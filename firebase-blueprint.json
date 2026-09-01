@@ -1,0 +1,51 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the application",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 256 },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["userId", "createdAt"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "A tour booking request",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "tourId": { "type": "string", "maxLength": 128 },
+        "tourName": { "type": "string", "maxLength": 256 },
+        "date": { "type": "string", "maxLength": 64 },
+        "time": { "type": "string", "maxLength": 64 },
+        "adults": { "type": "number" },
+        "children": { "type": "number" },
+        "pickupHotel": { "type": "string", "maxLength": 256 },
+        "specialRequests": { "type": "string", "maxLength": 2048 },
+        "totalUSD": { "type": "number" },
+        "totalCRC": { "type": "number" },
+        "customerName": { "type": "string", "maxLength": 256 },
+        "customerEmail": { "type": "string", "maxLength": 256 },
+        "customerPhone": { "type": "string", "maxLength": 64 },
+        "customerCountry": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "maxLength": 32, "enum": ["pending", "confirmed", "cancelled"] },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["userId", "tourId", "date", "adults", "totalUSD", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "users/{userId}/bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/Booking" },
+      "description": "User bookings"
+    }
+  }
+}

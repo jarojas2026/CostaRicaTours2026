@@ -1,0 +1,61 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helpers
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['userId', 'createdAt'])
+        && data.userId == request.auth.uid
+        && data.userId is string && data.userId.size() <= 128
+        && (data.createdAt == request.time || data.createdAt == existing().createdAt)
+        && (!('email' in data) || (data.email is string && data.email.size() <= 256))
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 256));
+    }
+
+    function isValidBooking(data) {
+      return data.keys().hasAll(['userId', 'tourId', 'date', 'adults', 'totalUSD', 'createdAt'])
+        && data.userId == request.auth.uid
+        && data.userId is string && data.userId.size() <= 128
+        && data.tourId is string && data.tourId.size() <= 128
+        && data.date is string && data.date.size() <= 64
+        && data.adults is number
+        && data.totalUSD is number
+        && (data.createdAt == request.time || data.createdAt == existing().createdAt)
+        && (!('tourName' in data) || (data.tourName is string && data.tourName.size() <= 256))
+        && (!('time' in data) || (data.time is string && data.time.size() <= 64))
+        && (!('children' in data) || (data.children is number))
+        && (!('pickupHotel' in data) || (data.pickupHotel is string && data.pickupHotel.size() <= 256))
+        && (!('specialRequests' in data) || (data.specialRequests is string && data.specialRequests.size() <= 2048))
+        && (!('totalCRC' in data) || (data.totalCRC is number))
+        && (!('customerName' in data) || (data.customerName is string && data.customerName.size() <= 256))
+        && (!('customerEmail' in data) || (data.customerEmail is string && data.customerEmail.size() <= 256))
+        && (!('customerPhone' in data) || (data.customerPhone is string && data.customerPhone.size() <= 64))
+        && (!('customerCountry' in data) || (data.customerCountry is string && data.customerCountry.size() <= 128))
+        && (!('status' in data) || (data.status in ['pending', 'confirmed', 'cancelled']));
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidUser(incoming());
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidUser(incoming()) && incoming().userId == existing().userId;
+    }
+    
+    match /bookings/{bookingId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidBooking(incoming());
+      allow update: if isSignedIn() && isValidBooking(incoming()) && incoming().userId == existing().userId;
+      allow delete: if false;
+    }
+  }
+}
