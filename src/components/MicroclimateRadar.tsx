@@ -106,7 +106,7 @@ export const MicroclimateRadar: React.FC<MicroclimateRadarProps> = ({ language }
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-100 pb-5">
         <div className="space-y-1">
-          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase px-3 py-1 rounded-full inline-flex items-center gap-1">
+          <span className="bg-stone-100 text-stone-800 text-[10px] font-black uppercase px-3 py-1 rounded-full inline-flex items-center gap-1">
             <Sparkles className="w-3 h-3 text-teal-600" />
             {language === 'es' ? 'Radar Meteorológico 2026' : '2026 Microclimate Radar'}
           </span>
@@ -120,8 +120,8 @@ export const MicroclimateRadar: React.FC<MicroclimateRadarProps> = ({ language }
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-2xl border border-emerald-200 text-emerald-900 text-xs font-bold self-start sm:self-center">
-          <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+        <div className="flex items-center gap-2 bg-stone-50 px-3 py-1.5 rounded-2xl border border-stone-200 text-stone-900 text-xs font-bold self-start sm:self-center">
+          <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping"></span>
           <span>{language === 'es' ? 'Actualizado en Vivo' : 'Live Updates Active'}</span>
         </div>
       </div>
@@ -137,7 +137,7 @@ export const MicroclimateRadar: React.FC<MicroclimateRadarProps> = ({ language }
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
                 isSelected
                   ? 'bg-teal-600 text-white border-teal-600 shadow-md'
-                  : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:border-amber-500'
+                  : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:border-orange-500'
               }`}
             >
               <MapPin className="w-3.5 h-3.5" />
@@ -148,24 +148,24 @@ export const MicroclimateRadar: React.FC<MicroclimateRadarProps> = ({ language }
       </div>
 
       {/* Selected region weather display card */}
-      <div className="bg-gradient-to-br from-neutral-900 to-emerald-950 text-white rounded-3xl p-6 sm:p-8 space-y-6 relative overflow-hidden shadow-xl border border-emerald-900">
-        <div className="absolute right-0 top-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="bg-gradient-to-br from-neutral-900 to-stone-950 text-white rounded-3xl p-6 sm:p-8 space-y-6 relative overflow-hidden shadow-xl border border-stone-900">
+        <div className="absolute right-0 top-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center relative z-10">
           
           {/* Main Temperature & State */}
           <div className="space-y-2">
-            <span className="text-amber-400 text-xs font-black uppercase tracking-wider block">
+            <span className="text-orange-400 text-xs font-black uppercase tracking-wider block">
               {language === 'es' ? selectedRegion.nameEs : selectedRegion.nameEn}
             </span>
             <div className="flex items-baseline gap-2">
               <span className="text-5xl sm:text-6xl font-black text-white">{selectedRegion.tempC}°C</span>
-              <span className="text-xl text-amber-300 font-bold">/ {selectedRegion.tempF}°F</span>
+              <span className="text-xl text-orange-300 font-bold">/ {selectedRegion.tempF}°F</span>
             </div>
-            <p className="text-sm font-semibold text-emerald-100 flex items-center gap-2">
-              {selectedRegion.icon === 'sun' && <Sun className="w-5 h-5 text-amber-400 animate-spin-slow" />}
-              {selectedRegion.icon === 'cloud' && <Wind className="w-5 h-5 text-amber-300" />}
-              {selectedRegion.icon === 'rain' && <CloudRain className="w-5 h-5 text-amber-300" />}
+            <p className="text-sm font-semibold text-stone-100 flex items-center gap-2">
+              {selectedRegion.icon === 'sun' && <Sun className="w-5 h-5 text-orange-400 animate-spin-slow" />}
+              {selectedRegion.icon === 'cloud' && <Wind className="w-5 h-5 text-orange-300" />}
+              {selectedRegion.icon === 'rain' && <CloudRain className="w-5 h-5 text-orange-300" />}
               <span>{language === 'es' ? selectedRegion.conditionEs : selectedRegion.conditionEn}</span>
             </p>
           </div>
@@ -173,25 +173,25 @@ export const MicroclimateRadar: React.FC<MicroclimateRadarProps> = ({ language }
           {/* Stats Bar */}
           <div className="grid grid-cols-2 gap-4 bg-white/10 p-4 rounded-2xl border border-white/10">
             <div>
-              <span className="text-[10px] text-amber-300 font-bold uppercase block">{language === 'es' ? 'Humedad:' : 'Humidity:'}</span>
+              <span className="text-[10px] text-orange-300 font-bold uppercase block">{language === 'es' ? 'Humedad:' : 'Humidity:'}</span>
               <span className="text-lg font-black text-white">{selectedRegion.humidity}%</span>
             </div>
             <div>
-              <span className="text-[10px] text-amber-300 font-bold uppercase block">{language === 'es' ? 'Índice UV:' : 'UV Index:'}</span>
-              <span className="text-lg font-black text-amber-300">{selectedRegion.uvIndex} ({selectedRegion.uvIndex > 8 ? (language === 'es' ? 'Muy Alto' : 'Very High') : (language === 'es' ? 'Moderado' : 'Moderate')})</span>
+              <span className="text-[10px] text-orange-300 font-bold uppercase block">{language === 'es' ? 'Índice UV:' : 'UV Index:'}</span>
+              <span className="text-lg font-black text-orange-300">{selectedRegion.uvIndex} ({selectedRegion.uvIndex > 8 ? (language === 'es' ? 'Muy Alto' : 'Very High') : (language === 'es' ? 'Moderado' : 'Moderate')})</span>
             </div>
           </div>
 
           {/* Recommended Packing Gear */}
           <div className="space-y-2 bg-white/10 p-4 rounded-2xl border border-white/10">
-            <span className="text-xs font-black text-amber-400 uppercase flex items-center gap-1.5">
+            <span className="text-xs font-black text-orange-400 uppercase flex items-center gap-1.5">
               <Shirt className="w-4 h-4" />
               {language === 'es' ? 'Qué llevar hoy:' : 'Gear to pack:'}
             </span>
-            <ul className="text-xs space-y-1.5 text-emerald-100">
+            <ul className="text-xs space-y-1.5 text-stone-100">
               {(language === 'es' ? selectedRegion.gearEs : selectedRegion.gearEn).map((item, idx) => (
                 <li key={idx} className="flex items-start gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-orange-400 flex-shrink-0 mt-0.5" />
                   <span>{item}</span>
                 </li>
               ))}

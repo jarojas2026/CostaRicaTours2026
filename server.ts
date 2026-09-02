@@ -1,3 +1,4 @@
+import Stripe from "stripe";
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
@@ -823,6 +824,63 @@ app.post("/api/gemini/generate-music", async (req, res) => {
   } catch (error: any) {
     console.error("Gemini Music Gen Error:", error);
     res.status(500).json({ error: "Error generating music" });
+  }
+});
+
+
+
+
+let stripeClient = null;
+function getStripe() {
+  if (!stripeClient) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (key) {
+      stripeClient = new Stripe(key, { apiVersion: '2023-10-16' });
+    }
+  }
+  return stripeClient;
+}
+
+app.post("/api/stripe/create-checkout-session", async (req, res) => {
+  try {
+    const stripe = getStripe();
+    if (!stripe) {
+      return res.status(500).json({ error: "Stripe is not configured on the server." });
+    }
+
+    const { tourId, tourName, totalUSD, customerEmail, date, passengers } = req.body;
+    const origin = req.headers.origin || process.env.APP_URL || 'http://localhost:3000';
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: customerEmail || undefined,
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: tourName,
+              description: `Reserva para el ${date} - ${passengers} pasajeros`,
+            },
+            unit_amount: Math.round(totalUSD * 100), // in cents
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${origin}/?booking=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/?booking=canceled`,
+      metadata: {
+        tourId,
+        date,
+        passengers
+      }
+    });
+
+    res.json({ id: session.id, url: session.url });
+  } catch (error) {
+    console.error("Stripe Checkout Error:", error);
+    res.status(500).json({ error: "Error creando sesión de pago" });
   }
 });
 

@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+
+    // A valid booking request schema
+    function isValidBooking(data) {
+      return data.keys().hasAll(['tourId', 'tourName', 'date', 'adults', 'totalUSD', 'customer', 'createdAt'])
+        && data.tourId is string && data.tourId.size() <= 100
+        && data.tourName is string && data.tourName.size() <= 200
+        && data.date is string && data.date.size() <= 50
+        && data.adults is number
+        && data.totalUSD is number
+        && data.customer is map
+        && data.customer.keys().hasAll(['fullName', 'email', 'phone'])
+        && data.customer.fullName is string && data.customer.fullName.size() <= 200
+        && data.customer.email is string && data.customer.email.size() <= 200
+        && data.customer.phone is string && data.customer.phone.size() <= 50
+        && data.createdAt == request.time;
+    }
+
+    // Bookings collection
+    match /bookings/{bookingId} {
+      // Anyone can create a booking request (public facing)
+      allow create: if isValidId(bookingId) && isValidBooking(incoming());
+      
+      // Only the user who created it (if logged in) can read it, or admins (if we had an admin setup)
+      // Since they are anonymous/public, we just don't allow reads unless it's their own userId
+      allow read: if request.auth != null && existing().userId == request.auth.uid;
+      
+      // Updates only by the owner
+      allow update: if request.auth != null 
+        && existing().userId == request.auth.uid 
+        && incoming().userId == existing().userId
+        && isValidBooking(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'paymentStatus']);
+    }
+    
+    // Flight Bookings (if separate or same)
+    // Both use 'bookings' collection in the current codebase
+  }
+}

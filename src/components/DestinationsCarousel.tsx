@@ -21,7 +21,7 @@ const destinations = [
     name: { es: 'Manuel Antonio', en: 'Manuel Antonio' },
     desc: { es: 'Playas de arena blanca y avistamiento de perezosos garantizado.', en: 'White sand beaches and guaranteed sloth sightings.' },
     img: 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=800&q=80',
-    color: 'from-emerald-600/80 to-emerald-900/90'
+    color: 'from-teal-600/80 to-stone-900/90'
   },
   {
     id: 'guanacaste' as TourRegion,
@@ -72,7 +72,7 @@ export const DestinationsCarousel: React.FC<DestinationsCarouselProps> = ({ lang
     <section className="py-12 bg-white relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 flex items-end justify-between">
         <div className="max-w-2xl">
-          <h2 className="text-3xl sm:text-4xl font-black text-emerald-950 uppercase tracking-tight mb-3">
+          <h2 className="text-3xl sm:text-4xl font-black text-stone-950 uppercase tracking-tight mb-3">
             {language === 'es' ? 'Explora los Destinos Top' : 'Explore Top Destinations'}
           </h2>
           <p className="text-neutral-600">
@@ -132,7 +132,7 @@ export const DestinationsCarousel: React.FC<DestinationsCarouselProps> = ({ lang
                     {dest.desc[language as keyof typeof dest.desc] || dest.desc.en}
                   </p>
                   
-                  <div className="mt-4 flex items-center gap-2 text-amber-400 font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-200">
+                  <div className="mt-4 flex items-center gap-2 text-orange-400 font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-200">
                     <span>{language === 'es' ? 'Ver Tours' : 'View Tours'}</span>
                     <ChevronRight className="w-4 h-4" />
                   </div>

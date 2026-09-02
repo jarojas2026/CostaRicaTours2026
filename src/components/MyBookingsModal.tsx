@@ -18,8 +18,8 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
   onSelectBooking,
 }) => {
   return (
-    <div className="fixed inset-0 z-[200] overflow-y-auto bg-emerald-950/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-emerald-900 border-2 border-white/10 rounded-[2rem] w-full max-w-2xl overflow-hidden shadow-2xl relative text-white my-8 p-6 sm:p-8 space-y-6">
+    <div className="fixed inset-0 z-[200] overflow-y-auto bg-stone-950/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="bg-stone-900 border-2 border-white/10 rounded-[2rem] w-full max-w-2xl overflow-hidden shadow-2xl relative text-white my-8 p-6 sm:p-8 space-y-6">
         
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
@@ -27,7 +27,7 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
               <Ticket className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-xl font-black text-amber-400 uppercase">
+              <h3 className="text-xl font-black text-orange-400 uppercase">
                 {language === 'es' ? 'Mis Reservas Confirmadas' : 'My Confirmed Bookings'}
               </h3>
               <span className="text-xs text-[#A7F3D0]">
@@ -57,10 +57,10 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
               <div
                 key={b.bookingId || idx}
                 onClick={() => onSelectBooking(b)}
-                className="bg-emerald-950 hover:bg-neutral-700 p-4 rounded-2xl border border-white/10 hover:border-amber-500 transition-colors cursor-pointer space-y-3"
+                className="bg-stone-950 hover:bg-neutral-700 p-4 rounded-2xl border border-white/10 hover:border-orange-500 transition-colors cursor-pointer space-y-3"
               >
                 <div className="flex items-center justify-between">
-                  <span className="bg-amber-500 text-neutral-900 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
+                  <span className="bg-orange-500 text-neutral-900 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                     ID: {b.bookingId}
                   </span>
                   <span className="text-xs text-[#A7F3D0] font-bold">
@@ -72,24 +72,24 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
 
                 <div className="grid grid-cols-2 gap-2 text-xs text-[#A7F3D0]">
                   <div className="flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                    <Calendar className="w-3.5 h-3.5 text-orange-400" />
                     <span>{b.date} ({b.time})</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                    <MapPin className="w-3.5 h-3.5 text-orange-400" />
                     <span>Hotel: {(b.pickupHotel || "").slice(0, 20)}...</span>
                   </div>
                 </div>
 
                 {b.electronicInvoice?.wantsInvoice && (
-                  <div className="text-[10px] text-emerald-300 font-bold flex items-center gap-1 mb-2">
+                  <div className="text-[10px] text-teal-300 font-bold flex items-center gap-1 mb-2">
                     🧾 {language === 'es' ? 'Factura Electrónica' : 'Electronic Invoice'}
                   </div>
                 )}
 
                 <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-[#A7F3D0]">
                   <span>Titular: {b.customer.fullName}</span>
-                  <span className="text-amber-400 font-bold flex items-center gap-1">
+                  <span className="text-orange-400 font-bold flex items-center gap-1">
                     Ver Voucher <Ticket className="w-3.5 h-3.5" />
                   </span>
                 </div>
@@ -109,7 +109,7 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
           </a>
           <button
             onClick={onClose}
-            className="flex-1 bg-amber-500 text-neutral-900 hover:bg-amber-500 font-black py-3 rounded-full text-xs uppercase tracking-wider transition-colors"
+            className="flex-1 bg-orange-500 text-neutral-900 hover:bg-orange-500 font-black py-3 rounded-full text-xs uppercase tracking-wider transition-colors"
           >
             {language === 'es' ? 'Cerrar' : 'Close'}
           </button>

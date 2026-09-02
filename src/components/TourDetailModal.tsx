@@ -437,6 +437,29 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     };
 
     try {
+      
+      if (paymentMethod === 'credit_card') {
+        const stripeRes = await fetch('/api/stripe/create-checkout-session', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({
+             tourId: tour.id,
+             tourName: tourTitle,
+             totalUSD,
+             customerEmail: finalEmail,
+             date: selectedDate || tomorrowStr,
+             passengers: (adults || 1) + (children || 0)
+           })
+        });
+        const stripeData = await stripeRes.json();
+        if (stripeData.url) {
+           window.location.href = stripeData.url;
+           return;
+        } else {
+           throw new Error(stripeData.error || 'Error al conectar con Stripe');
+        }
+      }
+
       const response = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -455,15 +478,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
       // Add to Firestore if user is authenticated
       import('../firebase').then(({ db, auth }) => {
-        if (auth.currentUser) {
-          import('firebase/firestore').then(({ collection, addDoc, serverTimestamp }) => {
-            addDoc(collection(db, 'bookings'), {
-              ...finalBooking,
-              userId: auth.currentUser!.uid,
-              createdAt: serverTimestamp()
-            });
-          });
-        }
+        import('firebase/firestore').then(({ collection, addDoc, serverTimestamp }) => { addDoc(collection(db, 'bookings'), { ...finalBooking, userId: auth.currentUser ? auth.currentUser.uid : 'anonymous', createdAt: serverTimestamp() }).catch(console.error); });
       });
 
       if (handleConfirm) handleConfirm(finalBooking);
@@ -474,15 +489,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
       };
       
       import('../firebase').then(({ db, auth }) => {
-        if (auth.currentUser) {
-          import('firebase/firestore').then(({ collection, addDoc, serverTimestamp }) => {
-            addDoc(collection(db, 'bookings'), {
-              ...fallbackBooking,
-              userId: auth.currentUser!.uid,
-              createdAt: serverTimestamp()
-            });
-          });
-        }
+        import('firebase/firestore').then(({ collection, addDoc, serverTimestamp }) => { addDoc(collection(db, 'bookings'), { ...fallbackBooking, userId: auth.currentUser ? auth.currentUser.uid : 'anonymous', createdAt: serverTimestamp() }).catch(console.error); });
       });
 
       if (handleConfirm) handleConfirm(fallbackBooking);
@@ -530,7 +537,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                 </span>
               )}
               <span className="bg-[#0C1E14]/85 text-[#F5EEDC] text-[10px] font-black uppercase px-3 py-1 rounded-full border border-[#2D663B]/60 flex items-center gap-1">
-                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                <Star className="w-3 h-3 fill-orange-400 text-orange-400" />
                 {tour.rating} ({tour.reviewsCount} {language === 'es' ? 'reseñas' : 'reviews'})
               </span>
             </div>
@@ -551,11 +558,11 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
             <div className="bg-gradient-to-r from-[#173D26] to-[#122F1E] p-4 rounded-2xl border border-[#2D663B] flex items-center justify-between gap-3 text-xs shadow-xs">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#1E4D2B] flex items-center justify-center border border-[#3E6D4B] shrink-0">
-                  <ShieldCheck className="w-5 h-5 text-amber-300" />
+                  <ShieldCheck className="w-5 h-5 text-orange-300" />
                 </div>
                 <div>
                   <span className="font-black text-white uppercase text-[11px] block">
-                    {language === 'es' ? 'Operación Receptiva Oficial' : 'Official Inbound Operations'}: <span className="text-amber-300">Costa Rica Tours (costaricatours.es)</span>
+                    {language === 'es' ? 'Operación Receptiva Oficial' : 'Official Inbound Operations'}: <span className="text-orange-300">Costa Rica Tours (costaricatours.es)</span>
                   </span>
                   <span className="text-[10px] text-stone-300 block">
                     {language === 'es' 
@@ -572,7 +579,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
             {/* Trust & Policy Badges */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px] font-semibold">
               <div className="flex items-center gap-2 bg-[#0C1E14]/70 p-3 rounded-xl border border-[#2D663B]/50 text-stone-200">
-                <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
+                <ShieldCheck className="w-4 h-4 text-orange-400 shrink-0" />
                 <span>{language === 'es' ? 'Cancelación GRATIS hasta 48h antes' : 'FREE cancellation up to 48h prior'}</span>
               </div>
               <div className="flex items-center gap-2 bg-[#0C1E14]/70 p-3 rounded-xl border border-[#2D663B]/50 text-stone-200">
@@ -583,7 +590,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
             {/* Rain & Weather Policy */}
             <div className="bg-[#0C1E14]/40 p-4 rounded-xl border border-[#2D663B]/40 text-[11px] text-stone-200 space-y-1">
-              <span className="font-bold text-amber-300 uppercase block flex items-center gap-1.5">
+              <span className="font-bold text-orange-300 uppercase block flex items-center gap-1.5">
                 🌧️ {language === 'es' ? 'Política de Clima y Lluvia Tropical:' : 'Tropical Rain & Weather Policy:'}
               </span>
               <p className="text-stone-300 leading-relaxed">
@@ -595,7 +602,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
             {/* Description */}
             <div className="space-y-2">
-              <h3 className="text-sm font-black text-amber-300 uppercase tracking-wider">
+              <h3 className="text-sm font-black text-orange-300 uppercase tracking-wider">
                 {language === 'es' ? 'Resumen de la Experiencia' : 'Tour Experience'}
               </h3>
               <p className="text-xs sm:text-sm text-stone-300 leading-relaxed">
@@ -605,14 +612,14 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
             {/* Highlights */}
             <div className="bg-[#0C1E14]/60 p-5 rounded-2xl border border-[#2D663B]/50 space-y-3">
-              <h3 className="text-xs font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <h3 className="text-xs font-black text-orange-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-orange-400" />
                 <span>{language === 'es' ? 'Puntos Destacados' : 'Key Highlights'}</span>
               </h3>
               <ul className="space-y-2">
                 {tourHighlights.map((hl, idx) => (
                   <li key={idx} className="flex items-start gap-2.5 text-xs text-stone-200">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
                     <span>{hl}</span>
                   </li>
                 ))}
@@ -628,7 +635,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                 <ul className="space-y-1.5 text-xs text-stone-300">
                   {tourInclusions.map((inc, i) => (
                     <li key={i} className="flex items-start gap-1.5">
-                      <span className="text-emerald-400">•</span>
+                      <span className="text-teal-400">•</span>
                       <span>{inc}</span>
                     </li>
                   ))}
@@ -667,7 +674,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
             {/* What to bring */}
             <div className="bg-[#0C1E14]/60 p-4 rounded-xl border border-[#2D663B]/40 space-y-2 text-xs">
-              <span className="font-black text-amber-300 uppercase block">
+              <span className="font-black text-orange-300 uppercase block">
                 🎒 {language === 'es' ? '¿Qué debes llevar?' : 'What to Bring'}
               </span>
               <p className="text-stone-300 leading-relaxed">
@@ -688,7 +695,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
               {restoredDraftNotice && (
                 <div className="bg-[#EBF5EE] border border-[#2D663B]/40 text-[#1E4D2B] p-3 rounded-xl text-xs flex items-center justify-between gap-2 shadow-xs animate-in fade-in">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <Sparkles className="w-4 h-4 text-teal-600 shrink-0" />
                     <div>
                       <p className="font-black text-[11px] leading-tight">
                         {language === 'es' ? '¡Borrador de reserva recuperado!' : 'Saved booking draft restored!'}
@@ -712,7 +719,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
               {/* Offline Warning Banner */}
               {!isOnline && (
-                <div className="bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-[11px] font-bold flex items-center gap-2 shadow-xs">
+                <div className="bg-amber-50 border border-orange-300 text-amber-900 p-2.5 rounded-xl text-[11px] font-bold flex items-center gap-2 shadow-xs">
                   <WifiOff className="w-4 h-4 text-amber-600 shrink-0" />
                   <span>
                     {language === 'es' 
@@ -730,8 +737,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                   </span>
                   <div className="flex items-center gap-2">
                     {lastSavedTime && (
-                      <span className="text-[9px] text-emerald-800 font-bold flex items-center gap-1 bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-300">
-                        <Save className="w-2.5 h-2.5 text-emerald-600" />
+                      <span className="text-[9px] text-stone-800 font-bold flex items-center gap-1 bg-stone-100/80 px-2 py-0.5 rounded-md border border-teal-300">
+                        <Save className="w-2.5 h-2.5 text-teal-600" />
                         <span>{language === 'es' ? `Guardado (${lastSavedTime})` : `Autosaved (${lastSavedTime})`}</span>
                       </span>
                     )}
@@ -758,7 +765,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                 
                 <div className="text-[10px] text-stone-500 flex items-center justify-between mt-1">
                   <span>{language === 'es' ? 'Tarifa final (13% IVA incluido)' : 'Final price (13% VAT included)'}</span>
-                  <span className="text-emerald-700 font-bold">✓ {language === 'es' ? 'Sin cargos ocultos' : 'No hidden fees'}</span>
+                  <span className="text-teal-700 font-bold">✓ {language === 'es' ? 'Sin cargos ocultos' : 'No hidden fees'}</span>
                 </div>
 
                 {/* Visual Step Progress Bar */}
@@ -950,7 +957,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                     className="w-full bg-[#1E4D2B] hover:bg-[#14391F] text-[#FAF8F5] font-black text-xs uppercase py-3.5 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <span>{language === 'es' ? 'Continuar: Datos del Viajero' : 'Continue: Traveler Info'}</span>
-                    <ChevronRight className="w-4 h-4 text-amber-300" />
+                    <ChevronRight className="w-4 h-4 text-orange-300" />
                   </button>
                 </div>
               )}
@@ -1091,7 +1098,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                       className="w-2/3 bg-[#1E4D2B] hover:bg-[#14391F] text-[#FAF8F5] font-black text-xs uppercase py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
                     >
                       <span>{language === 'es' ? 'Ir al Paso de Pago' : 'Go to Payment'}</span>
-                      <ChevronRight className="w-4 h-4 text-amber-300" />
+                      <ChevronRight className="w-4 h-4 text-orange-300" />
                     </button>
                   </div>
                 </div>
@@ -1343,7 +1350,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                         ? (language === 'es' ? 'Procesando Reserva...' : 'Processing Booking...')
                         : (language === 'es' ? 'Confirmar Reserva y Emitir Voucher' : 'Confirm Booking & Issue Voucher')}
                     </span>
-                    <ChevronRight className="w-4 h-4 text-amber-300" />
+                    <ChevronRight className="w-4 h-4 text-orange-300" />
                   </button>
 
                   <div className="text-[10px] text-center text-stone-500 flex items-center justify-center gap-1">

@@ -71,7 +71,7 @@ const BookingProgressIndicator = ({
           return (
             <React.Fragment key={step.id}>
               <div className="flex flex-col items-center gap-1 z-10 relative">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center border transition-all duration-500 ${isActive ? (isCurrent ? (step.id === 'payment_required' ? 'border-amber-500 bg-amber-50 text-amber-600 shadow-sm' : 'border-emerald-500 bg-emerald-50 text-emerald-600 shadow-sm') : 'border-emerald-500 bg-emerald-500 text-white') : 'border-slate-200 bg-white text-slate-300'}`}>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center border transition-all duration-500 ${isActive ? (isCurrent ? (step.id === 'payment_required' ? 'border-orange-500 bg-amber-50 text-amber-600 shadow-sm' : 'border-teal-500 bg-stone-50 text-teal-600 shadow-sm') : 'border-teal-500 bg-teal-500 text-white') : 'border-slate-200 bg-white text-slate-300'}`}>
                   {isActive && !isCurrent ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Icon className="w-3.5 h-3.5" />}
                 </div>
                 <span className={`text-[9px] font-bold uppercase tracking-wider ${isActive ? 'text-slate-800' : 'text-slate-400'}`}>
@@ -84,7 +84,7 @@ const BookingProgressIndicator = ({
                     initial={{ width: 0 }}
                     animate={{ width: idx < currentIndex ? '100%' : '0%' }}
                     transition={{ duration: 0.5 }}
-                    className="absolute inset-0 bg-emerald-500 h-full" 
+                    className="absolute inset-0 bg-teal-500 h-full" 
                   />
                 </div>
               )}
@@ -364,10 +364,10 @@ const ChatMiniCard: React.FC<ChatMiniCardProps> = ({ tour, language, onSelectTou
       {/* Earth & forest attention highlight badge */}
       <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-[#1E4D2B] text-[#F5EEDC] text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md border border-[#3E6D4B]">
         <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-400"></span>
         </span>
-        <Sparkles className="w-2.5 h-2.5 text-amber-300" />
+        <Sparkles className="w-2.5 h-2.5 text-orange-300" />
         <span>{language === 'es' ? 'Tour Recomendado' : 'Recommended'}</span>
       </div>
 
@@ -386,7 +386,7 @@ const ChatMiniCard: React.FC<ChatMiniCardProps> = ({ tour, language, onSelectTou
           <div className="flex items-center gap-1.5">
             {/* Duration Badge */}
             <div className="bg-[#143020]/90 backdrop-blur-xs text-[#E2EFE7] border border-[#2D663B]/60 text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
-              <Clock className="w-2.5 h-2.5 text-amber-300" />
+              <Clock className="w-2.5 h-2.5 text-orange-300" />
               <span>{durationBadge}</span>
             </div>
             {/* Price Tag */}
@@ -586,14 +586,14 @@ const ChatMiniCard: React.FC<ChatMiniCardProps> = ({ tour, language, onSelectTou
           }`}
         >
           <span className="flex items-center gap-1.5 truncate">
-            <Leaf className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+            <Leaf className="w-3.5 h-3.5 text-orange-300 shrink-0" />
             <span className="truncate">
               {dateValidation.isBlackout
                 ? (language === 'es' ? 'Fecha no disponible' : 'Date Unavailable')
                 : (language === 'es' ? 'Continuar con esta Fecha' : 'Continue with Date')}
             </span>
           </span>
-          <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-0.5 transition-transform text-amber-300 shrink-0" />
+          <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-0.5 transition-transform text-orange-300 shrink-0" />
         </button>
       </div>
     </motion.div>
@@ -611,7 +611,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
   const [recentScans, setRecentScans] = useState<string[]>([]);
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
   const [generatedQRUrl, setGeneratedQRUrl] = useState<string | null>(null);
-  const { isMuted, setIsMuted } = useNatureSounds(isOpen);
+  const { isMuted, setIsMuted, playNotification } = useNatureSounds(isOpen);
   
   // Internet connection detection
   const [isOnline, setIsOnline] = useState<boolean>(() => {
@@ -650,6 +650,26 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
       return [];
     }
   });
+
+  const prevIsOpenRef = React.useRef(isOpen);
+  useEffect(() => {
+    if (isOpen && !prevIsOpenRef.current) {
+      playNotification();
+    }
+    prevIsOpenRef.current = isOpen;
+  }, [isOpen, playNotification]);
+
+  const prevChatLengthRef = React.useRef(0);
+  useEffect(() => {
+    if (chatHistory.length > prevChatLengthRef.current) {
+      const lastMsg = chatHistory[chatHistory.length - 1];
+      if (lastMsg && lastMsg.role === 'bot' && isOpen) {
+        playNotification();
+      }
+    }
+    prevChatLengthRef.current = chatHistory.length;
+  }, [chatHistory, isOpen, playNotification]);
+
   const [chatInput, setChatInput] = useState('');
   const [showTyping, setShowTyping] = useState(false);
   const [isSendingToWebhook, setIsSendingToWebhook] = useState(false);
@@ -807,43 +827,43 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     options: [
       {
         id: 'tours',
-        icon: <Map className={`w-5 h-5 ${theme === 'teal' ? 'text-amber-500' : 'text-amber-500'}`} />,
+        icon: <Map className={`w-5 h-5 ${theme === 'teal' ? 'text-orange-500' : 'text-orange-500'}`} />,
         text: language === 'es' ? 'Recomendación de Tours' : 'Tour Recommendations',
         msg: generateCustomGreeting('Necesito recomendaciones de tours en Costa Rica.', 'I need tour recommendations in Costa Rica.')
       },
       {
         id: 'itinerary',
-        icon: <Calendar className={`w-5 h-5 ${theme === 'teal' ? 'text-amber-500' : 'text-amber-500'}`} />,
+        icon: <Calendar className={`w-5 h-5 ${theme === 'teal' ? 'text-orange-500' : 'text-orange-500'}`} />,
         text: language === 'es' ? 'Planear Itinerario' : 'Plan Itinerary',
         msg: generateCustomGreeting('Quiero ayuda para armar mi itinerario de viaje.', 'I want help planning my travel itinerary.')
       },
       {
         id: 'info',
-        icon: <Info className={`w-5 h-5 ${theme === 'teal' ? 'text-amber-500' : 'text-amber-500'}`} />,
+        icon: <Info className={`w-5 h-5 ${theme === 'teal' ? 'text-orange-500' : 'text-orange-500'}`} />,
         text: language === 'es' ? 'Dudas y Consultas' : 'Questions & Doubts',
         msg: generateCustomGreeting('Tengo algunas dudas generales sobre viajar a Costa Rica.', 'I have some general questions about traveling to Costa Rica.')
       },
       {
         id: 'custom',
-        icon: <MessageSquare className={`w-5 h-5 ${theme === 'teal' ? 'text-amber-500' : 'text-amber-500'}`} />,
+        icon: <MessageSquare className={`w-5 h-5 ${theme === 'teal' ? 'text-orange-500' : 'text-orange-500'}`} />,
         text: language === 'es' ? 'Chat Directo' : 'Direct Chat',
         msg: generateCustomGreeting('Quisiera más información.', 'I would like more information.', true)
       },
       {
         id: 'ai-bot',
-        icon: <Bot className="w-5 h-5 text-amber-500" />,
+        icon: <Bot className="w-5 h-5 text-orange-500" />,
         text: language === 'es' ? 'Bot de Reservas con IA (Urgencias)' : 'AI Booking Bot (Urgent)',
         msg: ''
       },
       {
         id: 'scan-qr',
-        icon: <QrCode className={`w-5 h-5 text-amber-500`} />,
+        icon: <QrCode className={`w-5 h-5 text-orange-500`} />,
         text: language === 'es' ? 'Escanear Código de Tour' : 'Scan Tour Code',
         msg: ''
       },
       {
         id: 'generate-qr',
-        icon: <Share2 className="w-5 h-5 text-amber-500" />,
+        icon: <Share2 className="w-5 h-5 text-orange-500" />,
         text: language === 'es' ? 'Compartir (QR)' : 'Share via QR',
         msg: ''
       }
@@ -1008,12 +1028,12 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     header: 'bg-[#1E7B4A]',
     badge: 'bg-[#E67E22] text-white',
     hoverBorder: 'hover:border-[#1E7B4A]',
-    iconBg: 'bg-emerald-50 group-hover:bg-emerald-100',
+    iconBg: 'bg-stone-50 group-hover:bg-stone-100',
     ping: 'bg-[#25D366]'
   };
 
   return (
-    <div className="floating-whatsapp-container fixed bottom-[5rem] right-4 xl:bottom-6 xl:right-6 z-40 flex flex-col items-end gap-3 pointer-events-none">
+    <div className="floating-whatsapp-container fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 xl:bottom-6 xl:right-6 z-[90] flex flex-col items-end gap-3 pointer-events-none">
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -1035,7 +1055,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
                     <MessageCircle className="w-6 h-6 text-white" />
                   </div>
-                  <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-white rounded-full transition-colors duration-300 ${isOnline ? 'bg-emerald-400' : 'bg-rose-500 animate-pulse'}`}></span>
+                  <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-white rounded-full transition-colors duration-300 ${isOnline ? 'bg-teal-400' : 'bg-rose-500 animate-pulse'}`}></span>
                 </div>
                 <div>
                   <h4 className="font-bold text-sm flex items-center gap-1.5">
@@ -1046,8 +1066,8 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                       </span>
                     )}
                   </h4>
-                  <p className={`text-xs flex items-center gap-1 ${isOnline ? (theme === 'teal' ? 'text-amber-100' : 'text-emerald-100') : 'text-rose-200 font-semibold'} transition-colors duration-300`}>
-                    {isOnline ? <Wifi className="w-3 h-3 text-emerald-300 inline" /> : <WifiOff className="w-3 h-3 text-rose-300 inline" />}
+                  <p className={`text-xs flex items-center gap-1 ${isOnline ? (theme === 'teal' ? 'text-amber-100' : 'text-stone-100') : 'text-rose-200 font-semibold'} transition-colors duration-300`}>
+                    {isOnline ? <Wifi className="w-3 h-3 text-teal-300 inline" /> : <WifiOff className="w-3 h-3 text-rose-300 inline" />}
                     {t.status}
                   </p>
                 </div>
@@ -1082,7 +1102,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="bg-amber-500 text-amber-950 px-3.5 py-2 text-xs font-bold flex items-center gap-2.5 border-b border-amber-600/30 shadow-inner shrink-0"
+                className="bg-orange-500 text-amber-950 px-3.5 py-2 text-xs font-bold flex items-center gap-2.5 border-b border-amber-600/30 shadow-inner shrink-0"
               >
                 <div className="w-6 h-6 rounded-full bg-amber-600/30 flex items-center justify-center shrink-0">
                   <WifiOff className="w-3.5 h-3.5 text-amber-950 animate-pulse" />
@@ -1104,9 +1124,9 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="bg-emerald-600 text-white px-3.5 py-2 text-xs font-bold flex items-center gap-2 border-b border-emerald-700 shadow-inner shrink-0"
+                className="bg-teal-600 text-white px-3.5 py-2 text-xs font-bold flex items-center gap-2 border-b border-teal-700 shadow-inner shrink-0"
               >
-                <Wifi className="w-4 h-4 text-emerald-200 shrink-0 animate-bounce" />
+                <Wifi className="w-4 h-4 text-stone-200 shrink-0 animate-bounce" />
                 <span className="leading-tight text-[11px]">
                   {language === 'es' 
                     ? '🟢 ¡Conexión restablecida! Estás en línea. Pura vida.'
@@ -1166,7 +1186,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                       </div>
                       <span className="text-sm font-semibold text-neutral-700">{opt.text}</span>
                     </div>
-                    <ChevronRight className={`w-4 h-4 text-neutral-400 ${theme === 'teal' ? 'group-hover:text-amber-500' : 'group-hover:text-amber-500'} group-hover:translate-x-1 transition-all`} />
+                    <ChevronRight className={`w-4 h-4 text-neutral-400 ${theme === 'teal' ? 'group-hover:text-orange-500' : 'group-hover:text-orange-500'} group-hover:translate-x-1 transition-all`} />
                   </button>
                 ))}
               </div>
@@ -1204,9 +1224,9 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                             } catch (e) {}
                           }
                         }}
-                        className={`w-full flex items-center gap-2 p-2 bg-white/50 backdrop-blur-sm rounded-lg border border-neutral-200 hover:bg-white hover:border-amber-300 transition-all text-left group`}
+                        className={`w-full flex items-center gap-2 p-2 bg-white/50 backdrop-blur-sm rounded-lg border border-neutral-200 hover:bg-white hover:border-orange-300 transition-all text-left group`}
                       >
-                        <QrCode className="w-4 h-4 text-neutral-400 group-hover:text-amber-500 shrink-0" />
+                        <QrCode className="w-4 h-4 text-neutral-400 group-hover:text-orange-500 shrink-0" />
                         <span className="text-xs text-neutral-600 truncate">{scan}</span>
                       </button>
                     ))}
@@ -1260,10 +1280,10 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
             exit={{ opacity: 0, scale: 0.95 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
           >
-            <div className="bg-neutral-950 border border-amber-500/30 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-[0_0_50px_rgba(16,185,129,0.2)] relative">
+            <div className="bg-neutral-950 border border-orange-500/30 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-[0_0_50px_rgba(16,185,129,0.2)] relative">
               <div className="p-5 bg-gradient-to-r from-teal-600 to-teal-600 flex items-center justify-between text-white shadow-md">
                 <div className="flex items-center gap-3">
-                  <QrCode className="w-6 h-6 text-emerald-100" />
+                  <QrCode className="w-6 h-6 text-stone-100" />
                   <h3 className="font-black text-lg uppercase tracking-wide">
                     {language === 'es' ? 'Escanear Código' : 'Scan Code'}
                   </h3>
@@ -1272,15 +1292,15 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <div className="p-6 relative bg-emerald-950/20">
+              <div className="p-6 relative bg-stone-950/20">
                 {scanResult ? (
                   <div className="text-center py-8 space-y-4 animate-fade-in">
-                    <CheckCircle2 className="w-20 h-20 text-amber-500 mx-auto glow-orange" />
+                    <CheckCircle2 className="w-20 h-20 text-orange-500 mx-auto glow-orange" />
                     <h4 className="text-2xl font-black text-white uppercase tracking-tight">
                       {language === 'es' ? '¡Código Escaneado!' : 'Code Scanned!'}
                     </h4>
                     <div className="bg-black/60 p-4 rounded-2xl border border-white/10 break-all">
-                      <p className="text-amber-400 font-mono text-sm">
+                      <p className="text-orange-400 font-mono text-sm">
                         {scanResult}
                       </p>
                     </div>
@@ -1289,14 +1309,14 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                         setScanResult(null);
                         setIsScanning(false);
                       }}
-                      className="mt-6 w-full bg-amber-500 hover:bg-teal-600 text-white font-black py-4 rounded-xl transition-all uppercase tracking-widest shadow-lg hover:scale-[1.02]"
+                      className="mt-6 w-full bg-orange-500 hover:bg-teal-600 text-white font-black py-4 rounded-xl transition-all uppercase tracking-widest shadow-lg hover:scale-[1.02]"
                     >
                       {language === 'es' ? 'Continuar' : 'Continue'}
                     </button>
                   </div>
                 ) : (
                   <>
-                    <div className="rounded-3xl overflow-hidden border-2 border-amber-500/50 relative bg-black aspect-square shadow-inner group">
+                    <div className="rounded-3xl overflow-hidden border-2 border-orange-500/50 relative bg-black aspect-square shadow-inner group">
                     <Scanner
                       onScan={(result: any) => {
                         if (result) {
@@ -1312,9 +1332,9 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                       onError={(error: any) => console.log(error)}
                     />
                     {/* Scanning overlay animation */}
-                    <div className="absolute inset-0 border-[4px] border-amber-500/50 rounded-3xl pointer-events-none z-10"></div>
-                    <div className="absolute top-0 left-0 w-full h-[2px] bg-amber-400 shadow-[0_0_20px_4px_rgba(52,211,153,0.8)] animate-scan pointer-events-none z-20"></div>
-                    <div className="absolute inset-0 bg-amber-500/10 pointer-events-none z-0"></div>
+                    <div className="absolute inset-0 border-[4px] border-orange-500/50 rounded-3xl pointer-events-none z-10"></div>
+                    <div className="absolute top-0 left-0 w-full h-[2px] bg-orange-400 shadow-[0_0_20px_4px_rgba(52,211,153,0.8)] animate-scan pointer-events-none z-20"></div>
+                    <div className="absolute inset-0 bg-orange-500/10 pointer-events-none z-0"></div>
                     
                     <div className="absolute bottom-4 left-0 right-0 text-center z-20">
                       <span className="bg-black/60 backdrop-blur-md text-white text-xs font-bold px-4 py-2 rounded-full border border-white/10">
@@ -1324,7 +1344,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                   </div>
                   
                   {/* Predictive Search Fallback */}
-                  <div className="mt-4 border-t border-amber-500/20 pt-4">
+                  <div className="mt-4 border-t border-orange-500/20 pt-4">
                     <p className="text-xs text-neutral-400 mb-2 font-medium uppercase tracking-wider text-center">
                       {language === 'es' ? '¿Código dañado? Busca por nombre:' : 'Damaged code? Search by name:'}
                     </p>
@@ -1333,10 +1353,10 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder={language === 'es' ? 'Buscar tour...' : 'Search tour...'}
-                      className="w-full bg-black/40 border border-amber-500/30 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500 transition-colors placeholder:text-neutral-500"
+                      className="w-full bg-black/40 border border-orange-500/30 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors placeholder:text-neutral-500"
                     />
                     {searchQuery.trim().length > 0 && (
-                      <div className="mt-2 max-h-40 overflow-y-auto rounded-xl bg-black/60 border border-amber-500/20 hide-scrollbar flex flex-col gap-1 p-1">
+                      <div className="mt-2 max-h-40 overflow-y-auto rounded-xl bg-black/60 border border-orange-500/20 hide-scrollbar flex flex-col gap-1 p-1">
                         {TOURS.filter(t => 
                            getLangText(t.title, language).toLowerCase().includes(searchQuery.toLowerCase())
                         ).map(t => (
@@ -1378,7 +1398,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
             animate={{ opacity: 1, scale: 1 }}
             onClick={() => setTheme(theme === 'emerald' ? 'teal' : 'emerald')}
             className={`w-8 h-8 rounded-full shadow-lg border-2 border-white flex items-center justify-center transition-colors ${
-              theme === 'teal' ? 'bg-teal-600 hover:bg-teal-600' : 'bg-amber-500 hover:bg-teal-600'
+              theme === 'teal' ? 'bg-teal-600 hover:bg-teal-600' : 'bg-orange-500 hover:bg-teal-600'
             }`}
             title={language === 'es' ? 'Cambiar Estilo' : 'Toggle Style'}
           >
@@ -1397,7 +1417,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
             }}
             aria-label="Toggle WhatsApp Chat"
             className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 ${
-              isOpen ? 'bg-emerald-900 text-white hover:scale-105' : `${themeClasses.button} text-white hover:scale-110 active:scale-95`
+              isOpen ? 'bg-stone-900 text-white hover:scale-105' : `${themeClasses.button} text-white hover:scale-110 active:scale-95`
             } ${needsAttention && !isOpen ? 'animate-pulse' : ''}`}
           >
             {isOpen ? <X className="w-8 h-8" /> : <MessageCircle className="w-9 h-9 fill-white/20 stroke-white" />}

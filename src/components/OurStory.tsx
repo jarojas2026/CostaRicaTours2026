@@ -11,7 +11,7 @@ export const OurStory: React.FC<OurStoryProps> = ({ language }) => {
   return (
     <section className="py-16 sm:py-24 bg-neutral-50 relative overflow-hidden">
       {/* Decorative bg elements */}
-      <div className="absolute top-0 right-0 -mr-20 -mt-20 w-72 h-72 rounded-full bg-emerald-100/50 blur-3xl pointer-events-none" />
+      <div className="absolute top-0 right-0 -mr-20 -mt-20 w-72 h-72 rounded-full bg-stone-100/50 blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-72 h-72 rounded-full bg-amber-100/50 blur-3xl pointer-events-none" />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -25,14 +25,14 @@ export const OurStory: React.FC<OurStoryProps> = ({ language }) => {
             transition={{ duration: 0.6 }}
             className="space-y-6"
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100 border border-emerald-200">
-              <Globe className="w-4 h-4 text-emerald-600" />
-              <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-100 border border-stone-200">
+              <Globe className="w-4 h-4 text-teal-600" />
+              <span className="text-xs font-bold text-stone-800 uppercase tracking-wider">
                 {language === 'es' ? '🇨🇷 Experiencias 100% Auténticas en Costa Rica' : '🇨🇷 100% Authentic Costa Rica Travel'}
               </span>
             </div>
             
-            <h2 className="text-3xl sm:text-5xl font-black text-emerald-950 leading-tight">
+            <h2 className="text-3xl sm:text-5xl font-black text-stone-950 leading-tight">
               {language === 'es' ? 'La magia de Costa Rica con los mejores guías y operadores locales.' : 'The magic of Costa Rica with top certified local guides and operators.'}
             </h2>
             
@@ -78,17 +78,17 @@ export const OurStory: React.FC<OurStoryProps> = ({ language }) => {
                 alt="Costa Rica Tours Aggregator" 
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-emerald-950/10 mix-blend-multiply" />
+              <div className="absolute inset-0 bg-stone-950/10 mix-blend-multiply" />
             </div>
             
             {/* Floating Badge */}
             <div className="absolute -bottom-8 -left-2 sm:bottom-8 sm:-left-12 bg-white p-6 rounded-3xl shadow-xl border border-neutral-100 max-w-[240px]">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <Map className="w-5 h-5 text-emerald-600" />
+                <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center">
+                  <Map className="w-5 h-5 text-teal-600" />
                 </div>
                 <div className="flex -space-x-2">
-                  <span className="text-2xl font-black text-amber-500">+100</span>
+                  <span className="text-2xl font-black text-orange-500">+100</span>
                 </div>
               </div>
               <p className="text-sm font-bold text-neutral-900 leading-tight">

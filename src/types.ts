@@ -220,13 +220,20 @@ export type AgentId =
   | 'adventure'
   | 'extreme'
   | 'budget_backpacker'
-  | 'family_accessible';
+  | 'family_accessible'
+  | 'climate'
+  | 'legal_visa'
+  | 'health_safety'
+  | 'eco_sustainability'
+  | 'events_culture'
+  | 'currency_budget'
+  | 'customer_service';
 
-export type AgentWorkflowCategory = 'all' | 'booking' | 'nature_adventure' | 'logistics_food' | 'specialized';
+export type AgentWorkflowCategory = 'all' | 'booking' | 'nature_adventure' | 'logistics_food' | 'specialized' | 'planning_support';
 
 export interface AIAgent {
   id: AgentId;
-  workflowCategory: 'booking' | 'nature_adventure' | 'logistics_food' | 'specialized';
+  workflowCategory: 'booking' | 'nature_adventure' | 'logistics_food' | 'specialized' | 'planning_support';
   name: Localized<string>;
   role: Localized<string>;
   badge: Localized<string>;

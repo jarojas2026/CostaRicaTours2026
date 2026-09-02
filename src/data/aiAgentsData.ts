@@ -2,6 +2,561 @@ import { AIAgent, AgentId, Language, AgentWorkflowCategory } from '../types';
 
 export const AI_AGENTS: AIAgent[] = [
   {
+    id: 'customer_service',
+    workflowCategory: 'planning_support',
+    name: {
+      es: 'Martín • Servicio al Cliente',
+      en: 'Martín • Customer Service',
+      de: 'Martín • Kundenservice',
+      fr: 'Martín • Service Client',
+      zh: 'Martín • 客户服务',
+      ja: 'マルティン • カスタマーサービス'
+    },
+    role: {
+      es: 'Resolución de Problemas y Soporte General',
+      en: 'Issue Resolution & General Support',
+      de: 'Problemlösung & Allgemeine Unterstützung',
+      fr: 'Résolution des problèmes & Support général',
+      zh: '问题解决与一般支持',
+      ja: '問題解決と一般的なサポート'
+    },
+    badge: {
+      es: 'Soporte',
+      en: 'Support',
+      de: 'Unterstützung',
+      fr: 'Support',
+      zh: '支持',
+      ja: 'サポート'
+    },
+    avatarEmoji: '🎧',
+    themeColor: 'indigo',
+    bgGradient: 'from-indigo-500/20 to-stone-900/40',
+    welcomeMessage: {
+      es: '¡Hola! Soy Martín. Estoy aquí para ayudarte con cualquier problema, queja o duda general que tengas sobre nuestros servicios. ¿En qué te puedo ayudar hoy?',
+      en: 'Hello! I\'m Martín. I\'m here to help you with any issues, complaints, or general questions about our services. How can I assist you today?',
+      de: 'Hallo! Ich bin Martín. Ich bin hier, um Ihnen bei Problemen, Beschwerden oder allgemeinen Fragen zu unseren Dienstleistungen zu helfen. Wie kann ich Ihnen heute helfen?',
+      fr: 'Bonjour! Je suis Martín. Je suis là pour vous aider avec tous les problèmes, plaintes ou questions générales sur nos services. Comment puis-je vous aider aujourd\'hui?',
+      zh: '你好！我是Martín。我在这里帮助您解决有关我们服务的任何问题、投诉或一般性问题。今天我能为您提供什么帮助？',
+      ja: 'こんにちは！マルティンです。当社のサービスに関する問題、苦情、一般的な質問についてお手伝いします。本日はどのようにお手伝いできますか？'
+    },
+    suggestedQuestions: {
+      es: [
+        'Tengo un problema con mi reserva',
+        'Quiero presentar una queja',
+        'Necesito contactar a un humano'
+      ],
+      en: [
+        'I have a problem with my booking',
+        'I want to file a complaint',
+        'I need to contact a human'
+      ],
+      de: [
+        'Ich habe ein Problem mit meiner Buchung',
+        'Ich möchte eine Beschwerde einreichen',
+        'Ich muss einen Menschen kontaktieren'
+      ],
+      fr: [
+        'J\'ai un problème avec ma réservation',
+        'Je veux déposer une plainte',
+        'Je dois contacter un humain'
+      ],
+      zh: [
+        '我的预订有问题',
+        '我想提出投诉',
+        '我需要联系人工服务'
+      ],
+      ja: [
+        '予約に問題があります',
+        '苦情を申し立てたいです',
+        '人間のオペレーターと話したいです'
+      ]
+    },
+    specialtyTags: {
+      es: ['Soporte', 'Quejas', 'Ayuda'],
+      en: ['Support', 'Complaints', 'Help'],
+      de: ['Support', 'Beschwerden', 'Hilfe'],
+      fr: ['Support', 'Plaintes', 'Aide'],
+      zh: ['支持', '投诉', '帮助'],
+      ja: ['サポート', '苦情', 'ヘルプ']
+    }
+  },
+
+  {
+    id: 'climate',
+    workflowCategory: 'nature_adventure',
+    name: {
+      es: 'Mateo • Clima & Temporadas',
+      en: 'Mateo • Weather & Seasons',
+      de: 'Mateo • Wetter & Jahreszeiten',
+      fr: 'Mateo • Météo & Saisons',
+      zh: 'Mateo • 天气与季节',
+      ja: 'マテオ • 天気と季節'
+    },
+    role: {
+      es: 'Análisis de Microclimas y Mejor Época para Viajar',
+      en: 'Micro-climates & Best Time to Travel Analysis',
+      de: 'Mikroklima & Beste Reisezeit',
+      fr: 'Micro-climats & Meilleure période pour voyager',
+      zh: '微气候及最佳旅行时间分析',
+      ja: '微気候および最適な旅行時期の分析'
+    },
+    badge: {
+      es: 'Meteorología',
+      en: 'Meteorology',
+      de: 'Meteorologie',
+      fr: 'Météorologie',
+      zh: '气象学',
+      ja: '気象学'
+    },
+    avatarEmoji: '🌤️',
+    themeColor: 'cyan',
+    bgGradient: 'from-cyan-500/20 to-stone-900/40',
+    welcomeMessage: {
+      es: '¡Hola! Costa Rica tiene decenas de microclimas. ¿A qué región viajas y en qué fechas para darte el pronóstico exacto?',
+      en: 'Hello! Costa Rica has dozens of micro-climates. Where and when are you traveling so I can give you the exact forecast?',
+      de: 'Hallo! Costa Rica hat Dutzende von Mikroklimata. Wohin und wann reisen Sie?',
+      fr: 'Bonjour! Le Costa Rica possède des dizaines de micro-climats. Où et quand voyagez-vous?',
+      zh: '你好！哥斯达黎加有数十种微气候。你计划何时去哪里旅行？',
+      ja: 'こんにちは！コスタリカには数十の微気候があります。いつ、どこへ旅行する予定ですか？'
+    },
+    suggestedQuestions: {
+      es: [
+        '¿Llueve mucho en octubre en Guanacaste?',
+        '¿Qué ropa empacar para Monteverde?',
+        '¿Cuándo es la época seca en el Caribe?'
+      ],
+      en: [
+        'Does it rain a lot in October in Guanacaste?',
+        'What to pack for Monteverde?',
+        'When is the dry season in the Caribbean?'
+      ],
+      de: [
+        'Regnet es im Oktober in Guanacaste viel?',
+        'Was soll ich für Monteverde einpacken?',
+        'Wann ist die Trockenzeit in der Karibik?'
+      ],
+      fr: [
+        'Pleut-il beaucoup en octobre à Guanacaste?',
+        'Que mettre dans ses bagages pour Monteverde?',
+        'Quand est la saison sèche dans les Caraïbes?'
+      ],
+      zh: [
+        '瓜纳卡斯特十月份雨水多吗？',
+        '去蒙特维多应该带些什么？',
+        '加勒比海地区的旱季是什么时候？'
+      ],
+      ja: [
+        'グアナカステの10月はよく雨が降りますか？',
+        'モンテベルデには何を持っていくべきですか？',
+        'カリブ海側の乾季はいつですか？'
+      ]
+    },
+    specialtyTags: {
+      es: ['Clima', 'Ropa', 'Temporadas'],
+      en: ['Weather', 'Packing', 'Seasons'],
+      de: ['Wetter', 'Packen', 'Jahreszeiten'],
+      fr: ['Météo', 'Bagages', 'Saisons'],
+      zh: ['天气', '打包', '季节'],
+      ja: ['天気', 'パッキング', '季節']
+    }
+  },
+  {
+    id: 'legal_visa',
+    workflowCategory: 'planning_support',
+    name: {
+      es: 'Elena • Visados & Inmigración',
+      en: 'Elena • Visas & Immigration',
+      de: 'Elena • Visa & Einwanderung',
+      fr: 'Elena • Visas & Immigration',
+      zh: 'Elena • 签证与移民',
+      ja: 'エレナ • ビザと移民'
+    },
+    role: {
+      es: 'Trámites de Entrada, Pasaportes e Impuestos',
+      en: 'Entry Requirements, Passports & Taxes',
+      de: 'Einreisebestimmungen, Pässe & Steuern',
+      fr: 'Exigences d\'entrée, Passeports & Taxes',
+      zh: '入境要求、护照与税收',
+      ja: '入国要件、パスポート、税金'
+    },
+    badge: {
+      es: 'Legal',
+      en: 'Legal',
+      de: 'Rechtlich',
+      fr: 'Légal',
+      zh: '法律',
+      ja: '法的'
+    },
+    avatarEmoji: '🛂',
+    themeColor: 'blue',
+    bgGradient: 'from-blue-500/20 to-stone-900/40',
+    welcomeMessage: {
+      es: '¡Hola! Te asisto con las regulaciones de entrada a Costa Rica. ¿De qué país es tu pasaporte?',
+      en: 'Hello! I assist with Costa Rica entry regulations. What country is your passport from?',
+      de: 'Hallo! Ich helfe bei den Einreisebestimmungen für Costa Rica. Aus welchem Land stammt Ihr Pass?',
+      fr: 'Bonjour! J\'assiste avec les règlements d\'entrée au Costa Rica. De quel pays vient votre passeport?',
+      zh: '你好！我协助处理哥斯达黎加的入境规定。你的护照是哪个国家的？',
+      ja: 'こんにちは！コスタリカの入国規制についてサポートします。パスポートはどの国のものですか？'
+    },
+    suggestedQuestions: {
+      es: [
+        '¿Necesito visa para entrar a Costa Rica?',
+        '¿Cuántos días me puedo quedar como turista?',
+        '¿Cuánto es el impuesto de salida?'
+      ],
+      en: [
+        'Do I need a visa to enter Costa Rica?',
+        'How many days can I stay as a tourist?',
+        'How much is the departure tax?'
+      ],
+      de: [
+        'Brauche ich ein Visum für Costa Rica?',
+        'Wie viele Tage kann ich als Tourist bleiben?',
+        'Wie hoch ist die Ausreisesteuer?'
+      ],
+      fr: [
+        'Ai-je besoin d\'un visa pour le Costa Rica?',
+        'Combien de jours puis-je rester en tant que touriste?',
+        'Quel est le montant de la taxe de départ?'
+      ],
+      zh: [
+        '我需要签证才能进入哥斯达黎加吗？',
+        '作为游客我可以停留多少天？',
+        '离境税是多少？'
+      ],
+      ja: [
+        'コスタリカに入国するにはビザが必要ですか？',
+        '観光客として何日間滞在できますか？',
+        '出国税はいくらですか？'
+      ]
+    },
+    specialtyTags: {
+      es: ['Migración', 'Pasaporte', 'Visas'],
+      en: ['Immigration', 'Passport', 'Visas'],
+      de: ['Einwanderung', 'Reisepass', 'Visa'],
+      fr: ['Immigration', 'Passeport', 'Visas'],
+      zh: ['移民', '护照', '签证'],
+      ja: ['移民', 'パスポート', 'ビザ']
+    }
+  },
+  {
+    id: 'health_safety',
+    workflowCategory: 'planning_support',
+    name: {
+      es: 'Dr. Rojas • Salud & Seguridad',
+      en: 'Dr. Rojas • Health & Safety',
+      de: 'Dr. Rojas • Gesundheit & Sicherheit',
+      fr: 'Dr. Rojas • Santé & Sécurité',
+      zh: 'Rojas医生 • 健康与安全',
+      ja: 'Dr. ロハス • 健康と安全'
+    },
+    role: {
+      es: 'Vacunas, Seguros, Farmacias y Emergencias',
+      en: 'Vaccines, Insurance, Pharmacies & Emergencies',
+      de: 'Impfungen, Versicherungen, Apotheken & Notfälle',
+      fr: 'Vaccins, Assurance, Pharmacies & Urgences',
+      zh: '疫苗、保险、药房与紧急情况',
+      ja: 'ワクチン、保険、薬局、緊急事態'
+    },
+    badge: {
+      es: 'Salud',
+      en: 'Health',
+      de: 'Gesundheit',
+      fr: 'Santé',
+      zh: '健康',
+      ja: '健康'
+    },
+    avatarEmoji: '🏥',
+    themeColor: 'red',
+    bgGradient: 'from-red-500/20 to-stone-900/40',
+    welcomeMessage: {
+      es: '¡Pura vida! Costa Rica es un país muy seguro, pero siempre es bueno estar preparado. ¿Tienes alguna duda sobre vacunas, agua potable o seguros médicos?',
+      en: 'Pura vida! Costa Rica is very safe, but it\'s always good to be prepared. Any questions about vaccines, tap water, or medical insurance?',
+      de: 'Pura vida! Costa Rica ist sicher, aber Vorbereitung ist wichtig. Fragen zu Impfungen oder Trinkwasser?',
+      fr: 'Pura vida! Le Costa Rica est sûr, mais il est toujours bon d\'être préparé. Des questions sur les vaccins ou l\'eau potable?',
+      zh: '纯粹的生活！哥斯达黎加非常安全，但做好准备总是好的。对疫苗或饮用水有什么疑问吗？',
+      ja: 'プラ・ビダ！コスタリカは安全ですが、準備は大切です。ワクチンや飲料水について質問はありますか？'
+    },
+    suggestedQuestions: {
+      es: [
+        '¿El agua del grifo es potable?',
+        '¿Necesito la vacuna de la Fiebre Amarilla?',
+        '¿Dónde hay hospitales cerca de Tamarindo?'
+      ],
+      en: [
+        'Is the tap water safe to drink?',
+        'Do I need the Yellow Fever vaccine?',
+        'Where are hospitals near Tamarindo?'
+      ],
+      de: [
+        'Ist das Leitungswasser trinkbar?',
+        'Brauche ich eine Gelbfieberimpfung?',
+        'Wo sind Krankenhäuser in der Nähe von Tamarindo?'
+      ],
+      fr: [
+        'L\'eau du robinet est-elle potable?',
+        'Ai-je besoin du vaccin contre la fièvre jaune?',
+        'Où sont les hôpitaux près de Tamarindo?'
+      ],
+      zh: [
+        '自来水可以直接饮用吗？',
+        '我需要接种黄热病疫苗吗？',
+        '塔马林多附近哪里有医院？'
+      ],
+      ja: [
+        '水道水は飲めますか？',
+        '黄熱病のワクチンは必要ですか？',
+        'タマリンドの近くに病院はありますか？'
+      ]
+    },
+    specialtyTags: {
+      es: ['Vacunas', 'Hospitales', 'Seguros'],
+      en: ['Vaccines', 'Hospitals', 'Insurance'],
+      de: ['Impfungen', 'Krankenhäuser', 'Versicherungen'],
+      fr: ['Vaccins', 'Hôpitaux', 'Assurance'],
+      zh: ['疫苗', '医院', '保险'],
+      ja: ['ワクチン', '病院', '保険']
+    }
+  },
+  {
+    id: 'eco_sustainability',
+    workflowCategory: 'nature_adventure',
+    name: {
+      es: 'Luna • Ecoturismo & Sostenibilidad',
+      en: 'Luna • Ecotourism & Sustainability',
+      de: 'Luna • Ökotourismus & Nachhaltigkeit',
+      fr: 'Luna • Écotourisme & Durabilité',
+      zh: 'Luna • 生态旅游与可持续发展',
+      ja: 'ルナ • エコツーリズムと持続可能性'
+    },
+    role: {
+      es: 'Eco-Lodges, Voluntariado y Compensación de Carbono',
+      en: 'Eco-Lodges, Volunteering & Carbon Offset',
+      de: 'Öko-Lodges, Freiwilligenarbeit & CO2-Ausgleich',
+      fr: 'Éco-Lodges, Bénévolat & Compensation Carbone',
+      zh: '生态旅馆、志愿服务与碳补偿',
+      ja: 'エコ・ロッジ、ボランティア、カーボンオフセット'
+    },
+    badge: {
+      es: 'Ecoturismo',
+      en: 'Ecotourism',
+      de: 'Ökotourismus',
+      fr: 'Écotourisme',
+      zh: '生态旅游',
+      ja: 'エコツーリズム'
+    },
+    avatarEmoji: '♻️',
+    themeColor: 'green',
+    bgGradient: 'from-green-500/20 to-stone-900/40',
+    welcomeMessage: {
+      es: 'Costa Rica es pionera en turismo sostenible. ¿Te interesa encontrar hoteles ecológicos, proyectos de rescate animal o compensar la huella de carbono de tu viaje?',
+      en: 'Costa Rica is a pioneer in sustainable tourism. Interested in finding eco-hotels, animal rescue projects, or offsetting your travel carbon footprint?',
+      de: 'Costa Rica ist ein Vorreiter im nachhaltigen Tourismus. Interessiert an Öko-Hotels oder Tierschutzprojekten?',
+      fr: 'Le Costa Rica est pionnier du tourisme durable. Intéressé par des hôtels écologiques ou des projets de sauvetage d\'animaux?',
+      zh: '哥斯达黎加是可持续旅游的先驱。有兴趣寻找生态酒店或动物救援项目吗？',
+      ja: 'コスタリカは持続可能な観光のパイオニアです。エコホテルや動物保護プロジェクトに興味はありますか？'
+    },
+    suggestedQuestions: {
+      es: [
+        '¿Dónde puedo hacer voluntariado con tortugas?',
+        'Recomiéndame un hotel certificado CST',
+        '¿Cómo reciclo en los parques nacionales?'
+      ],
+      en: [
+        'Where can I volunteer with turtles?',
+        'Recommend a CST certified hotel',
+        'How do I recycle in national parks?'
+      ],
+      de: [
+        'Wo kann ich mit Schildkröten Freiwilligenarbeit leisten?',
+        'Empfehlen Sie ein CST-zertifiziertes Hotel',
+        'Wie recycele ich in Nationalparks?'
+      ],
+      fr: [
+        'Où puis-je faire du bénévolat avec les tortues?',
+        'Recommandez un hôtel certifié CST',
+        'Comment recycler dans les parcs nationaux?'
+      ],
+      zh: [
+        '我在哪里可以参加海龟志愿服务？',
+        '推荐一家通过CST认证的酒店',
+        '在国家公园里如何进行垃圾分类回收？'
+      ],
+      ja: [
+        'どこでカメのボランティアができますか？',
+        'CST認定ホテルをお勧めします',
+        '国立公園ではどのようにリサイクルしますか？'
+      ]
+    },
+    specialtyTags: {
+      es: ['Ecológico', 'CST', 'Voluntariado'],
+      en: ['Eco-friendly', 'CST', 'Volunteering'],
+      de: ['Umweltfreundlich', 'CST', 'Freiwilligenarbeit'],
+      fr: ['Écologique', 'CST', 'Bénévolat'],
+      zh: ['环保', 'CST', '志愿者'],
+      ja: ['環境に優しい', 'CST', 'ボランティア']
+    }
+  },
+  {
+    id: 'events_culture',
+    workflowCategory: 'logistics_food',
+    name: {
+      es: 'Carlos • Cultura & Festivales',
+      en: 'Carlos • Culture & Festivals',
+      de: 'Carlos • Kultur & Festivals',
+      fr: 'Carlos • Culture & Festivals',
+      zh: 'Carlos • 文化与节庆',
+      ja: 'カルロス • 文化とフェスティバル'
+    },
+    role: {
+      es: 'Fiestas Locales, Topes, Carnavales y Eventos',
+      en: 'Local Fiestas, Rodeos, Carnivals & Events',
+      de: 'Lokale Feste, Rodeos, Karneval & Events',
+      fr: 'Fêtes locales, Rodéos, Carnavals & Événements',
+      zh: '当地节日、游行、狂欢节与活动',
+      ja: '地元のお祭り、ロデオ、カーニバル、イベント'
+    },
+    badge: {
+      es: 'Cultura',
+      en: 'Culture',
+      de: 'Kultur',
+      fr: 'Culture',
+      zh: '文化',
+      ja: '文化'
+    },
+    avatarEmoji: '🎭',
+    themeColor: 'purple',
+    bgGradient: 'from-purple-500/20 to-stone-900/40',
+    welcomeMessage: {
+      es: '¡Upe! ¿Quieres vivir la verdadera cultura tica? Te puedo recomendar topes, corridas a la tica, el Festival Envision, o carnavales según las fechas de tu viaje.',
+      en: 'Upe! Want to experience true Tico culture? I can recommend local rodeos, Envision Festival, or carnivals based on your travel dates.',
+      de: 'Upe! Möchten Sie die wahre Tico-Kultur erleben? Ich kann Ihnen lokale Events für Ihre Reisedaten empfehlen.',
+      fr: 'Upe! Vous voulez vivre la vraie culture Tico? Je peux vous recommander des événements locaux pour vos dates.',
+      zh: 'Upe！想体验真正的蒂科文化吗？我可以根据你的旅行日期推荐当地活动。',
+      ja: 'Upe！本物のティコ文化を体験したいですか？旅行日程に合わせて地元のイベントをお勧めします。'
+    },
+    suggestedQuestions: {
+      es: [
+        '¿Cuándo son las Fiestas de Palmares?',
+        '¿Qué se celebra el 25 de julio?',
+        '¿Dónde hay música folclórica en vivo?'
+      ],
+      en: [
+        'When are the Fiestas de Palmares?',
+        'What is celebrated on July 25th?',
+        'Where can I find live folkloric music?'
+      ],
+      de: [
+        'Wann sind die Fiestas de Palmares?',
+        'Was wird am 25. Juli gefeiert?',
+        'Wo finde ich Live-Folklore-Musik?'
+      ],
+      fr: [
+        'Quand sont les Fiestas de Palmares?',
+        'Que célèbre-t-on le 25 juillet?',
+        'Où trouver de la musique folklorique live?'
+      ],
+      zh: [
+        '帕尔马雷斯节是什么时候？',
+        '7月25日庆祝什么？',
+        '哪里可以找到现场民俗音乐？'
+      ],
+      ja: [
+        'パルマレスのお祭りはいつですか？',
+        '7月25日は何を祝いますか？',
+        '生演奏の民俗音楽はどこで聞けますか？'
+      ]
+    },
+    specialtyTags: {
+      es: ['Fiestas', 'Topes', 'Feriados'],
+      en: ['Fiestas', 'Rodeos', 'Holidays'],
+      de: ['Feste', 'Rodeos', 'Feiertage'],
+      fr: ['Fêtes', 'Rodéos', 'Jours fériés'],
+      zh: ['节日', '游行', '假期'],
+      ja: ['お祭り', 'ロデオ', '祝日']
+    }
+  },
+  {
+    id: 'currency_budget',
+    workflowCategory: 'planning_support',
+    name: {
+      es: 'Sofía • Finanzas & Presupuestos',
+      en: 'Sofía • Finance & Budgets',
+      de: 'Sofía • Finanzen & Budgets',
+      fr: 'Sofía • Finances & Budgets',
+      zh: 'Sofía • 财务与预算',
+      ja: 'ソフィア • 財務と予算'
+    },
+    role: {
+      es: 'Tipo de Cambio, Propinas, Cajeros y Presupuestos',
+      en: 'Exchange Rates, Tipping, ATMs & Budgeting',
+      de: 'Wechselkurse, Trinkgeld, Geldautomaten & Budgetierung',
+      fr: 'Taux de change, Pourboires, Distributeurs & Budgétisation',
+      zh: '汇率、小费、自动取款机与预算',
+      ja: '為替レート、チップ、ATM、予算作成'
+    },
+    badge: {
+      es: 'Finanzas',
+      en: 'Finance',
+      de: 'Finanzen',
+      fr: 'Finances',
+      zh: '财务',
+      ja: '財務'
+    },
+    avatarEmoji: '💳',
+    themeColor: 'emerald',
+    bgGradient: 'from-emerald-500/20 to-stone-900/40',
+    welcomeMessage: {
+      es: '¿Colones o Dólares? Te ayudo a optimizar tu dinero en Costa Rica. ¿Tienes dudas sobre propinas, uso de tarjetas o el tipo de cambio oficial (BCCR)?',
+      en: 'Colones or Dollars? I help you optimize your money in Costa Rica. Any questions about tipping, card usage, or the official exchange rate (BCCR)?',
+      de: 'Colones oder Dollar? Ich helfe Ihnen, Ihr Geld in Costa Rica zu optimieren.',
+      fr: 'Colones ou Dollars? Je vous aide à optimiser votre argent au Costa Rica.',
+      zh: '科朗还是美元？我帮你优化在哥斯达黎加的资金使用。对小费、刷卡有什么疑问吗？',
+      ja: 'コロンとドルのどちらですか？コスタリカでのお金の最適化をお手伝いします。'
+    },
+    suggestedQuestions: {
+      es: [
+        '¿Es mejor pagar en dólares o colones?',
+        '¿Es obligatorio dejar propina en los restaurantes?',
+        '¿Dónde me recomiendas cambiar dinero?'
+      ],
+      en: [
+        'Is it better to pay in dollars or colones?',
+        'Is tipping mandatory in restaurants?',
+        'Where do you recommend exchanging money?'
+      ],
+      de: [
+        'Ist es besser, in Dollar oder Colones zu bezahlen?',
+        'Ist Trinkgeld in Restaurants obligatorisch?',
+        'Wo empfehlen Sie Geld zu wechseln?'
+      ],
+      fr: [
+        'Vaut-il mieux payer en dollars ou en colones?',
+        'Le pourboire est-il obligatoire au restaurant?',
+        'Où recommandez-vous de changer de l\'argent?'
+      ],
+      zh: [
+        '用美元还是科朗支付更好？',
+        '在餐厅给小费是必须的吗？',
+        '你建议在哪里换钱？'
+      ],
+      ja: [
+        'ドルとコロンのどちらで支払うのが良いですか？',
+        'レストランでのチップは義務ですか？',
+        'どこで両替するのがお勧めですか？'
+      ]
+    },
+    specialtyTags: {
+      es: ['Colones', 'Propinas', 'Tarjetas'],
+      en: ['Colones', 'Tipping', 'Cards'],
+      de: ['Colones', 'Trinkgeld', 'Karten'],
+      fr: ['Colones', 'Pourboires', 'Cartes'],
+      zh: ['科朗', '小费', '信用卡'],
+      ja: ['コロン', 'チップ', 'カード']
+    }
+  },
+
+  {
     id: 'concierge',
     workflowCategory: 'booking',
     name: {

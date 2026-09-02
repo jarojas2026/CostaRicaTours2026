@@ -1,14 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { REGIONS_DATA } from '../data/regionsData';
-import { TourRegion, Language, Currency, Tour } from '../types';
-import { MapPin, Navigation, ArrowRight, ShieldCheck, Compass, ArrowLeft, Grid, X, WifiOff, DownloadCloud, CheckCircle2, RefreshCw } from 'lucide-react';
+import { TourRegion, Language, Currency, Tour, TourCategory } from '../types';
+import { MapPin, Navigation, ArrowRight, ShieldCheck, Compass, ArrowLeft, Grid, X, WifiOff, DownloadCloud, CheckCircle2, RefreshCw, Search, SlidersHorizontal, Map, Thermometer, Cloud, Sun, CloudRain } from 'lucide-react';
 import { formatCurrency, getLangText, UI_TRANSLATIONS } from '../utils/i18n';
 
-const getMapCoordinates = (lat: number, lng: number) => {
-  const x = (lng + 86.5) * 23;
-  const y = (11.5 - lat) * 30;
-  return { x: Math.max(2, Math.min(98, x)), y: Math.max(2, Math.min(98, y)) };
-};
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+// Leaflet defaults
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
+const customMarkerIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+const activeMarkerIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+const regionIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
 
 const OFFLINE_CACHE_KEY = 'pura_vida_offline_map_tours_v1';
 const OFFLINE_REGIONS_KEY = 'pura_vida_offline_map_regions_v1';
@@ -24,9 +56,39 @@ interface InteractiveMapProps {
   onExitMap?: () => void;
 }
 
+// Component to dynamically change map view
+function MapViewUpdater({ center, zoom }: { center: [number, number], zoom: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, zoom, { animate: true });
+  }, [center, zoom, map]);
+  return null;
+}
+
+// Component for bounds and map events
+function MapEvents({ onBoundsChange, onMapMove }: { onBoundsChange: (bounds: L.LatLngBounds) => void, onMapMove: () => void }) {
+  const map = useMapEvents({
+    moveend: () => {
+      onBoundsChange(map.getBounds());
+    },
+    dragend: () => {
+      onMapMove();
+    },
+    zoomend: () => {
+      onMapMove();
+    }
+  });
+  
+  useEffect(() => {
+    onBoundsChange(map.getBounds());
+  }, [map]);
+  
+  return null;
+}
+
 export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   language,
-  currency = 'USD' as Currency,
+  currency = 'USD',
   tours = [],
   selectedRegion,
   onSelectRegion,
@@ -34,35 +96,41 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   onSelectTour,
   onExitMap
 }) => {
-  const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
   const [selectedMapTour, setSelectedMapTour] = useState<Tour | null>(null);
-  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-  const [isMapCached, setIsMapCached] = useState<boolean>(false);
-  const [cachedTourCount, setCachedTourCount] = useState<number>(0);
-  const [cacheNotification, setCacheNotification] = useState<string | null>(null);
+  
+  // Offline functionality state
+  const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [cachedToursList, setCachedToursList] = useState<Tour[]>([]);
+  const [isMapCached, setIsMapCached] = useState(false);
+  const [cachedTourCount, setCachedTourCount] = useState(0);
 
-  // Monitor network connectivity status & load offline cached data
+  // Advanced Search & Filter States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<TourCategory | 'all'>('all');
+  const [activeClimate, setActiveClimate] = useState<string>('all');
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Bounds tracking
+  const [currentBounds, setCurrentBounds] = useState<L.LatLngBounds | null>(null);
+  const [searchAreaActive, setSearchAreaActive] = useState(false);
+  const [showSearchThisAreaBtn, setShowSearchThisAreaBtn] = useState(false);
+
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
-
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Read stored offline map cache on mount
-    try {
-      const savedToursRaw = localStorage.getItem(OFFLINE_CACHE_KEY);
-      if (savedToursRaw) {
-        const parsedTours: Tour[] = JSON.parse(savedToursRaw);
-        if (Array.isArray(parsedTours) && parsedTours.length > 0) {
-          setCachedToursList(parsedTours);
-          setCachedTourCount(parsedTours.length);
+    const savedMapTours = localStorage.getItem(OFFLINE_CACHE_KEY);
+    if (savedMapTours) {
+      try {
+        const parsed = JSON.parse(savedMapTours);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCachedToursList(parsed);
+          setCachedTourCount(parsed.length);
           setIsMapCached(true);
         }
-      }
-    } catch (e) {
-      console.warn('Could not parse offline map cache:', e);
+      } catch (e) {}
     }
 
     return () => {
@@ -71,33 +139,65 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     };
   }, []);
 
-  // Save current map tours & regions data to localStorage
-  const handleSaveMapOffline = () => {
+  const handleManualCache = () => {
+    if (!isOnline) {
+      alert(language === 'es' ? 'No puedes guardar el mapa sin conexión a internet.' : 'Cannot save map without internet connection.');
+      return;
+    }
+    
     try {
       const toursToSave = tours.length > 0 ? tours : cachedToursList;
       localStorage.setItem(OFFLINE_CACHE_KEY, JSON.stringify(toursToSave));
       localStorage.setItem(OFFLINE_REGIONS_KEY, JSON.stringify(REGIONS_DATA));
+      
       setCachedToursList(toursToSave);
       setCachedTourCount(toursToSave.length);
       setIsMapCached(true);
       
       const msg = language === 'es' 
-        ? `¡Mapa guardado exitosamente! ${toursToSave.length} puntos de interés disponibles sin conexión.`
-        : `Map saved successfully! ${toursToSave.length} destinations available offline.`;
-      setCacheNotification(msg);
-      setTimeout(() => setCacheNotification(null), 4000);
-    } catch (e) {
-      console.error('Error saving map to offline cache:', e);
-      const err = language === 'es' ? 'Error al guardar el mapa offline.' : 'Failed to save offline map.';
-      setCacheNotification(err);
-      setTimeout(() => setCacheNotification(null), 3000);
+        ? `¡Mapa y ${toursToSave.length} tours guardados! Ahora puedes usar el mapa sin conexión a internet.`
+        : `Map and ${toursToSave.length} tours saved! You can now use the map without internet connection.`;
+      
+      alert(msg);
+    } catch (error) {
+      alert(language === 'es' ? 'Error al guardar datos offline.' : 'Error saving offline data.');
     }
   };
 
-  // Determine effective tours list (use current or fall back to offline cache if offline)
-  const effectiveTours = (tours && tours.length > 0) 
-    ? tours 
-    : cachedToursList;
+  const baseTours = tours.length > 0 ? tours : cachedToursList;
+  
+  // Climate mapping helper
+  const getTourClimate = (region: TourRegion) => {
+    if (region === 'caribe') return 'tropical';
+    if (region === 'guanacaste') return 'dryforest';
+    if (region === 'monteverde') return 'cloudforest';
+    return 'rainforest';
+  };
+
+  // Filter Tours
+  const effectiveTours = baseTours.filter(tour => {
+    // 1. Text Search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const title = getLangText(tour.title, language).toLowerCase();
+      const desc = getLangText(tour.description || {es:'',en:''}, language).toLowerCase();
+      if (!title.includes(query) && !desc.includes(query)) return false;
+    }
+
+    // 2. Category Filter
+    if (activeCategory !== 'all' && tour.category !== activeCategory) return false;
+
+    // 3. Climate/Temp Filter
+    if (activeClimate !== 'all' && getTourClimate(tour.region) !== activeClimate) return false;
+
+    // 4. Bounds Filter (Search this area)
+    if (searchAreaActive && currentBounds) {
+      const pt = L.latLng(tour.location.lat, tour.location.lng);
+      if (!currentBounds.contains(pt)) return false;
+    }
+
+    return true;
+  });
 
   const activeRegionObj = REGIONS_DATA.find(r => r.id === selectedRegion) || REGIONS_DATA[0];
 
@@ -105,358 +205,289 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     if (onExitMap) {
       onExitMap();
     } else if (onExploreRegionTours) {
-      onExploreRegionTours('all');
+      onExploreRegionTours('all' as TourRegion);
     }
   };
 
+  const handleSearchThisArea = () => {
+    setSearchAreaActive(true);
+    setShowSearchThisAreaBtn(false);
+  };
+
+  const handleMapMove = () => {
+    // Show "Search this area" button when user pans
+    if (!showSearchThisAreaBtn) {
+      setShowSearchThisAreaBtn(true);
+    }
+    // Automatically turn off the strict bound filter when they move significantly so they don't lose all pins, or leave it and let them click search again
+    if (searchAreaActive) {
+      setSearchAreaActive(false); 
+    }
+  };
+
+  const handleBoundsChange = (bounds: L.LatLngBounds) => {
+    setCurrentBounds(bounds);
+  };
+
+  // Determine map center and zoom
+  let mapCenter: [number, number] = [9.7489, -83.7534]; // Default Costa Rica center
+  let mapZoom = 7;
+
+  if (selectedMapTour) {
+    mapCenter = [selectedMapTour.location.lat, selectedMapTour.location.lng];
+    mapZoom = 12;
+  } else if (selectedRegion !== 'all' && activeRegionObj) {
+    const regionTours = baseTours.filter(t => t.region === selectedRegion);
+    if (regionTours.length > 0) {
+      mapCenter = [regionTours[0].location.lat, regionTours[0].location.lng];
+      mapZoom = 9;
+    }
+  }
+
   return (
-    <section className="bg-[#1E7B4A] text-white py-12 lg:py-16 px-4 sm:px-6 lg:px-8 border-b-4 border-[#0B668F]/30">
-      <div className="max-w-7xl mx-auto space-y-8">
-        
-        {/* Offline Status & Cache Banner */}
-        {!isOnline && (
-          <div className="bg-[#E67E22] text-white p-4 rounded-2xl shadow-xl flex items-center justify-between gap-4 animate-in fade-in duration-300">
-            <div className="flex items-center gap-3">
-              <WifiOff className="w-6 h-6 flex-shrink-0 text-white" />
-              <div>
-                <p className="font-extrabold text-sm uppercase tracking-wide">
-                  {language === 'es' ? 'Modo Sin Conexión Detectado (Selva / Montaña)' : 'Offline Mode Active (Low/No Cellular Coverage)'}
-                </p>
-                <p className="text-xs text-white/90">
-                  {language === 'es'
-                    ? `Navegando con datos guardados en caché local (${cachedTourCount} destinos y mapa almacenado).`
-                    : `Browsing with saved offline local cache (${cachedTourCount} destinations & map stored).`}
-                </p>
-              </div>
-            </div>
-            <span className="bg-white text-[#E67E22] text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-sm whitespace-nowrap">
-              {language === 'es' ? 'Modo Offline' : 'Offline Ready'}
-            </span>
-          </div>
-        )}
-
-        {/* Cache Notification Toast */}
-        {cacheNotification && (
-          <div className="bg-[#0B668F] text-white p-3.5 rounded-2xl shadow-lg flex items-center gap-2 text-xs font-bold animate-in slide-in-from-top duration-300">
-            <CheckCircle2 className="w-5 h-5 text-emerald-300 flex-shrink-0" />
-            <span>{cacheNotification}</span>
-          </div>
-        )}
-
-        {/* Top Back & Offline Storage Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/20 pb-4">
-          <button
-            type="button"
-            onClick={handleExit}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-black uppercase tracking-wider border border-white/20 transition-all shadow-md group cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4 text-[#E67E22] group-hover:-translate-x-1 transition-transform" />
-            <span>{language === 'es' ? 'Volver al Catálogo de Tours' : 'Back to Tours Catalog'}</span>
-          </button>
-
-          <div className="flex items-center gap-3">
-            {/* Cache Map Button */}
-            <button
-              onClick={handleSaveMapOffline}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer ${
-                isMapCached
-                  ? 'bg-[#0B668F] text-white border border-white/30 hover:bg-[#084e6e]'
-                  : 'bg-[#E67E22] text-white hover:bg-[#d67118]'
-              }`}
-            >
-              {isMapCached ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-                  <span>{language === 'es' ? `Mapa Offline Guardado (${cachedTourCount})` : `Map Cached (${cachedTourCount})`}</span>
-                </>
-              ) : (
-                <>
-                  <DownloadCloud className="w-4 h-4 text-white" />
-                  <span>{language === 'es' ? 'Guardar Mapa para Uso Sin Conexión' : 'Save Map for Offline Use'}</span>
-                </>
-              )}
-            </button>
-
-            <div className="hidden sm:inline-flex items-center gap-2 px-3 py-2 bg-white/10 text-white rounded-full text-[11px] font-bold border border-white/20">
-              <Compass className="w-3.5 h-3.5 text-[#E67E22]" />
-              <span>{language === 'es' ? 'Navegación GPS / Caché Local' : 'GPS / Local Offline Mode'}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Header */}
-        <div className="text-center space-y-3 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 text-white rounded-full text-xs font-black uppercase tracking-widest border border-white/20">
-            <Compass className="w-4 h-4 text-[#E67E22]" />
-            {language === 'es' ? 'Explorador Geográfico & Caché Offline' : 'Costa Rica Geographic Explorer & Offline Cache'}
-          </div>
-
-          <h2 className="text-3xl sm:text-5xl font-black text-white uppercase tracking-tight">
-            {language === 'es' ? 'Mapa de Regiones y Destinos Top' : 'Regions & Top Destinations Map'}
-          </h2>
-
-          <p className="text-white/90 text-xs sm:text-sm leading-relaxed">
-            {language === 'es'
-              ? 'Haz clic en los puntos del mapa para descubrir tours, microclimas y logística. Los datos quedan guardados en la memoria de tu dispositivo para utilizarlos en zonas sin señal de celular.'
-              : 'Click region hotspots on the map to discover tours, microclimates, and logistics. Data is saved to local storage for use in areas with poor connectivity.'}
-          </p>
-        </div>
-
-        {/* Map & Detail Split Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-[#F4F7F5] text-[#2C3330] p-6 sm:p-8 rounded-[2rem] border-2 border-white/30 shadow-2xl">
+    <section className="bg-stone-900 text-white h-[calc(100vh-80px)] min-h-[600px] flex flex-col relative overflow-hidden">
+      {/* Map Container takes full space */}
+      <div className="absolute inset-0 z-0">
+        <MapContainer 
+          center={[9.7489, -83.7534]} 
+          zoom={7} 
+          style={{ height: '100%', width: '100%', zIndex: 0, touchAction: 'none' }}
+          zoomControl={false}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          />
           
-          {/* Interactive Graphic Map Column */}
-          <div className="lg:col-span-7 relative bg-white rounded-[1.5rem] p-6 border border-neutral-200 min-h-[380px] sm:min-h-[460px] flex flex-col justify-between overflow-hidden shadow-sm">
+          <MapViewUpdater center={mapCenter} zoom={mapZoom} />
+          <MapEvents onBoundsChange={handleBoundsChange} onMapMove={handleMapMove} />
+
+          {/* Render effective tours */}
+          {effectiveTours.map(tour => {
+            const isSelected = selectedMapTour?.id === tour.id;
             
-            {/* Map Header badge */}
-            <div className="flex justify-between items-center z-10">
-              <span className="text-[10px] font-black uppercase bg-[#1E7B4A] text-white px-3 py-1 rounded-full border border-white/20 shadow-sm">
-                📍 {language === 'es' ? 'Costa Rica (Caribe y Pacífico)' : 'Costa Rica (Caribbean & Pacific Coast)'}
-              </span>
-
-              <button
-                onClick={() => onSelectRegion('all')}
-                className="text-[11px] font-bold text-[#0B668F] hover:underline uppercase"
+            return (
+              <Marker 
+                key={tour.id} 
+                position={[tour.location.lat, tour.location.lng]}
+                icon={isSelected ? activeMarkerIcon : customMarkerIcon}
+                eventHandlers={{
+                  click: () => {
+                    setSelectedMapTour(tour);
+                  }
+                }}
               >
-                {language === 'es' ? 'Ver todo el mapa' : 'Reset Map View'}
-              </button>
-            </div>
+              </Marker>
+            )
+          })}
+        </MapContainer>
+      </div>
 
-            {/* Stylized Costa Rica SVG Outline */}
-            <div className="relative w-full h-[320px] sm:h-[380px] my-auto">
-              <svg
-                viewBox="0 0 100 100"
-                className="w-full h-full opacity-15 text-[#1E7B4A] fill-current"
-              >
-                <path d="M 15 20 Q 30 15 50 25 Q 70 20 85 30 Q 90 40 75 55 Q 85 70 70 90 Q 55 75 40 65 Q 25 55 15 35 Z" />
-              </svg>
-
-              {/* Ocean Labels */}
-              <div className="absolute top-4 left-4 text-[10px] font-black uppercase text-[#0B668F] tracking-widest pointer-events-none">
-                🌊 Océano Pacífico Norte
+      {/* FLOATING UI OVERLAY */}
+      <div className="absolute inset-0 pointer-events-none z-10 flex flex-col">
+        
+        {/* Top UI Area (Compact) */}
+        <div className="p-3 sm:p-6 flex flex-col gap-2 sm:gap-4 max-w-7xl mx-auto w-full relative">
+          
+          <div className="flex gap-2 items-center pointer-events-auto max-w-3xl">
+            {/* Back Button */}
+            <button 
+              onClick={handleExit}
+              className="bg-white/95 backdrop-blur-md text-stone-900 hover:bg-white p-3 sm:px-4 sm:py-3 rounded-xl sm:rounded-full font-bold shadow-lg transition-colors flex shrink-0 items-center gap-2"
+            >
+              <ArrowLeft className="w-5 h-5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">{language === 'es' ? 'Volver' : 'Back'}</span>
+            </button>
+            
+            {/* Search Box */}
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
+                <Search className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-500" />
               </div>
-              <div className="absolute top-4 right-4 text-[10px] font-black uppercase text-[#0B668F] tracking-widest pointer-events-none">
-                🏝️ Mar Caribe
-              </div>
-              <div className="absolute bottom-4 left-6 text-[10px] font-black uppercase text-[#0B668F] tracking-widest pointer-events-none">
-                🐋 Pacífico Sur (Osa)
-              </div>
-
-              {/* Tour Pins */}
-              {effectiveTours.map(tour => {
-                const isSelected = selectedMapTour?.id === tour.id;
-                const coords = getMapCoordinates(tour.location.lat, tour.location.lng);
-                if (selectedRegion !== 'all' && tour.region !== selectedRegion) return null;
-                
-                return (
-                  <button
-                    key={tour.id}
-                    onClick={() => setSelectedMapTour(tour)}
-                    style={{ left: `${coords.x}%`, top: `${coords.y}%` }}
-                    className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 group ${
-                      isSelected ? 'z-40 scale-125' : 'z-30 hover:scale-110'
-                    }`}
-                  >
-                    <div className="relative flex items-center justify-center">
-                      <div
-                        className={`w-4 h-4 rounded-full flex items-center justify-center font-black shadow-lg border-2 ${
-                          isSelected
-                            ? 'bg-[#E67E22] text-white border-white scale-110'
-                            : 'bg-[#1E7B4A] text-white border-white hover:bg-[#E67E22]'
-                        }`}
-                      />
-                      {!isSelected && (
-                        <span className="absolute top-5 whitespace-nowrap text-[9px] font-bold px-2 py-0.5 rounded shadow-lg border bg-[#2C3330] text-white border-white/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                          {tour.title[language] || tour.title.es}
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-
-              {/* Hotspot Pins */}
-              {REGIONS_DATA.map((reg) => {
-                const isSelected = selectedRegion === reg.id;
-                return (
-                  <button
-                    key={reg.id}
-                    onClick={() => onSelectRegion(reg.id)}
-                    style={{ left: `${reg.coordinates.x}%`, top: `${reg.coordinates.y}%` }}
-                    className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 group ${
-                      isSelected ? 'z-30 scale-125' : 'z-20 hover:scale-110'
-                    }`}
-                  >
-                    <div className="relative flex items-center justify-center">
-                      <span
-                        className={`absolute w-8 h-8 rounded-full animate-ping opacity-40 ${
-                          isSelected ? 'bg-[#E67E22]' : 'bg-[#1E7B4A]'
-                        }`}
-                      />
-                      <div
-                        className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shadow-xl border-2 ${
-                          isSelected
-                            ? 'bg-[#E67E22] text-white border-white scale-110'
-                            : 'bg-[#0B668F] text-white border-white'
-                        }`}
-                      >
-                        <MapPin className="w-4 h-4" />
-                      </div>
-
-                      {/* Floating tooltip label */}
-                      <span
-                        className={`absolute top-8 whitespace-nowrap text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow-lg border transition-all ${
-                          isSelected
-                            ? 'bg-[#E67E22] text-white border-white'
-                            : 'bg-[#1E7B4A] text-white border-white/20 group-hover:bg-[#0B668F]'
-                        }`}
-                      >
-                        {reg.name.split('/')[0]}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
+              <input 
+                type="text" 
+                placeholder={language === 'es' ? 'Buscar...' : 'Search...'}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white/95 backdrop-blur-md text-stone-900 pl-10 sm:pl-11 pr-4 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl shadow-lg font-bold placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+              />
             </div>
-
-            <div className="text-[10px] text-neutral-500 text-center font-medium pt-2 border-t border-neutral-200">
-              💡 {language === 'es' ? 'Haz clic en los marcadores para explorar detalles (Disponibles sin Internet)' : 'Click markers to explore details (Available Offline)'}
-            </div>
+            
+            {/* Filter Toggle */}
+            <button 
+              onClick={() => setShowFilters(!showFilters)}
+              className={`p-3 sm:px-5 sm:py-3.5 rounded-xl sm:rounded-2xl shadow-lg font-bold transition-colors shrink-0 flex items-center gap-2 ${showFilters ? 'bg-orange-500 text-white' : 'bg-white/95 text-stone-900 hover:bg-neutral-50'}`}
+            >
+              <SlidersHorizontal className="w-5 h-5" />
+              <span className="hidden sm:inline">{language === 'es' ? 'Filtros' : 'Filters'}</span>
+            </button>
           </div>
 
-          {/* Details Column */}
-          <div className="lg:col-span-5 space-y-6 text-left relative">
-            {selectedMapTour ? (
-              <div className="bg-white border border-neutral-200 rounded-3xl overflow-hidden shadow-lg flex flex-col h-full animate-fade-in">
-                <div className="relative h-48 sm:h-56">
-                  <img
-                    src={selectedMapTour.image}
-                    alt={selectedMapTour.title[language] || selectedMapTour.title.es}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#2C3330]/90 via-[#2C3330]/40 to-transparent" />
-                  <button
-                    onClick={() => setSelectedMapTour(null)}
-                    className="absolute top-4 right-4 w-8 h-8 bg-black/50 hover:bg-black/80 rounded-full flex items-center justify-center text-white transition-colors cursor-pointer"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <span className="bg-[#E67E22] text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full mb-2 inline-block">
-                      {getLangText(selectedMapTour.category, language)}
-                    </span>
-                    <h3 className="text-xl font-black text-white uppercase leading-tight">
-                      {selectedMapTour.title[language] || selectedMapTour.title.es}
-                    </h3>
+          {/* Offline Banner */}
+          {!isOnline && (
+            <div className="bg-orange-500 text-white px-4 py-2 rounded-xl sm:rounded-full font-bold shadow-lg flex items-center gap-2 text-xs sm:text-sm self-start pointer-events-auto">
+              <WifiOff className="w-4 h-4" />
+              <span>{language === 'es' ? 'Modo Sin Conexión' : 'Offline Mode'}</span>
+            </div>
+          )}
+
+          {/* Expanded Filters Panel */}
+          {showFilters && (
+            <div className="bg-white/95 backdrop-blur-md p-5 rounded-2xl shadow-2xl pointer-events-auto max-w-3xl flex flex-col gap-5 border border-neutral-100">
+              
+              <div className="flex flex-wrap gap-4">
+                {/* Category Filter */}
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-xs font-black text-neutral-400 uppercase tracking-widest mb-2">
+                    {language === 'es' ? 'Tipo de Turismo' : 'Tourism Type'}
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { id: 'all', icon: '🌍', label: { es: 'Todos', en: 'All' } },
+                      { id: 'aventura', icon: '🚣', label: { es: 'Aventura Extrema', en: 'Extreme Adventure' } },
+                      { id: 'naturaleza', icon: '🦥', label: { es: 'Naturaleza y Vida', en: 'Nature & Wildlife' } },
+                      { id: 'cultura', icon: '☕', label: { es: 'Cultura Local', en: 'Local Culture' } }
+                    ].map(cat => (
+                      <button
+                        key={cat.id}
+                        onClick={() => setActiveCategory(cat.id as TourCategory | 'all')}
+                        className={`px-3 py-1.5 rounded-xl text-sm font-bold border transition-colors flex items-center gap-1.5 ${activeCategory === cat.id ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-white text-stone-600 border-neutral-200 hover:bg-neutral-50'}`}
+                      >
+                        <span>{cat.icon}</span>
+                        {cat.label[language]}
+                      </button>
+                    ))}
                   </div>
                 </div>
-                
-                <div className="p-5 space-y-4 flex-grow">
-                  <p className="text-xs text-[#2C3330] leading-relaxed line-clamp-3">
-                    {selectedMapTour.description[language] || selectedMapTour.description.es}
-                  </p>
-                  
-                  <div className="flex items-center justify-between pt-4 border-t border-neutral-200">
-                    <div>
-                      <span className="text-[10px] text-neutral-500 font-bold block uppercase">
-                        {t('priceFrom')}
-                      </span>
-                      <span className="text-xl font-black text-[#E67E22]">
-                        {formatCurrency(selectedMapTour.priceUSD, currency)} {currency}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => {
-                        if (onSelectTour) onSelectTour(selectedMapTour);
-                      }}
-                      className="bg-[#1E7B4A] hover:bg-[#165a36] text-white font-black text-[11px] uppercase py-2.5 px-5 rounded-xl transition-all flex items-center gap-2 shadow-md hover:scale-105 cursor-pointer"
-                    >
-                      <span>{t('viewDetails')}</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-[#E67E22]" />
-                    </button>
+
+                {/* Climate/Temperature Filter */}
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-xs font-black text-neutral-400 uppercase tracking-widest mb-2">
+                    {language === 'es' ? 'Clima / Microclima' : 'Climate / Microclimate'}
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { id: 'all', icon: <Thermometer className="w-3.5 h-3.5" />, label: { es: 'Cualquiera', en: 'Any' } },
+                      { id: 'tropical', icon: <Sun className="w-3.5 h-3.5" />, label: { es: 'Tropical Húmedo', en: 'Humid Tropical' } },
+                      { id: 'dryforest', icon: <Sun className="w-3.5 h-3.5 text-orange-500" />, label: { es: 'Bosque Seco', en: 'Dry Forest' } },
+                      { id: 'cloudforest', icon: <Cloud className="w-3.5 h-3.5" />, label: { es: 'Bosque Nuboso', en: 'Cloud Forest' } },
+                      { id: 'rainforest', icon: <CloudRain className="w-3.5 h-3.5 text-blue-500" />, label: { es: 'Selva Lluviosa', en: 'Rainforest' } }
+                    ].map(clim => (
+                      <button
+                        key={clim.id}
+                        onClick={() => setActiveClimate(clim.id)}
+                        className={`px-3 py-1.5 rounded-xl text-sm font-bold border transition-colors flex items-center gap-1.5 ${activeClimate === clim.id ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-white text-stone-600 border-neutral-200 hover:bg-neutral-50'}`}
+                      >
+                        {clim.icon}
+                        <span>{clim.label[language]}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
-            ) : (
-              <>
-                <div className="relative h-48 rounded-2xl overflow-hidden border-2 border-neutral-200 shadow-md">
-                  <img
-                    src={activeRegionObj.image}
-                    alt={activeRegionObj.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#2C3330]/90 via-[#2C3330]/40 to-transparent" />
-                  <div className="absolute bottom-3 left-4 right-4">
-                    <span className="bg-[#1E7B4A] text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
-                      Destino Seleccionado
-                    </span>
-                    <h3 className="text-2xl font-black text-white uppercase mt-1">
-                      {activeRegionObj.name}
-                    </h3>
-                  </div>
+              
+              <div className="border-t border-neutral-100 pt-3 flex justify-between items-center text-sm font-bold">
+                <span className="text-neutral-500">
+                  {effectiveTours.length} {language === 'es' ? 'resultados' : 'results'}
+                </span>
+                <button 
+                  onClick={() => setShowFilters(false)}
+                  className="text-orange-500 hover:text-orange-600 uppercase tracking-wide"
+                >
+                  {language === 'es' ? 'Aplicar' : 'Apply'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Search this area button */}
+        <div className="flex-1 flex justify-center pointer-events-none pt-4">
+          <div className={`transition-all duration-300 transform ${showSearchThisAreaBtn ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0 pointer-events-none'}`}>
+            <button 
+              onClick={handleSearchThisArea}
+              className="pointer-events-auto bg-white text-orange-600 px-6 py-2.5 rounded-full font-black uppercase text-sm shadow-xl hover:bg-neutral-50 transition-colors border border-orange-100 flex items-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              {language === 'es' ? 'Buscar en esta zona' : 'Search this area'}
+            </button>
+          </div>
+        </div>
+
+        {/* Selected Tour Side Panel (Or Bottom Sheet on Mobile) */}
+        {selectedMapTour && (
+          <div className="absolute bottom-0 left-0 right-0 sm:left-auto sm:top-0 sm:bottom-0 w-full sm:w-[400px] max-h-[80vh] sm:max-h-full bg-white sm:shadow-[-10px_0_30px_rgba(0,0,0,0.1)] shadow-[0_-10px_30px_rgba(0,0,0,0.1)] pointer-events-auto flex flex-col z-20 animate-fade-in-up sm:animate-fade-in-right overflow-y-auto rounded-t-3xl sm:rounded-none">
+            <div className="relative h-56 sm:h-64 flex-shrink-0">
+              <img 
+                src={selectedMapTour.image} 
+                alt={selectedMapTour.title.en} 
+                className="w-full h-full object-cover"
+              />
+              <button 
+                onClick={() => setSelectedMapTour(null)}
+                className="absolute top-4 right-4 w-10 h-10 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-colors z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+                <span className="bg-orange-500 text-white text-[11px] font-black uppercase px-3 py-1.5 rounded-md shadow-lg">
+                  {getLangText(selectedMapTour.durationLabel, language)}
+                </span>
+                <div className="bg-white/10 backdrop-blur-md px-3 py-1 rounded-lg border border-white/20 text-right">
+                  <span className="block text-[9px] font-bold text-neutral-300 uppercase tracking-widest leading-none mb-0.5">
+                    {language === 'es' ? 'Precio' : 'Price'}
+                  </span>
+                  <span className="block font-black text-white leading-none text-lg">
+                    {formatCurrency(selectedMapTour.priceUSD, currency)}
+                  </span>
                 </div>
+              </div>
+            </div>
 
-                <p className="text-xs sm:text-sm text-[#2C3330] leading-relaxed font-medium">
-                  {activeRegionObj.tagline[language]}
-                </p>
+            <div className="p-6 flex flex-col flex-1">
+              <div className="flex items-center gap-2 text-orange-500 mb-2">
+                <MapPin className="w-4 h-4" />
+                <span className="text-xs font-bold tracking-widest uppercase">
+                  {selectedMapTour.location.name}
+                </span>
+              </div>
 
-                <div className="bg-white p-4 rounded-2xl border border-neutral-200 space-y-2 text-xs shadow-sm">
-                  <div className="flex justify-between items-center text-neutral-600">
-                    <span className="font-bold">{t('primaryAccess')}</span>
-                    <span className="text-[#2C3330] font-black">
-                      {activeRegionObj.id === 'arenal' || activeRegionObj.id === 'monteverde'
-                        ? 'Terrestre / Van Privada (3-3.5 hrs desde SJO)'
-                        : activeRegionObj.id === 'tortuguero' || activeRegionObj.id === 'osa'
-                        ? 'Lancha Rápida / Vuelo Doméstico'
-                        : 'Carretera Pavimentada / Transfer Directo'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-neutral-600 border-t border-neutral-100 pt-2">
-                    <span className="font-bold">{t('weatherPacking')}</span>
-                    <span className="text-[#2C3330] font-black">
-                      {activeRegionObj.id === 'monteverde'
-                        ? 'Fresco / Templado (Traer abrigo)'
-                        : activeRegionObj.id === 'guanacaste'
-                        ? 'Cálido & Soleado (Traer traje de baño)'
-                        : 'Tropical Cálido Húmedo'}
-                    </span>
-                  </div>
+              <h3 className="text-2xl font-black text-stone-900 leading-tight mb-4">
+                {getLangText(selectedMapTour.title, language)}
+              </h3>
+              
+              <div className="flex gap-4 mb-6 border-y border-neutral-100 py-3">
+                <div className="text-center">
+                  <span className="block text-[10px] font-bold uppercase text-neutral-400 mb-1">{language === 'es' ? 'Dificultad' : 'Difficulty'}</span>
+                  <span className="text-xs font-black text-stone-700 uppercase bg-neutral-100 px-2 py-1 rounded">{selectedMapTour.difficulty}</span>
                 </div>
+                <div className="text-center">
+                  <span className="block text-[10px] font-bold uppercase text-neutral-400 mb-1">{language === 'es' ? 'Rating' : 'Rating'}</span>
+                  <span className="text-xs font-black text-orange-500">{selectedMapTour.rating} ★</span>
+                </div>
+              </div>
 
-                <div className="space-y-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (onExploreRegionTours) {
-                        onExploreRegionTours(activeRegionObj.id);
-                      } else {
-                        onSelectRegion(activeRegionObj.id);
-                      }
-                    }}
-                    className="w-full bg-[#E67E22] hover:bg-[#d67118] text-white font-black text-xs uppercase py-3.5 px-6 rounded-full transition-transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+              <p className="text-sm text-neutral-600 leading-relaxed mb-6">
+                {getLangText(selectedMapTour.description, language)}
+              </p>
+
+              <div className="mt-auto space-y-3 pt-4">
+                {onSelectTour && (
+                  <button 
+                    onClick={() => onSelectTour(selectedMapTour)}
+                    className="w-full bg-teal-600 hover:bg-teal-700 text-white font-black text-sm uppercase py-4 px-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
                   >
                     <Navigation className="w-4 h-4" />
-                    <span>
-                      {language === 'es'
-                        ? `Ver Tours en ${activeRegionObj.name.split('/')[0]}`
-                        : `Explore Tours in ${activeRegionObj.name.split('/')[0]}`}
-                    </span>
-                    <ArrowRight className="w-4 h-4" />
+                    <span>{language === 'es' ? 'Ver Detalles y Reservar' : 'View Details & Book'}</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleExit}
-                    className="w-full bg-white hover:bg-neutral-100 text-[#2C3330] font-bold text-xs uppercase py-2.5 px-4 rounded-full border border-neutral-300 transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5 text-[#E67E22]" />
-                    <span>{t('exitMapViewAll')}</span>
-                  </button>
-                </div>
-              </>
-            )}
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
+
     </section>
   );
 };

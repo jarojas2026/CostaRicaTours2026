@@ -90,17 +90,17 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
   };
 
   return (
-    <div className="bg-emerald-950 border-2 border-emerald-500/30 rounded-[2rem] p-5 sm:p-7 shadow-2xl space-y-5">
+    <div className="bg-stone-950 border-2 border-teal-500/30 rounded-[2rem] p-5 sm:p-7 shadow-2xl space-y-5">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-500/20 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-teal-500/20 pb-4">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-amber-400/20 text-amber-400 flex items-center justify-center font-black">
-            <Globe className="w-6 h-6 text-amber-400" />
+          <div className="w-11 h-11 rounded-2xl bg-orange-400/20 text-orange-400 flex items-center justify-center font-black">
+            <Globe className="w-6 h-6 text-orange-400" />
           </div>
           <div>
-            <div className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-400">
-              <Sparkles className="w-3 h-3 text-amber-400" />
+            <div className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-orange-400">
+              <Sparkles className="w-3 h-3 text-orange-400" />
               {language === 'es' ? 'Búsqueda en Vivo & Grounding de Google' : 'Live Google Grounded Intelligence'}
             </div>
             <h3 className="text-xl font-black text-white uppercase">
@@ -109,8 +109,8 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
           </div>
         </div>
 
-        <span className="text-[10px] bg-emerald-900 text-emerald-200 px-3 py-1 rounded-full border border-emerald-700/50 font-bold self-start sm:self-auto flex items-center gap-1">
-          <Zap className="w-3 h-3 text-amber-400" />
+        <span className="text-[10px] bg-stone-900 text-stone-200 px-3 py-1 rounded-full border border-teal-700/50 font-bold self-start sm:self-auto flex items-center gap-1">
+          <Zap className="w-3 h-3 text-orange-400" />
           {language === 'es' ? 'Datos Actualizados' : 'Live Verified Data'}
         </span>
       </div>
@@ -129,7 +129,7 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
                 handleSearch(item.query);
               }}
               disabled={isLoading}
-              className="text-[11px] font-bold bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 hover:text-white px-3 py-1.5 rounded-xl border border-emerald-500/30 transition-all cursor-pointer disabled:opacity-50"
+              className="text-[11px] font-bold bg-stone-900/60 hover:bg-stone-800 text-stone-200 hover:text-white px-3 py-1.5 rounded-xl border border-teal-500/30 transition-all cursor-pointer disabled:opacity-50"
             >
               {item.label[language === 'es' ? 'es' : 'en']}
             </button>
@@ -155,7 +155,7 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
                 ? 'Ej: ¿Está abierto el Volcán Poás hoy? ¿Horario del ferry a Paquera?...'
                 : 'Ex: Is Poas Volcano open today? Paquera ferry schedule?....'
             }
-            className="w-full bg-emerald-900/60 border border-emerald-500/30 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white focus:outline-none placeholder-emerald-300/40 font-medium pr-10"
+            className="w-full bg-stone-900/60 border border-teal-500/30 focus:border-orange-400 rounded-xl px-4 py-3 text-sm text-white focus:outline-none placeholder-teal-300/40 font-medium pr-10"
           />
           <Search className="w-4 h-4 text-neutral-400 absolute right-3.5 top-3.5" />
         </div>
@@ -163,7 +163,7 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
         <button
           type="submit"
           disabled={isLoading || !searchQuery.trim()}
-          className="bg-amber-400 hover:bg-amber-300 text-emerald-950 font-black px-5 py-3 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+          className="bg-orange-400 hover:bg-orange-300 text-stone-950 font-black px-5 py-3 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
         >
           {isLoading ? (
             <RefreshCw className="w-4 h-4 animate-spin" />
@@ -178,13 +178,13 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
 
       {/* Search Results Display */}
       {resultAnswer && (
-        <div className="bg-emerald-900/80 p-5 rounded-2xl border-2 border-emerald-400/50 space-y-4 animate-fade-in text-white shadow-xl">
-          <div className="flex items-center justify-between border-b border-emerald-700/60 pb-2.5">
-            <span className="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-amber-400" />
+        <div className="bg-stone-900/80 p-5 rounded-2xl border-2 border-teal-400/50 space-y-4 animate-fade-in text-white shadow-xl">
+          <div className="flex items-center justify-between border-b border-teal-700/60 pb-2.5">
+            <span className="text-xs font-black uppercase text-orange-400 flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-orange-400" />
               {language === 'es' ? 'Respuesta Verificada con Fuentes en Vivo:' : 'Verified Live Response with Sources:'}
             </span>
-            <span className="text-[10px] text-emerald-300 font-bold bg-emerald-950 px-2.5 py-0.5 rounded-full">
+            <span className="text-[10px] text-teal-300 font-bold bg-stone-950 px-2.5 py-0.5 rounded-full">
               Gemini Search Grounding
             </span>
           </div>
@@ -195,8 +195,8 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
 
           {/* Sources Links */}
           {resultSources.length > 0 && (
-            <div className="pt-2 border-t border-emerald-700/60 space-y-1.5">
-              <span className="text-[10px] font-black uppercase text-emerald-300 tracking-wider block">
+            <div className="pt-2 border-t border-teal-700/60 space-y-1.5">
+              <span className="text-[10px] font-black uppercase text-teal-300 tracking-wider block">
                 {language === 'es' ? 'Fuentes Oficiales y Enlaces Grounding:' : 'Official Grounding Sources & Links:'}
               </span>
               <div className="flex flex-wrap gap-2">
@@ -206,7 +206,7 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
                     href={src.uri}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[10px] bg-emerald-950 hover:bg-emerald-800 text-amber-300 px-3 py-1 rounded-lg border border-emerald-600/40 flex items-center gap-1 transition-colors cursor-pointer"
+                    className="text-[10px] bg-stone-950 hover:bg-stone-800 text-orange-300 px-3 py-1 rounded-lg border border-teal-600/40 flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     <span>{src.title || 'Fuente Web'}</span>
                     <ExternalLink className="w-3 h-3" />

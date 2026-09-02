@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Language, Tour, BookingRequest, AgentId, AIAgent } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
+import { ArrowLeft,
   Bot, Send, Sparkles, Mic, MicOff, User, RefreshCw, X, MessageSquare, 
   Compass, ArrowRight, Trash2, HelpCircle, CheckCircle2, Ticket, 
   Image as ImageIcon, BrainCircuit, XCircle, Leaf, Trees, ShieldCheck, 
@@ -18,6 +18,7 @@ interface AIAssistantProps {
   userBookings?: BookingRequest[];
   onClose?: () => void;
   onNavigateTab?: (tab: 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights') => void;
+  onBack?: () => void;
 }
 
 interface Message {
@@ -367,22 +368,32 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const currentTags = getLangText(currentAgent.specialtyTags, language, []) as string[];
 
   return (
-    <div className="bg-emerald-950 py-10 px-4 sm:px-6 lg:px-8 border-t border-white/10">
+    <div className="bg-stone-950 py-6 sm:py-10 px-4 sm:px-6 lg:px-8 border-t border-white/10">
       <div className="max-w-5xl mx-auto space-y-6">
+        
+        {onBack && (
+          <button 
+            onClick={onBack}
+            className="bg-stone-900 hover:bg-stone-800 text-stone-200 hover:text-white px-4 py-2.5 rounded-full font-bold shadow-md transition-colors flex items-center gap-2 border border-white/10 w-fit cursor-pointer mb-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>{language === 'es' ? 'Volver al Inicio' : 'Back to Home'}</span>
+          </button>
+        )}
         
         {/* Header Title */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 px-4 py-1 bg-emerald-900 text-amber-400 rounded-full text-xs font-bold uppercase tracking-widest border border-white/10">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            {language === 'es' ? 'Ecosistema de 8 Agentes IA & Flujos de Trabajo' : 'Ecosystem of 8 Specialized AI Workflow Agents'}
+          <div className="inline-flex items-center gap-2 px-4 py-1 bg-stone-900 text-orange-400 rounded-full text-xs font-bold uppercase tracking-widest border border-white/10">
+            <Sparkles className="w-3.5 h-3.5 text-orange-400" />
+            {language === 'es' ? 'Motor de Inteligencia Artificial & Orquestación con n8n' : 'AI Intelligence Engine & n8n Workflow Orchestration'}
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight">
             {language === 'es' ? 'Centro de Asistentes & Agentes IA de Costa Rica' : 'Costa Rica AI Travel Agents & Workflows'}
           </h2>
           <p className="text-base text-neutral-300 max-w-3xl mx-auto">
             {language === 'es'
-              ? 'Interactúa con 8 agentes expertos diseñados para cada etapa de tu viaje: diseño de itinerarios, reservas y facturación, ecobiología SINAC, aventura y surf, logística 4x4, gastronomía, mochileros y accesibilidad familiar Ley 7600.'
-              : 'Interact with 8 specialized Costa Rican AI agents tailored for each workflow: custom itinerary design, bookings & invoicing, SINAC wildlife biology, extreme adventure, 4x4 road logistics, tico cuisine, budget backpacking, and family universal accessibility.'
+              ? 'Interactúa con nuestro Asistente Unificado. Por detrás, nuestro servidor n8n orquesta tu solicitud hacia diferentes flujos de IA (cotizaciones, itinerarios, logística y reservas) ejecutando procesos automáticos sin que tengas que saltar de un bot a otro.'
+              : 'Interact with our Unified Concierge. Behind the scenes, our n8n server routes your request to specialized AI workflows (quotes, itineraries, logistics, and bookings) executing automatic processes without you having to jump between bots.'
             }
           </p>
         </div>
@@ -390,11 +401,12 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         {/* Workflow Category Filter Tabs */}
         <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
           {[
-            { id: 'all', label: { es: 'Todos (8)', en: 'All (8)' }, icon: '✨' },
-            { id: 'booking', label: { es: 'Reservas & Itinerarios', en: 'Bookings & Itineraries' }, icon: '🧭' },
-            { id: 'nature_adventure', label: { es: 'Naturaleza & Aventura', en: 'Nature & Adventure' }, icon: '🦥' },
-            { id: 'logistics_food', label: { es: 'Logística 4x4 & Gastronomía', en: 'Logistics & Gastronomy' }, icon: '🚐' },
-            { id: 'specialized', label: { es: 'Mochileros & Familias', en: 'Backpackers & Families' }, icon: '👨‍👩‍👧‍👦' },
+            { id: 'all', label: { es: 'Todos (15)', en: 'All (15)' }, icon: '✨' },
+            { id: 'booking', label: { es: 'Reservas & Itinerarios', en: 'Bookings' }, icon: '🧭' },
+            { id: 'planning_support', label: { es: 'Asistencia & Visados', en: 'Support & Visas' }, icon: '🛂' },
+            { id: 'nature_adventure', label: { es: 'Naturaleza & Aventura', en: 'Nature' }, icon: '🦥' },
+            { id: 'logistics_food', label: { es: 'Logística & Gastronomía', en: 'Logistics' }, icon: '🚐' },
+            { id: 'specialized', label: { es: 'Mochileros & Familias', en: 'Specialized' }, icon: '👨‍👩‍👧‍👦' },
           ].map((cat) => {
             const isActive = selectedCategory === cat.id;
             return (
@@ -403,8 +415,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 onClick={() => setSelectedCategory(cat.id as any)}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
                   isActive
-                    ? 'bg-amber-400 text-emerald-950 border-amber-400 shadow-md font-black'
-                    : 'bg-emerald-900/60 text-emerald-100 hover:bg-emerald-800/80 border-white/10 hover:border-white/20'
+                    ? 'bg-orange-400 text-stone-950 border-orange-400 shadow-md font-black'
+                    : 'bg-stone-900/60 text-stone-100 hover:bg-stone-800/80 border-white/10 hover:border-white/20'
                 }`}
               >
                 <span>{cat.icon}</span>
@@ -415,12 +427,12 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         </div>
 
         {/* Multi-Agent Selector Bar */}
-        <div className="bg-emerald-900/60 p-2 sm:p-2.5 rounded-2xl border border-white/10 shadow-lg">
+        <div className="bg-stone-900/60 p-2 sm:p-2.5 rounded-2xl border border-white/10 shadow-lg">
           <div className="flex items-center justify-between px-2 pb-2 text-[11px] font-bold text-neutral-300 uppercase tracking-wider">
             <span>{language === 'es' ? 'Selecciona tu Agente Especialista:' : 'Select your Specialist Agent:'}</span>
-            <span className="text-amber-400 text-[10px] font-black flex items-center gap-1">
-              <Zap className="w-3 h-3 text-amber-400" />
-              {language === 'es' ? '8 Agentes Activos en costaricatours.es' : '8 Active Agents on costaricatours.es'}
+            <span className="text-orange-400 text-[10px] font-black flex items-center gap-1">
+              <Zap className="w-3 h-3 text-orange-400" />
+              {language === 'es' ? 'Flujos de Trabajo en el Backend (Orquestados por n8n)' : 'Backend Workflows (Orchestrated via n8n)'}
             </span>
           </div>
 
@@ -436,8 +448,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                   onClick={() => handleSelectAgent(agent.id)}
                   className={`relative p-2.5 sm:p-2 rounded-xl flex flex-col items-center text-center transition-all cursor-pointer border ${
                     isSelected 
-                      ? 'bg-emerald-950 text-white shadow-xl scale-[1.02] border-amber-400 ring-2 ring-amber-400/30' 
-                      : 'bg-emerald-900/40 hover:bg-emerald-800/60 text-neutral-300 border-white/5 hover:border-white/20'
+                      ? 'bg-stone-950 text-white shadow-xl scale-[1.02] border-orange-400 ring-2 ring-orange-400/30' 
+                      : 'bg-stone-900/40 hover:bg-stone-800/60 text-neutral-300 border-white/5 hover:border-white/20'
                   }`}
                 >
                   {/* Avatar Icon */}
@@ -453,15 +465,15 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                   {/* Badge */}
                   <span className={`text-[8px] font-bold mt-1 px-1.5 py-0.5 rounded-full line-clamp-1 ${
                     isSelected 
-                      ? 'bg-amber-400 text-emerald-950 font-black' 
-                      : 'bg-emerald-950 text-emerald-300 border border-emerald-700/50'
+                      ? 'bg-orange-400 text-stone-950 font-black' 
+                      : 'bg-stone-950 text-teal-300 border border-teal-700/50'
                   }`}>
                     {agentBadge}
                   </span>
 
                   {/* Active Indicator Dot */}
                   {isSelected && (
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-orange-400 animate-ping"></span>
                   )}
                 </button>
               );
@@ -471,15 +483,15 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
         {/* Current Agent Workflow Steps Banner */}
         {currentAgent.workflowSteps && (
-          <div className="bg-emerald-900/40 p-3 rounded-2xl border border-white/10">
-            <div className="flex items-center gap-2 mb-2 text-xs font-bold text-amber-400 uppercase tracking-wider">
+          <div className="bg-stone-900/40 p-3 rounded-2xl border border-white/10">
+            <div className="flex items-center gap-2 mb-2 text-xs font-bold text-orange-400 uppercase tracking-wider">
               <CompassIcon className="w-3.5 h-3.5" />
               <span>{language === 'es' ? `Flujo de Trabajo Especializado: ${getLangText(currentAgent.name, language)}` : `Specialized Workflow: ${getLangText(currentAgent.name, language)}`}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
               {getLangText(currentAgent.workflowSteps, language, []).map((step: string, idx: number) => (
-                <div key={idx} className="bg-emerald-950/60 p-2 rounded-xl border border-white/5 text-[11px] text-neutral-300 flex items-start gap-1.5">
-                  <span className="bg-amber-400 text-emerald-950 font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                <div key={idx} className="bg-stone-950/60 p-2 rounded-xl border border-white/5 text-[11px] text-neutral-300 flex items-start gap-1.5">
+                  <span className="bg-orange-400 text-stone-950 font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5">
                     {idx + 1}
                   </span>
                   <span className="leading-tight">{step.replace(/^[0-9]\.\s*/, '')}</span>
@@ -490,20 +502,20 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         )}
 
         {/* Chat Window Container */}
-        <div className="bg-emerald-950 border-2 border-white/10 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col h-[580px]">
+        <div className="bg-stone-950 border-2 border-white/10 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col h-[580px]">
           
           {/* Chat Header Bar with Active Agent Profile */}
-          <div className="bg-emerald-950 p-3 sm:p-4 border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
+          <div className="bg-stone-950 p-3 sm:p-4 border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 bg-teal-600 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-inner border border-white/20">
                 {currentAgent.avatarEmoji}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-black text-sm uppercase text-amber-400">
+                  <h3 className="font-black text-sm uppercase text-orange-400">
                     {getLangText(currentAgent.name, language)}
                   </h3>
-                  <span className="bg-emerald-900 text-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-700/50">
+                  <span className="bg-stone-900 text-stone-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-teal-700/50">
                     {getLangText(currentAgent.badge, language)}
                   </span>
                 </div>
@@ -516,7 +528,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
             {/* Specialty Tags */}
             <div className="hidden md:flex items-center gap-1.5">
               {currentTags.slice(0, 2).map((tag, idx) => (
-                <span key={idx} className="text-[10px] bg-emerald-900/80 text-emerald-200 px-2 py-0.5 rounded-md border border-emerald-700/40">
+                <span key={idx} className="text-[10px] bg-stone-900/80 text-stone-200 px-2 py-0.5 rounded-md border border-teal-700/40">
                   #{tag}
                 </span>
               ))}
@@ -529,8 +541,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 title={language === 'es' ? 'Modo de Pensamiento Profundo' : 'Deep Thinking Mode'}
                 className={`p-2 transition-colors rounded-lg border flex items-center gap-1 text-xs font-bold cursor-pointer ${
                   thinkingMode 
-                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' 
-                    : 'bg-emerald-950 text-neutral-400 border-white/10 hover:text-amber-400'
+                    ? 'bg-orange-500/20 text-orange-400 border-orange-500/50' 
+                    : 'bg-stone-950 text-neutral-400 border-white/10 hover:text-orange-400'
                 }`}
               >
                 <BrainCircuit className="w-4 h-4" />
@@ -540,13 +552,13 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               <button
                 onClick={handleClearHistory}
                 title={t('aiClearChat')}
-                className="p-2 text-neutral-300 hover:text-amber-400 transition-colors rounded-lg bg-emerald-950 border border-white/10 cursor-pointer"
+                className="p-2 text-neutral-300 hover:text-orange-400 transition-colors rounded-lg bg-stone-950 border border-white/10 cursor-pointer"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
 
               {onClose && (
-                <button onClick={onClose} className="p-2 text-white hover:text-amber-400 cursor-pointer">
+                <button onClick={onClose} className="p-2 text-white hover:text-orange-400 cursor-pointer">
                   <X className="w-5 h-5" />
                 </button>
               )}
@@ -554,7 +566,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           </div>
 
           {/* Messages Body */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-emerald-950/50">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-stone-950/50">
             <AnimatePresence initial={false}>
             {messages.map((msg) => {
               const msgAgent = msg.agentId ? getAIAgentById(msg.agentId) : currentAgent;
@@ -577,10 +589,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                   <div className={`max-w-[85%] sm:max-w-[78%] space-y-2`}>
                     {/* Agent Label if Assistant */}
                     {msg.sender === 'assistant' && (
-                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-400/90 pl-1">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-orange-400/90 pl-1">
                         <span>{getLangText(msgAgent.name, language)}</span>
                         <span className="opacity-60">•</span>
-                        <span className="text-emerald-300 font-normal">{getLangText(msgAgent.badge, language)}</span>
+                        <span className="text-teal-300 font-normal">{getLangText(msgAgent.badge, language)}</span>
                       </div>
                     )}
 
@@ -590,26 +602,26 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                         msg.sender === 'user'
                           ? 'bg-teal-600 text-white font-semibold rounded-tr-none shadow-md'
                           : msg.ecoFactData
-                            ? 'bg-emerald-900/90 text-white border-2 border-emerald-400/50 rounded-tl-none shadow-xl'
-                            : 'bg-emerald-950 text-white border border-white/10 rounded-tl-none shadow-md'
+                            ? 'bg-stone-900/90 text-white border-2 border-teal-400/50 rounded-tl-none shadow-xl'
+                            : 'bg-stone-950 text-white border border-white/10 rounded-tl-none shadow-md'
                       }`}
                     >
                       {/* Specialized Eco-Fact Header if present */}
                       {msg.ecoFactData && (
-                        <div className="mb-3 pb-3 border-b border-emerald-700/60 flex items-center justify-between">
+                        <div className="mb-3 pb-3 border-b border-teal-700/60 flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="text-2xl">{msg.ecoFactData.icon}</span>
                             <div>
-                              <span className="text-[10px] uppercase tracking-wider font-black text-amber-400 block">
+                              <span className="text-[10px] uppercase tracking-wider font-black text-orange-400 block">
                                 {language === 'es' ? '🇨🇷 DATO ECOLÓGICO DE COSTA RICA' : '🇨🇷 COSTA RICA ECO-FACT'}
                               </span>
-                              <span className="text-xs font-bold text-emerald-200">
+                              <span className="text-xs font-bold text-stone-200">
                                 {msg.ecoFactData.regionName}
                               </span>
                             </div>
                           </div>
-                          <span className="bg-emerald-800 text-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-600/40 flex items-center gap-1">
-                            <Leaf className="w-3 h-3 text-emerald-400" />
+                          <span className="bg-stone-800 text-stone-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-teal-600/40 flex items-center gap-1">
+                            <Leaf className="w-3 h-3 text-teal-400" />
                             100% Sostenible
                           </span>
                         </div>
@@ -619,19 +631,19 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
                       {/* Specialized Eco-Fact Interactive Details */}
                       {msg.ecoFactData && (
-                        <div className="mt-4 pt-3 border-t border-emerald-700/60 space-y-3">
+                        <div className="mt-4 pt-3 border-t border-teal-700/60 space-y-3">
                           {/* Protected Species Pills */}
                           {msg.ecoFactData.species && msg.ecoFactData.species.length > 0 && (
                             <div className="space-y-1">
-                              <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-1">
-                                <Trees className="w-3 h-3 text-emerald-400" />
+                              <span className="text-[10px] font-bold text-teal-300 uppercase tracking-wider flex items-center gap-1">
+                                <Trees className="w-3 h-3 text-teal-400" />
                                 {language === 'es' ? 'Especies Emblemáticas Protegidas:' : 'Key Protected Species:'}
                               </span>
                               <div className="flex flex-wrap gap-1.5">
                                 {msg.ecoFactData.species.map((sp, idx) => (
                                   <span
                                     key={idx}
-                                    className="text-[10px] font-semibold bg-emerald-950/80 text-emerald-200 px-2 py-0.5 rounded-md border border-emerald-700/40"
+                                    className="text-[10px] font-semibold bg-stone-950/80 text-stone-200 px-2 py-0.5 rounded-md border border-teal-700/40"
                                   >
                                     {sp}
                                   </span>
@@ -648,7 +660,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                                   const found = TOURS.find(t => t.id === msg.ecoFactData?.tourId);
                                   if (found) onSelectTour(found);
                                 }}
-                                className="text-[11px] font-black uppercase bg-amber-500 hover:bg-amber-400 text-emerald-950 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+                                className="text-[11px] font-black uppercase bg-orange-500 hover:bg-orange-400 text-stone-950 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
                               >
                                 <Ticket className="w-3.5 h-3.5" />
                                 <span>{language === 'es' ? 'Ver Ficha del Tour' : 'View Tour Details'}</span>
@@ -661,9 +673,9 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                                   : `What other wildlife species and eco projects can I see in ${msg.ecoFactData?.regionName}?`;
                                 handleSendMessage(askPrompt);
                               }}
-                              className="text-[11px] font-bold bg-emerald-800 hover:bg-emerald-700 text-emerald-100 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors border border-emerald-600/40 cursor-pointer"
+                              className="text-[11px] font-bold bg-stone-800 hover:bg-teal-700 text-stone-100 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors border border-teal-600/40 cursor-pointer"
                             >
-                              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                              <Sparkles className="w-3.5 h-3.5 text-orange-400" />
                               <span>{language === 'es' ? 'Preguntar más sobre esta región' : 'Ask more about this region'}</span>
                             </button>
                           </div>
@@ -677,14 +689,14 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
                     {/* Recommended Tours Widget if present */}
                     {msg.recommendedTours && msg.recommendedTours.length > 0 && (
-                      <div className="bg-emerald-950 p-3 rounded-2xl border border-amber-500/40 space-y-2 shadow-lg">
+                      <div className="bg-stone-950 p-3 rounded-2xl border border-orange-500/40 space-y-2 shadow-lg">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-black uppercase text-amber-400 flex items-center gap-1">
+                          <span className="text-[10px] font-black uppercase text-orange-400 flex items-center gap-1">
                             <Compass className="w-3.5 h-3.5" />
                             {language === 'es' ? 'Excursión Mencionada (Clic para ver & Eco-Fact):' : 'Mentioned Excursion (Click to View & Eco-Fact):'}
                           </span>
-                          <span className="text-[9px] text-emerald-300 font-bold bg-emerald-900/60 px-2 py-0.5 rounded-full border border-emerald-700/40 flex items-center gap-1">
-                            <Leaf className="w-2.5 h-2.5 text-emerald-400" />
+                          <span className="text-[9px] text-teal-300 font-bold bg-stone-900/60 px-2 py-0.5 rounded-full border border-teal-700/40 flex items-center gap-1">
+                            <Leaf className="w-2.5 h-2.5 text-teal-400" />
                             Eco-Fact
                           </span>
                         </div>
@@ -693,22 +705,22 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                             <div
                               key={t.id}
                               onClick={() => handleTourMiniCardClick(t)}
-                              className="bg-emerald-950 hover:bg-emerald-900 p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition-all border border-white/10 hover:border-emerald-500/50 group"
+                              className="bg-stone-950 hover:bg-stone-900 p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition-all border border-white/10 hover:border-teal-500/50 group"
                             >
                               <div className="flex items-center gap-2.5">
                                 <img src={t.image} alt={getLangText(t.title, language)} className="w-11 h-11 rounded-lg object-cover group-hover:scale-105 transition-transform" />
                                 <div>
-                                  <span className="text-xs font-bold text-white block line-clamp-1 group-hover:text-amber-300 transition-colors">
+                                  <span className="text-xs font-bold text-white block line-clamp-1 group-hover:text-orange-300 transition-colors">
                                     {getLangText(t.title, language)}
                                   </span>
                                   <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="text-[10px] text-amber-400 font-black">${t.priceUSD} USD</span>
-                                    <span className="text-[9px] text-emerald-200 font-semibold bg-emerald-900/80 px-1.5 py-0.2 rounded border border-emerald-600/30 flex items-center gap-0.5">
-                                      <Clock className="w-2.5 h-2.5 text-emerald-400" />
+                                    <span className="text-[10px] text-orange-400 font-black">${t.priceUSD} USD</span>
+                                    <span className="text-[9px] text-stone-200 font-semibold bg-stone-900/80 px-1.5 py-0.2 rounded border border-teal-600/30 flex items-center gap-0.5">
+                                      <Clock className="w-2.5 h-2.5 text-teal-400" />
                                       {t.durationHours ? `${t.durationHours} hrs` : (t.durationLabel ? getLangText(t.durationLabel, language) : '4 hrs')}
                                     </span>
-                                    <span className="text-[9px] text-emerald-300 font-semibold flex items-center gap-0.5">
-                                      <Leaf className="w-2.5 h-2.5 text-emerald-400" />
+                                    <span className="text-[9px] text-teal-300 font-semibold flex items-center gap-0.5">
+                                      <Leaf className="w-2.5 h-2.5 text-teal-400" />
                                       {getEcoFactForTour(t, language).regionName}
                                     </span>
                                   </div>
@@ -732,18 +744,18 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
                     {/* Urgent Booking Voucher Widget */}
                     {msg.voucher && (
-                      <div className="bg-emerald-950 p-4 rounded-2xl border border-amber-400 space-y-3 shadow-[0_0_15px_rgba(52,211,153,0.3)] mt-2">
-                        <div className="flex items-center justify-between border-b border-emerald-900 pb-2">
-                          <span className="text-[11px] font-black uppercase text-amber-400 flex items-center gap-1.5">
+                      <div className="bg-stone-950 p-4 rounded-2xl border border-orange-400 space-y-3 shadow-[0_0_15px_rgba(52,211,153,0.3)] mt-2">
+                        <div className="flex items-center justify-between border-b border-stone-900 pb-2">
+                          <span className="text-[11px] font-black uppercase text-orange-400 flex items-center gap-1.5">
                             <CheckCircle2 className="w-4 h-4" />
                             {language === 'es' ? 'VOUCHER CONFIRMADO' : 'CONFIRMED VOUCHER'}
                           </span>
-                          <span className="text-[10px] font-mono text-emerald-200 bg-emerald-900/50 px-2 py-0.5 rounded">
+                          <span className="text-[10px] font-mono text-stone-200 bg-stone-900/50 px-2 py-0.5 rounded">
                             {msg.voucher.bookingId}
                           </span>
                         </div>
                         
-                        <div className="space-y-1.5 text-xs text-emerald-100">
+                        <div className="space-y-1.5 text-xs text-stone-100">
                           <p className="flex justify-between">
                             <span className="opacity-70">{language === 'es' ? 'Tour:' : 'Tour:'}</span>
                             <span className="font-bold text-white">{msg.voucher.tourName}</span>
@@ -756,9 +768,9 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                             <span className="opacity-70">{language === 'es' ? 'Pasajeros:' : 'Passengers:'}</span>
                             <span className="font-bold text-white">{msg.voucher.adults} Ad. {msg.voucher.children > 0 && `, ${msg.voucher.children} Ch.`}</span>
                           </p>
-                          <p className="flex justify-between pt-1 border-t border-emerald-900/50 mt-1">
+                          <p className="flex justify-between pt-1 border-t border-stone-900/50 mt-1">
                             <span className="opacity-70">{language === 'es' ? 'Total (Pago en destino):' : 'Total (Pay at destination):'}</span>
-                            <span className="font-black text-amber-400">${msg.voucher.totalUSD} USD</span>
+                            <span className="font-black text-orange-400">${msg.voucher.totalUSD} USD</span>
                           </p>
                         </div>
                       </div>
@@ -766,7 +778,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                   </div>
 
                   {msg.sender === 'user' && (
-                    <div className="w-9 h-9 rounded-full bg-emerald-900 text-neutral-300 font-black flex items-center justify-center text-xs flex-shrink-0 border border-white/10">
+                    <div className="w-9 h-9 rounded-full bg-stone-900 text-neutral-300 font-black flex items-center justify-center text-xs flex-shrink-0 border border-white/10">
                       <User className="w-4 h-4" />
                     </div>
                   )}
@@ -780,8 +792,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 <div className="w-9 h-9 rounded-full bg-teal-600 text-white font-black flex items-center justify-center text-base">
                   {currentAgent.avatarEmoji}
                 </div>
-                <div className="bg-emerald-950 p-3 rounded-2xl border border-white/10 flex items-center gap-2">
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                <div className="bg-stone-950 p-3 rounded-2xl border border-white/10 flex items-center gap-2">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-orange-400" />
                   <span>{getLangText(currentAgent.name, language)} {language === 'es' ? 'está redactando tu respuesta...' : 'is typing response...'}</span>
                 </div>
               </div>
@@ -792,23 +804,23 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
           {/* Active Bookings Context Banner if present */}
           {userBookings.length > 0 && (
-            <div className="bg-emerald-950 px-4 py-1.5 border-t border-white/10 flex items-center justify-between text-[11px]">
-              <span className="text-amber-400 font-bold flex items-center gap-1.5">
-                <Ticket className="w-3.5 h-3.5 text-amber-400" />
+            <div className="bg-stone-950 px-4 py-1.5 border-t border-white/10 flex items-center justify-between text-[11px]">
+              <span className="text-orange-400 font-bold flex items-center gap-1.5">
+                <Ticket className="w-3.5 h-3.5 text-orange-400" />
                 {language === 'es' ? 'Última Reserva:' : 'Latest Booking:'} #{userBookings[0].bookingId} ({userBookings[0].tourName})
               </span>
-              <span className="text-amber-400 font-bold">{userBookings[0].status}</span>
+              <span className="text-orange-400 font-bold">{userBookings[0].status}</span>
             </div>
           )}
 
           {/* Quick Suggested Chips for Current Agent */}
-          <div className="bg-emerald-950 px-4 py-2 border-t border-white/10 flex gap-2 overflow-x-auto scrollbar-none">
+          <div className="bg-stone-950 px-4 py-2 border-t border-white/10 flex gap-2 overflow-x-auto scrollbar-none">
             {currentQuestions.map((q, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSendMessage(q)}
                 disabled={isLoading}
-                className="bg-emerald-950 hover:bg-emerald-900 text-neutral-300 hover:text-amber-400 border border-white/10 text-[11px] font-bold px-3 py-1.5 rounded-full whitespace-nowrap transition-colors flex-shrink-0 cursor-pointer"
+                className="bg-stone-950 hover:bg-stone-900 text-neutral-300 hover:text-orange-400 border border-white/10 text-[11px] font-bold px-3 py-1.5 rounded-full whitespace-nowrap transition-colors flex-shrink-0 cursor-pointer"
               >
                 {q}
               </button>
@@ -817,10 +829,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
           {/* Selected Image Preview */}
           {selectedImage && (
-            <div className="px-4 py-2 bg-emerald-950 border-t border-white/10 flex items-center justify-between">
+            <div className="px-4 py-2 bg-stone-950 border-t border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <img src={selectedImage} alt="Upload preview" className="w-12 h-12 rounded object-cover border border-amber-500/50" />
-                <span className="text-xs text-emerald-200">
+                <img src={selectedImage} alt="Upload preview" className="w-12 h-12 rounded object-cover border border-orange-500/50" />
+                <span className="text-xs text-stone-200">
                   {language === 'es' ? 'Imagen lista para análisis ecológico o de viaje' : 'Image ready for travel/wildlife analysis'}
                 </span>
               </div>
@@ -831,7 +843,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           )}
 
           {/* Input Form */}
-          <div className="p-3 sm:p-4 bg-emerald-950 border-t border-white/10">
+          <div className="p-3 sm:p-4 bg-stone-950 border-t border-white/10">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -850,7 +862,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading}
-                className="flex-shrink-0 w-[48px] h-[48px] flex items-center justify-center rounded-xl border bg-emerald-900 border-white/10 text-amber-400 hover:bg-emerald-800 transition-colors disabled:opacity-50 cursor-pointer"
+                className="flex-shrink-0 w-[48px] h-[48px] flex items-center justify-center rounded-xl border bg-stone-900 border-white/10 text-orange-400 hover:bg-stone-800 transition-colors disabled:opacity-50 cursor-pointer"
                 title={language === 'es' ? 'Subir Foto de Fauna/Ruta' : 'Upload Wildlife/Route Photo'}
               >
                 <ImageIcon className="w-5 h-5" />
@@ -862,7 +874,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 className={`flex-shrink-0 w-[48px] h-[48px] flex items-center justify-center rounded-xl border transition-all cursor-pointer ${
                   isRecording 
                     ? 'bg-red-500/20 text-red-400 border-red-500/50 animate-pulse' 
-                    : 'bg-emerald-900 border-white/10 text-amber-400 hover:bg-emerald-800'
+                    : 'bg-stone-900 border-white/10 text-orange-400 hover:bg-stone-800'
                 }`}
                 title={isRecording ? 'Detener grabación' : 'Grabar audio por voz'}
               >
@@ -878,7 +890,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                     : `Ask ${getLangText(currentAgent.name, language)}...`
                 }
                 disabled={isLoading || isRecording}
-                className="flex-1 bg-emerald-950 border border-white/10 focus:border-amber-400 text-white px-4 py-3 rounded-xl text-base focus:outline-none placeholder-amber-300/40"
+                className="flex-1 bg-stone-950 border border-white/10 focus:border-orange-400 text-white px-4 py-3 rounded-xl text-base focus:outline-none placeholder-orange-300/40"
               />
               <button
                 type="submit"
@@ -897,11 +909,11 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         <div className="pt-4 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-              <Bot className="w-5 h-5 text-amber-400" />
+              <Bot className="w-5 h-5 text-orange-400" />
               {language === 'es' ? 'Equipo de Asesores & Flujos IA de Costa Rica' : 'Costa Rica AI Advisory & Workflow Team'}
             </h3>
             <span className="text-xs text-neutral-300 font-bold">
-              {language === 'es' ? '8 especialistas para cada etapa del viaje' : '8 specialists for every stage of your journey'}
+              {language === 'es' ? 'Procesamiento automático de tus solicitudes en backend' : 'Automatic processing of your requests in the backend'}
             </span>
           </div>
 
@@ -919,27 +931,27 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                   key={agent.id}
                   className={`p-4 rounded-2xl border transition-all flex flex-col justify-between ${
                     isCurrent 
-                      ? 'bg-emerald-900/80 border-amber-400 shadow-lg ring-1 ring-amber-400/40' 
-                      : 'bg-emerald-950/80 hover:bg-emerald-900/50 border-white/10'
+                      ? 'bg-stone-900/80 border-orange-400 shadow-lg ring-1 ring-orange-400/40' 
+                      : 'bg-stone-950/80 hover:bg-stone-900/50 border-white/10'
                   }`}
                 >
                   <div className="space-y-2.5">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2.5">
-                        <span className="text-3xl p-1.5 bg-emerald-900 rounded-xl border border-white/10 shadow-sm">
+                        <span className="text-3xl p-1.5 bg-stone-900 rounded-xl border border-white/10 shadow-sm">
                           {agent.avatarEmoji}
                         </span>
                         <div>
                           <h4 className="font-black text-white text-sm">
                             {agentName}
                           </h4>
-                          <span className="text-[10px] font-bold text-amber-400">
+                          <span className="text-[10px] font-bold text-orange-400">
                             {agentBadge}
                           </span>
                         </div>
                       </div>
                       {isCurrent && (
-                        <span className="text-[10px] bg-amber-400 text-emerald-950 font-black px-2 py-0.5 rounded-full uppercase">
+                        <span className="text-[10px] bg-orange-400 text-stone-950 font-black px-2 py-0.5 rounded-full uppercase">
                           {language === 'es' ? 'En Uso' : 'Active'}
                         </span>
                       )}
@@ -952,13 +964,13 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                     {/* Workflow steps micro-list */}
                     {workflowSteps.length > 0 && (
                       <div className="pt-2 border-t border-white/5 space-y-1">
-                        <span className="text-[9px] font-black uppercase text-amber-400/90 tracking-wider block">
+                        <span className="text-[9px] font-black uppercase text-orange-400/90 tracking-wider block">
                           {language === 'es' ? 'Flujo de trabajo:' : 'Workflow:'}
                         </span>
                         <div className="space-y-0.5">
                           {workflowSteps.slice(0, 3).map((step, sIdx) => (
                             <div key={sIdx} className="text-[10px] text-neutral-400 flex items-center gap-1.5 line-clamp-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/60 shrink-0"></span>
+                              <span className="w-1.5 h-1.5 rounded-full bg-teal-400/60 shrink-0"></span>
                               <span className="truncate">{step}</span>
                             </div>
                           ))}
@@ -968,15 +980,15 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                   </div>
 
                   <div className="pt-3 mt-3 border-t border-white/10 flex items-center justify-between">
-                    <span className="text-[10px] text-emerald-300 font-semibold truncate max-w-[110px]">
+                    <span className="text-[10px] text-teal-300 font-semibold truncate max-w-[110px]">
                       {getLangText(agent.specialtyTags, language, [])[0]}
                     </span>
                     <button
                       onClick={() => handleSelectAgent(agent.id)}
                       className={`text-xs font-black uppercase px-3 py-1.5 rounded-xl flex items-center gap-1 transition-all cursor-pointer ${
                         isCurrent
-                          ? 'bg-amber-400 text-emerald-950 shadow-sm'
-                          : 'bg-emerald-800 hover:bg-emerald-700 text-white border border-emerald-600/50'
+                          ? 'bg-orange-400 text-stone-950 shadow-sm'
+                          : 'bg-stone-800 hover:bg-teal-700 text-white border border-teal-600/50'
                       }`}
                     >
                       <span>{isCurrent ? (language === 'es' ? 'Agente Activo' : 'Active Agent') : (language === 'es' ? 'Consultar' : 'Consult')}</span>

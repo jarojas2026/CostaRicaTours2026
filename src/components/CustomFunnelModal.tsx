@@ -267,20 +267,20 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-emerald-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-stone-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
       <div className="bg-white w-full max-w-3xl rounded-[2.5rem] border border-neutral-200 shadow-2xl overflow-hidden flex flex-col my-auto max-h-[90vh]">
         
         {/* Header */}
-        <div className="bg-emerald-900 text-white p-6 relative flex items-center justify-between">
+        <div className="bg-stone-900 text-white p-6 relative flex items-center justify-between">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="bg-amber-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full inline-flex items-center gap-1 shadow-sm">
+              <span className="bg-orange-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full inline-flex items-center gap-1 shadow-sm">
                 <Sparkles className="w-3 h-3" />
                 {language === 'es' ? 'Cotizador Inteligente 2026' : 'Smart Trip Package Builder 2026'}
               </span>
               {lastSavedTime && (
-                <span className="bg-emerald-800 text-emerald-200 text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 border border-emerald-700">
-                  <Save className="w-2.5 h-2.5 text-emerald-400" />
+                <span className="bg-stone-800 text-stone-200 text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 border border-teal-700">
+                  <Save className="w-2.5 h-2.5 text-teal-400" />
                   <span>{language === 'es' ? `Guardado (${lastSavedTime})` : `Draft saved (${lastSavedTime})`}</span>
                 </span>
               )}
@@ -288,7 +288,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
             <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight">
               {language === 'es' ? 'Diseña Tu Paquete a Costa Rica' : 'Build Your Custom Costa Rica Package'}
             </h2>
-            <p className="text-xs text-emerald-200">
+            <p className="text-xs text-stone-200">
               {language === 'es' ? 'Paso ' + step + ' de 4 • Cotización personalizada al instante' : 'Step ' + step + ' of 4 • Instant tailored quote'}
             </p>
           </div>
@@ -303,9 +303,9 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
 
         {/* Restored Draft & Offline Notifications */}
         {hasRestoredDraft && (
-          <div className="bg-emerald-50 border-b border-emerald-200 px-6 py-2.5 text-xs text-emerald-900 flex items-center justify-between">
+          <div className="bg-stone-50 border-b border-stone-200 px-6 py-2.5 text-xs text-stone-900 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+              <Sparkles className="w-4 h-4 text-teal-600 shrink-0" />
               <span>{language === 'es' ? 'Se recuperó tu cotización personalizada guardada.' : 'Restored your previous customized quote draft.'}</span>
             </div>
             <button
@@ -319,7 +319,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
         )}
 
         {!isOnline && (
-          <div className="bg-amber-50 border-b border-amber-200 px-6 py-2 text-xs text-amber-900 font-medium flex items-center gap-2">
+          <div className="bg-amber-50 border-b border-orange-200 px-6 py-2 text-xs text-amber-900 font-medium flex items-center gap-2">
             <WifiOff className="w-4 h-4 text-amber-600 shrink-0" />
             <span>{language === 'es' ? 'Sin conexión a internet — Tu progreso se guarda automáticamente en este dispositivo.' : 'No connection — Your progress is saved automatically on this device.'}</span>
           </div>
@@ -328,7 +328,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
         {/* Progress Bar */}
         <div className="bg-neutral-100 h-2 w-full flex">
           <div 
-            className="bg-amber-500 h-full transition-all duration-300"
+            className="bg-orange-500 h-full transition-all duration-300"
             style={{ width: `${(step / 4) * 100}%` }}
           />
         </div>
@@ -340,7 +340,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
           {step === 1 && (
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="space-y-1">
-                <h3 className="text-lg font-black text-emerald-950 uppercase flex items-center gap-2">
+                <h3 className="text-lg font-black text-stone-950 uppercase flex items-center gap-2">
                   <Plane className="w-5 h-5 text-teal-600" />
                   {language === 'es' ? '1. Llegada y Pasajeros' : '1. Arrival & Travelers'}
                 </h3>
@@ -355,12 +355,12 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
                   onClick={() => setArrivalAirport('SJO')}
                   className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-3 ${
                     arrivalAirport === 'SJO'
-                      ? 'border-amber-500 bg-emerald-50/50 shadow-sm'
+                      ? 'border-orange-500 bg-stone-50/50 shadow-sm'
                       : 'border-neutral-200 bg-white hover:border-neutral-300'
                   }`}
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black ${
-                    arrivalAirport === 'SJO' ? 'bg-amber-500 text-white' : 'bg-neutral-100 text-neutral-600'
+                    arrivalAirport === 'SJO' ? 'bg-orange-500 text-white' : 'bg-neutral-100 text-neutral-600'
                   }`}>
                     SJO
                   </div>
@@ -376,12 +376,12 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
                   onClick={() => setArrivalAirport('LIR')}
                   className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-3 ${
                     arrivalAirport === 'LIR'
-                      ? 'border-amber-500 bg-emerald-50/50 shadow-sm'
+                      ? 'border-orange-500 bg-stone-50/50 shadow-sm'
                       : 'border-neutral-200 bg-white hover:border-neutral-300'
                   }`}
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black ${
-                    arrivalAirport === 'LIR' ? 'bg-amber-500 text-white' : 'bg-neutral-100 text-neutral-600'
+                    arrivalAirport === 'LIR' ? 'bg-orange-500 text-white' : 'bg-neutral-100 text-neutral-600'
                   }`}>
                     LIR
                   </div>
@@ -445,7 +445,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
           {step === 2 && (
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="space-y-1">
-                <h3 className="text-lg font-black text-emerald-950 uppercase flex items-center gap-2">
+                <h3 className="text-lg font-black text-stone-950 uppercase flex items-center gap-2">
                   <Bus className="w-5 h-5 text-teal-600" />
                   {language === 'es' ? '2. Estilo de Transporte' : '2. Transport Style'}
                 </h3>
@@ -466,7 +466,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
                     onClick={() => setTransportType(opt.id as any)}
                     className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
                       transportType === opt.id
-                        ? 'border-amber-500 bg-emerald-50/50 shadow-sm'
+                        ? 'border-orange-500 bg-stone-50/50 shadow-sm'
                         : 'border-neutral-200 bg-white hover:border-neutral-300'
                     }`}
                   >
@@ -487,7 +487,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
           {step === 3 && (
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="space-y-1">
-                <h3 className="text-lg font-black text-emerald-950 uppercase flex items-center gap-2">
+                <h3 className="text-lg font-black text-stone-950 uppercase flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-teal-600" />
                   {language === 'es' ? '3. Destinos & Hospedaje' : '3. Destinations & Stay'}
                 </h3>
@@ -515,7 +515,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
                       className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
                         isSelected
                           ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
-                          : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:border-amber-500'
+                          : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:border-orange-500'
                       }`}
                     >
                       {isSelected ? <Check className="w-3.5 h-3.5 text-white" /> : <Compass className="w-3.5 h-3.5 text-neutral-400" />}
@@ -541,7 +541,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
                       onClick={() => setStayStyle(st.id as any)}
                       className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                         stayStyle === st.id
-                          ? 'border-amber-500 bg-emerald-50 text-emerald-950 shadow-sm'
+                          ? 'border-orange-500 bg-stone-50 text-stone-950 shadow-sm'
                           : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
                       }`}
                     >
@@ -558,7 +558,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
           {step === 4 && (
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="space-y-1">
-                <h3 className="text-lg font-black text-emerald-950 uppercase flex items-center gap-2">
+                <h3 className="text-lg font-black text-stone-950 uppercase flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-teal-600" />
                   {language === 'es' ? '4. Ventajas Incluidas & Cotización' : '4. Included Perks & Instant Quote'}
                 </h3>
@@ -581,43 +581,43 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
                       type="checkbox"
                       checked={item.state}
                       onChange={(e) => item.set(e.target.checked)}
-                      className="w-5 h-5 accent-amber-500 cursor-pointer"
+                      className="w-5 h-5 accent-orange-500 cursor-pointer"
                     />
                   </div>
                 ))}
               </div>
 
               {/* Estimate Result Box */}
-              <div className="bg-gradient-to-br from-emerald-900 to-emerald-950 p-6 rounded-3xl text-white space-y-4 shadow-xl border border-emerald-900/50">
+              <div className="bg-gradient-to-br from-stone-900 to-stone-950 p-6 rounded-3xl text-white space-y-4 shadow-xl border border-stone-900/50">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-4">
                   <div>
-                    <span className="text-xs uppercase tracking-wider font-extrabold text-amber-300 block">
+                    <span className="text-xs uppercase tracking-wider font-extrabold text-orange-300 block">
                       {language === 'es' ? 'Estimado Total Paquete Completo' : 'Total Custom Package Estimate'}
                     </span>
-                    <span className="text-xs text-emerald-200/80">
+                    <span className="text-xs text-stone-200/80">
                       {adults} {language === 'es' ? 'Adultos' : 'Adults'} {children > 0 && `+ ${children} ${language === 'es' ? 'Niños' : 'Kids'}`} • {durationDays} {language === 'es' ? 'Días' : 'Days'}
                     </span>
                   </div>
                   <div className="text-right">
-                    <div className="text-3xl font-black text-amber-400">
+                    <div className="text-3xl font-black text-orange-400">
                       ${totalUSD} <span className="text-sm font-bold text-white">USD</span>
                     </div>
-                    <div className="text-xs text-amber-300 font-mono">
+                    <div className="text-xs text-orange-300 font-mono">
                       ≈ {formatCurrency(totalUSD, 'CRC')} CRC
                     </div>
                     {isGroupDiscount && (
-                      <div className="text-[10px] text-amber-400 font-bold uppercase mt-1">
+                      <div className="text-[10px] text-orange-400 font-bold uppercase mt-1">
                         🎁 {language === 'es' ? '10% Descuento Grupo Aplicado' : '10% Group Discount'}
                       </div>
                     )}
-                    <div className="text-[9px] text-emerald-200 mt-1 uppercase font-bold">
+                    <div className="text-[9px] text-stone-200 mt-1 uppercase font-bold">
                       {language === 'es' ? 'Incluye IVA (13%) y tarifas locales' : 'Includes 13% VAT & fees'}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs text-emerald-100 bg-white/10 p-3 rounded-2xl border border-white/10">
-                  <CheckCircle2 className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                <div className="flex items-center gap-2 text-xs text-stone-100 bg-white/10 p-3 rounded-2xl border border-white/10">
+                  <CheckCircle2 className="w-4 h-4 text-orange-400 flex-shrink-0" />
                   <span>
                     {language === 'es' 
                       ? 'Sin costo inicial. Envía tus datos por WhatsApp para verificar disponibilidad de hoteles y transporte.' 
@@ -645,7 +645,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
           {step < 4 ? (
             <button
               onClick={() => setStep(step + 1)}
-              className="px-6 py-2.5 rounded-full bg-amber-500 hover:bg-teal-600 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all hover:scale-105 cursor-pointer ml-auto"
+              className="px-6 py-2.5 rounded-full bg-orange-500 hover:bg-teal-600 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-orange-500/20 transition-all hover:scale-105 cursor-pointer ml-auto"
             >
               <span>{language === 'es' ? 'Siguiente Paso' : 'Next Step'}</span>
               <ChevronRight className="w-4 h-4" />
@@ -653,7 +653,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
           ) : (
             <button
               onClick={handleSendWhatsApp}
-              className="w-full sm:w-auto px-8 py-3 rounded-full bg-amber-500 hover:bg-teal-600 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-105 cursor-pointer ml-auto"
+              className="w-full sm:w-auto px-8 py-3 rounded-full bg-orange-500 hover:bg-teal-600 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 transition-all hover:scale-105 cursor-pointer ml-auto"
             >
               <MessageCircle className="w-4 h-4 fill-white" />
               <span>{language === 'es' ? 'Reservar / Consultar por WhatsApp' : 'Reserve / Inquire via WhatsApp'}</span>

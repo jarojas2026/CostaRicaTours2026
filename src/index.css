@@ -21,20 +21,30 @@
   }
 }
 
-/* Custom Scrollbar */
+/* Subtle & Transparent Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #F4F7F5;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1E7B4A;
+  background: rgba(100, 116, 139, 0.3);
   border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #0B668F;
+  background: rgba(100, 116, 139, 0.6);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.4) transparent;
 }
 
 /* Glassmorphism & Panel Utilities */
@@ -64,19 +74,7 @@
 .modal-scrollable {
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #1E7B4A #F4F7F5;
 }
-.modal-scrollable::-webkit-scrollbar {
-  width: 8px;
-}
-.modal-scrollable::-webkit-scrollbar-track {
-  background: #F4F7F5;
-}
-.modal-scrollable::-webkit-scrollbar-thumb {
-  background: #1E7B4A;
-  border-radius: 9999px;
-}
-
 /* Keyframes for slow ambient animations */
 @keyframes pulseGlow {
   0%, 100% { opacity: 0.4; transform: scale(1); }

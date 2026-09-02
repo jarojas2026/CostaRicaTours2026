@@ -60,7 +60,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
           icon: <CreditCard className="w-3.5 h-3.5" />,
           label: language === 'es' ? 'Tarjeta de Crédito / Débito' : 'Credit / Debit Card',
           status: language === 'es' ? 'Pagado (Confirmado)' : 'Paid (Confirmed)',
-          color: 'bg-emerald-100 text-emerald-900 border-emerald-300'
+          color: 'bg-stone-100 text-stone-900 border-teal-300'
         };
       case 'sinpe_movil':
         return {
@@ -76,7 +76,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
           icon: <Banknote className="w-3.5 h-3.5" />,
           label: language === 'es' ? 'Pago al Abordar (Efectivo/Tarjeta)' : 'Pay at Pickup (Cash/Card)',
           status: language === 'es' ? 'Garantizado ($0 ahora)' : 'Guaranteed ($0 now)',
-          color: 'bg-amber-100 text-amber-900 border-amber-300'
+          color: 'bg-amber-100 text-amber-900 border-orange-300'
         };
       case 'paypal':
         return {
@@ -90,7 +90,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
           icon: <Check className="w-3.5 h-3.5" />,
           label: language === 'es' ? 'Confirmado' : 'Confirmed',
           status: language === 'es' ? 'Garantizado' : 'Guaranteed',
-          color: 'bg-emerald-100 text-emerald-900 border-emerald-300'
+          color: 'bg-stone-100 text-stone-900 border-teal-300'
         };
     }
   };
@@ -321,11 +321,11 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
         <div className="overflow-y-auto p-5 sm:p-7 custom-scrollbar w-full flex-1 space-y-5">
           {/* Header */}
           <div className="text-center space-y-2 pb-4 border-b border-[#2D663B]/40">
-            <div className="w-14 h-14 bg-gradient-to-tr from-[#1E4D2B] to-[#488257] rounded-full mx-auto flex items-center justify-center text-amber-300 border-2 border-amber-300/40 shadow-lg animate-bounce">
+            <div className="w-14 h-14 bg-gradient-to-tr from-[#1E4D2B] to-[#488257] rounded-full mx-auto flex items-center justify-center text-orange-300 border-2 border-orange-300/40 shadow-lg animate-bounce">
               <CheckCircle2 className="w-8 h-8" />
             </div>
 
-            <span className="text-[10px] font-black uppercase tracking-widest text-amber-300 block">
+            <span className="text-[10px] font-black uppercase tracking-widest text-orange-300 block">
               {language === 'es' ? '¡Reserva Confirmada y Garantizada!' : 'Booking Confirmed & Guaranteed!'}
             </span>
 
@@ -334,7 +334,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
             </h2>
 
             <div className="inline-block bg-[#0C1E14]/90 text-[#F5EEDC] px-4 py-1 rounded-full font-mono font-bold text-xs border border-[#2D663B]/60">
-              Código: <span className="text-amber-300">{booking.bookingId}</span>
+              Código: <span className="text-orange-300">{booking.bookingId}</span>
             </div>
           </div>
 
@@ -346,17 +346,17 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-stone-300">
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-amber-400 shrink-0" />
+                <Calendar className="w-4 h-4 text-orange-400 shrink-0" />
                 <span><strong className="text-stone-400">{language === 'es' ? 'Fecha:' : 'Date:'}</strong> {booking.date}</span>
               </div>
 
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                <Clock className="w-4 h-4 text-orange-400 shrink-0" />
                 <span><strong className="text-stone-400">{language === 'es' ? 'Horario:' : 'Time:'}</strong> {booking.time}</span>
               </div>
 
               <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-amber-400 shrink-0" />
+                <Users className="w-4 h-4 text-orange-400 shrink-0" />
                 <span>
                   <strong className="text-stone-400">{language === 'es' ? 'Pasajeros:' : 'Travelers:'}</strong> {booking.adults} {language === 'es' ? 'Adultos' : 'Adults'}
                   {booking.children > 0 && `, ${booking.children} ${language === 'es' ? 'Niños' : 'Kids'}`}
@@ -364,7 +364,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
               </div>
 
               <div className="flex items-center gap-2">
-                <Hotel className="w-4 h-4 text-amber-400 shrink-0" />
+                <Hotel className="w-4 h-4 text-orange-400 shrink-0" />
                 <span className="line-clamp-1">
                   <strong className="text-stone-400">Pickup:</strong> {booking.pickupHotel}
                 </span>
@@ -460,7 +460,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
 
           {/* Arrival Instructions */}
           <div className="bg-[#173D26] p-3.5 rounded-xl border border-[#2D663B] text-xs text-stone-200 space-y-1">
-            <span className="font-bold text-amber-300 block uppercase text-[11px] flex items-center gap-1.5">
+            <span className="font-bold text-orange-300 block uppercase text-[11px] flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5" />
               {language === 'es' ? 'Instrucciones de Recogida (Pickup):' : 'Pickup Instructions:'}
             </span>
@@ -480,9 +480,9 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
                 className="bg-[#1E4D2B] hover:bg-[#14391F] disabled:opacity-70 text-[#FAF8F5] border border-[#3E6D4B] font-bold text-xs uppercase py-3 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-md"
               >
                 {isGeneratingPDF ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-amber-300" />
+                  <Loader2 className="w-4 h-4 animate-spin text-orange-300" />
                 ) : (
-                  <Printer className="w-4 h-4 text-amber-300" />
+                  <Printer className="w-4 h-4 text-orange-300" />
                 )}
                 <span>{isGeneratingPDF ? (language === 'es' ? 'Generando...' : 'Generating...') : (language === 'es' ? 'Descargar Voucher PDF' : 'Download PDF Voucher')}</span>
               </button>

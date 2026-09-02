@@ -69,6 +69,19 @@ export default function App() {
 
   
   
+  
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const bookingStatus = params.get('booking');
+    if (bookingStatus === 'success') {
+      setTimeout(() => alert(language === 'es' ? '¡Pago exitoso con Stripe! Tu reserva está confirmada. Pura Vida.' : 'Stripe payment successful! Your booking is confirmed. Pura Vida.'), 500);
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (bookingStatus === 'canceled') {
+      setTimeout(() => alert(language === 'es' ? 'Pago cancelado. Puedes intentar de nuevo.' : 'Payment canceled. You can try again.'), 500);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [language]);
+
   const [ratesLoaded, setRatesLoaded] = useState(false);
   useEffect(() => {
     fetchExchangeRates().then(() => setRatesLoaded(true));
@@ -182,7 +195,7 @@ export default function App() {
   }, [activeTab]);
 
   return (
-    <div className="min-h-screen bg-emerald-950 text-neutral-100 flex flex-col font-sans selection:bg-amber-500 selection:text-white relative pb-16 xl:pb-0">
+    <div className="min-h-screen bg-stone-950 text-neutral-100 flex flex-col font-sans selection:bg-orange-500 selection:text-white relative pb-16 xl:pb-0">
       <AmbientBackground />
       {/* Top Header Navigation */}
       <Header
@@ -200,27 +213,27 @@ export default function App() {
       />
 
       {/* Main Content Areas based on activeTab */}
-      <main className="flex-1 space-y-0 pb-20 xl:pb-0">
+      <main className="flex-1 space-y-0 pb-24 xl:pb-0">
         
         {/* Dynamic Breadcrumbs & Quick Return Bar for Sub-pages */}
         {activeTab !== 'home' && (
-          <div className="bg-emerald-900/60 border-b border-emerald-500/20 py-2.5 px-4 sm:px-6 lg:px-8">
+          <div className="bg-stone-900/60 border-b border-teal-500/20 py-2.5 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
               {/* Breadcrumb path */}
-              <div className="flex items-center gap-2 text-emerald-200">
+              <div className="flex items-center gap-2 text-stone-200">
                 <button
                   onClick={() => setActiveTab('home')}
-                  className="flex items-center gap-1 hover:text-amber-400 font-bold transition-colors cursor-pointer"
+                  className="flex items-center gap-1 hover:text-orange-400 font-bold transition-colors cursor-pointer"
                 >
                   <Home className="w-3.5 h-3.5" />
                   <span>{language === 'es' ? 'Inicio' : 'Home'}</span>
                 </button>
                 <ChevronRight className="w-3.5 h-3.5 opacity-50" />
-                <span className="font-black text-amber-400 flex items-center gap-1.5">
+                <span className="font-black text-orange-400 flex items-center gap-1.5">
                   {activeTab === 'tours' && `🧭 ${language === 'es' ? 'Catálogo de Tours y Aventuras' : 'Tours & Adventures Catalog'}`}
                   {activeTab === 'flights' && `✈️ ${language === 'es' ? 'Rastreador en Vivo & Reserva de Vuelos a Costa Rica' : 'Live Flight Radar & Booking to Costa Rica'}`}
                   {activeTab === 'map' && `🗺️ ${language === 'es' ? 'Mapa Interactivo de Costa Rica' : 'Interactive Map of Costa Rica'}`}
-                  {activeTab === 'ai' && `🤖 ${language === 'es' ? 'Ecosistema de 8 Agentes IA Especializados' : '8 Specialized AI Agents Hub'}`}
+                  {activeTab === 'ai' && `🤖 ${language === 'es' ? 'Motor Inteligente & Flujos n8n' : 'AI Engine & n8n Workflows'}`}
                   {activeTab === 'itinerary' && `✨ ${language === 'es' ? 'Planificador Inteligente de Itinerarios' : 'AI Trip Planner'}`}
                   {activeTab === 'culture' && `🇨🇷 ${language === 'es' ? 'Rincón Tico: Cultura, Comida y Café' : 'Tico Culture & Slang'}`}
                   {activeTab === 'tools' && `🚐 ${language === 'es' ? 'Transporte, Shuttles & Buses' : 'Transport & Shuttles'}`}
@@ -231,7 +244,7 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setActiveTab('home')}
-                  className="flex items-center gap-1 text-[11px] font-bold bg-emerald-950 hover:bg-emerald-800 text-emerald-200 hover:text-white px-3 py-1 rounded-full border border-emerald-500/30 transition-colors cursor-pointer"
+                  className="flex items-center gap-1 text-[11px] font-bold bg-stone-950 hover:bg-stone-800 text-stone-200 hover:text-white px-3 py-1 rounded-full border border-teal-500/30 transition-colors cursor-pointer"
                 >
                   <ArrowLeft className="w-3 h-3" />
                   <span>{language === 'es' ? 'Volver al Inicio' : 'Back to Home'}</span>
@@ -240,7 +253,7 @@ export default function App() {
                 {activeTab !== 'tours' && (
                   <button
                     onClick={() => setActiveTab('tours')}
-                    className="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-emerald-950 hover:bg-emerald-800 text-amber-300 hover:text-amber-200 px-3 py-1 rounded-full border border-emerald-500/30 transition-colors cursor-pointer"
+                    className="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-stone-950 hover:bg-stone-800 text-orange-300 hover:text-orange-200 px-3 py-1 rounded-full border border-teal-500/30 transition-colors cursor-pointer"
                   >
                     <span>{language === 'es' ? 'Ver Tours (+20)' : 'View Tours (20+)'}</span>
                   </button>
@@ -249,9 +262,9 @@ export default function App() {
                 {activeTab !== 'flights' && (
                   <button
                     onClick={() => setActiveTab('flights')}
-                    className="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-emerald-950 hover:bg-emerald-800 text-amber-300 hover:text-amber-200 px-3 py-1 rounded-full border border-emerald-500/30 transition-colors cursor-pointer"
+                    className="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-stone-950 hover:bg-stone-800 text-orange-300 hover:text-orange-200 px-3 py-1 rounded-full border border-teal-500/30 transition-colors cursor-pointer"
                   >
-                    <Plane className="w-3 h-3 text-amber-400" />
+                    <Plane className="w-3 h-3 text-orange-400" />
                     <span>{language === 'es' ? 'Vuelos' : 'Flights'}</span>
                   </button>
                 )}
@@ -259,7 +272,7 @@ export default function App() {
                 {activeTab !== 'ai' && (
                   <button
                     onClick={() => setActiveTab('ai')}
-                    className="hidden md:flex items-center gap-1 text-[11px] font-black bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-emerald-950 px-3 py-1 rounded-full border border-amber-500/40 transition-colors cursor-pointer"
+                    className="hidden md:flex items-center gap-1 text-[11px] font-black bg-orange-500/20 text-orange-300 hover:bg-orange-500 hover:text-stone-950 px-3 py-1 rounded-full border border-orange-500/40 transition-colors cursor-pointer"
                   >
                     <span>🤖 {language === 'es' ? 'Consultar 8 Agentes IA' : 'Ask 8 AI Agents'}</span>
                   </button>
@@ -292,7 +305,6 @@ export default function App() {
               }}
               onOpenCustomFunnel={() => setIsCustomFunnelOpen(true)}
             />
-
             {/* Quick Navigation Hub & Curated Highlights */}
             <HomeQuickNav
               language={language}
@@ -310,43 +322,6 @@ export default function App() {
               onOpenCustomFunnel={() => setIsCustomFunnelOpen(true)}
             />
 
-            {/* Live Flight Radar & Airport Transfers Gadget */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <FlightTrackerGadget
-                language={language}
-                currency={currency}
-                onBookingSuccess={handleBookingSuccess}
-                onAskAI={(prompt) => {
-                  setActiveTab('ai');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-              />
-            </div>
-
-            {/* Live Google-Grounded Tourist Intelligence */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <LiveTouristIntelligence
-                language={language}
-                onAskAgent={(q) => {
-                  setActiveTab('ai');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-              />
-            </div>
-
-            {/* Destinations Carousel */}
-            <DestinationsCarousel 
-              language={language}
-              onSelectRegion={(reg) => {
-                setSelectedRegion(reg);
-                setActiveTab('tours');
-                setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
-              }}
-            />
-
-            {/* Marketplace Vision & Story */}
-            <OurStory language={language} />
-
           </div>
         )}
 
@@ -354,6 +329,7 @@ export default function App() {
         {activeTab === 'flights' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
             <FlightTrackerGadget
+                onBack={() => setActiveTab("home")}
               standalone
               language={language}
               currency={currency}
@@ -377,7 +353,7 @@ export default function App() {
         {/* Tab: Authentic Costa Rican Culture (Rincón Tico) */}
         {activeTab === 'culture' && (
           <div className="py-8">
-            <TicoCultureSection language={language} />
+            <TicoCultureSection language={language} onBack={() => setActiveTab('home')} onExploreTours={() => setActiveTab('tours')} />
           </div>
         )}
 
@@ -387,6 +363,7 @@ export default function App() {
             {/* Live Flight Radar & Airport Transfers Gadget */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <FlightTrackerGadget
+                onBack={() => setActiveTab("home")}
                 language={language}
                 currency={currency}
                 onBookingSuccess={handleBookingSuccess}
@@ -438,6 +415,7 @@ export default function App() {
             {/* Filter Bar & Tour Catalog Grid */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 pb-12">
               <ToursGrid
+                onBack={() => setActiveTab("home")}
                 tours={filteredTours}
                 language={language}
                 currency={currency}
@@ -485,6 +463,7 @@ export default function App() {
         {activeTab === 'ai' && (
           <div className="space-y-8 pb-12">
             <AIAssistant
+                onBack={() => setActiveTab("home")}
               language={language}
               onSelectTour={(t) => setSelectedTour(t)}
               userBookings={myBookings}
@@ -509,6 +488,7 @@ export default function App() {
         {activeTab === 'itinerary' && (
           <div>
             <ItineraryPlanner
+                onBack={() => setActiveTab("home")}
               language={language}
               onSelectTour={(t) => setSelectedTour(t)}
             />

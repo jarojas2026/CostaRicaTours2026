@@ -141,13 +141,13 @@ export const FormsManagerModal: React.FC<FormsManagerModalProps> = ({ isOpen, on
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-neutral-900 border border-amber-500/30 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+      <div className="bg-neutral-900 border border-orange-500/30 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
         
         {/* Header */}
-        <div className="p-4 sm:p-6 bg-gradient-to-r from-emerald-950 to-neutral-900 flex items-center justify-between border-b border-white/10 shrink-0">
+        <div className="p-4 sm:p-6 bg-gradient-to-r from-stone-950 to-neutral-900 flex items-center justify-between border-b border-white/10 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center border border-amber-500/30">
-              <FileText className="w-5 h-5 text-amber-400" />
+            <div className="w-10 h-10 bg-orange-500/20 rounded-xl flex items-center justify-center border border-orange-500/30">
+              <FileText className="w-5 h-5 text-orange-400" />
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-wider">
@@ -173,7 +173,7 @@ export const FormsManagerModal: React.FC<FormsManagerModalProps> = ({ isOpen, on
               <button
                 onClick={fetchForms}
                 disabled={loading}
-                className="p-2 text-amber-400 hover:bg-amber-400/10 rounded-full transition-colors disabled:opacity-50"
+                className="p-2 text-orange-400 hover:bg-orange-400/10 rounded-full transition-colors disabled:opacity-50"
                 title={language === 'es' ? 'Actualizar' : 'Refresh'}
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -181,7 +181,7 @@ export const FormsManagerModal: React.FC<FormsManagerModalProps> = ({ isOpen, on
               <button
                 onClick={handleCreateForm}
                 disabled={creating}
-                className="flex items-center gap-2 bg-amber-500 hover:bg-teal-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 bg-orange-500 hover:bg-teal-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
               >
                 {creating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 {language === 'es' ? 'Crear Formulario de Feedback' : 'Create Feedback Form'}
@@ -197,7 +197,7 @@ export const FormsManagerModal: React.FC<FormsManagerModalProps> = ({ isOpen, on
 
           {loading && !forms.length ? (
             <div className="py-12 flex justify-center">
-              <RefreshCw className="w-8 h-8 text-amber-500 animate-spin" />
+              <RefreshCw className="w-8 h-8 text-orange-500 animate-spin" />
             </div>
           ) : forms.length === 0 ? (
             <div className="py-12 text-center text-neutral-500 text-sm border-2 border-dashed border-neutral-800 rounded-xl">
@@ -206,7 +206,7 @@ export const FormsManagerModal: React.FC<FormsManagerModalProps> = ({ isOpen, on
           ) : (
             <div className="grid gap-3">
               {forms.map(form => (
-                <div key={form.id} className="bg-neutral-800/50 border border-neutral-700/50 p-4 rounded-xl flex items-center justify-between group hover:border-amber-500/30 transition-colors">
+                <div key={form.id} className="bg-neutral-800/50 border border-neutral-700/50 p-4 rounded-xl flex items-center justify-between group hover:border-orange-500/30 transition-colors">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-8 h-8 bg-purple-500/20 text-purple-400 rounded-lg flex items-center justify-center shrink-0">
                       <FileText className="w-4 h-4" />

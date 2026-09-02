@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 
 export const useNatureSounds = (isOpen: boolean) => {
   const [isMuted, setIsMuted] = useState(false);
@@ -21,7 +21,6 @@ export const useNatureSounds = (isOpen: boolean) => {
           gainNodeRef.current = audioCtxRef.current.createGain();
           gainNodeRef.current.connect(audioCtxRef.current.destination);
         }
-
         if (audioCtxRef.current.state === 'suspended') {
           audioCtxRef.current.resume();
         }
@@ -43,6 +42,7 @@ export const useNatureSounds = (isOpen: boolean) => {
         for (let i = 0; i < bufferSize; i++) {
           output[i] = Math.random() * 2 - 1;
         }
+
         const noiseSource = ctx.createBufferSource();
         noiseSource.buffer = noiseBuffer;
         noiseSource.loop = true;
@@ -113,7 +113,6 @@ export const useNatureSounds = (isOpen: boolean) => {
             }, 1000);
           }
         };
-
       } catch (e) {
         console.error("Audio context initialization failed:", e);
       }
@@ -135,5 +134,36 @@ export const useNatureSounds = (isOpen: boolean) => {
     };
   }, []);
 
-  return { isMuted, setIsMuted };
+  const playNotification = useCallback(() => {
+    if (isMuted) return;
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      
+      const ctx = new AudioContextClass();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      // Tropical water drop / hollow wood block sound (Costa Rican nature vibe)
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(900, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.1);
+      
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.15);
+      
+      setTimeout(() => {
+        if (ctx.state !== 'closed') ctx.close().catch(() => {});
+      }, 500);
+    } catch (e) {}
+  }, [isMuted]);
+
+  return { isMuted, setIsMuted, playNotification };
 };

@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "BookingRequest": {
+      "title": "BookingRequest",
+      "description": "Represents a user booking for a tour or flight.",
+      "type": "object",
+      "properties": {
+        "bookingId": { "type": "string" },
+        "tourId": { "type": "string" },
+        "tourName": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "adults": { "type": "number" },
+        "children": { "type": "number" },
+        "pickupHotel": { "type": "string" },
+        "specialRequests": { "type": "string" },
+        "totalUSD": { "type": "number" },
+        "totalCRC": { "type": "number" },
+        "customer": {
+          "type": "object",
+          "properties": {
+            "fullName": { "type": "string" },
+            "email": { "type": "string" },
+            "phone": { "type": "string" },
+            "country": { "type": "string" }
+          },
+          "required": ["fullName", "email", "phone"]
+        },
+        "paymentMethod": { "type": "string" },
+        "paymentStatus": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["tourId", "tourName", "date", "adults", "totalUSD", "customer", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/BookingRequest" },
+      "description": "Stores all tour and flight bookings made by users."
+    }
+  }
+}
