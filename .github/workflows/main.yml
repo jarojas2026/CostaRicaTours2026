@@ -1,0 +1,80 @@
+Necesito que implementes automatizaciones de backend para el sistema de reservas
+de esta plataforma de tours. El objetivo es que una reserva se complete de
+principio a fin SIN intervención humana: hoy dependo de leer WhatsApp a mano,
+y eso tiene que desaparecer.
+
+REGLA MÁS IMPORTANTE: no modifiques ningún componente de src/components ni
+ningún archivo de UI/frontend. Todo el trabajo va en server.ts y, si hace
+falta, en archivos nuevos dentro de una carpeta backend/. El frontend ya
+funciona y no lo quiero tocar.
+
+Contexto de lo que existe hoy en server.ts:
+- Hay un endpoint que crea reservas y las guarda en "const bookings: any[] = []",
+  un array en memoria que se borra en cada reinicio del servidor.
+- El campo paymentStatus se recibe directo del cliente sin verificación.
+- Hay una llamada a un webhook de n8n comentada (no activa).
+- Hay un endpoint /api/webhooks/n8n/update-booking que espera que n8n le
+  avise cambios de estado, pero nada lo dispara todavía porque el webhook
+  de salida está apagado.
+
+Quiero que implementes, en este orden, cada uno como un cambio independiente
+que pueda probar por separado:
+
+1. PERSISTENCIA REAL
+   Reemplazá el array en memoria por Firestore. Cada reserva nueva debe
+   escribirse en una colección "bookings" con el mismo bookingId que ya se
+   genera. El endpoint GET /api/bookings debe leer desde Firestore, no del
+   array. No cambies la forma (shape) del objeto booking que ya existe,
+   para no romper el AdminDashboard que lo consume.
+
+2. VERIFICACIÓN DE PAGO DEL LADO DEL SERVIDOR
+   Antes de guardar una reserva con paymentStatus = "completed", verificá
+   el pago contra la API de PayPal (Orders API / webhook de PayPal), no
+   contra lo que mande el cliente en el body. Si no se puede verificar,
+   guardá la reserva con estado "pendiente_pago" en vez de "completada".
+
+3. DISPARO DEL WEBHOOK A n8n
+   Activá la llamada POST a n8n que está comentada, mandando el objeto
+   completo de la reserva apenas se confirma el pago (no antes). Si la
+   llamada falla, no debe tumbar la creación de la reserva — logueá el
+   error y seguí.
+
+4. CONTROL DE DISPONIBILIDAD
+   Antes de aceptar una reserva nueva, chequeá en Firestore cuántas
+   reservas existen ya para el mismo tourId + date + time, y compará
+   contra un campo de cupo máximo del tour (agregalo a los datos del tour
+   si no existe). Si no hay cupo, devolvé un error claro que el frontend
+   ya pueda mostrar (status 409, mensaje "sin disponibilidad").
+
+Para cada punto: decime qué archivos tocaste, qué variables de entorno
+nuevas necesito configurar en Cloud Run (si alguna), y cómo lo puedo
+probar manualmente antes de publicar.
+________________________________________
+Después de este prompt, en n8n (fuera de AI Studio) armá:
+•	Un workflow que reciba el webhook del paso 3 y: 
+1.	Mande confirmación automática al cliente (WhatsApp Business API o email).
+2.	Te notifique a vos como operador (WhatsApp, email o Slack).
+3.	Cree el evento en un calendario si lo usás para coordinar operadores.
+Ese workflow de n8n no lo puede generar AI Studio — se arma directo en la interfaz de n8n, y lo que hicimos en el prompt de arriba es justamente lo que le da los datos para funcionar.
+
+
+
+
+
+
+
+
+
+
+
+
+recuerda que somos una platarma que vendera los tours que ofrecen en todo costa rica los proveedores de servicios turisticos y alojamiento y transporte incluyendo miles de productos
+
+
+
+
+
+
+
+
+
