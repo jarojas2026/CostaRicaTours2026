@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tour, Language, Currency } from '../types';
 import { getLangText, formatCurrency, UI_TRANSLATIONS } from '../utils/i18n';
+import { getDemandData } from '../utils/demandEngine';
 import { LazyImage } from './LazyImage';
 import { Star, Clock, MapPin, Leaf, Shield, ArrowRight, ExternalLink, X, Compass, Navigation, Heart, Scale, Check } from 'lucide-react';
 
@@ -28,6 +29,7 @@ export const TourCard: React.FC<TourCardProps> = ({
   viewMode = 'grid'
 }) => {
   const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
+  const demandData = getDemandData(tour.id);
   const [showMiniMap, setShowMiniMap] = useState(false);
 
   useEffect(() => {

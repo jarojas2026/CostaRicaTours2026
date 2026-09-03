@@ -2,22 +2,23 @@
 
 @layer base {
   :root {
-    --font-heading: 'Outfit', sans-serif;
-    --font-body: 'Plus Jakarta Sans', sans-serif;
-    --verde-selva: #1E7B4A;
-    --azul-oceano: #0B668F;
-    --naranja-atardecer: #E67E22;
-    --gris-oscuro: #2C3330;
-    --gris-claro: #F4F7F5;
+    --font-heading: 'Fraunces', serif;
+    --font-body: 'Work Sans', sans-serif;
+    --verde-selva: #1E4D2B; /* Dosel — verde profundo de selva */
+    --azul-oceano: #0F8B8D; /* Caribe — turquesa de costa caribeña */
+    --naranja-atardecer: #E8A33D; /* Guanacaste — dorado de atardecer, uso exclusivo para CTAs */
+    --basalto: #2B2622; /* Roca volcánica — solo para secciones hero oscuras */
+    --gris-oscuro: #1A1815; /* Texto — casi negro cálido, nunca negro puro */
+    --gris-claro: #EDE6D9; /* Arena tostada — fondo cálido, no blanco/gris frío */
   }
   body {
     background-color: #FFFFFF;
-    color: #2C3330;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #1A1815;
+    font-family: 'Work Sans', sans-serif;
     overflow-x: hidden;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Fraunces', serif;
   }
 }
 
@@ -52,22 +53,22 @@
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(30, 123, 74, 0.15);
-  box-shadow: 0 8px 32px 0 rgba(30, 123, 74, 0.08);
+  border: 1px solid rgba(30, 77, 43, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(30, 77, 43, 0.08);
 }
 
 .glass-panel-light {
-  background: #F4F7F5;
+  background: #EDE6D9;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(11, 102, 143, 0.15);
+  border: 1px solid rgba(15, 139, 141, 0.15);
 }
 
 .glow-orange {
-  box-shadow: 0 4px 20px -2px rgba(230, 126, 34, 0.4);
+  box-shadow: 0 4px 20px -2px rgba(232, 163, 61, 0.4);
 }
 .glow-green {
-  box-shadow: 0 4px 20px -2px rgba(30, 123, 74, 0.3);
+  box-shadow: 0 4px 20px -2px rgba(30, 77, 43, 0.3);
 }
 
 /* Custom Scrollbar for Modal Windows */

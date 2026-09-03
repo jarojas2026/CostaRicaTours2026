@@ -7,7 +7,7 @@ import { REGIONS } from '../data/toursData';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Compass, Search, Filter, SlidersHorizontal, Sparkles, LayoutGrid, List, 
-  Map, Heart, Scale, X, Flame, Leaf, Check, RotateCcw, ArrowUpDown, ArrowLeft 
+  Map, Heart, Scale, X, Flame, Leaf, Check, RotateCcw, ArrowUpDown, ArrowLeft, Mic, MicOff, Loader2 
 } from 'lucide-react';
 
 interface ToursGridProps {
@@ -49,6 +49,31 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
 }) => {
   // Local Catalog State
   const [currentPage, setCurrentPage] = useState(1);
+  const [isListening, setIsListening] = useState(false);
+
+  // Voice Search Handler
+  const startVoiceSearch = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert(language === 'es' ? 'Tu navegador no soporta búsqueda por voz. Usa Chrome.' : 'Browser does not support voice search. Use Chrome.');
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = language === 'es' ? 'es-CR' : 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    
+    recognition.onstart = () => setIsListening(true);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setSearchQuery(transcript);
+      setIsListening(false);
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+    
+    recognition.start();
+  };
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'popular' | 'rating' | 'price_asc' | 'price_desc' | 'duration'>('popular');
   const [bestsellerOnly, setBestsellerOnly] = useState(false);
@@ -210,17 +235,25 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   ? 'Buscar por volcán, playa, perezoso, rafting...'
                   : 'Search volcano, beach, sloth, rafting...'
               }
-              className="w-full bg-stone-950/40 text-neutral-100 text-sm pl-12 pr-10 py-3.5 rounded-full border border-white/10 focus:outline-none focus:border-orange-500 transition-colors shadow-inner placeholder:text-neutral-400"
+              className="w-full bg-stone-950/40 text-neutral-100 text-sm pl-12 pr-20 py-3.5 rounded-full border border-white/10 focus:outline-none focus:border-orange-500 transition-colors shadow-inner placeholder:text-neutral-400"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                className="absolute right-12 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-200"
               >
                 <X className="w-4 h-4" />
               </button>
             )}
+            <button
+              type="button"
+              onClick={startVoiceSearch}
+              className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${isListening ? 'bg-orange-500/20 text-orange-500 animate-pulse' : 'text-neutral-400 hover:text-orange-500 hover:bg-stone-800'}`}
+              title={language === 'es' ? 'Búsqueda por voz' : 'Voice Search'}
+            >
+              {isListening ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mic className="w-4 h-4" />}
+            </button>
           </div>
 
           {/* Controls: Region Dropdown, Difficulty, Sort & View Mode */}

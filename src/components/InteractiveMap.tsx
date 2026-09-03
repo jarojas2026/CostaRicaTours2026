@@ -225,7 +225,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       <div className="flex-1 relative">
         <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
-          <Map
+          <Map tilt={45} heading={0}
             mapId="b5387d230c6cf22f" // Valid map ID from example
             defaultCenter={{ lat: mapCenter[0], lng: mapCenter[1] }}
             defaultZoom={mapZoom}
