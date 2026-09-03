@@ -309,7 +309,7 @@ export const ECO_FACTS_BY_REGION: Record<string, RegionEcoFact> = {
       ja: 'ナショナルジオグラフィックが「地球上で最も生物学的に濃密な場所」と称賛。世界全生物種の2.5%が生息します。'
     },
     conservationHighlight: {
-      es: 'Entrada estrictamente regulada con guías naturalistas certificados y senderos de mínimo impacto.',
+      es: 'Entrada estrictamente regulada con guías naturalistas expertos y senderos de mínimo impacto.',
       en: 'Strict carrying-capacity limits and 100% certified local naturalist guide requirements.',
       de: 'Strenge Besucherquoten und zertifizierte Naturführer.',
       fr: 'Quotas stricts et accompagnement obligatoire par des guides naturalistes.',

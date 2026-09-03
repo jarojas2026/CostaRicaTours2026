@@ -28,7 +28,7 @@ export const CATEGORIES: CategoryInfo[] = [
     name: { es: 'Fauna Silvestre y Perezosos', en: 'Wildlife & Sloths' },
     iconName: 'Trees',
     description: {
-      es: 'Observa perezosos, monos capuchinos, tucanes y ranas de ojos rojos con guías certificados.',
+      es: 'Observa perezosos, monos capuchinos, tucanes y ranas de ojos rojos con guías experimentados.',
       en: 'Spot sloths, capuchin monkeys, toucans, and red-eyed tree frogs with certified naturalists.'
     }
   },
@@ -245,7 +245,7 @@ export const TOURS: Tour[] = [
         'Nado en la impresionante Catarata La Fortuna',
         'Acceso a 25 piscinas termales naturales con diferentes temperaturas',
         'Almuerzo típico costarricense y cena buffet completa',
-        'Guía naturalista bilingüe certificado por el'
+        'Guía naturalista bilingüe experimentado por el'
       ],
       en: [
         'Volcano hiking trail over historic 1968 lava fields',
@@ -335,7 +335,7 @@ export const TOURS: Tour[] = [
       ]
     },
     inclusions: {
-      es: ['Transporte ida y vuelta desde hoteles de Santa Elena y Monteverde', 'Todo el equipo de seguridad certificado', 'Guías instructores bilingües', 'Caminata por puentes colgantes'],
+      es: ['Transporte ida y vuelta desde hoteles de Santa Elena y Monteverde', 'Todo el equipo de seguridad experimentado', 'Guías instructores bilingües', 'Caminata por puentes colgantes'],
       en: ['Roundtrip hotel transport in Monteverde & Santa Elena', 'All Petzl certified safety equipment', 'Bilingual canopy instructors', 'Hanging bridges guided walk']
     },
     exclusions: {
@@ -412,7 +412,7 @@ export const TOURS: Tour[] = [
       ]
     },
     inclusions: {
-      es: ['Boleto de entrada oficial al Parque Nacional Manuel Antonio', 'Guía naturalista certificado por', 'Uso de telescopio HD', 'Transporte desde hoteles en Manuel Antonio y Quepos'],
+      es: ['Boleto de entrada autorizada al Parque Nacional Manuel Antonio', 'Guía naturalista profesional de', 'Uso de telescopio HD', 'Transporte desde hoteles en Manuel Antonio y Quepos'],
       en: ['Official entry park ticket to Manuel Antonio NP', 'certified naturalist guide', 'HD spotting telescope', 'Roundtrip pickup in Manuel Antonio & Quepos']
     },
     exclusions: {
@@ -475,7 +475,7 @@ export const TOURS: Tour[] = [
         '30 km de rápidos intensos como "Doble Cerro", "Huacas" y "Cialitos"',
         'Cañón del Pacuare con paredes de roca cubiertas de selva tropical',
         'Desayuno calientito en el centro de operaciones y almuerzo picnic abundante',
-        'Guías fluviales certificados por la IRF (Federación Internacional de Rafting)',
+        'Guías fluviales experimentados por la IRF (Federación Internacional de Rafting)',
         'Salidas desde San José, Turrialba o Puerto Viejo'
       ],
       en: [
@@ -707,7 +707,7 @@ export const TOURS: Tour[] = [
       ]
     },
     inclusions: {
-      es: ['Transporte en bote bimotor rápido desde Drake Bay o Puerto Jiménez', 'Permisos y tickets de entrada a Corcovado', 'Guía naturalista certificado por el SINAC', 'Almuerzo y frutas'],
+      es: ['Transporte en bote bimotor rápido desde Drake Bay o Puerto Jiménez', 'Permisos y tickets de entrada a Corcovado', 'Guía naturalista profesional de el SINAC', 'Almuerzo y frutas'],
       en: ['Speedboat ocean transport from Drake Bay or Puerto Jiménez', 'SINAC official entrance permits', 'Certified SINAC wildlife guide', 'Lunch & trail snacks']
     },
     exclusions: {
@@ -849,7 +849,7 @@ export const TOURS: Tour[] = [
       ]
     },
     inclusions: {
-      es: ['Entrada oficial al Parque Nacional Volcán Tenorio', 'Guía naturalista bilingüe certificado', 'Almuerzo típico costarricense', 'Transporte ida y vuelta desde hoteles en La Fortuna'],
+      es: ['Entrada autorizada al Parque Nacional Volcán Tenorio', 'Guía naturalista bilingüe experimentado', 'Almuerzo típico costarricense', 'Transporte ida y vuelta desde hoteles en La Fortuna'],
       en: ['Official entry ticket to Tenorio Volcano NP', 'Certified bilingual naturalist guide', 'Traditional Costa Rican lunch', 'Roundtrip pickup in La Fortuna']
     },
     exclusions: {
@@ -987,7 +987,7 @@ export const TOURS: Tour[] = [
       ]
     },
     inclusions: {
-      es: ['Entrada oficial a Místico Park', 'Guía naturalista bilingüe certificado', 'Transporte ida y vuelta desde hoteles en La Fortuna'],
+      es: ['Entrada autorizada a Místico Park', 'Guía naturalista bilingüe experimentado', 'Transporte ida y vuelta desde hoteles en La Fortuna'],
       en: ['Official entry ticket to Místico Park', 'Certified bilingual naturalist guide', 'Roundtrip hotel pickup in La Fortuna']
     },
     exclusions: {
@@ -1054,7 +1054,7 @@ export const TOURS: Tour[] = [
       ]
     },
     inclusions: {
-      es: ['Transporte marítimo en bote motorizado', 'Equipo completo de snorkel (máscara, tubo, aletas y chaleco)', 'Entrada a la Reserva Biológica Isla del Caño', 'Guía de buque y snorkel certificado', 'Almuerzo y frutas tropicales'],
+      es: ['Transporte marítimo en bote motorizado', 'Equipo completo de snorkel (máscara, tubo, aletas y chaleco)', 'Entrada a la Reserva Biológica Isla del Caño', 'Guía de buque y snorkel experimentado', 'Almuerzo y frutas tropicales'],
       en: ['Boat marine transportation', 'Complete snorkel gear (mask, fins, snorkel & vest)', 'Caño Island Reserve entry permits', 'Certified marine guide', 'Lunch and fresh tropical fruits']
     },
     exclusions: {
@@ -1127,7 +1127,7 @@ export const TOURS: Tour[] = [
       ]
     },
     inclusions: {
-      es: ['Transporte ida y vuelta desde hoteles en San José, Alajuela y Heredia', 'Entradas oficiales a Poás, Doka y La Paz Gardens', 'Desayuno típico y almuerzo buffet gourmet', 'Guía bilingüe certificado'],
+      es: ['Transporte ida y vuelta desde hoteles en San José, Alajuela y Heredia', 'Entradas autorizadas a Poás, Doka y La Paz Gardens', 'Desayuno típico y almuerzo buffet gourmet', 'Guía bilingüe experimentado'],
       en: ['Roundtrip hotel pickup in San José, Alajuela & Heredia', 'Official entry tickets to Poás, Doka & La Paz Gardens', 'Traditional breakfast and gourmet buffet lunch', 'Bilingual certified naturalist guide']
     },
     exclusions: {
@@ -1202,7 +1202,7 @@ export const TOURS: Tour[] = [
       ]
     },
     inclusions: {
-      es: ['Transporte en bote ida y vuelta desde Drake Bay o Sierpe', 'Permiso oficial e impuesto de entrada al Parque Nacional Corcovado', 'Guía biólogo certificado por el SINAC', 'Almuerzo completo y snacks'],
+      es: ['Transporte en bote ida y vuelta desde Drake Bay o Sierpe', 'Permiso autorizada e impuesto de entrada al Parque Nacional Corcovado', 'Guía biólogo experimentado por el SINAC', 'Almuerzo completo y snacks'],
       en: ['Roundtrip boat transportation from Drake Bay or Sierpe', 'Official Corcovado NP entry permits', 'Certified SINAC naturalist guide', 'Full picnic lunch and energy snacks']
     },
     exclusions: {
@@ -1331,7 +1331,7 @@ export const TOURS: Tour[] = [
     tourType: "group",
     ecoCert: true,
     description: {
-      es: 'Recorre un sendero privado rodeado de árboles de cecropia (guarumo) en La Fortuna, donde habita la mayor densidad de perezosos en libertad de Costa Rica. Con la ayuda de telescopios profesionales y guías certificados, observa mamás perezosas con sus crías, tucanes, ranas de ojos rojos y mariposas Morpho.',
+      es: 'Recorre un sendero privado rodeado de árboles de cecropia (guarumo) en La Fortuna, donde habita la mayor densidad de perezosos en libertad de Costa Rica. Con la ayuda de telescopios profesionales y guías experimentados, observa mamás perezosas con sus crías, tucanes, ranas de ojos rojos y mariposas Morpho.',
       en: 'Walk a flat private reserve trail in La Fortuna shaded by native Guarumo trees, boasting the highest wild sloth population density in Costa Rica. Equipped with optical telescopes, certified guides help you spot mother sloths carrying babies, toucans, poison dart frogs, and blue Morpho butterflies.'
     },
     highlights: {
@@ -1351,7 +1351,7 @@ export const TOURS: Tour[] = [
       ]
     },
     inclusions: {
-      es: ['Entrada al Santuario Privado de Perezosos', 'Guía naturalista certificado', 'Uso de telescopios de alta potencia', 'Frutas de temporada', 'Transporte ida y vuelta en La Fortuna'],
+      es: ['Entrada al Santuario Privado de Perezosos', 'Guía naturalista experimentado', 'Uso de telescopios de alta potencia', 'Frutas de temporada', 'Transporte ida y vuelta en La Fortuna'],
       en: ['Private Sloth Sanctuary entry ticket', 'Certified naturalist guide', 'HD spotting scope access', 'Fresh seasonal fruit platter', 'Roundtrip La Fortuna hotel pickup']
     },
     exclusions: {
@@ -1492,7 +1492,7 @@ export const TOURS: Tour[] = [
       ]
     },
     inclusions: {
-      es: ['Transporte 4x4 safari hasta las cataratas', 'Entradas oficiales a Nauyaca', 'Almuerzo típico costarricense', 'Transporte desde Manuel Antonio, Dominical o Uvita'],
+      es: ['Transporte 4x4 safari hasta las cataratas', 'Entradas autorizadas a Nauyaca', 'Almuerzo típico costarricense', 'Transporte desde Manuel Antonio, Dominical o Uvita'],
       en: ['4x4 safari truck ride to waterfalls', 'Nauyaca official entry permits', 'Traditional Costa Rican lunch', 'Pickup in Manuel Antonio, Dominical & Uvita']
     },
     exclusions: {
@@ -1564,7 +1564,7 @@ export const TOURS: Tour[] = [
       ]
     },
     inclusions: {
-      es: ['Paseo en bote con capitán experimentado', 'Entrada oficial al Parque Nacional Marino Ballena', 'Equipo de snorkel y chaleco salvavidas', 'Guía marino bilingüe', 'Frutas tropicales y bebidas'],
+      es: ['Paseo en bote con capitán experimentado', 'Entrada autorizada al Parque Nacional Marino Ballena', 'Equipo de snorkel y chaleco salvavidas', 'Guía marino bilingüe', 'Frutas tropicales y bebidas'],
       en: ['Boat tour with experienced captain', 'Official Marino Ballena NP entry permit', 'Snorkel gear and life jackets', 'Bilingual marine guide', 'Fresh fruits and drinks']
     },
     exclusions: {
@@ -1774,7 +1774,7 @@ export const TOURS: Tour[] = [
       ]
     },
     inclusions: {
-      es: ['Entradas oficiales al Teatro Nacional y Museo del Oro', 'Degustaciones de comida típica en el Mercado Central', 'Guía historiador bilingüe', 'Transporte desde hoteles céntricos'],
+      es: ['Entradas autorizadas al Teatro Nacional y Museo del Oro', 'Degustaciones de comida típica en el Mercado Central', 'Guía historiador bilingüe', 'Transporte desde hoteles céntricos'],
       en: ['Official entry tickets to National Theater & Gold Museum', 'Local food tastings in Central Market', 'Bilingual history guide', 'Hotel pickup in central San José']
     },
     exclusions: {
@@ -2064,11 +2064,11 @@ export const TOURS: Tour[] = [
       en: 'Costa Rica\'s #1 canyoning and waterfall rappelling tour. Located in a private rainforest canyon in La Fortuna, you will rappel down 4 crystal-clear waterfalls (up to 165 feet high), experience the thrilling Monkey Drop zipline, and hike through lush jungle trails. Concludes with a delicious traditional Costa Rican lunch.'
     },
     highlights: {
-      es: ['4 rapeles en cascadas espectaculares', 'Monkey Drop (Tirolesa + Rapel)', 'Equipo certificado Petzl de máxima seguridad', 'Almuerzo típico buffet incluido', 'Transporte desde hoteles en La Fortuna'],
+      es: ['4 rapeles en cascadas espectaculares', 'Monkey Drop (Tirolesa + Rapel)', 'Equipo experimentado Petzl de máxima seguridad', 'Almuerzo típico buffet incluido', 'Transporte desde hoteles en La Fortuna'],
       en: ['4 waterfall rappels up to 165ft', 'Monkey Drop zip-and-rappel combo', 'Certified Petzl top safety equipment', 'Organic Costa Rican lunch included', 'La Fortuna hotel transport']
     },
     inclusions: {
-      es: ['Transporte A/C ida y vuelta', 'Guías bilingües certificados Pure Trek', 'Cascos, arneses y guantes profesionales', 'Almuerzo casero completo', 'Toallas limpias'],
+      es: ['Transporte A/C ida y vuelta', 'Guías bilingües experimentados Pure Trek', 'Cascos, arneses y guantes profesionales', 'Almuerzo casero completo', 'Toallas limpias'],
       en: ['Roundtrip A/C transportation', 'Pure Trek certified bilingual guides', 'Professional harnesses, helmets & gloves', 'Full homemade buffet lunch', 'Clean towels']
     },
     exclusions: {
@@ -2118,11 +2118,11 @@ export const TOURS: Tour[] = [
       en: 'Navigate 6 miles of exciting class II and III whitewater rapids along the lush Balsa River. Spot monkeys, sloths, iguanas, and toucans in the riverside canopy between rapids. Midway through, enjoy a tropical fruit picnic on the riverbanks, followed by a warm farm-to-table lunch at a rustic countryside estate.'
     },
     highlights: {
-      es: ['Rápidos continuos clase II y III', 'Avistamiento de fauna en la selva ribereña', 'Picnic de frutas tropicales frescas en el río', 'Almuerzo tradicional campesino', 'Guías certificados de rescate acuático'],
+      es: ['Rápidos continuos clase II y III', 'Avistamiento de fauna en la selva ribereña', 'Picnic de frutas tropicales frescas en el río', 'Almuerzo tradicional campesino', 'Guías experimentados de rescate acuático'],
       en: ['Continuous Class II-III thrilling rapids', 'Wildlife spotting along rainforest riverbanks', 'Fresh tropical fruit break on the river', 'Traditional organic country lunch', 'Certified river rescue raft guides']
     },
     inclusions: {
-      es: ['Transporte A/C ida y vuelta', 'Equipo completo de rafting (cascos, chalecos certificados)', 'Guía bilingüe por balsa', 'Picnic de frutas y bebidas', 'Almuerzo buffet campesino'],
+      es: ['Transporte A/C ida y vuelta', 'Equipo completo de rafting (cascos, chalecos experimentados)', 'Guía bilingüe por balsa', 'Picnic de frutas y bebidas', 'Almuerzo buffet campesino'],
       en: ['Roundtrip A/C transport', 'Certified rafting gear (helmets, lifejackets)', 'Bilingual safety guide per raft', 'Tropical fruit picnic', 'Traditional country buffet lunch']
     },
     exclusions: {
@@ -2176,7 +2176,7 @@ export const TOURS: Tour[] = [
       en: ['Scenic Sky Tram aerial gondola ride', '7 high-speed Sky Trek mega cables', 'Sky Walk hanging suspension bridges trail', 'Direct panoramic views of Lake Arenal & Volcano', 'Top-tier magnetic auto-braking system']
     },
     inclusions: {
-      es: ['Transporte A/C ida y vuelta', 'Boleto Sky Tram, Sky Trek y Sky Walk', 'Guías bilingües certificados', 'Equipo de máxima seguridad'],
+      es: ['Transporte A/C ida y vuelta', 'Boleto Sky Tram, Sky Trek y Sky Walk', 'Guías bilingües experimentados', 'Equipo de máxima seguridad'],
       en: ['Roundtrip A/C transport', 'Sky Tram, Sky Trek & Sky Walk tickets', 'Certified bilingual guides', 'Top safety harness and gear']
     },
     exclusions: {
@@ -2231,7 +2231,7 @@ export const TOURS: Tour[] = [
       en: ['Canyon zipline and rock rappel course', 'Exciting Río Negro river tubing rapids', 'Scenic horseback riding trail', 'Natural volcanic hot springs & mud bath spa', 'Full authentic Guanacaste buffet lunch']
     },
     inclusions: {
-      es: ['Transporte A/C ida y vuelta desde Tamarindo/Liberia/Papagayo', 'Acceso a las 4 aventuras', 'Almuerzo buffet guanacasteco', 'Equipo de seguridad y guías certificados', 'Entrada a las aguas termales de Río Negro'],
+      es: ['Transporte A/C ida y vuelta desde Tamarindo/Liberia/Papagayo', 'Acceso a las 4 aventuras', 'Almuerzo buffet guanacasteco', 'Equipo de seguridad y guías experimentados', 'Entrada a las aguas termales de Río Negro'],
       en: ['Roundtrip A/C transport from Tamarindo/Liberia/Papagayo', 'Access to all 4 adventure activities', 'Full buffet lunch', 'Safety gear and bilingual guides', 'Río Negro hot springs entrance ticket']
     },
     exclusions: {
@@ -2394,7 +2394,7 @@ export const TOURS: Tour[] = [
       en: ['13 zipline cables in pristine cloud forest', '8 massive hanging bridges spanning 1.9 miles', 'Dedicated sloth sanctuary rescue exhibit', 'Giant walk-through butterfly biopark', 'Full lunch at El Sapo Restaurant']
     },
     inclusions: {
-      es: ['Transporte A/C ida y vuelta desde hoteles en Monteverde/Santa Elena', 'Entrada completa a las 4 atracciones de Selvatura', 'Guías naturalistas bilingües certificados', 'Almuerzo buffet completo', 'Equipo de canopy'],
+      es: ['Transporte A/C ida y vuelta desde hoteles en Monteverde/Santa Elena', 'Entrada completa a las 4 atracciones de Selvatura', 'Guías naturalistas bilingües experimentados', 'Almuerzo buffet completo', 'Equipo de canopy'],
       en: ['Roundtrip A/C hotel transport in Monteverde', 'All-inclusive entry to all 4 Selvatura exhibits', 'Certified bilingual naturalist guides', 'Full buffet lunch', 'Zipline safety equipment']
     },
     exclusions: {
@@ -2447,7 +2447,7 @@ export const TOURS: Tour[] = [
       en: ['1-mile Superman cable across the valley', 'Giant 150ft Tarzan freefall swing', '10 high-speed canopy cables', 'Clear day views toward the Nicoya Gulf', 'Expert safety-certified rigging guides']
     },
     inclusions: {
-      es: ['Transporte A/C ida y vuelta en Monteverde', 'Equipo completo de tirolesa certificado', 'Acceso a los 10 cables, Superman y Tarzan Swing', 'Guías bilingües'],
+      es: ['Transporte A/C ida y vuelta en Monteverde', 'Equipo completo de tirolesa experimentado', 'Acceso a los 10 cables, Superman y Tarzan Swing', 'Guías bilingües'],
       en: ['Roundtrip A/C transport in Monteverde', 'Certified safety harness and equipment', 'Full course access (Superman + Tarzan Swing)', 'Bilingual guides']
     },
     exclusions: {
@@ -2605,11 +2605,11 @@ export const TOURS: Tour[] = [
       en: 'Marino Ballena National Park in Uvita is the most celebrated humpback whale sanctuary in Central America. During migration seasons (July-Nov & Dec-March), witness awe-inspiring breaches of giant humpback mothers and calves, playful spotted dolphins, and sea turtles. Includes reef snorkeling at the iconic Whale Tail formation and boat visits to Ventanas sea caves.'
     },
     highlights: {
-      es: ['Avistamiento garantizado de ballenas jorobadas en temporada', 'Navegación frente al tómbolo en forma de Cola de Ballena', 'Snorkel en arrecife de coral protegido', 'Visita a las cavernas marinas de Playa Ventanas', 'Guía biólogo marino certificado'],
+      es: ['Avistamiento garantizado de ballenas jorobadas en temporada', 'Navegación frente al tómbolo en forma de Cola de Ballena', 'Snorkel en arrecife de coral protegido', 'Visita a las cavernas marinas de Playa Ventanas', 'Guía biólogo marino experimentado'],
       en: ['Top seasonal humpback whale sighting success', 'Cruise past the world-famous Whale Tail sandbar', 'Snorkeling in protected coral reef', 'Boat exploration of Playa Ventanas sea caves', 'Certified marine biologist guide']
     },
     inclusions: {
-      es: ['Entrada oficial al Parque Nacional Marino Ballena', 'Bote con capitanes certificados y guía marino', 'Equipo completo de snorkel', 'Frutas tropicales y agua', 'Seguro de navegación'],
+      es: ['Entrada autorizada al Parque Nacional Marino Ballena', 'Bote con capitanes experimentados y guía marino', 'Equipo completo de snorkel', 'Frutas tropicales y agua', 'Seguro de navegación'],
       en: ['Official Marino Ballena National Park ticket', 'Safety boat with certified captain & guide', 'Complete snorkeling equipment', 'Fresh tropical fruit & water', 'Marine insurance']
     },
     exclusions: {
@@ -2620,7 +2620,7 @@ export const TOURS: Tour[] = [
       es: ['Traje de baño puesto', 'Protector solar ecológico', 'Toalla', 'Sombrero y lentes de sol', 'Cámara con zoom'],
       en: ['Swimsuit on', 'Eco-friendly sunscreen', 'Beach towel', 'Hat and sunglasses', 'Camera with zoom lens']
     },
-    pickupHotels: ['Punto de salida oficial en Bahía Aventuras, Uvita'],
+    pickupHotels: ['Punto de salida autorizada en Bahía Aventuras, Uvita'],
     departureTimes: ['08:30 AM', '01:00 PM'],
     location: { lat: 9.1550, lng: -83.7450, placeName: 'Parque Nacional Marino Ballena, Uvita, Osa, Costa Rica' },
     operatorName: 'Bahía Aventuras Uvita',
@@ -2663,7 +2663,7 @@ export const TOURS: Tour[] = [
       en: ['Underwater visibility up to 80 feet', 'White-tip reef sharks & sea turtles spotting', '2 full guided snorkeling sessions on different reefs', 'Picnic lunch at secluded beach', 'Safe offshore speedboat transit']
     },
     inclusions: {
-      es: ['Entrada oficial a la Reserva Biológica Isla del Caño', 'Lancha rápida bimotor con capitán y guía naturalista', 'Equipo profesional de snorkel (máscara, aletas, chaleco)', 'Almuerzo completo tipo picnic', 'Frutas tropicales y bebidas'],
+      es: ['Entrada autorizada a la Reserva Biológica Isla del Caño', 'Lancha rápida bimotor con capitán y guía naturalista', 'Equipo profesional de snorkel (máscara, aletas, chaleco)', 'Almuerzo completo tipo picnic', 'Frutas tropicales y bebidas'],
       en: ['Official Caño Island Biological Reserve permit', 'Twin-engine speedboat with captain & guide', 'Professional snorkel gear (mask, fins, snorkel)', 'Full beach picnic lunch', 'Fresh fruit and refreshments']
     },
     exclusions: {
@@ -2710,7 +2710,7 @@ export const TOURS: Tour[] = [
     maxGroupSize: 8,
     freeCancellation: true,
     description: {
-      es: 'Corcovado fue calificado por National Geographic como "el lugar biológicamente más intenso del planeta". Esta expedición en lancha hasta la remota Estación Sirena te permite adentrarte en el corazón del bosque tropical primario con un guía naturalista certificado por el SINAC. Es el mejor lugar de Centroamérica para observar la danta centroamericana (tapir), los 4 monos de Costa Rica, pecaríes, osos hormigueros gigantes y cocodrilos.',
+      es: 'Corcovado fue calificado por National Geographic como "el lugar biológicamente más intenso del planeta". Esta expedición en lancha hasta la remota Estación Sirena te permite adentrarte en el corazón del bosque tropical primario con un guía naturalista experimentado por el SINAC. Es el mejor lugar de Centroamérica para observar la danta centroamericana (tapir), los 4 monos de Costa Rica, pecaríes, osos hormigueros gigantes y cocodrilos.',
       en: 'Described by National Geographic as "the most biologically intense place on Earth." This boat expedition to the remote Sirena Ranger Station takes you straight into the heart of virgin primary rainforest accompanied by a SINAC-certified master naturalist guide. The premier location in the Americas to spot Baird’s tapirs, all 4 Costa Rican monkey species, peccaries, and giant anteaters.'
     },
     highlights: {
@@ -2718,7 +2718,7 @@ export const TOURS: Tour[] = [
       en: ['Scenic coastal boat cruise to remote ranger station', 'Guided jungle treks on Sirena Station trails', 'Baird’s tapirs, 4 monkey species & peccaries spotting', 'Master naturalist with HD spotting scope', 'Full picnic lunch at the station']
     },
     inclusions: {
-      es: ['Permiso y entrada oficial del SINAC a Corcovado', 'Lancha rápida ida y vuelta desde Bahía Drake o Sierpe', 'Guía naturalista privado certificado por el parque', 'Almuerzo completo y frutas', 'Seguro de operaciones'],
+      es: ['Permiso y entrada autorizada del SINAC a Corcovado', 'Lancha rápida ida y vuelta desde Bahía Drake o Sierpe', 'Guía naturalista privado experimentado por el parque', 'Almuerzo completo y frutas', 'Seguro de operaciones'],
       en: ['Official SINAC Corcovado National Park permit', 'Roundtrip offshore boat transfer from Drake Bay or Sierpe', 'Licensed private naturalist guide', 'Full lunch and snacks', 'Expedition insurance']
     },
     exclusions: {
@@ -2772,7 +2772,7 @@ export const TOURS: Tour[] = [
       en: ['Roundtrip ground & riverboat transfers from San Jose', '2 nights at top riverfront rainforest eco-lodge', 'All meals included (breakfasts, lunches, dinners)', 'Boat safaris inside Tortuguero National Park canals', 'Guided walking tour of Tortuguero Caribbean village']
     },
     inclusions: {
-      es: ['Transporte A/C desde San José + lancha rápida', '2 noches de alojamiento con baño privado', 'Todas las comidas buffet (día 1 al 3)', 'Guía naturalista certificado durante todo el viaje', 'Tours en lancha por canales y senderos del lodge'],
+      es: ['Transporte A/C desde San José + lancha rápida', '2 noches de alojamiento con baño privado', 'Todas las comidas buffet (día 1 al 3)', 'Guía naturalista experimentado durante todo el viaje', 'Tours en lancha por canales y senderos del lodge'],
       en: ['A/C bus transfer from San Jose + scenic boat ride', '2 nights accommodation with private bathroom', 'All buffet meals (Day 1 lunch to Day 3 lunch)', 'Certified naturalist guide throughout', 'Boat canal tours & lodge nature trails']
     },
     exclusions: {
@@ -2825,7 +2825,7 @@ export const TOURS: Tour[] = [
       en: ['Snorkel Costa Rica’s premier Caribbean coral reef', 'Scenic boat ride to Punta Cahuita point', 'Coastal rainforest walk inside Cahuita National Park', 'Sloths and howler monkeys regular sightings', 'Fresh tropical fruit break on the beach']
     },
     inclusions: {
-      es: ['Transporte desde hoteles en Puerto Viejo y Cahuita', 'Paseo en lancha con capitán certificado', 'Equipo completo de snorkel (máscara, tubo, aletas)', 'Guía naturalista bilingüe', 'Frutas tropicales y agua'],
+      es: ['Transporte desde hoteles en Puerto Viejo y Cahuita', 'Paseo en lancha con capitán experimentado', 'Equipo completo de snorkel (máscara, tubo, aletas)', 'Guía naturalista bilingüe', 'Frutas tropicales y agua'],
       en: ['Roundtrip transport from Puerto Viejo and Cahuita', 'Boat ride with certified captain', 'Complete snorkeling gear (mask, snorkel, fins)', 'Bilingual naturalist guide', 'Fresh fruits and water']
     },
     exclusions: {
@@ -2851,7 +2851,7 @@ export const TOURS: Tour[] = [
       en: 'Essential Costa Rica 5-Day Circuit (Arenal Volcano, Cloud Forest & Beach)'
     },
     subtitle: {
-      es: 'Itinerario completo con hoteles 4 estrellas, transporte privado y entradas oficiales',
+      es: 'Itinerario completo con hoteles 4 estrellas, transporte privado y entradas autorizadas',
       en: 'Complete curated circuit with 4-star hotels, private intercity transfers & top tours'
     },
     category: 'multiday',
@@ -2884,7 +2884,7 @@ export const TOURS: Tour[] = [
       en: ['Arenal Volcano hike & Baldi mineral hot springs', 'Lake Arenal boat transfer crossing', 'Monteverde Cloud Forest canopy bridges & zipline', 'Manuel Antonio National Park guided wildlife safari', 'All door-to-door intercity hotel transfers included']
     },
     inclusions: {
-      es: ['4 noches de hospedaje en hoteles 4 estrellas con desayuno', 'Todos los traslados terrestres y acuáticos privados entre destinos', 'Entradas a Volcán Arenal, Termales Baldi, Puentes Monteverde y Manuel Antonio', 'Guías bilingües oficiales en cada tour', 'Asistencia local 24/7 de Costa Rica Tours (costaricatours.es)'],
+      es: ['4 noches de hospedaje en hoteles 4 estrellas con desayuno', 'Todos los traslados terrestres y acuáticos privados entre destinos', 'Entradas a Volcán Arenal, Termales Baldi, Puentes Monteverde y Manuel Antonio', 'Guías bilingües autorizadas en cada tour', 'Asistencia local 24/7 de Costa Rica Tours (costaricatours.es)'],
       en: ['4 nights in top 4-star hotels with daily breakfast', 'All private door-to-door intercity & boat transfers', 'Entrance tickets to Arenal, Baldi Springs, Monteverde Bridges & Manuel Antonio', 'Certified bilingual guides on every tour', '24/7 dedicated local concierge assistance']
     },
     exclusions: {

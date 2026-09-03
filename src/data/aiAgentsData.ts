@@ -31,6 +31,15 @@ export const AI_AGENTS: AIAgent[] = [
     avatarEmoji: '🎧',
     themeColor: 'indigo',
     bgGradient: 'from-indigo-500/20 to-stone-900/40',
+    borderColor: '#6366F1',
+    description: {
+      es: 'Soporte general y resolución de problemas para cualquier duda o inconveniente con tu reserva en costaricatours.es.',
+      en: 'General support and issue resolution for any question or problem with your booking on costaricatours.es.',
+      de: 'Allgemeiner Support und Problemlösung bei Fragen oder Schwierigkeiten mit Ihrer Buchung auf costaricatours.es.',
+      fr: 'Support général et résolution de problèmes pour toute question sur votre réservation via costaricatours.es.',
+      zh: '为您在 costaricatours.es 上的预订提供一般支持和问题解决服务。',
+      ja: 'costaricatours.esでのご予約に関する一般的なサポートと問題解決を行います。'
+    },
     welcomeMessage: {
       es: '¡Hola! Soy Martín. Estoy aquí para ayudarte con cualquier problema, queja o duda general que tengas sobre nuestros servicios. ¿En qué te puedo ayudar hoy?',
       en: 'Hello! I\'m Martín. I\'m here to help you with any issues, complaints, or general questions about our services. How can I assist you today?',
@@ -111,6 +120,15 @@ export const AI_AGENTS: AIAgent[] = [
     avatarEmoji: '🌤️',
     themeColor: 'cyan',
     bgGradient: 'from-cyan-500/20 to-stone-900/40',
+    borderColor: '#06B6D4',
+    description: {
+      es: 'Analiza los microclimas de Costa Rica para ayudarte a elegir la mejor región y fecha para tu viaje.',
+      en: 'Analyzes Costa Rica\'s micro-climates to help you choose the best region and dates for your trip.',
+      de: 'Analysiert die Mikroklimazonen Costa Ricas, um die beste Region und Reisezeit zu bestimmen.',
+      fr: 'Analyse les micro-climats du Costa Rica pour vous aider à choisir la meilleure région et période.',
+      zh: '分析哥斯达黎加的微气候，帮助您选择最佳旅行区域和日期。',
+      ja: 'コスタリカの微気候を分析し、最適な地域と旅行時期の選択をサポートします。'
+    },
     welcomeMessage: {
       es: '¡Hola! Costa Rica tiene decenas de microclimas. ¿A qué región viajas y en qué fechas para darte el pronóstico exacto?',
       en: 'Hello! Costa Rica has dozens of micro-climates. Where and when are you traveling so I can give you the exact forecast?',
@@ -190,6 +208,15 @@ export const AI_AGENTS: AIAgent[] = [
     avatarEmoji: '🛂',
     themeColor: 'blue',
     bgGradient: 'from-blue-500/20 to-stone-900/40',
+    borderColor: '#3B82F6',
+    description: {
+      es: 'Guía sobre requisitos de entrada, pasaportes e impuestos de salida para viajar a Costa Rica.',
+      en: 'Guidance on entry requirements, passports, and exit taxes for traveling to Costa Rica.',
+      de: 'Beratung zu Einreisebestimmungen, Pässen und Ausreisesteuern für Costa Rica.',
+      fr: 'Conseils sur les conditions d\'entrée, passeports et taxes de sortie pour le Costa Rica.',
+      zh: '提供有关前往哥斯达黎加的入境要求、护照和离境税的指导。',
+      ja: 'コスタリカ旅行に必要な入国要件、パスポート、出国税についてご案内します。'
+    },
     welcomeMessage: {
       es: '¡Hola! Te asisto con las regulaciones de entrada a Costa Rica. ¿De qué país es tu pasaporte?',
       en: 'Hello! I assist with Costa Rica entry regulations. What country is your passport from?',
@@ -269,6 +296,15 @@ export const AI_AGENTS: AIAgent[] = [
     avatarEmoji: '🏥',
     themeColor: 'red',
     bgGradient: 'from-red-500/20 to-stone-900/40',
+    borderColor: '#EF4444',
+    description: {
+      es: 'Información sobre vacunas, seguros médicos, farmacias y protocolos de emergencia en Costa Rica.',
+      en: 'Information on vaccines, medical insurance, pharmacies, and emergency protocols in Costa Rica.',
+      de: 'Informationen zu Impfungen, Krankenversicherung, Apotheken und Notfallprotokollen in Costa Rica.',
+      fr: 'Informations sur les vaccins, l\'assurance santé, les pharmacies et les protocoles d\'urgence.',
+      zh: '提供有关哥斯达黎加疫苗、医疗保险、药房和紧急情况处理的信息。',
+      ja: 'コスタリカでのワクチン、医療保険、薬局、緊急時対応についての情報を提供します。'
+    },
     welcomeMessage: {
       es: '¡Pura vida! Costa Rica es un país muy seguro, pero siempre es bueno estar preparado. ¿Tienes alguna duda sobre vacunas, agua potable o seguros médicos?',
       en: 'Pura vida! Costa Rica is very safe, but it\'s always good to be prepared. Any questions about vaccines, tap water, or medical insurance?',
@@ -348,6 +384,15 @@ export const AI_AGENTS: AIAgent[] = [
     avatarEmoji: '♻️',
     themeColor: 'green',
     bgGradient: 'from-green-500/20 to-stone-900/40',
+    borderColor: '#22C55E',
+    description: {
+      es: 'Especialista en eco-lodges, voluntariado y compensación de carbono para un viaje sostenible por Costa Rica.',
+      en: 'Specialist in eco-lodges, volunteering, and carbon offsetting for a sustainable trip through Costa Rica.',
+      de: 'Spezialist für Öko-Lodges, Freiwilligenarbeit und CO2-Ausgleich für eine nachhaltige Reise.',
+      fr: 'Spécialiste des éco-lodges, du bénévolat et de la compensation carbone pour un voyage durable.',
+      zh: '专注于生态旅馆、志愿服务和碳补偿，助您实现可持续的哥斯达黎加之旅。',
+      ja: 'エコロッジ、ボランティア、カーボンオフセットの専門家として、持続可能な旅をサポートします。'
+    },
     welcomeMessage: {
       es: 'Costa Rica es pionera en turismo sostenible. ¿Te interesa encontrar hoteles ecológicos, proyectos de rescate animal o compensar la huella de carbono de tu viaje?',
       en: 'Costa Rica is a pioneer in sustainable tourism. Interested in finding eco-hotels, animal rescue projects, or offsetting your travel carbon footprint?',
@@ -359,7 +404,7 @@ export const AI_AGENTS: AIAgent[] = [
     suggestedQuestions: {
       es: [
         '¿Dónde puedo hacer voluntariado con tortugas?',
-        'Recomiéndame un hotel certificado CST',
+        'Recomiéndame un hotel con excelentes prácticas sostenibles',
         '¿Cómo reciclo en los parques nacionales?'
       ],
       en: [
@@ -427,6 +472,15 @@ export const AI_AGENTS: AIAgent[] = [
     avatarEmoji: '🎭',
     themeColor: 'purple',
     bgGradient: 'from-purple-500/20 to-stone-900/40',
+    borderColor: '#A855F7',
+    description: {
+      es: 'Recomienda fiestas locales, topes, carnavales y eventos culturales según las fechas de tu viaje.',
+      en: 'Recommends local fiestas, rodeos, carnivals, and cultural events based on your travel dates.',
+      de: 'Empfiehlt lokale Feste, Rodeos, Karneval und Kulturveranstaltungen passend zu Ihrem Reisezeitraum.',
+      fr: 'Recommande fêtes locales, rodéos, carnavals et événements culturels selon vos dates de voyage.',
+      zh: '根据您的旅行日期推荐当地节日、游行、狂欢节和文化活动。',
+      ja: '旅行日程に合わせて地元のお祭り、ロデオ、カーニバル、文化イベントをご案内します。'
+    },
     welcomeMessage: {
       es: '¡Upe! ¿Quieres vivir la verdadera cultura tica? Te puedo recomendar topes, corridas a la tica, el Festival Envision, o carnavales según las fechas de tu viaje.',
       en: 'Upe! Want to experience true Tico culture? I can recommend local rodeos, Envision Festival, or carnivals based on your travel dates.',
@@ -506,6 +560,15 @@ export const AI_AGENTS: AIAgent[] = [
     avatarEmoji: '💳',
     themeColor: 'emerald',
     bgGradient: 'from-emerald-500/20 to-stone-900/40',
+    borderColor: '#10B981',
+    description: {
+      es: 'Asesora sobre tipo de cambio, propinas, cajeros automáticos y presupuesto para tu viaje a Costa Rica.',
+      en: 'Advises on exchange rates, tipping, ATMs, and budgeting for your trip to Costa Rica.',
+      de: 'Berät zu Wechselkursen, Trinkgeld, Geldautomaten und Budgetplanung für Costa Rica.',
+      fr: 'Conseille sur le taux de change, les pourboires, les distributeurs et le budget de voyage.',
+      zh: '为您的哥斯达黎加之旅提供汇率、小费、自动取款机和预算方面的建议。',
+      ja: 'コスタリカ旅行の為替レート、チップ、ATM、予算計画についてアドバイスします。'
+    },
     welcomeMessage: {
       es: '¿Colones o Dólares? Te ayudo a optimizar tu dinero en Costa Rica. ¿Tienes dudas sobre propinas, uso de tarjetas o el tipo de cambio oficial (BCCR)?',
       en: 'Colones or Dollars? I help you optimize your money in Costa Rica. Any questions about tipping, card usage, or the official exchange rate (BCCR)?',
@@ -720,7 +783,7 @@ export const AI_AGENTS: AIAgent[] = [
     bgGradient: 'from-[#0A3D39] to-[#0F766E]',
     borderColor: '#14B8A6',
     description: {
-      es: 'Gestiona reservas de última hora, confirmaciones instantáneas con operadores certificados, pagos seguros en USD/CRC (Stripe, SINPE Móvil, PayPal) y facturas tributarias de Costa Rica.',
+      es: 'Gestiona reservas de última hora, confirmaciones instantáneas con operadores verificados, pagos seguros en USD/CRC (Stripe, SINPE Móvil, PayPal) y facturas tributarias de Costa Rica.',
       en: 'Handles urgent last-minute bookings, instant confirmations with verified operators, secure USD/CRC payments, and Costa Rican official tax invoices.',
       de: 'Verwaltet Last-Minute-Buchungen, Sofortbestätigungen mit zertifizierten Partnern, sichere Zahlungen und Steuerrechnungen.',
       fr: 'Gère les réservations de dernière minute, confirmations instantanées, paiements sécurisés et facturation officielle.',
@@ -737,7 +800,7 @@ export const AI_AGENTS: AIAgent[] = [
     },
     workflowSteps: {
       es: [
-        '1. Validación de fecha y cupos con operadores oficiales',
+        '1. Validación de fecha y cupos con operadores autorizados',
         '2. Confirmación de punto de recogida en hotel y horario',
         '3. Procesamiento seguro de pago (Tarjeta, PayPal, SINPE Móvil)',
         '4. Emisión instantánea de voucher con QR y confirmación por WhatsApp'
@@ -872,7 +935,7 @@ export const AI_AGENTS: AIAgent[] = [
         '1. Análisis de temporada biológica (Desove jul-oct, Ballenas jul-nov/ene-mar)',
         '2. Selección de parque nacional o reserva biológica SINAC idónea',
         '3. Recomendación de equipo óptico (Telescopios Swarovsky, binoculares)',
-        '4. Protocolo ético #StopAnimalSelfies y reserva de guía naturalista certificado'
+        '4. Protocolo ético #StopAnimalSelfies y reserva de guía naturalista experto'
       ],
       en: [
         '1. Biological calendar analysis (Turtles Jul-Oct, Whales Jul-Nov/Jan-Mar)',

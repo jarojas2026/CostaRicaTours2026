@@ -9,6 +9,7 @@ import http from "http";
 import { initializeApp, cert } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import fs from "fs";
+import { TOURS } from "./src/data/toursData";
 
 dotenv.config();
 
@@ -28,6 +29,71 @@ const app = express();
 const PORT = 3000;
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: "/live" });
+
+// Guardia global: un error async no atrapado (ej. un problema de
+// autenticación o de red con Firestore/Stripe/Gemini) NO debe tumbar
+// todo el servidor y afectar a todos los usuarios conectados. Lo
+// logueamos y seguimos vivos; cada endpoint sigue siendo responsable
+// de responderle un error claro al cliente que lo disparó.
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled promise rejection (el servidor sigue corriendo):", reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught exception (el servidor sigue corriendo):", err);
+});
+
+// Registrar webhook de Stripe ANTES de express.json()
+app.post("/api/webhooks/stripe", express.raw({ type: "application/json" }), async (req, res) => {
+  try {
+    const stripe = getStripe();
+    if (!stripe) return res.status(503).json({ error: "Stripe no configurado" });
+
+    const sig = req.headers["stripe-signature"];
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!sig || !endpointSecret || typeof sig !== 'string') {
+      return res.status(400).send("Falta webhook secret o firma");
+    }
+
+    const event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+      const bookingId = session.metadata?.bookingId;
+
+      if (bookingId) {
+        const bookingsCol = getBookingsCollection();
+        if (bookingsCol) {
+          const docRef = bookingsCol.doc(bookingId);
+          const doc = await docRef.get();
+          if (doc.exists) {
+            const booking = doc.data() as any;
+            booking.paymentStatus = "completed";
+            booking.status = "confirmada";
+
+            await docRef.update({
+              paymentStatus: "completed",
+              status: "confirmada"
+            });
+
+            const N8N_URL = process.env.N8N_BOOKING_WEBHOOK_URL || "https://costaricatours.app.n8n.cloud/webhook-test/mi-api";
+            if (N8N_URL) {
+              fetch(N8N_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(booking)
+              }).catch(err => console.error("Error notificando a n8n:", err));
+            }
+          }
+        }
+      }
+    }
+    res.json({ received: true });
+  } catch (err: any) {
+    console.error("Webhook Error:", err.message);
+    res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+});
 
 app.use(express.json());
 
@@ -498,7 +564,7 @@ Return a strict JSON object with:
     };
 
     // Save to Firestore
-    await db.collection("users").doc(userId).collection("bookings").doc(bookingId).set(bookingData);
+    await db.collection("bookings").doc(bookingId).set({ ...bookingData, bookingId });
 
     const voucher = {
       bookingId,
@@ -835,7 +901,7 @@ function getStripe() {
   if (!stripeClient) {
     const key = process.env.STRIPE_SECRET_KEY;
     if (key) {
-      stripeClient = new Stripe(key, { apiVersion: '2023-10-16' });
+      stripeClient = new Stripe(key, { apiVersion: '2026-08-26.dahlia' });
     }
   }
   return stripeClient;
@@ -850,6 +916,35 @@ app.post("/api/stripe/create-checkout-session", async (req, res) => {
 
     const { tourId, tourName, totalUSD, customerEmail, date, passengers } = req.body;
     const origin = req.headers.origin || process.env.APP_URL || 'http://localhost:3000';
+
+    const bookingId = `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+    const bookingsCol = getBookingsCollection();
+    
+    if (bookingsCol) {
+      const newBooking = {
+        bookingId,
+        tourId,
+        tourName,
+        date,
+        time: "08:00 AM",
+        adults: passengers || 1,
+        children: 0,
+        pickupHotel: "Recepción del Hotel",
+        totalUSD,
+        totalCRC: Math.round((totalUSD || 0) * 515),
+        paymentMethod: "credit_card",
+        paymentStatus: "pending",
+        status: "pendiente_pago",
+        customer: {
+          fullName: "Cliente Stripe",
+          email: customerEmail || "sin_correo@ejemplo.com",
+          phone: "+506 8888-7777",
+          country: "Costa Rica / Internacional"
+        },
+        createdAt: new Date().toISOString()
+      };
+      await bookingsCol.doc(bookingId).set(newBooking).catch(e => console.error(e));
+    }
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -873,7 +968,8 @@ app.post("/api/stripe/create-checkout-session", async (req, res) => {
       metadata: {
         tourId,
         date,
-        passengers
+        passengers: String(passengers),
+        bookingId
       }
     });
 
@@ -885,26 +981,75 @@ app.post("/api/stripe/create-checkout-session", async (req, res) => {
 });
 
 // Bookings endpoint (Mock memory storage)
-const bookings: any[] = [];
+// Colección de Firestore donde viven las reservas de verdad.
+// Si Firestore no se pudo inicializar (ver arriba), devolvemos null y cada
+// endpoint responde con un error claro en vez de fallar en silencio.
+function getBookingsCollection() {
+  if (!db) return null;
+  return db.collection("bookings");
+}
 
 app.post("/api/bookings", async (req, res) => {
-  const { 
-    tourId, 
-    tourName, 
-    date, 
-    time, 
-    adults, 
-    children, 
-    pickupHotel, 
-    totalUSD, 
-    customer, 
-    electronicInvoice, 
-    paymentMethod, 
-    paymentStatus, 
-    status, 
+  const bookingsCol = getBookingsCollection();
+  if (!bookingsCol) {
+    return res.status(503).json({ error: "La base de datos no está disponible. Intentá de nuevo en unos minutos." });
+  }
+
+  const {
+    tourId,
+    tourName,
+    date,
+    time,
+    adults,
+    children,
+    pickupHotel,
+    totalUSD,
+    customer,
+    electronicInvoice,
+    paymentMethod,
+    paymentStatus,
+    status,
     specialRequests,
-    flightDetails
+    flightDetails,
+    paypalOrderId
   } = req.body;
+
+  if (!tourId || !date) {
+    return res.status(400).json({ error: "Faltan datos obligatorios: tourId y date." });
+  }
+
+  const numAdults = Number(adults) || 1;
+  const numChildren = Number(children) || 0;
+  const bookingTime = time || "08:00 AM";
+
+  // Control de cupo: sumamos los pasajeros ya reservados para el mismo
+  // tour, misma fecha y mismo horario, y lo comparamos contra el
+  // maxGroupSize del tour (si el tour no define cupo máximo, no bloqueamos).
+  const tourDef = TOURS.find((t) => t.id === tourId);
+  if (tourDef?.maxGroupSize) {
+    const existingSnapshot = await bookingsCol
+      .where("tourId", "==", tourId)
+      .where("date", "==", date)
+      .where("time", "==", bookingTime)
+      .get();
+
+    let alreadyBooked = 0;
+    existingSnapshot.forEach((doc) => {
+      const b = doc.data();
+      if (b.status !== "cancelada") {
+        alreadyBooked += (b.adults || 0) + (b.children || 0);
+      }
+    });
+
+    if (alreadyBooked + numAdults + numChildren > tourDef.maxGroupSize) {
+      return res.status(409).json({
+        error: "sin_disponibilidad",
+        message: "No queda cupo suficiente para ese tour en esa fecha y horario.",
+        cuposDisponibles: Math.max(0, tourDef.maxGroupSize - alreadyBooked)
+      });
+    }
+  }
+
   const bookingId = `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
   const pnrLocator = flightDetails ? `PNR-${Math.random().toString(36).substring(2, 8).toUpperCase()}` : undefined;
 
@@ -916,8 +1061,8 @@ app.post("/api/bookings", async (req, res) => {
       const prompt = `Analiza la siguiente reserva turística y automatiza las tareas operativas requeridas.
       Detalles de la reserva:
       - Tour: ${tourName}
-      - Fecha y Hora: ${date} ${time || ''}
-      - Pasajeros: ${adults || 1} adultos, ${children || 0} niños
+      - Fecha y Hora: ${date} ${bookingTime}
+      - Pasajeros: ${numAdults} adultos, ${numChildren} niños
       - Hotel/Recogida: ${pickupHotel || 'No especificado'}
       - Notas especiales del cliente: ${specialRequests || 'Ninguna'}
       
@@ -939,7 +1084,7 @@ app.post("/api/bookings", async (req, res) => {
           }
         }
       });
-      
+
       if (response.text) {
         agentInsights = JSON.parse(response.text);
       }
@@ -948,20 +1093,65 @@ app.post("/api/bookings", async (req, res) => {
     }
   }
 
+  // Verificación Server-Side de Pagos (PayPal)
+  let finalStatus = status || "confirmada";
+  let finalPaymentStatus = paymentStatus || "completed";
+
+  if (paymentMethod === "paypal") {
+    finalStatus = "pendiente_pago";
+    finalPaymentStatus = "pending";
+
+    if (paypalOrderId) {
+      try {
+        const paypalClientId = process.env.PAYPAL_CLIENT_ID;
+        const paypalSecret = process.env.PAYPAL_SECRET;
+        
+        if (paypalClientId && paypalSecret) {
+          const authStr = Buffer.from(`${paypalClientId}:${paypalSecret}`).toString('base64');
+          const authRes = await fetch('https://api-m.sandbox.paypal.com/v1/oauth2/token', {
+            method: 'POST',
+            body: 'grant_type=client_credentials',
+            headers: {
+              'Authorization': `Basic ${authStr}`,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          });
+          const authData = await authRes.json();
+          
+          if (authData.access_token) {
+            const orderRes = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${paypalOrderId}`, {
+              headers: { 'Authorization': `Bearer ${authData.access_token}` }
+            });
+            const orderData = await orderRes.json();
+            
+            if (orderData.status === 'COMPLETED') {
+              finalStatus = "confirmada";
+              finalPaymentStatus = "completed";
+            }
+          }
+        } else {
+          console.warn("PAYPAL_CLIENT_ID or PAYPAL_SECRET not configured, unable to verify PayPal payment.");
+        }
+      } catch (err) {
+        console.error("Error verifying PayPal order:", err);
+      }
+    }
+  }
+
   const newBooking = {
     bookingId,
     tourId,
     tourName,
     date,
-    time: time || "08:00 AM",
-    adults: Number(adults) || 1,
-    children: Number(children) || 0,
+    time: bookingTime,
+    adults: numAdults,
+    children: numChildren,
     pickupHotel: pickupHotel || (flightDetails ? `Aeropuerto ${flightDetails.destinationCode} (Vuelo ${flightDetails.flightNumber})` : "Recepción del Hotel"),
     specialRequests,
     totalUSD,
     totalCRC: Math.round((totalUSD || 0) * 515),
     paymentMethod: paymentMethod || "credit_card",
-    paymentStatus: paymentStatus || "completed",
+    paymentStatus: finalPaymentStatus,
     customer,
     electronicInvoice,
     flightDetails: flightDetails ? {
@@ -969,34 +1159,83 @@ app.post("/api/bookings", async (req, res) => {
       pnrLocator: flightDetails.pnrLocator || pnrLocator
     } : undefined,
     createdAt: new Date().toISOString(),
-    status: status || "confirmada",
-    agentInsights // Attach the background AI agent's operational insights
+    status: finalStatus,
+    agentInsights
   };
-  bookings.push(newBooking);
-  
-  // NOTE: En producción, aquí se realizaría la petición POST al webhook de n8n
-  // fetch('https://tu-n8n.com/webhook/reservas', { method: 'POST', body: JSON.stringify(newBooking) }).catch(console.error);
+
+  try {
+    await bookingsCol.doc(bookingId).set(newBooking);
+  } catch (error) {
+    console.error("Error guardando la reserva en Firestore:", error);
+    return res.status(500).json({ error: "No se pudo guardar la reserva. Intentá de nuevo." });
+  }
+
+  // Avisar a n8n de que entró una reserva nueva, SOLO si ya está confirmada o pago verificado.
+  const N8N_URL = process.env.N8N_BOOKING_WEBHOOK_URL || "https://costaricatours.app.n8n.cloud/webhook-test/mi-api";
+  if (N8N_URL && newBooking.status !== "pendiente_pago") {
+    fetch(N8N_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newBooking)
+    }).catch((err) => console.error("Error notificando a n8n:", err));
+  }
 
   res.status(201).json({ success: true, booking: newBooking });
 });
 
-app.get("/api/bookings", (_req, res) => {
-  res.json({ bookings });
+app.get("/api/bookings", async (req, res) => {
+  const bookingsCol = getBookingsCollection();
+  if (!bookingsCol) {
+    return res.status(503).json({ error: "La base de datos no está disponible." });
+  }
+
+  // Paginación simple por si el volumen de reservas crece mucho:
+  // ?limit=50&startAfter=<bookingId del último de la página anterior>
+  const limit = Math.min(Number(req.query.limit) || 100, 500);
+  let query = bookingsCol.orderBy("createdAt", "desc").limit(limit);
+
+  if (req.query.startAfter) {
+    const startAfterDoc = await bookingsCol.doc(String(req.query.startAfter)).get();
+    if (startAfterDoc.exists) {
+      query = query.startAfter(startAfterDoc);
+    }
+  }
+
+  try {
+    const snapshot = await query.get();
+    const bookings = snapshot.docs.map((doc) => doc.data());
+    res.json({ bookings, nextCursor: bookings.length === limit ? bookings[bookings.length - 1].bookingId : null });
+  } catch (error) {
+    console.error("Error leyendo reservas de Firestore:", error);
+    res.status(500).json({ error: "No se pudieron cargar las reservas." });
+  }
 });
 
 // Endpoint para que n8n interactúe de vuelta con el sistema (ej. confirmar reserva, actualizar status)
-app.post("/api/webhooks/n8n/update-booking", (req, res) => {
-  const { bookingId, status, notes } = req.body;
-  const index = bookings.findIndex(b => b.bookingId === bookingId);
-  if (index !== -1) {
-    bookings[index].status = status || bookings[index].status;
-    if (notes) {
-      bookings[index].n8nNotes = notes;
-    }
-    res.json({ success: true, booking: bookings[index] });
-  } else {
-    res.status(404).json({ error: "Booking not found" });
+app.post("/api/webhooks/n8n/update-booking", async (req, res) => {
+  const bookingsCol = getBookingsCollection();
+  if (!bookingsCol) {
+    return res.status(503).json({ error: "La base de datos no está disponible." });
   }
+
+  const { bookingId, status, notes } = req.body;
+  if (!bookingId) {
+    return res.status(400).json({ error: "Falta bookingId." });
+  }
+
+  const docRef = bookingsCol.doc(bookingId);
+  const doc = await docRef.get();
+  if (!doc.exists) {
+    return res.status(404).json({ error: "Booking not found" });
+  }
+
+  const updates: Record<string, any> = {};
+  if (status) updates.status = status;
+  if (notes) updates.n8nNotes = notes;
+
+  await docRef.update(updates);
+  const updatedDoc = await docRef.get();
+  res.json({ success: true, booking: updatedDoc.data() });
 });
 
 // ==========================================
@@ -1114,16 +1353,35 @@ app.post("/api/agents/contingency", async (req, res) => {
 });
 
 // Bucle de Autoaprendizaje (Self-Healing) - Registro de Excepciones
-const exceptionsLog: any[] = [];
+function getEscalationsCollection() {
+  if (!db) return null;
+  return db.collection("escalations");
+}
 
 app.post("/api/agents/log_exception", (req, res) => {
   const { errorContext, rawData, agentName } = req.body;
-  exceptionsLog.push({ timestamp: new Date().toISOString(), agentName, errorContext, rawData });
-  res.json({ success: true, count: exceptionsLog.length });
+  const escalationsCol = getEscalationsCollection();
+  if (escalationsCol) {
+    escalationsCol.add({ timestamp: new Date().toISOString(), agentName, errorContext, rawData, status: "pending" })
+      .then(() => res.json({ success: true }))
+      .catch((err) => res.status(500).json({ error: "Failed to log escalation" }));
+  } else {
+    res.status(503).json({ error: "DB not ready" });
+  }
 });
 
 app.get("/api/agents/exceptions", (req, res) => {
-  res.json({ exceptionsLog });
+  const escalationsCol = getEscalationsCollection();
+  if (escalationsCol) {
+    escalationsCol.orderBy("timestamp", "desc").limit(100).get()
+      .then(snap => {
+        const logs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.json({ exceptionsLog: logs });
+      })
+      .catch(err => res.status(500).json({ error: "Failed to fetch" }));
+  } else {
+    res.status(503).json({ error: "DB not ready" });
+  }
 });
 
 // Agent 4: Supervisor Agent (Self-Healing Loop)
@@ -1131,11 +1389,15 @@ app.get("/api/agents/exceptions", (req, res) => {
 app.post("/api/agents/supervisor", async (req, res) => {
   try {
     if (!ai) return res.status(503).json({ error: "AI not configured" });
-    if (exceptionsLog.length === 0) {
+    const escalationsCol = getEscalationsCollection();
+    if (!escalationsCol) return res.status(503).json({ error: "DB not ready" });
+    const snap = await escalationsCol.where("status", "==", "pending").orderBy("timestamp", "desc").limit(5).get();
+    if (snap.empty) {
       return res.json({ analysis: "No hay excepciones recientes registradas. El sistema opera a un 100% de éxito.", detectedPattern: "Stable" });
     }
 
-    const prompt = `Analiza los siguientes errores operativos (JSON Parsing, format errors, timeout): ${JSON.stringify(exceptionsLog.slice(-5))}`;
+    const recentLogs = snap.docs.map(d => d.data());
+    const prompt = `Analiza los siguientes errores operativos no resueltos (escalaciones): ${JSON.stringify(recentLogs)}`;
 
     const response = await ai.models.generateContent({
       model: "gemini-1.5-pro",

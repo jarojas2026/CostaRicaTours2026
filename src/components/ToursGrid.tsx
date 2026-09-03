@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Tour, TourCategory, TourRegion, Language, Currency } from '../types';
 import { TourCard } from './TourCard';
+import { LazyImage } from './LazyImage';
 import { TourComparisonModal } from './TourComparisonModal';
 import { REGIONS } from '../data/toursData';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Compass, Search, Filter, SlidersHorizontal, Sparkles, LayoutGrid, List, 
-  Map, Heart, Scale, X, Flame, Leaf, Check, RotateCcw, ArrowUpDown 
+  Map, Heart, Scale, X, Flame, Leaf, Check, RotateCcw, ArrowUpDown, ArrowLeft 
 } from 'lucide-react';
 
 interface ToursGridProps {
@@ -638,11 +639,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
           <div className="flex items-center gap-2">
             {comparedTours.map(t => (
               <div key={t.id} className="relative group">
-                <img 
-                  src={t.image} 
-                  alt="" 
-                  className="w-9 h-9 object-cover rounded-full border border-orange-500"
-                />
+                <LazyImage src={t.image} alt="" className="w-9 h-9 object-cover rounded-full border border-orange-500" />
                 <button
                   type="button"
                   onClick={() => removeComparedTour(t.id)}

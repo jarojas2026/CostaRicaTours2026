@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import fs from 'fs';
+
+const content = `import React, { useState, useEffect } from 'react';
 import { REGIONS_DATA } from '../data/regionsData';
 import { TourRegion, Language, Currency, Tour, TourCategory } from '../types';
 import { MapPin, Navigation, X, RefreshCw, Thermometer, Cloud, Sun, CloudRain } from 'lucide-react';
@@ -42,7 +44,7 @@ function MapController({ center, zoom, onBoundsChange, onMapMove }: { center: [n
       })
     ];
     return () => {
-      listeners.forEach(l => (window as any).google.maps.event.removeListener(l));
+      listeners.forEach(l => google.maps.event.removeListener(l));
     };
   }, [map, onBoundsChange, onMapMove]);
   
@@ -118,8 +120,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       setIsMapCached(true);
       
       const msg = language === 'es' 
-        ? `¡Mapa y ${toursToSave.length} tours guardados! Ahora puedes usar el mapa sin conexión a internet.`
-        : `Map and ${toursToSave.length} tours saved! You can now use the map without internet connection.`;
+        ? \`¡Mapa y \${toursToSave.length} tours guardados! Ahora puedes usar el mapa sin conexión a internet.\`
+        : \`Map and \${toursToSave.length} tours saved! You can now use the map without internet connection.\`;
       
       alert(msg);
     } catch (error) {
@@ -147,7 +149,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     if (activeClimate !== 'all' && getTourClimate(tour.region) !== activeClimate) return false;
     
     if (searchAreaActive && currentBounds) {
-      const pt = new (window as any).google.maps.LatLng(tour.location.lat, tour.location.lng);
+      const pt = new google.maps.LatLng(tour.location.lat, tour.location.lng);
       if (currentBounds && typeof currentBounds.contains === 'function' && !currentBounds.contains(pt)) return false;
     }
     return true;
@@ -172,13 +174,9 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   if (selectedRegion !== 'all') {
     const regionObj = REGIONS_DATA.find(r => r.id === selectedRegion);
-    if (regionObj) {
-      // Fallback center for region, maybe based on tours in region
-      const regionTours = tours.filter(t => t.region === selectedRegion);
-      if (regionTours.length > 0) {
-        mapCenter = [regionTours[0].location.lat, regionTours[0].location.lng];
-        mapZoom = 9;
-      }
+    if (regionObj && regionObj.center) {
+      mapCenter = [regionObj.center.lat, regionObj.center.lng];
+      mapZoom = 9;
     }
   }
 
@@ -241,6 +239,25 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               onMapMove={handleMapMove} 
             />
 
+            {/* Region Markers */}
+            {selectedRegion === 'all' && REGIONS_DATA.map(region => {
+              if (!region.center) return null;
+              return (
+                <AdvancedMarker
+                  key={region.id}
+                  position={{ lat: region.center.lat, lng: region.center.lng }}
+                  onClick={() => onExploreRegionTours?.(region.id as any)}
+                  title={getLangText(region.name, language)}
+                  className="cursor-pointer"
+                >
+                  <div className="bg-teal-700 text-white p-2 rounded-xl shadow-lg border-2 border-white flex flex-col items-center">
+                    <span className="font-bold text-sm whitespace-nowrap">{getLangText(region.name, language)}</span>
+                    <span className="text-xs bg-orange-500 px-2 py-0.5 rounded-full mt-1">Explorar</span>
+                  </div>
+                </AdvancedMarker>
+              );
+            })}
+
             {/* Tour Markers */}
             {effectiveTours.map(tour => {
               const isSelected = selectedMapTour?.id === tour.id;
@@ -253,7 +270,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                   zIndex={isSelected ? 100 : 1}
                   className="cursor-pointer"
                 >
-                  <div className={`${isSelected ? 'bg-red-500 scale-125' : 'bg-orange-500'} text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 border-white transition-all`}>
+                  <div className={\`\${isSelected ? 'bg-red-500 scale-125' : 'bg-orange-500'} text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 border-white transition-all\`}>
                     <MapPin className="w-5 h-5" />
                   </div>
                 </AdvancedMarker>
@@ -334,3 +351,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     </section>
   );
 };
+`;
+
+fs.writeFileSync('src/components/InteractiveMap.tsx', content);
+

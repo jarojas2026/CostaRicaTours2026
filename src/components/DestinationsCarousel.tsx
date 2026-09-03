@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Language, TourRegion } from '../types';
 import { motion, useScroll, useTransform } from 'motion/react';
 import { ChevronRight, ChevronLeft, MapPin } from 'lucide-react';
+import { LazyImage } from './LazyImage';
 
 interface DestinationsCarouselProps {
   language: Language;
@@ -108,11 +109,7 @@ export const DestinationsCarousel: React.FC<DestinationsCarouselProps> = ({ lang
               className="relative min-w-[280px] sm:min-w-[320px] aspect-[4/5] rounded-[2rem] overflow-hidden snap-start cursor-pointer group shadow-md hover:shadow-xl transition-all duration-300"
             >
               {/* Background Image */}
-              <img 
-                src={dest.img} 
-                alt={dest.name[language as keyof typeof dest.name] || dest.name.en}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
+              <LazyImage src={dest.img} alt={dest.name[language as keyof typeof dest.name] || dest.name.en} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
               
               {/* Gradient Overlay */}
               <div className={`absolute inset-0 bg-gradient-to-t ${dest.color} opacity-80 mix-blend-multiply transition-opacity duration-300 group-hover:opacity-90`}></div>

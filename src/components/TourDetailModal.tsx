@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Tour, Language, Currency, BookingRequest } from '../types';
 import { getLangText, formatCurrency } from '../utils/i18n';
+import { LazyImage } from './LazyImage';
 import { 
   Star, Clock, MapPin, CheckCircle2, ShieldCheck, Calendar, Users, Hotel, 
   ChevronRight, ChevronLeft, X, AlertCircle, CreditCard, Smartphone, Banknote, 
@@ -519,11 +520,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
         {/* Hero Header */}
         <div className="relative h-60 sm:h-72 w-full overflow-hidden">
-          <img
-            src={tour.image}
-            alt={tourTitle}
-            className="w-full h-full object-cover"
-          />
+          <LazyImage src={tour.image} alt={tourTitle} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#102A1C] via-[#102A1C]/60 to-transparent" />
 
           <div className="absolute bottom-5 left-5 right-5 sm:bottom-6 sm:left-8 sm:right-8 space-y-2">
@@ -584,7 +581,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
               </div>
               <div className="flex items-center gap-2 bg-[#0C1E14]/70 p-3 rounded-xl border border-[#2D663B]/50 text-stone-200">
                 <Users className="w-4 h-4 text-[#A8D5BA] shrink-0" />
-                <span>{language === 'es' ? 'Guía bilingüe certificado ICT • Grupos reducidos' : 'ICT certified guide • Small groups'}</span>
+                <span>{language === 'es' ? 'Guía local experto • Grupos reducidos' : 'Expert local guide • Small groups'}</span>
               </div>
             </div>
 

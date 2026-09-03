@@ -50,6 +50,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   userBookings = [],
   onClose,
   onNavigateTab,
+  onBack,
 }) => {
   const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
 

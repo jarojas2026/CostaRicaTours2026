@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tour, Language, Currency } from '../types';
 import { getLangText, formatCurrency, UI_TRANSLATIONS } from '../utils/i18n';
+import { LazyImage } from './LazyImage';
 import { Star, Clock, MapPin, Leaf, Shield, ArrowRight, ExternalLink, X, Compass, Navigation, Heart, Scale, Check } from 'lucide-react';
 
 interface TourCardProps {
@@ -68,11 +69,7 @@ export const TourCard: React.FC<TourCardProps> = ({
       >
         {/* Image Container */}
         <div className={`relative overflow-hidden ${viewMode === 'list' ? 'shrink-0 w-full lg:w-[40%] h-48 lg:h-auto' : 'w-full flex-1 min-h-[14rem] sm:min-h-[16rem]'}`}>
-          <img
-            src={tour.image}
-            alt={titleText}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
-          />
+          <LazyImage src={tour.image} alt={titleText} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
           {/* Soft gradient to ensure top badges are readable */}
           <div className="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-950/10 to-stone-950/80 pointer-events-none"></div>
           
