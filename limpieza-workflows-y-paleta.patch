@@ -1,0 +1,827 @@
+diff --git a/.github/workflows/greetings.yml b/.github/workflows/greetings.yml
+deleted file mode 100644
+index 4677434..0000000
+--- a/.github/workflows/greetings.yml
++++ /dev/null
+@@ -1,16 +0,0 @@
+-name: Greetings
+-
+-on: [pull_request_target, issues]
+-
+-jobs:
+-  greeting:
+-    runs-on: ubuntu-latest
+-    permissions:
+-      issues: write
+-      pull-requests: write
+-    steps:
+-    - uses: actions/first-interaction@v1
+-      with:
+-        repo-token: ${{ secrets.GITHUB_TOKEN }}
+-        issue-message: "Message that will be displayed on users' first issue"
+-        pr-message: "Message that will be displayed on users' first pull request"
+diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
+deleted file mode 100644
+index 7223a5e..0000000
+--- a/.github/workflows/main.yml
++++ /dev/null
+@@ -1,80 +0,0 @@
+-Necesito que implementes automatizaciones de backend para el sistema de reservas
+-de esta plataforma de tours. El objetivo es que una reserva se complete de
+-principio a fin SIN intervención humana: hoy dependo de leer WhatsApp a mano,
+-y eso tiene que desaparecer.
+-
+-REGLA MÁS IMPORTANTE: no modifiques ningún componente de src/components ni
+-ningún archivo de UI/frontend. Todo el trabajo va en server.ts y, si hace
+-falta, en archivos nuevos dentro de una carpeta backend/. El frontend ya
+-funciona y no lo quiero tocar.
+-
+-Contexto de lo que existe hoy en server.ts:
+-- Hay un endpoint que crea reservas y las guarda en "const bookings: any[] = []",
+-  un array en memoria que se borra en cada reinicio del servidor.
+-- El campo paymentStatus se recibe directo del cliente sin verificación.
+-- Hay una llamada a un webhook de n8n comentada (no activa).
+-- Hay un endpoint /api/webhooks/n8n/update-booking que espera que n8n le
+-  avise cambios de estado, pero nada lo dispara todavía porque el webhook
+-  de salida está apagado.
+-
+-Quiero que implementes, en este orden, cada uno como un cambio independiente
+-que pueda probar por separado:
+-
+-1. PERSISTENCIA REAL
+-   Reemplazá el array en memoria por Firestore. Cada reserva nueva debe
+-   escribirse en una colección "bookings" con el mismo bookingId que ya se
+-   genera. El endpoint GET /api/bookings debe leer desde Firestore, no del
+-   array. No cambies la forma (shape) del objeto booking que ya existe,
+-   para no romper el AdminDashboard que lo consume.
+-
+-2. VERIFICACIÓN DE PAGO DEL LADO DEL SERVIDOR
+-   Antes de guardar una reserva con paymentStatus = "completed", verificá
+-   el pago contra la API de PayPal (Orders API / webhook de PayPal), no
+-   contra lo que mande el cliente en el body. Si no se puede verificar,
+-   guardá la reserva con estado "pendiente_pago" en vez de "completada".
+-
+-3. DISPARO DEL WEBHOOK A n8n
+-   Activá la llamada POST a n8n que está comentada, mandando el objeto
+-   completo de la reserva apenas se confirma el pago (no antes). Si la
+-   llamada falla, no debe tumbar la creación de la reserva — logueá el
+-   error y seguí.
+-
+-4. CONTROL DE DISPONIBILIDAD
+-   Antes de aceptar una reserva nueva, chequeá en Firestore cuántas
+-   reservas existen ya para el mismo tourId + date + time, y compará
+-   contra un campo de cupo máximo del tour (agregalo a los datos del tour
+-   si no existe). Si no hay cupo, devolvé un error claro que el frontend
+-   ya pueda mostrar (status 409, mensaje "sin disponibilidad").
+-
+-Para cada punto: decime qué archivos tocaste, qué variables de entorno
+-nuevas necesito configurar en Cloud Run (si alguna), y cómo lo puedo
+-probar manualmente antes de publicar.
+-________________________________________
+-Después de este prompt, en n8n (fuera de AI Studio) armá:
+-•	Un workflow que reciba el webhook del paso 3 y: 
+-1.	Mande confirmación automática al cliente (WhatsApp Business API o email).
+-2.	Te notifique a vos como operador (WhatsApp, email o Slack).
+-3.	Cree el evento en un calendario si lo usás para coordinar operadores.
+-Ese workflow de n8n no lo puede generar AI Studio — se arma directo en la interfaz de n8n, y lo que hicimos en el prompt de arriba es justamente lo que le da los datos para funcionar.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-recuerda que somos una platarma que vendera los tours que ofrecen en todo costa rica los proveedores de servicios turisticos y alojamiento y transporte incluyendo miles de productos
+-
+-
+-
+-
+-
+-
+-
+-
+-
+diff --git a/.github/workflows/manual.yml b/.github/workflows/manual.yml
+deleted file mode 100644
+index 11b2e35..0000000
+--- a/.github/workflows/manual.yml
++++ /dev/null
+@@ -1,32 +0,0 @@
+-# This is a basic workflow that is manually triggered
+-
+-name: Manual workflow
+-
+-# Controls when the action will run. Workflow runs when manually triggered using the UI
+-# or API.
+-on:
+-  workflow_dispatch:
+-    # Inputs the workflow accepts.
+-    inputs:
+-      name:
+-        # Friendly description to be shown in the UI instead of 'name'
+-        description: 'Person to greet'
+-        # Default value if no value is explicitly provided
+-        default: 'World'
+-        # Input has to be provided for the workflow to run
+-        required: true
+-        # The data type of the input
+-        type: string
+-
+-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+-jobs:
+-  # This workflow contains a single job called "greet"
+-  greet:
+-    # The type of runner that the job will run on
+-    runs-on: ubuntu-latest
+-
+-    # Steps represent a sequence of tasks that will be executed as part of the job
+-    steps:
+-    # Runs a single command using the runners shell
+-    - name: Send greeting
+-      run: echo "Hello ${{ inputs.name }}"
+diff --git a/.github/workflows/python-app.yml b/.github/workflows/python-app.yml
+deleted file mode 100644
+index 1168bd9..0000000
+--- a/.github/workflows/python-app.yml
++++ /dev/null
+@@ -1,39 +0,0 @@
+-# This workflow will install Python dependencies, run tests and lint with a single version of Python
+-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+-
+-name: Python application
+-
+-on:
+-  push:
+-    branches: [ "main" ]
+-  pull_request:
+-    branches: [ "main" ]
+-
+-permissions:
+-  contents: read
+-
+-jobs:
+-  build:
+-
+-    runs-on: ubuntu-latest
+-
+-    steps:
+-    - uses: actions/checkout@v4
+-    - name: Set up Python 3.10
+-      uses: actions/setup-python@v3
+-      with:
+-        python-version: "3.10"
+-    - name: Install dependencies
+-      run: |
+-        python -m pip install --upgrade pip
+-        pip install flake8 pytest
+-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+-    - name: Lint with flake8
+-      run: |
+-        # stop the build if there are Python syntax errors or undefined names
+-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+-    - name: Test with pytest
+-      run: |
+-        pytest
+diff --git a/.github/workflows/typecheck.yml b/.github/workflows/typecheck.yml
+new file mode 100644
+index 0000000..032a92c
+--- /dev/null
++++ b/.github/workflows/typecheck.yml
+@@ -0,0 +1,18 @@
++name: Chequeo de tipos
++
++on:
++  push:
++    branches: [ "main" ]
++  pull_request:
++    branches: [ "main" ]
++
++jobs:
++  typecheck:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: 20
++      - run: npm install
++      - run: npm run lint
+diff --git a/fix-completo-y-nueva-paleta.patch b/fix-completo-y-nueva-paleta.patch
+deleted file mode 100644
+index 93cc960..0000000
+--- a/fix-completo-y-nueva-paleta.patch
++++ /dev/null
+@@ -1,506 +0,0 @@
+-diff --git a/index.html b/index.html
+-index c433f72..f90c81f 100644
+---- a/index.html
+-+++ b/index.html
+-@@ -17,7 +17,7 @@
+-     
+-     <link rel="preconnect" href="https://fonts.googleapis.com" />
+-     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+--    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+-+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+-   </head>
+-   <body class="bg-white text-[#2C3330] font-sans antialiased selection:bg-[#E67E22] selection:text-white">
+-     <div id="root"></div>
+-diff --git a/server.ts b/server.ts
+-index d3b1e6c..31e11c6 100644
+---- a/server.ts
+-+++ b/server.ts
+-@@ -9,6 +9,7 @@ import http from "http";
+- import { initializeApp, cert } from "firebase-admin/app";
+- import { getFirestore, FieldValue } from "firebase-admin/firestore";
+- import fs from "fs";
+-+import { TOURS } from "./src/data/toursData";
+- 
+- dotenv.config();
+- 
+-@@ -29,6 +30,18 @@ const PORT = 3000;
+- const server = http.createServer(app);
+- const wss = new WebSocketServer({ server, path: "/live" });
+- 
+-+// Guardia global: un error async no atrapado (ej. un problema de
+-+// autenticación o de red con Firestore/Stripe/Gemini) NO debe tumbar
+-+// todo el servidor y afectar a todos los usuarios conectados. Lo
+-+// logueamos y seguimos vivos; cada endpoint sigue siendo responsable
+-+// de responderle un error claro al cliente que lo disparó.
+-+process.on("unhandledRejection", (reason) => {
+-+  console.error("Unhandled promise rejection (el servidor sigue corriendo):", reason);
+-+});
+-+process.on("uncaughtException", (err) => {
+-+  console.error("Uncaught exception (el servidor sigue corriendo):", err);
+-+});
+-+
+- app.use(express.json());
+- 
+- // Initialize Google GenAI
+-@@ -835,7 +848,7 @@ function getStripe() {
+-   if (!stripeClient) {
+-     const key = process.env.STRIPE_SECRET_KEY;
+-     if (key) {
+--      stripeClient = new Stripe(key, { apiVersion: '2023-10-16' });
+-+      stripeClient = new Stripe(key, { apiVersion: '2026-08-26.dahlia' });
+-     }
+-   }
+-   return stripeClient;
+-@@ -885,26 +898,74 @@ app.post("/api/stripe/create-checkout-session", async (req, res) => {
+- });
+- 
+- // Bookings endpoint (Mock memory storage)
+--const bookings: any[] = [];
+-+// Colección de Firestore donde viven las reservas de verdad.
+-+// Si Firestore no se pudo inicializar (ver arriba), devolvemos null y cada
+-+// endpoint responde con un error claro en vez de fallar en silencio.
+-+function getBookingsCollection() {
+-+  if (!db) return null;
+-+  return db.collection("bookings");
+-+}
+- 
+- app.post("/api/bookings", async (req, res) => {
+--  const { 
+--    tourId, 
+--    tourName, 
+--    date, 
+--    time, 
+--    adults, 
+--    children, 
+--    pickupHotel, 
+--    totalUSD, 
+--    customer, 
+--    electronicInvoice, 
+--    paymentMethod, 
+--    paymentStatus, 
+--    status, 
+-+  const bookingsCol = getBookingsCollection();
+-+  if (!bookingsCol) {
+-+    return res.status(503).json({ error: "La base de datos no está disponible. Intentá de nuevo en unos minutos." });
+-+  }
+-+
+-+  const {
+-+    tourId,
+-+    tourName,
+-+    date,
+-+    time,
+-+    adults,
+-+    children,
+-+    pickupHotel,
+-+    totalUSD,
+-+    customer,
+-+    electronicInvoice,
+-+    paymentMethod,
+-+    paymentStatus,
+-+    status,
+-     specialRequests,
+-     flightDetails
+-   } = req.body;
+-+
+-+  if (!tourId || !date) {
+-+    return res.status(400).json({ error: "Faltan datos obligatorios: tourId y date." });
+-+  }
+-+
+-+  const numAdults = Number(adults) || 1;
+-+  const numChildren = Number(children) || 0;
+-+  const bookingTime = time || "08:00 AM";
+-+
+-+  // Control de cupo: sumamos los pasajeros ya reservados para el mismo
+-+  // tour, misma fecha y mismo horario, y lo comparamos contra el
+-+  // maxGroupSize del tour (si el tour no define cupo máximo, no bloqueamos).
+-+  const tourDef = TOURS.find((t) => t.id === tourId);
+-+  if (tourDef?.maxGroupSize) {
+-+    const existingSnapshot = await bookingsCol
+-+      .where("tourId", "==", tourId)
+-+      .where("date", "==", date)
+-+      .where("time", "==", bookingTime)
+-+      .get();
+-+
+-+    let alreadyBooked = 0;
+-+    existingSnapshot.forEach((doc) => {
+-+      const b = doc.data();
+-+      if (b.status !== "cancelada") {
+-+        alreadyBooked += (b.adults || 0) + (b.children || 0);
+-+      }
+-+    });
+-+
+-+    if (alreadyBooked + numAdults + numChildren > tourDef.maxGroupSize) {
+-+      return res.status(409).json({
+-+        error: "sin_disponibilidad",
+-+        message: "No queda cupo suficiente para ese tour en esa fecha y horario.",
+-+        cuposDisponibles: Math.max(0, tourDef.maxGroupSize - alreadyBooked)
+-+      });
+-+    }
+-+  }
+-+
+-   const bookingId = `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+-   const pnrLocator = flightDetails ? `PNR-${Math.random().toString(36).substring(2, 8).toUpperCase()}` : undefined;
+- 
+-@@ -916,8 +977,8 @@ app.post("/api/bookings", async (req, res) => {
+-       const prompt = `Analiza la siguiente reserva turística y automatiza las tareas operativas requeridas.
+-       Detalles de la reserva:
+-       - Tour: ${tourName}
+--      - Fecha y Hora: ${date} ${time || ''}
+--      - Pasajeros: ${adults || 1} adultos, ${children || 0} niños
+-+      - Fecha y Hora: ${date} ${bookingTime}
+-+      - Pasajeros: ${numAdults} adultos, ${numChildren} niños
+-       - Hotel/Recogida: ${pickupHotel || 'No especificado'}
+-       - Notas especiales del cliente: ${specialRequests || 'Ninguna'}
+-       
+-@@ -939,7 +1000,7 @@ app.post("/api/bookings", async (req, res) => {
+-           }
+-         }
+-       });
+--      
+-+
+-       if (response.text) {
+-         agentInsights = JSON.parse(response.text);
+-       }
+-@@ -948,14 +1009,17 @@ app.post("/api/bookings", async (req, res) => {
+-     }
+-   }
+- 
+-+  // NOTA IMPORTANTE: el paymentStatus todavía se recibe del cliente sin
+-+  // verificación server-side contra PayPal/Stripe. Eso queda pendiente
+-+  // como el siguiente paso (verificación de pago), no está resuelto acá.
+-   const newBooking = {
+-     bookingId,
+-     tourId,
+-     tourName,
+-     date,
+--    time: time || "08:00 AM",
+--    adults: Number(adults) || 1,
+--    children: Number(children) || 0,
+-+    time: bookingTime,
+-+    adults: numAdults,
+-+    children: numChildren,
+-     pickupHotel: pickupHotel || (flightDetails ? `Aeropuerto ${flightDetails.destinationCode} (Vuelo ${flightDetails.flightNumber})` : "Recepción del Hotel"),
+-     specialRequests,
+-     totalUSD,
+-@@ -970,33 +1034,83 @@ app.post("/api/bookings", async (req, res) => {
+-     } : undefined,
+-     createdAt: new Date().toISOString(),
+-     status: status || "confirmada",
+--    agentInsights // Attach the background AI agent's operational insights
+-+    agentInsights
+-   };
+--  bookings.push(newBooking);
+--  
+--  // NOTE: En producción, aquí se realizaría la petición POST al webhook de n8n
+--  // fetch('https://tu-n8n.com/webhook/reservas', { method: 'POST', body: JSON.stringify(newBooking) }).catch(console.error);
+-+
+-+  try {
+-+    await bookingsCol.doc(bookingId).set(newBooking);
+-+  } catch (error) {
+-+    console.error("Error guardando la reserva en Firestore:", error);
+-+    return res.status(500).json({ error: "No se pudo guardar la reserva. Intentá de nuevo." });
+-+  }
+-+
+-+  // Avisar a n8n de que entró una reserva nueva, para que dispare la
+-+  // confirmación automática al cliente y la notificación al operador.
+-+  // No bloqueamos la respuesta al cliente si esto falla.
+-+  if (process.env.N8N_BOOKING_WEBHOOK_URL) {
+-+    fetch(process.env.N8N_BOOKING_WEBHOOK_URL, {
+-+      method: "POST",
+-+      headers: { "Content-Type": "application/json" },
+-+      body: JSON.stringify(newBooking)
+-+    }).catch((err) => console.error("Error notificando a n8n:", err));
+-+  }
+- 
+-   res.status(201).json({ success: true, booking: newBooking });
+- });
+- 
+--app.get("/api/bookings", (_req, res) => {
+--  res.json({ bookings });
+-+app.get("/api/bookings", async (req, res) => {
+-+  const bookingsCol = getBookingsCollection();
+-+  if (!bookingsCol) {
+-+    return res.status(503).json({ error: "La base de datos no está disponible." });
+-+  }
+-+
+-+  // Paginación simple por si el volumen de reservas crece mucho:
+-+  // ?limit=50&startAfter=<bookingId del último de la página anterior>
+-+  const limit = Math.min(Number(req.query.limit) || 100, 500);
+-+  let query = bookingsCol.orderBy("createdAt", "desc").limit(limit);
+-+
+-+  if (req.query.startAfter) {
+-+    const startAfterDoc = await bookingsCol.doc(String(req.query.startAfter)).get();
+-+    if (startAfterDoc.exists) {
+-+      query = query.startAfter(startAfterDoc);
+-+    }
+-+  }
+-+
+-+  try {
+-+    const snapshot = await query.get();
+-+    const bookings = snapshot.docs.map((doc) => doc.data());
+-+    res.json({ bookings, nextCursor: bookings.length === limit ? bookings[bookings.length - 1].bookingId : null });
+-+  } catch (error) {
+-+    console.error("Error leyendo reservas de Firestore:", error);
+-+    res.status(500).json({ error: "No se pudieron cargar las reservas." });
+-+  }
+- });
+- 
+- // Endpoint para que n8n interactúe de vuelta con el sistema (ej. confirmar reserva, actualizar status)
+--app.post("/api/webhooks/n8n/update-booking", (req, res) => {
+-+app.post("/api/webhooks/n8n/update-booking", async (req, res) => {
+-+  const bookingsCol = getBookingsCollection();
+-+  if (!bookingsCol) {
+-+    return res.status(503).json({ error: "La base de datos no está disponible." });
+-+  }
+-+
+-   const { bookingId, status, notes } = req.body;
+--  const index = bookings.findIndex(b => b.bookingId === bookingId);
+--  if (index !== -1) {
+--    bookings[index].status = status || bookings[index].status;
+--    if (notes) {
+--      bookings[index].n8nNotes = notes;
+--    }
+--    res.json({ success: true, booking: bookings[index] });
+--  } else {
+--    res.status(404).json({ error: "Booking not found" });
+-+  if (!bookingId) {
+-+    return res.status(400).json({ error: "Falta bookingId." });
+-+  }
+-+
+-+  const docRef = bookingsCol.doc(bookingId);
+-+  const doc = await docRef.get();
+-+  if (!doc.exists) {
+-+    return res.status(404).json({ error: "Booking not found" });
+-   }
+-+
+-+  const updates: Record<string, any> = {};
+-+  if (status) updates.status = status;
+-+  if (notes) updates.n8nNotes = notes;
+-+
+-+  await docRef.update(updates);
+-+  const updatedDoc = await docRef.get();
+-+  res.json({ success: true, booking: updatedDoc.data() });
+- });
+- 
+- // ==========================================
+-diff --git a/src/components/AIAssistant.tsx b/src/components/AIAssistant.tsx
+-index 7bf8c6a..c914f69 100644
+---- a/src/components/AIAssistant.tsx
+-+++ b/src/components/AIAssistant.tsx
+-@@ -50,6 +50,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
+-   userBookings = [],
+-   onClose,
+-   onNavigateTab,
+-+  onBack,
+- }) => {
+-   const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
+- 
+-diff --git a/src/components/InteractiveMap.tsx b/src/components/InteractiveMap.tsx
+-index 4506089..1d6f929 100644
+---- a/src/components/InteractiveMap.tsx
+-+++ b/src/components/InteractiveMap.tsx
+-@@ -8,7 +8,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 're
+- import 'leaflet/dist/leaflet.css';
+- import L from 'leaflet';
+- // Leaflet defaults
+--delete L.Icon.Default.prototype._getIconUrl;
+-+delete (L.Icon.Default.prototype as any)._getIconUrl;
+- L.Icon.Default.mergeOptions({
+-   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+-   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+-diff --git a/src/components/ToursGrid.tsx b/src/components/ToursGrid.tsx
+-index 367663d..78a3a96 100644
+---- a/src/components/ToursGrid.tsx
+-+++ b/src/components/ToursGrid.tsx
+-@@ -6,7 +6,7 @@ import { REGIONS } from '../data/toursData';
+- import { motion, AnimatePresence } from 'motion/react';
+- import { 
+-   Compass, Search, Filter, SlidersHorizontal, Sparkles, LayoutGrid, List, 
+--  Map, Heart, Scale, X, Flame, Leaf, Check, RotateCcw, ArrowUpDown 
+-+  Map, Heart, Scale, X, Flame, Leaf, Check, RotateCcw, ArrowUpDown, ArrowLeft 
+- } from 'lucide-react';
+- 
+- interface ToursGridProps {
+-diff --git a/src/data/aiAgentsData.ts b/src/data/aiAgentsData.ts
+-index 6f9cb4f..79cb573 100644
+---- a/src/data/aiAgentsData.ts
+-+++ b/src/data/aiAgentsData.ts
+-@@ -31,6 +31,15 @@ export const AI_AGENTS: AIAgent[] = [
+-     avatarEmoji: '🎧',
+-     themeColor: 'indigo',
+-     bgGradient: 'from-indigo-500/20 to-stone-900/40',
+-+    borderColor: '#6366F1',
+-+    description: {
+-+      es: 'Soporte general y resolución de problemas para cualquier duda o inconveniente con tu reserva en costaricatours.es.',
+-+      en: 'General support and issue resolution for any question or problem with your booking on costaricatours.es.',
+-+      de: 'Allgemeiner Support und Problemlösung bei Fragen oder Schwierigkeiten mit Ihrer Buchung auf costaricatours.es.',
+-+      fr: 'Support général et résolution de problèmes pour toute question sur votre réservation via costaricatours.es.',
+-+      zh: '为您在 costaricatours.es 上的预订提供一般支持和问题解决服务。',
+-+      ja: 'costaricatours.esでのご予約に関する一般的なサポートと問題解決を行います。'
+-+    },
+-     welcomeMessage: {
+-       es: '¡Hola! Soy Martín. Estoy aquí para ayudarte con cualquier problema, queja o duda general que tengas sobre nuestros servicios. ¿En qué te puedo ayudar hoy?',
+-       en: 'Hello! I\'m Martín. I\'m here to help you with any issues, complaints, or general questions about our services. How can I assist you today?',
+-@@ -111,6 +120,15 @@ export const AI_AGENTS: AIAgent[] = [
+-     avatarEmoji: '🌤️',
+-     themeColor: 'cyan',
+-     bgGradient: 'from-cyan-500/20 to-stone-900/40',
+-+    borderColor: '#06B6D4',
+-+    description: {
+-+      es: 'Analiza los microclimas de Costa Rica para ayudarte a elegir la mejor región y fecha para tu viaje.',
+-+      en: 'Analyzes Costa Rica\'s micro-climates to help you choose the best region and dates for your trip.',
+-+      de: 'Analysiert die Mikroklimazonen Costa Ricas, um die beste Region und Reisezeit zu bestimmen.',
+-+      fr: 'Analyse les micro-climats du Costa Rica pour vous aider à choisir la meilleure région et période.',
+-+      zh: '分析哥斯达黎加的微气候，帮助您选择最佳旅行区域和日期。',
+-+      ja: 'コスタリカの微気候を分析し、最適な地域と旅行時期の選択をサポートします。'
+-+    },
+-     welcomeMessage: {
+-       es: '¡Hola! Costa Rica tiene decenas de microclimas. ¿A qué región viajas y en qué fechas para darte el pronóstico exacto?',
+-       en: 'Hello! Costa Rica has dozens of micro-climates. Where and when are you traveling so I can give you the exact forecast?',
+-@@ -190,6 +208,15 @@ export const AI_AGENTS: AIAgent[] = [
+-     avatarEmoji: '🛂',
+-     themeColor: 'blue',
+-     bgGradient: 'from-blue-500/20 to-stone-900/40',
+-+    borderColor: '#3B82F6',
+-+    description: {
+-+      es: 'Guía sobre requisitos de entrada, pasaportes e impuestos de salida para viajar a Costa Rica.',
+-+      en: 'Guidance on entry requirements, passports, and exit taxes for traveling to Costa Rica.',
+-+      de: 'Beratung zu Einreisebestimmungen, Pässen und Ausreisesteuern für Costa Rica.',
+-+      fr: 'Conseils sur les conditions d\'entrée, passeports et taxes de sortie pour le Costa Rica.',
+-+      zh: '提供有关前往哥斯达黎加的入境要求、护照和离境税的指导。',
+-+      ja: 'コスタリカ旅行に必要な入国要件、パスポート、出国税についてご案内します。'
+-+    },
+-     welcomeMessage: {
+-       es: '¡Hola! Te asisto con las regulaciones de entrada a Costa Rica. ¿De qué país es tu pasaporte?',
+-       en: 'Hello! I assist with Costa Rica entry regulations. What country is your passport from?',
+-@@ -269,6 +296,15 @@ export const AI_AGENTS: AIAgent[] = [
+-     avatarEmoji: '🏥',
+-     themeColor: 'red',
+-     bgGradient: 'from-red-500/20 to-stone-900/40',
+-+    borderColor: '#EF4444',
+-+    description: {
+-+      es: 'Información sobre vacunas, seguros médicos, farmacias y protocolos de emergencia en Costa Rica.',
+-+      en: 'Information on vaccines, medical insurance, pharmacies, and emergency protocols in Costa Rica.',
+-+      de: 'Informationen zu Impfungen, Krankenversicherung, Apotheken und Notfallprotokollen in Costa Rica.',
+-+      fr: 'Informations sur les vaccins, l\'assurance santé, les pharmacies et les protocoles d\'urgence.',
+-+      zh: '提供有关哥斯达黎加疫苗、医疗保险、药房和紧急情况处理的信息。',
+-+      ja: 'コスタリカでのワクチン、医療保険、薬局、緊急時対応についての情報を提供します。'
+-+    },
+-     welcomeMessage: {
+-       es: '¡Pura vida! Costa Rica es un país muy seguro, pero siempre es bueno estar preparado. ¿Tienes alguna duda sobre vacunas, agua potable o seguros médicos?',
+-       en: 'Pura vida! Costa Rica is very safe, but it\'s always good to be prepared. Any questions about vaccines, tap water, or medical insurance?',
+-@@ -348,6 +384,15 @@ export const AI_AGENTS: AIAgent[] = [
+-     avatarEmoji: '♻️',
+-     themeColor: 'green',
+-     bgGradient: 'from-green-500/20 to-stone-900/40',
+-+    borderColor: '#22C55E',
+-+    description: {
+-+      es: 'Especialista en eco-lodges, voluntariado y compensación de carbono para un viaje sostenible por Costa Rica.',
+-+      en: 'Specialist in eco-lodges, volunteering, and carbon offsetting for a sustainable trip through Costa Rica.',
+-+      de: 'Spezialist für Öko-Lodges, Freiwilligenarbeit und CO2-Ausgleich für eine nachhaltige Reise.',
+-+      fr: 'Spécialiste des éco-lodges, du bénévolat et de la compensation carbone pour un voyage durable.',
+-+      zh: '专注于生态旅馆、志愿服务和碳补偿，助您实现可持续的哥斯达黎加之旅。',
+-+      ja: 'エコロッジ、ボランティア、カーボンオフセットの専門家として、持続可能な旅をサポートします。'
+-+    },
+-     welcomeMessage: {
+-       es: 'Costa Rica es pionera en turismo sostenible. ¿Te interesa encontrar hoteles ecológicos, proyectos de rescate animal o compensar la huella de carbono de tu viaje?',
+-       en: 'Costa Rica is a pioneer in sustainable tourism. Interested in finding eco-hotels, animal rescue projects, or offsetting your travel carbon footprint?',
+-@@ -427,6 +472,15 @@ export const AI_AGENTS: AIAgent[] = [
+-     avatarEmoji: '🎭',
+-     themeColor: 'purple',
+-     bgGradient: 'from-purple-500/20 to-stone-900/40',
+-+    borderColor: '#A855F7',
+-+    description: {
+-+      es: 'Recomienda fiestas locales, topes, carnavales y eventos culturales según las fechas de tu viaje.',
+-+      en: 'Recommends local fiestas, rodeos, carnivals, and cultural events based on your travel dates.',
+-+      de: 'Empfiehlt lokale Feste, Rodeos, Karneval und Kulturveranstaltungen passend zu Ihrem Reisezeitraum.',
+-+      fr: 'Recommande fêtes locales, rodéos, carnavals et événements culturels selon vos dates de voyage.',
+-+      zh: '根据您的旅行日期推荐当地节日、游行、狂欢节和文化活动。',
+-+      ja: '旅行日程に合わせて地元のお祭り、ロデオ、カーニバル、文化イベントをご案内します。'
+-+    },
+-     welcomeMessage: {
+-       es: '¡Upe! ¿Quieres vivir la verdadera cultura tica? Te puedo recomendar topes, corridas a la tica, el Festival Envision, o carnavales según las fechas de tu viaje.',
+-       en: 'Upe! Want to experience true Tico culture? I can recommend local rodeos, Envision Festival, or carnivals based on your travel dates.',
+-@@ -506,6 +560,15 @@ export const AI_AGENTS: AIAgent[] = [
+-     avatarEmoji: '💳',
+-     themeColor: 'emerald',
+-     bgGradient: 'from-emerald-500/20 to-stone-900/40',
+-+    borderColor: '#10B981',
+-+    description: {
+-+      es: 'Asesora sobre tipo de cambio, propinas, cajeros automáticos y presupuesto para tu viaje a Costa Rica.',
+-+      en: 'Advises on exchange rates, tipping, ATMs, and budgeting for your trip to Costa Rica.',
+-+      de: 'Berät zu Wechselkursen, Trinkgeld, Geldautomaten und Budgetplanung für Costa Rica.',
+-+      fr: 'Conseille sur le taux de change, les pourboires, les distributeurs et le budget de voyage.',
+-+      zh: '为您的哥斯达黎加之旅提供汇率、小费、自动取款机和预算方面的建议。',
+-+      ja: 'コスタリカ旅行の為替レート、チップ、ATM、予算計画についてアドバイスします。'
+-+    },
+-     welcomeMessage: {
+-       es: '¿Colones o Dólares? Te ayudo a optimizar tu dinero en Costa Rica. ¿Tienes dudas sobre propinas, uso de tarjetas o el tipo de cambio oficial (BCCR)?',
+-       en: 'Colones or Dollars? I help you optimize your money in Costa Rica. Any questions about tipping, card usage, or the official exchange rate (BCCR)?',
+-diff --git a/src/index.css b/src/index.css
+-index 6b95ceb..46306fa 100644
+---- a/src/index.css
+-+++ b/src/index.css
+-@@ -2,22 +2,23 @@
+- 
+- @layer base {
+-   :root {
+--    --font-heading: 'Outfit', sans-serif;
+--    --font-body: 'Plus Jakarta Sans', sans-serif;
+--    --verde-selva: #1E7B4A;
+--    --azul-oceano: #0B668F;
+--    --naranja-atardecer: #E67E22;
+--    --gris-oscuro: #2C3330;
+--    --gris-claro: #F4F7F5;
+-+    --font-heading: 'Fraunces', serif;
+-+    --font-body: 'Work Sans', sans-serif;
+-+    --verde-selva: #1E4D2B;      /* Dosel — verde profundo de selva */
+-+    --azul-oceano: #0F8B8D;      /* Caribe — turquesa de costa caribeña */
+-+    --naranja-atardecer: #E8A33D; /* Guanacaste — dorado de atardecer, uso exclusivo para CTAs */
+-+    --gris-oscuro: #1A1815;      /* Texto — casi negro cálido, nunca negro puro */
+-+    --gris-claro: #EDE6D9;       /* Arena tostada — fondo cálido, no blanco/gris frío */
+-+    --basalto: #2B2622;          /* Roca volcánica — solo para secciones hero oscuras */
+-   }
+-   body {
+-     background-color: #FFFFFF;
+--    color: #2C3330;
+--    font-family: 'Plus Jakarta Sans', sans-serif;
+-+    color: #1A1815;
+-+    font-family: 'Work Sans', sans-serif;
+-     overflow-x: hidden;
+-   }
+-   h1, h2, h3, h4, h5, h6 {
+--    font-family: 'Outfit', sans-serif;
+-+    font-family: 'Fraunces', serif;
+-   }
+- }
+- 
+-@@ -52,22 +53,22 @@
+-   background: rgba(255, 255, 255, 0.95);
+-   backdrop-filter: blur(20px);
+-   -webkit-backdrop-filter: blur(20px);
+--  border: 1px solid rgba(30, 123, 74, 0.15);
+--  box-shadow: 0 8px 32px 0 rgba(30, 123, 74, 0.08);
+-+  border: 1px solid rgba(30, 77, 43, 0.15);
+-+  box-shadow: 0 8px 32px 0 rgba(30, 77, 43, 0.08);
+- }
+- 
+- .glass-panel-light {
+--  background: #F4F7F5;
+-+  background: #EDE6D9;
+-   backdrop-filter: blur(20px);
+-   -webkit-backdrop-filter: blur(20px);
+--  border: 1px solid rgba(11, 102, 143, 0.15);
+-+  border: 1px solid rgba(15, 139, 141, 0.15);
+- }
+- 
+- .glow-orange {
+--  box-shadow: 0 4px 20px -2px rgba(230, 126, 34, 0.4);
+-+  box-shadow: 0 4px 20px -2px rgba(232, 163, 61, 0.4);
+- }
+- .glow-green {
+--  box-shadow: 0 4px 20px -2px rgba(30, 123, 74, 0.3);
+-+  box-shadow: 0 4px 20px -2px rgba(30, 77, 43, 0.3);
+- }
+- 
+- /* Custom Scrollbar for Modal Windows */
+diff --git a/index.html b/index.html
+index cd5e776..2cb78fa 100644
+--- a/index.html
++++ b/index.html
+@@ -17,7 +17,7 @@
+     
+     <link rel="preconnect" href="https://fonts.googleapis.com" />
+     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
++    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+   </head>
+   <body class="bg-white text-[#2C3330] font-sans antialiased selection:bg-[#E67E22] selection:text-white">
+     <div id="root"></div>
+diff --git a/map_test.tsx b/map_test.tsx
+deleted file mode 100644
+index 61e210f..0000000
+--- a/map_test.tsx
++++ /dev/null
+@@ -1,14 +0,0 @@
+-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+-import 'leaflet/dist/leaflet.css';
+-// Leaflet icon fix
+-import L from 'leaflet';
+-import icon from 'leaflet/dist/images/marker-icon.png';
+-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+-
+-let DefaultIcon = L.icon({
+-    iconUrl: icon,
+-    shadowUrl: iconShadow,
+-    iconAnchor: [12, 41]
+-});
+-
+-L.Marker.prototype.options.icon = DefaultIcon;
+diff --git a/src/index.css b/src/index.css
+index 6b95ceb..46306fa 100644
+--- a/src/index.css
++++ b/src/index.css
+@@ -2,22 +2,23 @@
+ 
+ @layer base {
+   :root {
+-    --font-heading: 'Outfit', sans-serif;
+-    --font-body: 'Plus Jakarta Sans', sans-serif;
+-    --verde-selva: #1E7B4A;
+-    --azul-oceano: #0B668F;
+-    --naranja-atardecer: #E67E22;
+-    --gris-oscuro: #2C3330;
+-    --gris-claro: #F4F7F5;
++    --font-heading: 'Fraunces', serif;
++    --font-body: 'Work Sans', sans-serif;
++    --verde-selva: #1E4D2B;      /* Dosel — verde profundo de selva */
++    --azul-oceano: #0F8B8D;      /* Caribe — turquesa de costa caribeña */
++    --naranja-atardecer: #E8A33D; /* Guanacaste — dorado de atardecer, uso exclusivo para CTAs */
++    --gris-oscuro: #1A1815;      /* Texto — casi negro cálido, nunca negro puro */
++    --gris-claro: #EDE6D9;       /* Arena tostada — fondo cálido, no blanco/gris frío */
++    --basalto: #2B2622;          /* Roca volcánica — solo para secciones hero oscuras */
+   }
+   body {
+     background-color: #FFFFFF;
+-    color: #2C3330;
+-    font-family: 'Plus Jakarta Sans', sans-serif;
++    color: #1A1815;
++    font-family: 'Work Sans', sans-serif;
+     overflow-x: hidden;
+   }
+   h1, h2, h3, h4, h5, h6 {
+-    font-family: 'Outfit', sans-serif;
++    font-family: 'Fraunces', serif;
+   }
+ }
+ 
+@@ -52,22 +53,22 @@
+   background: rgba(255, 255, 255, 0.95);
+   backdrop-filter: blur(20px);
+   -webkit-backdrop-filter: blur(20px);
+-  border: 1px solid rgba(30, 123, 74, 0.15);
+-  box-shadow: 0 8px 32px 0 rgba(30, 123, 74, 0.08);
++  border: 1px solid rgba(30, 77, 43, 0.15);
++  box-shadow: 0 8px 32px 0 rgba(30, 77, 43, 0.08);
+ }
+ 
+ .glass-panel-light {
+-  background: #F4F7F5;
++  background: #EDE6D9;
+   backdrop-filter: blur(20px);
+   -webkit-backdrop-filter: blur(20px);
+-  border: 1px solid rgba(11, 102, 143, 0.15);
++  border: 1px solid rgba(15, 139, 141, 0.15);
+ }
+ 
+ .glow-orange {
+-  box-shadow: 0 4px 20px -2px rgba(230, 126, 34, 0.4);
++  box-shadow: 0 4px 20px -2px rgba(232, 163, 61, 0.4);
+ }
+ .glow-green {
+-  box-shadow: 0 4px 20px -2px rgba(30, 123, 74, 0.3);
++  box-shadow: 0 4px 20px -2px rgba(30, 77, 43, 0.3);
+ }
+ 
+ /* Custom Scrollbar for Modal Windows */
