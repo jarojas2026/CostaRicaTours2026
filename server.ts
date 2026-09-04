@@ -4,6 +4,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, LiveServerMessage, Modality, Type } from "@google/genai";
 import dotenv from "dotenv";
+import { google } from "googleapis";
 import { WebSocketServer } from "ws";
 import http from "http";
 import { initializeApp, cert } from "firebase-admin/app";
@@ -113,6 +114,50 @@ const ai = process.env.GEMINI_API_KEY
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", service: "Costa Rica Tours API (costaricatours.es)" });
 });
+
+
+// --- CHAT MEMORY MANAGER (Firestore) ---
+app.get("/api/chat/history", async (req, res) => {
+  try {
+    const sessionId = req.query.sessionId as string;
+    if (!sessionId) return res.status(400).json({ error: "sessionId required" });
+    const bookingsCol = getBookingsCollection(); // Used as a proxy to know DB is active
+    if (!bookingsCol) return res.json({ history: [] }); // fallback
+
+    const db = bookingsCol.firestore;
+    const doc = await db.collection("chat_sessions").doc(sessionId).get();
+    if (doc.exists) {
+      return res.json({ history: doc.data()?.history || [] });
+    } else {
+      return res.json({ history: [] });
+    }
+  } catch (error) {
+    console.error("Error fetching chat history:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.post("/api/chat/history", express.json(), async (req, res) => {
+  try {
+    const { sessionId, history } = req.body;
+    if (!sessionId || !history) return res.status(400).json({ error: "sessionId and history required" });
+    
+    const bookingsCol = getBookingsCollection();
+    if (!bookingsCol) return res.status(200).json({ success: true, message: "No DB" });
+
+    const db = bookingsCol.firestore;
+    await db.collection("chat_sessions").doc(sessionId).set({
+      history,
+      lastUpdated: new Date().toISOString()
+    }, { merge: true });
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error saving chat history:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+// ----------------------------------------
 
 // AI Concierge & Multi-Agent Chat endpoint (Context-Aware with Memory & Support Capabilities)
 app.post("/api/gemini/concierge", async (req, res) => {
@@ -1094,6 +1139,69 @@ app.post("/api/bookings", async (req, res) => {
     }
   }
 
+  
+// --- GOOGLE CALENDAR NATIVE INTEGRATION ---
+app.post("/api/calendar/sync", express.json(), async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "No Bearer token provided" });
+    }
+    const token = authHeader.split(" ")[1];
+
+    const { booking } = req.body;
+    if (!booking) {
+      return res.status(400).json({ error: "Booking data required" });
+    }
+
+    const oAuth2Client = new google.auth.OAuth2();
+    oAuth2Client.setCredentials({ access_token: token });
+
+    const calendar = google.calendar({ version: "v3", auth: oAuth2Client });
+
+    // Assuming booking.date is "YYYY-MM-DD" and time is something like "08:00"
+    // We'll create a generic 8-hour block or use the specific time if available.
+    // For simplicity, let's create an all-day event or a 4-hour block.
+    const startDate = new Date(`${booking.date}T08:00:00Z`);
+    if (isNaN(startDate.getTime())) {
+       // fallback if date parse fails
+       startDate.setTime(Date.now() + 86400000);
+    }
+    const endDate = new Date(startDate.getTime() + (4 * 60 * 60 * 1000)); // + 4 hours
+
+    const event = {
+      summary: `Reserva Confirmada: ${booking.tourName}`,
+      location: booking.pickupHotel || "Costa Rica",
+      description: `
+        Booking ID: ${booking.bookingId}
+        Cliente: ${booking.customerName || "No especificado"}
+        Email: ${booking.customerEmail || "No especificado"}
+        Pasajeros: ${(booking.adults || 0) + (booking.children || 0)}
+        Método de Pago: ${booking.paymentMethod}
+      `,
+      start: {
+        dateTime: startDate.toISOString(),
+        timeZone: "America/Costa_Rica",
+      },
+      end: {
+        dateTime: endDate.toISOString(),
+        timeZone: "America/Costa_Rica",
+      },
+    };
+
+    const response = await calendar.events.insert({
+      calendarId: "primary",
+      requestBody: event,
+    });
+
+    res.json({ success: true, eventLink: response.data.htmlLink });
+  } catch (error: any) {
+    console.error("Calendar Sync Error:", error);
+    res.status(500).json({ error: error.message || "Failed to sync with calendar" });
+  }
+});
+// ------------------------------------------
+
   // Verificación Server-Side de Pagos (PayPal)
   let finalStatus = status || "confirmada";
   let finalPaymentStatus = paymentStatus || "completed";
@@ -1136,6 +1244,33 @@ app.post("/api/bookings", async (req, res) => {
       } catch (err) {
         console.error("Error verifying PayPal order:", err);
       }
+    }
+  }
+
+  // Disparar Webhook a n8n si el pago de PayPal se confirmó en backend
+  if (finalStatus === "confirmada" && paymentMethod === "paypal") {
+    const N8N_URL = process.env.N8N_BOOKING_WEBHOOK_URL || "https://costaricatours.app.n8n.cloud/webhook-test/mi-api";
+    if (N8N_URL) {
+      // Usamos setImmediate o un fetch no bloqueante para no demorar la respuesta al cliente
+      fetch(N8N_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingId,
+          tourId,
+          tourName,
+          date,
+          time: bookingTime,
+          adults: numAdults,
+          children: numChildren,
+          customerName: customer?.name,
+          customerEmail: customer?.email,
+          paymentMethod,
+          paymentStatus: finalPaymentStatus,
+          status: finalStatus,
+          agentInsights
+        })
+      }).catch(err => console.error("Error notificando a n8n para PayPal:", err));
     }
   }
 

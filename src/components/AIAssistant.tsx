@@ -58,6 +58,15 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'booking' | 'nature_adventure' | 'logistics_food' | 'specialized'>('all');
   const currentAgent = getAIAgentById(activeAgentId);
 
+  const [chatSessionId] = useState(() => {
+    let sid = localStorage.getItem('chatSessionId');
+    if (!sid) {
+      sid = 'session_' + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('chatSessionId', sid);
+    }
+    return sid;
+  });
+  
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome-concierge',
@@ -82,6 +91,29 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  useEffect(() => {
+    // Load chat history from Firestore via backend
+    fetch(`/api/chat/history?sessionId=${chatSessionId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.history && data.history.length > 0) {
+          setMessages(data.history);
+        }
+      })
+      .catch(err => console.error('Failed to load history:', err));
+  }, [chatSessionId]);
+
+  // Sync history to backend when messages change (only if we have more than the welcome message)
+  useEffect(() => {
+    if (messages.length > 1) {
+      fetch('/api/chat/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: chatSessionId, history: messages })
+      }).catch(err => console.error('Failed to sync history:', err));
+    }
+  }, [messages, chatSessionId]);
 
   useEffect(() => {
     scrollToBottom();

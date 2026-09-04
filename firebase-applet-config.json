@@ -1,12 +1,11 @@
 {
-  "projectId": "original-iterator-4bndl",
-  "appId": "1:977549090045:web:61d7433df5c97df8cf3294",
-  "apiKey": "AIzaSyC8vwxbWU_DGutO3cqTat_iScoxfkNqCPE",
-  "authDomain": "original-iterator-4bndl.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-costaricatours-88d81273-09f7-4f87-991c-60b9b0db0dea",
-  "storageBucket": "original-iterator-4bndl.firebasestorage.app",
-  "messagingSenderId": "977549090045",
+  "projectId": "gen-lang-client-0782739149",
+  "appId": "1:937250723434:web:6b2ed826b2586a92c1dc13",
+  "apiKey": "AIzaSyD7-_fwJLM65J1kBEK5xQV35YBnDzp6cQk",
+  "authDomain": "gen-lang-client-0782739149.firebaseapp.com",
+  "storageBucket": "gen-lang-client-0782739149.firebasestorage.app",
+  "messagingSenderId": "937250723434",
   "measurementId": "",
-  "oAuthClientId": "977549090045-ek35kmtmnsva54q278k8cec3q4jlqgek.apps.googleusercontent.com",
+  "oAuthClientId": "937250723434-kelk0h3o3oj6dcjae19qjegleakh587b.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }
