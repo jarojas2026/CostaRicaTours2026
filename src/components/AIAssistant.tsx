@@ -7,7 +7,7 @@ import { ArrowLeft,
   Image as ImageIcon, BrainCircuit, XCircle, Leaf, Trees, ShieldCheck, 
   Info, Clock, ChevronRight, Zap, Coffee, Compass as CompassIcon, Waves, Mountain
 } from 'lucide-react';
-import { TOURS } from '../data/toursData';
+import { useTours } from '../contexts/ToursContext';
 import { getLangText, UI_TRANSLATIONS, formatCurrency } from '../utils/i18n';
 import { getEcoFactForTour, getEcoFactForRegion } from '../data/ecoFacts';
 import { AI_AGENTS, getAIAgentById } from '../data/aiAgentsData';
@@ -52,6 +52,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   onNavigateTab,
   onBack,
 }) => {
+  const { tours: TOURS } = useTours();
   const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
 
   const [activeAgentId, setActiveAgentId] = useState<AgentId>('concierge');

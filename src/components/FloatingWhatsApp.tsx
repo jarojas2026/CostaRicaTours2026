@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { Language, Tour } from '../types';
 import { getLangText } from '../utils/i18n';
-import { TOURS } from '../data/toursData';
+import { useTours } from '../contexts/ToursContext';
 import { useNatureSounds } from "../hooks/useNatureSounds";
 
 interface FloatingWhatsAppProps {
@@ -145,7 +145,7 @@ const keywordsToTourId: Record<string, string> = {
   'sim': 'tourist-sim-esim'
 };
 
-const getMentionedTours = (text: string) => {
+const getMentionedTours = (text: string, TOURS: Tour[]) => {
   if (!text || text.length < 3) return [];
   const lower = text.toLowerCase();
   const matchedTours: Tour[] = [];
@@ -601,6 +601,7 @@ const ChatMiniCard: React.FC<ChatMiniCardProps> = ({ tour, language, onSelectTou
 };
 
 export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, initialMessage, onOpenAIAssistant, onSelectTour }) => {
+  const { tours: TOURS } = useTours();
   const [isOpen, setIsOpen] = useState(false);
   const [needsAttention, setNeedsAttention] = useState(false);
   const [badgeText, setBadgeText] = useState(language === 'es' ? '¡Chiva!' : 'New');
@@ -1144,7 +1145,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                 </div>
 
                 {chatHistory.map((msg, idx) => {
-                  const mentionedTours = getMentionedTours(msg.text);
+                  const mentionedTours = getMentionedTours(msg.text, TOURS);
                   return (
                     <div key={idx} className={`mb-3 flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                       <div className={`p-3 rounded-2xl max-w-[90%] shadow-sm text-sm font-medium ${msg.role === 'user' ? 'bg-[#25D366] text-white rounded-tr-sm' : 'bg-white/80 backdrop-blur-md text-neutral-800 border border-neutral-200/60 rounded-tl-sm'}`}>

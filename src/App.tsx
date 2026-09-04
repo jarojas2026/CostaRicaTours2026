@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { TOURS, REGIONS } from './data/toursData';
+import { REGIONS } from './data/toursData';
+import { useTours } from './contexts/ToursContext';
 import { Tour, Language, Currency, TourCategory, TourRegion, BookingRequest } from './types';
 import { detectBrowserLanguage, getLangText, fetchExchangeRates } from './utils/i18n';
 import { Header } from './components/Header';
@@ -39,6 +40,7 @@ import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
 export default function App() {
+  const { tours: TOURS, loading: toursLoading } = useTours();
   const [language, setLanguage] = useState<Language>(detectBrowserLanguage);
   const [currency, setCurrency] = useState<Currency>('USD');
   const [activeTab, setActiveTab] = useState<'home' | 'tours' | 'map' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'culture' | 'flights'>('home');
@@ -60,6 +62,43 @@ export default function App() {
   const [isFormsManagerModalOpen, setIsFormsManagerModalOpen] = useState(false);
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
+
+  // Check URL parameters for successful payment redirect (Stripe/PayPal)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('booking') === 'success') {
+      const sessionId = params.get('session_id');
+      // We simulate fetching the confirmed booking or we just show a success modal
+      setRecentBooking({
+        bookingId: "VERIFICANDO...",
+        tourId: "procesando",
+        tourName: "Tu Experiencia en Costa Rica",
+        date: "Confirmando fecha...",
+        time: "Confirmando hora...",
+        adults: 1,
+        children: 0,
+        pickupHotel: "",
+        specialRequests: "",
+        totalUSD: 0,
+        totalCRC: 0,
+        paymentMethod: "credit_card",
+        paymentStatus: "completed",
+        status: "confirmada",
+        createdAt: new Date().toISOString()
+      });
+
+      if (sessionId) {
+        // Here we could fetch the specific booking by stripe session ID if we had a dedicated endpoint
+        // For now, we clear the URL to avoid re-triggering
+      }
+
+      // Cleanup URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (params.get('booking') === 'canceled') {
+      alert(language === 'es' ? 'El pago fue cancelado. Puedes volver a intentarlo cuando gustes.' : 'Payment was canceled. You can try again whenever you are ready.');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [language]);
 
   useEffect(() => {
     const handleOpenAdmin = () => setIsAdminDashboardOpen(true);
@@ -132,7 +171,7 @@ export default function App() {
   };
 
   // Filter logic
-  const filteredTours = TOURS.filter(t => {
+  const filteredTours = toursLoading ? [] : TOURS.filter(t => {
     // Search query filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();

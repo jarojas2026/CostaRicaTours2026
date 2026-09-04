@@ -104,6 +104,29 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
 
     try {
       // 1. Post to backend
+      
+      if (paymentMethod === 'credit_card') {
+        const stripeRes = await fetch('/api/stripe/create-checkout-session', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({
+             tourId: 'flight-' + flight.flightNumber,
+             tourName: 'Vuelo Privado ' + flight.flightNumber + ' - ' + flight.airline,
+             totalUSD: flight.priceUSD * (adults + children),
+             customerEmail: email,
+             date: flight.departureDate,
+             passengers: adults + children
+           })
+        });
+        const stripeData = await stripeRes.json();
+        if (stripeData.url) {
+           window.location.href = stripeData.url;
+           return;
+        } else {
+           throw new Error(stripeData.error || 'Error al conectar con Stripe');
+        }
+      }
+
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

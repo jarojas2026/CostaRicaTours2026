@@ -439,6 +439,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
     try {
       
+
       if (paymentMethod === 'credit_card') {
         const stripeRes = await fetch('/api/stripe/create-checkout-session', {
            method: 'POST',
@@ -459,7 +460,30 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
         } else {
            throw new Error(stripeData.error || 'Error al conectar con Stripe');
         }
+      } else if (paymentMethod === 'paypal') {
+        const paypalRes = await fetch('/api/paypal/create-order', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({
+             totalUSD,
+             tourName: tourTitle
+           })
+        });
+        const paypalData = await paypalRes.json();
+        if (paypalData.url) {
+           bookingPayload.paypalOrderId = paypalData.id;
+           await fetch('/api/bookings', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify(bookingPayload)
+           });
+           window.location.href = paypalData.url;
+           return;
+        } else {
+           throw new Error(paypalData.error || 'Error al conectar con PayPal');
+        }
       }
+
 
       const response = await fetch('/api/bookings', {
         method: 'POST',

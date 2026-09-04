@@ -1026,6 +1026,79 @@ app.post("/api/stripe/create-checkout-session", async (req, res) => {
   }
 });
 
+
+// PayPal Order Generation (Server-Side)
+app.post("/api/paypal/create-order", async (req, res) => {
+  try {
+    const paypalClientId = process.env.PAYPAL_CLIENT_ID;
+    const paypalSecret = process.env.PAYPAL_SECRET;
+    const paypalMode = process.env.PAYPAL_MODE || "sandbox";
+    const baseUrl = paypalMode === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
+
+    if (!paypalClientId || !paypalSecret) {
+      return res.status(500).json({ error: "PayPal no está configurado en el servidor." });
+    }
+
+    const authStr = Buffer.from(`${paypalClientId}:${paypalSecret}`).toString('base64');
+    const authRes = await fetch(`${baseUrl}/v1/oauth2/token`, {
+      method: 'POST',
+      body: 'grant_type=client_credentials',
+      headers: {
+        'Authorization': `Basic ${authStr}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+    const authData = await authRes.json();
+
+    if (!authData.access_token) {
+      return res.status(500).json({ error: "Error de autenticación con PayPal" });
+    }
+
+    const { totalUSD, tourName } = req.body;
+    const origin = req.headers.origin || process.env.APP_URL || 'http://localhost:3000';
+
+    const orderRes = await fetch(`${baseUrl}/v2/checkout/orders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authData.access_token}`
+      },
+      body: JSON.stringify({
+        intent: "CAPTURE",
+        purchase_units: [
+          {
+            description: tourName,
+            amount: {
+              currency_code: "USD",
+              value: totalUSD.toString()
+            }
+          }
+        ],
+        application_context: {
+          brand_name: "Costa Rica Tours",
+          landing_page: "NO_PREFERENCE",
+          user_action: "PAY_NOW",
+          return_url: `${origin}/?booking=success&method=paypal`,
+          cancel_url: `${origin}/?booking=canceled`
+        }
+      })
+    });
+    const orderData = await orderRes.json();
+    
+    if (orderData.id) {
+      const approveLink = orderData.links.find((link) => link.rel === "approve");
+      if (approveLink) {
+        return res.json({ id: orderData.id, url: approveLink.href });
+      }
+    }
+    return res.status(500).json({ error: "Error creando orden de PayPal" });
+  } catch (error) {
+    console.error("PayPal Order Error:", error);
+    res.status(500).json({ error: "Error al comunicarse con PayPal" });
+  }
+});
+
+
 // Bookings endpoint (Mock memory storage)
 // Colección de Firestore donde viven las reservas de verdad.
 // Si Firestore no se pudo inicializar (ver arriba), devolvemos null y cada
@@ -1053,11 +1126,11 @@ app.post("/api/bookings", async (req, res) => {
     customer,
     electronicInvoice,
     paymentMethod,
-    paymentStatus,
-    status,
+    // paymentStatus and status sent by client are IGNORED.
     specialRequests,
     flightDetails,
-    paypalOrderId
+    paypalOrderId,
+    stripeSessionId
   } = req.body;
 
   if (!tourId || !date) {
@@ -1068,9 +1141,6 @@ app.post("/api/bookings", async (req, res) => {
   const numChildren = Number(children) || 0;
   const bookingTime = time || "08:00 AM";
 
-  // Control de cupo: sumamos los pasajeros ya reservados para el mismo
-  // tour, misma fecha y mismo horario, y lo comparamos contra el
-  // maxGroupSize del tour (si el tour no define cupo máximo, no bloqueamos).
   const tourDef = TOURS.find((t) => t.id === tourId);
   if (tourDef?.maxGroupSize) {
     const existingSnapshot = await bookingsCol
@@ -1101,7 +1171,6 @@ app.post("/api/bookings", async (req, res) => {
 
   let agentInsights = null;
 
-  // Background AI Automation Agent for Bookings
   if (ai) {
     try {
       const prompt = `Analiza la siguiente reserva turística y automatiza las tareas operativas requeridas.
@@ -1111,7 +1180,7 @@ app.post("/api/bookings", async (req, res) => {
       - Pasajeros: ${numAdults} adultos, ${numChildren} niños
       - Hotel/Recogida: ${pickupHotel || 'No especificado'}
       - Notas especiales del cliente: ${specialRequests || 'Ninguna'}
-      
+        
       Genera las etiquetas operativas, evaluación de riesgos logísticos e instrucciones automatizadas para el operador local.`;
 
       const response = await ai.models.generateContent({
@@ -1139,85 +1208,23 @@ app.post("/api/bookings", async (req, res) => {
     }
   }
 
-  
-// --- GOOGLE CALENDAR NATIVE INTEGRATION ---
-app.post("/api/calendar/sync", express.json(), async (req, res) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "No Bearer token provided" });
-    }
-    const token = authHeader.split(" ")[1];
-
-    const { booking } = req.body;
-    if (!booking) {
-      return res.status(400).json({ error: "Booking data required" });
-    }
-
-    const oAuth2Client = new google.auth.OAuth2();
-    oAuth2Client.setCredentials({ access_token: token });
-
-    const calendar = google.calendar({ version: "v3", auth: oAuth2Client });
-
-    // Assuming booking.date is "YYYY-MM-DD" and time is something like "08:00"
-    // We'll create a generic 8-hour block or use the specific time if available.
-    // For simplicity, let's create an all-day event or a 4-hour block.
-    const startDate = new Date(`${booking.date}T08:00:00Z`);
-    if (isNaN(startDate.getTime())) {
-       // fallback if date parse fails
-       startDate.setTime(Date.now() + 86400000);
-    }
-    const endDate = new Date(startDate.getTime() + (4 * 60 * 60 * 1000)); // + 4 hours
-
-    const event = {
-      summary: `Reserva Confirmada: ${booking.tourName}`,
-      location: booking.pickupHotel || "Costa Rica",
-      description: `
-        Booking ID: ${booking.bookingId}
-        Cliente: ${booking.customerName || "No especificado"}
-        Email: ${booking.customerEmail || "No especificado"}
-        Pasajeros: ${(booking.adults || 0) + (booking.children || 0)}
-        Método de Pago: ${booking.paymentMethod}
-      `,
-      start: {
-        dateTime: startDate.toISOString(),
-        timeZone: "America/Costa_Rica",
-      },
-      end: {
-        dateTime: endDate.toISOString(),
-        timeZone: "America/Costa_Rica",
-      },
-    };
-
-    const response = await calendar.events.insert({
-      calendarId: "primary",
-      requestBody: event,
-    });
-
-    res.json({ success: true, eventLink: response.data.htmlLink });
-  } catch (error: any) {
-    console.error("Calendar Sync Error:", error);
-    res.status(500).json({ error: error.message || "Failed to sync with calendar" });
-  }
-});
-// ------------------------------------------
-
-  // Verificación Server-Side de Pagos (PayPal)
-  let finalStatus = status || "confirmada";
-  let finalPaymentStatus = paymentStatus || "completed";
+  // --- Real Server-Side Payment Verification ---
+  // Default to pending.
+  let finalStatus = "pendiente_pago";
+  let finalPaymentStatus = "pending";
 
   if (paymentMethod === "paypal") {
-    finalStatus = "pendiente_pago";
-    finalPaymentStatus = "pending";
-
     if (paypalOrderId) {
       try {
         const paypalClientId = process.env.PAYPAL_CLIENT_ID;
         const paypalSecret = process.env.PAYPAL_SECRET;
+        // Sandbox or Live mode
+        const paypalMode = process.env.PAYPAL_MODE || 'sandbox';
+        const paypalApiBase = paypalMode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
         
         if (paypalClientId && paypalSecret) {
           const authStr = Buffer.from(`${paypalClientId}:${paypalSecret}`).toString('base64');
-          const authRes = await fetch('https://api-m.sandbox.paypal.com/v1/oauth2/token', {
+          const authRes = await fetch(`${paypalApiBase}/v1/oauth2/token`, {
             method: 'POST',
             body: 'grant_type=client_credentials',
             headers: {
@@ -1228,50 +1235,46 @@ app.post("/api/calendar/sync", express.json(), async (req, res) => {
           const authData = await authRes.json();
           
           if (authData.access_token) {
-            const orderRes = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${paypalOrderId}`, {
+            const orderRes = await fetch(`${paypalApiBase}/v2/checkout/orders/${paypalOrderId}`, {
               headers: { 'Authorization': `Bearer ${authData.access_token}` }
             });
             const orderData = await orderRes.json();
             
             if (orderData.status === 'COMPLETED') {
-              finalStatus = "confirmada";
+              finalStatus = "pagada";
               finalPaymentStatus = "completed";
+            } else {
+               console.warn("PayPal order is not COMPLETED:", orderData.status);
             }
           }
         } else {
-          console.warn("PAYPAL_CLIENT_ID or PAYPAL_SECRET not configured, unable to verify PayPal payment.");
+          console.warn("PAYPAL_CLIENT_ID or PAYPAL_SECRET not configured.");
         }
       } catch (err) {
         console.error("Error verifying PayPal order:", err);
       }
     }
-  }
-
-  // Disparar Webhook a n8n si el pago de PayPal se confirmó en backend
-  if (finalStatus === "confirmada" && paymentMethod === "paypal") {
-    const N8N_URL = process.env.N8N_BOOKING_WEBHOOK_URL || "https://costaricatours.app.n8n.cloud/webhook-test/mi-api";
-    if (N8N_URL) {
-      // Usamos setImmediate o un fetch no bloqueante para no demorar la respuesta al cliente
-      fetch(N8N_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bookingId,
-          tourId,
-          tourName,
-          date,
-          time: bookingTime,
-          adults: numAdults,
-          children: numChildren,
-          customerName: customer?.name,
-          customerEmail: customer?.email,
-          paymentMethod,
-          paymentStatus: finalPaymentStatus,
-          status: finalStatus,
-          agentInsights
-        })
-      }).catch(err => console.error("Error notificando a n8n para PayPal:", err));
-    }
+  } else if (paymentMethod === "stripe") {
+     if (stripeSessionId) {
+        try {
+          const stripe = getStripe();
+          if (stripe) {
+             const session = await stripe.checkout.sessions.retrieve(stripeSessionId);
+             if (session.payment_status === "paid") {
+                finalStatus = "pagada";
+                finalPaymentStatus = "completed";
+             } else {
+                console.warn("Stripe session not paid:", session.payment_status);
+             }
+          }
+        } catch (err) {
+           console.error("Error verifying Stripe session:", err);
+        }
+     }
+  } else if (paymentMethod === "sinpe_movil" || paymentMethod === "cash") {
+     // These methods are manually verified later, keep as pending
+     finalStatus = "pendiente_pago";
+     finalPaymentStatus = "pending";
   }
 
   const newBooking = {
@@ -1308,7 +1311,7 @@ app.post("/api/calendar/sync", express.json(), async (req, res) => {
 
   // Avisar a n8n de que entró una reserva nueva, SOLO si ya está confirmada o pago verificado.
   const N8N_URL = process.env.N8N_BOOKING_WEBHOOK_URL || "https://costaricatours.app.n8n.cloud/webhook-test/mi-api";
-  if (N8N_URL && newBooking.status !== "pendiente_pago") {
+  if (N8N_URL && newBooking.status === "confirmada") {
     fetch(N8N_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1318,6 +1321,66 @@ app.post("/api/calendar/sync", express.json(), async (req, res) => {
 
   res.status(201).json({ success: true, booking: newBooking });
 });
+
+
+// --- GOOGLE CALENDAR NATIVE INTEGRATION ---
+app.post("/api/calendar/sync", express.json(), async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "No Bearer token provided" });
+    }
+    const token = authHeader.split(" ")[1];
+
+    const { booking } = req.body;
+    if (!booking) {
+      return res.status(400).json({ error: "Booking data required" });
+    }
+
+    const oAuth2Client = new google.auth.OAuth2();
+    oAuth2Client.setCredentials({ access_token: token });
+
+    const calendar = google.calendar({ version: "v3", auth: oAuth2Client });
+
+    const startDate = new Date(`${booking.date}T08:00:00Z`);
+    if (isNaN(startDate.getTime())) {
+       startDate.setTime(Date.now() + 86400000);
+    }
+    const endDate = new Date(startDate.getTime() + (4 * 60 * 60 * 1000)); 
+
+    const event = {
+      summary: `Reserva Confirmada: ${booking.tourName}`,
+      location: booking.pickupHotel || "Costa Rica",
+      description: `
+        Booking ID: ${booking.bookingId}
+        Cliente: ${booking.customerName || "No especificado"}
+        Email: ${booking.customerEmail || "No especificado"}
+        Pasajeros: ${(booking.adults || 0) + (booking.children || 0)}
+        Método de Pago: ${booking.paymentMethod}
+      `,
+      start: {
+        dateTime: startDate.toISOString(),
+        timeZone: "America/Costa_Rica",
+      },
+      end: {
+        dateTime: endDate.toISOString(),
+        timeZone: "America/Costa_Rica",
+      },
+    };
+
+    const response = await calendar.events.insert({
+      calendarId: "primary",
+      requestBody: event,
+    });
+
+    res.json({ success: true, eventLink: response.data.htmlLink });
+  } catch (error: any) {
+    console.error("Calendar Sync Error:", error);
+    res.status(500).json({ error: error.message || "Failed to sync with calendar" });
+  }
+});
+// ------------------------------------------
+
 
 app.get("/api/bookings", async (req, res) => {
   const bookingsCol = getBookingsCollection();

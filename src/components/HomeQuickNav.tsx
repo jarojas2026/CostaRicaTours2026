@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Compass, Map, Sparkles, Bus, Coffee, ArrowRight, ShieldCheck, CheckCircle2, Star, Clock, Flame, Users, Bot, Plane } from 'lucide-react';
 import { Language, Currency, Tour } from '../types';
-import { TOURS } from '../data/toursData';
+import { useTours } from '../contexts/ToursContext';
 import { getLangText, formatCurrency } from '../utils/i18n';
 
 interface HomeQuickNavProps {
@@ -22,6 +22,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
   onSelectTour,
   onOpenCustomFunnel
 }) => {
+  const { tours: TOURS } = useTours();
   const tico = language === 'es';
 
   // 3 Curated Must-Do Tours for fast discovery without clutter

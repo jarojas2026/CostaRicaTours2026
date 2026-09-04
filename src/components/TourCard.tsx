@@ -29,7 +29,6 @@ export const TourCard: React.FC<TourCardProps> = ({
   viewMode = 'grid'
 }) => {
   const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
-  const demandData = getDemandData(tour.id);
   const [showMiniMap, setShowMiniMap] = useState(false);
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Language, Tour } from '../types';
 import { Calendar, Sparkles, ArrowLeft, Clock, Compass, CheckCircle2, ArrowRight, RefreshCw, Sun, MapPin, DollarSign } from 'lucide-react';
-import { TOURS } from '../data/toursData';
+import { useTours } from '../contexts/ToursContext';
 
 interface ItineraryPlannerProps {
   language: Language;
@@ -29,6 +29,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
   onSelectTour,
   onBack
 }) => {
+  const { tours: TOURS } = useTours();
   const [daysCount, setDaysCount] = useState(5);
   const [style, setStyle] = useState('Aventura y Naturaleza');
   const [budget, setBudget] = useState('Medio');
