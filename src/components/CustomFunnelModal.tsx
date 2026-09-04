@@ -15,6 +15,7 @@ interface CustomFunnelModalProps {
   language: Language;
   currency: Currency;
   onSelectTour?: (tour: any) => void;
+  onOpenItineraryPlanner?: () => void;
 }
 
 export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
@@ -22,8 +23,10 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
   onClose,
   language,
   currency,
+  onOpenItineraryPlanner,
 }) => {
   const [step, setStep] = useState<number>(1);
+  const [copiedQuote, setCopiedQuote] = useState(false);
 
   // Step 1: Trip Basics
   const [arrivalAirport, setArrivalAirport] = useState<'SJO' | 'LIR'>('SJO');
@@ -263,7 +266,34 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
 
     const message = language === 'es' ? textEs : textEn;
     const url = `https://wa.me/50687959148?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+    
+    // Copy to clipboard as safe backup
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(message).catch(() => {});
+    }
+
+    // Safely trigger external link navigation without about:blank sandboxing issues
+    try {
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch {
+      window.location.href = url;
+    }
+  };
+
+  const handleCopyQuote = () => {
+    const textEs = `🌴 COTIZACIÓN PERSONALIZADA COSTARICATOURS 🌴\nLlegada: Aeropuerto ${arrivalAirport} (${travelMonth})\nDuración: ${durationDays} Días | Viajeros: ${adults} Adultos, ${children} Niños\nTransporte: ${transportType.toUpperCase()} | Destinos: ${selectedDestinations.join(', ')}\nPresupuesto Estimado: $${totalUSD} USD`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(textEs).then(() => {
+        setCopiedQuote(true);
+        setTimeout(() => setCopiedQuote(false), 3000);
+      });
+    }
   };
 
   return (
@@ -651,13 +681,39 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
               <ChevronRight className="w-4 h-4" />
             </button>
           ) : (
-            <button
-              onClick={handleSendWhatsApp}
-              className="w-full sm:w-auto px-8 py-3 rounded-full bg-orange-500 hover:bg-teal-600 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 transition-all hover:scale-105 cursor-pointer ml-auto"
-            >
-              <MessageCircle className="w-4 h-4 fill-white" />
-              <span>{language === 'es' ? 'Reservar / Consultar por WhatsApp' : 'Reserve / Inquire via WhatsApp'}</span>
-            </button>
+            <div className="flex flex-wrap items-center gap-2.5 ml-auto">
+              <button
+                type="button"
+                onClick={handleCopyQuote}
+                className="px-4 py-2.5 rounded-full border border-neutral-300 hover:border-neutral-400 bg-white text-neutral-700 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                title={language === 'es' ? 'Copiar texto al portapapeles' : 'Copy text to clipboard'}
+              >
+                {copiedQuote ? <Check className="w-4 h-4 text-emerald-600" /> : <Save className="w-4 h-4 text-neutral-500" />}
+                <span>{copiedQuote ? (language === 'es' ? '¡Copiado!' : 'Copied!') : (language === 'es' ? 'Copiar Cotización' : 'Copy Quote')}</span>
+              </button>
+
+              {onOpenItineraryPlanner && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenItineraryPlanner();
+                  }}
+                  className="px-4 py-2.5 rounded-full border border-emerald-600/30 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  <span>{language === 'es' ? 'Generar con IA' : 'Generate with AI'}</span>
+                </button>
+              )}
+
+              <button
+                onClick={handleSendWhatsApp}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 cursor-pointer"
+              >
+                <MessageCircle className="w-4 h-4 fill-white" />
+                <span>{language === 'es' ? 'Enviar por WhatsApp' : 'Send via WhatsApp'}</span>
+              </button>
+            </div>
           )}
         </div>
 

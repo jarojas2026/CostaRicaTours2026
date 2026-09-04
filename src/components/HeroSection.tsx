@@ -20,18 +20,18 @@ interface HeroSectionProps {
 const HERO_SLIDES = [
   {
     id: 1,
-    image: "https://images.unsplash.com/photo-1518182170546-0766de6b682b?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80",
     badge: "🔥 Experiencia VIP",
     badgeEn: "🔥 VIP Experience",
     title: "Volcán Arenal & Aguas Termales",
     titleEn: "Arenal Volcano & Hot Springs",
     desc: "Descubre el majestuoso Volcán Arenal. Sumérgete en exclusivas aguas termales y siente la energía pura de la selva tropical de Costa Rica.",
     descEn: "Discover the majestic Arenal Volcano. Immerse yourself in exclusive hot springs and feel the pure energy of the Costa Rican rainforest.",
-    price: "$135"
+    price: "$125"
   },
   {
     id: 2,
-    image: "https://images.unsplash.com/photo-1544436579-247065977995?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=1200&q=80",
     badge: "🐒 Favorito de los Viajeros",
     badgeEn: "🐒 Traveler's Favorite",
     title: "Playas de Manuel Antonio",
@@ -42,7 +42,7 @@ const HERO_SLIDES = [
   },
   {
     id: 3,
-    image: "https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1530866495561-507c9faab2ed?auto=format&fit=crop&w=1200&q=80",
     badge: "🚣 Pura Adrenalina",
     badgeEn: "🚣 Pure Adrenaline",
     title: "Rafting en el Río Pacuare",
@@ -171,10 +171,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 {onOpenCustomFunnel && (
                   <button
                     onClick={onOpenCustomFunnel}
-                    className="w-full sm:w-auto bg-gradient-to-r from-teal-600 to-teal-600 hover:from-orange-500 hover:to-orange-500 text-white font-black text-sm uppercase py-3.5 px-6 rounded-xl shadow-lg transition-all hover:scale-105 flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full sm:w-auto bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:to-amber-500 text-white font-black text-sm uppercase py-3.5 px-7 rounded-xl shadow-[0_4px_20px_rgba(255,140,0,0.45)] hover:shadow-[0_6px_28px_rgba(255,140,0,0.65)] transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2.5 cursor-pointer border border-amber-300/40"
                   >
-                    <Sparkles className="w-4 h-4" />
-                    {language === 'es' ? 'Armar mi Viaje Tuanis' : 'Build Custom Trip'}
+                    <Sparkles className="w-4 h-4 text-amber-100 animate-pulse" />
+                    <span>{language === 'es' ? '✨ Armar mi Viaje a Medida' : '✨ Build Custom Trip'}</span>
                   </button>
                 )}
 

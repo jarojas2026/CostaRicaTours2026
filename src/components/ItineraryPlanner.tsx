@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Language, Tour } from '../types';
-import { Calendar, Sparkles, ArrowLeft, Clock, Compass, CheckCircle2, ArrowRight, RefreshCw, Sun, MapPin, DollarSign } from 'lucide-react';
+import { Calendar, Sparkles, ArrowLeft, Clock, Compass, CheckCircle2, ArrowRight, RefreshCw, Sun, MapPin, DollarSign, Users } from 'lucide-react';
 import { useTours } from '../contexts/ToursContext';
 
 interface ItineraryPlannerProps {
@@ -56,10 +56,46 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
       });
 
       const data = await response.json();
-      setItinerary(data);
+      
+      let parsedDays = [];
+      if (Array.isArray(data.days)) {
+        parsedDays = data.days;
+      } else if (Array.isArray(data.itinerary)) {
+        parsedDays = data.itinerary;
+      } else if (data.itinerary && Array.isArray(data.itinerary.days)) {
+        parsedDays = data.itinerary.days;
+      } else if (Array.isArray(data)) {
+        parsedDays = data;
+      }
+
+      setItinerary({
+        title: data.title || data.itinerary?.title || (language === 'es' ? 'Itinerario Personalizado Pura Vida' : 'Tailored Pura Vida Itinerary'),
+        summary: data.summary || data.itinerary?.summary || (language === 'es' ? 'Ruta de viaje diseñada especialmente según tus preferencias de viaje.' : 'Custom route crafted specifically to your travel preferences.'),
+        days: parsedDays.length > 0 ? parsedDays : [
+          {
+            day: 1,
+            title: language === 'es' ? 'Llegada y Traslado a La Fortuna' : 'Arrival & Arenal Transfer',
+            location: 'La Fortuna / Arenal',
+            activities: [
+              language === 'es' ? 'Check-in en eco-lodge con vista al Volcán Arenal' : 'Eco-lodge check-in facing Arenal Volcano',
+              language === 'es' ? 'Relajante baño en aguas termales de Baldi' : 'Soak in Baldi Hot Springs thermal waters'
+            ],
+            recommendedTourId: 'arenal-hot-springs'
+          },
+          {
+            day: 2,
+            title: language === 'es' ? 'Caminata Volcánica y Catarata' : 'Volcano Hike & Waterfall',
+            location: 'Arenal NP',
+            activities: [
+              language === 'es' ? 'Caminata sobre coladas de lava de 1968' : 'Hiking 1968 lava fields',
+              language === 'es' ? 'Nado refrescante en Catarata La Fortuna' : 'Refreshing swim at La Fortuna Waterfall'
+            ],
+            recommendedTourId: 'arenal-volcano-hike'
+          }
+        ]
+      });
     } catch (err) {
       console.error(err);
-      // Fallback
       setItinerary({
         title: language === 'es' ? 'Ruta Costa Rica Tours (costaricatours.es)' : 'Costa Rica Tours Route (costaricatours.es)',
         summary: language === 'es' ? 'Un viaje equilibrado combinando Volcán Arenal, Bosque Nuboso y Parque Manuel Antonio.' : 'A balanced trip combining Arenal Volcano, Cloud Forest, and Manuel Antonio NP.',
@@ -82,7 +118,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
               language === 'es' ? 'Caminata sobre coladas de lava de 1968' : 'Hiking 1968 lava fields',
               language === 'es' ? 'Nado refrescante en Catarata La Fortuna' : 'Refreshing swim at La Fortuna Waterfall'
             ],
-            recommendedTourId: 'arenal-hot-springs'
+            recommendedTourId: 'arenal-volcano-hike'
           },
           {
             day: 3,
@@ -101,35 +137,103 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
     }
   };
 
+  const applyPreset = (presetDays: number, presetStyle: string, presetBudget: string, presetGroup: string) => {
+    setDaysCount(presetDays);
+    setStyle(presetStyle);
+    setBudget(presetBudget);
+    setGroup(presetGroup);
+    setTimeout(() => {
+      handleGenerateItinerary();
+    }, 100);
+  };
+
   return (
     <div className="bg-stone-950 py-12 px-4 sm:px-6 lg:px-8 border-t border-white/10">
       <div className="max-w-5xl mx-auto space-y-8">
         
-        {/* Header Title */}
+        {/* Header Title & Warm Explanation */}
         <div className="text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-4 py-1 bg-stone-900 text-orange-400 rounded-full text-xs font-bold uppercase tracking-widest border border-white/10">
             <Calendar className="w-3.5 h-3.5 text-[#FF8C00]" />
-            {language === 'es' ? 'Diseñador Inteligente' : 'Smart Planner'}
+            {language === 'es' ? 'Planificador Inteligente con IA' : 'AI Smart Planner'}
           </div>
           <h2 className="text-3xl sm:text-5xl font-black text-orange-400 uppercase tracking-tight">
-            {language === 'es' ? 'Cotizador de Itinerario IA' : 'AI Itinerary Generator'}
+            {language === 'es' ? 'Diseñador de Itinerarios Pura Vida' : 'Pura Vida Itinerary Generator'}
           </h2>
-          <p className="text-sm sm:text-base text-[#A7F3D0] max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-[#A7F3D0] max-w-2xl mx-auto leading-relaxed">
             {language === 'es'
-              ? 'Personaliza tus días, estilo de viaje y presupuesto. Nuestra IA creará el itinerario día por día optimizado con los mejores tours.'
-              : 'Customize your days, travel style, and group. AI generates a day-by-day tailored itinerary with recommended tours.'
+              ? '¿Planeando tu viaje a Costa Rica? Nuestra IA experta conecta volcanes imponentes, bosques nubosos mágicos y playas paradisíacas sin contratiempos logísticos. Selecciona tus preferencias o elige una ruta de ejemplo.'
+              : 'Planning your trip to Costa Rica? Our expert AI seamlessly connects majestic volcanoes, magical cloud forests, and paradise beaches without logistics headaches. Select your preferences or choose a sample route.'
             }
           </p>
         </div>
 
+        {/* 3 Visual Mini-Cards of Example Itineraries */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div
+            onClick={() => applyPreset(7, 'Relax y Aguas Termales', 'Medio', 'Pareja')}
+            className="bg-stone-900 hover:bg-stone-800 p-5 rounded-2xl border border-white/10 hover:border-orange-500 transition-all cursor-pointer group shadow-lg space-y-2"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-2xl">🌋</span>
+              <span className="text-[10px] font-black uppercase bg-teal-600/30 text-teal-300 px-2.5 py-0.5 rounded-full">
+                7 {language === 'es' ? 'Días' : 'Days'} • Pareja
+              </span>
+            </div>
+            <h4 className="text-sm font-black text-white group-hover:text-orange-400 uppercase">
+              {language === 'es' ? 'Volcanes y Termales de Ensueño' : 'Volcanoes & Hot Springs Dream'}
+            </h4>
+            <p className="text-xs text-stone-400 line-clamp-2">
+              {language === 'es' ? 'Arenal, aguas termales minerales de Baldi y relax total en pareja.' : 'Arenal, Baldi mineral hot springs and romantic relaxation.'}
+            </p>
+          </div>
+
+          <div
+            onClick={() => applyPreset(5, 'Aventura y Adrenalina', 'Medio', 'Familia')}
+            className="bg-stone-900 hover:bg-stone-800 p-5 rounded-2xl border border-white/10 hover:border-orange-500 transition-all cursor-pointer group shadow-lg space-y-2"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-2xl">🦅</span>
+              <span className="text-[10px] font-black uppercase bg-orange-500/20 text-orange-300 px-2.5 py-0.5 rounded-full">
+                5 {language === 'es' ? 'Días' : 'Days'} • Familia
+              </span>
+            </div>
+            <h4 className="text-sm font-black text-white group-hover:text-orange-400 uppercase">
+              {language === 'es' ? 'Aventura Esencial y Fauna' : 'Essential Adventure & Wildlife'}
+            </h4>
+            <p className="text-xs text-stone-400 line-clamp-2">
+              {language === 'es' ? 'Puentes colgantes, tirolesas en Monteverde y safari de perezosos.' : 'Hanging bridges, Monteverde ziplines & sloth safari.'}
+            </p>
+          </div>
+
+          <div
+            onClick={() => applyPreset(10, 'Naturaleza y Fauna', 'Lujo Boutique', 'Grupo de Amigos')}
+            className="bg-stone-900 hover:bg-stone-800 p-5 rounded-2xl border border-white/10 hover:border-orange-500 transition-all cursor-pointer group shadow-lg space-y-2"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-2xl">🏖️</span>
+              <span className="text-[10px] font-black uppercase bg-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-full">
+                10 {language === 'es' ? 'Días' : 'Days'} • Lujo
+              </span>
+            </div>
+            <h4 className="text-sm font-black text-white group-hover:text-orange-400 uppercase">
+              {language === 'es' ? 'Expedición Total de Costa a Costa' : 'Coast-to-Coast Total Expedition'}
+            </h4>
+            <p className="text-xs text-stone-400 line-clamp-2">
+              {language === 'es' ? 'Arenal, Monteverde, Manuel Antonio y Rafting Pacuare VIP.' : 'Arenal, Monteverde, Manuel Antonio & VIP Pacuare Rafting.'}
+            </p>
+          </div>
+        </div>
+
         {/* Form Controls Card */}
-        <div className="bg-stone-950 p-6 sm:p-8 rounded-[2rem] border-2 border-white/10 shadow-2xl space-y-6">
+        <div className="bg-stone-900 p-6 sm:p-8 rounded-[2rem] border-2 border-white/10 shadow-2xl space-y-6">
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             
             {/* Days selector */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase text-[#A7F3D0]">
+              <label className="text-xs font-bold uppercase text-[#A7F3D0] flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-orange-400" />
                 {language === 'es' ? 'Duración del Viaje' : 'Trip Duration'}
               </label>
               <select
@@ -146,7 +250,8 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
 
             {/* Travel Style */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase text-[#A7F3D0]">
+              <label className="text-xs font-bold uppercase text-[#A7F3D0] flex items-center gap-1.5">
+                <Compass className="w-3.5 h-3.5 text-orange-400" />
                 {language === 'es' ? 'Estilo de Viaje' : 'Travel Style'}
               </label>
               <select
@@ -164,7 +269,8 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
 
             {/* Budget */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase text-[#A7F3D0]">
+              <label className="text-xs font-bold uppercase text-[#A7F3D0] flex items-center gap-1.5">
+                <DollarSign className="w-3.5 h-3.5 text-orange-400" />
                 {language === 'es' ? 'Presupuesto' : 'Budget Level'}
               </label>
               <select
@@ -180,7 +286,8 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
 
             {/* Group */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase text-[#A7F3D0]">
+              <label className="text-xs font-bold uppercase text-[#A7F3D0] flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-orange-400" />
                 {language === 'es' ? 'Compañía' : 'Travelers'}
               </label>
               <select
@@ -200,16 +307,16 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
           <button
             onClick={handleGenerateItinerary}
             disabled={isLoading}
-            className="w-full bg-teal-600 hover:bg-teal-600 text-white font-black py-4 rounded-full text-sm uppercase tracking-wider transition-colors shadow-xl flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:to-amber-500 text-stone-950 font-black py-4 rounded-2xl text-sm uppercase tracking-wider transition-all shadow-[0_4px_25px_rgba(255,140,0,0.4)] hover:shadow-[0_6px_30px_rgba(255,140,0,0.6)] flex items-center justify-center gap-2 cursor-pointer border border-amber-300/40 transform hover:-translate-y-0.5 active:translate-y-0"
           >
             {isLoading ? (
               <>
-                <RefreshCw className="w-5 h-5 animate-spin" />
+                <RefreshCw className="w-5 h-5 animate-spin text-stone-950" />
                 <span>{language === 'es' ? 'Diseñando Itinerario con Gemini IA...' : 'Designing Itinerary with Gemini AI...'}</span>
               </>
             ) : (
               <>
-                <Sparkles className="w-5 h-5 text-white" />
+                <Sparkles className="w-5 h-5 text-stone-950" />
                 <span>{language === 'es' ? 'Generar Mi Itinerario Personalizado' : 'Generate Custom Itinerary'}</span>
               </>
             )}
@@ -219,7 +326,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
 
         {/* Results Presentation */}
         {itinerary && (
-          <div className="bg-stone-950 p-6 sm:p-8 rounded-[2rem] border-2 border-orange-500 shadow-2xl space-y-6 animate-fade-in">
+          <div className="bg-gradient-to-b from-stone-900 to-stone-950 p-6 sm:p-8 rounded-[2rem] border-2 border-amber-500/60 shadow-[0_10px_40px_rgba(0,0,0,0.6)] space-y-6 animate-fade-in">
             
             {/* Title & Summary */}
             <div className="border-b border-white/10 pb-4 space-y-2">
@@ -239,7 +346,6 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
             {/* Days Breakdown */}
             <div className="space-y-4">
               {itinerary.days?.map((d) => {
-                // Check if there is a matching tour in data
                 const matchingTour = d.recommendedTourId 
                   ? TOURS.find(t => t.id === d.recommendedTourId)
                   : TOURS.find(t => t.title['es'].toLowerCase().includes(d.title.toLowerCase().slice(0, 5)));
@@ -287,7 +393,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                         </span>
                         <button
                           onClick={() => onSelectTour(matchingTour)}
-                          className="bg-stone-900 hover:bg-teal-600 hover:text-white text-white px-3 py-1.5 rounded-full text-xs font-bold uppercase transition-colors flex items-center gap-1"
+                          className="bg-stone-900 hover:bg-teal-600 hover:text-white text-white px-3 py-1.5 rounded-full text-xs font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer"
                         >
                           <span>{matchingTour.title[language].slice(0, 30)}...</span>
                           <ArrowRight className="w-3 h-3" />

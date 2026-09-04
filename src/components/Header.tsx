@@ -17,7 +17,8 @@ import {
   Bot, 
   Clock,
   ShieldCheck,
-  Plane
+  Plane,
+  Palette
 } from 'lucide-react';
 import { Language, Currency } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -67,6 +68,85 @@ export const Header: React.FC<HeaderProps> = ({
   const [isCurrencyMenuOpen, setIsCurrencyMenuOpen] = useState(false);
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [isPaletteMenuOpen, setIsPaletteMenuOpen] = useState(false);
+
+  const DEV_PALETTES = [
+    {
+      id: 'caribe',
+      name: language === 'es' ? 'Azul Caribe Claro' : 'Caribbean Ocean Azure',
+      badge: language === 'es' ? 'Mucho más claro' : 'Much lighter',
+      colors: {
+        '--app-stone-950': '#1B4965',
+        '--app-stone-900': '#22577A',
+        '--app-stone-850': '#2C688F',
+        '--app-stone-800': '#387CA8',
+        '--app-stone-700': '#4B94C2',
+      },
+      previewColor: '#22577A'
+    },
+    {
+      id: 'cielo',
+      name: language === 'es' ? 'Cielo & Pizarra Suave' : 'Soft Sky & Slate',
+      badge: language === 'es' ? 'Súper Despejado' : 'Extra Clear',
+      colors: {
+        '--app-stone-950': '#2E4A62',
+        '--app-stone-900': '#3B5E7C',
+        '--app-stone-850': '#4B7396',
+        '--app-stone-800': '#5D8AB3',
+        '--app-stone-700': '#78A5D0',
+      },
+      previewColor: '#3B5E7C'
+    },
+    {
+      id: 'esmeralda',
+      name: language === 'es' ? 'Esmeralda Tropical Claro' : 'Bright Tropical Emerald',
+      badge: language === 'es' ? 'Naturaleza Viva' : 'Lively Nature',
+      colors: {
+        '--app-stone-950': '#1D5449',
+        '--app-stone-900': '#256B5D',
+        '--app-stone-850': '#318474',
+        '--app-stone-800': '#419E8C',
+        '--app-stone-700': '#59B8A4',
+      },
+      previewColor: '#256B5D'
+    },
+    {
+      id: 'arena',
+      name: language === 'es' ? 'Arena & Atardecer Cálido' : 'Warm Beach Sand & Dusk',
+      badge: language === 'es' ? 'Cálido & Sol' : 'Warm Sunset',
+      colors: {
+        '--app-stone-950': '#3C3F58',
+        '--app-stone-900': '#4B4F6E',
+        '--app-stone-850': '#5C6185',
+        '--app-stone-800': '#70759E',
+        '--app-stone-700': '#888EB8',
+      },
+      previewColor: '#4B4F6E'
+    }
+  ];
+
+  const [activePalette, setActivePalette] = useState<string>(() => {
+    return localStorage.getItem('crt_dev_palette') || 'caribe';
+  });
+
+  const applyDevPalette = (paletteId: string) => {
+    const pal = DEV_PALETTES.find(p => p.id === paletteId);
+    if (!pal) return;
+    Object.entries(pal.colors).forEach(([key, val]) => {
+      document.documentElement.style.setProperty(key, val);
+    });
+    setActivePalette(paletteId);
+    localStorage.setItem('crt_dev_palette', paletteId);
+    setIsPaletteMenuOpen(false);
+  };
+
+  useEffect(() => {
+    const saved = localStorage.getItem('crt_dev_palette') || 'caribe';
+    const pal = DEV_PALETTES.find(p => p.id === saved) || DEV_PALETTES[0];
+    Object.entries(pal.colors).forEach(([key, val]) => {
+      document.documentElement.style.setProperty(key, val);
+    });
+  }, []);
 
   const [currencyPrompt, setCurrencyPrompt] = useState<{
     isOpen: boolean;
@@ -147,10 +227,10 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Structural Spacer: Prevents content clipping under fixed header */}
       <div className="w-full h-[94px] sm:h-[100px] shrink-0" aria-hidden="true" />
       
-      <header id="main-header" className="w-full fixed top-0 left-0 right-0 z-50 bg-[#071C10]/95 backdrop-blur-md border-b border-teal-500/25 text-neutral-100 shadow-xl transition-all duration-200">
+      <header id="main-header" className="w-full fixed top-0 left-0 right-0 z-50 bg-stone-900/95 backdrop-blur-md border-b border-white/10 text-neutral-100 shadow-xl transition-all duration-200">
         
         {/* Top Assistance & Trust Strip */}
-        <div className="bg-[#05140B] text-xs px-3 sm:px-6 py-1 border-b border-stone-900/60 text-stone-200/90">
+        <div className="bg-stone-950/90 text-xs px-3 sm:px-6 py-1 border-b border-white/10 text-stone-200/90">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
             
             <div className="flex items-center gap-2 sm:gap-3 text-[11px] whitespace-nowrap overflow-x-auto hide-scrollbar">
@@ -302,8 +382,8 @@ export const Header: React.FC<HeaderProps> = ({
               {isCurrencyMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsCurrencyMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-44 max-h-60 overflow-y-auto bg-[#071F12] rounded-2xl shadow-2xl border border-teal-500/40 z-50 p-1.5 animate-fade-in modal-scrollable">
-                    <div className="px-2 py-1 text-[10px] font-black text-teal-400 uppercase border-b border-stone-900/80 mb-1">
+                  <div className="absolute right-0 mt-2 w-44 max-h-60 overflow-y-auto bg-stone-900 rounded-2xl shadow-2xl border border-white/20 z-50 p-1.5 animate-fade-in modal-scrollable">
+                    <div className="px-2 py-1 text-[10px] font-black text-teal-400 uppercase border-b border-stone-800 mb-1">
                       {language === 'es' ? 'Moneda de Pago' : 'Payment Currency'}
                     </div>
                     {CURRENCIES.map((curr) => (
@@ -336,6 +416,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => {
                   setIsLangMenuOpen(!isLangMenuOpen);
                   setIsCurrencyMenuOpen(false);
+                  setIsPaletteMenuOpen(false);
                 }}
                 className="flex items-center gap-1 bg-stone-900/70 hover:bg-stone-800 px-2 sm:px-2.5 py-1.5 rounded-xl border border-teal-500/40 text-[11px] font-bold text-white transition-all cursor-pointer"
                 title="Seleccionar Idioma / Language"
@@ -348,8 +429,8 @@ export const Header: React.FC<HeaderProps> = ({
               {isLangMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsLangMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-48 bg-[#071F12] rounded-2xl shadow-2xl border border-teal-500/40 z-50 p-1.5 animate-fade-in">
-                    <div className="px-2 py-1 text-[10px] font-black text-teal-400 uppercase border-b border-stone-900/80 mb-1">
+                  <div className="absolute right-0 mt-2 w-48 bg-stone-900 rounded-2xl shadow-2xl border border-white/20 z-50 p-1.5 animate-fade-in">
+                    <div className="px-2 py-1 text-[10px] font-black text-teal-400 uppercase border-b border-stone-800 mb-1">
                       🌍 Idioma / Language
                     </div>
                     {SUPPORTED_LANGUAGES.map((langItem) => (
@@ -376,16 +457,91 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
 
-            {/* Custom Trip Funnel CTA (Compact & adaptive) */}
-            {onOpenCustomFunnel && (
+            {/* Development Palette Selector */}
+            <div className="relative">
               <button
-                onClick={onOpenCustomFunnel}
-                className="hidden lg:inline-flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-400 hover:to-orange-500 text-stone-950 px-2.5 sm:px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-tight shadow-md hover:scale-105 transition-all cursor-pointer shrink-0"
+                onClick={() => {
+                  setIsPaletteMenuOpen(!isPaletteMenuOpen);
+                  setIsLangMenuOpen(false);
+                  setIsCurrencyMenuOpen(false);
+                }}
+                className="flex items-center gap-1.5 bg-stone-850 hover:bg-stone-800 px-2 sm:px-2.5 py-1.5 rounded-xl border border-amber-400/40 text-[11px] font-bold text-amber-300 transition-all cursor-pointer shadow-sm"
+                title={language === 'es' ? 'Paleta de Color de Desarrollo' : 'Development Color Palette'}
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span className="whitespace-nowrap">{language === 'es' ? 'Armar Viaje' : 'Custom Trip'}</span>
+                <Palette className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline font-semibold text-[10px] uppercase tracking-wide">
+                  {language === 'es' ? 'Color' : 'Theme'}
+                </span>
+                <span 
+                  className="w-2.5 h-2.5 rounded-full border border-white/40 shadow-inner shrink-0" 
+                  style={{ backgroundColor: DEV_PALETTES.find(p => p.id === activePalette)?.previewColor || '#22577A' }} 
+                />
               </button>
-            )}
+
+              {isPaletteMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsPaletteMenuOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-64 bg-stone-900 rounded-2xl shadow-2xl border border-amber-400/50 z-50 p-2.5 animate-fade-in">
+                    <div className="flex items-center justify-between px-2 py-1 border-b border-stone-800 mb-2">
+                      <span className="text-[11px] font-black text-amber-300 uppercase tracking-wide flex items-center gap-1.5">
+                        <Palette className="w-3.5 h-3.5" />
+                        {language === 'es' ? 'Paleta de Desarrollo' : 'Dev Color Palette'}
+                      </span>
+                      <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono">
+                        {language === 'es' ? 'TEMPORAL' : 'DEV'}
+                      </span>
+                    </div>
+
+                    <p className="text-[10px] text-stone-300 px-2 mb-2 leading-tight">
+                      {language === 'es' 
+                        ? 'Probá paletas más claras durante el desarrollo antes del lanzamiento final:' 
+                        : 'Test clearer palettes during development before final release:'}
+                    </p>
+
+                    <div className="space-y-1.5">
+                      {DEV_PALETTES.map((pal) => (
+                        <button
+                          key={pal.id}
+                          onClick={() => applyDevPalette(pal.id)}
+                          className={`w-full text-left p-2 rounded-xl text-xs transition-all flex items-center justify-between cursor-pointer ${
+                            activePalette === pal.id
+                              ? 'bg-amber-500 text-stone-950 font-black shadow-md'
+                              : 'text-neutral-100 hover:bg-stone-800/90 border border-white/5'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span 
+                              className="w-4 h-4 rounded-full border border-white/60 shadow-inner shrink-0"
+                              style={{ backgroundColor: pal.previewColor }}
+                            />
+                            <div>
+                              <div className="text-xs font-bold leading-none">{pal.name}</div>
+                              <div className={`text-[10px] mt-0.5 ${activePalette === pal.id ? 'text-stone-900/80 font-medium' : 'text-stone-400'}`}>
+                                {pal.badge}
+                              </div>
+                            </div>
+                          </div>
+                          {activePalette === pal.id && (
+                            <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-stone-950 text-amber-400 font-bold">
+                              ✓
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Custom Trip Funnel CTA (Compact & adaptive) */}
+            <button
+              onClick={handleOpenItinerary}
+              className="hidden lg:inline-flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-400 hover:to-orange-500 text-stone-950 px-2.5 sm:px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-tight shadow-md hover:scale-105 transition-all cursor-pointer shrink-0"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span className="whitespace-nowrap">{language === 'es' ? 'Armar Viaje' : 'Custom Trip'}</span>
+            </button>
 
             {/* My Bookings Button */}
             <button
@@ -451,7 +607,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setIsMobileDrawerOpen(false)}
             />
             
-            <div className="fixed top-[95px] left-2 right-2 sm:left-4 sm:right-4 max-h-[82vh] bg-[#071C10] border border-teal-500/40 rounded-3xl z-[100] shadow-2xl p-4 sm:p-5 overflow-y-auto xl:hidden space-y-4 animate-fade-in modal-scrollable">
+            <div className="fixed top-[95px] left-2 right-2 sm:left-4 sm:right-4 max-h-[82vh] bg-stone-900 border border-white/20 rounded-3xl z-[100] shadow-2xl p-4 sm:p-5 overflow-y-auto xl:hidden space-y-4 animate-fade-in modal-scrollable">
               
               {/* Drawer Header */}
               <div className="flex items-center justify-between border-b border-stone-800/60 pb-3">
@@ -505,18 +661,16 @@ export const Header: React.FC<HeaderProps> = ({
 
               {/* Quick Trip Builder & Bookings Action Bar in Drawer */}
               <div className="grid grid-cols-2 gap-2">
-                {onOpenCustomFunnel && (
-                  <button
-                    onClick={() => {
-                      onOpenCustomFunnel();
-                      setIsMobileDrawerOpen(false);
-                    }}
-                    className="flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 to-amber-600 text-stone-950 p-2.5 rounded-2xl font-black text-xs uppercase shadow-md"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>{language === 'es' ? 'Armar Viaje' : 'Custom Trip'}</span>
-                  </button>
-                )}
+                <button
+                  onClick={() => {
+                    handleOpenItinerary();
+                    setIsMobileDrawerOpen(false);
+                  }}
+                  className="flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 to-amber-600 text-stone-950 p-2.5 rounded-2xl font-black text-xs uppercase shadow-md cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{language === 'es' ? 'Armar Viaje' : 'Custom Trip'}</span>
+                </button>
 
                 <button
                   onClick={handleOpenBookings}
@@ -717,7 +871,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Currency Change Modal */}
       {currencyPrompt?.isOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#0B2516] rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl animate-fade-in border border-teal-500/40 text-white">
+          <div className="bg-stone-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl animate-fade-in border border-white/20 text-white">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-2xl bg-orange-500/20 border border-orange-400/40 flex items-center justify-center shrink-0">
                 <Globe className="w-6 h-6 text-orange-400" />

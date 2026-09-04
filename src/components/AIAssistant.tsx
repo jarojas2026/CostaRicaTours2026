@@ -67,16 +67,58 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     }
     return sid;
   });
-  
-  const [messages, setMessages] = useState<Message[]>([
+
+  // Isolated chat histories per agent to prevent cross-contamination
+  const [messagesByAgent, setMessagesByAgent] = useState<Record<string, Message[]>>(() => {
+    const initial: Record<string, Message[]> = {};
+    AI_AGENTS.forEach((ag) => {
+      const cached = localStorage.getItem(`chat_history_${ag.id}`);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            initial[ag.id] = parsed;
+            return;
+          }
+        } catch (e) {}
+      }
+      initial[ag.id] = [
+        {
+          id: `welcome-${ag.id}`,
+          sender: 'assistant',
+          agentId: ag.id,
+          text: getLangText(ag.welcomeMessage, language),
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ];
+    });
+    return initial;
+  });
+
+  // Current active agent's messages
+  const messages = messagesByAgent[activeAgentId] || [
     {
-      id: 'welcome-concierge',
+      id: `welcome-${activeAgentId}`,
       sender: 'assistant',
-      agentId: 'concierge',
-      text: getLangText(AI_AGENTS[0].welcomeMessage, language),
+      agentId: activeAgentId,
+      text: getLangText(currentAgent.welcomeMessage, language),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
-  ]);
+  ];
+
+  const setMessages = (updater: Message[] | ((prev: Message[]) => Message[])) => {
+    setMessagesByAgent((prev) => {
+      const current = prev[activeAgentId] || [];
+      const next = typeof updater === 'function' ? updater(current) : updater;
+      try {
+        localStorage.setItem(`chat_history_${activeAgentId}`, JSON.stringify(next));
+      } catch (e) {}
+      return {
+        ...prev,
+        [activeAgentId]: next,
+      };
+    });
+  };
 
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -93,48 +135,45 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Load chat history from Firestore scoped to active agent
   useEffect(() => {
-    // Load chat history from Firestore via backend
-    fetch(`/api/chat/history?sessionId=${chatSessionId}`)
-      .then(res => res.json())
-      .then(data => {
+    const scopedSessionId = `${chatSessionId}_${activeAgentId}`;
+    fetch(`/api/chat/history?sessionId=${scopedSessionId}`)
+      .then((res) => res.json())
+      .then((data) => {
         if (data.history && data.history.length > 0) {
-          setMessages(data.history);
+          setMessagesByAgent((prev) => ({
+            ...prev,
+            [activeAgentId]: data.history,
+          }));
         }
       })
-      .catch(err => console.error('Failed to load history:', err));
-  }, [chatSessionId]);
+      .catch((err) => console.error('Failed to load agent history:', err));
+  }, [chatSessionId, activeAgentId]);
 
-  // Sync history to backend when messages change (only if we have more than the welcome message)
+  // Sync active agent history to backend when messages change (if more than welcome msg)
   useEffect(() => {
-    if (messages.length > 1) {
+    const currentMsgs = messagesByAgent[activeAgentId];
+    if (currentMsgs && currentMsgs.length > 1) {
+      const scopedSessionId = `${chatSessionId}_${activeAgentId}`;
       fetch('/api/chat/history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: chatSessionId, history: messages })
-      }).catch(err => console.error('Failed to sync history:', err));
+        body: JSON.stringify({ sessionId: scopedSessionId, history: currentMsgs }),
+      }).catch((err) => console.error('Failed to sync agent history:', err));
     }
-  }, [messages, chatSessionId]);
+  }, [messagesByAgent, activeAgentId, chatSessionId]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  // When switching agent, if only the welcome message exists or user wants greeting, post agent intro
+  // Seamless agent switching with clean isolated context
   const handleSelectAgent = (agentId: AgentId) => {
     if (agentId === activeAgentId) return;
     setActiveAgentId(agentId);
-    const selectedAgent = getAIAgentById(agentId);
-    
-    // Add welcome message from the new agent
-    const introMsg: Message = {
-      id: `agent-switch-${agentId}-${Date.now()}`,
-      sender: 'assistant',
-      agentId: agentId,
-      text: getLangText(selectedAgent.welcomeMessage, language),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-    setMessages((prev) => [...prev, introMsg]);
+    setInputMessage('');
+    setSelectedImage(null);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -209,6 +248,11 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
+    const scopedSessionId = `${chatSessionId}_${activeAgentId}`;
+    fetch(`/api/chat/history?sessionId=${scopedSessionId}`, { method: 'DELETE' }).catch(console.error);
+    try {
+      localStorage.removeItem(`chat_history_${activeAgentId}`);
+    } catch (e) {}
   };
 
   const handleTourMiniCardClick = (tour: Tour) => {

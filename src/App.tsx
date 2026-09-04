@@ -30,6 +30,7 @@ import { FormsManagerModal } from './components/FormsManagerModal';
 import { NationalTransportSection } from './components/NationalTransportSection';
 import { TicoCultureSection } from './components/TicoCultureSection';
 import { HomeQuickNav } from './components/HomeQuickNav';
+import { HomeTrustSections } from './components/HomeTrustSections';
 import { BottomNav } from './components/BottomNav';
 import { FlightTrackerGadget } from './components/FlightTrackerGadget';
 import { LiveTouristIntelligence } from './components/LiveTouristIntelligence';
@@ -361,6 +362,20 @@ export default function App() {
               onOpenCustomFunnel={() => setIsCustomFunnelOpen(true)}
             />
 
+            {/* Trust & Conversion Sections: How it works, Testimonials, Official Partners & VIP CTA */}
+            <HomeTrustSections
+              language={language}
+              onOpenCustomFunnel={() => setIsCustomFunnelOpen(true)}
+              onOpenItineraryPlanner={() => {
+                setActiveTab('itinerary');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onExploreTours={() => {
+                setActiveTab('tours');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
+
           </div>
         )}
 
@@ -581,6 +596,11 @@ export default function App() {
         language={language}
         currency={currency}
         onSelectTour={(t) => setSelectedTour(t)}
+        onOpenItineraryPlanner={() => {
+          setIsCustomFunnelOpen(false);
+          setActiveTab('itinerary');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
       />
 
       {/* AI Eco-Vision Photo & Wildlife Scanner Modal */}

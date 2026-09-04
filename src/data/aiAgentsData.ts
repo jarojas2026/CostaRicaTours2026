@@ -659,12 +659,12 @@ export const AI_AGENTS: AIAgent[] = [
       ja: '火山、ビーチ、熱帯雨林、ブティックホテルを最適に結ぶ3日〜14日のフルオーダー旅程をご提案します。'
     },
     welcomeMessage: {
-      es: '¡Pura Vida! 👋 Soy Valeria, tu Concierge VIP en costaricatours.es. Cuéntame cuántos días tienes, si viajas en pareja, familia o amigos, y diseñaré el itinerario perfecto para ti.',
-      en: 'Pura Vida! 👋 I am Valeria, your VIP Concierge at costaricatours.es. Tell me how many days you have, who you are traveling with, and I will craft your bespoke itinerary.',
-      de: 'Pura Vida! 👋 Ich bin Valeria, Ihre VIP-Concierge bei costaricatours.es. Verraten Sie mir Reisedauer und Vorlieben, und ich erstelle Ihre perfekte Reiseroute.',
-      fr: 'Pura Vida ! 👋 Je suis Valeria, votre Concierge VIP sur costaricatours.es. Dites-moi vos dates et préférences, et je composerai votre itinéraire idéal.',
-      zh: 'Pura Vida! 👋 我是 Valeria，您在 costaricatours.es 的 VIP 专属礼宾顾问。请告诉我您的旅行天数和同行伙伴，我将为您量身定制专属行程。',
-      ja: 'Pura Vida! 👋 costaricatours.es 専属VIPコンシェルジュのヴァレリアです。旅行日数や同行者をお知らせいただければ、最適なカスタムプランを作成します。'
+      es: '¡Hola! Soy Valeria, tu Concierge VIP Pura Vida. Me especializo en diseñar vacaciones soñadas a medida de 3 a 14 días conectando volcanes, playas, bosques nubosos y mucho más. ¡Cuéntame sobre tu estilo de viaje, fechas y quiénes vienen, y diseñaré tu itinerario perfecto por Costa Rica!',
+      en: 'Hello! I\'m Valeria, your VIP Pura Vida Concierge. I specialize in crafting custom 3-14 day dream vacations connecting volcanoes, beaches, cloud forests, and more. Tell me about your travel style, dates, and who\'s coming, and I\'ll design your perfect Costa Rica itinerary!',
+      de: 'Hallo! Ich bin Valeria, Ihre VIP Pura Vida Concierge. Ich bin spezialisiert auf maßgeschneiderte 3-14 tägige Traumurlaube. Erzählen Sie mir von Ihrem Reisestil!',
+      fr: 'Bonjour ! Je suis Valeria, votre Concierge VIP Pura Vida. Je me spécialise dans la création de voyages sur mesure.',
+      zh: '你好！我是 Valeria，您的 VIP Pura Vida 礼宾顾问。我专注于定制 3-14 天的梦想假期。',
+      ja: 'こんにちは！バレリアです。オーダーメイドの旅行プランを作成します。'
     },
     workflowSteps: {
       es: [
@@ -1151,12 +1151,12 @@ export const AI_AGENTS: AIAgent[] = [
     id: 'logistics',
     workflowCategory: 'logistics_food',
     name: {
-      es: 'Esteban • Capitán de Rutas & Logística 4x4',
-      en: 'Esteban • Route Captain & 4x4 Logistics',
-      de: 'Esteban • Routenkapitän & 4x4-Logistik',
-      fr: 'Esteban • Capitaine de Route & Logistique 4x4',
-      zh: 'Esteban • 陆路交通与4x4四驱调度专家',
-      ja: 'エステバン • ルートキャプテン＆4WDロジスティクス'
+      es: 'Martín • Capitán de Rutas & Logística 4x4',
+      en: 'Martín • Route Captain & 4x4 Logistics',
+      de: 'Martín • Routenkapitän & 4x4-Logistik',
+      fr: 'Martín • Capitaine de Route & Logistique 4x4',
+      zh: 'Martín • 陆路交通与4x4四驱调度专家',
+      ja: 'マルティン • ルートキャプテン＆4WDロジスティクス'
     },
     role: {
       es: 'Tiempos Reales de Manejo, Shuttles, Ferris & Vuelos Sansa',
@@ -1187,12 +1187,12 @@ export const AI_AGENTS: AIAgent[] = [
       ja: '山道での正確な所要時間計算（100kmに3〜4時間）、4WDレンタカー要否、パケラフェリー時刻表、国内線乗り継ぎをご案内。'
     },
     welcomeMessage: {
-      es: '¡Buenas rutas! 🚐 Soy Esteban. En Costa Rica las distancias engañan: una curva en la montaña o un río cambia todo. Dime tu punto de partida y destino para darte la ruta más rápida y segura.',
-      en: 'Smooth travels! 🚐 I am Esteban. In Costa Rica distances are deceptive due to mountainous terrain. Give me your start and end points for the safest, fastest route.',
-      de: 'Gute Fahrt! 🚐 Ich bin Esteban. Entfernungen in Costa Rica werden oft unterschätzt. Nennen Sie mir Start und Ziel für die sicherste und schnellste Route.',
-      fr: 'Bonne route ! 🚐 Je suis Esteban. Au Costa Rica, les distances sont trompeuses en montagne. Indiquez-moi votre trajet pour obtenir l\'itinéraire idéal.',
-      zh: '一路顺风，Pura Vida！🚐 我是交通物流专家 Esteban。哥斯达黎加地势多山，地图上的直线距离极具迷惑性。告诉我您的出发地与目的地，我来帮您测算最平稳省时的路线。',
-      ja: '快適なドライブを！🚐 ルートロジスティクス担当のエステバンです。コスタリカは山道が多く距離感が日本と異なります。出発地と目的地をお知らせいただければ最短・安全なルートを計算します。'
+      es: '¡Buenas rutas! 🚐 Soy Martín. En Costa Rica las distancias engañan: una curva en la montaña o un río cambia todo. Dime tu punto de partida y destino para darte la ruta más rápida y segura.',
+      en: 'Smooth travels! 🚐 I am Martín. In Costa Rica distances are deceptive due to mountainous terrain. Give me your start and end points for the safest, fastest route.',
+      de: 'Gute Fahrt! 🚐 Ich bin Martín. Entfernungen in Costa Rica werden oft unterschätzt. Nennen Sie mir Start und Ziel für die sicherste und schnellste Route.',
+      fr: 'Bonne route ! 🚐 Je suis Martín. Au Costa Rica, les distances sont trompeuses en montagne. Indiquez-moi votre trajet pour obtenir l\'itinéraire idéal.',
+      zh: '一路顺风，Pura Vida！🚐 我是交通物流专家 Martín。哥斯达黎加地势多山，地图上的直线距离极具迷惑性。告诉我您的出发地与目的地，我来帮您测算最平稳省时的路线。',
+      ja: '快適なドライブを！🚐 ルートロジスティクス担当のマルティンです。コスタリカは山道が多く距離感が日本と異なります。出発地と目的地をお知らせいただければ最短・安全なルートを計算します。'
     },
     workflowSteps: {
       es: [

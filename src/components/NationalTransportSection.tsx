@@ -19,9 +19,9 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
   const [activeTab, setActiveTab] = useState<'shuttles' | 'car_rental' | 'flights' | 'buses'>('shuttles');
 
   return (
-    <section id="transporte" className="py-16 bg-[#0B2516] text-white relative overflow-hidden border-y border-teal-500/30">
+    <section id="transporte" className="py-16 bg-stone-900 text-white relative overflow-hidden border-y border-white/10">
       {/* Background Subtle Gradient & Pattern */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-stone-900/40 via-[#0B2516] to-[#05140B] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-stone-850 via-stone-900 to-stone-950 pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         

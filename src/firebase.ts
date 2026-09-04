@@ -8,13 +8,10 @@ export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId 
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Add Google Forms & Drive scopes
-googleProvider.addScope('https://www.googleapis.com/auth/drive');
-googleProvider.addScope('https://www.googleapis.com/auth/drive.file');
-googleProvider.addScope('https://www.googleapis.com/auth/drive.readonly');
-googleProvider.addScope('https://www.googleapis.com/auth/forms.body');
-googleProvider.addScope('https://www.googleapis.com/auth/forms.body.readonly');
-googleProvider.addScope('https://www.googleapis.com/auth/forms.responses.readonly');
+// Minimal scopes for authentication only - openid, email, profile
+googleProvider.addScope('openid');
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
 
 // Cache the access token in memory
 let cachedAccessToken: string | null = null;

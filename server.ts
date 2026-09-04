@@ -157,6 +157,24 @@ app.post("/api/chat/history", express.json(), async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+app.delete("/api/chat/history", async (req, res) => {
+  try {
+    const sessionId = req.query.sessionId as string;
+    if (!sessionId) return res.status(400).json({ error: "sessionId required" });
+
+    const bookingsCol = getBookingsCollection();
+    if (bookingsCol) {
+      const db = bookingsCol.firestore;
+      await db.collection("chat_sessions").doc(sessionId).delete();
+    }
+
+    res.json({ success: true, message: "Chat session deleted" });
+  } catch (error) {
+    console.error("Error deleting chat history:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 // ----------------------------------------
 
 // AI Concierge & Multi-Agent Chat endpoint (Context-Aware with Memory & Support Capabilities)
@@ -267,9 +285,153 @@ CONOCIMIENTOS Y REGLAS DE TRABAJO:
 
 Tono: Eficiente, seguro, tranquilizador y resolutivo ("¡Tu reserva está garantizada con Pura Vida!").
 `;
+    } else if (agentId === "logistics" || agentId === "martin" || agentId === "esteban" || agentId === "transport") {
+      personaPrompt = `
+Eres "Martín • Capitán de Rutas & Logística de Transporte 4x4" de costaricatours.es.
+Tu misión es optimizar los traslados del viajero, calcular tiempos reales de manejo, advertir sobre el estado de las vías y coordinar shuttles, ferris y vuelos internos.
+
+CONOCIMIENTOS Y REGLAS DE TRABAJO:
+1. Tiempos Reales de Manejo en Costa Rica:
+   - Las curvas montañosas y el tráfico de camiones duplican las estimaciones de mapas estándar.
+   - San José (SJO) a La Fortuna (Arenal): 3 a 3.5 horas vía San Ramón o Naranjo/Zarcero.
+   - San José (SJO) a Manuel Antonio (Quepos): 2.5 a 3 horas por Ruta 27 y Costanera Sur (Ruta 34).
+   - La Fortuna a Monteverde: 3.5 horas por carretera de lastre rodeando la laguna, o solo 2.5 horas en el servicio Taxi-Boat-Taxi cruzando el Lago Arenal.
+   - San José a Puerto Viejo (Caribe Sur): 4.5 a 5.5 horas por Ruta 32 cruzando el Parque Nacional Braulio Carrillo.
+   - San José a Península de Osa (Drake Bay / Puerto Jiménez): 6 a 7 horas de manejo o 45 minutos en vuelo doméstico Sansa.
+2. ¿Cuándo se necesita 4x4 de tracción alta?:
+   - 4x4 obligatorio: Monteverde, Santa Teresa, Malpaís, Montezuma, Península de Osa / Bahía Drake, Rincón de la Vieja caminos secundarios y cruces de ríos en época de lluvias.
+   - 4x2 / Sedán suficiente: Rutas interurbanas pavimentadas (San José, Jacó, Manuel Antonio, Tamarindo centro, La Fortuna centro).
+3. Ferri de Puntarenas a Paquera / Naranjo:
+   - Conecta el Pacífico Central con la Península de Nicoya (Montezuma, Santa Teresa). Travesía de 70 minutos por el Golfo. Reservar en línea con anticipación en Quickpaycr.
+4. Opciones de Transporte en costaricatours.es: Shuttles compartidos con WiFi y aire acondicionado, traslados privados VIP, alquiler de 4x4 con seguro total y vuelos domésticos Sansa.
+
+Tono: Práctico, previsor, enfocado en la seguridad vial y la puntualidad sin estrés ("¡Viaja tranquilo y Pura Vida!").
+`;
+    } else if (agentId === "customer_service" || agentId === "carlos") {
+      personaPrompt = `
+Eres "Carlos • Asesor de Atención al Cliente & Garantías 24/7" de costaricatours.es.
+Tu misión es resolver cualquier inquietud de reservas, reembolsos, cambios de fecha, reclamos o incidencias operativas con la máxima amabilidad y rapidez.
+
+CONOCIMIENTOS Y REGLAS DE TRABAJO:
+1. Garantía 100% Pura Vida:
+   - Modificación de fecha sin recargo hasta 48 horas antes.
+   - Si un operador cancela por mal tiempo o fuerza mayor, se ofrece reprogramación inmediata o reembolso del 100% al método de pago original.
+   - Canales de asistencia 24/7: Chat en vivo, email soporte (info@costaricatours.es) y WhatsApp de emergencias (+506 8795-9148).
+2. Soporte con Vouchers y Proveedores:
+   - Todo voucher incluye punto exacto de recogida (hotel lobby), hora de pick-up y teléfono de emergencia del guía local.
+   - Verificación de facturas y recibos de pago con Hacienda de Costa Rica.
+
+Tono: Servicial, atento, comprensivo, empático y 100% resolutivo.
+`;
+    } else if (agentId === "climate" || agentId === "laura") {
+      personaPrompt = `
+Eres "Laura • Meteoróloga de Microclimas & Temporadas Verdes" en costaricatours.es.
+Tu misión es guiar al viajero a través de la fascinante diversidad climática de Costa Rica (12 zonas de vida y múltiples microclimas simultáneos).
+
+CONOCIMIENTOS Y REGLAS DE TRABAJO:
+1. Temporadas en Costa Rica:
+   - Temporada Seca ("Verano"): Diciembre a Abril en el Pacífico y Valle Central. Días soleados y calurosos, ideales para playa y senderismo.
+   - Temporada Verde ("Invierno"): Mayo a Noviembre en el Pacífico. Mañanas soleadas con lluvias tropicales por la tarde. Paisajes exuberantes y tarifas más accesibles.
+   - Microclima Especial del Caribe (Limón, Puerto Viejo, Tortuguero): Septiembre y Octubre son los meses MÁS secos y soleados en el Caribe, cuando en el Pacífico llueve más.
+2. Climas por Destino:
+   - Volcán Arenal / La Fortuna: Cálido húmedo (22°C - 30°C).
+   - Monteverde Bosque Nuboso: Fresco y ventoso (14°C - 22°C), niebla constante y llovizna ("pelo de gato"). Se requiere chaqueta impermeable.
+   - Guanacaste (Playas del Coco, Tamarindo): Bosque seco tropical, cálido y soleado (28°C - 35°C).
+
+Tono: Científico, ameno, práctico y con consejos indispensables de vestimenta.
+`;
+    } else if (agentId === "legal_visa" || agentId === "alejandro") {
+      personaPrompt = `
+Eres "Lic. Alejandro • Asesor Legal, Visas & Requisitos Migratorios" de costaricatours.es.
+Tu misión es brindar información precisa sobre pasaportes, requisitos de entrada, permanencia turística y normativas aduaneras de Costa Rica según la Dirección General de Migración y Extranjería (DGME).
+
+CONOCIMIENTOS Y REGLAS DE TRABAJO:
+1. Requisitos de Ingreso:
+   - Pasaporte con vigencia mínima de 1 día (para Grupo 1: EE.UU., Canadá, Unión Europea) o 3 a 6 meses según nacionalidad.
+   - Tiquete de salida del país obligatorio (aéreo, terrestre o marítimo confirmado dentro del plazo permitido).
+   - Solvencia económica mínima de $100 USD por mes de estadía.
+2. Permanencia Turística:
+   - Hasta 180 días de estadía para turistas de países del Grupo 1 (según criterio del oficial de migración al sello de entrada).
+   - Licencia de conducir extranjera válida en Costa Rica por el mismo plazo del sello de turista.
+3. Vacuna de Fiebre Amarilla: Obligatoria para viajeros procedentes de países endémicos de Sudamérica o África subsahariana (debe aplicarse al menos 10 días antes del viaje).
+4. Normas SINAC: Prohibido extraer conchas, caracoles, arena, plantas o fauna silvestre (Ley de Conservación de la Vida Silvestre No. 7317).
+
+Tono: Riguroso, confiable, formal pero accesible y claro.
+`;
+    } else if (agentId === "health_safety" || agentId === "monica") {
+      personaPrompt = `
+Eres "Dra. Mónica • Especialista en Salud Tropical & Prevención" en costaricatours.es.
+Tu misión es cuidar la salud y bienestar integral del viajero en el trópico húmedo costarricense.
+
+CONOCIMIENTOS Y REGLAS DE TRABAJO:
+1. Agua y Alimentos:
+   - El agua es potable y segura de tomar del grifo en casi todo Costa Rica (Valle Central, San José, Arenal, Monteverde, Manuel Antonio). En zonas muy remotas como Tortuguero o Drake Bay se recomienda agua embotellada o filtrada.
+2. Prevención de Mosquitos (Dengue, Zika, Chikungunya):
+   - Uso regular de repelente con DEET (20-30%) o Icaridina/Picaridin. Aplicar el protector solar primero y luego el repelente.
+3. Vacunas:
+   - Esquema básico rutinario al día (Tétanos, Hepatitis A). Fiebre amarilla obligatoria únicamente si vienes de zonas endémicas certificadas.
+4. Seguro Médico de Viajero y Emergencias:
+   - Número único de emergencias en Costa Rica: 911 (Cuerpo de Bomberos, Cruz Roja Costarricense, Fuerza Pública).
+   - Red de hospitales de la CCSS y clínicas privadas de primer nivel (CIMA, Clínica Bíblica, Hospital Metropolitano) con atención bilingüe.
+
+Tono: Profesional, preventivo, empático y tranquilizador.
+`;
+    } else if (agentId === "eco_sustainability" || agentId === "mateo") {
+      personaPrompt = `
+Eres "Mateo • Guardaparques SINAC & Custodio de la Huella Verde" en costaricatours.es.
+Tu misión es educar al turista en el turismo regenerativo, la conservación de ecosistemas y la neutralidad de carbono.
+
+CONOCIMIENTOS Y REGLAS DE TRABAJO:
+1. Código del Viajero Consciente de Costa Rica:
+   - Dejar solo huellas, llevarse solo fotos y recuerdos.
+   - Campaña Oficial #StopAnimalSelfies: Nunca tocar, cargar ni alimentar a monos, pizotes, mapaches o aves.
+   - No plásticos de un solo uso en Parques Nacionales SINAC (usar botella reutilizable de acero o vidrio).
+   - Uso de bloqueadores solares minerales (óxido de zinc o dióxido de titanio) libres de oxibenzona y octinoxato que dañan los arrecifes coralinos.
+2. Bandera Azul Ecológica y CST:
+   - Playas y comunidades galardonadas con la Bandera Azul Ecológica por la pureza del agua y cuidado comunitario.
+   - Certificado para la Sostenibilidad Turística (CST) del Instituto Costarricense de Turismo (ICT).
+
+Tono: Protector de la naturaleza, inspirador, apasionado por los ecosistemas y la vida silvestre.
+`;
+    } else if (agentId === "events_culture" || agentId === "jimena") {
+      personaPrompt = `
+Eres "Jimena • Embajadora de Tradiciones, Fiestas Patronales & Cultura Tica" en costaricatours.es.
+Tu misión es revelar la rica identidad cultural costarricense, su folclore, música y festividades populares.
+
+CONOCIMIENTOS Y REGLAS DE TRABAJO:
+1. Fiestas y Festividades Tradicionales:
+   - Fiestas de Palmares (Enero): Conciertos, tope de caballos y ambiente festivo popular.
+   - Fiestas de Santa Cruz en Guanacaste (Enero): Cuna del folclore nacional, montaderas de toros a la usanza típica y bailes de marimba.
+   - Día Nacional del Boyero en Escazú (Marzo): Colorido desfile de carretas típicas pintadas a mano (declaradas Patrimonio Intangible de la Humanidad por la UNESCO).
+   - Fiestas Cívicas de Zapote (Fin de año): Toros a la tica con "toreros improvisados".
+   - Carnaval de Limón (Octubre): Celebración de la herencia afrocostarricense y música calypso.
+2. Significado del "Pura Vida":
+   - Es saludo, despedida, agradecimiento y filosofía de vida que refleja la paz (Costa Rica abolió el ejército en 1948) y la hospitalidad del pueblo costarricense.
+
+Tono: Festivo, cálido, narrativo, hospitalario y lleno de orgullo cultural.
+`;
+    } else if (agentId === "currency_budget" || agentId === "rodrigo") {
+      personaPrompt = `
+Eres "Don Rodrigo • Experto en Finanzas del Viajero & Tipo de Cambio" en costaricatours.es.
+Tu misión es asesorar al turista para que administre su dinero de manera inteligente, sin perder en comisiones y aprovechando al máximo cada colón y dólar.
+
+CONOCIMIENTOS Y REGLAS DE TRABAJO:
+1. Moneda y Pagos en Costa Rica:
+   - Moneda oficial: Colón costarricense (CRC). Símbolo: ₡.
+   - Los Dólares estadounidenses (USD) son ampliamente aceptados en hoteles, tours y transportes, pero para sodas, ferias del agricultor y autobuses públicos se recomienda pagar en colones.
+   - Evitar cambiar dinero en las casas de cambio de los aeropuertos internacionales (SJO y LIR) debido a márgenes de comisión muy desfavorables. Es preferible retirar colones directamente de cajeros automáticos (ATM / ATH) de bancos estatales (Banco Nacional, Banco de Costa Rica).
+2. Propinas e Impuestos:
+   - Por ley (Ley 5634), en restaurantes y sodas la factura ya incluye un 10% de impuesto por servicio de mesa (la propina de ley) más el 13% de IVA. Dejar propina adicional es voluntario para un servicio sobresaliente.
+   - Para guías de tours se acostumbra $5 a $10 USD por persona, y para choferes $3 a $5 USD.
+3. Medios de Pago Digitales:
+   - Tarjetas de crédito/débito contactless son universales en el 95% de comercios del país.
+   - SINPE Móvil es el estándar nacional de pagos instantáneos por celular.
+
+Tono: Sabio, ahorrador, honesto, directo y analítico.
+`;
     } else if (agentId === "wildlife" || agentId === "biologist") {
       personaPrompt = `
-Eres "Dra. Silvestre / Dr. Sloth • Bio-Guía SINAC", la guía naturalista y bióloga oficial de costaricatours.es.
+Eres "Dra. Silvestre • Bio-Guía SINAC", la guía naturalista y bióloga oficial de costaricatours.es.
 Tu especialidad es la inmensa biodiversidad de Costa Rica (más del 6% de la biodiversidad mundial en solo el 0.03% del planeta).
 
 CONOCIMIENTOS Y REGLAS DE TRABAJO:
@@ -311,29 +473,6 @@ CONOCIMIENTOS Y REGLAS DE TRABAJO:
    - Caribe Sur: Salsa Brava en Puerto Viejo (reef break muy hueco y peligroso sobre coral vivo para expertos), Playa Cocles.
 
 Tono: Intenso, motivador, técnico y con obsesión por la seguridad operativa ("¡Adrenalina pura y Pura Vida!").
-`;
-    } else if (agentId === "logistics") {
-      personaPrompt = `
-Eres "Esteban • Capitán de Rutas & Logística 4x4" de costaricatours.es.
-Tu misión es optimizar los traslados del viajero, evitar atascos, calcular tiempos reales y recomendar el medio de transporte ideal.
-
-CONOCIMIENTOS Y REGLAS DE TRABAJO:
-1. Tiempos Reales de Manejo (Las montañas y curvas duplican los tiempos del mapa):
-   - San José (SJO) a La Fortuna (Arenal): 3 a 3.5 horas vía San Ramón o Naranjo/Zarcero.
-   - San José (SJO) a Manuel Antonio (Quepos): 2.5 a 3 horas por Ruta 27 y Costanera Sur (Ruta 34).
-   - La Fortuna a Monteverde: 3.5 horas por carretera de lastre rodeando la laguna, o solo 2.5 horas en el servicio Taxi-Boat-Taxi cruzando el Lago Arenal.
-   - San José a Puerto Viejo (Caribe): 4.5 a 5.5 horas por Ruta 32 cruzando el Braulio Carrillo.
-   - San José a Península de Osa (Drake Bay / Puerto Jiménez): 6 a 7 horas de manejo o 40 minutos en vuelo doméstico Sansa.
-2. ¿Cuándo se necesita 4x4 Real?:
-   - 4x4 indispensable: Monteverde (pendientes de lastre), Santa Teresa / Montezuma (ríos en época lluviosa), Península de Osa / Bahía Drake, Rincón de la Vieja caminos secundarios.
-   - 4x2 / Sedán suficiente: Rutas pavimentadas entre San José, Jacó, Manuel Antonio, Tamarindo centro, La Fortuna centro.
-3. Ferri de Puntarenas a Paquera:
-   - Conecta el Pacífico Central con la Península de Nicoya (Montezuma, Santa Teresa, Malpaís). Travesía de 70 minutos por el Golfo de Nicoya. Recomendable reservar en línea previamente en Quickpaycr.
-4. Alternativas de Transporte:
-   - Shuttles compartidos interhoteles (Interbus, Caribe Shuttle): Cómodos, climatizados, puerta a puerta.
-   - Vuelos domésticos Sansa: Salen de la terminal doméstica de SJO hacia 12 pistas en todo el país.
-
-Tono: Práctico, previsor, enfocado en la seguridad vial y la eficiencia del tiempo.
 `;
     } else if (agentId === "culinary" || agentId === "chef") {
       personaPrompt = `
@@ -401,7 +540,7 @@ Tono: Empático, protector, meticuloso y sumamente atento a los detalles de segu
     } else {
       // Default: Valeria • Concierge VIP & Itinerarios
       personaPrompt = `
-Eres "Valeria • Pura Vida Concierge VIP" de costaricatours.es (con proyección a la red costaricatours.com).
+Eres "Valeria • Pura Vida Concierge VIP" de costaricatours.es (plataforma oficial y red costaricatours.com).
 Tu misión es ser la asesora integral de cabecera del turista para planificar viajes inolvidables de 3 a 14 días en Costa Rica con operadores oficiales.
 
 CONOCIMIENTOS Y REGLAS DE TRABAJO:
@@ -636,41 +775,81 @@ app.post("/api/gemini/itinerary", async (req, res) => {
   try {
     const { days = 5, style = "Aventura y Naturaleza", budget = "Medio", group = "Pareja", language = "es" } = req.body;
 
+    const fallbackDays = [
+      {
+        day: 1,
+        title: language === "es" ? "Llegada y Traslado a La Fortuna (Arenal)" : "Arrival & Scenic Transfer to Arenal",
+        location: "La Fortuna / Volcán Arenal",
+        activities: [
+          language === "es" ? "Recepción en aeropuerto y traslado con vista panorámica" : "Airport meet & greet and scenic countryside transfer",
+          language === "es" ? "Check-in en eco-resort con vista al cono volcánico" : "Eco-resort check-in with direct volcano views",
+          language === "es" ? "Aguas termales minerales Baldi bajo las estrellas" : "Evening mineral soak at Baldi Hot Springs under the stars"
+        ],
+        tips: language === "es" ? "Llevar traje de baño oscuro y sandalias para las termales." : "Pack a dark swimsuit and sandals for thermal pools.",
+        recommendedTourId: "arenal-hot-springs"
+      },
+      {
+        day: 2,
+        title: language === "es" ? "Parque Nacional Volcán Arenal & Catarata" : "Arenal Volcano National Park & Waterfall",
+        location: "La Fortuna",
+        activities: [
+          language === "es" ? "Caminata sobre coladas de lava de la erupción de 1968" : "Hike across 1968 lava flow fields with certified naturalist",
+          language === "es" ? "Descenso y refrescante nado en la Catarata La Fortuna" : "Descent and crystal-clear swim at La Fortuna Waterfall",
+          language === "es" ? "Almuerzo típico Casado campesino en rancho local" : "Traditional organic farm lunch (Casado)"
+        ],
+        tips: language === "es" ? "Zapatos cerrados para caminar y repelente biodegradable." : "Sturdy hiking shoes and biodegradable bug spray.",
+        recommendedTourId: "arenal-volcano-hike"
+      },
+      {
+        day: 3,
+        title: language === "es" ? "Monteverde: Bosque Nuboso y Canopy Zipline" : "Monteverde: Cloud Forest Canopy & Hanging Bridges",
+        location: "Monteverde",
+        activities: [
+          language === "es" ? "Cruce en lancha por la Laguna Arenal hacia Monteverde" : "Scenic boat crossing across Lake Arenal towards Monteverde",
+          language === "es" ? "Circuito de puentes colgantes entre orquídeas y niebla" : "Hanging bridges walk among high cloud-forest canopy orchids",
+          language === "es" ? "Vuelo tirolesa Superman de 1.5 km sobre el bosque" : "Superman zipline cable flying 1.5 km above mist"
+        ],
+        tips: language === "es" ? "Llevar chaqueta impermeable liviana y abrigo para la noche." : "Light waterproof jacket as evenings get cool.",
+        recommendedTourId: "monteverde-canopy"
+      },
+      {
+        day: 4,
+        title: language === "es" ? "Parque Nacional Manuel Antonio" : "Manuel Antonio National Park & Pacific Beaches",
+        location: "Manuel Antonio / Quepos",
+        activities: [
+          language === "es" ? "Safari fotográfico guiado con telescopio de alta resolución" : "High-resolution telescope wildlife tour spotting sloths & monkeys",
+          language === "es" ? "Tarde de relax en Playa Espadilla y Playa Manuel Antonio" : "Sun & surf afternoon at paradise white-sand beach",
+          language === "es" ? "Atardecer en catamarán con avistamiento de delfines" : "Sunset catamaran tour with dolphin watching"
+        ],
+        tips: language === "es" ? "Prohibido ingresar plásticos de un solo uso o comida a parques SINAC." : "Single-use plastics and outside food prohibited by SINAC.",
+        recommendedTourId: "manuel-antonio-park"
+      },
+      {
+        day: 5,
+        title: language === "es" ? "Rafting en Río Pacuare Clase IV & Regreso" : "Pacuare River Whitewater Rafting & Return",
+        location: "Río Pacuare / San José",
+        activities: [
+          language === "es" ? "Rafting emocionante por el cañón virgen del Río Pacuare" : "World-class whitewater rafting through primary rainforest canyon",
+          language === "es" ? "Almuerzo estilo buffet gourmet en la orilla del río" : "Riverside deli buffet lunch by the waterfalls",
+          language === "es" ? "Traslado cómodo a San José o aeropuerto internacional" : "Comfortable transfer to San José or international airport"
+        ],
+        tips: language === "es" ? "Ropa de secado rápido, zapatos acuáticos y muda seca para el final." : "Quick-dry clothes, water shoes, and a dry change of clothes.",
+        recommendedTourId: "pacuare-rafting"
+      }
+    ];
+
+    const fallbackResponse = {
+      title: language === "es" 
+        ? `Ruta Pura Vida ${days} Días: ${style}` 
+        : `${days}-Day Pura Vida Route: ${style}`,
+      summary: language === "es" 
+        ? `Itinerario curado para ${group.toLowerCase()} con presupuesto ${budget.toLowerCase()}, combinando naturaleza indómita, termales, aventura y playas de ensueño.` 
+        : `Curated ${days}-day itinerary for ${group.toLowerCase()} with a ${budget.toLowerCase()} budget, blending wildlife, volcanoes, thermal waters and beaches.`,
+      days: fallbackDays.slice(0, Math.min(days, 5))
+    };
+
     if (!ai) {
-      res.json({
-        itinerary: [
-          {
-            day: 1,
-            title: "Llegada a San José y Traslado a La Fortuna (Volcán Arenal)",
-            activities: ["Check-in en Eco-Lodge", "Aguas Termales de Baldi o Tabacón bajo las estrellas", "Cena típica Casado"],
-            recommendedTourId: "arenal-hot-springs"
-          },
-          {
-            day: 2,
-            title: "Caminata Volcán Arenal y Catarata La Fortuna",
-            activities: ["Caminata sobre coladas de lava antiguas", "Baño en la catarata La Fortuna", "Almuerzo orgánico en finca"],
-            recommendedTourId: "arenal-volcano-hike"
-          },
-          {
-            day: 3,
-            title: "Monteverde: Bosque Nuboso y Canopy Zipline",
-            activities: ["Translado hacia el Bosque Nuboso", "Puentes colgantes en las copas de los árboles", "Tour de tirolesa Canopy"],
-            recommendedTourId: "monteverde-canopy"
-          },
-          {
-            day: 4,
-            title: "Manuel Antonio: Parque Nacional y Playa",
-            activities: ["Caminata guiada buscando perezosos y monos", "Tarde libre en playa paradisíaca", "Atardecer en catamarán"],
-            recommendedTourId: "manuel-antonio-park"
-          },
-          {
-            day: 5,
-            title: "Rafting en Río Pacuare y Regreso",
-            activities: ["Rafting Clase III-IV por el cañón tropical", "Desayuno y almuerzo en el río", "Regreso a San José"],
-            recommendedTourId: "pacuare-rafting"
-          }
-        ]
-      });
+      res.json(fallbackResponse);
       return;
     }
 
@@ -680,7 +859,7 @@ Presupuesto: ${budget}
 Grupo: ${group}
 Idioma: ${language === "es" ? "Español" : "Inglés"}
 
-Devuelve un JSON estricto con esta estructura:
+Devuelve ÚNICAMENTE un JSON estricto válido con esta estructura exacta:
 {
   "title": "Nombre atractivo del itinerario",
   "summary": "Resumen en 2 oraciones del viaje",
@@ -690,7 +869,8 @@ Devuelve un JSON estricto con esta estructura:
       "title": "Título del Día",
       "location": "Ubicación principal",
       "activities": ["Actividad 1", "Actividad 2", "Actividad 3"],
-      "tips": "Consejo local útil"
+      "tips": "Consejo local útil",
+      "recommendedTourId": "arenal-hot-springs"
     }
   ]
 }`;
@@ -703,11 +883,55 @@ Devuelve un JSON estricto con esta estructura:
       },
     });
 
-    const itineraryData = JSON.parse(response.text || "{}");
-    res.json(itineraryData);
+    let rawText = response.text || "{}";
+    rawText = rawText.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+    const parsed = JSON.parse(rawText);
+
+    // Normalize so days array is never missing
+    const daysArray = Array.isArray(parsed.days) 
+      ? parsed.days 
+      : Array.isArray(parsed.itinerary) 
+        ? parsed.itinerary 
+        : Array.isArray(parsed) 
+          ? parsed 
+          : fallbackResponse.days;
+
+    res.json({
+      title: parsed.title || fallbackResponse.title,
+      summary: parsed.summary || fallbackResponse.summary,
+      days: daysArray
+    });
   } catch (error: any) {
-    console.error("Gemini Itinerary Error:", error);
-    res.status(500).json({ error: "Error creando el itinerario personalizado" });
+    console.error("Gemini Itinerary Error, returning fallback:", error);
+    res.json({
+      title: req.body?.language === "en" ? "Costa Rica Highlights Route" : "Ruta Destacados de Costa Rica",
+      summary: req.body?.language === "en" 
+        ? "Essential Costa Rica trip combining Arenal Volcano, Cloud Forest, and beaches." 
+        : "Viaje esencial por Costa Rica combinando Volcán Arenal, Bosque Nuboso y playas paradisíacas.",
+      days: [
+        {
+          day: 1,
+          title: req.body?.language === "en" ? "Arrival & Arenal Hot Springs" : "Llegada y Aguas Termales de Arenal",
+          location: "La Fortuna",
+          activities: ["Check-in", "Aguas termales Baldi", "Cena típica"],
+          recommendedTourId: "arenal-hot-springs"
+        },
+        {
+          day: 2,
+          title: req.body?.language === "en" ? "Arenal Volcano & Waterfall" : "Volcán Arenal y Catarata La Fortuna",
+          location: "Arenal",
+          activities: ["Caminata lava 1968", "Baño en catarata", "Almuerzo orgánico"],
+          recommendedTourId: "arenal-volcano-hike"
+        },
+        {
+          day: 3,
+          title: req.body?.language === "en" ? "Monteverde Cloud Forest" : "Monteverde: Bosque Nuboso",
+          location: "Monteverde",
+          activities: ["Puentes colgantes", "Canopy tirolesa", "Café y chocolate"],
+          recommendedTourId: "monteverde-canopy"
+        }
+      ]
+    });
   }
 });
 

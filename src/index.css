@@ -1,19 +1,64 @@
 @import "tailwindcss";
 
+@theme {
+  /* Costa Rica Tours - Paleta Clara de Desarrollo (Caribbean Ocean & Coastal Sand) */
+  --color-forest: var(--app-stone-950, #1B4965);
+  --color-forest-dark: var(--app-stone-900, #22577A);
+  --color-forest-light: var(--app-stone-850, #2C688F);
+  --color-forest-accent: #0284C7;
+
+  --color-puravida: #F97316;
+  --color-puravida-dark: #EA580C;
+  --color-puravida-light: #FB923C;
+
+  --color-gold: #F59E0B;
+  --color-gold-light: #FBBF24;
+
+  --color-crema: #F8FAFC;
+  --color-arena: #F1F5F9;
+
+  /* Remap utility colors to much lighter, fresh coastal and bright Caribbean tones */
+  --color-stone-950: var(--app-stone-950, #1B4965);
+  --color-stone-900: var(--app-stone-900, #22577A);
+  --color-stone-850: var(--app-stone-850, #2C688F);
+  --color-stone-800: var(--app-stone-800, #387CA8);
+  --color-stone-700: var(--app-stone-700, #4B94C2);
+
+  --color-teal-600: #0284C7;
+  --color-teal-500: #0EA5E9;
+  --color-teal-400: #38BDF8;
+  --color-teal-300: #7DD3FC;
+
+  --color-orange-600: #EA580C;
+  --color-orange-500: #F97316;
+  --color-orange-400: #FB923C;
+  --color-orange-300: #FDBA74;
+
+  --color-amber-500: #F59E0B;
+  --color-amber-400: #FBBF24;
+}
+
 @layer base {
   :root {
+    --app-stone-950: #1B4965;
+    --app-stone-900: #22577A;
+    --app-stone-850: #2C688F;
+    --app-stone-800: #387CA8;
+    --app-stone-700: #4B94C2;
+
     --font-heading: 'Fraunces', serif;
     --font-body: 'Work Sans', sans-serif;
-    --verde-selva: #1E4D2B; /* Dosel — verde profundo de selva */
-    --azul-oceano: #0F8B8D; /* Caribe — turquesa de costa caribeña */
-    --naranja-atardecer: #E8A33D; /* Guanacaste — dorado de atardecer, uso exclusivo para CTAs */
-    --basalto: #2B2622; /* Roca volcánica — solo para secciones hero oscuras */
-    --gris-oscuro: #1A1815; /* Texto — casi negro cálido, nunca negro puro */
-    --gris-claro: #EDE6D9; /* Arena tostada — fondo cálido, no blanco/gris frío */
+    --verde-selva: var(--app-stone-900, #22577A);
+    --verde-selva-profundo: var(--app-stone-950, #1B4965);
+    --naranja-puravida: #F97316;
+    --dorado-destacado: #F59E0B;
+    --crema-fondo: #F8FAFC;
+    --arena-tostada: #F1F5F9;
+    --texto-oscuro: #0F172A;
   }
   body {
-    background-color: #FFFFFF;
-    color: #1A1815;
+    background-color: var(--app-stone-950, #1B4965);
+    color: #F8FAFC;
     font-family: 'Work Sans', sans-serif;
     overflow-x: hidden;
   }

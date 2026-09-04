@@ -125,6 +125,7 @@ export interface BookingRequest {
   };
   paymentMethod?: 'credit_card' | 'sinpe_movil' | 'pay_at_pickup' | 'paypal' | string;
   paymentStatus?: 'pending' | 'completed' | 'on_arrival' | string;
+  paypalOrderId?: string;
   electronicInvoice?: {
     wantsInvoice: boolean;
     idType: string;

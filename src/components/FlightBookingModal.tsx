@@ -112,10 +112,10 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
            body: JSON.stringify({
              tourId: 'flight-' + flight.flightNumber,
              tourName: 'Vuelo Privado ' + flight.flightNumber + ' - ' + flight.airline,
-             totalUSD: flight.priceUSD * (adults + children),
+             totalUSD: flight.priceUSD * (passengersCount),
              customerEmail: email,
              date: flight.departureDate,
-             passengers: adults + children
+             passengers: passengersCount
            })
         });
         const stripeData = await stripeRes.json();

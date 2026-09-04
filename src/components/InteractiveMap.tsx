@@ -147,8 +147,10 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     if (activeClimate !== 'all' && getTourClimate(tour.region) !== activeClimate) return false;
     
     if (searchAreaActive && currentBounds) {
-      const pt = new (window as any).google.maps.LatLng(tour.location.lat, tour.location.lng);
-      if (currentBounds && typeof currentBounds.contains === 'function' && !currentBounds.contains(pt)) return false;
+      if ((window as any)?.google?.maps?.LatLng) {
+        const pt = new (window as any).google.maps.LatLng(tour.location.lat, tour.location.lng);
+        if (currentBounds && typeof currentBounds.contains === 'function' && !currentBounds.contains(pt)) return false;
+      }
     }
     return true;
   });
@@ -223,44 +225,165 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 relative">
-        <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
-          <Map tilt={45} heading={0}
-            mapId="b5387d230c6cf22f" // Valid map ID from example
-            defaultCenter={{ lat: mapCenter[0], lng: mapCenter[1] }}
-            defaultZoom={mapZoom}
-            gestureHandling="greedy"
-            disableDefaultUI
-            className="w-full h-full z-0 custom-google-map"
-            internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
-          >
-            <MapController 
-              center={mapCenter} 
-              zoom={mapZoom} 
-              onBoundsChange={(bounds) => handleBoundsChange(bounds as any)} 
-              onMapMove={handleMapMove} 
-            />
+      <div className="flex-1 relative overflow-hidden bg-slate-900">
+        {GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY.trim().length > 5 ? (
+          <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
+            <Map tilt={45} heading={0}
+              mapId="b5387d230c6cf22f" // Valid map ID from example
+              defaultCenter={{ lat: mapCenter[0], lng: mapCenter[1] }}
+              defaultZoom={mapZoom}
+              gestureHandling="greedy"
+              disableDefaultUI
+              className="w-full h-full z-0 custom-google-map"
+              internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
+            >
+              <MapController 
+                center={mapCenter} 
+                zoom={mapZoom} 
+                onBoundsChange={(bounds) => handleBoundsChange(bounds as any)} 
+                onMapMove={handleMapMove} 
+              />
 
-            {/* Tour Markers */}
-            {effectiveTours.map(tour => {
-              const isSelected = selectedMapTour?.id === tour.id;
-              return (
-                <AdvancedMarker
-                  key={tour.id}
-                  position={{ lat: tour.location.lat, lng: tour.location.lng }}
-                  onClick={() => setSelectedMapTour(tour)}
-                  title={getLangText(tour.title, language)}
-                  zIndex={isSelected ? 100 : 1}
-                  className="cursor-pointer"
-                >
-                  <div className={`${isSelected ? 'bg-red-500 scale-125' : 'bg-orange-500'} text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 border-white transition-all`}>
-                    <MapPin className="w-5 h-5" />
-                  </div>
-                </AdvancedMarker>
-              );
-            })}
-          </Map>
-        </APIProvider>
+              {/* Tour Markers */}
+              {effectiveTours.map(tour => {
+                const isSelected = selectedMapTour?.id === tour.id;
+                return (
+                  <AdvancedMarker
+                    key={tour.id}
+                    position={{ lat: tour.location.lat, lng: tour.location.lng }}
+                    onClick={() => setSelectedMapTour(tour)}
+                    title={getLangText(tour.title, language)}
+                    zIndex={isSelected ? 100 : 1}
+                    className="cursor-pointer"
+                  >
+                    <div className={`${isSelected ? 'bg-red-500 scale-125' : 'bg-orange-500'} text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 border-white transition-all`}>
+                      <MapPin className="w-5 h-5" />
+                    </div>
+                  </AdvancedMarker>
+                );
+              })}
+            </Map>
+          </APIProvider>
+        ) : (
+          /* Interactive Costa Rica Eco-Explorer (GPS Calibrated) */
+          <div className="w-full h-full relative bg-gradient-to-b from-stone-900 via-stone-850 to-stone-950 overflow-hidden flex items-center justify-center select-none">
+            {/* Topographic & Regional Background Canvas */}
+            <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:24px_24px]" />
+            
+            {/* Ocean labels */}
+            <div className="absolute top-1/4 left-6 text-emerald-300/40 text-xs font-semibold tracking-widest uppercase rotate-[-25deg] pointer-events-none">
+              🌊 Océano Pacífico (Pacific Ocean)
+            </div>
+            <div className="absolute top-1/3 right-8 text-cyan-300/40 text-xs font-semibold tracking-widest uppercase rotate-[20deg] pointer-events-none">
+              🌊 Mar Caribe (Caribbean Sea)
+            </div>
+
+            {/* Costa Rica Map Container */}
+            <div className="relative w-[92%] h-[85%] max-w-4xl max-h-[640px] border border-emerald-800/40 rounded-3xl bg-emerald-950/40 backdrop-blur-sm p-4 shadow-2xl">
+              {/* Map Header Status */}
+              <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-emerald-500/30 text-xs text-emerald-300">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Explorador Satelital Costa Rica • {effectiveTours.length} Tours GPS</span>
+              </div>
+
+              {/* Geographic Hotspot Regions */}
+              <div className="absolute inset-0">
+                {/* Arenal Volcano & Lake */}
+                <div className="absolute top-[32%] left-[45%] text-center transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
+                     onClick={() => onSelectRegion('arenal')}>
+                  <div className="text-xl animate-bounce">🌋</div>
+                  <span className="text-[10px] font-bold text-amber-200 bg-black/70 px-2 py-0.5 rounded shadow">
+                    La Fortuna / Arenal
+                  </span>
+                </div>
+
+                {/* Monteverde Cloud Forest */}
+                <div className="absolute top-[36%] left-[36%] text-center transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
+                     onClick={() => onSelectRegion('monteverde')}>
+                  <div className="text-xl">🌿</div>
+                  <span className="text-[10px] font-bold text-emerald-200 bg-black/70 px-2 py-0.5 rounded shadow">
+                    Monteverde
+                  </span>
+                </div>
+
+                {/* Guanacaste Coast */}
+                <div className="absolute top-[22%] left-[22%] text-center transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
+                     onClick={() => onSelectRegion('guanacaste')}>
+                  <div className="text-xl">🏖️</div>
+                  <span className="text-[10px] font-bold text-yellow-200 bg-black/70 px-2 py-0.5 rounded shadow">
+                    Guanacaste
+                  </span>
+                </div>
+
+                {/* Manuel Antonio */}
+                <div className="absolute top-[58%] left-[50%] text-center transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
+                     onClick={() => onSelectRegion('manuel_antonio')}>
+                  <div className="text-xl">🐒</div>
+                  <span className="text-[10px] font-bold text-amber-300 bg-black/70 px-2 py-0.5 rounded shadow">
+                    Manuel Antonio
+                  </span>
+                </div>
+
+                {/* Tortuguero Caribbean */}
+                <div className="absolute top-[25%] left-[68%] text-center transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
+                     onClick={() => onSelectRegion('tortuguero')}>
+                  <div className="text-xl">🐢</div>
+                  <span className="text-[10px] font-bold text-teal-200 bg-black/70 px-2 py-0.5 rounded shadow">
+                    Tortuguero
+                  </span>
+                </div>
+
+                {/* Corcovado Osa */}
+                <div className="absolute top-[78%] left-[65%] text-center transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
+                     onClick={() => onSelectRegion('corcovado')}>
+                  <div className="text-xl">🐆</div>
+                  <span className="text-[10px] font-bold text-lime-200 bg-black/70 px-2 py-0.5 rounded shadow">
+                    Corcovado (Osa)
+                  </span>
+                </div>
+
+                {/* Puerto Viejo Caribe Sur */}
+                <div className="absolute top-[52%] left-[78%] text-center transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
+                     onClick={() => onSelectRegion('caribe')}>
+                  <div className="text-xl">🏄</div>
+                  <span className="text-[10px] font-bold text-cyan-200 bg-black/70 px-2 py-0.5 rounded shadow">
+                    Caribe Sur
+                  </span>
+                </div>
+
+                {/* Individual Tour Pins placed via GPS relative coordinates */}
+                {effectiveTours.map((tour) => {
+                  const isSelected = selectedMapTour?.id === tour.id;
+                  const leftPercent = Math.max(8, Math.min(92, ((tour.location.lng - (-85.9)) / 3.3) * 100));
+                  const topPercent = Math.max(10, Math.min(90, ((11.0 - tour.location.lat) / 2.8) * 100));
+
+                  return (
+                    <button
+                      key={tour.id}
+                      onClick={() => setSelectedMapTour(tour)}
+                      style={{ left: `${leftPercent}%`, top: `${topPercent}%` }}
+                      className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 z-10 ${
+                        isSelected ? 'scale-125 z-30' : 'hover:scale-110 hover:z-20'
+                      }`}
+                      title={getLangText(tour.title, language)}
+                    >
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full shadow-lg border-2 ${
+                        isSelected 
+                          ? 'bg-red-500 border-white text-white font-bold' 
+                          : 'bg-orange-500 hover:bg-orange-400 border-white text-white text-xs'
+                      }`}>
+                        <MapPin className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline max-w-[90px] truncate text-[10px]">
+                          {getLangText(tour.title, language)}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Selected Tour Side Panel */}
         {selectedMapTour && (
