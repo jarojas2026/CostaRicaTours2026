@@ -216,8 +216,10 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const handleOpenItinerary = () => {
+    if (setActiveTab) setActiveTab('itinerary');
+    if (setActiveSection) setActiveSection('itinerary');
     if (onOpenItineraryPlanner) onOpenItineraryPlanner();
-    else handleTabChange('itinerary');
+    setIsMobileDrawerOpen(false);
   };
 
   const count = bookingsCount !== undefined ? bookingsCount : (cartCount || 0);
