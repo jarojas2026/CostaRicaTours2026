@@ -4,6 +4,8 @@ import { createServer as createViteServer } from 'vite';
 import Stripe from 'stripe';
 import { GoogleGenAI } from '@google/genai';
 import admin from 'firebase-admin';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 
 const app = express();
 const PORT = 3000;
@@ -14,7 +16,7 @@ app.use(express.json());
 try {
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     admin.initializeApp({
-      credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+      credential: ((admin as any).credential.cert)(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
     });
   } else {
     admin.initializeApp(); // Usa las credenciales por defecto si está en Cloud Run

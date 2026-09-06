@@ -106,7 +106,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
       // 1. Post to backend
       
       if (paymentMethod === 'credit_card') {
-        const stripeRes = await fetch('/api/stripe/create-checkout-session', {
+        const stripeRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || ""}/api/stripe/create-checkout-session`, {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify({
