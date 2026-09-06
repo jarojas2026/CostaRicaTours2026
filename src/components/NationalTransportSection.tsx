@@ -19,7 +19,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
   const [activeTab, setActiveTab] = useState<'shuttles' | 'car_rental' | 'flights' | 'buses'>('shuttles');
 
   return (
-    <section id="transporte" className="py-16 bg-stone-900 text-white relative overflow-hidden border-y border-white/10">
+    <section id="transporte" className="py-16 bg-stone-50 text-white relative overflow-hidden border-y border-black/10">
       {/* Background Subtle Gradient & Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-stone-850 via-stone-900 to-stone-950 pointer-events-none" />
 
@@ -36,7 +36,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
             🚌 {language === 'es' ? 'Transporte & Movilidad Nacional' : 'Nationwide Transport & Mobility'}
           </h2>
           
-          <p className="text-sm sm:text-base text-stone-100 font-medium leading-relaxed">
+          <p className="text-sm sm:text-base text-stone-900 font-medium leading-relaxed">
             {language === 'es' 
               ? 'Conectamos todas las opciones para moverte por el país: shuttles interhoteles compartidos, renta de vehículos 4x4, vuelos domésticos rápidos y buses públicos económicos.'
               : 'All your Costa Rica travel options in one place: door-to-door shuttles, 4x4 car rentals, fast domestic flights, and affordable public buses.'}
@@ -50,7 +50,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
             className={`px-5 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer shadow-lg ${
               activeTab === 'shuttles'
                 ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white border border-teal-300 shadow-teal-500/20 scale-105'
-                : 'bg-[#0E351F] text-stone-200 hover:bg-[#15462A] border border-stone-800/60'
+                : 'bg-[#0E351F] text-stone-800 hover:bg-[#15462A] border border-stone-200/60'
             }`}
           >
             <span>🚐</span>
@@ -62,7 +62,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
             className={`px-5 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer shadow-lg ${
               activeTab === 'car_rental'
                 ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white border border-teal-300 shadow-teal-500/20 scale-105'
-                : 'bg-[#0E351F] text-stone-200 hover:bg-[#15462A] border border-stone-800/60'
+                : 'bg-[#0E351F] text-stone-800 hover:bg-[#15462A] border border-stone-200/60'
             }`}
           >
             <span>🚙</span>
@@ -74,7 +74,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
             className={`px-5 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer shadow-lg ${
               activeTab === 'flights'
                 ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white border border-teal-300 shadow-teal-500/20 scale-105'
-                : 'bg-[#0E351F] text-stone-200 hover:bg-[#15462A] border border-stone-800/60'
+                : 'bg-[#0E351F] text-stone-800 hover:bg-[#15462A] border border-stone-200/60'
             }`}
           >
             <span>✈️</span>
@@ -86,7 +86,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
             className={`px-5 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer shadow-lg ${
               activeTab === 'buses'
                 ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white border border-teal-300 shadow-teal-500/20 scale-105'
-                : 'bg-[#0E351F] text-stone-200 hover:bg-[#15462A] border border-stone-800/60'
+                : 'bg-[#0E351F] text-stone-800 hover:bg-[#15462A] border border-stone-200/60'
             }`}
           >
             <span>🚍</span>
@@ -113,13 +113,13 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                     🚐 Shuttle Turístico Hotel-a-Hotel
                   </h3>
 
-                  <p className="text-xs text-stone-100 leading-relaxed">
+                  <p className="text-xs text-stone-900 leading-relaxed">
                     {language === 'es'
                       ? 'Traslados compartidos y confortables con recogida directa en la recepción de tu hotel entre Arenal, Monteverde, Manuel Antonio, Tamarindo, Papagayo y Aeropuerto SJO. Vans modernas con A/C y WiFi.'
                       : 'Shared door-to-door transfers picking you up at your hotel lobby connecting San José Airport, Arenal, Monteverde, Manuel Antonio, Tamarindo, and Guanacaste.'}
                   </p>
 
-                  <div className="bg-[#071A0F] p-3.5 rounded-2xl border border-stone-900/80 text-xs space-y-1.5 text-stone-200">
+                  <div className="bg-[#071A0F] p-3.5 rounded-2xl border border-stone-200/80 text-xs space-y-1.5 text-stone-800">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-teal-400 flex-shrink-0" />
                       <span>{language === 'es' ? 'Salidas diarias: 8:00 AM y 2:00 PM' : 'Daily Departures: 8:00 AM & 2:00 PM'}</span>
@@ -131,7 +131,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                   </div>
                 </div>
 
-                <div className="pt-5 mt-5 border-t border-stone-800/60">
+                <div className="pt-5 mt-5 border-t border-stone-200/60">
                   <a
                     href={`https://wa.me/50687959148?text=${encodeURIComponent(
                       language === 'es'
@@ -162,13 +162,13 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                     🚌 Shuttle Expreso Caribe Sur
                   </h3>
 
-                  <p className="text-xs text-stone-100 leading-relaxed">
+                  <p className="text-xs text-stone-900 leading-relaxed">
                     {language === 'es'
                       ? 'Conexiones directas y confortables entre San José, Arenal y Tortuguero hacia Puerto Viejo de Talamanca, Cahuita, Manzanillo y cruce fronterizo.'
                       : 'Direct comfortable tourist routes linking San José and Arenal with Puerto Viejo, Cahuita, Manzanillo, and Caribbean ports.'}
                   </p>
 
-                  <div className="bg-[#071A0F] p-3.5 rounded-2xl border border-stone-900/80 text-xs space-y-1.5 text-stone-200">
+                  <div className="bg-[#071A0F] p-3.5 rounded-2xl border border-stone-200/80 text-xs space-y-1.5 text-stone-800">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-teal-400 flex-shrink-0" />
                       <span>{language === 'es' ? 'Conexiones directas a playa & muelles' : 'Direct beach & boat connections'}</span>
@@ -180,7 +180,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                   </div>
                 </div>
 
-                <div className="pt-5 mt-5 border-t border-stone-800/60">
+                <div className="pt-5 mt-5 border-t border-stone-200/60">
                   <a
                     href={`https://wa.me/50687959148?text=${encodeURIComponent(
                       language === 'es'
@@ -211,13 +211,13 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                     🚐 Traslados Privados Exclusivos
                   </h3>
 
-                  <p className="text-xs text-stone-100 leading-relaxed">
+                  <p className="text-xs text-stone-900 leading-relaxed">
                     {language === 'es'
                       ? 'Vans ejecutivas exclusivas para familias y grupos pequeños con paradas libres para fotos y comida en ruta. Horario 100% flexible a tu conveniencia.'
                       : 'Exclusive executive vans for families and groups with custom departure times and scenic photo/meal stops along the route.'}
                   </p>
 
-                  <div className="bg-[#071A0F] p-3.5 rounded-2xl border border-stone-900/80 text-xs space-y-1.5 text-stone-200">
+                  <div className="bg-[#071A0F] p-3.5 rounded-2xl border border-stone-200/80 text-xs space-y-1.5 text-stone-800">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-teal-400 flex-shrink-0" />
                       <span>{language === 'es' ? 'Salida a la hora que tú elijas' : 'Custom departure time anytime'}</span>
@@ -229,7 +229,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                   </div>
                 </div>
 
-                <div className="pt-5 mt-5 border-t border-stone-800/60">
+                <div className="pt-5 mt-5 border-t border-stone-200/60">
                   <a
                     href={`https://wa.me/50687959148?text=${encodeURIComponent(
                       language === 'es'
@@ -269,33 +269,33 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                     🚙 Alquiler de Vehículos 4x4 & SUVs
                   </h3>
 
-                  <p className="text-xs sm:text-sm text-stone-100 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-stone-900 leading-relaxed">
                     {language === 'es'
                       ? 'Flota moderna de vehículos 4x4 (Suzuki Jimny, Vitara, Hyundai Tucson, Prado) con excelentes coberturas y entrega directa en Aeropuertos SJO y LIR o en tu hotel en cualquier parte del país.'
                       : 'Modern 4WD SUV fleet (Suzuki Jimny, Vitara, Tucson, Prado) with comprehensive zero-deductible insurance and airport pickup at SJO/LIR or direct hotel delivery.'}
                   </p>
 
-                  <div className="grid grid-cols-2 gap-2 text-xs text-stone-200">
-                    <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-900/60 flex items-center gap-2">
+                  <div className="grid grid-cols-2 gap-2 text-xs text-stone-800">
+                    <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-200/60 flex items-center gap-2">
                       <Check className="w-4 h-4 text-teal-400 shrink-0" />
                       <span>{language === 'es' ? 'Cobertura Total Cero Deducible' : 'Zero Deductible Option'}</span>
                     </div>
-                    <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-900/60 flex items-center gap-2">
+                    <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-200/60 flex items-center gap-2">
                       <Check className="w-4 h-4 text-teal-400 shrink-0" />
                       <span>{language === 'es' ? 'GPS & WiFi portátil' : 'GPS & WiFi Hotspot'}</span>
                     </div>
-                    <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-900/60 flex items-center gap-2">
+                    <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-200/60 flex items-center gap-2">
                       <Check className="w-4 h-4 text-teal-400 shrink-0" />
                       <span>{language === 'es' ? 'Conductor adicional gratis' : 'Free additional driver'}</span>
                     </div>
-                    <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-900/60 flex items-center gap-2">
+                    <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-200/60 flex items-center gap-2">
                       <Check className="w-4 h-4 text-teal-400 shrink-0" />
                       <span>{language === 'es' ? 'Asistencia en carretera 24/7' : '24/7 Roadside Assistance'}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-6 mt-6 border-t border-stone-800/60 flex flex-col sm:flex-row gap-3">
+                <div className="pt-6 mt-6 border-t border-stone-200/60 flex flex-col sm:flex-row gap-3">
                   <a
                     href={`https://wa.me/50687959148?text=${encodeURIComponent(
                       language === 'es'
@@ -326,33 +326,33 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                     🚗 Renta de SUVs & Sedanes Automáticos
                   </h3>
 
-                  <p className="text-xs sm:text-sm text-stone-100 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-stone-900 leading-relaxed">
                     {language === 'es'
                       ? 'Flota de última generación con vehículos automáticos y manuales de alta gama. Ideal para turistas que buscan máximo confort, kilometraje ilimitado y entrega inmediata en el aeropuerto.'
                       : 'Premium vehicle fleet featuring modern automatic and manual SUVs. Perfect for travelers seeking effortless airport car pickups, high comfort, and unlimited mileage.'}
                   </p>
 
-                  <div className="grid grid-cols-2 gap-2 text-xs text-stone-200">
-                    <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-900/60 flex items-center gap-2">
+                  <div className="grid grid-cols-2 gap-2 text-xs text-stone-800">
+                    <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-200/60 flex items-center gap-2">
                       <Check className="w-4 h-4 text-teal-400 shrink-0" />
                       <span>{language === 'es' ? 'Pick-up en Aeropuerto SJO/LIR' : 'Airport SJO/LIR Pick-up'}</span>
                     </div>
-                    <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-900/60 flex items-center gap-2">
+                    <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-200/60 flex items-center gap-2">
                       <Check className="w-4 h-4 text-teal-400 shrink-0" />
                       <span>{language === 'es' ? 'Transmisión Automática' : 'Automatic Transmission'}</span>
                     </div>
-                    <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-900/60 flex items-center gap-2">
+                    <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-200/60 flex items-center gap-2">
                       <Check className="w-4 h-4 text-teal-400 shrink-0" />
                       <span>{language === 'es' ? 'Sillas de bebé disponibles' : 'Child safety seats'}</span>
                     </div>
-                    <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-900/60 flex items-center gap-2">
+                    <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-200/60 flex items-center gap-2">
                       <Check className="w-4 h-4 text-teal-400 shrink-0" />
                       <span>{language === 'es' ? 'Kilometraje Ilimitado' : 'Unlimited Mileage'}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-6 mt-6 border-t border-stone-800/60 flex flex-col sm:flex-row gap-3">
+                <div className="pt-6 mt-6 border-t border-stone-200/60 flex flex-col sm:flex-row gap-3">
                   <a
                     href={`https://wa.me/50687959148?text=${encodeURIComponent(
                       language === 'es'
@@ -377,7 +377,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
         {activeTab === 'flights' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div className="bg-[#0E351F]/90 rounded-3xl p-6 sm:p-8 border border-teal-500/30 shadow-xl">
-              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-stone-800/60">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-stone-200/60">
                 <div className="space-y-2">
                   <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/20 text-orange-300 rounded-full text-xs font-black uppercase">
                     <Plane className="w-3.5 h-3.5" />
@@ -386,7 +386,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                   <h3 className="text-2xl sm:text-3xl font-black text-white">
                     ✈️ Vuelos Domésticos & Avionetas Escénicas
                   </h3>
-                  <p className="text-xs sm:text-sm text-stone-100 max-w-2xl leading-relaxed">
+                  <p className="text-xs sm:text-sm text-stone-900 max-w-2xl leading-relaxed">
                     {language === 'es'
                       ? 'Llega a tu destino en solo 30 a 45 minutos volando desde la terminal de San José (SJO). Ahorra hasta 6 horas de carretera y disfruta de vistas aéreas espectaculares de volcanes, costas y selvas.'
                       : 'Reach top destinations in just 30 to 45 minutes departing from San José Terminal (SJO). Save 4-6 hours of road driving while enjoying breathtaking aerial views of volcanoes and coasts.'}
@@ -410,32 +410,32 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
 
               {/* Flight Route Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 pt-6">
-                <div className="bg-[#071A0F] p-4 rounded-2xl border border-stone-900/60 text-center">
+                <div className="bg-[#071A0F] p-4 rounded-2xl border border-stone-200/60 text-center">
                   <span className="text-[10px] text-orange-400 font-bold block uppercase">SJO ⇄ Quepos</span>
                   <strong className="text-white text-sm block mt-1">Manuel Antonio</strong>
                   <span className="text-[11px] text-teal-300 block mt-1">⏱ 25 min vuelo</span>
                 </div>
-                <div className="bg-[#071A0F] p-4 rounded-2xl border border-stone-900/60 text-center">
+                <div className="bg-[#071A0F] p-4 rounded-2xl border border-stone-200/60 text-center">
                   <span className="text-[10px] text-orange-400 font-bold block uppercase">SJO ⇄ La Fortuna</span>
                   <strong className="text-white text-sm block mt-1">Volcán Arenal</strong>
                   <span className="text-[11px] text-teal-300 block mt-1">⏱ 30 min vuelo</span>
                 </div>
-                <div className="bg-[#071A0F] p-4 rounded-2xl border border-stone-900/60 text-center">
+                <div className="bg-[#071A0F] p-4 rounded-2xl border border-stone-200/60 text-center">
                   <span className="text-[10px] text-orange-400 font-bold block uppercase">SJO ⇄ Tamarindo</span>
                   <strong className="text-white text-sm block mt-1">Guanacaste</strong>
                   <span className="text-[11px] text-teal-300 block mt-1">⏱ 45 min vuelo</span>
                 </div>
-                <div className="bg-[#071A0F] p-4 rounded-2xl border border-stone-900/60 text-center">
+                <div className="bg-[#071A0F] p-4 rounded-2xl border border-stone-200/60 text-center">
                   <span className="text-[10px] text-orange-400 font-bold block uppercase">SJO ⇄ Bahía Drake</span>
                   <strong className="text-white text-sm block mt-1">Corcovado / Osa</strong>
                   <span className="text-[11px] text-teal-300 block mt-1">⏱ 45 min vuelo</span>
                 </div>
-                <div className="bg-[#071A0F] p-4 rounded-2xl border border-stone-900/60 text-center">
+                <div className="bg-[#071A0F] p-4 rounded-2xl border border-stone-200/60 text-center">
                   <span className="text-[10px] text-orange-400 font-bold block uppercase">SJO ⇄ Pto. Jiménez</span>
                   <strong className="text-white text-sm block mt-1">Golfo Dulce</strong>
                   <span className="text-[11px] text-teal-300 block mt-1">⏱ 50 min vuelo</span>
                 </div>
-                <div className="bg-[#071A0F] p-4 rounded-2xl border border-stone-900/60 text-center">
+                <div className="bg-[#071A0F] p-4 rounded-2xl border border-stone-200/60 text-center">
                   <span className="text-[10px] text-orange-400 font-bold block uppercase">SJO ⇄ Tortuguero</span>
                   <strong className="text-white text-sm block mt-1">Caribe Norte</strong>
                   <span className="text-[11px] text-teal-300 block mt-1">⏱ 35 min vuelo</span>
@@ -458,13 +458,13 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                     <Bus className="w-5 h-5 text-teal-400" />
                   </div>
                   <h3 className="text-xl font-black text-white">MUSOC</h3>
-                  <p className="text-xs text-stone-100">
+                  <p className="text-xs text-stone-900">
                     {language === 'es' 
                       ? 'Rutas principales desde San José hacia Pérez Zeledón, San Isidro y el Pacífico Sur.'
                       : 'Main routes connecting San José with Pérez Zeledón & South Pacific.'}
                   </p>
                 </div>
-                <div className="pt-4 mt-4 border-t border-stone-800/60">
+                <div className="pt-4 mt-4 border-t border-stone-200/60">
                   <a
                     href="https://www.musoc.co.cr"
                     target="_blank"
@@ -485,13 +485,13 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                     <Bus className="w-5 h-5 text-teal-400" />
                   </div>
                   <h3 className="text-xl font-black text-white">TRACOPA</h3>
-                  <p className="text-xs text-stone-100">
+                  <p className="text-xs text-stone-900">
                     {language === 'es' 
                       ? 'Rutas directas a Quepos, Manuel Antonio, Uvita, Golfito, Puerto Jiménez y Paso Canoas.'
                       : 'Direct buses to Manuel Antonio, Quepos, Uvita, Golfito, and Panama border.'}
                   </p>
                 </div>
-                <div className="pt-4 mt-4 border-t border-stone-800/60">
+                <div className="pt-4 mt-4 border-t border-stone-200/60">
                   <a
                     href="https://www.tracopa.com"
                     target="_blank"
@@ -512,13 +512,13 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                     <Bus className="w-5 h-5 text-teal-400" />
                   </div>
                   <h3 className="text-xl font-black text-white">GAFESO / San Carlos</h3>
-                  <p className="text-xs text-stone-100">
+                  <p className="text-xs text-stone-900">
                     {language === 'es' 
                       ? 'Rutas hacia San Carlos, Ciudad Quesada y conexiones al Volcán Arenal / La Fortuna.'
                       : 'Buses to San Carlos, Ciudad Quesada, and Arenal Volcano connections.'}
                   </p>
                 </div>
-                <div className="pt-4 mt-4 border-t border-stone-800/60">
+                <div className="pt-4 mt-4 border-t border-stone-200/60">
                   <a
                     href="https://www.gafeso.com"
                     target="_blank"
@@ -539,13 +539,13 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                     <Bus className="w-5 h-5 text-teal-400" />
                   </div>
                   <h3 className="text-xl font-black text-white">AUTOTRANSPORTES MEPE</h3>
-                  <p className="text-xs text-stone-100">
+                  <p className="text-xs text-stone-900">
                     {language === 'es' 
                       ? 'Rutas principales a Cahuita, Puerto Viejo, Manzanillo, Bribri y Limón.'
                       : 'Main routes to Cahuita, Puerto Viejo, Manzanillo, Bribri, and Limón.'}
                   </p>
                 </div>
-                <div className="pt-4 mt-4 border-t border-stone-800/60">
+                <div className="pt-4 mt-4 border-t border-stone-200/60">
                   <a
                     href="https://www.mepe.cr"
                     target="_blank"
@@ -566,7 +566,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                 <h4 className="text-lg font-black text-white">
                   {language === 'es' ? '¿Buscas terminales en San José, tarifas exactas o consejos de seguridad?' : 'Looking for San José terminals, exact fares or bus safety tips?'}
                 </h4>
-                <p className="text-xs text-stone-200">
+                <p className="text-xs text-stone-800">
                   {language === 'es' ? 'Abre el directorio completo de buses locales de Costa Rica con más de 10 rutas nacionales detalladas.' : 'Open the complete local bus directory with over 10 detailed national routes.'}
                 </p>
               </div>
@@ -604,36 +604,36 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
             {language === 'es' ? 'Preguntas Frecuentes de Movilidad' : 'Mobility & Transport FAQ'}
           </h3>
           <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-[#0E351F]/60 p-5 rounded-2xl border border-stone-800/50">
+            <div className="bg-[#0E351F]/60 p-5 rounded-2xl border border-stone-200/50">
               <h4 className="text-teal-300 font-bold mb-2 flex items-center gap-2 text-sm uppercase">
                 <Clock className="w-4 h-4 text-orange-300" />
                 {language === 'es' ? '¿Son puntuales los traslados?' : 'Are schedules accurate?'}
               </h4>
-              <p className="text-stone-100 text-xs leading-relaxed">
+              <p className="text-stone-900 text-xs leading-relaxed">
                 {language === 'es' 
                   ? 'Los traslados turísticos y vuelos domésticos coordinados por nuestra agencia son sumamente puntuales. Para buses públicos, recomendamos presentarse con 30 minutos de antelación.' 
                   : 'Tourist shuttles and domestic flights arranged by our agency operate strictly on schedule. For public buses, we recommend arriving 30 minutes before departure.'}
               </p>
             </div>
             
-            <div className="bg-[#0E351F]/60 p-5 rounded-2xl border border-stone-800/50">
+            <div className="bg-[#0E351F]/60 p-5 rounded-2xl border border-stone-200/50">
               <h4 className="text-teal-300 font-bold mb-2 flex items-center gap-2 text-sm uppercase">
                 <Car className="w-4 h-4 text-orange-300" />
                 {language === 'es' ? '¿Se necesita auto 4x4?' : 'Is a 4x4 vehicle needed?'}
               </h4>
-              <p className="text-stone-100 text-xs leading-relaxed">
+              <p className="text-stone-900 text-xs leading-relaxed">
                 {language === 'es' 
                   ? 'Para Monteverde, Península de Osa y playas remotas, un 4x4 o SUV alto es altamente recomendado debido a la topografía de montaña y tramos de lastre.' 
                   : 'For Monteverde, Osa Peninsula, and secluded beaches, a 4WD or high-clearance SUV is strongly recommended due to mountain terrain.'}
               </p>
             </div>
 
-            <div className="bg-[#0E351F]/60 p-5 rounded-2xl border border-stone-800/50">
+            <div className="bg-[#0E351F]/60 p-5 rounded-2xl border border-stone-200/50">
               <h4 className="text-teal-300 font-bold mb-2 flex items-center gap-2 text-sm uppercase">
                 <ShieldCheck className="w-4 h-4 text-orange-300" />
                 {language === 'es' ? '¿Cómo se garantiza la reserva?' : 'How is booking guaranteed?'}
               </h4>
-              <p className="text-stone-100 text-xs leading-relaxed">
+              <p className="text-stone-900 text-xs leading-relaxed">
                 {language === 'es' 
                   ? 'Emitimos vouchers oficiales de Costa Rica Tours con confirmación inmediata, código QR de verificación, póliza de seguro y asistencia 24/7 en español e inglés.' 
                   : 'We issue official Costa Rica Tours vouchers with instant confirmation, verification QR code, insurance coverage, and 24/7 bilingual travel assistance.'}

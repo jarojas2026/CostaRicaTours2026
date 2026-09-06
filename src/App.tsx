@@ -235,7 +235,7 @@ export default function App() {
   }, [activeTab]);
 
   return (
-    <div className="min-h-screen bg-stone-950 text-neutral-100 flex flex-col font-sans selection:bg-orange-500 selection:text-white relative pb-16 xl:pb-0">
+    <div className="min-h-screen bg-white text-stone-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white relative pb-16 xl:pb-0">
       <AmbientBackground />
       {/* Top Header Navigation */}
       <Header
@@ -257,10 +257,10 @@ export default function App() {
         
         {/* Dynamic Breadcrumbs & Quick Return Bar for Sub-pages */}
         {activeTab !== 'home' && (
-          <div className="bg-stone-900/60 border-b border-teal-500/20 py-2.5 px-4 sm:px-6 lg:px-8">
+          <div className="bg-stone-100/60 border-b border-teal-500/20 py-2.5 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
               {/* Breadcrumb path */}
-              <div className="flex items-center gap-2 text-stone-200">
+              <div className="flex items-center gap-2 text-stone-800">
                 <button
                   onClick={() => setActiveTab('home')}
                   className="flex items-center gap-1 hover:text-orange-400 font-bold transition-colors cursor-pointer"
@@ -284,7 +284,7 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setActiveTab('home')}
-                  className="flex items-center gap-1 text-[11px] font-bold bg-stone-950 hover:bg-stone-800 text-stone-200 hover:text-white px-3 py-1 rounded-full border border-teal-500/30 transition-colors cursor-pointer"
+                  className="flex items-center gap-1 text-[11px] font-bold bg-white hover:bg-stone-100 text-stone-800 hover:text-stone-900 px-3 py-1 rounded-full border border-teal-500/30 transition-colors cursor-pointer"
                 >
                   <ArrowLeft className="w-3 h-3" />
                   <span>{language === 'es' ? 'Volver al Inicio' : 'Back to Home'}</span>
@@ -293,7 +293,7 @@ export default function App() {
                 {activeTab !== 'tours' && (
                   <button
                     onClick={() => setActiveTab('tours')}
-                    className="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-stone-950 hover:bg-stone-800 text-orange-300 hover:text-orange-200 px-3 py-1 rounded-full border border-teal-500/30 transition-colors cursor-pointer"
+                    className="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-white hover:bg-stone-100 text-orange-300 hover:text-orange-200 px-3 py-1 rounded-full border border-teal-500/30 transition-colors cursor-pointer"
                   >
                     <span>{language === 'es' ? 'Ver Tours (+20)' : 'View Tours (20+)'}</span>
                   </button>
@@ -302,7 +302,7 @@ export default function App() {
                 {activeTab !== 'flights' && (
                   <button
                     onClick={() => setActiveTab('flights')}
-                    className="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-stone-950 hover:bg-stone-800 text-orange-300 hover:text-orange-200 px-3 py-1 rounded-full border border-teal-500/30 transition-colors cursor-pointer"
+                    className="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-white hover:bg-stone-100 text-orange-300 hover:text-orange-200 px-3 py-1 rounded-full border border-teal-500/30 transition-colors cursor-pointer"
                   >
                     <Plane className="w-3 h-3 text-orange-400" />
                     <span>{language === 'es' ? 'Vuelos' : 'Flights'}</span>

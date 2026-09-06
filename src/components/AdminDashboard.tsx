@@ -217,7 +217,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          <span className="bg-stone-900/40 text-teal-400 px-2 py-1 rounded text-xs font-bold border border-stone-800">
+                          <span className="bg-stone-100/40 text-teal-400 px-2 py-1 rounded text-xs font-bold border border-stone-200">
                             {b.status.toUpperCase()}
                           </span>
                         </td>
@@ -318,7 +318,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                             ))}
                           </ul>
                         </div>
-                        <div className="bg-stone-900/10 p-3 rounded-lg border border-teal-500/30">
+                        <div className="bg-stone-100/10 p-3 rounded-lg border border-teal-500/30">
                           <span className="text-teal-500 font-bold block mb-2">Borrador de Respuesta Generado:</span>
                           <div className="text-slate-300 whitespace-pre-wrap leading-relaxed">{processorResult.draftResponse}</div>
                         </div>
@@ -353,7 +353,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                   <div className="bg-slate-900/50 border border-teal-500/30 rounded-lg p-4">
                     <h4 className="font-bold text-teal-400 mb-2 flex items-center gap-2"><Settings className="w-4 h-4"/> 2. Formularios y Bloqueo</h4>
                     <p className="text-xs text-slate-300 mb-2">Captura dinámica de datos (restricciones, pesos). Soft Hold de 15 mins con links de pago con expiración. Timeouts automáticos en n8n.</p>
-                    <div className="bg-stone-900/20 text-teal-300 text-[10px] p-2 rounded font-mono">
+                    <div className="bg-stone-100/20 text-teal-300 text-[10px] p-2 rounded font-mono">
                       Dynamic Form Hooks & Webhook Handlers
                     </div>
                   </div>

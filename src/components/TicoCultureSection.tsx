@@ -281,7 +281,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
         
         {/* Header Title */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-10">
-          <div className="inline-flex items-center gap-2 bg-stone-900/80 text-orange-300 text-xs font-black uppercase px-4 py-1.5 rounded-full border border-orange-500/40 shadow-md">
+          <div className="inline-flex items-center gap-2 bg-stone-100/80 text-orange-300 text-xs font-black uppercase px-4 py-1.5 rounded-full border border-orange-500/40 shadow-md">
             <Sparkles className="w-4 h-4 text-orange-400" />
             <span>{language === 'es' ? '🇨🇷 100% Identidad Tica • Cultura & Tradición' : '🇨🇷 100% Authentic Costa Rican Culture & Heritage'}</span>
           </div>
@@ -290,7 +290,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
             {language === 'es' ? 'El Alma de Costa Rica' : 'The Soul of Costa Rica'}
           </h2>
 
-          <p className="text-stone-200/90 text-sm sm:text-base leading-relaxed">
+          <p className="text-stone-800/90 text-sm sm:text-base leading-relaxed">
             {language === 'es'
               ? 'Costa Rica no es solo un destino, es una forma de vivir en paz con la naturaleza y con una calidez humana incomparable. Conoce nuestras expresiones ticas, los platillos más deliciosos y la tradición cafetalera que nos llena de orgullo.'
               : 'Costa Rica is more than a destination; it is a peaceful way of living in harmony with nature and genuine human warmth. Discover our famous Tico slang, savor authentic cuisine, and immerse yourself in world-class coffee heritage.'}
@@ -304,7 +304,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
             className={`px-4 sm:px-6 py-3 rounded-2xl font-black text-xs uppercase transition-all flex items-center gap-2 cursor-pointer ${
               activeSubTab === 'slang'
                 ? 'bg-orange-500 text-stone-950 shadow-lg scale-105 border border-orange-300'
-                : 'bg-[#0E351F] text-stone-200 hover:bg-stone-800/60 border border-teal-700/50'
+                : 'bg-[#0E351F] text-stone-800 hover:bg-stone-200/60 border border-teal-700/50'
             }`}
           >
             <BookOpen className="w-4 h-4" />
@@ -316,7 +316,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
             className={`px-4 sm:px-6 py-3 rounded-2xl font-black text-xs uppercase transition-all flex items-center gap-2 cursor-pointer ${
               activeSubTab === 'food'
                 ? 'bg-orange-500 text-stone-950 shadow-lg scale-105 border border-orange-300'
-                : 'bg-[#0E351F] text-stone-200 hover:bg-stone-800/60 border border-teal-700/50'
+                : 'bg-[#0E351F] text-stone-800 hover:bg-stone-200/60 border border-teal-700/50'
             }`}
           >
             <Utensils className="w-4 h-4" />
@@ -328,7 +328,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
             className={`px-4 sm:px-6 py-3 rounded-2xl font-black text-xs uppercase transition-all flex items-center gap-2 cursor-pointer ${
               activeSubTab === 'coffee'
                 ? 'bg-orange-500 text-stone-950 shadow-lg scale-105 border border-orange-300'
-                : 'bg-[#0E351F] text-stone-200 hover:bg-stone-800/60 border border-teal-700/50'
+                : 'bg-[#0E351F] text-stone-800 hover:bg-stone-200/60 border border-teal-700/50'
             }`}
           >
             <Coffee className="w-4 h-4" />
@@ -340,7 +340,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
             className={`px-4 sm:px-6 py-3 rounded-2xl font-black text-xs uppercase transition-all flex items-center gap-2 cursor-pointer ${
               activeSubTab === 'symbols'
                 ? 'bg-orange-500 text-stone-950 shadow-lg scale-105 border border-orange-300'
-                : 'bg-[#0E351F] text-stone-200 hover:bg-stone-800/60 border border-teal-700/50'
+                : 'bg-[#0E351F] text-stone-800 hover:bg-stone-200/60 border border-teal-700/50'
             }`}
           >
             <Palmtree className="w-4 h-4" />
@@ -352,7 +352,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
             className={`px-4 sm:px-6 py-3 rounded-2xl font-black text-xs uppercase transition-all flex items-center gap-2 cursor-pointer ${
               activeSubTab === 'tips'
                 ? 'bg-orange-500 text-stone-950 shadow-lg scale-105 border border-orange-300'
-                : 'bg-[#0E351F] text-stone-200 hover:bg-stone-800/60 border border-teal-700/50'
+                : 'bg-[#0E351F] text-stone-800 hover:bg-stone-200/60 border border-teal-700/50'
             }`}
           >
             <ShieldCheck className="w-4 h-4" />
@@ -381,7 +381,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                   className={`text-xs px-3.5 py-1.5 rounded-full font-bold uppercase transition-colors ${
                     slangFilter === cat.id
                       ? 'bg-teal-500 text-stone-950'
-                      : 'bg-[#0E351F] text-teal-300 hover:bg-stone-800'
+                      : 'bg-[#0E351F] text-teal-300 hover:bg-stone-100'
                   }`}
                 >
                   {language === 'es' ? cat.es : cat.en}
@@ -401,14 +401,14 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                       <span className="text-2xl font-black text-orange-300">{item.word}</span>
                       <button
                         onClick={() => speakText(item.word)}
-                        className="w-9 h-9 rounded-full bg-stone-950 hover:bg-stone-800 text-orange-300 flex items-center justify-center transition-transform active:scale-90 border border-teal-600/50"
+                        className="w-9 h-9 rounded-full bg-white hover:bg-stone-100 text-orange-300 flex items-center justify-center transition-transform active:scale-90 border border-teal-600/50"
                         title={language === 'es' ? 'Escuchar pronunciación' : 'Listen pronunciation'}
                       >
                         <Volume2 className={`w-4 h-4 ${speakingWord === item.word ? 'text-orange-400 animate-bounce' : ''}`} />
                       </button>
                     </div>
 
-                    <div className="text-[11px] font-mono text-teal-400 font-bold bg-stone-950/60 px-2.5 py-1 rounded-lg w-fit">
+                    <div className="text-[11px] font-mono text-teal-400 font-bold bg-white/60 px-2.5 py-1 rounded-lg w-fit">
                       🗣️ /{item.pronunciation}/
                     </div>
 
@@ -417,11 +417,11 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                     </p>
                   </div>
 
-                  <div className="bg-[#071A0F] p-3.5 rounded-2xl border border-stone-900/60 space-y-1">
+                  <div className="bg-[#071A0F] p-3.5 rounded-2xl border border-stone-200/60 space-y-1">
                     <span className="text-[10px] font-black uppercase text-orange-400 tracking-wider block">
                       {language === 'es' ? 'Ejemplo en Costa Rica:' : 'Example in Context:'}
                     </span>
-                    <p className="text-xs text-stone-200 italic">
+                    <p className="text-xs text-stone-800 italic">
                       "{language === 'es' ? item.exampleEs : item.exampleEn}"
                     </p>
                   </div>
@@ -434,7 +434,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
               <h4 className="text-sm font-black uppercase text-orange-300">
                 {language === 'es' ? '¡El Tico es Pura Calidez!' : 'Ticos Are Pure Warmth!'}
               </h4>
-              <p className="text-xs text-stone-200 leading-relaxed">
+              <p className="text-xs text-stone-800 leading-relaxed">
                 {language === 'es'
                   ? 'No dudes en decir "¡Pura Vida!" cuando llegues a un hotel, restaurante o al subirte al transporte turístico. ¡Siempre te responderán con una gran sonrisa costarricense!'
                   : 'Never hesitate to say "¡Pura Vida!" when arriving at a hotel, soda, or boarding your shuttle. You will always be greeted with a warm and genuine Costa Rican smile!'}
@@ -470,17 +470,17 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                       <span className="text-xs font-bold text-orange-300 block">
                         {language === 'es' ? dish.subtitleEs : dish.subtitleEn}
                       </span>
-                      <p className="text-xs text-stone-200/90 leading-relaxed pt-2">
+                      <p className="text-xs text-stone-800/90 leading-relaxed pt-2">
                         {language === 'es' ? dish.descEs : dish.descEn}
                       </p>
                     </div>
 
-                    <div className="pt-4 border-t border-stone-800/60 flex items-center justify-between text-[11px] text-teal-300">
+                    <div className="pt-4 border-t border-stone-200/60 flex items-center justify-between text-[11px] text-teal-300">
                       <span className="font-bold flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5 text-orange-400" />
                         {language === 'es' ? '100% Sabor Criollo' : '100% Authentic Recipe'}
                       </span>
-                      <span className="bg-stone-950 px-2 py-0.5 rounded-full font-mono text-[10px] text-orange-300">
+                      <span className="bg-white px-2 py-0.5 rounded-full font-mono text-[10px] text-orange-300">
                         {language === 'es' ? 'Plato Insignia' : 'Must-Try'}
                       </span>
                     </div>
@@ -498,7 +498,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                 <h4 className="text-base font-black text-white uppercase">
                   {language === 'es' ? 'El Secreto Nacional: Salsa Lizano' : 'The National Secret: Salsa Lizano'}
                 </h4>
-                <p className="text-xs text-stone-200 leading-relaxed">
+                <p className="text-xs text-stone-800 leading-relaxed">
                   {language === 'es'
                     ? 'Creada en Costa Rica en 1920, esta salsa vegetal de sabor agridulce y especiado es el condimento indispensable de la cocina costarricense. ¡No olvides pedirla en cualquier Soda y llevarte una botella de recuerdo!'
                     : 'Created in Costa Rica in 1920, this savory, tangy vegetable-based condiment is the irreplaceable flavor of Costa Rican cuisine. Ask for it at every Soda and bring a bottle home!'}
@@ -521,20 +521,20 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                 <h3 className="text-2xl sm:text-3xl font-black text-white uppercase">
                   {language === 'es' ? 'El Arte del Café Chorreado' : 'The Art of Traditional Drip Coffee'}
                 </h3>
-                <p className="text-xs sm:text-sm text-stone-200 leading-relaxed">
+                <p className="text-xs sm:text-sm text-stone-800 leading-relaxed">
                   {language === 'es'
                     ? 'En Costa Rica, el café no se prepara en máquinas complejas: se "chorrea" en un soporte de madera con una bolsita de tela de algodón. El agua caliente a 92°C extrae de forma limpia todos los aceites esenciales y notas florales del grano recién tostado.'
                     : 'In Costa Rica, authentic coffee is brewed using a "Chorreador"—a simple wooden stand with a reusable cotton cloth filter bag. Hot water poured gently over freshly ground beans yields an extraordinarily smooth, aromatic, and bright cup.'}
                 </p>
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
-                  <div className="bg-[#071A0F] p-3 rounded-2xl border border-stone-800">
+                  <div className="bg-[#071A0F] p-3 rounded-2xl border border-stone-200">
                     <span className="text-orange-400 font-black text-sm block">100% Arábica</span>
                     <span className="text-[10px] text-teal-300">
                       {language === 'es' ? 'Único país con prohibición legal del café Robusta inferior.' : 'Only country with a legal ban on lower-grade Robusta.'}
                     </span>
                   </div>
-                  <div className="bg-[#071A0F] p-3 rounded-2xl border border-stone-800">
+                  <div className="bg-[#071A0F] p-3 rounded-2xl border border-stone-200">
                     <span className="text-orange-400 font-black text-sm block">Cosecha a Mano</span>
                     <span className="text-[10px] text-teal-300">
                       {language === 'es' ? 'Solo se recolectan los granos 100% maduros (rojos).' : 'Only 100% ripe red cherries picked by skilled hands.'}
@@ -549,7 +549,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                   <h4 className="text-lg font-black text-orange-300 uppercase">
                     {language === 'es' ? '¿Cómo pedir café en Costa Rica?' : 'How to order coffee in Costa Rica?'}
                   </h4>
-                  <ul className="text-xs text-stone-200 text-left space-y-2">
+                  <ul className="text-xs text-stone-800 text-left space-y-2">
                     <li className="flex items-start gap-2">
                       <span className="text-orange-400 font-bold">•</span>
                       <span><strong>Café Negro:</strong> {language === 'es' ? 'Puro, recién chorreado sin leche.' : 'Pure, freshly dripped black coffee.'}</span>
@@ -577,16 +577,16 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                 {COFFEE_REGIONS.map((region, idx) => (
                   <div key={idx} className="bg-[#0E351F]/80 p-5 rounded-3xl border border-teal-500/30 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="bg-stone-950 text-orange-400 font-mono text-[10px] px-2.5 py-0.5 rounded-full font-bold">
+                      <span className="bg-white text-orange-400 font-mono text-[10px] px-2.5 py-0.5 rounded-full font-bold">
                         {region.altitude}
                       </span>
                       <MapPin className="w-3.5 h-3.5 text-teal-400" />
                     </div>
                     <h5 className="text-base font-black text-white">{region.name}</h5>
-                    <p className="text-xs text-stone-200">
+                    <p className="text-xs text-stone-800">
                       {language === 'es' ? region.profileEs : region.profileEn}
                     </p>
-                    <div className="pt-2 border-t border-stone-800/60">
+                    <div className="pt-2 border-t border-stone-200/60">
                       <span className="text-[10px] uppercase font-bold text-orange-300 block">
                         {language === 'es' ? 'Notas de Cata:' : 'Tasting Notes:'}
                       </span>
@@ -611,7 +611,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                 <span className="text-4xl">🦥</span>
                 <h4 className="text-xl font-black text-white">El Perezoso (Sloth)</h4>
                 <span className="text-xs font-bold text-orange-300 block">Símbolo Nacional de la Fauna</span>
-                <p className="text-xs text-stone-200 leading-relaxed">
+                <p className="text-xs text-stone-800 leading-relaxed">
                   {language === 'es'
                     ? 'Representa la biodiversidad y el compromiso de Costa Rica con la conservación. Hay dos especies en el país: el de dos dedos (nocturno) y el de tres dedos (diurno).'
                     : 'The ultimate symbol of Costa Rica\'s biodiversity. You can spot both two-toed (nocturnal) and three-toed (diurnal) sloths in Manuel Antonio, Arenal, and Tortuguero.'}
@@ -623,7 +623,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                 <span className="text-4xl">🐦</span>
                 <h4 className="text-xl font-black text-white">El Yigüirro</h4>
                 <span className="text-xs font-bold text-orange-300 block">Ave Nacional de Costa Rica</span>
-                <p className="text-xs text-stone-200 leading-relaxed">
+                <p className="text-xs text-stone-800 leading-relaxed">
                   {language === 'es'
                     ? 'Elegido por su canto melodioso que acompaña la vida campesina al inicio de las cosechas y las lluvias de mayo. Es amigable y común en jardines y valles.'
                     : 'Chosen for its sweet and persistent song that announces the coming of nourishing green-season rains to the farming communities.'}
@@ -635,7 +635,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                 <span className="text-4xl">🎨</span>
                 <h4 className="text-xl font-black text-white">Carreta Típica de Sarchí</h4>
                 <span className="text-xs font-bold text-orange-300 block">Patrimonio de la Humanidad (UNESCO)</span>
-                <p className="text-xs text-stone-200 leading-relaxed">
+                <p className="text-xs text-stone-800 leading-relaxed">
                   {language === 'es'
                     ? 'Pintada a mano con intrincados mandalas florales y geométricos. Históricamente transportaba el café desde el Valle Central hasta los puertos del Pacífico y Caribe.'
                     : 'Intricately hand-painted with colorful mandalas. Declared a Masterpiece of Oral and Intangible Heritage by UNESCO, used historically to transport coffee to ports.'}
@@ -647,7 +647,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                 <span className="text-4xl">🌸</span>
                 <h4 className="text-xl font-black text-white">La Guaria Morada</h4>
                 <span className="text-xs font-bold text-orange-300 block">Flor Nacional (Guarianthe skinneri)</span>
-                <p className="text-xs text-stone-200 leading-relaxed">
+                <p className="text-xs text-stone-800 leading-relaxed">
                   {language === 'es'
                     ? 'Orquídea epífita de intenso color morado que florece entre febrero y marzo. Adorna los cafetales, tapias y árboles centenarios del país.'
                     : 'A stunning purple orchid that blooms in late winter. A cherished symbol of luck, fortune, and peaceful home life across Costa Rican households.'}
@@ -659,7 +659,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                 <span className="text-4xl">🌳</span>
                 <h4 className="text-xl font-black text-white">Árbol de Guanacaste</h4>
                 <span className="text-xs font-bold text-orange-300 block">Árbol Nacional (Enterolobium cyclocarpum)</span>
-                <p className="text-xs text-stone-200 leading-relaxed">
+                <p className="text-xs text-stone-800 leading-relaxed">
                   {language === 'es'
                     ? 'Árbol majestuoso en forma de sombrilla gigante que cobija al ganado y a la fauna en las llanuras soleadas del Pacífico norte.'
                     : 'A grand, umbrella-canopied tree that provides cool shade to wildlife across the sun-drenched savannas of Guanacaste.'}
@@ -671,7 +671,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                 <span className="text-4xl">🦜</span>
                 <h4 className="text-xl font-black text-white">El Quetzal</h4>
                 <span className="text-xs font-bold text-orange-300 block">Ave Sagrada del Bosque Nuboso</span>
-                <p className="text-xs text-stone-200 leading-relaxed">
+                <p className="text-xs text-stone-800 leading-relaxed">
                   {language === 'es'
                     ? 'Famoso por su plumaje verde esmeralda y larga cola. Habita en los bosques nubosos de Monteverde, Los Santos y San Gerardo de Dota.'
                     : 'Famous for its iridescent emerald feathers and long twin tail plumes. Thrives in high-elevation cloud forests feeding on wild avocados.'}
@@ -692,7 +692,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                 <h5 className="font-black text-white text-sm uppercase">
                   {language === 'es' ? '1. Agua Potable de Calidad' : '1. Safe Tap Water'}
                 </h5>
-                <p className="text-xs text-stone-200">
+                <p className="text-xs text-stone-800">
                   {language === 'es'
                     ? 'El agua del grifo es 100% potable en la gran mayoría del país (San José, Arenal, Monteverde, Manuel Antonio). Lleva tu botella reutilizable.'
                     : 'Tap water is clean and safe to drink in most tourist destinations. Bring a reusable water bottle to reduce single-use plastic.'}
@@ -704,7 +704,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                 <h5 className="font-black text-white text-sm uppercase">
                   {language === 'es' ? '2. Propinas e Impuestos' : '2. Tips & Taxes Included'}
                 </h5>
-                <p className="text-xs text-stone-200">
+                <p className="text-xs text-stone-800">
                   {language === 'es'
                     ? 'En restaurantes, la cuenta ya incluye por ley el 10% de propina por servicio y el 13% de IVA. Dejar propina adicional es voluntario para premiar un servicio excelente.'
                     : 'Restaurant bills legally include a 10% service tip and 13% VAT tax. Extra tips are optional but deeply appreciated for outstanding service.'}
@@ -716,7 +716,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                 <h5 className="font-black text-white text-sm uppercase">
                   {language === 'es' ? '3. La Regla del Madrugador Tico' : '3. The Early Riser Advantage'}
                 </h5>
-                <p className="text-xs text-stone-200">
+                <p className="text-xs text-stone-800">
                   {language === 'es'
                     ? 'El sol sale a las 5:30 AM y se oculta a las 5:45 PM todo el año. Los mejores avistamientos de fauna y las horas más frescas son temprano en la mañana.'
                     : 'The sun rises around 5:30 AM and sets at 5:45 PM year-round. Wildlife is most active and trails are coolest between 6:00 AM and 10:00 AM.'}
@@ -728,7 +728,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                 <h5 className="font-black text-white text-sm uppercase">
                   {language === 'es' ? '4. Guías Naturalistas Locales Expertos' : '4. Expert Local Naturalist Guides'}
                 </h5>
-                <p className="text-xs text-stone-200">
+                <p className="text-xs text-stone-800">
                   {language === 'es'
                     ? 'Nuestros guías locales cuentan con telescopios de alta definición y un profundo conocimiento de la fauna, senderos y ecosistemas del país.'
                     : 'Our local guides carry high-definition spotting scopes and deep firsthand knowledge of Costa Rica’s wildlife, trails, and ecosystems.'}

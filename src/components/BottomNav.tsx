@@ -45,7 +45,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ language, activeTab, setAc
               className={`relative flex flex-col items-center justify-center w-full h-full space-y-1 transition-all cursor-pointer ${
                 isActive 
                   ? 'text-orange-400 font-black' 
-                  : 'text-neutral-400 hover:text-teal-300'
+                  : 'text-stone-600 hover:text-teal-300'
               }`}
             >
               {item.badge && !isActive && (
@@ -55,7 +55,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ language, activeTab, setAc
               )}
               
               <div className={`p-1 rounded-xl transition-all ${
-                isActive ? 'bg-stone-900/80 shadow-sm scale-110' : ''
+                isActive ? 'bg-stone-100/80 shadow-sm scale-110' : ''
               }`}>
                 {item.icon}
               </div>

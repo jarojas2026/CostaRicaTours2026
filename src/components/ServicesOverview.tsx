@@ -26,11 +26,11 @@ export const ServicesOverview: React.FC<ServicesOverviewProps> = ({
   };
 
   return (
-    <section className="bg-stone-950 py-12 px-4 sm:px-6 lg:px-8 border-t border-white/10">
+    <section className="bg-white py-12 px-4 sm:px-6 lg:px-8 border-t border-black/10">
       <div className="max-w-7xl mx-auto space-y-8">
         
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 px-4 py-1 bg-stone-950 text-orange-400 rounded-full text-xs font-bold uppercase tracking-widest border border-white/10">
+          <div className="inline-flex items-center gap-2 px-4 py-1 bg-white text-orange-400 rounded-full text-xs font-bold uppercase tracking-widest border border-black/10">
             <ShieldCheck className="w-3.5 h-3.5 text-[#FF8C00]" />
             {language === 'es' ? 'Logística y Complementos' : 'Logistics & Extras'}
           </div>
@@ -48,11 +48,11 @@ export const ServicesOverview: React.FC<ServicesOverviewProps> = ({
           {TOURIST_SERVICES.map((srv) => (
             <div
               key={srv.id}
-              className="bg-stone-950 p-6 rounded-[2rem] border-2 border-white/10 hover:border-orange-500 transition-all flex flex-col justify-between space-y-4 shadow-xl"
+              className="bg-white p-6 rounded-[2rem] border-2 border-black/10 hover:border-orange-500 transition-all flex flex-col justify-between space-y-4 shadow-xl"
             >
               <div className="space-y-3">
                 <div className="flex justify-between items-start">
-                  <div className="p-3 bg-stone-950 rounded-2xl border border-white/10">
+                  <div className="p-3 bg-white rounded-2xl border border-black/10">
                     {getIcon(srv.icon)}
                   </div>
                   <span className="bg-[#FF8C00] text-white text-[10px] font-black uppercase px-3 py-1 rounded-full">
@@ -69,7 +69,7 @@ export const ServicesOverview: React.FC<ServicesOverviewProps> = ({
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+              <div className="pt-4 border-t border-black/10 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] uppercase text-[#A7F3D0] block font-bold">Desde</span>
                   <span className="text-lg font-black text-orange-400">
@@ -79,7 +79,7 @@ export const ServicesOverview: React.FC<ServicesOverviewProps> = ({
 
                 <button
                   onClick={() => onBookService(srv)}
-                  className="bg-stone-950 hover:bg-stone-900 text-orange-400 border border-white/10 hover:border-orange-500 text-xs font-black uppercase px-4 py-2.5 rounded-full transition-colors flex items-center gap-1.5"
+                  className="bg-white hover:bg-stone-50 text-orange-400 border border-black/10 hover:border-orange-500 text-xs font-black uppercase px-4 py-2.5 rounded-full transition-colors flex items-center gap-1.5"
                 >
                   <span>{language === 'es' ? 'Consultar' : 'Inquire'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />

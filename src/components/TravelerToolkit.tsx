@@ -358,7 +358,7 @@ export const TravelerToolkit: React.FC<TravelerToolkitProps> = ({
                 href="https://serviciosenlinea.sinac.go.cr/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-stone-800 hover:bg-stone-900 text-white text-xs font-black px-4 py-2.5 rounded-full shadow transition-colors cursor-pointer"
+                className="inline-flex items-center gap-2 bg-stone-100 hover:bg-stone-50 text-white text-xs font-black px-4 py-2.5 rounded-full shadow transition-colors cursor-pointer"
               >
                 <span>{isEs ? 'Portal Oficial SINAC' : 'Official SINAC Portal'}</span>
                 <Globe className="w-3.5 h-3.5" />
@@ -468,7 +468,7 @@ export const TravelerToolkit: React.FC<TravelerToolkitProps> = ({
                       {isChecked ? (
                         <CheckSquare className="w-5 h-5 text-teal-600 fill-emerald-100" />
                       ) : (
-                        <Square className="w-5 h-5 text-neutral-400" />
+                        <Square className="w-5 h-5 text-stone-600" />
                       )}
                     </div>
                     <div className="space-y-1 flex-1">
@@ -736,7 +736,7 @@ export const TravelerToolkit: React.FC<TravelerToolkitProps> = ({
                     {isEs ? 'Monto en Dólares ($ USD):' : 'Amount in Dollars ($ USD):'}
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-neutral-400">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-stone-600">$</span>
                     <input
                       type="number"
                       value={calcUsd}

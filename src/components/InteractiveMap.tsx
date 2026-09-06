@@ -405,8 +405,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 <span className="bg-orange-500 text-white text-[11px] font-black uppercase px-3 py-1.5 rounded-md shadow-lg">
                   {getLangText(selectedMapTour.durationLabel, language)}
                 </span>
-                <div className="bg-white/10 backdrop-blur-md px-3 py-1 rounded-lg border border-white/20 text-right">
-                  <span className="block text-[9px] font-bold text-neutral-300 uppercase tracking-widest leading-none mb-0.5">
+                <div className="bg-white/10 backdrop-blur-md px-3 py-1 rounded-lg border border-black/20 text-right">
+                  <span className="block text-[9px] font-bold text-stone-700 uppercase tracking-widest leading-none mb-0.5">
                     {language === 'es' ? 'Precio' : 'Price'}
                   </span>
                   <span className="block font-black text-white leading-none text-lg">
@@ -428,11 +428,11 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               
               <div className="flex gap-4 mb-6 border-y border-neutral-100 py-3">
                 <div className="text-center">
-                  <span className="block text-[10px] font-bold uppercase text-neutral-400 mb-1">{language === 'es' ? 'Dificultad' : 'Difficulty'}</span>
+                  <span className="block text-[10px] font-bold uppercase text-stone-600 mb-1">{language === 'es' ? 'Dificultad' : 'Difficulty'}</span>
                   <span className="text-xs font-black text-stone-700 uppercase bg-neutral-100 px-2 py-1 rounded">{selectedMapTour.difficulty}</span>
                 </div>
                 <div className="text-center">
-                  <span className="block text-[10px] font-bold uppercase text-neutral-400 mb-1">{language === 'es' ? 'Rating' : 'Rating'}</span>
+                  <span className="block text-[10px] font-bold uppercase text-stone-600 mb-1">{language === 'es' ? 'Rating' : 'Rating'}</span>
                   <span className="text-xs font-black text-orange-500">{selectedMapTour.rating} ★</span>
                 </div>
               </div>

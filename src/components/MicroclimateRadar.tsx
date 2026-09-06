@@ -148,7 +148,7 @@ export const MicroclimateRadar: React.FC<MicroclimateRadarProps> = ({ language }
       </div>
 
       {/* Selected region weather display card */}
-      <div className="bg-gradient-to-br from-neutral-900 to-stone-950 text-white rounded-3xl p-6 sm:p-8 space-y-6 relative overflow-hidden shadow-xl border border-stone-900">
+      <div className="bg-gradient-to-br from-neutral-900 to-stone-950 text-white rounded-3xl p-6 sm:p-8 space-y-6 relative overflow-hidden shadow-xl border border-stone-200">
         <div className="absolute right-0 top-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center relative z-10">
@@ -162,7 +162,7 @@ export const MicroclimateRadar: React.FC<MicroclimateRadarProps> = ({ language }
               <span className="text-5xl sm:text-6xl font-black text-white">{selectedRegion.tempC}°C</span>
               <span className="text-xl text-orange-300 font-bold">/ {selectedRegion.tempF}°F</span>
             </div>
-            <p className="text-sm font-semibold text-stone-100 flex items-center gap-2">
+            <p className="text-sm font-semibold text-stone-900 flex items-center gap-2">
               {selectedRegion.icon === 'sun' && <Sun className="w-5 h-5 text-orange-400 animate-spin-slow" />}
               {selectedRegion.icon === 'cloud' && <Wind className="w-5 h-5 text-orange-300" />}
               {selectedRegion.icon === 'rain' && <CloudRain className="w-5 h-5 text-orange-300" />}
@@ -171,7 +171,7 @@ export const MicroclimateRadar: React.FC<MicroclimateRadarProps> = ({ language }
           </div>
 
           {/* Stats Bar */}
-          <div className="grid grid-cols-2 gap-4 bg-white/10 p-4 rounded-2xl border border-white/10">
+          <div className="grid grid-cols-2 gap-4 bg-white/10 p-4 rounded-2xl border border-black/10">
             <div>
               <span className="text-[10px] text-orange-300 font-bold uppercase block">{language === 'es' ? 'Humedad:' : 'Humidity:'}</span>
               <span className="text-lg font-black text-white">{selectedRegion.humidity}%</span>
@@ -183,12 +183,12 @@ export const MicroclimateRadar: React.FC<MicroclimateRadarProps> = ({ language }
           </div>
 
           {/* Recommended Packing Gear */}
-          <div className="space-y-2 bg-white/10 p-4 rounded-2xl border border-white/10">
+          <div className="space-y-2 bg-white/10 p-4 rounded-2xl border border-black/10">
             <span className="text-xs font-black text-orange-400 uppercase flex items-center gap-1.5">
               <Shirt className="w-4 h-4" />
               {language === 'es' ? 'Qué llevar hoy:' : 'Gear to pack:'}
             </span>
-            <ul className="text-xs space-y-1.5 text-stone-100">
+            <ul className="text-xs space-y-1.5 text-stone-900">
               {(language === 'es' ? selectedRegion.gearEs : selectedRegion.gearEn).map((item, idx) => (
                 <li key={idx} className="flex items-start gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-orange-400 flex-shrink-0 mt-0.5" />

@@ -90,7 +90,7 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
   };
 
   return (
-    <div className="bg-stone-950 border-2 border-teal-500/30 rounded-[2rem] p-5 sm:p-7 shadow-2xl space-y-5">
+    <div className="bg-white border-2 border-teal-500/30 rounded-[2rem] p-5 sm:p-7 shadow-2xl space-y-5">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-teal-500/20 pb-4">
@@ -109,7 +109,7 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
           </div>
         </div>
 
-        <span className="text-[10px] bg-stone-900 text-stone-200 px-3 py-1 rounded-full border border-teal-700/50 font-bold self-start sm:self-auto flex items-center gap-1">
+        <span className="text-[10px] bg-stone-50 text-stone-800 px-3 py-1 rounded-full border border-teal-700/50 font-bold self-start sm:self-auto flex items-center gap-1">
           <Zap className="w-3 h-3 text-orange-400" />
           {language === 'es' ? 'Datos Actualizados' : 'Live Verified Data'}
         </span>
@@ -117,7 +117,7 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
 
       {/* Quick Topic Chips */}
       <div className="space-y-1.5">
-        <span className="text-[11px] font-bold text-neutral-300 uppercase tracking-wider block">
+        <span className="text-[11px] font-bold text-stone-700 uppercase tracking-wider block">
           {language === 'es' ? 'Consultas Frecuentes en Tiempo Real:' : 'Real-Time Frequent Queries:'}
         </span>
         <div className="flex flex-wrap gap-2">
@@ -129,7 +129,7 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
                 handleSearch(item.query);
               }}
               disabled={isLoading}
-              className="text-[11px] font-bold bg-stone-900/60 hover:bg-stone-800 text-stone-200 hover:text-white px-3 py-1.5 rounded-xl border border-teal-500/30 transition-all cursor-pointer disabled:opacity-50"
+              className="text-[11px] font-bold bg-stone-100/60 hover:bg-stone-100 text-stone-800 hover:text-white px-3 py-1.5 rounded-xl border border-teal-500/30 transition-all cursor-pointer disabled:opacity-50"
             >
               {item.label[language === 'es' ? 'es' : 'en']}
             </button>
@@ -155,9 +155,9 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
                 ? 'Ej: ¿Está abierto el Volcán Poás hoy? ¿Horario del ferry a Paquera?...'
                 : 'Ex: Is Poas Volcano open today? Paquera ferry schedule?....'
             }
-            className="w-full bg-stone-900/60 border border-teal-500/30 focus:border-orange-400 rounded-xl px-4 py-3 text-sm text-white focus:outline-none placeholder-teal-300/40 font-medium pr-10"
+            className="w-full bg-stone-100/60 border border-teal-500/30 focus:border-orange-400 rounded-xl px-4 py-3 text-sm text-white focus:outline-none placeholder-teal-300/40 font-medium pr-10"
           />
-          <Search className="w-4 h-4 text-neutral-400 absolute right-3.5 top-3.5" />
+          <Search className="w-4 h-4 text-stone-600 absolute right-3.5 top-3.5" />
         </div>
 
         <button
@@ -178,18 +178,18 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
 
       {/* Search Results Display */}
       {resultAnswer && (
-        <div className="bg-stone-900/80 p-5 rounded-2xl border-2 border-teal-400/50 space-y-4 animate-fade-in text-white shadow-xl">
+        <div className="bg-stone-100/80 p-5 rounded-2xl border-2 border-teal-400/50 space-y-4 animate-fade-in text-white shadow-xl">
           <div className="flex items-center justify-between border-b border-teal-700/60 pb-2.5">
             <span className="text-xs font-black uppercase text-orange-400 flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-orange-400" />
               {language === 'es' ? 'Respuesta Verificada con Fuentes en Vivo:' : 'Verified Live Response with Sources:'}
             </span>
-            <span className="text-[10px] text-teal-300 font-bold bg-stone-950 px-2.5 py-0.5 rounded-full">
+            <span className="text-[10px] text-teal-300 font-bold bg-white px-2.5 py-0.5 rounded-full">
               Gemini Search Grounding
             </span>
           </div>
 
-          <div className="text-sm leading-relaxed whitespace-pre-line text-neutral-100 font-medium">
+          <div className="text-sm leading-relaxed whitespace-pre-line text-stone-900 font-medium">
             {resultAnswer}
           </div>
 
@@ -206,7 +206,7 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
                     href={src.uri}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[10px] bg-stone-950 hover:bg-stone-800 text-orange-300 px-3 py-1 rounded-lg border border-teal-600/40 flex items-center gap-1 transition-colors cursor-pointer"
+                    className="text-[10px] bg-white hover:bg-stone-100 text-orange-300 px-3 py-1 rounded-lg border border-teal-600/40 flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     <span>{src.title || 'Fuente Web'}</span>
                     <ExternalLink className="w-3 h-3" />

@@ -32,10 +32,10 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-[200] overflow-y-auto bg-stone-950/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-stone-900 border-2 border-white/10 rounded-[2rem] w-full max-w-2xl overflow-hidden shadow-2xl relative text-white my-8 p-6 sm:p-8 space-y-6">
+    <div className="fixed inset-0 z-[200] overflow-y-auto bg-white/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="bg-stone-50 border-2 border-black/10 rounded-[2rem] w-full max-w-2xl overflow-hidden shadow-2xl relative text-white my-8 p-6 sm:p-8 space-y-6">
         
-        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+        <div className="flex items-center justify-between border-b border-black/10 pb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center text-neutral-900">
               <Ticket className="w-5 h-5 text-white" />
@@ -57,20 +57,20 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
 
         {bookings.length > 0 && (
           <div className="relative">
-            <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-stone-400" />
+            <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-stone-600" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={language === 'es' ? 'Buscar por ID de reserva, email o tour...' : 'Search by booking ID, email or tour...'}
-              className="w-full bg-stone-950 border border-white/10 focus:border-orange-400 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-stone-500 focus:outline-none"
+              className="w-full bg-white border border-black/10 focus:border-orange-400 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-stone-500 focus:outline-none"
             />
           </div>
         )}
 
         {bookings.length === 0 ? (
           <div className="text-center py-12 space-y-4">
-            <div className="w-16 h-16 bg-stone-950 rounded-full flex items-center justify-center mx-auto border border-white/10 text-3xl">
+            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto border border-black/10 text-3xl">
               🎟️
             </div>
             <div className="space-y-1">
@@ -97,7 +97,7 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
             )}
           </div>
         ) : filteredBookings.length === 0 ? (
-          <div className="text-center py-8 text-xs text-stone-400">
+          <div className="text-center py-8 text-xs text-stone-600">
             {language === 'es' ? 'No se encontraron reservas con ese criterio.' : 'No bookings found matching your search.'}
           </div>
         ) : (
@@ -106,7 +106,7 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
               <div
                 key={b.bookingId || idx}
                 onClick={() => onSelectBooking(b)}
-                className="bg-stone-950 hover:bg-stone-800 p-4 rounded-2xl border border-white/10 hover:border-orange-500 transition-colors cursor-pointer space-y-3 shadow-md"
+                className="bg-white hover:bg-stone-100 p-4 rounded-2xl border border-black/10 hover:border-orange-500 transition-colors cursor-pointer space-y-3 shadow-md"
               >
                 <div className="flex items-center justify-between">
                   <span className="bg-orange-500 text-stone-950 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
@@ -136,7 +136,7 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
                   </div>
                 )}
 
-                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-[#A7F3D0]">
+                <div className="pt-2 border-t border-black/10 flex items-center justify-between text-[11px] text-[#A7F3D0]">
                   <span>Titular: {b.customer.fullName}</span>
                   <span className="text-orange-400 font-bold flex items-center gap-1">
                     Ver Voucher <Ticket className="w-3.5 h-3.5" />
@@ -147,7 +147,7 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-white/10">
+        <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-black/10">
           <a
             href="https://wa.me/50687959148?text=Hola,%20quisiera%20consultar%20sobre%20mis%20reservas"
             target="_blank"
@@ -158,7 +158,7 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
           </a>
           <button
             onClick={onClose}
-            className="flex-1 bg-stone-800 hover:bg-stone-700 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider transition-colors cursor-pointer"
+            className="flex-1 bg-stone-100 hover:bg-stone-200 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider transition-colors cursor-pointer"
           >
             {language === 'es' ? 'Cerrar' : 'Close'}
           </button>

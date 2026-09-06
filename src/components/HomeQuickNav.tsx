@@ -113,7 +113,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
       
       {/* 1. Interactive Navigation Hub (Visual Shortcuts) */}
       <section className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-stone-900/60 pb-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-stone-200/60 pb-4">
           <div>
             <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-400 uppercase tracking-widest mb-1">
               <Sparkles className="w-3.5 h-3.5" />
@@ -123,7 +123,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
               {tico ? '¿Cómo deseas explorar Costa Rica?' : 'How do you wish to explore Costa Rica?'}
             </h2>
           </div>
-          <p className="text-sm text-stone-200/80 max-w-md">
+          <p className="text-sm text-stone-800/80 max-w-md">
             {tico
               ? 'Accede directamente a la sección que necesitas sin rodeos ni páginas saturadas.'
               : 'Jump straight to the section you need with zero clutter.'}
@@ -145,7 +145,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="p-2.5 rounded-xl bg-black/40 border border-white/10 group-hover:scale-110 transition-transform">
+                  <div className="p-2.5 rounded-xl bg-black/40 border border-black/10 group-hover:scale-110 transition-transform">
                     {card.icon}
                   </div>
                   <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${card.badgeColor}`}>
@@ -157,7 +157,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
                   <h3 className="text-base font-black text-white group-hover:text-orange-400 transition-colors">
                     {card.title}
                   </h3>
-                  <p className="text-xs text-neutral-300 leading-relaxed mt-1 line-clamp-2">
+                  <p className="text-xs text-stone-700 leading-relaxed mt-1 line-clamp-2">
                     {card.subtitle}
                   </p>
                 </div>
@@ -204,7 +204,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.2 }}
                 onClick={() => onSelectTour(tour)}
-                className="group relative rounded-3xl bg-stone-900/30 border border-teal-500/20 overflow-hidden shadow-xl hover:border-orange-400/50 cursor-pointer flex flex-col justify-between"
+                className="group relative rounded-3xl bg-stone-100/30 border border-teal-500/20 overflow-hidden shadow-xl hover:border-orange-400/50 cursor-pointer flex flex-col justify-between"
               >
                 <div className="relative h-48 overflow-hidden">
                   <img
@@ -216,7 +216,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
                   <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-black/30" />
                   
                   <div className="absolute top-3 left-3 flex gap-2">
-                    <span className="bg-stone-950/80 backdrop-blur-md text-teal-300 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full border border-teal-500/30 flex items-center gap-1">
+                    <span className="bg-white/80 backdrop-blur-md text-teal-300 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full border border-teal-500/30 flex items-center gap-1">
                       <Star className="w-3 h-3 text-orange-400 fill-orange-400" />
                       {tour.rating} ({tour.reviewsCount})
                     </span>
@@ -228,7 +228,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
                     </span>
                   </div>
 
-                  <div className="absolute bottom-3 left-3 right-3 text-xs font-bold text-stone-200/90 flex items-center gap-3">
+                  <div className="absolute bottom-3 left-3 right-3 text-xs font-bold text-stone-800/90 flex items-center gap-3">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5 text-orange-400" />
                       {getLangText(tour.durationLabel, language)}
@@ -243,12 +243,12 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
                     <h3 className="text-lg font-black text-white group-hover:text-orange-400 transition-colors line-clamp-1">
                       {title}
                     </h3>
-                    <p className="text-xs text-neutral-300 leading-relaxed line-clamp-2 mt-1.5">
+                    <p className="text-xs text-stone-700 leading-relaxed line-clamp-2 mt-1.5">
                       {desc}
                     </p>
                   </div>
 
-                  <div className="pt-3 border-t border-stone-900/60 flex items-center justify-between">
+                  <div className="pt-3 border-t border-stone-200/60 flex items-center justify-between">
                     <div className="text-[11px] text-teal-300 font-bold flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
                       <span>{tico ? 'Cancelación Gratuita 48h' : 'Free 48h Cancel'}</span>
@@ -274,7 +274,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
             </div>
             <div>
               <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Agencia Receptiva' : 'Official Agency'}</h4>
-              <p className="text-[11px] text-stone-200/75 leading-tight mt-0.5">{tico ? 'Guías ICT y pólizas de seguro al día' : 'ICT certified guides & full liability insurance'}</p>
+              <p className="text-[11px] text-stone-800/75 leading-tight mt-0.5">{tico ? 'Guías ICT y pólizas de seguro al día' : 'ICT certified guides & full liability insurance'}</p>
             </div>
           </div>
 
@@ -284,7 +284,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
             </div>
             <div>
               <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Tarifa Oficial Directa' : 'Official Rate'}</h4>
-              <p className="text-[11px] text-stone-200/75 leading-tight mt-0.5">{tico ? 'Sin sobreprecios ni costos ocultos' : 'Direct rates with zero hidden markups'}</p>
+              <p className="text-[11px] text-stone-800/75 leading-tight mt-0.5">{tico ? 'Sin sobreprecios ni costos ocultos' : 'Direct rates with zero hidden markups'}</p>
             </div>
           </div>
 
@@ -294,7 +294,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
             </div>
             <div>
               <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Voucher QR Inmediato' : 'Instant QR Voucher'}</h4>
-              <p className="text-[11px] text-stone-200/75 leading-tight mt-0.5">{tico ? 'Confirmación digital y soporte directo' : 'Instant confirmation with digital voucher'}</p>
+              <p className="text-[11px] text-stone-800/75 leading-tight mt-0.5">{tico ? 'Confirmación digital y soporte directo' : 'Instant confirmation with digital voucher'}</p>
             </div>
           </div>
 
@@ -304,7 +304,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
             </div>
             <div>
               <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Cancelación Flexible' : 'Flexible Refund'}</h4>
-              <p className="text-[11px] text-stone-200/75 leading-tight mt-0.5">{tico ? 'Reembolso 100% hasta 48h antes' : '100% refund up to 48 hours prior'}</p>
+              <p className="text-[11px] text-stone-800/75 leading-tight mt-0.5">{tico ? 'Reembolso 100% hasta 48h antes' : '100% refund up to 48 hours prior'}</p>
             </div>
           </div>
 
@@ -314,7 +314,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
             </div>
             <div>
               <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Asistencia Tica 24/7' : '24/7 Concierge'}</h4>
-              <p className="text-[11px] text-stone-200/75 leading-tight mt-0.5">{tico ? 'Atención local vía WhatsApp' : 'Local WhatsApp support in destination'}</p>
+              <p className="text-[11px] text-stone-800/75 leading-tight mt-0.5">{tico ? 'Atención local vía WhatsApp' : 'Local WhatsApp support in destination'}</p>
             </div>
           </div>
         </div>

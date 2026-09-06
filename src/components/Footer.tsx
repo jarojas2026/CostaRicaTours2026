@@ -9,10 +9,10 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
   return (
-    <footer className="bg-[#0A2314] text-neutral-300 border-t-4 border-teal-500/40 mt-12">
+    <footer className="bg-[#0A2314] text-stone-700 border-t-4 border-teal-500/40 mt-12">
       {/* Trust & Payment Bar */}
-      <div className="bg-[#05140B] text-xs py-3 px-6 border-b border-stone-900/40">
-        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4 text-stone-200">
+      <div className="bg-[#05140B] text-xs py-3 px-6 border-b border-stone-200/40">
+        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4 text-stone-800">
           <div className="flex items-center gap-2">
             <Lock className="w-4 h-4 text-teal-400" />
             <span className="font-semibold text-[11px] sm:text-xs">
@@ -22,11 +22,11 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
 
           <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-teal-300">
             <span>{language === 'es' ? 'Métodos de Pago Aceptados:' : 'Accepted Payments:'}</span>
-            <span className="bg-stone-950 px-2 py-0.5 rounded border border-teal-500/30 text-white">VISA</span>
-            <span className="bg-stone-950 px-2 py-0.5 rounded border border-teal-500/30 text-white">Mastercard</span>
-            <span className="bg-stone-950 px-2 py-0.5 rounded border border-teal-500/30 text-white">PayPal</span>
-            <span className="bg-stone-950 px-2 py-0.5 rounded border border-teal-500/30 text-white">Apple Pay</span>
-            <span className="bg-stone-950 px-2 py-0.5 rounded border border-teal-500/30 text-orange-300">SINPE Móvil</span>
+            <span className="bg-white px-2 py-0.5 rounded border border-teal-500/30 text-white">VISA</span>
+            <span className="bg-white px-2 py-0.5 rounded border border-teal-500/30 text-white">Mastercard</span>
+            <span className="bg-white px-2 py-0.5 rounded border border-teal-500/30 text-white">PayPal</span>
+            <span className="bg-white px-2 py-0.5 rounded border border-teal-500/30 text-white">Apple Pay</span>
+            <span className="bg-white px-2 py-0.5 rounded border border-teal-500/30 text-orange-300">SINPE Móvil</span>
           </div>
         </div>
       </div>
@@ -50,7 +50,7 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
             </div>
           </div>
 
-          <div className="hidden sm:block w-[1px] h-12 bg-stone-800/60" />
+          <div className="hidden sm:block w-[1px] h-12 bg-stone-200/60" />
 
           <div className="flex flex-col text-xs">
             <span className="text-[10px] uppercase font-black text-teal-400">
@@ -97,7 +97,7 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
             <span className="text-[10px] uppercase font-black text-teal-400">
               {language === 'es' ? 'Oficina Principal' : 'Main Office'}
             </span>
-            <span className="font-extrabold flex items-center gap-1 text-neutral-200">
+            <span className="font-extrabold flex items-center gap-1 text-stone-800">
               <MapPin className="w-3.5 h-3.5 text-teal-400" />
               San José, Paseo Colón, Centro Corporativo Costa Rica Tours
             </span>
@@ -123,13 +123,13 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
           </div>
 
           <div className="flex -space-x-3">
-            <div className="w-10 h-10 rounded-full border-2 border-teal-400 bg-stone-950 text-white text-xs font-bold flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full border-2 border-teal-400 bg-white text-white text-xs font-bold flex items-center justify-center">
               🦜
             </div>
-            <div className="w-10 h-10 rounded-full border-2 border-teal-400 bg-stone-900 text-white text-xs font-bold flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full border-2 border-teal-400 bg-stone-50 text-white text-xs font-bold flex items-center justify-center">
               🌺
             </div>
-            <div className="w-10 h-10 rounded-full border-2 border-teal-400 bg-stone-800 text-white text-xs font-bold flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full border-2 border-teal-400 bg-stone-100 text-white text-xs font-bold flex items-center justify-center">
               🐒
             </div>
             <div className="w-10 h-10 rounded-full border-2 border-teal-400 bg-teal-600 text-white text-[10px] font-black flex items-center justify-center shadow-lg">
@@ -141,7 +141,7 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
       </div>
 
       {/* Bottom Sub-bar */}
-      <div className="bg-[#05140B] text-neutral-400 text-xs py-4 px-6 border-t border-stone-900/50">
+      <div className="bg-[#05140B] text-stone-600 text-xs py-4 px-6 border-t border-stone-200/50">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-teal-400" />

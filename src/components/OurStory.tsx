@@ -78,7 +78,7 @@ export const OurStory: React.FC<OurStoryProps> = ({ language }) => {
                 alt="Costa Rica Tours Aggregator" 
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-stone-950/10 mix-blend-multiply" />
+              <div className="absolute inset-0 bg-white/10 mix-blend-multiply" />
             </div>
             
             {/* Floating Badge */}

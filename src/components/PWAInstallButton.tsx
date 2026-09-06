@@ -33,7 +33,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ language }) 
         onClick={handleClick}
         className={`flex items-center gap-2 rounded-full px-2.5 sm:px-4 py-2 sm:py-2 text-xs font-bold uppercase tracking-wider transition shadow-md ${
           isInstallable 
-            ? 'bg-stone-900 text-white hover:bg-stone-800' 
+            ? 'bg-stone-50 text-white hover:bg-stone-100' 
             : 'bg-white text-stone-900 border border-stone-200 hover:bg-stone-50'
         }`}
       >
@@ -57,7 +57,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ language }) 
             >
               <button 
                 onClick={() => setShowGuide(false)}
-                className="absolute top-4 right-4 p-2 text-stone-400 hover:text-stone-900 rounded-full bg-stone-100 transition-colors"
+                className="absolute top-4 right-4 p-2 text-stone-600 hover:text-stone-900 rounded-full bg-stone-100 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -94,7 +94,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ language }) 
               
               <button
                 onClick={() => setShowGuide(false)}
-                className="mt-6 w-full rounded-full bg-stone-900 py-3.5 text-sm font-bold text-white hover:bg-stone-800 uppercase tracking-wider"
+                className="mt-6 w-full rounded-full bg-stone-50 py-3.5 text-sm font-bold text-white hover:bg-stone-100 uppercase tracking-wider"
               >
                 {language === 'es' ? 'Entendido' : 'Got it'}
               </button>

@@ -229,10 +229,10 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Structural Spacer: Prevents content clipping under fixed header */}
       <div className="w-full h-[94px] sm:h-[100px] shrink-0" aria-hidden="true" />
       
-      <header id="main-header" className="w-full fixed top-0 left-0 right-0 z-50 bg-stone-900/95 backdrop-blur-md border-b border-white/10 text-neutral-100 shadow-xl transition-all duration-200">
+      <header id="main-header" className="w-full fixed top-0 left-0 right-0 z-50 bg-stone-100/95 backdrop-blur-md border-b border-black/10 text-stone-900 shadow-xl transition-all duration-200">
         
         {/* Top Assistance & Trust Strip */}
-        <div className="bg-stone-950/90 text-xs px-3 sm:px-6 py-1 border-b border-white/10 text-stone-200/90">
+        <div className="bg-white/90 text-xs px-3 sm:px-6 py-1 border-b border-black/10 text-stone-800/90">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
             
             <div className="flex items-center gap-2 sm:gap-3 text-[11px] whitespace-nowrap overflow-x-auto hide-scrollbar">
@@ -247,17 +247,17 @@ export const Header: React.FC<HeaderProps> = ({
                 href="https://wa.me/50687959148?text=Hola%20Costa%20Rica%20Tours%20(costaricatours.es),%20quisiera%20consultar%20sobre%20los%20tours%20y%20traslados."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-stone-100 hover:text-white font-bold transition-colors"
+                className="inline-flex items-center gap-1 text-stone-900 hover:text-stone-900 font-bold transition-colors"
               >
                 <MessageCircle className="w-3 h-3 text-[#25D366]" />
-                <span>WhatsApp 24/7: <strong className="text-white">+506 8795-9148</strong></span>
+                <span>WhatsApp 24/7: <strong className="text-stone-900">+506 8795-9148</strong></span>
               </a>
 
               <span className="hidden lg:inline text-stone-800">•</span>
 
               <a
                 href="mailto:info@costaricatours.es"
-                className="hidden lg:inline-flex items-center gap-1 text-teal-300 hover:text-white transition-colors"
+                className="hidden lg:inline-flex items-center gap-1 text-teal-300 hover:text-stone-900 transition-colors"
               >
                 <Mail className="w-3 h-3 text-teal-400" />
                 <span>info@costaricatours.es</span>
@@ -284,11 +284,11 @@ export const Header: React.FC<HeaderProps> = ({
               <Compass className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div className="whitespace-nowrap">
-              <div className="text-sm sm:text-xl font-black tracking-tighter uppercase leading-none text-white flex items-center gap-1.5">
+              <div className="text-sm sm:text-xl font-black tracking-tighter uppercase leading-none text-stone-900 flex items-center gap-1.5">
                 <span>Costa Rica</span>
                 <span className="text-orange-400">Tours</span>
               </div>
-              <span className="text-[8px] sm:text-[9px] tracking-[0.2em] uppercase font-bold text-neutral-400 block mt-1">
+              <span className="text-[8px] sm:text-[9px] tracking-[0.2em] uppercase font-bold text-stone-600 block mt-1">
                 {language === 'es' ? 'Descubre Costa Rica' : 'Discover Costa Rica'}
               </span>
             </div>
@@ -298,25 +298,25 @@ export const Header: React.FC<HeaderProps> = ({
           <nav className="hidden 2xl:flex items-center gap-8 text-sm font-bold tracking-widest uppercase">
             <button
               onClick={() => handleTabChange('home')}
-              className={`transition-all cursor-pointer ${currentTab === 'home' ? 'text-orange-400' : 'text-neutral-400 hover:text-white'}`}
+              className={`transition-all cursor-pointer ${currentTab === 'home' ? 'text-orange-400' : 'text-stone-600 hover:text-stone-900'}`}
             >
               {language === 'es' ? 'Inicio' : 'Home'}
             </button>
             <button
               onClick={() => handleTabChange('tours')}
-              className={`transition-all cursor-pointer ${currentTab === 'tours' ? 'text-orange-400' : 'text-neutral-400 hover:text-white'}`}
+              className={`transition-all cursor-pointer ${currentTab === 'tours' ? 'text-orange-400' : 'text-stone-600 hover:text-stone-900'}`}
             >
               {language === 'es' ? 'Tours' : 'Tours'}
             </button>
             <button
               onClick={() => handleTabChange('map')}
-              className={`transition-all cursor-pointer ${currentTab === 'map' ? 'text-orange-400' : 'text-neutral-400 hover:text-white'}`}
+              className={`transition-all cursor-pointer ${currentTab === 'map' ? 'text-orange-400' : 'text-stone-600 hover:text-stone-900'}`}
             >
               {language === 'es' ? 'Mapa' : 'Map'}
             </button>
             <button
               onClick={() => handleTabChange('ai')}
-              className={`transition-all cursor-pointer flex items-center gap-1.5 ${currentTab === 'ai' ? 'text-orange-400' : 'text-neutral-400 hover:text-white'}`}
+              className={`transition-all cursor-pointer flex items-center gap-1.5 ${currentTab === 'ai' ? 'text-orange-400' : 'text-stone-600 hover:text-stone-900'}`}
             >
               <Bot className="w-4 h-4" />
               <span>{language === 'es' ? 'IA Asistente' : 'AI Assistant'}</span>
@@ -327,37 +327,37 @@ export const Header: React.FC<HeaderProps> = ({
           <nav className="hidden xl:flex 2xl:hidden items-center gap-4 text-sm font-bold tracking-wider">
             <button
               onClick={() => handleTabChange('home')}
-              className={`transition-colors cursor-pointer ${currentTab === 'home' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-neutral-200 hover:text-orange-300'}`}
+              className={`transition-colors cursor-pointer ${currentTab === 'home' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-800 hover:text-orange-300'}`}
             >
               {language === 'es' ? 'Inicio' : 'Home'}
             </button>
             <button
               onClick={() => handleTabChange('tours')}
-              className={`transition-colors cursor-pointer ${currentTab === 'tours' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-neutral-200 hover:text-orange-300'}`}
+              className={`transition-colors cursor-pointer ${currentTab === 'tours' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-800 hover:text-orange-300'}`}
             >
               {language === 'es' ? 'Tours' : 'Tours'}
             </button>
             <button
               onClick={() => handleTabChange('map')}
-              className={`transition-colors cursor-pointer ${currentTab === 'map' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-neutral-200 hover:text-orange-300'}`}
+              className={`transition-colors cursor-pointer ${currentTab === 'map' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-800 hover:text-orange-300'}`}
             >
               {language === 'es' ? 'Mapa' : 'Map'}
             </button>
             <button
               onClick={() => handleTabChange('ai')}
-              className={`transition-colors cursor-pointer ${currentTab === 'ai' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-neutral-200 hover:text-orange-300'}`}
+              className={`transition-colors cursor-pointer ${currentTab === 'ai' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-800 hover:text-orange-300'}`}
             >
               {language === 'es' ? 'IA' : 'AI'}
             </button>
             <button
               onClick={() => handleTabChange('itinerary')}
-              className={`transition-colors cursor-pointer ${currentTab === 'itinerary' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-neutral-200 hover:text-orange-300'}`}
+              className={`transition-colors cursor-pointer ${currentTab === 'itinerary' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-800 hover:text-orange-300'}`}
             >
               {language === 'es' ? 'Itinerario' : 'Itinerary'}
             </button>
             <button
               onClick={() => handleTabChange('flights')}
-              className={`transition-colors cursor-pointer ${currentTab === 'flights' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-neutral-200 hover:text-orange-300'}`}
+              className={`transition-colors cursor-pointer ${currentTab === 'flights' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-800 hover:text-orange-300'}`}
             >
               {language === 'es' ? 'Vuelos' : 'Flights'}
             </button>
@@ -374,7 +374,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setIsCurrencyMenuOpen(!isCurrencyMenuOpen);
                   setIsLangMenuOpen(false);
                 }}
-                className="flex items-center gap-1 bg-stone-900/70 hover:bg-stone-800 px-2 sm:px-2.5 py-1.5 rounded-xl border border-teal-500/40 text-[11px] font-bold text-white transition-all cursor-pointer"
+                className="flex items-center gap-1 bg-stone-100/70 hover:bg-stone-100 px-2 sm:px-2.5 py-1.5 rounded-xl border border-teal-500/40 text-[11px] font-bold text-stone-900 transition-all cursor-pointer"
                 title="Seleccionar Moneda / Currency"
               >
                 <span className="font-mono text-orange-400 font-black">{currency}</span>
@@ -384,8 +384,8 @@ export const Header: React.FC<HeaderProps> = ({
               {isCurrencyMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsCurrencyMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-44 max-h-60 overflow-y-auto bg-stone-900 rounded-2xl shadow-2xl border border-white/20 z-50 p-1.5 animate-fade-in modal-scrollable">
-                    <div className="px-2 py-1 text-[10px] font-black text-teal-400 uppercase border-b border-stone-800 mb-1">
+                  <div className="absolute right-0 mt-2 w-44 max-h-60 overflow-y-auto bg-stone-50 rounded-2xl shadow-2xl border border-black/20 z-50 p-1.5 animate-fade-in modal-scrollable">
+                    <div className="px-2 py-1 text-[10px] font-black text-teal-400 uppercase border-b border-stone-200 mb-1">
                       {language === 'es' ? 'Moneda de Pago' : 'Payment Currency'}
                     </div>
                     {CURRENCIES.map((curr) => (
@@ -398,7 +398,7 @@ export const Header: React.FC<HeaderProps> = ({
                         className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center justify-between ${
                           currency === curr
                             ? 'bg-orange-500 text-stone-950 font-black'
-                            : 'text-neutral-200 hover:bg-stone-800/80 hover:text-white'
+                            : 'text-stone-800 hover:bg-stone-200/80 hover:text-stone-900'
                         }`}
                       >
                         <span>{curr}</span>
@@ -420,19 +420,19 @@ export const Header: React.FC<HeaderProps> = ({
                   setIsCurrencyMenuOpen(false);
                   setIsPaletteMenuOpen(false);
                 }}
-                className="flex items-center gap-1 bg-stone-900/70 hover:bg-stone-800 px-2 sm:px-2.5 py-1.5 rounded-xl border border-teal-500/40 text-[11px] font-bold text-white transition-all cursor-pointer"
+                className="flex items-center gap-1 bg-stone-100/70 hover:bg-stone-100 px-2 sm:px-2.5 py-1.5 rounded-xl border border-teal-500/40 text-[11px] font-bold text-stone-900 transition-all cursor-pointer"
                 title="Seleccionar Idioma / Language"
               >
                 <span className="text-sm leading-none">{currentLangInfo.flag}</span>
-                <span className="font-mono text-stone-200 font-bold uppercase">{currentLangInfo.code}</span>
+                <span className="font-mono text-stone-800 font-bold uppercase">{currentLangInfo.code}</span>
                 <ChevronDown className={`w-3 h-3 text-teal-300 transition-transform ${isLangMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {isLangMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsLangMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-48 bg-stone-900 rounded-2xl shadow-2xl border border-white/20 z-50 p-1.5 animate-fade-in">
-                    <div className="px-2 py-1 text-[10px] font-black text-teal-400 uppercase border-b border-stone-800 mb-1">
+                  <div className="absolute right-0 mt-2 w-48 bg-stone-50 rounded-2xl shadow-2xl border border-black/20 z-50 p-1.5 animate-fade-in">
+                    <div className="px-2 py-1 text-[10px] font-black text-teal-400 uppercase border-b border-stone-200 mb-1">
                       🌍 Idioma / Language
                     </div>
                     {SUPPORTED_LANGUAGES.map((langItem) => (
@@ -442,7 +442,7 @@ export const Header: React.FC<HeaderProps> = ({
                         className={`w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold flex items-center justify-between transition-colors ${
                           language === langItem.code
                             ? 'bg-orange-500 text-stone-950 font-black'
-                            : 'text-neutral-200 hover:bg-stone-800/80 hover:text-white'
+                            : 'text-stone-800 hover:bg-stone-200/80 hover:text-stone-900'
                         }`}
                       >
                         <span className="flex items-center gap-2">
@@ -467,7 +467,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setIsLangMenuOpen(false);
                   setIsCurrencyMenuOpen(false);
                 }}
-                className="flex items-center gap-1.5 bg-stone-850 hover:bg-stone-800 px-2 sm:px-2.5 py-1.5 rounded-xl border border-amber-400/40 text-[11px] font-bold text-amber-300 transition-all cursor-pointer shadow-sm"
+                className="flex items-center gap-1.5 bg-stone-850 hover:bg-stone-100 px-2 sm:px-2.5 py-1.5 rounded-xl border border-amber-400/40 text-[11px] font-bold text-amber-300 transition-all cursor-pointer shadow-sm"
                 title={language === 'es' ? 'Paleta de Color de Desarrollo' : 'Development Color Palette'}
               >
                 <Palette className="w-3.5 h-3.5 text-amber-400" />
@@ -475,7 +475,7 @@ export const Header: React.FC<HeaderProps> = ({
                   {language === 'es' ? 'Color' : 'Theme'}
                 </span>
                 <span 
-                  className="w-2.5 h-2.5 rounded-full border border-white/40 shadow-inner shrink-0" 
+                  className="w-2.5 h-2.5 rounded-full border border-black/40 shadow-inner shrink-0" 
                   style={{ backgroundColor: DEV_PALETTES.find(p => p.id === activePalette)?.previewColor || '#22577A' }} 
                 />
               </button>
@@ -483,8 +483,8 @@ export const Header: React.FC<HeaderProps> = ({
               {isPaletteMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsPaletteMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-64 bg-stone-900 rounded-2xl shadow-2xl border border-amber-400/50 z-50 p-2.5 animate-fade-in">
-                    <div className="flex items-center justify-between px-2 py-1 border-b border-stone-800 mb-2">
+                  <div className="absolute right-0 mt-2 w-64 bg-stone-50 rounded-2xl shadow-2xl border border-amber-400/50 z-50 p-2.5 animate-fade-in">
+                    <div className="flex items-center justify-between px-2 py-1 border-b border-stone-200 mb-2">
                       <span className="text-[11px] font-black text-amber-300 uppercase tracking-wide flex items-center gap-1.5">
                         <Palette className="w-3.5 h-3.5" />
                         {language === 'es' ? 'Paleta de Desarrollo' : 'Dev Color Palette'}
@@ -494,7 +494,7 @@ export const Header: React.FC<HeaderProps> = ({
                       </span>
                     </div>
 
-                    <p className="text-[10px] text-stone-300 px-2 mb-2 leading-tight">
+                    <p className="text-[10px] text-stone-700 px-2 mb-2 leading-tight">
                       {language === 'es' 
                         ? 'Probá paletas más claras durante el desarrollo antes del lanzamiento final:' 
                         : 'Test clearer palettes during development before final release:'}
@@ -508,23 +508,23 @@ export const Header: React.FC<HeaderProps> = ({
                           className={`w-full text-left p-2 rounded-xl text-xs transition-all flex items-center justify-between cursor-pointer ${
                             activePalette === pal.id
                               ? 'bg-amber-500 text-stone-950 font-black shadow-md'
-                              : 'text-neutral-100 hover:bg-stone-800/90 border border-white/5'
+                              : 'text-stone-900 hover:bg-stone-200/90 border border-black/5'
                           }`}
                         >
                           <div className="flex items-center gap-2">
                             <span 
-                              className="w-4 h-4 rounded-full border border-white/60 shadow-inner shrink-0"
+                              className="w-4 h-4 rounded-full border border-black/60 shadow-inner shrink-0"
                               style={{ backgroundColor: pal.previewColor }}
                             />
                             <div>
                               <div className="text-xs font-bold leading-none">{pal.name}</div>
-                              <div className={`text-[10px] mt-0.5 ${activePalette === pal.id ? 'text-stone-900/80 font-medium' : 'text-stone-400'}`}>
+                              <div className={`text-[10px] mt-0.5 ${activePalette === pal.id ? 'text-stone-900/80 font-medium' : 'text-stone-600'}`}>
                                 {pal.badge}
                               </div>
                             </div>
                           </div>
                           {activePalette === pal.id && (
-                            <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-stone-950 text-amber-400 font-bold">
+                            <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-white text-amber-400 font-bold">
                               ✓
                             </span>
                           )}
@@ -548,7 +548,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* My Bookings Button */}
             <button
               onClick={handleOpenBookings}
-              className="relative flex items-center gap-1.5 bg-stone-800 hover:bg-teal-700 text-white px-2.5 sm:px-3 py-1.5 rounded-xl font-bold text-xs border border-teal-500/40 transition-all hover:scale-105 cursor-pointer shadow-sm shrink-0"
+              className="relative flex items-center gap-1.5 bg-stone-100 hover:bg-teal-700 text-white px-2.5 sm:px-3 py-1.5 rounded-xl font-bold text-xs border border-teal-500/40 transition-all hover:scale-105 cursor-pointer shadow-sm shrink-0"
               aria-label={language === 'es' ? 'Ver mis reservas' : 'View my bookings'}
             >
               <ShoppingBag className="w-3.5 h-3.5 text-orange-400" />
@@ -573,7 +573,7 @@ export const Header: React.FC<HeaderProps> = ({
                 />
                 <button 
                   onClick={signOut} 
-                  className="text-neutral-400 hover:text-red-400 transition-colors p-1" 
+                  className="text-stone-600 hover:text-red-400 transition-colors p-1" 
                   title={language === 'es' ? 'Cerrar Sesión' : 'Sign Out'}
                 >
                   <LogOut className="w-4 h-4" />
@@ -582,7 +582,7 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               <button
                 onClick={signInWithGoogle}
-                className="hidden xl:flex items-center gap-1 text-[11px] font-bold bg-stone-950 hover:bg-stone-900 text-neutral-200 px-2.5 py-1.5 rounded-xl border border-teal-600/30 transition-colors shrink-0"
+                className="hidden xl:flex items-center gap-1 text-[11px] font-bold bg-white hover:bg-stone-50 text-stone-800 px-2.5 py-1.5 rounded-xl border border-teal-600/30 transition-colors shrink-0"
               >
                 <LogIn className="w-3.5 h-3.5 text-orange-400" />
                 <span>{t('signIn')}</span>
@@ -592,10 +592,10 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Mobile / Tablet Drawer Hamburger Button (Visible on screens < 1280px) */}
             <button
               onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
-              className="xl:hidden p-2 rounded-xl bg-stone-900/90 hover:bg-stone-800 text-white border border-teal-500/40 transition-colors cursor-pointer shrink-0"
+              className="xl:hidden p-2 rounded-xl bg-stone-100/90 hover:bg-stone-100 text-stone-900 border border-teal-500/40 transition-colors cursor-pointer shrink-0"
               aria-label="Abrir Menú"
             >
-              {isMobileDrawerOpen ? <X className="w-4 h-4 text-orange-400" /> : <Menu className="w-4 h-4 text-white" />}
+              {isMobileDrawerOpen ? <X className="w-4 h-4 text-orange-400" /> : <Menu className="w-4 h-4 text-stone-900" />}
             </button>
 
           </div>
@@ -609,16 +609,16 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setIsMobileDrawerOpen(false)}
             />
             
-            <div className="fixed top-[95px] left-2 right-2 sm:left-4 sm:right-4 max-h-[82vh] bg-stone-900 border border-white/20 rounded-3xl z-[100] shadow-2xl p-4 sm:p-5 overflow-y-auto xl:hidden space-y-4 animate-fade-in modal-scrollable">
+            <div className="fixed top-[95px] left-2 right-2 sm:left-4 sm:right-4 max-h-[82vh] bg-stone-50 border border-black/20 rounded-3xl z-[100] shadow-2xl p-4 sm:p-5 overflow-y-auto xl:hidden space-y-4 animate-fade-in modal-scrollable">
               
               {/* Drawer Header */}
-              <div className="flex items-center justify-between border-b border-stone-800/60 pb-3">
+              <div className="flex items-center justify-between border-b border-stone-200/60 pb-3">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-xl bg-teal-600 flex items-center justify-center text-white font-black text-sm">
                     🇨🇷
                   </div>
                   <div>
-                    <span className="text-xs font-black text-white uppercase tracking-wider block">
+                    <span className="text-xs font-black text-stone-900 uppercase tracking-wider block">
                       Costa Rica <span className="text-orange-400">Tours</span>
                     </span>
                     <span className="text-[8px] text-teal-300 font-bold uppercase tracking-widest">
@@ -629,7 +629,7 @@ export const Header: React.FC<HeaderProps> = ({
 
                 <div className="flex items-center gap-2">
                   {user ? (
-                    <div className="flex items-center gap-1.5 bg-stone-950 px-2 py-1 rounded-xl border border-stone-800">
+                    <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-xl border border-stone-200">
                       <img 
                         src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}`} 
                         alt="Avatar" 
@@ -645,7 +645,7 @@ export const Header: React.FC<HeaderProps> = ({
                         signInWithGoogle();
                         setIsMobileDrawerOpen(false);
                       }}
-                      className="flex items-center gap-1 text-[10px] font-black bg-stone-900 text-orange-300 px-2.5 py-1 rounded-xl border border-orange-400/30 uppercase"
+                      className="flex items-center gap-1 text-[10px] font-black bg-stone-50 text-orange-300 px-2.5 py-1 rounded-xl border border-orange-400/30 uppercase"
                     >
                       <LogIn className="w-3 h-3" />
                       <span>{t('signIn')}</span>
@@ -654,7 +654,7 @@ export const Header: React.FC<HeaderProps> = ({
 
                   <button
                     onClick={() => setIsMobileDrawerOpen(false)}
-                    className="p-1.5 rounded-xl bg-stone-950 text-teal-300 hover:text-white"
+                    className="p-1.5 rounded-xl bg-white text-teal-300 hover:text-stone-900"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -676,7 +676,7 @@ export const Header: React.FC<HeaderProps> = ({
 
                 <button
                   onClick={handleOpenBookings}
-                  className="flex items-center justify-center gap-1.5 bg-stone-800 text-white p-2.5 rounded-2xl font-black text-xs uppercase border border-teal-600/50"
+                  className="flex items-center justify-center gap-1.5 bg-stone-100 text-stone-900 p-2.5 rounded-2xl font-black text-xs uppercase border border-teal-600/50"
                 >
                   <ShoppingBag className="w-3.5 h-3.5 text-orange-400" />
                   <span>{language === 'es' ? 'Mis Reservas' : 'My Bookings'}</span>
@@ -698,7 +698,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => handleTabChange('home')}
                     className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left ${
-                      currentTab === 'home' ? 'bg-orange-500 text-stone-950 font-black' : 'bg-stone-900/40 text-neutral-100 hover:bg-stone-900/80 border border-stone-800/40'
+                      currentTab === 'home' ? 'bg-orange-500 text-stone-950 font-black' : 'bg-stone-100/40 text-stone-900 hover:bg-stone-100/80 border border-stone-200/40'
                     }`}
                   >
                     <span className="flex items-center gap-2">
@@ -711,7 +711,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => handleTabChange('tours')}
                     className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left ${
-                      currentTab === 'tours' ? 'bg-orange-500 text-stone-950 font-black' : 'bg-stone-900/40 text-neutral-100 hover:bg-stone-900/80 border border-stone-800/40'
+                      currentTab === 'tours' ? 'bg-orange-500 text-stone-950 font-black' : 'bg-stone-100/40 text-stone-900 hover:bg-stone-100/80 border border-stone-200/40'
                     }`}
                   >
                     <span className="flex items-center gap-2">
@@ -726,7 +726,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => handleTabChange('map')}
                     className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left ${
-                      currentTab === 'map' ? 'bg-orange-500 text-stone-950 font-black' : 'bg-stone-900/40 text-neutral-100 hover:bg-stone-900/80 border border-stone-800/40'
+                      currentTab === 'map' ? 'bg-orange-500 text-stone-950 font-black' : 'bg-stone-100/40 text-stone-900 hover:bg-stone-100/80 border border-stone-200/40'
                     }`}
                   >
                     <span className="flex items-center gap-2">
@@ -739,7 +739,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => handleTabChange('culture')}
                     className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left ${
-                      currentTab === 'culture' ? 'bg-orange-500 text-stone-950 font-black' : 'bg-stone-900/40 text-neutral-100 hover:bg-stone-900/80 border border-stone-800/40'
+                      currentTab === 'culture' ? 'bg-orange-500 text-stone-950 font-black' : 'bg-stone-100/40 text-stone-900 hover:bg-stone-100/80 border border-stone-200/40'
                     }`}
                   >
                     <span className="flex items-center gap-2">
@@ -752,7 +752,7 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
 
               {/* Section 2: Inteligencia Artificial & Planificación */}
-              <div className="space-y-1.5 pt-2 border-t border-stone-900/60">
+              <div className="space-y-1.5 pt-2 border-t border-stone-200/60">
                 <span className="text-[9px] uppercase font-black tracking-widest text-orange-400 px-1 flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-orange-400" />
                   {language === 'es' ? 'Inteligencia Artificial Especializada' : 'Specialized Artificial Intelligence'}
@@ -764,7 +764,7 @@ export const Header: React.FC<HeaderProps> = ({
                     className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left border ${
                       currentTab === 'ai' 
                         ? 'bg-orange-500 text-stone-950 font-black border-orange-300 shadow-md' 
-                        : 'bg-stone-950/80 border-orange-500/30 text-orange-200 hover:bg-stone-900'
+                        : 'bg-white/80 border-orange-500/30 text-orange-200 hover:bg-stone-50'
                     }`}
                   >
                     <span className="flex items-center gap-2">
@@ -783,7 +783,7 @@ export const Header: React.FC<HeaderProps> = ({
                     }}
                     className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left border ${
                       currentTab === 'itinerary'
-                        ? 'bg-purple-600 text-white font-black border-purple-300'
+                        ? 'bg-purple-600 text-stone-900 font-black border-purple-300'
                         : 'bg-purple-950/60 border-purple-500/40 text-purple-200 hover:bg-purple-900/80'
                     }`}
                   >
@@ -799,7 +799,7 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
 
               {/* Section 3: Movilidad & Logística */}
-              <div className="space-y-1.5 pt-2 border-t border-stone-900/60">
+              <div className="space-y-1.5 pt-2 border-t border-stone-200/60">
                 <span className="text-[9px] uppercase font-black tracking-widest text-teal-400 px-1 block">
                   {language === 'es' ? 'Transporte & Movilidad' : 'Transport & Logistics'}
                 </span>
@@ -808,7 +808,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => handleTabChange('flights')}
                     className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left border ${
-                      currentTab === 'flights' ? 'bg-orange-500 text-stone-950 font-black border-orange-300' : 'bg-stone-900/40 text-neutral-100 hover:bg-stone-900/80 border-stone-800/40'
+                      currentTab === 'flights' ? 'bg-orange-500 text-stone-950 font-black border-orange-300' : 'bg-stone-100/40 text-stone-900 hover:bg-stone-100/80 border-stone-200/40'
                     }`}
                   >
                     <span className="flex items-center gap-2">
@@ -823,7 +823,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => handleTabChange('tools')}
                     className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left ${
-                      currentTab === 'tools' ? 'bg-orange-500 text-stone-950 font-black' : 'bg-stone-900/40 text-neutral-100 hover:bg-stone-900/80 border border-stone-800/40'
+                      currentTab === 'tools' ? 'bg-orange-500 text-stone-950 font-black' : 'bg-stone-100/40 text-stone-900 hover:bg-stone-100/80 border border-stone-200/40'
                     }`}
                   >
                     <span className="flex items-center gap-2">
@@ -839,7 +839,7 @@ export const Header: React.FC<HeaderProps> = ({
                         onOpenLocalBuses();
                         setIsMobileDrawerOpen(false);
                       }}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-stone-900/30 text-stone-200 hover:bg-stone-900/80 transition-colors text-left border border-stone-800/40"
+                      className="flex items-center justify-between p-3 rounded-2xl bg-stone-100/30 text-stone-800 hover:bg-stone-100/80 transition-colors text-left border border-stone-200/40"
                     >
                       <span className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-[#E67E22]" />
@@ -852,7 +852,7 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
 
               {/* WhatsApp Support in Drawer */}
-              <div className="pt-3 border-t border-stone-900/80 space-y-2">
+              <div className="pt-3 border-t border-stone-200/80 space-y-2">
                 <a
                   href="https://wa.me/50687959148?text=Hola%20Costa%20Rica%20Tours%20(costaricatours.es),%20quisiera%20ayuda%20para%20reservar."
                   target="_blank"
@@ -873,24 +873,24 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Currency Change Modal */}
       {currencyPrompt?.isOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-stone-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl animate-fade-in border border-white/20 text-white">
+          <div className="bg-stone-50 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl animate-fade-in border border-black/20 text-stone-900">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-2xl bg-orange-500/20 border border-orange-400/40 flex items-center justify-center shrink-0">
                 <Globe className="w-6 h-6 text-orange-400" />
               </div>
-              <h3 className="text-lg sm:text-xl font-black uppercase text-white">
+              <h3 className="text-lg sm:text-xl font-black uppercase text-stone-900">
                 {t('suggestCurrencyChangeTitle')}
               </h3>
             </div>
             
-            <p className="text-sm text-stone-200/90 mb-6 font-medium leading-relaxed">
+            <p className="text-sm text-stone-800/90 mb-6 font-medium leading-relaxed">
               {t('suggestCurrencyChangeDesc')} <strong className="font-black text-orange-400 text-base">{currencyPrompt.suggestedCurrency}</strong>?
             </p>
             
             <div className="flex flex-col sm:flex-row gap-3">
               <button 
                 onClick={declineCurrencyChange}
-                className="flex-1 px-4 py-3 rounded-xl font-bold uppercase text-xs text-neutral-300 bg-stone-950 hover:bg-stone-900 transition-colors border border-teal-700/50 cursor-pointer"
+                className="flex-1 px-4 py-3 rounded-xl font-bold uppercase text-xs text-stone-700 bg-white hover:bg-stone-50 transition-colors border border-teal-700/50 cursor-pointer"
               >
                 {t('noKeepCurrent')}
               </button>

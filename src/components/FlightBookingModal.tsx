@@ -151,10 +151,10 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-stone-950 border-2 border-orange-400/80 rounded-[2rem] max-w-2xl w-full shadow-2xl overflow-hidden my-6 animate-fade-in text-white">
+      <div className="bg-white border-2 border-orange-400/80 rounded-[2rem] max-w-2xl w-full shadow-2xl overflow-hidden my-6 animate-fade-in text-white">
         
         {/* Modal Header */}
-        <div className="bg-stone-900/90 p-5 sm:p-6 border-b border-teal-500/30 flex items-center justify-between">
+        <div className="bg-stone-100/90 p-5 sm:p-6 border-b border-teal-500/30 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-orange-400 text-stone-950 flex items-center justify-center font-black shadow-lg">
               <Plane className="w-6 h-6" />
@@ -164,7 +164,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                 <span className="text-[10px] font-black uppercase tracking-wider bg-orange-400/20 text-orange-300 px-2 py-0.5 rounded-full border border-orange-400/40">
                   {flight.airline} • {flight.flightNumber}
                 </span>
-                <span className="text-[10px] bg-stone-800 text-stone-200 px-2 py-0.5 rounded-full font-bold">
+                <span className="text-[10px] bg-stone-100 text-stone-800 px-2 py-0.5 rounded-full font-bold">
                   {flight.aircraft}
                 </span>
               </div>
@@ -176,23 +176,23 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-2 rounded-full bg-stone-950/80 hover:bg-stone-800 text-neutral-300 hover:text-white transition-colors cursor-pointer"
+            className="p-2 rounded-full bg-white/80 hover:bg-stone-100 text-stone-700 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Flight Route Summary Bar */}
-        <div className="bg-stone-950 p-4 sm:p-5 border-b border-teal-500/20">
+        <div className="bg-white p-4 sm:p-5 border-b border-teal-500/20">
           <div className="flex items-center justify-between gap-4">
             <div className="text-left">
               <span className="text-2xl font-black text-orange-400">{flight.originAirportCode}</span>
-              <p className="text-xs text-neutral-300 font-bold">{getLangText(flight.originCity, language)}</p>
+              <p className="text-xs text-stone-700 font-bold">{getLangText(flight.originCity, language)}</p>
               <span className="text-[11px] text-teal-300 font-mono">{flight.departureTime}</span>
             </div>
 
             <div className="flex-1 flex flex-col items-center px-4">
-              <span className="text-[10px] text-neutral-400 font-bold mb-1 flex items-center gap-1">
+              <span className="text-[10px] text-stone-600 font-bold mb-1 flex items-center gap-1">
                 <Clock className="w-3 h-3 text-orange-400" />
                 {flight.duration} ({flight.stops === 0 ? (language === 'es' ? 'Directo' : 'Direct') : `${flight.stops} stop`})
               </span>
@@ -206,7 +206,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
 
             <div className="text-right">
               <span className="text-2xl font-black text-orange-400">{flight.destinationAirportCode}</span>
-              <p className="text-xs text-neutral-300 font-bold">{getLangText(flight.destinationCity, language)}</p>
+              <p className="text-xs text-stone-700 font-bold">{getLangText(flight.destinationCity, language)}</p>
               <span className="text-[11px] text-teal-300 font-mono">{flight.arrivalTime}</span>
             </div>
           </div>
@@ -218,7 +218,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
           {/* Flight Date & Passengers */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-stone-200 uppercase flex items-center gap-1">
+              <label className="text-xs font-bold text-stone-800 uppercase flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 text-orange-400" />
                 {language === 'es' ? 'Fecha de Salida' : 'Departure Date'}
               </label>
@@ -228,22 +228,22 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                 value={departureDate}
                 min={new Date().toISOString().split('T')[0]}
                 onChange={(e) => setDepartureDate(e.target.value)}
-                className="w-full bg-stone-900/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-orange-400"
+                className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-orange-400"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-stone-200 uppercase flex items-center gap-1">
+              <label className="text-xs font-bold text-stone-800 uppercase flex items-center gap-1">
                 <User className="w-3.5 h-3.5 text-orange-400" />
                 {language === 'es' ? 'Pasajeros' : 'Passengers'}
               </label>
               <select
                 value={passengersCount}
                 onChange={(e) => setPassengersCount(Number(e.target.value))}
-                className="w-full bg-stone-900/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-orange-400 cursor-pointer"
+                className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-orange-400 cursor-pointer"
               >
                 {[1, 2, 3, 4, 5, 6, 8, 10].map((num) => (
-                  <option key={num} value={num} className="bg-stone-950 text-white">
+                  <option key={num} value={num} className="bg-white text-white">
                     {num} {num === 1 ? (language === 'es' ? 'Pasajero' : 'Passenger') : (language === 'es' ? 'Pasajeros' : 'Passengers')}
                   </option>
                 ))}
@@ -251,30 +251,30 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-stone-200 uppercase flex items-center gap-1">
+              <label className="text-xs font-bold text-stone-800 uppercase flex items-center gap-1">
                 <Award className="w-3.5 h-3.5 text-orange-400" />
                 {language === 'es' ? 'Clase de Cabina' : 'Cabin Class'}
               </label>
               <select
                 value={selectedCabin}
                 onChange={(e) => setSelectedCabin(e.target.value as any)}
-                className="w-full bg-stone-900/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-orange-400 cursor-pointer"
+                className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-orange-400 cursor-pointer"
               >
-                <option value="Economy" className="bg-stone-950 text-white">Economy Class</option>
-                <option value="Business" className="bg-stone-950 text-white">Business Class (VIP)</option>
+                <option value="Economy" className="bg-white text-white">Economy Class</option>
+                <option value="Business" className="bg-white text-white">Business Class (VIP)</option>
               </select>
             </div>
           </div>
 
           {/* Add-ons for Costa Rica Tours Package */}
-          <div className="bg-stone-900/40 p-4 rounded-2xl border border-teal-500/30 space-y-3">
+          <div className="bg-stone-100/40 p-4 rounded-2xl border border-teal-500/30 space-y-3">
             <span className="text-xs font-black text-orange-400 uppercase tracking-wider flex items-center gap-1.5">
               <Sparkles className="w-4 h-4" />
               {language === 'es' ? 'Servicios Receptivos Integrados de Costa Rica Tours:' : 'Integrated Costa Rica Tours Airport Services:'}
             </span>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <label className="flex items-start gap-2.5 p-3 rounded-xl bg-stone-950/80 border border-teal-500/30 cursor-pointer hover:border-orange-400 transition-colors">
+              <label className="flex items-start gap-2.5 p-3 rounded-xl bg-white/80 border border-teal-500/30 cursor-pointer hover:border-orange-400 transition-colors">
                 <input
                   type="checkbox"
                   checked={includeAirportTransfer}
@@ -286,7 +286,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                     <Car className="w-3.5 h-3.5 text-orange-400" />
                     {language === 'es' ? 'Traslado Receptivo VIP Aeropuerto' : 'VIP Airport Meet & Transfer'}
                   </span>
-                  <p className="text-[11px] text-neutral-300 mt-0.5 leading-tight">
+                  <p className="text-[11px] text-stone-700 mt-0.5 leading-tight">
                     {language === 'es' 
                       ? 'Chofer certificado con cartel a tu nombre + agua embotellada al hotel (+ $45 USD)'
                       : 'Driver with sign in arrival hall + bottled water to your hotel (+ $45 USD)'}
@@ -294,7 +294,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                 </div>
               </label>
 
-              <label className="flex items-start gap-2.5 p-3 rounded-xl bg-stone-950/80 border border-teal-500/30 cursor-pointer hover:border-orange-400 transition-colors">
+              <label className="flex items-start gap-2.5 p-3 rounded-xl bg-white/80 border border-teal-500/30 cursor-pointer hover:border-orange-400 transition-colors">
                 <input
                   type="checkbox"
                   checked={includeWelcomeSimKit}
@@ -306,7 +306,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                     <Globe className="w-3.5 h-3.5 text-teal-400" />
                     {language === 'es' ? 'Kit SIM 4G/5G + Soporte WhatsApp' : '4G/5G SIM Kit + 24/7 Concierge'}
                   </span>
-                  <p className="text-[11px] text-neutral-300 mt-0.5 leading-tight">
+                  <p className="text-[11px] text-stone-700 mt-0.5 leading-tight">
                     {language === 'es' 
                       ? 'Chip prepago 10GB listo para usar + asistencia 24h (+ $15 USD)'
                       : '10GB prepaid SIM card active upon arrival + 24/7 support (+ $15 USD)'}
@@ -318,13 +318,13 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
 
           {/* Passenger Information */}
           <div className="space-y-3">
-            <span className="text-xs font-black text-stone-200 uppercase tracking-wider block">
+            <span className="text-xs font-black text-stone-800 uppercase tracking-wider block">
               {language === 'es' ? 'Datos del Pasajero Titular:' : 'Lead Passenger Details:'}
             </span>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-neutral-300">
+                <label className="text-[11px] font-bold text-stone-700">
                   {language === 'es' ? 'Nombre y Apellidos (como en Pasaporte) *' : 'Full Name (as in Passport) *'}
                 </label>
                 <input
@@ -333,12 +333,12 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Ej: Carlos Fernandez"
-                  className="w-full bg-stone-900/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-400"
+                  className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-400"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-neutral-300">
+                <label className="text-[11px] font-bold text-stone-700">
                   {language === 'es' ? 'Correo Electrónico (para Voucher & PNR) *' : 'Email (for Voucher & PNR) *'}
                 </label>
                 <input
@@ -347,12 +347,12 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ejemplo@correo.com"
-                  className="w-full bg-stone-900/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-400"
+                  className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-400"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-neutral-300">
+                <label className="text-[11px] font-bold text-stone-700">
                   {language === 'es' ? 'Teléfono / WhatsApp *' : 'Phone / WhatsApp *'}
                 </label>
                 <input
@@ -361,12 +361,12 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+34 600 000 000"
-                  className="w-full bg-stone-900/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-400"
+                  className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-400"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-neutral-300">
+                <label className="text-[11px] font-bold text-stone-700">
                   {language === 'es' ? 'Número de Pasaporte (opcional)' : 'Passport Number (optional)'}
                 </label>
                 <input
@@ -374,7 +374,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                   value={passportNumber}
                   onChange={(e) => setPassportNumber(e.target.value)}
                   placeholder="P12345678"
-                  className="w-full bg-stone-900/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-400"
+                  className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-400"
                 />
               </div>
             </div>
@@ -382,7 +382,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
 
           {/* Payment Method */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-stone-200 uppercase block">
+            <label className="text-xs font-bold text-stone-800 uppercase block">
               {language === 'es' ? 'Método de Pago:' : 'Payment Method:'}
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -398,7 +398,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                   className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     paymentMethod === m.id
                       ? 'bg-orange-400 text-stone-950 border-orange-400 font-black shadow-md'
-                      : 'bg-stone-900/60 text-neutral-300 border-teal-500/20 hover:bg-stone-800/80'
+                      : 'bg-stone-100/60 text-stone-700 border-teal-500/20 hover:bg-stone-200/80'
                   }`}
                 >
                   {m.icon}
@@ -409,9 +409,9 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
           </div>
 
           {/* Total Summary & Submit */}
-          <div className="bg-stone-900/80 p-4 rounded-2xl border border-orange-400/40 flex flex-wrap items-center justify-between gap-4">
+          <div className="bg-stone-100/80 p-4 rounded-2xl border border-orange-400/40 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <span className="text-xs text-neutral-300 font-bold block">
+              <span className="text-xs text-stone-700 font-bold block">
                 {language === 'es' ? 'Total Vuelo + Servicios Receptivos:' : 'Total Flight + Services:'}
               </span>
               <div className="flex items-baseline gap-2">
@@ -422,7 +422,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                   (₡{totalCRC.toLocaleString()} CRC)
                 </span>
               </div>
-              <span className="text-[10px] text-neutral-400 block mt-0.5">
+              <span className="text-[10px] text-stone-600 block mt-0.5">
                 {language === 'es' ? 'Incluye equipaje de mano 10kg + maleta 23kg + tasas aéreas' : 'Includes 10kg carry-on + 23kg checked bag + airport taxes'}
               </span>
             </div>

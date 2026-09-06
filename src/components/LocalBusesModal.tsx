@@ -284,7 +284,7 @@ export const LocalBusesModal: React.FC<LocalBusesModalProps> = ({
         {/* Modal Header */}
         <div className="bg-[#1E7B4A] text-white px-6 py-5 flex items-center justify-between shadow-md">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20">
+            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center border border-black/20">
               <Bus className="w-6 h-6 text-[#E67E22]" />
             </div>
             <div>
@@ -312,7 +312,7 @@ export const LocalBusesModal: React.FC<LocalBusesModalProps> = ({
           <div className="flex flex-col sm:flex-row items-center gap-4">
             {/* Search Input */}
             <div className="relative flex-1 w-full">
-              <Search className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+              <Search className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-600" />
               <input
                 type="text"
                 value={searchQuery}
@@ -323,7 +323,7 @@ export const LocalBusesModal: React.FC<LocalBusesModalProps> = ({
               {searchQuery && (
                 <button 
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-[#2C3330]"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-600 hover:text-[#2C3330]"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -522,7 +522,7 @@ export const LocalBusesModal: React.FC<LocalBusesModalProps> = ({
 
           {filteredRoutes.length === 0 && (
             <div className="text-center py-12 space-y-3 bg-white rounded-3xl p-8 border border-neutral-200">
-              <Bus className="w-12 h-12 text-neutral-400 mx-auto" />
+              <Bus className="w-12 h-12 text-stone-600 mx-auto" />
               <p className="font-bold text-neutral-700">
                 {language === 'es' ? 'No se encontraron rutas con ese término.' : 'No bus routes found for your search query.'}
               </p>

@@ -531,12 +531,12 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-[#0A1A10]/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-[#102A1C] text-stone-100 border border-[#2D663B]/40 rounded-[2rem] sm:rounded-[2.5rem] w-full max-w-5xl max-h-[90vh] modal-scrollable overflow-y-auto shadow-2xl relative">
+      <div className="bg-[#102A1C] text-stone-900 border border-[#2D663B]/40 rounded-[2rem] sm:rounded-[2.5rem] w-full max-w-5xl max-h-[90vh] modal-scrollable overflow-y-auto shadow-2xl relative">
         
         {/* Sticky Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 sm:top-6 sm:right-6 z-30 w-10 h-10 bg-[#0C1E14]/90 hover:bg-[#1E4D2B] text-stone-200 rounded-full flex items-center justify-center border border-[#2D663B]/60 transition-colors shadow-lg cursor-pointer"
+          className="absolute top-4 right-4 sm:top-6 sm:right-6 z-30 w-10 h-10 bg-[#0C1E14]/90 hover:bg-[#1E4D2B] text-stone-800 rounded-full flex items-center justify-center border border-[#2D663B]/60 transition-colors shadow-lg cursor-pointer"
           aria-label="Cerrar modal"
         >
           <X className="w-5 h-5" />
@@ -553,7 +553,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                 📍 {tour.location?.placeName || tour.region}
               </span>
               {tour.region === 'sjo' && (
-                <span className="bg-[#D97736] text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-xs">
+                <span className="bg-[#D97736] text-stone-900 text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-xs">
                   🚌 {language === 'es' ? 'Salida desde: San José' : 'Departs from: San Jose'}
                 </span>
               )}
@@ -563,7 +563,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
               </span>
             </div>
 
-            <h2 className="text-xl sm:text-3xl lg:text-4xl font-black text-white uppercase leading-tight drop-shadow-md">
+            <h2 className="text-xl sm:text-3xl lg:text-4xl font-black text-stone-900 uppercase leading-tight drop-shadow-md">
               {tourTitle}
             </h2>
           </div>
@@ -582,10 +582,10 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                   <ShieldCheck className="w-5 h-5 text-orange-300" />
                 </div>
                 <div>
-                  <span className="font-black text-white uppercase text-[11px] block">
+                  <span className="font-black text-stone-900 uppercase text-[11px] block">
                     {language === 'es' ? 'Operación Receptiva Oficial' : 'Official Inbound Operations'}: <span className="text-orange-300">Costa Rica Tours (costaricatours.es)</span>
                   </span>
-                  <span className="text-[10px] text-stone-300 block">
+                  <span className="text-[10px] text-stone-700 block">
                     {language === 'es' 
                       ? 'Tarifa oficial verificada • Seguro de responsabilidad civil • Voucher con código QR' 
                       : 'Verified official rate • Full liability insurance • QR voucher'}
@@ -599,22 +599,22 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
             {/* Trust & Policy Badges */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px] font-semibold">
-              <div className="flex items-center gap-2 bg-[#0C1E14]/70 p-3 rounded-xl border border-[#2D663B]/50 text-stone-200">
+              <div className="flex items-center gap-2 bg-[#0C1E14]/70 p-3 rounded-xl border border-[#2D663B]/50 text-stone-800">
                 <ShieldCheck className="w-4 h-4 text-orange-400 shrink-0" />
                 <span>{language === 'es' ? 'Cancelación GRATIS hasta 48h antes' : 'FREE cancellation up to 48h prior'}</span>
               </div>
-              <div className="flex items-center gap-2 bg-[#0C1E14]/70 p-3 rounded-xl border border-[#2D663B]/50 text-stone-200">
+              <div className="flex items-center gap-2 bg-[#0C1E14]/70 p-3 rounded-xl border border-[#2D663B]/50 text-stone-800">
                 <Users className="w-4 h-4 text-[#A8D5BA] shrink-0" />
                 <span>{language === 'es' ? 'Guía local experto • Grupos reducidos' : 'Expert local guide • Small groups'}</span>
               </div>
             </div>
 
             {/* Rain & Weather Policy */}
-            <div className="bg-[#0C1E14]/40 p-4 rounded-xl border border-[#2D663B]/40 text-[11px] text-stone-200 space-y-1">
+            <div className="bg-[#0C1E14]/40 p-4 rounded-xl border border-[#2D663B]/40 text-[11px] text-stone-800 space-y-1">
               <span className="font-bold text-orange-300 uppercase block flex items-center gap-1.5">
                 🌧️ {language === 'es' ? 'Política de Clima y Lluvia Tropical:' : 'Tropical Rain & Weather Policy:'}
               </span>
-              <p className="text-stone-300 leading-relaxed">
+              <p className="text-stone-700 leading-relaxed">
                 {language === 'es' 
                   ? 'Operamos en cualquier condición climática segura (ponchos y equipo incluidos). En caso de alerta climática extrema: reprogramación o reembolso 100% garantizado.'
                   : 'We operate rain or shine with full safety equipment. In case of extreme weather alerts: 100% refund or free rescheduling.'}
@@ -626,7 +626,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
               <h3 className="text-sm font-black text-orange-300 uppercase tracking-wider">
                 {language === 'es' ? 'Resumen de la Experiencia' : 'Tour Experience'}
               </h3>
-              <p className="text-xs sm:text-sm text-stone-300 leading-relaxed">
+              <p className="text-xs sm:text-sm text-stone-700 leading-relaxed">
                 {tourDesc}
               </p>
             </div>
@@ -639,7 +639,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
               </h3>
               <ul className="space-y-2">
                 {tourHighlights.map((hl, idx) => (
-                  <li key={idx} className="flex items-start gap-2.5 text-xs text-stone-200">
+                  <li key={idx} className="flex items-start gap-2.5 text-xs text-stone-800">
                     <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
                     <span>{hl}</span>
                   </li>
@@ -653,7 +653,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                 <span className="text-[11px] font-black text-[#A8D5BA] uppercase block">
                   ✅ {language === 'es' ? '¿Qué Incluye?' : 'What is Included?'}
                 </span>
-                <ul className="space-y-1.5 text-xs text-stone-300">
+                <ul className="space-y-1.5 text-xs text-stone-700">
                   {tourInclusions.map((inc, i) => (
                     <li key={i} className="flex items-start gap-1.5">
                       <span className="text-teal-400">•</span>
@@ -667,7 +667,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                 <span className="text-[11px] font-black text-rose-300 uppercase block">
                   ❌ {language === 'es' ? 'No Incluye' : 'Exclusions'}
                 </span>
-                <ul className="space-y-1.5 text-xs text-stone-400">
+                <ul className="space-y-1.5 text-xs text-stone-600">
                   {tourExclusions.map((exc, i) => (
                     <li key={i} className="flex items-start gap-1.5">
                       <span className="text-rose-400">•</span>
@@ -698,10 +698,10 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
               <span className="font-black text-orange-300 uppercase block">
                 🎒 {language === 'es' ? '¿Qué debes llevar?' : 'What to Bring'}
               </span>
-              <p className="text-stone-300 leading-relaxed">
+              <p className="text-stone-700 leading-relaxed">
                 {tourWhatToBring.join(' • ')}
               </p>
-              <div className="mt-2 pt-2 border-t border-[#2D663B]/40 text-[10px] text-stone-400">
+              <div className="mt-2 pt-2 border-t border-[#2D663B]/40 text-[10px] text-stone-600">
                 🌿 {language === 'es' ? 'Por favor utilizar protector solar y repelente biodegradable amigable con la fauna.' : 'Please use biodegradable reef & wildlife-safe sunscreen and repellent.'}
               </div>
             </div>

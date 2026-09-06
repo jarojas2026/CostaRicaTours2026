@@ -78,7 +78,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const slide = HERO_SLIDES[currentSlide];
 
   return (
-    <section className="relative bg-transparent text-white overflow-hidden py-12 lg:py-20 border-b border-stone-900/50">
+    <section className="relative bg-transparent text-stone-900 overflow-hidden py-12 lg:py-20 border-b border-stone-200/50">
       {/* Background decoration & atmospheric glow */}
       <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-stone-950/80 to-transparent pointer-events-none" />
       <div
@@ -96,12 +96,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="lg:col-span-7 space-y-6 text-left"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-stone-900/60 text-stone-100 rounded-full text-sm font-bold uppercase tracking-widest border border-teal-500/30 backdrop-blur-md">
-              <Sparkles className="w-4 h-4 text-stone-200" />
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-stone-100/60 text-stone-900 rounded-full text-sm font-bold uppercase tracking-widest border border-teal-500/30 backdrop-blur-md">
+              <Sparkles className="w-4 h-4 text-stone-800" />
               {t('licenseText')}
             </div>
 
-            <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black leading-[1.1] text-white tracking-tight">
+            <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black leading-[1.1] text-stone-900 tracking-tight">
               {t('discover')}<br />
               <span className="text-orange-400">
                 COSTA RICA
@@ -115,7 +115,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </p>
 
             {/* Search and Filters Bar */}
-            <div className="bg-stone-900/10 backdrop-blur-md p-4 sm:p-5 rounded-[2rem] border border-white/10 shadow-2xl space-y-3 mt-6">
+            <div className="bg-stone-100/10 backdrop-blur-md p-4 sm:p-5 rounded-[2rem] border border-black/10 shadow-2xl space-y-3 mt-6">
               <div className="text-xs uppercase font-extrabold text-orange-300 tracking-wider flex items-center gap-2">
                 <Search className="w-4 h-4 text-orange-400" />
                 {t('toursAndAdventures')}
@@ -129,7 +129,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t('searchPlaceholder')}
-                    className="w-full bg-stone-950/20 text-white placeholder-emerald-100/60 text-sm px-4 py-3.5 rounded-xl border border-white/10 focus:outline-none focus:border-orange-400 transition-colors"
+                    className="w-full bg-white/20 text-stone-900 placeholder-emerald-100/60 text-sm px-4 py-3.5 rounded-xl border border-black/10 focus:outline-none focus:border-orange-400 transition-colors"
                   />
                 </div>
 
@@ -137,7 +137,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <select
                   value={selectedRegion}
                   onChange={(e) => setSelectedRegion(e.target.value as TourRegion | 'all')}
-                  className="w-full bg-stone-950/40 text-stone-50 text-sm px-4 py-3.5 rounded-xl border border-white/10 focus:outline-none focus:border-orange-400 transition-colors cursor-pointer appearance-none"
+                  className="w-full bg-white/40 text-stone-50 text-sm px-4 py-3.5 rounded-xl border border-black/10 focus:outline-none focus:border-orange-400 transition-colors cursor-pointer appearance-none"
                 >
                   <option value="all">{t('allRegions')}</option>
                   <option value="arenal">🌋 La Fortuna / Volcán Arenal</option>
@@ -154,7 +154,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value as TourCategory | 'all')}
-                  className="w-full bg-stone-950/40 text-stone-50 text-sm px-4 py-3.5 rounded-xl border border-white/10 focus:outline-none focus:border-orange-400 transition-colors cursor-pointer appearance-none"
+                  className="w-full bg-white/40 text-stone-50 text-sm px-4 py-3.5 rounded-xl border border-black/10 focus:outline-none focus:border-orange-400 transition-colors cursor-pointer appearance-none"
                 >
                   <option value="all">{t('allCategories')}</option>
                                     <option value="combos">{language === 'es' ? '🚀 Combos de 1 Día' : '🚀 1-Day Combos'}</option>
@@ -180,7 +180,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
                 <button
                   onClick={onExploreTours}
-                  className="w-full sm:w-auto flex-1 bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md text-white font-extrabold text-sm uppercase py-3.5 px-6 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto flex-1 bg-white/10 hover:bg-white/20 border border-black/20 backdrop-blur-md text-stone-900 font-extrabold text-sm uppercase py-3.5 px-6 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Compass className="w-4 h-4 text-orange-400" />
                   {t('exploreCatalog')}
@@ -188,7 +188,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
                 <button
                   onClick={onOpenItineraryPlanner}
-                  className="w-full sm:w-auto bg-white/[0.05] hover:bg-white/[0.1] text-neutral-200 font-bold text-sm py-3.5 px-6 rounded-xl border border-white/10 transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                  className="w-full sm:w-auto bg-white/[0.05] hover:bg-white/[0.1] text-stone-800 font-bold text-sm py-3.5 px-6 rounded-xl border border-black/10 transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4 text-orange-400" />
                   {t('aiPlannerBtn')}
@@ -196,7 +196,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </div>
 
               {/* Quick Filter Pills */}
-              <div className="pt-2 border-t border-white/10 flex items-center gap-2 flex-wrap text-xs">
+              <div className="pt-2 border-t border-black/10 flex items-center gap-2 flex-wrap text-xs">
                 <span className="text-[11px] font-bold text-teal-300 uppercase tracking-wider">
                   {language === 'es' ? 'Exploración directa:' : 'Quick shortcuts:'}
                 </span>
@@ -206,7 +206,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     setSelectedCategory('volcanoes');
                     onExploreTours();
                   }}
-                  className="px-2.5 py-1 rounded-full bg-stone-950/60 hover:bg-orange-500 hover:text-white border border-teal-500/30 text-stone-200 transition-colors cursor-pointer"
+                  className="px-2.5 py-1 rounded-full bg-white/60 hover:bg-orange-500 hover:text-stone-900 border border-teal-500/30 text-stone-800 transition-colors cursor-pointer"
                 >
                   🌋 {language === 'es' ? 'Volcanes & Termales' : 'Volcanoes'}
                 </button>
@@ -216,7 +216,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     setSelectedCategory('wildlife');
                     onExploreTours();
                   }}
-                  className="px-2.5 py-1 rounded-full bg-stone-950/60 hover:bg-orange-500 hover:text-white border border-teal-500/30 text-stone-200 transition-colors cursor-pointer"
+                  className="px-2.5 py-1 rounded-full bg-white/60 hover:bg-orange-500 hover:text-stone-900 border border-teal-500/30 text-stone-800 transition-colors cursor-pointer"
                 >
                   🦥 {language === 'es' ? 'Fauna & Selva' : 'Wildlife'}
                 </button>
@@ -226,7 +226,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     setSelectedCategory('rafting');
                     onExploreTours();
                   }}
-                  className="px-2.5 py-1 rounded-full bg-stone-950/60 hover:bg-orange-500 hover:text-white border border-teal-500/30 text-stone-200 transition-colors cursor-pointer"
+                  className="px-2.5 py-1 rounded-full bg-white/60 hover:bg-orange-500 hover:text-stone-900 border border-teal-500/30 text-stone-800 transition-colors cursor-pointer"
                 >
                   🚣 {language === 'es' ? 'Rafting' : 'Rafting'}
                 </button>
@@ -236,7 +236,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     setSelectedCategory('beaches');
                     onExploreTours();
                   }}
-                  className="px-2.5 py-1 rounded-full bg-stone-950/60 hover:bg-orange-500 hover:text-white border border-teal-500/30 text-stone-200 transition-colors cursor-pointer"
+                  className="px-2.5 py-1 rounded-full bg-white/60 hover:bg-orange-500 hover:text-stone-900 border border-teal-500/30 text-stone-800 transition-colors cursor-pointer"
                 >
                   🏖️ {language === 'es' ? 'Playas' : 'Beaches'}
                 </button>
@@ -271,18 +271,18 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     <span className="bg-orange-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-lg w-fit mb-3">
                       {language === 'es' ? slide.badge : slide.badgeEn}
                     </span>
-                    <h3 className="text-2xl sm:text-3xl font-black text-white uppercase leading-tight drop-shadow-md mb-2">
+                    <h3 className="text-2xl sm:text-3xl font-black text-stone-900 uppercase leading-tight drop-shadow-md mb-2">
                       {language === 'es' ? slide.title : slide.titleEn}
                     </h3>
                     <p className="text-xs sm:text-sm text-stone-50 mb-4 drop-shadow line-clamp-3">
                       {language === 'es' ? slide.desc : slide.descEn}
                     </p>
-                    <div className="flex items-center justify-between border-t border-white/20 pt-4">
+                    <div className="flex items-center justify-between border-t border-black/20 pt-4">
                       <div className="flex flex-col">
-                         <span className="text-[10px] text-white/80 font-bold uppercase">{language === 'es' ? 'Desde ' : 'From '}</span>
+                         <span className="text-[10px] text-stone-900/80 font-bold uppercase">{language === 'es' ? 'Desde ' : 'From '}</span>
                          <span className="text-xl sm:text-2xl font-black text-orange-400">{slide.price} USD</span>
                       </div>
-                      <button className="bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md text-white font-black px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-[10px] sm:text-xs uppercase tracking-wider transition-colors shadow-lg">
+                      <button className="bg-white/10 hover:bg-white/20 border border-black/20 backdrop-blur-md text-stone-900 font-black px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-[10px] sm:text-xs uppercase tracking-wider transition-colors shadow-lg">
                         {language === 'es' ? '¡Mandarse!' : 'Discover'}
                       </button>
                     </div>
@@ -298,7 +298,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   key={index}
                   onClick={() => setCurrentSlide(index)}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
-                    currentSlide === index ? 'w-8 bg-[#FFD700]' : 'w-2 bg-stone-900/40 hover:bg-stone-900/60'
+                    currentSlide === index ? 'w-8 bg-[#FFD700]' : 'w-2 bg-stone-100/40 hover:bg-stone-100/60'
                   }`}
                   title={`Go to slide ${index + 1}`}
                 />
@@ -311,7 +311,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 e.stopPropagation();
                 setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
               }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-stone-950/30 hover:bg-stone-950/50 text-white rounded-full flex items-center justify-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-white/10"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/30 hover:bg-white/50 text-stone-900 rounded-full flex items-center justify-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-black/10"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -320,7 +320,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 e.stopPropagation();
                 setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
               }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-stone-950/30 hover:bg-stone-950/50 text-white rounded-full flex items-center justify-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-white/10"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/30 hover:bg-white/50 text-stone-900 rounded-full flex items-center justify-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-black/10"
             >
               <ChevronRight className="w-5 h-5" />
             </button>

@@ -307,12 +307,12 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
       </div>
       {/* --- END HIDDEN PDF VOUCHER --- */}
 
-      <div className="bg-[#102A1C] text-stone-100 border border-[#2D663B]/40 rounded-[2rem] sm:rounded-[2.5rem] w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden">
+      <div className="bg-[#102A1C] text-stone-900 border border-[#2D663B]/40 rounded-[2rem] sm:rounded-[2.5rem] w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden">
         
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 sm:top-6 sm:right-6 z-30 w-10 h-10 bg-[#0C1E14]/90 hover:bg-[#1E4D2B] text-stone-200 rounded-full flex items-center justify-center border border-[#2D663B]/60 transition-colors shadow-lg cursor-pointer"
+          className="absolute top-4 right-4 sm:top-6 sm:right-6 z-30 w-10 h-10 bg-[#0C1E14]/90 hover:bg-[#1E4D2B] text-stone-800 rounded-full flex items-center justify-center border border-[#2D663B]/60 transition-colors shadow-lg cursor-pointer"
           aria-label="Cerrar modal"
         >
           <X className="w-5 h-5" />
@@ -344,21 +344,21 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
               {booking.tourName}
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-stone-300">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-stone-700">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-orange-400 shrink-0" />
-                <span><strong className="text-stone-400">{language === 'es' ? 'Fecha:' : 'Date:'}</strong> {booking.date}</span>
+                <span><strong className="text-stone-600">{language === 'es' ? 'Fecha:' : 'Date:'}</strong> {booking.date}</span>
               </div>
 
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-orange-400 shrink-0" />
-                <span><strong className="text-stone-400">{language === 'es' ? 'Horario:' : 'Time:'}</strong> {booking.time}</span>
+                <span><strong className="text-stone-600">{language === 'es' ? 'Horario:' : 'Time:'}</strong> {booking.time}</span>
               </div>
 
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-orange-400 shrink-0" />
                 <span>
-                  <strong className="text-stone-400">{language === 'es' ? 'Pasajeros:' : 'Travelers:'}</strong> {booking.adults} {language === 'es' ? 'Adultos' : 'Adults'}
+                  <strong className="text-stone-600">{language === 'es' ? 'Pasajeros:' : 'Travelers:'}</strong> {booking.adults} {language === 'es' ? 'Adultos' : 'Adults'}
                   {booking.children > 0 && `, ${booking.children} ${language === 'es' ? 'Niños' : 'Kids'}`}
                 </span>
               </div>
@@ -366,7 +366,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
               <div className="flex items-center gap-2">
                 <Hotel className="w-4 h-4 text-orange-400 shrink-0" />
                 <span className="line-clamp-1">
-                  <strong className="text-stone-400">Pickup:</strong> {booking.pickupHotel}
+                  <strong className="text-stone-600">Pickup:</strong> {booking.pickupHotel}
                 </span>
               </div>
             </div>
@@ -450,7 +450,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
               <span className="font-bold text-[#A8D5BA] block uppercase text-[11px]">
                 🧾 {language === 'es' ? 'Factura Electrónica Hacienda' : 'Costa Rica Tax Invoice'}
               </span>
-              <p className="text-stone-300 text-[11px]">
+              <p className="text-stone-700 text-[11px]">
                 {language === 'es' 
                   ? `Se emitirá la factura fiscal a nombre de: ${booking.electronicInvoice.legalName} (${booking.electronicInvoice.idNumber}).`
                   : `Tax invoice will be generated for: ${booking.electronicInvoice.legalName} (${booking.electronicInvoice.idNumber}).`}
@@ -459,12 +459,12 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
           )}
 
           {/* Arrival Instructions */}
-          <div className="bg-[#173D26] p-3.5 rounded-xl border border-[#2D663B] text-xs text-stone-200 space-y-1">
+          <div className="bg-[#173D26] p-3.5 rounded-xl border border-[#2D663B] text-xs text-stone-800 space-y-1">
             <span className="font-bold text-orange-300 block uppercase text-[11px] flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5" />
               {language === 'es' ? 'Instrucciones de Recogida (Pickup):' : 'Pickup Instructions:'}
             </span>
-            <p className="text-stone-300 text-[11px] leading-relaxed">
+            <p className="text-stone-700 text-[11px] leading-relaxed">
               {language === 'es'
                 ? 'El chofer o guía del servicio asociado se presentará en la recepción/lobby de tu hotel 15 minutos antes de la hora indicada preguntando por el titular de la reserva. Presenta este código QR o voucher al abordar.'
                 : 'Your assigned driver or tour guide will meet you at your hotel lobby 15 minutes before the departure time and ask for the lead traveler\'s name. Present this QR code or voucher upon boarding.'}

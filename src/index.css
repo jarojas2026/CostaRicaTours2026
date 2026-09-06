@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+
   /* Costa Rica Tours - Paleta Clara de Desarrollo (Caribbean Ocean & Coastal Sand) */
   --color-forest: var(--app-stone-950, #1B4965);
   --color-forest-dark: var(--app-stone-900, #22577A);
@@ -40,11 +41,11 @@
 
 @layer base {
   :root {
-    --app-stone-950: #1B4965;
-    --app-stone-900: #22577A;
-    --app-stone-850: #2C688F;
-    --app-stone-800: #387CA8;
-    --app-stone-700: #4B94C2;
+    --app-stone-950: #FFFFFF;
+    --app-stone-900: #F8FAFC;
+    --app-stone-850: #F1F5F9;
+    --app-stone-800: #E2E8F0;
+    --app-stone-700: #CBD5E1;
 
     --font-heading: 'Fraunces', serif;
     --font-body: 'Work Sans', sans-serif;
@@ -58,7 +59,7 @@
   }
   body {
     background-color: var(--app-stone-950, #1B4965);
-    color: #F8FAFC;
+    color: #1E293B;
     font-family: 'Work Sans', sans-serif;
     overflow-x: hidden;
   }

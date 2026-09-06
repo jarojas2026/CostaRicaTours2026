@@ -24,7 +24,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
     <div className={`relative overflow-hidden w-full h-full ${containerClassName}`}>
       {/* Skeleton / Placeholder */}
       <div 
-        className={`absolute inset-0 bg-stone-800 animate-pulse transition-opacity duration-500 z-10 ${
+        className={`absolute inset-0 bg-stone-100 animate-pulse transition-opacity duration-500 z-10 ${
           isLoaded ? 'opacity-0 pointer-events-none' : 'opacity-100'
         }`}
       />

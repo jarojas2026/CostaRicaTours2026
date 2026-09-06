@@ -144,7 +144,7 @@ export const FormsManagerModal: React.FC<FormsManagerModalProps> = ({ isOpen, on
       <div className="bg-neutral-900 border border-orange-500/30 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
         
         {/* Header */}
-        <div className="p-4 sm:p-6 bg-gradient-to-r from-stone-950 to-neutral-900 flex items-center justify-between border-b border-white/10 shrink-0">
+        <div className="p-4 sm:p-6 bg-gradient-to-r from-stone-950 to-neutral-900 flex items-center justify-between border-b border-black/10 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-orange-500/20 rounded-xl flex items-center justify-center border border-orange-500/30">
               <FileText className="w-5 h-5 text-orange-400" />
@@ -153,12 +153,12 @@ export const FormsManagerModal: React.FC<FormsManagerModalProps> = ({ isOpen, on
               <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-wider">
                 {language === 'es' ? 'Gestor de Formularios' : 'Forms Manager'}
               </h2>
-              <p className="text-xs text-neutral-400">
+              <p className="text-xs text-stone-600">
                 {language === 'es' ? 'Gestiona formularios de Google' : 'Manage your Google Forms'}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+          <button onClick={onClose} className="p-2 text-stone-600 hover:text-white hover:bg-white/10 rounded-full transition-colors">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -166,7 +166,7 @@ export const FormsManagerModal: React.FC<FormsManagerModalProps> = ({ isOpen, on
         {/* Content */}
         <div className="p-6 overflow-y-auto flex-1 space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-neutral-200 uppercase">
+            <h3 className="text-sm font-bold text-stone-800 uppercase">
               {language === 'es' ? 'Tus Formularios' : 'Your Forms'}
             </h3>
             <div className="flex items-center gap-3">
@@ -223,14 +223,14 @@ export const FormsManagerModal: React.FC<FormsManagerModalProps> = ({ isOpen, on
                       href={form.webViewLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 text-neutral-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors"
+                      className="p-2 text-stone-600 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors"
                       title={language === 'es' ? 'Abrir formulario' : 'Open form'}
                     >
                       <ExternalLink className="w-4 h-4" />
                     </a>
                     <button
                       onClick={() => handleDeleteForm(form.id, form.name)}
-                      className="p-2 text-neutral-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                      className="p-2 text-stone-600 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
                       title={language === 'es' ? 'Eliminar' : 'Delete'}
                     >
                       <Trash2 className="w-4 h-4" />

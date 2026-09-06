@@ -297,11 +297,11 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-stone-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-white/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
       <div className="bg-white w-full max-w-3xl rounded-[2.5rem] border border-neutral-200 shadow-2xl overflow-hidden flex flex-col my-auto max-h-[90vh]">
         
         {/* Header */}
-        <div className="bg-stone-900 text-white p-6 relative flex items-center justify-between">
+        <div className="bg-stone-50 text-white p-6 relative flex items-center justify-between">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="bg-orange-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full inline-flex items-center gap-1 shadow-sm">
@@ -309,7 +309,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
                 {language === 'es' ? 'Cotizador Inteligente 2026' : 'Smart Trip Package Builder 2026'}
               </span>
               {lastSavedTime && (
-                <span className="bg-stone-800 text-stone-200 text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 border border-teal-700">
+                <span className="bg-stone-100 text-stone-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 border border-teal-700">
                   <Save className="w-2.5 h-2.5 text-teal-400" />
                   <span>{language === 'es' ? `Guardado (${lastSavedTime})` : `Draft saved (${lastSavedTime})`}</span>
                 </span>
@@ -318,14 +318,14 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
             <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight">
               {language === 'es' ? 'Diseña Tu Paquete a Costa Rica' : 'Build Your Custom Costa Rica Package'}
             </h2>
-            <p className="text-xs text-stone-200">
+            <p className="text-xs text-stone-800">
               {language === 'es' ? 'Paso ' + step + ' de 4 • Cotización personalizada al instante' : 'Step ' + step + ' of 4 • Instant tailored quote'}
             </p>
           </div>
 
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors border border-white/20 cursor-pointer"
+            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors border border-black/20 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -548,7 +548,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
                           : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:border-orange-500'
                       }`}
                     >
-                      {isSelected ? <Check className="w-3.5 h-3.5 text-white" /> : <Compass className="w-3.5 h-3.5 text-neutral-400" />}
+                      {isSelected ? <Check className="w-3.5 h-3.5 text-white" /> : <Compass className="w-3.5 h-3.5 text-stone-600" />}
                       <span>{dest}</span>
                     </button>
                   );
@@ -618,13 +618,13 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
               </div>
 
               {/* Estimate Result Box */}
-              <div className="bg-gradient-to-br from-stone-900 to-stone-950 p-6 rounded-3xl text-white space-y-4 shadow-xl border border-stone-900/50">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-4">
+              <div className="bg-gradient-to-br from-stone-900 to-stone-950 p-6 rounded-3xl text-white space-y-4 shadow-xl border border-stone-200/50">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/10 pb-4">
                   <div>
                     <span className="text-xs uppercase tracking-wider font-extrabold text-orange-300 block">
                       {language === 'es' ? 'Estimado Total Paquete Completo' : 'Total Custom Package Estimate'}
                     </span>
-                    <span className="text-xs text-stone-200/80">
+                    <span className="text-xs text-stone-800/80">
                       {adults} {language === 'es' ? 'Adultos' : 'Adults'} {children > 0 && `+ ${children} ${language === 'es' ? 'Niños' : 'Kids'}`} • {durationDays} {language === 'es' ? 'Días' : 'Days'}
                     </span>
                   </div>
@@ -640,13 +640,13 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
                         🎁 {language === 'es' ? '10% Descuento Grupo Aplicado' : '10% Group Discount'}
                       </div>
                     )}
-                    <div className="text-[9px] text-stone-200 mt-1 uppercase font-bold">
+                    <div className="text-[9px] text-stone-800 mt-1 uppercase font-bold">
                       {language === 'es' ? 'Incluye IVA (13%) y tarifas locales' : 'Includes 13% VAT & fees'}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs text-stone-100 bg-white/10 p-3 rounded-2xl border border-white/10">
+                <div className="flex items-center gap-2 text-xs text-stone-900 bg-white/10 p-3 rounded-2xl border border-black/10">
                   <CheckCircle2 className="w-4 h-4 text-orange-400 flex-shrink-0" />
                   <span>
                     {language === 'es' 

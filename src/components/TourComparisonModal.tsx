@@ -36,15 +36,15 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
   return (
     <div 
       onClick={onClose}
-      className="fixed inset-0 z-50 bg-stone-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto cursor-pointer"
+      className="fixed inset-0 z-50 bg-white/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto cursor-pointer"
     >
       <div 
         onClick={(e) => e.stopPropagation()}
-        className="relative bg-stone-950 w-full max-w-5xl max-h-[88vh] modal-scrollable overflow-y-auto rounded-[2.5rem] border-4 border-white/10 shadow-2xl space-y-0 text-white cursor-default animate-in fade-in zoom-in-95 duration-200"
+        className="relative bg-white w-full max-w-5xl max-h-[88vh] modal-scrollable overflow-y-auto rounded-[2.5rem] border-4 border-black/10 shadow-2xl space-y-0 text-white cursor-default animate-in fade-in zoom-in-95 duration-200"
       >
         
         {/* Header */}
-        <div className="bg-stone-900 p-5 sm:p-6 border-b-2 border-white/10 flex items-center justify-between gap-4">
+        <div className="bg-stone-50 p-5 sm:p-6 border-b-2 border-black/10 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-orange-500 text-neutral-900 rounded-2xl flex items-center justify-center font-black shadow-lg">
               <Scale className="w-5 h-5" />
@@ -88,7 +88,7 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
                   : `₡${Math.round(tour.priceUSD * 515).toLocaleString('es-CR')}`;
 
                 return (
-                  <div key={tour.id} className="bg-stone-900 p-4 rounded-2xl border border-white/10 flex flex-col justify-between space-y-3 relative group">
+                  <div key={tour.id} className="bg-stone-50 p-4 rounded-2xl border border-black/10 flex flex-col justify-between space-y-3 relative group">
                     <button
                       type="button"
                       onClick={() => onRemoveTour(tour.id)}
@@ -101,7 +101,7 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
                     <img 
                       src={tour.image} 
                       alt={titleText} 
-                      className="w-full h-28 object-cover rounded-xl border border-white/10"
+                      className="w-full h-28 object-cover rounded-xl border border-black/10"
                     />
 
                     <div>
@@ -113,7 +113,7 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
                       </p>
                     </div>
 
-                    <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+                    <div className="pt-2 border-t border-black/10 flex items-center justify-between">
                       <span className="text-lg font-black text-[#FFD700]">{priceFormatted}</span>
                       <button
                         type="button"
@@ -211,7 +211,7 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="bg-stone-900 p-4 sm:p-5 border-t border-white/10 flex items-center justify-between">
+        <div className="bg-stone-50 p-4 sm:p-5 border-t border-black/10 flex items-center justify-between">
           <button
             type="button"
             onClick={() => {

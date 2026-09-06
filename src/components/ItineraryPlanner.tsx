@@ -148,12 +148,12 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
   };
 
   return (
-    <div className="bg-stone-950 py-12 px-4 sm:px-6 lg:px-8 border-t border-white/10">
+    <div className="bg-white py-12 px-4 sm:px-6 lg:px-8 border-t border-black/10">
       <div className="max-w-5xl mx-auto space-y-8">
         
         {/* Header Title & Warm Explanation */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-4 py-1 bg-stone-900 text-orange-400 rounded-full text-xs font-bold uppercase tracking-widest border border-white/10">
+          <div className="inline-flex items-center gap-2 px-4 py-1 bg-stone-50 text-orange-400 rounded-full text-xs font-bold uppercase tracking-widest border border-black/10">
             <Calendar className="w-3.5 h-3.5 text-[#FF8C00]" />
             {language === 'es' ? 'Planificador Inteligente con IA' : 'AI Smart Planner'}
           </div>
@@ -172,7 +172,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div
             onClick={() => applyPreset(7, 'Relax y Aguas Termales', 'Medio', 'Pareja')}
-            className="bg-stone-900 hover:bg-stone-800 p-5 rounded-2xl border border-white/10 hover:border-orange-500 transition-all cursor-pointer group shadow-lg space-y-2"
+            className="bg-stone-50 hover:bg-stone-100 p-5 rounded-2xl border border-black/10 hover:border-orange-500 transition-all cursor-pointer group shadow-lg space-y-2"
           >
             <div className="flex items-center justify-between">
               <span className="text-2xl">🌋</span>
@@ -183,14 +183,14 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
             <h4 className="text-sm font-black text-white group-hover:text-orange-400 uppercase">
               {language === 'es' ? 'Volcanes y Termales de Ensueño' : 'Volcanoes & Hot Springs Dream'}
             </h4>
-            <p className="text-xs text-stone-400 line-clamp-2">
+            <p className="text-xs text-stone-600 line-clamp-2">
               {language === 'es' ? 'Arenal, aguas termales minerales de Baldi y relax total en pareja.' : 'Arenal, Baldi mineral hot springs and romantic relaxation.'}
             </p>
           </div>
 
           <div
             onClick={() => applyPreset(5, 'Aventura y Adrenalina', 'Medio', 'Familia')}
-            className="bg-stone-900 hover:bg-stone-800 p-5 rounded-2xl border border-white/10 hover:border-orange-500 transition-all cursor-pointer group shadow-lg space-y-2"
+            className="bg-stone-50 hover:bg-stone-100 p-5 rounded-2xl border border-black/10 hover:border-orange-500 transition-all cursor-pointer group shadow-lg space-y-2"
           >
             <div className="flex items-center justify-between">
               <span className="text-2xl">🦅</span>
@@ -201,14 +201,14 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
             <h4 className="text-sm font-black text-white group-hover:text-orange-400 uppercase">
               {language === 'es' ? 'Aventura Esencial y Fauna' : 'Essential Adventure & Wildlife'}
             </h4>
-            <p className="text-xs text-stone-400 line-clamp-2">
+            <p className="text-xs text-stone-600 line-clamp-2">
               {language === 'es' ? 'Puentes colgantes, tirolesas en Monteverde y safari de perezosos.' : 'Hanging bridges, Monteverde ziplines & sloth safari.'}
             </p>
           </div>
 
           <div
             onClick={() => applyPreset(10, 'Naturaleza y Fauna', 'Lujo Boutique', 'Grupo de Amigos')}
-            className="bg-stone-900 hover:bg-stone-800 p-5 rounded-2xl border border-white/10 hover:border-orange-500 transition-all cursor-pointer group shadow-lg space-y-2"
+            className="bg-stone-50 hover:bg-stone-100 p-5 rounded-2xl border border-black/10 hover:border-orange-500 transition-all cursor-pointer group shadow-lg space-y-2"
           >
             <div className="flex items-center justify-between">
               <span className="text-2xl">🏖️</span>
@@ -219,14 +219,14 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
             <h4 className="text-sm font-black text-white group-hover:text-orange-400 uppercase">
               {language === 'es' ? 'Expedición Total de Costa a Costa' : 'Coast-to-Coast Total Expedition'}
             </h4>
-            <p className="text-xs text-stone-400 line-clamp-2">
+            <p className="text-xs text-stone-600 line-clamp-2">
               {language === 'es' ? 'Arenal, Monteverde, Manuel Antonio y Rafting Pacuare VIP.' : 'Arenal, Monteverde, Manuel Antonio & VIP Pacuare Rafting.'}
             </p>
           </div>
         </div>
 
         {/* Form Controls Card */}
-        <div className="bg-stone-900 p-6 sm:p-8 rounded-[2rem] border-2 border-white/10 shadow-2xl space-y-6">
+        <div className="bg-stone-50 p-6 sm:p-8 rounded-[2rem] border-2 border-black/10 shadow-2xl space-y-6">
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             
@@ -239,7 +239,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
               <select
                 value={daysCount}
                 onChange={(e) => setDaysCount(Number(e.target.value))}
-                className="w-full bg-stone-950 border border-white/10 focus:border-orange-400 text-white p-3 rounded-xl text-base font-bold focus:outline-none cursor-pointer"
+                className="w-full bg-white border border-black/10 focus:border-orange-400 text-white p-3 rounded-xl text-base font-bold focus:outline-none cursor-pointer"
               >
                 <option value={3}>{language === 'es' ? '3 Días (Escapada)' : '3 Days (Quick Getaway)'}</option>
                 <option value={5}>{language === 'es' ? '5 Días (Aventura Esencial)' : '5 Days (Essential Adventure)'}</option>
@@ -257,7 +257,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
               <select
                 value={style}
                 onChange={(e) => setStyle(e.target.value)}
-                className="w-full bg-stone-950 border border-white/10 focus:border-orange-400 text-white p-3 rounded-xl text-base font-bold focus:outline-none cursor-pointer"
+                className="w-full bg-white border border-black/10 focus:border-orange-400 text-white p-3 rounded-xl text-base font-bold focus:outline-none cursor-pointer"
               >
                 <option value="Aventura y Adrenalina">{language === 'es' ? 'Aventura y Adrenalina' : 'Adrenaline & Adventure'}</option>
                 <option value="Naturaleza y Fauna">{language === 'es' ? 'Naturaleza y Fauna' : 'Nature & Wildlife'}</option>
@@ -276,7 +276,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
               <select
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
-                className="w-full bg-stone-950 border border-white/10 focus:border-orange-400 text-white p-3 rounded-xl text-base font-bold focus:outline-none cursor-pointer"
+                className="w-full bg-white border border-black/10 focus:border-orange-400 text-white p-3 rounded-xl text-base font-bold focus:outline-none cursor-pointer"
               >
                 <option value="Medio">{language === 'es' ? 'Medio (Recomendado)' : 'Moderate (Recommended)'}</option>
                 <option value="Económico">{language === 'es' ? 'Económico / Mochilero' : 'Budget Friendly'}</option>
@@ -293,7 +293,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
               <select
                 value={group}
                 onChange={(e) => setGroup(e.target.value)}
-                className="w-full bg-stone-950 border border-white/10 focus:border-orange-400 text-white p-3 rounded-xl text-base font-bold focus:outline-none cursor-pointer"
+                className="w-full bg-white border border-black/10 focus:border-orange-400 text-white p-3 rounded-xl text-base font-bold focus:outline-none cursor-pointer"
               >
                 <option value="Pareja">{language === 'es' ? 'Pareja' : 'Couple'}</option>
                 <option value="Solo">{language === 'es' ? 'Viajero Solo' : 'Solo Traveler'}</option>
@@ -329,7 +329,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
           <div className="bg-gradient-to-b from-stone-900 to-stone-950 p-6 sm:p-8 rounded-[2rem] border-2 border-amber-500/60 shadow-[0_10px_40px_rgba(0,0,0,0.6)] space-y-6 animate-fade-in">
             
             {/* Title & Summary */}
-            <div className="border-b border-white/10 pb-4 space-y-2">
+            <div className="border-b border-black/10 pb-4 space-y-2">
               <span className="bg-teal-600 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full">
                 {language === 'es' ? 'Itinerario Sugerido' : 'Suggested Itinerary'}
               </span>
@@ -351,7 +351,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                   : TOURS.find(t => t.title['es'].toLowerCase().includes(d.title.toLowerCase().slice(0, 5)));
 
                 return (
-                  <div key={d.day} className="bg-stone-950 p-5 rounded-2xl border border-white/10 space-y-3">
+                  <div key={d.day} className="bg-white p-5 rounded-2xl border border-black/10 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <span className="w-8 h-8 rounded-full bg-teal-600 text-white font-black text-sm flex items-center justify-center">
@@ -381,19 +381,19 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                     </ul>
 
                     {d.tips && (
-                      <div className="bg-stone-950 p-2.5 rounded-xl border border-white/10 text-xs text-orange-200/90 italic">
+                      <div className="bg-white p-2.5 rounded-xl border border-black/10 text-xs text-orange-200/90 italic">
                         💡 Tip local: {d.tips}
                       </div>
                     )}
 
                     {matchingTour && (
-                      <div className="pt-2 flex items-center justify-between border-t border-white/10">
+                      <div className="pt-2 flex items-center justify-between border-t border-black/10">
                         <span className="text-[11px] text-[#A7F3D0] font-bold">
                           {language === 'es' ? 'Tour Recomendado para este día:' : 'Recommended Tour for this day:'}
                         </span>
                         <button
                           onClick={() => onSelectTour(matchingTour)}
-                          className="bg-stone-900 hover:bg-teal-600 hover:text-white text-white px-3 py-1.5 rounded-full text-xs font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer"
+                          className="bg-stone-50 hover:bg-teal-600 hover:text-white text-white px-3 py-1.5 rounded-full text-xs font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer"
                         >
                           <span>{matchingTour.title[language].slice(0, 30)}...</span>
                           <ArrowRight className="w-3 h-3" />
