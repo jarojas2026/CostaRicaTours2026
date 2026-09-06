@@ -96,6 +96,100 @@ const BookingProgressIndicator = ({
   );
 };
 
+
+const THEMES: Record<string, any> = {
+  emerald: {
+    name: 'Emerald (Standard)',
+    button: 'bg-[#25D366] hover:bg-[#20bd5a] shadow-[0_0_20px_rgba(37,211,102,0.4)]',
+    header: 'bg-[#1E7B4A]',
+    badge: 'bg-[#E67E22] text-white',
+    hoverBorder: 'hover:border-[#1E7B4A]',
+    iconBg: 'bg-stone-50 group-hover:bg-stone-100',
+    ping: 'bg-[#25D366]'
+  },
+  costa_rica: {
+    name: 'Costa Rica Pura Vida',
+    button: 'bg-[#E63946] hover:bg-[#D62828] shadow-[0_0_20px_rgba(230,57,70,0.4)]',
+    header: 'bg-[#1D3557]',
+    badge: 'bg-[#F1FAEE] text-[#1D3557]',
+    hoverBorder: 'hover:border-[#E63946]',
+    iconBg: 'bg-stone-50 group-hover:bg-[#F1FAEE]',
+    ping: 'bg-[#E63946]'
+  },
+  ocean: {
+    name: 'Ocean Blue',
+    button: 'bg-[#0077B6] hover:bg-[#023E8A] shadow-[0_0_20px_rgba(0,119,182,0.4)]',
+    header: 'bg-[#03045E]',
+    badge: 'bg-[#48CAE4] text-white',
+    hoverBorder: 'hover:border-[#0077B6]',
+    iconBg: 'bg-stone-50 group-hover:bg-[#CAF0F8]',
+    ping: 'bg-[#0077B6]'
+  },
+  sunset: {
+    name: 'Tropical Sunset',
+    button: 'bg-[#F4A261] hover:bg-[#E76F51] shadow-[0_0_20px_rgba(244,162,97,0.4)]',
+    header: 'bg-[#264653]',
+    badge: 'bg-[#E9C46A] text-[#264653]',
+    hoverBorder: 'hover:border-[#F4A261]',
+    iconBg: 'bg-stone-50 group-hover:bg-[#F4A261]/10',
+    ping: 'bg-[#F4A261]'
+  },
+  volcano: {
+    name: 'Arenal Volcano',
+    button: 'bg-[#D00000] hover:bg-[#9D0208] shadow-[0_0_20px_rgba(208,0,0,0.4)]',
+    header: 'bg-[#370617]',
+    badge: 'bg-[#FFBA08] text-[#370617]',
+    hoverBorder: 'hover:border-[#D00000]',
+    iconBg: 'bg-stone-50 group-hover:bg-[#FFBA08]/10',
+    ping: 'bg-[#D00000]'
+  },
+  rainforest: {
+    name: 'Monteverde Rainforest',
+    button: 'bg-[#2D6A4F] hover:bg-[#1B4332] shadow-[0_0_20px_rgba(45,106,79,0.4)]',
+    header: 'bg-[#081C15]',
+    badge: 'bg-[#74C69D] text-[#081C15]',
+    hoverBorder: 'hover:border-[#2D6A4F]',
+    iconBg: 'bg-stone-50 group-hover:bg-[#74C69D]/10',
+    ping: 'bg-[#2D6A4F]'
+  },
+  orchid: {
+    name: 'Wild Orchid',
+    button: 'bg-[#9D4EDD] hover:bg-[#7B2CBF] shadow-[0_0_20px_rgba(157,78,221,0.4)]',
+    header: 'bg-[#3C096C]',
+    badge: 'bg-[#E0AAFF] text-[#3C096C]',
+    hoverBorder: 'hover:border-[#9D4EDD]',
+    iconBg: 'bg-stone-50 group-hover:bg-[#E0AAFF]/10',
+    ping: 'bg-[#9D4EDD]'
+  },
+  gold: {
+    name: 'Luxury Gold',
+    button: 'bg-[#D4AF37] hover:bg-[#AA8C2C] shadow-[0_0_20px_rgba(212,175,55,0.4)]',
+    header: 'bg-[#1A1A1A]',
+    badge: 'bg-[#FFFFFF] text-[#1A1A1A]',
+    hoverBorder: 'hover:border-[#D4AF37]',
+    iconBg: 'bg-stone-50 group-hover:bg-[#D4AF37]/10',
+    ping: 'bg-[#D4AF37]'
+  },
+  minimalist: {
+    name: 'Minimalist Monochrome',
+    button: 'bg-[#4A4A4A] hover:bg-[#2D2D2D] shadow-[0_0_20px_rgba(74,74,74,0.4)]',
+    header: 'bg-[#111111]',
+    badge: 'bg-[#E0E0E0] text-[#111111]',
+    hoverBorder: 'hover:border-[#4A4A4A]',
+    iconBg: 'bg-stone-50 group-hover:bg-[#E0E0E0]/20',
+    ping: 'bg-[#4A4A4A]'
+  },
+  sky: {
+    name: 'Clear Sky',
+    button: 'bg-[#00B4D8] hover:bg-[#0096C7] shadow-[0_0_20px_rgba(0,180,216,0.4)]',
+    header: 'bg-[#03045E]',
+    badge: 'bg-[#90E0EF] text-[#03045E]',
+    hoverBorder: 'hover:border-[#00B4D8]',
+    iconBg: 'bg-stone-50 group-hover:bg-[#90E0EF]/20',
+    ping: 'bg-[#00B4D8]'
+  }
+};
+
 const keywordsToTourId: Record<string, string> = {
   'poas': 'sjo-3-in-1-combo',
   '3-in-1': 'sjo-3-in-1-combo',
@@ -605,7 +699,8 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
   const [isOpen, setIsOpen] = useState(false);
   const [needsAttention, setNeedsAttention] = useState(false);
   const [badgeText, setBadgeText] = useState(language === 'es' ? '¡Chiva!' : 'New');
-  const [theme, setTheme] = useState<'emerald' | 'teal'>('emerald');
+  const [theme, setTheme] = useState<string>('emerald');
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -643,7 +738,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     };
   }, []);
 
-  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'bot', text: string }[]>(() => {
+  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'bot', text: string, quickActions?: {label: string, action: string, data?: any}[] }[]>(() => {
     try {
       const saved = localStorage.getItem('whatsapp_chat_history');
       return saved ? JSON.parse(saved) : [];
@@ -651,6 +746,72 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
       return [];
     }
   });
+
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'costa_rica') {
+      root.style.setProperty('--app-stone-950', '#1D3557');
+      root.style.setProperty('--app-stone-900', '#25446E');
+      root.style.setProperty('--app-stone-850', '#2E5487');
+      root.style.setProperty('--app-stone-800', '#3965A1');
+      root.style.setProperty('--app-stone-700', '#4E7BB8');
+    } else if (theme === 'emerald') {
+      root.style.setProperty('--app-stone-950', '#1B4965');
+      root.style.setProperty('--app-stone-900', '#22577A');
+      root.style.setProperty('--app-stone-850', '#2C688F');
+      root.style.setProperty('--app-stone-800', '#387CA8');
+      root.style.setProperty('--app-stone-700', '#4B94C2');
+    } else if (theme === 'ocean') {
+      root.style.setProperty('--app-stone-950', '#03045E');
+      root.style.setProperty('--app-stone-900', '#023E8A');
+      root.style.setProperty('--app-stone-850', '#0077B6');
+      root.style.setProperty('--app-stone-800', '#0096C7');
+      root.style.setProperty('--app-stone-700', '#00B4D8');
+    } else if (theme === 'volcano') {
+      root.style.setProperty('--app-stone-950', '#370617');
+      root.style.setProperty('--app-stone-900', '#6A040F');
+      root.style.setProperty('--app-stone-850', '#9D0208');
+      root.style.setProperty('--app-stone-800', '#D00000');
+      root.style.setProperty('--app-stone-700', '#DC2F02');
+    } else if (theme === 'rainforest') {
+      root.style.setProperty('--app-stone-950', '#081C15');
+      root.style.setProperty('--app-stone-900', '#1B4332');
+      root.style.setProperty('--app-stone-850', '#2D6A4F');
+      root.style.setProperty('--app-stone-800', '#40916C');
+      root.style.setProperty('--app-stone-700', '#52B788');
+    } else if (theme === 'orchid') {
+      root.style.setProperty('--app-stone-950', '#240046');
+      root.style.setProperty('--app-stone-900', '#3C096C');
+      root.style.setProperty('--app-stone-850', '#5A189A');
+      root.style.setProperty('--app-stone-800', '#7B2CBF');
+      root.style.setProperty('--app-stone-700', '#9D4EDD');
+    } else if (theme === 'gold') {
+      root.style.setProperty('--app-stone-950', '#1A1A1A');
+      root.style.setProperty('--app-stone-900', '#2D2D2D');
+      root.style.setProperty('--app-stone-850', '#333333');
+      root.style.setProperty('--app-stone-800', '#404040');
+      root.style.setProperty('--app-stone-700', '#595959');
+    } else if (theme === 'minimalist') {
+      root.style.setProperty('--app-stone-950', '#111111');
+      root.style.setProperty('--app-stone-900', '#222222');
+      root.style.setProperty('--app-stone-850', '#333333');
+      root.style.setProperty('--app-stone-800', '#444444');
+      root.style.setProperty('--app-stone-700', '#555555');
+    } else if (theme === 'sky') {
+      root.style.setProperty('--app-stone-950', '#03045E');
+      root.style.setProperty('--app-stone-900', '#0077B6');
+      root.style.setProperty('--app-stone-850', '#0096C7');
+      root.style.setProperty('--app-stone-800', '#00B4D8');
+      root.style.setProperty('--app-stone-700', '#48CAE4');
+    } else if (theme === 'sunset') {
+      root.style.setProperty('--app-stone-950', '#264653');
+      root.style.setProperty('--app-stone-900', '#2A9D8F');
+      root.style.setProperty('--app-stone-850', '#E9C46A');
+      root.style.setProperty('--app-stone-800', '#F4A261');
+      root.style.setProperty('--app-stone-700', '#E76F51');
+    }
+  }, [theme]);
 
   const prevIsOpenRef = React.useRef(isOpen);
   useEffect(() => {
@@ -904,6 +1065,24 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     localStorage.removeItem('whatsapp_chat_history');
   };
 
+  
+  const handleQuickAction = (action: string, data?: any) => {
+    if (action === 'send_message') {
+      setChatInput(data.message);
+      // We can also auto-send it
+      setTimeout(() => {
+        const form = document.getElementById('chat-form') as HTMLFormElement;
+        if (form) form.requestSubmit();
+      }, 50);
+    } else if (action === 'book') {
+      setChatInput(language === 'es' ? 'Quiero reservar' : 'I want to book');
+      setTimeout(() => {
+        const form = document.getElementById('chat-form') as HTMLFormElement;
+        if (form) form.requestSubmit();
+      }, 50);
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim() || isSendingToWebhook) return;
@@ -968,8 +1147,11 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
       
       setChatHistory(prev => {
         const replyText = data.reply || (language === 'es' ? '🤖 ¡Mensaje recibido! Nuestro agente n8n lo está procesando...' : '🤖 Message received! Our n8n agent is processing it...');
-        const newHistory = [...prev, { role: 'bot' as const, text: replyText }];
+        
+        const quickActions = data.quickActions || [];
+        const newHistory = [...prev, { role: 'bot' as const, text: replyText, quickActions }];
         return newHistory.slice(-50);
+
       });
       
     } catch (error) {
@@ -989,8 +1171,16 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
         });
         const procData = await procRes.json();
 
+
         // SIMULATION LOGIC FOR PROGRESS INDICATOR
-        if (msg.toLowerCase().includes('reserv') || msg.toLowerCase().includes('book')) {
+        let quickActions: any[] = [];
+        if (msg.toLowerCase().includes('precio') || msg.toLowerCase().includes('price') || msg.toLowerCase().includes('cost')) {
+            quickActions = [
+              { label: language === 'es' ? '📅 Reservar Ahora' : '📅 Book Now', action: 'book' },
+              { label: language === 'es' ? '🔍 Ver Detalles' : '🔍 See Details', action: 'send_message', data: { message: language === 'es' ? 'Ver detalles de tours' : 'See tour details' } }
+            ];
+        } else if (msg.toLowerCase().includes('reserv') || msg.toLowerCase().includes('book')) {
+
            setBookingStatus('pending');
            setTimeout(() => {
              setBookingStatus('payment_required');
@@ -1010,8 +1200,10 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
              replyText = language === 'es' ? '✅ ¡Pago recibido! Tu reserva está 100% confirmada. Te hemos enviado el voucher por correo.' : '✅ Payment received! Your booking is 100% confirmed. We sent the voucher to your email.';
           }
 
-          const newHistory = [...prev, { role: 'bot' as const, text: replyText }];
+          
+          const newHistory = [...prev, { role: 'bot' as const, text: replyText, quickActions }];
           return newHistory.slice(-50);
+
         });
       } catch (innerError) {
          setChatHistory(prev => {
@@ -1024,7 +1216,8 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     }
   };
 
-  const themeClasses = {
+  const themeClasses = THEMES[theme] || THEMES.emerald;
+  const _ignore = {
     button: 'bg-[#25D366] hover:bg-[#20bd5a] shadow-[0_0_20px_rgba(37,211,102,0.4)]',
     header: 'bg-[#1E7B4A]',
     badge: 'bg-[#E67E22] text-white',
@@ -1053,7 +1246,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
             <div className={`${themeClasses.header}/90 backdrop-blur-md p-3 sm:p-4 flex items-center justify-between text-white transition-colors duration-300 border-b border-black/10 shrink-0`}>
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <div className={`w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm`}>
                     <MessageCircle className="w-6 h-6 text-white" />
                   </div>
                   <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-white rounded-full transition-colors duration-300 ${isOnline ? 'bg-teal-400' : 'bg-rose-500 animate-pulse'}`}></span>
@@ -1137,7 +1330,8 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
             )}
 
             <BookingProgressIndicator status={bookingStatus} language={language} />
-            {/* Chat Body */}
+                        {/* Chat Body */}
+
             <div className="p-3 sm:p-4 bg-neutral-50/40 flex flex-col flex-1 min-h-0">
               <div className="overflow-y-auto flex-1 pb-2 scrollbar-thin scrollbar-thumb-neutral-200">
                 <div className="bg-white/80 backdrop-blur-md p-3 rounded-2xl rounded-tl-sm shadow-sm border border-neutral-200/60 mb-4 inline-block max-w-[90%]">
@@ -1148,10 +1342,25 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                   const mentionedTours = getMentionedTours(msg.text, TOURS);
                   return (
                     <div key={idx} className={`mb-3 flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                      <div className={`p-3 rounded-2xl max-w-[90%] shadow-sm text-sm font-medium ${msg.role === 'user' ? 'bg-[#25D366] text-white rounded-tr-sm' : 'bg-white/80 backdrop-blur-md text-neutral-800 border border-neutral-200/60 rounded-tl-sm'}`}>
+                      
+                      <div className={`p-3 rounded-2xl max-w-[90%] shadow-sm text-sm font-medium ${msg.role === 'user' ? themeClasses.button + ' text-white rounded-tr-sm' : 'bg-white/80 backdrop-blur-md text-neutral-800 border border-neutral-200/60 rounded-tl-sm'}`}>
                         <span className="whitespace-pre-wrap">{msg.text}</span>
                         <MessageStatus isBot={msg.role === 'bot'} />
                       </div>
+                      {msg.quickActions && msg.quickActions.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2 ml-1">
+                          {msg.quickActions.map((qa, qaid) => (
+                            <button 
+                              key={qaid}
+                              onClick={() => handleQuickAction(qa.action, qa.data)}
+                              className={`text-xs font-bold px-4 py-2 rounded-full shadow-md ${themeClasses.button} text-white transition-all transform hover:scale-105 active:scale-95 duration-200 flex-1 text-center`}
+                            >
+                              {qa.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
                       {mentionedTours.length > 0 && (
                         <div className="mt-1 flex flex-col gap-2">
                           {mentionedTours.map(t => (
@@ -1252,7 +1461,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
               )}
 
               {/* Chat Input */}
-              <form onSubmit={handleSendMessage} className="mt-2 flex gap-2 shrink-0">
+              <form id="chat-form" onSubmit={handleSendMessage} className="mt-2 flex gap-2 shrink-0">
                 <input
                   type="text"
                   value={chatInput}
@@ -1392,14 +1601,42 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col items-center gap-3 pointer-events-auto">
+      <div className="flex flex-col items-center gap-3 pointer-events-auto relative">
+
+            {showThemeSelector && !isOpen && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10, scale: 0.9, transformOrigin: 'bottom right' }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                className="absolute bottom-32 right-0 bg-white rounded-xl shadow-2xl border border-stone-200 p-2 z-50 w-56 flex flex-col gap-1 max-h-80 overflow-y-auto"
+              >
+                <div className="flex justify-between items-center mb-1 px-2">
+                   <div className="text-xs font-bold text-stone-500">{language === 'es' ? 'Apariencia de la App' : 'App Theme'}</div>
+                   <button onClick={() => setShowThemeSelector(false)} className="text-stone-400 hover:text-stone-700">
+                     <X className="w-4 h-4" />
+                   </button>
+                </div>
+                {Object.entries(THEMES).map(([key, t]) => (
+                  <button
+                    key={key}
+                    onClick={() => { setTheme(key); setShowThemeSelector(false); }}
+                    className={`text-left text-sm px-3 py-2 rounded-lg hover:bg-stone-100 transition-colors ${theme === key ? 'font-bold bg-stone-50 border border-stone-200' : 'border border-transparent'}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${t.ping} shadow-sm border border-black/10`}></div>
+                      <span className="text-stone-700">{t.name}</span>
+                    </div>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+
         {!isOpen && (
           <motion.button
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            onClick={() => setTheme(theme === 'emerald' ? 'teal' : 'emerald')}
+            onClick={() => setShowThemeSelector(!showThemeSelector)}
             className={`w-8 h-8 rounded-full shadow-lg border-2 border-white flex items-center justify-center transition-colors ${
-              theme === 'teal' ? 'bg-teal-600 hover:bg-teal-600' : 'bg-orange-500 hover:bg-teal-600'
+              showThemeSelector ? 'bg-stone-700 hover:bg-stone-800' : themeClasses.header
             }`}
             title={language === 'es' ? 'Cambiar Estilo' : 'Toggle Style'}
           >
