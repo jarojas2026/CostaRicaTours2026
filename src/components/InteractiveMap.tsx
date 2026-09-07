@@ -200,7 +200,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               <button onClick={() => setShowFilters(!showFilters)} className="px-4 py-2 font-bold text-orange-600 bg-orange-50 rounded-xl">
                 {language === 'es' ? 'Filtros' : 'Filters'}
               </button>
-              <button onClick={handleManualCache} className="px-4 py-2 font-bold text-white bg-teal-600 rounded-xl">
+              <button onClick={handleManualCache} className="px-4 py-2 font-bold text-stone-900 bg-teal-600 rounded-xl">
                 {language === 'es' ? 'Descargar Mapa' : 'Download Map'}
               </button>
             </div>
@@ -256,7 +256,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     zIndex={isSelected ? 100 : 1}
                     className="cursor-pointer"
                   >
-                    <div className={`${isSelected ? 'bg-red-500 scale-125' : 'bg-orange-500'} text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 border-white transition-all`}>
+                    <div className={`${isSelected ? 'bg-red-500 scale-125' : 'bg-orange-500'} text-stone-900 w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 border-white transition-all`}>
                       <MapPin className="w-5 h-5" />
                     </div>
                   </AdvancedMarker>
@@ -266,7 +266,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           </APIProvider>
         ) : (
           /* Interactive Costa Rica Eco-Explorer (GPS Calibrated) */
-          <div className="w-full h-full relative bg-gradient-to-b from-stone-900 via-stone-850 to-stone-950 overflow-hidden flex items-center justify-center select-none">
+          <div className="w-full h-full relative bg-slate-100 overflow-hidden flex items-center justify-center select-none">
             {/* Topographic & Regional Background Canvas */}
             <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:24px_24px]" />
             
@@ -369,8 +369,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     >
                       <div className={`flex items-center gap-1 px-2 py-1 rounded-full shadow-lg border-2 ${
                         isSelected 
-                          ? 'bg-red-500 border-white text-white font-bold' 
-                          : 'bg-orange-500 hover:bg-orange-400 border-white text-white text-xs'
+                          ? 'bg-red-500 border-white text-stone-900 font-bold' 
+                          : 'bg-orange-500 hover:bg-orange-400 border-white text-stone-900 text-xs'
                       }`}>
                         <MapPin className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline max-w-[90px] truncate text-[10px]">
@@ -396,20 +396,20 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               />
               <button 
                 onClick={() => setSelectedMapTour(null)}
-                className="absolute top-4 right-4 w-10 h-10 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-colors z-10"
+                className="absolute top-4 right-4 w-10 h-10 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center text-stone-900 transition-colors z-10"
               >
                 <X className="w-5 h-5" />
               </button>
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
-                <span className="bg-orange-500 text-white text-[11px] font-black uppercase px-3 py-1.5 rounded-md shadow-lg">
+                <span className="bg-orange-500 text-stone-900 text-[11px] font-black uppercase px-3 py-1.5 rounded-md shadow-lg">
                   {getLangText(selectedMapTour.durationLabel, language)}
                 </span>
                 <div className="bg-white/10 backdrop-blur-md px-3 py-1 rounded-lg border border-black/20 text-right">
                   <span className="block text-[9px] font-bold text-stone-700 uppercase tracking-widest leading-none mb-0.5">
                     {language === 'es' ? 'Precio' : 'Price'}
                   </span>
-                  <span className="block font-black text-white leading-none text-lg">
+                  <span className="block font-black text-stone-900 leading-none text-lg">
                     {formatCurrency(selectedMapTour.priceUSD, currency)}
                   </span>
                 </div>
@@ -443,7 +443,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 {onSelectTour && (
                   <button 
                     onClick={() => onSelectTour(selectedMapTour)}
-                    className="w-full bg-teal-600 hover:bg-teal-700 text-white font-black text-sm uppercase py-4 px-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+                    className="w-full bg-teal-600 hover:bg-teal-700 text-stone-900 font-black text-sm uppercase py-4 px-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
                   >
                     <Navigation className="w-4 h-4" />
                     <span>{language === 'es' ? 'Ver Detalles y Reservar' : 'View Details & Book'}</span>

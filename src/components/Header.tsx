@@ -68,85 +68,14 @@ export const Header: React.FC<HeaderProps> = ({
   const [isCurrencyMenuOpen, setIsCurrencyMenuOpen] = useState(false);
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
-  const [isPaletteMenuOpen, setIsPaletteMenuOpen] = useState(false);
+  
 
-  const DEV_PALETTES = [
-    {
-      id: 'caribe',
-      name: language === 'es' ? 'Azul Caribe Claro' : 'Caribbean Ocean Azure',
-      badge: language === 'es' ? 'Mucho más claro' : 'Much lighter',
-      colors: {
-        '--app-stone-950': '#1B4965',
-        '--app-stone-900': '#22577A',
-        '--app-stone-850': '#2C688F',
-        '--app-stone-800': '#387CA8',
-        '--app-stone-700': '#4B94C2',
-      },
-      previewColor: '#22577A'
-    },
-    {
-      id: 'cielo',
-      name: language === 'es' ? 'Cielo & Pizarra Suave' : 'Soft Sky & Slate',
-      badge: language === 'es' ? 'Súper Despejado' : 'Extra Clear',
-      colors: {
-        '--app-stone-950': '#2E4A62',
-        '--app-stone-900': '#3B5E7C',
-        '--app-stone-850': '#4B7396',
-        '--app-stone-800': '#5D8AB3',
-        '--app-stone-700': '#78A5D0',
-      },
-      previewColor: '#3B5E7C'
-    },
-    {
-      id: 'esmeralda',
-      name: language === 'es' ? 'Esmeralda Tropical Claro' : 'Bright Tropical Emerald',
-      badge: language === 'es' ? 'Naturaleza Viva' : 'Lively Nature',
-      colors: {
-        '--app-stone-950': '#1D5449',
-        '--app-stone-900': '#256B5D',
-        '--app-stone-850': '#318474',
-        '--app-stone-800': '#419E8C',
-        '--app-stone-700': '#59B8A4',
-      },
-      previewColor: '#256B5D'
-    },
-    {
-      id: 'arena',
-      name: language === 'es' ? 'Arena & Atardecer Cálido' : 'Warm Beach Sand & Dusk',
-      badge: language === 'es' ? 'Cálido & Sol' : 'Warm Sunset',
-      colors: {
-        '--app-stone-950': '#3C3F58',
-        '--app-stone-900': '#4B4F6E',
-        '--app-stone-850': '#5C6185',
-        '--app-stone-800': '#70759E',
-        '--app-stone-700': '#888EB8',
-      },
-      previewColor: '#4B4F6E'
-    }
-  ];
+  
 
-  const [activePalette, setActivePalette] = useState<string>(() => {
-    return localStorage.getItem('crt_dev_palette') || 'caribe';
-  });
+  
 
-  const applyDevPalette = (paletteId: string) => {
-    const pal = DEV_PALETTES.find(p => p.id === paletteId);
-    if (!pal) return;
-    Object.entries(pal.colors).forEach(([key, val]) => {
-      document.documentElement.style.setProperty(key, val);
-    });
-    setActivePalette(paletteId);
-    localStorage.setItem('crt_dev_palette', paletteId);
-    setIsPaletteMenuOpen(false);
-  };
 
-  useEffect(() => {
-    const saved = localStorage.getItem('crt_dev_palette') || 'caribe';
-    const pal = DEV_PALETTES.find(p => p.id === saved) || DEV_PALETTES[0];
-    Object.entries(pal.colors).forEach(([key, val]) => {
-      document.documentElement.style.setProperty(key, val);
-    });
-  }, []);
+  
 
   const [currencyPrompt, setCurrencyPrompt] = useState<{
     isOpen: boolean;
@@ -418,7 +347,6 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => {
                   setIsLangMenuOpen(!isLangMenuOpen);
                   setIsCurrencyMenuOpen(false);
-                  setIsPaletteMenuOpen(false);
                 }}
                 className="flex items-center gap-1 bg-stone-100/70 hover:bg-stone-100 px-2 sm:px-2.5 py-1.5 rounded-xl border border-teal-500/40 text-[11px] font-bold text-stone-900 transition-all cursor-pointer"
                 title="Seleccionar Idioma / Language"
@@ -458,92 +386,6 @@ export const Header: React.FC<HeaderProps> = ({
                 </>
               )}
             </div>
-
-            {/* Development Palette Selector */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setIsPaletteMenuOpen(!isPaletteMenuOpen);
-                  setIsLangMenuOpen(false);
-                  setIsCurrencyMenuOpen(false);
-                }}
-                className="flex items-center gap-1.5 bg-stone-850 hover:bg-stone-100 px-2 sm:px-2.5 py-1.5 rounded-xl border border-amber-400/40 text-[11px] font-bold text-amber-300 transition-all cursor-pointer shadow-sm"
-                title={language === 'es' ? 'Paleta de Color de Desarrollo' : 'Development Color Palette'}
-              >
-                <Palette className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline font-semibold text-[10px] uppercase tracking-wide">
-                  {language === 'es' ? 'Color' : 'Theme'}
-                </span>
-                <span 
-                  className="w-2.5 h-2.5 rounded-full border border-black/40 shadow-inner shrink-0" 
-                  style={{ backgroundColor: DEV_PALETTES.find(p => p.id === activePalette)?.previewColor || '#22577A' }} 
-                />
-              </button>
-
-              {isPaletteMenuOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsPaletteMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-64 bg-stone-50 rounded-2xl shadow-2xl border border-amber-400/50 z-50 p-2.5 animate-fade-in">
-                    <div className="flex items-center justify-between px-2 py-1 border-b border-stone-200 mb-2">
-                      <span className="text-[11px] font-black text-amber-300 uppercase tracking-wide flex items-center gap-1.5">
-                        <Palette className="w-3.5 h-3.5" />
-                        {language === 'es' ? 'Paleta de Desarrollo' : 'Dev Color Palette'}
-                      </span>
-                      <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono">
-                        {language === 'es' ? 'TEMPORAL' : 'DEV'}
-                      </span>
-                    </div>
-
-                    <p className="text-[10px] text-stone-700 px-2 mb-2 leading-tight">
-                      {language === 'es' 
-                        ? 'Probá paletas más claras durante el desarrollo antes del lanzamiento final:' 
-                        : 'Test clearer palettes during development before final release:'}
-                    </p>
-
-                    <div className="space-y-1.5">
-                      {DEV_PALETTES.map((pal) => (
-                        <button
-                          key={pal.id}
-                          onClick={() => applyDevPalette(pal.id)}
-                          className={`w-full text-left p-2 rounded-xl text-xs transition-all flex items-center justify-between cursor-pointer ${
-                            activePalette === pal.id
-                              ? 'bg-amber-500 text-stone-950 font-black shadow-md'
-                              : 'text-stone-900 hover:bg-stone-200/90 border border-black/5'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span 
-                              className="w-4 h-4 rounded-full border border-black/60 shadow-inner shrink-0"
-                              style={{ backgroundColor: pal.previewColor }}
-                            />
-                            <div>
-                              <div className="text-xs font-bold leading-none">{pal.name}</div>
-                              <div className={`text-[10px] mt-0.5 ${activePalette === pal.id ? 'text-stone-900/80 font-medium' : 'text-stone-600'}`}>
-                                {pal.badge}
-                              </div>
-                            </div>
-                          </div>
-                          {activePalette === pal.id && (
-                            <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-white text-amber-400 font-bold">
-                              ✓
-                            </span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Custom Trip Funnel CTA (Compact & adaptive) */}
-            <button
-              onClick={handleOpenItinerary}
-              className="hidden lg:inline-flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-400 hover:to-orange-500 text-stone-950 px-2.5 sm:px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-tight shadow-md hover:scale-105 transition-all cursor-pointer shrink-0"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span className="whitespace-nowrap">{language === 'es' ? 'Armar Viaje' : 'Custom Trip'}</span>
-            </button>
 
             {/* My Bookings Button */}
             <button

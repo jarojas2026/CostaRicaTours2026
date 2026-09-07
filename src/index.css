@@ -1,68 +1,18 @@
 @import "tailwindcss";
 
-@theme {
-
-  /* Costa Rica Tours - Paleta Clara de Desarrollo (Caribbean Ocean & Coastal Sand) */
-  --color-forest: var(--app-stone-950, #1B4965);
-  --color-forest-dark: var(--app-stone-900, #22577A);
-  --color-forest-light: var(--app-stone-850, #2C688F);
-  --color-forest-accent: #0284C7;
-
-  --color-puravida: #F97316;
-  --color-puravida-dark: #EA580C;
-  --color-puravida-light: #FB923C;
-
-  --color-gold: #F59E0B;
-  --color-gold-light: #FBBF24;
-
-  --color-crema: #F8FAFC;
-  --color-arena: #F1F5F9;
-
-  /* Remap utility colors to much lighter, fresh coastal and bright Caribbean tones */
-  --color-stone-950: var(--app-stone-950, #1B4965);
-  --color-stone-900: var(--app-stone-900, #22577A);
-  --color-stone-850: var(--app-stone-850, #2C688F);
-  --color-stone-800: var(--app-stone-800, #387CA8);
-  --color-stone-700: var(--app-stone-700, #4B94C2);
-
-  --color-teal-600: #0284C7;
-  --color-teal-500: #0EA5E9;
-  --color-teal-400: #38BDF8;
-  --color-teal-300: #7DD3FC;
-
-  --color-orange-600: #EA580C;
-  --color-orange-500: #F97316;
-  --color-orange-400: #FB923C;
-  --color-orange-300: #FDBA74;
-
-  --color-amber-500: #F59E0B;
-  --color-amber-400: #FBBF24;
-}
-
 @layer base {
   :root {
-    --app-stone-950: #FFFFFF;
-    --app-stone-900: #F8FAFC;
-    --app-stone-850: #F1F5F9;
-    --app-stone-800: #E2E8F0;
-    --app-stone-700: #CBD5E1;
-
     --font-heading: 'Fraunces', serif;
     --font-body: 'Work Sans', sans-serif;
-    --verde-selva: var(--app-stone-900, #22577A);
-    --verde-selva-profundo: var(--app-stone-950, #1B4965);
-    --naranja-puravida: #F97316;
-    --dorado-destacado: #F59E0B;
-    --crema-fondo: #F8FAFC;
-    --arena-tostada: #F1F5F9;
-    --texto-oscuro: #0F172A;
   }
+  
   body {
-    background-color: var(--app-stone-950, #1B4965);
-    color: #1E293B;
+    background-color: #F8FAFC; /* slate-50 */
+    color: #0F172A; /* slate-900 */
     font-family: 'Work Sans', sans-serif;
     overflow-x: hidden;
   }
+  
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Fraunces', serif;
   }
@@ -99,22 +49,22 @@
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(30, 77, 43, 0.15);
-  box-shadow: 0 8px 32px 0 rgba(30, 77, 43, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.05); /* slate-900 with low opacity */
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
 }
 
 .glass-panel-light {
-  background: #EDE6D9;
+  background: rgba(248, 250, 252, 0.95); /* slate-50 */
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(15, 139, 141, 0.15);
+  border: 1px solid rgba(15, 23, 42, 0.05);
 }
 
 .glow-orange {
-  box-shadow: 0 4px 20px -2px rgba(232, 163, 61, 0.4);
+  box-shadow: 0 4px 20px -2px rgba(249, 115, 22, 0.4); /* orange-500 */
 }
 .glow-green {
-  box-shadow: 0 4px 20px -2px rgba(30, 77, 43, 0.3);
+  box-shadow: 0 4px 20px -2px rgba(20, 184, 166, 0.3); /* teal-500 */
 }
 
 /* Custom Scrollbar for Modal Windows */
@@ -122,6 +72,7 @@
   overflow-y: auto;
   scrollbar-width: thin;
 }
+
 /* Keyframes for slow ambient animations */
 @keyframes pulseGlow {
   0%, 100% { opacity: 0.4; transform: scale(1); }
@@ -135,19 +86,19 @@
 @keyframes whatsappMiniCardPulse {
   0% {
     transform: scale(0.92);
-    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7);
   }
   25% {
     transform: scale(1.04);
-    box-shadow: 0 0 0 12px rgba(245, 158, 11, 0.35);
+    box-shadow: 0 0 0 12px rgba(249, 115, 22, 0.35);
   }
   50% {
     transform: scale(0.98);
-    box-shadow: 0 0 0 18px rgba(245, 158, 11, 0);
+    box-shadow: 0 0 0 18px rgba(249, 115, 22, 0);
   }
   75% {
     transform: scale(1.02);
-    box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.2);
+    box-shadow: 0 0 0 8px rgba(249, 115, 22, 0.2);
   }
   100% {
     transform: scale(1);

@@ -180,7 +180,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                 7 {language === 'es' ? 'Días' : 'Days'} • Pareja
               </span>
             </div>
-            <h4 className="text-sm font-black text-white group-hover:text-orange-400 uppercase">
+            <h4 className="text-sm font-black text-stone-900 group-hover:text-orange-400 uppercase">
               {language === 'es' ? 'Volcanes y Termales de Ensueño' : 'Volcanoes & Hot Springs Dream'}
             </h4>
             <p className="text-xs text-stone-600 line-clamp-2">
@@ -198,7 +198,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                 5 {language === 'es' ? 'Días' : 'Days'} • Familia
               </span>
             </div>
-            <h4 className="text-sm font-black text-white group-hover:text-orange-400 uppercase">
+            <h4 className="text-sm font-black text-stone-900 group-hover:text-orange-400 uppercase">
               {language === 'es' ? 'Aventura Esencial y Fauna' : 'Essential Adventure & Wildlife'}
             </h4>
             <p className="text-xs text-stone-600 line-clamp-2">
@@ -216,7 +216,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                 10 {language === 'es' ? 'Días' : 'Days'} • Lujo
               </span>
             </div>
-            <h4 className="text-sm font-black text-white group-hover:text-orange-400 uppercase">
+            <h4 className="text-sm font-black text-stone-900 group-hover:text-orange-400 uppercase">
               {language === 'es' ? 'Expedición Total de Costa a Costa' : 'Coast-to-Coast Total Expedition'}
             </h4>
             <p className="text-xs text-stone-600 line-clamp-2">
@@ -239,7 +239,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
               <select
                 value={daysCount}
                 onChange={(e) => setDaysCount(Number(e.target.value))}
-                className="w-full bg-white border border-black/10 focus:border-orange-400 text-white p-3 rounded-xl text-base font-bold focus:outline-none cursor-pointer"
+                className="w-full bg-white border border-black/10 focus:border-orange-400 text-stone-900 p-3 rounded-xl text-base font-bold focus:outline-none cursor-pointer"
               >
                 <option value={3}>{language === 'es' ? '3 Días (Escapada)' : '3 Days (Quick Getaway)'}</option>
                 <option value={5}>{language === 'es' ? '5 Días (Aventura Esencial)' : '5 Days (Essential Adventure)'}</option>
@@ -257,7 +257,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
               <select
                 value={style}
                 onChange={(e) => setStyle(e.target.value)}
-                className="w-full bg-white border border-black/10 focus:border-orange-400 text-white p-3 rounded-xl text-base font-bold focus:outline-none cursor-pointer"
+                className="w-full bg-white border border-black/10 focus:border-orange-400 text-stone-900 p-3 rounded-xl text-base font-bold focus:outline-none cursor-pointer"
               >
                 <option value="Aventura y Adrenalina">{language === 'es' ? 'Aventura y Adrenalina' : 'Adrenaline & Adventure'}</option>
                 <option value="Naturaleza y Fauna">{language === 'es' ? 'Naturaleza y Fauna' : 'Nature & Wildlife'}</option>
@@ -276,7 +276,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
               <select
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
-                className="w-full bg-white border border-black/10 focus:border-orange-400 text-white p-3 rounded-xl text-base font-bold focus:outline-none cursor-pointer"
+                className="w-full bg-white border border-black/10 focus:border-orange-400 text-stone-900 p-3 rounded-xl text-base font-bold focus:outline-none cursor-pointer"
               >
                 <option value="Medio">{language === 'es' ? 'Medio (Recomendado)' : 'Moderate (Recommended)'}</option>
                 <option value="Económico">{language === 'es' ? 'Económico / Mochilero' : 'Budget Friendly'}</option>
@@ -293,7 +293,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
               <select
                 value={group}
                 onChange={(e) => setGroup(e.target.value)}
-                className="w-full bg-white border border-black/10 focus:border-orange-400 text-white p-3 rounded-xl text-base font-bold focus:outline-none cursor-pointer"
+                className="w-full bg-white border border-black/10 focus:border-orange-400 text-stone-900 p-3 rounded-xl text-base font-bold focus:outline-none cursor-pointer"
               >
                 <option value="Pareja">{language === 'es' ? 'Pareja' : 'Couple'}</option>
                 <option value="Solo">{language === 'es' ? 'Viajero Solo' : 'Solo Traveler'}</option>
@@ -326,11 +326,11 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
 
         {/* Results Presentation */}
         {itinerary && (
-          <div className="bg-gradient-to-b from-stone-900 to-stone-950 p-6 sm:p-8 rounded-[2rem] border-2 border-amber-500/60 shadow-[0_10px_40px_rgba(0,0,0,0.6)] space-y-6 animate-fade-in">
+          <div className="bg-white p-6 sm:p-8 rounded-[2rem] border-2 border-amber-500/60 shadow-[0_10px_40px_rgba(0,0,0,0.6)] space-y-6 animate-fade-in">
             
             {/* Title & Summary */}
             <div className="border-b border-black/10 pb-4 space-y-2">
-              <span className="bg-teal-600 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full">
+              <span className="bg-teal-600 text-stone-900 text-[10px] font-black uppercase px-3 py-1 rounded-full">
                 {language === 'es' ? 'Itinerario Sugerido' : 'Suggested Itinerary'}
               </span>
               <h3 className="text-2xl sm:text-3xl font-black text-orange-400 uppercase">
@@ -354,11 +354,11 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                   <div key={d.day} className="bg-white p-5 rounded-2xl border border-black/10 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <span className="w-8 h-8 rounded-full bg-teal-600 text-white font-black text-sm flex items-center justify-center">
+                        <span className="w-8 h-8 rounded-full bg-teal-600 text-stone-900 font-black text-sm flex items-center justify-center">
                           {d.day}
                         </span>
                         <div>
-                          <h4 className="text-base font-black text-white uppercase">
+                          <h4 className="text-base font-black text-stone-900 uppercase">
                             Día {d.day}: {d.title}
                           </h4>
                           {d.location && (
@@ -393,7 +393,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                         </span>
                         <button
                           onClick={() => onSelectTour(matchingTour)}
-                          className="bg-stone-50 hover:bg-teal-600 hover:text-white text-white px-3 py-1.5 rounded-full text-xs font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer"
+                          className="bg-stone-50 hover:bg-teal-600 hover:text-stone-900 text-stone-900 px-3 py-1.5 rounded-full text-xs font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer"
                         >
                           <span>{matchingTour.title[language].slice(0, 30)}...</span>
                           <ArrowRight className="w-3 h-3" />

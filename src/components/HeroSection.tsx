@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Sparkles, MapPin, Compass, ShieldCheck, ChevronRight, ChevronLeft } from 'lucide-react';
+import { formatCurrency } from '../utils/i18n';
 import { motion, AnimatePresence } from 'motion/react';
-import { Language, TourRegion, TourCategory } from '../types';
+import { Language, TourRegion, TourCategory, Currency } from '../types';
 import { UI_TRANSLATIONS } from '../utils/i18n';
 
 interface HeroSectionProps {
+  currency: Currency;
   language: Language;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
@@ -54,6 +56,7 @@ const HERO_SLIDES = [
 ];
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
+  currency,
   language,
   searchQuery,
   setSearchQuery,
@@ -280,7 +283,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     <div className="flex items-center justify-between border-t border-black/20 pt-4">
                       <div className="flex flex-col">
                          <span className="text-[10px] text-stone-900/80 font-bold uppercase">{language === 'es' ? 'Desde ' : 'From '}</span>
-                         <span className="text-xl sm:text-2xl font-black text-orange-400">{slide.price} USD</span>
+                         <span className="text-xl sm:text-2xl font-black text-orange-400">{formatCurrency(parseInt(slide.price) || 0, currency)}</span>
                       </div>
                       <button className="bg-white/10 hover:bg-white/20 border border-black/20 backdrop-blur-md text-stone-900 font-black px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-[10px] sm:text-xs uppercase tracking-wider transition-colors shadow-lg">
                         {language === 'es' ? '¡Mandarse!' : 'Discover'}

@@ -699,8 +699,8 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
   const [isOpen, setIsOpen] = useState(false);
   const [needsAttention, setNeedsAttention] = useState(false);
   const [badgeText, setBadgeText] = useState(language === 'es' ? '¡Chiva!' : 'New');
-  const [theme, setTheme] = useState<string>('emerald');
-  const [showThemeSelector, setShowThemeSelector] = useState(false);
+  
+  
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -748,70 +748,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
   });
 
 
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'costa_rica') {
-      root.style.setProperty('--app-stone-950', '#1D3557');
-      root.style.setProperty('--app-stone-900', '#25446E');
-      root.style.setProperty('--app-stone-850', '#2E5487');
-      root.style.setProperty('--app-stone-800', '#3965A1');
-      root.style.setProperty('--app-stone-700', '#4E7BB8');
-    } else if (theme === 'emerald') {
-      root.style.setProperty('--app-stone-950', '#1B4965');
-      root.style.setProperty('--app-stone-900', '#22577A');
-      root.style.setProperty('--app-stone-850', '#2C688F');
-      root.style.setProperty('--app-stone-800', '#387CA8');
-      root.style.setProperty('--app-stone-700', '#4B94C2');
-    } else if (theme === 'ocean') {
-      root.style.setProperty('--app-stone-950', '#03045E');
-      root.style.setProperty('--app-stone-900', '#023E8A');
-      root.style.setProperty('--app-stone-850', '#0077B6');
-      root.style.setProperty('--app-stone-800', '#0096C7');
-      root.style.setProperty('--app-stone-700', '#00B4D8');
-    } else if (theme === 'volcano') {
-      root.style.setProperty('--app-stone-950', '#370617');
-      root.style.setProperty('--app-stone-900', '#6A040F');
-      root.style.setProperty('--app-stone-850', '#9D0208');
-      root.style.setProperty('--app-stone-800', '#D00000');
-      root.style.setProperty('--app-stone-700', '#DC2F02');
-    } else if (theme === 'rainforest') {
-      root.style.setProperty('--app-stone-950', '#081C15');
-      root.style.setProperty('--app-stone-900', '#1B4332');
-      root.style.setProperty('--app-stone-850', '#2D6A4F');
-      root.style.setProperty('--app-stone-800', '#40916C');
-      root.style.setProperty('--app-stone-700', '#52B788');
-    } else if (theme === 'orchid') {
-      root.style.setProperty('--app-stone-950', '#240046');
-      root.style.setProperty('--app-stone-900', '#3C096C');
-      root.style.setProperty('--app-stone-850', '#5A189A');
-      root.style.setProperty('--app-stone-800', '#7B2CBF');
-      root.style.setProperty('--app-stone-700', '#9D4EDD');
-    } else if (theme === 'gold') {
-      root.style.setProperty('--app-stone-950', '#1A1A1A');
-      root.style.setProperty('--app-stone-900', '#2D2D2D');
-      root.style.setProperty('--app-stone-850', '#333333');
-      root.style.setProperty('--app-stone-800', '#404040');
-      root.style.setProperty('--app-stone-700', '#595959');
-    } else if (theme === 'minimalist') {
-      root.style.setProperty('--app-stone-950', '#111111');
-      root.style.setProperty('--app-stone-900', '#222222');
-      root.style.setProperty('--app-stone-850', '#333333');
-      root.style.setProperty('--app-stone-800', '#444444');
-      root.style.setProperty('--app-stone-700', '#555555');
-    } else if (theme === 'sky') {
-      root.style.setProperty('--app-stone-950', '#03045E');
-      root.style.setProperty('--app-stone-900', '#0077B6');
-      root.style.setProperty('--app-stone-850', '#0096C7');
-      root.style.setProperty('--app-stone-800', '#00B4D8');
-      root.style.setProperty('--app-stone-700', '#48CAE4');
-    } else if (theme === 'sunset') {
-      root.style.setProperty('--app-stone-950', '#264653');
-      root.style.setProperty('--app-stone-900', '#2A9D8F');
-      root.style.setProperty('--app-stone-850', '#E9C46A');
-      root.style.setProperty('--app-stone-800', '#F4A261');
-      root.style.setProperty('--app-stone-700', '#E76F51');
-    }
-  }, [theme]);
+  
 
   const prevIsOpenRef = React.useRef(isOpen);
   useEffect(() => {
@@ -989,25 +926,25 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     options: [
       {
         id: 'tours',
-        icon: <Map className={`w-5 h-5 ${theme === 'teal' ? 'text-orange-500' : 'text-orange-500'}`} />,
+        icon: <Map className={`w-5 h-5 text-orange-500`} />,
         text: language === 'es' ? 'Recomendación de Tours' : 'Tour Recommendations',
         msg: generateCustomGreeting('Necesito recomendaciones de tours en Costa Rica.', 'I need tour recommendations in Costa Rica.')
       },
       {
         id: 'itinerary',
-        icon: <Calendar className={`w-5 h-5 ${theme === 'teal' ? 'text-orange-500' : 'text-orange-500'}`} />,
+        icon: <Calendar className={`w-5 h-5 text-orange-500`} />,
         text: language === 'es' ? 'Planear Itinerario' : 'Plan Itinerary',
         msg: generateCustomGreeting('Quiero ayuda para armar mi itinerario de viaje.', 'I want help planning my travel itinerary.')
       },
       {
         id: 'info',
-        icon: <Info className={`w-5 h-5 ${theme === 'teal' ? 'text-orange-500' : 'text-orange-500'}`} />,
+        icon: <Info className={`w-5 h-5 text-orange-500`} />,
         text: language === 'es' ? 'Dudas y Consultas' : 'Questions & Doubts',
         msg: generateCustomGreeting('Tengo algunas dudas generales sobre viajar a Costa Rica.', 'I have some general questions about traveling to Costa Rica.')
       },
       {
         id: 'custom',
-        icon: <MessageSquare className={`w-5 h-5 ${theme === 'teal' ? 'text-orange-500' : 'text-orange-500'}`} />,
+        icon: <MessageSquare className={`w-5 h-5 text-orange-500`} />,
         text: language === 'es' ? 'Chat Directo' : 'Direct Chat',
         msg: generateCustomGreeting('Quisiera más información.', 'I would like more information.', true)
       },
@@ -1216,7 +1153,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     }
   };
 
-  const themeClasses = THEMES[theme] || THEMES.emerald;
+  const themeClasses = THEMES.emerald;
   const _ignore = {
     button: 'bg-[#25D366] hover:bg-[#20bd5a] shadow-[0_0_20px_rgba(37,211,102,0.4)]',
     header: 'bg-[#1E7B4A]',
@@ -1260,7 +1197,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                       </span>
                     )}
                   </h4>
-                  <p className={`text-xs flex items-center gap-1 ${isOnline ? (theme === 'teal' ? 'text-amber-100' : 'text-stone-900') : 'text-rose-200 font-semibold'} transition-colors duration-300`}>
+                  <p className={`text-xs flex items-center gap-1 \${isOnline ? "text-amber-100" : "text-rose-200 font-semibold"} transition-colors duration-300`}>
                     {isOnline ? <Wifi className="w-3 h-3 text-teal-300 inline" /> : <WifiOff className="w-3 h-3 text-rose-300 inline" />}
                     {t.status}
                   </p>
@@ -1396,7 +1333,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                       </div>
                       <span className="text-sm font-semibold text-neutral-700">{opt.text}</span>
                     </div>
-                    <ChevronRight className={`w-4 h-4 text-stone-600 ${theme === 'teal' ? 'group-hover:text-orange-500' : 'group-hover:text-orange-500'} group-hover:translate-x-1 transition-all`} />
+                    <ChevronRight className={`w-4 h-4 text-stone-600 group-hover:text-orange-500 group-hover:translate-x-1 transition-all`} />
                   </button>
                 ))}
               </div>
@@ -1490,7 +1427,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
             exit={{ opacity: 0, scale: 0.95 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
           >
-            <div className="bg-neutral-950 border border-orange-500/30 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-[0_0_50px_rgba(16,185,129,0.2)] relative">
+            <div className="bg-white border border-orange-500/30 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-[0_0_50px_rgba(16,185,129,0.2)] relative">
               <div className="p-5 bg-gradient-to-r from-teal-600 to-teal-600 flex items-center justify-between text-white shadow-md">
                 <div className="flex items-center gap-3">
                   <QrCode className="w-6 h-6 text-stone-900" />
@@ -1601,49 +1538,8 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
         )}
       </AnimatePresence>
 
+      
       <div className="flex flex-col items-center gap-3 pointer-events-auto relative">
-
-            {showThemeSelector && !isOpen && (
-              <motion.div 
-                initial={{ opacity: 0, y: 10, scale: 0.9, transformOrigin: 'bottom right' }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                className="absolute bottom-32 right-0 bg-white rounded-xl shadow-2xl border border-stone-200 p-2 z-50 w-56 flex flex-col gap-1 max-h-80 overflow-y-auto"
-              >
-                <div className="flex justify-between items-center mb-1 px-2">
-                   <div className="text-xs font-bold text-stone-500">{language === 'es' ? 'Apariencia de la App' : 'App Theme'}</div>
-                   <button onClick={() => setShowThemeSelector(false)} className="text-stone-400 hover:text-stone-700">
-                     <X className="w-4 h-4" />
-                   </button>
-                </div>
-                {Object.entries(THEMES).map(([key, t]) => (
-                  <button
-                    key={key}
-                    onClick={() => { setTheme(key); setShowThemeSelector(false); }}
-                    className={`text-left text-sm px-3 py-2 rounded-lg hover:bg-stone-100 transition-colors ${theme === key ? 'font-bold bg-stone-50 border border-stone-200' : 'border border-transparent'}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${t.ping} shadow-sm border border-black/10`}></div>
-                      <span className="text-stone-700">{t.name}</span>
-                    </div>
-                  </button>
-                ))}
-              </motion.div>
-            )}
-
-        {!isOpen && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            onClick={() => setShowThemeSelector(!showThemeSelector)}
-            className={`w-8 h-8 rounded-full shadow-lg border-2 border-white flex items-center justify-center transition-colors ${
-              showThemeSelector ? 'bg-stone-700 hover:bg-stone-800' : themeClasses.header
-            }`}
-            title={language === 'es' ? 'Cambiar Estilo' : 'Toggle Style'}
-          >
-            <Palette className="w-4 h-4 text-white" />
-          </motion.button>
-        )}
-
         <div className="relative">
           {needsAttention && !isOpen && (
             <div className={`absolute inset-0 ${themeClasses.ping} rounded-full animate-ping opacity-40 transition-colors duration-300`}></div>
@@ -1655,7 +1551,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
             }}
             aria-label="Toggle WhatsApp Chat"
             className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 ${
-              isOpen ? 'bg-stone-50 text-white hover:scale-105' : `${themeClasses.button} text-white hover:scale-110 active:scale-95`
+              isOpen ? 'bg-stone-50 text-stone-900 hover:scale-105' : '${themeClasses.button} text-white hover:scale-110 active:scale-95'
             } ${needsAttention && !isOpen ? 'animate-pulse' : ''}`}
           >
             {isOpen ? <X className="w-8 h-8" /> : <MessageCircle className="w-9 h-9 fill-white/20 stroke-white" />}
@@ -1671,3 +1567,6 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     </div>
   );
 };
+
+
+export default FloatingWhatsApp;

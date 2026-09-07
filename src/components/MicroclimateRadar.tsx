@@ -136,7 +136,7 @@ export const MicroclimateRadar: React.FC<MicroclimateRadarProps> = ({ language }
               onClick={() => setSelectedRegion(reg)}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
                 isSelected
-                  ? 'bg-teal-600 text-white border-teal-600 shadow-md'
+                  ? 'bg-teal-600 text-stone-900 border-teal-600 shadow-md'
                   : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:border-orange-500'
               }`}
             >
@@ -148,7 +148,7 @@ export const MicroclimateRadar: React.FC<MicroclimateRadarProps> = ({ language }
       </div>
 
       {/* Selected region weather display card */}
-      <div className="bg-gradient-to-br from-neutral-900 to-stone-950 text-white rounded-3xl p-6 sm:p-8 space-y-6 relative overflow-hidden shadow-xl border border-stone-200">
+      <div className="bg-white text-stone-900 rounded-3xl p-6 sm:p-8 space-y-6 relative overflow-hidden shadow-xl border border-stone-200">
         <div className="absolute right-0 top-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center relative z-10">
@@ -159,7 +159,7 @@ export const MicroclimateRadar: React.FC<MicroclimateRadarProps> = ({ language }
               {language === 'es' ? selectedRegion.nameEs : selectedRegion.nameEn}
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-5xl sm:text-6xl font-black text-white">{selectedRegion.tempC}°C</span>
+              <span className="text-5xl sm:text-6xl font-black text-stone-900">{selectedRegion.tempC}°C</span>
               <span className="text-xl text-orange-300 font-bold">/ {selectedRegion.tempF}°F</span>
             </div>
             <p className="text-sm font-semibold text-stone-900 flex items-center gap-2">
@@ -174,7 +174,7 @@ export const MicroclimateRadar: React.FC<MicroclimateRadarProps> = ({ language }
           <div className="grid grid-cols-2 gap-4 bg-white/10 p-4 rounded-2xl border border-black/10">
             <div>
               <span className="text-[10px] text-orange-300 font-bold uppercase block">{language === 'es' ? 'Humedad:' : 'Humidity:'}</span>
-              <span className="text-lg font-black text-white">{selectedRegion.humidity}%</span>
+              <span className="text-lg font-black text-stone-900">{selectedRegion.humidity}%</span>
             </div>
             <div>
               <span className="text-[10px] text-orange-300 font-bold uppercase block">{language === 'es' ? 'Índice UV:' : 'UV Index:'}</span>

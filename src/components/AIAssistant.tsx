@@ -976,10 +976,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               >
                 {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </button>
-              <input
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
+              <input type="text" value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} spellCheck="false" autoComplete="off" autoCorrect="off"
                 placeholder={
                   language === 'es'
                     ? `Pregunta a ${getLangText(currentAgent.name, language)}...`

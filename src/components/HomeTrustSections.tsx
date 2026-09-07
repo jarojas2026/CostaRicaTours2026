@@ -132,7 +132,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             {isEs ? 'Simple & Seguro' : 'Simple & Safe'}
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-black text-stone-900 tracking-tight">
             {isEs ? '¿Cómo funciona CostaRicaTours?' : 'How CostaRicaTours Works'}
           </h2>
           <p className="mt-3 text-base text-stone-700">
@@ -152,7 +152,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.15 }}
-                className="relative bg-gradient-to-b from-stone-900 to-stone-950 p-8 rounded-3xl border border-black/10 hover:border-amber-500/60 transition-all duration-300 group shadow-xl hover:shadow-2xl hover:-translate-y-1.5 flex flex-col justify-between"
+                className="relative bg-white p-8 rounded-3xl border border-black/10 hover:border-amber-500/60 transition-all duration-300 group shadow-xl hover:shadow-2xl hover:-translate-y-1.5 flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between mb-6">
@@ -164,7 +164,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
                     </span>
                   </div>
 
-                  <h3 className="text-xl font-bold text-white group-hover:text-amber-300 transition-colors">
+                  <h3 className="text-xl font-bold text-stone-900 group-hover:text-amber-300 transition-colors">
                     {step.title}
                   </h3>
                   <p className="mt-3 text-stone-700 text-sm leading-relaxed">
@@ -185,7 +185,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
       </section>
 
       {/* 2. SECCIÓN TESTIMONIOS REALES */}
-      <section className="bg-gradient-to-b from-stone-950 via-stone-900 to-stone-950 py-16 border-y border-black/10">
+      <section className="bg-stone-50 py-16 border-y border-black/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
             <div>
@@ -193,7 +193,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
                 <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                 {isEs ? '4.98 / 5 Estrellas en +1,200 Reseñas' : '4.98 / 5 Stars from +1,200 Reviews'}
               </div>
-              <h2 className="text-3xl sm:text-4xl font-black text-white">
+              <h2 className="text-3xl sm:text-4xl font-black text-stone-900">
                 {isEs ? 'Viajeros felices viviendo el Pura Vida' : 'Happy Travelers Living Pura Vida'}
               </h2>
             </div>
@@ -224,7 +224,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
                       className="w-11 h-11 rounded-full object-cover border-2 border-amber-400/80 shadow"
                     />
                     <div>
-                      <h4 className="text-sm font-bold text-white leading-tight">
+                      <h4 className="text-sm font-bold text-stone-900 leading-tight">
                         {item.name}
                       </h4>
                       <p className="text-xs text-stone-600 flex items-center gap-1.5 mt-0.5">
@@ -269,7 +269,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             {isEs ? 'Garantía de Calidad' : 'Quality Assurance'}
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white">
+          <h2 className="text-2xl sm:text-3xl font-black text-stone-900">
             {isEs ? 'Operadores y Aliados Oficiales de Costa Rica' : 'Official Costa Rican Operators & Partners'}
           </h2>
           <p className="mt-2 text-sm text-stone-700">
@@ -286,7 +286,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
               className="bg-stone-100/60 border border-black/10 hover:border-teal-500/50 rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all hover:scale-105"
             >
               <span className="text-2xl mb-1">{p.icon}</span>
-              <span className="text-xs font-bold text-white mt-1 leading-tight">{p.name}</span>
+              <span className="text-xs font-bold text-stone-900 mt-1 leading-tight">{p.name}</span>
               <span className="text-[10px] text-teal-300/80 mt-0.5">{p.subtitle}</span>
             </div>
           ))}
@@ -295,7 +295,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
 
       {/* 4. BANNER CTA ALTO IMPACTO: ARMÁ TU VIAJE A MEDIDA */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-stone-900 via-stone-850 to-stone-900 border-2 border-amber-500/40 p-8 sm:p-12 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+        <div className="relative rounded-3xl overflow-hidden bg-white border-2 border-amber-500/40 p-8 sm:p-12 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
           {/* Subtle background glow */}
           <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
@@ -307,7 +307,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
                 {isEs ? 'Concierge VIP & Asesoría Gratuita' : 'VIP Concierge & Free Consultation'}
               </div>
 
-              <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+              <h3 className="text-3xl sm:text-4xl font-black text-stone-900 tracking-tight">
                 {isEs ? '¿Buscás una experiencia 100% personalizada en Costa Rica?' : 'Looking for a 100% Tailored Costa Rican Experience?'}
               </h3>
 
@@ -336,7 +336,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
             <div className="lg:col-span-4 flex flex-col gap-3">
               <button
                 onClick={onOpenCustomFunnel}
-                className="w-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:to-amber-500 text-white font-black text-base uppercase py-4 px-6 rounded-2xl shadow-[0_4px_25px_rgba(255,140,0,0.5)] transition-all transform hover:-translate-y-1 active:translate-y-0 flex items-center justify-center gap-3 cursor-pointer border border-amber-300/50"
+                className="w-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:to-amber-500 text-stone-900 font-black text-base uppercase py-4 px-6 rounded-2xl shadow-[0_4px_25px_rgba(255,140,0,0.5)] transition-all transform hover:-translate-y-1 active:translate-y-0 flex items-center justify-center gap-3 cursor-pointer border border-amber-300/50"
               >
                 <Sparkles className="w-5 h-5 text-amber-100 animate-pulse" />
                 <span>{isEs ? 'Armar mi Viaje a Medida' : 'Build My Custom Trip'}</span>
@@ -344,7 +344,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
 
               <button
                 onClick={onOpenItineraryPlanner}
-                className="w-full bg-white/10 hover:bg-white/20 border border-black/20 text-white font-bold text-sm py-3 px-6 rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer backdrop-blur-md"
+                className="w-full bg-white/10 hover:bg-white/20 border border-black/20 text-stone-900 font-bold text-sm py-3 px-6 rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer backdrop-blur-md"
               >
                 <Compass className="w-4 h-4 text-amber-400" />
                 <span>{isEs ? 'Generar Itinerario con IA' : 'Generate AI Itinerary'}</span>

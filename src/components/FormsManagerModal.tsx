@@ -141,16 +141,16 @@ export const FormsManagerModal: React.FC<FormsManagerModalProps> = ({ isOpen, on
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-neutral-900 border border-orange-500/30 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+      <div className="bg-white border border-orange-500/30 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
         
         {/* Header */}
-        <div className="p-4 sm:p-6 bg-gradient-to-r from-stone-950 to-neutral-900 flex items-center justify-between border-b border-black/10 shrink-0">
+        <div className="p-4 sm:p-6 bg-white flex items-center justify-between border-b border-black/10 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-orange-500/20 rounded-xl flex items-center justify-center border border-orange-500/30">
               <FileText className="w-5 h-5 text-orange-400" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-wider">
+              <h2 className="text-lg sm:text-xl font-black text-stone-900 uppercase tracking-wider">
                 {language === 'es' ? 'Gestor de Formularios' : 'Forms Manager'}
               </h2>
               <p className="text-xs text-stone-600">
@@ -158,7 +158,7 @@ export const FormsManagerModal: React.FC<FormsManagerModalProps> = ({ isOpen, on
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-stone-600 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+          <button onClick={onClose} className="p-2 text-stone-600 hover:text-stone-900 hover:bg-white/10 rounded-full transition-colors">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -181,7 +181,7 @@ export const FormsManagerModal: React.FC<FormsManagerModalProps> = ({ isOpen, on
               <button
                 onClick={handleCreateForm}
                 disabled={creating}
-                className="flex items-center gap-2 bg-orange-500 hover:bg-teal-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 bg-orange-500 hover:bg-teal-600 text-stone-900 px-4 py-2 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
               >
                 {creating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 {language === 'es' ? 'Crear Formulario de Feedback' : 'Create Feedback Form'}
@@ -212,7 +212,7 @@ export const FormsManagerModal: React.FC<FormsManagerModalProps> = ({ isOpen, on
                       <FileText className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">
-                      <h4 className="text-sm font-bold text-white truncate">{form.name}</h4>
+                      <h4 className="text-sm font-bold text-stone-900 truncate">{form.name}</h4>
                       <p className="text-[10px] text-neutral-500">
                         {new Date(form.createdTime).toLocaleDateString()}
                       </p>
