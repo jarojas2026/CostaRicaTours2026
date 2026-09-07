@@ -8,6 +8,7 @@ import { getLangText } from '../utils/i18n';
 import { useTours } from '../contexts/ToursContext';
 import { useNatureSounds } from "../hooks/useNatureSounds";
 import { api } from '../lib/apiManager';
+import { triggerConsultaChatIA } from '../lib/n8nTriggers.js';
 
 interface FloatingWhatsAppProps {
   language: Language;
@@ -787,57 +788,6 @@ export const packageConsultaChatPayload = (
   };
 };
 
-/**
- * Dispara el trigger 'CONSULTA_CHAT_IA' enviando el payload al endpoint '/webhook/chat-consulta'
- * de n8n mediante apiManager.
- */
-export const triggerConsultaChatIA = async (
-  mensaje: string,
-  idioma: Language,
-  historial: Array<{ role: 'user' | 'bot'; text: string }> = [],
-  contextExtra?: {
-    tourSeleccionado?: string | null;
-    agente?: string;
-  }
-): Promise<ConsultaChatIAResult> => {
-  const payload = packageConsultaChatPayload(mensaje, idioma, historial, contextExtra);
-
-  try {
-    const res = await api.post('/webhook/chat-consulta', payload);
-
-    if (!res || !res.exito) {
-      const errorDetail = res?.error?.mensaje || 'Error en comunicación con el servidor n8n';
-      return {
-        success: false,
-        reply: null,
-        quickActions: [],
-        error: errorDetail,
-        raw: res
-      };
-    }
-
-    const data = res.datos || {};
-    const reply = data.reply || data.mensaje || data.response || data.output || data.text || null;
-    const quickActions = data.quickActions || data.accionesRapidas || [];
-
-    return {
-      success: true,
-      reply,
-      quickActions,
-      error: null,
-      raw: data
-    };
-  } catch (error) {
-    const errorDetail = error instanceof Error ? error.message : 'Error inesperado de conexión con n8n';
-    return {
-      success: false,
-      reply: null,
-      quickActions: [],
-      error: errorDetail
-    };
-  }
-};
-
 export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, initialMessage, onOpenAIAssistant, onSelectTour }) => {
   const { tours: TOURS } = useTours();
   const [isOpen, setIsOpen] = useState(false);
@@ -1202,11 +1152,44 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     setIsSendingToWebhook(true);
 
     try {
-      // 1. Ejecución del Trigger 'CONSULTA_CHAT_IA' empaquetando mensajes y contexto hacia '/webhook/chat-consulta' vía apiManager
-      const result = await triggerConsultaChatIA(msg, language, chatHistory);
+      // 1. Obtener o inicializar ID de usuario persistente
+      let userId = '';
+      try {
+        userId = localStorage.getItem('crt_user_id') || '';
+        if (!userId) {
+          userId = 'usr_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
+          localStorage.setItem('crt_user_id', userId);
+        }
+      } catch {
+        userId = 'usr_guest_' + Date.now();
+      }
 
-      if (result.success && result.reply) {
-        let quickActions = result.quickActions || [];
+      const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+      const recentHistory = chatHistory.slice(-10);
+
+      // 2. Empaquetar contexto y disparar trigger 'CONSULTA_CHAT_IA' hacia n8n
+      const result: any = await triggerConsultaChatIA({
+        idUsuario: userId,
+        mensaje: msg,
+        agenteSeleccionado: 'asistente_pura_vida_ia',
+        idioma: language,
+        historial: recentHistory,
+        contexto: {
+          origen: 'floating_whatsapp_widget',
+          paginaActual: currentUrl,
+          historialChat: recentHistory,
+          dispositivo: typeof navigator !== 'undefined' ? navigator.userAgent : 'browser',
+          horaLocal: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          agenteActivo: 'asistente_pura_vida_ia'
+        }
+      });
+
+      const isSuccess = Boolean(result && (result.exito || result.success));
+      const responseData = result?.datos || result?.data || {};
+      const reply = responseData.reply || responseData.mensaje || responseData.response || responseData.output || responseData.text || null;
+
+      if (isSuccess && reply) {
+        let quickActions = responseData.quickActions || responseData.accionesRapidas || [];
         if (quickActions.length === 0) {
           if (msg.toLowerCase().includes('precio') || msg.toLowerCase().includes('price') || msg.toLowerCase().includes('cost')) {
             quickActions = [
@@ -1216,16 +1199,19 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
           }
         }
 
+        // Si el sonido de la naturaleza está activo, reproducir tono
+        playNotification();
+
         setChatHistory(prev => {
-          const newHistory = [...prev, { role: 'bot' as const, text: result.reply!, quickActions }];
+          const newHistory = [...prev, { role: 'bot' as const, text: reply, quickActions }];
           return newHistory.slice(-50);
         });
       } else {
-        // Error en la comunicación con n8n capturado: se comunica directamente al usuario
-        const errorDetail = result.error || (language === 'es' ? 'El servidor n8n no respondió correctamente' : 'The n8n server did not respond properly');
-        console.warn(`[Trigger CONSULTA_CHAT_IA] Notificación de error en n8n: ${errorDetail}`);
+        // Manejo de estado de error cuando el webhook de n8n falla o no devuelve respuesta
+        const errorDetail = result?.error?.mensaje || result?.error?.codigo || (typeof result?.error === 'string' ? result.error : null) || (language === 'es' ? 'El servidor n8n no respondió correctamente' : 'The n8n webhook did not respond properly');
+        console.warn(`[Trigger CONSULTA_CHAT_IA] Webhook de n8n no disponible o retornó error: ${errorDetail}`);
 
-        // Intentar fallback con agentes locales si están disponibles para brindar soporte
+        // Intentar fallback con procesador local de agentes para garantizar atención al turista
         let fallbackReply = '';
         try {
           const triageRes = await fetch('/api/agents/triage', {
@@ -1248,10 +1234,10 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
             }
           }
         } catch {
-          // Si el procesador local no responde, continuamos con el aviso al usuario
+          // Si el procesador local falla, se continuará con el aviso de contingencia
         }
 
-        // Lógica de simulación para el indicador de progreso si el usuario interactúa con reservas
+        // Acciones rápidas contextuales para el usuario ante error
         let quickActions: any[] = [
           {
             label: language === 'es' ? '💬 WhatsApp Directo' : '💬 Direct WhatsApp',
@@ -1286,8 +1272,8 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
           : `⚠️ [n8n Notice / CONSULTA_CHAT_IA]: Unable to reach the '/webhook/chat-consulta' endpoint (${errorDetail}).`;
 
         const finalBotText = fallbackReply
-          ? `${n8nWarning}\n\n🤖 [Asistente de Respaldo]: ${fallbackReply}`
-          : `${n8nWarning}\n\n${language === 'es' ? 'Tu mensaje ha sido guardado localmente. Puedes reintentar o comunicarte de inmediato con un asesor mediante WhatsApp directo.' : 'Your message has been backed up locally. You can retry or reach an advisor right away via direct WhatsApp.'}`;
+          ? `${n8nWarning}\n\n🤖 [Asistente de Respaldo Pura Vida]: ${fallbackReply}`
+          : `${n8nWarning}\n\n${language === 'es' ? 'Tu mensaje ha sido respaldado en la cola local de contingencia. Puedes reintentar o comunicarte directamente con un asesor vía WhatsApp oficial.' : 'Your message has been backed up in the contingency queue. You can retry or reach an advisor directly via official WhatsApp.'}`;
 
         setChatHistory(prev => {
           const newHistory = [...prev, { role: 'bot' as const, text: finalBotText, quickActions }];

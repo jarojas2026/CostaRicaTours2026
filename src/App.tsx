@@ -493,15 +493,14 @@ export default function App() {
 
         {/* Tab 2: Interactive Map */}
         {activeTab === 'map' && (
-          <div>
+          <div className="w-full">
             <InteractiveMap
               language={language}
               currency={currency}
-              tours={filteredTours}
+              tours={toursLoading ? [] : TOURS}
               selectedRegion={selectedRegion}
               onSelectRegion={(reg) => {
                 setSelectedRegion(reg);
-                setActiveTab('tours');
               }}
               onExploreRegionTours={(reg) => {
                 setSelectedRegion(reg);

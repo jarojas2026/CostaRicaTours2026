@@ -1,4 +1,5 @@
 import express from 'express';
+import http from 'http';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { google } from 'googleapis';
@@ -497,9 +498,15 @@ app.delete('/api/chat/history', (req, res) => {
 // ==========================================
 
 async function startServer() {
+  const httpServer = http.createServer(app);
+
   if (process.env.NODE_ENV !== 'production') {
+    const isHmrDisabled = process.env.DISABLE_HMR === 'true';
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: isHmrDisabled ? false : { server: httpServer }
+      },
       appType: 'spa'
     });
     app.use(vite.middlewares);
@@ -511,7 +518,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor Full-Stack corriendo en http://0.0.0.0:${PORT}`);
     console.log(`⚡ Backend n8n listo con triggers salientes y webhooks entrantes.`);
   });
