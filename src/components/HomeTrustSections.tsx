@@ -344,10 +344,14 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
 
               <button
                 onClick={onOpenItineraryPlanner}
-                className="w-full bg-white/10 hover:bg-white/20 border border-black/20 text-stone-900 font-bold text-sm py-3 px-6 rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer backdrop-blur-md"
+                className="w-full bg-stone-900/90 hover:bg-stone-900 border border-teal-500/40 hover:border-teal-400 text-white font-bold text-sm py-3.5 px-6 rounded-2xl transition-all shadow-lg hover:shadow-[0_0_20px_rgba(20,184,166,0.25)] flex items-center justify-center gap-2.5 cursor-pointer group"
+                title={isEs ? 'Planificador inteligente con IA en segundos' : 'Smart AI trip planner in seconds'}
               >
-                <Compass className="w-4 h-4 text-amber-400" />
+                <Compass className="w-4 h-4 text-teal-300 group-hover:rotate-45 transition-transform duration-300" />
                 <span>{isEs ? 'Generar Itinerario con IA' : 'Generate AI Itinerary'}</span>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 ml-1">
+                  {isEs ? 'Gratis' : 'Free'}
+                </span>
               </button>
             </div>
           </div>

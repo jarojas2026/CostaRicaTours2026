@@ -85,8 +85,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       {/* Background decoration & atmospheric glow */}
       <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-stone-950/80 to-transparent pointer-events-none" />
       <div
-        className="absolute inset-0 opacity-30 bg-cover bg-center pointer-events-none mix-blend-overlay"
-        style={{ backgroundImage: `url('/images/costa_rica_hero_1785203783748.jpg')` }}
+        className="absolute inset-0 opacity-15 bg-cover bg-center pointer-events-none mix-blend-overlay"
+        style={{ backgroundImage: `url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80')` }}
       />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -267,6 +267,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   <img
                     src={slide.image}
                     alt={slide.title}
+                    loading="eager"
+                    fetchPriority="high"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      // Fallback image if unsplash url fails
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80';
+                    }}
                     className="w-full h-full object-cover transition-transform duration-[10s] ease-linear group-hover:scale-110"
                     style={{ transform: 'scale(1.05)' }} // Base scale for slight zoom effect
                   />
@@ -283,7 +290,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     <div className="flex items-center justify-between border-t border-black/20 pt-4">
                       <div className="flex flex-col">
                          <span className="text-[10px] text-stone-900/80 font-bold uppercase">{language === 'es' ? 'Desde ' : 'From '}</span>
-                         <span className="text-xl sm:text-2xl font-black text-orange-400">{formatCurrency(parseInt(slide.price) || 0, currency)}</span>
+                         <span className="text-xl sm:text-2xl font-black text-orange-400">
+                           {formatCurrency(Number(slide.price.replace(/[^0-9]/g, '')) || 0, currency)}
+                         </span>
                       </div>
                       <button className="bg-white/10 hover:bg-white/20 border border-black/20 backdrop-blur-md text-stone-900 font-black px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-[10px] sm:text-xs uppercase tracking-wider transition-colors shadow-lg">
                         {language === 'es' ? '¡Mandarse!' : 'Discover'}
