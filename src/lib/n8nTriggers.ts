@@ -4,9 +4,21 @@ import { api, API_CONFIG } from './apiManager';
 /**
  * 🤖 TRIGGER: CONSULTA_CHAT_IA
  */
-export const triggerChatAI = async (idUsuario, mensaje, agenteSeleccionado, idioma) => {
-  return await api.post('chat-consulta', { idUsuario, mensaje, timestamp: new Date().toISOString(), agenteSeleccionado, idioma });
+export const triggerConsultaChatIA = async (idUsuario: string, mensaje: string, agenteSeleccionado: string, idioma: string, contexto?: any) => {
+  return await api.post('/webhook/chat-consulta', { 
+    trigger: 'CONSULTA_CHAT_IA',
+    idUsuario, 
+    mensaje, 
+    message: mensaje,
+    agenteSeleccionado, 
+    idioma,
+    language: idioma,
+    timestamp: new Date().toISOString(),
+    ...(contexto ? { contexto, context: contexto } : {})
+  });
 };
+
+export const triggerChatAI = triggerConsultaChatIA;
 
 /**
  * 📝 TRIGGER: INICIO_RESERVA

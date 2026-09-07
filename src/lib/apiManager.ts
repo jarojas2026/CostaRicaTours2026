@@ -9,11 +9,13 @@ const ENV = import.meta.env?.MODE || 'development';
 
 export const API_CONFIG = {
   n8n: {
-    // Reemplaza con la URL base real de tu webhook de n8n
-    baseUrl: ENV === 'production' 
-      ? 'https://tu-instancia-n8n.webhook/production/' 
-      : 'https://tu-instancia-n8n.webhook/test/',
-    webhookSecret: import.meta.env?.VITE_N8N_WEBHOOK_SECRET || 'dev-secret-key-123'
+    // Reemplaza con la URL base real de tu webhook de n8n o usa VITE_N8N_WEBHOOK_URL
+    baseUrl: import.meta.env?.VITE_N8N_BASE_URL || 
+             import.meta.env?.VITE_N8N_WEBHOOK_URL || 
+             (ENV === 'production' 
+               ? 'https://tu-instancia-n8n.webhook/production' 
+               : 'https://tu-instancia-n8n.webhook/test'),
+    webhookSecret: import.meta.env?.VITE_N8N_WEBHOOK_SECRET || import.meta.env?.VITE_N8N_API_KEY || 'dev-secret-key-123'
   },
   pagos: {
     stripe: {
@@ -24,7 +26,7 @@ export const API_CONFIG = {
 
 // 2. CLIENTE HTTP UNIFICADO
 export const api = {
-  async fetchWithRetry(url, options = {}, retries = 3, backoff = 300) {
+  async fetchWithRetry(url: string, options: any = {}, retries = 3, backoff = 300): Promise<Response> {
     try {
       const response = await fetch(url, options);
       if (!response.ok) {
@@ -42,11 +44,19 @@ export const api = {
   },
 
   async request(endpoint: string, method: string = 'GET', data: any = null, customHeaders: any = {}) {
-    const url = endpoint.startsWith('http') ? endpoint : `${API_CONFIG.n8n.baseUrl}${endpoint}`;
+    let url: string;
+    if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+      url = endpoint;
+    } else {
+      const cleanBase = (API_CONFIG.n8n.baseUrl || '').replace(/\/+$/, '');
+      const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+      url = `${cleanBase}${cleanEndpoint}`;
+    }
     
-    const headers = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'X-Webhook-Secret': API_CONFIG.n8n.webhookSecret,
+      ...(import.meta.env?.VITE_N8N_API_KEY ? { 'Authorization': `Bearer ${import.meta.env.VITE_N8N_API_KEY}` } : {}),
       ...customHeaders
     };
 
@@ -126,9 +136,17 @@ export const api = {
 // 3. SISTEMA DE WEBHOOKS SALIENTES Y TRIGGERS PARA N8N
 export const n8nTriggers = {
   // 1. TRIGGER: CONSULTA_CHAT_IA
-  enviarConsultaChat: async (idUsuario, mensaje, agenteSeleccionado, idioma) => {
-    const payload = { idUsuario, mensaje, timestamp: new Date().toISOString(), agenteSeleccionado, idioma };
-    return api.post('chat-consulta', payload);
+  enviarConsultaChat: async (idUsuario: string, mensaje: string, agenteSeleccionado: string, idioma: string, contexto?: any) => {
+    const payload = {
+      trigger: 'CONSULTA_CHAT_IA',
+      idUsuario,
+      mensaje,
+      agenteSeleccionado,
+      idioma,
+      timestamp: new Date().toISOString(),
+      ...(contexto ? { contexto } : {})
+    };
+    return api.post('/webhook/chat-consulta', payload);
   },
 
   // 2. TRIGGER: INICIO_RESERVA

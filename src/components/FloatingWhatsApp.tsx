@@ -7,6 +7,7 @@ import { Language, Tour } from '../types';
 import { getLangText } from '../utils/i18n';
 import { useTours } from '../contexts/ToursContext';
 import { useNatureSounds } from "../hooks/useNatureSounds";
+import { api } from '../lib/apiManager';
 
 interface FloatingWhatsAppProps {
   language: Language;
@@ -694,6 +695,149 @@ const ChatMiniCard: React.FC<ChatMiniCardProps> = ({ tour, language, onSelectTou
   );
 };
 
+/**
+ * Esquema JSON requerido para el trigger 'CONSULTA_CHAT_IA' de n8n
+ */
+export interface ConsultaChatIAPayload {
+  trigger: 'CONSULTA_CHAT_IA';
+  idUsuario: string;
+  mensaje: string;
+  agenteSeleccionado: string;
+  idioma: Language;
+  timestamp: string;
+  contexto: {
+    origen: string;
+    paginaActual: string;
+    historialChat: Array<{ role: 'user' | 'bot'; text: string }>;
+    tourSeleccionado?: string | null;
+    dispositivo: string;
+    horaLocal: string;
+    agenteActivo: string;
+  };
+  // Propiedades espejo para compatibilidad con flujos en inglés en n8n
+  message: string;
+  language: Language;
+  context: {
+    source: string;
+    currentPage: string;
+    chatHistory: Array<{ role: 'user' | 'bot'; text: string }>;
+  };
+}
+
+export interface ConsultaChatIAResult {
+  success: boolean;
+  reply: string | null;
+  quickActions: Array<{ label: string; action: string; data?: any }>;
+  error: string | null;
+  raw?: any;
+}
+
+/**
+ * Empaqueta los mensajes del usuario y el contexto relevante en el esquema JSON
+ * requerido para el trigger 'CONSULTA_CHAT_IA'.
+ */
+export const packageConsultaChatPayload = (
+  mensaje: string,
+  idioma: Language,
+  historial: Array<{ role: 'user' | 'bot'; text: string }> = [],
+  contextExtra?: {
+    tourSeleccionado?: string | null;
+    agente?: string;
+  }
+): ConsultaChatIAPayload => {
+  let userId = '';
+  try {
+    userId = localStorage.getItem('crt_user_id') || '';
+    if (!userId) {
+      userId = 'usr_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
+      localStorage.setItem('crt_user_id', userId);
+    }
+  } catch {
+    userId = 'usr_guest_' + Date.now();
+  }
+
+  const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const now = new Date();
+  const activeAgent = contextExtra?.agente || 'asistente_pura_vida_ia';
+  const recentHistory = historial.slice(-10);
+
+  return {
+    trigger: 'CONSULTA_CHAT_IA',
+    idUsuario: userId,
+    mensaje,
+    agenteSeleccionado: activeAgent,
+    idioma,
+    timestamp: now.toISOString(),
+    contexto: {
+      origen: 'floating_whatsapp_widget',
+      paginaActual: currentUrl,
+      historialChat: recentHistory,
+      tourSeleccionado: contextExtra?.tourSeleccionado || null,
+      dispositivo: typeof navigator !== 'undefined' ? navigator.userAgent : 'browser',
+      horaLocal: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      agenteActivo: activeAgent
+    },
+    message: mensaje,
+    language: idioma,
+    context: {
+      source: 'floating_whatsapp_widget',
+      currentPage: currentUrl,
+      chatHistory: recentHistory
+    }
+  };
+};
+
+/**
+ * Dispara el trigger 'CONSULTA_CHAT_IA' enviando el payload al endpoint '/webhook/chat-consulta'
+ * de n8n mediante apiManager.
+ */
+export const triggerConsultaChatIA = async (
+  mensaje: string,
+  idioma: Language,
+  historial: Array<{ role: 'user' | 'bot'; text: string }> = [],
+  contextExtra?: {
+    tourSeleccionado?: string | null;
+    agente?: string;
+  }
+): Promise<ConsultaChatIAResult> => {
+  const payload = packageConsultaChatPayload(mensaje, idioma, historial, contextExtra);
+
+  try {
+    const res = await api.post('/webhook/chat-consulta', payload);
+
+    if (!res || !res.exito) {
+      const errorDetail = res?.error?.mensaje || 'Error en comunicación con el servidor n8n';
+      return {
+        success: false,
+        reply: null,
+        quickActions: [],
+        error: errorDetail,
+        raw: res
+      };
+    }
+
+    const data = res.datos || {};
+    const reply = data.reply || data.mensaje || data.response || data.output || data.text || null;
+    const quickActions = data.quickActions || data.accionesRapidas || [];
+
+    return {
+      success: true,
+      reply,
+      quickActions,
+      error: null,
+      raw: data
+    };
+  } catch (error) {
+    const errorDetail = error instanceof Error ? error.message : 'Error inesperado de conexión con n8n';
+    return {
+      success: false,
+      reply: null,
+      quickActions: [],
+      error: errorDetail
+    };
+  }
+};
+
 export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, initialMessage, onOpenAIAssistant, onSelectTour }) => {
   const { tours: TOURS } = useTours();
   const [isOpen, setIsOpen] = useState(false);
@@ -1004,7 +1148,11 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
 
   
   const handleQuickAction = (action: string, data?: any) => {
-    if (action === 'send_message') {
+    if (action === 'direct_whatsapp') {
+      const text = encodeURIComponent(language === 'es' ? 'Hola, necesito asistencia con tours en Costa Rica.' : 'Hello, I need assistance with tours in Costa Rica.');
+      window.open(`https://wa.me/50687959148?text=${text}`, '_blank');
+      setIsOpen(false);
+    } else if (action === 'send_message') {
       setChatInput(data.message);
       // We can also auto-send it
       setTimeout(() => {
@@ -1054,100 +1202,119 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     setIsSendingToWebhook(true);
 
     try {
-      const n8nWebhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL || 'https://tu-n8n.com/webhook/whatsapp-chat';
-      const n8nApiKey = import.meta.env.VITE_N8N_API_KEY;
-      
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (n8nApiKey) {
-        // Secure API Key authentication for n8n Webhook validation
-        headers['Authorization'] = `Bearer ${n8nApiKey}`;
-        // Alternatively, use a custom header if configured in n8n
-        // headers['X-N8N-API-KEY'] = n8nApiKey;
-      }
-      
-      const response = await fetch(n8nWebhookUrl, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ 
-           message: msg, 
-           language,
-           source: 'website_chat',
-           timestamp: new Date().toISOString()
-        })
-      });
+      // 1. Ejecución del Trigger 'CONSULTA_CHAT_IA' empaquetando mensajes y contexto hacia '/webhook/chat-consulta' vía apiManager
+      const result = await triggerConsultaChatIA(msg, language, chatHistory);
 
-      if (!response.ok && n8nWebhookUrl.includes('tu-n8n.com')) {
-         throw new Error("Simulated Webhook");
-      }
-      
-      const data = await response.json().catch(() => ({}));
-      
-      setChatHistory(prev => {
-        const replyText = data.reply || (language === 'es' ? '🤖 ¡Mensaje recibido! Nuestro agente n8n lo está procesando...' : '🤖 Message received! Our n8n agent is processing it...');
-        
-        const quickActions = data.quickActions || [];
-        const newHistory = [...prev, { role: 'bot' as const, text: replyText, quickActions }];
-        return newHistory.slice(-50);
-
-      });
-      
-    } catch (error) {
-      // Fallback for simulation purposes: call our local agent Triage/Processor
-      try {
-        const triageRes = await fetch('/api/agents/triage', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rawMessage: msg })
-        });
-        const triageData = await triageRes.json();
-        
-        const procRes = await fetch('/api/agents/processor', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rawMessage: msg, intent: triageData.intent, extractedData: triageData.extractedData })
-        });
-        const procData = await procRes.json();
-
-
-        // SIMULATION LOGIC FOR PROGRESS INDICATOR
-        let quickActions: any[] = [];
-        if (msg.toLowerCase().includes('precio') || msg.toLowerCase().includes('price') || msg.toLowerCase().includes('cost')) {
+      if (result.success && result.reply) {
+        let quickActions = result.quickActions || [];
+        if (quickActions.length === 0) {
+          if (msg.toLowerCase().includes('precio') || msg.toLowerCase().includes('price') || msg.toLowerCase().includes('cost')) {
             quickActions = [
               { label: language === 'es' ? '📅 Reservar Ahora' : '📅 Book Now', action: 'book' },
               { label: language === 'es' ? '🔍 Ver Detalles' : '🔍 See Details', action: 'send_message', data: { message: language === 'es' ? 'Ver detalles de tours' : 'See tour details' } }
             ];
-        } else if (msg.toLowerCase().includes('reserv') || msg.toLowerCase().includes('book')) {
-
-           setBookingStatus('pending');
-           setTimeout(() => {
-             setBookingStatus('payment_required');
-             setChatHistory(prev => {
-                const newHistory = [...prev, { role: 'bot' as const, text: language === 'es' ? '🔗 Aquí tienes tu enlace de pago seguro para confirmar el cupo. Expira en 15 minutos.' : '🔗 Here is your secure payment link to confirm the spot. It expires in 15 minutes.' }];
-                return newHistory.slice(-50);
-             });
-           }, 5000);
-        } else if ((msg.toLowerCase().includes('pag') || msg.toLowerCase().includes('paid') || msg.toLowerCase().includes('listo')) && bookingStatus === 'payment_required') {
-           setBookingStatus('confirmed');
+          }
         }
 
         setChatHistory(prev => {
-          let replyText = procData.draftResponse || (language === 'es' ? 'Mensaje procesado en backend.' : 'Message processed in backend.');
-          
-          if (bookingStatus === 'payment_required' && (msg.toLowerCase().includes('pag') || msg.toLowerCase().includes('paid') || msg.toLowerCase().includes('listo'))) {
-             replyText = language === 'es' ? '✅ ¡Pago recibido! Tu reserva está 100% confirmada. Te hemos enviado el voucher por correo.' : '✅ Payment received! Your booking is 100% confirmed. We sent the voucher to your email.';
-          }
-
-          
-          const newHistory = [...prev, { role: 'bot' as const, text: replyText, quickActions }];
+          const newHistory = [...prev, { role: 'bot' as const, text: result.reply!, quickActions }];
           return newHistory.slice(-50);
-
         });
-      } catch (innerError) {
-         setChatHistory(prev => {
-            const newHistory = [...prev, { role: 'bot' as const, text: language === 'es' ? '⚠️ Error al contactar al Agente N8N o Backend.' : '⚠️ Error contacting N8N or Backend Agent.' }];
-            return newHistory.slice(-50);
-         });
+      } else {
+        // Error en la comunicación con n8n capturado: se comunica directamente al usuario
+        const errorDetail = result.error || (language === 'es' ? 'El servidor n8n no respondió correctamente' : 'The n8n server did not respond properly');
+        console.warn(`[Trigger CONSULTA_CHAT_IA] Notificación de error en n8n: ${errorDetail}`);
+
+        // Intentar fallback con agentes locales si están disponibles para brindar soporte
+        let fallbackReply = '';
+        try {
+          const triageRes = await fetch('/api/agents/triage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rawMessage: msg })
+          });
+          if (triageRes.ok) {
+            const triageData = await triageRes.json();
+            const procRes = await fetch('/api/agents/processor', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ rawMessage: msg, intent: triageData.intent, extractedData: triageData.extractedData })
+            });
+            if (procRes.ok) {
+              const procData = await procRes.json();
+              if (procData.draftResponse) {
+                fallbackReply = procData.draftResponse;
+              }
+            }
+          }
+        } catch {
+          // Si el procesador local no responde, continuamos con el aviso al usuario
+        }
+
+        // Lógica de simulación para el indicador de progreso si el usuario interactúa con reservas
+        let quickActions: any[] = [
+          {
+            label: language === 'es' ? '💬 WhatsApp Directo' : '💬 Direct WhatsApp',
+            action: 'direct_whatsapp'
+          },
+          {
+            label: language === 'es' ? '🔄 Reintentar Envío' : '🔄 Retry Send',
+            action: 'send_message',
+            data: { message: msg }
+          }
+        ];
+
+        if (msg.toLowerCase().includes('precio') || msg.toLowerCase().includes('price') || msg.toLowerCase().includes('cost')) {
+          quickActions.unshift(
+            { label: language === 'es' ? '📅 Reservar Ahora' : '📅 Book Now', action: 'book' }
+          );
+        } else if (msg.toLowerCase().includes('reserv') || msg.toLowerCase().includes('book')) {
+          setBookingStatus('pending');
+          setTimeout(() => {
+            setBookingStatus('payment_required');
+            setChatHistory(prev => {
+              const newHistory = [...prev, { role: 'bot' as const, text: language === 'es' ? '🔗 Aquí tienes tu enlace de pago seguro para confirmar el cupo. Expira en 15 minutos.' : '🔗 Here is your secure payment link to confirm the spot. It expires in 15 minutes.' }];
+              return newHistory.slice(-50);
+            });
+          }, 5000);
+        } else if ((msg.toLowerCase().includes('pag') || msg.toLowerCase().includes('paid') || msg.toLowerCase().includes('listo')) && bookingStatus === 'payment_required') {
+          setBookingStatus('confirmed');
+        }
+
+        const n8nWarning = language === 'es'
+          ? `⚠️ [Aviso n8n / CONSULTA_CHAT_IA]: No fue posible contactar el webhook '/webhook/chat-consulta' (${errorDetail}).`
+          : `⚠️ [n8n Notice / CONSULTA_CHAT_IA]: Unable to reach the '/webhook/chat-consulta' endpoint (${errorDetail}).`;
+
+        const finalBotText = fallbackReply
+          ? `${n8nWarning}\n\n🤖 [Asistente de Respaldo]: ${fallbackReply}`
+          : `${n8nWarning}\n\n${language === 'es' ? 'Tu mensaje ha sido guardado localmente. Puedes reintentar o comunicarte de inmediato con un asesor mediante WhatsApp directo.' : 'Your message has been backed up locally. You can retry or reach an advisor right away via direct WhatsApp.'}`;
+
+        setChatHistory(prev => {
+          const newHistory = [...prev, { role: 'bot' as const, text: finalBotText, quickActions }];
+          return newHistory.slice(-50);
+        });
       }
+    } catch (unexpectedError) {
+      console.error('[Trigger CONSULTA_CHAT_IA] Error fatal:', unexpectedError);
+      const errText = unexpectedError instanceof Error ? unexpectedError.message : 'Error inesperado';
+      setChatHistory(prev => {
+        const newHistory = [
+          ...prev,
+          {
+            role: 'bot' as const,
+            text: language === 'es'
+              ? `⚠️ Error al procesar tu consulta (${errText}). Por favor contáctanos vía WhatsApp.`
+              : `⚠️ Error processing your inquiry (${errText}). Please contact us via WhatsApp.`,
+            quickActions: [
+              {
+                label: language === 'es' ? '💬 WhatsApp Directo' : '💬 Direct WhatsApp',
+                action: 'direct_whatsapp'
+              }
+            ]
+          }
+        ];
+        return newHistory.slice(-50);
+      });
     } finally {
       setIsSendingToWebhook(false);
     }
