@@ -1168,21 +1168,11 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
       const recentHistory = chatHistory.slice(-10);
 
       // 2. Empaquetar contexto y disparar trigger 'CONSULTA_CHAT_IA' hacia n8n
-      const result: any = await triggerConsultaChatIA({
-        idUsuario: userId,
-        mensaje: msg,
-        agenteSeleccionado: 'asistente_pura_vida_ia',
-        idioma: language,
-        historial: recentHistory,
-        contexto: {
-          origen: 'floating_whatsapp_widget',
-          paginaActual: currentUrl,
-          historialChat: recentHistory,
-          dispositivo: typeof navigator !== 'undefined' ? navigator.userAgent : 'browser',
-          horaLocal: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          agenteActivo: 'asistente_pura_vida_ia'
-        }
+      const formattedHistory = chatHistory.map(h => ({ role: h.role, text: h.text }));
+      const payload = packageConsultaChatPayload(msg, language, formattedHistory, {
+        agente: 'asistente_pura_vida_ia'
       });
+      const result: any = await triggerConsultaChatIA(payload);
 
       const isSuccess = Boolean(result && (result.exito || result.success));
       const responseData = result?.datos || result?.data || {};

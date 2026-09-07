@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { REGIONS_DATA } from '../data/regionsData';
+import { REGIONS_GEOJSON } from '../data/regionsGeoJson';
 import { TourRegion, Language, Currency, Tour, TourCategory } from '../types';
 import { 
   MapPin, 
@@ -146,6 +147,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const leafletMapRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const geoJsonLayerRef = useRef<L.GeoJSON | null>(null);
 
   const [selectedMapTour, setSelectedMapTour] = useState<Tour | null>(null);
   const [activeLayer, setActiveLayer] = useState<TileLayerKey>('voyager');
@@ -284,6 +286,58 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     const markersGroup = L.layerGroup().addTo(map);
     markersLayerRef.current = markersGroup;
 
+    // GeoJSON region layer
+    const geoJsonLayer = L.geoJSON(REGIONS_GEOJSON as any, {
+      style: (feature) => {
+        const id = feature?.properties?.id;
+        const isSelected = selectedRegion === id;
+        return {
+          color: feature?.properties?.color || '#10b981',
+          weight: isSelected ? 3 : 1.5,
+          opacity: 0.8,
+          fillColor: feature?.properties?.color || '#10b981',
+          fillOpacity: isSelected ? 0.4 : 0.15
+        };
+      },
+      onEachFeature: (feature, layer) => {
+        const id = feature.properties?.id;
+        const name = feature.properties?.name;
+        
+        layer.bindTooltip(`<b>${name}</b><br/>${language === 'es' ? 'Haz clic para filtrar región' : 'Click to filter region'}`, {
+          direction: 'top'
+        });
+
+        layer.on({
+          mouseover: (e) => {
+            const l = e.target;
+            l.setStyle({
+              weight: 3,
+              fillOpacity: 0.35
+            });
+          },
+          mouseout: (e) => {
+            const l = e.target;
+            const isSelected = selectedRegion === id;
+            l.setStyle({
+              weight: isSelected ? 3 : 1.5,
+              fillOpacity: isSelected ? 0.4 : 0.15
+            });
+          },
+          click: () => {
+            onSelectRegion(id as TourRegion);
+            const target = REGION_NAV_ITEMS.find((r) => r.id === id);
+            if (target && leafletMapRef.current) {
+              leafletMapRef.current.flyTo([target.lat, target.lng], target.zoom, {
+                duration: 1.2
+              });
+            }
+          }
+        });
+      }
+    }).addTo(map);
+
+    geoJsonLayerRef.current = geoJsonLayer;
+
     map.on('zoomend', () => {
       setCurrentZoom(map.getZoom());
     });
@@ -309,7 +363,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     };
   }, [useGoogleMapsMode]);
 
-  // Reactive Fly to Region when selectedRegion changes externally
+  // Reactive Fly to Region when selectedRegion changes externally & update GeoJSON styling
   useEffect(() => {
     if (!leafletMapRef.current) return;
     const target = REGION_NAV_ITEMS.find((r) => r.id === selectedRegion);
@@ -317,6 +371,17 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       leafletMapRef.current.flyTo([target.lat, target.lng], target.zoom, {
         duration: 1.2,
         easeLinearity: 0.25
+      });
+    }
+
+    if (geoJsonLayerRef.current) {
+      geoJsonLayerRef.current.eachLayer((layer: any) => {
+        const id = layer.feature?.properties?.id;
+        const isActuallySelected = selectedRegion === id;
+        layer.setStyle({
+          weight: isActuallySelected ? 3 : 1.5,
+          fillOpacity: isActuallySelected ? 0.4 : (selectedRegion === 'all' ? 0.15 : 0.05)
+        });
       });
     }
   }, [selectedRegion]);
