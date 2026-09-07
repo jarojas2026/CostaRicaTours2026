@@ -1,4 +1,6 @@
-import React from 'react';
+const fs = require('fs');
+
+const ambient = `import React from 'react';
 
 export const AmbientBackground: React.FC = () => {
   return (
@@ -26,3 +28,7 @@ export const AmbientBackground: React.FC = () => {
     </div>
   );
 };
+`;
+
+fs.writeFileSync('src/components/AmbientBackground.tsx', ambient);
+console.log('AmbientBackground.tsx updated');

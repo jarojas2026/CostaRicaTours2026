@@ -9,10 +9,10 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
   return (
-    <footer className="bg-[#0A2314] text-stone-700 border-t-4 border-teal-500/40 mt-12">
+    <footer className="bg-[#041711] text-emerald-100/80 border-t-4 border-emerald-500/40 mt-12">
       {/* Trust & Payment Bar */}
-      <div className="bg-[#05140B] text-xs py-3 px-6 border-b border-stone-200/40">
-        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4 text-stone-800">
+      <div className="bg-[#05140B] text-xs py-3 px-6 border-b border-emerald-500/20">
+        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4 text-emerald-100/90">
           <div className="flex items-center gap-2">
             <Lock className="w-4 h-4 text-teal-400" />
             <span className="font-semibold text-[11px] sm:text-xs">
@@ -22,11 +22,11 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
 
           <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-teal-300">
             <span>{language === 'es' ? 'Métodos de Pago Aceptados:' : 'Accepted Payments:'}</span>
-            <span className="bg-white px-2 py-0.5 rounded border border-teal-500/30 text-white">VISA</span>
-            <span className="bg-white px-2 py-0.5 rounded border border-teal-500/30 text-white">Mastercard</span>
-            <span className="bg-white px-2 py-0.5 rounded border border-teal-500/30 text-white">PayPal</span>
-            <span className="bg-white px-2 py-0.5 rounded border border-teal-500/30 text-white">Apple Pay</span>
-            <span className="bg-white px-2 py-0.5 rounded border border-teal-500/30 text-orange-300">SINPE Móvil</span>
+            <span className="bg-[#0a2c1e] px-2 py-0.5 rounded border border-emerald-500/40 text-stone-100">VISA</span>
+            <span className="bg-[#0a2c1e] px-2 py-0.5 rounded border border-emerald-500/40 text-stone-100">Mastercard</span>
+            <span className="bg-[#0a2c1e] px-2 py-0.5 rounded border border-emerald-500/40 text-stone-100">PayPal</span>
+            <span className="bg-[#0a2c1e] px-2 py-0.5 rounded border border-emerald-500/40 text-stone-100">Apple Pay</span>
+            <span className="bg-[#0a2c1e] px-2 py-0.5 rounded border border-emerald-500/40 text-amber-400">SINPE Móvil</span>
           </div>
         </div>
       </div>
@@ -50,7 +50,7 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
             </div>
           </div>
 
-          <div className="hidden sm:block w-[1px] h-12 bg-stone-200/60" />
+          <div className="hidden sm:block w-[1px] h-12 bg-emerald-500/30" />
 
           <div className="flex flex-col text-xs">
             <span className="text-[10px] uppercase font-black text-teal-400">
@@ -97,7 +97,7 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
             <span className="text-[10px] uppercase font-black text-teal-400">
               {language === 'es' ? 'Oficina Principal' : 'Main Office'}
             </span>
-            <span className="font-extrabold flex items-center gap-1 text-stone-800">
+            <span className="font-extrabold flex items-center gap-1 text-emerald-100/90">
               <MapPin className="w-3.5 h-3.5 text-teal-400" />
               San José, Paseo Colón, Centro Corporativo Costa Rica Tours
             </span>
@@ -141,7 +141,7 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
       </div>
 
       {/* Bottom Sub-bar */}
-      <div className="bg-[#05140B] text-stone-600 text-xs py-4 px-6 border-t border-stone-200/50">
+      <div className="bg-[#020e0a] text-emerald-200/70 text-xs py-4 px-6 border-t border-emerald-500/20">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-teal-400" />

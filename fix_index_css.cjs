@@ -1,4 +1,6 @@
-@import "tailwindcss";
+const fs = require('fs');
+
+const css = `@import "tailwindcss";
 
 @layer base {
   :root {
@@ -142,3 +144,7 @@
     max-height: 80vh !important;
   }
 }
+`;
+
+fs.writeFileSync('src/index.css', css);
+console.log('src/index.css updated successfully');

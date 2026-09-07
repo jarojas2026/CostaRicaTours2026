@@ -158,14 +158,14 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Structural Spacer: Prevents content clipping under fixed header */}
       <div className="w-full h-[94px] sm:h-[100px] shrink-0" aria-hidden="true" />
       
-      <header id="main-header" className="w-full fixed top-0 left-0 right-0 z-50 bg-stone-100/95 backdrop-blur-md border-b border-black/10 text-stone-900 shadow-xl transition-all duration-200">
+      <header id="main-header" className="w-full fixed top-0 left-0 right-0 z-50 bg-[#051c14]/95 backdrop-blur-md border-b border-emerald-500/20 text-white shadow-2xl transition-all duration-200">
         
         {/* Top Assistance & Trust Strip */}
-        <div className="bg-white/90 text-xs px-3 sm:px-6 py-1 border-b border-black/10 text-stone-800/90">
+        <div className="bg-[#03130d]/90 text-xs px-3 sm:px-6 py-1 border-b border-emerald-500/20 text-emerald-100/80">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
             
             <div className="flex items-center gap-2 sm:gap-3 text-[11px] whitespace-nowrap overflow-x-auto hide-scrollbar">
-              <span className="inline-flex items-center gap-1.5 bg-orange-500/15 text-orange-300 px-2 py-0.5 rounded-full border border-orange-500/30 font-bold">
+              <span className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/40 font-bold">
                 <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
                 <span>{language === 'es' ? '🇨🇷 Agencia Receptiva Oficial' : '🇨🇷 Official Receptive Agency'}</span>
               </span>
@@ -176,10 +176,10 @@ export const Header: React.FC<HeaderProps> = ({
                 href="https://wa.me/50687959148?text=Hola%20Costa%20Rica%20Tours%20(costaricatours.es),%20quisiera%20consultar%20sobre%20los%20tours%20y%20traslados."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-stone-900 hover:text-stone-900 font-bold transition-colors"
+                className="inline-flex items-center gap-1 text-stone-200 hover:text-white font-bold transition-colors"
               >
                 <MessageCircle className="w-3 h-3 text-[#25D366]" />
-                <span>WhatsApp 24/7: <strong className="text-stone-900">+506 8795-9148</strong></span>
+                <span>WhatsApp 24/7: <strong className="text-amber-400">+506 8795-9148</strong></span>
               </a>
 
               <span className="hidden lg:inline text-stone-800">•</span>
@@ -193,7 +193,7 @@ export const Header: React.FC<HeaderProps> = ({
               </a>
             </div>
 
-            <div className="hidden sm:flex items-center gap-2 text-[11px] font-bold text-orange-300 shrink-0">
+            <div className="hidden sm:flex items-center gap-2 text-[11px] font-bold text-amber-300 shrink-0">
               <ShieldCheck className="w-3.5 h-3.5 text-orange-400" />
               <span>{language === 'es' ? 'Tarifas Oficiales Directas' : 'Guaranteed Direct Rates'}</span>
             </div>
@@ -213,11 +213,11 @@ export const Header: React.FC<HeaderProps> = ({
               <Compass className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div className="whitespace-nowrap">
-              <div className="text-sm sm:text-xl font-black tracking-tighter uppercase leading-none text-stone-900 flex items-center gap-1.5">
+              <div className="text-sm sm:text-xl font-black tracking-tighter uppercase leading-none text-white flex items-center gap-1.5">
                 <span>Costa Rica</span>
                 <span className="text-orange-400">Tours</span>
               </div>
-              <span className="text-[8px] sm:text-[9px] tracking-[0.2em] uppercase font-bold text-stone-600 block mt-1">
+              <span className="text-[8px] sm:text-[9px] tracking-[0.2em] uppercase font-bold text-emerald-400/90 block mt-1">
                 {language === 'es' ? 'Descubre Costa Rica' : 'Discover Costa Rica'}
               </span>
             </div>
@@ -227,25 +227,25 @@ export const Header: React.FC<HeaderProps> = ({
           <nav className="hidden 2xl:flex items-center gap-8 text-sm font-bold tracking-widest uppercase">
             <button
               onClick={() => handleTabChange('home')}
-              className={`transition-all cursor-pointer ${currentTab === 'home' ? 'text-orange-400' : 'text-stone-600 hover:text-stone-900'}`}
+              className={`transition-all cursor-pointer ${currentTab === 'home' ? 'text-orange-400' : 'text-stone-300 hover:text-amber-400'}`}
             >
               {language === 'es' ? 'Inicio' : 'Home'}
             </button>
             <button
               onClick={() => handleTabChange('tours')}
-              className={`transition-all cursor-pointer ${currentTab === 'tours' ? 'text-orange-400' : 'text-stone-600 hover:text-stone-900'}`}
+              className={`transition-all cursor-pointer ${currentTab === 'tours' ? 'text-orange-400' : 'text-stone-300 hover:text-amber-400'}`}
             >
               {language === 'es' ? 'Tours' : 'Tours'}
             </button>
             <button
               onClick={() => handleTabChange('map')}
-              className={`transition-all cursor-pointer ${currentTab === 'map' ? 'text-orange-400' : 'text-stone-600 hover:text-stone-900'}`}
+              className={`transition-all cursor-pointer ${currentTab === 'map' ? 'text-orange-400' : 'text-stone-300 hover:text-amber-400'}`}
             >
               {language === 'es' ? 'Mapa' : 'Map'}
             </button>
             <button
               onClick={() => handleTabChange('ai')}
-              className={`transition-all cursor-pointer flex items-center gap-1.5 ${currentTab === 'ai' ? 'text-orange-400' : 'text-stone-600 hover:text-stone-900'}`}
+              className={`transition-all cursor-pointer flex items-center gap-1.5 ${currentTab === 'ai' ? 'text-orange-400' : 'text-stone-300 hover:text-amber-400'}`}
             >
               <Bot className="w-4 h-4" />
               <span>{language === 'es' ? 'IA Asistente' : 'AI Assistant'}</span>
@@ -256,37 +256,37 @@ export const Header: React.FC<HeaderProps> = ({
           <nav className="hidden xl:flex 2xl:hidden items-center gap-4 text-sm font-bold tracking-wider">
             <button
               onClick={() => handleTabChange('home')}
-              className={`transition-colors cursor-pointer ${currentTab === 'home' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-800 hover:text-orange-300'}`}
+              className={`transition-colors cursor-pointer ${currentTab === 'home' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-300 hover:text-amber-300'}`}
             >
               {language === 'es' ? 'Inicio' : 'Home'}
             </button>
             <button
               onClick={() => handleTabChange('tours')}
-              className={`transition-colors cursor-pointer ${currentTab === 'tours' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-800 hover:text-orange-300'}`}
+              className={`transition-colors cursor-pointer ${currentTab === 'tours' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-300 hover:text-amber-300'}`}
             >
               {language === 'es' ? 'Tours' : 'Tours'}
             </button>
             <button
               onClick={() => handleTabChange('map')}
-              className={`transition-colors cursor-pointer ${currentTab === 'map' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-800 hover:text-orange-300'}`}
+              className={`transition-colors cursor-pointer ${currentTab === 'map' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-300 hover:text-amber-300'}`}
             >
               {language === 'es' ? 'Mapa' : 'Map'}
             </button>
             <button
               onClick={() => handleTabChange('ai')}
-              className={`transition-colors cursor-pointer ${currentTab === 'ai' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-800 hover:text-orange-300'}`}
+              className={`transition-colors cursor-pointer ${currentTab === 'ai' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-300 hover:text-amber-300'}`}
             >
               {language === 'es' ? 'IA' : 'AI'}
             </button>
             <button
               onClick={() => handleTabChange('itinerary')}
-              className={`transition-colors cursor-pointer ${currentTab === 'itinerary' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-800 hover:text-orange-300'}`}
+              className={`transition-colors cursor-pointer ${currentTab === 'itinerary' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-300 hover:text-amber-300'}`}
             >
               {language === 'es' ? 'Itinerario' : 'Itinerary'}
             </button>
             <button
               onClick={() => handleTabChange('flights')}
-              className={`transition-colors cursor-pointer ${currentTab === 'flights' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-800 hover:text-orange-300'}`}
+              className={`transition-colors cursor-pointer ${currentTab === 'flights' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-300 hover:text-amber-300'}`}
             >
               {language === 'es' ? 'Vuelos' : 'Flights'}
             </button>
@@ -303,7 +303,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setIsCurrencyMenuOpen(!isCurrencyMenuOpen);
                   setIsLangMenuOpen(false);
                 }}
-                className="flex items-center gap-1 bg-stone-100/70 hover:bg-stone-100 px-2 sm:px-2.5 py-1.5 rounded-xl border border-teal-500/40 text-[11px] font-bold text-stone-900 transition-all cursor-pointer"
+                className="flex items-center gap-1 bg-emerald-950/70 hover:bg-emerald-900/80 px-2 sm:px-2.5 py-1.5 rounded-xl border border-emerald-500/40 text-[11px] font-bold text-stone-100 transition-all cursor-pointer"
                 title="Seleccionar Moneda / Currency"
               >
                 <span className="font-mono text-orange-400 font-black">{currency}</span>
@@ -313,7 +313,7 @@ export const Header: React.FC<HeaderProps> = ({
               {isCurrencyMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsCurrencyMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-44 max-h-60 overflow-y-auto bg-stone-50 rounded-2xl shadow-2xl border border-black/20 z-50 p-1.5 animate-fade-in modal-scrollable">
+                  <div className="absolute right-0 mt-2 w-44 max-h-60 overflow-y-auto bg-[#07241a] rounded-2xl shadow-2xl border border-emerald-500/40 z-50 text-stone-100 p-1.5 animate-fade-in modal-scrollable">
                     <div className="px-2 py-1 text-[10px] font-black text-teal-400 uppercase border-b border-stone-200 mb-1">
                       {language === 'es' ? 'Moneda de Pago' : 'Payment Currency'}
                     </div>
@@ -327,7 +327,7 @@ export const Header: React.FC<HeaderProps> = ({
                         className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center justify-between ${
                           currency === curr
                             ? 'bg-orange-500 text-stone-950 font-black'
-                            : 'text-stone-800 hover:bg-stone-200/80 hover:text-stone-900'
+                            : 'text-stone-200 hover:bg-emerald-900/60 hover:text-white'
                         }`}
                       >
                         <span>{curr}</span>
@@ -348,18 +348,18 @@ export const Header: React.FC<HeaderProps> = ({
                   setIsLangMenuOpen(!isLangMenuOpen);
                   setIsCurrencyMenuOpen(false);
                 }}
-                className="flex items-center gap-1 bg-stone-100/70 hover:bg-stone-100 px-2 sm:px-2.5 py-1.5 rounded-xl border border-teal-500/40 text-[11px] font-bold text-stone-900 transition-all cursor-pointer"
+                className="flex items-center gap-1 bg-emerald-950/70 hover:bg-emerald-900/80 px-2 sm:px-2.5 py-1.5 rounded-xl border border-emerald-500/40 text-[11px] font-bold text-stone-100 transition-all cursor-pointer"
                 title="Seleccionar Idioma / Language"
               >
                 <span className="text-sm leading-none">{currentLangInfo.flag}</span>
-                <span className="font-mono text-stone-800 font-bold uppercase">{currentLangInfo.code}</span>
+                <span className="font-mono text-stone-100 font-bold uppercase">{currentLangInfo.code}</span>
                 <ChevronDown className={`w-3 h-3 text-teal-300 transition-transform ${isLangMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {isLangMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsLangMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-48 bg-stone-50 rounded-2xl shadow-2xl border border-black/20 z-50 p-1.5 animate-fade-in">
+                  <div className="absolute right-0 mt-2 w-48 bg-[#07241a] rounded-2xl shadow-2xl border border-emerald-500/40 z-50 text-stone-100 p-1.5 animate-fade-in">
                     <div className="px-2 py-1 text-[10px] font-black text-teal-400 uppercase border-b border-stone-200 mb-1">
                       🌍 Idioma / Language
                     </div>
@@ -370,7 +370,7 @@ export const Header: React.FC<HeaderProps> = ({
                         className={`w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold flex items-center justify-between transition-colors ${
                           language === langItem.code
                             ? 'bg-orange-500 text-stone-950 font-black'
-                            : 'text-stone-800 hover:bg-stone-200/80 hover:text-stone-900'
+                            : 'text-stone-200 hover:bg-emerald-900/60 hover:text-white'
                         }`}
                       >
                         <span className="flex items-center gap-2">
@@ -390,7 +390,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* My Bookings Button */}
             <button
               onClick={handleOpenBookings}
-              className="relative flex items-center gap-1.5 bg-stone-100 hover:bg-teal-700 text-white px-2.5 sm:px-3 py-1.5 rounded-xl font-bold text-xs border border-teal-500/40 transition-all hover:scale-105 cursor-pointer shadow-sm shrink-0"
+              className="relative flex items-center gap-1.5 bg-emerald-900/80 hover:bg-emerald-800 text-white px-2.5 sm:px-3 py-1.5 rounded-xl font-bold text-xs border border-emerald-500/40 transition-all hover:scale-105 cursor-pointer shadow-sm shrink-0"
               aria-label={language === 'es' ? 'Ver mis reservas' : 'View my bookings'}
             >
               <ShoppingBag className="w-3.5 h-3.5 text-orange-400" />
@@ -424,7 +424,7 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               <button
                 onClick={signInWithGoogle}
-                className="hidden xl:flex items-center gap-1 text-[11px] font-bold bg-white hover:bg-stone-50 text-stone-800 px-2.5 py-1.5 rounded-xl border border-teal-600/30 transition-colors shrink-0"
+                className="hidden xl:flex items-center gap-1 text-[11px] font-bold bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 px-2.5 py-1.5 rounded-xl border border-emerald-500/40 transition-colors shrink-0"
               >
                 <LogIn className="w-3.5 h-3.5 text-orange-400" />
                 <span>{t('signIn')}</span>
@@ -434,7 +434,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Mobile / Tablet Drawer Hamburger Button (Visible on screens < 1280px) */}
             <button
               onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
-              className="xl:hidden p-2 rounded-xl bg-stone-100/90 hover:bg-stone-100 text-stone-900 border border-teal-500/40 transition-colors cursor-pointer shrink-0"
+              className="xl:hidden p-2 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 border border-emerald-500/40 transition-colors cursor-pointer shrink-0"
               aria-label="Abrir Menú"
             >
               {isMobileDrawerOpen ? <X className="w-4 h-4 text-orange-400" /> : <Menu className="w-4 h-4 text-stone-900" />}
@@ -451,7 +451,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setIsMobileDrawerOpen(false)}
             />
             
-            <div className="fixed top-[95px] left-2 right-2 sm:left-4 sm:right-4 max-h-[82vh] bg-stone-50 border border-black/20 rounded-3xl z-[100] shadow-2xl p-4 sm:p-5 overflow-y-auto xl:hidden space-y-4 animate-fade-in modal-scrollable">
+            <div className="fixed top-[95px] left-2 right-2 sm:left-4 sm:right-4 max-h-[82vh] bg-[#061f17] border border-emerald-500/30 rounded-3xl z-[100] shadow-2xl p-4 sm:p-5 overflow-y-auto xl:hidden space-y-4 animate-fade-in modal-scrollable text-white">
               
               {/* Drawer Header */}
               <div className="flex items-center justify-between border-b border-stone-200/60 pb-3">
@@ -460,7 +460,7 @@ export const Header: React.FC<HeaderProps> = ({
                     🇨🇷
                   </div>
                   <div>
-                    <span className="text-xs font-black text-stone-900 uppercase tracking-wider block">
+                    <span className="text-xs font-black text-white uppercase tracking-wider block">
                       Costa Rica <span className="text-orange-400">Tours</span>
                     </span>
                     <span className="text-[8px] text-teal-300 font-bold uppercase tracking-widest">
@@ -518,7 +518,7 @@ export const Header: React.FC<HeaderProps> = ({
 
                 <button
                   onClick={handleOpenBookings}
-                  className="flex items-center justify-center gap-1.5 bg-stone-100 text-stone-900 p-2.5 rounded-2xl font-black text-xs uppercase border border-teal-600/50"
+                  className="flex items-center justify-center gap-1.5 bg-emerald-950/80 text-stone-100 border border-emerald-500/30 p-2.5 rounded-2xl font-black text-xs uppercase border border-teal-600/50"
                 >
                   <ShoppingBag className="w-3.5 h-3.5 text-orange-400" />
                   <span>{language === 'es' ? 'Mis Reservas' : 'My Bookings'}</span>

@@ -37,7 +37,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
       badge: tico ? 'Más Popular' : 'Most Popular',
       badgeColor: 'bg-orange-500/20 text-orange-300 border-orange-500/40',
       tab: 'tours' as const,
-      gradient: 'bg-white hover:border-orange-400/60',
+      gradient: 'from-[#0b3323] to-[#051c14] hover:border-amber-400/80',
       actionText: tico ? 'Explorar catálogo' : 'Explore catalog'
     },
     {
@@ -48,7 +48,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
       badge: tico ? 'Multi-Flujo' : 'Multi-Workflow',
       badgeColor: 'bg-orange-400 text-stone-950 font-black',
       tab: 'ai' as const,
-      gradient: 'bg-white hover:border-orange-400/80',
+      gradient: 'from-[#0d3d2c] to-[#072419] hover:border-amber-400',
       actionText: tico ? 'Hablar con Agentes' : 'Chat with Agents'
     },
     {
@@ -59,7 +59,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
       badge: tico ? 'Geográfico' : 'Geographic',
       badgeColor: 'bg-teal-500/20 text-teal-300 border-teal-500/40',
       tab: 'map' as const,
-      gradient: 'from-teal-950/90 to-stone-950/90 hover:border-teal-400/60',
+      gradient: 'from-[#072c29] to-[#041a18] hover:border-teal-400/80',
       actionText: tico ? 'Ver mapa' : 'View map'
     },
     {
@@ -70,7 +70,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
       badge: tico ? 'En Vivo' : 'Live Radar',
       badgeColor: 'bg-orange-400 text-stone-950 font-black',
       tab: 'flights' as const,
-      gradient: 'from-amber-950/70 to-stone-950/90 hover:border-orange-400/80',
+      gradient: 'from-[#222110] to-[#0c1409] hover:border-amber-400/80',
       actionText: tico ? 'Ver Vuelos y Reservar' : 'View Flights & Book'
     },
     {
@@ -81,7 +81,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
       badge: tico ? '100% Auténtico' : '100% Authentic',
       badgeColor: 'bg-yellow-500/20 text-orange-300 border-yellow-500/40',
       tab: 'culture' as const,
-      gradient: 'from-amber-950/80 to-stone-950/90 hover:border-orange-400/60',
+      gradient: 'from-[#261d11] to-[#120f09] hover:border-amber-400/80',
       actionText: tico ? 'Descubrir cultura' : 'Discover culture'
     },
     {
@@ -92,7 +92,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
       badge: tico ? 'Imprescindible' : 'Must Know',
       badgeColor: 'bg-teal-500/20 text-teal-300 border-teal-500/40',
       tab: 'tools' as const,
-      gradient: 'bg-white hover:border-teal-400/60',
+      gradient: 'from-[#092e22] to-[#041711] hover:border-teal-400/80',
       actionText: tico ? 'Ver Guía Completa' : 'View Travel Guide'
     },
     {
@@ -103,7 +103,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
       badge: tico ? 'Gratis & Rápido' : 'Free & Fast',
       badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
       tab: 'itinerary' as const,
-      gradient: 'from-purple-950/80 to-stone-950/90 hover:border-purple-400/60',
+      gradient: 'from-[#1b192e] to-[#0d0c18] hover:border-purple-400/80',
       actionText: tico ? 'Generar plan' : 'Generate plan'
     },
     {
@@ -114,7 +114,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
       badge: tico ? 'Exclusivo' : 'Exclusive',
       badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
       tab: 'tours' as const,
-      gradient: 'from-amber-950/90 to-stone-950/90 hover:border-amber-400/60',
+      gradient: 'from-[#292211] to-[#141007] hover:border-amber-400/80',
       actionText: tico ? 'Cotizar VIP' : 'Request VIP'
     }
   ];
@@ -130,11 +130,11 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
               <Sparkles className="w-3.5 h-3.5" />
               {tico ? 'Navegación Rápida' : 'Quick Navigation'}
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-stone-900">
+            <h2 className="text-2xl sm:text-3xl font-black text-white">
               {tico ? '¿Cómo deseas explorar Costa Rica?' : 'How do you wish to explore Costa Rica?'}
             </h2>
           </div>
-          <p className="text-sm text-stone-800/80 max-w-md">
+          <p className="text-sm text-emerald-100/80 max-w-md">
             {tico
               ? 'Accede directamente a la sección que necesitas sin rodeos ni páginas saturadas.'
               : 'Jump straight to the section you need with zero clutter.'}
@@ -165,16 +165,16 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
                 </div>
                 
                 <div>
-                  <h3 className="text-base font-black text-stone-900 group-hover:text-orange-400 transition-colors">
+                  <h3 className="text-base font-black text-white group-hover:text-amber-400 transition-colors">
                     {card.title}
                   </h3>
-                  <p className="text-xs text-stone-700 leading-relaxed mt-1 line-clamp-2">
+                  <p className="text-xs text-emerald-100/75 leading-relaxed mt-1 line-clamp-2">
                     {card.subtitle}
                   </p>
                 </div>
               </div>
 
-              <div className="pt-4 mt-2 flex items-center gap-1 text-xs font-bold text-orange-400 group-hover:translate-x-1 transition-transform">
+              <div className="pt-4 mt-2 flex items-center gap-1 text-xs font-bold text-amber-400 group-hover:translate-x-1 transition-transform">
                 <span>{card.actionText}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </div>
@@ -191,7 +191,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
               <Flame className="w-4 h-4 text-orange-400" />
               {tico ? 'Top 3 Imperdibles de Costa Rica' : 'Top 3 Must-Do Experiences'}
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-stone-900">
+            <h2 className="text-2xl sm:text-3xl font-black text-white">
               {tico ? 'Experiencias Estrella Garantizadas' : 'Signature Costa Rica Highlights'}
             </h2>
           </div>
@@ -215,7 +215,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.2 }}
                 onClick={() => onSelectTour(tour)}
-                className="group relative rounded-3xl bg-stone-100/30 border border-teal-500/20 overflow-hidden shadow-xl hover:border-orange-400/50 cursor-pointer flex flex-col justify-between"
+                className="group relative rounded-3xl bg-[#08241b]/90 border border-emerald-500/30 overflow-hidden shadow-xl hover:border-amber-400/60 cursor-pointer flex flex-col justify-between"
               >
                 <div className="relative h-48 overflow-hidden">
                   <img
@@ -227,7 +227,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
                   <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-black/30" />
                   
                   <div className="absolute top-3 left-3 flex gap-2">
-                    <span className="bg-white/80 backdrop-blur-md text-teal-300 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full border border-teal-500/30 flex items-center gap-1">
+                    <span className="bg-[#051a13]/90 backdrop-blur-md text-teal-300 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full border border-teal-500/30 flex items-center gap-1">
                       <Star className="w-3 h-3 text-orange-400 fill-orange-400" />
                       {tour.rating} ({tour.reviewsCount})
                     </span>
@@ -239,7 +239,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
                     </span>
                   </div>
 
-                  <div className="absolute bottom-3 left-3 right-3 text-xs font-bold text-stone-800/90 flex items-center gap-3">
+                  <div className="absolute bottom-3 left-3 right-3 text-xs font-bold text-emerald-100/90 flex items-center gap-3">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5 text-orange-400" />
                       {getLangText(tour.durationLabel, language)}
@@ -251,15 +251,15 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
 
                 <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                   <div>
-                    <h3 className="text-lg font-black text-stone-900 group-hover:text-orange-400 transition-colors line-clamp-1">
+                    <h3 className="text-lg font-black text-white group-hover:text-amber-400 transition-colors line-clamp-1">
                       {title}
                     </h3>
-                    <p className="text-xs text-stone-700 leading-relaxed line-clamp-2 mt-1.5">
+                    <p className="text-xs text-emerald-100/80 leading-relaxed line-clamp-2 mt-1.5">
                       {desc}
                     </p>
                   </div>
 
-                  <div className="pt-3 border-t border-stone-200/60 flex items-center justify-between">
+                  <div className="pt-3 border-t border-emerald-500/25 flex items-center justify-between">
                     <div className="text-[11px] text-teal-300 font-bold flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
                       <span>{tico ? 'Cancelación Gratuita 48h' : 'Free 48h Cancel'}</span>
@@ -277,7 +277,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
       </section>
 
       {/* 3. Official Guarantee & Receptive Quality Strip */}
-      <section className="bg-stone-50 rounded-3xl p-6 sm:p-7 border border-teal-500/30 backdrop-blur-md shadow-xl">
+      <section className="bg-[#062017]/95 rounded-3xl p-6 sm:p-7 border border-emerald-500/30 backdrop-blur-md shadow-2xl text-white">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6 text-left">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-2xl bg-orange-500/20 flex items-center justify-center shrink-0 border border-orange-400/40 text-orange-400">

@@ -1177,7 +1177,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
               damping: 25,
               mass: 0.8 
             }}
-            className="whatsapp-modal-window pointer-events-auto bg-white/90 backdrop-blur-2xl rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2)] border border-neutral-200/50 overflow-hidden w-[90vw] max-w-[400px] sm:w-80 flex flex-col max-h-[calc(100vh-100px)] sm:max-h-[calc(100vh-120px)]"
+            className="whatsapp-modal-window pointer-events-auto bg-[#07241a]/95 backdrop-blur-2xl rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.6)] border border-emerald-500/30 overflow-hidden w-[90vw] max-w-[400px] sm:w-80 flex flex-col max-h-[calc(100vh-100px)] sm:max-h-[calc(100vh-120px)] text-stone-100"
           >
             {/* Header */}
             <div className={`${themeClasses.header}/90 backdrop-blur-md p-3 sm:p-4 flex items-center justify-between text-white transition-colors duration-300 border-b border-black/10 shrink-0`}>
@@ -1269,10 +1269,10 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
             <BookingProgressIndicator status={bookingStatus} language={language} />
                         {/* Chat Body */}
 
-            <div className="p-3 sm:p-4 bg-neutral-50/40 flex flex-col flex-1 min-h-0">
+            <div className="p-3 sm:p-4 bg-[#041710]/95 flex flex-col flex-1 min-h-0">
               <div className="overflow-y-auto flex-1 pb-2 scrollbar-thin scrollbar-thumb-neutral-200">
-                <div className="bg-white/80 backdrop-blur-md p-3 rounded-2xl rounded-tl-sm shadow-sm border border-neutral-200/60 mb-4 inline-block max-w-[90%]">
-                  <p className="text-sm text-neutral-800 font-medium whitespace-pre-wrap">{t.prompt}<MessageStatus isBot={true} /></p>
+                <div className="bg-[#082a1e] backdrop-blur-md p-3 rounded-2xl rounded-tl-sm shadow-sm border border-emerald-500/30 mb-4 inline-block max-w-[90%]">
+                  <p className="text-sm text-emerald-100 font-medium whitespace-pre-wrap">{t.prompt}<MessageStatus isBot={true} /></p>
                 </div>
 
                 {chatHistory.map((msg, idx) => {
@@ -1280,7 +1280,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                   return (
                     <div key={idx} className={`mb-3 flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                       
-                      <div className={`p-3 rounded-2xl max-w-[90%] shadow-sm text-sm font-medium ${msg.role === 'user' ? themeClasses.button + ' text-white rounded-tr-sm' : 'bg-white/80 backdrop-blur-md text-neutral-800 border border-neutral-200/60 rounded-tl-sm'}`}>
+                      <div className={`p-3 rounded-2xl max-w-[90%] shadow-sm text-sm font-medium ${msg.role === 'user' ? themeClasses.button + ' text-white rounded-tr-sm' : 'bg-[#082a1e] backdrop-blur-md text-emerald-100 border border-emerald-500/30 rounded-tl-sm'}`}>
                         <span className="whitespace-pre-wrap">{msg.text}</span>
                         <MessageStatus isBot={msg.role === 'bot'} />
                       </div>
@@ -1325,13 +1325,13 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                   <button
                     key={opt.id}
                     onClick={() => handleOptionClick(opt)}
-                    className={`w-full flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-xl shadow-sm border border-neutral-200/50 ${themeClasses.hoverBorder} hover:bg-white/90 hover:shadow-md transition-all group text-left`}
+                    className={`w-full flex items-center justify-between p-3 bg-[#08261b] backdrop-blur-sm rounded-xl shadow-sm border border-emerald-500/25 ${themeClasses.hoverBorder} hover:bg-[#0c3526] hover:shadow-md transition-all group text-left`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`${themeClasses.iconBg} p-2 rounded-lg transition-colors`}>
                         {opt.icon}
                       </div>
-                      <span className="text-sm font-semibold text-neutral-700">{opt.text}</span>
+                      <span className="text-sm font-semibold text-emerald-100">{opt.text}</span>
                     </div>
                     <ChevronRight className={`w-4 h-4 text-stone-600 group-hover:text-orange-500 group-hover:translate-x-1 transition-all`} />
                   </button>
@@ -1404,7 +1404,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder={language === 'es' ? 'Mandá un mensaje mae...' : 'Type a message...'}
-                  className="flex-1 bg-white border border-neutral-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-[#25D366] focus:ring-1 focus:ring-[#25D366] transition-shadow"
+                  className="flex-1 bg-emerald-950/80 text-white placeholder-emerald-200/50 border border-emerald-500/30 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-shadow"
                 />
                 <button
                   type="submit"
@@ -1427,7 +1427,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
             exit={{ opacity: 0, scale: 0.95 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
           >
-            <div className="bg-white border border-orange-500/30 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-[0_0_50px_rgba(16,185,129,0.2)] relative">
+            <div className="bg-[#062017] border border-emerald-500/30 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] text-stone-100 relative">
               <div className="p-5 bg-gradient-to-r from-teal-600 to-teal-600 flex items-center justify-between text-white shadow-md">
                 <div className="flex items-center gap-3">
                   <QrCode className="w-6 h-6 text-stone-900" />

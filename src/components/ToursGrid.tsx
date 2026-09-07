@@ -210,7 +210,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
       {onBack && (
         <button 
           onClick={onBack}
-          className="bg-white/95 backdrop-blur-md text-stone-900 hover:bg-white px-4 py-2.5 rounded-full font-bold shadow-lg transition-colors flex items-center gap-2 border border-stone-200 w-fit cursor-pointer"
+          className="bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 px-4 py-2.5 rounded-full font-bold shadow-lg transition-colors flex items-center gap-2 border border-emerald-500/30 w-fit cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>{language === 'es' ? 'Volver al Inicio' : 'Back to Home'}</span>
@@ -218,7 +218,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
       )}
 
       {/* Advanced Control & Filter Panel */}
-      <div className="bg-stone-100/90 backdrop-blur-3xl p-5 sm:p-7 rounded-[2rem] border border-stone-200 shadow-2xl space-y-5 sticky top-2 sm:top-4 z-40">
+      <div className="bg-[#07241a]/95 backdrop-blur-3xl p-5 sm:p-7 rounded-[2rem] border border-emerald-500/25 shadow-2xl space-y-5 sticky top-2 sm:top-4 z-40 text-stone-100">
         
         {/* Row 1: Search Bar & Primary View / Quick Action Controls */}
         <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
@@ -235,7 +235,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   ? 'Buscar por volcán, playa, perezoso, rafting...'
                   : 'Search volcano, beach, sloth, rafting...'
               }
-              className="w-full bg-white/40 text-stone-900 text-sm pl-12 pr-20 py-3.5 rounded-full border border-black/10 focus:outline-none focus:border-orange-500 transition-colors shadow-inner placeholder:text-stone-600"
+              className="w-full bg-emerald-950/70 text-white text-sm pl-12 pr-20 py-3.5 rounded-full border border-emerald-500/30 focus:outline-none focus:border-amber-400 transition-colors shadow-inner placeholder:text-emerald-200/50"
             />
             {searchQuery && (
               <button
@@ -249,7 +249,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
             <button
               type="button"
               onClick={startVoiceSearch}
-              className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${isListening ? 'bg-orange-500/20 text-orange-500 animate-pulse' : 'text-stone-600 hover:text-orange-500 hover:bg-stone-100'}`}
+              className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${isListening ? 'bg-amber-500/20 text-amber-400 animate-pulse' : 'text-emerald-200/70 hover:text-amber-400 hover:bg-emerald-900/60'}`}
               title={language === 'es' ? 'Búsqueda por voz' : 'Voice Search'}
             >
               {isListening ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mic className="w-4 h-4" />}
@@ -263,7 +263,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
             <select
               value={selectedRegion}
               onChange={(e) => setSelectedRegion(e.target.value as any)}
-              className="bg-white/40 text-stone-700 text-sm px-4 py-3 rounded-full border border-black/10 focus:outline-none focus:border-orange-500 font-bold cursor-pointer"
+              className="bg-[#051c14] text-stone-100 text-sm px-4 py-3 rounded-full border border-emerald-500/30 focus:outline-none focus:border-amber-400 font-bold cursor-pointer"
             >
               <option value="all">📍 {language === 'es' ? 'Todas las Regiones' : 'All Regions'}</option>
               {REGIONS.map(reg => (
@@ -277,7 +277,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
             <select
               value={difficultyFilter}
               onChange={(e) => setDifficultyFilter(e.target.value as any)}
-              className="bg-white/40 text-stone-700 text-sm px-4 py-3 rounded-full border border-black/10 focus:outline-none focus:border-orange-500 font-bold cursor-pointer"
+              className="bg-[#051c14] text-stone-100 text-sm px-4 py-3 rounded-full border border-emerald-500/30 focus:outline-none focus:border-amber-400 font-bold cursor-pointer"
             >
               <option value="all">⚡ {language === 'es' ? 'Toda Dificultad' : 'All Difficulties'}</option>
               <option value="fácil">🟢 {language === 'es' ? 'Fácil / Familiar' : 'Easy'}</option>
@@ -289,7 +289,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-white/40 text-stone-700 text-sm px-4 py-3 rounded-full border border-black/10 focus:outline-none focus:border-orange-500 font-black cursor-pointer"
+              className="bg-[#051c14] text-stone-100 text-sm px-4 py-3 rounded-full border border-emerald-500/30 focus:outline-none focus:border-amber-400 font-black cursor-pointer"
             >
               <option value="popular">🔥 {language === 'es' ? 'Más Populares' : 'Most Popular'}</option>
               <option value="rating">⭐ {language === 'es' ? 'Mejor Calificados' : 'Highest Rated'}</option>
@@ -299,12 +299,12 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
             </select>
 
             {/* View Mode Switcher (Grid vs List) */}
-            <div className="flex items-center bg-white/[0.03] backdrop-blur-3xl/80 p-1 rounded-full border border-black/10">
+            <div className="flex items-center bg-[#051c14] p-1 rounded-full border border-emerald-500/30">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
                 className={`p-2 rounded-full transition-colors ${
-                  viewMode === 'grid' ? 'bg-orange-500 text-white shadow-sm' : 'text-stone-600 hover:text-orange-500'
+                  viewMode === 'grid' ? 'bg-amber-500 text-stone-950 font-black shadow-sm' : 'text-emerald-200/70 hover:text-amber-400'
                 }`}
                 title={language === 'es' ? 'Vista Cuadrícula' : 'Grid View'}
               >
@@ -314,7 +314,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 type="button"
                 onClick={() => setViewMode('list')}
                 className={`p-2 rounded-full transition-colors ${
-                  viewMode === 'list' ? 'bg-orange-500 text-white shadow-sm' : 'text-stone-600 hover:text-orange-500'
+                  viewMode === 'list' ? 'bg-amber-500 text-stone-950 font-black shadow-sm' : 'text-emerald-200/70 hover:text-amber-400'
                 }`}
                 title={language === 'es' ? 'Vista Lista' : 'List View'}
               >
@@ -326,7 +326,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
         </div>
 
         {/* Row 2: Category Chips & Special Badges Toggle Bar */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-2 border-t border-neutral-100">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-2 border-t border-emerald-500/20">
           
           {/* Category Chips Scrollable */}
           <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-none">
@@ -334,8 +334,8 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               onClick={() => setSelectedCategory('all')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap transition-all ${
                 selectedCategory === 'all'
-                  ? 'bg-orange-500 text-white shadow-md font-black border border-orange-500'
-                  : 'bg-white/[0.03] backdrop-blur-3xl text-stone-700 hover:text-stone-900 border border-black/10 hover:border-neutral-300'
+                  ? 'bg-amber-500 text-stone-950 shadow-md font-black border border-amber-400'
+                  : 'bg-emerald-950/60 text-emerald-100/80 hover:text-white border border-emerald-500/25 hover:border-amber-400'
               }`}
             >
               ✨ {language === 'es' ? 'Todos los Tours' : 'All Tours'}
@@ -345,8 +345,8 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               onClick={() => setSelectedCategory('combos')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
                 selectedCategory === 'combos'
-                  ? 'bg-orange-500 text-white shadow-md font-black border border-orange-500'
-                  : 'bg-white/[0.03] backdrop-blur-3xl text-stone-700 hover:text-stone-900 border border-black/10 hover:border-neutral-300'
+                  ? 'bg-amber-500 text-stone-950 shadow-md font-black border border-amber-400'
+                  : 'bg-emerald-950/60 text-emerald-100/80 hover:text-white border border-emerald-500/25 hover:border-amber-400'
               }`}
             >
               🚀 {language === 'es' ? 'Combos 3-en-1' : '3-in-1 Combos'}
@@ -355,8 +355,8 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               onClick={() => setSelectedCategory('volcanoes')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
                 selectedCategory === 'volcanoes'
-                  ? 'bg-orange-500 text-white shadow-md font-black border border-orange-500'
-                  : 'bg-white/[0.03] backdrop-blur-3xl text-stone-700 hover:text-stone-900 border border-black/10 hover:border-neutral-300'
+                  ? 'bg-amber-500 text-stone-950 shadow-md font-black border border-amber-400'
+                  : 'bg-emerald-950/60 text-emerald-100/80 hover:text-white border border-emerald-500/25 hover:border-amber-400'
               }`}
             >
               🌋 {language === 'es' ? 'Volcanes y Termales' : 'Volcanoes'}
@@ -366,8 +366,8 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               onClick={() => setSelectedCategory('canopy')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
                 selectedCategory === 'canopy'
-                  ? 'bg-orange-500 text-white shadow-md font-black border border-orange-500'
-                  : 'bg-white/[0.03] backdrop-blur-3xl text-stone-700 hover:text-stone-900 border border-black/10 hover:border-neutral-300'
+                  ? 'bg-amber-500 text-stone-950 shadow-md font-black border border-amber-400'
+                  : 'bg-emerald-950/60 text-emerald-100/80 hover:text-white border border-emerald-500/25 hover:border-amber-400'
               }`}
             >
               ⚡ {language === 'es' ? 'Canopy y Tirolesas' : 'Zipline'}
@@ -377,8 +377,8 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               onClick={() => setSelectedCategory('wildlife')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
                 selectedCategory === 'wildlife'
-                  ? 'bg-orange-500 text-white shadow-md font-black border border-orange-500'
-                  : 'bg-white/[0.03] backdrop-blur-3xl text-stone-700 hover:text-stone-900 border border-black/10 hover:border-neutral-300'
+                  ? 'bg-amber-500 text-stone-950 shadow-md font-black border border-amber-400'
+                  : 'bg-emerald-950/60 text-emerald-100/80 hover:text-white border border-emerald-500/25 hover:border-amber-400'
               }`}
             >
               🦥 {language === 'es' ? 'Perezosos y Fauna' : 'Wildlife'}
@@ -388,8 +388,8 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               onClick={() => setSelectedCategory('beaches')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
                 selectedCategory === 'beaches'
-                  ? 'bg-orange-500 text-white shadow-md font-black border border-orange-500'
-                  : 'bg-white/[0.03] backdrop-blur-3xl text-stone-700 hover:text-stone-900 border border-black/10 hover:border-neutral-300'
+                  ? 'bg-amber-500 text-stone-950 shadow-md font-black border border-amber-400'
+                  : 'bg-emerald-950/60 text-emerald-100/80 hover:text-white border border-emerald-500/25 hover:border-amber-400'
               }`}
             >
               🏝️ {language === 'es' ? 'Playas y Catamarán' : 'Beaches'}
@@ -399,8 +399,8 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               onClick={() => setSelectedCategory('rafting')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
                 selectedCategory === 'rafting'
-                  ? 'bg-orange-500 text-white shadow-md font-black border border-orange-500'
-                  : 'bg-white/[0.03] backdrop-blur-3xl text-stone-700 hover:text-stone-900 border border-black/10 hover:border-neutral-300'
+                  ? 'bg-amber-500 text-stone-950 shadow-md font-black border border-amber-400'
+                  : 'bg-emerald-950/60 text-emerald-100/80 hover:text-white border border-emerald-500/25 hover:border-amber-400'
               }`}
             >
               🚣 {language === 'es' ? 'Rafting en Ríos' : 'Rafting'}
@@ -417,15 +417,15 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase flex items-center gap-1 transition-all border ${
                 freeCancellationOnly
                   ? 'bg-teal-600 text-white border-orange-500 shadow-md'
-                  : 'bg-white/[0.03] backdrop-blur-3xl text-neutral-600 border-black/10 hover:border-orange-500 hover:text-teal-600'
+                  : 'bg-emerald-950/60 text-emerald-200/80 border-emerald-500/25 hover:border-teal-400 hover:text-teal-300'
               }`}
             >
               ✅ {language === 'es' ? 'Cancelación Gratis' : 'Free Cancellation'}
             </button>
             
             {/* Price Slider */}
-            <div className="flex items-center gap-2 bg-white/[0.03] backdrop-blur-3xl/80 px-3.5 py-1.5 rounded-full border border-black/10 text-xs">
-              <span className="font-bold text-stone-700">
+            <div className="flex items-center gap-2 bg-emerald-950/60 px-3.5 py-1.5 rounded-full border border-emerald-500/25 text-xs text-emerald-100">
+              <span className="font-bold text-emerald-200">
                 {language === 'es' ? 'Máx:' : 'Max:'}
               </span>
               <input
@@ -437,7 +437,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 onChange={(e) => setMaxPrice(Number(e.target.value))}
                 className="accent-orange-500 cursor-pointer w-20"
               />
-              <span className="font-black text-teal-600">${maxPrice}</span>
+              <span className="font-black text-amber-400">${maxPrice}</span>
             </div>
 
             {/* Eco Friendly Toggle */}
@@ -447,7 +447,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase flex items-center gap-1 transition-all border ${
                 ecoFriendlyOnly
                   ? 'bg-green-600 text-stone-900 border-green-400 shadow-md font-black'
-                  : 'bg-white/[0.03] backdrop-blur-3xl text-neutral-600 border-black/10 hover:border-green-400 hover:text-green-500'
+                  : 'bg-emerald-950/60 text-emerald-200/80 border-emerald-500/25 hover:border-emerald-400 hover:text-emerald-300'
               }`}
             >
               <Leaf className="w-3.5 h-3.5" />
@@ -461,7 +461,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase flex items-center gap-1 transition-all border ${
                 bestsellerOnly
                   ? 'bg-orange-500 text-white border-orange-400 shadow-md font-black'
-                  : 'bg-white/[0.03] backdrop-blur-3xl text-neutral-600 border-black/10 hover:border-orange-500 hover:text-orange-500'
+                  : 'bg-emerald-950/60 text-emerald-200/80 border-emerald-500/25 hover:border-amber-400 hover:text-amber-300'
               }`}
             >
               <Flame className="w-3.5 h-3.5" />
@@ -475,7 +475,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase flex items-center gap-1 transition-all border ${
                 favoritesOnly
                   ? 'bg-rose-500 text-white border-rose-400 shadow-md'
-                  : 'bg-white/[0.03] backdrop-blur-3xl text-neutral-600 border-black/10 hover:border-rose-400 hover:text-rose-500'
+                  : 'bg-emerald-950/60 text-emerald-200/80 border-emerald-500/25 hover:border-rose-400 hover:text-rose-300'
               }`}
             >
               <Heart className={`w-3.5 h-3.5 ${favorites.length > 0 ? 'fill-rose-400 text-stone-900' : ''}`} />
@@ -492,41 +492,41 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
 
         {/* Active Filters Tag Bar */}
         {activeFiltersCount > 0 && (
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-neutral-100 text-xs">
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-emerald-500/20 text-xs">
             <span className="font-bold text-neutral-500 text-[11px] uppercase tracking-wider">
               {language === 'es' ? 'Filtros Activos:' : 'Active Filters:'}
             </span>
 
             {searchQuery && (
-              <span className="bg-white/[0.03] backdrop-blur-3xl/80 text-stone-700 px-3 py-1 rounded-full border border-black/10 flex items-center gap-1 font-semibold">
+              <span className="bg-emerald-950/80 text-emerald-100 px-3 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1 font-semibold">
                 "{searchQuery}"
                 <X className="w-3 h-3 cursor-pointer text-stone-600 hover:text-neutral-600 ml-1" onClick={() => setSearchQuery('')} />
               </span>
             )}
 
             {selectedCategory !== 'all' && (
-              <span className="bg-white/[0.03] backdrop-blur-3xl/80 text-stone-700 px-3 py-1 rounded-full border border-black/10 flex items-center gap-1 font-semibold">
+              <span className="bg-emerald-950/80 text-emerald-100 px-3 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1 font-semibold">
                 🏷️ {selectedCategory}
                 <X className="w-3 h-3 cursor-pointer text-stone-600 hover:text-neutral-600 ml-1" onClick={() => setSelectedCategory('all')} />
               </span>
             )}
 
             {selectedRegion !== 'all' && (
-              <span className="bg-white/[0.03] backdrop-blur-3xl/80 text-stone-700 px-3 py-1 rounded-full border border-black/10 flex items-center gap-1 font-semibold">
+              <span className="bg-emerald-950/80 text-emerald-100 px-3 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1 font-semibold">
                 📍 {REGIONS.find(r => r.id === selectedRegion)?.name.split('/')[0]}
                 <X className="w-3 h-3 cursor-pointer text-stone-600 hover:text-neutral-600 ml-1" onClick={() => setSelectedRegion('all')} />
               </span>
             )}
 
             {difficultyFilter !== 'all' && (
-              <span className="bg-white/[0.03] backdrop-blur-3xl/80 text-stone-700 px-3 py-1 rounded-full border border-black/10 flex items-center gap-1 font-semibold">
+              <span className="bg-emerald-950/80 text-emerald-100 px-3 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1 font-semibold">
                 ⚡ {difficultyFilter}
                 <X className="w-3 h-3 cursor-pointer text-stone-600 hover:text-neutral-600 ml-1" onClick={() => setDifficultyFilter('all')} />
               </span>
             )}
 
             {maxPrice < 200 && (
-              <span className="bg-white/[0.03] backdrop-blur-3xl/80 text-stone-700 px-3 py-1 rounded-full border border-black/10 flex items-center gap-1 font-semibold">
+              <span className="bg-emerald-950/80 text-emerald-100 px-3 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1 font-semibold">
                 💰 ≤ ${maxPrice}
                 <X className="w-3 h-3 cursor-pointer text-stone-600 hover:text-neutral-600 ml-1" onClick={() => setMaxPrice(200)} />
               </span>
@@ -560,16 +560,16 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
       </div>
 
       {/* Catalog Header & Count Row */}
-      <div className="flex items-center justify-between border-b border-black/10 pb-3 px-2">
+      <div className="flex items-center justify-between border-b border-emerald-500/20 pb-3 px-2">
         <div className="flex items-center gap-2">
           <Compass className="w-5 h-5 text-orange-500" />
-          <h2 className="text-xl sm:text-2xl font-black text-stone-900 uppercase tracking-wider">
+          <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-wider">
             {language === 'es' ? 'Catálogo Completo de Tours' : 'Complete Tour Catalog'}
           </h2>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="bg-neutral-700 text-orange-400 px-3.5 py-1 rounded-full text-xs font-bold">
+          <span className="bg-emerald-950 text-amber-400 border border-emerald-500/30 px-3.5 py-1 rounded-full text-xs font-bold">
             {processedTours.length} {language === 'es' ? 'tours listados' : 'tours listed'}
           </span>
         </div>
@@ -577,7 +577,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
 
       {/* Tour Cards Display */}
       {processedTours.length === 0 ? (
-        <div className="bg-white/40 p-12 rounded-[2.5rem] border-2 border-black/10 text-center space-y-4">
+        <div className="bg-[#07241a]/80 p-12 rounded-[2.5rem] border border-emerald-500/30 text-center space-y-4 text-stone-100">
           <div className="text-5xl">🌴</div>
           <h3 className="text-xl font-black text-orange-400 uppercase">
             {language === 'es'

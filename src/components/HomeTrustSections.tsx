@@ -132,10 +132,10 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             {isEs ? 'Simple & Seguro' : 'Simple & Safe'}
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-stone-900 tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
             {isEs ? '¿Cómo funciona CostaRicaTours?' : 'How CostaRicaTours Works'}
           </h2>
-          <p className="mt-3 text-base text-stone-700">
+          <p className="mt-3 text-base text-emerald-100/80">
             {isEs 
               ? 'Desde la primera consulta con nuestra IA hasta tu regreso a casa, una experiencia de viaje fluida y sin complicaciones.'
               : 'From your first AI consultation to your flight back home, a smooth and stress-free travel experience.'}
@@ -152,7 +152,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.15 }}
-                className="relative bg-white p-8 rounded-3xl border border-black/10 hover:border-amber-500/60 transition-all duration-300 group shadow-xl hover:shadow-2xl hover:-translate-y-1.5 flex flex-col justify-between"
+                className="relative bg-[#08261c]/90 backdrop-blur-md p-8 rounded-3xl border border-emerald-500/25 hover:border-amber-400/80 transition-all duration-300 group shadow-xl hover:shadow-2xl hover:-translate-y-1.5 flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between mb-6">
@@ -164,15 +164,15 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
                     </span>
                   </div>
 
-                  <h3 className="text-xl font-bold text-stone-900 group-hover:text-amber-300 transition-colors">
+                  <h3 className="text-xl font-bold text-white group-hover:text-amber-300 transition-colors">
                     {step.title}
                   </h3>
-                  <p className="mt-3 text-stone-700 text-sm leading-relaxed">
+                  <p className="mt-3 text-emerald-100/80 text-sm leading-relaxed">
                     {step.desc}
                   </p>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-black/10 flex items-center gap-2">
+                <div className="mt-6 pt-4 border-t border-emerald-500/20 flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-teal-400 shrink-0" />
                   <span className="text-xs font-semibold text-teal-200">
                     {step.badge}
@@ -185,7 +185,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
       </section>
 
       {/* 2. SECCIÓN TESTIMONIOS REALES */}
-      <section className="bg-stone-50 py-16 border-y border-black/10">
+      <section className="bg-[#051c14]/90 py-16 border-y border-emerald-500/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
             <div>
@@ -193,7 +193,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
                 <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                 {isEs ? '4.98 / 5 Estrellas en +1,200 Reseñas' : '4.98 / 5 Stars from +1,200 Reviews'}
               </div>
-              <h2 className="text-3xl sm:text-4xl font-black text-stone-900">
+              <h2 className="text-3xl sm:text-4xl font-black text-white">
                 {isEs ? 'Viajeros felices viviendo el Pura Vida' : 'Happy Travelers Living Pura Vida'}
               </h2>
             </div>
@@ -214,7 +214,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: idx * 0.1 }}
-                className="bg-stone-100/90 backdrop-blur-md rounded-2xl p-6 border border-black/10 hover:border-amber-400/50 transition-all flex flex-col justify-between shadow-lg"
+                className="bg-[#092b20]/90 backdrop-blur-md rounded-2xl p-6 border border-emerald-500/25 hover:border-amber-400/60 transition-all flex flex-col justify-between shadow-xl"
               >
                 <div>
                   <div className="flex items-center gap-3 mb-4">
@@ -224,10 +224,10 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
                       className="w-11 h-11 rounded-full object-cover border-2 border-amber-400/80 shadow"
                     />
                     <div>
-                      <h4 className="text-sm font-bold text-stone-900 leading-tight">
+                      <h4 className="text-sm font-bold text-white leading-tight">
                         {item.name}
                       </h4>
-                      <p className="text-xs text-stone-600 flex items-center gap-1.5 mt-0.5">
+                      <p className="text-xs text-emerald-200/70 flex items-center gap-1.5 mt-0.5">
                         <span>{item.flag}</span>
                         <span>{item.country}</span>
                       </p>
@@ -248,12 +248,12 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
                     {item.tour}
                   </p>
 
-                  <p className="text-stone-700 text-xs leading-relaxed italic">
+                  <p className="text-emerald-100/80 text-xs leading-relaxed italic">
                     "{item.text}"
                   </p>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-emerald-900/30 text-[11px] text-stone-600">
+                <div className="mt-4 pt-3 border-t border-emerald-900/30 text-[11px] text-emerald-300/60">
                   {item.date}
                 </div>
               </motion.div>
@@ -269,10 +269,10 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             {isEs ? 'Garantía de Calidad' : 'Quality Assurance'}
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-stone-900">
+          <h2 className="text-2xl sm:text-3xl font-black text-white">
             {isEs ? 'Operadores y Aliados Oficiales de Costa Rica' : 'Official Costa Rican Operators & Partners'}
           </h2>
-          <p className="mt-2 text-sm text-stone-700">
+          <p className="mt-2 text-sm text-emerald-100/80">
             {isEs 
               ? 'Trabajamos directamente con empresas locales acreditadas por el Instituto Costarricense de Turismo y SINAC.'
               : 'Direct partnership with accredited local operators under the Costa Rica Tourism Board and SINAC standards.'}
@@ -283,10 +283,10 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
           {partners.map((p) => (
             <div 
               key={p.name}
-              className="bg-stone-100/60 border border-black/10 hover:border-teal-500/50 rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all hover:scale-105"
+              className="bg-[#08261c]/80 border border-emerald-500/25 hover:border-amber-400/60 rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all hover:scale-105 shadow-md"
             >
               <span className="text-2xl mb-1">{p.icon}</span>
-              <span className="text-xs font-bold text-stone-900 mt-1 leading-tight">{p.name}</span>
+              <span className="text-xs font-bold text-white mt-1 leading-tight">{p.name}</span>
               <span className="text-[10px] text-teal-300/80 mt-0.5">{p.subtitle}</span>
             </div>
           ))}
@@ -295,7 +295,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
 
       {/* 4. BANNER CTA ALTO IMPACTO: ARMÁ TU VIAJE A MEDIDA */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative rounded-3xl overflow-hidden bg-white border-2 border-amber-500/40 p-8 sm:p-12 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#0a2e21] via-[#07241a] to-[#041610] border-2 border-amber-500/40 p-8 sm:p-12 shadow-[0_10px_40px_rgba(0,0,0,0.7)]">
           {/* Subtle background glow */}
           <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
@@ -307,17 +307,17 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
                 {isEs ? 'Concierge VIP & Asesoría Gratuita' : 'VIP Concierge & Free Consultation'}
               </div>
 
-              <h3 className="text-3xl sm:text-4xl font-black text-stone-900 tracking-tight">
+              <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
                 {isEs ? '¿Buscás una experiencia 100% personalizada en Costa Rica?' : 'Looking for a 100% Tailored Costa Rican Experience?'}
               </h3>
 
-              <p className="text-base text-stone-800 leading-relaxed max-w-2xl">
+              <p className="text-base text-emerald-100/90 leading-relaxed max-w-2xl">
                 {isEs 
                   ? 'Nuestra inteligencia artificial especializada y equipo de concierges locales diseñan tu aventura ideal en menos de 2 minutos: transporte privado o shuttle, hoteles con encanto y los mejores tours con cupos garantizados.'
                   : 'Our dedicated travel AI and local concierge specialists will craft your dream itinerary in under 2 minutes: private or shuttle transport, charming boutique stays, and premier tours with guaranteed spots.'}
               </p>
 
-              <div className="flex flex-wrap gap-4 pt-2 text-xs text-stone-700 font-medium">
+              <div className="flex flex-wrap gap-4 pt-2 text-xs text-emerald-100/80 font-medium">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle className="w-4 h-4 text-amber-400" />
                   {isEs ? 'Sin compromisos ni cargos ocultos' : 'No hidden fees or obligations'}
