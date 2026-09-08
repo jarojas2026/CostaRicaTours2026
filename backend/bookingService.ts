@@ -314,10 +314,19 @@ export async function createBooking(data: any) {
     children: numChildren
   });
 
+  // Proveedor/operador local al que hay que pagarle esta reserva. Si el
+  // tour no tiene un providerId asignado en toursData.ts, se usa el
+  // proveedor por defecto "proveedor-directo-crtours" (representa a Costa
+  // Rica Tours operando el tour directamente, sin operador externo).
+  const DEFAULT_PROVIDER_ID = 'proveedor-directo-crtours';
+  const tourInfo = TOURS.find((t) => t.id === data.tourId);
+  const providerId = tourInfo?.providerId || DEFAULT_PROVIDER_ID;
+
   const newBooking = {
     bookingId,
     tourId: data.tourId,
     tourName: data.tourName || 'Tour en Costa Rica',
+    providerId,
     date: data.date,
     time: bookingTime,
     adults: numAdults,

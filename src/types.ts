@@ -25,6 +25,11 @@ export interface Tour {
   ecoCert: boolean;
   tourType?: 'private' | 'group';
   maxGroupSize?: number;
+  // ID del proveedor/operador local que ejecuta este tour, usado por la
+  // automatización de pagos en n8n para saber a quién pagarle después del
+  // viaje. Si se omite, se usa un proveedor por defecto (ver bookingService.ts)
+  // que representa "Costa Rica Tours operando el tour directamente".
+  providerId?: string;
   freeCancellation?: boolean;
   description: Localized<string>;
   highlights: Localized<string[]>;
