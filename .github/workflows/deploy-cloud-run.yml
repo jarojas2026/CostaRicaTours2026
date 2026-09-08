@@ -1,0 +1,66 @@
+name: Deploy to Google Cloud Run
+
+# Se ejecuta automáticamente cada vez que hay un push a "main" que ya
+# pasó el chequeo de build-check.yml. También se puede lanzar a mano
+# desde la pestaña "Actions" de GitHub (workflow_dispatch).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+env:
+  # Nombre del servicio en Cloud Run y región donde vive.
+  # San José, Costa Rica está más cerca de la región "us-central1"
+  # (Iowa) que de otras opciones de Google Cloud en Latinoamérica
+  # limitadas; es una de las regiones más económicas y estables.
+  SERVICE_NAME: costa-rica-tours
+  REGION: us-central1
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    name: Build y despliegue a Cloud Run
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código del repositorio
+        uses: actions/checkout@v4
+
+      - name: Autenticar con Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: "${{ secrets.GCP_SA_KEY }}"
+
+      - name: Configurar gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Configurar Docker para usar Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Construir la imagen de Docker
+        run: |
+          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/costa-rica-tours/${{ env.SERVICE_NAME }}:${{ github.sha }} .
+
+      - name: Subir la imagen a Artifact Registry
+        run: |
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/costa-rica-tours/${{ env.SERVICE_NAME }}:${{ github.sha }}
+
+      - name: Desplegar en Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          image: ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/costa-rica-tours/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          # Las llaves reales (Stripe, PayPal, Gemini, etc.) NUNCA van
+          # escritas aquí. Se configuran una sola vez directamente en
+          # Cloud Run (consola web o "gcloud run services update" con
+          # --set-secrets), para que no queden expuestas en GitHub.
+          flags: "--allow-unauthenticated --min-instances=0 --max-instances=4"
+
+      - name: Mostrar la URL del servicio desplegado
+        run: |
+          echo "✅ Desplegado en: $(gcloud run services describe ${{ env.SERVICE_NAME }} --region ${{ env.REGION }} --format='value(status.url)')"
