@@ -1,0 +1,44 @@
+name: Build & Type Check
+
+# Se ejecuta en cada push a main y en cada Pull Request hacia main.
+# Objetivo: detectar errores de código ANTES de que lleguen a producción,
+# sin depender de revisar manualmente cada cambio.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Instalar, verificar tipos y compilar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Verificar tipos de TypeScript (equivalente a "npm run lint")
+        run: npm run lint
+
+      - name: Compilar el proyecto (frontend + servidor)
+        run: npm run build
+        env:
+          # Variables de entorno "falsas" solo para que la compilación no
+          # falle por falta de claves reales. Esto NO despliega nada ni
+          # usa dinero real — es solo para verificar que el código compila.
+          GEMINI_API_KEY: "ci-dummy-key"
+          STRIPE_SECRET_KEY: "sk_test_dummy"
+          VITE_STRIPE_PUBLIC_KEY: "pk_test_dummy"
+          VITE_GOOGLE_MAPS_API_KEY: "dummy-key"
