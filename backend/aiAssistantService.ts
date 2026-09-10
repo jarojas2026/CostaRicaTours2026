@@ -6,7 +6,13 @@
 import { GoogleGenAI } from '@google/genai';
 import { TOURS } from '../src/data/toursData';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || 'mock-key' });
+let aiClient: GoogleGenAI | null = null;
+function getAI(): GoogleGenAI | null {
+  if (!aiClient && process.env.GEMINI_API_KEY) {
+    aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  }
+  return aiClient;
+}
 
 // Registro en memoria de excepciones para diagnóstico del Supervisor
 const exceptionLogs: Array<{
@@ -161,6 +167,11 @@ function getKnowledgeBaseReply(message: string, isEn: boolean) {
     const formattedHistory = history.map((h) => `${h.role === 'user' ? 'Usuario' : 'Asistente'}: ${h.text}`).join('\n');
     const prompt = `${formattedHistory ? `HISTORIAL DE LA CONVERSACIÓN:\n${formattedHistory}\n\n` : ''}CONSULTA ACTUAL DEL USUARIO:\n${message}`;
 
+    const ai = getAI();
+    if (!ai) {
+      return getKnowledgeBaseReply(message, isEn);
+    }
+
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
@@ -200,6 +211,8 @@ function getKnowledgeBaseReply(message: string, isEn: boolean) {
  */
 export async function runTriage(rawMessage: string) {
   try {
+    const ai = getAI();
+    if (!ai) throw new Error('Gemini API key no configurada');
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: `Analiza este mensaje de cliente de turismo en Costa Rica: "${rawMessage}". Extrae intención y datos estructurados.`,
@@ -230,6 +243,8 @@ export async function runTriage(rawMessage: string) {
  */
 export async function runProcessor(rawMessage: string, intent: string, extractedData: any) {
   try {
+    const ai = getAI();
+    if (!ai) throw new Error('Gemini API key no configurada');
     const prompt = `Mensaje: "${rawMessage}", Intención: ${intent}, Datos: ${JSON.stringify(extractedData)}. Genera las acciones necesarias y una respuesta cordial en formato JSON.`;
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',

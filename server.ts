@@ -1,5 +1,4 @@
 import express from 'express';
-import http from 'http';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { google } from 'googleapis';
@@ -476,6 +475,82 @@ app.post('/api/agents/log_exception', (req, res) => {
   res.json({ success: true });
 });
 
+app.post('/api/gemini/concierge', async (req, res) => {
+  try {
+    const { message, language, history, agentId, context } = req.body;
+    const userMsg = message || '';
+    const lang = (language || 'es') as 'es' | 'en';
+    
+    // Intento de despacho prioritario a n8n
+    const n8nResult = await dispatchToN8N('/webhook/chat-consulta', {
+      trigger: 'CONSULTA_CHAT_IA',
+      mensaje: userMsg,
+      idioma: lang,
+      agenteSeleccionado: agentId || 'concierge',
+      historial: history || [],
+      contexto: context || {}
+    });
+
+    if (n8nResult.success && n8nResult.data) {
+      const reply = n8nResult.data.reply || n8nResult.data.mensaje || n8nResult.data.output;
+      if (reply) {
+        return res.json({
+          reply,
+          quickActions: n8nResult.data.quickActions || [],
+          success: true,
+          source: 'n8n'
+        });
+      }
+    }
+
+    const assistantResult = await processChatInquiry(userMsg, lang, history || []);
+    res.json({
+      reply: assistantResult.reply,
+      quickActions: assistantResult.quickActions,
+      success: true,
+      source: 'gemini_fallback'
+    });
+  } catch (err: any) {
+    res.json({
+      reply: '¡Pura Vida! Ocurrió un inconveniente temporal al conectar con el motor de IA. Por favor intenta de nuevo o escríbenos a nuestro WhatsApp oficial.',
+      success: false,
+      error: err.message
+    });
+  }
+});
+
+app.post('/api/gemini/booking/urgent', async (req, res) => {
+  try {
+    const { message, language, history, agentId } = req.body;
+    const lang = (language || 'es') as 'es' | 'en';
+    const assistantResult = await processChatInquiry(message || '', lang, history || []);
+    
+    // Despacho a n8n trigger de soporte/urgencia
+    dispatchToN8N('/webhook/solicitud-soporte', {
+      trigger: 'SOLICITUD_SOPORTE',
+      tipo: 'urgencia_reserva',
+      mensaje: message,
+      idioma: lang,
+      timestamp: new Date().toISOString()
+    }).catch(() => {});
+
+    res.json({
+      reply: `🚨 **[ATENCIÓN PRIORITARIA COSTA RICA TOURS]**\n\n${assistantResult.reply}`,
+      quickActions: [
+        { label: lang === 'es' ? '💬 WhatsApp Directo Urgente' : '💬 Urgent Direct WhatsApp', action: 'direct_whatsapp' },
+        ...(assistantResult.quickActions || [])
+      ],
+      success: true,
+      urgent: true
+    });
+  } catch (err: any) {
+    res.json({
+      reply: 'Atención prioritaria registrada. Por favor comunícate a nuestro WhatsApp de soporte: +506 8888-7777.',
+      success: false
+    });
+  }
+});
+
 // Compatibilidad de rutas generales
 app.post('/api/workflows/:action', (req, res) => {
   res.json({ success: true, message: `Workflow ${req.params.action} procesado con éxito` });
@@ -498,15 +573,9 @@ app.delete('/api/chat/history', (req, res) => {
 // ==========================================
 
 async function startServer() {
-  const httpServer = http.createServer(app);
-
   if (process.env.NODE_ENV !== 'production') {
-    const isHmrDisabled = process.env.DISABLE_HMR === 'true';
     const vite = await createViteServer({
-      server: {
-        middlewareMode: true,
-        hmr: isHmrDisabled ? false : { server: httpServer }
-      },
+      server: { middlewareMode: true },
       appType: 'spa'
     });
     app.use(vite.middlewares);
@@ -518,7 +587,7 @@ async function startServer() {
     });
   }
 
-  httpServer.listen(PORT, '0.0.0.0', () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor Full-Stack corriendo en http://0.0.0.0:${PORT}`);
     console.log(`⚡ Backend n8n listo con triggers salientes y webhooks entrantes.`);
   });

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BookingRequest, Language } from '../types';
 import { X, Server, Activity, Database, Key, Settings, ExternalLink, Zap, Mail, Bot, Network, ChevronRight } from 'lucide-react';
+import { N8NWorkflowStudio } from './N8NWorkflowStudio';
 
 interface AdminDashboardProps {
   isOpen: boolean;
@@ -11,10 +12,10 @@ interface AdminDashboardProps {
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose, language }) => {
   const [bookings, setBookings] = useState<BookingRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [n8nWebhookUrl, setN8nWebhookUrl] = useState('https://tu-n8n.com/webhook/reservas');
+  const [n8nWebhookUrl, setN8nWebhookUrl] = useState('https://costaricatours.app.n8n.cloud/webhook/reservas');
   
   // Multi-Agent Simulation State
-  const [activeTab, setActiveTab] = useState<'bookings' | 'swarm' | 'architecture'>('bookings');
+  const [activeTab, setActiveTab] = useState<'bookings' | 'n8n' | 'swarm' | 'architecture'>('bookings');
   const [simEmail, setSimEmail] = useState('Hola! Somos una familia de 4 (2 adultos, 2 niños). Queremos ir a Costa Rica la primera semana de diciembre. Nos interesan los volcanes y la playa, pero uno de los niños es alérgico al maní. ¿Qué nos recomiendan?');
   const [triageResult, setTriageResult] = useState<any>(null);
   const [processorResult, setProcessorResult] = useState<any>(null);
@@ -109,6 +110,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
             className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'bookings' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
           >
             Live Bookings
+          </button>
+          <button 
+            onClick={() => setActiveTab('n8n')}
+            className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'n8n' ? 'border-amber-400 text-amber-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
+          >
+            <Zap className="w-4 h-4 text-amber-400" /> n8n Workflows Studio
           </button>
           <button 
             onClick={() => setActiveTab('swarm')}
@@ -229,6 +236,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
             </div>
           </section>
             </>
+          )}
+
+          {activeTab === 'n8n' && (
+            <div className="py-1">
+              <N8NWorkflowStudio language={language || 'es'} />
+            </div>
           )}
 
           {activeTab === 'swarm' && (
