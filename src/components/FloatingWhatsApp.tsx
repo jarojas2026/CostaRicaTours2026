@@ -1307,7 +1307,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
   };
 
   return (
-    <div className="floating-whatsapp-container fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 xl:bottom-6 xl:right-6 z-[90] flex flex-col items-end gap-3 pointer-events-none">
+    <div className="floating-whatsapp-container fixed bottom-[calc(4.8rem+env(safe-area-inset-bottom))] right-3 sm:right-4 lg:bottom-6 lg:right-6 z-[80] flex flex-col items-end gap-3 pointer-events-none">
       <AnimatePresence>
         {isOpen && (
           <motion.div

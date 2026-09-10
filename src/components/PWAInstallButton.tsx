@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { Language } from '../types';
-import { Download, X } from 'lucide-react';
+import { Download, X, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface PWAInstallButtonProps {
@@ -16,12 +16,11 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ language }) 
     return null;
   }
 
-  const btnText = language === 'es' ? 'Instalar App' : 'Install App';
+  const btnText = language === 'es' ? 'App Móvil' : 'Install App';
 
   const handleClick = async () => {
     if (isInstallable) {
-      const success = await install();
-      if (!success) setShowGuide(true);
+      await install();
     } else {
       setShowGuide(true);
     }
@@ -31,13 +30,10 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ language }) 
     <>
       <button
         onClick={handleClick}
-        className={`flex items-center gap-2 rounded-full px-2.5 sm:px-4 py-2 sm:py-2 text-xs font-bold uppercase tracking-wider transition shadow-md ${
-          isInstallable 
-            ? 'bg-stone-50 text-white hover:bg-stone-100' 
-            : 'bg-white text-stone-900 border border-stone-200 hover:bg-stone-50'
-        }`}
+        className="flex items-center gap-1.5 bg-emerald-950/70 hover:bg-emerald-900/80 px-2.5 sm:px-3 py-1.5 rounded-xl border border-emerald-500/40 text-[11px] font-bold text-emerald-200 hover:text-white transition-all cursor-pointer shadow-sm group"
+        title={language === 'es' ? 'Instalar Aplicación Móvil PWA' : 'Install PWA Mobile App'}
       >
-        <Download className="w-3.5 h-3.5" />
+        <Download className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
         <span className="hidden sm:inline">{btnText}</span>
       </button>
 
@@ -47,46 +43,52 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ language }) 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
           >
             <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
+              initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="w-full max-w-sm rounded-[2rem] bg-white p-6 sm:p-8 shadow-2xl relative"
+              exit={{ scale: 0.95, y: 20 }}
+              className="w-full max-w-sm rounded-[2rem] bg-[#07241a] border border-emerald-500/40 p-6 sm:p-8 shadow-[0_10px_50px_rgba(0,0,0,0.8)] text-stone-100 relative"
             >
               <button 
                 onClick={() => setShowGuide(false)}
-                className="absolute top-4 right-4 p-2 text-stone-600 hover:text-stone-900 rounded-full bg-stone-100 transition-colors"
+                className="absolute top-4 right-4 p-2 text-emerald-400 hover:text-white rounded-full bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/30 transition-colors"
+                aria-label="Cerrar guía"
               >
                 <X className="w-4 h-4" />
               </button>
 
-              <h3 className="text-xl font-black text-stone-900 mb-4 font-heading">
-                {language === 'es' ? 'Instalar Aplicación' : 'Install Application'}
-              </h3>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-amber-400/20 text-amber-400 flex items-center justify-center border border-amber-400/30">
+                  <Smartphone className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-black text-white">
+                  {language === 'es' ? 'Instalar App Costa Rica' : 'Install Costa Rica App'}
+                </h3>
+              </div>
               
-              <div className="space-y-4 text-sm text-stone-600 font-medium bg-stone-50 p-5 rounded-2xl border border-stone-100">
+              <div className="space-y-3.5 text-xs text-stone-200 bg-[#051c14] p-4 rounded-2xl border border-emerald-500/20">
                 {isIOS ? (
                   <>
-                    <p className="flex items-start gap-3">
-                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-600 font-bold shrink-0">1</span>
-                      <span>{language === 'es' ? 'Toca el botón' : 'Tap the'} <strong>{language === 'es' ? 'Compartir' : 'Share'}</strong> {language === 'es' ? 'en la barra inferior de Safari.' : 'button in Safari toolbar.'}</span>
+                    <p className="flex items-start gap-2.5">
+                      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-400 text-stone-950 font-black text-[10px] shrink-0 mt-0.5">1</span>
+                      <span>{language === 'es' ? 'Toca el botón' : 'Tap the'} <strong className="text-amber-300">{language === 'es' ? 'Compartir' : 'Share'}</strong> {language === 'es' ? 'en la barra de Safari.' : 'button in Safari.'}</span>
                     </p>
-                    <p className="flex items-start gap-3">
-                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-600 font-bold shrink-0">2</span>
-                      <span>{language === 'es' ? 'Desliza hacia abajo y selecciona' : 'Scroll down and select'} <strong>{language === 'es' ? 'Agregar a Inicio' : 'Add to Home Screen'}</strong>.</span>
+                    <p className="flex items-start gap-2.5">
+                      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-400 text-stone-950 font-black text-[10px] shrink-0 mt-0.5">2</span>
+                      <span>{language === 'es' ? 'Selecciona' : 'Select'} <strong className="text-amber-300">{language === 'es' ? 'Agregar a Inicio' : 'Add to Home Screen'}</strong>.</span>
                     </p>
                   </>
                 ) : (
                   <>
-                    <p className="flex items-start gap-3">
-                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-600 font-bold shrink-0">1</span>
-                      <span>{language === 'es' ? 'Abre el menú de opciones (⋮) de tu navegador.' : 'Open your browser options menu (⋮).'}</span>
+                    <p className="flex items-start gap-2.5">
+                      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-400 text-stone-950 font-black text-[10px] shrink-0 mt-0.5">1</span>
+                      <span>{language === 'es' ? 'Abre el menú de opciones (⋮) de tu navegador.' : 'Open your browser menu (⋮).'}</span>
                     </p>
-                    <p className="flex items-start gap-3">
-                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-600 font-bold shrink-0">2</span>
-                      <span>{language === 'es' ? 'Selecciona' : 'Select'} <strong>{language === 'es' ? 'Instalar aplicación' : 'Install app'}</strong> {language === 'es' ? 'o' : 'or'} <strong>{language === 'es' ? 'Agregar a inicio' : 'Add to Home screen'}</strong>.</span>
+                    <p className="flex items-start gap-2.5">
+                      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-400 text-stone-950 font-black text-[10px] shrink-0 mt-0.5">2</span>
+                      <span>{language === 'es' ? 'Toca' : 'Tap'} <strong className="text-amber-300">{language === 'es' ? 'Instalar aplicación' : 'Install app'}</strong> {language === 'es' ? 'o' : 'or'} <strong className="text-amber-300">{language === 'es' ? 'Agregar a pantalla principal' : 'Add to Home'}</strong>.</span>
                     </p>
                   </>
                 )}
@@ -94,9 +96,9 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ language }) 
               
               <button
                 onClick={() => setShowGuide(false)}
-                className="mt-6 w-full rounded-full bg-stone-50 py-3.5 text-sm font-bold text-white hover:bg-stone-100 uppercase tracking-wider"
+                className="mt-6 w-full rounded-full bg-amber-500 hover:bg-amber-400 py-3 text-xs font-black text-stone-950 uppercase tracking-wider transition-colors shadow-lg cursor-pointer"
               >
-                {language === 'es' ? 'Entendido' : 'Got it'}
+                {language === 'es' ? '¡Entendido!' : 'Got it!'}
               </button>
             </motion.div>
           </motion.div>

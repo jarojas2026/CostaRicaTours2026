@@ -57,6 +57,13 @@ interface TileLayerConfig {
 }
 
 const TILE_LAYERS: Record<TileLayerKey, TileLayerConfig> = {
+  voyager: {
+    name: { es: 'Explorador Ecoturismo', en: 'Ecotourism Explorer' },
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19,
+    icon: '🗺️'
+  },
   satellite: {
     name: { es: 'Satélite Natural HD', en: 'HD Natural Satellite' },
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -64,18 +71,11 @@ const TILE_LAYERS: Record<TileLayerKey, TileLayerConfig> = {
     maxZoom: 18,
     icon: '🛰️'
   },
-  voyager: {
-    name: { es: 'Explorador Ecoturismo', en: 'Ecotourism Explorer' },
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO',
-    maxZoom: 19,
-    icon: '🗺️'
-  },
   topo: {
     name: { es: 'Topográfico & Relieve', en: 'Topography & Relief' },
-    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; OpenStreetMap contributors, SRTM | OpenTopoMap',
-    maxZoom: 17,
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; Esri, HERE, Garmin, USGS',
+    maxZoom: 18,
     icon: '⛰️'
   }
 };

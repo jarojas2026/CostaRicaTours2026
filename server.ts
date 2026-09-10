@@ -21,10 +21,7 @@ import {
 } from './backend/aiAssistantService';
 
 const app = express();
-// Cloud Run asigna el puerto dinámicamente vía la variable de entorno PORT.
-// process.env siempre entrega texto, así que lo convertimos a número.
-// En desarrollo local (donde esa variable no existe) usamos 3000 como antes.
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = 3000;
 
 app.use(express.json());
 

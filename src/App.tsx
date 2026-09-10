@@ -107,21 +107,6 @@ export default function App() {
     return () => document.removeEventListener('open-admin-dashboard', handleOpenAdmin);
   }, []);
 
-  
-  
-  
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const bookingStatus = params.get('booking');
-    if (bookingStatus === 'success') {
-      setTimeout(() => alert(language === 'es' ? '¡Pago exitoso con Stripe! Tu reserva está confirmada. Pura Vida.' : 'Stripe payment successful! Your booking is confirmed. Pura Vida.'), 500);
-      window.history.replaceState({}, '', window.location.pathname);
-    } else if (bookingStatus === 'canceled') {
-      setTimeout(() => alert(language === 'es' ? 'Pago cancelado. Puedes intentar de nuevo.' : 'Payment canceled. You can try again.'), 500);
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-  }, [language]);
-
   const [ratesLoaded, setRatesLoaded] = useState(false);
   useEffect(() => {
     fetchExchangeRates().then(() => setRatesLoaded(true));
@@ -253,71 +238,41 @@ export default function App() {
       />
 
       {/* Main Content Areas based on activeTab */}
-      <main className="flex-1 space-y-0 pb-24 xl:pb-0">
+      <main className="flex-1 space-y-0 pb-20 lg:pb-0">
         
-        {/* Dynamic Breadcrumbs & Quick Return Bar for Sub-pages */}
-        {activeTab !== 'home' && (
-          <div className="bg-[#07241a]/90 backdrop-blur-md border-b border-emerald-500/20 py-2.5 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
+        {/* Dynamic Breadcrumbs & Quick Return Bar for Sub-pages (Except full-screen map) */}
+        {activeTab !== 'home' && activeTab !== 'map' && (
+          <div className="bg-[#02130c]/90 backdrop-blur-md border-b border-emerald-500/20 py-2 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs">
               {/* Breadcrumb path */}
-              <div className="flex items-center gap-2 text-stone-300">
+              <div className="flex items-center gap-2 text-stone-300 min-w-0">
                 <button
                   onClick={() => setActiveTab('home')}
-                  className="flex items-center gap-1 hover:text-orange-400 font-bold transition-colors cursor-pointer"
+                  className="flex items-center gap-1 text-emerald-200/80 hover:text-amber-400 font-bold transition-colors cursor-pointer shrink-0"
                 >
                   <Home className="w-3.5 h-3.5" />
                   <span>{language === 'es' ? 'Inicio' : 'Home'}</span>
                 </button>
-                <ChevronRight className="w-3.5 h-3.5 opacity-50" />
-                <span className="font-black text-orange-400 flex items-center gap-1.5">
+                <ChevronRight className="w-3.5 h-3.5 text-emerald-500/40 shrink-0" />
+                <span className="font-bold text-amber-400 truncate flex items-center gap-1.5">
                   {activeTab === 'tours' && `🧭 ${language === 'es' ? 'Catálogo de Tours y Aventuras' : 'Tours & Adventures Catalog'}`}
-                  {activeTab === 'flights' && `✈️ ${language === 'es' ? 'Rastreador en Vivo & Reserva de Vuelos a Costa Rica' : 'Live Flight Radar & Booking to Costa Rica'}`}
-                  {activeTab === 'map' && `🗺️ ${language === 'es' ? 'Mapa Interactivo de Costa Rica' : 'Interactive Map of Costa Rica'}`}
-                  {activeTab === 'ai' && `🤖 ${language === 'es' ? 'Motor Inteligente & Flujos n8n' : 'AI Engine & n8n Workflows'}`}
+                  {activeTab === 'flights' && `✈️ ${language === 'es' ? 'Rastreador en Vivo de Vuelos a Costa Rica' : 'Live Flight Radar to Costa Rica'}`}
+                  {activeTab === 'ai' && `🤖 ${language === 'es' ? 'Motor Inteligente & Asistente Turístico' : 'AI Concierge & Automations'}`}
                   {activeTab === 'itinerary' && `✨ ${language === 'es' ? 'Planificador Inteligente de Itinerarios' : 'AI Trip Planner'}`}
                   {activeTab === 'culture' && `🇨🇷 ${language === 'es' ? 'Rincón Tico: Cultura, Comida y Café' : 'Tico Culture & Slang'}`}
                   {activeTab === 'tools' && `🚐 ${language === 'es' ? 'Transporte, Shuttles & Buses' : 'Transport & Shuttles'}`}
                 </span>
               </div>
 
-              {/* Quick Action Navigation Links */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setActiveTab('home')}
-                  className="flex items-center gap-1 text-[11px] font-bold bg-emerald-950/70 hover:bg-emerald-900/80 text-stone-100 px-3 py-1 rounded-full border border-emerald-500/40 transition-colors cursor-pointer"
-                >
-                  <ArrowLeft className="w-3 h-3" />
-                  <span>{language === 'es' ? 'Volver al Inicio' : 'Back to Home'}</span>
-                </button>
-
-                {activeTab !== 'tours' && (
-                  <button
-                    onClick={() => setActiveTab('tours')}
-                    className="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-emerald-950/70 hover:bg-emerald-900/80 text-amber-300 hover:text-amber-200 px-3 py-1 rounded-full border border-emerald-500/40 transition-colors cursor-pointer"
-                  >
-                    <span>{language === 'es' ? 'Ver Tours (+20)' : 'View Tours (20+)'}</span>
-                  </button>
-                )}
-
-                {activeTab !== 'flights' && (
-                  <button
-                    onClick={() => setActiveTab('flights')}
-                    className="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-white hover:bg-stone-100 text-orange-300 hover:text-orange-200 px-3 py-1 rounded-full border border-teal-500/30 transition-colors cursor-pointer"
-                  >
-                    <Plane className="w-3 h-3 text-orange-400" />
-                    <span>{language === 'es' ? 'Vuelos' : 'Flights'}</span>
-                  </button>
-                )}
-
-                {activeTab !== 'ai' && (
-                  <button
-                    onClick={() => setActiveTab('ai')}
-                    className="hidden md:flex items-center gap-1 text-[11px] font-black bg-orange-500/20 text-orange-300 hover:bg-orange-500 hover:text-stone-950 px-3 py-1 rounded-full border border-orange-500/40 transition-colors cursor-pointer"
-                  >
-                    <span>🤖 {language === 'es' ? 'Consultar 8 Agentes IA' : 'Ask 8 AI Agents'}</span>
-                  </button>
-                )}
-              </div>
+              {/* Quick Return Pill */}
+              <button
+                onClick={() => setActiveTab('home')}
+                className="flex items-center gap-1.5 text-[11px] font-bold bg-[#041910] hover:bg-[#07261b] text-emerald-200 hover:text-white px-3 py-1 rounded-full border border-emerald-500/30 transition-all cursor-pointer shrink-0 shadow-sm"
+              >
+                <ArrowLeft className="w-3 h-3 text-amber-400" />
+                <span className="hidden sm:inline">{language === 'es' ? 'Volver al Inicio' : 'Back to Home'}</span>
+                <span className="sm:hidden">{language === 'es' ? 'Inicio' : 'Home'}</span>
+              </button>
             </div>
           </div>
         )}

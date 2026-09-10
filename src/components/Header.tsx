@@ -18,7 +18,9 @@ import {
   Clock,
   ShieldCheck,
   Plane,
-  Palette
+  Palette,
+  Home,
+  Calendar
 } from 'lucide-react';
 import { Language, Currency } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -223,72 +225,89 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </button>
 
-          {/* Desktop Primary Navigation Links (Active on 2xl & xl screens) */}
-          <nav className="hidden 2xl:flex items-center gap-8 text-sm font-bold tracking-widest uppercase">
+          {/* Unified High-Tech Desktop Navigation (Visible on lg screens and up) */}
+          <nav className="hidden lg:flex items-center gap-1 bg-[#02130c]/85 p-1 rounded-full border border-emerald-500/30 backdrop-blur-xl shadow-inner">
             <button
               onClick={() => handleTabChange('home')}
-              className={`transition-all cursor-pointer ${currentTab === 'home' ? 'text-orange-400' : 'text-stone-300 hover:text-amber-400'}`}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+                currentTab === 'home'
+                  ? 'bg-amber-400 text-stone-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.35)]'
+                  : 'text-emerald-100/75 hover:text-white hover:bg-emerald-900/40'
+              }`}
             >
-              {language === 'es' ? 'Inicio' : 'Home'}
+              <Home className="w-3.5 h-3.5" />
+              <span>{language === 'es' ? 'Inicio' : 'Home'}</span>
             </button>
-            <button
-              onClick={() => handleTabChange('tours')}
-              className={`transition-all cursor-pointer ${currentTab === 'tours' ? 'text-orange-400' : 'text-stone-300 hover:text-amber-400'}`}
-            >
-              {language === 'es' ? 'Tours' : 'Tours'}
-            </button>
-            <button
-              onClick={() => handleTabChange('map')}
-              className={`transition-all cursor-pointer ${currentTab === 'map' ? 'text-orange-400' : 'text-stone-300 hover:text-amber-400'}`}
-            >
-              {language === 'es' ? 'Mapa' : 'Map'}
-            </button>
-            <button
-              onClick={() => handleTabChange('ai')}
-              className={`transition-all cursor-pointer flex items-center gap-1.5 ${currentTab === 'ai' ? 'text-orange-400' : 'text-stone-300 hover:text-amber-400'}`}
-            >
-              <Bot className="w-4 h-4" />
-              <span>{language === 'es' ? 'IA Asistente' : 'AI Assistant'}</span>
-            </button>
-          </nav>
 
-          {/* Medium Desktop Compact Nav (for xl screens 1280px-1536px) */}
-          <nav className="hidden xl:flex 2xl:hidden items-center gap-4 text-sm font-bold tracking-wider">
-            <button
-              onClick={() => handleTabChange('home')}
-              className={`transition-colors cursor-pointer ${currentTab === 'home' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-300 hover:text-amber-300'}`}
-            >
-              {language === 'es' ? 'Inicio' : 'Home'}
-            </button>
             <button
               onClick={() => handleTabChange('tours')}
-              className={`transition-colors cursor-pointer ${currentTab === 'tours' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-300 hover:text-amber-300'}`}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+                currentTab === 'tours'
+                  ? 'bg-amber-400 text-stone-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.35)]'
+                  : 'text-emerald-100/75 hover:text-white hover:bg-emerald-900/40'
+              }`}
             >
-              {language === 'es' ? 'Tours' : 'Tours'}
+              <Compass className="w-3.5 h-3.5" />
+              <span>{language === 'es' ? 'Tours' : 'Tours'}</span>
+              <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-black ${
+                currentTab === 'tours' ? 'bg-stone-950/20 text-stone-950' : 'bg-emerald-500/20 text-emerald-300'
+              }`}>
+                +20
+              </span>
             </button>
+
             <button
               onClick={() => handleTabChange('map')}
-              className={`transition-colors cursor-pointer ${currentTab === 'map' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-300 hover:text-amber-300'}`}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+                currentTab === 'map'
+                  ? 'bg-amber-400 text-stone-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.35)]'
+                  : 'text-emerald-100/75 hover:text-white hover:bg-emerald-900/40'
+              }`}
             >
-              {language === 'es' ? 'Mapa' : 'Map'}
+              <Map className="w-3.5 h-3.5" />
+              <span>{language === 'es' ? 'Mapa' : 'Map'}</span>
             </button>
-            <button
-              onClick={() => handleTabChange('ai')}
-              className={`transition-colors cursor-pointer ${currentTab === 'ai' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-300 hover:text-amber-300'}`}
-            >
-              {language === 'es' ? 'IA' : 'AI'}
-            </button>
-            <button
-              onClick={() => handleTabChange('itinerary')}
-              className={`transition-colors cursor-pointer ${currentTab === 'itinerary' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-300 hover:text-amber-300'}`}
-            >
-              {language === 'es' ? 'Itinerario' : 'Itinerary'}
-            </button>
+
             <button
               onClick={() => handleTabChange('flights')}
-              className={`transition-colors cursor-pointer ${currentTab === 'flights' ? 'text-orange-400 border-b-2 border-orange-400 pb-1' : 'text-stone-300 hover:text-amber-300'}`}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+                currentTab === 'flights'
+                  ? 'bg-amber-400 text-stone-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.35)]'
+                  : 'text-emerald-100/75 hover:text-white hover:bg-emerald-900/40'
+              }`}
             >
-              {language === 'es' ? 'Vuelos' : 'Flights'}
+              <Plane className="w-3.5 h-3.5" />
+              <span>{language === 'es' ? 'Vuelos' : 'Flights'}</span>
+              <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-black ${
+                currentTab === 'flights' ? 'bg-stone-950/20 text-stone-950' : 'bg-orange-500/20 text-orange-300'
+              }`}>
+                Live
+              </span>
+            </button>
+
+            <button
+              onClick={() => handleTabChange('itinerary')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+                currentTab === 'itinerary'
+                  ? 'bg-amber-400 text-stone-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.35)]'
+                  : 'text-emerald-100/75 hover:text-white hover:bg-emerald-900/40'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>{language === 'es' ? 'Itinerario' : 'Itinerary'}</span>
+            </button>
+
+            <button
+              onClick={() => handleTabChange('ai')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+                currentTab === 'ai'
+                  ? 'bg-amber-400 text-stone-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.35)]'
+                  : 'text-emerald-100/75 hover:text-white hover:bg-emerald-900/40'
+              }`}
+            >
+              <Bot className="w-3.5 h-3.5 text-amber-400" />
+              <span>{language === 'es' ? 'Asistente IA' : 'AI Concierge'}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             </button>
           </nav>
 
@@ -314,7 +333,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsCurrencyMenuOpen(false)} />
                   <div className="absolute right-0 mt-2 w-44 max-h-60 overflow-y-auto bg-[#07241a] rounded-2xl shadow-2xl border border-emerald-500/40 z-50 text-stone-100 p-1.5 animate-fade-in modal-scrollable">
-                    <div className="px-2 py-1 text-[10px] font-black text-teal-400 uppercase border-b border-stone-200 mb-1">
+                    <div className="px-2 py-1 text-[10px] font-black text-emerald-400 uppercase border-b border-emerald-500/30 mb-1">
                       {language === 'es' ? 'Moneda de Pago' : 'Payment Currency'}
                     </div>
                     {CURRENCIES.map((curr) => (
@@ -360,7 +379,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsLangMenuOpen(false)} />
                   <div className="absolute right-0 mt-2 w-48 bg-[#07241a] rounded-2xl shadow-2xl border border-emerald-500/40 z-50 text-stone-100 p-1.5 animate-fade-in">
-                    <div className="px-2 py-1 text-[10px] font-black text-teal-400 uppercase border-b border-stone-200 mb-1">
+                    <div className="px-2 py-1 text-[10px] font-black text-emerald-400 uppercase border-b border-emerald-500/30 mb-1">
                       🌍 Idioma / Language
                     </div>
                     {SUPPORTED_LANGUAGES.map((langItem) => (
@@ -415,7 +434,7 @@ export const Header: React.FC<HeaderProps> = ({
                 />
                 <button 
                   onClick={signOut} 
-                  className="text-stone-600 hover:text-red-400 transition-colors p-1" 
+                  className="text-emerald-300/80 hover:text-rose-400 transition-colors p-1 cursor-pointer" 
                   title={language === 'es' ? 'Cerrar Sesión' : 'Sign Out'}
                 >
                   <LogOut className="w-4 h-4" />
@@ -424,20 +443,20 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               <button
                 onClick={signInWithGoogle}
-                className="hidden xl:flex items-center gap-1 text-[11px] font-bold bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 px-2.5 py-1.5 rounded-xl border border-emerald-500/40 transition-colors shrink-0"
+                className="hidden lg:flex items-center gap-1 text-[11px] font-bold bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 px-2.5 py-1.5 rounded-xl border border-emerald-500/40 transition-colors shrink-0 cursor-pointer"
               >
-                <LogIn className="w-3.5 h-3.5 text-orange-400" />
+                <LogIn className="w-3.5 h-3.5 text-amber-400" />
                 <span>{t('signIn')}</span>
               </button>
             )}
 
-            {/* Mobile / Tablet Drawer Hamburger Button (Visible on screens < 1280px) */}
+            {/* Mobile / Tablet Drawer Hamburger Button (Visible on screens < 1024px) */}
             <button
               onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
-              className="xl:hidden p-2 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 border border-emerald-500/40 transition-colors cursor-pointer shrink-0"
+              className="lg:hidden p-2 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 border border-emerald-500/40 transition-colors cursor-pointer shrink-0"
               aria-label="Abrir Menú"
             >
-              {isMobileDrawerOpen ? <X className="w-4 h-4 text-orange-400" /> : <Menu className="w-4 h-4 text-stone-900" />}
+              {isMobileDrawerOpen ? <X className="w-4 h-4 text-amber-400" /> : <Menu className="w-4 h-4 text-emerald-200" />}
             </button>
 
           </div>
@@ -447,23 +466,23 @@ export const Header: React.FC<HeaderProps> = ({
         {isMobileDrawerOpen && (
           <>
             <div
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[90] xl:hidden"
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[90] lg:hidden"
               onClick={() => setIsMobileDrawerOpen(false)}
             />
             
-            <div className="fixed top-[95px] left-2 right-2 sm:left-4 sm:right-4 max-h-[82vh] bg-[#061f17] border border-emerald-500/30 rounded-3xl z-[100] shadow-2xl p-4 sm:p-5 overflow-y-auto xl:hidden space-y-4 animate-fade-in modal-scrollable text-white">
+            <div className="fixed top-[95px] left-2 right-2 sm:left-4 sm:right-4 max-h-[82vh] bg-[#061f17] border border-emerald-500/30 rounded-3xl z-[100] shadow-2xl p-4 sm:p-5 overflow-y-auto lg:hidden space-y-4 animate-fade-in modal-scrollable text-white">
               
               {/* Drawer Header */}
-              <div className="flex items-center justify-between border-b border-stone-200/60 pb-3">
+              <div className="flex items-center justify-between border-b border-emerald-500/20 pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-teal-600 flex items-center justify-center text-white font-black text-sm">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-white font-black text-sm">
                     🇨🇷
                   </div>
                   <div>
                     <span className="text-xs font-black text-white uppercase tracking-wider block">
-                      Costa Rica <span className="text-orange-400">Tours</span>
+                      Costa Rica <span className="text-amber-400">Tours</span>
                     </span>
-                    <span className="text-[8px] text-teal-300 font-bold uppercase tracking-widest">
+                    <span className="text-[8px] text-emerald-400 font-bold uppercase tracking-widest">
                       Agencia Receptiva Oficial
                     </span>
                   </div>
@@ -471,13 +490,13 @@ export const Header: React.FC<HeaderProps> = ({
 
                 <div className="flex items-center gap-2">
                   {user ? (
-                    <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-xl border border-stone-200">
+                    <div className="flex items-center gap-1.5 bg-[#03140d] px-2.5 py-1 rounded-xl border border-emerald-500/30">
                       <img 
                         src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}`} 
-                        alt="Avatar" 
+                        alt={user.displayName || 'Avatar'} 
                         className="w-5 h-5 rounded-full" 
                       />
-                      <button onClick={signOut} className="text-red-400 text-xs font-bold ml-1">
+                      <button onClick={signOut} className="text-rose-400 hover:text-rose-300 text-xs font-bold ml-1 cursor-pointer">
                         Salir
                       </button>
                     </div>
@@ -487,7 +506,7 @@ export const Header: React.FC<HeaderProps> = ({
                         signInWithGoogle();
                         setIsMobileDrawerOpen(false);
                       }}
-                      className="flex items-center gap-1 text-[10px] font-black bg-stone-50 text-orange-300 px-2.5 py-1 rounded-xl border border-orange-400/30 uppercase"
+                      className="flex items-center gap-1 text-[10px] font-black bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 px-2.5 py-1 rounded-xl border border-amber-400/30 uppercase cursor-pointer"
                     >
                       <LogIn className="w-3 h-3" />
                       <span>{t('signIn')}</span>
@@ -496,7 +515,8 @@ export const Header: React.FC<HeaderProps> = ({
 
                   <button
                     onClick={() => setIsMobileDrawerOpen(false)}
-                    className="p-1.5 rounded-xl bg-white text-teal-300 hover:text-stone-900"
+                    className="p-1.5 rounded-xl bg-[#03140d] text-emerald-300 hover:text-white border border-emerald-500/30 cursor-pointer"
+                    aria-label="Cerrar Menú"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -532,7 +552,7 @@ export const Header: React.FC<HeaderProps> = ({
 
               {/* Section 1: Tours & Destinos */}
               <div className="space-y-1.5">
-                <span className="text-[9px] uppercase font-black tracking-widest text-teal-400 px-1 block">
+                <span className="text-[9px] uppercase font-black tracking-widest text-emerald-400 px-1 block">
                   {language === 'es' ? 'Experiencias & Destinos' : 'Experiences & Destinations'}
                 </span>
                 
@@ -540,11 +560,11 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => handleTabChange('home')}
                     className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left ${
-                      currentTab === 'home' ? 'bg-orange-500 text-stone-950 font-black' : 'bg-stone-100/40 text-stone-900 hover:bg-stone-100/80 border border-stone-200/40'
+                      currentTab === 'home' ? 'bg-amber-400 text-stone-950 font-black' : 'bg-[#041910] text-emerald-100 hover:bg-[#07261b] border border-emerald-500/25'
                     }`}
                   >
                     <span className="flex items-center gap-2">
-                      <span>🏠</span>
+                      <Home className="w-4 h-4 text-amber-400" />
                       <span className="text-xs font-bold">{language === 'es' ? 'Inicio' : 'Home'}</span>
                     </span>
                     <span className="text-[9px] uppercase opacity-70">{language === 'es' ? 'Principal' : 'Main'}</span>
@@ -553,14 +573,14 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => handleTabChange('tours')}
                     className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left ${
-                      currentTab === 'tours' ? 'bg-orange-500 text-stone-950 font-black' : 'bg-stone-100/40 text-stone-900 hover:bg-stone-100/80 border border-stone-200/40'
+                      currentTab === 'tours' ? 'bg-amber-400 text-stone-950 font-black' : 'bg-[#041910] text-emerald-100 hover:bg-[#07261b] border border-emerald-500/25'
                     }`}
                   >
                     <span className="flex items-center gap-2">
-                      <Compass className="w-4 h-4 text-orange-400" />
+                      <Compass className="w-4 h-4 text-amber-400" />
                       <span className="text-xs font-bold">{t('toursAndAdventures')}</span>
                     </span>
-                    <span className="text-[9px] uppercase bg-orange-400/20 text-orange-300 px-1.5 py-0.5 rounded-full font-black border border-orange-400/30">
+                    <span className="text-[9px] uppercase bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded-full font-black border border-amber-400/30">
                       +20 Tours
                     </span>
                   </button>
@@ -568,11 +588,11 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => handleTabChange('map')}
                     className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left ${
-                      currentTab === 'map' ? 'bg-orange-500 text-stone-950 font-black' : 'bg-stone-100/40 text-stone-900 hover:bg-stone-100/80 border border-stone-200/40'
+                      currentTab === 'map' ? 'bg-amber-400 text-stone-950 font-black' : 'bg-[#041910] text-emerald-100 hover:bg-[#07261b] border border-emerald-500/25'
                     }`}
                   >
                     <span className="flex items-center gap-2">
-                      <Map className="w-4 h-4 text-teal-400" />
+                      <Map className="w-4 h-4 text-emerald-400" />
                       <span className="text-xs font-bold">{t('interactiveMap')}</span>
                     </span>
                     <span className="text-[9px] uppercase opacity-70">{language === 'es' ? 'Por Regiones' : 'By Region'}</span>
@@ -581,11 +601,11 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => handleTabChange('culture')}
                     className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left ${
-                      currentTab === 'culture' ? 'bg-orange-500 text-stone-950 font-black' : 'bg-stone-100/40 text-stone-900 hover:bg-stone-100/80 border border-stone-200/40'
+                      currentTab === 'culture' ? 'bg-amber-400 text-stone-950 font-black' : 'bg-[#041910] text-emerald-100 hover:bg-[#07261b] border border-emerald-500/25'
                     }`}
                   >
                     <span className="flex items-center gap-2">
-                      <Coffee className="w-4 h-4 text-orange-300" />
+                      <Coffee className="w-4 h-4 text-amber-300" />
                       <span className="text-xs font-bold">{language === 'es' ? 'Rincón Tico (Cultura)' : 'Tico Culture & Slang'}</span>
                     </span>
                     <span className="text-[9px] uppercase opacity-70">100% Tico</span>
@@ -594,9 +614,9 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
 
               {/* Section 2: Inteligencia Artificial & Planificación */}
-              <div className="space-y-1.5 pt-2 border-t border-stone-200/60">
-                <span className="text-[9px] uppercase font-black tracking-widest text-orange-400 px-1 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-orange-400" />
+              <div className="space-y-1.5 pt-2 border-t border-emerald-500/20">
+                <span className="text-[9px] uppercase font-black tracking-widest text-amber-400 px-1 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-amber-400" />
                   {language === 'es' ? 'Inteligencia Artificial Especializada' : 'Specialized Artificial Intelligence'}
                 </span>
 
@@ -605,15 +625,15 @@ export const Header: React.FC<HeaderProps> = ({
                     onClick={() => handleTabChange('ai')}
                     className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left border ${
                       currentTab === 'ai' 
-                        ? 'bg-orange-500 text-stone-950 font-black border-orange-300 shadow-md' 
-                        : 'bg-white/80 border-orange-500/30 text-orange-200 hover:bg-stone-50'
+                        ? 'bg-amber-400 text-stone-950 font-black border-amber-300 shadow-md' 
+                        : 'bg-[#041910] border-emerald-500/25 text-emerald-100 hover:bg-[#07261b]'
                     }`}
                   >
                     <span className="flex items-center gap-2">
-                      <Bot className="w-4 h-4 text-orange-400" />
+                      <Bot className="w-4 h-4 text-amber-400" />
                       <span className="text-xs font-bold">{language === 'es' ? 'Motor de Inteligencia & n8n' : 'AI Engine & Automations'}</span>
                     </span>
-                    <span className="text-[9px] uppercase bg-orange-400 text-stone-950 px-2 py-0.5 rounded-full font-black">
+                    <span className="text-[9px] uppercase bg-amber-400 text-stone-950 px-2 py-0.5 rounded-full font-black">
                       8 Flujos
                     </span>
                   </button>
@@ -625,15 +645,15 @@ export const Header: React.FC<HeaderProps> = ({
                     }}
                     className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left border ${
                       currentTab === 'itinerary'
-                        ? 'bg-purple-600 text-stone-900 font-black border-purple-300'
-                        : 'bg-purple-950/60 border-purple-500/40 text-purple-200 hover:bg-purple-900/80'
+                        ? 'bg-amber-400 text-stone-950 font-black border-amber-300 shadow-md'
+                        : 'bg-[#041910] border-emerald-500/25 text-emerald-100 hover:bg-[#07261b]'
                     }`}
                   >
                     <span className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-purple-300" />
+                      <Sparkles className="w-4 h-4 text-amber-300" />
                       <span className="text-xs font-bold">{t('aiPlanner')}</span>
                     </span>
-                    <span className="text-[9px] uppercase bg-purple-500/30 text-purple-200 px-1.5 py-0.5 rounded-full font-bold">
+                    <span className="text-[9px] uppercase bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded-full font-bold">
                       Gratis
                     </span>
                   </button>
@@ -641,8 +661,8 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
 
               {/* Section 3: Movilidad & Logística */}
-              <div className="space-y-1.5 pt-2 border-t border-stone-200/60">
-                <span className="text-[9px] uppercase font-black tracking-widest text-teal-400 px-1 block">
+              <div className="space-y-1.5 pt-2 border-t border-emerald-500/20">
+                <span className="text-[9px] uppercase font-black tracking-widest text-emerald-400 px-1 block">
                   {language === 'es' ? 'Transporte & Movilidad' : 'Transport & Logistics'}
                 </span>
 
@@ -650,14 +670,14 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => handleTabChange('flights')}
                     className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left border ${
-                      currentTab === 'flights' ? 'bg-orange-500 text-stone-950 font-black border-orange-300' : 'bg-stone-100/40 text-stone-900 hover:bg-stone-100/80 border-stone-200/40'
+                      currentTab === 'flights' ? 'bg-amber-400 text-stone-950 font-black border-amber-300' : 'bg-[#041910] text-emerald-100 hover:bg-[#07261b] border border-emerald-500/25'
                     }`}
                   >
                     <span className="flex items-center gap-2">
-                      <Plane className="w-4 h-4 text-orange-400" />
+                      <Plane className="w-4 h-4 text-amber-400" />
                       <span className="text-xs font-bold">{language === 'es' ? 'Vuelos a Costa Rica' : 'Flights to CR'}</span>
                     </span>
-                    <span className="text-[9px] uppercase bg-orange-400/20 text-orange-300 px-1.5 py-0.5 rounded-full font-black">
+                    <span className="text-[9px] uppercase bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded-full font-black">
                       Live
                     </span>
                   </button>
@@ -665,11 +685,11 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => handleTabChange('tools')}
                     className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left ${
-                      currentTab === 'tools' ? 'bg-orange-500 text-stone-950 font-black' : 'bg-stone-100/40 text-stone-900 hover:bg-stone-100/80 border border-stone-200/40'
+                      currentTab === 'tools' ? 'bg-amber-400 text-stone-950 font-black' : 'bg-[#041910] text-emerald-100 hover:bg-[#07261b] border border-emerald-500/25'
                     }`}
                   >
                     <span className="flex items-center gap-2">
-                      <Bus className="w-4 h-4 text-teal-400" />
+                      <Bus className="w-4 h-4 text-emerald-400" />
                       <span className="text-xs font-bold">{language === 'es' ? 'Shuttles & Guía' : 'Shuttles & Guide'}</span>
                     </span>
                     <span className="text-[9px] uppercase opacity-70">SINAC / 4x4</span>
@@ -681,10 +701,10 @@ export const Header: React.FC<HeaderProps> = ({
                         onOpenLocalBuses();
                         setIsMobileDrawerOpen(false);
                       }}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-stone-100/30 text-stone-800 hover:bg-stone-100/80 transition-colors text-left border border-stone-200/40"
+                      className="flex items-center justify-between p-3 rounded-2xl bg-[#041910] text-emerald-100 hover:bg-[#07261b] transition-colors text-left border border-emerald-500/25"
                     >
                       <span className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-[#E67E22]" />
+                        <Clock className="w-4 h-4 text-amber-400" />
                         <span className="text-xs font-bold">{t('localBuses')}</span>
                       </span>
                       <span className="text-[9px] uppercase opacity-70">Rutas</span>
@@ -694,7 +714,7 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
 
               {/* WhatsApp Support in Drawer */}
-              <div className="pt-3 border-t border-stone-200/80 space-y-2">
+              <div className="pt-3 border-t border-emerald-500/20 space-y-2">
                 <a
                   href="https://wa.me/50687959148?text=Hola%20Costa%20Rica%20Tours%20(costaricatours.es),%20quisiera%20ayuda%20para%20reservar."
                   target="_blank"
@@ -714,31 +734,31 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Currency Change Modal */}
       {currencyPrompt?.isOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-stone-50 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl animate-fade-in border border-black/20 text-stone-900">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#07241a] rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl animate-fade-in border border-emerald-500/40 text-stone-100">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-orange-500/20 border border-orange-400/40 flex items-center justify-center shrink-0">
-                <Globe className="w-6 h-6 text-orange-400" />
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shrink-0">
+                <Globe className="w-6 h-6 text-amber-400" />
               </div>
-              <h3 className="text-lg sm:text-xl font-black uppercase text-stone-900">
+              <h3 className="text-lg sm:text-xl font-black uppercase text-white">
                 {t('suggestCurrencyChangeTitle')}
               </h3>
             </div>
             
-            <p className="text-sm text-stone-800/90 mb-6 font-medium leading-relaxed">
-              {t('suggestCurrencyChangeDesc')} <strong className="font-black text-orange-400 text-base">{currencyPrompt.suggestedCurrency}</strong>?
+            <p className="text-sm text-stone-200 mb-6 font-medium leading-relaxed">
+              {t('suggestCurrencyChangeDesc')} <strong className="font-black text-amber-400 text-base">{currencyPrompt.suggestedCurrency}</strong>?
             </p>
             
             <div className="flex flex-col sm:flex-row gap-3">
               <button 
                 onClick={declineCurrencyChange}
-                className="flex-1 px-4 py-3 rounded-xl font-bold uppercase text-xs text-stone-700 bg-white hover:bg-stone-50 transition-colors border border-teal-700/50 cursor-pointer"
+                className="flex-1 px-4 py-3 rounded-xl font-bold uppercase text-xs text-stone-300 bg-emerald-950/80 hover:bg-emerald-900 transition-colors border border-emerald-500/30 cursor-pointer"
               >
                 {t('noKeepCurrent')}
               </button>
               <button 
                 onClick={acceptCurrencyChange}
-                className="flex-1 px-4 py-3 rounded-xl font-black uppercase text-xs text-stone-950 bg-orange-400 hover:bg-orange-300 transition-colors shadow-lg shadow-orange-500/20 cursor-pointer"
+                className="flex-1 px-4 py-3 rounded-xl font-black uppercase text-xs text-stone-950 bg-amber-400 hover:bg-amber-300 transition-colors shadow-lg shadow-amber-500/20 cursor-pointer"
               >
                 {t('yesChangeIt')}
               </button>

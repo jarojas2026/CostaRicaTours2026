@@ -162,7 +162,7 @@ function getKnowledgeBaseReply(message: string, isEn: boolean) {
     const prompt = `${formattedHistory ? `HISTORIAL DE LA CONVERSACIÓN:\n${formattedHistory}\n\n` : ''}CONSULTA ACTUAL DEL USUARIO:\n${message}`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
@@ -201,7 +201,7 @@ function getKnowledgeBaseReply(message: string, isEn: boolean) {
 export async function runTriage(rawMessage: string) {
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: `Analiza este mensaje de cliente de turismo en Costa Rica: "${rawMessage}". Extrae intención y datos estructurados.`,
       config: {
         systemInstruction:
@@ -232,7 +232,7 @@ export async function runProcessor(rawMessage: string, intent: string, extracted
   try {
     const prompt = `Mensaje: "${rawMessage}", Intención: ${intent}, Datos: ${JSON.stringify(extractedData)}. Genera las acciones necesarias y una respuesta cordial en formato JSON.`;
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
         systemInstruction:
