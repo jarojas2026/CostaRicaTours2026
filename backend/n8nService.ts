@@ -9,6 +9,7 @@ export interface N8NConfig {
   apiKey: string;
   bookingWebhookUrl: string;
   chatWebhookUrl: string;
+  providerNotifyWebhookUrl: string;
 }
 
 export const getN8NConfig = (): N8NConfig => {
@@ -25,6 +26,7 @@ export const getN8NConfig = (): N8NConfig => {
     apiKey: process.env.N8N_API_KEY || process.env.VITE_N8N_API_KEY || '',
     bookingWebhookUrl: process.env.N8N_BOOKING_WEBHOOK_URL || `${baseUrl}/webhook/reserva-confirmada`,
     chatWebhookUrl: process.env.N8N_CHAT_WEBHOOK_URL || `${baseUrl}/webhook/chat-consulta`,
+    providerNotifyWebhookUrl: process.env.N8N_PROVIDER_NOTIFY_WEBHOOK_URL || `${baseUrl}/webhook/notificar-proveedor`,
   };
 };
 

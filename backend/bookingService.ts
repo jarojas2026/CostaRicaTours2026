@@ -364,16 +364,34 @@ export async function createBooking(data: any) {
     }
   }
 
-  // 4. DISPARAR WEBHOOK A N8N si la reserva está confirmada
+  // 4. DISPARAR WEBHOOKS A N8N si la reserva está confirmada.
+  //    Son dos webhooks INDEPENDIENTES a propósito (no uno solo con dos
+  //    tareas): si falla el envío al proveedor, no debe afectar el envío
+  //    de la confirmación al cliente, y viceversa.
   if (newBooking.status === 'confirmada' || newBooking.paymentStatus === 'completed') {
     const config = getN8NConfig();
+
+    // 4a. Avisar al CLIENTE (workflow "Confirmación de Reserva al Cliente")
     dispatchToN8N(config.bookingWebhookUrl, {
       trigger: 'RESERVA_CONFIRMADA',
       event: 'booking.created',
       timestamp: new Date().toISOString(),
       booking: newBooking
     }).catch((err) => {
-      console.warn('Fallo silencioso al notificar a n8n:', err);
+      console.warn('Fallo silencioso al notificar a n8n (cliente):', err);
+    });
+
+    // 4b. Avisar al PROVEEDOR/OPERADOR local en tiempo real (workflow
+    //     "Coordinación en Tiempo Real con Proveedores"), para que pueda
+    //     preparar logística (chofer, guía, equipo) de inmediato, en vez
+    //     de enterarse solo hasta el pago automático del día siguiente.
+    dispatchToN8N(config.providerNotifyWebhookUrl, {
+      trigger: 'NOTIFICAR_PROVEEDOR',
+      event: 'booking.created',
+      timestamp: new Date().toISOString(),
+      booking: newBooking
+    }).catch((err) => {
+      console.warn('Fallo silencioso al notificar a n8n (proveedor):', err);
     });
   }
 

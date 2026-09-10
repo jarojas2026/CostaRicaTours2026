@@ -15,15 +15,19 @@ nunca los valores reales de API keys o tokens.
 | 2 | [Confirmación de Reserva al Cliente](./workflows/confirmacion-de-reserva-al-cliente.json) | `6gnDcs9Ss7QIpMRw` | 🔴 Inactivo (faltan credenciales) | Webhook desde `server.ts` al confirmar pago |
 | 3 | [Recordatorio 24h Antes del Tour](./workflows/recordatorio-24h-antes-del-tour.json) | `LwgnVnKikhxucZ6U` | 🔴 Inactivo (faltan credenciales) | Diario 7am — tours de mañana |
 | 4 | [Solicitud de Reseña Post-Tour](./workflows/solicitud-resena-post-tour.json) | `Er8taaV6RsA539xp` | 🔴 Inactivo (faltan credenciales) | Diario 5pm — tours ya finalizados hoy |
+| 5 | [Reporte Diario de Operación](./workflows/reporte-diario-de-operacion.json) | `oHr24K6pPlTo6TKA` | 🔴 Inactivo (faltan credenciales) | Diario 8pm — resumen del día |
+| 6 | [Vigilancia y Escalamiento](./workflows/vigilancia-y-escalamiento.json) | `tQVF8tpNkqVUVi4k` | 🔴 Inactivo (faltan credenciales) | Cada 2h — reservas atascadas en pago |
+| 8 | [Coordinación en Tiempo Real con Proveedores](./workflows/coordinacion-tiempo-real-proveedores.json) | `1wf8ZQ1XuVTpbHnw` | 🔴 Inactivo (faltan credenciales) | Webhook desde `server.ts` al confirmar pago |
 
 ## Webhooks expuestos
 
 | Workflow | URL de producción | Protección |
 |---|---|---|
 | Confirmación de Reserva al Cliente | `https://costaricatours2026.app.n8n.cloud/webhook/reserva-confirmada` | Header Auth (`X-Webhook-Secret`) — **pendiente de configurar la credencial en n8n** |
+| Coordinación en Tiempo Real con Proveedores | `https://costaricatours2026.app.n8n.cloud/webhook/notificar-proveedor` | Header Auth (`X-Webhook-Secret`) — **pendiente de configurar la credencial en n8n** |
 
-`server.ts` ya llama a esta URL automáticamente (ver `backend/n8nService.ts`) cada vez
-que una reserva pasa a estado `confirmada`.
+`server.ts` / `backend/bookingService.ts` ya llaman a ambas URLs automáticamente
+cada vez que una reserva pasa a estado `confirmada` (ver `backend/n8nService.ts`).
 
 ## Credenciales pendientes de configurar en n8n (una sola vez, compartidas entre los 4 workflows)
 
@@ -51,8 +55,5 @@ que una reserva pasa a estado `confirmada`.
 
 Ver `docs/roadmap-automatizacion-reservas.md` para el contexto original. Pendientes:
 
-- Vigilancia y Escalamiento (monitoreo de reservas atascadas)
-- Antifraude y Alertas
-- Reporte Diario de operación (ingresos, ocupación, pendientes)
-- Coordinación en tiempo real con proveedores (aviso inmediato al confirmar reserva, no solo el pago posterior)
-- Panel de Control Móvil vía comandos de Telegram
+- Antifraude y Alertas (#7)
+- Panel de Control Móvil vía comandos de Telegram (#9)
