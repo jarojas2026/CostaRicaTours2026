@@ -205,18 +205,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
   };
 
   return (
-        <div className="space-y-6">
-      
-      {onBack && (
-        <button 
-          onClick={onBack}
-          className="bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 px-4 py-2.5 rounded-full font-bold shadow-lg transition-colors flex items-center gap-2 border border-emerald-500/30 w-fit cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>{language === 'es' ? 'Volver al Inicio' : 'Back to Home'}</span>
-        </button>
-      )}
-
+    <div className="space-y-6">
       {/* Advanced Control & Filter Panel */}
       <div className="bg-[#07241a]/95 backdrop-blur-3xl p-5 sm:p-7 rounded-[2rem] border border-emerald-500/25 shadow-2xl space-y-5 sticky top-2 sm:top-4 z-40 text-stone-100">
         

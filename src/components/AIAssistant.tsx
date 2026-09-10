@@ -11,6 +11,7 @@ import { useTours } from '../contexts/ToursContext';
 import { getLangText, UI_TRANSLATIONS, formatCurrency } from '../utils/i18n';
 import { getEcoFactForTour, getEcoFactForRegion } from '../data/ecoFacts';
 import { AI_AGENTS, getAIAgentById } from '../data/aiAgentsData';
+import { N8NWorkflowStudio } from './N8NWorkflowStudio';
 
 interface AIAssistantProps {
   language: Language;
@@ -57,6 +58,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
   const [activeAgentId, setActiveAgentId] = useState<AgentId>('concierge');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'booking' | 'nature_adventure' | 'logistics_food' | 'specialized'>('all');
+  const [subTab, setSubTab] = useState<'chat' | 'n8n'>('chat');
   const currentAgent = getAIAgentById(activeAgentId);
 
   const [chatSessionId] = useState(() => {
@@ -470,14 +472,50 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           </h2>
           <p className="text-base text-stone-700 max-w-3xl mx-auto">
             {language === 'es'
-              ? 'Interactúa con nuestro Asistente Unificado. Por detrás, nuestro servidor n8n orquesta tu solicitud hacia diferentes flujos de IA (cotizaciones, itinerarios, logística y reservas) ejecutando procesos automáticos sin que tengas que saltar de un bot a otro.'
-              : 'Interact with our Unified Concierge. Behind the scenes, our n8n server routes your request to specialized AI workflows (quotes, itineraries, logistics, and bookings) executing automatic processes without you having to jump between bots.'
+              ? 'Interactúa con nuestro Asistente Unificado o explora los 8 flujos operativos en n8n que orquestan reservas en Firestore, pasarelas de pago y contingencias climáticas.'
+              : 'Interact with our Unified Concierge or explore the 8 operational n8n workflows orchestrating Firestore bookings, payment gateways, and weather contingencies.'
             }
           </p>
+
+          {/* SubTab Switcher: Chat Agents vs n8n Workflows */}
+          <div className="flex items-center justify-center pt-3">
+            <div className="bg-[#03150d] p-1.5 rounded-2xl border border-emerald-500/30 inline-flex items-center gap-2 shadow-xl">
+              <button
+                onClick={() => setSubTab('chat')}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                  subTab === 'chat'
+                    ? 'bg-amber-400 text-stone-950 shadow-md'
+                    : 'text-emerald-200/80 hover:text-white hover:bg-[#072418]'
+                }`}
+              >
+                <Bot className="w-4 h-4" />
+                <span>{language === 'es' ? 'Chat con Agentes Especialistas' : 'Specialist Agents Chat'}</span>
+              </button>
+
+              <button
+                onClick={() => setSubTab('n8n')}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                  subTab === 'n8n'
+                    ? 'bg-amber-400 text-stone-950 shadow-md'
+                    : 'text-emerald-200/80 hover:text-white hover:bg-[#072418]'
+                }`}
+              >
+                <Zap className="w-4 h-4 text-amber-400" />
+                <span>{language === 'es' ? 'Flujos & Automatizaciones n8n (8)' : 'n8n Workflows & Pipelines (8)'}</span>
+                <span className="bg-emerald-500 text-stone-950 text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                  PROD
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Workflow Category Filter Tabs */}
-        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+        {subTab === 'n8n' ? (
+          <N8NWorkflowStudio language={language} />
+        ) : (
+          <>
+            {/* Workflow Category Filter Tabs */}
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
           {[
             { id: 'all', label: { es: 'Todos (15)', en: 'All (15)' }, icon: '✨' },
             { id: 'booking', label: { es: 'Reservas & Itinerarios', en: 'Bookings' }, icon: '🧭' },
@@ -508,10 +546,13 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         <div className="bg-stone-100/60 p-2 sm:p-2.5 rounded-2xl border border-black/10 shadow-lg">
           <div className="flex items-center justify-between px-2 pb-2 text-[11px] font-bold text-stone-700 uppercase tracking-wider">
             <span>{language === 'es' ? 'Selecciona tu Agente Especialista:' : 'Select your Specialist Agent:'}</span>
-            <span className="text-orange-400 text-[10px] font-black flex items-center gap-1">
+            <button
+              onClick={() => setSubTab('n8n')}
+              className="text-orange-400 hover:text-orange-300 text-[10px] font-black flex items-center gap-1 cursor-pointer transition-colors"
+            >
               <Zap className="w-3 h-3 text-orange-400" />
-              {language === 'es' ? 'Flujos de Trabajo en el Backend (Orquestados por n8n)' : 'Backend Workflows (Orchestrated via n8n)'}
-            </span>
+              <span>{language === 'es' ? 'Ver Pipelines en n8n Studio ⚡' : 'View Pipelines in n8n Studio ⚡'}</span>
+            </button>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
@@ -1093,6 +1134,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
             })}
           </div>
         </div>
+      </>
+    )}
 
       </div>
     </div>
