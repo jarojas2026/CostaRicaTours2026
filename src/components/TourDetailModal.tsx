@@ -33,6 +33,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [sinpeRef, setSinpeRef] = useState('');
 
   if (!tour || !isOpen) return null;
 
@@ -44,25 +46,52 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     if (!selectedDate || !fullName || !email) return;
     setIsSubmitting(true);
 
+    const generatedBookingId = `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+
     const bookingPayload: BookingRequest = {
-      bookingId: `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`,
+      bookingId: generatedBookingId,
       tourId: tour.id,
       tourName: tour.title[language],
       date: selectedDate,
-      time: tour.departureTimes[0],
+      time: tour.departureTimes[0] || '08:00 AM',
       adults,
       children,
-      pickupHotel,
+      pickupHotel: pickupHotel || 'Recepción del Hotel',
       specialRequests,
       totalUSD,
       totalCRC,
       paymentMethod,
-      customer: { fullName, email, phone: '', country: '' },
-      status: 'pendiente_pago',
+      customer: { fullName, email, phone: phone || '+506', country: 'CR' },
+      status: paymentMethod === 'sinpe_movil' ? 'pendiente_pago' : 'confirmada',
       createdAt: new Date().toISOString()
     };
 
     try {
+      // Disparar persistencia y webhooks n8n a través del backend
+      fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...bookingPayload,
+          customerName: fullName,
+          customerEmail: email,
+          customerPhone: phone,
+          sinpeReference: paymentMethod === 'sinpe_movil' ? sinpeRef : undefined
+        })
+      }).catch(() => {});
+
+      if (paymentMethod === 'sinpe_movil' && sinpeRef.trim()) {
+        fetch('/api/sinpe/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bookingId: generatedBookingId,
+            sinpeReference: sinpeRef,
+            customerPhone: phone
+          })
+        }).catch(() => {});
+      }
+
       if (paymentMethod === 'credit_card') {
         const stripeRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || ""}/api/stripe/create-checkout-session`, {
           method: 'POST',
@@ -151,14 +180,38 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
             </div>
 
             <div>
+              <label className="text-xs font-bold block mb-1">WhatsApp / Teléfono (+506)</label>
+              <input required type="tel" placeholder="+506 8888-8888" className="w-full p-2 border rounded-lg" value={phone} onChange={e => setPhone(e.target.value)} />
+            </div>
+
+            <div>
               <label className="text-xs font-bold block mb-1">Payment Method</label>
               <select className="w-full p-2 border rounded-lg" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value as any)}>
-                <option value="credit_card">Credit Card (Stripe)</option>
-                <option value="paypal">PayPal</option>
-                <option value="sinpe_movil">SINPE Móvil (CR Only)</option>
-                <option value="pay_at_pickup">Pay at Pickup</option>
+                <option value="sinpe_movil">📱 SINPE Móvil (Costa Rica ₡)</option>
+                <option value="paypal">💳 PayPal Express</option>
+                <option value="credit_card">💳 Tarjeta de Crédito / Débito (Stripe)</option>
+                <option value="pay_at_pickup">💵 Pago al Abordar (Efectivo/Tarjeta)</option>
               </select>
             </div>
+
+            {paymentMethod === 'sinpe_movil' && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-950 space-y-2">
+                <div className="flex justify-between items-baseline font-bold">
+                  <span>Transferir al SINPE Móvil:</span>
+                  <span className="text-sm text-emerald-800">+506 8795-9148 / +506 8888-8888</span>
+                </div>
+                <p className="text-[11px] text-emerald-800">
+                  Total en colones: <strong>₡{totalCRC.toLocaleString('es-CR')}</strong>. Ingresa el comprobante bancario para confirmación instantánea:
+                </p>
+                <input
+                  type="text"
+                  placeholder="Número de comprobante SINPE (ej: 492014)"
+                  value={sinpeRef}
+                  onChange={e => setSinpeRef(e.target.value)}
+                  className="w-full p-2 border border-emerald-300 rounded-lg bg-white text-xs outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            )}
 
             <button disabled={isSubmitting} type="submit" className="w-full bg-orange-500 text-white font-bold py-3 rounded-xl mt-6">
               {isSubmitting ? 'Processing...' : 'Confirm Booking'}

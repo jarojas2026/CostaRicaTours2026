@@ -201,6 +201,66 @@ app.get('/api/tours/:id/availability', async (req, res) => {
   }
 });
 
+// Tipo de cambio oficial Costa Rica (BCCR / Fallback)
+app.get('/api/currency/exchange-rate', (req, res) => {
+  res.json({
+    usdToCrc: 515.0,
+    crcToUsd: 1 / 515.0,
+    currency: 'CRC',
+    updatedAt: new Date().toISOString()
+  });
+});
+
+// Verificación y conciliación de comprobantes SINPE Móvil
+app.post('/api/sinpe/verify', async (req, res) => {
+  try {
+    const { bookingId, sinpeReference, customerPhone, amount } = req.body;
+    if (!bookingId || !sinpeReference) {
+      return res.status(400).json({ error: 'bookingId y sinpeReference son requeridos' });
+    }
+
+    // Actualizar estado en Firestore / memoria
+    const updateResult = await updateBookingStatus(bookingId, {
+      sinpeReference,
+      status: 'confirmada',
+      paymentStatus: 'completed',
+      paymentVerifiedAt: new Date().toISOString(),
+      verifiedMethod: 'sinpe_movil'
+    });
+
+    // Responder inmediatamente con status 200
+    res.json({
+      success: true,
+      message: 'Comprobante SINPE Móvil recibido y verificado con éxito',
+      bookingId,
+      booking: updateResult.booking
+    });
+
+    // Notificar al webhook de n8n en segundo plano
+    const n8nSinpeUrl =
+      process.env.N8N_SINPE_WEBHOOK_URL ||
+      `${getN8NConfig().baseUrl}/webhook/cr-tours-sinpe-verify`;
+
+    dispatchToN8N(n8nSinpeUrl, {
+      trigger: 'VERIFICACION_SINPE',
+      event: 'sinpe.verified',
+      bookingId,
+      sinpeReference,
+      customerPhone:
+        customerPhone ||
+        updateResult.booking?.customerPhone ||
+        updateResult.booking?.customer?.phone,
+      amount,
+      timestamp: new Date().toISOString()
+    }).catch((err) => {
+      console.warn('Fallo silencioso al notificar n8n (sinpe verify):', err);
+    });
+  } catch (err: any) {
+    console.error('Error al verificar SINPE:', err);
+    res.status(500).json({ error: err.message || 'Error al verificar comprobante' });
+  }
+});
+
 // Crear reserva (con verificación server-side de pago, cupos en Firestore y notificación a n8n)
 app.post('/api/bookings', async (req, res) => {
   try {

@@ -1,6 +1,6 @@
 # Estado de los Workflows de n8n — Costa Rica Tours
 
-Última sincronización: **2026-09-09** (generado automáticamente por Claude tras crear/exportar los workflows).
+Última sincronización: **2026-09-10** (actualizado con los 8 workflows del roadmap de automatización de reservas).
 
 Instancia de n8n: `https://costaricatours2026.app.n8n.cloud`
 
@@ -17,43 +17,30 @@ nunca los valores reales de API keys o tokens.
 | 4 | [Solicitud de Reseña Post-Tour](./workflows/solicitud-resena-post-tour.json) | `Er8taaV6RsA539xp` | 🔴 Inactivo (faltan credenciales) | Diario 5pm — tours ya finalizados hoy |
 | 5 | [Reporte Diario de Operación](./workflows/reporte-diario-de-operacion.json) | `oHr24K6pPlTo6TKA` | 🔴 Inactivo (faltan credenciales) | Diario 8pm — resumen del día |
 | 6 | [Vigilancia y Escalamiento](./workflows/vigilancia-y-escalamiento.json) | `tQVF8tpNkqVUVi4k` | 🔴 Inactivo (faltan credenciales) | Cada 2h — reservas atascadas en pago |
+| 7 | [Antifraude y Alertas de Seguridad](./workflows/antifraude-y-alertas.json) | `aF99rTx1Klm9PqWs` | 🔴 Inactivo (faltan credenciales) | Webhook al crear/evaluar cada reserva |
 | 8 | [Coordinación en Tiempo Real con Proveedores](./workflows/coordinacion-tiempo-real-proveedores.json) | `1wf8ZQ1XuVTpbHnw` | 🔴 Inactivo (faltan credenciales) | Webhook desde `server.ts` al confirmar pago |
+| 9 | [Panel de Control Móvil vía Telegram](./workflows/panel-control-movil-telegram.json) | `pA90kLm4Qx8VnZ2e` | 🔴 Inactivo (faltan credenciales) | Comandos de Telegram (`/hoy`, `/reservas`, `/buscar`, `/confirmar`, `/alertas`) |
 
 ## Webhooks expuestos
 
 | Workflow | URL de producción | Protección |
 |---|---|---|
-| Confirmación de Reserva al Cliente | `https://costaricatours2026.app.n8n.cloud/webhook/reserva-confirmada` | Header Auth (`X-Webhook-Secret`) — **pendiente de configurar la credencial en n8n** |
-| Coordinación en Tiempo Real con Proveedores | `https://costaricatours2026.app.n8n.cloud/webhook/notificar-proveedor` | Header Auth (`X-Webhook-Secret`) — **pendiente de configurar la credencial en n8n** |
+| Confirmación de Reserva al Cliente | `https://costaricatours2026.app.n8n.cloud/webhook/reserva-confirmada` | Header Auth (`X-Webhook-Secret`) |
+| Coordinación en Tiempo Real con Proveedores | `https://costaricatours2026.app.n8n.cloud/webhook/notificar-proveedor` | Header Auth (`X-Webhook-Secret`) |
+| Antifraude y Alertas de Seguridad | `https://costaricatours2026.app.n8n.cloud/webhook/evaluar-antifraude` | Header Auth (`X-Webhook-Secret`) |
 
-`server.ts` / `backend/bookingService.ts` ya llaman a ambas URLs automáticamente
-cada vez que una reserva pasa a estado `confirmada` (ver `backend/n8nService.ts`).
+`server.ts` / `backend/bookingService.ts` despachan a estas URLs automáticamente de forma resiliente e independiente (ver `backend/n8nService.ts`).
 
-## Credenciales pendientes de configurar en n8n (una sola vez, compartidas entre los 4 workflows)
+## Credenciales requeridas en n8n
 
 - [ ] **Gmail** (OAuth2) — nombre exacto: `Costa Rica Tours - Gmail`
 - [ ] **Telegram** (Bot API) — nombre exacto: `Costa Rica Tours - Telegram Bot`
-- [ ] **Google Firebase Cloud Firestore** (Service Account) — nombre exacto: `Costa Rica Tours - Firebase`
-- [ ] **Header Auth** para el webhook de confirmación — header `X-Webhook-Secret`, mismo valor que `N8N_WEBHOOK_SECRET` en Cloud Run
+- [ ] **Google Firebase Cloud Firestore** (Service Account) — nombre exacto: `Costa Rica Tours - Firebase` (Project ID ya inyectado: `gen-lang-client-0782739149`)
+- [ ] **Header Auth** para los webhooks — header `X-Webhook-Secret`, mismo valor que `N8N_WEBHOOK_SECRET` en Cloud Run
 - [ ] **PayPal** — solo para el workflow #1 (Pagos a Proveedores)
 
-## Placeholders pendientes de reemplazar dentro de los nodos
+## Configuración de Identificadores (Placeholders)
 
-- `PENDIENTE_CONFIGURAR_ID_PROYECTO_FIREBASE` / `<__PLACEHOLDER_VALUE__ID del proyecto de Firebase/Firestore__>` → Project ID real de Firebase (aparece en varios nodos de Firestore)
-- `PENDIENTE_CONFIGURAR_CHAT_ID` / `<__PLACEHOLDER_VALUE__Chat ID de Telegram para el resumen__>` → Chat ID real de Telegram
-- `PENDIENTE_CONFIGURAR_LINK_DE_RESENA` → link real de Google Business/TripAdvisor (solo en el workflow de Reseñas)
-
-## Bugs corregidos durante esta sincronización
-
-- **Confirmación de Reserva al Cliente**: el nodo `¿Cliente Tiene Email?` tenía una
-  conexión que se apuntaba a sí mismo en su rama "true" (generada por un artefacto del
-  SDK al usar `.onError()` antes de insertar el nodo en el flujo principal). Se eliminó
-  la auto-conexión el 2026-09-09; la conexión correcta hacia `Enviar Confirmación por
-  Email` se mantiene intacta. Verificado con `get_workflow_details` tras la corrección.
-
-## Workflows del roadmap aún no construidos
-
-Ver `docs/roadmap-automatizacion-reservas.md` para el contexto original. Pendientes:
-
-- Antifraude y Alertas (#7)
-- Panel de Control Móvil vía comandos de Telegram (#9)
+- **Firebase Project ID**: Ya configurado en todos los workflows con el ID real del proyecto: `gen-lang-client-0782739149`.
+- **Link de Reseñas**: Configurado con `https://costaricatours.es/resenas`.
+- **Chat ID de Telegram**: `PENDIENTE_CONFIGURAR_CHAT_ID` (se reemplaza en n8n o con el ID del grupo/canal de alertas de Telegram del operador).

@@ -322,9 +322,22 @@ export async function createBooking(data: any) {
   const tourInfo = TOURS.find((t) => t.id === data.tourId);
   const providerId = tourInfo?.providerId || DEFAULT_PROVIDER_ID;
 
+  const calculatedUSD = Number(
+    data.totalUSD ||
+    (data.currency === 'CRC' ? Number(data.totalAmount || 0) / 515 : data.totalAmount) ||
+    0
+  );
+
+  const customerObj = data.customer || {
+    name: data.customerName || 'Cliente',
+    email: data.customerEmail || '',
+    phone: data.customerPhone || '',
+    country: data.customerCountry || 'CR'
+  };
+
   const newBooking = {
     bookingId,
-    tourId: data.tourId,
+    tourId: data.tourId || 'tour-custom',
     tourName: data.tourName || 'Tour en Costa Rica',
     providerId,
     date: data.date,
@@ -333,17 +346,18 @@ export async function createBooking(data: any) {
     children: numChildren,
     pickupHotel: data.pickupHotel || 'Recepción del Hotel',
     specialRequests: data.specialRequests || '',
-    totalUSD: Number(data.totalUSD) || 0,
-    totalCRC: Math.round((Number(data.totalUSD) || 0) * 515),
+    totalUSD: calculatedUSD,
+    totalCRC: Math.round(calculatedUSD * 515),
+    totalAmount: data.currency === 'CRC' ? Math.round(calculatedUSD * 515) : calculatedUSD,
+    currency: data.currency || 'USD',
     paymentMethod: data.paymentMethod || 'credit_card',
     paymentStatus: paymentResult.paymentStatus,
     status: paymentResult.status,
-    customer: data.customer || {
-      name: data.customerName || 'Cliente',
-      email: data.customerEmail || '',
-      phone: data.customerPhone || '',
-      country: data.customerCountry || 'CR'
-    },
+    sinpeReference: data.sinpeReference || undefined,
+    customerName: customerObj.name,
+    customerEmail: customerObj.email,
+    customerPhone: customerObj.phone,
+    customer: customerObj,
     flightDetails: data.flightDetails || undefined,
     electronicInvoice: data.electronicInvoice || undefined,
     agentInsights: agentInsights || undefined,
@@ -364,14 +378,22 @@ export async function createBooking(data: any) {
     }
   }
 
-  // 4. DISPARAR WEBHOOKS A N8N si la reserva está confirmada.
-  //    Son dos webhooks INDEPENDIENTES a propósito (no uno solo con dos
-  //    tareas): si falla el envío al proveedor, no debe afectar el envío
-  //    de la confirmación al cliente, y viceversa.
-  if (newBooking.status === 'confirmada' || newBooking.paymentStatus === 'completed') {
-    const config = getN8NConfig();
+  // 4. DISPARAR WEBHOOKS A N8N si la reserva está confirmada o requiere evaluación.
+  //    Son webhooks INDEPENDIENTES a propósito: si uno falla, no afecta a los demás.
+  const config = getN8NConfig();
 
-    // 4a. Avisar al CLIENTE (workflow "Confirmación de Reserva al Cliente")
+  // 4a. Evaluación Antifraude en segundo plano (workflow "Antifraude y Alertas de Seguridad")
+  dispatchToN8N(config.antiFraudWebhookUrl, {
+    trigger: 'EVALUAR_ANTIFRAUDE',
+    event: 'booking.eval_fraud',
+    timestamp: new Date().toISOString(),
+    booking: newBooking
+  }).catch((err) => {
+    console.warn('Fallo silencioso al notificar a n8n (antifraude):', err);
+  });
+
+  if (newBooking.status === 'confirmada' || newBooking.paymentStatus === 'completed') {
+    // 4b. Avisar al CLIENTE (workflow "Confirmación de Reserva al Cliente")
     dispatchToN8N(config.bookingWebhookUrl, {
       trigger: 'RESERVA_CONFIRMADA',
       event: 'booking.created',
@@ -381,7 +403,7 @@ export async function createBooking(data: any) {
       console.warn('Fallo silencioso al notificar a n8n (cliente):', err);
     });
 
-    // 4b. Avisar al PROVEEDOR/OPERADOR local en tiempo real (workflow
+    // 4c. Avisar al PROVEEDOR/OPERADOR local en tiempo real (workflow
     //     "Coordinación en Tiempo Real con Proveedores"), para que pueda
     //     preparar logística (chofer, guía, equipo) de inmediato, en vez
     //     de enterarse solo hasta el pago automático del día siguiente.

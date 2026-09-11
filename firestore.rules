@@ -42,7 +42,12 @@ service cloud.firestore {
         && (!('customerEmail' in data) || (data.customerEmail is string && data.customerEmail.size() <= 256))
         && (!('customerPhone' in data) || (data.customerPhone is string && data.customerPhone.size() <= 64))
         && (!('customerCountry' in data) || (data.customerCountry is string && data.customerCountry.size() <= 128))
-        && (!('status' in data) || (data.status in ['pending', 'confirmed', 'cancelled']));
+        && (!('sinpeReference' in data) || (data.sinpeReference is string && data.sinpeReference.size() <= 128))
+        && (!('currency' in data) || (data.currency in ['USD', 'CRC']))
+        && (!('paymentMethod' in data) || (data.paymentMethod is string && data.paymentMethod.size() <= 64))
+        && (!('paymentStatus' in data) || (data.paymentStatus in ['pending', 'completed', 'failed']))
+        && (!('totalAmount' in data) || (data.totalAmount is number))
+        && (!('status' in data) || (data.status in ['pending', 'confirmed', 'cancelled', 'confirmada', 'pendiente_pago']));
     }
 
     match /users/{userId} {

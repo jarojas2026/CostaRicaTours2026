@@ -10,6 +10,7 @@ export interface N8NConfig {
   bookingWebhookUrl: string;
   chatWebhookUrl: string;
   providerNotifyWebhookUrl: string;
+  antiFraudWebhookUrl: string;
 }
 
 export const getN8NConfig = (): N8NConfig => {
@@ -27,6 +28,7 @@ export const getN8NConfig = (): N8NConfig => {
     bookingWebhookUrl: process.env.N8N_BOOKING_WEBHOOK_URL || `${baseUrl}/webhook/reserva-confirmada`,
     chatWebhookUrl: process.env.N8N_CHAT_WEBHOOK_URL || `${baseUrl}/webhook/chat-consulta`,
     providerNotifyWebhookUrl: process.env.N8N_PROVIDER_NOTIFY_WEBHOOK_URL || `${baseUrl}/webhook/notificar-proveedor`,
+    antiFraudWebhookUrl: process.env.N8N_ANTIFRAUD_WEBHOOK_URL || `${baseUrl}/webhook/evaluar-antifraude`,
   };
 };
 

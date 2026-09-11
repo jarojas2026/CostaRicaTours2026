@@ -1,0 +1,157 @@
+{
+  "name": "CostaRicaTours - 01. Nueva Reserva & Notificacion WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cr-tours-booking",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook",
+      "name": "Webhook: Nueva Reserva",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "cr-tours-booking-trigger"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"received\",\n  \"bookingId\": \"{{ $json.body.bookingId || $json.body.data?.bookingId }}\",\n  \"message\": \"Reserva recibida y en proceso de notificación\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-respond-webhook",
+      "name": "Respuesta Inmediata al Frontend",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [480, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalización y limpieza de datos para Costa Rica\nconst body = $input.item.json.body || $input.item.json.data || $input.item.json;\nconst customer = body.customer || {};\n\n// 1. Limpieza de número telefónico (Eliminar guiones, espacios y asegurar 506)\nlet rawPhone = String(body.customerPhone || customer.phone || '').replace(/[^0-9]/g, '');\nif (rawPhone.length === 8) {\n  rawPhone = '506' + rawPhone;\n} else if (rawPhone.startsWith('00506')) {\n  rawPhone = rawPhone.substring(2);\n}\n\n// 2. Formato de Monto y Moneda\nconst currency = body.currency || 'USD';\nconst amount = Number(body.totalUSD || body.totalAmount || body.totalCRC || 0);\nlet formattedTotal = '';\n\nif (currency === 'CRC' || body.totalCRC) {\n  const crcVal = body.totalCRC || Math.round(amount * 515);\n  formattedTotal = '₡' + Math.round(crcVal).toLocaleString('es-CR');\n} else {\n  formattedTotal = '$' + amount.toFixed(2) + ' USD';\n}\n\n// 3. Enlaces útiles según destino en Costa Rica\nconst tourName = body.tourName || 'Tour en Costa Rica';\nconst wazeSearch = encodeURIComponent(tourName + ' Costa Rica');\nconst wazeLink = `https://waze.com/ul?q=${wazeSearch}`;\n\nreturn {\n  bookingId: body.bookingId || 'CR-' + Date.now().toString().slice(-6),\n  customerName: body.customerName || customer.name || 'Aventurero/a',\n  customerEmail: body.customerEmail || customer.email || '',\n  customerPhone: rawPhone,\n  tourName: tourName,\n  tourDate: body.date || body.tourDate || new Date().toISOString().split('T')[0],\n  time: body.time || '08:00 AM',\n  participants: (Number(body.adults || 0) + Number(body.children || 0)) || Number(body.participants || 1),\n  totalFormatted: formattedTotal,\n  paymentMethod: body.paymentMethod || 'Pendiente',\n  wazeLink: wazeLink,\n  meetingPoint: body.pickupHotel || body.meetingPoint || 'Recepción del Hotel o punto coordinado'\n};"
+      },
+      "id": "node-normalizer",
+      "name": "Limpieza & Formato CR",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.customerPhone }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "node-check-phone",
+      "name": "¿Tiene Teléfono?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [700, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_API_URL || 'https://api.whatsapp.com/v1/messages' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.WHATSAPP_API_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $json.customerPhone }}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"🌴 *¡Pura Vida, {{ $json.customerName }}!* 🇨🇷\\n\\nHemos recibido tu solicitud de reserva en *Costa Rica Tours*:\\n\\n📋 *Detalles de la Reserva:*\\n• *Reserva #:* {{ $json.bookingId }}\\n• *Tour:* {{ $json.tourName }}\\n• *Fecha:* {{ $json.tourDate }} ({{ $json.time }})\\n• *Personas:* {{ $json.participants }}\\n• *Total:* {{ $json.totalFormatted }}\\n• *Método de Pago:* {{ $json.paymentMethod }}\\n\\n📍 *Punto de Salida / Recogida:* {{ $json.meetingPoint }}\\n🚗 *Abrir en Waze:* {{ $json.wazeLink }}\\n\\n🎒 *Recomendaciones para tu experiencia:*\\n- Ropa ligera y calzado cómodo con buen agarre para senderos.\\n- Repelente de insectos biodegradable y protector solar amigable con arrecifes.\\n- Capa impermeable o poncho (el clima tropical varía con frecuencia).\\n\\nCualquier consulta estamos a tu disposición. ¡Te esperamos en la aventura!\"\n  }\n}"
+      },
+      "id": "node-send-whatsapp",
+      "name": "Enviar WhatsApp Turista",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [940, 320]
+    },
+    {
+      "parameters": {
+        "fromEmail": "reservas@costaricatours.com",
+        "toEmail": "={{ $json.customerEmail }}",
+        "subject": "=Confirmación de Reserva #{{ $json.bookingId }} - {{ $json.tourName }}",
+        "text": "=¡Hola {{ $json.customerName }}!\n\nTu reserva para el tour {{ $json.tourName }} el día {{ $json.tourDate }} ha sido procesada con éxito.\nTotal: {{ $json.totalFormatted }}\nHorario: {{ $json.time }}\nLugar: {{ $json.meetingPoint }}\n\n¡Pura Vida!",
+        "options": {}
+      },
+      "id": "node-send-email",
+      "name": "Enviar Correo Respaldo",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [940, 480]
+    }
+  ],
+  "connections": {
+    "Webhook: Nueva Reserva": {
+      "main": [
+        [
+          {
+            "node": "Respuesta Inmediata al Frontend",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Limpieza & Formato CR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpieza & Formato CR": {
+      "main": [
+        [
+          {
+            "node": "¿Tiene Teléfono?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Tiene Teléfono?": {
+      "main": [
+        [
+          {
+            "node": "Enviar WhatsApp Turista",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Enviar Correo Respaldo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar Correo Respaldo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

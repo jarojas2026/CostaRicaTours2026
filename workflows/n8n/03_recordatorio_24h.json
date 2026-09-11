@@ -1,0 +1,117 @@
+{
+  "name": "CostaRicaTours - 03. Cron Recordatorio 24h",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * *"
+            }
+          ]
+        }
+      },
+      "id": "node-cron",
+      "name": "Todos los días 7:00 AM CR",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://firestore.googleapis.com/v1/projects/{{ $env.FIREBASE_PROJECT_ID || 'gen-lang-client-0782739149' }}/databases/(default)/documents:runQuery",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.FIREBASE_AUTH_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"structuredQuery\": {\n    \"from\": [{ \"collectionId\": \"bookings\" }],\n    \"where\": {\n      \"fieldFilter\": {\n        \"field\": { \"fieldPath\": \"status\" },\n        \"op\": \"EQUAL\",\n        \"value\": { \"stringValue\": \"confirmada\" }\n      }\n    }\n  }\n}"
+      },
+      "id": "node-query-tomorrow",
+      "name": "Buscar Tours de Mañana",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filtrar solo las reservas que correspondan a la fecha de mañana en Costa Rica\nconst tomorrow = new Date();\ntomorrow.setDate(tomorrow.getDate() + 1);\nconst tomorrowStr = tomorrow.toISOString().split('T')[0];\n\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const doc = item.json.document;\n  if (!doc || !doc.fields) continue;\n  \n  const tourDate = doc.fields.date?.stringValue || doc.fields.tourDate?.stringValue;\n  if (tourDate === tomorrowStr) {\n    const customer = doc.fields.customer?.mapValue?.fields || {};\n    let rawPhone = doc.fields.customerPhone?.stringValue || customer.phone?.stringValue || '';\n    rawPhone = String(rawPhone).replace(/[^0-9]/g, '');\n    if (rawPhone.length === 8) rawPhone = '506' + rawPhone;\n\n    results.push({\n      bookingId: doc.name.split('/').pop(),\n      customerName: doc.fields.customerName?.stringValue || customer.name?.stringValue || 'Viajero',\n      customerPhone: rawPhone,\n      tourName: doc.fields.tourName?.stringValue || 'Tour en Costa Rica',\n      time: doc.fields.time?.stringValue || '08:00 AM',\n      meetingPoint: doc.fields.pickupHotel?.stringValue || doc.fields.meetingPoint?.stringValue || 'Lugar indicado en el voucher'\n    });\n  }\n}\n\nreturn results;"
+      },
+      "id": "node-filter-tomorrow",
+      "name": "Filtrar Fecha de Mañana",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_API_URL || 'https://api.whatsapp.com/v1/messages' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.WHATSAPP_API_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $json.customerPhone }}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"🐒 *¡Mañana es el día de tu tour, {{ $json.customerName }}!*\\n\\nTe recordamos los detalles de tu salida para *{{ $json.tourName }}*:\\n\\n⏰ *Hora:* {{ $json.time }} (recomendamos estar 15 min antes)\\n📍 *Punto de Salida:* {{ $json.meetingPoint }}\\n\\n🌧️ *Recomendaciones indispensables:*\\n- Calzado cerrado con buen agarre que se pueda mojar.\\n- Capa impermeable o poncho ligero.\\n- Botella de agua reutilizable y repelente biodegradable.\\n\\n¡Todo el equipo local de Costa Rica Tours está listo para recibirte, Pura Vida!\"\n  }\n}"
+      },
+      "id": "node-send-reminder",
+      "name": "Recordatorio WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [920, 300]
+    }
+  ],
+  "connections": {
+    "Todos los días 7:00 AM CR": {
+      "main": [
+        [
+          {
+            "node": "Buscar Tours de Mañana",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Tours de Mañana": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Fecha de Mañana",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Fecha de Mañana": {
+      "main": [
+        [
+          {
+            "node": "Recordatorio WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
