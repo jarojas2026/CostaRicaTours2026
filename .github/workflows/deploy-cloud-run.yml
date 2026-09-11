@@ -24,6 +24,10 @@ jobs:
   deploy:
     name: Build y despliegue a Cloud Run
     runs-on: ubuntu-latest
+    # Se ejecuta solo si el secreto GCP_SA_KEY está configurado en GitHub Repository Secrets.
+    # Si Google Cloud ya tiene conectado Cloud Build (trigger nativo), este job se omite
+    # automáticamente para no marcar error rojo en los checks de GitHub.
+    if: ${{ secrets.GCP_SA_KEY != '' }}
     steps:
       - name: Descargar el código del repositorio
         uses: actions/checkout@v4

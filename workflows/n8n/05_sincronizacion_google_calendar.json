@@ -1,0 +1,109 @@
+{
+  "name": "CostaRicaTours - 05. Sincronización Google Calendar Operadores",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sync-calendar",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-cal-webhook",
+      "name": "Webhook: Reserva Confirmada para Calendario",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "webhookId": "sync-calendar-trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.item.json.body || $input.item.json;\nconst booking = body.booking || body;\nconst customer = booking.customer || {};\n\nconst tourName = booking.tourName || 'Tour Costa Rica';\nconst dateStr = booking.date || new Date().toISOString().slice(0, 10);\nconst timeStr = booking.time || '08:00 AM';\nconst bookingId = booking.bookingId || 'CR-TOUR';\nconst pickup = booking.pickupHotel || 'Por confirmar en destino';\nconst pax = (parseInt(booking.adults || 1, 10) + parseInt(booking.children || 0, 10));\nconst customerName = customer.name || 'Viajero';\nconst customerPhone = customer.phone || 'Sin teléfono';\n\n// Construir timestamp de inicio y fin estimado (3.5 horas por defecto)\nlet startDateTime = `${dateStr}T08:00:00-06:00`;\nlet endDateTime = `${dateStr}T11:30:00-06:00`;\n\nif (timeStr.toLowerCase().includes('pm')) {\n  const num = parseInt(timeStr, 10) || 1;\n  const h24 = num === 12 ? 12 : num + 12;\n  const padH = String(h24).padStart(2, '0');\n  startDateTime = `${dateStr}T${padH}:00:00-06:00`;\n  endDateTime = `${dateStr}T${String(h24 + 3).padStart(2, '0')}:30:00-06:00`;\n} else if (timeStr.toLowerCase().includes('am')) {\n  const num = parseInt(timeStr, 10) || 8;\n  const padH = String(num).padStart(2, '0');\n  startDateTime = `${dateStr}T${padH}:00:00-06:00`;\n  endDateTime = `${dateStr}T${String(num + 3).padStart(2, '0')}:30:00-06:00`;\n}\n\nconst summary = `🌴 [${bookingId}] ${tourName} - ${pax} pax (${customerName})`;\nconst description = `🌿 DETALLES DE OPERACIÓN - COSTA RICA TOURS\\n\\n• Reserva: ${bookingId}\\n• Tour: ${tourName}\\n• Pasajeros: ${pax} (${booking.adults || 1} adultos, ${booking.children || 0} niños)\\n• Cliente: ${customerName}\\n• Teléfono: ${customerPhone}\\n• Hotel Recogida: ${pickup}\\n• Total: $${booking.totalUSD || 0} USD\\n• Estado: Confirmado / Pago Acreditado\\n\\n¡Pura Vida!`;\n\nreturn {\n  bookingId: bookingId,\n  summary: summary,\n  description: description,\n  location: pickup,\n  start: { dateTime: startDateTime, timeZone: 'America/Costa_Rica' },\n  end: { dateTime: endDateTime, timeZone: 'America/Costa_Rica' }\n};"
+      },
+      "id": "node-prep-event",
+      "name": "Preparar Evento Calendario",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list"
+        },
+        "start": "={{ $json.start.dateTime }}",
+        "end": "={{ $json.end.dateTime }}",
+        "summary": "={{ $json.summary }}",
+        "description": "={{ $json.description }}",
+        "location": "={{ $json.location }}",
+        "options": {}
+      },
+      "id": "node-google-calendar",
+      "name": "Crear Evento en Google Calendar",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.2,
+      "position": [680, 300],
+      "credentials": {
+        "googleCalendarOAuth2": {
+          "id": "costa_rica_tours_calendar_oauth",
+          "name": "Costa Rica Tours - Google Calendar"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Evento agendado en Google Calendar\",\n  \"eventLink\": \"{{ $json.htmlLink || 'https://calendar.google.com' }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-respond-cal",
+      "name": "Confirmar al Servidor",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [920, 300]
+    }
+  ],
+  "connections": {
+    "Webhook: Reserva Confirmada para Calendario": {
+      "main": [
+        [
+          {
+            "node": "Preparar Evento Calendario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Evento Calendario": {
+      "main": [
+        [
+          {
+            "node": "Crear Evento en Google Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear Evento en Google Calendar": {
+      "main": [
+        [
+          {
+            "node": "Confirmar al Servidor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

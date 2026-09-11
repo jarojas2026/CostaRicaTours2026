@@ -1,3 +1,11 @@
+// Clean tsx injected relative __dirname which breaks module resolution in vite plugins
+if (typeof (globalThis as any).__dirname !== 'undefined' && (globalThis as any).__dirname === '.') {
+  delete (globalThis as any).__dirname;
+}
+if (typeof (global as any).__dirname !== 'undefined' && (global as any).__dirname === '.') {
+  delete (global as any).__dirname;
+}
+
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
@@ -635,7 +643,11 @@ app.delete('/api/chat/history', (req, res) => {
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: false,
+        ws: false
+      },
       appType: 'spa'
     });
     app.use(vite.middlewares);

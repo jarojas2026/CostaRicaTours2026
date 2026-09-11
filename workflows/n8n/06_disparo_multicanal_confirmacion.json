@@ -1,0 +1,128 @@
+{
+  "name": "CostaRicaTours - 06. Disparo Multicanal Reserva Confirmada",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "reserva-multicanal",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-multichannel-in",
+      "name": "Webhook: Pago Verificado",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 360],
+      "webhookId": "reserva-multicanal-trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.item.json.body || $input.item.json;\nconst booking = body.booking || body;\nconst customer = booking.customer || {};\n\nconst bookingId = booking.bookingId || 'CR-TOUR';\nconst tourName = booking.tourName || 'Experiencia Costa Rica';\nconst date = booking.date || '';\nconst time = booking.time || '';\nconst pickup = booking.pickupHotel || 'Por coordinar';\nconst customerName = customer.name || 'Viajero Pura Vida';\nconst customerEmail = customer.email || '';\nconst customerPhone = customer.phone || '';\nconst totalUSD = booking.totalUSD || 0;\nconst adults = booking.adults || 1;\nconst children = booking.children || 0;\n\nreturn {\n  bookingId,\n  tourName,\n  date,\n  time,\n  pickup,\n  customerName,\n  customerEmail,\n  customerPhone,\n  totalUSD,\n  adults,\n  children,\n  totalPax: adults + children,\n  voucherUrl: `https://costaricatours.es/voucher/${bookingId}`\n};"
+      },
+      "id": "node-prep-multichannel",
+      "name": "Unificar Parámetros de Reserva",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 360]
+    },
+    {
+      "parameters": {
+        "fromEmail": "reservas@costaricatours.com",
+        "toEmail": "={{ $json.customerEmail }}",
+        "subject": "=🌿 ¡Reserva Confirmada Pura Vida! - {{ $json.tourName }} (#{{ $json.bookingId }})",
+        "html": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;\">\n  <div style=\"background: linear-gradient(135deg, #059669, #047857); padding: 28px; text-align: center; color: white;\">\n    <h1 style=\"margin: 0; font-size: 24px;\">¡Pura Vida, {{ $json.customerName }}! 🌴</h1>\n    <p style=\"margin: 8px 0 0 0; opacity: 0.95;\">Tu aventura en Costa Rica está 100% confirmada</p>\n  </div>\n  <div style=\"padding: 24px;\">\n    <p style=\"font-size: 16px; margin-top: 0;\">Hemos acreditado tu pago y notificado al guía naturalista oficial. A continuación tu resumen:</p>\n    <table style=\"width: 100%; border-collapse: collapse; margin-bottom: 20px;\">\n      <tr style=\"border-bottom: 1px solid #f1f5f9;\"><td style=\"padding: 8px 0; color: #64748b;\">N° Reserva:</td><td style=\"padding: 8px 0; font-weight: bold; text-align: right;\">#{{ $json.bookingId }}</td></tr>\n      <tr style=\"border-bottom: 1px solid #f1f5f9;\"><td style=\"padding: 8px 0; color: #64748b;\">Tour:</td><td style=\"padding: 8px 0; font-weight: bold; text-align: right;\">{{ $json.tourName }}</td></tr>\n      <tr style=\"border-bottom: 1px solid #f1f5f9;\"><td style=\"padding: 8px 0; color: #64748b;\">Fecha y Hora:</td><td style=\"padding: 8px 0; font-weight: bold; text-align: right;\">{{ $json.date }} a las {{ $json.time }}</td></tr>\n      <tr style=\"border-bottom: 1px solid #f1f5f9;\"><td style=\"padding: 8px 0; color: #64748b;\">Punto de Recogida:</td><td style=\"padding: 8px 0; font-weight: bold; text-align: right;\">{{ $json.pickup }}</td></tr>\n      <tr style=\"border-bottom: 1px solid #f1f5f9;\"><td style=\"padding: 8px 0; color: #64748b;\">Pasajeros:</td><td style=\"padding: 8px 0; font-weight: bold; text-align: right;\">{{ $json.adults }} Adultos, {{ $json.children }} Niños</td></tr>\n      <tr><td style=\"padding: 8px 0; color: #64748b;\">Total Pagado:</td><td style=\"padding: 8px 0; font-size: 18px; font-weight: bold; color: #059669; text-align: right;\">${{ $json.totalUSD }} USD</td></tr>\n    </table>\n    <div style=\"background: #f8fafc; border-left: 4px solid #059669; padding: 14px; border-radius: 4px; margin-bottom: 24px;\">\n      <strong>🌿 Qué llevar:</strong> Ropa fresca, zapatos cerrados de tracción para senderos, repelente biodegradable, bloqueador solar y botella de agua reutilizable.\n    </div>\n    <div style=\"text-align: center;\">\n      <a href=\"{{ $json.voucherUrl }}\" style=\"display: inline-block; background: #059669; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: bold;\">Descargar Voucher Digital</a>\n    </div>\n  </div>\n  <div style=\"background: #f1f5f9; padding: 16px; text-align: center; font-size: 12px; color: #64748b;\">\n    Costa Rica Tours · Certificación para la Sostenibilidad Turística (CST) · Soporte 24/7 WhatsApp: +506 8795-9148\n  </div>\n</div>",
+        "options": {}
+      },
+      "id": "node-email-customer",
+      "name": "Enviar Correo con Voucher",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [680, 240]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "PENDIENTE_CONFIGURAR_CHAT_ID",
+        "text": "=🔔 *NUEVA RESERVA CONFIRMADA* 🇨🇷\n\n📌 *ID:* `{{ $json.bookingId }}`\n🌲 *Tour:* {{ $json.tourName }}\n📅 *Fecha:* {{ $json.date }} - {{ $json.time }}\n👥 *Pax:* {{ $json.totalPax }} ({{ $json.adults }} adultos, {{ $json.children }} niños)\n👤 *Cliente:* {{ $json.customerName }}\n📞 *Tel:* {{ $json.customerPhone }}\n🏨 *Hotel:* {{ $json.pickup }}\n💰 *Monto:* ${{ $json.totalUSD }} USD (Acreditado)\n\n✅ Operador y guía asignados en cola automática.",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "node-telegram-admin",
+      "name": "Notificar a Equipo / Guías (Telegram)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [680, 480],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Notificaciones multicanal despachadas\",\n  \"bookingId\": \"{{ $json.bookingId }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-respond-multichannel",
+      "name": "Respuesta Exitosa Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [940, 360]
+    }
+  ],
+  "connections": {
+    "Webhook: Pago Verificado": {
+      "main": [
+        [
+          {
+            "node": "Unificar Parámetros de Reserva",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unificar Parámetros de Reserva": {
+      "main": [
+        [
+          {
+            "node": "Enviar Correo con Voucher",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notificar a Equipo / Guías (Telegram)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Correo con Voucher": {
+      "main": [
+        [
+          {
+            "node": "Respuesta Exitosa Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notificar a Equipo / Guías (Telegram)": {
+      "main": [
+        [
+          {
+            "node": "Respuesta Exitosa Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

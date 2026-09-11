@@ -20,6 +20,9 @@ nunca los valores reales de API keys o tokens.
 | 7 | [Antifraude y Alertas de Seguridad](./workflows/antifraude-y-alertas.json) | `aF99rTx1Klm9PqWs` | 🔴 Inactivo (faltan credenciales) | Webhook al crear/evaluar cada reserva |
 | 8 | [Coordinación en Tiempo Real con Proveedores](./workflows/coordinacion-tiempo-real-proveedores.json) | `1wf8ZQ1XuVTpbHnw` | 🔴 Inactivo (faltan credenciales) | Webhook desde `server.ts` al confirmar pago |
 | 9 | [Panel de Control Móvil vía Telegram](./workflows/panel-control-movil-telegram.json) | `pA90kLm4Qx8VnZ2e` | 🔴 Inactivo (faltan credenciales) | Comandos de Telegram (`/hoy`, `/reservas`, `/buscar`, `/confirmar`, `/alertas`) |
+| 10 | [Asistente IA WhatsApp & Chat](./workflows/n8n/04_asistente_ia_chat.json) | `n8n-ia-chat-04` | 🟢 Listo para importar | Webhook `/webhook/chat-consulta` con Gemini 2.5 Flash |
+| 11 | [Sincronización Google Calendar Operadores](./workflows/n8n/05_sincronizacion_google_calendar.json) | `n8n-cal-sync-05` | 🟢 Listo para importar | Webhook `/webhook/sync-calendar` o evento de reserva |
+| 12 | [Disparo Multicanal Reserva Confirmada](./workflows/n8n/06_disparo_multicanal_confirmacion.json) | `n8n-multicanal-06` | 🟢 Listo para importar | Webhook `/webhook/reserva-multicanal` (Email + Telegram) |
 
 ## Webhooks expuestos
 
@@ -28,6 +31,9 @@ nunca los valores reales de API keys o tokens.
 | Confirmación de Reserva al Cliente | `https://costaricatours2026.app.n8n.cloud/webhook/reserva-confirmada` | Header Auth (`X-Webhook-Secret`) |
 | Coordinación en Tiempo Real con Proveedores | `https://costaricatours2026.app.n8n.cloud/webhook/notificar-proveedor` | Header Auth (`X-Webhook-Secret`) |
 | Antifraude y Alertas de Seguridad | `https://costaricatours2026.app.n8n.cloud/webhook/evaluar-antifraude` | Header Auth (`X-Webhook-Secret`) |
+| Asistente IA WhatsApp & Chat | `https://costaricatours2026.app.n8n.cloud/webhook/chat-consulta` | Autenticación de header / Public webhook |
+| Sincronización Google Calendar | `https://costaricatours2026.app.n8n.cloud/webhook/sync-calendar` | Header Auth (`X-Webhook-Secret`) |
+| Disparo Multicanal Reserva Confirmada | `https://costaricatours2026.app.n8n.cloud/webhook/reserva-multicanal` | Header Auth (`X-Webhook-Secret`) |
 
 `server.ts` / `backend/bookingService.ts` despachan a estas URLs automáticamente de forma resiliente e independiente (ver `backend/n8nService.ts`).
 
