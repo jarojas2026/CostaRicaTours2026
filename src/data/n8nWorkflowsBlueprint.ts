@@ -8,7 +8,7 @@ export interface N8NWorkflowDef {
   id: string;
   code: string;
   name: { es: string; en: string };
-  category: 'chat' | 'booking' | 'payment' | 'fulfillment' | 'itinerary' | 'contingency' | 'supervision' | 'support';
+  category: 'chat' | 'booking' | 'payment' | 'fulfillment' | 'itinerary' | 'contingency' | 'supervision' | 'support' | 'fraud' | 'telegram';
   description: { es: string; en: string };
   icon: string;
   color: string;
@@ -677,6 +677,203 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
       connections: {
         "Webhook Soporte": { main: [[{ node: "Create Ticket ID", type: "main", index: 0 }]] },
         "Create Ticket ID": { main: [[{ node: "Respond to Client", type: "main", index: 0 }]] }
+      }
+    }
+  },
+
+  {
+    id: 'wf-fraud-risk-scoring',
+    code: 'WF-09',
+    name: {
+      es: 'Motor Antifraude & Scoring de Riesgo de Transacciones',
+      en: 'Anti-Fraud Engine & Transaction Risk Scoring'
+    },
+    category: 'fraud',
+    description: {
+      es: 'Evalúa cada reserva y pago entrante analizando país emisor de tarjeta vs IP de navegación, velocidad de intentos repetidos, correos desechables y montos atípicos. Si el Risk Score supera 70/100, retiene el voucher y notifica a supervisión.',
+      en: 'Evaluates each booking transaction analyzing card issuing country vs client IP, velocity spikes, disposable emails, and unusual totals. If Risk Score exceeds 70/100, places hold and triggers alert.'
+    },
+    icon: 'ShieldAlert',
+    color: '#ef4444',
+    endpoint: '/webhook/antifraude-evaluacion',
+    method: 'POST',
+    triggerEvent: 'EVALUACION_ANTIFRAUDE',
+    nodesCount: 6,
+    slaTarget: '< 850 ms',
+    nodes: [
+      { id: 'f1', name: 'Fraud Check Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe datos de transacción previa a emisión de voucher' },
+      { id: 'f2', name: 'IP Geolocation & VPN Check', type: 'n8n-nodes-base.httpRequest', description: 'Compara geolocalización de red con país emisor del BIN bancario' },
+      { id: 'f3', name: 'Velocity & History Lookup', type: 'n8n-nodes-base.httpRequest', description: 'Consulta historial de intentos y chargebacks en Firestore' },
+      { id: 'f4', name: 'Risk Scoring Algorithm', type: 'n8n-nodes-base.code', description: 'Calcula score 0-100 ponderando factores de riesgo' },
+      { id: 'f5', name: 'Decision Switch (Pass / Review / Block)', type: 'n8n-nodes-base.if', description: 'Aprobado (<45), Revisión manual (46-70), Bloqueo automático (>70)' },
+      { id: 'f6', name: 'Audit & Dispatcher Response', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve veredicto de autorización y registra en bitácora' }
+    ],
+    samplePayload: {
+      trigger: 'EVALUACION_ANTIFRAUDE',
+      idReserva: 'CRT-2026-9941',
+      montoUSD: 580,
+      cliente: {
+        nombre: 'Alexander Vance',
+        email: 'alex.vance.travel@gmail.com',
+        telefono: '+1 305-555-0199',
+        paisEmisorTarjeta: 'US',
+        ipOrigen: '198.51.100.42',
+        paisIP: 'US'
+      },
+      tourId: 'arenal-volcano-hot-springs',
+      intentosPrevios24h: 1,
+      tarjetaUltimos4: '4242',
+      timestamp: new Date().toISOString()
+    },
+    blueprintJson: {
+      name: "Costa Rica Tours - WF09 Motor Antifraude & Risk Scoring",
+      nodes: [
+        {
+          parameters: { httpMethod: "POST", path: "antifraude-evaluacion", responseMode: "responseNode" },
+          name: "Webhook Antifraude",
+          type: "n8n-nodes-base.webhook",
+          typeVersion: 1,
+          position: [100, 300]
+        },
+        {
+          parameters: {
+            mode: "runOnceForEachItem",
+            jsCode: "const body = $input.item.json.body || $input.item.json;\nlet score = 0;\nconst flags = [];\n\nif (body.cliente?.paisEmisorTarjeta && body.cliente?.paisIP && body.cliente.paisEmisorTarjeta !== body.cliente.paisIP) {\n  score += 35;\n  flags.push('DISCORDANCIA_PAIS_IP');\n}\nif ((body.intentosPrevios24h || 0) > 3) {\n  score += 40;\n  flags.push('VELOCIDAD_EXCESIVA_INTENTOS');\n}\nif (body.montoUSD > 1200) {\n  score += 15;\n  flags.push('MONTO_ELEVADO');\n}\n\nconst decision = score >= 70 ? 'BLOQUEADO' : score >= 45 ? 'REVISION_MANUAL' : 'APROBADO';\nreturn { json: { ...body, riskScore: score, decision, flags, evaluadoAt: new Date().toISOString() } };"
+          },
+          name: "Calculate Risk Score",
+          type: "n8n-nodes-base.code",
+          typeVersion: 2,
+          position: [350, 300]
+        },
+        {
+          parameters: {
+            conditions: { string: [{ value1: "={{$json.decision}}", operation: "equals", value2: "APROBADO" }] }
+          },
+          name: "Is Approved?",
+          type: "n8n-nodes-base.if",
+          typeVersion: 1,
+          position: [600, 300]
+        },
+        {
+          parameters: {
+            respondWith: "json",
+            responseBody: "={\n  \"exito\": true,\n  \"autorizado\": {{$json.decision === 'APROBADO'}},\n  \"decision\": $json.decision,\n  \"riskScore\": $json.riskScore,\n  \"flags\": $json.flags,\n  \"reservaId\": $json.idReserva\n}"
+          },
+          name: "Respond Verdict",
+          type: "n8n-nodes-base.respondToWebhook",
+          typeVersion: 1,
+          position: [850, 300]
+        }
+      ],
+      connections: {
+        "Webhook Antifraude": { main: [[{ node: "Calculate Risk Score", type: "main", index: 0 }]] },
+        "Calculate Risk Score": { main: [[{ node: "Is Approved?", type: "main", index: 0 }]] },
+        "Is Approved?": {
+          main: [
+            [{ node: "Respond Verdict", type: "main", index: 0 }],
+            [{ node: "Respond Verdict", type: "main", index: 0 }]
+          ]
+        }
+      }
+    }
+  },
+
+  {
+    id: 'wf-telegram-ops-panel',
+    code: 'WF-10',
+    name: {
+      es: 'Panel Operativo en Telegram & Acciones Interactivas (Bot 1-Clic)',
+      en: 'Telegram Ops Panel & Interactive Bot Actions (1-Click Bot)'
+    },
+    category: 'telegram',
+    description: {
+      es: 'Envía alertas a guías y operadores locales mediante un Bot oficial de Telegram con botones inline interactivos: [Confirmar Recogida], [Reagendar por Clima], [Llamar Chofer], [Ver Voucher]. Ejecuta la acción y actualiza Firestore en 1 clic.',
+      en: 'Dispatches real-time alerts to local guides & coordinators via official Telegram Bot with inline buttons: [Confirm Pickup], [Reschedule Weather], [Call Driver], [View Voucher]. Updates Firestore in 1 click.'
+    },
+    icon: 'Send',
+    color: '#0284c7',
+    endpoint: '/webhook/telegram-ops-action',
+    method: 'POST',
+    triggerEvent: 'ACCION_PANEL_TELEGRAM',
+    nodesCount: 6,
+    slaTarget: '< 950 ms',
+    nodes: [
+      { id: 't1', name: 'Telegram Webhook Trigger', type: 'n8n-nodes-base.telegramTrigger', description: 'Escucha clics en botones inline de Telegram o comandos /status' },
+      { id: 't2', name: 'Extract Callback Data', type: 'n8n-nodes-base.code', description: 'Parsea el bookingId y la acción seleccionada por el guía' },
+      { id: 't3', name: 'Action Router', type: 'n8n-nodes-base.switch', description: 'Enruta según: confirmar_recogida, reagendar, contactar_cliente' },
+      { id: 't4', name: 'Update Firestore Booking', type: 'n8n-nodes-base.httpRequest', description: 'Registra el cambio de estado operacional con firma del operador' },
+      { id: 't5', name: 'Edit Telegram Message Markup', type: 'n8n-nodes-base.telegram', description: 'Actualiza la tarjeta en Telegram a "✅ CONFIRMADO POR GUÍA"' },
+      { id: 't6', name: 'Answer Callback Query', type: 'n8n-nodes-base.respondToWebhook', description: 'Envía notificación toast emergente en la app de Telegram' }
+    ],
+    samplePayload: {
+      trigger: 'ACCION_PANEL_TELEGRAM',
+      telegramUserId: 184920482,
+      operador: 'Guía Juan Carlos (La Fortuna Rafting)',
+      action: 'confirmar_recogida',
+      idReserva: 'CRT-2026-8819',
+      hotelRecogida: 'Hotel Los Lagos, La Fortuna',
+      horaEstimada: '07:45 AM',
+      notas: 'Microbús Toyota HiAce placa CRT-442 en camino',
+      timestamp: new Date().toISOString()
+    },
+    blueprintJson: {
+      name: "Costa Rica Tours - WF10 Panel Operativo Telegram Bot",
+      nodes: [
+        {
+          parameters: {
+            updates: ["callback_query", "message"]
+          },
+          name: "Telegram Bot Trigger",
+          type: "n8n-nodes-base.telegramTrigger",
+          typeVersion: 1,
+          position: [100, 300]
+        },
+        {
+          parameters: {
+            mode: "runOnceForEachItem",
+            jsCode: "const data = $input.item.json.callback_query || $input.item.json;\nconst callbackData = data.data || '';\nconst parts = callbackData.split(':');\nreturn {\n  json: {\n    action: parts[0] || 'ver_detalle',\n    bookingId: parts[1] || 'CRT-GEN',\n    user: data.from?.first_name || 'Operador',\n    chatId: data.message?.chat?.id\n  }\n};"
+          },
+          name: "Parse Telegram Action",
+          type: "n8n-nodes-base.code",
+          typeVersion: 2,
+          position: [350, 300]
+        },
+        {
+          parameters: {
+            url: "http://localhost:3000/api/webhooks/n8n/update-booking",
+            method: "POST",
+            headerParameters: {
+              parameters: [{ name: "X-Webhook-Secret", value: "dev-secret-key-123" }]
+            },
+            bodyParameters: {
+              parameters: [
+                { name: "bookingId", value: "={{$json.bookingId}}" },
+                { name: "pickupStatus", value: "confirmado_por_guia" },
+                { name: "assignedOperator", value: "={{$json.user}}" }
+              ]
+            }
+          },
+          name: "Sync Firestore Status",
+          type: "n8n-nodes-base.httpRequest",
+          typeVersion: 4,
+          position: [600, 300]
+        },
+        {
+          parameters: {
+            chatId: "={{$json.chatId}}",
+            text: "=*¡Estado Actualizado Exitosamente!*\\n\\nReserva: `{{$json.bookingId}}`\\nAcción: `{{$json.action}}`\\nConfirmado por: `{{$json.user}}`",
+            additionalFields: { parse_mode: "Markdown" }
+          },
+          name: "Notify Telegram Group",
+          type: "n8n-nodes-base.telegram",
+          typeVersion: 1,
+          position: [850, 300]
+        }
+      ],
+      connections: {
+        "Telegram Bot Trigger": { main: [[{ node: "Parse Telegram Action", type: "main", index: 0 }]] },
+        "Parse Telegram Action": { main: [[{ node: "Sync Firestore Status", type: "main", index: 0 }]] },
+        "Sync Firestore Status": { main: [[{ node: "Notify Telegram Group", type: "main", index: 0 }]] }
       }
     }
   }

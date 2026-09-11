@@ -335,21 +335,23 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
 
             <div className="lg:col-span-4 flex flex-col gap-3">
               <button
+                type="button"
                 onClick={onOpenCustomFunnel}
-                className="w-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:to-amber-500 text-stone-900 font-black text-base uppercase py-4 px-6 rounded-2xl shadow-[0_4px_25px_rgba(255,140,0,0.5)] transition-all transform hover:-translate-y-1 active:translate-y-0 flex items-center justify-center gap-3 cursor-pointer border border-amber-300/50"
+                className="w-full bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-base uppercase py-4 px-6 rounded-2xl shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-3 cursor-pointer border border-amber-300"
               >
-                <Sparkles className="w-5 h-5 text-amber-100 animate-pulse" />
+                <Sparkles className="w-5 h-5 text-stone-950" />
                 <span>{isEs ? 'Armar mi Viaje a Medida' : 'Build My Custom Trip'}</span>
               </button>
 
               <button
+                type="button"
                 onClick={onOpenItineraryPlanner}
-                className="w-full bg-stone-900/90 hover:bg-stone-900 border border-teal-500/40 hover:border-teal-400 text-white font-bold text-sm py-3.5 px-6 rounded-2xl transition-all shadow-lg hover:shadow-[0_0_20px_rgba(20,184,166,0.25)] flex items-center justify-center gap-2.5 cursor-pointer group"
+                className="w-full bg-[#03140e] hover:bg-[#051c14] border border-emerald-500/40 hover:border-emerald-400 text-white font-bold text-sm py-3.5 px-6 rounded-2xl transition-all shadow-md flex items-center justify-center gap-2.5 cursor-pointer group"
                 title={isEs ? 'Planificador inteligente con IA en segundos' : 'Smart AI trip planner in seconds'}
               >
-                <Compass className="w-4 h-4 text-teal-300 group-hover:rotate-45 transition-transform duration-300" />
+                <Compass className="w-4 h-4 text-amber-400 group-hover:rotate-45 transition-transform duration-300" />
                 <span>{isEs ? 'Generar Itinerario con IA' : 'Generate AI Itinerary'}</span>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 ml-1">
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 ml-1">
                   {isEs ? 'Gratis' : 'Free'}
                 </span>
               </button>

@@ -4,7 +4,8 @@ import { N8N_WORKFLOWS, N8NWorkflowDef } from '../data/n8nWorkflowsBlueprint';
 import {
   Zap, Play, CheckCircle2, AlertCircle, Copy, Download, RefreshCw,
   Terminal, Server, Code, FileText, ArrowRight, ShieldCheck, Clock,
-  Cpu, Send, ExternalLink, ChevronRight, Layers, Bot, HelpCircle
+  Cpu, Send, ExternalLink, ChevronRight, Layers, Bot, HelpCircle,
+  Key, Mail, ShieldAlert
 } from 'lucide-react';
 
 interface N8NWorkflowStudioProps {
@@ -15,6 +16,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
   const isEs = language === 'es';
   const [selectedWfId, setSelectedWfId] = useState<string>(N8N_WORKFLOWS[0].id);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [showCredentialsGuide, setShowCredentialsGuide] = useState<boolean>(false);
   
   // Connection status state
   const [connectionStatus, setConnectionStatus] = useState<{
@@ -198,7 +200,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
               </span>
               <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                {isEs ? '8 Flujos en Producción' : '8 Production Workflows'}
+                {isEs ? '10 Flujos en Producción' : '10 Production Workflows'}
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
@@ -207,32 +209,172 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
             </h2>
             <p className="text-xs sm:text-sm text-stone-300 max-w-2xl mt-1 leading-relaxed">
               {isEs
-                ? 'Conectamos el chat de viajeros, el motor de reservas en Firestore, las pasarelas de pago y las contingencias climáticas mediante webhooks asíncronos y modelos de IA en n8n.'
-                : 'Connecting traveler chat, Firestore booking engine, payment gateways, and weather contingencies via asynchronous webhooks and AI models in n8n.'}
+                ? 'Conectamos el chat de viajeros, el motor de reservas en Firestore, pasarelas de pago, análisis antifraude, contingencias climáticas y panel de guías en Telegram mediante webhooks asíncronos.'
+                : 'Connecting traveler chat, Firestore booking engine, payment gateways, fraud scoring, weather contingencies, and Telegram guide ops panel via asynchronous webhooks.'}
             </p>
           </div>
 
-          {/* Connection Pill & Ping Action */}
-          <div className="bg-[#020e08] border border-emerald-500/30 rounded-2xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center gap-3 shrink-0 shadow-inner">
-            <div className="space-y-0.5">
-              <div className="text-[10px] uppercase font-bold text-emerald-300/70 tracking-wider">
-                {isEs ? 'Endpoint Base n8n' : 'n8n Base Endpoint'}
-              </div>
-              <div className="text-xs font-mono font-bold text-amber-300 truncate max-w-[220px]">
-                {connectionStatus.baseUrl}
-              </div>
-            </div>
-
+          {/* Connection Pill & Actions */}
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
-              onClick={handleTestPing}
-              disabled={connectionStatus.loading}
-              className="px-3.5 py-2 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-200 hover:text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 border border-emerald-500/40 cursor-pointer disabled:opacity-50"
+              onClick={() => setShowCredentialsGuide(!showCredentialsGuide)}
+              className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 border cursor-pointer ${
+                showCredentialsGuide
+                  ? 'bg-amber-400 text-stone-950 border-amber-300 shadow-md'
+                  : 'bg-emerald-950/80 hover:bg-emerald-900 text-amber-400 border-amber-400/40'
+              }`}
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${connectionStatus.loading ? 'animate-spin text-amber-400' : ''}`} />
-              <span>{isEs ? 'Test Ping' : 'Test Ping'}</span>
+              <Key className="w-3.5 h-3.5" />
+              <span>{isEs ? 'Credenciales Oficiales' : 'Official Credentials'}</span>
             </button>
+
+            <div className="bg-[#020e08] border border-emerald-500/30 rounded-2xl p-3 flex items-center gap-3 shadow-inner">
+              <div className="space-y-0.5">
+                <div className="text-[10px] uppercase font-bold text-emerald-300/70 tracking-wider">
+                  {isEs ? 'Endpoint n8n' : 'n8n Endpoint'}
+                </div>
+                <div className="text-xs font-mono font-bold text-amber-300 truncate max-w-[170px]">
+                  {connectionStatus.baseUrl}
+                </div>
+              </div>
+
+              <button
+                onClick={handleTestPing}
+                disabled={connectionStatus.loading}
+                className="px-3 py-1.5 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-200 hover:text-white rounded-xl text-xs font-black transition-all flex items-center gap-1 border border-emerald-500/40 cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${connectionStatus.loading ? 'animate-spin text-amber-400' : ''}`} />
+                <span>Ping</span>
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Official Credentials Guide Panel (Expandable) */}
+        {showCredentialsGuide && (
+          <div className="mt-4 p-5 rounded-2xl bg-[#020e08]/95 border border-amber-400/40 space-y-4 animate-in fade-in">
+            <div className="flex items-center justify-between border-b border-emerald-500/20 pb-3">
+              <div className="flex items-center gap-2">
+                <Key className="w-5 h-5 text-amber-400" />
+                <h3 className="font-black text-sm text-white uppercase tracking-wider">
+                  {isEs ? 'Configuración de las 3 Credenciales de n8n para Producción' : '3 Official n8n Production Credentials Setup'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowCredentialsGuide(false)}
+                className="text-stone-400 hover:text-white text-xs font-bold px-2 py-1"
+              >
+                ✕ {isEs ? 'Cerrar' : 'Close'}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              
+              {/* Credential 1: Firebase / Firestore */}
+              <div className="bg-[#051c14] p-4 rounded-xl border border-emerald-500/30 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-300">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    <span>1. Firebase / Firestore</span>
+                  </div>
+                  <span className="text-[10px] bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded font-mono">GCP Node</span>
+                </div>
+                <p className="text-[11px] text-stone-300">
+                  {isEs 
+                    ? 'Permite a los nodos de n8n leer inventario de tours, bloquear cupos y actualizar estado de reservas.' 
+                    : 'Allows n8n nodes to read tour inventory, hold seats, and update booking statuses.'}
+                </p>
+                <div className="space-y-1 text-xs font-mono bg-black/40 p-2.5 rounded-lg border border-emerald-500/20">
+                  <div className="text-[10px] text-emerald-400/80">Project ID:</div>
+                  <div className="flex items-center justify-between text-amber-300 font-bold">
+                    <span>gen-lang-client-0782739149</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText('gen-lang-client-0782739149');
+                        setCopiedKey('project-id');
+                        setTimeout(() => setCopiedKey(null), 2000);
+                      }}
+                      className="text-stone-400 hover:text-white p-1"
+                      title="Copiar Project ID"
+                    >
+                      {copiedKey === 'project-id' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                  <div className="text-[10px] text-emerald-400/80 mt-1">Database ID:</div>
+                  <div className="flex items-center justify-between text-stone-300 text-[10px] truncate">
+                    <span className="truncate">ai-studio-costaricatours-88d81273-09f7-4f87-991c-60b9b0db0dea</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText('ai-studio-costaricatours-88d81273-09f7-4f87-991c-60b9b0db0dea');
+                        setCopiedKey('database-id');
+                        setTimeout(() => setCopiedKey(null), 2000);
+                      }}
+                      className="text-stone-400 hover:text-white p-1"
+                      title="Copiar Database ID"
+                    >
+                      {copiedKey === 'database-id' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Credential 2: Gmail (Vouchers & Emails) */}
+              <div className="bg-[#051c14] p-4 rounded-xl border border-emerald-500/30 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
+                    <Mail className="w-3.5 h-3.5 text-amber-400" />
+                    <span>2. Gmail (Vouchers)</span>
+                  </div>
+                  <span className="text-[10px] bg-amber-950 text-amber-400 px-2 py-0.5 rounded font-mono">OAuth2 / SMTP</span>
+                </div>
+                <p className="text-[11px] text-stone-300">
+                  {isEs 
+                    ? 'Envía confirmaciones con PDF adjunto, itinerarios y avisos de contingencia al email del viajero.' 
+                    : 'Dispatches confirmations with attached PDF, itineraries, and contingency alerts to traveler email.'}
+                </p>
+                <div className="space-y-1 text-xs font-mono bg-black/40 p-2.5 rounded-lg border border-emerald-500/20">
+                  <div className="text-[10px] text-amber-400/80">Remitente Autorizado:</div>
+                  <div className="flex items-center justify-between text-stone-200">
+                    <span>info@costaricatours.es</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText('info@costaricatours.es');
+                        setCopiedKey('email-sender');
+                        setTimeout(() => setCopiedKey(null), 2000);
+                      }}
+                      className="text-stone-400 hover:text-white p-1"
+                    >
+                      {copiedKey === 'email-sender' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                  <div className="text-[10px] text-stone-400 mt-1">Scope: https://mail.google.com/</div>
+                </div>
+              </div>
+
+              {/* Credential 3: Telegram (Ops Bot) */}
+              <div className="bg-[#051c14] p-4 rounded-xl border border-emerald-500/30 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-sky-300">
+                    <Send className="w-3.5 h-3.5 text-sky-400" />
+                    <span>3. Telegram (Bot Operativo)</span>
+                  </div>
+                  <span className="text-[10px] bg-sky-950 text-sky-400 px-2 py-0.5 rounded font-mono">Telegram API</span>
+                </div>
+                <p className="text-[11px] text-stone-300">
+                  {isEs 
+                    ? 'Conecta a los guías en campo para confirmar recogidas y traslados mediante botones inline interactivos.' 
+                    : 'Connects field guides to confirm pickups and transfers using interactive inline buttons.'}
+                </p>
+                <div className="space-y-1 text-xs font-mono bg-black/40 p-2.5 rounded-lg border border-emerald-500/20">
+                  <div className="text-[10px] text-sky-400/80">Bot Provider:</div>
+                  <div className="text-stone-200 text-xs">@BotFather (Telegram)</div>
+                  <div className="text-[10px] text-stone-400 mt-1">Webhook: /webhook/telegram-ops-action</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
 
         {/* Live Ping Output Banner if run */}
         {connectionStatus.pingResult && (
@@ -263,10 +405,12 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
       {/* Category Filter Tabs */}
       <div className="flex flex-wrap items-center gap-2">
         {[
-          { id: 'all', label: { es: 'Todos (8)', en: 'All (8)' } },
+          { id: 'all', label: { es: 'Todos (10)', en: 'All (10)' } },
           { id: 'chat', label: { es: 'Chat & Triage', en: 'Chat & Triage' } },
           { id: 'booking', label: { es: 'Bloqueo Cupos', en: 'Seat Hold' } },
           { id: 'payment', label: { es: 'Pagos & HMAC', en: 'Payments' } },
+          { id: 'fraud', label: { es: 'Antifraude & Riesgo', en: 'Fraud & Risk' } },
+          { id: 'telegram', label: { es: 'Panel Telegram', en: 'Telegram Panel' } },
           { id: 'fulfillment', label: { es: 'Vouchers & WhatsApp', en: 'Vouchers' } },
           { id: 'itinerary', label: { es: 'Itinerarios', en: 'Itineraries' } },
           { id: 'contingency', label: { es: 'Contingencias', en: 'Contingency' } },

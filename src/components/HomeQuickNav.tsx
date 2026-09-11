@@ -280,52 +280,52 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
       <section className="bg-[#062017]/95 rounded-3xl p-6 sm:p-7 border border-emerald-500/30 backdrop-blur-md shadow-2xl text-white">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6 text-left">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-orange-500/20 flex items-center justify-center shrink-0 border border-orange-400/40 text-orange-400">
+            <div className="w-10 h-10 rounded-2xl bg-amber-400/20 flex items-center justify-center shrink-0 border border-amber-400/40 text-amber-400">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-stone-900 uppercase tracking-tight">{tico ? 'Agencia Receptiva' : 'Official Agency'}</h4>
-              <p className="text-[11px] text-stone-800/75 leading-tight mt-0.5">{tico ? 'Guías ICT y pólizas de seguro al día' : 'ICT certified guides & full liability insurance'}</p>
+              <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Agencia Receptiva' : 'Official Agency'}</h4>
+              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Guías ICT y pólizas de seguro al día' : 'ICT certified guides & full liability insurance'}</p>
             </div>
           </div>
 
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-teal-500/20 flex items-center justify-center shrink-0 border border-teal-400/40 text-teal-400">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-400/40 text-emerald-400">
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-stone-900 uppercase tracking-tight">{tico ? 'Tarifa Oficial Directa' : 'Official Rate'}</h4>
-              <p className="text-[11px] text-stone-800/75 leading-tight mt-0.5">{tico ? 'Sin sobreprecios ni costos ocultos' : 'Direct rates with zero hidden markups'}</p>
+              <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Tarifa Oficial Directa' : 'Official Rate'}</h4>
+              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Sin sobreprecios ni costos ocultos' : 'Direct rates with zero hidden markups'}</p>
             </div>
           </div>
 
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-teal-500/20 flex items-center justify-center shrink-0 border border-teal-400/40 text-teal-400">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-400/40 text-emerald-400">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-stone-900 uppercase tracking-tight">{tico ? 'Voucher QR Inmediato' : 'Instant QR Voucher'}</h4>
-              <p className="text-[11px] text-stone-800/75 leading-tight mt-0.5">{tico ? 'Confirmación digital y soporte directo' : 'Instant confirmation with digital voucher'}</p>
+              <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Voucher QR Inmediato' : 'Instant QR Voucher'}</h4>
+              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Confirmación digital y soporte directo' : 'Instant confirmation with digital voucher'}</p>
             </div>
           </div>
 
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 flex items-center justify-center shrink-0 border border-cyan-400/40 text-cyan-400">
+            <div className="w-10 h-10 rounded-2xl bg-teal-500/20 flex items-center justify-center shrink-0 border border-teal-400/40 text-teal-300">
               <Clock className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-stone-900 uppercase tracking-tight">{tico ? 'Cancelación Flexible' : 'Flexible Refund'}</h4>
-              <p className="text-[11px] text-stone-800/75 leading-tight mt-0.5">{tico ? 'Reembolso 100% hasta 48h antes' : '100% refund up to 48 hours prior'}</p>
+              <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Cancelación Flexible' : 'Flexible Refund'}</h4>
+              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Reembolso 100% hasta 48h antes' : '100% refund up to 48 hours prior'}</p>
             </div>
           </div>
 
           <div className="flex items-start gap-3 col-span-2 md:col-span-4 lg:col-span-1">
-            <div className="w-10 h-10 rounded-2xl bg-yellow-500/20 flex items-center justify-center shrink-0 border border-yellow-400/40 text-yellow-400">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 flex items-center justify-center shrink-0 border border-amber-400/40 text-amber-400">
               <Users className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-stone-900 uppercase tracking-tight">{tico ? 'Asistencia Tica 24/7' : '24/7 Concierge'}</h4>
-              <p className="text-[11px] text-stone-800/75 leading-tight mt-0.5">{tico ? 'Atención local vía WhatsApp' : 'Local WhatsApp support in destination'}</p>
+              <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Asistencia Tica 24/7' : '24/7 Concierge'}</h4>
+              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Atención local vía WhatsApp' : 'Local WhatsApp support in destination'}</p>
             </div>
           </div>
         </div>

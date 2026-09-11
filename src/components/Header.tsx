@@ -130,6 +130,15 @@ export const Header: React.FC<HeaderProps> = ({
     return () => unsubscribe();
   }, []);
 
+  const [isScrolled, setIsScrolled] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 25);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const currentLangInfo = SUPPORTED_LANGUAGES.find(l => l.code === language) || SUPPORTED_LANGUAGES[0];
   const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
   const currentTab = activeTab || activeSection || 'home';
@@ -158,154 +167,148 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <>
       {/* Structural Spacer: Prevents content clipping under fixed header */}
-      <div className="w-full h-[94px] sm:h-[100px] shrink-0" aria-hidden="true" />
+      <div className={`w-full shrink-0 transition-all duration-300 ${isScrolled ? 'h-[62px]' : 'h-[92px] sm:h-[96px]'}`} aria-hidden="true" />
       
-      <header id="main-header" className="w-full fixed top-0 left-0 right-0 z-50 bg-[#051c14]/95 backdrop-blur-md border-b border-emerald-500/20 text-white shadow-2xl transition-all duration-200">
+      <header id="main-header" className={`w-full fixed top-0 left-0 right-0 z-50 bg-[#051c14]/95 backdrop-blur-md border-b border-emerald-500/20 text-white shadow-2xl transition-all duration-300 ${isScrolled ? 'shadow-emerald-950/50' : ''}`}>
         
-        {/* Top Assistance & Trust Strip */}
-        <div className="bg-[#03130d]/90 text-xs px-3 sm:px-6 py-1 border-b border-emerald-500/20 text-emerald-100/80">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+        {/* Top Assistance & Trust Strip (Collapses smoothly on scroll to maximize visible screen) */}
+        <div className={`bg-[#02130c] text-xs px-3 sm:px-6 border-b border-emerald-500/20 text-stone-200 transition-all duration-300 overflow-hidden ${
+          isScrolled ? 'max-h-0 opacity-0 py-0 border-b-0 pointer-events-none' : 'max-h-12 opacity-100 py-1.5'
+        }`}>
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs">
             
-            <div className="flex items-center gap-2 sm:gap-3 text-[11px] whitespace-nowrap overflow-x-auto hide-scrollbar">
-              <span className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/40 font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
-                <span>{language === 'es' ? '🇨🇷 Agencia Receptiva Oficial' : '🇨🇷 Official Receptive Agency'}</span>
+            <div className="flex items-center gap-3 whitespace-nowrap overflow-x-auto hide-scrollbar">
+              <span className="inline-flex items-center gap-1.5 bg-emerald-950/90 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/40 font-bold text-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                <span>{language === 'es' ? '🇨🇷 Agencia Receptiva Oficial' : '🇨🇷 Official Inbound Agency'}</span>
               </span>
 
-              <span className="hidden sm:inline text-stone-800">•</span>
+              <span className="hidden sm:inline text-emerald-500/40">•</span>
               
               <a
                 href="https://wa.me/50687959148?text=Hola%20Costa%20Rica%20Tours%20(costaricatours.es),%20quisiera%20consultar%20sobre%20los%20tours%20y%20traslados."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-stone-200 hover:text-white font-bold transition-colors"
+                className="inline-flex items-center gap-1.5 text-stone-200 hover:text-white font-medium transition-colors text-xs"
               >
-                <MessageCircle className="w-3 h-3 text-[#25D366]" />
-                <span>WhatsApp 24/7: <strong className="text-amber-400">+506 8795-9148</strong></span>
+                <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
+                <span>WhatsApp: <strong className="text-amber-400 font-bold">+506 8795-9148</strong></span>
               </a>
 
-              <span className="hidden lg:inline text-stone-800">•</span>
+              <span className="hidden lg:inline text-emerald-500/40">•</span>
 
               <a
                 href="mailto:info@costaricatours.es"
-                className="hidden lg:inline-flex items-center gap-1 text-teal-300 hover:text-stone-900 transition-colors"
+                className="hidden lg:inline-flex items-center gap-1.5 text-stone-300 hover:text-amber-300 transition-colors text-xs"
               >
-                <Mail className="w-3 h-3 text-teal-400" />
+                <Mail className="w-3.5 h-3.5 text-teal-400" />
                 <span>info@costaricatours.es</span>
               </a>
             </div>
 
-            <div className="hidden sm:flex items-center gap-2 text-[11px] font-bold text-amber-300 shrink-0">
-              <ShieldCheck className="w-3.5 h-3.5 text-orange-400" />
-              <span>{language === 'es' ? 'Tarifas Oficiales Directas' : 'Guaranteed Direct Rates'}</span>
+            <div className="hidden sm:flex items-center gap-2 text-xs font-bold text-amber-400 shrink-0">
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
+              <span>{language === 'es' ? 'Tarifas Oficiales Directas' : 'Direct Official Rates'}</span>
             </div>
 
           </div>
         </div>
 
         {/* Main Navigation Bar */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-2 lg:gap-4">
+        <div className={`max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 transition-all duration-300 flex items-center justify-between gap-2 lg:gap-4 ${
+          isScrolled ? 'py-2' : 'py-3'
+        }`}>
           
           {/* Brand Logo */}
           <button
             onClick={() => handleTabChange('home')}
-            className="flex items-center gap-2 sm:gap-2.5 group text-left cursor-pointer shrink-0"
+            className="flex items-center gap-2.5 group text-left cursor-pointer shrink-0"
           >
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 rounded-xl flex items-center justify-center text-white font-black text-base sm:text-xl shadow-lg group-hover:scale-105 transition-transform border border-orange-400">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-amber-400 rounded-xl flex items-center justify-center text-stone-950 font-black shadow-md group-hover:scale-105 transition-transform">
               <Compass className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div className="whitespace-nowrap">
-              <div className="text-sm sm:text-xl font-black tracking-tighter uppercase leading-none text-white flex items-center gap-1.5">
+              <div className="text-base sm:text-xl font-extrabold tracking-tight text-white flex items-center gap-1.5">
                 <span>Costa Rica</span>
-                <span className="text-orange-400">Tours</span>
+                <span className="text-amber-400">Tours</span>
               </div>
-              <span className="text-[8px] sm:text-[9px] tracking-[0.2em] uppercase font-bold text-emerald-400/90 block mt-1">
-                {language === 'es' ? 'Descubre Costa Rica' : 'Discover Costa Rica'}
+              <span className="text-[10px] tracking-wider uppercase font-semibold text-emerald-400 block">
+                {language === 'es' ? 'Operador Oficial' : 'Official Operator'}
               </span>
             </div>
           </button>
 
           {/* Unified High-Tech Desktop Navigation (Visible on lg screens and up) */}
-          <nav className="hidden lg:flex items-center gap-1 bg-[#02130c]/85 p-1 rounded-full border border-emerald-500/30 backdrop-blur-xl shadow-inner">
+          <nav className="hidden lg:flex items-center gap-1 bg-[#02130c]/90 p-1.5 rounded-full border border-emerald-500/30 backdrop-blur-xl shadow-md">
             <button
               onClick={() => handleTabChange('home')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+              className={`px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'home'
-                  ? 'bg-amber-400 text-stone-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.35)]'
-                  : 'text-emerald-100/75 hover:text-white hover:bg-emerald-900/40'
+                  ? 'bg-amber-400 text-stone-950 font-extrabold shadow-sm'
+                  : 'text-stone-300 hover:text-white hover:bg-emerald-900/40'
               }`}
             >
-              <Home className="w-3.5 h-3.5" />
+              <Home className="w-4 h-4" />
               <span>{language === 'es' ? 'Inicio' : 'Home'}</span>
             </button>
 
             <button
               onClick={() => handleTabChange('tours')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+              className={`px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'tours'
-                  ? 'bg-amber-400 text-stone-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.35)]'
-                  : 'text-emerald-100/75 hover:text-white hover:bg-emerald-900/40'
+                  ? 'bg-amber-400 text-stone-950 font-extrabold shadow-sm'
+                  : 'text-stone-300 hover:text-white hover:bg-emerald-900/40'
               }`}
             >
-              <Compass className="w-3.5 h-3.5" />
+              <Compass className="w-4 h-4" />
               <span>{language === 'es' ? 'Tours' : 'Tours'}</span>
-              <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-black ${
-                currentTab === 'tours' ? 'bg-stone-950/20 text-stone-950' : 'bg-emerald-500/20 text-emerald-300'
-              }`}>
-                +20
-              </span>
             </button>
 
             <button
               onClick={() => handleTabChange('map')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+              className={`px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'map'
-                  ? 'bg-amber-400 text-stone-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.35)]'
-                  : 'text-emerald-100/75 hover:text-white hover:bg-emerald-900/40'
+                  ? 'bg-amber-400 text-stone-950 font-extrabold shadow-sm'
+                  : 'text-stone-300 hover:text-white hover:bg-emerald-900/40'
               }`}
             >
-              <Map className="w-3.5 h-3.5" />
+              <Map className="w-4 h-4" />
               <span>{language === 'es' ? 'Mapa' : 'Map'}</span>
             </button>
 
             <button
               onClick={() => handleTabChange('flights')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+              className={`px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'flights'
-                  ? 'bg-amber-400 text-stone-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.35)]'
-                  : 'text-emerald-100/75 hover:text-white hover:bg-emerald-900/40'
+                  ? 'bg-amber-400 text-stone-950 font-extrabold shadow-sm'
+                  : 'text-stone-300 hover:text-white hover:bg-emerald-900/40'
               }`}
             >
-              <Plane className="w-3.5 h-3.5" />
+              <Plane className="w-4 h-4" />
               <span>{language === 'es' ? 'Vuelos' : 'Flights'}</span>
-              <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-black ${
-                currentTab === 'flights' ? 'bg-stone-950/20 text-stone-950' : 'bg-orange-500/20 text-orange-300'
-              }`}>
-                Live
-              </span>
             </button>
 
             <button
               onClick={() => handleTabChange('itinerary')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+              className={`px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'itinerary'
-                  ? 'bg-amber-400 text-stone-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.35)]'
-                  : 'text-emerald-100/75 hover:text-white hover:bg-emerald-900/40'
+                  ? 'bg-amber-400 text-stone-950 font-extrabold shadow-sm'
+                  : 'text-stone-300 hover:text-white hover:bg-emerald-900/40'
               }`}
             >
-              <Calendar className="w-3.5 h-3.5" />
+              <Calendar className="w-4 h-4" />
               <span>{language === 'es' ? 'Itinerario' : 'Itinerary'}</span>
             </button>
 
             <button
               onClick={() => handleTabChange('ai')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+              className={`px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'ai'
-                  ? 'bg-amber-400 text-stone-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.35)]'
-                  : 'text-emerald-100/75 hover:text-white hover:bg-emerald-900/40'
+                  ? 'bg-amber-400 text-stone-950 font-extrabold shadow-sm'
+                  : 'text-stone-300 hover:text-white hover:bg-emerald-900/40'
               }`}
             >
-              <Bot className="w-3.5 h-3.5 text-amber-400" />
+              <Bot className="w-4 h-4 text-amber-400" />
               <span>{language === 'es' ? 'Asistente IA' : 'AI Concierge'}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             </button>

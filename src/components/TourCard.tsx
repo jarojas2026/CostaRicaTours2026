@@ -64,54 +64,39 @@ export const TourCard: React.FC<TourCardProps> = ({
     <>
       <div 
         onClick={() => onSelectTour(tour)}
-        className={`relative rounded-[2rem] border border-black/10 hover:border-orange-400 transition-all duration-500 overflow-hidden flex ${
+        className={`relative rounded-3xl transition-all duration-300 overflow-hidden flex ${
           viewMode === 'list' ? 'flex-col lg:flex-row' : 'flex-col h-full'
-        } group cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.2)] hover:shadow-[0_0_35px_rgba(245,158,11,0.25)] hover:-translate-y-2 bg-[#082319]/90 backdrop-blur-xl border-emerald-500/25 hover:border-amber-400 hover:shadow-[0_0_35px_rgba(245,158,11,0.25)]`}
+        } group cursor-pointer bg-[#07241a] border border-emerald-500/25 hover:border-amber-400 hover:shadow-[0_12px_40px_rgba(0,0,0,0.5)] hover:-translate-y-1`}
       >
-        {/* Image Container */}
-        <div className={`relative overflow-hidden ${viewMode === 'list' ? 'shrink-0 w-full lg:w-[40%] h-48 lg:h-auto' : 'w-full flex-1 min-h-[14rem] sm:min-h-[16rem]'}`}>
-          <LazyImage src={tour.image} alt={titleText} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
-          {/* Soft gradient to ensure top badges are readable */}
-          <div className="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-950/10 to-stone-950/80 pointer-events-none"></div>
+        {/* Image Container with Crisp Aspect Ratio */}
+        <div className={`relative overflow-hidden ${viewMode === 'list' ? 'shrink-0 w-full lg:w-[38%] h-56 lg:h-auto' : 'w-full aspect-[4/3] shrink-0'}`}>
+          <LazyImage src={tour.image} alt={titleText} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out" />
           
-          {/* Top Actions: Badges & Favorites */}
-          <div className="absolute top-0 left-0 w-full p-4 flex items-start justify-between z-10">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {tour.bestseller && (
-                  <span className="bg-orange-500 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-lg">
-                    🔥 Bestseller
-                  </span>
-                )}
-                <span className="bg-green-600/90 backdrop-blur-md text-white text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-green-400 shadow-sm flex items-center gap-1">
-                  <Leaf className="w-3 h-3" />
-                  {language === 'es' ? 'Eco-Sostenible' : 'Eco-Friendly'}
+          {/* Subtle Top & Bottom Gradient Shadows for Legibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/60 pointer-events-none" />
+          
+          {/* Top Row: Clean Highlight Badge & Action Buttons */}
+          <div className="absolute top-0 left-0 w-full p-3.5 flex items-center justify-between z-10">
+            <div>
+              {tour.bestseller ? (
+                <span className="inline-flex items-center gap-1.5 bg-amber-400 text-stone-950 text-xs font-black px-3 py-1 rounded-full shadow-md">
+                  <span>🔥</span>
+                  <span>{language === 'es' ? 'Más Popular' : 'Top Choice'}</span>
                 </span>
-                {tour.freeCancellation && (
-                  <span className="bg-teal-600/90 backdrop-blur-md text-white text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-teal-400 shadow-sm">
-                    {t('freeCancellation')}
-                  </span>
-                )}
-                {tour.maxGroupSize && tour.maxGroupSize >= 8 && (
-                  <span className="bg-purple-600/90 backdrop-blur-md text-white text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-purple-400 shadow-sm">
-                    {language === 'es' ? 'Precios para Grupos' : 'Group Rates'}
-                  </span>
-                )}
-                {tour.tourType && (
-                  <span className="bg-teal-600/90 backdrop-blur-md text-white text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-orange-400 shadow-sm">
-                    {tour.tourType === 'private' ? t('privateTour') : t('groupTour')}
-                  </span>
-                )}
-              </div>
-              
-              <div className="bg-emerald-950/80 backdrop-blur-md text-amber-400 px-2.5 py-1 rounded-full text-xs font-black flex items-center w-fit gap-1 border border-emerald-500/30 shadow-sm">
-                <Star className="w-3.5 h-3.5 fill-orange-400" />
-                <span>{tour.rating}</span>
-                <span className="text-[10px] text-stone-300">({tour.reviewsCount})</span>
-              </div>
+              ) : tour.freeCancellation ? (
+                <span className="inline-flex items-center gap-1 bg-emerald-950/90 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full border border-emerald-400/40 backdrop-blur-md shadow-md">
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{language === 'es' ? 'Cancelación Gratis' : 'Free Cancel'}</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 bg-emerald-950/90 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full border border-emerald-400/40 backdrop-blur-md shadow-md">
+                  <Leaf className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{language === 'es' ? 'Sostenible CST' : 'CST Certified'}</span>
+                </span>
+              )}
             </div>
 
-            <div className="flex flex-col gap-2 items-end">
+            <div className="flex items-center gap-1.5">
               {onToggleFavorite && (
                 <button
                   type="button"
@@ -119,14 +104,15 @@ export const TourCard: React.FC<TourCardProps> = ({
                     e.stopPropagation();
                     onToggleFavorite(tour.id);
                   }}
-                  className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all ${
+                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md ${
                     isFavorite
-                      ? 'bg-rose-500 text-white border-rose-400 scale-110 shadow-lg shadow-rose-500/30'
-                      : 'bg-emerald-950/70 backdrop-blur-md text-stone-100 hover:text-rose-400 border-emerald-500/40 hover:scale-105'
+                      ? 'bg-rose-500 text-white scale-105'
+                      : 'bg-black/60 hover:bg-black/80 text-white backdrop-blur-md border border-white/20'
                   }`}
                   title={isFavorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+                  aria-label="Favorito"
                 >
-                  <Heart className={`w-4.5 h-4.5 ${isFavorite ? 'fill-white' : ''}`} />
+                  <Heart className={`w-4 h-4 ${isFavorite ? 'fill-white' : ''}`} />
                 </button>
               )}
               {onToggleCompare && (
@@ -136,64 +122,74 @@ export const TourCard: React.FC<TourCardProps> = ({
                     e.stopPropagation();
                     onToggleCompare(tour);
                   }}
-                  className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all ${
+                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md ${
                     isCompared
-                      ? 'bg-orange-500 text-white border-orange-400 shadow-lg shadow-orange-500/30'
-                      : 'bg-emerald-950/70 backdrop-blur-md text-stone-100 hover:text-amber-400 border-emerald-500/40 hover:scale-105'
+                      ? 'bg-amber-400 text-stone-950 scale-105 font-bold'
+                      : 'bg-black/60 hover:bg-black/80 text-white backdrop-blur-md border border-white/20'
                   }`}
                   title={t('compareTour')}
+                  aria-label="Comparar"
                 >
-                  {isCompared ? <Check className="w-4.5 h-4.5" /> : <Scale className="w-4.5 h-4.5" />}
+                  {isCompared ? <Check className="w-4 h-4" /> : <Scale className="w-4 h-4" />}
                 </button>
               )}
             </div>
           </div>
+
+          {/* Bottom of Photo: Rating & Duration Chips */}
+          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs font-bold text-white z-10 pointer-events-none">
+            <div className="inline-flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/15">
+              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              <span className="font-extrabold text-white">{tour.rating}</span>
+              <span className="text-stone-300 font-normal">({tour.reviewsCount})</span>
+            </div>
+
+            <div className="inline-flex items-center gap-1 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/15 text-stone-200">
+              <Clock className="w-3.5 h-3.5 text-amber-400" />
+              <span>{durationText}</span>
+            </div>
+          </div>
         </div>
 
-        {/* Content Container */}
-        <div className={`relative z-10 flex flex-col flex-1 p-5 ${viewMode === 'list' ? 'lg:w-[60%]' : ''}`}>
-          <div className="space-y-2 mb-4">
+        {/* Card Content Body */}
+        <div className={`flex flex-col flex-1 p-5 justify-between ${viewMode === 'list' ? 'lg:w-[62%]' : ''}`}>
+          
+          <div className="space-y-2.5">
+            {/* Location Link with Map Trigger */}
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowMiniMap(true);
               }}
-              className="inline-flex items-center gap-1 text-orange-400 hover:text-orange-300 transition-colors text-[11px] font-black uppercase tracking-wider bg-emerald-950/80 px-2.5 py-1 rounded-full border border-emerald-500/40 text-amber-400"
+              className="inline-flex items-center gap-1.5 text-emerald-300 hover:text-amber-300 transition-colors text-xs font-bold uppercase tracking-wider group/loc text-left"
             >
-              <MapPin className="w-3.5 h-3.5" />
-              <span>{tour.location.placeName.split(',')[0]}</span>
+              <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0 group-hover/loc:scale-110 transition-transform" />
+              <span className="underline decoration-emerald-500/40 underline-offset-2">{tour.location.placeName.split(',')[0]}</span>
             </button>
             
-            <h3 className="font-black text-xl sm:text-2xl text-white uppercase leading-tight group-hover:text-amber-400 transition-colors drop-shadow-md">
+            {/* Tour Title */}
+            <h3 className="font-bold text-lg sm:text-xl text-white leading-snug group-hover:text-amber-400 transition-colors">
               {titleText}
             </h3>
-            <p className="text-sm text-emerald-100/80 line-clamp-2 leading-relaxed">
+
+            {/* Description Snippet */}
+            <p className="text-sm text-stone-300 line-clamp-2 leading-relaxed font-normal">
               {subtitleText}
             </p>
-
-            {/* Agency Guarantee Ribbon */}
-            <div className="flex items-center gap-2 pt-1">
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300 bg-emerald-950/70 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                <Shield className="w-3 h-3 text-orange-400" />
-                <span>{language === 'es' ? 'Servicio Receptivo Garantizado' : 'Guaranteed Inbound Service'}</span>
-              </span>
-            </div>
           </div>
 
-          {/* Catalog Footer Actions */}
-          <div className="flex items-end justify-between mt-auto pt-4 border-t border-black/10">
-            <div className="space-y-1">
-              <span className="bg-emerald-950/80 text-amber-300 px-2.5 py-0.5 rounded-md font-bold uppercase text-[10px] tracking-wider inline-block mb-1 border border-emerald-500/30">
-                {durationText}
+          {/* Footer: Clear Price & Primary Action */}
+          <div className="flex items-center justify-between pt-4 mt-4 border-t border-emerald-500/20">
+            <div className="space-y-0.5">
+              <span className="text-xs text-stone-400 font-medium block">
+                {language === 'es' ? 'Precio por persona' : 'Price per person'}
               </span>
               <div className="flex items-baseline gap-1">
-                <span className="text-[10px] font-bold uppercase text-emerald-200/70 mr-1">
-                  {t('fromPrice')}
+                <span className="text-2xl font-black text-amber-400 tracking-tight">
+                  {formattedPrice}
                 </span>
-                <span className="text-2xl font-black text-amber-400">
-                  {formattedPrice} {currency}
-                </span>
+                <span className="text-xs font-bold text-stone-300">{currency}</span>
               </div>
             </div>
 
@@ -203,7 +199,7 @@ export const TourCard: React.FC<TourCardProps> = ({
                 e.stopPropagation();
                 onSelectTour(tour);
               }}
-              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 border border-amber-300/40 text-stone-950 font-black px-4 sm:px-5 py-2.5 rounded-xl flex items-center justify-center transition-transform shadow-lg group-hover:scale-105 cursor-pointer flex-shrink-0 gap-2 text-xs uppercase"
+              className="bg-amber-400 hover:bg-amber-300 text-stone-950 font-black px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs uppercase tracking-wide transition-all shadow-md group-hover:scale-105 cursor-pointer"
             >
               <span>{t('checkDetails')}</span>
               <ArrowRight className="w-4 h-4" />
