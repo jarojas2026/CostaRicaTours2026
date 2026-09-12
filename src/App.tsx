@@ -463,6 +463,8 @@ export default function App() {
               }}
               onExitMap={() => setActiveTab('tours')}
               onSelectTour={(t) => setSelectedTour(t)}
+              onOpenItineraryTab={() => setIsCustomFunnelOpen(true)}
+              onOpenLocalBusesModal={() => setIsLocalBusesOpen(true)}
             />
           </div>
         )}

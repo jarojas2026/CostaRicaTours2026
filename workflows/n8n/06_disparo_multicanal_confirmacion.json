@@ -42,7 +42,7 @@
     {
       "parameters": {
         "operation": "sendMessage",
-        "chatId": "PENDIENTE_CONFIGURAR_CHAT_ID",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID || '-1002489148001' }}",
         "text": "=🔔 *NUEVA RESERVA CONFIRMADA* 🇨🇷\n\n📌 *ID:* `{{ $json.bookingId }}`\n🌲 *Tour:* {{ $json.tourName }}\n📅 *Fecha:* {{ $json.date }} - {{ $json.time }}\n👥 *Pax:* {{ $json.totalPax }} ({{ $json.adults }} adultos, {{ $json.children }} niños)\n👤 *Cliente:* {{ $json.customerName }}\n📞 *Tel:* {{ $json.customerPhone }}\n🏨 *Hotel:* {{ $json.pickup }}\n💰 *Monto:* ${{ $json.totalUSD }} USD (Acreditado)\n\n✅ Operador y guía asignados en cola automática.",
         "additionalFields": {
           "parse_mode": "Markdown"

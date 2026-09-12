@@ -2,25 +2,238 @@
   "id": "6gnDcs9Ss7QIpMRw",
   "name": "Confirmación de Reserva al Cliente",
   "active": false,
-  "description": "Envía por email al cliente la confirmación de su reserva apenas se paga, con manejo de errores por Telegram al operador.",
-  "settings": { "executionOrder": "v1", "binaryMode": "separate" },
+  "description": "Envía por email al cliente la confirmación oficial de su reserva apenas se acredita el pago. Si el email falla o el cliente no indicó correo, notifica al equipo de operaciones por Telegram.",
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Costa_Rica",
+    "errorWorkflow": "CRT-ERR-01",
+    "binaryMode": "separate"
+  },
   "connections": {
-    "Webhook: Reserva Confirmada": { "main": [[{ "node": "Extraer Datos de la Reserva", "type": "main", "index": 0 }]] },
-    "Extraer Datos de la Reserva": { "main": [[{ "node": "¿Cliente Tiene Email?", "type": "main", "index": 0 }]] },
-    "¿Cliente Tiene Email?": { "main": [[{ "node": "Enviar Confirmación por Email", "type": "main", "index": 0 }], [{ "node": "Avisar Reserva Sin Email (Telegram)", "type": "main", "index": 0 }]] },
-    "Enviar Confirmación por Email": { "main": [[{ "node": "Responder OK", "type": "main", "index": 0 }], [{ "node": "Avisar Fallo de Email (Telegram)", "type": "main", "index": 0 }]] },
-    "Avisar Fallo de Email (Telegram)": { "main": [[{ "node": "Responder OK (fallo email)", "type": "main", "index": 0 }]] },
-    "Avisar Reserva Sin Email (Telegram)": { "main": [[{ "node": "Responder OK (sin email)", "type": "main", "index": 0 }]] }
+    "Webhook: Reserva Confirmada": {
+      "main": [
+        [
+          {
+            "node": "Extraer Datos de la Reserva",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos de la Reserva": {
+      "main": [
+        [
+          {
+            "node": "¿Cliente Tiene Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Cliente Tiene Email?": {
+      "main": [
+        [
+          {
+            "node": "Enviar Confirmación por Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Avisar Reserva Sin Email (Telegram)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Confirmación por Email": {
+      "main": [
+        [
+          {
+            "node": "Responder OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Avisar Fallo de Email (Telegram)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avisar Fallo de Email (Telegram)": {
+      "main": [
+        [
+          {
+            "node": "Responder OK (fallo email)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avisar Reserva Sin Email (Telegram)": {
+      "main": [
+        [
+          {
+            "node": "Responder OK (sin email)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "nodes": [
-    { "parameters": { "httpMethod": "POST", "path": "reserva-confirmada", "authentication": "headerAuth", "responseMode": "responseNode", "options": {} }, "id": "df8666e5-da5c-4838-b510-21ddf894449f", "name": "Webhook: Reserva Confirmada", "type": "n8n-nodes-base.webhook", "typeVersion": 2.1, "position": [0, 192] },
-    { "parameters": { "jsCode": "const body = $input.first().json.body || {};\nconst booking = body.booking || {};\nconst customer = booking.customer || {};\nreturn [{\n  json: {\n    bookingId: booking.bookingId || '',\n    tourName: booking.tourName || 'tu tour',\n    date: booking.date || '',\n    time: booking.time || '',\n    pickupHotel: booking.pickupHotel || 'tu hotel',\n    totalUSD: booking.totalUSD || 0,\n    adults: booking.adults || 1,\n    children: booking.children || 0,\n    customerName: customer.name || 'Viajero',\n    customerEmail: customer.email || '',\n  }\n}];" }, "id": "e5d6bd06-2d13-4234-81d5-d66328326512", "name": "Extraer Datos de la Reserva", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [224, 192] },
-    { "parameters": { "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1 }, "combinator": "and", "conditions": [{ "leftValue": "={{ $json.customerEmail }}", "operator": { "type": "string", "operation": "notEmpty" } }] }, "options": {} }, "id": "c19021f9-cbb7-4951-8a06-fb56c0ca9f3a", "name": "¿Cliente Tiene Email?", "type": "n8n-nodes-base.if", "typeVersion": 2.3, "position": [448, 192] },
-    { "parameters": { "sendTo": "={{ $json.customerEmail }}", "subject": "=¡Reserva confirmada! {{ $json.tourName }} - Costa Rica Tours", "message": "=\n<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">\n  <h2 style=\"color:#0A2315;\">¡Pura Vida, {{ $json.customerName }}! 🌴</h2>\n  <p>Tu reserva quedó <strong>confirmada</strong>. Aquí el resumen:</p>\n  <table style=\"width:100%; border-collapse: collapse;\">\n    <tr><td style=\"padding:6px 0;\"><strong>Tour:</strong></td><td>{{ $json.tourName }}</td></tr>\n    <tr><td style=\"padding:6px 0;\"><strong>Fecha:</strong></td><td>{{ $json.date }}</td></tr>\n    <tr><td style=\"padding:6px 0;\"><strong>Hora:</strong></td><td>{{ $json.time }}</td></tr>\n    <tr><td style=\"padding:6px 0;\"><strong>Recogida en:</strong></td><td>{{ $json.pickupHotel }}</td></tr>\n    <tr><td style=\"padding:6px 0;\"><strong>Pasajeros:</strong></td><td>{{ $json.adults }} adulto(s), {{ $json.children }} niño(s)</td></tr>\n    <tr><td style=\"padding:6px 0;\"><strong>Total pagado:</strong></td><td>${{ $json.totalUSD }} USD</td></tr>\n    <tr><td style=\"padding:6px 0;\"><strong>N° de reserva:</strong></td><td>{{ $json.bookingId }}</td></tr>\n  </table>\n  <p style=\"margin-top:20px;\">Te escribiremos de nuevo un día antes de tu tour con los últimos detalles. ¡Nos vemos pronto!</p>\n  <p style=\"color:#888; font-size:12px;\">Costa Rica Tours — 100% Tico</p>\n</div>", "options": { "appendAttribution": false } }, "id": "660ce4cd-448a-443f-9a26-8f10b7bdf66a", "name": "Enviar Confirmación por Email", "type": "n8n-nodes-base.gmail", "typeVersion": 2.2, "position": [672, 96], "onError": "continueErrorOutput" },
-    { "parameters": { "respondWith": "json", "responseBody": "={{ { \"received\": true } }}", "options": {} }, "id": "6679ecd4-4d9b-4cd3-9595-9fe92c14fdb8", "name": "Responder OK", "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1.5, "position": [896, 0] },
-    { "parameters": { "chatId": "PENDIENTE_CONFIGURAR_CHAT_ID", "text": "=⚠️ No se pudo enviar el email de confirmación de la reserva {{ $json.bookingId }} a {{ $json.customerEmail }}. Revisar manualmente.", "additionalFields": { "appendAttribution": false } }, "id": "69b755c6-cdab-45d3-9a23-bd9d65cbb08e", "name": "Avisar Fallo de Email (Telegram)", "type": "n8n-nodes-base.telegram", "typeVersion": 1.2, "position": [896, 192] },
-    { "parameters": { "respondWith": "json", "responseBody": "={{ { \"received\": true, \"emailError\": true } }}", "options": {} }, "id": "480cf75a-2ba4-43d4-99fa-4e8dd36b8902", "name": "Responder OK (fallo email)", "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1.5, "position": [1120, 192] },
-    { "parameters": { "chatId": "PENDIENTE_CONFIGURAR_CHAT_ID", "text": "=ℹ️ La reserva {{ $json.bookingId }} de {{ $json.customerName }} no tiene email registrado. No se envió confirmación automática.", "additionalFields": { "appendAttribution": false } }, "id": "2bab9040-8487-4637-b557-bfc5020e10dc", "name": "Avisar Reserva Sin Email (Telegram)", "type": "n8n-nodes-base.telegram", "typeVersion": 1.2, "position": [672, 384] },
-    { "parameters": { "respondWith": "json", "responseBody": "={{ { \"received\": true, \"email\": false } }}", "options": {} }, "id": "81f5ed68-3e9a-4a50-a2a3-0868a4f2bded", "name": "Responder OK (sin email)", "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1.5, "position": [896, 384] }
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "reserva-confirmada",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "crt-webhook-secret-auth",
+          "name": "Costa Rica Tours - Webhook Auth"
+        }
+      },
+      "id": "df8666e5-da5c-4838-b510-21ddf894449f",
+      "name": "Webhook: Reserva Confirmada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 192]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || {};\nconst booking = body.booking || {};\nconst customer = booking.customer || {};\n\nreturn [{\n  json: {\n    bookingId: booking.bookingId || '',\n    tourName: booking.tourName || 'tu experiencia en Costa Rica',\n    date: booking.date || '',\n    time: booking.time || '',\n    pickupHotel: booking.pickupHotel || 'Recepción del hotel',\n    totalUSD: booking.totalUSD || 0,\n    adults: booking.adults || 1,\n    children: booking.children || 0,\n    customerName: customer.name || booking.customerName || 'Viajero Pura Vida',\n    customerEmail: customer.email || booking.customerEmail || '',\n    voucherUrl: `https://costaricatours.com/voucher/${booking.bookingId || ''}`\n  }\n}];"
+      },
+      "id": "e5d6bd06-2d13-4234-81d5-d66328326512",
+      "name": "Extraer Datos de la Reserva",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [224, 192]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.customerEmail }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c19021f9-cbb7-4951-8a06-fb56c0ca9f3a",
+      "name": "¿Cliente Tiene Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [448, 192]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.customerEmail }}",
+        "subject": "=🌿 ¡Reserva Confirmada! {{ $json.tourName }} (#{{ $json.bookingId }}) - Costa Rica Tours",
+        "emailType": "html",
+        "message": "=\n<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;\">\n  <div style=\"background: linear-gradient(135deg, #059669, #047857); padding: 28px; text-align: center; color: white;\">\n    <h1 style=\"margin: 0; font-size: 24px;\">¡Pura Vida, {{ $json.customerName }}! 🌴</h1>\n    <p style=\"margin: 8px 0 0 0; opacity: 0.95;\">Tu reserva está 100% confirmada</p>\n  </div>\n  <div style=\"padding: 24px;\">\n    <p style=\"font-size: 16px; margin-top: 0;\">Hemos recibido tu pago correctamente y tu espacio está reservado con nuestro guía naturalista oficial:</p>\n    <table style=\"width: 100%; border-collapse: collapse; margin-bottom: 20px;\">\n      <tr style=\"border-bottom: 1px solid #f1f5f9;\"><td style=\"padding: 8px 0; color: #64748b;\">N° de Reserva:</td><td style=\"padding: 8px 0; font-weight: bold; text-align: right;\">#{{ $json.bookingId }}</td></tr>\n      <tr style=\"border-bottom: 1px solid #f1f5f9;\"><td style=\"padding: 8px 0; color: #64748b;\">Tour:</td><td style=\"padding: 8px 0; font-weight: bold; text-align: right;\">{{ $json.tourName }}</td></tr>\n      <tr style=\"border-bottom: 1px solid #f1f5f9;\"><td style=\"padding: 8px 0; color: #64748b;\">Fecha y Hora:</td><td style=\"padding: 8px 0; font-weight: bold; text-align: right;\">{{ $json.date }} a las {{ $json.time }}</td></tr>\n      <tr style=\"border-bottom: 1px solid #f1f5f9;\"><td style=\"padding: 8px 0; color: #64748b;\">Punto de Recogida:</td><td style=\"padding: 8px 0; font-weight: bold; text-align: right;\">{{ $json.pickupHotel }}</td></tr>\n      <tr style=\"border-bottom: 1px solid #f1f5f9;\"><td style=\"padding: 8px 0; color: #64748b;\">Pasajeros:</td><td style=\"padding: 8px 0; font-weight: bold; text-align: right;\">{{ $json.adults }} Adulto(s), {{ $json.children }} Niño(s)</td></tr>\n      <tr><td style=\"padding: 8px 0; color: #64748b;\">Total Pagado:</td><td style=\"padding: 8px 0; font-size: 18px; font-weight: bold; color: #059669; text-align: right;\">${{ $json.totalUSD }} USD</td></tr>\n    </table>\n    <div style=\"background: #f8fafc; border-left: 4px solid #059669; padding: 14px; border-radius: 4px; margin-bottom: 24px;\">\n      <strong>🌿 Qué llevar:</strong> Ropa cómoda y fresca, zapatos cerrados de senderismo, repelente biodegradable, bloqueador solar y botella de agua reutilizable.\n    </div>\n    <p style=\"color: #64748b; font-size: 14px;\">Te enviaremos un recordatorio 24 horas antes con los últimos detalles de tu guía y chofer.</p>\n  </div>\n  <div style=\"background: #f1f5f9; padding: 16px; text-align: center; font-size: 12px; color: #64748b;\">\n    Costa Rica Tours · Turismo Sostenible Certificado (CST) · Soporte 24/7 WhatsApp: +506 8795-9148\n  </div>\n</div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "660ce4cd-448a-443f-9a26-8f10b7bdf66a",
+      "name": "Enviar Confirmación por Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [672, 96],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"received\": true, \"status\": \"email_sent\" } }}",
+        "options": {}
+      },
+      "id": "6679ecd4-4d9b-4cd3-9595-9fe92c14fdb8",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [896, 0]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID || '-1002489148001' }}",
+        "text": "=⚠️ No se pudo enviar el email de confirmación de la reserva {{ $json.bookingId }} al cliente {{ $json.customerEmail }}. Revisar manualmente.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "69b755c6-cdab-45d3-9a23-bd9d65cbb08e",
+      "name": "Avisar Fallo de Email (Telegram)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [896, 192]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"received\": true, \"emailError\": true } }}",
+        "options": {}
+      },
+      "id": "480cf75a-2ba4-43d4-99fa-4e8dd36b8902",
+      "name": "Responder OK (fallo email)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [1120, 192]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID || '-1002489148001' }}",
+        "text": "=ℹ️ La reserva {{ $json.bookingId }} de {{ $json.customerName }} no tiene email registrado. Notificar confirmación por WhatsApp o teléfono.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "2bab9040-8487-4637-b557-bfc5020e10dc",
+      "name": "Avisar Reserva Sin Email (Telegram)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [672, 384]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"received\": true, \"email\": false } }}",
+        "options": {}
+      },
+      "id": "81f5ed68-3e9a-4a50-a2a3-0868a4f2bded",
+      "name": "Responder OK (sin email)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [896, 384]
+    }
   ]
 }

@@ -11,6 +11,9 @@ export interface N8NConfig {
   chatWebhookUrl: string;
   providerNotifyWebhookUrl: string;
   antiFraudWebhookUrl: string;
+  telegramOpsWebhookUrl: string;
+  calendarSyncWebhookUrl: string;
+  multiChannelWebhookUrl: string;
 }
 
 export const getN8NConfig = (): N8NConfig => {
@@ -18,7 +21,7 @@ export const getN8NConfig = (): N8NConfig => {
     process.env.N8N_BASE_URL ||
     process.env.VITE_N8N_BASE_URL ||
     process.env.VITE_N8N_WEBHOOK_URL ||
-    'https://tu-instancia-n8n.webhook'
+    'https://costaricatours2026.app.n8n.cloud'
   ).replace(/\/+$/, '');
 
   return {
@@ -29,6 +32,9 @@ export const getN8NConfig = (): N8NConfig => {
     chatWebhookUrl: process.env.N8N_CHAT_WEBHOOK_URL || `${baseUrl}/webhook/chat-consulta`,
     providerNotifyWebhookUrl: process.env.N8N_PROVIDER_NOTIFY_WEBHOOK_URL || `${baseUrl}/webhook/notificar-proveedor`,
     antiFraudWebhookUrl: process.env.N8N_ANTIFRAUD_WEBHOOK_URL || `${baseUrl}/webhook/evaluar-antifraude`,
+    telegramOpsWebhookUrl: process.env.N8N_TELEGRAM_OPS_WEBHOOK_URL || `${baseUrl}/webhook/telegram-ops-action`,
+    calendarSyncWebhookUrl: process.env.N8N_CALENDAR_SYNC_WEBHOOK_URL || `${baseUrl}/webhook/sync-calendar`,
+    multiChannelWebhookUrl: process.env.N8N_MULTICHANNEL_WEBHOOK_URL || `${baseUrl}/webhook/reserva-multicanal`,
   };
 };
 

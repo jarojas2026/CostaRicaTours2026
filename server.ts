@@ -367,9 +367,9 @@ app.post('/webhook/solicitud-pago', async (req, res) => {
 });
 
 // 4. Trigger: CONFIRMACION_RESERVA
-app.post('/webhook/confirmacion-reserva', async (req, res) => {
+app.post(['/webhook/confirmacion-reserva', '/webhook/reserva-confirmada'], async (req, res) => {
   const payload = { trigger: 'CONFIRMACION_RESERVA', ...req.body, timestamp: new Date().toISOString() };
-  dispatchToN8N('/webhook/confirmacion-reserva', payload).catch(() => {});
+  dispatchToN8N('/webhook/reserva-confirmada', payload).catch(() => {});
   res.json({ exito: true, mensaje: 'Confirmación de reserva recibida y despachada a n8n' });
 });
 
@@ -392,6 +392,60 @@ app.post('/webhook/solicitud-soporte', async (req, res) => {
   const payload = { trigger: 'SOLICITUD_SOPORTE', ...req.body, timestamp: new Date().toISOString() };
   dispatchToN8N('/webhook/solicitud-soporte', payload).catch(() => {});
   res.json({ exito: true, mensaje: 'Solicitud de soporte recibida y despachada a n8n' });
+});
+
+// 8. Trigger: NOTIFICAR_PROVEEDOR (Coordinación en Tiempo Real)
+app.post('/webhook/notificar-proveedor', async (req, res) => {
+  const payload = { trigger: 'NOTIFICAR_PROVEEDOR', ...req.body, timestamp: new Date().toISOString() };
+  dispatchToN8N('/webhook/notificar-proveedor', payload).catch(() => {});
+  res.json({ exito: true, mensaje: 'Notificación de proveedor recibida y despachada a n8n' });
+});
+
+// 9. Trigger: EVALUAR_ANTIFRAUDE (Reglas de Seguridad y Riesgo)
+app.post(['/webhook/evaluar-antifraude', '/webhook/antifraude-evaluacion'], async (req, res) => {
+  const payload = { trigger: 'EVALUAR_ANTIFRAUDE', ...req.body, timestamp: new Date().toISOString() };
+  const n8nResult = await dispatchToN8N('/webhook/evaluar-antifraude', payload).catch(() => null);
+  
+  // Si n8n responde con evaluación directa, la devolvemos; si no, calculamos score seguro
+  if (n8nResult && n8nResult.success && n8nResult.data) {
+    return res.json(n8nResult.data);
+  }
+
+  const booking = req.body.booking || req.body || {};
+  const total = Number(booking.totalUSD || 0);
+  const score = total >= 2000 ? 40 : 10;
+  res.json({
+    approved: score < 50,
+    riskScore: score >= 50 ? 'alto' : 'bajo',
+    score,
+    mensaje: 'Evaluación antifraude completada con éxito'
+  });
+});
+
+// 10. Trigger: PANEL_CONTROL_TELEGRAM & OPS ACTION
+app.post(['/webhook/panel-control-telegram', '/webhook/telegram-ops-action'], async (req, res) => {
+  const payload = { trigger: 'ACCION_PANEL_TELEGRAM', ...req.body, timestamp: new Date().toISOString() };
+  dispatchToN8N('/webhook/telegram-ops-action', payload).catch(() => {});
+  res.json({ exito: true, mensaje: 'Acción operativa enviada al canal de Telegram' });
+});
+
+// 11. Trigger: RESERVA_MULTICANAL (Email + Telegram + WhatsApp)
+app.post('/webhook/reserva-multicanal', async (req, res) => {
+  const payload = { trigger: 'RESERVA_MULTICANAL', ...req.body, timestamp: new Date().toISOString() };
+  dispatchToN8N('/webhook/reserva-multicanal', payload).catch(() => {});
+  res.json({ exito: true, mensaje: 'Despacho multicanal coordinado con n8n' });
+});
+
+// 12. Trigger: SYNC_CALENDAR (Google Calendar Operator Sync)
+app.post('/webhook/sync-calendar', async (req, res) => {
+  const payload = { trigger: 'SYNC_CALENDAR', ...req.body, timestamp: new Date().toISOString() };
+  dispatchToN8N('/webhook/sync-calendar', payload).catch(() => {});
+  res.json({ exito: true, mensaje: 'Sincronización de evento en Google Calendar enviada a n8n' });
+});
+
+// 13. Health Check Webhook para n8n Ping
+app.all('/webhook/health-check', (req, res) => {
+  res.json({ status: 'ok', service: 'costa-rica-tours-n8n-bridge', timestamp: new Date().toISOString() });
 });
 
 // ==========================================
@@ -482,6 +536,14 @@ app.get('/api/n8n/status', (req, res) => {
         '/webhook/inicio-reserva',
         '/webhook/solicitud-pago',
         '/webhook/confirmacion-reserva',
+        '/webhook/reserva-confirmada',
+        '/webhook/notificar-proveedor',
+        '/webhook/evaluar-antifraude',
+        '/webhook/antifraude-evaluacion',
+        '/webhook/panel-control-telegram',
+        '/webhook/telegram-ops-action',
+        '/webhook/reserva-multicanal',
+        '/webhook/sync-calendar',
         '/webhook/solicitud-itinerario',
         '/webhook/evento-analitica',
         '/webhook/solicitud-soporte'

@@ -1,0 +1,73 @@
+{
+  "id": "CRT-ERR-01",
+  "name": "Manejador Global de Errores n8n",
+  "active": true,
+  "description": "Intercepta automáticamente cualquier fallo no controlado en los workflows de Costa Rica Tours y emite una alerta inmediata con detalles técnicos por Telegram al equipo de operaciones.",
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Costa_Rica",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Formatear Alerta de Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Alerta de Error": {
+      "main": [
+        [
+          {
+            "node": "Avisar Error Crítico (Telegram)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "8f1a23b4-5c6d-4e7f-8a9b-0c1d2e3f4a5b",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [0, 200],
+      "parameters": {}
+    },
+    {
+      "id": "7e2b34c5-6d7e-4f8a-9b0c-1d2e3f4a5b6c",
+      "name": "Formatear Alerta de Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 200],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const item = $input.first().json || {};\nconst wf = item.workflow || {};\nconst execution = item.execution || {};\nconst error = execution.error || item.error || {};\n\nconst wfName = wf.name || 'Workflow desconocido';\nconst wfId = wf.id || 'N/A';\nconst execId = execution.id || 'N/A';\nconst nodeName = error.node?.name || 'Nodo no especificado';\nconst errorMessage = error.message || 'Error no detallado';\nconst timestamp = new Date().toISOString();\n\nconst LF = String.fromCharCode(10);\nconst mensaje = [\n  '🚨 ALERTA CRÍTICA: Fallo en Workflow n8n',\n  '',\n  `• Workflow: ${wfName} (${wfId})`,\n  `• Nodo fallido: ${nodeName}`,\n  `• ID Ejecución: ${execId}`,\n  `• Hora (CR): ${timestamp}`,\n  '',\n  `• Detalle del error:`,\n  `${errorMessage}`,\n  '',\n  '⚠️ Se requiere revisión técnica en la consola de n8n.'\n].join(LF);\n\nreturn [{ json: { mensaje, wfName, execId, nodeName, errorMessage } }];"
+      }
+    },
+    {
+      "id": "6d3c45d6-7e8f-4a9b-0c1d-2e3f4a5b6c7d",
+      "name": "Avisar Error Crítico (Telegram)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [480, 200],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID || '-1002489148001' }}",
+        "text": "={{ $json.mensaje }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      }
+    }
+  ]
+}

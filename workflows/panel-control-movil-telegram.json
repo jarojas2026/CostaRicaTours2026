@@ -3,48 +3,548 @@
   "name": "Panel de Control Móvil vía Telegram",
   "active": false,
   "description": "Permite al operador consultar el estado de la operación y gestionar reservas en tiempo real mediante comandos de Telegram (/hoy, /reservas, /buscar [id], /confirmar [id], /alertas, /ayuda). Conecta directamente a Firestore.",
-  "settings": { "executionOrder": "v1" },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Costa_Rica",
+    "errorWorkflow": "CRT-ERR-01"
+  },
   "connections": {
-    "Telegram Trigger": { "main": [[{ "node": "Parsear Comando", "type": "main", "index": 0 }]] },
-    "Parsear Comando": { "main": [[{ "node": "Enrutar Comando", "type": "main", "index": 0 }]] },
-    "Enrutar Comando": {
+    "Telegram Trigger": {
       "main": [
-        [{ "node": "Buscar Reservas (Comando Hoy)", "type": "main", "index": 0 }],
-        [{ "node": "Buscar Reservas Recientes", "type": "main", "index": 0 }],
-        [{ "node": "Buscar Reserva Específica", "type": "main", "index": 0 }],
-        [{ "node": "Confirmar Reserva Manual", "type": "main", "index": 0 }],
-        [{ "node": "Buscar Escalaciones Abiertas", "type": "main", "index": 0 }],
-        [{ "node": "Enviar Menú de Ayuda", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Parsear Comando",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Buscar Reservas (Comando Hoy)": { "main": [[{ "node": "Formatear Tours de Hoy", "type": "main", "index": 0 }]] },
-    "Formatear Tours de Hoy": { "main": [[{ "node": "Responder Mensaje Hoy", "type": "main", "index": 0 }]] },
-    "Buscar Reservas Recientes": { "main": [[{ "node": "Formatear Reservas Recientes", "type": "main", "index": 0 }]] },
-    "Formatear Reservas Recientes": { "main": [[{ "node": "Responder Reservas Recientes", "type": "main", "index": 0 }]] },
-    "Buscar Reserva Específica": { "main": [[{ "node": "Formatear Detalle de Reserva", "type": "main", "index": 0 }]] },
-    "Formatear Detalle de Reserva": { "main": [[{ "node": "Responder Detalle Reserva", "type": "main", "index": 0 }]] },
-    "Confirmar Reserva Manual": { "main": [[{ "node": "Responder Confirmación Exitosa", "type": "main", "index": 0 }]] },
-    "Buscar Escalaciones Abiertas": { "main": [[{ "node": "Formatear Escalaciones", "type": "main", "index": 0 }]] },
-    "Formatear Escalaciones": { "main": [[{ "node": "Responder Escalaciones", "type": "main", "index": 0 }]] }
+    "Parsear Comando": {
+      "main": [
+        [
+          {
+            "node": "Enrutar Comando",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrutar Comando": {
+      "main": [
+        [
+          {
+            "node": "Buscar Reservas (Comando Hoy)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Reservas Recientes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Reserva Específica",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Confirmar Reserva Manual",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Escalaciones Abiertas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar Menú de Ayuda",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Reservas (Comando Hoy)": {
+      "main": [
+        [
+          {
+            "node": "Formatear Tours de Hoy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Tours de Hoy": {
+      "main": [
+        [
+          {
+            "node": "Responder Mensaje Hoy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Reservas Recientes": {
+      "main": [
+        [
+          {
+            "node": "Formatear Reservas Recientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Reservas Recientes": {
+      "main": [
+        [
+          {
+            "node": "Responder Reservas Recientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Reserva Específica": {
+      "main": [
+        [
+          {
+            "node": "Formatear Detalle de Reserva",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Detalle de Reserva": {
+      "main": [
+        [
+          {
+            "node": "Responder Detalle Reserva",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirmar Reserva Manual": {
+      "main": [
+        [
+          {
+            "node": "Responder Confirmación Exitosa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Escalaciones Abiertas": {
+      "main": [
+        [
+          {
+            "node": "Formatear Escalaciones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Escalaciones": {
+      "main": [
+        [
+          {
+            "node": "Responder Escalaciones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "nodes": [
-    { "id": "1b08ce91-a1b7-4c4f-9e32-a50d2bc4a890", "name": "Telegram Trigger", "type": "n8n-nodes-base.telegramTrigger", "typeVersion": 1.1, "position": [0, 480], "parameters": { "updates": ["message"] } },
-    { "id": "3c98b671-558e-4a62-a279-d58e3981ac12", "name": "Parsear Comando", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [224, 480], "parameters": { "mode": "runOnceForAllItems", "language": "javaScript", "jsCode": "const msg = $input.first().json.message || {};\nconst text = String(msg.text || '').trim();\nconst chatId = msg.chat?.id || '';\n\nconst parts = text.split(/\\s+/);\nlet rawCmd = (parts[0] || '').toLowerCase().replace('/', '').split('@')[0];\nconst arg = parts.slice(1).join(' ').trim();\n\nconst validCommands = ['hoy', 'reservas', 'buscar', 'confirmar', 'alertas', 'ayuda', 'start'];\nif (!validCommands.includes(rawCmd)) {\n  rawCmd = 'ayuda';\n}\nif (rawCmd === 'start') {\n  rawCmd = 'ayuda';\n}\n\nreturn [{\n  json: {\n    command: rawCmd,\n    arg: arg,\n    chatId: String(chatId),\n    user: msg.from?.first_name || 'Operador'\n  }\n}];" } },
-    { "id": "f5195ea1-455b-4229-87a3-e71167732a90", "name": "Enrutar Comando", "type": "n8n-nodes-base.switch", "typeVersion": 3, "position": [448, 480], "parameters": { "mode": "rules", "rules": { "values": [{ "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 }, "combinator": "and", "conditions": [{ "leftValue": "={{ $json.command }}", "rightValue": "hoy", "operator": { "type": "string", "operation": "equals" } }] } }, { "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 }, "combinator": "and", "conditions": [{ "leftValue": "={{ $json.command }}", "rightValue": "reservas", "operator": { "type": "string", "operation": "equals" } }] } }, { "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 }, "combinator": "and", "conditions": [{ "leftValue": "={{ $json.command }}", "rightValue": "buscar", "operator": { "type": "string", "operation": "equals" } }] } }, { "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 }, "combinator": "and", "conditions": [{ "leftValue": "={{ $json.command }}", "rightValue": "confirmar", "operator": { "type": "string", "operation": "equals" } }] } }, { "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 }, "combinator": "and", "conditions": [{ "leftValue": "={{ $json.command }}", "rightValue": "alertas", "operator": { "type": "string", "operation": "equals" } }] } }] }, "fallbackOutput": { "extraOutputs": 1 } } },
-    { "id": "c76d29b1-6b58-4509-967a-1158a1835bc1", "name": "Buscar Reservas (Comando Hoy)", "type": "n8n-nodes-base.googleFirebaseCloudFirestore", "typeVersion": 1.1, "position": [672, 96], "parameters": { "resource": "document", "operation": "query", "authentication": "serviceAccount", "projectId": "gen-lang-client-0782739149", "query": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"bookings\"}],\"where\":{\"fieldFilter\":{\"field\":{\"fieldPath\":\"status\"},\"op\":\"EQUAL\",\"value\":{\"stringValue\":\"confirmada\"}}}}}", "simple": true } },
-    { "id": "4921ca87-0b1a-4712-9c1e-36fa89c091d3", "name": "Formatear Tours de Hoy", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [896, 96], "parameters": { "mode": "runOnceForAllItems", "language": "javaScript", "jsCode": "const hoyStr = new Date().toISOString().slice(0, 10);\nconst items = $input.all().filter(i => Object.keys(i.json).length > 0).map(i => i.json);\nconst toursHoy = items.filter(b => String(b.date || '').slice(0, 10) === hoyStr);\n\nconst LF = String.fromCharCode(10);\nlet msg = '';\nif (toursHoy.length === 0) {\n  msg = `🌴 No hay tours programados para hoy (${hoyStr}).`;\n} else {\n  const lines = toursHoy.map((b, idx) => {\n    const p = (parseInt(b.adults || 1, 10) + parseInt(b.children || 0, 10));\n    return `${idx + 1}. [${b.time || 'Hora s/d'}] ${b.tourName || 'Tour'} — ${p} pax — Hotel: ${b.pickupHotel || 'Por confirmar'} (Reserva: ${b.bookingId})`;\n  });\n  msg = [`🌴 Tours programados para HOY (${hoyStr}):`, ...lines].join(LF);\n}\nreturn [{ json: { text: msg, chatId: $('Parsear Comando').item.json.chatId } }];" } },
-    { "id": "41680d6b-b26a-4ba9-bca1-74f464d42019", "name": "Responder Mensaje Hoy", "type": "n8n-nodes-base.telegram", "typeVersion": 1.2, "position": [1120, 96], "parameters": { "resource": "message", "operation": "sendMessage", "chatId": "={{ $json.chatId }}", "text": "={{ $json.text }}", "additionalFields": { "appendAttribution": false } } },
-    { "id": "890ba123-5e91-4567-a021-ef123456789a", "name": "Buscar Reservas Recientes", "type": "n8n-nodes-base.googleFirebaseCloudFirestore", "typeVersion": 1.1, "position": [672, 288], "parameters": { "resource": "document", "operation": "query", "authentication": "serviceAccount", "projectId": "gen-lang-client-0782739149", "query": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"bookings\"}],\"limit\":10}}", "simple": true } },
-    { "id": "780ea234-6f02-4678-b132-fa234567890b", "name": "Formatear Reservas Recientes", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [896, 288], "parameters": { "mode": "runOnceForAllItems", "language": "javaScript", "jsCode": "const items = $input.all().filter(i => Object.keys(i.json).length > 0).map(i => i.json);\nconst LF = String.fromCharCode(10);\nlet msg = '';\nif (items.length === 0) {\n  msg = 'No se encontraron reservas en el sistema.';\n} else {\n  const lines = items.slice(0, 8).map(b => {\n    const cliente = b.customer?.name || 'Cliente';\n    return `• ${b.bookingId}: ${b.tourName || 'Tour'} | ${b.date} | $${b.totalUSD} USD [${b.status}] - ${cliente}`;\n  });\n  msg = ['📋 Últimas reservas registradas:', ...lines].join(LF);\n}\nreturn [{ json: { text: msg, chatId: $('Parsear Comando').item.json.chatId } }];" } },
-    { "id": "51290e54-7013-4789-c243-0b345678901c", "name": "Responder Reservas Recientes", "type": "n8n-nodes-base.telegram", "typeVersion": 1.2, "position": [1120, 288], "parameters": { "resource": "message", "operation": "sendMessage", "chatId": "={{ $json.chatId }}", "text": "={{ $json.text }}", "additionalFields": { "appendAttribution": false } } },
-    { "id": "62301f65-8124-4890-d354-1c456789012d", "name": "Buscar Reserva Específica", "type": "n8n-nodes-base.googleFirebaseCloudFirestore", "typeVersion": 1.1, "position": [672, 480], "parameters": { "resource": "document", "operation": "get", "authentication": "serviceAccount", "projectId": "gen-lang-client-0782739149", "collection": "bookings", "documentId": "={{ $('Parsear Comando').item.json.arg }}", "simple": true }, "onError": "continueErrorOutput" },
-    { "id": "73412a76-9235-4901-e465-2d567890123e", "name": "Formatear Detalle de Reserva", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [896, 480], "parameters": { "mode": "runOnceForAllItems", "language": "javaScript", "jsCode": "const b = $input.first().json;\nconst searchedId = $('Parsear Comando').item.json.arg;\nconst LF = String.fromCharCode(10);\nlet msg = '';\nif (!b || !b.bookingId) {\n  msg = `🔍 No se encontró ninguna reserva con el identificador \"${searchedId}\". Verifica el código e intenta nuevamente.`;\n} else {\n  msg = [\n    `🔍 Detalle de Reserva: ${b.bookingId}`,\n    `• Tour: ${b.tourName || 'Tour'}`,\n    `• Fecha y Hora: ${b.date} ${b.time || ''}`,\n    `• Estado: ${b.status}`,\n    `• Total: $${b.totalUSD} USD`,\n    `• Pasajeros: ${b.adults || 1} adultos, ${b.children || 0} niños`,\n    `• Hotel recogida: ${b.pickupHotel || 'No especificado'}`,\n    `• Cliente: ${b.customer?.name || 's/n'} (${b.customer?.email || 's/e'})`,\n    `• Teléfono: ${b.customer?.phone || 's/t'}`,\n    `• Proveedor: ${b.providerId || 'No asignado'}`,\n  ].join(LF);\n}\nreturn [{ json: { text: msg, chatId: $('Parsear Comando').item.json.chatId } }];" } },
-    { "id": "84523b87-0346-4a12-f576-3e678901234f", "name": "Responder Detalle Reserva", "type": "n8n-nodes-base.telegram", "typeVersion": 1.2, "position": [1120, 480], "parameters": { "resource": "message", "operation": "sendMessage", "chatId": "={{ $json.chatId }}", "text": "={{ $json.text }}", "additionalFields": { "appendAttribution": false } } },
-    { "id": "95634c98-1457-4b23-a687-4f789012345a", "name": "Confirmar Reserva Manual", "type": "n8n-nodes-base.googleFirebaseCloudFirestore", "typeVersion": 1.1, "position": [672, 672], "parameters": { "resource": "document", "operation": "upsert", "authentication": "serviceAccount", "projectId": "gen-lang-client-0782739149", "collection": "bookings", "updateKey": "id", "columns": "id,status,confirmedManuallyAt,confirmedBy" } },
-    { "id": "06745da9-2568-4c34-b798-50890123456b", "name": "Responder Confirmación Exitosa", "type": "n8n-nodes-base.telegram", "typeVersion": 1.2, "position": [896, 672], "parameters": { "resource": "message", "operation": "sendMessage", "chatId": "={{ $('Parsear Comando').item.json.chatId }}", "text": "=✅ La reserva {{ $('Parsear Comando').item.json.arg }} ha sido marcada manualmente como CONFIRMADA en el sistema.", "additionalFields": { "appendAttribution": false } } },
-    { "id": "17856eb0-3679-4d45-c8a9-61901234567c", "name": "Buscar Escalaciones Abiertas", "type": "n8n-nodes-base.googleFirebaseCloudFirestore", "typeVersion": 1.1, "position": [672, 864], "parameters": { "resource": "document", "operation": "query", "authentication": "serviceAccount", "projectId": "gen-lang-client-0782739149", "query": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"escalations\"}],\"limit\":10}}", "simple": true } },
-    { "id": "28967fc1-4780-4e56-d9ba-72a12345678d", "name": "Formatear Escalaciones", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [896, 864], "parameters": { "mode": "runOnceForAllItems", "language": "javaScript", "jsCode": "const items = $input.all().filter(i => Object.keys(i.json).length > 0).map(i => i.json);\nconst LF = String.fromCharCode(10);\nlet msg = '';\nif (items.length === 0) {\n  msg = '🟢 ¡Excelente! No hay escalaciones ni incidencias abiertas actualmente.';\n} else {\n  const lines = items.map((e, idx) => `⚠️ ${idx + 1}. [${e.tipo || 'alerta'}] Reserva: ${e.bookingId || 's/n'}: ${e.detalle || ''}`);\n  msg = [`🚨 Escalaciones e incidencias pendientes (${items.length}):`, ...lines].join(LF);\n}\nreturn [{ json: { text: msg, chatId: $('Parsear Comando').item.json.chatId } }];" } },
-    { "id": "39078ad2-5891-4f67-ea0b-83b23456789e", "name": "Responder Escalaciones", "type": "n8n-nodes-base.telegram", "typeVersion": 1.2, "position": [1120, 864], "parameters": { "resource": "message", "operation": "sendMessage", "chatId": "={{ $json.chatId }}", "text": "={{ $json.text }}", "additionalFields": { "appendAttribution": false } } },
-    { "id": "40189be3-6902-4078-fb1c-94c34567890f", "name": "Enviar Menú de Ayuda", "type": "n8n-nodes-base.telegram", "typeVersion": 1.2, "position": [672, 1056], "parameters": { "resource": "message", "operation": "sendMessage", "chatId": "={{ $json.chatId }}", "text": "=🌴 *Panel de Control Costa Rica Tours*\n\nComandos disponibles:\n• `/hoy` — Tours y pasajeros programados para el día de hoy\n• `/reservas` — Lista las últimas reservas registradas\n• `/buscar [id]` — Consulta información detallada de una reserva\n• `/confirmar [id]` — Confirma manualmente una reserva pendiente\n• `/alertas` — Lista escalaciones e incidencias abiertas\n• `/ayuda` — Muestra este menú de instrucciones", "additionalFields": { "appendAttribution": false } } }
+    {
+      "id": "1b08ce91-a1b7-4c4f-9e32-a50d2bc4a890",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 480],
+      "parameters": {
+        "updates": [
+          "message"
+        ]
+      }
+    },
+    {
+      "id": "3c98b671-558e-4a62-a279-d58e3981ac12",
+      "name": "Parsear Comando",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [224, 480],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const msg = $input.first().json.message || {};\nconst text = String(msg.text || '').trim();\nconst chatId = msg.chat?.id || '';\n\nconst parts = text.split(/\\s+/);\nlet rawCmd = (parts[0] || '').toLowerCase().replace('/', '').split('@')[0];\nconst arg = parts.slice(1).join(' ').trim();\n\nconst validCommands = ['hoy', 'reservas', 'buscar', 'confirmar', 'alertas', 'ayuda', 'start'];\nif (!validCommands.includes(rawCmd)) {\n  rawCmd = 'ayuda';\n}\nif (rawCmd === 'start') {\n  rawCmd = 'ayuda';\n}\n\nreturn [{\n  json: {\n    command: rawCmd,\n    arg: arg,\n    chatId: String(chatId),\n    user: msg.from?.first_name || 'Operador'\n  }\n}];"
+      }
+    },
+    {
+      "id": "f5195ea1-455b-4229-87a3-e71167732a90",
+      "name": "Enrutar Comando",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [448, 480],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.command }}",
+                    "rightValue": "hoy",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.command }}",
+                    "rightValue": "reservas",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.command }}",
+                    "rightValue": "buscar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.command }}",
+                    "rightValue": "confirmar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.command }}",
+                    "rightValue": "alertas",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "fallbackOutput": {
+          "extraOutputs": 1
+        }
+      }
+    },
+    {
+      "id": "c76d29b1-6b58-4509-967a-1158a1835bc1",
+      "name": "Buscar Reservas (Comando Hoy)",
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [672, 96],
+      "parameters": {
+        "resource": "document",
+        "operation": "query",
+        "authentication": "serviceAccount",
+        "projectId": "gen-lang-client-0782739149",
+        "query": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"bookings\"}],\"where\":{\"fieldFilter\":{\"field\":{\"fieldPath\":\"status\"},\"op\":\"EQUAL\",\"value\":{\"stringValue\":\"confirmada\"}}}}}",
+        "simple": true
+      }
+    },
+    {
+      "id": "4921ca87-0b1a-4712-9c1e-36fa89c091d3",
+      "name": "Formatear Tours de Hoy",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [896, 96],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const hoyStr = new Date().toISOString().slice(0, 10);\nconst items = $input.all().filter(i => Object.keys(i.json).length > 0).map(i => i.json);\nconst toursHoy = items.filter(b => String(b.date || '').slice(0, 10) === hoyStr);\n\nconst LF = String.fromCharCode(10);\nlet msg = '';\nif (toursHoy.length === 0) {\n  msg = `🌴 No hay tours programados para hoy (${hoyStr}).`;\n} else {\n  const lines = toursHoy.map((b, idx) => {\n    const p = (parseInt(b.adults || 1, 10) + parseInt(b.children || 0, 10));\n    return `${idx + 1}. [${b.time || 'Hora s/d'}] ${b.tourName || 'Tour'} — ${p} pax — Hotel: ${b.pickupHotel || 'Por confirmar'} (Reserva: ${b.bookingId})`;\n  });\n  msg = [`🌴 Tours programados para HOY (${hoyStr}):`, ...lines].join(LF);\n}\nreturn [{ json: { text: msg, chatId: $('Parsear Comando').item.json.chatId } }];"
+      }
+    },
+    {
+      "id": "41680d6b-b26a-4ba9-bca1-74f464d42019",
+      "name": "Responder Mensaje Hoy",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1120, 96],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      }
+    },
+    {
+      "id": "890ba123-5e91-4567-a021-ef123456789a",
+      "name": "Buscar Reservas Recientes",
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [672, 288],
+      "parameters": {
+        "resource": "document",
+        "operation": "query",
+        "authentication": "serviceAccount",
+        "projectId": "gen-lang-client-0782739149",
+        "query": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"bookings\"}],\"orderBy\":[{\"field\":{\"fieldPath\":\"createdAt\"},\"direction\":\"DESCENDING\"}],\"limit\":15}}",
+        "simple": true
+      }
+    },
+    {
+      "id": "780ea234-6f02-4678-b132-fa234567890b",
+      "name": "Formatear Reservas Recientes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [896, 288],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const items = $input.all().filter(i => Object.keys(i.json).length > 0).map(i => i.json);\nconst LF = String.fromCharCode(10);\nlet msg = '';\nif (items.length === 0) {\n  msg = 'No se encontraron reservas en el sistema.';\n} else {\n  const lines = items.slice(0, 8).map(b => {\n    const cliente = b.customer?.name || 'Cliente';\n    return `• ${b.bookingId}: ${b.tourName || 'Tour'} | ${b.date} | $${b.totalUSD} USD [${b.status}] - ${cliente}`;\n  });\n  msg = ['📋 Últimas reservas registradas:', ...lines].join(LF);\n}\nreturn [{ json: { text: msg, chatId: $('Parsear Comando').item.json.chatId } }];"
+      }
+    },
+    {
+      "id": "51290e54-7013-4789-c243-0b345678901c",
+      "name": "Responder Reservas Recientes",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1120, 288],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      }
+    },
+    {
+      "id": "62301f65-8124-4890-d354-1c456789012d",
+      "name": "Buscar Reserva Específica",
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [672, 480],
+      "parameters": {
+        "resource": "document",
+        "operation": "get",
+        "authentication": "serviceAccount",
+        "projectId": "gen-lang-client-0782739149",
+        "collection": "bookings",
+        "documentId": "={{ $('Parsear Comando').item.json.arg }}",
+        "simple": true
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "73412a76-9235-4901-e465-2d567890123e",
+      "name": "Formatear Detalle de Reserva",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [896, 480],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const b = $input.first().json;\nconst searchedId = $('Parsear Comando').item.json.arg;\nconst LF = String.fromCharCode(10);\nlet msg = '';\nif (!b || !b.bookingId) {\n  msg = `🔍 No se encontró ninguna reserva con el identificador \"${searchedId}\". Verifica el código e intenta nuevamente.`;\n} else {\n  msg = [\n    `🔍 Detalle de Reserva: ${b.bookingId}`,\n    `• Tour: ${b.tourName || 'Tour'}`,\n    `• Fecha y Hora: ${b.date} ${b.time || ''}`,\n    `• Estado: ${b.status}`,\n    `• Total: $${b.totalUSD} USD`,\n    `• Pasajeros: ${b.adults || 1} adultos, ${b.children || 0} niños`,\n    `• Hotel recogida: ${b.pickupHotel || 'No especificado'}`,\n    `• Cliente: ${b.customer?.name || 's/n'} (${b.customer?.email || 's/e'})`,\n    `• Teléfono: ${b.customer?.phone || 's/t'}`,\n    `• Proveedor: ${b.providerId || 'No asignado'}`,\n  ].join(LF);\n}\nreturn [{ json: { text: msg, chatId: $('Parsear Comando').item.json.chatId } }];"
+      }
+    },
+    {
+      "id": "84523b87-0346-4a12-f576-3e678901234f",
+      "name": "Responder Detalle Reserva",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1120, 480],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      }
+    },
+    {
+      "id": "95634c98-1457-4b23-a687-4f789012345a",
+      "name": "Confirmar Reserva Manual",
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [672, 672],
+      "parameters": {
+        "resource": "document",
+        "operation": "upsert",
+        "authentication": "serviceAccount",
+        "projectId": "gen-lang-client-0782739149",
+        "collection": "bookings",
+        "updateKey": "id",
+        "columns": "id,status,confirmedManuallyAt,confirmedBy"
+      }
+    },
+    {
+      "id": "06745da9-2568-4c34-b798-50890123456b",
+      "name": "Responder Confirmación Exitosa",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [896, 672],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Parsear Comando').item.json.chatId }}",
+        "text": "=✅ La reserva {{ $('Parsear Comando').item.json.arg }} ha sido marcada manualmente como CONFIRMADA en el sistema.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      }
+    },
+    {
+      "id": "17856eb0-3679-4d45-c8a9-61901234567c",
+      "name": "Buscar Escalaciones Abiertas",
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [672, 864],
+      "parameters": {
+        "resource": "document",
+        "operation": "query",
+        "authentication": "serviceAccount",
+        "projectId": "gen-lang-client-0782739149",
+        "query": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"escalations\"}],\"orderBy\":[{\"field\":{\"fieldPath\":\"createdAt\"},\"direction\":\"DESCENDING\"}],\"limit\":10}}",
+        "simple": true
+      }
+    },
+    {
+      "id": "28967fc1-4780-4e56-d9ba-72a12345678d",
+      "name": "Formatear Escalaciones",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [896, 864],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const items = $input.all().filter(i => Object.keys(i.json).length > 0).map(i => i.json);\nconst LF = String.fromCharCode(10);\nlet msg = '';\nif (items.length === 0) {\n  msg = '🟢 ¡Excelente! No hay escalaciones ni incidencias abiertas actualmente.';\n} else {\n  const lines = items.map((e, idx) => `⚠️ ${idx + 1}. [${e.tipo || 'alerta'}] Reserva: ${e.bookingId || 's/n'}: ${e.detalle || ''}`);\n  msg = [`🚨 Escalaciones e incidencias pendientes (${items.length}):`, ...lines].join(LF);\n}\nreturn [{ json: { text: msg, chatId: $('Parsear Comando').item.json.chatId } }];"
+      }
+    },
+    {
+      "id": "39078ad2-5891-4f67-ea0b-83b23456789e",
+      "name": "Responder Escalaciones",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1120, 864],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      }
+    },
+    {
+      "id": "40189be3-6902-4078-fb1c-94c34567890f",
+      "name": "Enviar Menú de Ayuda",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [672, 1056],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chatId }}",
+        "text": "=🌴 *Panel de Control Costa Rica Tours*\n\nComandos disponibles:\n• `/hoy` — Tours y pasajeros programados para el día de hoy\n• `/reservas` — Lista las últimas reservas registradas\n• `/buscar [id]` — Consulta información detallada de una reserva\n• `/confirmar [id]` — Confirma manualmente una reserva pendiente\n• `/alertas` — Lista escalaciones e incidencias abiertas\n• `/ayuda` — Muestra este menú de instrucciones",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      }
+    }
   ]
 }
