@@ -12,6 +12,7 @@ import { getLangText, UI_TRANSLATIONS, formatCurrency } from '../utils/i18n';
 import { getEcoFactForTour, getEcoFactForRegion } from '../data/ecoFacts';
 import { AI_AGENTS, getAIAgentById } from '../data/aiAgentsData';
 import { N8NWorkflowStudio } from './N8NWorkflowStudio';
+import { ClaudeItineraryModal } from './ClaudeItineraryModal';
 
 interface AIAssistantProps {
   language: Language;
@@ -28,6 +29,7 @@ interface Message {
   agentId?: AgentId;
   text: string;
   time: string;
+  modelUsed?: string;
   recommendedTours?: Tour[];
   voucher?: any;
   ecoFactData?: {
@@ -126,6 +128,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [thinkingMode, setThinkingMode] = useState(false);
+  const [aiEngine, setAiEngine] = useState<'claude' | 'gemini'>('claude');
+  const [isItineraryModalOpen, setIsItineraryModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -353,6 +357,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           language,
           thinking: thinkingMode,
           agentId: activeAgentId,
+          engine: aiEngine,
           context: {
             bookings: userBookings,
           },
@@ -420,6 +425,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         agentId: activeAgentId,
         text: finalReply,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        modelUsed: data.modelUsed || (aiEngine === 'claude' ? 'Claude 3.5 Sonnet' : 'Gemini 2.5 Flash'),
         recommendedTours: matchedTours.length > 0 ? matchedTours : undefined,
         voucher: data.voucher || undefined,
       };
@@ -655,6 +661,42 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
             {/* Header Actions */}
             <div className="flex items-center gap-2">
+              {/* AI Engine Switcher (Claude vs Gemini) */}
+              <div className="hidden sm:flex items-center bg-stone-100 p-0.5 rounded-xl border border-black/10 text-[11px] font-bold">
+                <button
+                  onClick={() => setAiEngine('claude')}
+                  className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+                    aiEngine === 'claude'
+                      ? 'bg-amber-500 text-white shadow-sm font-black'
+                      : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                  title="Anthropic Claude 3.5 Sonnet (Google Cloud Vertex AI)"
+                >
+                  <span>🧠 Claude 3.5</span>
+                </button>
+                <button
+                  onClick={() => setAiEngine('gemini')}
+                  className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+                    aiEngine === 'gemini'
+                      ? 'bg-emerald-600 text-white shadow-sm font-black'
+                      : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                  title="Google Gemini 2.5 Flash"
+                >
+                  <span>⚡ Gemini 2.5</span>
+                </button>
+              </div>
+
+              {/* Claude Itinerary Planner Button */}
+              <button
+                onClick={() => setIsItineraryModalOpen(true)}
+                title={language === 'es' ? 'Planificador Experto Claude' : 'Claude Itinerary Planner'}
+                className="p-1.5 sm:px-2.5 sm:py-1.5 transition-all rounded-lg border bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300/80 flex items-center gap-1 text-xs font-bold cursor-pointer shadow-sm"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <span className="hidden md:inline">{language === 'es' ? 'Itinerario Claude' : 'Claude Itinerary'}</span>
+              </button>
+
               <button
                 onClick={() => setThinkingMode(!thinkingMode)}
                 title={language === 'es' ? 'Modo de Pensamiento Profundo' : 'Deep Thinking Mode'}
@@ -819,9 +861,21 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                         </div>
                       )}
 
-                      <span className="block text-[9px] opacity-75 text-right mt-1 font-bold">
-                        {msg.time}
-                      </span>
+                      <div className="flex items-center justify-between text-[9px] opacity-80 mt-1.5 font-bold">
+                        {msg.modelUsed ? (
+                          <span className={`px-1.5 py-0.5 rounded text-[8px] tracking-wide font-black uppercase flex items-center gap-1 ${
+                            msg.modelUsed.toLowerCase().includes('claude')
+                              ? 'bg-amber-100 text-amber-900 border border-amber-300/60'
+                              : 'bg-emerald-100 text-emerald-900 border border-emerald-300/60'
+                          }`}>
+                            <span>{msg.modelUsed.toLowerCase().includes('claude') ? '🧠' : '⚡'}</span>
+                            <span>{msg.modelUsed}</span>
+                          </span>
+                        ) : (
+                          <span />
+                        )}
+                        <span>{msg.time}</span>
+                      </div>
                     </div>
 
                     {/* Recommended Tours Widget if present */}
@@ -1138,6 +1192,17 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     )}
 
       </div>
+
+      {/* Modal de Itinerario Inteligente con Claude 3.5 Sonnet */}
+      <ClaudeItineraryModal
+        isOpen={isItineraryModalOpen}
+        onClose={() => setIsItineraryModalOpen(false)}
+        language={language}
+        onSelectTour={onSelectTour}
+        onSendToChat={(prompt) => {
+          handleSendMessage(prompt);
+        }}
+      />
     </div>
   );
 };

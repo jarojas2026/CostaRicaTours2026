@@ -35,7 +35,7 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "=https://firestore.googleapis.com/v1/projects/{{ $env.FIREBASE_PROJECT_ID || 'gen-lang-client-0782739149' }}/databases/(default)/documents/bookings/{{ $json.body.bookingId }}?updateMask.fieldPaths=status&updateMask.fieldPaths=paymentStatus&updateMask.fieldPaths=sinpeReference&updateMask.fieldPaths=paymentVerifiedAt",
+        "url": "=https://firestore.googleapis.com/v1/projects/{{ $env.FIREBASE_PROJECT_ID || 'gen-lang-client-0782739149' }}/databases/{{ $env.FIRESTORE_DATABASE_ID || 'ai-studio-costaricatours-88d81273-09f7-4f87-991c-60b9b0db0dea' }}/documents/bookings/{{ $json.body.bookingId }}?updateMask.fieldPaths=status&updateMask.fieldPaths=paymentStatus&updateMask.fieldPaths=sinpeReference&updateMask.fieldPaths=paymentVerifiedAt",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

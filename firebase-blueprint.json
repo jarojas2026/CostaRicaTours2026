@@ -14,12 +14,14 @@
     },
     "Booking": {
       "title": "Booking",
-      "description": "A tour booking request",
+      "description": "A tour booking request with full operational metadata",
       "type": "object",
       "properties": {
         "userId": { "type": "string", "maxLength": 128 },
+        "bookingId": { "type": "string", "maxLength": 128 },
         "tourId": { "type": "string", "maxLength": 128 },
         "tourName": { "type": "string", "maxLength": 256 },
+        "providerId": { "type": "string", "maxLength": 128 },
         "date": { "type": "string", "maxLength": 64 },
         "time": { "type": "string", "maxLength": 64 },
         "adults": { "type": "number" },
@@ -28,14 +30,64 @@
         "specialRequests": { "type": "string", "maxLength": 2048 },
         "totalUSD": { "type": "number" },
         "totalCRC": { "type": "number" },
+        "currency": { "type": "string", "maxLength": 8, "enum": ["USD", "CRC"] },
         "customerName": { "type": "string", "maxLength": 256 },
         "customerEmail": { "type": "string", "maxLength": 256 },
         "customerPhone": { "type": "string", "maxLength": 64 },
         "customerCountry": { "type": "string", "maxLength": 128 },
-        "status": { "type": "string", "maxLength": 32, "enum": ["pending", "confirmed", "cancelled"] },
+        "status": { "type": "string", "maxLength": 32, "enum": ["pending", "confirmed", "confirmada", "pendiente_pago", "cancelled", "cancelada"] },
+        "paymentMethod": { "type": "string", "maxLength": 64 },
+        "paymentStatus": { "type": "string", "maxLength": 32, "enum": ["pending", "completed", "failed"] },
+        "sinpeReference": { "type": "string", "maxLength": 128 },
+        "riskScore": { "type": "string", "maxLength": 32 },
+        "reviewRequestSent": { "type": "boolean" },
         "createdAt": { "type": "timestamp" }
       },
-      "required": ["userId", "tourId", "date", "adults", "totalUSD", "createdAt"]
+      "required": ["tourId", "date", "adults", "totalUSD", "createdAt"]
+    },
+    "Escalation": {
+      "title": "Escalation",
+      "description": "Security alerts, antifraud flags, and operational escalations",
+      "type": "object",
+      "properties": {
+        "bookingId": { "type": "string", "maxLength": 128 },
+        "tipo": { "type": "string", "maxLength": 64 },
+        "detalle": { "type": "string", "maxLength": 2048 },
+        "riskScore": { "type": "string", "maxLength": 32 },
+        "reasons": { "type": "string", "maxLength": 1024 },
+        "status": { "type": "string", "maxLength": 32 },
+        "createdAt": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["tipo", "createdAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Traveler tour reviews and ratings",
+      "type": "object",
+      "properties": {
+        "bookingId": { "type": "string", "maxLength": 128 },
+        "tourId": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "rating": { "type": "number" },
+        "comment": { "type": "string", "maxLength": 2048 },
+        "authorName": { "type": "string", "maxLength": 256 },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["bookingId", "rating", "comment", "createdAt"]
+    },
+    "Tour": {
+      "title": "Tour",
+      "description": "Catalog of Costa Rica tours and activities",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 256 },
+        "location": { "type": "string", "maxLength": 256 },
+        "priceUSD": { "type": "number" },
+        "duration": { "type": "string", "maxLength": 64 },
+        "maxGroupSize": { "type": "number" }
+      },
+      "required": ["id", "title", "priceUSD"]
     }
   },
   "firestore": {
@@ -43,9 +95,21 @@
       "schema": { "$ref": "#/entities/User" },
       "description": "User profiles"
     },
-    "users/{userId}/bookings/{bookingId}": {
+    "bookings/{bookingId}": {
       "schema": { "$ref": "#/entities/Booking" },
-      "description": "User bookings"
+      "description": "System-wide tour bookings"
+    },
+    "escalations/{escalationId}": {
+      "schema": { "$ref": "#/entities/Escalation" },
+      "description": "Antifraud flags and operational escalations"
+    },
+    "reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/Review" },
+      "description": "Traveler reviews and ratings"
+    },
+    "tours/{tourId}": {
+      "schema": { "$ref": "#/entities/Tour" },
+      "description": "Public tour catalogue definitions"
     }
   }
 }

@@ -5,6 +5,7 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { TOURS } from '../src/data/toursData';
+import { generateClaudeChatResponse, getClaudeClient } from './claudeService';
 
 let aiClient: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI | null {
@@ -85,9 +86,26 @@ ${getToursKnowledgeBase()}
 export async function processChatInquiry(
   message: string,
   language: 'es' | 'en' = 'es',
-  history: Array<{ role: 'user' | 'bot'; text: string }> = []
-): Promise<{ reply: string; quickActions: Array<{ label: string; action: string; data?: any }> }> {
+  history: Array<{ role: 'user' | 'bot'; text: string }> = [],
+  engine: 'auto' | 'claude' | 'gemini' = 'auto'
+): Promise<{ reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string }> {
   const isEn = language === 'en';
+
+  // Si se solicita o prefiere Claude en Vertex AI
+  if (engine === 'claude' || (engine === 'auto' && process.env.ANTHROPIC_VERTEX_MODEL)) {
+    try {
+      const claudeRes = await generateClaudeChatResponse(message, language, history as any);
+      if (claudeRes && claudeRes.reply) {
+        return {
+          reply: claudeRes.reply,
+          quickActions: claudeRes.quickActions || [],
+          modelUsed: claudeRes.modelUsed
+        };
+      }
+    } catch (claudeErr) {
+      console.warn('⚠️ Fallback de Claude a Gemini / Base local:', claudeErr);
+    }
+  }
 
 function getKnowledgeBaseReply(message: string, isEn: boolean) {
   const lower = message.toLowerCase();

@@ -14,6 +14,13 @@ service cloud.firestore {
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
 
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email == 'jarojas800@gmail.com' && request.auth.token.email_verified == true) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
     function isValidUser(data) {
       return data.keys().hasAll(['userId', 'createdAt'])
         && data.userId == request.auth.uid
@@ -24,14 +31,14 @@ service cloud.firestore {
     }
 
     function isValidBooking(data) {
-      return data.keys().hasAll(['userId', 'tourId', 'date', 'adults', 'totalUSD', 'createdAt'])
-        && data.userId == request.auth.uid
-        && data.userId is string && data.userId.size() <= 128
+      return data.keys().hasAll(['tourId', 'date', 'adults', 'totalUSD', 'createdAt'])
+        && (!('userId' in data) || (data.userId is string && data.userId.size() <= 128))
         && data.tourId is string && data.tourId.size() <= 128
         && data.date is string && data.date.size() <= 64
         && data.adults is number
         && data.totalUSD is number
         && (data.createdAt == request.time || data.createdAt == existing().createdAt)
+        && (!('bookingId' in data) || (data.bookingId is string && data.bookingId.size() <= 128))
         && (!('tourName' in data) || (data.tourName is string && data.tourName.size() <= 256))
         && (!('time' in data) || (data.time is string && data.time.size() <= 64))
         && (!('children' in data) || (data.children is number))
@@ -47,28 +54,54 @@ service cloud.firestore {
         && (!('paymentMethod' in data) || (data.paymentMethod is string && data.paymentMethod.size() <= 64))
         && (!('paymentStatus' in data) || (data.paymentStatus in ['pending', 'completed', 'failed']))
         && (!('totalAmount' in data) || (data.totalAmount is number))
-        && (!('status' in data) || (data.status in ['pending', 'confirmed', 'cancelled', 'confirmada', 'pendiente_pago']));
+        && (!('status' in data) || (data.status in ['pending', 'confirmed', 'cancelled', 'confirmada', 'pendiente_pago', 'cancelada']));
+    }
+
+    function isValidReview(data) {
+      return data.keys().hasAll(['bookingId', 'rating', 'comment', 'createdAt'])
+        && data.bookingId is string && data.bookingId.size() <= 128
+        && data.rating is number && data.rating >= 1 && data.rating <= 5
+        && data.comment is string && data.comment.size() <= 2048
+        && (data.createdAt == request.time || data.createdAt == existing().createdAt)
+        && (!('tourId' in data) || (data.tourId is string && data.tourId.size() <= 128))
+        && (!('authorName' in data) || (data.authorName is string && data.authorName.size() <= 256));
+    }
+
+    // Health check / connection test
+    match /test/connection {
+      allow read: if true;
     }
 
     match /users/{userId} {
-      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+      allow get: if (isSignedIn() && request.auth.uid == userId && isValidId(userId)) || isAdmin();
       allow create: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidUser(incoming());
-      allow update: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidUser(incoming()) && incoming().userId == existing().userId;
+      allow update: if (isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidUser(incoming()) && incoming().userId == existing().userId) || isAdmin();
     }
     
     match /bookings/{bookingId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow read: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
       allow create: if isSignedIn() && isValidBooking(incoming());
-      allow update: if isSignedIn() && isValidBooking(incoming()) && incoming().userId == existing().userId;
-      allow delete: if false;
+      allow update: if (isSignedIn() && isValidBooking(incoming()) && (incoming().userId == existing().userId || !('userId' in existing()))) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /escalations/{escalationId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isValidReview(incoming());
+      allow update, delete: if isAdmin();
     }
 
     match /tours/{tourId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if isAdmin();
     }
+
     match /chat_sessions/{sessionId} {
-      allow read, write: if true; // temporary for chat sessions
+      allow read, write: if true;
     }
   }
 }

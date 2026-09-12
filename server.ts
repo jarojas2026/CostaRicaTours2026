@@ -26,6 +26,12 @@ import {
   runSupervisor,
   logException
 } from './backend/aiAssistantService';
+import {
+  generateClaudeChatResponse,
+  generateClaudeItinerary,
+  analyzeOperationalRiskWithClaude,
+  getClaudeStatus
+} from './backend/claudeService';
 
 const app = express();
 const PORT = 3000;
@@ -607,10 +613,26 @@ app.post('/api/agents/log_exception', (req, res) => {
 
 app.post('/api/gemini/concierge', async (req, res) => {
   try {
-    const { message, language, history, agentId, context } = req.body;
+    const { message, language, history, agentId, context, engine } = req.body;
     const userMsg = message || '';
     const lang = (language || 'es') as 'es' | 'en';
     
+    // Si se especifica o prefiere motor Claude 3.5 Sonnet
+    if (engine === 'claude') {
+      try {
+        const claudeResult = await generateClaudeChatResponse(userMsg, lang, history || []);
+        return res.json({
+          reply: claudeResult.reply,
+          quickActions: claudeResult.quickActions || [],
+          success: true,
+          source: 'claude_vertex',
+          modelUsed: claudeResult.modelUsed
+        });
+      } catch (claudeErr: any) {
+        console.warn('Fallback de Claude a n8n / Gemini:', claudeErr.message);
+      }
+    }
+
     // Intento de despacho prioritario a n8n
     const n8nResult = await dispatchToN8N('/webhook/chat-consulta', {
       trigger: 'CONSULTA_CHAT_IA',
@@ -633,12 +655,12 @@ app.post('/api/gemini/concierge', async (req, res) => {
       }
     }
 
-    const assistantResult = await processChatInquiry(userMsg, lang, history || []);
+    const assistantResult = await processChatInquiry(userMsg, lang, history || [], engine || 'auto');
     res.json({
       reply: assistantResult.reply,
       quickActions: assistantResult.quickActions,
       success: true,
-      source: 'gemini_fallback'
+      source: assistantResult.modelUsed || 'gemini_fallback'
     });
   } catch (err: any) {
     res.json({
@@ -678,6 +700,87 @@ app.post('/api/gemini/booking/urgent', async (req, res) => {
       reply: 'Atención prioritaria registrada. Por favor comunícate a nuestro WhatsApp de soporte: +506 8888-7777.',
       success: false
     });
+  }
+});
+
+// ==========================================
+// 🧠 RUTAS OFICIALES CLAUDE (VERTEX AI)
+// ==========================================
+
+// 1. Estado y configuración de Claude en Google Cloud Vertex AI
+app.get('/api/claude/status', (req, res) => {
+  const status = getClaudeStatus();
+  res.json({
+    engine: 'Anthropic Claude on Google Cloud Vertex AI',
+    sdk: '@anthropic-ai/vertex-sdk',
+    ...status
+  });
+});
+
+// 2. Chat conversacional con Claude 3.5 Sonnet
+app.post('/api/claude/chat', async (req, res) => {
+  try {
+    const { message, language, history, temperature } = req.body;
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'El parámetro "message" es requerido' });
+    }
+
+    const lang = (language || 'es') as 'es' | 'en';
+    const result = await generateClaudeChatResponse(message, lang, history || [], { temperature });
+
+    res.json(result);
+  } catch (err: any) {
+    console.error('Error procesando chat con Claude:', err);
+    // Fallback elegante a Gemini / Asistente local
+    try {
+      const fallback = await processChatInquiry(req.body.message, req.body.language || 'es', req.body.history || []);
+      res.json({
+        reply: fallback.reply,
+        quickActions: fallback.quickActions,
+        success: true,
+        modelUsed: 'Fallback Asistente Oficial (Gemini/KB)',
+        warning: 'Claude Vertex AI no disponible temporalmente en esta instancia.'
+      });
+    } catch (fbErr: any) {
+      res.status(500).json({ error: err.message || 'Error con Claude Vertex AI' });
+    }
+  }
+});
+
+// 3. Generador experto de itinerarios personalizados con Claude
+app.post('/api/claude/itinerary', async (req, res) => {
+  try {
+    const { days, travelers, style, regions, budget, language, specialRequests } = req.body;
+    const itinerary = await generateClaudeItinerary({
+      days: Number(days) || 5,
+      travelers: Number(travelers) || 2,
+      style: style || 'eco_relax',
+      regions: regions || ['Arenal', 'Monteverde', 'Manuel Antonio'],
+      budget: budget || 'premium',
+      language: (language || 'es') as 'es' | 'en',
+      specialRequests
+    });
+
+    res.json({ success: true, ...itinerary });
+  } catch (err: any) {
+    console.error('Error generando itinerario con Claude:', err);
+    res.status(500).json({
+      success: false,
+      error: err.message,
+      fallbackMessage: 'No se pudo generar el itinerario con Claude Vertex AI en este momento.'
+    });
+  }
+});
+
+// 4. Auditoría operativa y antifraude de reserva con Claude
+app.post('/api/claude/audit-booking', async (req, res) => {
+  try {
+    const booking = req.body.booking || req.body;
+    const auditResult = await analyzeOperationalRiskWithClaude(booking);
+    res.json({ success: true, audit: auditResult });
+  } catch (err: any) {
+    console.error('Error auditando reserva con Claude:', err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
