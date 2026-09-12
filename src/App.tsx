@@ -238,7 +238,7 @@ export default function App() {
       />
 
       {/* Main Content Areas based on activeTab */}
-      <main className="flex-1 space-y-0 pb-20 lg:pb-0">
+      <main className={`flex-1 space-y-0 relative z-10 isolate ${activeTab === 'map' ? 'pb-0' : 'pb-20 lg:pb-0'}`}>
         
         {/* Dynamic Breadcrumbs & Quick Return Bar for Sub-pages (Except full-screen map) */}
         {activeTab !== 'home' && activeTab !== 'map' && (

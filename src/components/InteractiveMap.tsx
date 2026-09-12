@@ -27,7 +27,11 @@ import {
   Waves, 
   Coffee, 
   Sparkles,
-  Info
+  Info,
+  Eye,
+  EyeOff,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { formatCurrency, getLangText } from '../utils/i18n';
 import { APIProvider, Map as GoogleMap, AdvancedMarker, useMap as useGoogleMap } from '@vis.gl/react-google-maps';
@@ -155,6 +159,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showLayerMenu, setShowLayerMenu] = useState(false);
   const [showFiltersModal, setShowFiltersModal] = useState(false);
+  const [isControlsCollapsed, setIsControlsCollapsed] = useState<boolean>(false);
+  const [showRegionPills, setShowRegionPills] = useState<boolean>(false);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -577,181 +583,262 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       id="costa-rica-interactive-map-root"
       className="relative w-full h-[calc(100vh-64px)] flex flex-col bg-[#041711] overflow-hidden select-none"
     >
-      {/* TOP HEADER CONTROLS BAR */}
-      <header className="absolute top-0 left-0 right-0 z-30 pointer-events-none p-2 sm:p-4">
-        <div className="max-w-7xl mx-auto flex flex-col gap-2 pointer-events-auto">
-          {/* Main Top Bar */}
-          <div className="bg-[#051e16]/90 backdrop-blur-md border border-emerald-500/30 rounded-2xl shadow-2xl p-2 sm:p-2.5 flex items-center justify-between gap-2">
-            {/* Back Button & Count */}
-            <div className="flex items-center gap-2">
+      {/* TOP HEADER CONTROLS BAR (MODERN FLOATING & COLLAPSIBLE) */}
+      <header className="absolute top-0 left-0 right-0 z-30 pointer-events-none p-2 sm:p-3">
+        <div className="max-w-4xl mx-auto flex flex-col gap-2 pointer-events-auto">
+          {/* Collapsed State: Minimal floating pill to maximize map visibility */}
+          {isControlsCollapsed ? (
+            <div className="flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
               <button
-                id="map-exit-btn"
+                id="map-exit-min-btn"
                 onClick={onExitMap}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-bold text-emerald-100 hover:text-white bg-emerald-950/70 hover:bg-emerald-900/90 border border-emerald-500/40 rounded-xl transition-all shadow"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-emerald-100 hover:text-white bg-[#051e16]/95 hover:bg-emerald-900 border border-emerald-500/40 rounded-xl shadow-2xl backdrop-blur-md transition-all active:scale-95"
                 title={language === 'es' ? 'Volver al catálogo de tours' : 'Back to tours list'}
               >
                 <span>←</span>
-                <span className="hidden sm:inline">{language === 'es' ? 'Volver a Tours' : 'Back to Tours'}</span>
+                <span className="hidden sm:inline">{language === 'es' ? 'Volver' : 'Back'}</span>
               </button>
 
-              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-black/40 border border-emerald-500/20 rounded-xl text-xs text-emerald-300">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="font-semibold">
-                  {effectiveTours.length} {language === 'es' ? 'Tours Visibles' : 'Visible Tours'}
+              <button
+                id="map-expand-controls-btn"
+                onClick={() => setIsControlsCollapsed(false)}
+                className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-emerald-100 bg-[#051e16]/95 hover:bg-emerald-900 border border-emerald-500/40 rounded-xl shadow-2xl backdrop-blur-md transition-all active:scale-95 group"
+                title={language === 'es' ? 'Mostrar buscador y controles del mapa' : 'Show search and map controls'}
+              >
+                <Search className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
+                <span className="font-semibold text-white">
+                  {searchQuery ? `"${searchQuery}"` : (language === 'es' ? 'Buscador y Filtros' : 'Search & Filters')}
                 </span>
-              </div>
-            </div>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-mono border border-emerald-500/30">
+                  {effectiveTours.length} {language === 'es' ? 'tours' : 'tours'}
+                </span>
+                <Eye className="w-3.5 h-3.5 text-emerald-400 ml-1" />
+                <span className="hidden md:inline text-emerald-300 font-normal text-[11px]">
+                  ({language === 'es' ? 'Abrir menú' : 'Open menu'})
+                </span>
+              </button>
 
-            {/* Center: Live Tour Search Input */}
-            <div className="flex-1 max-w-md relative">
-              <div className="relative flex items-center">
-                <Search className="absolute left-3 w-4 h-4 text-emerald-400 pointer-events-none" />
-                <input
-                  id="map-search-input"
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={language === 'es' ? 'Buscar volcán, playa, tirolesa, rafting...' : 'Search volcano, beach, zipline, rafting...'}
-                  className="w-full pl-9 pr-8 py-2 bg-emerald-950/60 border border-emerald-500/30 rounded-xl text-xs sm:text-sm text-emerald-100 placeholder-emerald-400/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/60 transition-all"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-2.5 text-emerald-400/70 hover:text-emerald-200"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Right: Actions (Layers, Filters, Offline) */}
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              {/* Fit Bounds Button */}
-              {effectiveTours.length > 0 && (
+              {/* Quick chip if a specific region is active */}
+              {selectedRegion !== 'all' && (
                 <button
-                  id="map-fit-bounds-btn"
-                  onClick={handleFitBoundsToTours}
-                  className="hidden lg:flex items-center gap-1 px-2.5 py-2 text-xs font-bold text-emerald-200 bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-500/30 rounded-xl transition-all"
-                  title={language === 'es' ? 'Encuadrar tours en pantalla' : 'Fit tours in view'}
+                  onClick={() => {
+                    onSelectRegion('all');
+                    handleRecenterCostaRica();
+                  }}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-950/90 text-emerald-200 border border-emerald-500/40 shadow-xl backdrop-blur-md hover:bg-emerald-900 transition-all"
+                  title={language === 'es' ? 'Quitar filtro de región' : 'Clear region filter'}
                 >
-                  <Compass className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{language === 'es' ? 'Encuadrar' : 'Fit View'}</span>
+                  <span>{REGION_NAV_ITEMS.find((r) => r.id === selectedRegion)?.icon}</span>
+                  <span className="max-w-[130px] truncate">
+                    {REGION_NAV_ITEMS.find((r) => r.id === selectedRegion)?.name[language === 'es' ? 'es' : 'en']}
+                  </span>
+                  <X className="w-3.5 h-3.5 text-emerald-400 hover:text-white" />
                 </button>
               )}
-
-              {/* Filters Toggle */}
-              <button
-                id="map-toggle-filters-btn"
-                onClick={() => setShowFiltersModal(!showFiltersModal)}
-                className={`flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-bold rounded-xl border transition-all ${
-                  selectedCategory !== 'all' || selectedDifficulty !== 'all'
-                    ? 'bg-amber-500 border-amber-400 text-stone-950 shadow-md'
-                    : 'bg-emerald-950/70 border-emerald-500/30 text-emerald-100 hover:bg-emerald-900/90'
-                }`}
-              >
-                <Filter className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{language === 'es' ? 'Filtros' : 'Filters'}</span>
-                {(selectedCategory !== 'all' || selectedDifficulty !== 'all') && (
-                  <span className="w-2 h-2 rounded-full bg-stone-950"></span>
-                )}
-              </button>
-
-              {/* Layer Switcher Button */}
-              <div className="relative">
+            </div>
+          ) : (
+            /* Expanded State: Compact, Floating, Non-intrusive Search & Control Deck */
+            <div className="flex flex-col gap-2">
+              <div className="bg-[#051e16]/95 backdrop-blur-md border border-emerald-500/35 rounded-2xl shadow-2xl p-2 sm:p-2.5 flex items-center justify-between gap-1.5 sm:gap-2">
+                {/* Back to Tours Button */}
                 <button
-                  id="map-layer-selector-btn"
-                  onClick={() => setShowLayerMenu(!showLayerMenu)}
-                  className="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-bold text-emerald-100 bg-emerald-950/70 hover:bg-emerald-900/90 border border-emerald-500/30 rounded-xl transition-all"
-                  title={language === 'es' ? 'Cambiar estilo de mapa' : 'Change map style'}
+                  id="map-exit-btn"
+                  onClick={onExitMap}
+                  className="flex items-center gap-1 px-2.5 sm:px-3 py-2 text-xs font-bold text-emerald-100 hover:text-white bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 rounded-xl transition-all shadow shrink-0"
+                  title={language === 'es' ? 'Volver al catálogo de tours' : 'Back to tours list'}
                 >
-                  <Layers className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="hidden md:inline">{TILE_LAYERS[activeLayer].name[language === 'es' ? 'es' : 'en']}</span>
+                  <span>←</span>
+                  <span className="hidden sm:inline">{language === 'es' ? 'Volver' : 'Back'}</span>
                 </button>
 
-                {/* Layer Dropdown */}
-                {showLayerMenu && (
-                  <div className="absolute right-0 mt-2 w-56 bg-[#06241a] border border-emerald-500/40 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 px-3 py-1 mb-1">
-                      {language === 'es' ? 'Capas de Mapa' : 'Map Layers'}
+                {/* Center: Live Tour Search Input */}
+                <div className="flex-1 min-w-[140px] relative">
+                  <div className="relative flex items-center">
+                    <Search className="absolute left-2.5 sm:left-3 w-3.5 sm:w-4 h-3.5 sm:h-4 text-emerald-400 pointer-events-none" />
+                    <input
+                      id="map-search-input"
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={language === 'es' ? 'Buscar volcán, playa, rafting...' : 'Search volcano, beach, rafting...'}
+                      className="w-full pl-8 sm:pl-9 pr-7 sm:pr-8 py-1.5 sm:py-2 bg-emerald-950/70 border border-emerald-500/30 rounded-xl text-xs sm:text-sm text-emerald-100 placeholder-emerald-400/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/60 transition-all"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-2 text-emerald-400/70 hover:text-emerald-200"
+                        title={language === 'es' ? 'Limpiar búsqueda' : 'Clear search'}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Region Navigation Toggle Button */}
+                <button
+                  id="map-toggle-regions-btn"
+                  onClick={() => setShowRegionPills(!showRegionPills)}
+                  className={`flex items-center gap-1 px-2 sm:px-2.5 py-1.5 sm:py-2 text-xs font-bold rounded-xl border transition-all shrink-0 ${
+                    showRegionPills || selectedRegion !== 'all'
+                      ? 'bg-emerald-600 border-emerald-400 text-stone-950 font-black shadow-md'
+                      : 'bg-emerald-950/80 border-emerald-500/30 text-emerald-200 hover:bg-emerald-900'
+                  }`}
+                  title={language === 'es' ? 'Ver regiones de Costa Rica' : 'Explore Costa Rica regions'}
+                >
+                  <MapPin className="w-3.5 h-3.5" />
+                  <span className="hidden md:inline">
+                    {selectedRegion !== 'all' 
+                      ? (REGION_NAV_ITEMS.find(r => r.id === selectedRegion)?.icon || '📍') 
+                      : (language === 'es' ? 'Regiones' : 'Regions')}
+                  </span>
+                  {showRegionPills ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </button>
+
+                {/* Filters Toggle */}
+                <button
+                  id="map-toggle-filters-btn"
+                  onClick={() => setShowFiltersModal(!showFiltersModal)}
+                  className={`flex items-center gap-1 px-2 sm:px-2.5 py-1.5 sm:py-2 text-xs font-bold rounded-xl border transition-all shrink-0 ${
+                    selectedCategory !== 'all' || selectedDifficulty !== 'all'
+                      ? 'bg-amber-400 border-amber-300 text-stone-950 font-black shadow-md'
+                      : 'bg-emerald-950/80 border-emerald-500/30 text-emerald-200 hover:bg-emerald-900'
+                  }`}
+                  title={language === 'es' ? 'Filtrar por categoría y dificultad' : 'Filter by category and difficulty'}
+                >
+                  <Filter className="w-3.5 h-3.5" />
+                  <span className="hidden lg:inline">{language === 'es' ? 'Filtros' : 'Filters'}</span>
+                  {(selectedCategory !== 'all' || selectedDifficulty !== 'all') && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-stone-950"></span>
+                  )}
+                </button>
+
+                {/* Layer Switcher Button */}
+                <div className="relative shrink-0">
+                  <button
+                    id="map-layer-selector-btn"
+                    onClick={() => setShowLayerMenu(!showLayerMenu)}
+                    className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 sm:py-2 text-xs font-bold text-emerald-200 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/30 rounded-xl transition-all"
+                    title={language === 'es' ? 'Cambiar estilo de mapa (Satélite, Relieve, Terreno)' : 'Change map style'}
+                  >
+                    <Layers className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="hidden xl:inline">{TILE_LAYERS[activeLayer].name[language === 'es' ? 'es' : 'en']}</span>
+                  </button>
+
+                  {/* Layer Dropdown */}
+                  {showLayerMenu && (
+                    <div className="absolute right-0 mt-2 w-56 bg-[#06241a] border border-emerald-500/40 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 px-3 py-1 mb-1">
+                        {language === 'es' ? 'Capas de Mapa' : 'Map Layers'}
+                      </div>
+                      {(Object.keys(TILE_LAYERS) as TileLayerKey[]).map((key) => {
+                        const l = TILE_LAYERS[key];
+                        const isActive = activeLayer === key;
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => {
+                              setActiveLayer(key);
+                              setShowLayerMenu(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all ${
+                              isActive 
+                                ? 'bg-emerald-500 text-stone-950 font-bold' 
+                                : 'text-emerald-100 hover:bg-emerald-900/60'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span>{l.icon}</span>
+                              <span>{l.name[language === 'es' ? 'es' : 'en']}</span>
+                            </div>
+                            {isActive && <Check className="w-4 h-4" />}
+                          </button>
+                        );
+                      })}
+
+                      {/* Google Maps toggle if key present */}
+                      {GOOGLE_MAPS_API_KEY && (
+                        <div className="mt-2 pt-2 border-t border-emerald-500/20">
+                          <button
+                            onClick={() => {
+                              setUseGoogleMapsMode(!useGoogleMapsMode);
+                              setShowLayerMenu(false);
+                            }}
+                            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-emerald-900/50"
+                          >
+                            <span>🗺️ Google Maps Vector</span>
+                            <span>{useGoogleMapsMode ? 'ON' : 'OFF'}</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    {(Object.keys(TILE_LAYERS) as TileLayerKey[]).map((key) => {
-                      const l = TILE_LAYERS[key];
-                      const isActive = activeLayer === key;
+                  )}
+                </div>
+
+                {/* Offline Download Button */}
+                <button
+                  id="map-download-offline-btn"
+                  onClick={handleDownloadOffline}
+                  className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 sm:py-2 text-xs font-bold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 rounded-xl transition-all shadow shrink-0"
+                  title={language === 'es' ? 'Guardar mapa para uso sin conexión' : 'Download map for offline use'}
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span className="hidden lg:inline">{isCached ? (language === 'es' ? 'Guardado' : 'Cached') : 'Offline'}</span>
+                </button>
+
+                {/* Collapsing / Clear Map Button */}
+                <button
+                  id="map-collapse-controls-btn"
+                  onClick={() => setIsControlsCollapsed(true)}
+                  className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 sm:py-2 text-xs font-bold text-emerald-300 hover:text-white bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-500/40 rounded-xl transition-all shrink-0"
+                  title={language === 'es' ? 'Ocultar menú para despejar la vista del mapa' : 'Hide menu to clear map view'}
+                >
+                  <EyeOff className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="hidden md:inline">{language === 'es' ? 'Despejar' : 'Clear'}</span>
+                </button>
+              </div>
+
+              {/* Region Quick Navigation Pills (Collapsible on demand) */}
+              {showRegionPills && (
+                <div className="bg-[#051e16]/95 backdrop-blur-md border border-emerald-500/30 rounded-2xl p-2 shadow-2xl animate-in slide-in-from-top-2 duration-150">
+                  <div className="flex items-center justify-between px-2 pb-1.5 mb-1 border-b border-emerald-500/20 text-[11px] font-bold text-emerald-300">
+                    <span className="flex items-center gap-1.5">
+                      <Compass className="w-3.5 h-3.5 text-emerald-400" />
+                      {language === 'es' ? 'Seleccionar Región de Costa Rica' : 'Select Costa Rica Region'}
+                    </span>
+                    <button
+                      onClick={() => setShowRegionPills(false)}
+                      className="text-emerald-400 hover:text-white p-0.5 rounded"
+                      title={language === 'es' ? 'Cerrar regiones' : 'Close regions'}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none">
+                    {REGION_NAV_ITEMS.map((item) => {
+                      const isSelected = selectedRegion === item.id;
                       return (
                         <button
-                          key={key}
+                          key={item.id}
+                          id={`region-nav-pill-${item.id}`}
                           onClick={() => {
-                            setActiveLayer(key);
-                            setShowLayerMenu(false);
+                            handleFlyToRegion(item.id);
                           }}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all ${
-                            isActive 
-                              ? 'bg-emerald-500 text-stone-950 font-bold' 
-                              : 'text-emerald-100 hover:bg-emerald-900/60'
+                          className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-md ${
+                            isSelected
+                              ? 'bg-emerald-500 text-stone-950 border-2 border-white scale-105 shadow-emerald-500/25 font-black'
+                              : 'bg-emerald-950/80 text-emerald-100 hover:bg-emerald-900 border border-emerald-500/30 hover:border-emerald-400'
                           }`}
                         >
-                          <div className="flex items-center gap-2">
-                            <span>{l.icon}</span>
-                            <span>{l.name[language === 'es' ? 'es' : 'en']}</span>
-                          </div>
-                          {isActive && <Check className="w-4 h-4" />}
+                          <span>{item.name[language === 'es' ? 'es' : 'en']}</span>
                         </button>
                       );
                     })}
-
-                    {/* Google Maps toggle if key present */}
-                    {GOOGLE_MAPS_API_KEY && (
-                      <div className="mt-2 pt-2 border-t border-emerald-500/20">
-                        <button
-                          onClick={() => {
-                            setUseGoogleMapsMode(!useGoogleMapsMode);
-                            setShowLayerMenu(false);
-                          }}
-                          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-emerald-900/50"
-                        >
-                          <span>🗺️ Google Maps Vector</span>
-                          <span>{useGoogleMapsMode ? 'ON' : 'OFF'}</span>
-                        </button>
-                      </div>
-                    )}
                   </div>
-                )}
-              </div>
-
-              {/* Offline Download Button */}
-              <button
-                id="map-download-offline-btn"
-                onClick={handleDownloadOffline}
-                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs font-bold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 rounded-xl transition-all shadow"
-                title={language === 'es' ? 'Descargar mapa para uso offline' : 'Download map for offline use'}
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span className="hidden lg:inline">{isCached ? (language === 'es' ? 'Guardado' : 'Cached') : (language === 'es' ? 'Offline' : 'Offline')}</span>
-              </button>
+                </div>
+              )}
             </div>
-          </div>
-
-          {/* Region Quick Navigation Pills (Horizontal Scroll) */}
-          <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none">
-            {REGION_NAV_ITEMS.map((item) => {
-              const isSelected = selectedRegion === item.id;
-              return (
-                <button
-                  key={item.id}
-                  id={`region-nav-pill-${item.id}`}
-                  onClick={() => handleFlyToRegion(item.id)}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all backdrop-blur-md shadow-md ${
-                    isSelected
-                      ? 'bg-emerald-500 text-stone-950 border-2 border-white scale-105 shadow-emerald-500/20'
-                      : 'bg-[#06241a]/85 text-emerald-100 hover:bg-emerald-900/90 border border-emerald-500/30 hover:border-emerald-400'
-                  }`}
-                >
-                  <span>{item.name[language === 'es' ? 'es' : 'en']}</span>
-                </button>
-              );
-            })}
-          </div>
+          )}
         </div>
       </header>
 

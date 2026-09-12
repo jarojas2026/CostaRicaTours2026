@@ -169,7 +169,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Structural Spacer: Prevents content clipping under fixed header */}
       <div className={`w-full shrink-0 transition-all duration-300 ${isScrolled ? 'h-[62px]' : 'h-[92px] sm:h-[96px]'}`} aria-hidden="true" />
       
-      <header id="main-header" className={`w-full fixed top-0 left-0 right-0 z-50 bg-[#051c14]/95 backdrop-blur-md border-b border-emerald-500/20 text-white shadow-2xl transition-all duration-300 ${isScrolled ? 'shadow-emerald-950/50' : ''}`}>
+      <header id="main-header" className={`w-full fixed top-0 left-0 right-0 z-[70] bg-[#051c14]/95 backdrop-blur-md border-b border-emerald-500/20 text-white shadow-2xl transition-all duration-300 ${isScrolled ? 'shadow-emerald-950/50' : ''}`}>
         
         {/* Top Assistance & Trust Strip (Collapses smoothly on scroll to maximize visible screen) */}
         <div className={`bg-[#02130c] text-xs px-3 sm:px-6 border-b border-emerald-500/20 text-stone-200 transition-all duration-300 overflow-hidden ${
