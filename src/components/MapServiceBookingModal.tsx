@@ -192,7 +192,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
     >
       <div 
         id="map-service-booking-modal-dialog"
-        className="bg-[#051e16] border-2 border-emerald-500/40 rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden my-6 text-white animate-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]"
+        className="bg-[#051e16]/95 backdrop-blur-2xl border border-emerald-500/30 rounded-[28px] max-w-2xl w-full shadow-[0_0_40px_rgba(0,0,0,0.6)] overflow-hidden my-6 text-white animate-in zoom-in-95 duration-300 flex flex-col max-h-[92vh] ring-1 ring-white/10"
       >
         {/* Header */}
         <div className="bg-emerald-950/80 p-4 sm:p-5 border-b border-emerald-500/30 flex items-center justify-between shrink-0">
@@ -311,7 +311,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                       min={todayStr}
                       onChange={(e) => setDate(e.target.value)}
                       required
-                      className="w-full px-3 py-2 bg-emerald-950/70 border border-emerald-500/30 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      className="w-full px-4 py-3 bg-[#0a291f] border border-emerald-800/50 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 transition-all duration-300 placeholder-emerald-800/50"
                     />
                   </div>
                   <div>
@@ -324,7 +324,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                       min={date}
                       onChange={(e) => setCheckOutDate(e.target.value)}
                       required
-                      className="w-full px-3 py-2 bg-emerald-950/70 border border-emerald-500/30 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      className="w-full px-4 py-3 bg-[#0a291f] border border-emerald-800/50 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 transition-all duration-300 placeholder-emerald-800/50"
                     />
                   </div>
                 </div>
@@ -343,7 +343,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                         min={todayStr}
                         onChange={(e) => setDate(e.target.value)}
                         required
-                        className="w-full px-3 py-2 bg-emerald-950/70 border border-emerald-500/30 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        className="w-full px-4 py-3 bg-[#0a291f] border border-emerald-800/50 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 transition-all duration-300 placeholder-emerald-800/50"
                       />
                     </div>
                     <div>
@@ -353,7 +353,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                       <select
                         value={timeSlot}
                         onChange={(e) => setTimeSlot(e.target.value)}
-                        className="w-full px-3 py-2 bg-emerald-950/70 border border-emerald-500/30 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        className="w-full px-4 py-3 bg-[#0a291f] border border-emerald-800/50 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 transition-all duration-300 placeholder-emerald-800/50"
                       >
                         <option value="07:00 AM">07:00 AM ({language === 'es' ? 'Recomendado fauna matutina' : 'Best for wildlife'})</option>
                         <option value="08:30 AM">08:30 AM</option>
@@ -373,7 +373,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                       value={passportId}
                       onChange={(e) => setPassportId(e.target.value)}
                       required
-                      className="w-full px-3 py-2 bg-emerald-950/70 border border-emerald-500/30 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      className="w-full px-4 py-3 bg-[#0a291f] border border-emerald-800/50 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 transition-all duration-300 placeholder-emerald-800/50"
                     />
                   </div>
                   <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-200 flex items-start gap-2">
@@ -397,7 +397,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                       <select
                         value={flightDirection}
                         onChange={(e) => setFlightDirection(e.target.value as any)}
-                        className="w-full px-3 py-2 bg-emerald-950/70 border border-emerald-500/30 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        className="w-full px-4 py-3 bg-[#0a291f] border border-emerald-800/50 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 transition-all duration-300 placeholder-emerald-800/50"
                       >
                         <option value="sjo_to_destination">San José (SJO) ➡️ {getLangText(service.name, language)}</option>
                         <option value="destination_to_sjo">{getLangText(service.name, language)} ➡️ San José (SJO)</option>
@@ -413,7 +413,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                         min={todayStr}
                         onChange={(e) => setDate(e.target.value)}
                         required
-                        className="w-full px-3 py-2 bg-emerald-950/70 border border-emerald-500/30 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        className="w-full px-4 py-3 bg-[#0a291f] border border-emerald-800/50 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 transition-all duration-300 placeholder-emerald-800/50"
                       />
                     </div>
                   </div>
@@ -438,7 +438,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                       <select
                         value={transferType}
                         onChange={(e) => setTransferType(e.target.value as any)}
-                        className="w-full px-3 py-2 bg-emerald-950/70 border border-emerald-500/30 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        className="w-full px-4 py-3 bg-[#0a291f] border border-emerald-800/50 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 transition-all duration-300 placeholder-emerald-800/50"
                       >
                         <option value="shared_shuttle">{language === 'es' ? 'Shuttle Compartido Interhotel' : 'Shared Hotel-to-Hotel Shuttle'}</option>
                         <option value="private_van">{language === 'es' ? 'Microbús Privada Exclusiva' : 'Exclusive Private Van'}</option>
@@ -453,7 +453,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                         type="time"
                         value={timeSlot.includes(':') ? timeSlot.slice(0, 5) : '08:00'}
                         onChange={(e) => setTimeSlot(e.target.value)}
-                        className="w-full px-3 py-2 bg-emerald-950/70 border border-emerald-500/30 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        className="w-full px-4 py-3 bg-[#0a291f] border border-emerald-800/50 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 transition-all duration-300 placeholder-emerald-800/50"
                       />
                     </div>
                   </div>
@@ -524,7 +524,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       placeholder={language === 'es' ? 'Ej: María Rodríguez' : 'e.g. John Smith'}
-                      className="w-full px-3 py-2 bg-emerald-950/70 border border-emerald-500/30 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      className="w-full px-4 py-3 bg-[#0a291f] border border-emerald-800/50 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 transition-all duration-300 placeholder-emerald-800/50"
                     />
                   </div>
                   <div>
@@ -537,7 +537,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                       value={customerEmail}
                       onChange={(e) => setCustomerEmail(e.target.value)}
                       placeholder="tucorreo@ejemplo.com"
-                      className="w-full px-3 py-2 bg-emerald-950/70 border border-emerald-500/30 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      className="w-full px-4 py-3 bg-[#0a291f] border border-emerald-800/50 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 transition-all duration-300 placeholder-emerald-800/50"
                     />
                   </div>
                 </div>
@@ -553,7 +553,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
                       placeholder="+506 8888-8888"
-                      className="w-full px-3 py-2 bg-emerald-950/70 border border-emerald-500/30 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      className="w-full px-4 py-3 bg-[#0a291f] border border-emerald-800/50 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 transition-all duration-300 placeholder-emerald-800/50"
                     />
                   </div>
                   <div>
@@ -565,7 +565,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                       value={specialRequests}
                       onChange={(e) => setSpecialRequests(e.target.value)}
                       placeholder={language === 'es' ? 'Alergias, número de vuelo, equipaje' : 'Luggage, flight number, dietary'}
-                      className="w-full px-3 py-2 bg-emerald-950/70 border border-emerald-500/30 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      className="w-full px-4 py-3 bg-[#0a291f] border border-emerald-800/50 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 transition-all duration-300 placeholder-emerald-800/50"
                     />
                   </div>
                 </div>

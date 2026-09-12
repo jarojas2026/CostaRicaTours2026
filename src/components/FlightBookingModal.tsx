@@ -151,10 +151,10 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white border-2 border-orange-400/80 rounded-[2rem] max-w-2xl w-full shadow-2xl overflow-hidden my-6 animate-fade-in text-white">
+      <div className="bg-stone-50 border border-stone-200 rounded-[28px] max-w-2xl w-full shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden my-6 animate-fade-in text-stone-900">
         
         {/* Modal Header */}
-        <div className="bg-stone-100/90 p-5 sm:p-6 border-b border-teal-500/30 flex items-center justify-between">
+        <div className="bg-white p-5 sm:p-6 border-b border-stone-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-orange-400 text-stone-950 flex items-center justify-center font-black shadow-lg">
               <Plane className="w-6 h-6" />
@@ -168,7 +168,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                   {flight.aircraft}
                 </span>
               </div>
-              <h3 className="text-lg sm:text-xl font-black text-white mt-1">
+              <h3 className="text-lg sm:text-xl font-black text-stone-900 mt-1">
                 {language === 'es' ? 'Reserva de Vuelo a Costa Rica' : 'Book Flight to Costa Rica'}
               </h3>
             </div>
@@ -176,7 +176,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-2 rounded-full bg-white/80 hover:bg-stone-100 text-stone-700 hover:text-white transition-colors cursor-pointer"
+            className="p-2 rounded-full bg-white/80 hover:bg-stone-100 text-stone-700 hover:text-stone-900 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -228,7 +228,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                 value={departureDate}
                 min={new Date().toISOString().split('T')[0]}
                 onChange={(e) => setDepartureDate(e.target.value)}
-                className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-orange-400"
+                className="input-modern"
               />
             </div>
 
@@ -240,10 +240,10 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
               <select
                 value={passengersCount}
                 onChange={(e) => setPassengersCount(Number(e.target.value))}
-                className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-orange-400 cursor-pointer"
+                className="input-modern cursor-pointer"
               >
                 {[1, 2, 3, 4, 5, 6, 8, 10].map((num) => (
-                  <option key={num} value={num} className="bg-white text-white">
+                  <option key={num} value={num} className="bg-white text-stone-900">
                     {num} {num === 1 ? (language === 'es' ? 'Pasajero' : 'Passenger') : (language === 'es' ? 'Pasajeros' : 'Passengers')}
                   </option>
                 ))}
@@ -258,10 +258,10 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
               <select
                 value={selectedCabin}
                 onChange={(e) => setSelectedCabin(e.target.value as any)}
-                className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-orange-400 cursor-pointer"
+                className="input-modern cursor-pointer"
               >
-                <option value="Economy" className="bg-white text-white">Economy Class</option>
-                <option value="Business" className="bg-white text-white">Business Class (VIP)</option>
+                <option value="Economy" className="bg-white text-stone-900">Economy Class</option>
+                <option value="Business" className="bg-white text-stone-900">Business Class (VIP)</option>
               </select>
             </div>
           </div>
@@ -282,7 +282,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                   className="w-4 h-4 accent-orange-400 rounded mt-0.5"
                 />
                 <div>
-                  <span className="text-xs font-black text-white flex items-center gap-1">
+                  <span className="text-xs font-black text-stone-900 flex items-center gap-1">
                     <Car className="w-3.5 h-3.5 text-orange-400" />
                     {language === 'es' ? 'Traslado Receptivo VIP Aeropuerto' : 'VIP Airport Meet & Transfer'}
                   </span>
@@ -302,7 +302,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                   className="w-4 h-4 accent-orange-400 rounded mt-0.5"
                 />
                 <div>
-                  <span className="text-xs font-black text-white flex items-center gap-1">
+                  <span className="text-xs font-black text-stone-900 flex items-center gap-1">
                     <Globe className="w-3.5 h-3.5 text-teal-400" />
                     {language === 'es' ? 'Kit SIM 4G/5G + Soporte WhatsApp' : '4G/5G SIM Kit + 24/7 Concierge'}
                   </span>
@@ -333,7 +333,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Ej: Carlos Fernandez"
-                  className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-400"
+                  className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-stone-900 focus:outline-none focus:border-orange-400"
                 />
               </div>
 
@@ -347,7 +347,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ejemplo@correo.com"
-                  className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-400"
+                  className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-stone-900 focus:outline-none focus:border-orange-400"
                 />
               </div>
 
@@ -361,7 +361,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+34 600 000 000"
-                  className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-400"
+                  className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-stone-900 focus:outline-none focus:border-orange-400"
                 />
               </div>
 
@@ -374,7 +374,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                   value={passportNumber}
                   onChange={(e) => setPassportNumber(e.target.value)}
                   placeholder="P12345678"
-                  className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-400"
+                  className="w-full bg-stone-100/60 border border-teal-500/30 rounded-xl px-3 py-2 text-sm text-stone-900 focus:outline-none focus:border-orange-400"
                 />
               </div>
             </div>
