@@ -35,7 +35,6 @@ import {
   analyzeOperationalRiskWithClaude,
   getClaudeStatus
 } from './backend/claudeService';
-import { getAutonomousStatus, runAutonomousDaemonLoop } from './backend/autonomousEngine';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -1129,6 +1128,43 @@ app.post('/webhook/reporte-semanal-conversion', async (req, res) => {
   }
 });
 
+// ==========================================
+// 🚀 RUTAS ADICIONALES (WF-14 a WF-24)
+// ==========================================
+const additionalWebhooks = [
+  '/webhook/reserva-parques-sinac',
+  '/webhook/alerta-vuelo-retrasado',
+  '/webhook/reporte-objeto-olvidado',
+  '/webhook/whatsapp-traductor-soporte',
+  '/webhook/recepcion-vip-aeropuerto',
+  '/webhook/alerta-requerimientos-especiales',
+  '/webhook/cancelacion-reembolso-inteligente',
+  '/webhook/entrega-fotos-recuerdos',
+  '/webhook/sincronizacion-operadores-locales',
+  '/webhook/alerta-emergencia-sos',
+  '/webhook/booster-reseñas-incentivos'
+];
+
+app.post(additionalWebhooks, async (req, res) => {
+  try {
+    const endpoint = req.path;
+    const triggerName = endpoint.replace('/webhook/', '').toUpperCase().replace(/-/g, '_');
+    const payload = { trigger: triggerName, ...req.body, timestamp: new Date().toISOString() };
+    const n8nResult = await dispatchToN8N(endpoint, payload).catch(() => null);
+
+    if (n8nResult && n8nResult.success && n8nResult.data) {
+      return res.json(n8nResult.data);
+    }
+    
+    res.json({
+      exito: true,
+      mensaje: `Webhook ${triggerName} procesado y despachado a n8n`
+    });
+  } catch (error: any) {
+    res.status(500).json({ exito: false, error: error.message });
+  }
+});
+
 // 14. Health Check Webhook para n8n Ping
 app.all('/webhook/health-check', (req, res) => {
   res.json({ status: 'ok', service: 'costa-rica-tours-n8n-bridge', timestamp: new Date().toISOString() });
@@ -1303,8 +1339,7 @@ app.get('/api/n8n/status', (req, res) => {
         '/api/webhooks/n8n/update-booking',
         '/webhook/verificar-pago-reserva',
         '/api/webhooks/n8n/booking-action',
-        '/api/analytics/conversion-report',
-        '/api/agents/autonomous-daemon'
+        '/api/analytics/conversion-report'
       ]
     },
     authSecurity: {
@@ -1350,20 +1385,6 @@ app.post('/api/agents/contingency', async (req, res) => {
 app.post('/api/agents/supervisor', async (req, res) => {
   const result = await runSupervisor();
   res.json(result);
-});
-
-// 🤖 ENDPOINT DE MOTOR DE AUTONOMÍA TOTAL (DAEMON SOBERANO SIN HUMANOS)
-app.get('/api/agents/autonomous-daemon', (req, res) => {
-  res.json(getAutonomousStatus());
-});
-
-app.post('/api/agents/autonomous-daemon', async (req, res) => {
-  const status = await runAutonomousDaemonLoop();
-  res.json({
-    success: true,
-    message: 'Ciclo de autonomía ejecutado con éxito. Operaciones auto-gestionadas sin intervención humana.',
-    status
-  });
 });
 
 app.post('/api/agents/log_exception', (req, res) => {
