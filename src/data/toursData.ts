@@ -1914,119 +1914,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['San José Palacio', 'Radisson San José', 'Gran Hotel Costa Rica', 'Hilton Garden Inn San José', 'Intercontinental Escazú'],
     departureTimes: ['07:30 AM'],
     location: { lat: 9.9791, lng: -83.8528, placeName: 'Volcán Irazú, Cartago, Costa Rica' },
-    operatorName: 'Expediciones Tropicales',
-    operatorBadge: { es: 'Operador Certificado #1 San José', en: 'Certified #1 San Jose Operator' },
-    instantConfirmation: true,
-    bestPriceGuaranteed: true
-  },
-  {
-    id: 'sjo-tortuga-island-cruise',
-    title: {
-      es: 'Crucero en Catamarán a Isla Tortuga & Playa Blanca',
-      en: 'Tortuga Island Catamaran Cruise & White Sand Beach'
-    },
-    subtitle: {
-      es: 'Navegación en el Golfo de Nicoya con almuerzo buffet y snorkel',
-      en: 'Gulf of Nicoya sailing with gourmet buffet lunch & snorkeling'
-    },
-    category: 'beaches',
-    region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80'
-    ],
-    priceUSD: 150,
-    durationHours: 11,
-    durationLabel: { es: 'Día Completo (11 hrs)', en: 'Full Day (11 hrs)' },
-    difficulty: 'fácil',
-    difficultyLabel: { es: 'Fácil - Familiar', en: 'Easy - Family' },
-    rating: 4.9,
-    reviewsCount: 540,
-    featured: true,
-    bestseller: true,
-    ecoCert: true,
-    tourType: 'group',
-    maxGroupSize: 45,
-    freeCancellation: true,
-    description: {
-      es: 'Aborda un confortable catamarán de alta tecnología en el puerto de Puntarenas y navega por las aguas turquesas del Golfo de Nicoya hasta llegar a las playas vírgenes de arena blanca de Isla Tortuga. Disfruta de música en vivo, frutas tropicales, snorkel en arrecifes de roca volcánica, tour de banana boat y un exquisito almuerzo servido bajo las palmeras.',
-      en: 'Board a comfortable modern catamaran in Puntarenas and sail across the turquoise waters of the Gulf of Nicoya to the pristine white sands of Tortuga Island. Enjoy live music, fresh tropical fruit, coral reef snorkeling, banana boat rides, and an exquisite 4-course lunch served right under the coconut palms.'
-    },
-    highlights: {
-      es: ['Navegación en catamarán de lujo por el Golfo', 'Playa de arena blanca y aguas transparentes', 'Tour de snorkel con equipo completo', 'Almuerzo buffet gourmet en la playa', 'Transporte desde San José'],
-      en: ['Luxury catamaran cruise across Nicoya Gulf', 'White sand beach and crystal waters', 'Guided reef snorkel tour with gear', 'Gourmet beach buffet lunch', 'Roundtrip transport from San Jose']
-    },
-    inclusions: {
-      es: ['Transporte A/C terrestre San José - Puntarenas', 'Desayuno ligero', 'Almuerzo buffet gourmet', 'Frutas tropicales y bebidas naturales', 'Equipo de snorkel y banana boat'],
-      en: ['A/C ground transfer San Jose - Puntarenas', 'Light breakfast on board', 'Gourmet buffet lunch', 'Fresh fruits and fruit punch', 'Snorkel gear and banana boat']
-    },
-    exclusions: {
-      es: ['Bebidas alcohólicas premium', 'Alquiler de kayaks o sillas reclinables privadas'],
-      en: ['Premium alcoholic drinks', 'Private beach lounger upgrades']
-    },
-    whatToBring: {
-      es: ['Traje de baño', 'Toalla', 'Bloqueador biodegradable', 'Gafas de sol', 'Cambio de ropa seca'],
-      en: ['Swimsuit', 'Towel', 'Biodegradable sunscreen', 'Sunglasses', 'Dry change of clothes']
-    },
-    pickupHotels: ['San José Palacio', 'Gran Hotel Costa Rica', 'Radisson', 'Crown Plaza', 'Hoteles en Puntarenas'],
-    departureTimes: ['06:00 AM'],
-    location: { lat: 9.7744, lng: -84.9017, placeName: 'Isla Tortuga, Golfo de Nicoya, Costa Rica' },
-    operatorName: 'Expediciones Tropicales / Bay Island Cruises',
-    operatorBadge: { es: 'Crucero Oficial Certificado', en: 'Certified Official Cruise' },
-    instantConfirmation: true,
-    bestPriceGuaranteed: true
-  },
-  {
-    id: 'sjo-city-heritage-tour',
-    title: {
-      es: 'San José City Tour VIP & Teatro Nacional',
-      en: 'San José VIP City Tour & National Theater'
-    },
-    subtitle: {
-      es: 'Museo de Oro Precolombino, Mercado Central y arquitectura histórica',
-      en: 'Pre-Columbian Gold Museum, Central Market & historic architecture'
-    },
-    category: 'culture',
-    region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=800&q=80'],
-    priceUSD: 74,
-    durationHours: 5,
-    durationLabel: { es: 'Medio Día (5 hrs)', en: 'Half Day (5 hrs)' },
-    difficulty: 'fácil',
-    difficultyLabel: { es: 'Fácil', en: 'Easy' },
-    rating: 4.8,
-    reviewsCount: 190,
-    ecoCert: true,
-    tourType: 'group',
-    maxGroupSize: 18,
-    freeCancellation: true,
-    description: {
-      es: 'Descubre la rica historia, arquitectura y vida cotidiana de la capital de Costa Rica. Visitaremos el emblemático Teatro Nacional (joya arquitectónica de 1897), el Museo del Oro Precolombino, la Catedral Metropolitana, el Parque Central y nos sumergiremos en los aromas del Mercado Central para probar café gourmet y comida típica.',
-      en: 'Immerse yourself in the history, architecture, and vibrant culture of Costa Rica’s capital. Visit the iconic National Theater (1897 architectural masterpiece), the Pre-Columbian Gold Museum, the Metropolitan Cathedral, Central Park, and taste gourmet coffee while exploring the lively historic Central Market.'
-    },
-    highlights: {
-      es: ['Teatro Nacional de Costa Rica', 'Museo de Oro Precolombino', 'Recorrido por el Mercado Central', 'Guía historiador bilingüe', 'Degustación de café costarricense'],
-      en: ['National Theater guided visit', 'Pre-Columbian Gold Museum entrance', 'Central Market cultural stroll', 'Bilingual historian guide', 'Costa Rican coffee tasting']
-    },
-    inclusions: {
-      es: ['Transporte hotelero ida y vuelta', 'Guía profesional bilingüe', 'Entrada al Teatro Nacional', 'Entrada al Museo de Oro', 'Degustación de café'],
-      en: ['Roundtrip hotel transport', 'Professional bilingual guide', 'National Theater entrance', 'Gold Museum entrance', 'Coffee tasting']
-    },
-    exclusions: {
-      es: ['Almuerzo completo', 'Propinas'],
-      en: ['Full lunch', 'Gratuities']
-    },
-    whatToBring: {
-      es: ['Zapatos cómodos para caminar', 'Cámara fotográfica', 'Sombrilla o impermeable'],
-      en: ['Comfortable walking shoes', 'Camera', 'Umbrella or light rain jacket']
-    },
-    pickupHotels: ['Hoteles céntricos de San José, Escazú, Belén y Santa Ana'],
-    departureTimes: ['08:30 AM', '01:30 PM'],
-    location: { lat: 9.9333, lng: -84.0833, placeName: 'San José Centro, Costa Rica' },
-    operatorName: 'Expediciones Tropicales',
-    operatorBadge: { es: 'Tour Cultural Oficial', en: 'Official Cultural Tour' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2080,8 +1967,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['The Springs Resort', 'Tabacón Resort', 'Nayara Resorts', 'Baldi Hot Springs', 'Hoteles en La Fortuna'],
     departureTimes: ['07:30 AM', '11:30 AM'],
     location: { lat: 10.4500, lng: -84.6600, placeName: 'Cañón Pure Trek, La Fortuna, San Carlos, Costa Rica' },
-    operatorName: 'Pure Trek Canyoning',
-    operatorBadge: { es: 'Operador #1 Cañonismo La Fortuna', en: '#1 Canyoning Operator in Arenal' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2134,8 +2019,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Todos los hoteles en La Fortuna, Arenal y alrededores'],
     departureTimes: ['09:00 AM', '12:30 PM'],
     location: { lat: 10.3800, lng: -84.5800, placeName: 'Río Balsa, San Carlos, Alajuela, Costa Rica' },
-    operatorName: 'Wave Expeditions & Arenal Rafting',
-    operatorBadge: { es: 'Operador Oficial Rafting Arenal', en: 'Official Arenal Rafting Operator' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2188,8 +2071,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Hoteles en La Fortuna y zona volcánica de Arenal'],
     departureTimes: ['08:00 AM', '10:30 AM', '01:00 PM'],
     location: { lat: 10.4350, lng: -84.7100, placeName: 'Sky Adventures Arenal Park, El Castillo, Alajuela, Costa Rica' },
-    operatorName: 'Sky Adventures Costa Rica',
-    operatorBadge: { es: 'Parque de Aventura Certificado', en: 'Certified Adventure Park' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2243,8 +2124,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Hoteles en Tamarindo, Conchal, Flamingo, Playas del Coco, Papagayo y Liberia'],
     departureTimes: ['07:00 AM'],
     location: { lat: 10.7500, lng: -85.3800, placeName: 'Hacienda Guachipelín, Rincón de la Vieja, Guanacaste, Costa Rica' },
-    operatorName: 'Hacienda Guachipelín Adventure Center',
-    operatorBadge: { es: 'Parque Oficial Rincón de la Vieja', en: 'Official Rincón de la Vieja Park' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2296,8 +2175,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Hoteles en Golfo de Papagayo, Playas del Coco, Hermosa, Tamarindo y Conchal'],
     departureTimes: ['08:30 AM'],
     location: { lat: 10.5800, lng: -85.6700, placeName: 'Diamante Eco Adventure Park, Matapalo, Guanacaste, Costa Rica' },
-    operatorName: 'Diamante Eco Adventure Park',
-    operatorBadge: { es: 'Parque Eco-Aventura Certificado', en: 'Certified Eco-Adventure Park' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2351,8 +2228,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Puntos de encuentro en Playa Tamarindo y Playas del Coco'],
     departureTimes: ['01:30 PM'],
     location: { lat: 10.2990, lng: -85.8400, placeName: 'Playa Tamarindo, Guanacaste, Costa Rica' },
-    operatorName: 'Marlin del Rey Catamarans',
-    operatorBadge: { es: 'Operador #1 Catamarán Guanacaste', en: '#1 Catamaran Operator in Guanacaste' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2406,8 +2281,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Todos los hoteles y eco-lodges de Santa Elena y Monteverde'],
     departureTimes: ['08:30 AM', '11:00 AM', '01:00 PM'],
     location: { lat: 10.3300, lng: -84.7900, placeName: 'Selvatura Park, Santa Elena, Monteverde, Puntarenas, Costa Rica' },
-    operatorName: 'Selvatura Park Monteverde',
-    operatorBadge: { es: 'Parque Ecológico Oficial Monteverde', en: 'Official Monteverde Eco-Park' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2459,8 +2332,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Hoteles en Monteverde y Santa Elena'],
     departureTimes: ['08:00 AM', '11:00 AM', '01:00 PM', '03:00 PM'],
     location: { lat: 10.3150, lng: -84.8200, placeName: '100% Aventura Park, Monteverde, Costa Rica' },
-    operatorName: '100% Aventura Monteverde',
-    operatorBadge: { es: 'Canopy Extremo Oficial', en: 'Official Extreme Canopy' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2512,8 +2383,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Hoteles en Manuel Antonio y Quepos'],
     departureTimes: ['08:00 AM', '01:00 PM'],
     location: { lat: 9.4700, lng: -84.2200, placeName: 'Estero Isla Damas, Quepos, Puntarenas, Costa Rica' },
-    operatorName: 'Iguana Tours Manuel Antonio',
-    operatorBadge: { es: 'Operador Oficial #1 Quepos', en: '#1 Operator in Quepos' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2567,8 +2436,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Todos los hoteles en Manuel Antonio y Quepos'],
     departureTimes: ['09:00 AM', '02:00 PM'],
     location: { lat: 9.4200, lng: -84.1600, placeName: 'Marina Pez Vela, Quepos, Puntarenas, Costa Rica' },
-    operatorName: 'Ocean King / Iguana Tours',
-    operatorBadge: { es: 'Mega Catamarán Oficial', en: 'Official Mega Catamaran' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2621,8 +2488,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Punto de salida autorizada en Bahía Aventuras, Uvita'],
     departureTimes: ['08:30 AM', '01:00 PM'],
     location: { lat: 9.1550, lng: -83.7450, placeName: 'Parque Nacional Marino Ballena, Uvita, Osa, Costa Rica' },
-    operatorName: 'Bahía Aventuras Uvita',
-    operatorBadge: { es: 'Operador Oficial Marino Ballena', en: 'Official Marino Ballena Operator' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2675,8 +2540,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Bahía Aventuras en Uvita o Playa Drake'],
     departureTimes: ['07:30 AM'],
     location: { lat: 8.7050, lng: -83.8800, placeName: 'Reserva Biológica Isla del Caño, Osa, Puntarenas, Costa Rica' },
-    operatorName: 'Bahía Aventuras',
-    operatorBadge: { es: 'Operador Autorizado Reserva Marina', en: 'Authorized Marine Reserve Operator' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2730,8 +2593,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Playa Drake, Sierpe o Puerto Jiménez'],
     departureTimes: ['06:00 AM'],
     location: { lat: 8.4800, lng: -83.5900, placeName: 'Estación Biológica Sirena, Parque Nacional Corcovado, Osa, Costa Rica' },
-    operatorName: 'Corcovado Info Center & Osa Wild',
-    operatorBadge: { es: 'Guías Oficiales Certificados SINAC', en: 'Certified Official SINAC Guides' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2784,8 +2645,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Hoteles en San José, Heredia, Alajuela y Guápiles'],
     departureTimes: ['06:00 AM'],
     location: { lat: 10.5400, lng: -83.5000, placeName: 'Parque Nacional Tortuguero, Limón, Costa Rica' },
-    operatorName: 'Grupo Mawamba / Pachira Lodge',
-    operatorBadge: { es: 'Operador Líder Todo Incluido Tortuguero', en: 'Premier All-Inclusive Tortuguero Operator' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2837,8 +2696,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Hoteles en Puerto Viejo, Cahuita, Cocles, Playa Chiquita y Manzanillo'],
     departureTimes: ['08:30 AM', '01:00 PM'],
     location: { lat: 9.7350, lng: -82.8400, placeName: 'Parque Nacional Cahuita, Limón, Costa Rica' },
-    operatorName: 'Caribe Fun Sunrise & Terraventuras',
-    operatorBadge: { es: 'Operador Oficial Caribe Sur', en: 'Official South Caribbean Operator' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },

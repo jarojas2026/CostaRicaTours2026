@@ -10,6 +10,10 @@ import { GoogleGenAI } from '@google/genai';
 import Stripe from 'stripe';
 import { dispatchToN8N, getN8NConfig } from './n8nService';
 import { TOURS } from '../src/data/toursData';
+import {
+  executeProviderRealtimeCoordination,
+  executeCustomerBookingConfirmation
+} from './nativeWorkflows';
 
 const FIRESTORE_DATABASE_ID =
   process.env.FIRESTORE_DATABASE_ID ||
@@ -545,7 +549,18 @@ export async function createBooking(data: any) {
   const fraudRiskScore = isSuspicious ? 65 : 5;
   console.log(`🛡️ [AUTOMATIZACIÓN NATIVA] Antifraude evaluado: Score ${fraudRiskScore}/100 para ${bookingId}`);
 
-  // 5. Despacho opcional a n8n solo si está explícitamente activo
+  // 5. Despacho NATIVO inmediato de Workflows 1 & 2 (Confirmación al cliente y Coordinación con Proveedor)
+  // Se ejecutan en segundo plano protegido sin bloquear la respuesta inmediata al usuario
+  Promise.allSettled([
+    executeCustomerBookingConfirmation(responseBooking).catch((err) => {
+      console.error('❌ Error en despacho nativo de confirmación a cliente:', err);
+    }),
+    executeProviderRealtimeCoordination(responseBooking).catch((err) => {
+      console.error('❌ Error en despacho nativo de coordinación con proveedor:', err);
+    })
+  ]);
+
+  // 6. Despacho opcional a n8n solo si está explícitamente activo
   if (process.env.N8N_ENABLED === 'true') {
     try {
       const config = getN8NConfig();
@@ -602,14 +617,16 @@ export async function getAllBookings(): Promise<any[]> {
 
 /**
  * Actualiza una reserva en Firestore por su ID con Timestamp nativo
+ * Si el estado cambia a cancelada/cancelled, libera de forma transaccional los cupos en availability_slots.
  */
 export async function updateBookingStatus(
   bookingId: string,
   updates: Partial<any>
 ): Promise<{ success: boolean; booking?: any; error?: string }> {
   let existing = inMemoryBookings.get(bookingId);
-
+  const db = getFirestoreDb();
   const col = getBookingsCollection();
+
   if (col) {
     try {
       const docRef = col.doc(bookingId);
@@ -626,6 +643,11 @@ export async function updateBookingStatus(
     return { success: false, error: `Reserva con ID ${bookingId} no encontrada.` };
   }
 
+  const previousStatus = existing.status;
+  const newStatus = updates.status;
+  const isCancelling = (newStatus === 'cancelada' || newStatus === 'cancelled') &&
+                       (previousStatus !== 'cancelada' && previousStatus !== 'cancelled');
+
   const updatedBooking = {
     ...existing,
     ...updates,
@@ -634,15 +656,64 @@ export async function updateBookingStatus(
 
   inMemoryBookings.set(bookingId, updatedBooking);
 
-  if (col) {
+  // Liberar cupo en memoria si corresponde
+  if (isCancelling) {
+    const tourId = existing.tourId;
+    const tourDate = existing.date;
+    const bookingTime = existing.time || '08:00 AM';
+    const passengersToRelease = (Number(existing.adults) || 1) + (Number(existing.children) || 0);
+
+    if (tourId && tourDate) {
+      const slotKey = getSlotKey(tourId, tourDate, bookingTime);
+      const currentMemory = inMemorySlots.get(slotKey) || 0;
+      inMemorySlots.set(slotKey, Math.max(0, currentMemory - passengersToRelease));
+      console.log(`🔄 [MEMORIA] Cupo liberado (${passengersToRelease} asientos) para slot ${slotKey}`);
+    }
+  }
+
+  // Actualización transaccional en Firestore
+  if (db && col) {
     try {
-      await col.doc(bookingId).set(
-        {
-          ...updates,
-          updatedAt: FieldValue.serverTimestamp()
-        },
-        { merge: true }
-      );
+      if (isCancelling) {
+        const tourId = existing.tourId;
+        const tourDate = existing.date;
+        const bookingTime = existing.time || '08:00 AM';
+        const passengersToRelease = (Number(existing.adults) || 1) + (Number(existing.children) || 0);
+        const slotKey = getSlotKey(tourId, tourDate, bookingTime);
+        const slotRef = db.collection('availability_slots').doc(slotKey);
+        const bookingRef = col.doc(bookingId);
+
+        await db.runTransaction(async (transaction) => {
+          const slotDoc = await transaction.get(slotRef);
+          if (slotDoc.exists) {
+            const currentBooked = Number(slotDoc.data()?.bookedSeats) || 0;
+            const newBooked = Math.max(0, currentBooked - passengersToRelease);
+            transaction.update(slotRef, {
+              bookedSeats: newBooked,
+              updatedAt: FieldValue.serverTimestamp()
+            });
+          }
+
+          transaction.set(
+            bookingRef,
+            {
+              ...updates,
+              updatedAt: FieldValue.serverTimestamp()
+            },
+            { merge: true }
+          );
+        });
+
+        console.log(`✅ [TRANSACCIÓN ATÓMICA CANCELACIÓN] Reserva ${bookingId} cancelada. Liberados ${passengersToRelease} cupos en slot ${slotKey}.`);
+      } else {
+        await col.doc(bookingId).set(
+          {
+            ...updates,
+            updatedAt: FieldValue.serverTimestamp()
+          },
+          { merge: true }
+        );
+      }
     } catch (err: any) {
       console.error('Error actualizando en Firestore:', err);
       return { success: false, error: err.message };

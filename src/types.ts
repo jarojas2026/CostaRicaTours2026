@@ -44,8 +44,6 @@ export interface Tour {
     lng: number;
     placeName: string;
   };
-  operatorName?: string;
-  operatorBadge?: Localized<string>;
   instantConfirmation?: boolean;
   bestPriceGuaranteed?: boolean;
 }
