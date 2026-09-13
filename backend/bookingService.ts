@@ -319,6 +319,37 @@ export async function createBooking(data: any) {
   // proveedor por defecto "proveedor-directo-crtours" (representa a Costa
   // Rica Tours operando el tour directamente, sin operador externo).
   const DEFAULT_PROVIDER_ID = 'proveedor-directo-crtours';
+
+// Proveedores oficiales verificados en Costa Rica Tours (incluyendo Alsama Tours CR y Expediciones Tropicales)
+const VERIFIED_PROVIDERS: Record<string, any> = {
+  'alsama-tours-cr': {
+    id: 'alsama-tours-cr',
+    name: 'Alsama Tours CR',
+    website: 'https://alsamatourscr.com/',
+    commissionRate: 0.15,
+    paypalEmail: 'operaciones@alsamatourscr.com',
+    verified: true,
+    certificacion: 'CST Nivel Avanzado'
+  },
+  'expediciones-tropicales': {
+    id: 'expediciones-tropicales',
+    name: 'Expediciones Tropicales',
+    website: 'https://www.expedicionestropicales.com/',
+    commissionRate: 0.15,
+    paypalEmail: 'reservas@expedicionestropicales.com',
+    verified: true,
+    certificacion: 'CST Nivel Élite / Sostenibilidad Turística'
+  },
+  'proveedor-directo-crtours': {
+    id: 'proveedor-directo-crtours',
+    name: 'Costa Rica Tours Operaciones Directas',
+    website: 'https://ais-dev-bkbwi5trklm5ra7pjehfgn-650141017629.us-east1.run.app',
+    commissionRate: 0.0,
+    paypalEmail: 'pagos@costaricatours.com',
+    verified: true,
+    certificacion: 'CST Oficial'
+  }
+};
   const tourInfo = TOURS.find((t) => t.id === data.tourId);
   const providerId = tourInfo?.providerId || DEFAULT_PROVIDER_ID;
 
@@ -358,6 +389,7 @@ export async function createBooking(data: any) {
     customerEmail: customerObj.email,
     customerPhone: customerObj.phone,
     customer: customerObj,
+    providerInfo: VERIFIED_PROVIDERS[providerId] || VERIFIED_PROVIDERS[DEFAULT_PROVIDER_ID],
     flightDetails: data.flightDetails || undefined,
     electronicInvoice: data.electronicInvoice || undefined,
     agentInsights: agentInsights || undefined,

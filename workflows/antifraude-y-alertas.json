@@ -89,7 +89,10 @@
       "name": "Webhook: Evaluar Antifraude",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
-      "position": [0, 192],
+      "position": [
+        0,
+        192
+      ],
       "parameters": {
         "httpMethod": "POST",
         "path": "evaluar-antifraude",
@@ -108,7 +111,10 @@
       "name": "Motor de Reglas Antifraude",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [224, 192],
+      "position": [
+        224,
+        192
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
@@ -120,7 +126,10 @@
       "name": "¿Es Sospechosa o Riesgo Alto?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [448, 192],
+      "position": [
+        448,
+        192
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -148,7 +157,10 @@
       "name": "Registrar Escalación Antifraude",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [672, 96],
+      "position": [
+        672,
+        96
+      ],
       "parameters": {
         "resource": "document",
         "operation": "create",
@@ -157,6 +169,12 @@
         "collection": "escalations",
         "columns": "bookingId,tipo,detalle,riskScore,reasons,createdAt",
         "simple": true
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -164,7 +182,10 @@
       "name": "Marcar Reserva Para Revisión Manual",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [896, 96],
+      "position": [
+        896,
+        96
+      ],
       "parameters": {
         "resource": "document",
         "operation": "upsert",
@@ -173,6 +194,12 @@
         "collection": "bookings",
         "updateKey": "id",
         "columns": "id,riskScore,manualReviewRequired,flaggedAt"
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -180,7 +207,10 @@
       "name": "Alerta Crítica Antifraude (Telegram)",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1120, 96],
+      "position": [
+        1120,
+        96
+      ],
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",
@@ -196,7 +226,10 @@
       "name": "Responder Alerta Emitida",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [1344, 96],
+      "position": [
+        1344,
+        96
+      ],
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { \"approved\": false, \"riskScore\": $('Motor de Reglas Antifraude').item.json.riskScore, \"reviewRequired\": true, \"reasons\": $('Motor de Reglas Antifraude').item.json.reasons } }}"
@@ -207,7 +240,10 @@
       "name": "Responder Aprobado",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [672, 288],
+      "position": [
+        672,
+        288
+      ],
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { \"approved\": true, \"riskScore\": \"bajo\" } }}"

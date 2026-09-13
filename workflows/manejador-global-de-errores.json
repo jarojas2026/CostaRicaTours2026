@@ -24,6 +24,17 @@
       "main": [
         [
           {
+            "node": "Registrar Error en Firestore",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Error en Firestore": {
+      "main": [
+        [
+          {
             "node": "Avisar Error Crítico (Telegram)",
             "type": "main",
             "index": 0
@@ -38,7 +49,10 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [0, 200],
+      "position": [
+        0,
+        200
+      ],
       "parameters": {}
     },
     {
@@ -46,7 +60,10 @@
       "name": "Formatear Alerta de Error",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [240, 200],
+      "position": [
+        240,
+        200
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
@@ -58,7 +75,10 @@
       "name": "Avisar Error Crítico (Telegram)",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [480, 200],
+      "position": [
+        720,
+        100
+      ],
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",
@@ -66,6 +86,31 @@
         "text": "={{ $json.mensaje }}",
         "additionalFields": {
           "appendAttribution": false
+        }
+      }
+    },
+    {
+      "id": "err-firestore-node-id",
+      "name": "Registrar Error en Firestore",
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        100
+      ],
+      "parameters": {
+        "resource": "document",
+        "operation": "create",
+        "authentication": "serviceAccount",
+        "projectId": "gen-lang-client-0782739149",
+        "collection": "errors",
+        "columns": "workflowName,nodeName,executionId,errorMessage,createdAt",
+        "simple": true
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
         }
       }
     }

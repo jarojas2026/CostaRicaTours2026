@@ -107,7 +107,10 @@
       "name": "Webhook: Notificar Proveedor",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
-      "position": [0, 192],
+      "position": [
+        0,
+        192
+      ],
       "parameters": {
         "httpMethod": "POST",
         "path": "notificar-proveedor",
@@ -126,7 +129,10 @@
       "name": "Extraer Datos de la Reserva",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [224, 192],
+      "position": [
+        224,
+        192
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
@@ -138,7 +144,10 @@
       "name": "Obtener Proveedor",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [448, 192],
+      "position": [
+        448,
+        192
+      ],
       "parameters": {
         "resource": "document",
         "operation": "get",
@@ -147,6 +156,12 @@
         "collection": "providers",
         "documentId": "={{ $json.providerId }}",
         "simple": true
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -154,7 +169,10 @@
       "name": "¿Proveedor Activo Con Email?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [672, 192],
+      "position": [
+        672,
+        192
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -190,7 +208,10 @@
       "name": "Notificar Proveedor por Email",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
-      "position": [896, 96],
+      "position": [
+        896,
+        96
+      ],
       "parameters": {
         "resource": "message",
         "operation": "send",
@@ -209,7 +230,10 @@
       "name": "Responder OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [1120, 0],
+      "position": [
+        1120,
+        0
+      ],
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { \"received\": true, \"status\": \"notified_provider\" } }}"
@@ -220,7 +244,10 @@
       "name": "Avisar Fallo de Notificación (Telegram)",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1120, 192],
+      "position": [
+        1120,
+        192
+      ],
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",
@@ -236,7 +263,10 @@
       "name": "Responder OK (email falló)",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [1344, 192],
+      "position": [
+        1344,
+        192
+      ],
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { \"received\": true, \"emailError\": true } }}"
@@ -247,7 +277,10 @@
       "name": "Escalar Coordinación por Telegram",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [896, 384],
+      "position": [
+        896,
+        384
+      ],
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",
@@ -263,7 +296,10 @@
       "name": "Responder OK (escalado)",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [1120, 384],
+      "position": [
+        1120,
+        384
+      ],
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { \"received\": true, \"escalated\": true } }}"

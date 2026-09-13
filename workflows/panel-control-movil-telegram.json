@@ -183,7 +183,10 @@
       "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [0, 480],
+      "position": [
+        0,
+        480
+      ],
       "parameters": {
         "updates": [
           "message"
@@ -195,7 +198,10 @@
       "name": "Parsear Comando",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [224, 480],
+      "position": [
+        224,
+        480
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
@@ -207,7 +213,10 @@
       "name": "Enrutar Comando",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [448, 480],
+      "position": [
+        448,
+        480
+      ],
       "parameters": {
         "mode": "rules",
         "rules": {
@@ -329,7 +338,10 @@
       "name": "Buscar Reservas (Comando Hoy)",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [672, 96],
+      "position": [
+        672,
+        96
+      ],
       "parameters": {
         "resource": "document",
         "operation": "query",
@@ -337,6 +349,12 @@
         "projectId": "gen-lang-client-0782739149",
         "query": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"bookings\"}],\"where\":{\"fieldFilter\":{\"field\":{\"fieldPath\":\"status\"},\"op\":\"EQUAL\",\"value\":{\"stringValue\":\"confirmada\"}}}}}",
         "simple": true
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -344,7 +362,10 @@
       "name": "Formatear Tours de Hoy",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [896, 96],
+      "position": [
+        896,
+        96
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
@@ -356,7 +377,10 @@
       "name": "Responder Mensaje Hoy",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1120, 96],
+      "position": [
+        1120,
+        96
+      ],
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",
@@ -372,7 +396,10 @@
       "name": "Buscar Reservas Recientes",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [672, 288],
+      "position": [
+        672,
+        288
+      ],
       "parameters": {
         "resource": "document",
         "operation": "query",
@@ -380,6 +407,12 @@
         "projectId": "gen-lang-client-0782739149",
         "query": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"bookings\"}],\"orderBy\":[{\"field\":{\"fieldPath\":\"createdAt\"},\"direction\":\"DESCENDING\"}],\"limit\":15}}",
         "simple": true
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -387,7 +420,10 @@
       "name": "Formatear Reservas Recientes",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [896, 288],
+      "position": [
+        896,
+        288
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
@@ -399,7 +435,10 @@
       "name": "Responder Reservas Recientes",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1120, 288],
+      "position": [
+        1120,
+        288
+      ],
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",
@@ -415,7 +454,10 @@
       "name": "Buscar Reserva Específica",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [672, 480],
+      "position": [
+        672,
+        480
+      ],
       "parameters": {
         "resource": "document",
         "operation": "get",
@@ -425,14 +467,23 @@
         "documentId": "={{ $('Parsear Comando').item.json.arg }}",
         "simple": true
       },
-      "onError": "continueErrorOutput"
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
+      }
     },
     {
       "id": "73412a76-9235-4901-e465-2d567890123e",
       "name": "Formatear Detalle de Reserva",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [896, 480],
+      "position": [
+        896,
+        480
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
@@ -444,7 +495,10 @@
       "name": "Responder Detalle Reserva",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1120, 480],
+      "position": [
+        1120,
+        480
+      ],
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",
@@ -460,7 +514,10 @@
       "name": "Confirmar Reserva Manual",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [672, 672],
+      "position": [
+        672,
+        672
+      ],
       "parameters": {
         "resource": "document",
         "operation": "upsert",
@@ -469,6 +526,12 @@
         "collection": "bookings",
         "updateKey": "id",
         "columns": "id,status,confirmedManuallyAt,confirmedBy"
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -476,7 +539,10 @@
       "name": "Responder Confirmación Exitosa",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [896, 672],
+      "position": [
+        896,
+        672
+      ],
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",
@@ -492,7 +558,10 @@
       "name": "Buscar Escalaciones Abiertas",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [672, 864],
+      "position": [
+        672,
+        864
+      ],
       "parameters": {
         "resource": "document",
         "operation": "query",
@@ -500,6 +569,12 @@
         "projectId": "gen-lang-client-0782739149",
         "query": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"escalations\"}],\"orderBy\":[{\"field\":{\"fieldPath\":\"createdAt\"},\"direction\":\"DESCENDING\"}],\"limit\":10}}",
         "simple": true
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -507,7 +582,10 @@
       "name": "Formatear Escalaciones",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [896, 864],
+      "position": [
+        896,
+        864
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
@@ -519,7 +597,10 @@
       "name": "Responder Escalaciones",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1120, 864],
+      "position": [
+        1120,
+        864
+      ],
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",
@@ -535,7 +616,10 @@
       "name": "Enviar Menú de Ayuda",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [672, 1056],
+      "position": [
+        672,
+        1056
+      ],
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",

@@ -1,0 +1,89 @@
+{
+  "id": "crt-post-sale-01",
+  "name": "Fidelización y Cupones VIP Post-Venta",
+  "active": false,
+  "description": "Envía automáticamente un agradecimiento especial y un código de descuento VIP (15% OFF) para su próxima aventura en Costa Rica 3 días después de haber completado su tour.",
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Costa_Rica",
+    "errorWorkflow": "CRT-ERR-01"
+  },
+  "connections": {
+    "Disparador Diario 10am": {
+      "main": [
+        [
+          {
+            "node": "Buscar Reservas Pasadas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Reservas Pasadas": {
+      "main": [
+        [
+          {
+            "node": "Generar Cupón VIP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "node-sched-postsale",
+      "name": "Disparador Diario 10am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [0, 0],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 10,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-fs-postsale",
+      "name": "Buscar Reservas Pasadas",
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [224, 0],
+      "parameters": {
+        "resource": "document",
+        "operation": "query",
+        "authentication": "serviceAccount",
+        "projectId": "gen-lang-client-0782739149",
+        "query": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"bookings\"}],\"where\":{\"compositeFilter\":{\"op\":\"AND\",\"filters\":[{\"fieldFilter\":{\"field\":{\"fieldPath\":\"status\"},\"op\":\"EQUAL\",\"value\":{\"stringValue\":\"confirmada\"}}}]}},\"limit\":100}}",
+        "simple": true
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "id": "node-code-postsale",
+      "name": "Generar Cupón VIP",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [448, 0],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const now = new Date();\nconst targetDate = new Date();\ntargetDate.setDate(now.getDate() - 3);\nconst targetStr = targetDate.toISOString().slice(0, 10);\n\nconst items = $input.all().map(i => i.json).filter(b => String(b.date || '').slice(0, 10) === targetStr && !b.vipCouponSent);\n\nreturn items.map(item => ({\n  json: {\n    bookingId: item.bookingId,\n    customerName: item.customerName || 'Viajero',\n    customerEmail: item.customerEmail,\n    vipCode: `PURAVIDA15-${item.bookingId.slice(-6)}`,\n    mensaje: `¡Hola ${item.customerName || 'Viajero'}! Esperamos que hayas disfrutado al máximo tu experiencia con Costa Rica Tours. Como agradecimiento por tu confianza, queremos regalarte un 15% de descuento VIP (Código: PURAVIDA15-${item.bookingId.slice(-6)}) para tu próxima visita a nuestro hermoso país. ¡Te esperamos pronto con los brazos abiertos! 🌿✨`\n  }\n}));"
+      }
+    }
+  ]
+}

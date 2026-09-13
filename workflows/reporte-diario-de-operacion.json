@@ -60,7 +60,10 @@
       "name": "Disparador Diario 8pm (Costa Rica)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.4,
-      "position": [0, 0],
+      "position": [
+        0,
+        0
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -79,7 +82,10 @@
       "name": "Buscar Reservas Recientes de la Ventana Operativa",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [224, 0],
+      "position": [
+        224,
+        0
+      ],
       "parameters": {
         "resource": "document",
         "operation": "query",
@@ -87,6 +93,12 @@
         "projectId": "gen-lang-client-0782739149",
         "query": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"bookings\"}],\"orderBy\":[{\"field\":{\"fieldPath\":\"createdAt\"},\"direction\":\"DESCENDING\"}],\"limit\":250}}",
         "simple": true
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -94,7 +106,10 @@
       "name": "Buscar Escalaciones Recientes",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [448, 0],
+      "position": [
+        448,
+        0
+      ],
       "parameters": {
         "resource": "document",
         "operation": "query",
@@ -103,18 +118,27 @@
         "query": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"escalations\"}],\"orderBy\":[{\"field\":{\"fieldPath\":\"createdAt\"},\"direction\":\"DESCENDING\"}],\"limit\":100}}",
         "simple": true
       },
-      "executeOnce": true
+      "executeOnce": true,
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
+      }
     },
     {
       "id": "4b14e8d3-d6b9-43aa-98fc-e3c5d8d0ad74",
       "name": "Construir Reporte del Día",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [672, 0],
+      "position": [
+        672,
+        0
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const hoyStr = new Date().toISOString().slice(0, 10);\n\nconst reservas = $('Buscar Reservas Recientes de la Ventana Operativa').all()\n  .filter(i => Object.keys(i.json).length > 0)\n  .map(i => i.json);\n\nconst escalaciones = $('Buscar Escalaciones Recientes').all()\n  .filter(i => Object.keys(i.json).length > 0)\n  .map(i => i.json);\n\nconst reservasHoy = reservas.filter(b => String(b.createdAt || '').slice(0, 10) === hoyStr);\nconst confirmadasHoy = reservasHoy.filter(b => b.status === 'confirmada');\nconst pendientesHoy = reservasHoy.filter(b => b.status === 'pendiente_pago');\nconst ingresoHoy = confirmadasHoy.reduce((sum, b) => sum + (Number(b.totalUSD) || 0), 0);\n\nconst manana = new Date(); manana.setDate(manana.getDate() + 1);\nconst mananaStr = manana.toISOString().slice(0, 10);\nconst toursDeManana = reservas.filter(b => b.status === 'confirmada' && String(b.date || '').slice(0, 10) === mananaStr);\n\nconst escalacionesHoy = escalaciones.filter(e => String(e.createdAt || '').slice(0, 10) === hoyStr);\nconst escalacionesTotalAbiertas = escalaciones.length;\n\nconst LF = String.fromCharCode(10);\nconst mensaje = [\n  '📊 Reporte Diario Operativo — Costa Rica Tours',\n  `Fecha: ${hoyStr} (8:00 PM CR)`,\n  '',\n  `• Reservas confirmadas hoy: ${confirmadasHoy.length}`,\n  `• Reservas pendientes de pago hoy: ${pendientesHoy.length}`,\n  `• Ingresos confirmados hoy: $${ingresoHoy.toFixed(2)} USD`,\n  `• Tours programados para mañana: ${toursDeManana.length}`,\n  '',\n  `⚠️ Escalaciones nuevas hoy: ${escalacionesHoy.length}`,\n  `⚠️ Escalaciones en ventana operativa: ${escalacionesTotalAbiertas}`,\n  '',\n  '🟢 Sistema n8n y plataforma operando con normalidad.'\n].join(LF);\n\nreturn [{ json: { mensaje, confirmadasHoy: confirmadasHoy.length, ingresoHoy, escalacionesHoy: escalacionesHoy.length } }];"
+        "jsCode": "const hoyStr = new Date().toISOString().slice(0, 10);\n\nconst reservas = $('Buscar Reservas Recientes de la Ventana Operativa').all()\n  .filter(i => Object.keys(i.json).length > 0)\n  .map(i => i.json);\n\nconst escalaciones = $('Buscar Escalaciones Recientes').all()\n  .filter(i => Object.keys(i.json).length > 0)\n  .map(i => i.json);\n\nconst reservasHoy = reservas.filter(b => String(b.createdAt || '').slice(0, 10) === hoyStr);\nconst confirmadasHoy = reservasHoy.filter(b => b.status === 'confirmada');\nconst pendientesHoy = reservasHoy.filter(b => b.status === 'pendiente_pago');\nconst ingresoHoy = confirmadasHoy.reduce((sum, b) => sum + (Number(b.totalUSD) || 0), 0);\n\n// KPI de Tasa de Conversión\nconst totalIntentosHoy = confirmadasHoy.length + pendientesHoy.length;\nconst tasaConversion = totalIntentosHoy > 0 ? ((confirmadasHoy.length / totalIntentosHoy) * 100).toFixed(1) : '0.0';\n\nconst manana = new Date(); manana.setDate(manana.getDate() + 1);\nconst mananaStr = manana.toISOString().slice(0, 10);\nconst toursDeManana = reservas.filter(b => b.status === 'confirmada' && String(b.date || '').slice(0, 10) === mananaStr);\n\nconst escalacionesHoy = escalaciones.filter(e => String(e.createdAt || '').slice(0, 10) === hoyStr);\nconst escalacionesTotalAbiertas = escalaciones.length;\n\nconst LF = String.fromCharCode(10);\nconst mensaje = [\n  '📊 Reporte Diario Operativo — Costa Rica Tours',\n  `Fecha: ${hoyStr} (8:00 PM CR)`,\n  '',\n  `• Reservas confirmadas hoy: ${confirmadasHoy.length}`,\n  `• Reservas pendientes de pago hoy: ${pendientesHoy.length}`,\n  `• Tasa de conversión de hoy: ${tasaConversion}% (${confirmadasHoy.length}/${totalIntentosHoy})`,\n  `• Ingresos confirmados hoy: $${ingresoHoy.toFixed(2)} USD`,\n  `• Tours programados para mañana: ${toursDeManana.length}`,\n  '',\n  `⚠️ Escalaciones nuevas hoy: ${escalacionesHoy.length}`,\n  `⚠️ Escalaciones en ventana operativa: ${escalacionesTotalAbiertas}`,\n  '',\n  '🟢 Sistema n8n y plataforma operando con normalidad.'\n].join(LF);\n\nreturn [{ json: { mensaje, confirmadasHoy: confirmadasHoy.length, pendientesHoy: pendientesHoy.length, tasaConversion, ingresoHoy, escalacionesHoy: escalacionesHoy.length } }];"
       }
     },
     {
@@ -122,7 +146,10 @@
       "name": "Enviar Reporte por Telegram",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [896, 0],
+      "position": [
+        896,
+        0
+      ],
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",

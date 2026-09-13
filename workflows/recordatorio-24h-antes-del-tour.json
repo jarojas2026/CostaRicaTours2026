@@ -141,7 +141,10 @@
       "name": "Disparador Diario 7am (Costa Rica)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.4,
-      "position": [0, 480],
+      "position": [
+        0,
+        480
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -160,7 +163,10 @@
       "name": "Buscar Reservas Confirmadas",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [224, 480],
+      "position": [
+        224,
+        480
+      ],
       "parameters": {
         "resource": "document",
         "operation": "query",
@@ -168,6 +174,12 @@
         "projectId": "gen-lang-client-0782739149",
         "query": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"bookings\"}],\"where\":{\"fieldFilter\":{\"field\":{\"fieldPath\":\"status\"},\"op\":\"EQUAL\",\"value\":{\"stringValue\":\"confirmada\"}}}}}",
         "simple": true
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -175,7 +187,10 @@
       "name": "Filtrar Tours de Mañana",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [448, 480],
+      "position": [
+        448,
+        480
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
@@ -187,7 +202,10 @@
       "name": "Bucle Reservas de Mañana",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [672, 480],
+      "position": [
+        672,
+        480
+      ],
       "parameters": {
         "batchSize": 1
       }
@@ -197,7 +215,10 @@
       "name": "¿Reserva Tiene Email?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [896, 192],
+      "position": [
+        896,
+        192
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -223,7 +244,10 @@
       "name": "Enviar Recordatorio por Email",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
-      "position": [1120, 96],
+      "position": [
+        1120,
+        96
+      ],
       "parameters": {
         "resource": "message",
         "operation": "send",
@@ -242,7 +266,10 @@
       "name": "Preparar Actualización",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
-      "position": [1344, 0],
+      "position": [
+        1344,
+        0
+      ],
       "parameters": {
         "mode": "manual",
         "assignments": {
@@ -274,7 +301,10 @@
       "name": "Marcar Recordatorio Enviado",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [1568, 272],
+      "position": [
+        1568,
+        272
+      ],
       "parameters": {
         "resource": "document",
         "operation": "upsert",
@@ -283,6 +313,12 @@
         "collection": "bookings",
         "updateKey": "id",
         "columns": "id,reminderSent,reminderSentAt"
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -290,7 +326,10 @@
       "name": "Avisar Fallo de Recordatorio (Telegram)",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1344, 192],
+      "position": [
+        1344,
+        192
+      ],
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",
@@ -306,7 +345,10 @@
       "name": "Avisar Reserva Sin Email (Telegram)",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1120, 288],
+      "position": [
+        1120,
+        288
+      ],
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",

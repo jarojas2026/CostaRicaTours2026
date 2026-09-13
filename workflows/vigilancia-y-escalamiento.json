@@ -121,7 +121,10 @@
       "name": "Disparador Cada 2 Horas",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.4,
-      "position": [0, 176]
+      "position": [
+        0,
+        176
+      ]
     },
     {
       "parameters": {
@@ -136,7 +139,16 @@
       "name": "Buscar Reservas Pendientes de Pago",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [224, 176]
+      "position": [
+        224,
+        176
+      ],
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
+      }
     },
     {
       "parameters": {
@@ -146,7 +158,10 @@
       "name": "Filtrar Reservas Atascadas (2h+)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [448, 176]
+      "position": [
+        448,
+        176
+      ]
     },
     {
       "parameters": {
@@ -175,7 +190,10 @@
       "name": "¿Hay Reservas Atascadas?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [672, 0]
+      "position": [
+        672,
+        0
+      ]
     },
     {
       "parameters": {
@@ -185,7 +203,10 @@
       "name": "Armar Mensaje de Alerta",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [896, 0]
+      "position": [
+        896,
+        0
+      ]
     },
     {
       "parameters": {
@@ -201,7 +222,10 @@
       "name": "Avisar por Telegram",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1120, 0]
+      "position": [
+        1120,
+        0
+      ]
     },
     {
       "parameters": {
@@ -227,7 +251,10 @@
       "name": "Preparar Marca de Alerta",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
-      "position": [896, 192]
+      "position": [
+        896,
+        192
+      ]
     },
     {
       "parameters": {
@@ -243,7 +270,16 @@
       "name": "Marcar Alerta Enviada",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [1120, 272]
+      "position": [
+        1120,
+        272
+      ],
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
+      }
     },
     {
       "parameters": {
@@ -253,7 +289,10 @@
       "name": "Bucle Reservas Atascadas",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [768, 352]
+      "position": [
+        768,
+        352
+      ]
     }
   ]
 }

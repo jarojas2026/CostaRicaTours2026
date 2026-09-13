@@ -320,7 +320,10 @@
       "name": "Disparador Diario 6am (Costa Rica)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.4,
-      "position": [0, 912],
+      "position": [
+        0,
+        912
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -339,7 +342,10 @@
       "name": "Buscar Reservas Confirmadas",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [224, 912],
+      "position": [
+        224,
+        912
+      ],
       "parameters": {
         "resource": "document",
         "operation": "query",
@@ -347,6 +353,12 @@
         "projectId": "gen-lang-client-0782739149",
         "query": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"bookings\"}],\"where\":{\"fieldFilter\":{\"field\":{\"fieldPath\":\"status\"},\"op\":\"EQUAL\",\"value\":{\"stringValue\":\"confirmada\"}}}}}",
         "simple": true
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -354,7 +366,10 @@
       "name": "Filtrar Reservas Listas Para Pagar",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [448, 912],
+      "position": [
+        448,
+        912
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
@@ -366,7 +381,10 @@
       "name": "Bucle Reservas Por Pagar",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [672, 912],
+      "position": [
+        672,
+        912
+      ],
       "parameters": {
         "batchSize": 1,
         "options": {}
@@ -377,7 +395,10 @@
       "name": "Obtener Proveedor",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [896, 480],
+      "position": [
+        896,
+        480
+      ],
       "parameters": {
         "resource": "document",
         "operation": "get",
@@ -387,14 +408,23 @@
         "documentId": "={{ $json.providerId }}",
         "simple": true
       },
-      "onError": "continueErrorOutput"
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
+      }
     },
     {
       "id": "3b7117c7-edf0-40e7-84ea-3c2325c17de4",
       "name": "¿Proveedor Tiene PayPal?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [1120, 384],
+      "position": [
+        1120,
+        384
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -424,11 +454,14 @@
       "name": "Calcular Monto a Pagar",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1344, 288],
+      "position": [
+        1344,
+        288
+      ],
       "parameters": {
         "mode": "runOnceForEachItem",
         "language": "javaScript",
-        "jsCode": "const booking = $('Bucle Reservas Por Pagar').item.json;\nconst provider = $('Obtener Proveedor').item.json;\nconst total = parseFloat(String(booking.totalUSD).replace(/[^0-9.\\-]/g, '')) || 0;\nconst rate = parseFloat(provider.commissionRate) || 0;\nconst amount = total * (1 - rate);\n\nreturn { json: {\n  docId: booking._id || booking.id || booking.bookingId,\n  bookingId: booking.bookingId,\n  providerId: booking.providerId,\n  providerName: provider.name,\n  paypalEmail: provider.paypalEmail,\n  totalUSD: total,\n  commissionRate: rate,\n  amount: amount.toFixed(2),\n  senderBatchId: `payout-crt-${booking.bookingId}`\n} };"
+        "jsCode": "const booking = $('Bucle Reservas Por Pagar').item.json;\nconst provider = $('Obtener Proveedor').item.json;\nconst total = parseFloat(String(booking.totalUSD).replace(/[^0-9.\\-]/g, '')) || 0;\nconst rate = parseFloat(provider.commissionRate) || 0;\nconst amount = total * (1 - rate);\n\nif (amount <= 0) {\n  throw new Error(`Monto inválido o menor/igual a cero ($${amount.toFixed(2)}) para la reserva ${booking.bookingId}. Requiere revisión manual.`);\n}\n\nreturn { json: {\n  docId: booking._id || booking.id || booking.bookingId,\n  bookingId: booking.bookingId,\n  providerId: booking.providerId,\n  providerName: provider.name,\n  paypalEmail: provider.paypalEmail,\n  totalUSD: total,\n  commissionRate: rate,\n  amount: amount.toFixed(2),\n  senderBatchId: `payout-crt-${booking.bookingId}`\n} };"
       }
     },
     {
@@ -436,7 +469,10 @@
       "name": "Bloquear Reserva Para Pago (Idempotencia)",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [1456, 288],
+      "position": [
+        1456,
+        288
+      ],
       "parameters": {
         "resource": "document",
         "operation": "upsert",
@@ -445,6 +481,12 @@
         "collection": "bookings",
         "updateKey": "id",
         "columns": "id,payoutStatus,payoutAttemptAt,payoutExecutionId"
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -452,7 +494,10 @@
       "name": "Enviar Pago PayPal",
       "type": "n8n-nodes-base.payPal",
       "typeVersion": 1,
-      "position": [1680, 288],
+      "position": [
+        1680,
+        288
+      ],
       "parameters": {
         "resource": "payout",
         "operation": "create",
@@ -480,7 +525,10 @@
       "name": "Preparar Actualización Reserva",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
-      "position": [1904, 192],
+      "position": [
+        1904,
+        192
+      ],
       "parameters": {
         "mode": "manual",
         "assignments": {
@@ -525,7 +573,10 @@
       "name": "Marcar Reserva Como Pagada",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [2128, 192],
+      "position": [
+        2128,
+        192
+      ],
       "parameters": {
         "resource": "document",
         "operation": "upsert",
@@ -534,6 +585,12 @@
         "collection": "bookings",
         "updateKey": "id",
         "columns": "id,payoutStatus,payoutTxId,payoutExecutionId,paidAt"
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -541,7 +598,10 @@
       "name": "Preparar Escalación: Pago Fallido",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
-      "position": [1904, 480],
+      "position": [
+        1904,
+        480
+      ],
       "parameters": {
         "mode": "manual",
         "assignments": {
@@ -598,7 +658,10 @@
       "name": "Marcar Reserva Como Fallida",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [2016, 480],
+      "position": [
+        2016,
+        480
+      ],
       "parameters": {
         "resource": "document",
         "operation": "upsert",
@@ -607,6 +670,12 @@
         "collection": "bookings",
         "updateKey": "id",
         "columns": "id,payoutStatus,payoutError"
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -614,7 +683,10 @@
       "name": "Registrar Escalación: Pago Fallido",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [2240, 480],
+      "position": [
+        2240,
+        480
+      ],
       "parameters": {
         "resource": "document",
         "operation": "create",
@@ -623,6 +695,12 @@
         "collection": "escalations",
         "columns": "bookingId,providerId,tipo,detalle,amount,executionId,createdAt",
         "simple": true
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -630,7 +708,10 @@
       "name": "Preparar Escalación: Proveedor Sin PayPal",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
-      "position": [1344, 480],
+      "position": [
+        1344,
+        480
+      ],
       "parameters": {
         "mode": "manual",
         "assignments": {
@@ -681,7 +762,10 @@
       "name": "Registrar Escalación: Proveedor Sin PayPal",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [1568, 480],
+      "position": [
+        1568,
+        480
+      ],
       "parameters": {
         "resource": "document",
         "operation": "create",
@@ -690,6 +774,12 @@
         "collection": "escalations",
         "columns": "bookingId,providerId,tipo,detalle,executionId,createdAt",
         "simple": true
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -697,7 +787,10 @@
       "name": "Preparar Escalación: Proveedor No Encontrado",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
-      "position": [1120, 672],
+      "position": [
+        1120,
+        672
+      ],
       "parameters": {
         "mode": "manual",
         "assignments": {
@@ -748,7 +841,10 @@
       "name": "Registrar Escalación: Proveedor No Encontrado",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [1344, 672],
+      "position": [
+        1344,
+        672
+      ],
       "parameters": {
         "resource": "document",
         "operation": "create",
@@ -757,6 +853,12 @@
         "collection": "escalations",
         "columns": "bookingId,providerId,tipo,detalle,executionId,createdAt",
         "simple": true
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -764,7 +866,10 @@
       "name": "Fin del Bucle",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [896, 0],
+      "position": [
+        896,
+        0
+      ],
       "parameters": {}
     },
     {
@@ -772,7 +877,10 @@
       "name": "Consultar Escalaciones de la Corrida",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [1120, 0],
+      "position": [
+        1120,
+        0
+      ],
       "parameters": {
         "resource": "document",
         "operation": "query",
@@ -781,14 +889,23 @@
         "query": "={\"structuredQuery\":{\"from\":[{\"collectionId\":\"escalations\"}],\"where\":{\"fieldFilter\":{\"field\":{\"fieldPath\":\"executionId\"},\"op\":\"EQUAL\",\"value\":{\"stringValue\":\"{{ $execution.id }}\"}}}}}",
         "simple": true
       },
-      "executeOnce": true
+      "executeOnce": true,
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
+      }
     },
     {
       "id": "1ec11b85-0bf4-49e4-94d9-29e3d89a7c85",
       "name": "Consultar Reservas Pagadas de la Corrida",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [1344, 0],
+      "position": [
+        1344,
+        0
+      ],
       "parameters": {
         "resource": "document",
         "operation": "query",
@@ -798,18 +915,27 @@
         "simple": true
       },
       "executeOnce": true,
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
+      }
     },
     {
       "id": "061a8021-c796-4d16-9fb3-109c93d55dd7",
       "name": "Construir Resumen",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1568, 0],
+      "position": [
+        1568,
+        0
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const esc = $('Consultar Escalaciones de la Corrida').all().filter(i => Object.keys(i.json).length > 0);\nconst pagadas = $('Consultar Reservas Pagadas de la Corrida').all().filter(i => Object.keys(i.json).length > 0);\nconst LF = String.fromCharCode(10);\nconst lineas = esc.map(function (i) {\n  const e = i.json;\n  return '\u2022 Reserva ' + (e.bookingId || 's/n') + ' [' + (e.tipo || 'desconocido') + ']: ' + (e.detalle || '');\n});\nconst mensaje = 'Resumen de pagos a proveedores' + LF +\n  'Fecha: ' + new Date().toISOString() + LF + LF +\n  'Pagadas correctamente: ' + pagadas.length + LF +\n  'Pendientes de revisión: ' + esc.length + LF + LF +\n  'Detalle de escalaciones:' + LF + (lineas.length > 0 ? lineas.join(LF) : 'Ninguna');\nreturn [{ json: { pagadas: pagadas.length, pendientes: esc.length, mensaje: mensaje } }];"
+        "jsCode": "const esc = $('Consultar Escalaciones de la Corrida').all().filter(i => Object.keys(i.json).length > 0);\nconst pagadas = $('Consultar Reservas Pagadas de la Corrida').all().filter(i => Object.keys(i.json).length > 0);\nconst LF = String.fromCharCode(10);\nconst lineas = esc.map(function (i) {\n  const e = i.json;\n  return '• Reserva ' + (e.bookingId || 's/n') + ' [' + (e.tipo || 'desconocido') + ']: ' + (e.detalle || '');\n});\nconst mensaje = 'Resumen de pagos a proveedores' + LF +\n  'Fecha: ' + new Date().toISOString() + LF + LF +\n  'Pagadas correctamente: ' + pagadas.length + LF +\n  'Pendientes de revisión: ' + esc.length + LF + LF +\n  'Detalle de escalaciones:' + LF + (lineas.length > 0 ? lineas.join(LF) : 'Ninguna');\nreturn [{ json: { pagadas: pagadas.length, pendientes: esc.length, mensaje: mensaje } }];"
       }
     },
     {
@@ -817,7 +943,10 @@
       "name": "¿Hubo Escalaciones?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [1792, 0],
+      "position": [
+        1792,
+        0
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -846,7 +975,10 @@
       "name": "Enviar Resumen por Telegram",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [2016, 0],
+      "position": [
+        2016,
+        0
+      ],
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",

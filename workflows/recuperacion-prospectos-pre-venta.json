@@ -1,0 +1,87 @@
+{
+  "id": "crt-pre-sale-01",
+  "name": "Recuperación de Prospectos y Carritos Abandonados (Pre-Venta)",
+  "active": false,
+  "description": "Monitorea prospectos con intención de reserva pendientes de pago por más de 2 horas y envía automáticamente un mensaje de asistencia y oferta de ayuda para cerrar la venta.",
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Costa_Rica",
+    "errorWorkflow": "CRT-ERR-01"
+  },
+  "connections": {
+    "Disparador Cada Hora": {
+      "main": [
+        [
+          {
+            "node": "Buscar Reservas Pendientes Antiguas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Reservas Pendientes Antiguas": {
+      "main": [
+        [
+          {
+            "node": "Filtrar y Enviar Asistencia Pre-Venta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "node-sched-presale",
+      "name": "Disparador Cada Hora",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [0, 0],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-fs-presale",
+      "name": "Buscar Reservas Pendientes Antiguas",
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [224, 0],
+      "parameters": {
+        "resource": "document",
+        "operation": "query",
+        "authentication": "serviceAccount",
+        "projectId": "gen-lang-client-0782739149",
+        "query": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"bookings\"}],\"where\":{\"compositeFilter\":{\"op\":\"AND\",\"filters\":[{\"fieldFilter\":{\"field\":{\"fieldPath\":\"status\"},\"op\":\"EQUAL\",\"value\":{\"stringValue\":\"pendiente_pago\"}}}]}},\"limit\":50}}",
+        "simple": true
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "id": "node-code-presale",
+      "name": "Filtrar y Enviar Asistencia Pre-Venta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [448, 0],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const now = new Date().getTime();\nconst duasHours = 2 * 60 * 60 * 1000;\n\nconst items = $input.all().map(i => i.json).filter(b => {\n  if (!b.createdAt) return false;\n  const created = new Date(b.createdAt).getTime();\n  const diff = now - created;\n  // Pendiente entre 2 y 24 horas\n  return diff >= duasHours && diff <= 24 * 60 * 60 * 1000 && !b.followUpSent;\n});\n\nreturn items.map(item => ({\n  json: {\n    bookingId: item.bookingId,\n    customerName: item.customerName || 'Viajero',\n    customerEmail: item.customerEmail,\n    tourName: item.tourName || 'Experiencia Costa Rica Tours',\n    totalUSD: item.totalUSD,\n    mensaje: `¡Hola ${item.customerName || 'Viajero'}! Notamos que iniciaste tu reserva para ${item.tourName || 'nuestro tour'} pero quedó pendiente de pago. ¿Tienes alguna duda sobre las fechas o métodos de pago (SINPE, Tarjeta, PayPal)? Estamos aquí para ayudarte a asegurar tu espacio. ¡Pura Vida! 🌿`\n  }\n}));"
+      }
+    }
+  ]
+}

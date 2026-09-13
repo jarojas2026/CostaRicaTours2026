@@ -130,7 +130,10 @@
       "name": "Disparador Diario 5pm (Costa Rica)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.4,
-      "position": [0, 384],
+      "position": [
+        0,
+        384
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -149,7 +152,10 @@
       "name": "Buscar Reservas Confirmadas",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [224, 384],
+      "position": [
+        224,
+        384
+      ],
       "parameters": {
         "resource": "document",
         "operation": "query",
@@ -157,6 +163,12 @@
         "projectId": "gen-lang-client-0782739149",
         "query": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"bookings\"}],\"where\":{\"fieldFilter\":{\"field\":{\"fieldPath\":\"status\"},\"op\":\"EQUAL\",\"value\":{\"stringValue\":\"confirmada\"}}}}}",
         "simple": true
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -164,7 +176,10 @@
       "name": "Filtrar Tours de Hoy",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [448, 384],
+      "position": [
+        448,
+        384
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
@@ -176,7 +191,10 @@
       "name": "Bucle Reservas de Hoy",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [672, 384],
+      "position": [
+        672,
+        384
+      ],
       "parameters": {
         "batchSize": 1
       }
@@ -186,7 +204,10 @@
       "name": "¿Reserva Tiene Email?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [896, 96],
+      "position": [
+        896,
+        96
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -212,7 +233,10 @@
       "name": "Enviar Solicitud de Reseña",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
-      "position": [1120, 96],
+      "position": [
+        1120,
+        96
+      ],
       "parameters": {
         "resource": "message",
         "operation": "send",
@@ -231,7 +255,10 @@
       "name": "Preparar Actualización",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
-      "position": [1344, 0],
+      "position": [
+        1344,
+        0
+      ],
       "parameters": {
         "mode": "manual",
         "assignments": {
@@ -263,7 +290,10 @@
       "name": "Marcar Reseña Solicitada",
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
-      "position": [1568, 176],
+      "position": [
+        1568,
+        176
+      ],
       "parameters": {
         "resource": "document",
         "operation": "upsert",
@@ -272,6 +302,12 @@
         "collection": "bookings",
         "updateKey": "id",
         "columns": "id,reviewRequestSent,reviewRequestSentAt"
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
       }
     },
     {
@@ -279,7 +315,10 @@
       "name": "Avisar Fallo de Solicitud (Telegram)",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1344, 192],
+      "position": [
+        1344,
+        192
+      ],
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",
