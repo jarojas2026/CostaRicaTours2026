@@ -37,7 +37,7 @@ import {
 } from './backend/claudeService';
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json());
 
@@ -50,7 +50,11 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
     const { tourName, totalUSD, customerEmail } = req.body;
     const stripe = getStripe();
     if (!stripe) {
-      console.warn('⚠️ STRIPE_SECRET_KEY no configurada. Simulando enlace de pago.');
+      if (process.env.NODE_ENV === 'production') {
+        console.error('🔴 STRIPE_SECRET_KEY no configurada en PRODUCCIÓN. Se rechaza el pago.');
+        return res.status(503).json({ error: 'Pagos no disponibles temporalmente. Contacta a soporte.' });
+      }
+      console.warn('⚠️ STRIPE_SECRET_KEY no configurada (modo desarrollo). Simulando enlace de pago.');
       return res.json({ url: `${req.protocol}://${req.get('host')}?booking=success` });
     }
 
@@ -88,7 +92,11 @@ app.post('/api/paypal/create-order', async (req, res) => {
       paypalMode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
 
     if (!paypalClientId || !paypalSecret) {
-      console.warn('⚠️ PAYPAL_CLIENT_ID o PAYPAL_SECRET no configurados. Simulando pago.');
+      if (process.env.NODE_ENV === 'production') {
+        console.error('🔴 PAYPAL_CLIENT_ID/SECRET no configurados en PRODUCCIÓN. Se rechaza el pago.');
+        return res.status(503).json({ error: 'Pagos no disponibles temporalmente. Contacta a soporte.' });
+      }
+      console.warn('⚠️ PAYPAL_CLIENT_ID o PAYPAL_SECRET no configurados (modo desarrollo). Simulando pago.');
       return res.json({
         url: `${req.protocol}://${req.get('host')}?booking=success`,
         id: 'mock_paypal_id'
@@ -1157,7 +1165,14 @@ app.post('/api/webhooks/n8n/update-booking', async (req, res) => {
 });
 
 // Callback de verificación de pago de reserva
+// ⚠️ Este endpoint marca una reserva como PAGADA en Firestore. Sin esta
+// verificación, cualquiera en internet podría marcar cualquier reserva
+// como pagada sin pagar un centavo. Se exige el mismo secreto compartido
+// que ya se usa en /api/webhooks/n8n/booking-action.
 app.post('/webhook/verificar-pago-reserva', async (req, res) => {
+  if (!verifyN8NRequest(req.headers)) {
+    return res.status(401).json({ error: 'Credenciales de n8n inválidas' });
+  }
   const { bookingId, paymentStatus, status } = req.body;
   if (bookingId) {
     await updateBookingStatus(bookingId, {
