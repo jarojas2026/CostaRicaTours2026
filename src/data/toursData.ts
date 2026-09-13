@@ -198,11 +198,6 @@ export const TOURS: Tour[] = [
       lng: -84.2307,
       placeName: 'Volcán Poás, Alajuela, Costa Rica'
     },
-    operatorName: 'Expediciones Tropicales',
-    operatorBadge: {
-      es: 'Operador Oficial Certificado #1',
-      en: 'Certified Official Operator #1'
-    },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2901,8 +2896,323 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Aeropuerto Internacional Juan Santamaría (SJO) o cualquier hotel en San José'],
     departureTimes: ['07:00 AM'],
     location: { lat: 9.9333, lng: -84.0833, placeName: 'San José / Arenal / Monteverde / Manuel Antonio, Costa Rica' },
-    operatorName: 'Horizontes Nature Tours & Swiss Travel',
-    operatorBadge: { es: 'Circuito Nacional Garantizado', en: 'Guaranteed National Circuit' },
+    instantConfirmation: true,
+    bestPriceGuaranteed: true
+  },
+  {
+    id: 'sjo-city-tour-vip',
+    title: {
+      es: 'San José City Tour VIP: Cultura, Historia y Mercados Tradicionales',
+      en: 'VIP San José Cultural City Tour: Heritage, Markets & History'
+    },
+    subtitle: {
+      es: 'Descubre los tesoros arquitectónicos, el Teatro Nacional, el Museo de Oro y el Mercado Central',
+      en: 'Discover architectural gems, National Theatre, Pre-Columbian Gold Museum & Central Market'
+    },
+    category: 'culture',
+    region: 'sjo',
+    image: 'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80',
+    gallery: [
+      'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80'
+    ],
+    priceUSD: 55,
+    durationHours: 4.5,
+    durationLabel: { es: 'Medio Día (4.5 hrs)', en: 'Half Day (4.5 hrs)' },
+    difficulty: 'fácil',
+    difficultyLabel: { es: 'Fácil - Todas las edades', en: 'Easy - All ages' },
+    rating: 4.91,
+    reviewsCount: 310,
+    featured: true,
+    bestseller: true,
+    ecoCert: true,
+    tourType: 'group',
+    maxGroupSize: 15,
+    freeCancellation: true,
+    description: {
+      es: 'Sumérgete en la vibrante capital costarricense con este recorrido guiado por sus puntos más emblemáticos. Visitaremos el majestuoso Teatro Nacional (joya arquitectónica inaugurada en 1897), el Museo del Oro Precolombino o Museo Nacional, el Parque Nacional con el Monumento Nacional y el histórico Mercado Central, donde degustaremos un café chorreado tradicional y platillos típicos.',
+      en: 'Immerse yourself in Costa Rica’s vibrant capital on this guided journey through its most iconic landmarks. Visit the majestic National Theatre (built in 1897), the Pre-Columbian Gold Museum or National Museum, National Park with its historic monument, and the bustling Central Market for authentic artisanal coffee and traditional snacks.'
+    },
+    highlights: {
+      es: ['Visita guiada al interior del histórico Teatro Nacional', 'Entrada al Museo del Oro Precolombino o Museo Nacional', 'Caminata sensorial y degustación en el Mercado Central de San José', 'Paseo por el Paseo Colón y La Sabana', 'Transporte con aire acondicionado y guía historiador certificado'],
+      en: ['Guided tour of the historic National Theatre interior', 'Admission to the Pre-Columbian Gold Museum or National Museum', 'Sensory tasting walk through the lively San José Central Market', 'Scenic drive through Paseo Colón and La Sabana Metropolitan Park', 'A/C transportation and certified historian guide']
+    },
+    inclusions: {
+      es: ['Transporte ida y vuelta desde hoteles en San José y Valle Central', 'Guía turístico certificado bilingüe', 'Entradas a todos los museos y monumentos del itinerario', 'Degustación de café y bocadillo típico en el Mercado Central'],
+      en: ['Roundtrip hotel pickup in San José & Central Valley', 'Certified bilingual tour guide', 'All museum and monument admission tickets', 'Traditional coffee tasting and local snacks at Central Market']
+    },
+    exclusions: {
+      es: ['Almuerzo completo', 'Propinas voluntarias'],
+      en: ['Full lunch', 'Optional gratuities']
+    },
+    whatToBring: {
+      es: ['Ropa cómoda y ligera', 'Zapatos para caminar', 'Cámara fotográfica', 'Capa para lluvia ligera', 'Efectivo en colones para artesanías'],
+      en: ['Comfortable clothing', 'Walking shoes', 'Camera', 'Light rain poncho', 'Cash CRC for souvenirs']
+    },
+    pickupHotels: [
+      'Gran Hotel Costa Rica', 'Radisson San José', 'Hilton Garden Inn San José', 'San José Palacio',
+      'Studio Hotel Santa Ana', 'Intercontinental Costa Rica', 'Crowne Plaza Corobicí', 'Hoteles en Paseo Colón y Escalante'
+    ],
+    departureTimes: ['08:30 AM', '01:30 PM'],
+    location: {
+      lat: 9.9333,
+      lng: -84.0833,
+      placeName: 'San José Centro, Costa Rica'
+    },
+    instantConfirmation: true,
+    bestPriceGuaranteed: true
+  },
+  {
+    id: 'irazu-cartago-orosi-tour',
+    title: {
+      es: 'Volcán Irazú, Basílica de Los Ángeles y Valle de Orosí',
+      en: 'Irazú Volcano Summit, Cartago Basilica & Orosí Valley'
+    },
+    subtitle: {
+      es: 'El volcán más alto de Costa Rica (3,432m), historia colonial y exuberantes valles verdes',
+      en: 'Costa Rica’s highest volcano (11,260 ft), colonial heritage & lush coffee valleys'
+    },
+    category: 'volcanoes',
+    region: 'sjo',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
+    gallery: [
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80'
+    ],
+    priceUSD: 115,
+    durationHours: 8,
+    durationLabel: { es: 'Día Completo (8 hrs)', en: 'Full Day (8 hrs)' },
+    difficulty: 'fácil',
+    difficultyLabel: { es: 'Fácil - Para toda la familia', en: 'Easy - Family Friendly' },
+    rating: 4.93,
+    reviewsCount: 260,
+    featured: true,
+    bestseller: false,
+    ecoCert: true,
+    tourType: 'group',
+    maxGroupSize: 18,
+    freeCancellation: true,
+    description: {
+      es: 'Sube al punto más alto de la Cordillera Volcánica Central en el Volcán Irazú, con sus impresionantes cráteres lunares Diego de la Haya y Principal. Después descenderemos a la colonial ciudad de Cartago para visitar la famosa Basílica de Nuestra Señora de Los Ángeles. El tour continúa hacia el verde y pintoresco Valle de Orosí, visitando la iglesia colonial más antigua de Costa Rica y disfrutando de un delicioso almuerzo típico con vistas panorámicas.',
+      en: 'Ascend to the highest volcanic peak in Costa Rica at Irazú Volcano (11,260 feet above sea level), gazing into its moon-like Diego de la Haya crater lagoon. Next, descend to the historic capital Cartago to tour the famous Basilica of Our Lady of the Angels. Continue into the scenic Orosí Valley, visiting Costa Rica’s oldest colonial church and enjoying a gourmet traditional lunch surrounded by mountains.'
+    },
+    highlights: {
+      es: ['Cráter lunar del Volcán Irazú a 3,432 metros sobre el nivel del mar', 'Visita histórica a la Basílica de Los Ángeles en Cartago', 'Ruinas de Ujarrás y la Iglesia Colonial de Orosí (1743)', 'Almuerzo típico buffet costarricense con vista al valle', 'Transporte panorámico con paradas para fotos'],
+      en: ['Spectacular lunar crater views at Irazú Volcano summit (3,432m)', 'Historic tour of Cartago’s Basilica of Our Lady of the Angels', 'Colonial Church of Orosí (1743) and Ujarrás Ruins', 'Traditional Costa Rican buffet lunch with valley vistas', 'Comfortable A/C scenic transfer with photo stops']
+    },
+    inclusions: {
+      es: ['Transporte de turismo ida y vuelta desde San José', 'Entrada oficial al Parque Nacional Volcán Irazú', 'Visitas guiadas a la Basílica de Cartago e Iglesia de Orosí', 'Almuerzo típico completo en restaurante local', 'Guía naturalista y cultural bilingüe'],
+      en: ['Roundtrip transportation from San José hotels', 'Official Irazú Volcano National Park entrance ticket', 'Guided visits to Cartago Basilica & Orosí Church', 'Full traditional lunch at local restaurant', 'Certified bilingual naturalist & cultural guide']
+    },
+    exclusions: {
+      es: ['Bebidas alcohólicas', 'Propinas voluntarias'],
+      en: ['Alcoholic beverages', 'Optional gratuities']
+    },
+    whatToBring: {
+      es: ['Abrigo o chaqueta abrigada (la cima del Irazú puede estar fría y ventosa)', 'Zapatos cómodos para caminar', 'Cámara fotográfica', 'Bloqueador solar y gafas de sol'],
+      en: ['Warm jacket or fleece (Irazú summit can be cold and windy)', 'Comfortable walking shoes', 'Camera', 'Sunscreen and sunglasses']
+    },
+    pickupHotels: [
+      'Hoteles en San José Centro', 'Hoteles en La Sabana', 'Hoteles en San Pedro y Curridabat', 'Hoteles en Escazú y Santa Ana'
+    ],
+    departureTimes: ['07:30 AM'],
+    location: {
+      lat: 9.9791,
+      lng: -83.8528,
+      placeName: 'Volcán Irazú / Valle de Orosí, Cartago, Costa Rica'
+    },
+    instantConfirmation: true,
+    bestPriceGuaranteed: true
+  },
+  {
+    id: 'tortuga-island-cruise-sjo',
+    title: {
+      es: 'Crucero en Catamarán a Isla Tortuga: Snorkel, Playa y Almuerzo Gourmet',
+      en: 'Tortuga Island Catamaran Day Cruise: Snorkel, White Beach & Gourmet Lunch'
+    },
+    subtitle: {
+      es: 'Día de ensueño en el Golfo de Nicoya con arenas blancas, aguas cristalinas y open bar a bordo',
+      en: 'Dream day trip in the Gulf of Nicoya with white sand beaches, snorkeling & live music on board'
+    },
+    category: 'beaches',
+    region: 'sjo',
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
+    gallery: [
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80'
+    ],
+    priceUSD: 140,
+    durationHours: 11,
+    durationLabel: { es: 'Día Completo (11 hrs)', en: 'Full Day (11 hrs)' },
+    difficulty: 'fácil',
+    difficultyLabel: { es: 'Fácil - Diversión y Relax', en: 'Easy - Fun & Relaxation' },
+    rating: 4.96,
+    reviewsCount: 540,
+    featured: true,
+    bestseller: true,
+    ecoCert: true,
+    tourType: 'group',
+    maxGroupSize: 50,
+    freeCancellation: true,
+    description: {
+      es: 'Escápate desde San José a las paradisíacas arenas blancas de Isla Tortuga a bordo de un moderno catamarán de lujo. El viaje incluye desayuno típico en ruta, navegación por el Golfo de Nicoya con avistamiento de delfines, música en vivo y cócteles tropicales a bordo. En la isla disfrutarás de 5 horas de playa cristalina, tour de snorkel en arrecife, banana boat y un exquisito almuerzo gourmet servido bajo las palmeras.',
+      en: 'Escape from San José to the turquoise waters and powder-white sands of Tortuga Island aboard a luxury catamaran cruise. Includes traditional breakfast on the way to Puntarenas, scenic sailing across the Gulf of Nicoya with dolphin watching, tropical cocktails, and live music. Spend 5 relaxing hours on the island with guided snorkeling, banana boat rides, and a gourmet 4-course lunch served under palm trees.'
+    },
+    highlights: {
+      es: ['Navegación en catamarán de primera clase por el Golfo de Nicoya', 'Tour guiado de snorkel en arrecifes de roca volcánica', 'Paseo en Banana Boat en la bahía de la isla', 'Almuerzo gourmet en la playa con pescado o pollo fresco', 'Bebidas tropicales refrescantes y frutas frescas a bordo'],
+      en: ['Luxury catamaran sailing across the scenic Gulf of Nicoya', 'Guided reef snorkeling with tropical fish', 'Thrilling Banana Boat ride in calm island bay', 'Beachside gourmet lunch with fresh grilled seafood or chicken', 'Open tropical bar, fresh fruit platters, and live music on board']
+    },
+    inclusions: {
+      es: ['Transporte terrestre A/C ida y vuelta desde San José', 'Desayuno típico costarricense en ruta', 'Navegación en catamarán con bebidas y música', 'Almuerzo gourmet servido en la isla', 'Equipo completo de snorkel y chaleco', 'Paseo en Banana Boat'],
+      en: ['Roundtrip A/C coach transport from San José hotels', 'Traditional Costa Rican breakfast en route', 'Catamaran sailing with open bar and music', 'Gourmet multi-course island lunch', 'Complete snorkel gear with life vest', 'Banana boat ride']
+    },
+    exclusions: {
+      es: ['Bebidas alcohólicas premium', 'Alquiler de kayaks o motos de agua en la isla', 'Propinas para la tripulación'],
+      en: ['Premium alcoholic cocktails', 'Kayaks or jet ski rentals on island', 'Crew gratuities']
+    },
+    whatToBring: {
+      es: ['Traje de baño puesto', 'Ropa fresca de cambio', 'Toalla de playa', 'Protector solar biodegradable', 'Lentes de sol y sombrero', 'Cámara sumergible'],
+      en: ['Swimsuit underneath', 'Change of dry clothes', 'Beach towel', 'Biodegradable sunscreen', 'Sunglasses and sun hat', 'Waterproof camera']
+    },
+    pickupHotels: [
+      'San José Palacio', 'Radisson San José', 'Gran Hotel Costa Rica', 'Hilton Garden Inn San José',
+      'Studio Hotel Santa Ana', 'Intercontinental Costa Rica', 'Crowne Plaza Corobicí', 'Marriott San José Belén'
+    ],
+    departureTimes: ['06:00 AM'],
+    location: {
+      lat: 9.7742,
+      lng: -84.8931,
+      placeName: 'Isla Tortuga, Golfo de Nicoya, Costa Rica'
+    },
+    instantConfirmation: true,
+    bestPriceGuaranteed: true
+  },
+  {
+    id: 'doka-grecia-sarchi-tour',
+    title: {
+      es: 'Tour Doka Coffee Estate, Ciudad de Grecia y Cuna Artesanal de Sarchí',
+      en: 'Doka Coffee Estate, Grecia Church & Sarchí Artisan Village'
+    },
+    subtitle: {
+      es: 'El tour cultural más auténtico: café de altura, la famosa iglesia metálica y carretas típicas',
+      en: 'The definitive cultural journey: high-altitude coffee, metal church & Costa Rican oxcarts'
+    },
+    category: 'culture',
+    region: 'sjo',
+    image: 'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?auto=format&fit=crop&w=1200&q=80',
+    gallery: [
+      'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80'
+    ],
+    priceUSD: 75,
+    durationHours: 6,
+    durationLabel: { es: 'Medio Día (6 hrs)', en: 'Half Day (6 hrs)' },
+    difficulty: 'fácil',
+    difficultyLabel: { es: 'Fácil - Para todas las edades', en: 'Easy - All ages' },
+    rating: 4.88,
+    reviewsCount: 195,
+    featured: false,
+    bestseller: false,
+    ecoCert: true,
+    tourType: 'group',
+    maxGroupSize: 20,
+    freeCancellation: true,
+    description: {
+      es: 'Conoce las tradiciones vivas del Valle Central. Comenzamos en la prestigiosa finca Doka Coffee Estate en las faldas del Volcán Poás, conociendo el proceso completo del café de semilla a taza y catación profesional. Luego visitamos la pintoresca ciudad de Grecia con su emblemática Iglesia metálica roja traída de Bélgica en el siglo XIX. Concluimos en Sarchí, cuna de los artesanos de Costa Rica, donde verás el taller de pintura tradicional de la famosa Carreta Típica (Patrimonio Cultural de la Humanidad por la UNESCO).',
+      en: 'Explore the living traditions and craftsmanship of Costa Rica’s Central Valley. Begin at Doka Coffee Estate on the fertile slopes of Poás Volcano to learn the seed-to-cup harvesting and roasting methods with a professional coffee tasting. Continue to the charming town of Grecia to see its unique red metal church imported from Belgium. Finish in Sarchí, the cradle of Costa Rican artisans, watching master craftsmen paint the world-renowned traditional oxcarts (UNESCO Intangible Cultural Heritage).'
+    },
+    highlights: {
+      es: ['Tour integral del café en Doka Estate con catación guiada', 'Visita a la famosa Iglesia de Metal de Grecia (Nuestra Señora de Las Mercedes)', 'Taller artesanal de carretas típicas de Sarchí y la carreta más grande del mundo', 'Almuerzo buffet tradicional costarricense incluido', 'Oportunidad de comprar recuerdos auténticos directamente de los artesanos'],
+      en: ['Full bean-to-cup coffee tour at Doka Estate with cupping session', 'Visit to the historic all-metal church in Grecia', 'Live painting demonstrations at Sarchí traditional oxcart factory', 'Delicious authentic Costa Rican buffet lunch included', 'Time to shop handcrafted souvenirs directly from master artisans']
+    },
+    inclusions: {
+      es: ['Transporte turístico ida y vuelta desde San José', 'Guía profesional bilingüe', 'Entrada y tour guiado en Doka Coffee Estate', 'Almuerzo buffet típico costarricense', 'Visitas a Grecia y talleres de Sarchí'],
+      en: ['Roundtrip transportation from San José hotels', 'Certified bilingual tour guide', 'Doka Coffee Estate tour & coffee tasting', 'Traditional Costa Rican buffet lunch', 'Grecia and Sarchí artisan workshop tours']
+    },
+    exclusions: {
+      es: ['Compras personales', 'Propinas voluntarias'],
+      en: ['Personal souvenirs', 'Optional gratuities']
+    },
+    whatToBring: {
+      es: ['Ropa cómoda', 'Zapatos para caminar', 'Sombrero y bloqueador solar', 'Cámara fotográfica', 'Efectivo o tarjeta para compras de artesanías'],
+      en: ['Comfortable clothes', 'Walking shoes', 'Sun hat and sunscreen', 'Camera', 'Cash or card for souvenirs']
+    },
+    pickupHotels: [
+      'Hoteles en San José', 'Hoteles en Alajuela', 'Hoteles en Heredia', 'Hoteles en Escazú'
+    ],
+    departureTimes: ['08:00 AM'],
+    location: {
+      lat: 10.0894,
+      lng: -84.3122,
+      placeName: 'Doka Estate / Grecia / Sarchí, Alajuela, Costa Rica'
+    },
+    instantConfirmation: true,
+    bestPriceGuaranteed: true
+  },
+  {
+    id: 'sarapiqui-boat-rainforest-sjo',
+    title: {
+      es: 'Safari en Bote Río Sarapiquí, Reserva Selva Verde y Teleférico del Bosque Lluvioso',
+      en: 'Sarapiquí River Boat Wildlife Safari & Rainforest Aerial Tram'
+    },
+    subtitle: {
+      es: 'Aventura en la selva caribeña: caimanes, tucanes, monos y vuelo en teleférico sobre el dosel',
+      en: 'Caribbean rainforest safari: caimans, toucans, monkeys & aerial tram canopy glide'
+    },
+    category: 'wildlife',
+    region: 'sjo',
+    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
+    gallery: [
+      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80'
+    ],
+    priceUSD: 130,
+    durationHours: 9,
+    durationLabel: { es: 'Día Completo (9 hrs)', en: 'Full Day (9 hrs)' },
+    difficulty: 'fácil',
+    difficultyLabel: { es: 'Fácil - Naturaleza Pura', en: 'Easy - Pure Nature' },
+    rating: 4.92,
+    reviewsCount: 220,
+    featured: false,
+    bestseller: false,
+    ecoCert: true,
+    tourType: 'group',
+    maxGroupSize: 16,
+    freeCancellation: true,
+    description: {
+      es: 'Atraviesa la majestuosa Cordillera Central pasando por el Parque Nacional Braulio Carrillo hacia las tierras bajas del Caribe en Sarapiquí. Abordaremos una lancha techada para un safari fluvial de 2 horas por el Río Sarapiquí buscando caimanes, nutrias, perezosos, iguanas y garzas tigre. Después de un almuerzo buffet campesino, caminaremos por la reserva privada Selva Verde y subiremos al emocionante Teleférico del Bosque Lluvioso para flotar entre las copas de los árboles gigantes.',
+      en: 'Drive through the breathtaking primary rainforest of Braulio Carrillo National Park toward the lush Caribbean lowlands of Sarapiquí. Board a covered riverboat for a 2-hour wildlife safari down the Sarapiquí River, spotting caimans, river otters, sloths, iguanas, and exotic toucans. After a hearty farm-to-table lunch, take a guided nature walk through Selva Verde private reserve and glide through the tree canopy on the famous Rainforest Aerial Tram.'
+    },
+    highlights: {
+      es: ['Safari en lancha por el Río Sarapiquí observando fauna acuática y selva virgen', 'Paseo panorámico por el Parque Nacional Braulio Carrillo', 'Caminata guiada en senderos de la Reserva Privada Selva Verde', 'Vuelo en góndola en el Teleférico del Bosque Lluvioso del Atlántico', 'Almuerzo buffet campestre con ingredientes frescos locales'],
+      en: ['2-hour covered boat safari along Sarapiquí River with expert spotter', 'Scenic drive through Braulio Carrillo National Park', 'Guided nature walk at Selva Verde Private Rainforest Reserve', 'Aerial tram gondola ride through pristine rainforest canopy', 'Farm-to-table Costa Rican buffet lunch included']
+    },
+    inclusions: {
+      es: ['Transporte ida y vuelta desde hoteles en San José', 'Paseo en lancha de 2 horas en Río Sarapiquí', 'Entrada al Teleférico del Bosque Lluvioso', 'Almuerzo completo buffet campesino', 'Guía naturalista bilingüe experimentado'],
+      en: ['Roundtrip hotel transportation from San José', '2-hour Sarapiquí riverboat safari tour', 'Rainforest Aerial Tram admission ticket', 'Full traditional country buffet lunch', 'Certified bilingual naturalist guide']
+    },
+    exclusions: {
+      es: ['Bebidas alcohólicas', 'Propinas para el guía y capitán'],
+      en: ['Alcoholic beverages', 'Captain and guide tips']
+    },
+    whatToBring: {
+      es: ['Ropa fresca y cómoda', 'Capa impermeable o poncho para lluvia', 'Zapatos cerrados para caminar', 'Repelente de mosquitos y bloqueador', 'Cámara con buen zoom o binoculares'],
+      en: ['Lightweight comfortable clothing', 'Rain jacket or poncho', 'Closed-toe walking shoes', 'Bug repellent and sunscreen', 'Zoom camera or binoculars']
+    },
+    pickupHotels: [
+      'Hoteles en San José', 'Hoteles en Heredia', 'Hoteles en Alajuela', 'Hoteles en Escazú'
+    ],
+    departureTimes: ['06:30 AM'],
+    location: {
+      lat: 10.4532,
+      lng: -84.0152,
+      placeName: 'Sarapiquí / Braulio Carrillo, Heredia, Costa Rica'
+    },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   }
@@ -2925,19 +3235,19 @@ export const TOURIST_SERVICES: TouristService[] = [
     id: 'sjo-shuttle',
     title: { es: 'Traslado Privado Aeropuerto SJO a Hoteles San José', en: 'Private Airport Transfer SJO to San José Hotels' },
     category: 'transport',
-    description: { es: 'Operado por Alsama Tours CR. Van ejecutiva A/C con Wi-Fi a bordo, agua embotellada y recepción con cartel en terminal.', en: 'Operated by Alsama Tours CR. Executive A/C van with on-board Wi-Fi, bottled water, and airport name greeting.' },
+    description: { es: 'Servicio oficial de Costa Rica Tours. Van ejecutiva A/C con Wi-Fi a bordo, agua embotellada y recepción con cartel en terminal.', en: 'Official Costa Rica Tours service. Executive A/C van with on-board Wi-Fi, bottled water, and airport name greeting.' },
     priceUSD: 50,
     icon: 'Bus',
-    badge: { es: 'Alsama Tours CR • Oficial', en: 'Alsama Tours CR • Official' }
+    badge: { es: 'Servicio Oficial • CST', en: 'Official Service • CST' }
   },
   {
     id: 'sjo-arenal-private-transfer',
     title: { es: 'Traslado Privado San José / SJO a La Fortuna (Volcán Arenal)', en: 'Private Transfer San José / SJO to La Fortuna (Arenal Volcano)' },
     category: 'transport',
-    description: { es: 'Operado por Alsama Tours CR. Servicio puerta a puerta exclusivo (1-5 pax $170 / 6-10 pax $200), chofer bilingüe y paradas escénicas.', en: 'Operated by Alsama Tours CR. Exclusive door-to-door service (1-5 pax $170 / 6-10 pax $200), bilingual driver, and scenic stops.' },
+    description: { es: 'Servicio puerta a puerta exclusivo de Costa Rica Tours (1-5 pax $170 / 6-10 pax $200), chofer bilingüe y paradas escénicas.', en: 'Exclusive door-to-door service by Costa Rica Tours (1-5 pax $170 / 6-10 pax $200), bilingual driver, and scenic stops.' },
     priceUSD: 170,
     icon: 'Bus',
-    badge: { es: 'Alsama Tours CR • CST', en: 'Alsama Tours CR • CST' }
+    badge: { es: 'Transporte VIP • CST', en: 'VIP Transport • CST' }
   },
   {
     id: 'car-rental-4x4',
