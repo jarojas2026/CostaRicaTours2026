@@ -201,6 +201,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
 
   const filteredWorkflows = N8N_WORKFLOWS.filter((wf) => {
     if (categoryFilter === 'all') return true;
+    if (categoryFilter === 'enterprise_complex') return wf.isComplex === true || wf.complexityTier === 'enterprise_complex';
     return wf.category === categoryFilter;
   });
 
@@ -431,6 +432,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
       <div className="flex flex-wrap items-center gap-2">
         {[
           { id: 'all', label: { es: `Todos (${N8N_WORKFLOWS.length})`, en: `All (${N8N_WORKFLOWS.length})` } },
+          { id: 'enterprise_complex', label: { es: '🚀 Súper Avanzados (6)', en: '🚀 Super Advanced (6)' } },
           { id: 'flight', label: { es: '✈️ Vuelos & Retrasos', en: '✈️ Flights & Delays' } },
           { id: 'concierge', label: { es: '🎒 Objetos Olvidados', en: '🎒 Lost & Found' } },
           { id: 'vip', label: { es: '👑 Recepción VIP', en: '👑 VIP Reception' } },
@@ -507,8 +509,14 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
                     </span>
                   </div>
 
-                  <div className="font-bold text-sm text-white leading-snug">
-                    {wf.name[isEs ? 'es' : 'en']}
+                  <div className="font-bold text-sm text-white leading-snug flex items-center justify-between gap-2">
+                    <span>{wf.name[isEs ? 'es' : 'en']}</span>
+                    {wf.isComplex && (
+                      <span className="shrink-0 bg-gradient-to-r from-amber-400 to-amber-300 text-stone-950 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
+                        <Sparkles className="w-2.5 h-2.5" />
+                        <span>Súper Avanzado</span>
+                      </span>
+                    )}
                   </div>
 
                   <p className="text-xs text-stone-300 line-clamp-2 leading-relaxed">
@@ -576,6 +584,63 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
             <p className="text-xs sm:text-sm text-stone-300 leading-relaxed">
               {activeWf.description[isEs ? 'es' : 'en']}
             </p>
+
+            {/* Si es un flujo Enterprise Multi-Etapa, renderizamos las Etapas y Resiliencia */}
+            {activeWf.orchestrationStages && activeWf.orchestrationStages.length > 0 && (
+              <div className="bg-[#020f09] border border-amber-400/30 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{isEs ? 'Etapas de Orquestación Enterprise' : 'Enterprise Orchestration Stages'}</span>
+                  </div>
+                  <span className="text-[10px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-md font-mono font-bold">
+                    {activeWf.orchestrationStages.length} {isEs ? 'Etapas Autónomas' : 'Autonomous Stages'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {activeWf.orchestrationStages.map((stage, sIdx) => (
+                    <div key={sIdx} className="bg-black/40 border border-emerald-500/20 rounded-xl p-3 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-400 text-stone-950 text-[10px] font-black flex items-center justify-center">
+                          {sIdx + 1}
+                        </span>
+                        <span className="text-xs font-bold text-white">
+                          {stage.stageName}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-stone-300 leading-relaxed">
+                        {stage.description}
+                      </p>
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {stage.nodes.map((nodeName, nIdx) => (
+                          <span key={nIdx} className="text-[9px] font-mono bg-emerald-950/80 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                            {nodeName}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {activeWf.resilienceFeatures && activeWf.resilienceFeatures.length > 0 && (
+                  <div className="pt-2 border-t border-emerald-500/15">
+                    <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                      <span>{isEs ? 'Garantías de Resiliencia & Tolerancia a Fallos' : 'Resilience & Fault-Tolerance Guarantees'}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {activeWf.resilienceFeatures.map((feature, fIdx) => (
+                        <span key={fIdx} className="text-[10px] bg-emerald-950/60 text-emerald-200 px-2 py-0.5 rounded-full border border-emerald-500/25 flex items-center gap-1">
+                          <Check className="w-2.5 h-2.5 text-amber-400" />
+                          <span>{feature}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Pipeline Visual Node Architecture - Modern Interactive Canvas */}
             <div className="space-y-3 pt-3 border-t border-emerald-500/20">

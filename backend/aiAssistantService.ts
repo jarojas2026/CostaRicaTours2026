@@ -78,6 +78,22 @@ const SYSTEM_INSTRUCTION = `Eres el asistente inteligente oficial de Costa Rica 
 
 --- TOURS Y TARIFAS AUTORIZADAS ---
 ${getToursKnowledgeBase()}
+
+--- TRASLADOS PRIVADOS OFICIALES (ALSAMA TOURS CR) ---
+Proveedor Oficial Verificado: Alsama Tours CR (https://alsamatourscr.com/transport/)
+Todas las tarifas son en USD por vehículo completo privado (no por persona). Incluyen A/C, Wi-Fi 4G/5G a bordo, botellas de agua de cortesía, chofer profesional bilingüe y paradas escénicas en ruta (ej. Puente de los Cocodrilos en Río Tárcoles):
+• Aeropuerto SJO ⇄ Hoteles en San José (Centro / Escazú / Sabana): $50 USD (1-5 pax) / $57 USD (6-10 pax)
+• Hoteles San José ⇄ Aeropuerto SJO: $43 USD (1-5 pax) / $50 USD (6-10 pax)
+• San José / Aeropuerto SJO ⇄ La Fortuna (Volcán Arenal): $170 USD (1-5 pax) / $200 USD (6-10 pax) (~3.5 hrs)
+• San José / Aeropuerto SJO ⇄ Jacó / Playa Hermosa: $143 USD (1-5 pax) / $170 USD (6-10 pax) (~1 hr 45 min)
+• San José / Aeropuerto SJO ⇄ Manuel Antonio / Quepos: $186 USD (1-5 pax) / $214 USD (6-10 pax) (~3 hrs)
+• San José / Aeropuerto SJO ⇄ Monteverde (Bosque Nuboso): $186 USD (1-5 pax) / $214 USD (6-10 pax) (~3.5 hrs)
+• San José / Aeropuerto SJO ⇄ Puntarenas (Ferry) / Caldera: $143 USD (1-5 pax) / $170 USD (6-10 pax) (~1 hr 45 min)
+• La Fortuna / Arenal ⇄ Manuel Antonio: $260 USD (1-5 pax) / $300 USD (6-10 pax) (~4.5 hrs)
+• La Fortuna / Arenal ⇄ Monteverde: $160 USD (1-5 pax) / $190 USD (6-10 pax) (~3 hrs)
+• San José / Aeropuerto SJO ⇄ Guanacaste / Tamarindo / Papagayo: $260 USD (1-5 pax) / $310 USD (6-10 pax) (~4.5 hrs)
+• San José / Aeropuerto SJO ⇄ Puerto Viejo de Talamanca / Cahuita: $240 USD (1-5 pax) / $280 USD (6-10 pax) (~4.5 hrs)
+• San José / Aeropuerto SJO ⇄ Volcán Poás / La Paz Waterfall Gardens: $120 USD (1-5 pax) / $140 USD (6-10 pax) (~1 hr 15 min)
 `;
 
 /**
@@ -109,6 +125,30 @@ export async function processChatInquiry(
 
 function getKnowledgeBaseReply(message: string, isEn: boolean) {
   const lower = message.toLowerCase();
+
+  // Consulta sobre Transporte, Traslados Privados o Alsama Tours CR
+  if (
+    lower.includes('transporte') ||
+    lower.includes('transport') ||
+    lower.includes('transfer') ||
+    lower.includes('traslado') ||
+    lower.includes('alsama') ||
+    lower.includes('shuttle') ||
+    lower.includes('aeropuerto') ||
+    lower.includes('airport') ||
+    lower.includes('jaco') ||
+    lower.includes('jacó')
+  ) {
+    return {
+      reply: isEn
+        ? `🚐 **Official Private Transfers • Alsama Tours CR**\n\nWe provide verified private door-to-door transportation operated by **Alsama Tours CR** (https://alsamatourscr.com/transport/):\n\n• **San José / SJO Airport ⇄ Arenal (La Fortuna)**: $170 USD (1-5 pax) | $200 USD (6-10 pax)\n• **San José / SJO Airport ⇄ Jacó Beach**: $143 USD (1-5 pax) | $170 USD (6-10 pax)\n• **San José / SJO Airport ⇄ Manuel Antonio**: $186 USD (1-5 pax) | $214 USD (6-10 pax)\n• **San José / SJO Airport ⇄ Monteverde**: $186 USD (1-5 pax) | $214 USD (6-10 pax)\n• **SJO Airport ⇄ San José City Hotels**: $50 USD (1-5 pax) | $57 USD (6-10 pax)\n• **San José Hotels ⇄ SJO Airport**: $43 USD (1-5 pax) | $50 USD (6-10 pax)\n• **Arenal ⇄ Manuel Antonio**: $260 USD (1-5 pax) | $300 USD (6-10 pax)\n• **Arenal ⇄ Monteverde**: $160 USD (1-5 pax) | $190 USD (6-10 pax)\n\n✨ **Includes**: Executive modern van with AC, on-board 4G/5G Wi-Fi, complimentary cold bottled water, professional bilingual driver, scenic stops (like the Tárcoles River Crocodile Bridge), and full traveler insurance.\n\n¿Would you like me to help you book a private transfer or calculate a custom route?`
+        : `🚐 **Traslados Privados Oficiales • Alsama Tours CR**\n\nContamos con servicio oficial de transporte privado puerta a puerta operado por nuestro proveedor verificado **Alsama Tours CR** (https://alsamatourscr.com/transport/):\n\n• **San José / Aeropuerto SJO ⇄ Arenal (La Fortuna)**: $170 USD (1-5 personas) | $200 USD (6-10 personas)\n• **San José / Aeropuerto SJO ⇄ Jacó / Playa Hermosa**: $143 USD (1-5 personas) | $170 USD (6-10 personas)\n• **San José / Aeropuerto SJO ⇄ Manuel Antonio / Quepos**: $186 USD (1-5 personas) | $214 USD (6-10 personas)\n• **San José / Aeropuerto SJO ⇄ Monteverde**: $186 USD (1-5 personas) | $214 USD (6-10 personas)\n• **Aeropuerto SJO ⇄ Hoteles en San José**: $50 USD (1-5 personas) | $57 USD (6-10 personas)\n• **Hoteles en San José ⇄ Aeropuerto SJO**: $43 USD (1-5 personas) | $50 USD (6-10 personas)\n• **Arenal ⇄ Manuel Antonio**: $260 USD (1-5 personas) | $300 USD (6-10 personas)\n• **Arenal ⇄ Monteverde**: $160 USD (1-5 personas) | $190 USD (6-10 personas)\n\n✨ **Incluye**: Van ejecutiva moderna con aire acondicionado, Wi-Fi 4G/5G a bordo, botellas de agua fría de cortesía, chofer profesional bilingüe, paradas escénicas en ruta (ej. Puente de los Cocodrilos en Tárcoles) y seguro MOPT/ICT.\n\n¿Te gustaría coordinar la reserva de tu traslado privado o consultar por alguna otra ruta?`,
+      quickActions: [
+        { label: isEn ? '🚐 View Transport Rates' : '🚐 Ver Tarifario de Transporte', action: 'send_message', data: { message: isEn ? 'Show transport' : 'Ver transporte' } },
+        { label: isEn ? '💬 WhatsApp Booking' : '💬 Reservar por WhatsApp', action: 'direct_whatsapp' }
+      ]
+    };
+  }
 
   if (lower.includes('arenal') || lower.includes('volcan') || lower.includes('volcano') || lower.includes('tabacon')) {
     return {

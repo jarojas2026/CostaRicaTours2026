@@ -211,7 +211,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
   );
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0A1A10]/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-[#0A1A10]/85 backdrop-blur-md flex items-start sm:items-center justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain">
       {/* --- HIDDEN PROFESSIONAL PRINTABLE VOUCHER --- */}
       <div style={{ position: 'absolute', left: '-9999px', top: 0, zIndex: -1 }}>
         <div id="pdf-voucher-content" style={{ width: '800px', padding: '50px', backgroundColor: '#FAF8F5', color: '#1C1917', fontFamily: 'system-ui, sans-serif' }}>

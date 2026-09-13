@@ -28,14 +28,12 @@ const getEnvironment = () => {
 export const ENV = getEnvironment();
 
 export const API_CONFIG = {
-  // Configuración de conexión con n8n
+  // Configuración de conexión nativa en código (reemplaza proxies externos)
   n8n: {
     baseUrl: 
       (typeof import.meta !== 'undefined' && (import.meta.env?.VITE_N8N_BASE_URL || import.meta.env?.VITE_N8N_WEBHOOK_URL)) ||
       (typeof process !== 'undefined' && (process.env?.N8N_BASE_URL || process.env?.VITE_N8N_WEBHOOK_URL)) ||
-      (ENV === 'production' 
-        ? 'https://costaricatours.app.n8n.cloud' 
-        : 'https://costaricatours.app.n8n.cloud'),
+      '',
     webhookSecret: 
       (typeof import.meta !== 'undefined' && import.meta.env?.VITE_N8N_WEBHOOK_SECRET) ||
       (typeof process !== 'undefined' && process.env?.N8N_WEBHOOK_SECRET) ||

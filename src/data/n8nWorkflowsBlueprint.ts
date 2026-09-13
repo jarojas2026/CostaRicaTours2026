@@ -5,6 +5,8 @@
  * y plantillas JSON oficiales totalmente terminadas listas para importar en instancias n8n.
  */
 
+import { SUPER_ADVANCED_WORKFLOWS } from './superAdvancedWorkflows';
+
 export interface N8NWorkflowDef {
   id: string;
   code: string;
@@ -26,6 +28,14 @@ export interface N8NWorkflowDef {
   }>;
   samplePayload: Record<string, any>;
   blueprintJson: Record<string, any>;
+  isComplex?: boolean;
+  complexityTier?: 'enterprise_complex' | 'advanced' | 'standard';
+  orchestrationStages?: Array<{
+    stageName: string;
+    description: string;
+    nodes: string[];
+  }>;
+  resilienceFeatures?: string[];
 }
 
 export const GOOGLE_SERVICE_ACCOUNT_CREDENTIAL = {
@@ -33,7 +43,7 @@ export const GOOGLE_SERVICE_ACCOUNT_CREDENTIAL = {
   name: "Google Service Account"
 };
 
-export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
+const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
   {
     id: 'wf-chat-triage',
     code: 'WF-01',
@@ -3363,5 +3373,10 @@ return {
       }
     }
   }
+];
+
+export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
+  ...SUPER_ADVANCED_WORKFLOWS,
+  ...BASE_N8N_WORKFLOWS
 ];
 

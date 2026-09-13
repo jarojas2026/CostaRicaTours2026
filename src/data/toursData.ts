@@ -2923,12 +2923,21 @@ export interface TouristService {
 export const TOURIST_SERVICES: TouristService[] = [
   {
     id: 'sjo-shuttle',
-    title: { es: 'Traslado Privado Aeropuerto (SJO / LIR) a Hoteles', en: 'Private Airport Transfer (SJO / LIR) to Hotels' },
+    title: { es: 'Traslado Privado Aeropuerto SJO a Hoteles San José', en: 'Private Airport Transfer SJO to San José Hotels' },
     category: 'transport',
-    description: { es: 'Microbús A/C moderno con chofer profesional y recepción en terminal por nombre de pasajero.', en: 'Modern A/C van with professional bilingual driver and passenger name terminal greeting.' },
-    priceUSD: 85,
+    description: { es: 'Operado por Alsama Tours CR. Van ejecutiva A/C con Wi-Fi a bordo, agua embotellada y recepción con cartel en terminal.', en: 'Operated by Alsama Tours CR. Executive A/C van with on-board Wi-Fi, bottled water, and airport name greeting.' },
+    priceUSD: 50,
     icon: 'Bus',
-    badge: { es: 'Servicio 24/7', en: '24/7 Service' }
+    badge: { es: 'Alsama Tours CR • Oficial', en: 'Alsama Tours CR • Official' }
+  },
+  {
+    id: 'sjo-arenal-private-transfer',
+    title: { es: 'Traslado Privado San José / SJO a La Fortuna (Volcán Arenal)', en: 'Private Transfer San José / SJO to La Fortuna (Arenal Volcano)' },
+    category: 'transport',
+    description: { es: 'Operado por Alsama Tours CR. Servicio puerta a puerta exclusivo (1-5 pax $170 / 6-10 pax $200), chofer bilingüe y paradas escénicas.', en: 'Operated by Alsama Tours CR. Exclusive door-to-door service (1-5 pax $170 / 6-10 pax $200), bilingual driver, and scenic stops.' },
+    priceUSD: 170,
+    icon: 'Bus',
+    badge: { es: 'Alsama Tours CR • CST', en: 'Alsama Tours CR • CST' }
   },
   {
     id: 'car-rental-4x4',

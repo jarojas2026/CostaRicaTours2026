@@ -41,12 +41,12 @@
     "stripe": "^22.6.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
-    "typescript": "~5.8.2",
     "vite": "^6.2.3",
     "vite-plugin-pwa": "^1.3.0"
   },
   "devDependencies": {
     "@types/node-cron": "^3.0.11",
-    "sharp": "^0.35.4"
+    "sharp": "^0.35.4",
+    "typescript": "^5.8.2"
   }
 }

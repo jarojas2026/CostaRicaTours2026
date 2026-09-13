@@ -1,0 +1,135 @@
+{
+  "id": "rKfO0OE2luRB6d4J",
+  "name": "Fidelización Post-Venta y Cupones Club VIP",
+  "active": false,
+  "isArchived": false,
+  "versionId": "200217e5-e2ee-4cc2-8cc1-244d43de2c16",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "nodeCount": 3,
+  "createdAt": "2026-09-13T03:58:26.209Z",
+  "updatedAt": "2026-09-13T03:58:26.209Z",
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "tags": [],
+  "parentFolderId": null,
+  "description": "Emisión automática de cupones VIP (15% OFF) a los 3 días de completada la experiencia turística.",
+  "scopes": [
+    "execution:reveal",
+    "workflow:create",
+    "workflow:delete",
+    "workflow:disableRedaction",
+    "workflow:enableRedaction",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:export",
+    "workflow:import",
+    "workflow:list",
+    "workflow:move",
+    "workflow:publish",
+    "workflow:read",
+    "workflow:share",
+    "workflow:unpublish",
+    "workflow:unshare",
+    "workflow:update"
+  ],
+  "canExecute": true,
+  "connections": {
+    "Disparador Diario 11:00 AM": {
+      "main": [
+        [
+          {
+            "node": "Identificar Viajeros Finalizados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identificar Viajeros Finalizados": {
+      "main": [
+        [
+          {
+            "node": "Formatear Mensaje Club VIP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "c999daed-e037-4072-8398-bf710157cce8",
+      "name": "Disparador Diario 11:00 AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 11 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "2f98c782-e5dd-463e-bd91-3bf05f1305f2",
+      "name": "Identificar Viajeros Finalizados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "return [{ json: { cuponGenerado: \"PURAVIP15\", descuento: \"15% OFF\", validez: \"1 ano para tours operados por Alsama Tours CR y Expediciones Tropicales\", canal: \"Email + WhatsApp\" } }];"
+      }
+    },
+    {
+      "id": "0f698d6d-e424-471d-8dfb-8c9878c3f345",
+      "name": "Formatear Mensaje Club VIP",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "asunto",
+              "name": "asunto",
+              "value": "¡Gracias por explorar Costa Rica! Tu cupon VIP 15% OFF te espera",
+              "type": "string"
+            },
+            {
+              "id": "remitente",
+              "name": "remitente",
+              "value": "Costa Rica Tours Fidelizacion",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "nodeGroups": [],
+  "activeVersion": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  }
+}

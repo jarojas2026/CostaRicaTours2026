@@ -137,8 +137,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
-      <div className="modal-panel w-full max-w-4xl relative text-stone-900 my-8">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto overscroll-contain">
+      <div className="modal-panel w-full max-w-4xl relative text-stone-900 my-4 sm:my-8 pb-8 sm:pb-6">
         <button onClick={onClose} className="min-h-[44px] min-w-[44px] btn-close">
           <X size={24} />
         </button>
