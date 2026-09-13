@@ -167,41 +167,41 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <>
       {/* Structural Spacer: Prevents content clipping under fixed header */}
-      <div className={`w-full shrink-0 transition-all duration-300 ${isScrolled ? 'h-[62px]' : 'h-[92px] sm:h-[96px]'}`} aria-hidden="true" />
+      <div className={`w-full shrink-0 transition-all duration-300 ${isScrolled ? 'h-[58px]' : 'h-[86px] sm:h-[90px]'}`} aria-hidden="true" />
       
-      <header id="main-header" className={`w-full fixed top-0 left-0 right-0 z-[70] bg-[#051c14]/95 backdrop-blur-md border-b border-emerald-500/20 text-white shadow-2xl transition-all duration-300 ${isScrolled ? 'shadow-emerald-950/50' : ''}`}>
+      <header id="main-header" className={`w-full fixed top-0 left-0 right-0 z-[70] bg-[#031710]/95 backdrop-blur-xl border-b border-emerald-500/20 text-white shadow-xl transition-all duration-300 ${isScrolled ? 'shadow-emerald-950/40' : ''}`}>
         
         {/* Top Assistance & Trust Strip (Collapses smoothly on scroll to maximize visible screen) */}
-        <div className={`bg-[#02130c] text-xs px-3 sm:px-6 border-b border-emerald-500/20 text-stone-200 transition-all duration-300 overflow-hidden ${
+        <div className={`bg-[#010e08] text-xs px-3 sm:px-6 border-b border-emerald-500/15 text-stone-200 transition-all duration-300 overflow-hidden ${
           isScrolled ? 'max-h-0 opacity-0 py-0 border-b-0 pointer-events-none' : 'max-h-12 opacity-100 py-1.5'
         }`}>
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs">
             
             <div className="flex items-center gap-3 whitespace-nowrap overflow-x-auto hide-scrollbar">
-              <span className="inline-flex items-center gap-1.5 bg-emerald-950/90 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/40 font-bold text-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              <span className="inline-flex items-center gap-1.5 bg-emerald-950/80 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/30 font-semibold text-[11px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span>{language === 'es' ? '🇨🇷 Agencia Receptiva Oficial' : '🇨🇷 Official Inbound Agency'}</span>
               </span>
 
-              <span className="hidden sm:inline text-emerald-500/40">•</span>
+              <span className="hidden sm:inline text-emerald-500/30">•</span>
               
               <a
                 href="https://wa.me/50687959148?text=Hola%20Costa%20Rica%20Tours%20(costaricatours.es),%20quisiera%20consultar%20sobre%20los%20tours%20y%20traslados."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-stone-200 hover:text-white font-medium transition-colors text-xs"
+                className="inline-flex items-center gap-1.5 text-stone-200 hover:text-emerald-300 font-medium transition-colors text-xs"
               >
                 <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
-                <span>WhatsApp: <strong className="text-amber-400 font-bold">+506 8795-9148</strong></span>
+                <span>WhatsApp: <strong className="text-emerald-300 font-bold">+506 8795-9148</strong></span>
               </a>
 
-              <span className="hidden lg:inline text-emerald-500/40">•</span>
+              <span className="hidden lg:inline text-emerald-500/30">•</span>
 
               <a
                 href="mailto:info@costaricatours.es"
-                className="hidden lg:inline-flex items-center gap-1.5 text-stone-300 hover:text-amber-300 transition-colors text-xs"
+                className="hidden lg:inline-flex items-center gap-1.5 text-stone-300 hover:text-emerald-300 transition-colors text-xs"
               >
-                <Mail className="w-3.5 h-3.5 text-teal-400" />
+                <Mail className="w-3.5 h-3.5 text-emerald-400" />
                 <span>info@costaricatours.es</span>
               </a>
             </div>
@@ -216,7 +216,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Main Navigation Bar */}
         <div className={`max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 transition-all duration-300 flex items-center justify-between gap-2 lg:gap-4 ${
-          isScrolled ? 'py-2' : 'py-3'
+          isScrolled ? 'py-2' : 'py-2.5'
         }`}>
           
           {/* Brand Logo */}
@@ -224,8 +224,8 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => handleTabChange('home')}
             className="flex items-center gap-2.5 group text-left cursor-pointer shrink-0"
           >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-amber-400 rounded-xl flex items-center justify-center text-stone-950 font-black shadow-md group-hover:scale-105 transition-transform">
-              <Compass className="w-5 h-5 sm:w-6 sm:h-6" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center text-stone-950 font-black shadow-md shadow-emerald-900/30 group-hover:scale-105 transition-transform">
+              <Compass className="w-5 h-5 sm:w-6 sm:h-6 text-stone-950" />
             </div>
             <div className="whitespace-nowrap">
               <div className="text-base sm:text-xl font-extrabold tracking-tight text-white flex items-center gap-1.5">
@@ -239,13 +239,13 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           {/* Unified High-Tech Desktop Navigation (Visible on lg screens and up) */}
-          <nav className="hidden lg:flex items-center gap-1 bg-[#02130c]/90 p-1.5 rounded-full border border-emerald-500/30 backdrop-blur-xl shadow-md">
+          <nav className="hidden lg:flex items-center gap-1 bg-[#010e08]/80 p-1.5 rounded-full border border-emerald-500/25 backdrop-blur-xl shadow-inner">
             <button
               onClick={() => handleTabChange('home')}
-              className={`px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'home'
-                  ? 'bg-amber-400 text-stone-950 font-extrabold shadow-sm'
-                  : 'text-stone-300 hover:text-white hover:bg-emerald-900/40'
+                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
+                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
               }`}
             >
               <Home className="w-4 h-4" />
@@ -254,10 +254,10 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={() => handleTabChange('tours')}
-              className={`px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'tours'
-                  ? 'bg-amber-400 text-stone-950 font-extrabold shadow-sm'
-                  : 'text-stone-300 hover:text-white hover:bg-emerald-900/40'
+                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
+                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
               }`}
             >
               <Compass className="w-4 h-4" />
@@ -266,10 +266,10 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={() => handleTabChange('map')}
-              className={`px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'map'
-                  ? 'bg-amber-400 text-stone-950 font-extrabold shadow-sm'
-                  : 'text-stone-300 hover:text-white hover:bg-emerald-900/40'
+                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
+                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
               }`}
             >
               <Map className="w-4 h-4" />
@@ -278,10 +278,10 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={() => handleTabChange('flights')}
-              className={`px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'flights'
-                  ? 'bg-amber-400 text-stone-950 font-extrabold shadow-sm'
-                  : 'text-stone-300 hover:text-white hover:bg-emerald-900/40'
+                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
+                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
               }`}
             >
               <Plane className="w-4 h-4" />
@@ -290,10 +290,10 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={() => handleTabChange('itinerary')}
-              className={`px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'itinerary'
-                  ? 'bg-amber-400 text-stone-950 font-extrabold shadow-sm'
-                  : 'text-stone-300 hover:text-white hover:bg-emerald-900/40'
+                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
+                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
               }`}
             >
               <Calendar className="w-4 h-4" />
@@ -302,10 +302,10 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={() => handleTabChange('ai')}
-              className={`px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'ai'
-                  ? 'bg-amber-400 text-stone-950 font-extrabold shadow-sm'
-                  : 'text-stone-300 hover:text-white hover:bg-emerald-900/40'
+                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
+                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
               }`}
             >
               <Bot className="w-4 h-4 text-amber-400" />
@@ -637,7 +637,7 @@ export const Header: React.FC<HeaderProps> = ({
                       <span className="text-xs font-bold">{language === 'es' ? 'Motor de Inteligencia & n8n' : 'AI Engine & Automations'}</span>
                     </span>
                     <span className="text-[9px] uppercase bg-amber-400 text-stone-950 px-2 py-0.5 rounded-full font-black">
-                      8 Flujos
+                      10 Flujos
                     </span>
                   </button>
 

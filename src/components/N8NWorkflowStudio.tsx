@@ -5,7 +5,7 @@ import {
   Zap, Play, CheckCircle2, AlertCircle, Copy, Download, RefreshCw,
   Terminal, Server, Code, FileText, ArrowRight, ShieldCheck, Clock,
   Cpu, Send, ExternalLink, ChevronRight, Layers, Bot, HelpCircle,
-  Key, Mail, ShieldAlert
+  Key, Mail, ShieldAlert, Sliders, Settings, Check, Sparkles, X, Eye
 } from 'lucide-react';
 
 interface N8NWorkflowStudioProps {
@@ -17,6 +17,12 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
   const [selectedWfId, setSelectedWfId] = useState<string>(N8N_WORKFLOWS[0].id);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [showCredentialsGuide, setShowCredentialsGuide] = useState<boolean>(false);
+  const [activeNodeModal, setActiveNodeModal] = useState<any | null>(null);
+
+  // Form input mode: 'visual' (form fields) or 'json' (raw code)
+  const [inputMode, setInputMode] = useState<'visual' | 'json'>('visual');
+  const [authSecretHeader, setAuthSecretHeader] = useState<string>('dev-secret-key-123');
+  const [retryOnFail, setRetryOnFail] = useState<boolean>(true);
   
   // Connection status state
   const [connectionStatus, setConnectionStatus] = useState<{
@@ -135,7 +141,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
         method: activeWf.method,
         headers: {
           'Content-Type': 'application/json',
-          'X-Webhook-Secret': 'dev-secret-key-123'
+          'X-Webhook-Secret': authSecretHeader || 'dev-secret-key-123'
         },
         body: JSON.stringify(parsedPayload)
       });
@@ -166,6 +172,17 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
     }
   };
 
+  // Helper to update individual JSON properties from visual form
+  const handleVisualFieldUpdate = (key: string, value: any) => {
+    try {
+      const current = JSON.parse(testPayload || '{}');
+      current[key] = value;
+      setTestPayload(JSON.stringify(current, null, 2));
+    } catch {
+      // ignore
+    }
+  };
+
   const handleCopyJson = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
@@ -187,6 +204,14 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
     return wf.category === categoryFilter;
   });
 
+  // Safely parse current testPayload for the Visual Fields Form editor
+  let parsedPayloadObj: Record<string, any> = {};
+  try {
+    parsedPayloadObj = JSON.parse(testPayload || '{}');
+  } catch {
+    parsedPayloadObj = {};
+  }
+
   return (
     <div className="space-y-6 text-stone-100">
       
@@ -200,7 +225,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
               </span>
               <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                {isEs ? '10 Flujos en Producción' : '10 Production Workflows'}
+                {isEs ? '13 Flujos en Producción' : '13 Production Workflows'}
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
@@ -405,12 +430,15 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
       {/* Category Filter Tabs */}
       <div className="flex flex-wrap items-center gap-2">
         {[
-          { id: 'all', label: { es: 'Todos (10)', en: 'All (10)' } },
+          { id: 'all', label: { es: 'Todos (13)', en: 'All (13)' } },
+          { id: 'analytics', label: { es: '📊 Reportes & Telegram', en: '📊 Reports & Telegram' } },
           { id: 'chat', label: { es: 'Chat & Triage', en: 'Chat & Triage' } },
           { id: 'booking', label: { es: 'Bloqueo Cupos', en: 'Seat Hold' } },
           { id: 'payment', label: { es: 'Pagos & HMAC', en: 'Payments' } },
           { id: 'fraud', label: { es: 'Antifraude & Riesgo', en: 'Fraud & Risk' } },
           { id: 'telegram', label: { es: 'Panel Telegram', en: 'Telegram Panel' } },
+          { id: 'calendar', label: { es: 'Google Calendar Sync', en: 'Calendar Sync' } },
+          { id: 'feedback', label: { es: 'NPS & Post-Tour', en: 'NPS & Feedback' } },
           { id: 'fulfillment', label: { es: 'Vouchers & WhatsApp', en: 'Vouchers' } },
           { id: 'itinerary', label: { es: 'Itinerarios', en: 'Itineraries' } },
           { id: 'contingency', label: { es: 'Contingencias', en: 'Contingency' } },
@@ -543,75 +571,293 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
               {activeWf.description[isEs ? 'es' : 'en']}
             </p>
 
-            {/* Pipeline Visual Node Architecture */}
-            <div className="space-y-2 pt-2 border-t border-emerald-500/20">
-              <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Cpu className="w-3.5 h-3.5" />
-                <span>{isEs ? 'Diagrama de Nodos del Pipeline en n8n' : 'n8n Pipeline Node Flow'}</span>
+            {/* Pipeline Visual Node Architecture - Modern Interactive Canvas */}
+            <div className="space-y-3 pt-3 border-t border-emerald-500/20">
+              <div className="flex items-center justify-between">
+                <div className="text-[11px] font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Cpu className="w-4 h-4 text-amber-400" />
+                  <span>{isEs ? 'Lienzo de Nodos n8n en Tiempo Real' : 'Real-time n8n Node Canvas'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-bold text-emerald-400 bg-[#020e08] px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                    {activeWf.nodes.length} {isEs ? 'Nodos Encadenados' : 'Chained Nodes'}
+                  </span>
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Animated Horizontal Pipeline Preview on Desktop */}
+              <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
                 {activeWf.nodes.map((node, index) => (
-                  <div
-                    key={node.id}
-                    className="bg-[#020e08] p-2.5 rounded-xl border border-emerald-500/20 flex items-start gap-2 text-xs"
-                  >
-                    <span className="w-5 h-5 rounded-full bg-emerald-950 text-amber-400 border border-emerald-500/40 text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
-                      {index + 1}
-                    </span>
-                    <div className="min-w-0">
-                      <div className="font-bold text-white truncate">{node.name}</div>
-                      <div className="text-[10px] font-mono text-emerald-400/70 truncate">{node.type}</div>
-                      <div className="text-[11px] text-stone-400 mt-0.5 leading-snug">{node.description}</div>
+                  <React.Fragment key={`mini-${node.id}`}>
+                    <div className="flex items-center gap-1 bg-[#020e08] border border-emerald-500/30 px-2.5 py-1 rounded-lg shrink-0">
+                      <span className="w-4 h-4 rounded-full bg-amber-400 text-stone-950 text-[9px] font-black flex items-center justify-center">
+                        {index + 1}
+                      </span>
+                      <span className="text-[11px] font-bold text-stone-200 truncate max-w-[100px]">
+                        {node.name.split(' ')[0]}
+                      </span>
                     </div>
-                  </div>
+                    {index < activeWf.nodes.length - 1 && (
+                      <span className="w-4 h-0.5 bg-gradient-to-r from-emerald-400 to-amber-400 shrink-0" />
+                    )}
+                  </React.Fragment>
                 ))}
+              </div>
+
+              {/* Detailed Node Grid Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {activeWf.nodes.map((node, index) => {
+                  const isWebhook = node.type.includes('webhook') || node.type.includes('scheduleTrigger');
+                  const isAi = node.type.includes('openAi') || node.type.includes('ai') || node.name.toLowerCase().includes('ia') || node.name.toLowerCase().includes('triage');
+                  const isDatabase = node.type.includes('httpRequest') || node.name.toLowerCase().includes('firestore') || node.name.toLowerCase().includes('inventario');
+                  const isTelegram = node.type.includes('telegram');
+                  const isAction = node.type.includes('code') || node.type.includes('crypto') || node.type.includes('respond');
+                  
+                  let badgeColor = 'text-emerald-300 border-emerald-500/30 bg-emerald-950/60';
+                  let nodeTypeIcon = '⚡';
+                  if (node.type.includes('scheduleTrigger')) {
+                    badgeColor = 'text-cyan-300 border-cyan-500/40 bg-cyan-950/60';
+                    nodeTypeIcon = '⏰';
+                  } else if (isWebhook) {
+                    badgeColor = 'text-sky-300 border-sky-500/40 bg-sky-950/60';
+                    nodeTypeIcon = '🌐';
+                  } else if (isTelegram) {
+                    badgeColor = 'text-sky-300 border-sky-400/50 bg-sky-950/70';
+                    nodeTypeIcon = '✈️';
+                  } else if (isAi) {
+                    badgeColor = 'text-purple-300 border-purple-500/40 bg-purple-950/60';
+                    nodeTypeIcon = '🧠';
+                  } else if (isDatabase) {
+                    badgeColor = 'text-amber-300 border-amber-500/40 bg-amber-950/60';
+                    nodeTypeIcon = '🗄️';
+                  }
+
+                  return (
+                    <div
+                      key={node.id}
+                      onClick={() => setActiveNodeModal(node)}
+                      className="group relative bg-[#020e08]/90 hover:bg-[#062216] p-3.5 rounded-2xl border border-emerald-500/20 hover:border-amber-400/60 transition-all duration-300 flex flex-col justify-between shadow-md cursor-pointer"
+                    >
+                      {/* Top Header of Node */}
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-400 to-amber-500 text-stone-950 font-black text-[11px] flex items-center justify-center shadow-sm shrink-0">
+                            {index + 1}
+                          </span>
+                          <span className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors truncate">
+                            {node.name}
+                          </span>
+                        </div>
+                        <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full border flex items-center gap-1 font-semibold shrink-0 ${badgeColor}`}>
+                          <span>{nodeTypeIcon}</span>
+                          <span className="truncate max-w-[85px]">{node.type.replace('n8n-nodes-base.', '')}</span>
+                        </span>
+                      </div>
+
+                      {/* Node Description */}
+                      <p className="text-[11px] text-stone-300 leading-relaxed group-hover:text-stone-100 transition-colors">
+                        {node.description}
+                      </p>
+
+                      {/* Node Status Bar & In/Out indicators */}
+                      <div className="mt-3 pt-2 border-t border-emerald-500/15 flex items-center justify-between text-[10px] text-emerald-400/80">
+                        <span className="flex items-center gap-1 font-mono">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                          <span>ONLINE</span>
+                        </span>
+                        <span className="text-amber-400 font-bold flex items-center gap-1 opacity-80 group-hover:opacity-100">
+                          <Eye className="w-3 h-3" />
+                          <span>{isEs ? 'Ver Parámetros' : 'View Config'}</span>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
 
-          {/* Interactive Live Tester / Runner */}
+          {/* Professional Interactive Form & Live Simulator */}
           <div className="bg-[#03150d]/90 backdrop-blur-xl border border-emerald-500/25 rounded-3xl p-5 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
+            
+            {/* Header & Tabs */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-500/20 pb-3">
               <div className="flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-amber-400" />
+                <Sliders className="w-4 h-4 text-amber-400" />
                 <h4 className="text-sm font-black text-white uppercase tracking-wider">
-                  {isEs ? 'Simulador & Disparador de Webhooks en Vivo' : 'Live Webhook Simulator & Runner'}
+                  {isEs ? 'Formulario Parametrizado & Disparador del Flujo' : 'Parametric Form & Workflow Dispatcher'}
                 </h4>
               </div>
 
-              <button
-                onClick={() => setTestPayload(JSON.stringify(activeWf.samplePayload, null, 2))}
-                className="text-[11px] text-emerald-300/80 hover:text-white cursor-pointer underline"
-              >
-                {isEs ? 'Restablecer Payload' : 'Reset Payload'}
-              </button>
+              {/* Mode Toggle Pills: Formulario Visual vs Raw JSON */}
+              <div className="flex items-center bg-[#020e08] p-1 rounded-xl border border-emerald-500/30">
+                <button
+                  type="button"
+                  onClick={() => setInputMode('visual')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    inputMode === 'visual'
+                      ? 'bg-amber-400 text-stone-950 font-black shadow'
+                      : 'text-emerald-300 hover:text-white'
+                  }`}
+                >
+                  <Sliders className="w-3 h-3" />
+                  <span>{isEs ? 'Campos Visuales' : 'Visual Fields'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInputMode('json')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    inputMode === 'json'
+                      ? 'bg-amber-400 text-stone-950 font-black shadow'
+                      : 'text-emerald-300 hover:text-white'
+                  }`}
+                >
+                  <Code className="w-3 h-3" />
+                  <span>JSON RAW</span>
+                </button>
+              </div>
             </div>
 
-            {/* Editable JSON Payload Textarea */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-stone-300">
-                {isEs ? 'Cuerpo de la Petición (Payload JSON):' : 'Request Body (JSON Payload):'}
-              </label>
-              <textarea
-                value={testPayload}
-                onChange={(e) => setTestPayload(e.target.value)}
-                rows={6}
-                className="w-full bg-[#020e08] text-emerald-300 font-mono text-xs p-3 rounded-2xl border border-emerald-500/30 focus:border-amber-400 focus:outline-none resize-y leading-relaxed shadow-inner"
-              />
-            </div>
+            {/* Visual Form Mode: Dynamic fields matching current workflow */}
+            {inputMode === 'visual' ? (
+              <div className="space-y-4 p-4 rounded-2xl bg-[#020e08]/90 border border-emerald-500/20">
+                <div className="text-xs text-stone-300 flex items-center justify-between">
+                  <span className="font-bold text-amber-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    {isEs ? 'Configuración de Parámetros de Entrada para este Workflow' : 'Input Parameters Setup for this Workflow'}
+                  </span>
+                  <button
+                    onClick={() => setTestPayload(JSON.stringify(activeWf.samplePayload, null, 2))}
+                    className="text-[11px] text-emerald-400 hover:underline cursor-pointer"
+                  >
+                    {isEs ? 'Valores por Defecto' : 'Reset Defaults'}
+                  </button>
+                </div>
 
-            {/* Trigger Button */}
-            <div className="flex items-center justify-between gap-3 pt-1">
-              <div className="text-[11px] text-stone-400 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{isEs ? 'Autenticación con cabecera X-Webhook-Secret' : 'Authenticated via X-Webhook-Secret header'}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {/* Field: Evento Trigger */}
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block mb-1">
+                      Trigger Event
+                    </label>
+                    <input
+                      type="text"
+                      value={parsedPayloadObj?.trigger || activeWf.triggerEvent || ''}
+                      onChange={(e) => handleVisualFieldUpdate('trigger', e.target.value)}
+                      className="w-full bg-[#051c14] border border-emerald-500/30 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-400 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Field: ID Usuario / Contacto / Canal */}
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block mb-1">
+                      {activeWf.category === 'analytics'
+                        ? (isEs ? 'Canal Telegram Destino' : 'Target Telegram Channel')
+                        : (isEs ? 'ID Usuario / Viajero' : 'User / Traveler ID')}
+                    </label>
+                    <input
+                      type="text"
+                      value={activeWf.category === 'analytics'
+                        ? (parsedPayloadObj?.canalTelegram || '@CostaRicaToursAdminOps')
+                        : (parsedPayloadObj?.idUsuario || parsedPayloadObj?.titular || 'user_cr_992')}
+                      onChange={(e) => {
+                        if (activeWf.category === 'analytics') handleVisualFieldUpdate('canalTelegram', e.target.value);
+                        else handleVisualFieldUpdate(parsedPayloadObj?.idUsuario ? 'idUsuario' : 'titular', e.target.value);
+                      }}
+                      className="w-full bg-[#051c14] border border-emerald-500/30 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-400 focus:outline-none font-mono"
+                    />
+                  </div>
+
+                  {/* Field: Mensaje / Motivo / Consulta / Origen */}
+                  <div className="sm:col-span-2">
+                    <label className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block mb-1">
+                      {activeWf.category === 'analytics'
+                        ? (isEs ? 'Colección de Origen de Datos (Firestore)' : 'Data Source Collection (Firestore)')
+                        : (isEs ? 'Mensaje o Petición Turística' : 'Message or Tourist Request')}
+                    </label>
+                    <input
+                      type="text"
+                      value={activeWf.category === 'analytics'
+                        ? (parsedPayloadObj?.origenDatos || 'Firestore Collection: bookings')
+                        : (parsedPayloadObj?.mensaje || parsedPayloadObj?.nombreTour || parsedPayloadObj?.motivo || '')}
+                      onChange={(e) => {
+                        if (activeWf.category === 'analytics') handleVisualFieldUpdate('origenDatos', e.target.value);
+                        else if ('mensaje' in parsedPayloadObj) handleVisualFieldUpdate('mensaje', e.target.value);
+                        else if ('nombreTour' in parsedPayloadObj) handleVisualFieldUpdate('nombreTour', e.target.value);
+                        else handleVisualFieldUpdate('motivo', e.target.value);
+                      }}
+                      className="w-full bg-[#051c14] border border-emerald-500/30 rounded-xl px-3 py-2 text-xs text-amber-200 focus:border-amber-400 focus:outline-none font-medium"
+                    />
+                  </div>
+
+                  {/* Field: Idioma */}
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block mb-1">
+                      {isEs ? 'Idioma del Viajero' : 'Language'}
+                    </label>
+                    <select
+                      value={parsedPayloadObj?.idioma || 'es'}
+                      onChange={(e) => handleVisualFieldUpdate('idioma', e.target.value)}
+                      className="w-full bg-[#051c14] border border-emerald-500/30 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-400 focus:outline-none cursor-pointer"
+                    >
+                      <option value="es">Español (Costa Rica / LATAM)</option>
+                      <option value="en">English (US / International)</option>
+                    </select>
+                  </div>
+
+                  {/* Field: Token Secreto Webhook */}
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block mb-1">
+                      X-Webhook-Secret Header
+                    </label>
+                    <input
+                      type="text"
+                      value={authSecretHeader}
+                      onChange={(e) => setAuthSecretHeader(e.target.value)}
+                      className="w-full bg-[#051c14] border border-emerald-500/30 rounded-xl px-3 py-2 text-xs font-mono text-emerald-300 focus:border-amber-400 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Raw JSON Code Mode */
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <label className="font-bold text-stone-300">
+                    {isEs ? 'Cuerpo de la Petición (Payload JSON):' : 'Request Body (JSON Payload):'}
+                  </label>
+                  <button
+                    onClick={() => setTestPayload(JSON.stringify(activeWf.samplePayload, null, 2))}
+                    className="text-emerald-300/80 hover:text-white cursor-pointer underline"
+                  >
+                    {isEs ? 'Restablecer Payload' : 'Reset Payload'}
+                  </button>
+                </div>
+                <textarea
+                  value={testPayload}
+                  onChange={(e) => setTestPayload(e.target.value)}
+                  rows={7}
+                  className="w-full bg-[#020e08] text-emerald-300 font-mono text-xs p-3 rounded-2xl border border-emerald-500/30 focus:border-amber-400 focus:outline-none resize-y leading-relaxed shadow-inner"
+                />
+              </div>
+            )}
+
+            {/* Trigger Bar with SLA & Run Button */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <div className="flex items-center gap-3 text-xs text-stone-400">
+                <span className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="text-stone-300 font-bold">SLA: {activeWf.slaTarget}</span>
+                </span>
+                <span className="hidden sm:inline">•</span>
+                <span className="font-mono text-emerald-400 text-[11px]">{activeWf.method} {activeWf.endpoint}</span>
               </div>
 
               <button
                 onClick={handleExecuteWorkflow}
                 disabled={isRunning}
-                className="px-5 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs transition-all flex items-center gap-2 cursor-pointer shadow-lg disabled:opacity-50"
+                className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-stone-950 font-black text-xs transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-amber-400/20 disabled:opacity-50 active:scale-95"
               >
                 {isRunning ? (
                   <>
@@ -629,7 +875,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
 
             {/* Execution Result Box */}
             {runResult && (
-              <div className={`p-4 rounded-2xl border space-y-2 mt-3 ${
+              <div className={`p-4 rounded-2xl border space-y-2.5 mt-3 ${
                 runResult.success 
                   ? 'bg-[#02180d] border-emerald-500/40 text-emerald-100' 
                   : 'bg-rose-950/40 border-rose-500/40 text-rose-200'
@@ -664,8 +910,15 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
                 )}
 
                 <div className="space-y-1">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400/80">
-                    {isEs ? 'Respuesta JSON Devuelta:' : 'Returned JSON Response:'}
+                  <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-emerald-400/80">
+                    <span>{isEs ? 'Respuesta JSON Devuelta:' : 'Returned JSON Response:'}</span>
+                    <button
+                      onClick={() => handleCopyJson(JSON.stringify(runResult.data, null, 2), 'response-output')}
+                      className="text-amber-400 hover:text-amber-300 cursor-pointer flex items-center gap-1 normal-case font-bold"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>{copiedKey === 'response-output' ? (isEs ? 'Copiado' : 'Copied') : (isEs ? 'Copiar' : 'Copy')}</span>
+                    </button>
                   </div>
                   <pre className="bg-[#020e08] p-3 rounded-xl font-mono text-xs text-amber-200 overflow-x-auto max-h-48 border border-emerald-500/20">
                     {JSON.stringify(runResult.data, null, 2)}
@@ -678,6 +931,69 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
         </div>
 
       </div>
+
+      {/* Node Inspector Modal / Drawer */}
+      {activeNodeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn">
+          <div className="bg-[#03150d] border border-amber-400/50 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 text-stone-100">
+            <div className="flex items-center justify-between border-b border-emerald-500/20 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-400 text-stone-950 font-black flex items-center justify-center text-sm">
+                  ⚡
+                </div>
+                <div>
+                  <h3 className="font-black text-white text-base leading-tight">
+                    {activeNodeModal.name}
+                  </h3>
+                  <span className="text-xs font-mono text-emerald-400">
+                    {activeNodeModal.type}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveNodeModal(null)}
+                className="w-8 h-8 rounded-full bg-[#052418] hover:bg-[#0c3826] text-stone-300 hover:text-white flex items-center justify-center cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-stone-300 leading-relaxed">
+              {activeNodeModal.description}
+            </p>
+
+            <div className="bg-[#020e08] p-3.5 rounded-2xl border border-emerald-500/30 space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <Settings className="w-3.5 h-3.5" />
+                <span>{isEs ? 'Parámetros del Nodo en n8n' : 'n8n Node Parameters'}</span>
+              </div>
+              <div className="space-y-1 text-xs font-mono text-emerald-200">
+                <div className="flex justify-between border-b border-emerald-500/10 py-1">
+                  <span className="text-stone-400">Node ID:</span>
+                  <span className="font-bold">{activeNodeModal.id}</span>
+                </div>
+                <div className="flex justify-between border-b border-emerald-500/10 py-1">
+                  <span className="text-stone-400">Execution Mode:</span>
+                  <span className="text-amber-300 font-bold">Standard Synchronous</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span className="text-stone-400">Retry On Fail:</span>
+                  <span className="text-emerald-400 font-bold">Enabled (3 attempts)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setActiveNodeModal(null)}
+                className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs cursor-pointer shadow"
+              >
+                {isEs ? 'Entendido' : 'Got it'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

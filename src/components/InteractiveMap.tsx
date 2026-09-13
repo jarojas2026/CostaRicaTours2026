@@ -966,7 +966,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       className="relative w-full h-[calc(100vh-64px)] flex flex-col bg-[#041711] overflow-hidden select-none"
     >
       {/* TOP HEADER CONTROLS BAR */}
-      <header className="absolute top-0 left-0 right-0 z-30 pointer-events-none p-2 sm:p-3">
+      <header className="absolute top-2 left-2 right-2 z-30 pointer-events-none">
         <div className="max-w-6xl mx-auto flex flex-col gap-2 pointer-events-auto">
           {/* Collapsed State */}
           {isControlsCollapsed ? (
@@ -974,7 +974,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               <button
                 id="map-exit-min-btn"
                 onClick={onExitMap}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-emerald-100 hover:text-white bg-[#051e16]/95 hover:bg-emerald-900 border border-emerald-500/40 rounded-xl shadow-2xl backdrop-blur-md transition-all active:scale-95"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-800 bg-white/95 hover:bg-white border border-slate-200/90 rounded-xl shadow-lg backdrop-blur-md transition-all active:scale-95"
                 title={language === 'es' ? 'Volver al catálogo' : 'Back to catalog'}
               >
                 <span>←</span>
@@ -984,24 +984,24 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               <button
                 id="map-expand-controls-btn"
                 onClick={() => setIsControlsCollapsed(false)}
-                className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-emerald-100 bg-[#051e16]/95 hover:bg-emerald-900 border border-emerald-500/40 rounded-xl shadow-2xl backdrop-blur-md transition-all active:scale-95 group"
+                className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-800 bg-white/95 hover:bg-white border border-slate-200/90 rounded-xl shadow-lg backdrop-blur-md transition-all active:scale-95 group"
                 title={language === 'es' ? 'Mostrar herramientas y capas' : 'Show tools & layers'}
               >
-                <Search className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
-                <span className="font-semibold text-white">
+                <Search className="w-3.5 h-3.5 text-emerald-600 group-hover:scale-110 transition-transform" />
+                <span className="font-semibold text-slate-900">
                   {searchQuery ? `"${searchQuery}"` : (language === 'es' ? 'Buscador y Capas' : 'Search & Layers')}
                 </span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-mono border border-emerald-500/30">
+                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-mono border border-emerald-300">
                   {effectiveTours.length + effectiveServices.length} {language === 'es' ? 'puntos' : 'pins'}
                 </span>
-                <Eye className="w-3.5 h-3.5 text-emerald-400 ml-1" />
+                <Eye className="w-3.5 h-3.5 text-emerald-600 ml-1" />
               </button>
 
               {/* Itinerary Quick Pill if stops exist */}
               {itineraryStops.length > 0 && (
                 <button
                   onClick={() => setShowItineraryDrawer(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black bg-emerald-500 text-stone-950 border border-white shadow-xl animate-pulse"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white border border-emerald-500 shadow-xl"
                 >
                   <Route className="w-3.5 h-3.5" />
                   <span>{language === 'es' ? 'Itinerario' : 'Itinerary'} ({itineraryStops.length})</span>
@@ -1009,36 +1009,36 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               )}
             </div>
           ) : (
-            /* Expanded State: Compact, Floating, Non-intrusive Search & Control Deck */
+            /* Expanded State: Compact, Modern Floating Card Deck */
             <div className="flex flex-col gap-2">
-              <div className="bg-[#051e16]/95 backdrop-blur-md border border-emerald-500/35 rounded-2xl shadow-2xl p-2 sm:p-2.5 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
+              <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-xl p-2 sm:p-2.5 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 text-slate-800">
                 {/* Back Button */}
                 <button
                   id="map-exit-btn"
                   onClick={onExitMap}
-                  className="flex items-center gap-1 px-2.5 sm:px-3 py-2 text-xs font-bold text-emerald-100 hover:text-white bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 rounded-xl transition-all shadow shrink-0"
+                  className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all shrink-0"
                   title={language === 'es' ? 'Volver al catálogo' : 'Back to catalog'}
                 >
                   <span>←</span>
                   <span className="hidden sm:inline">{language === 'es' ? 'Volver' : 'Back'}</span>
                 </button>
 
-                {/* Center: Search Input */}
+                {/* Search Bar Input */}
                 <div className="flex-1 min-w-[140px] relative">
                   <div className="relative flex items-center">
-                    <Search className="absolute left-2.5 sm:left-3 w-3.5 sm:w-4 h-3.5 sm:h-4 text-emerald-400 pointer-events-none" />
+                    <Search className="absolute left-2.5 sm:left-3 w-3.5 sm:w-4 h-3.5 sm:h-4 text-slate-400 pointer-events-none" />
                     <input
                       id="map-search-input"
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder={language === 'es' ? 'Buscar tours, hoteles, parques SINAC, buses...' : 'Search tours, hotels, national parks, buses...'}
-                      className="w-full pl-8 sm:pl-9 pr-7 sm:pr-8 py-1.5 sm:py-2 bg-emerald-950/70 border border-emerald-500/30 rounded-xl text-xs sm:text-sm text-emerald-100 placeholder-emerald-400/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/60 transition-all"
+                      className="w-full pl-8 sm:pl-9 pr-7 sm:pr-8 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
                     />
                     {searchQuery && (
                       <button
                         onClick={() => setSearchQuery('')}
-                        className="absolute right-2 text-emerald-400/70 hover:text-emerald-200"
+                        className="absolute right-2 text-slate-400 hover:text-slate-600"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -1046,14 +1046,14 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                   </div>
                 </div>
 
-                {/* Region Navigation Toggle */}
+                {/* Region Navigation Selector */}
                 <button
                   id="map-toggle-regions-btn"
                   onClick={() => setShowRegionPills(!showRegionPills)}
-                  className={`flex items-center gap-1 px-2 sm:px-2.5 py-1.5 sm:py-2 text-xs font-bold rounded-xl border transition-all shrink-0 ${
+                  className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-xl border transition-all shrink-0 ${
                     showRegionPills || selectedRegion !== 'all'
-                      ? 'bg-emerald-500 border-white text-stone-950 font-black shadow-md'
-                      : 'bg-emerald-950/80 border-emerald-500/30 text-emerald-200 hover:bg-emerald-900'
+                      ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm'
+                      : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
                   }`}
                   title={language === 'es' ? 'Ver regiones de Costa Rica' : 'Explore regions'}
                 >
@@ -1070,46 +1070,31 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 <button
                   id="map-toggle-calculator-btn"
                   onClick={() => setShowCalculatorModal(true)}
-                  className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 sm:py-2 text-xs font-bold text-amber-300 bg-emerald-950/80 hover:bg-emerald-900 border border-amber-500/40 rounded-xl transition-all shrink-0"
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-all shrink-0"
                   title={language === 'es' ? 'Calculadora de rutas y tiempos (Bus, Auto, Avioneta)' : 'Route & travel time calculator'}
                 >
-                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                  <Clock className="w-3.5 h-3.5 text-emerald-600" />
                   <span className="hidden lg:inline">{language === 'es' ? 'Rutas y Tiempos' : 'Travel Times'}</span>
                 </button>
 
-                {/* Itinerary Planner Toggle */}
+                {/* Itinerary Drawer Button */}
                 <button
                   id="map-toggle-itinerary-drawer-btn"
                   onClick={() => setShowItineraryDrawer(!showItineraryDrawer)}
-                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold rounded-xl border transition-all shrink-0 ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-xl border transition-all shrink-0 ${
                     itineraryStops.length > 0 
-                      ? 'bg-emerald-500 text-stone-950 border-white font-black shadow-lg ring-2 ring-emerald-400/40' 
-                      : 'bg-emerald-950/80 border-emerald-500/30 text-emerald-200 hover:bg-emerald-900'
+                      ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm' 
+                      : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
                   }`}
                   title={language === 'es' ? 'Planificador de Itinerario en el Mapa' : 'Map Route Itinerary'}
                 >
                   <Route className="w-3.5 h-3.5" />
                   <span>{language === 'es' ? 'Itinerario' : 'Itinerary'}</span>
                   {itineraryStops.length > 0 && (
-                    <span className="w-5 h-5 rounded-full bg-stone-950 text-white text-[10px] font-black flex items-center justify-center">
+                    <span className="w-4 h-4 rounded-full bg-emerald-800 text-white text-[10px] font-bold flex items-center justify-center">
                       {itineraryStops.length}
                     </span>
                   )}
-                </button>
-
-                {/* Filters Toggle */}
-                <button
-                  id="map-toggle-filters-btn"
-                  onClick={() => setShowFiltersModal(!showFiltersModal)}
-                  className={`flex items-center gap-1 px-2 sm:px-2.5 py-1.5 sm:py-2 text-xs font-bold rounded-xl border transition-all shrink-0 ${
-                    selectedCategory !== 'all' || selectedDifficulty !== 'all'
-                      ? 'bg-amber-400 border-amber-300 text-stone-950 font-black shadow-md'
-                      : 'bg-emerald-950/80 border-emerald-500/30 text-emerald-200 hover:bg-emerald-900'
-                  }`}
-                  title={language === 'es' ? 'Filtrar por categoría' : 'Filters'}
-                >
-                  <Filter className="w-3.5 h-3.5" />
-                  <span className="hidden xl:inline">{language === 'es' ? 'Filtros' : 'Filters'}</span>
                 </button>
 
                 {/* Layer Switcher */}
@@ -1117,15 +1102,15 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                   <button
                     id="map-layer-selector-btn"
                     onClick={() => setShowLayerMenu(!showLayerMenu)}
-                    className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 sm:py-2 text-xs font-bold text-emerald-200 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/30 rounded-xl transition-all"
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all"
                   >
-                    <Layers className="w-3.5 h-3.5 text-emerald-400" />
+                    <Layers className="w-3.5 h-3.5 text-emerald-600" />
                     <span className="hidden xl:inline">{TILE_LAYERS[activeLayer].name[language === 'es' ? 'es' : 'en']}</span>
                   </button>
 
                   {showLayerMenu && (
-                    <div className="absolute right-0 mt-2 w-56 bg-[#06241a] border border-emerald-500/40 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 px-3 py-1 mb-1">
+                    <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 text-slate-800">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 py-1 mb-1">
                         {language === 'es' ? 'Capas de Mapa' : 'Map Layers'}
                       </div>
                       {(Object.keys(TILE_LAYERS) as TileLayerKey[]).map((key) => {
@@ -1139,7 +1124,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                               setShowLayerMenu(false);
                             }}
                             className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all ${
-                              isActive ? 'bg-emerald-500 text-stone-950 font-bold' : 'text-emerald-100 hover:bg-emerald-900/60'
+                              isActive ? 'bg-emerald-600 text-white font-bold' : 'text-slate-700 hover:bg-slate-100'
                             }`}
                           >
                             <div className="flex items-center gap-2">
@@ -1154,158 +1139,133 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                   )}
                 </div>
 
-                {/* Offline Download */}
-                <button
-                  id="map-download-offline-btn"
-                  onClick={handleDownloadOffline}
-                  className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 sm:py-2 text-xs font-bold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 rounded-xl transition-all shadow shrink-0"
-                  title={language === 'es' ? 'Descargar para uso sin conexión' : 'Download for offline use'}
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span className="hidden lg:inline">{isCached ? (language === 'es' ? 'Guardado' : 'Cached') : 'Offline'}</span>
-                </button>
-
-                {/* Clear / Collapse View */}
+                {/* Hide Bar Toggle */}
                 <button
                   id="map-collapse-controls-btn"
                   onClick={() => setIsControlsCollapsed(true)}
-                  className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 sm:py-2 text-xs font-bold text-emerald-300 hover:text-white bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-500/40 rounded-xl transition-all shrink-0"
+                  className="flex items-center gap-1 px-2 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all shrink-0"
                   title={language === 'es' ? 'Ocultar barra para despejar mapa' : 'Hide toolbar'}
                 >
-                  <EyeOff className="w-3.5 h-3.5 text-emerald-400" />
+                  <EyeOff className="w-3.5 h-3.5 text-slate-500" />
                 </button>
               </div>
 
-              {/* SERVICE CATEGORIES FILTER PILLS BAR */}
-              <div className="bg-[#051e16]/95 backdrop-blur-md border border-emerald-500/30 rounded-2xl p-2 shadow-2xl flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400/80 px-2 shrink-0">
+              {/* SINGLE CLEAN SCROLLABLE LAYER PILLS BAR */}
+              <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl p-1.5 shadow-lg flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 shrink-0">
                   {language === 'es' ? 'Capas:' : 'Layers:'}
                 </span>
 
                 {/* Tours */}
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, tours: !prev.tours }))}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all shrink-0 border ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
                     layerFilters.tours 
-                      ? 'bg-emerald-500/30 border-emerald-400 text-emerald-200' 
-                      : 'bg-emerald-950/40 border-emerald-500/20 text-emerald-400/50 opacity-60'
+                      ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm' 
+                      : 'bg-slate-100 border-slate-200 text-slate-500 opacity-70'
                   }`}
                 >
                   <span>📍</span>
                   <span>{language === 'es' ? 'Tours' : 'Tours'}</span>
-                  <span className="text-[10px] font-mono opacity-80">({serviceCounts.tours})</span>
+                  <span className="text-[10px] opacity-90">({serviceCounts.tours})</span>
                 </button>
 
                 {/* Hotels */}
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, hotels: !prev.hotels }))}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all shrink-0 border ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
                     layerFilters.hotels 
-                      ? 'bg-amber-500/30 border-amber-400 text-amber-200' 
-                      : 'bg-emerald-950/40 border-emerald-500/20 text-emerald-400/50 opacity-60'
+                      ? 'bg-amber-500 text-white border-amber-400 shadow-sm' 
+                      : 'bg-slate-100 border-slate-200 text-slate-500 opacity-70'
                   }`}
                 >
                   <span>🏨</span>
-                  <span>{language === 'es' ? 'Hoteles & Lodges' : 'Hotels & Lodges'}</span>
-                  <span className="text-[10px] font-mono opacity-80">({serviceCounts.hotels})</span>
+                  <span>{language === 'es' ? 'Hoteles' : 'Hotels'}</span>
+                  <span className="text-[10px] opacity-90">({serviceCounts.hotels})</span>
                 </button>
 
                 {/* National Parks */}
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, parks: !prev.parks }))}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all shrink-0 border ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
                     layerFilters.parks 
-                      ? 'bg-emerald-600/40 border-emerald-300 text-emerald-100' 
-                      : 'bg-emerald-950/40 border-emerald-500/20 text-emerald-400/50 opacity-60'
+                      ? 'bg-teal-600 text-white border-teal-500 shadow-sm' 
+                      : 'bg-slate-100 border-slate-200 text-slate-500 opacity-70'
                   }`}
                 >
                   <span>🌿</span>
                   <span>{language === 'es' ? 'Parques SINAC' : 'SINAC Parks'}</span>
-                  <span className="text-[10px] font-mono opacity-80">({serviceCounts.parks})</span>
+                  <span className="text-[10px] opacity-90">({serviceCounts.parks})</span>
                 </button>
 
                 {/* Buses */}
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, buses: !prev.buses }))}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all shrink-0 border ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
                     layerFilters.buses 
-                      ? 'bg-blue-600/30 border-blue-400 text-blue-200' 
-                      : 'bg-emerald-950/40 border-emerald-500/20 text-emerald-400/50 opacity-60'
+                      ? 'bg-blue-600 text-white border-blue-500 shadow-sm' 
+                      : 'bg-slate-100 border-slate-200 text-slate-500 opacity-70'
                   }`}
                 >
                   <span>🚌</span>
                   <span>{language === 'es' ? 'Buses' : 'Buses'}</span>
-                  <span className="text-[10px] font-mono opacity-80">({serviceCounts.buses})</span>
+                  <span className="text-[10px] opacity-90">({serviceCounts.buses})</span>
                 </button>
 
                 {/* Trains */}
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, trains: !prev.trains }))}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all shrink-0 border ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
                     layerFilters.trains 
-                      ? 'bg-teal-600/30 border-teal-400 text-teal-200' 
-                      : 'bg-emerald-950/40 border-emerald-500/20 text-emerald-400/50 opacity-60'
+                      ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm' 
+                      : 'bg-slate-100 border-slate-200 text-slate-500 opacity-70'
                   }`}
                 >
                   <span>🚆</span>
-                  <span>{language === 'es' ? 'Trenes INCOFER' : 'Trains'}</span>
-                  <span className="text-[10px] font-mono opacity-80">({serviceCounts.trains})</span>
+                  <span>{language === 'es' ? 'Trenes' : 'Trains'}</span>
+                  <span className="text-[10px] opacity-90">({serviceCounts.trains})</span>
                 </button>
 
                 {/* Taxis & Shuttles */}
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, taxis: !prev.taxis }))}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all shrink-0 border ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
                     layerFilters.taxis 
-                      ? 'bg-yellow-500/30 border-yellow-400 text-yellow-200' 
-                      : 'bg-emerald-950/40 border-emerald-500/20 text-emerald-400/50 opacity-60'
+                      ? 'bg-amber-600 text-white border-amber-500 shadow-sm' 
+                      : 'bg-slate-100 border-slate-200 text-slate-500 opacity-70'
                   }`}
                 >
                   <span>🚕</span>
-                  <span>{language === 'es' ? 'Taxis & Shuttles' : 'Taxis & Shuttles'}</span>
-                  <span className="text-[10px] font-mono opacity-80">({serviceCounts.taxis})</span>
+                  <span>{language === 'es' ? 'Shuttles' : 'Shuttles'}</span>
+                  <span className="text-[10px] opacity-90">({serviceCounts.taxis})</span>
                 </button>
 
                 {/* Commercial Airports */}
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, airports: !prev.airports }))}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all shrink-0 border ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
                     layerFilters.airports 
-                      ? 'bg-purple-600/30 border-purple-400 text-purple-200' 
-                      : 'bg-emerald-950/40 border-emerald-500/20 text-emerald-400/50 opacity-60'
+                      ? 'bg-purple-600 text-white border-purple-500 shadow-sm' 
+                      : 'bg-slate-100 border-slate-200 text-slate-500 opacity-70'
                   }`}
                 >
                   <span>✈️</span>
-                  <span>{language === 'es' ? 'Aeropuertos Int.' : 'Intl Airports'}</span>
-                  <span className="text-[10px] font-mono opacity-80">({serviceCounts.airports})</span>
-                </button>
-
-                {/* Domestic Airstrips */}
-                <button
-                  onClick={() => setLayerFilters(prev => ({ ...prev, airstrips: !prev.airstrips }))}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all shrink-0 border ${
-                    layerFilters.airstrips 
-                      ? 'bg-sky-500/30 border-sky-400 text-sky-200' 
-                      : 'bg-emerald-950/40 border-emerald-500/20 text-emerald-400/50 opacity-60'
-                  }`}
-                >
-                  <span>🛩️</span>
-                  <span>{language === 'es' ? 'Avionetas (Sansa)' : 'Scenic Flights'}</span>
-                  <span className="text-[10px] font-mono opacity-80">({serviceCounts.airstrips})</span>
+                  <span>{language === 'es' ? 'Aeropuertos' : 'Airports'}</span>
+                  <span className="text-[10px] opacity-90">({serviceCounts.airports})</span>
                 </button>
               </div>
 
               {/* Region Quick Navigation Pills */}
               {showRegionPills && (
-                <div className="bg-[#051e16]/95 backdrop-blur-md border border-emerald-500/30 rounded-2xl p-2 shadow-2xl animate-in slide-in-from-top-2 duration-150">
-                  <div className="flex items-center justify-between px-2 pb-1.5 mb-1 border-b border-emerald-500/20 text-[11px] font-bold text-emerald-300">
-                    <span className="flex items-center gap-1.5">
-                      <Compass className="w-3.5 h-3.5 text-emerald-400" />
+                <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl p-2 shadow-xl animate-in slide-in-from-top-2 duration-150">
+                  <div className="flex items-center justify-between px-2 pb-1.5 mb-1 border-b border-slate-100 text-[11px] font-bold text-slate-800">
+                    <span className="flex items-center gap-1.5 text-emerald-700">
+                      <Compass className="w-3.5 h-3.5" />
                       {language === 'es' ? 'Seleccionar Región de Costa Rica' : 'Select Costa Rica Region'}
                     </span>
                     <button
                       onClick={() => setShowRegionPills(false)}
-                      className="text-emerald-400 hover:text-white p-0.5 rounded"
+                      className="text-slate-400 hover:text-slate-600 p-0.5 rounded"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -1318,10 +1278,10 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                           key={item.id}
                           id={`region-nav-pill-${item.id}`}
                           onClick={() => handleFlyToRegion(item.id)}
-                          className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-md ${
+                          className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all shadow-sm ${
                             isSelected
-                              ? 'bg-emerald-500 text-stone-950 border-2 border-white scale-105 shadow-emerald-500/25 font-black'
-                              : 'bg-emerald-950/80 text-emerald-100 hover:bg-emerald-900 border border-emerald-500/30 hover:border-emerald-400'
+                              ? 'bg-emerald-600 text-white font-bold scale-105 shadow-emerald-500/25'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
                           }`}
                         >
                           <span>{item.name[language === 'es' ? 'es' : 'en']}</span>

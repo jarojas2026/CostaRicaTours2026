@@ -19,6 +19,61 @@
 }
 
 @layer components {
+  /* Ultra-Modern Glassmorphism & Cyber Card Utilities */
+  .modern-card {
+    @apply bg-[#07241a]/85 backdrop-blur-xl border border-emerald-500/30 rounded-3xl transition-all duration-300 shadow-2xl;
+  }
+  .modern-card:hover {
+    @apply border-amber-400/80 shadow-[0_10px_40px_rgba(245,158,11,0.15)] -translate-y-1;
+  }
+
+  .modern-gradient-border {
+    position: relative;
+    background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(245,158,11,0.1));
+    border: 1px solid rgba(245, 158, 11, 0.35);
+  }
+
+  /* Cyber Node & Interactive Pipeline Flow Styles */
+  .node-cyber-card {
+    @apply relative overflow-hidden bg-[#041d13]/90 backdrop-blur-xl border border-emerald-500/25 rounded-2xl transition-all duration-300 shadow-lg;
+  }
+  .node-cyber-card:hover {
+    @apply border-amber-400/70 shadow-[0_0_25px_rgba(245,158,11,0.2)] -translate-y-0.5;
+  }
+  .node-cyber-card.active {
+    @apply border-amber-400 ring-2 ring-amber-400/30 bg-[#072a1c] shadow-[0_0_30px_rgba(245,158,11,0.25)];
+  }
+
+  /* Animated pulse connector line between nodes */
+  .pipeline-connector-animated {
+    background: linear-gradient(90deg, #10b981 0%, #f59e0b 50%, #10b981 100%);
+    background-size: 200% 100%;
+    animation: pipelineFlow 2.5s linear infinite;
+  }
+
+  @keyframes pipelineFlow {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Node pulse radar effect */
+  .node-pulse-ring {
+    position: relative;
+  }
+  .node-pulse-ring::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: inherit;
+    border: 1.5px solid rgba(245, 158, 11, 0.5);
+    animation: ringPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  @keyframes ringPing {
+    0% { transform: scale(1); opacity: 0.8; }
+    75%, 100% { transform: scale(1.35); opacity: 0; }
+  }
+
   /* Modern Form Controls */
   .input-modern {
     @apply w-full px-4 py-3 border border-stone-200 bg-stone-50 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all duration-300 text-stone-800 font-medium placeholder-stone-400;
