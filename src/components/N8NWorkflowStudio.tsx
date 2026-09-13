@@ -225,7 +225,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
               </span>
               <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                {isEs ? '13 Flujos en Producción' : '13 Production Workflows'}
+                {isEs ? `${N8N_WORKFLOWS.length} Flujos en Producción` : `${N8N_WORKFLOWS.length} Production Workflows`}
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
@@ -430,7 +430,13 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
       {/* Category Filter Tabs */}
       <div className="flex flex-wrap items-center gap-2">
         {[
-          { id: 'all', label: { es: 'Todos (13)', en: 'All (13)' } },
+          { id: 'all', label: { es: `Todos (${N8N_WORKFLOWS.length})`, en: `All (${N8N_WORKFLOWS.length})` } },
+          { id: 'flight', label: { es: '✈️ Vuelos & Retrasos', en: '✈️ Flights & Delays' } },
+          { id: 'concierge', label: { es: '🎒 Objetos Olvidados', en: '🎒 Lost & Found' } },
+          { id: 'vip', label: { es: '👑 Recepción VIP', en: '👑 VIP Reception' } },
+          { id: 'emergency', label: { es: '🚨 Emergencias SOS', en: '🚨 Emergency SOS' } },
+          { id: 'marketing', label: { es: '⭐ Reseñas & Cupones', en: '⭐ Reviews & Promos' } },
+          { id: 'operations', label: { es: '🔄 Operadores Locales', en: '🔄 Local Operators' } },
           { id: 'analytics', label: { es: '📊 Reportes & Telegram', en: '📊 Reports & Telegram' } },
           { id: 'chat', label: { es: 'Chat & Triage', en: 'Chat & Triage' } },
           { id: 'booking', label: { es: 'Bloqueo Cupos', en: 'Seat Hold' } },
@@ -439,11 +445,11 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
           { id: 'telegram', label: { es: 'Panel Telegram', en: 'Telegram Panel' } },
           { id: 'calendar', label: { es: 'Google Calendar Sync', en: 'Calendar Sync' } },
           { id: 'feedback', label: { es: 'NPS & Post-Tour', en: 'NPS & Feedback' } },
-          { id: 'fulfillment', label: { es: 'Vouchers & WhatsApp', en: 'Vouchers' } },
+          { id: 'fulfillment', label: { es: 'Vouchers & Fotos', en: 'Vouchers & Photos' } },
           { id: 'itinerary', label: { es: 'Itinerarios', en: 'Itineraries' } },
           { id: 'contingency', label: { es: 'Contingencias', en: 'Contingency' } },
           { id: 'supervision', label: { es: 'Supervisor', en: 'Supervisor' } },
-          { id: 'support', label: { es: 'Soporte Humano', en: 'Support' } }
+          { id: 'support', label: { es: 'Soporte & Dietas', en: 'Support & Dietary' } }
         ].map((cat) => {
           const isActive = categoryFilter === cat.id;
           return (

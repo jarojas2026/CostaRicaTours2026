@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { REGIONS } from './data/toursData';
 import { useTours } from './contexts/ToursContext';
 import { Tour, Language, Currency, TourCategory, TourRegion, BookingRequest } from './types';
@@ -10,10 +10,8 @@ import { HeroSection } from './components/HeroSection';
 import { ServicesSection } from './components/ServicesSection';
 import { ToursGrid } from './components/ToursGrid';
 import { TourCard } from './components/TourCard';
-import { TourDetailModal } from './components/TourDetailModal';
 import { InteractiveMap } from './components/InteractiveMap';
 import { AIAssistant } from './components/AIAssistant';
-import { ItineraryPlanner } from './components/ItineraryPlanner';
 import { BookingConfirmationModal } from './components/BookingConfirmationModal';
 import { MyBookingsModal } from './components/MyBookingsModal';
 import { Footer } from './components/Footer';
@@ -24,7 +22,6 @@ import { MicroclimateRadar } from './components/MicroclimateRadar';
 import { AmbientBackground } from './components/AmbientBackground';
 import { LegalModal } from './components/LegalModal';
 import { CookiesBanner } from './components/CookiesBanner';
-import { AdminDashboard } from './components/AdminDashboard';
 import { LocalBusesModal } from './components/LocalBusesModal';
 import { FormsManagerModal } from './components/FormsManagerModal';
 import { NationalTransportSection } from './components/NationalTransportSection';
@@ -35,6 +32,11 @@ import { BottomNav } from './components/BottomNav';
 import { FlightTrackerGadget } from './components/FlightTrackerGadget';
 import { LiveTouristIntelligence } from './components/LiveTouristIntelligence';
 import { Compass, ArrowLeft, Home, ChevronRight, Plane } from 'lucide-react';
+
+// Code-splitting via React.lazy to reduce initial JS bundle size
+const TourDetailModal = lazy(() => import('./components/TourDetailModal').then(m => ({ default: m.TourDetailModal })));
+const ItineraryPlanner = lazy(() => import('./components/ItineraryPlanner').then(m => ({ default: m.ItineraryPlanner })));
+const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 
 import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -497,11 +499,18 @@ export default function App() {
         {/* Tab 4: AI Itinerary Generator */}
         {activeTab === 'itinerary' && (
           <div>
-            <ItineraryPlanner
+            <Suspense fallback={
+              <div className="py-24 text-center text-emerald-400 flex flex-col items-center justify-center gap-3">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-400"></div>
+                <span className="font-semibold">{language === 'es' ? 'Cargando Planificador Inteligente...' : 'Loading AI Trip Planner...'}</span>
+              </div>
+            }>
+              <ItineraryPlanner
                 onBack={() => setActiveTab("home")}
-              language={language}
-              onSelectTour={(t) => setSelectedTour(t)}
-            />
+                language={language}
+                onSelectTour={(t) => setSelectedTour(t)}
+              />
+            </Suspense>
           </div>
         )}
 
@@ -509,15 +518,24 @@ export default function App() {
 
       {/* Tour Details Booking Modal */}
       {selectedTour && (
-        <TourDetailModal
-          tour={selectedTour}
-          isOpen={!!selectedTour}
-          language={language}
-          currency={currency}
-          onClose={() => setSelectedTour(null)}
-          onConfirmBooking={handleBookingSuccess}
-          onBookingSuccess={handleBookingSuccess}
-        />
+        <Suspense fallback={
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-[#07241a] border border-emerald-500/30 rounded-2xl p-6 text-stone-100 flex items-center gap-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-400"></div>
+              <span>{language === 'es' ? 'Cargando detalles del tour...' : 'Loading tour details...'}</span>
+            </div>
+          </div>
+        }>
+          <TourDetailModal
+            tour={selectedTour}
+            isOpen={!!selectedTour}
+            language={language}
+            currency={currency}
+            onClose={() => setSelectedTour(null)}
+            onConfirmBooking={handleBookingSuccess}
+            onBookingSuccess={handleBookingSuccess}
+          />
+        </Suspense>
       )}
 
       {/* Booking Confirmation Voucher Modal */}
@@ -595,11 +613,22 @@ export default function App() {
         onClose={() => setIsLegalModalOpen(false)}
         language={language}
       />
-      <AdminDashboard 
-        isOpen={isAdminDashboardOpen} 
-        onClose={() => setIsAdminDashboardOpen(false)} 
-        language={language} 
-      />
+      {isAdminDashboardOpen && (
+        <Suspense fallback={
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="bg-[#07241a] border border-amber-500/30 rounded-2xl p-6 text-stone-100 flex items-center gap-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-400"></div>
+              <span>{language === 'es' ? 'Cargando Panel Administrativo...' : 'Loading Admin Dashboard...'}</span>
+            </div>
+          </div>
+        }>
+          <AdminDashboard 
+            isOpen={isAdminDashboardOpen} 
+            onClose={() => setIsAdminDashboardOpen(false)} 
+            language={language} 
+          />
+        </Suspense>
+      )}
       <Footer language={language} onOpenLegal={() => setIsLegalModalOpen(true)} />
       <CookiesBanner language={language} />
 

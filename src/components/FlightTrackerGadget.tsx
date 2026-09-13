@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { 
   ArrowLeft, Plane, Globe, MapPin, Calendar, Clock, Luggage, ArrowRight, 
   Sparkles, CheckCircle2, ShieldCheck, Filter, Search, RefreshCw, 
@@ -7,7 +7,8 @@ import {
 import { FlightRoute, Language, Currency, BookingRequest } from '../types';
 import { FLIGHT_ROUTES, ORIGIN_COUNTRIES, OriginCountryInfo, detectUserOriginCountry } from '../data/flightsData';
 import { formatCurrency, getLangText } from '../utils/i18n';
-import { FlightBookingModal } from './FlightBookingModal';
+
+const FlightBookingModal = lazy(() => import('./FlightBookingModal').then(m => ({ default: m.FlightBookingModal })));
 
 interface FlightTrackerGadgetProps {
   language: Language;
@@ -360,14 +361,23 @@ export const FlightTrackerGadget: React.FC<FlightTrackerGadgetProps> = ({
 
       {/* Flight Booking Modal */}
       {selectedFlightForBooking && (
-        <FlightBookingModal
-          flight={selectedFlightForBooking}
-          isOpen={!!selectedFlightForBooking}
-          language={language}
-          currency={currency}
-          onClose={() => setSelectedFlightForBooking(null)}
-          onBookingSuccess={onBookingSuccess}
-        />
+        <Suspense fallback={
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-[#07241a] border border-emerald-500/30 rounded-2xl p-6 text-stone-100 flex items-center gap-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-400"></div>
+              <span>{language === 'es' ? 'Cargando módulo de reservas de vuelos...' : 'Loading flight booking module...'}</span>
+            </div>
+          </div>
+        }>
+          <FlightBookingModal
+            flight={selectedFlightForBooking}
+            isOpen={!!selectedFlightForBooking}
+            language={language}
+            currency={currency}
+            onClose={() => setSelectedFlightForBooking(null)}
+            onBookingSuccess={onBookingSuccess}
+          />
+        </Suspense>
       )}
 
     </div>

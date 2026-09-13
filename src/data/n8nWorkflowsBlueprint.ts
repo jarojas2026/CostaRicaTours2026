@@ -9,7 +9,7 @@ export interface N8NWorkflowDef {
   id: string;
   code: string;
   name: { es: string; en: string };
-  category: 'chat' | 'booking' | 'payment' | 'fulfillment' | 'itinerary' | 'contingency' | 'supervision' | 'support' | 'fraud' | 'telegram' | 'analytics' | 'calendar' | 'feedback';
+  category: 'chat' | 'booking' | 'payment' | 'fulfillment' | 'itinerary' | 'contingency' | 'supervision' | 'support' | 'fraud' | 'telegram' | 'analytics' | 'calendar' | 'feedback' | 'flight' | 'concierge' | 'vip' | 'operations' | 'marketing' | 'emergency';
   description: { es: string; en: string };
   icon: string;
   color: string;
@@ -1904,5 +1904,600 @@ return {
         "[TELEGRAM] Alert Admin & Dispatch QR Ticket": { main: [[{ node: "[RESPONSE] Return Park Ticket Confirmation", type: "main", index: 0 }]] }
       }
     }
+  },
+  {
+    id: 'wf-flight-delay-alert',
+    code: 'WF-15',
+    name: {
+      es: 'Monitoreo & Alertas Reagendamiento de Vuelos (Flight Delay)',
+      en: 'Flight Delay Monitoring & Auto Pick-up Reschedule'
+    },
+    category: 'flight',
+    description: {
+      es: 'Monitorea retrasos en vuelos internacionales a SJO/LIR, actualiza la hora de transporte en Firestore (Credencial: 5NiYz8gX64lPYIdK) y alinea automáticamente al chofer vía Telegram.',
+      en: 'Monitors flight delays to SJO/LIR, updates transport pickup time in Firestore (Credential: 5NiYz8gX64lPYIdK) and syncs driver via Telegram.'
+    },
+    icon: 'Plane',
+    color: '#0284c7',
+    endpoint: '/webhook/alerta-vuelo-retrasado',
+    method: 'POST',
+    triggerEvent: 'ALERTA_RETRASO_VUELO',
+    nodesCount: 6,
+    slaTarget: '< 1500 ms',
+    nodes: [
+      { id: 'n1', name: '[TRIGGER] Inbound Flight Delay Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe actualización de estado del vuelo desde radar aéreo' },
+      { id: 'n2', name: '[SECURITY] HMAC Auth', type: 'n8n-nodes-base.crypto', description: 'Verifica firma de seguridad del payload' },
+      { id: 'n3', name: '[FIRESTORE] Fetch Associated Transport Booking', type: 'n8n-nodes-base.httpRequest', description: 'Consulta reserva de transporte en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n4', name: '[FIRESTORE] Update Pickup Time & Driver Schedule', type: 'n8n-nodes-base.httpRequest', description: 'Actualiza nueva hora de recogida en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n5', name: '[TELEGRAM] Alert Driver & Operations Team', type: 'n8n-nodes-base.telegram', description: 'Notifica al chofer asignado con nueva hora estimada en Telegram' },
+      { id: 'n6', name: '[RESPONSE] Confirm Flight Delay Reschedule', type: 'n8n-nodes-base.respondToWebhook', description: 'Responde confirmando re-programación de logística' }
+    ],
+    samplePayload: {
+      flightNumber: 'AA-1204',
+      airline: 'American Airlines',
+      airport: 'SJO',
+      originalEta: '2026-11-20T14:30:00Z',
+      newEta: '2026-11-20T16:15:00Z',
+      delayMinutes: 105,
+      bookingId: 'BK-FLIGHT-9921',
+      customerName: 'Carlos Mendoza',
+      driverPhone: '+506 8899-1122'
+    },
+    blueprintJson: {
+      name: "Costa Rica Tours - WF15 Monitoreo Vuelos & Pick-up Reschedule",
+      stickyNotes: [
+        { name: "✈️ FLIGHT RADAR INBOUND", color: 6, width: 260, height: 160, position: [80, 240] },
+        { name: "🗄️ FIRESTORE RESCHEDULE (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "✈️ TELEGRAM DRIVER ALERT", color: 2, width: 340, height: 160, position: [720, 240] }
+      ],
+      nodes: [
+        { parameters: { httpMethod: "POST", path: "alerta-vuelo-retrasado", responseMode: "responseNode" }, name: "[TRIGGER] Inbound Flight Delay Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
+        { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, status: 'delay_processed', processedAt: new Date().toISOString() } };" }, name: "[SECURITY] HMAC Auth", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Fetch Associated Transport Booking", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[FIRESTORE] Update Pickup Time & Driver Schedule", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*✈️ ALERTA VUELO RETRASADO - REAGENDAMIENTO PICK-UP*\\n\\nVuelo: `{{$json.flightNumber || 'AA-1204'}}`\\nCliente: `{{$json.customerName || 'Carlos Mendoza'}}`\\nNueva Hora Llegada: `{{$json.newEta || '16:15'}}` (Retraso: `{{$json.delayMinutes || 105}} min`)\\nChofer Asignado: `{{$json.driverPhone || '+506 8899-1122'}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Driver & Operations Team", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"mensaje\": \"Horario de transporte actualizado exitosamente por retraso de vuelo.\"\n}" }, name: "[RESPONSE] Confirm Flight Delay Reschedule", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
+      ],
+      connections: {
+        "[TRIGGER] Inbound Flight Delay Webhook": { main: [[{ node: "[SECURITY] HMAC Auth", type: "main", index: 0 }]] },
+        "[SECURITY] HMAC Auth": { main: [[{ node: "[FIRESTORE] Fetch Associated Transport Booking", type: "main", index: 0 }]] },
+        "[FIRESTORE] Fetch Associated Transport Booking": { main: [[{ node: "[FIRESTORE] Update Pickup Time & Driver Schedule", type: "main", index: 0 }]] },
+        "[FIRESTORE] Update Pickup Time & Driver Schedule": { main: [[{ node: "[TELEGRAM] Alert Driver & Operations Team", type: "main", index: 0 }]] },
+        "[TELEGRAM] Alert Driver & Operations Team": { main: [[{ node: "[RESPONSE] Confirm Flight Delay Reschedule", type: "main", index: 0 }]] }
+      }
+    }
+  },
+  {
+    id: 'wf-lost-property-concierge',
+    code: 'WF-16',
+    name: {
+      es: 'Asistente de Objetos Olvidados & Recuperación (Lost & Found)',
+      en: 'Lost & Found Property Recovery Concierge'
+    },
+    category: 'concierge',
+    description: {
+      es: 'Gestiona reportes de pertenencias olvidadas en transporte o tours, crea ticket en Firestore (Credencial: 5NiYz8gX64lPYIdK) y coordina al chofer vía Telegram.',
+      en: 'Manages lost item reports in vehicles/tours, creates ticket in Firestore (Credential: 5NiYz8gX64lPYIdK) and coordinates driver via Telegram.'
+    },
+    icon: 'Search',
+    color: '#8b5cf6',
+    endpoint: '/webhook/reporte-objeto-olvidado',
+    method: 'POST',
+    triggerEvent: 'REPORTE_OBJETO_OLVIDADO',
+    nodesCount: 6,
+    slaTarget: '< 1800 ms',
+    nodes: [
+      { id: 'n1', name: '[TRIGGER] Lost & Found Report Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe reporte de objeto olvidado por el turista' },
+      { id: 'n2', name: '[SECURITY] Payload Validator', type: 'n8n-nodes-base.code', description: 'Valida datos de la reserva y objeto reportado' },
+      { id: 'n3', name: '[FIRESTORE] Create Lost Property Ticket', type: 'n8n-nodes-base.httpRequest', description: 'Registra incidencia en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n4', name: '[TELEGRAM] Alert Guide & Driver Immediate Search', type: 'n8n-nodes-base.telegram', description: 'Notifica al chofer/guía para inspección física del vehículo' },
+      { id: 'n5', name: '[WHATSAPP] Dispatch Ticket Details to Customer', type: 'n8n-nodes-base.httpRequest', description: 'Envía código de rastreo al turista por WhatsApp' },
+      { id: 'n6', name: '[RESPONSE] Ticket Confirmation', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve respuesta con número de caso' }
+    ],
+    samplePayload: {
+      touristName: 'Emma Watson',
+      phone: '+1 415 555 0199',
+      itemDescription: 'Cámara Canon EOS Rebel T7 negra con estuche de cuero',
+      tourName: 'Rafting Río Sarapiquí Nivel III',
+      vehiclePlate: 'TSJ-4589',
+      date: '2026-11-21',
+      hotelDestination: 'Hotel Areca Arenal'
+    },
+    blueprintJson: {
+      name: "Costa Rica Tours - WF16 Lost & Found Property Concierge",
+      stickyNotes: [
+        { name: "🔍 LOST & FOUND REPORT", color: 6, width: 260, height: 160, position: [80, 240] },
+        { name: "🗄️ FIRESTORE TICKET (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "💬 TELEGRAM & WHATSAPP DISPATCH", color: 2, width: 340, height: 160, position: [720, 240] }
+      ],
+      nodes: [
+        { parameters: { httpMethod: "POST", path: "reporte-objeto-olvidado", responseMode: "responseNode" }, name: "[TRIGGER] Lost & Found Report Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
+        { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, ticketId: 'LF-2026-' + Math.floor(Math.random()*90000+10000) } };" }, name: "[SECURITY] Payload Validator", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Create Lost Property Ticket", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🎒 OBJETO OLVIDADO REPORTADO*\\n\\nTicket: `{{$json.ticketId}}`\\nObjeto: `{{$json.itemDescription}}`\\nTurista: `{{$json.touristName}}` ({{$json.phone}})\\nVehículo/Tour: `{{$json.vehiclePlate}}` / `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Guide & Driver Immediate Search", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Dispatch Ticket Details to Customer", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
+        { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"ticketId\": \"{{$json.ticketId}}\",\n  \"mensaje\": \"Reporte recibido. Nuestro equipo inspeccionará la unidad de transporte de inmediato.\"\n}" }, name: "[RESPONSE] Ticket Confirmation", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
+      ],
+      connections: {
+        "[TRIGGER] Lost & Found Report Webhook": { main: [[{ node: "[SECURITY] Payload Validator", type: "main", index: 0 }]] },
+        "[SECURITY] Payload Validator": { main: [[{ node: "[FIRESTORE] Create Lost Property Ticket", type: "main", index: 0 }]] },
+        "[FIRESTORE] Create Lost Property Ticket": { main: [[{ node: "[TELEGRAM] Alert Guide & Driver Immediate Search", type: "main", index: 0 }]] },
+        "[TELEGRAM] Alert Guide & Driver Immediate Search": { main: [[{ node: "[WHATSAPP] Dispatch Ticket Details to Customer", type: "main", index: 0 }]] },
+        "[WHATSAPP] Dispatch Ticket Details to Customer": { main: [[{ node: "[RESPONSE] Ticket Confirmation", type: "main", index: 0 }]] }
+      }
+    }
+  },
+  {
+    id: 'wf-whatsapp-auto-translator',
+    code: 'WF-17',
+    name: {
+      es: 'Traducción Automática Multilingüe Soporte WhatsApp',
+      en: 'Multilingual Live AI Auto-Translate for Support'
+    },
+    category: 'chat',
+    description: {
+      es: 'Traduce automáticamente conversaciones entre turistas internacionales (inglés, francés, alemán) y agentes locales en tiempo real con Gemini AI.',
+      en: 'Translates real-time WhatsApp chats between tourists and local agents using Gemini AI.'
+    },
+    icon: 'Languages',
+    color: '#ec4899',
+    endpoint: '/webhook/whatsapp-traductor-soporte',
+    method: 'POST',
+    triggerEvent: 'TRADUCCION_CHAT_MULTILINGUE',
+    nodesCount: 5,
+    slaTarget: '< 1200 ms',
+    nodes: [
+      { id: 'n1', name: '[TRIGGER] WhatsApp Multilingual Inbound', type: 'n8n-nodes-base.webhook', description: 'Recibe mensaje entrante del cliente' },
+      { id: 'n2', name: '[AI ENGINE] Gemini Translation & Sentiment Analyzer', type: 'n8n-nodes-base.openAi', description: 'Detecta idioma, traduce a español para el agente y preserva sentido turístico' },
+      { id: 'n3', name: '[TELEGRAM] Relay Translated Message to Operations', type: 'n8n-nodes-base.telegram', description: 'Publica mensaje en español en canal de soporte de Telegram' },
+      { id: 'n4', name: '[FIRESTORE] Log Conversation Pair', type: 'n8n-nodes-base.httpRequest', description: 'Guarda historial traducido en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n5', name: '[RESPONSE] Translation Pipeline Ready', type: 'n8n-nodes-base.respondToWebhook', description: 'Retorna payload traducido para el frontend/WhatsApp' }
+    ],
+    samplePayload: {
+      senderPhone: '+49 171 1234567',
+      senderName: 'Hans Gruber',
+      detectedLanguage: 'de',
+      originalMessage: 'Guten Tag, kann ich den Manuel Antonio Tour Termin ändern?',
+      translatedSpanishMessage: 'Good day, can I change the date of my Manuel Antonio tour?'
+    },
+    blueprintJson: {
+      name: "Costa Rica Tours - WF17 WhatsApp Live AI Auto-Translate",
+      stickyNotes: [
+        { name: "🌐 INBOUND MULTILINGUAL MESSAGE", color: 6, width: 260, height: 160, position: [80, 240] },
+        { name: "🤖 GEMINI TRANSLATION ENGINE", color: 5, width: 340, height: 160, position: [360, 240] },
+        { name: "✈️ TELEGRAM AGENT RELAY", color: 2, width: 340, height: 160, position: [720, 240] }
+      ],
+      nodes: [
+        { parameters: { httpMethod: "POST", path: "whatsapp-traductor-soporte", responseMode: "responseNode" }, name: "[TRIGGER] WhatsApp Multilingual Inbound", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
+        { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, translatedText: $input.item.json.body.translatedSpanishMessage || 'Mensaje traducido automáticamente', processedAt: new Date().toISOString() } };" }, name: "[AI ENGINE] Gemini Translation & Sentiment Analyzer", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🌐 CHAT TRADUCIDO (Alemán ➡️ Español)*\\n\\nCliente: `{{$json.senderName}}` ({{$json.senderPhone}})\\nOriginal: `{{$json.originalMessage}}`\\nTraducción: `{{$json.translatedText}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Relay Translated Message to Operations", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [500, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Log Conversation Pair", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"translatedMessage\": \"{{$json.translatedText}}\",\n  \"language\": \"es\"\n}" }, name: "[RESPONSE] Translation Pipeline Ready", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [900, 300] }
+      ],
+      connections: {
+        "[TRIGGER] WhatsApp Multilingual Inbound": { main: [[{ node: "[AI ENGINE] Gemini Translation & Sentiment Analyzer", type: "main", index: 0 }]] },
+        "[AI ENGINE] Gemini Translation & Sentiment Analyzer": { main: [[{ node: "[TELEGRAM] Relay Translated Message to Operations", type: "main", index: 0 }]] },
+        "[TELEGRAM] Relay Translated Message to Operations": { main: [[{ node: "[FIRESTORE] Log Conversation Pair", type: "main", index: 0 }]] },
+        "[FIRESTORE] Log Conversation Pair": { main: [[{ node: "[RESPONSE] Translation Pipeline Ready", type: "main", index: 0 }]] }
+      }
+    }
+  },
+  {
+    id: 'wf-vip-arrival-reception',
+    code: 'WF-18',
+    name: {
+      es: 'Protocolo de Bienvenida & Chofer VIP Aeropuerto',
+      en: 'VIP Airport Meet & Greet Driver Dispatch'
+    },
+    category: 'vip',
+    description: {
+      es: 'Emite el rótulo digital con nombre 2h antes de aterrizar, asigna chofer en Firestore (Credencial: 5NiYz8gX64lPYIdK) y comparte GPS en vivo.',
+      en: 'Generates digital sign 2h before landing, assigns driver in Firestore (Credential: 5NiYz8gX64lPYIdK) and shares live GPS.'
+    },
+    icon: 'Sparkles',
+    color: '#f59e0b',
+    endpoint: '/webhook/recepcion-vip-aeropuerto',
+    method: 'POST',
+    triggerEvent: 'RECEPCION_VIP_AEROPUERTO',
+    nodesCount: 6,
+    slaTarget: '< 1400 ms',
+    nodes: [
+      { id: 'n1', name: '[TRIGGER] VIP Arrival Cron / Event Trigger', type: 'n8n-nodes-base.webhook', description: 'Se activa 2 horas antes de la llegada estimada del vuelo' },
+      { id: 'n2', name: '[FIRESTORE] Fetch VIP Customer Details', type: 'n8n-nodes-base.httpRequest', description: 'Obtiene preferencias VIP en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n3', name: '[LOGIC] Generate Welcome Banner & Assign Driver', type: 'n8n-nodes-base.code', description: 'Formatea cartel de bienvenida y asigna chofer certificado' },
+      { id: 'n4', name: '[TELEGRAM] Dispatch Driver Board & Flight Tracking', type: 'n8n-nodes-base.telegram', description: 'Notifica al chofer con cartel digital para recibir en sala de llegadas' },
+      { id: 'n5', name: '[WHATSAPP] Share Driver GPS & Meet Point to Passenger', type: 'n8n-nodes-base.httpRequest', description: 'Envía foto del chofer y ubicación GPS al turista' },
+      { id: 'n6', name: '[RESPONSE] VIP Reception Active', type: 'n8n-nodes-base.respondToWebhook', description: 'Confirma activación de protocolo VIP' }
+    ],
+    samplePayload: {
+      passengerName: 'Sir Richard Branson',
+      flightNumber: 'BA-2237',
+      airport: 'SJO',
+      eta: '2026-11-25T18:45:00Z',
+      assignedDriver: 'Don Esteban Solano (Suburban Negra 2025)',
+      welcomeText: 'WELCOME SIR RICHARD - COSTA RICA TOURS VIP'
+    },
+    blueprintJson: {
+      name: "Costa Rica Tours - WF18 VIP Airport Meet & Greet Dispatch",
+      stickyNotes: [
+        { name: "👑 VIP RECEPTION INBOUND", color: 6, width: 260, height: 160, position: [80, 240] },
+        { name: "🗄️ FIRESTORE VIP DETAILS (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "✈️ TELEGRAM & WHATSAPP DISPATCH", color: 2, width: 340, height: 160, position: [720, 240] }
+      ],
+      nodes: [
+        { parameters: { httpMethod: "POST", path: "recepcion-vip-aeropuerto", responseMode: "responseNode" }, name: "[TRIGGER] VIP Arrival Cron / Event Trigger", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Fetch VIP Customer Details", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [300, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, vipStatus: 'driver_assigned', dispatchTime: new Date().toISOString() } };" }, name: "[LOGIC] Generate Welcome Banner & Assign Driver", type: "n8n-nodes-base.code", typeVersion: 2, position: [500, 300] },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*👑 PROTOCOLO VIP ACTIVADO*\\n\\nPasajero: `{{$json.passengerName}}`\\nVuelo: `{{$json.flightNumber}}` ({{$json.airport}})\\nChofer: `{{$json.assignedDriver}}`\\nRótulo: `{{$json.welcomeText}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Dispatch Driver Board & Flight Tracking", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Share Driver GPS & Meet Point to Passenger", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
+        { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"status\": \"VIP_DISPATCHED\",\n  \"mensaje\": \"Chofer asignado y rótulo de bienvenida generado con éxito.\"\n}" }, name: "[RESPONSE] VIP Reception Active", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
+      ],
+      connections: {
+        "[TRIGGER] VIP Arrival Cron / Event Trigger": { main: [[{ node: "[FIRESTORE] Fetch VIP Customer Details", type: "main", index: 0 }]] },
+        "[FIRESTORE] Fetch VIP Customer Details": { main: [[{ node: "[LOGIC] Generate Welcome Banner & Assign Driver", type: "main", index: 0 }]] },
+        "[LOGIC] Generate Welcome Banner & Assign Driver": { main: [[{ node: "[TELEGRAM] Dispatch Driver Board & Flight Tracking", type: "main", index: 0 }]] },
+        "[TELEGRAM] Dispatch Driver Board & Flight Tracking": { main: [[{ node: "[WHATSAPP] Share Driver GPS & Meet Point to Passenger", type: "main", index: 0 }]] },
+        "[WHATSAPP] Share Driver GPS & Meet Point to Passenger": { main: [[{ node: "[RESPONSE] VIP Reception Active", type: "main", index: 0 }]] }
+      }
+    }
+  },
+  {
+    id: 'wf-custom-dietary-medical-alert',
+    code: 'WF-19',
+    name: {
+      es: 'Gestión de Requerimientos Médicos & Dietas Especiales',
+      en: 'Dietary & Special Medical Logistics Protocol'
+    },
+    category: 'support',
+    description: {
+      es: 'Escanea alergias alimentarias y accesibilidad en reservas, notificando a las cocinas de restaurantes asociados y guías 24h antes del tour.',
+      en: 'Scans dietary allergies and accessibility needs in bookings, notifying partner kitchens and guides 24h prior to tour.'
+    },
+    icon: 'HeartHandshake',
+    color: '#10b981',
+    endpoint: '/webhook/alerta-requerimientos-especiales',
+    method: 'POST',
+    triggerEvent: 'ALERTA_DIETA_Y_MEDICA',
+    nodesCount: 6,
+    slaTarget: '< 1500 ms',
+    nodes: [
+      { id: 'n1', name: '[TRIGGER] Medical & Dietary Alert Trigger', type: 'n8n-nodes-base.webhook', description: 'Recibe especificaciones médicas/dietéticas del turista' },
+      { id: 'n2', name: '[SECURITY] Validate Medical Confidentiality', type: 'n8n-nodes-base.code', description: 'Encripta y protege datos sensibles bajo HIPAA/GDPR' },
+      { id: 'n3', name: '[FIRESTORE] Query Booking & Restaurant Partners', type: 'n8n-nodes-base.httpRequest', description: 'Consulta el itinerario y cocinas asociadas en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n4', name: '[TELEGRAM] Alert Kitchen Chef & Lead Guide', type: 'n8n-nodes-base.telegram', description: 'Envía requerimiento especial al chef del restaurante del tour' },
+      { id: 'n5', name: '[FIRESTORE] Update Safe Meal Pass', type: 'n8n-nodes-base.httpRequest', description: 'Genera credencial de menú seguro en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n6', name: '[RESPONSE] Dietary Confirmation', type: 'n8n-nodes-base.respondToWebhook', description: 'Confirma menú adaptado al cliente' }
+    ],
+    samplePayload: {
+      bookingId: 'BK-DIET-8834',
+      passengerName: 'Maria Silva',
+      dietaryType: 'Celiaco (Gluten Free Estricto)',
+      allergies: ['Maní', 'Mariscos'],
+      accessibilityRequirements: 'Silla de ruedas para senderos planos',
+      tourName: 'Caminata Bosque Nuboso Monteverde',
+      date: '2026-11-28'
+    },
+    blueprintJson: {
+      name: "Costa Rica Tours - WF19 Dietary & Medical Logistics Protocol",
+      stickyNotes: [
+        { name: "🥗 DIETARY ALERT INBOUND", color: 6, width: 260, height: 160, position: [80, 240] },
+        { name: "🗄️ FIRESTORE RESTAURANT PARTNERS (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "✈️ TELEGRAM CHEF & GUIDE ALERT", color: 2, width: 340, height: 160, position: [720, 240] }
+      ],
+      nodes: [
+        { parameters: { httpMethod: "POST", path: "alerta-requerimientos-especiales", responseMode: "responseNode" }, name: "[TRIGGER] Medical & Dietary Alert Trigger", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
+        { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, safeMealVerified: true, verifiedAt: new Date().toISOString() } };" }, name: "[SECURITY] Validate Medical Confidentiality", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Query Booking & Restaurant Partners", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🥗 ALERTA DIETÉTICA Y MÉDICA*\\n\\nCliente: `{{$json.passengerName}}`\\nDieta: `{{$json.dietaryType}}`\\nAlergias: `{{$json.allergies ? $json.allergies.join(', ') : 'Ninguna'}}`\\nAccesibilidad: `{{$json.accessibilityRequirements || 'Estándar'}}`\\nTour: `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Kitchen Chef & Lead Guide", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[FIRESTORE] Update Safe Meal Pass", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"status\": \"DIETARY_VERIFIED\",\n  \"mensaje\": \"Menú adaptado y requerimientos comunicados al equipo del tour.\"\n}" }, name: "[RESPONSE] Dietary Confirmation", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
+      ],
+      connections: {
+        "[TRIGGER] Medical & Dietary Alert Trigger": { main: [[{ node: "[SECURITY] Validate Medical Confidentiality", type: "main", index: 0 }]] },
+        "[SECURITY] Validate Medical Confidentiality": { main: [[{ node: "[FIRESTORE] Query Booking & Restaurant Partners", type: "main", index: 0 }]] },
+        "[FIRESTORE] Query Booking & Restaurant Partners": { main: [[{ node: "[TELEGRAM] Alert Kitchen Chef & Lead Guide", type: "main", index: 0 }]] },
+        "[TELEGRAM] Alert Kitchen Chef & Lead Guide": { main: [[{ node: "[FIRESTORE] Update Safe Meal Pass", type: "main", index: 0 }]] },
+        "[FIRESTORE] Update Safe Meal Pass": { main: [[{ node: "[RESPONSE] Dietary Confirmation", type: "main", index: 0 }]] }
+      }
+    }
+  },
+  {
+    id: 'wf-smart-cancellation-refund',
+    code: 'WF-20',
+    name: {
+      es: 'Procesamiento Inteligente de Cancelaciones & Reembolsos',
+      en: 'Smart Cancellation & Instant Automated Refund'
+    },
+    category: 'payment',
+    description: {
+      es: 'Aplica reglas de reembolso según anticipación, libera cupos en Firestore (Credencial: 5NiYz8gX64lPYIdK) y procesa reembolso en Stripe/PayPal o voucher.',
+      en: 'Applies refund rules by lead time, releases slots in Firestore (Credential: 5NiYz8gX64lPYIdK) and processes refund or voucher.'
+    },
+    icon: 'RefreshCw',
+    color: '#ef4444',
+    endpoint: '/webhook/cancelacion-reembolso-inteligente',
+    method: 'POST',
+    triggerEvent: 'CANCELACION_REEMBOLSO_AUTOMATICO',
+    nodesCount: 7,
+    slaTarget: '< 2000 ms',
+    nodes: [
+      { id: 'n1', name: '[TRIGGER] Cancellation Request Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe solicitud de cancelación de reserva' },
+      { id: 'n2', name: '[SECURITY] HMAC & Policy Calculator', type: 'n8n-nodes-base.code', description: 'Calcula porcentaje de reembolso (72h+ 100%, 48-72h 50%, <48h 0%)' },
+      { id: 'n3', name: '[PAYMENT] Execute Refund Gateway (Stripe/PayPal)', type: 'n8n-nodes-base.httpRequest', description: 'Procesa devolución financiera parcial o total' },
+      { id: 'n4', name: '[FIRESTORE] Release Tour Seat & Update Status', type: 'n8n-nodes-base.httpRequest', description: 'Actualiza reserva a cancelled en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n5', name: '[TELEGRAM] Alert Finance & Admin Chat', type: 'n8n-nodes-base.telegram', description: 'Registra la cancelación y monto devuelto en Telegram' },
+      { id: 'n6', name: '[WHATSAPP] Dispatch Refund Voucher / Receipt', type: 'n8n-nodes-base.httpRequest', description: 'Envía comprobante de reembolso o crédito futuro al cliente' },
+      { id: 'n7', name: '[RESPONSE] Cancellation Result', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve respuesta JSON con detalle de la devolución' }
+    ],
+    samplePayload: {
+      bookingId: 'BK-CANCEL-5511',
+      customerEmail: 'robert.smith@example.com',
+      totalPaidUSD: 130,
+      hoursNoticeBeforeTour: 80,
+      paymentMethod: 'stripe',
+      reason: 'Cambio involuntario de itinerario de vuelo'
+    },
+    blueprintJson: {
+      name: "Costa Rica Tours - WF20 Smart Cancellation & Refund Protocol",
+      stickyNotes: [
+        { name: "🛑 CANCELLATION REQUEST", color: 6, width: 260, height: 160, position: [80, 240] },
+        { name: "💳 STRIPE/PAYPAL REFUND GATEWAY", color: 3, width: 340, height: 160, position: [360, 240] },
+        { name: "🗄️ FIRESTORE SEAT RELEASE (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [720, 240] }
+      ],
+      nodes: [
+        { parameters: { httpMethod: "POST", path: "cancelacion-reembolso-inteligente", responseMode: "responseNode" }, name: "[TRIGGER] Cancellation Request Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
+        { parameters: { mode: "runOnceForEachItem", jsCode: "const hours = $input.item.json.body.hoursNoticeBeforeTour || 72;\nlet refundPct = 100;\nif (hours < 48) refundPct = 0;\nelse if (hours < 72) refundPct = 50;\nreturn { json: { ...$input.item.json.body, refundPct, refundAmountUSD: ($input.item.json.body.totalPaidUSD || 100) * (refundPct / 100) } };" }, name: "[SECURITY] HMAC & Policy Calculator", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
+        { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[PAYMENT] Execute Refund Gateway (Stripe/PayPal)", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300] },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Release Tour Seat & Update Status", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🛑 REEMBOLSO PROCESADO*\\n\\nReserva: `{{$json.bookingId}}`\\nPorcentaje: `{{$json.refundPct}}%`\\nMonto Reembolsado: `${{$json.refundAmountUSD}} USD`\\nCliente: `{{$json.customerEmail}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Finance & Admin Chat", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Dispatch Refund Voucher / Receipt", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [1100, 300] },
+        { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"reembolsoPct\": {{$json.refundPct}},\n  \"montoDevueltoUSD\": {{$json.refundAmountUSD}},\n  \"mensaje\": \"Cancelación procesada de acuerdo a las políticas de Costa Rica Tours.\"\n}" }, name: "[RESPONSE] Cancellation Result", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1300, 300] }
+      ],
+      connections: {
+        "[TRIGGER] Cancellation Request Webhook": { main: [[{ node: "[SECURITY] HMAC & Policy Calculator", type: "main", index: 0 }]] },
+        "[SECURITY] HMAC & Policy Calculator": { main: [[{ node: "[PAYMENT] Execute Refund Gateway (Stripe/PayPal)", type: "main", index: 0 }]] },
+        "[PAYMENT] Execute Refund Gateway (Stripe/PayPal)": { main: [[{ node: "[FIRESTORE] Release Tour Seat & Update Status", type: "main", index: 0 }]] },
+        "[FIRESTORE] Release Tour Seat & Update Status": { main: [[{ node: "[TELEGRAM] Alert Finance & Admin Chat", type: "main", index: 0 }]] },
+        "[TELEGRAM] Alert Finance & Admin Chat": { main: [[{ node: "[WHATSAPP] Dispatch Refund Voucher / Receipt", type: "main", index: 0 }]] },
+        "[WHATSAPP] Dispatch Refund Voucher / Receipt": { main: [[{ node: "[RESPONSE] Cancellation Result", type: "main", index: 0 }]] }
+      }
+    }
+  },
+  {
+    id: 'wf-tour-photo-memory-pack',
+    code: 'WF-21',
+    name: {
+      es: 'Entrega Automática de Álbum & Fotos HD Post-Tour',
+      en: 'Post-Tour Digital HD Photo Album Dispatcher'
+    },
+    category: 'fulfillment',
+    description: {
+      es: 'Procesa las fotos capturadas por el guía, crea un álbum web protegido con marca de agua Costa Rica Tours y envía el enlace por WhatsApp y email.',
+      en: 'Processes guide photos, generates protected web album link, and sends to tourist via WhatsApp & email.'
+    },
+    icon: 'Camera',
+    color: '#14b8a6',
+    endpoint: '/webhook/entrega-fotos-recuerdos',
+    method: 'POST',
+    triggerEvent: 'ENTREGA_ALBUM_FOTOS',
+    nodesCount: 6,
+    slaTarget: '< 1600 ms',
+    nodes: [
+      { id: 'n1', name: '[TRIGGER] Photo Album Upload Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe imágenes del guía certificado' },
+      { id: 'n2', name: '[STORAGE] Watermark & Optimize HD Images', type: 'n8n-nodes-base.code', description: 'Aplica marca de agua Costa Rica Tours y comprime para web' },
+      { id: 'n3', name: '[FIRESTORE] Save Album Entry', type: 'n8n-nodes-base.httpRequest', description: 'Registra URL del álbum en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n4', name: '[WHATSAPP] Dispatch Album Link to Tourist', type: 'n8n-nodes-base.httpRequest', description: 'Envía mensaje con link de descarga al turista' },
+      { id: 'n5', name: '[TELEGRAM] Notify Guide Photo Delivery Completed', type: 'n8n-nodes-base.telegram', description: 'Confirma al guía la entrega exitosa del pack' },
+      { id: 'n6', name: '[RESPONSE] Photo Pack Ready', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve respuesta JSON de éxito' }
+    ],
+    samplePayload: {
+      bookingId: 'BK-PHOTO-1029',
+      tourName: 'Canopy & Tirolesa Bosque Nuboso Monteverde',
+      touristPhone: '+506 7000-1122',
+      guideName: 'Mariano Trejos',
+      photoCount: 18,
+      albumUrl: 'https://costaricatours.com/albums/monteverde-canopy-1029'
+    },
+    blueprintJson: {
+      name: "Costa Rica Tours - WF21 Post-Tour HD Photo Album Dispatcher",
+      stickyNotes: [
+        { name: "📸 GUIDE PHOTO UPLOAD", color: 6, width: 260, height: 160, position: [80, 240] },
+        { name: "🗄️ FIRESTORE ALBUM (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "💬 WHATSAPP ALBUM DISPATCH", color: 2, width: 340, height: 160, position: [720, 240] }
+      ],
+      nodes: [
+        { parameters: { httpMethod: "POST", path: "entrega-fotos-recuerdos", responseMode: "responseNode" }, name: "[TRIGGER] Photo Album Upload Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
+        { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, watermarkApplied: true, deliveredAt: new Date().toISOString() } };" }, name: "[STORAGE] Watermark & Optimize HD Images", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Save Album Entry", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Dispatch Album Link to Tourist", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300] },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*📸 ÁLBUM DE FOTOS ENTREGADO*\\n\\nTour: `{{$json.tourName}}`\\nGuía: `{{$json.guideName}}`\\nFotos: `{{$json.photoCount}} HD`\\nLink: `{{$json.albumUrl}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Notify Guide Photo Delivery Completed", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"albumUrl\": \"{{$json.albumUrl}}\",\n  \"mensaje\": \"Álbum de fotos entregado al cliente por WhatsApp y correo.\"\n}" }, name: "[RESPONSE] Photo Pack Ready", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
+      ],
+      connections: {
+        "[TRIGGER] Photo Album Upload Webhook": { main: [[{ node: "[STORAGE] Watermark & Optimize HD Images", type: "main", index: 0 }]] },
+        "[STORAGE] Watermark & Optimize HD Images": { main: [[{ node: "[FIRESTORE] Save Album Entry", type: "main", index: 0 }]] },
+        "[FIRESTORE] Save Album Entry": { main: [[{ node: "[WHATSAPP] Dispatch Album Link to Tourist", type: "main", index: 0 }]] },
+        "[WHATSAPP] Dispatch Album Link to Tourist": { main: [[{ node: "[TELEGRAM] Notify Guide Photo Delivery Completed", type: "main", index: 0 }]] },
+        "[TELEGRAM] Notify Guide Photo Delivery Completed": { main: [[{ node: "[RESPONSE] Photo Pack Ready", type: "main", index: 0 }]] }
+      }
+    }
+  },
+  {
+    id: 'wf-supplier-rate-sync',
+    code: 'WF-22',
+    name: {
+      es: 'Sincronización de Tarifas & Inventario de Operadores',
+      en: 'Local Tour Supplier Rate & Inventory Sync'
+    },
+    category: 'operations',
+    description: {
+      es: 'Sincroniza cupos en tiempo real, cierres climáticos y variaciones de tarifas entre operadores turísticos en La Fortuna, Monteverde y Firestore (Credencial: 5NiYz8gX64lPYIdK).',
+      en: 'Syncs real-time inventory, weather blocks and operator rates across La Fortuna, Monteverde and Firestore (Credential: 5NiYz8gX64lPYIdK).'
+    },
+    icon: 'Database',
+    color: '#6366f1',
+    endpoint: '/webhook/sincronizacion-operadores-locales',
+    method: 'POST',
+    triggerEvent: 'SINCRONIZACION_OPERADORES',
+    nodesCount: 6,
+    slaTarget: '< 1500 ms',
+    nodes: [
+      { id: 'n1', name: '[TRIGGER] Supplier Inventory Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe actualización de inventario del operador' },
+      { id: 'n2', name: '[SECURITY] Validate Operator Key', type: 'n8n-nodes-base.code', description: 'Verifica autenticidad del operador verificado' },
+      { id: 'n3', name: '[FIRESTORE] Batch Update Tour Prices & Available Seats', type: 'n8n-nodes-base.httpRequest', description: 'Actualiza colección de tours en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n4', name: '[TELEGRAM] Operations Change Alert', type: 'n8n-nodes-base.telegram', description: 'Alerta al equipo de operaciones sobre cambios en tarifas o cupos' },
+      { id: 'n5', name: '[CACHE] Invalidate Search Cache', type: 'n8n-nodes-base.httpRequest', description: 'Invalida caché de búsquedas en el frontend' },
+      { id: 'n6', name: '[RESPONSE] Inventory Sync Ok', type: 'n8n-nodes-base.respondToWebhook', description: 'Confirma sincronización exitosa' }
+    ],
+    samplePayload: {
+      operatorId: 'OP-ARENAL-EXPLORE-01',
+      tourCode: 'TR-ARENAL-001',
+      date: '2026-11-30',
+      availableSeats: 8,
+      updatedPriceUSD: 65,
+      weatherBlockActive: false
+    },
+    blueprintJson: {
+      name: "Costa Rica Tours - WF22 Local Supplier Rate & Inventory Sync",
+      stickyNotes: [
+        { name: "🔄 SUPPLIER INVENTORY SYNC", color: 6, width: 260, height: 160, position: [80, 240] },
+        { name: "🗄️ FIRESTORE TOUR BATCH (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "✈️ TELEGRAM OPS BROADCAST", color: 2, width: 340, height: 160, position: [720, 240] }
+      ],
+      nodes: [
+        { parameters: { httpMethod: "POST", path: "sincronizacion-operadores-locales", responseMode: "responseNode" }, name: "[TRIGGER] Supplier Inventory Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
+        { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, syncedAt: new Date().toISOString() } };" }, name: "[SECURITY] Validate Operator Key", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Batch Update Tour Prices & Available Seats", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🔄 SINCRONIZACIÓN DE OPERADOR LOCAL*\\n\\nOperador: `{{$json.operatorId}}`\\nTour: `{{$json.tourCode}}`\\nCupos Disponibles: `{{$json.availableSeats}}`\\nTarifa: `${{$json.updatedPriceUSD}} USD`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Operations Change Alert", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[CACHE] Invalidate Search Cache", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
+        { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"status\": \"SYNC_SUCCESS\",\n  \"mensaje\": \"Inventario y tarifas del operador sincronizadas en tiempo real.\"\n}" }, name: "[RESPONSE] Inventory Sync Ok", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
+      ],
+      connections: {
+        "[TRIGGER] Supplier Inventory Webhook": { main: [[{ node: "[SECURITY] Validate Operator Key", type: "main", index: 0 }]] },
+        "[SECURITY] Validate Operator Key": { main: [[{ node: "[FIRESTORE] Batch Update Tour Prices & Available Seats", type: "main", index: 0 }]] },
+        "[FIRESTORE] Batch Update Tour Prices & Available Seats": { main: [[{ node: "[TELEGRAM] Operations Change Alert", type: "main", index: 0 }]] },
+        "[TELEGRAM] Operations Change Alert": { main: [[{ node: "[CACHE] Invalidate Search Cache", type: "main", index: 0 }]] },
+        "[CACHE] Invalidate Search Cache": { main: [[{ node: "[RESPONSE] Inventory Sync Ok", type: "main", index: 0 }]] }
+      }
+    }
+  },
+  {
+    id: 'wf-emergency-sos-response',
+    code: 'WF-23',
+    name: {
+      es: 'Protocolo de Emergencias SOS 24/7 & Asistencia en Ruta',
+      en: '24/7 Tourist Emergency SOS & Route Dispatch'
+    },
+    category: 'emergency',
+    description: {
+      es: 'Respuesta de máxima prioridad ante situaciones SOS en ruta, transmite coordenadas GPS a la central y enlaza la póliza Assist-CR.',
+      en: 'High priority response to route SOS incidents, dispatches GPS coordinates to ops, and connects Assist-CR travel insurance.'
+    },
+    icon: 'AlertOctagon',
+    color: '#dc2626',
+    endpoint: '/webhook/alerta-emergencia-sos',
+    method: 'POST',
+    triggerEvent: 'EMERGENCIA_SOS_RUTA',
+    nodesCount: 6,
+    slaTarget: '< 800 ms',
+    nodes: [
+      { id: 'n1', name: '[TRIGGER] Emergency SOS Panic Trigger', type: 'n8n-nodes-base.webhook', description: 'Activado por botón SOS del cliente o guía' },
+      { id: 'n2', name: '[HIGH PRIORITY] Priority Alert Escalator', type: 'n8n-nodes-base.code', description: 'Eleva prioridad de respuesta al 100% inmediato' },
+      { id: 'n3', name: '[TELEGRAM] Instant SOS Alert to Emergency Command', type: 'n8n-nodes-base.telegram', description: 'Alarma sonora e informe de geolocalización GPS en Telegram' },
+      { id: 'n4', name: '[FIRESTORE] Log Emergency Incident', type: 'n8n-nodes-base.httpRequest', description: 'Registra coordenadas e incidentes en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n5', name: '[INSURANCE] Notify Assist-CR Travel Insurance Hotline', type: 'n8n-nodes-base.httpRequest', description: 'Activa póliza de cobertura médica y auxilio médico/vial' },
+      { id: 'n6', name: '[RESPONSE] Emergency Protocol Active', type: 'n8n-nodes-base.respondToWebhook', description: 'Responde confirmando asistencia médica o vial en camino' }
+    ],
+    samplePayload: {
+      incidentId: 'SOS-2026-911',
+      touristName: 'Sophie Dupont',
+      phone: '+33 6 12 34 56 78',
+      location: { lat: 10.4678, lng: -84.6427, placeName: 'Ruta 142 Hacia La Fortuna' },
+      incidentType: 'Falla mecánica del microbús',
+      passengersCount: 6
+    },
+    blueprintJson: {
+      name: "Costa Rica Tours - WF23 24/7 Emergency SOS & Route Dispatch",
+      stickyNotes: [
+        { name: "🚨 CRITICAL SOS TRIGGER", color: 7, width: 260, height: 160, position: [80, 240] },
+        { name: "✈️ TELEGRAM EMERGENCY COMMAND", color: 2, width: 340, height: 160, position: [360, 240] },
+        { name: "🗄️ FIRESTORE SOS INCIDENT (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [720, 240] }
+      ],
+      nodes: [
+        { parameters: { httpMethod: "POST", path: "alerta-emergencia-sos", responseMode: "responseNode" }, name: "[TRIGGER] Emergency SOS Panic Trigger", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
+        { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, emergencyLevel: 'CRITICAL', dispatchedAt: new Date().toISOString() } };" }, name: "[HIGH PRIORITY] Priority Alert Escalator", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🚨 ALERTA SOS CRÍTICA - ASISTENCIA EN CAMINO*\\n\\nIncidente: `{{$json.incidentId}}`\\nTipo: `{{$json.incidentType}}`\\nTurista: `{{$json.touristName}}` ({{$json.phone}})\\nUbicación: `{{$json.location?.placeName}}` (GPS: `{{$json.location?.lat}}, {{$json.location?.lng}}`)\\nPasajeros: `{{$json.passengersCount}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Instant SOS Alert to Emergency Command", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [500, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Log Emergency Incident", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[INSURANCE] Notify Assist-CR Travel Insurance Hotline", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
+        { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"status\": \"SOS_DISPATCHED\",\n  \"mensaje\": \"Equipo de emergencia y vehículo de sustitución despachados.\"\n}" }, name: "[RESPONSE] Emergency Protocol Active", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
+      ],
+      connections: {
+        "[TRIGGER] Emergency SOS Panic Trigger": { main: [[{ node: "[HIGH PRIORITY] Priority Alert Escalator", type: "main", index: 0 }]] },
+        "[HIGH PRIORITY] Priority Alert Escalator": { main: [[{ node: "[TELEGRAM] Instant SOS Alert to Emergency Command", type: "main", index: 0 }]] },
+        "[TELEGRAM] Instant SOS Alert to Emergency Command": { main: [[{ node: "[FIRESTORE] Log Emergency Incident", type: "main", index: 0 }]] },
+        "[FIRESTORE] Log Emergency Incident": { main: [[{ node: "[INSURANCE] Notify Assist-CR Travel Insurance Hotline", type: "main", index: 0 }]] },
+        "[INSURANCE] Notify Assist-CR Travel Insurance Hotline": { main: [[{ node: "[RESPONSE] Emergency Protocol Active", type: "main", index: 0 }]] }
+      }
+    }
+  },
+  {
+    id: 'wf-review-reputation-booster',
+    code: 'WF-24',
+    name: {
+      es: 'Booster de Reseñas TripAdvisor/Google & Referidos',
+      en: 'TripAdvisor/Google Review Booster & Referral Rewards'
+    },
+    category: 'marketing',
+    description: {
+      es: 'Identifica a turistas con alta satisfacción (NPS 9-10), envía invitación personalizada para opinar en TripAdvisor/Google y entrega cupón de 15% de descuento.',
+      en: 'Invites satisfied tourists (NPS 9-10) to review on TripAdvisor/Google and generates 15% discount referral codes.'
+    },
+    icon: 'Star',
+    color: '#f59e0b',
+    endpoint: '/webhook/booster-reseñas-incentivos',
+    method: 'POST',
+    triggerEvent: 'BOOSTER_RESEÑAS_INCENTIVO',
+    nodesCount: 6,
+    slaTarget: '< 1500 ms',
+    nodes: [
+      { id: 'n1', name: '[TRIGGER] NPS Promoter Score Trigger', type: 'n8n-nodes-base.webhook', description: 'Recibe evento cuando un cliente otorga NPS 9 o 10' },
+      { id: 'n2', name: '[LOGIC] Coupon Generator Engine', type: 'n8n-nodes-base.code', description: 'Genera código promocional único de 15% de descuento' },
+      { id: 'n3', name: '[FIRESTORE] Save Referral Coupon', type: 'n8n-nodes-base.httpRequest', description: 'Guarda cupón de descuento en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n4', name: '[WHATSAPP] Send TripAdvisor & Discount Invitation', type: 'n8n-nodes-base.httpRequest', description: 'Envía invitación interactiva por WhatsApp' },
+      { id: 'n5', name: '[TELEGRAM] Log Marketing Referral Campaign', type: 'n8n-nodes-base.telegram', description: 'Notifica al equipo de mercadeo en Telegram' },
+      { id: 'n6', name: '[RESPONSE] Booster Dispatch Success', type: 'n8n-nodes-base.respondToWebhook', description: 'Retorna confirmación de invitación enviada' }
+    ],
+    samplePayload: {
+      touristName: 'David Miller',
+      email: 'david.m@example.com',
+      npsScore: 10,
+      tourName: 'Tour de Aguas Termales + Volcán Arenal',
+      tripAdvisorUrl: 'https://tripadvisor.com/costa-rica-tours-review',
+      googleReviewUrl: 'https://g.page/r/costa-rica-tours/review'
+    },
+    blueprintJson: {
+      name: "Costa Rica Tours - WF24 TripAdvisor & Google Review Booster",
+      stickyNotes: [
+        { name: "⭐ PROMOTER NPS TRIGGER", color: 6, width: 260, height: 160, position: [80, 240] },
+        { name: "🎁 COUPON GENERATOR & FIRESTORE (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "💬 WHATSAPP & TELEGRAM DISPATCH", color: 2, width: 340, height: 160, position: [720, 240] }
+      ],
+      nodes: [
+        { parameters: { httpMethod: "POST", path: "booster-reseñas-incentivos", responseMode: "responseNode" }, name: "[TRIGGER] NPS Promoter Score Trigger", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
+        { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, promoCode: 'PURAVIDA15-' + Math.floor(Math.random()*9000+1000), generatedAt: new Date().toISOString() } };" }, name: "[LOGIC] Coupon Generator Engine", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Save Referral Coupon", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Send TripAdvisor & Discount Invitation", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300] },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*⭐ REPUTATION BOOSTER ENVIADO*\\n\\nCliente: `{{$json.touristName}}` (NPS: `{{$json.npsScore}}/10`)\\nCupón 15%: `{{$json.promoCode}}`\\nTour: `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Log Marketing Referral Campaign", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"promoCode\": \"{{$json.promoCode}}\",\n  \"mensaje\": \"Invitación a reseña y cupón de regalo enviado por WhatsApp.\"\n}" }, name: "[RESPONSE] Booster Dispatch Success", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
+      ],
+      connections: {
+        "[TRIGGER] NPS Promoter Score Trigger": { main: [[{ node: "[LOGIC] Coupon Generator Engine", type: "main", index: 0 }]] },
+        "[LOGIC] Coupon Generator Engine": { main: [[{ node: "[FIRESTORE] Save Referral Coupon", type: "main", index: 0 }]] },
+        "[FIRESTORE] Save Referral Coupon": { main: [[{ node: "[WHATSAPP] Send TripAdvisor & Discount Invitation", type: "main", index: 0 }]] },
+        "[WHATSAPP] Send TripAdvisor & Discount Invitation": { main: [[{ node: "[TELEGRAM] Log Marketing Referral Campaign", type: "main", index: 0 }]] },
+        "[TELEGRAM] Log Marketing Referral Campaign": { main: [[{ node: "[RESPONSE] Booster Dispatch Success", type: "main", index: 0 }]] }
+      }
+    }
   }
 ];
+

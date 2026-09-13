@@ -76,7 +76,7 @@
 
   /* Modern Form Controls */
   .input-modern {
-    @apply w-full px-4 py-3 border border-stone-200 bg-stone-50 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all duration-300 text-stone-800 font-medium placeholder-stone-400;
+    @apply w-full px-4 py-3 min-h-[44px] border border-stone-200 bg-stone-50 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all duration-300 text-stone-800 font-medium placeholder-stone-400 text-sm;
   }
   
   .label-modern {
@@ -85,25 +85,25 @@
   
   /* Modern Professional Buttons */
   .btn-primary {
-    @apply bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black py-4 px-6 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 flex justify-center items-center gap-2;
+    @apply bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black py-3.5 px-6 min-h-[44px] rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 flex justify-center items-center gap-2 cursor-pointer;
   }
   
   .btn-secondary {
-    @apply bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-black py-4 px-6 rounded-xl shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 flex justify-center items-center gap-2;
+    @apply bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-black py-3.5 px-6 min-h-[44px] rounded-xl shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 flex justify-center items-center gap-2 cursor-pointer;
   }
   
   .btn-outline {
-    @apply border-2 border-stone-200 bg-white text-stone-700 font-bold py-3 px-6 rounded-xl hover:bg-stone-50 hover:border-stone-300 active:scale-[0.98] transition-all duration-300 flex justify-center items-center gap-2;
+    @apply border-2 border-stone-200 bg-white text-stone-700 font-bold py-3 px-6 min-h-[44px] rounded-xl hover:bg-stone-50 hover:border-stone-300 active:scale-[0.98] transition-all duration-300 flex justify-center items-center gap-2 cursor-pointer;
   }
   
   /* Polished Modal Panel */
   .modal-panel {
-    @apply bg-white p-6 md:p-8 rounded-[24px] shadow-2xl shadow-black/50 border border-stone-100/50 relative text-stone-900;
+    @apply bg-white p-4 sm:p-6 md:p-8 rounded-[24px] shadow-2xl shadow-black/50 border border-stone-100/50 relative text-stone-900 max-h-[92vh] overflow-y-auto;
   }
   
   /* Modern close button */
   .btn-close {
-    @apply absolute top-4 right-4 text-stone-400 hover:text-stone-800 z-10 bg-stone-100 hover:bg-stone-200 rounded-full p-2 transition-colors duration-200;
+    @apply absolute top-3 right-3 sm:top-4 sm:right-4 text-stone-400 hover:text-stone-800 z-10 bg-stone-100 hover:bg-stone-200 rounded-full w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors duration-200 cursor-pointer;
   }
 }
 
