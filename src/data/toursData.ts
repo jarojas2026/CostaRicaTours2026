@@ -213,12 +213,8 @@ export const TOURS: Tour[] = [
     },
     category: 'volcanoes',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 125,
     durationHours: 10,
     durationLabel: { es: 'Día Completo (10h)', en: 'Full Day (10h)' },
@@ -293,11 +289,7 @@ export const TOURS: Tour[] = [
     category: 'canopy',
     region: 'monteverde',
     image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1000&q=80'
-    ],
+    gallery: ['https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 89,
     durationHours: 5,
     durationLabel: { es: 'Medio Día (5h)', en: 'Half Day (5h)' },
@@ -369,12 +361,8 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1574063413132-355dbfd83e12?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 65,
     durationHours: 4,
     durationLabel: { es: '4 Horas', en: '4 Hours' },
@@ -446,12 +434,8 @@ export const TOURS: Tour[] = [
     },
     category: 'rafting',
     region: 'pacuare',
-    image: 'https://images.unsplash.com/photo-1530866495561-507c9faab2ed?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1530866495561-507c9faab2ed?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1530541930197-ff16ac917b0e?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 110,
     durationHours: 9,
     durationLabel: { es: 'Día Completo (9h)', en: 'Full Day (9h)' },
@@ -522,12 +506,8 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'tortuguero',
-    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1550853024-fae8cd4be47f?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 95,
     durationHours: 8,
     durationLabel: { es: 'Día Completo (8h)', en: 'Full Day (8h)' },
@@ -593,11 +573,8 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'guanacaste',
-    image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 90,
     durationHours: 5,
     durationLabel: { es: '5 Horas', en: '5 Hours' },
@@ -668,12 +645,8 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'osa',
-    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1550853024-fae8cd4be47f?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1574063413132-355dbfd83e12?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 165,
     durationHours: 10,
     durationLabel: { es: 'Día Completo (10h)', en: 'Full Day (10h)' },
@@ -741,11 +714,8 @@ export const TOURS: Tour[] = [
     },
     category: 'culture',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 45,
     durationHours: 2.5,
     durationLabel: { es: '2.5 Horas', en: '2.5 Hours' },
@@ -809,11 +779,8 @@ export const TOURS: Tour[] = [
     },
     category: 'volcanoes',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1589556264800-08ae9e129a8c?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1589556264800-08ae9e129a8c?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 98,
     durationHours: 7,
     durationLabel: { es: '7 Horas', en: '7 Hours' },
@@ -882,10 +849,7 @@ export const TOURS: Tour[] = [
     category: 'wildlife',
     region: 'arenal',
     image: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80'
-    ],
+    gallery: ['https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 52,
     durationHours: 2.5,
     durationLabel: { es: '2.5 Horas', en: '2.5 Hours' },
@@ -951,11 +915,8 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 72,
     durationHours: 3.5,
     durationLabel: { es: '3.5 Horas', en: '3.5 Hours' },
@@ -1019,10 +980,7 @@ export const TOURS: Tour[] = [
     category: 'beaches',
     region: 'osa',
     image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1000&q=80'
-    ],
+    gallery: ['https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 145,
     durationHours: 8,
     durationLabel: { es: '8 Horas', en: '8 Hours' },
@@ -1087,11 +1045,8 @@ export const TOURS: Tour[] = [
     },
     category: 'volcanoes',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 115,
     durationHours: 9,
     durationLabel: { es: '9 Horas', en: '9 Hours' },
@@ -1162,11 +1117,8 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'osa',
-    image: 'https://images.unsplash.com/photo-1550853024-fae8cd4be47f?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1550853024-fae8cd4be47f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 175,
     durationHours: 10,
     durationLabel: { es: '10 Horas', en: '10 Hours' },
@@ -1235,11 +1187,8 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'guanacaste',
-    image: 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 135,
     durationHours: 8,
     durationLabel: { es: '8 Horas', en: '8 Hours' },
@@ -1311,11 +1260,8 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1574063413132-355dbfd83e12?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1574063413132-355dbfd83e12?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 49,
     durationHours: 3,
     durationLabel: { es: '3 Horas', en: '3 Hours' },
@@ -1382,11 +1328,8 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'caribe',
-    image: 'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1574063413132-355dbfd83e12?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 79,
     durationHours: 6,
     durationLabel: { es: '6 Horas', en: '6 Hours' },
@@ -1454,11 +1397,8 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 85,
     durationHours: 6,
     durationLabel: { es: '6 Horas', en: '6 Hours' },
@@ -1525,10 +1465,7 @@ export const TOURS: Tour[] = [
     category: 'beaches',
     region: 'manuel_antonio',
     image: 'https://images.unsplash.com/photo-1568430462989-44163eb1752f?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1568430462989-44163eb1752f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1000&q=80'
-    ],
+    gallery: ['https://images.unsplash.com/photo-1568430462989-44163eb1752f?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1568430462989-44163eb1752f?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 95,
     durationHours: 4,
     durationLabel: { es: '4 Horas', en: '4 Hours' },
@@ -1596,11 +1533,8 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'monteverde',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 45,
     durationHours: 2.5,
     durationLabel: { es: '2.5 Horas', en: '2.5 Hours' },
@@ -1667,11 +1601,8 @@ export const TOURS: Tour[] = [
     },
     category: 'volcanoes',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 89,
     durationHours: 7,
     durationLabel: { es: '7 Horas', en: '7 Hours' },
@@ -1737,10 +1668,7 @@ export const TOURS: Tour[] = [
     category: 'culture',
     region: 'sjo',
     image: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?auto=format&fit=crop&w=1000&q=80'
-    ],
+    gallery: ['https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 55,
     durationHours: 4,
     durationLabel: { es: '4 Horas', en: '4 Hours' },
@@ -1805,11 +1733,8 @@ export const TOURS: Tour[] = [
     },
     category: 'culture',
     region: 'caribe',
-    image: 'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?auto=format&fit=crop&w=1000&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 75,
     durationHours: 6,
     durationLabel: { es: '6 Horas', en: '6 Hours' },
@@ -1874,11 +1799,8 @@ export const TOURS: Tour[] = [
     },
     category: 'volcanoes',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 127,
     durationHours: 9,
     durationLabel: { es: 'Día Completo (9 hrs)', en: 'Full Day (9 hrs)' },
@@ -1929,8 +1851,8 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 119,
     durationHours: 4,
     durationLabel: { es: 'Medio Día (4 hrs)', en: 'Half Day (4 hrs)' },
@@ -1982,8 +1904,8 @@ export const TOURS: Tour[] = [
     },
     category: 'rafting',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=800&q=80'],
+    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 75,
     durationHours: 5,
     durationLabel: { es: 'Medio Día (5 hrs)', en: 'Half Day (5 hrs)' },
@@ -2035,7 +1957,7 @@ export const TOURS: Tour[] = [
     category: 'canopy',
     region: 'arenal',
     image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80'],
+    gallery: ['https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 145,
     durationHours: 6,
     durationLabel: { es: 'Día Completo (6 hrs)', en: 'Full Day (6 hrs)' },
@@ -2086,8 +2008,8 @@ export const TOURS: Tour[] = [
     },
     category: 'combos',
     region: 'guanacaste',
-    image: 'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 129,
     durationHours: 8,
     durationLabel: { es: 'Día Completo (8 hrs)', en: 'Full Day (8 hrs)' },
@@ -2139,8 +2061,8 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'guanacaste',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 118,
     durationHours: 6,
     durationLabel: { es: 'Día Completo (6 hrs)', en: 'Full Day (6 hrs)' },
@@ -2190,8 +2112,8 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'guanacaste',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'],
+    image: 'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 95,
     durationHours: 5,
     durationLabel: { es: 'Tarde de Atardecer (5 hrs)', en: 'Sunset Afternoon (5 hrs)' },
@@ -2243,8 +2165,8 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'monteverde',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 120,
     durationHours: 6,
     durationLabel: { es: 'Día Completo (6 hrs)', en: 'Full Day (6 hrs)' },
@@ -2297,7 +2219,7 @@ export const TOURS: Tour[] = [
     category: 'canopy',
     region: 'monteverde',
     image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80'],
+    gallery: ['https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 65,
     durationHours: 3,
     durationLabel: { es: 'Medio Día (3 hrs)', en: 'Half Day (3 hrs)' },
@@ -2347,8 +2269,8 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 75,
     durationHours: 4,
     durationLabel: { es: 'Medio Día (4 hrs)', en: 'Half Day (4 hrs)' },
@@ -2398,8 +2320,8 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'],
+    image: 'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 90,
     durationHours: 4,
     durationLabel: { es: 'Medio Día (4 hrs)', en: 'Half Day (4 hrs)' },
@@ -2451,8 +2373,8 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1568430462989-44163eb1752f?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1568430462989-44163eb1752f?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1568430462989-44163eb1752f?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 88,
     durationHours: 4,
     durationLabel: { es: 'Medio Día (4 hrs)', en: 'Half Day (4 hrs)' },
@@ -2503,8 +2425,8 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'],
+    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 145,
     durationHours: 7,
     durationLabel: { es: 'Día Completo (7 hrs)', en: 'Full Day (7 hrs)' },
@@ -2555,8 +2477,8 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'osa',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 145,
     durationHours: 8,
     durationLabel: { es: 'Día Completo (8 hrs)', en: 'Full Day (8 hrs)' },
@@ -2608,8 +2530,8 @@ export const TOURS: Tour[] = [
     },
     category: 'multiday',
     region: 'tortuguero',
-    image: 'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 390,
     durationHours: 72,
     durationLabel: { es: 'Paquete 3 Días / 2 Noches', en: 'Package 3 Days / 2 Nights' },
@@ -2661,7 +2583,7 @@ export const TOURS: Tour[] = [
     category: 'beaches',
     region: 'caribe',
     image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'],
+    gallery: ['https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 65,
     durationHours: 5,
     durationLabel: { es: 'Medio Día (5 hrs)', en: 'Half Day (5 hrs)' },
@@ -2711,12 +2633,8 @@ export const TOURS: Tour[] = [
     },
     category: 'multiday',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 780,
     durationHours: 120,
     durationLabel: { es: 'Circuito 5 Días / 4 Noches', en: 'Circuit 5 Days / 4 Nights' },
@@ -2754,71 +2672,8 @@ export const TOURS: Tour[] = [
     departureTimes: ['07:00 AM'],
     location: { lat: 9.9333, lng: -84.0833, placeName: 'San José / Arenal / Monteverde / Manuel Antonio, Costa Rica' },
     instantConfirmation: true,
-    bestPriceGuaranteed: true
-  },
-  {
-    id: 'sjo-city-tour-vip',
-    title: {
-      es: 'San José City Tour VIP: Cultura, Historia y Mercados Tradicionales',
-      en: 'VIP San José Cultural City Tour: Heritage, Markets & History'
-    },
-    subtitle: {
-      es: 'Descubre los tesoros arquitectónicos, el Teatro Nacional, el Museo de Oro y el Mercado Central',
-      en: 'Discover architectural gems, National Theatre, Pre-Columbian Gold Museum & Central Market'
-    },
-    category: 'culture',
-    region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80'
-    ],
-    priceUSD: 55,
-    durationHours: 4.5,
-    durationLabel: { es: 'Medio Día (4.5 hrs)', en: 'Half Day (4.5 hrs)' },
-    difficulty: 'fácil',
-    difficultyLabel: { es: 'Fácil - Todas las edades', en: 'Easy - All ages' },
-    rating: 4.91,
-    reviewsCount: 310,
-    featured: true,
-    bestseller: true,
-    ecoCert: true,
-    tourType: 'group',
-    maxGroupSize: 15,
-    freeCancellation: true,
-    description: {
-      es: 'Sumérgete en la vibrante capital costarricense con este recorrido guiado por sus puntos más emblemáticos. Visitaremos el majestuoso Teatro Nacional (joya arquitectónica inaugurada en 1897), el Museo del Oro Precolombino o Museo Nacional, el Parque Nacional con el Monumento Nacional y el histórico Mercado Central, donde degustaremos un café chorreado tradicional y platillos típicos.',
-      en: 'Immerse yourself in Costa Rica’s vibrant capital on this guided journey through its most iconic landmarks. Visit the majestic National Theatre (built in 1897), the Pre-Columbian Gold Museum or National Museum, National Park with its historic monument, and the bustling Central Market for authentic artisanal coffee and traditional snacks.'
-    },
-    highlights: {
-      es: ['Visita guiada al interior del histórico Teatro Nacional', 'Entrada al Museo del Oro Precolombino o Museo Nacional', 'Caminata sensorial y degustación en el Mercado Central de San José', 'Paseo por el Paseo Colón y La Sabana', 'Transporte con aire acondicionado y guía historiador certificado'],
-      en: ['Guided tour of the historic National Theatre interior', 'Admission to the Pre-Columbian Gold Museum or National Museum', 'Sensory tasting walk through the lively San José Central Market', 'Scenic drive through Paseo Colón and La Sabana Metropolitan Park', 'A/C transportation and certified historian guide']
-    },
-    inclusions: {
-      es: ['Transporte ida y vuelta desde hoteles en San José y Valle Central', 'Guía turístico certificado bilingüe', 'Entradas a todos los museos y monumentos del itinerario', 'Degustación de café y bocadillo típico en el Mercado Central'],
-      en: ['Roundtrip hotel pickup in San José & Central Valley', 'Certified bilingual tour guide', 'All museum and monument admission tickets', 'Traditional coffee tasting and local snacks at Central Market']
-    },
-    exclusions: {
-      es: ['Almuerzo completo', 'Propinas voluntarias'],
-      en: ['Full lunch', 'Optional gratuities']
-    },
-    whatToBring: {
-      es: ['Ropa cómoda y ligera', 'Zapatos para caminar', 'Cámara fotográfica', 'Capa para lluvia ligera', 'Efectivo en colones para artesanías'],
-      en: ['Comfortable clothing', 'Walking shoes', 'Camera', 'Light rain poncho', 'Cash CRC for souvenirs']
-    },
-    pickupHotels: [
-      'Gran Hotel Costa Rica', 'Radisson San José', 'Hilton Garden Inn San José', 'San José Palacio',
-      'Studio Hotel Santa Ana', 'Intercontinental Costa Rica', 'Crowne Plaza Corobicí', 'Hoteles en Paseo Colón y Escalante'
-    ],
-    departureTimes: ['08:30 AM', '01:30 PM'],
-    location: {
-      lat: 9.9333,
-      lng: -84.0833,
-      placeName: 'San José Centro, Costa Rica'
-    },
-    instantConfirmation: true,
-    bestPriceGuaranteed: true
+    bestPriceGuaranteed: true,
+    verifiedBadge: { es: 'Costa Rica Tours - Verificado', en: 'Costa Rica Tours - Verified' }
   },
   {
     id: 'irazu-cartago-orosi-tour',
@@ -2833,11 +2688,7 @@ export const TOURS: Tour[] = [
     category: 'volcanoes',
     region: 'sjo',
     image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80'
-    ],
+    gallery: ['https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 115,
     durationHours: 8,
     durationLabel: { es: 'Día Completo (8 hrs)', en: 'Full Day (8 hrs)' },
@@ -2881,69 +2732,65 @@ export const TOURS: Tour[] = [
       placeName: 'Volcán Irazú / Valle de Orosí, Cartago, Costa Rica'
     },
     instantConfirmation: true,
-    bestPriceGuaranteed: true
+    bestPriceGuaranteed: true,
+    verifiedBadge: { es: 'Costa Rica Tours - Verificado', en: 'Costa Rica Tours - Verified' }
   },
   {
-    id: 'tortuga-island-cruise-sjo',
+    id: 'bay-island-sunset-cruise',
     providerId: 'bay-island-cruises',
     title: {
-      es: 'Crucero en Catamarán a Isla Tortuga: Snorkel, Playa y Almuerzo Gourmet',
-      en: 'Tortuga Island Catamaran Day Cruise: Snorkel, White Beach & Gourmet Lunch'
+      es: 'Crucero al Atardecer y Cena Tropical en Catamarán (Bay Island Cruises)',
+      en: 'Bay Island Sunset Dinner Catamaran Cruise'
     },
     subtitle: {
-      es: 'Día de ensueño en el Golfo de Nicoya con arenas blancas, aguas cristalinas y open bar a bordo',
-      en: 'Dream day trip in the Gulf of Nicoya with white sand beaches, snorkeling & live music on board'
+      es: 'Navegación romántica por el Golfo de Nicoya con puesta de sol, música en vivo y cena buffet',
+      en: 'Romantic sunset sailing across the Gulf of Nicoya with live music and tropical dinner'
     },
     category: 'beaches',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80'
-    ],
-    priceUSD: 140,
-    durationHours: 11,
-    durationLabel: { es: 'Día Completo (11 hrs)', en: 'Full Day (11 hrs)' },
+    image: 'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=800&q=80'],
+    priceUSD: 115,
+    durationHours: 6,
+    durationLabel: { es: '6 horas (Tarde/Noche)', en: '6 hours (Afternoon/Evening)' },
     difficulty: 'fácil',
-    difficultyLabel: { es: 'Fácil - Diversión y Relax', en: 'Easy - Fun & Relaxation' },
-    rating: 4.96,
-    reviewsCount: 540,
+    difficultyLabel: { es: 'Fácil - Relajación y Romance', en: 'Easy - Relaxation & Romance' },
+    rating: 4.94,
+    reviewsCount: 280,
     featured: true,
-    bestseller: true,
+    bestseller: false,
     ecoCert: true,
     tourType: 'group',
-    maxGroupSize: 50,
+    maxGroupSize: 45,
     freeCancellation: true,
     description: {
-      es: 'Escápate desde San José a las paradisíacas arenas blancas de Isla Tortuga a bordo de un moderno catamarán de lujo. El viaje incluye desayuno típico en ruta, navegación por el Golfo de Nicoya con avistamiento de delfines, música en vivo y cócteles tropicales a bordo. En la isla disfrutarás de 5 horas de playa cristalina, tour de snorkel en arrecife, banana boat y un exquisito almuerzo gourmet servido bajo las palmeras.',
-      en: 'Escape from San José to the turquoise waters and powder-white sands of Tortuga Island aboard a luxury catamaran cruise. Includes traditional breakfast on the way to Puntarenas, scenic sailing across the Gulf of Nicoya with dolphin watching, tropical cocktails, and live music. Spend 5 relaxing hours on the island with guided snorkeling, banana boat rides, and a gourmet 4-course lunch served under palm trees.'
+      es: 'Disfruta de la magia del atardecer en el Golfo de Nicoya a bordo del catamarán de lujo operado por Bay Island Cruises. Salida por la tarde desde Puntarenas tras cómodo traslado desde San José, navegación entre islas con barra abierta de cócteles tropicales, cena buffet servida bajo las estrellas y música ambiental para vivir una experiencia inolvidable.',
+      en: 'Experience the magic of the Pacific sunset in the Gulf of Nicoya aboard Bay Island Cruises signature luxury catamaran. Afternoon departure from Puntarenas with open tropical bar, delicious dinner under the stars, and music as the sun dips below the horizon.'
     },
     highlights: {
-      es: ['Navegación en catamarán de primera clase por el Golfo de Nicoya', 'Tour guiado de snorkel en arrecifes de roca volcánica', 'Paseo en Banana Boat en la bahía de la isla', 'Almuerzo gourmet en la playa con pescado o pollo fresco', 'Bebidas tropicales refrescantes y frutas frescas a bordo'],
-      en: ['Luxury catamaran sailing across the scenic Gulf of Nicoya', 'Guided reef snorkeling with tropical fish', 'Thrilling Banana Boat ride in calm island bay', 'Beachside gourmet lunch with fresh grilled seafood or chicken', 'Open tropical bar, fresh fruit platters, and live music on board']
+      es: ['Espectacular puesta de sol en el Golfo de Nicoya', 'Barra abierta con cócteles tropicales y refrescos', 'Cena buffet caliente a bordo', 'Música en vivo y ambiente festivo o romántico'],
+      en: ['Breathtaking Gulf of Nicoya sunset views', 'Open tropical bar and rum punch', 'Hot buffet dinner served on board', 'Live music and wonderful ambiance']
     },
     inclusions: {
-      es: ['Transporte terrestre A/C ida y vuelta desde San José', 'Desayuno típico costarricense en ruta', 'Navegación en catamarán con bebidas y música', 'Almuerzo gourmet servido en la isla', 'Equipo completo de snorkel y chaleco', 'Paseo en Banana Boat'],
-      en: ['Roundtrip A/C coach transport from San José hotels', 'Traditional Costa Rican breakfast en route', 'Catamaran sailing with open bar and music', 'Gourmet multi-course island lunch', 'Complete snorkel gear with life vest', 'Banana boat ride']
+      es: ['Transporte A/C ida y vuelta desde San José', 'Navegación en catamarán', 'Cena buffet a bordo', 'Barra abierta de bebidas', 'Guía y animación'],
+      en: ['Roundtrip A/C transport from San José', 'Catamaran cruise', 'Onboard buffet dinner', 'Open bar', 'Host and crew']
     },
     exclusions: {
-      es: ['Bebidas alcohólicas premium', 'Alquiler de kayaks o motos de agua en la isla', 'Propinas para la tripulación'],
-      en: ['Premium alcoholic cocktails', 'Kayaks or jet ski rentals on island', 'Crew gratuities']
+      es: ['Bebidas licores premium', 'Propinas'],
+      en: ['Premium liquor', 'Gratuities']
     },
     whatToBring: {
-      es: ['Traje de baño puesto', 'Ropa fresca de cambio', 'Toalla de playa', 'Protector solar biodegradable', 'Lentes de sol y sombrero', 'Cámara sumergible'],
-      en: ['Swimsuit underneath', 'Change of dry clothes', 'Beach towel', 'Biodegradable sunscreen', 'Sunglasses and sun hat', 'Waterproof camera']
+      es: ['Ropa casual elegante o cómoda', 'Suéter ligero para la brisa marina', 'Cámara'],
+      en: ['Smart casual wear', 'Light sweater for sea breeze', 'Camera']
     },
     pickupHotels: [
-      'San José Palacio', 'Radisson San José', 'Gran Hotel Costa Rica', 'Hilton Garden Inn San José',
-      'Studio Hotel Santa Ana', 'Intercontinental Costa Rica', 'Crowne Plaza Corobicí', 'Marriott San José Belén'
+      'San José Centro', 'Escazú', 'Santa Ana', 'Alajuela'
     ],
-    departureTimes: ['06:00 AM'],
+    departureTimes: ['01:00 PM'],
     location: {
-      lat: 9.7742,
-      lng: -84.8931,
-      placeName: 'Isla Tortuga, Golfo de Nicoya, Costa Rica'
+      lat: 9.9791,
+      lng: -84.8528,
+      placeName: 'Golfo de Nicoya / Puntarenas, Costa Rica'
     },
     instantConfirmation: true,
     bestPriceGuaranteed: true
@@ -2960,12 +2807,8 @@ export const TOURS: Tour[] = [
     },
     category: 'culture',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 75,
     durationHours: 6,
     durationLabel: { es: 'Medio Día (6 hrs)', en: 'Half Day (6 hrs)' },
@@ -3023,12 +2866,8 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=80',
+    gallery: ['https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=800&q=80'],
     priceUSD: 130,
     durationHours: 9,
     durationLabel: { es: 'Día Completo (9 hrs)', en: 'Full Day (9 hrs)' },

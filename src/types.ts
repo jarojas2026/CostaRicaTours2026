@@ -46,6 +46,7 @@ export interface Tour {
   };
   instantConfirmation?: boolean;
   bestPriceGuaranteed?: boolean;
+  verifiedBadge?: Localized<string>;
 }
 
 export type TourCategory = 
