@@ -10,6 +10,7 @@ import express from 'express';
 import path from 'path';
 import crypto from 'crypto';
 import { createServer as createViteServer } from 'vite';
+import { initializeAutomationEngine } from './backend/cronEngine';
 import { google } from 'googleapis';
 import { dispatchToN8N, getN8NConfig, verifyN8NRequest } from './backend/n8nService';
 import { TOURS } from './src/data/toursData';
@@ -1142,7 +1143,11 @@ const additionalWebhooks = [
   '/webhook/entrega-fotos-recuerdos',
   '/webhook/sincronizacion-operadores-locales',
   '/webhook/alerta-emergencia-sos',
-  '/webhook/booster-reseñas-incentivos'
+  '/webhook/booster-reseñas-incentivos',
+  '/webhook/contingency',
+  '/webhook/supervisor',
+  '/webhook/contingency',
+  '/webhook/supervisor'
 ];
 
 app.post(additionalWebhooks, async (req, res) => {
@@ -1609,6 +1614,7 @@ async function startServer() {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor Full-Stack corriendo en http://0.0.0.0:${PORT}`);
     console.log(`⚡ Backend n8n listo con triggers salientes y webhooks entrantes.`);
+    initializeAutomationEngine();
   });
 }
 

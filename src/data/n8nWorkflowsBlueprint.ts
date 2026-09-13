@@ -96,7 +96,7 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
         {
           parameters: {
             mode: "runOnceForEachItem",
-            jsCode: "const body = $input.item.json.body || $input.item.json;\nconst token = $input.item.json.headers?.['x-webhook-secret'] || 'valid_token';\nreturn { json: { ...body, authenticated: true, receivedAt: new Date().toISOString() } };"
+            jsCode: "const crypto = require('crypto');\nconst body = $input.item.json.body || $input.item.json;\nconst signature = $input.item.json.headers?.['x-webhook-signature'];\nconst secret = 'dev-secret-key-123';\nconst hash = crypto.createHmac('sha256', secret).update(JSON.stringify(body)).digest('hex');\nif(hash !== signature && signature !== undefined) throw new Error('Invalid HMAC Signature');\nreturn { json: { ...body, authenticated: true, receivedAt: new Date().toISOString() } };"
           },
           name: "[SECURITY] HMAC Authenticator",
           type: "n8n-nodes-base.code",
@@ -123,7 +123,37 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
           position: [700, 300
-    ],
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -156,7 +186,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
         "[SECURITY] HMAC Authenticator": { main: [[{ node: "[AI ENGINE] Gemini Triage Agent", type: "main", index: 0 }]] },
         "[AI ENGINE] Gemini Triage Agent": { main: [[{ node: "[FIRESTORE] Query Authorized Tours", type: "main", index: 0 }]] },
         "[FIRESTORE] Query Authorized Tours": { main: [[{ node: "[LOGIC] Official Concierge Formatter", type: "main", index: 0 }]] },
-        "[LOGIC] Official Concierge Formatter": { main: [[{ node: "[RESPONSE] Respond to Client", type: "main", index: 0 }]] }
+        "[LOGIC] Official Concierge Formatter": { main: [[{ node: "[RESPONSE] Respond to Client", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -232,7 +263,37 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
           position: [300, 300
-    ],
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -317,7 +378,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
         "[LOGIC] Evaluate Available Seats": { main: [[{ node: "[FIRESTORE] Create Soft Hold Record", type: "main", index: 0 }]] },
         "[FIRESTORE] Create Soft Hold Record": { main: [[{ node: "[LOGIC] Set 15m Expiration Timeout", type: "main", index: 0 }]] },
         "[LOGIC] Set 15m Expiration Timeout": { main: [[{ node: "[FIRESTORE] Auto Release Expired Lock", type: "main", index: 0 }]] },
-        "[FIRESTORE] Auto Release Expired Lock": { main: [[{ node: "[RESPONSE] Confirm Soft Hold", type: "main", index: 0 }]] }
+        "[FIRESTORE] Auto Release Expired Lock": { main: [[{ node: "[RESPONSE] Confirm Soft Hold", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -438,7 +500,37 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
           position: [900, 250
-    ],
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -461,7 +553,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
         "[LOGIC] Gateway Selector": { main: [[{ node: "[SECURITY] Generate Stripe Checkout Session", type: "main", index: 0 }]] },
         "[SECURITY] Generate Stripe Checkout Session": { main: [[{ node: "[SECURITY] Verify HMAC Payment Signature", type: "main", index: 0 }]] },
         "[SECURITY] Verify HMAC Payment Signature": { main: [[{ node: "[FIRESTORE] Update Booking Payment Status", type: "main", index: 0 }]] },
-        "[FIRESTORE] Update Booking Payment Status": { main: [[{ node: "[RESPONSE] Return Payment URL", type: "main", index: 0 }]] }
+        "[FIRESTORE] Update Booking Payment Status": { main: [[{ node: "[RESPONSE] Return Payment URL", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -558,7 +651,37 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
           position: [500, 300
-    ],
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -610,7 +733,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
         "[SECURITY] QR Code & Validation Generator": { main: [[{ node: "[FIRESTORE] Save Voucher & Update Booking", type: "main", index: 0 }]] },
         "[FIRESTORE] Save Voucher & Update Booking": { main: [[{ node: "[WHATSAPP] Dispatch WhatsApp Voucher", type: "main", index: 0 }]] },
         "[WHATSAPP] Dispatch WhatsApp Voucher": { main: [[{ node: "[EMAIL] Send PDF Voucher Email", type: "main", index: 0 }]] },
-        "[EMAIL] Send PDF Voucher Email": { main: [[{ node: "[RESPONSE] Confirm Dispatch Completion", type: "main", index: 0 }]] }
+        "[EMAIL] Send PDF Voucher Email": { main: [[{ node: "[RESPONSE] Confirm Dispatch Completion", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -699,7 +823,37 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
           position: [700, 300
-    ],
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -721,7 +875,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
         "[TRIGGER] Webhook Solicitud Itinerario": { main: [[{ node: "[LOGIC] Region Transit Matrix", type: "main", index: 0 }]] },
         "[LOGIC] Region Transit Matrix": { main: [[{ node: "[AI ENGINE] Gemini Itinerary Planner", type: "main", index: 0 }]] },
         "[AI ENGINE] Gemini Itinerary Planner": { main: [[{ node: "[FIRESTORE] Fetch Tour Catalog Mapping", type: "main", index: 0 }]] },
-        "[FIRESTORE] Fetch Tour Catalog Mapping": { main: [[{ node: "[RESPONSE] Deliver Full Itinerary", type: "main", index: 0 }]] }
+        "[FIRESTORE] Fetch Tour Catalog Mapping": { main: [[{ node: "[RESPONSE] Deliver Full Itinerary", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -794,7 +949,37 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
           position: [350, 300
-    ],
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -855,7 +1040,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
         "[FIRESTORE] Query Impacted Region Bookings": { main: [[{ node: "[AI ENGINE] Evaluate Alternative Tours", type: "main", index: 0 }]] },
         "[AI ENGINE] Evaluate Alternative Tours": { main: [[{ node: "[SECURITY] Generate 1-Click Reschedule Token", type: "main", index: 0 }]] },
         "[SECURITY] Generate 1-Click Reschedule Token": { main: [[{ node: "[WHATSAPP] Send Empathetic Notification", type: "main", index: 0 }]] },
-        "[WHATSAPP] Send Empathetic Notification": { main: [[{ node: "[RESPONSE] Log Incident Audit", type: "main", index: 0 }]] }
+        "[WHATSAPP] Send Empathetic Notification": { main: [[{ node: "[RESPONSE] Log Incident Audit", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -920,7 +1106,37 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
           position: [350, 300
-    ],
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -979,7 +1195,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
         "[FIRESTORE] Fetch Unhandled Exception Logs": { main: [[{ node: "[AI ENGINE] Gemini Failure Pattern Analyzer", type: "main", index: 0 }]] },
         "[AI ENGINE] Gemini Failure Pattern Analyzer": { main: [[{ node: "[LOGIC] Generate Prompt Hotfix Rule", type: "main", index: 0 }]] },
         "[LOGIC] Generate Prompt Hotfix Rule": { main: [[{ node: "[TELEGRAM] Send Alert to Ops Tech Channel", type: "main", index: 0 }]] },
-        "[TELEGRAM] Send Alert to Ops Tech Channel": { main: [[{ node: "[RESPONSE] Deliver Self-Healing Diagnosis", type: "main", index: 0 }]] }
+        "[TELEGRAM] Send Alert to Ops Tech Channel": { main: [[{ node: "[RESPONSE] Deliver Self-Healing Diagnosis", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -1068,7 +1285,37 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
           position: [500, 300
-    ],
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -1106,7 +1353,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
         "[TRIGGER] Support Escalation Webhook": { main: [[{ node: "[AI ENGINE] Sentiment & Severity Classifier", type: "main", index: 0 }]] },
         "[AI ENGINE] Sentiment & Severity Classifier": { main: [[{ node: "[FIRESTORE] Create High-Priority Support Ticket", type: "main", index: 0 }]] },
         "[FIRESTORE] Create High-Priority Support Ticket": { main: [[{ node: "[TELEGRAM] Dispatch Priority Alert to Ops Chat", type: "main", index: 0 }]] },
-        "[TELEGRAM] Dispatch Priority Alert to Ops Chat": { main: [[{ node: "[RESPONSE] Reassure Traveler", type: "main", index: 0 }]] }
+        "[TELEGRAM] Dispatch Priority Alert to Ops Chat": { main: [[{ node: "[RESPONSE] Reassure Traveler", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -1183,7 +1431,37 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
           position: [350, 300
-    ],
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -1241,7 +1519,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
         "[FIRESTORE] Fetch Customer Transaction History": { main: [[{ node: "[LOGIC] Calculate Risk Score Engine", type: "main", index: 0 }]] },
         "[LOGIC] Calculate Risk Score Engine": { main: [[{ node: "[LOGIC] Decision Switch (Pass / Review / Block)", type: "main", index: 0 }]] },
         "[LOGIC] Decision Switch (Pass / Review / Block)": { main: [[{ node: "[TELEGRAM] Send High-Risk Fraud Alert", type: "main", index: 0 }]] },
-        "[TELEGRAM] Send High-Risk Fraud Alert": { main: [[{ node: "[RESPONSE] Respond Risk Verdict", type: "main", index: 0 }]] }
+        "[TELEGRAM] Send High-Risk Fraud Alert": { main: [[{ node: "[RESPONSE] Respond Risk Verdict", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -1302,7 +1581,37 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: "n8n-nodes-base.telegramTrigger",
           typeVersion: 1.1,
           position: [100, 300
-    ],
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ],
           credentials: {
             telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -1392,7 +1701,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
         "[LOGIC] Parse Telegram Action Callback": { main: [[{ node: "[FIRESTORE] Sync Booking Operational Status", type: "main", index: 0 }]] },
         "[FIRESTORE] Sync Booking Operational Status": { main: [[{ node: "[TELEGRAM] Update Inline Button Markup", type: "main", index: 0 }]] },
         "[TELEGRAM] Update Inline Button Markup": { main: [[{ node: "[TELEGRAM] Notify Ops Telegram Group", type: "main", index: 0 }]] },
-        "[TELEGRAM] Notify Ops Telegram Group": { main: [[{ node: "[RESPONSE] Answer Callback Query Toast", type: "main", index: 0 }]] }
+        "[TELEGRAM] Notify Ops Telegram Group": { main: [[{ node: "[RESPONSE] Answer Callback Query Toast", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -1446,7 +1756,37 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           parameters: {
             rule: {
               interval: [{ field: "weeks", triggerAtDay: [1
-    ], triggerAtHour: 7, triggerAtMinute: 0 }]
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ], triggerAtHour: 7, triggerAtMinute: 0 }]
             }
           },
           name: "[TRIGGER] Weekly Schedule Trigger",
@@ -1563,7 +1903,8 @@ return {
         "[TRIGGER] Weekly Schedule Trigger": { main: [[{ node: "[FIRESTORE] Fetch Weekly Bookings & Analytics", type: "main", index: 0 }]] },
         "[FIRESTORE] Fetch Weekly Bookings & Analytics": { main: [[{ node: "[LOGIC] Conversion Rate & KPI Engine", type: "main", index: 0 }]] },
         "[LOGIC] Conversion Rate & KPI Engine": { main: [[{ node: "[LOGIC] Telegram Executive Markdown Formatter", type: "main", index: 0 }]] },
-        "[LOGIC] Telegram Executive Markdown Formatter": { main: [[{ node: "[TELEGRAM] Send to Admin Telegram Channel", type: "main", index: 0 }]] }
+        "[LOGIC] Telegram Executive Markdown Formatter": { main: [[{ node: "[TELEGRAM] Send to Admin Telegram Channel", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -1631,7 +1972,37 @@ return {
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
           position: [350, 300
-    ],
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -1669,7 +2040,8 @@ return {
       connections: {
         "[TRIGGER] Calendar Trigger Webhook": { main: [[{ node: "[FIRESTORE] Query Guide & Driver Trip Details", type: "main", index: 0 }]] },
         "[FIRESTORE] Query Guide & Driver Trip Details": { main: [[{ node: "[CALENDAR] Google Calendar Event Creator", type: "main", index: 0 }]] },
-        "[CALENDAR] Google Calendar Event Creator": { main: [[{ node: "[RESPONSE] Confirm Calendar Sync", type: "main", index: 0 }]] }
+        "[CALENDAR] Google Calendar Event Creator": { main: [[{ node: "[RESPONSE] Confirm Calendar Sync", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -1737,7 +2109,37 @@ return {
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
           position: [350, 300
-    ],
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -1802,7 +2204,8 @@ return {
         "[FIRESTORE] Fetch Completed Tours 24h Prior": { main: [[{ node: "[WHATSAPP] WhatsApp NPS Interactive Dispatcher", type: "main", index: 0 }]] },
         "[WHATSAPP] WhatsApp NPS Interactive Dispatcher": { main: [[{ node: "[LOGIC] NPS Score Classifier", type: "main", index: 0 }]] },
         "[LOGIC] NPS Score Classifier": { main: [[{ node: "[TELEGRAM] Alert Detractor Score to Admin Chat", type: "main", index: 0 }]] },
-        "[TELEGRAM] Alert Detractor Score to Admin Chat": { main: [[{ node: "[RESPONSE] Confirm Survey Dispatch", type: "main", index: 0 }]] }
+        "[TELEGRAM] Alert Detractor Score to Admin Chat": { main: [[{ node: "[RESPONSE] Confirm Survey Dispatch", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -1895,7 +2298,37 @@ return {
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
           position: [500, 300
-    ],
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -1971,7 +2404,8 @@ return {
         "[FIRESTORE] Check Park Slot Capacity & Rates": { main: [[{ node: "[PAYMENT] Process SINAC Entry Ticket Payment", type: "main", index: 0 }]] },
         "[PAYMENT] Process SINAC Entry Ticket Payment": { main: [[{ node: "[FIRESTORE] Save Ticket Voucher & QR Code", type: "main", index: 0 }]] },
         "[FIRESTORE] Save Ticket Voucher & QR Code": { main: [[{ node: "[TELEGRAM] Alert Admin & Dispatch QR Ticket", type: "main", index: 0 }]] },
-        "[TELEGRAM] Alert Admin & Dispatch QR Ticket": { main: [[{ node: "[RESPONSE] Return Park Ticket Confirmation", type: "main", index: 0 }]] }
+        "[TELEGRAM] Alert Admin & Dispatch QR Ticket": { main: [[{ node: "[RESPONSE] Return Park Ticket Confirmation", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -2028,7 +2462,37 @@ return {
         { parameters: { httpMethod: "POST", path: "alerta-vuelo-retrasado", responseMode: "responseNode" }, name: "[TRIGGER] Inbound Flight Delay Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, status: 'delay_processed', processedAt: new Date().toISOString() } };" }, name: "[SECURITY] HMAC Auth", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
         { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Fetch Associated Transport Booking", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300
-    ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[FIRESTORE] Update Pickup Time & Driver Schedule", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*✈️ ALERTA VUELO RETRASADO - REAGENDAMIENTO PICK-UP*\\n\\nVuelo: `{{$json.flightNumber || 'AA-1204'}}`\\nCliente: `{{$json.customerName || 'Carlos Mendoza'}}`\\nNueva Hora Llegada: `{{$json.newEta || '16:15'}}` (Retraso: `{{$json.delayMinutes || 105}} min`)\\nChofer Asignado: `{{$json.driverPhone || '+506 8899-1122'}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Driver & Operations Team", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"mensaje\": \"Horario de transporte actualizado exitosamente por retraso de vuelo.\"\n}" }, name: "[RESPONSE] Confirm Flight Delay Reschedule", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
@@ -2038,7 +2502,8 @@ return {
         "[SECURITY] HMAC Auth": { main: [[{ node: "[FIRESTORE] Fetch Associated Transport Booking", type: "main", index: 0 }]] },
         "[FIRESTORE] Fetch Associated Transport Booking": { main: [[{ node: "[FIRESTORE] Update Pickup Time & Driver Schedule", type: "main", index: 0 }]] },
         "[FIRESTORE] Update Pickup Time & Driver Schedule": { main: [[{ node: "[TELEGRAM] Alert Driver & Operations Team", type: "main", index: 0 }]] },
-        "[TELEGRAM] Alert Driver & Operations Team": { main: [[{ node: "[RESPONSE] Confirm Flight Delay Reschedule", type: "main", index: 0 }]] }
+        "[TELEGRAM] Alert Driver & Operations Team": { main: [[{ node: "[RESPONSE] Confirm Flight Delay Reschedule", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -2093,7 +2558,37 @@ return {
         { parameters: { httpMethod: "POST", path: "reporte-objeto-olvidado", responseMode: "responseNode" }, name: "[TRIGGER] Lost & Found Report Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, ticketId: 'LF-2026-' + Math.floor(Math.random()*90000+10000) } };" }, name: "[SECURITY] Payload Validator", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
         { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Create Lost Property Ticket", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300
-    ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🎒 OBJETO OLVIDADO REPORTADO*\\n\\nTicket: `{{$json.ticketId}}`\\nObjeto: `{{$json.itemDescription}}`\\nTurista: `{{$json.touristName}}` ({{$json.phone}})\\nVehículo/Tour: `{{$json.vehiclePlate}}` / `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Guide & Driver Immediate Search", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Dispatch Ticket Details to Customer", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"ticketId\": \"{{$json.ticketId}}\",\n  \"mensaje\": \"Reporte recibido. Nuestro equipo inspeccionará la unidad de transporte de inmediato.\"\n}" }, name: "[RESPONSE] Ticket Confirmation", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
@@ -2103,7 +2598,8 @@ return {
         "[SECURITY] Payload Validator": { main: [[{ node: "[FIRESTORE] Create Lost Property Ticket", type: "main", index: 0 }]] },
         "[FIRESTORE] Create Lost Property Ticket": { main: [[{ node: "[TELEGRAM] Alert Guide & Driver Immediate Search", type: "main", index: 0 }]] },
         "[TELEGRAM] Alert Guide & Driver Immediate Search": { main: [[{ node: "[WHATSAPP] Dispatch Ticket Details to Customer", type: "main", index: 0 }]] },
-        "[WHATSAPP] Dispatch Ticket Details to Customer": { main: [[{ node: "[RESPONSE] Ticket Confirmation", type: "main", index: 0 }]] }
+        "[WHATSAPP] Dispatch Ticket Details to Customer": { main: [[{ node: "[RESPONSE] Ticket Confirmation", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -2155,7 +2651,37 @@ return {
         { parameters: { httpMethod: "POST", path: "whatsapp-traductor-soporte", responseMode: "responseNode" }, name: "[TRIGGER] WhatsApp Multilingual Inbound", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, translatedText: $input.item.json.body.translatedSpanishMessage || 'Mensaje traducido automáticamente', processedAt: new Date().toISOString() } };" }, name: "[AI ENGINE] Gemini Translation & Sentiment Analyzer", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🌐 CHAT TRADUCIDO (Alemán ➡️ Español)*\\n\\nCliente: `{{$json.senderName}}` ({{$json.senderPhone}})\\nOriginal: `{{$json.originalMessage}}`\\nTraducción: `{{$json.translatedText}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Relay Translated Message to Operations", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [500, 300
-    ], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Log Conversation Pair", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"translatedMessage\": \"{{$json.translatedText}}\",\n  \"language\": \"es\"\n}" }, name: "[RESPONSE] Translation Pipeline Ready", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [900, 300] }
       ],
@@ -2163,7 +2689,8 @@ return {
         "[TRIGGER] WhatsApp Multilingual Inbound": { main: [[{ node: "[AI ENGINE] Gemini Translation & Sentiment Analyzer", type: "main", index: 0 }]] },
         "[AI ENGINE] Gemini Translation & Sentiment Analyzer": { main: [[{ node: "[TELEGRAM] Relay Translated Message to Operations", type: "main", index: 0 }]] },
         "[TELEGRAM] Relay Translated Message to Operations": { main: [[{ node: "[FIRESTORE] Log Conversation Pair", type: "main", index: 0 }]] },
-        "[FIRESTORE] Log Conversation Pair": { main: [[{ node: "[RESPONSE] Translation Pipeline Ready", type: "main", index: 0 }]] }
+        "[FIRESTORE] Log Conversation Pair": { main: [[{ node: "[RESPONSE] Translation Pipeline Ready", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -2216,7 +2743,37 @@ return {
       nodes: [
         { parameters: { httpMethod: "POST", path: "recepcion-vip-aeropuerto", responseMode: "responseNode" }, name: "[TRIGGER] VIP Arrival Cron / Event Trigger", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Fetch VIP Customer Details", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [300, 300
-    ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, vipStatus: 'driver_assigned', dispatchTime: new Date().toISOString() } };" }, name: "[LOGIC] Generate Welcome Banner & Assign Driver", type: "n8n-nodes-base.code", typeVersion: 2, position: [500, 300] },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*👑 PROTOCOLO VIP ACTIVADO*\\n\\nPasajero: `{{$json.passengerName}}`\\nVuelo: `{{$json.flightNumber}}` ({{$json.airport}})\\nChofer: `{{$json.assignedDriver}}`\\nRótulo: `{{$json.welcomeText}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Dispatch Driver Board & Flight Tracking", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Share Driver GPS & Meet Point to Passenger", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
@@ -2227,7 +2784,8 @@ return {
         "[FIRESTORE] Fetch VIP Customer Details": { main: [[{ node: "[LOGIC] Generate Welcome Banner & Assign Driver", type: "main", index: 0 }]] },
         "[LOGIC] Generate Welcome Banner & Assign Driver": { main: [[{ node: "[TELEGRAM] Dispatch Driver Board & Flight Tracking", type: "main", index: 0 }]] },
         "[TELEGRAM] Dispatch Driver Board & Flight Tracking": { main: [[{ node: "[WHATSAPP] Share Driver GPS & Meet Point to Passenger", type: "main", index: 0 }]] },
-        "[WHATSAPP] Share Driver GPS & Meet Point to Passenger": { main: [[{ node: "[RESPONSE] VIP Reception Active", type: "main", index: 0 }]] }
+        "[WHATSAPP] Share Driver GPS & Meet Point to Passenger": { main: [[{ node: "[RESPONSE] VIP Reception Active", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -2282,7 +2840,37 @@ return {
         { parameters: { httpMethod: "POST", path: "alerta-requerimientos-especiales", responseMode: "responseNode" }, name: "[TRIGGER] Medical & Dietary Alert Trigger", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, safeMealVerified: true, verifiedAt: new Date().toISOString() } };" }, name: "[SECURITY] Validate Medical Confidentiality", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
         { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Query Booking & Restaurant Partners", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300
-    ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🥗 ALERTA DIETÉTICA Y MÉDICA*\\n\\nCliente: `{{$json.passengerName}}`\\nDieta: `{{$json.dietaryType}}`\\nAlergias: `{{$json.allergies ? $json.allergies.join(', ') : 'Ninguna'}}`\\nAccesibilidad: `{{$json.accessibilityRequirements || 'Estándar'}}`\\nTour: `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Kitchen Chef & Lead Guide", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[FIRESTORE] Update Safe Meal Pass", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"status\": \"DIETARY_VERIFIED\",\n  \"mensaje\": \"Menú adaptado y requerimientos comunicados al equipo del tour.\"\n}" }, name: "[RESPONSE] Dietary Confirmation", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
@@ -2292,7 +2880,8 @@ return {
         "[SECURITY] Validate Medical Confidentiality": { main: [[{ node: "[FIRESTORE] Query Booking & Restaurant Partners", type: "main", index: 0 }]] },
         "[FIRESTORE] Query Booking & Restaurant Partners": { main: [[{ node: "[TELEGRAM] Alert Kitchen Chef & Lead Guide", type: "main", index: 0 }]] },
         "[TELEGRAM] Alert Kitchen Chef & Lead Guide": { main: [[{ node: "[FIRESTORE] Update Safe Meal Pass", type: "main", index: 0 }]] },
-        "[FIRESTORE] Update Safe Meal Pass": { main: [[{ node: "[RESPONSE] Dietary Confirmation", type: "main", index: 0 }]] }
+        "[FIRESTORE] Update Safe Meal Pass": { main: [[{ node: "[RESPONSE] Dietary Confirmation", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -2348,7 +2937,37 @@ return {
         { parameters: { mode: "runOnceForEachItem", jsCode: "const hours = $input.item.json.body.hoursNoticeBeforeTour || 72;\nlet refundPct = 100;\nif (hours < 48) refundPct = 0;\nelse if (hours < 72) refundPct = 50;\nreturn { json: { ...$input.item.json.body, refundPct, refundAmountUSD: ($input.item.json.body.totalPaidUSD || 100) * (refundPct / 100) } };" }, name: "[SECURITY] HMAC & Policy Calculator", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[PAYMENT] Execute Refund Gateway (Stripe/PayPal)", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300] },
         { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Release Tour Seat & Update Status", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300
-    ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🛑 REEMBOLSO PROCESADO*\\n\\nReserva: `{{$json.bookingId}}`\\nPorcentaje: `{{$json.refundPct}}%`\\nMonto Reembolsado: `${{$json.refundAmountUSD}} USD`\\nCliente: `{{$json.customerEmail}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Finance & Admin Chat", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Dispatch Refund Voucher / Receipt", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [1100, 300] },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"reembolsoPct\": {{$json.refundPct}},\n  \"montoDevueltoUSD\": {{$json.refundAmountUSD}},\n  \"mensaje\": \"Cancelación procesada de acuerdo a las políticas de Costa Rica Tours.\"\n}" }, name: "[RESPONSE] Cancellation Result", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1300, 300] }
@@ -2359,7 +2978,8 @@ return {
         "[PAYMENT] Execute Refund Gateway (Stripe/PayPal)": { main: [[{ node: "[FIRESTORE] Release Tour Seat & Update Status", type: "main", index: 0 }]] },
         "[FIRESTORE] Release Tour Seat & Update Status": { main: [[{ node: "[TELEGRAM] Alert Finance & Admin Chat", type: "main", index: 0 }]] },
         "[TELEGRAM] Alert Finance & Admin Chat": { main: [[{ node: "[WHATSAPP] Dispatch Refund Voucher / Receipt", type: "main", index: 0 }]] },
-        "[WHATSAPP] Dispatch Refund Voucher / Receipt": { main: [[{ node: "[RESPONSE] Cancellation Result", type: "main", index: 0 }]] }
+        "[WHATSAPP] Dispatch Refund Voucher / Receipt": { main: [[{ node: "[RESPONSE] Cancellation Result", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -2413,7 +3033,37 @@ return {
         { parameters: { httpMethod: "POST", path: "entrega-fotos-recuerdos", responseMode: "responseNode" }, name: "[TRIGGER] Photo Album Upload Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, watermarkApplied: true, deliveredAt: new Date().toISOString() } };" }, name: "[STORAGE] Watermark & Optimize HD Images", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
         { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Save Album Entry", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300
-    ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Dispatch Album Link to Tourist", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300] },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*📸 ÁLBUM DE FOTOS ENTREGADO*\\n\\nTour: `{{$json.tourName}}`\\nGuía: `{{$json.guideName}}`\\nFotos: `{{$json.photoCount}} HD`\\nLink: `{{$json.albumUrl}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Notify Guide Photo Delivery Completed", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"albumUrl\": \"{{$json.albumUrl}}\",\n  \"mensaje\": \"Álbum de fotos entregado al cliente por WhatsApp y correo.\"\n}" }, name: "[RESPONSE] Photo Pack Ready", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
@@ -2423,7 +3073,8 @@ return {
         "[STORAGE] Watermark & Optimize HD Images": { main: [[{ node: "[FIRESTORE] Save Album Entry", type: "main", index: 0 }]] },
         "[FIRESTORE] Save Album Entry": { main: [[{ node: "[WHATSAPP] Dispatch Album Link to Tourist", type: "main", index: 0 }]] },
         "[WHATSAPP] Dispatch Album Link to Tourist": { main: [[{ node: "[TELEGRAM] Notify Guide Photo Delivery Completed", type: "main", index: 0 }]] },
-        "[TELEGRAM] Notify Guide Photo Delivery Completed": { main: [[{ node: "[RESPONSE] Photo Pack Ready", type: "main", index: 0 }]] }
+        "[TELEGRAM] Notify Guide Photo Delivery Completed": { main: [[{ node: "[RESPONSE] Photo Pack Ready", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -2477,7 +3128,37 @@ return {
         { parameters: { httpMethod: "POST", path: "sincronizacion-operadores-locales", responseMode: "responseNode" }, name: "[TRIGGER] Supplier Inventory Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, syncedAt: new Date().toISOString() } };" }, name: "[SECURITY] Validate Operator Key", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
         { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Batch Update Tour Prices & Available Seats", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300
-    ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🔄 SINCRONIZACIÓN DE OPERADOR LOCAL*\\n\\nOperador: `{{$json.operatorId}}`\\nTour: `{{$json.tourCode}}`\\nCupos Disponibles: `{{$json.availableSeats}}`\\nTarifa: `${{$json.updatedPriceUSD}} USD`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Operations Change Alert", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[CACHE] Invalidate Search Cache", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"status\": \"SYNC_SUCCESS\",\n  \"mensaje\": \"Inventario y tarifas del operador sincronizadas en tiempo real.\"\n}" }, name: "[RESPONSE] Inventory Sync Ok", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
@@ -2487,7 +3168,8 @@ return {
         "[SECURITY] Validate Operator Key": { main: [[{ node: "[FIRESTORE] Batch Update Tour Prices & Available Seats", type: "main", index: 0 }]] },
         "[FIRESTORE] Batch Update Tour Prices & Available Seats": { main: [[{ node: "[TELEGRAM] Operations Change Alert", type: "main", index: 0 }]] },
         "[TELEGRAM] Operations Change Alert": { main: [[{ node: "[CACHE] Invalidate Search Cache", type: "main", index: 0 }]] },
-        "[CACHE] Invalidate Search Cache": { main: [[{ node: "[RESPONSE] Inventory Sync Ok", type: "main", index: 0 }]] }
+        "[CACHE] Invalidate Search Cache": { main: [[{ node: "[RESPONSE] Inventory Sync Ok", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -2541,7 +3223,37 @@ return {
         { parameters: { httpMethod: "POST", path: "alerta-emergencia-sos", responseMode: "responseNode" }, name: "[TRIGGER] Emergency SOS Panic Trigger", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, emergencyLevel: 'CRITICAL', dispatchedAt: new Date().toISOString() } };" }, name: "[HIGH PRIORITY] Priority Alert Escalator", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🚨 ALERTA SOS CRÍTICA - ASISTENCIA EN CAMINO*\\n\\nIncidente: `{{$json.incidentId}}`\\nTipo: `{{$json.incidentType}}`\\nTurista: `{{$json.touristName}}` ({{$json.phone}})\\nUbicación: `{{$json.location?.placeName}}` (GPS: `{{$json.location?.lat}}, {{$json.location?.lng}}`)\\nPasajeros: `{{$json.passengersCount}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Instant SOS Alert to Emergency Command", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [500, 300
-    ], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Log Emergency Incident", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[INSURANCE] Notify Assist-CR Travel Insurance Hotline", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"status\": \"SOS_DISPATCHED\",\n  \"mensaje\": \"Equipo de emergencia y vehículo de sustitución despachados.\"\n}" }, name: "[RESPONSE] Emergency Protocol Active", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
@@ -2551,7 +3263,8 @@ return {
         "[HIGH PRIORITY] Priority Alert Escalator": { main: [[{ node: "[TELEGRAM] Instant SOS Alert to Emergency Command", type: "main", index: 0 }]] },
         "[TELEGRAM] Instant SOS Alert to Emergency Command": { main: [[{ node: "[FIRESTORE] Log Emergency Incident", type: "main", index: 0 }]] },
         "[FIRESTORE] Log Emergency Incident": { main: [[{ node: "[INSURANCE] Notify Assist-CR Travel Insurance Hotline", type: "main", index: 0 }]] },
-        "[INSURANCE] Notify Assist-CR Travel Insurance Hotline": { main: [[{ node: "[RESPONSE] Emergency Protocol Active", type: "main", index: 0 }]] }
+        "[INSURANCE] Notify Assist-CR Travel Insurance Hotline": { main: [[{ node: "[RESPONSE] Emergency Protocol Active", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   },
@@ -2605,7 +3318,37 @@ return {
         { parameters: { httpMethod: "POST", path: "booster-reseñas-incentivos", responseMode: "responseNode" }, name: "[TRIGGER] NPS Promoter Score Trigger", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, promoCode: 'PURAVIDA15-' + Math.floor(Math.random()*9000+1000), generatedAt: new Date().toISOString() } };" }, name: "[LOGIC] Coupon Generator Engine", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
         { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Save Referral Coupon", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300
-    ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+    ,
+        {
+          parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
+          name: '[ROUTING] Data Validation Switch',
+          type: 'n8n-nodes-base.switch',
+          typeVersion: 1,
+          position: [1500, 300]
+        },
+        {
+          parameters: { values: { string: [{ name: 'processedAt', value: '={{$now}}' }] }, options: {} },
+          name: '[TRANSFORM] Payload Standardizer',
+          type: 'n8n-nodes-base.set',
+          typeVersion: 1,
+          position: [1700, 300]
+        },
+        {
+          parameters: {},
+          name: '[ERROR HANDLER] Catch Workflow Exceptions',
+          type: 'n8n-nodes-base.errorTrigger',
+          typeVersion: 1,
+          position: [100, 500]
+        },
+        {
+          parameters: { chatId: '-1002348576921', text: '=*⚠️ ERROR DE EJECUCIÓN EN FLUJO N8N*=\n\nFlujo: `{{$workflow.name}}`\nNodo: `{{$json.execution.error.nodeName}}`\nError: `{{$json.execution.error.message}}`\n\nRevisar consola de operaciones (n8n).', additionalFields: { parse_mode: 'Markdown' } },
+          name: '[OPS ALERT] Telegram Ops Notify',
+          type: 'n8n-nodes-base.telegram',
+          typeVersion: 1.1,
+          position: [300, 500],
+          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+        }
+      ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Send TripAdvisor & Discount Invitation", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300] },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*⭐ REPUTATION BOOSTER ENVIADO*\\n\\nCliente: `{{$json.touristName}}` (NPS: `{{$json.npsScore}}/10`)\\nCupón 15%: `{{$json.promoCode}}`\\nTour: `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Log Marketing Referral Campaign", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"promoCode\": \"{{$json.promoCode}}\",\n  \"mensaje\": \"Invitación a reseña y cupón de regalo enviado por WhatsApp.\"\n}" }, name: "[RESPONSE] Booster Dispatch Success", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
@@ -2615,7 +3358,8 @@ return {
         "[LOGIC] Coupon Generator Engine": { main: [[{ node: "[FIRESTORE] Save Referral Coupon", type: "main", index: 0 }]] },
         "[FIRESTORE] Save Referral Coupon": { main: [[{ node: "[WHATSAPP] Send TripAdvisor & Discount Invitation", type: "main", index: 0 }]] },
         "[WHATSAPP] Send TripAdvisor & Discount Invitation": { main: [[{ node: "[TELEGRAM] Log Marketing Referral Campaign", type: "main", index: 0 }]] },
-        "[TELEGRAM] Log Marketing Referral Campaign": { main: [[{ node: "[RESPONSE] Booster Dispatch Success", type: "main", index: 0 }]] }
+        "[TELEGRAM] Log Marketing Referral Campaign": { main: [[{ node: "[RESPONSE] Booster Dispatch Success", type: "main", index: 0 }]] },
+        "[ERROR HANDLER] Catch Workflow Exceptions": { main: [[{ node: "[OPS ALERT] Telegram Ops Notify", type: "main", index: 0 }]] }
       }
     }
   }

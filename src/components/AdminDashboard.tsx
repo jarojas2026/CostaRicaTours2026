@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BookingRequest, Language } from '../types';
 import { X, Server, Activity, Database, Key, Settings, ExternalLink, Zap, Mail, Bot, Network, ChevronRight } from 'lucide-react';
+import { CronDashboard } from './CronDashboard';
 import { N8NWorkflowStudio } from './N8NWorkflowStudio';
 
 interface AdminDashboardProps {
@@ -15,7 +16,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
   const [n8nWebhookUrl, setN8nWebhookUrl] = useState('https://costaricatours.app.n8n.cloud/webhook/reservas');
   
   // Multi-Agent Simulation State
-  const [activeTab, setActiveTab] = useState<'bookings' | 'n8n' | 'swarm' | 'architecture'>('bookings');
+  const [activeTab, setActiveTab] = useState<'bookings' | 'n8n' | 'cron' | 'swarm' | 'architecture'>('bookings');
   const [simEmail, setSimEmail] = useState('Hola! Somos una familia de 4 (2 adultos, 2 niños). Queremos ir a Costa Rica la primera semana de diciembre. Nos interesan los volcanes y la playa, pero uno de los niños es alérgico al maní. ¿Qué nos recomiendan?');
   const [triageResult, setTriageResult] = useState<any>(null);
   const [processorResult, setProcessorResult] = useState<any>(null);
@@ -104,30 +105,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-slate-700/50 bg-[#1e293b]/50 px-6">
+        <div className="flex overflow-x-auto border-b border-slate-700/50 bg-[#1e293b]/50 px-6 hide-scrollbar shrink-0">
           <button 
             onClick={() => setActiveTab('bookings')}
-            className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'bookings' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
+            className={`whitespace-nowrap px-4 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'bookings' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
           >
             Live Bookings
           </button>
           <button 
             onClick={() => setActiveTab('n8n')}
-            className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'n8n' ? 'border-amber-400 text-amber-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
+            className={`whitespace-nowrap px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'n8n' ? 'border-amber-400 text-amber-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
           >
-            <Zap className="w-4 h-4 text-amber-400" /> n8n Workflows Studio
+            <Zap className="w-4 h-4 text-amber-400" /> n8n Workflows
+          </button>
+          <button 
+            onClick={() => setActiveTab('cron')}
+            className={`whitespace-nowrap px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'cron' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
+          >
+            <Settings className="w-4 h-4" /> Background Jobs (Cron)
           </button>
           <button 
             onClick={() => setActiveTab('swarm')}
-            className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'swarm' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
+            className={`whitespace-nowrap px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'swarm' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
           >
             <Network className="w-4 h-4" /> Multi-Agent Swarm
           </button>
           <button 
             onClick={() => setActiveTab('architecture')}
-            className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'architecture' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
+            className={`whitespace-nowrap px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'architecture' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
           >
-            <Database className="w-4 h-4" /> Advanced Architecture
+            <Database className="w-4 h-4" /> Architecture
           </button>
         </div>
 
@@ -137,26 +144,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
           {activeTab === 'bookings' && (
             <>
               {/* n8n Configuration Panel */}
-          <section className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Zap className="w-5 h-5 text-orange-400" />
-              <h3 className="text-white font-bold text-lg">n8n Automation Webhooks</h3>
+          <section className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Zap className="w-4 h-4 text-orange-400" />
+                <h3 className="text-white font-bold text-sm">n8n Global Webhook URL</h3>
+              </div>
+              <p className="text-xs text-slate-400">Target for booking dispatch (used in fallback/demo if environment var is not set).</p>
             </div>
-            <p className="text-sm text-slate-400 mb-4">
-              Configura el webhook de tu servidor n8n para enviar automáticamente las nuevas reservas. 
-              El Agente de IA ya ha pre-procesado las tareas operativas (Insights) que llegarán en el Payload de n8n.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <input 
                 type="text" 
                 value={n8nWebhookUrl}
                 onChange={(e) => setN8nWebhookUrl(e.target.value)}
-                className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                className="w-full sm:w-80 bg-slate-900/80 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-500"
                 placeholder="https://tu-n8n.com/webhook/..."
               />
-              <button className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg transition-colors flex items-center justify-center gap-2">
-                <Settings className="w-4 h-4" />
-                Guardar Configuración
+              <button className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-colors flex items-center gap-1.5 shrink-0">
+                <Settings className="w-3.5 h-3.5" />
+                Save
               </button>
             </div>
           </section>
@@ -236,6 +242,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
             </div>
           </section>
             </>
+          )}
+
+          {activeTab === 'cron' && (
+            <div className="py-1">
+              <CronDashboard />
+            </div>
           )}
 
           {activeTab === 'n8n' && (

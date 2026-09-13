@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 /**
  * ⚡ Servicio de Integración con n8n para Costa Rica Tours
  * Gestiona triggers salientes, verificación de webhooks entrantes y monitoreo de conexión.
@@ -63,9 +64,16 @@ export async function dispatchToN8N(
     };
   }
 
+  const payloadString = JSON.stringify(payload);
+  const signature = crypto
+    .createHmac('sha256', config.webhookSecret)
+    .update(payloadString)
+    .digest('hex');
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'X-Webhook-Secret': config.webhookSecret,
+    'X-Webhook-Signature': signature,
+    'X-Webhook-Secret': config.webhookSecret, // Legacy fallback
     'User-Agent': 'CostaRicaTours-Backend/1.0'
   };
 
@@ -81,7 +89,7 @@ export async function dispatchToN8N(
       const response = await fetch(targetUrl, {
         method: 'POST',
         headers,
-        body: JSON.stringify(payload),
+        body: payloadString,
         signal: controller.signal
       });
 
