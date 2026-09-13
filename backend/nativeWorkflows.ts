@@ -129,7 +129,7 @@ export async function executeProviderRealtimeCoordination(
   // Buscar proveedor en Firestore (operators / proveedores)
   let provider = await getProviderFromDb(providerId);
 
-  // Fallback con datos embebidos si el operador es conocido (ej: Alsama Tours CR)
+  // Fallback con datos embebidos si el operador es conocido (ej: Alsama Tours CR o Bay Island Cruises)
   if (!provider) {
     if (providerId === 'alsama-tours-cr' || providerId.includes('alsama')) {
       provider = {
@@ -138,6 +138,15 @@ export async function executeProviderRealtimeCoordination(
         email: 'operaciones@alsamatourscr.com',
         active: true,
         phone: '+506 8795-9148'
+      };
+    } else if (providerId === 'bay-island-cruises' || providerId.includes('bay-island') || providerId.includes('bayisland')) {
+      provider = {
+        id: 'bay-island-cruises',
+        name: 'Bay Island Cruises',
+        email: 'reservations@bayislandcruises.com',
+        active: true,
+        phone: '+506 2661-1111',
+        website: 'https://bayislandcruises.com/'
       };
     } else {
       provider = booking.providerInfo || {

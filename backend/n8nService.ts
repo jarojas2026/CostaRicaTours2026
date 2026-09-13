@@ -155,29 +155,50 @@ export async function dispatchToN8N(
  * Valida si un webhook entrante desde n8n contiene las credenciales autorizadas
  * Rechaza sin ambigüedad si el secreto no coincide o no está configurado.
  */
+/**
+ * Valida si un webhook entrante desde n8n contiene las credenciales autorizadas
+ * Rechaza sin ambigüedad si el secreto no coincide o no está configurado (Fail-closed en producción).
+ * Usa crypto.timingSafeEqual para prevenir timing attacks.
+ */
 export function verifyN8NRequest(headers: Record<string, string | string[] | undefined>): boolean {
   const config = getN8NConfig();
   const secretHeader = headers['x-webhook-secret'] || headers['X-Webhook-Secret'];
   const authHeader = headers['authorization'] || headers['Authorization'];
 
-  // Si no hay secretos configurados en entorno de desarrollo local sin n8n activado
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // Si no hay secretos configurados
   if (!config.webhookSecret && !config.apiKey) {
-    if (process.env.NODE_ENV === 'production') {
-      console.warn('⚠️ Webhook entrante rechazado: Secreto de webhook no configurado en producción.');
+    if (isProduction) {
+      console.warn('⚠️ [SEGURIDAD] Webhook entrante rechazado: Secreto/API Key de n8n no configurada en producción (fail-closed).');
       return false;
     }
+    console.warn('⚠️ [SEGURIDAD ADVERTENCIA] Webhook entrante permitido sin credenciales en entorno de desarrollo.');
     return true;
   }
 
-  if (secretHeader && config.webhookSecret && secretHeader === config.webhookSecret) {
-    return true;
-  }
-
-  if (authHeader && typeof authHeader === 'string' && config.apiKey) {
-    const token = authHeader.replace(/^Bearer\s+/i, '');
-    if (token === config.apiKey) {
-      return true;
+  try {
+    // Validar por x-webhook-secret si está presente
+    if (secretHeader && typeof secretHeader === 'string' && config.webhookSecret) {
+      const expectedBuf = Buffer.from(config.webhookSecret);
+      const providedBuf = Buffer.from(secretHeader);
+      if (expectedBuf.length === providedBuf.length && crypto.timingSafeEqual(expectedBuf, providedBuf)) {
+        return true;
+      }
     }
+
+    // Validar por Bearer Token (Authorization) si está presente
+    if (authHeader && typeof authHeader === 'string' && config.apiKey) {
+      const token = authHeader.replace(/^Bearer\s+/i, '');
+      const expectedBuf = Buffer.from(config.apiKey);
+      const providedBuf = Buffer.from(token);
+      if (expectedBuf.length === providedBuf.length && crypto.timingSafeEqual(expectedBuf, providedBuf)) {
+        return true;
+      }
+    }
+  } catch (err) {
+    console.error('Error validando timingSafeEqual en verifyN8NRequest:', err);
+    return false;
   }
 
   return false;

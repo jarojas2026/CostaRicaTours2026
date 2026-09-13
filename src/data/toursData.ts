@@ -2885,6 +2885,7 @@ export const TOURS: Tour[] = [
   },
   {
     id: 'tortuga-island-cruise-sjo',
+    providerId: 'bay-island-cruises',
     title: {
       es: 'Crucero en Catamarán a Isla Tortuga: Snorkel, Playa y Almuerzo Gourmet',
       en: 'Tortuga Island Catamaran Day Cruise: Snorkel, White Beach & Gourmet Lunch'

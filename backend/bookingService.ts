@@ -392,7 +392,7 @@ export async function createBooking(data: any) {
   const providerId = tourInfo?.providerId || 'alsama-tours-cr';
   const providerInfo = await getOperatorById(providerId);
 
-  // 2. Validar pago del lado del servidor si viene con referencia de pasarela
+  // 2. Validar pago del lado del servidor de forma estricta (NUNCA adoptar estado del cliente)
   let paymentResult: {
     verified: boolean;
     status: 'confirmada' | 'pendiente_pago';
@@ -400,8 +400,8 @@ export async function createBooking(data: any) {
     meta?: any;
   } = {
     verified: false,
-    status: (data.status || 'pendiente_pago') as 'confirmada' | 'pendiente_pago',
-    paymentStatus: (data.paymentStatus || 'pending') as 'completed' | 'pending',
+    status: 'pendiente_pago',
+    paymentStatus: 'pending',
     meta: undefined
   };
 
@@ -410,6 +410,14 @@ export async function createBooking(data: any) {
       paypalOrderId: data.paypalOrderId,
       stripeSessionId: data.stripeSessionId
     });
+  } else if (data.sinpeReference) {
+    // Si viene referencia SINPE, queda pendiente de verificación manual por operador
+    paymentResult = {
+      verified: false,
+      status: 'pendiente_pago',
+      paymentStatus: 'pending',
+      meta: { sinpeReference: data.sinpeReference, verificationMethod: 'sinpe_movil_manual' }
+    };
   }
 
   // 3. Generar insights operativos con IA

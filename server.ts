@@ -9,10 +9,12 @@ if (typeof (global as any).__dirname !== 'undefined' && (global as any).__dirnam
 import express from 'express';
 import path from 'path';
 import crypto from 'crypto';
+import rateLimit from 'express-rate-limit';
 import { createServer as createViteServer } from 'vite';
 import { initializeAutomationEngine } from './backend/cronEngine';
 import { google } from 'googleapis';
 import { dispatchToN8N, getN8NConfig, verifyN8NRequest } from './backend/n8nService';
+import { requireOperator } from './backend/authMiddleware';
 import { TOURS } from './src/data/toursData';
 import {
   getStripe,
@@ -77,7 +79,37 @@ import {
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
+app.set('trust proxy', 1);
 app.use(express.json());
+
+// ==========================================
+// 🛡️ RATE LIMITING MIDDLEWARES
+// ==========================================
+const paymentLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes de pago desde esta IP. Por favor intente más tarde.' }
+});
+
+const chatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Límite de solicitudes de chat excedido. Por favor espere un momento.' }
+});
+
+const generalApiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes. Por favor intente más tarde.' }
+});
+
+app.use('/api/', generalApiLimiter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -285,26 +317,30 @@ app.get('/api/currency/exchange-rate', (req, res) => {
 });
 
 // Verificación y conciliación de comprobantes SINPE Móvil
-app.post('/api/sinpe/verify', async (req, res) => {
+app.post('/api/sinpe/verify', requireOperator, async (req, res) => {
   try {
     const { bookingId, sinpeReference, customerPhone, amount } = req.body;
     if (!bookingId || !sinpeReference) {
       return res.status(400).json({ error: 'bookingId y sinpeReference son requeridos' });
     }
 
-    // Actualizar estado en Firestore / memoria
+    // Actualizar estado en Firestore / memoria con estado pendiente de aprobación humana
     const updateResult = await updateBookingStatus(bookingId, {
       sinpeReference,
-      status: 'confirmada',
-      paymentStatus: 'completed',
+      status: 'pendiente_pago',
+      paymentStatus: 'pending',
       paymentVerifiedAt: new Date().toISOString(),
-      verifiedMethod: 'sinpe_movil'
+      verificationMethod: 'sinpe_movil_manual'
     });
+
+    if (!updateResult.success) {
+      return res.status(404).json(updateResult);
+    }
 
     // Responder inmediatamente con status 200
     res.json({
       success: true,
-      message: 'Comprobante SINPE Móvil recibido y verificado con éxito',
+      message: 'Comprobante SINPE Móvil registrado. En espera de verificación final por operador.',
       bookingId,
       booking: updateResult.booking
     });
@@ -316,7 +352,7 @@ app.post('/api/sinpe/verify', async (req, res) => {
 
     dispatchToN8N(n8nSinpeUrl, {
       trigger: 'VERIFICACION_SINPE',
-      event: 'sinpe.verified',
+      event: 'sinpe.pending_verification',
       bookingId,
       sinpeReference,
       customerPhone:
@@ -350,8 +386,8 @@ app.post('/api/bookings', async (req, res) => {
   }
 });
 
-// Listar todas las reservas (desde Firestore)
-app.get('/api/bookings', async (req, res) => {
+// Listar todas las reservas (desde Firestore) - Protegido con requireOperator
+app.get('/api/bookings', requireOperator, async (req, res) => {
   try {
     const bookings = await getAllBookings();
     res.json({ success: true, bookings, data: bookings });
@@ -360,8 +396,8 @@ app.get('/api/bookings', async (req, res) => {
   }
 });
 
-// Actualizar una reserva
-app.patch('/api/bookings/:id', async (req, res) => {
+// Actualizar una reserva - Protegido con requireOperator
+app.patch('/api/bookings/:id', requireOperator, async (req, res) => {
   try {
     const result = await updateBookingStatus(req.params.id, req.body);
     if (!result.success) {
