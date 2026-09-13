@@ -70,6 +70,10 @@ testConnection();
 googleProvider.addScope('openid');
 googleProvider.addScope('email');
 googleProvider.addScope('profile');
+googleProvider.addScope('https://www.googleapis.com/auth/calendar');
+googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
+googleProvider.addScope('https://mail.google.com/');
+googleProvider.addScope('https://www.googleapis.com/auth/gmail.send');
 
 // Cache the access token in memory
 let cachedAccessToken: string | null = null;

@@ -30,7 +30,8 @@ import { HomeTrustSections } from './components/HomeTrustSections';
 import { BottomNav } from './components/BottomNav';
 import { FlightTrackerGadget } from './components/FlightTrackerGadget';
 import { LiveTouristIntelligence } from './components/LiveTouristIntelligence';
-import { Compass, ArrowLeft, Home, ChevronRight, Plane } from 'lucide-react';
+import { GoogleWorkspaceHub } from './components/GoogleWorkspaceHub';
+import { Compass, ArrowLeft, Home, ChevronRight, Plane, Mail, Calendar } from 'lucide-react';
 
 // Code-splitting via React.lazy to reduce initial JS bundle size
 const TourDetailModal = lazy(() => import('./components/TourDetailModal').then(m => ({ default: m.TourDetailModal })));
@@ -46,7 +47,7 @@ export default function App() {
   const { tours: TOURS, loading: toursLoading } = useTours();
   const [language, setLanguage] = useState<Language>(detectBrowserLanguage);
   const [currency, setCurrency] = useState<Currency>('USD');
-  const [activeTab, setActiveTab] = useState<'home' | 'tours' | 'map' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'culture' | 'flights'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'tours' | 'map' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'culture' | 'flights' | 'workspace'>('home');
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
@@ -263,6 +264,7 @@ export default function App() {
                   {activeTab === 'itinerary' && `✨ ${language === 'es' ? 'Planificador Inteligente de Itinerarios' : 'AI Trip Planner'}`}
                   {activeTab === 'culture' && `🇨🇷 ${language === 'es' ? 'Rincón Tico: Cultura, Comida y Café' : 'Tico Culture & Slang'}`}
                   {activeTab === 'tools' && `🚐 ${language === 'es' ? 'Transporte, Shuttles & Buses' : 'Transport & Shuttles'}`}
+                  {activeTab === 'workspace' && `✉️ 📅 ${language === 'es' ? 'Google Workspace (Gmail & Calendar)' : 'Google Workspace (Gmail & Calendar)'}`}
                 </span>
               </div>
 
@@ -361,7 +363,12 @@ export default function App() {
           </div>
         )}
 
-        {/* Tab: Authentic Costa Rican Culture (Rincón Tico) */}
+        {/* Tab: Google Workspace (Gmail & Calendar) */}
+        {activeTab === 'workspace' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <GoogleWorkspaceHub language={language} />
+          </div>
+        )}
         {activeTab === 'culture' && (
           <div className="py-8">
             <TicoCultureSection language={language} onBack={() => setActiveTab('home')} onExploreTours={() => setActiveTab('tours')} />
