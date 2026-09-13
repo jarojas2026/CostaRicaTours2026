@@ -11,7 +11,6 @@ import { ServicesSection } from './components/ServicesSection';
 import { ToursGrid } from './components/ToursGrid';
 import { TourCard } from './components/TourCard';
 import { InteractiveMap } from './components/InteractiveMap';
-import { AIAssistant } from './components/AIAssistant';
 import { BookingConfirmationModal } from './components/BookingConfirmationModal';
 import { MyBookingsModal } from './components/MyBookingsModal';
 import { Footer } from './components/Footer';
@@ -37,6 +36,7 @@ import { Compass, ArrowLeft, Home, ChevronRight, Plane } from 'lucide-react';
 const TourDetailModal = lazy(() => import('./components/TourDetailModal').then(m => ({ default: m.TourDetailModal })));
 const ItineraryPlanner = lazy(() => import('./components/ItineraryPlanner').then(m => ({ default: m.ItineraryPlanner })));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const AIAssistant = lazy(() => import('./components/AIAssistant').then(m => ({ default: m.AIAssistant })));
 
 import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -474,16 +474,23 @@ export default function App() {
         {/* Tab 3: AI Concierge Chat */}
         {activeTab === 'ai' && (
           <div className="space-y-8 pb-12">
-            <AIAssistant
+            <Suspense fallback={
+              <div className="py-24 text-center text-emerald-400 flex flex-col items-center justify-center gap-3">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-400"></div>
+                <span className="font-semibold">{language === 'es' ? 'Cargando Asistente Virtual...' : 'Loading AI Assistant...'}</span>
+              </div>
+            }>
+              <AIAssistant
                 onBack={() => setActiveTab("home")}
-              language={language}
-              onSelectTour={(t) => setSelectedTour(t)}
-              userBookings={myBookings}
-              onNavigateTab={(tab) => {
-                setActiveTab(tab);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            />
+                language={language}
+                onSelectTour={(t) => setSelectedTour(t)}
+                userBookings={myBookings}
+                onNavigateTab={(tab) => {
+                  setActiveTab(tab);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              />
+            </Suspense>
 
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
               <LiveTouristIntelligence

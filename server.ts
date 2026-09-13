@@ -35,6 +35,7 @@ import {
   analyzeOperationalRiskWithClaude,
   getClaudeStatus
 } from './backend/claudeService';
+import { getAutonomousStatus, runAutonomousDaemonLoop } from './backend/autonomousEngine';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -1285,13 +1286,25 @@ app.get('/api/n8n/status', (req, res) => {
         '/webhook/solicitud-itinerario',
         '/webhook/evento-analitica',
         '/webhook/solicitud-soporte',
-        '/webhook/reporte-semanal-conversion'
+        '/webhook/reporte-semanal-conversion',
+        '/webhook/reserva-parques-sinac',
+        '/webhook/alerta-vuelo-retrasado',
+        '/webhook/reporte-objeto-olvidado',
+        '/webhook/whatsapp-traductor-soporte',
+        '/webhook/recepcion-vip-aeropuerto',
+        '/webhook/alerta-requerimientos-especiales',
+        '/webhook/cancelacion-reembolso-inteligente',
+        '/webhook/entrega-fotos-recuerdos',
+        '/webhook/sincronizacion-operadores-locales',
+        '/webhook/alerta-emergencia-sos',
+        '/webhook/booster-reseñas-incentivos'
       ],
       inboundWebhooks: [
         '/api/webhooks/n8n/update-booking',
         '/webhook/verificar-pago-reserva',
         '/api/webhooks/n8n/booking-action',
-        '/api/analytics/conversion-report'
+        '/api/analytics/conversion-report',
+        '/api/agents/autonomous-daemon'
       ]
     },
     authSecurity: {
@@ -1337,6 +1350,20 @@ app.post('/api/agents/contingency', async (req, res) => {
 app.post('/api/agents/supervisor', async (req, res) => {
   const result = await runSupervisor();
   res.json(result);
+});
+
+// 🤖 ENDPOINT DE MOTOR DE AUTONOMÍA TOTAL (DAEMON SOBERANO SIN HUMANOS)
+app.get('/api/agents/autonomous-daemon', (req, res) => {
+  res.json(getAutonomousStatus());
+});
+
+app.post('/api/agents/autonomous-daemon', async (req, res) => {
+  const status = await runAutonomousDaemonLoop();
+  res.json({
+    success: true,
+    message: 'Ciclo de autonomía ejecutado con éxito. Operaciones auto-gestionadas sin intervención humana.',
+    status
+  });
 });
 
 app.post('/api/agents/log_exception', (req, res) => {

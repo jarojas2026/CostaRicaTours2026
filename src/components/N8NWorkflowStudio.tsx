@@ -48,6 +48,10 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
     timestamp: string;
   } | null>(null);
 
+  // Autonomous Daemon State
+  const [autonomousLoading, setAutonomousLoading] = useState<boolean>(false);
+  const [autonomousResult, setAutonomousResult] = useState<any>(null);
+
   // Copy feedback
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -62,7 +66,33 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
   // Check n8n status on mount
   useEffect(() => {
     checkN8NStatus();
+    fetchAutonomousStatus();
   }, []);
+
+  const fetchAutonomousStatus = async () => {
+    try {
+      const res = await fetch('/api/agents/autonomous-daemon');
+      if (res.ok) {
+        const data = await res.json();
+        setAutonomousResult(data);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleRunAutonomousDaemon = async () => {
+    setAutonomousLoading(true);
+    try {
+      const res = await fetch('/api/agents/autonomous-daemon', { method: 'POST' });
+      const data = await res.json();
+      setAutonomousResult(data.status || data);
+    } catch (err: any) {
+      console.error('Error running autonomous loop:', err);
+    } finally {
+      setAutonomousLoading(false);
+    }
+  };
 
   const checkN8NStatus = async () => {
     try {
@@ -241,6 +271,19 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
 
           {/* Connection Pill & Actions */}
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <button
+              onClick={handleRunAutonomousDaemon}
+              disabled={autonomousLoading}
+              className="px-3.5 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 border border-emerald-400/60 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg cursor-pointer disabled:opacity-50"
+            >
+              <Bot className={`w-3.5 h-3.5 ${autonomousLoading ? 'animate-spin' : 'animate-bounce'}`} />
+              <span>
+                {autonomousLoading
+                  ? (isEs ? 'Ejecutando Autonomía...' : 'Running Autonomous Loop...')
+                  : (isEs ? '🤖 Modo 100% Autónomo' : '🤖 100% Autonomous Mode')}
+              </span>
+            </button>
+
             <button
               onClick={() => setShowCredentialsGuide(!showCredentialsGuide)}
               className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 border cursor-pointer ${
