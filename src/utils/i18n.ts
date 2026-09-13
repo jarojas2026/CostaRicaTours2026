@@ -46,11 +46,13 @@ export function detectBrowserLanguage(): Language {
   Safe language accessor with fallback to EN/ES
  */
 export function getLangText<T = string>(
-  record: Partial<Record<Language, T>> | undefined | null,
+  record: any,
   lang: Language,
   fallbackVal: T = '' as unknown as T
 ): T {
   if (!record) return fallbackVal;
+  if (typeof record === 'string') return record as unknown as T;
+  if (typeof record !== 'object') return String(record) as unknown as T;
   if (record[lang] !== undefined && record[lang] !== null) return record[lang] as T;
   if (record['en'] !== undefined && record['en'] !== null) return record['en'] as T;
   if (record['es'] !== undefined && record['es'] !== null) return record['es'] as T;

@@ -48,13 +48,16 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     setIsSubmitting(true);
 
     const generatedBookingId = `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+    const tourTitle = getLangText(tour.title, language, 'Tour de Costa Rica');
+    const tourDescription = getLangText(tour.description, language, '');
+    const departureTime = (tour.departureTimes && tour.departureTimes.length > 0) ? tour.departureTimes[0] : '08:00 AM';
 
     const bookingPayload: BookingRequest = {
       bookingId: generatedBookingId,
       tourId: tour.id,
-      tourName: tour.title[language],
+      tourName: tourTitle,
       date: selectedDate,
-      time: tour.departureTimes[0] || '08:00 AM',
+      time: departureTime,
       adults,
       children,
       pickupHotel: pickupHotel || 'Recepción del Hotel',
@@ -110,7 +113,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             tourId: tour.id,
-            tourName: tour.title[language],
+            tourName: tourTitle,
             totalUSD,
             customerEmail: email,
             date: selectedDate,
@@ -127,7 +130,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
         const paypalRes = await fetch('/api/paypal/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ totalUSD, tourName: tour.title[language] })
+          body: JSON.stringify({ totalUSD, tourName: tourTitle })
         });
         const paypalData = await paypalRes.json();
         if (paypalData.url) {
@@ -154,6 +157,9 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     ? tour.images[0] 
     : (tour.image || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80');
 
+  const modalTitle = getLangText(tour.title, language, 'Tour de Costa Rica');
+  const modalDescription = getLangText(tour.description, language, '');
+
   return (
     <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto overscroll-contain">
       <div className="modal-panel w-full max-w-4xl relative text-stone-900 my-4 sm:my-8 pb-8 sm:pb-6 bg-white rounded-3xl shadow-2xl p-6 sm:p-8">
@@ -163,9 +169,9 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-2">
           <div>
-            <img src={tourImage} alt={tour.title[language]} className="w-full h-64 object-cover rounded-2xl mb-4 shadow-sm" />
-            <h2 className="text-2xl font-black mb-2 uppercase text-stone-900">{tour.title[language]}</h2>
-            <p className="text-sm text-stone-600 mb-4 leading-relaxed">{tour.description[language]}</p>
+            <img src={tourImage} alt={modalTitle} className="w-full h-64 object-cover rounded-2xl mb-4 shadow-sm" />
+            <h2 className="text-2xl font-black mb-2 uppercase text-stone-900">{modalTitle}</h2>
+            <p className="text-sm text-stone-600 mb-4 leading-relaxed">{modalDescription}</p>
             <div className="flex items-center justify-between font-black text-xl mb-4 text-emerald-800 bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
               <span className="text-sm uppercase tracking-wider text-emerald-900">{language === 'es' ? 'Total Calculado:' : 'Calculated Total:'}</span>
               <span>{currency === 'USD' ? `$${totalUSD} USD` : `₡${totalCRC.toLocaleString('es-CR')} CRC`}</span>
@@ -266,3 +272,5 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     </div>
   );
 };
+
+export default TourDetailModal;

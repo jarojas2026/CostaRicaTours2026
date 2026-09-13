@@ -149,10 +149,10 @@ export const TOURS: Tour[] = [
     },
     category: 'combos',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: '/src/assets/images/poas_waterfall_1789327555369.jpg',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      '/src/assets/images/poas_waterfall_1789327555369.jpg',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=1200&q=85'
     ],
     priceUSD: 145,
     durationHours: 10,
@@ -212,10 +212,10 @@ export const TOURS: Tour[] = [
     },
     category: 'volcanoes',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: '/src/assets/images/costa_rica_hero_1789327541732.jpg',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      '/src/assets/images/costa_rica_hero_1789327541732.jpg',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=1200&q=85'
     ],
     priceUSD: 125,
     durationHours: 10,
@@ -290,10 +290,10 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'monteverde',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+    image: '/src/assets/images/monteverde_canopy_1789327567266.jpg',
     gallery: [
-      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=800&q=85'
+      '/src/assets/images/monteverde_canopy_1789327567266.jpg',
+      'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=1200&q=85'
     ],
     priceUSD: 89,
     durationHours: 5,
@@ -366,10 +366,10 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    image: '/src/assets/images/manuel_antonio_beach_1789327578996.jpg',
     gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
+      '/src/assets/images/manuel_antonio_beach_1789327578996.jpg',
+      'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=1200&q=85'
     ],
     priceUSD: 65,
     durationHours: 4,

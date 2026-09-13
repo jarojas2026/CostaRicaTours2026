@@ -33,8 +33,9 @@ import { LiveTouristIntelligence } from './components/LiveTouristIntelligence';
 import { GoogleWorkspaceHub } from './components/GoogleWorkspaceHub';
 import { Compass, ArrowLeft, Home, ChevronRight, Plane, Mail, Calendar } from 'lucide-react';
 
+import { TourDetailModal } from './components/TourDetailModal';
+
 // Code-splitting via React.lazy to reduce initial JS bundle size
-const TourDetailModal = lazy(() => import('./components/TourDetailModal').then(m => ({ default: m.TourDetailModal })));
 const ItineraryPlanner = lazy(() => import('./components/ItineraryPlanner').then(m => ({ default: m.ItineraryPlanner })));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const AIAssistant = lazy(() => import('./components/AIAssistant').then(m => ({ default: m.AIAssistant })));
@@ -532,24 +533,15 @@ export default function App() {
 
       {/* Tour Details Booking Modal */}
       {selectedTour && (
-        <Suspense fallback={
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-[#07241a] border border-emerald-500/30 rounded-2xl p-6 text-stone-100 flex items-center gap-3">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-400"></div>
-              <span>{language === 'es' ? 'Cargando detalles del tour...' : 'Loading tour details...'}</span>
-            </div>
-          </div>
-        }>
-          <TourDetailModal
-            tour={selectedTour}
-            isOpen={!!selectedTour}
-            language={language}
-            currency={currency}
-            onClose={() => setSelectedTour(null)}
-            onConfirmBooking={handleBookingSuccess}
-            onBookingSuccess={handleBookingSuccess}
-          />
-        </Suspense>
+        <TourDetailModal
+          tour={selectedTour}
+          isOpen={!!selectedTour}
+          language={language}
+          currency={currency}
+          onClose={() => setSelectedTour(null)}
+          onConfirmBooking={handleBookingSuccess}
+          onBookingSuccess={handleBookingSuccess}
+        />
       )}
 
       {/* Booking Confirmation Voucher Modal */}

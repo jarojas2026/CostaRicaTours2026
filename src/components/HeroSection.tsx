@@ -22,7 +22,7 @@ interface HeroSectionProps {
 const HERO_SLIDES = [
   {
     id: 1,
-    image: "https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80",
+    image: "/src/assets/images/costa_rica_hero_1789327541732.jpg",
     badge: "🔥 Experiencia VIP",
     badgeEn: "🔥 VIP Experience",
     title: "Volcán Arenal & Aguas Termales",
@@ -33,7 +33,7 @@ const HERO_SLIDES = [
   },
   {
     id: 2,
-    image: "https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=1200&q=80",
+    image: "/src/assets/images/manuel_antonio_beach_1789327578996.jpg",
     badge: "🐒 Favorito de los Viajeros",
     badgeEn: "🐒 Traveler's Favorite",
     title: "Playas de Manuel Antonio",
@@ -44,13 +44,13 @@ const HERO_SLIDES = [
   },
   {
     id: 3,
-    image: "https://images.unsplash.com/photo-1530866495561-507c9faab2ed?auto=format&fit=crop&w=1200&q=80",
-    badge: "🚣 Pura Adrenalina",
-    badgeEn: "🚣 Pure Adrenaline",
-    title: "Rafting en el Río Pacuare",
-    titleEn: "Pacuare River Rafting",
-    desc: "Desafía rápidos de clase III y IV en uno de los ríos más escénicos del mundo. Una aventura épica y segura con instructores certificados.",
-    descEn: "Brave Class III and IV rapids in one of the most scenic rivers in the world. An epic and safe adventure with certified instructors.",
+    image: "/src/assets/images/monteverde_canopy_1789327567266.jpg",
+    badge: "🌱 Puentes Colgantes & Bosque Nuboso",
+    badgeEn: "🌱 Canopy & Cloud Forest",
+    title: "Monteverde & Bosque Nuboso",
+    titleEn: "Monteverde Cloud Forest",
+    desc: "Siente la magia de caminar sobre el dosel de la selva nubosa en puentes colgantes rodeado de quetzales y orquídeas exóticas.",
+    descEn: "Experience the magic of walking over the cloud forest canopy on suspension bridges surrounded by quetzals and exotic orchids.",
     price: "$110"
   }
 ];
