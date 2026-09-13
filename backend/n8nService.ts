@@ -2,6 +2,7 @@ import crypto from 'crypto';
 /**
  * ⚡ Servicio de Integración con n8n para Costa Rica Tours
  * Gestiona triggers salientes, verificación de webhooks entrantes y monitoreo de conexión.
+ * Configuración estricta de seguridad: No se admiten fallbacks hardcodeados en producción.
  */
 
 export interface N8NConfig {
@@ -25,9 +26,20 @@ export const getN8NConfig = (): N8NConfig => {
     'https://costaricatours2026.app.n8n.cloud'
   ).replace(/\/+$/, '');
 
+  const webhookSecret =
+    process.env.N8N_WEBHOOK_SECRET ||
+    process.env.WEBHOOK_SECRET ||
+    process.env.VITE_N8N_WEBHOOK_SECRET ||
+    '';
+
+  // Si N8N está habilitado pero no hay secreto configurado, alertar explícitamente
+  if (process.env.N8N_ENABLED === 'true' && !webhookSecret) {
+    console.error('❌ [SEGURIDAD] N8N_ENABLED=true pero N8N_WEBHOOK_SECRET no está definida. Las solicitudes a webhooks no podrán firmarse criptográficamente.');
+  }
+
   return {
     baseUrl,
-    webhookSecret: process.env.N8N_WEBHOOK_SECRET || process.env.VITE_N8N_WEBHOOK_SECRET || 'dev-secret-key-123',
+    webhookSecret,
     apiKey: process.env.N8N_API_KEY || process.env.VITE_N8N_API_KEY || '',
     bookingWebhookUrl: process.env.N8N_BOOKING_WEBHOOK_URL || `${baseUrl}/webhook/reserva-confirmada`,
     chatWebhookUrl: process.env.N8N_CHAT_WEBHOOK_URL || `${baseUrl}/webhook/chat-consulta`,
@@ -40,7 +52,7 @@ export const getN8NConfig = (): N8NConfig => {
 };
 
 /**
- * Despacha un trigger saliente hacia n8n con reintentos y autenticación
+ * Despacha un trigger saliente hacia n8n con reintentos y firma criptográfica
  */
 export async function dispatchToN8N(
   endpointOrFullUrl: string,
@@ -65,17 +77,19 @@ export async function dispatchToN8N(
   }
 
   const payloadString = JSON.stringify(payload);
-  const signature = crypto
-    .createHmac('sha256', config.webhookSecret)
-    .update(payloadString)
-    .digest('hex');
-
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'X-Webhook-Signature': signature,
-    'X-Webhook-Secret': config.webhookSecret, // Legacy fallback
     'User-Agent': 'CostaRicaTours-Backend/1.0'
   };
+
+  if (config.webhookSecret) {
+    const signature = crypto
+      .createHmac('sha256', config.webhookSecret)
+      .update(payloadString)
+      .digest('hex');
+    headers['X-Webhook-Signature'] = signature;
+    headers['X-Webhook-Secret'] = config.webhookSecret;
+  }
 
   if (config.apiKey) {
     headers['Authorization'] = `Bearer ${config.apiKey}`;
@@ -139,18 +153,23 @@ export async function dispatchToN8N(
 
 /**
  * Valida si un webhook entrante desde n8n contiene las credenciales autorizadas
+ * Rechaza sin ambigüedad si el secreto no coincide o no está configurado.
  */
 export function verifyN8NRequest(headers: Record<string, string | string[] | undefined>): boolean {
   const config = getN8NConfig();
   const secretHeader = headers['x-webhook-secret'] || headers['X-Webhook-Secret'];
   const authHeader = headers['authorization'] || headers['Authorization'];
 
-  // Si no hay secretos configurados, permitir en modo desarrollo
+  // Si no hay secretos configurados en entorno de desarrollo local sin n8n activado
   if (!config.webhookSecret && !config.apiKey) {
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('⚠️ Webhook entrante rechazado: Secreto de webhook no configurado en producción.');
+      return false;
+    }
     return true;
   }
 
-  if (secretHeader && secretHeader === config.webhookSecret) {
+  if (secretHeader && config.webhookSecret && secretHeader === config.webhookSecret) {
     return true;
   }
 

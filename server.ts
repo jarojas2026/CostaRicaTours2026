@@ -64,6 +64,15 @@ import {
   getNativeEngineStatus,
   getNativeAutomationLogs
 } from './backend/nativeAutomationEngine';
+import {
+  executeProviderRealtimeCoordination,
+  executeCustomerBookingConfirmation,
+  executeAutomatedProviderPayouts,
+  executeSurveillanceAndEscalation,
+  executeDailyOperationReport,
+  executePostTourReviewRequests,
+  executeTour24hReminders
+} from './backend/nativeWorkflows';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -609,6 +618,84 @@ app.post(additionalWebhooks, async (req, res) => {
     res.json(result);
   } catch (error: any) {
     res.status(500).json({ exito: false, error: error.message });
+  }
+});
+
+// ==========================================
+// 🌿 LOS 7 WORKFLOWS NATIVOS DE NEGOCIO MIGRADOS
+// ==========================================
+
+// 1. Coordinación en Tiempo Real con Proveedores (Webhook)
+app.post(['/webhook/proveedores-coordinacion', '/webhook/coordinacion-proveedores', '/api/webhooks/provider-coordination'], async (req, res) => {
+  try {
+    const authHeader = req.headers['x-webhook-secret'] as string;
+    const result = await executeProviderRealtimeCoordination(req.body, authHeader);
+    res.json(result);
+  } catch (error: any) {
+    const status = error.message.includes('No autorizado') ? 401 : 500;
+    res.status(status).json({ success: false, error: error.message });
+  }
+});
+
+// 2. Confirmación de Reserva al Cliente (Webhook)
+app.post(['/webhook/cliente-confirmacion', '/webhook/confirmacion-cliente', '/api/webhooks/customer-confirmation'], async (req, res) => {
+  try {
+    const authHeader = req.headers['x-webhook-secret'] as string;
+    const result = await executeCustomerBookingConfirmation(req.body, authHeader);
+    res.json(result);
+  } catch (error: any) {
+    const status = error.message.includes('No autorizado') ? 401 : 500;
+    res.status(status).json({ success: false, error: error.message });
+  }
+});
+
+// 3. Pagos Automáticos a Proveedores (Batch / Cron Trigger)
+app.post(['/api/payouts/run-batch', '/webhook/pagos-proveedores-batch'], async (req, res) => {
+  try {
+    const result = await executeAutomatedProviderPayouts();
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 4. Vigilancia y Escalamiento de Reservas Pendientes (Cron Trigger)
+app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], async (req, res) => {
+  try {
+    const result = await executeSurveillanceAndEscalation();
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 5. Reporte Diario de Operación (Cron Trigger)
+app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], async (req, res) => {
+  try {
+    const result = await executeDailyOperationReport();
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 6. Solicitud de Reseña Post-Tour (Cron Trigger)
+app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], async (req, res) => {
+  try {
+    const result = await executePostTourReviewRequests();
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 7. Recordatorio 24h Antes del Tour (Cron Trigger)
+app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], async (req, res) => {
+  try {
+    const result = await executeTour24hReminders();
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
