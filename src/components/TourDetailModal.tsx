@@ -139,7 +139,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
       <div className="modal-panel w-full max-w-4xl relative text-stone-900 my-8">
-        <button onClick={onClose} className="btn-close">
+        <button onClick={onClose} className="min-h-[44px] min-w-[44px] btn-close">
           <X size={24} />
         </button>
         
@@ -160,33 +160,33 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="label-modern">Date</label>
-                <input required type="date" className="input-modern" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
+                <input required type="date" className="min-h-[44px] input-modern" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
               </div>
               <div>
                 <label className="label-modern">Adults</label>
-                <input type="number" min="1" className="input-modern" value={adults} onChange={e => setAdults(Number(e.target.value))} />
+                <input type="number" min="1" className="min-h-[44px] input-modern" value={adults} onChange={e => setAdults(Number(e.target.value))} />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="label-modern">Full Name</label>
-                <input required type="text" className="input-modern" value={fullName} onChange={e => setFullName(e.target.value)} />
+                <input required type="text" className="min-h-[44px] input-modern" value={fullName} onChange={e => setFullName(e.target.value)} />
               </div>
               <div>
                 <label className="label-modern">Email</label>
-                <input required type="email" className="input-modern" value={email} onChange={e => setEmail(e.target.value)} />
+                <input required type="email" className="min-h-[44px] input-modern" value={email} onChange={e => setEmail(e.target.value)} />
               </div>
             </div>
 
             <div>
               <label className="label-modern">WhatsApp / Teléfono (+506)</label>
-              <input required type="tel" placeholder="+506 8888-8888" className="input-modern" value={phone} onChange={e => setPhone(e.target.value)} />
+              <input required type="tel" placeholder="+506 8888-8888" className="min-h-[44px] input-modern" value={phone} onChange={e => setPhone(e.target.value)} />
             </div>
 
             <div>
               <label className="label-modern">Payment Method</label>
-              <select className="input-modern" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value as any)}>
+              <select className="min-h-[44px] input-modern" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value as any)}>
                 <option value="sinpe_movil">📱 SINPE Móvil (Costa Rica ₡)</option>
                 <option value="paypal">💳 PayPal Express</option>
                 <option value="credit_card">💳 Tarjeta de Crédito / Débito (Stripe)</option>
@@ -213,7 +213,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
               </div>
             )}
 
-            <button disabled={isSubmitting} type="submit" className="btn-primary w-full mt-8">
+            <button disabled={isSubmitting} type="submit" className="min-h-[44px] min-w-[44px] btn-primary w-full mt-8">
               {isSubmitting ? 'Processing...' : 'Confirm Booking'}
             </button>
           </form>

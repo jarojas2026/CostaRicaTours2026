@@ -17,7 +17,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, languag
 
   return (
     <div className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white text-white rounded-[2rem] w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-black/10 relative overflow-hidden">
+      <div className="bg-white text-stone-900 rounded-[2rem] w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-black/10 relative overflow-hidden">
         
         {/* Header */}
         <div className="p-6 border-b border-black/10 flex items-center justify-between shrink-0 bg-stone-100/50">
@@ -37,7 +37,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, languag
           
           <button
             onClick={onClose}
-            className="w-10 h-10 bg-white/[0.03] hover:bg-white/10 rounded-full flex items-center justify-center transition-colors"
+            className="min-h-[44px] min-w-[44px] w-10 h-10 bg-stone-100 hover:bg-stone-200 text-stone-900 rounded-full flex items-center justify-center transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -51,7 +51,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, languag
               className={`flex items-center gap-2.5 px-4 py-3 rounded-xl text-left transition-colors whitespace-nowrap sm:whitespace-normal font-bold text-sm ${
                 activeTab === 'terminos' 
                   ? 'bg-teal-600 text-white shadow-md' 
-                  : 'text-stone-600 hover:text-white hover:bg-white/5'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
               }`}
             >
               <FileText className="w-4 h-4 shrink-0" />
@@ -62,7 +62,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, languag
               className={`flex items-center gap-2.5 px-4 py-3 rounded-xl text-left transition-colors whitespace-nowrap sm:whitespace-normal font-bold text-sm ${
                 activeTab === 'cancelacion' 
                   ? 'bg-teal-600 text-white shadow-md' 
-                  : 'text-stone-600 hover:text-white hover:bg-white/5'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
               }`}
             >
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -73,7 +73,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, languag
               className={`flex items-center gap-2.5 px-4 py-3 rounded-xl text-left transition-colors whitespace-nowrap sm:whitespace-normal font-bold text-sm ${
                 activeTab === 'privacidad' 
                   ? 'bg-teal-600 text-white shadow-md' 
-                  : 'text-stone-600 hover:text-white hover:bg-white/5'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
               }`}
             >
               <Lock className="w-4 h-4 shrink-0" />
@@ -84,7 +84,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, languag
               className={`flex items-center gap-2.5 px-4 py-3 rounded-xl text-left transition-colors whitespace-nowrap sm:whitespace-normal font-bold text-sm ${
                 activeTab === 'escnna' 
                   ? 'bg-teal-600 text-white shadow-md' 
-                  : 'text-stone-600 hover:text-white hover:bg-white/5'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
               }`}
             >
               <Building className="w-4 h-4 shrink-0" />

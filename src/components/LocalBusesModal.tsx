@@ -301,7 +301,7 @@ export const LocalBusesModal: React.FC<LocalBusesModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="min-h-[44px] min-w-[44px] w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-6 h-6" />
           </button>
@@ -550,7 +550,7 @@ export const LocalBusesModal: React.FC<LocalBusesModalProps> = ({
 
           <button
             onClick={onClose}
-            className="w-full sm:w-auto bg-[#1E7B4A] hover:bg-[#165a36] text-white font-black text-xs uppercase px-6 py-2.5 rounded-full transition-colors cursor-pointer"
+            className="min-h-[44px] min-w-[44px] w-full sm:w-auto bg-[#1E7B4A] hover:bg-[#165a36] text-white font-black text-xs uppercase px-6 py-2.5 rounded-full transition-colors cursor-pointer"
           >
             {language === 'es' ? 'Cerrar Directorio' : 'Close Directory'}
           </button>

@@ -325,7 +325,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
 
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-stone-900 flex items-center justify-center transition-colors border border-black/20 cursor-pointer"
+            className="min-h-[44px] min-w-[44px] w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-stone-900 flex items-center justify-center transition-colors border border-black/20 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -340,7 +340,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
             </div>
             <button
               onClick={handleResetDraft}
-              className="text-[10px] font-black text-red-600 hover:text-red-800 flex items-center gap-1 underline cursor-pointer"
+              className="min-h-[44px] min-w-[44px] text-[10px] font-black text-red-600 hover:text-red-800 flex items-center gap-1 underline cursor-pointer"
             >
               <Trash2 className="w-3 h-3" />
               <span>{language === 'es' ? 'Reiniciar' : 'Reset'}</span>
@@ -685,7 +685,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
               <button
                 type="button"
                 onClick={handleCopyQuote}
-                className="px-4 py-2.5 rounded-full border border-neutral-300 hover:border-neutral-400 bg-white text-neutral-700 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="min-h-[44px] min-w-[44px] px-4 py-2.5 rounded-full border border-neutral-300 hover:border-neutral-400 bg-white text-neutral-700 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                 title={language === 'es' ? 'Copiar texto al portapapeles' : 'Copy text to clipboard'}
               >
                 {copiedQuote ? <Check className="w-4 h-4 text-emerald-600" /> : <Save className="w-4 h-4 text-neutral-500" />}
@@ -708,7 +708,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
 
               <button
                 onClick={handleSendWhatsApp}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-stone-900 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 cursor-pointer"
+                className="min-h-[44px] min-w-[44px] w-full sm:w-auto px-6 py-2.5 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-stone-900 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 cursor-pointer"
               >
                 <MessageCircle className="w-4 h-4 fill-white" />
                 <span>{language === 'es' ? 'Enviar por WhatsApp' : 'Send via WhatsApp'}</span>

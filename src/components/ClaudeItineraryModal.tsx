@@ -97,7 +97,7 @@ export const ClaudeItineraryModal: React.FC<ClaudeItineraryModalProps> = ({
         <div className="bg-gradient-to-r from-amber-600 via-amber-700 to-stone-900 text-white p-6 relative">
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
+            className="min-h-[44px] min-w-[44px] absolute top-5 right-5 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -257,7 +257,7 @@ export const ClaudeItineraryModal: React.FC<ClaudeItineraryModalProps> = ({
                 type="button"
                 onClick={handleGenerate}
                 disabled={isLoading}
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all disabled:opacity-50 cursor-pointer"
+                className="min-h-[44px] min-w-[44px] w-full py-4 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isLoading ? (
                   <>

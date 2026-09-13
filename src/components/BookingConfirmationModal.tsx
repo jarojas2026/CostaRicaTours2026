@@ -312,7 +312,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 sm:top-6 sm:right-6 z-30 w-10 h-10 bg-[#0C1E14]/90 hover:bg-[#1E4D2B] text-stone-800 rounded-full flex items-center justify-center border border-[#2D663B]/60 transition-colors shadow-lg cursor-pointer"
+          className="min-h-[44px] min-w-[44px] absolute top-4 right-4 sm:top-6 sm:right-6 z-30 w-10 h-10 bg-[#0C1E14]/90 hover:bg-[#1E4D2B] text-stone-800 rounded-full flex items-center justify-center border border-[#2D663B]/60 transition-colors shadow-lg cursor-pointer"
           aria-label="Cerrar modal"
         >
           <X className="w-5 h-5" />
@@ -477,7 +477,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
               <button
                 onClick={handlePrint}
                 disabled={isGeneratingPDF}
-                className="bg-[#1E4D2B] hover:bg-[#14391F] disabled:opacity-70 text-[#FAF8F5] border border-[#3E6D4B] font-bold text-xs uppercase py-3 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-md"
+                className="min-h-[44px] min-w-[44px] bg-[#1E4D2B] hover:bg-[#14391F] disabled:opacity-70 text-[#FAF8F5] border border-[#3E6D4B] font-bold text-xs uppercase py-3 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-md"
               >
                 {isGeneratingPDF ? (
                   <Loader2 className="w-4 h-4 animate-spin text-orange-300" />
@@ -501,7 +501,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
             <button
               onClick={handleAddToTasks}
               disabled={isAddingTask}
-              className="w-full bg-[#1A73E8] hover:bg-[#1557B0] text-white disabled:opacity-70 font-bold text-xs uppercase py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-xs"
+              className="min-h-[44px] min-w-[44px] w-full bg-[#1A73E8] hover:bg-[#1557B0] text-white disabled:opacity-70 font-bold text-xs uppercase py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-xs"
             >
               {isAddingTask ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

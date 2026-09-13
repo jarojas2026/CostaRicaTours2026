@@ -51,7 +51,7 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
     endpoint: '/webhook/chat-consulta',
     method: 'POST',
     triggerEvent: 'CONSULTA_CHAT_IA',
-    nodesCount: 6,
+    nodesCount: 10,
     slaTarget: '< 1500 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] Webhook Inbound', type: 'n8n-nodes-base.webhook', description: 'Recibe payload JSON del usuario con token de seguridad' },
@@ -59,7 +59,11 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
       { id: 'n3', name: '[AI ENGINE] Gemini Triage Agent', type: 'n8n-nodes-base.openAi', description: 'Evalúa mensaje, idioma y extrae entidades (tour, destino, fechas)' },
       { id: 'n4', name: '[FIRESTORE] Query Authorized Tours', type: 'n8n-nodes-base.httpRequest', description: 'Obtiene tarifas vigentes y cupos en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
       { id: 'n5', name: '[LOGIC] Official Concierge Formatter', type: 'n8n-nodes-base.code', description: 'Estructura respuesta con viñetas, precios USD y botones de reserva' },
-      { id: 'n6', name: '[RESPONSE] Respond to Client', type: 'n8n-nodes-base.respondToWebhook', description: 'Entrega respuesta JSON al cliente' }
+      { id: 'n6', name: '[RESPONSE] Respond to Client', type: 'n8n-nodes-base.respondToWebhook', description: 'Entrega respuesta JSON al cliente' },
+      { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       trigger: 'CONSULTA_CHAT_IA',
@@ -118,7 +122,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           name: "[FIRESTORE] Query Authorized Tours",
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
-          position: [700, 300],
+          position: [700, 300
+    ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -173,7 +178,7 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
     endpoint: '/webhook/inicio-reserva',
     method: 'POST',
     triggerEvent: 'INICIO_RESERVA',
-    nodesCount: 7,
+    nodesCount: 11,
     slaTarget: '< 800 ms',
     nodes: [
       { id: 'b1', name: '[TRIGGER] Webhook Inicio Reserva', type: 'n8n-nodes-base.webhook', description: 'Recibe solicitud de reserva preliminar' },
@@ -182,7 +187,11 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
       { id: 'b4', name: '[FIRESTORE] Create Soft Hold Record', type: 'n8n-nodes-base.httpRequest', description: 'Crea documento de reserva temporal en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
       { id: 'b5', name: '[LOGIC] Set 15m Expiration Timeout', type: 'n8n-nodes-base.wait', description: 'Espera 15 minutos para auditoría de pago' },
       { id: 'b6', name: '[FIRESTORE] Auto Release Expired Lock', type: 'n8n-nodes-base.httpRequest', description: 'Libera cupos en Firestore si expira el tiempo sin pago (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
-      { id: 'b7', name: '[RESPONSE] Confirm Soft Hold', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve bookingId y enlace de pago' }
+      { id: 'b7', name: '[RESPONSE] Confirm Soft Hold', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve bookingId y enlace de pago' },
+      { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       trigger: 'INICIO_RESERVA',
@@ -222,7 +231,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           name: "[FIRESTORE] Check Tour Availability",
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
-          position: [300, 300],
+          position: [300, 300
+    ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -329,7 +339,7 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
     endpoint: '/webhook/solicitud-pago',
     method: 'POST',
     triggerEvent: 'SOLICITUD_PAGO',
-    nodesCount: 6,
+    nodesCount: 10,
     slaTarget: '< 2000 ms',
     nodes: [
       { id: 'p1', name: '[TRIGGER] Webhook Solicitud Pago', type: 'n8n-nodes-base.webhook', description: 'Recibe ID de reserva y método seleccionado' },
@@ -337,7 +347,11 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
       { id: 'p3', name: '[SECURITY] Generate Stripe Checkout Session', type: 'n8n-nodes-base.httpRequest', description: 'Genera enlace seguro de pago de Stripe' },
       { id: 'p4', name: '[SECURITY] Verify HMAC Payment Signature', type: 'n8n-nodes-base.crypto', description: 'Valida firma criptográfica SHA-256' },
       { id: 'p5', name: '[FIRESTORE] Update Booking Payment Status', type: 'n8n-nodes-base.httpRequest', description: 'Marca reserva pagada en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
-      { id: 'p6', name: '[RESPONSE] Return Payment URL', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve URL de checkout al cliente' }
+      { id: 'p6', name: '[RESPONSE] Return Payment URL', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve URL de checkout al cliente' },
+      { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       trigger: 'SOLICITUD_PAGO',
@@ -423,7 +437,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           name: "[FIRESTORE] Update Booking Payment Status",
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
-          position: [900, 250],
+          position: [900, 250
+    ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -468,7 +483,7 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
     endpoint: '/webhook/confirmacion-reserva',
     method: 'POST',
     triggerEvent: 'CONFIRMACION_RESERVA',
-    nodesCount: 6,
+    nodesCount: 10,
     slaTarget: '< 3000 ms',
     nodes: [
       { id: 'v1', name: '[TRIGGER] Webhook Confirmación', type: 'n8n-nodes-base.webhook', description: 'Recibe evento de reserva pagada' },
@@ -476,7 +491,11 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
       { id: 'v3', name: '[FIRESTORE] Save Voucher & Update Booking', type: 'n8n-nodes-base.httpRequest', description: 'Almacena enlace de voucher y confirma reserva en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
       { id: 'v4', name: '[WHATSAPP] Dispatch WhatsApp Voucher', type: 'n8n-nodes-base.httpRequest', description: 'Envía plantilla oficial de WhatsApp Business API' },
       { id: 'v5', name: '[EMAIL] Send PDF Voucher Email', type: 'n8n-nodes-base.emailSend', description: 'Envía correo electrónico con voucher PDF adjunto' },
-      { id: 'v6', name: '[RESPONSE] Confirm Dispatch Completion', type: 'n8n-nodes-base.respondToWebhook', description: 'Retorna estatus de entrega multicanal' }
+      { id: 'v6', name: '[RESPONSE] Confirm Dispatch Completion', type: 'n8n-nodes-base.respondToWebhook', description: 'Retorna estatus de entrega multicanal' },
+      { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       trigger: 'CONFIRMACION_RESERVA',
@@ -538,7 +557,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           name: "[FIRESTORE] Save Voucher & Update Booking",
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
-          position: [500, 300],
+          position: [500, 300
+    ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -612,14 +632,18 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
     endpoint: '/webhook/solicitud-itinerario',
     method: 'POST',
     triggerEvent: 'SOLICITUD_ITINERARIO',
-    nodesCount: 5,
+    nodesCount: 9,
     slaTarget: '< 2500 ms',
     nodes: [
       { id: 'i1', name: '[TRIGGER] Webhook Solicitud Itinerario', type: 'n8n-nodes-base.webhook', description: 'Recibe preferencias de viaje' },
       { id: 'i2', name: '[LOGIC] Region Transit Matrix', type: 'n8n-nodes-base.code', description: 'Calcula tiempos reales de viaje por carretera entre San José, Arenal y Manuel Antonio' },
       { id: 'i3', name: '[AI ENGINE] Gemini Itinerary Planner', type: 'n8n-nodes-base.openAi', description: 'Genera plan detallado día por día' },
       { id: 'i4', name: '[FIRESTORE] Fetch Tour Catalog Mapping', type: 'n8n-nodes-base.httpRequest', description: 'Asocia actividades con el catálogo Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
-      { id: 'i5', name: '[RESPONSE] Deliver Full Itinerary', type: 'n8n-nodes-base.respondToWebhook', description: 'Entrega itinerario JSON completo' }
+      { id: 'i5', name: '[RESPONSE] Deliver Full Itinerary', type: 'n8n-nodes-base.respondToWebhook', description: 'Entrega itinerario JSON completo' },
+      { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       trigger: 'SOLICITUD_ITINERARIO',
@@ -674,7 +698,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           name: "[FIRESTORE] Fetch Tour Catalog Mapping",
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
-          position: [700, 300],
+          position: [700, 300
+    ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -718,7 +743,7 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
     endpoint: '/api/agents/contingency',
     method: 'POST',
     triggerEvent: 'CONTINGENCIA_CLIMA',
-    nodesCount: 6,
+    nodesCount: 10,
     slaTarget: '< 1000 ms',
     nodes: [
       { id: 'c1', name: '[TRIGGER] Weather Alert Hook', type: 'n8n-nodes-base.webhook', description: 'Recibe alerta de crecida o temporal' },
@@ -726,7 +751,11 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
       { id: 'c3', name: '[AI ENGINE] Evaluate Alternative Tours', type: 'n8n-nodes-base.code', description: 'Selecciona actividades bajo techo o termales cercanas' },
       { id: 'c4', name: '[SECURITY] Generate 1-Click Reschedule Token', type: 'n8n-nodes-base.crypto', description: 'Crea token seguro de cambio de fecha sin costo' },
       { id: 'c5', name: '[WHATSAPP] Send Empathetic Notification', type: 'n8n-nodes-base.httpRequest', description: 'Envía mensaje explicativo con alternativas' },
-      { id: 'c6', name: '[RESPONSE] Log Incident Audit', type: 'n8n-nodes-base.respondToWebhook', description: 'Registra la contingencia en la bitácora' }
+      { id: 'c6', name: '[RESPONSE] Log Incident Audit', type: 'n8n-nodes-base.respondToWebhook', description: 'Registra la contingencia en la bitácora' },
+      { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       tourId: 'sarapiqui-white-water-rafting-class-iii',
@@ -764,7 +793,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           name: "[FIRESTORE] Query Impacted Region Bookings",
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
-          position: [350, 300],
+          position: [350, 300
+    ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -847,7 +877,7 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
     endpoint: '/api/agents/supervisor',
     method: 'POST',
     triggerEvent: 'AUDITORIA_SUPERVISOR',
-    nodesCount: 6,
+    nodesCount: 10,
     slaTarget: '< 1800 ms',
     nodes: [
       { id: 's1', name: '[TRIGGER] Cron Exception Auditor', type: 'n8n-nodes-base.cron', description: 'Se dispara periódicamente o tras 3 errores' },
@@ -855,7 +885,11 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
       { id: 's3', name: '[AI ENGINE] Gemini Failure Pattern Analyzer', type: 'n8n-nodes-base.openAi', description: 'Analiza la causa raíz en modismos locales' },
       { id: 's4', name: '[LOGIC] Generate Prompt Hotfix Rule', type: 'n8n-nodes-base.code', description: 'Genera parche de normalización en tiempo real' },
       { id: 's5', name: '[TELEGRAM] Send Alert to Ops Tech Channel', type: 'n8n-nodes-base.telegram', description: 'Despacha alerta técnica a Telegram (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
-      { id: 's6', name: '[RESPONSE] Deliver Self-Healing Diagnosis', type: 'n8n-nodes-base.respondToWebhook', description: 'Entrega diagnóstico de auto-recuperación' }
+      { id: 's6', name: '[RESPONSE] Deliver Self-Healing Diagnosis', type: 'n8n-nodes-base.respondToWebhook', description: 'Entrega diagnóstico de auto-recuperación' },
+      { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       agentName: 'OperationsTriage',
@@ -885,7 +919,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           name: "[FIRESTORE] Fetch Unhandled Exception Logs",
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
-          position: [350, 300],
+          position: [350, 300
+    ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -966,14 +1001,18 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
     endpoint: '/webhook/solicitud-soporte',
     method: 'POST',
     triggerEvent: 'SOLICITUD_SOPORTE',
-    nodesCount: 5,
+    nodesCount: 9,
     slaTarget: '< 600 ms',
     nodes: [
       { id: 'u1', name: '[TRIGGER] Support Escalation Webhook', type: 'n8n-nodes-base.webhook', description: 'Detecta solicitud humana o urgencia' },
       { id: 'u2', name: '[AI ENGINE] Sentiment & Severity Classifier', type: 'n8n-nodes-base.code', description: 'Calcula severidad del caso y asigna urgencia' },
       { id: 'u3', name: '[FIRESTORE] Create High-Priority Support Ticket', type: 'n8n-nodes-base.httpRequest', description: 'Almacena el ticket en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
       { id: 'u4', name: '[TELEGRAM] Dispatch Priority Alert to Ops Chat', type: 'n8n-nodes-base.telegram', description: 'Avisa al personal de guardia en Telegram (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
-      { id: 'u5', name: '[RESPONSE] Reassure Traveler', type: 'n8n-nodes-base.respondToWebhook', description: 'Informa al usuario sobre el contacto humano inmediato' }
+      { id: 'u5', name: '[RESPONSE] Reassure Traveler', type: 'n8n-nodes-base.respondToWebhook', description: 'Informa al usuario sobre el contacto humano inmediato' },
+      { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       trigger: 'SOLICITUD_SOPORTE',
@@ -1028,7 +1067,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           name: "[FIRESTORE] Create High-Priority Support Ticket",
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
-          position: [500, 300],
+          position: [500, 300
+    ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -1088,7 +1128,7 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
     endpoint: '/webhook/antifraude-evaluacion',
     method: 'POST',
     triggerEvent: 'EVALUACION_ANTIFRAUDE',
-    nodesCount: 6,
+    nodesCount: 10,
     slaTarget: '< 850 ms',
     nodes: [
       { id: 'f1', name: '[TRIGGER] Fraud Check Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe datos de pago previa a emisión' },
@@ -1096,7 +1136,11 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
       { id: 'f3', name: '[LOGIC] Calculate Risk Score Engine', type: 'n8n-nodes-base.code', description: 'Calcula score 0-100 por discordancia geográfica y montos' },
       { id: 'f4', name: '[LOGIC] Decision Switch (Pass / Review / Block)', type: 'n8n-nodes-base.if', description: 'Switchea según score <40 (Aprobado), 40-69 (Revisión), >=70 (Bloqueado)' },
       { id: 'f5', name: '[TELEGRAM] Send High-Risk Fraud Alert', type: 'n8n-nodes-base.telegram', description: 'Alert al equipo de seguridad en Telegram (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
-      { id: 'f6', name: '[RESPONSE] Respond Risk Verdict', type: 'n8n-nodes-base.respondToWebhook', description: 'Retorna veredicto final' }
+      { id: 'f6', name: '[RESPONSE] Respond Risk Verdict', type: 'n8n-nodes-base.respondToWebhook', description: 'Retorna veredicto final' },
+      { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       trigger: 'EVALUACION_ANTIFRAUDE',
@@ -1138,7 +1182,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           name: "[FIRESTORE] Fetch Customer Transaction History",
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
-          position: [350, 300],
+          position: [350, 300
+    ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -1218,7 +1263,7 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
     endpoint: '/webhook/telegram-ops-action',
     method: 'POST',
     triggerEvent: 'ACCION_PANEL_TELEGRAM',
-    nodesCount: 6,
+    nodesCount: 10,
     slaTarget: '< 950 ms',
     nodes: [
       { id: 't1', name: '[TRIGGER] Telegram Bot Trigger', type: 'n8n-nodes-base.telegramTrigger', description: 'Escucha clics en botones inline en Telegram Bot (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
@@ -1226,7 +1271,11 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
       { id: 't3', name: '[FIRESTORE] Sync Booking Operational Status', type: 'n8n-nodes-base.httpRequest', description: 'Actualiza el estado de la reserva en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
       { id: 't4', name: '[TELEGRAM] Update Inline Button Markup', type: 'n8n-nodes-base.telegram', description: 'Modifica el texto de la tarjeta en Telegram a "✅ CONFIRMADO POR GUÍA"' },
       { id: 't5', name: '[TELEGRAM] Notify Ops Telegram Group', type: 'n8n-nodes-base.telegram', description: 'Informa al grupo general de logística (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
-      { id: 't6', name: '[RESPONSE] Answer Callback Query Toast', type: 'n8n-nodes-base.respondToWebhook', description: 'Despacha notificación emergente toast en la interfaz de Telegram' }
+      { id: 't6', name: '[RESPONSE] Answer Callback Query Toast', type: 'n8n-nodes-base.respondToWebhook', description: 'Despacha notificación emergente toast en la interfaz de Telegram' },
+      { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       trigger: 'ACCION_PANEL_TELEGRAM',
@@ -1252,7 +1301,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
           name: "[TRIGGER] Telegram Bot Trigger",
           type: "n8n-nodes-base.telegramTrigger",
           typeVersion: 1.1,
-          position: [100, 300],
+          position: [100, 300
+    ],
           credentials: {
             telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -1364,14 +1414,18 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
     endpoint: '/webhook/reporte-semanal-conversion',
     method: 'POST',
     triggerEvent: 'CRON_SEMANAL_CONVERSION',
-    nodesCount: 5,
+    nodesCount: 9,
     slaTarget: '< 2500 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] Weekly Schedule Trigger', type: 'n8n-nodes-base.scheduleTrigger', description: 'Se activa todos los lunes a las 07:00 AM (Hora Costa Rica, UTC-6)' },
       { id: 'n2', name: '[FIRESTORE] Fetch Weekly Bookings & Analytics', type: 'n8n-nodes-base.httpRequest', description: 'Consulta consolidada de reservas en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
       { id: 'n3', name: '[LOGIC] Conversion Rate & KPI Engine', type: 'n8n-nodes-base.code', description: 'Calcula % de conversión, ingresos USD y top tours demandados' },
       { id: 'n4', name: '[LOGIC] Telegram Executive Markdown Formatter', type: 'n8n-nodes-base.code', description: 'Formatea reporte ejecutivo en Markdown con métricas clave' },
-      { id: 'n5', name: '[TELEGRAM] Send to Admin Telegram Channel', type: 'n8n-nodes-base.telegram', description: 'Despacha reporte al chat administrativo en Telegram (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n5', name: '[TELEGRAM] Send to Admin Telegram Channel', type: 'n8n-nodes-base.telegram', description: 'Despacha reporte al chat administrativo en Telegram (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'n6', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n7', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n8', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n9', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       trigger: 'CRON_SEMANAL_CONVERSION',
@@ -1391,7 +1445,8 @@ export const N8N_WORKFLOWS: N8NWorkflowDef[] = [
         {
           parameters: {
             rule: {
-              interval: [{ field: "weeks", triggerAtDay: [1], triggerAtHour: 7, triggerAtMinute: 0 }]
+              interval: [{ field: "weeks", triggerAtDay: [1
+    ], triggerAtHour: 7, triggerAtMinute: 0 }]
             }
           },
           name: "[TRIGGER] Weekly Schedule Trigger",
@@ -1530,13 +1585,17 @@ return {
     endpoint: '/webhook/sync-calendar',
     method: 'POST',
     triggerEvent: 'SYNC_CALENDAR',
-    nodesCount: 4,
+    nodesCount: 8,
     slaTarget: '< 1800 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] Calendar Trigger Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe payload con bookingId y asignaciones' },
       { id: 'n2', name: '[FIRESTORE] Query Guide & Driver Trip Details', type: 'n8n-nodes-base.httpRequest', description: 'Consulta datos en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
       { id: 'n3', name: '[CALENDAR] Google Calendar Event Creator', type: 'n8n-nodes-base.googleCalendar', description: 'Crea evento en Google Calendar con alertas (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
-      { id: 'n4', name: '[RESPONSE] Confirm Calendar Sync', type: 'n8n-nodes-base.respondToWebhook', description: 'Retorna ID de evento y confirma sincronización' }
+      { id: 'n4', name: '[RESPONSE] Confirm Calendar Sync', type: 'n8n-nodes-base.respondToWebhook', description: 'Retorna ID de evento y confirma sincronización' },
+      { id: 'n5', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n6', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n7', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n8', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       trigger: 'SYNC_CALENDAR',
@@ -1571,7 +1630,8 @@ return {
           name: "[FIRESTORE] Query Guide & Driver Trip Details",
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
-          position: [350, 300],
+          position: [350, 300
+    ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -1631,7 +1691,7 @@ return {
     endpoint: '/webhook/post-tour-nps',
     method: 'POST',
     triggerEvent: 'POST_TOUR_NPS',
-    nodesCount: 6,
+    nodesCount: 10,
     slaTarget: '< 1200 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] Post-Tour Cron Trigger', type: 'n8n-nodes-base.webhook', description: 'Se ejecuta 24 horas después de finalizar el tour' },
@@ -1639,7 +1699,11 @@ return {
       { id: 'n3', name: '[WHATSAPP] WhatsApp NPS Interactive Dispatcher', type: 'n8n-nodes-base.httpRequest', description: 'Despacha botones interactivos 1-10 por WhatsApp Business' },
       { id: 'n4', name: '[LOGIC] NPS Score Classifier', type: 'n8n-nodes-base.code', description: 'Clasifica en Promotor (9-10) o Detractor (1-6)' },
       { id: 'n5', name: '[TELEGRAM] Alert Detractor Score to Admin Chat', type: 'n8n-nodes-base.telegram', description: 'Notifica al Gerente de Experiencia en Telegram si la nota es <= 6 (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
-      { id: 'n6', name: '[RESPONSE] Confirm Survey Dispatch', type: 'n8n-nodes-base.respondToWebhook', description: 'Confirma la ejecución de encuestas post-tour' }
+      { id: 'n6', name: '[RESPONSE] Confirm Survey Dispatch', type: 'n8n-nodes-base.respondToWebhook', description: 'Confirma la ejecución de encuestas post-tour' },
+      { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       trigger: 'POST_TOUR_NPS',
@@ -1672,7 +1736,8 @@ return {
           name: "[FIRESTORE] Fetch Completed Tours 24h Prior",
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
-          position: [350, 300],
+          position: [350, 300
+    ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -1758,7 +1823,7 @@ return {
     endpoint: '/webhook/reserva-parques-sinac',
     method: 'POST',
     triggerEvent: 'RESERVA_PARQUE_NACIONAL_SINAC',
-    nodesCount: 7,
+    nodesCount: 11,
     slaTarget: '< 2000 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] Webhook SINAC Park Booking', type: 'n8n-nodes-base.webhook', description: 'Recibe datos de visitantes, parque seleccionado, fecha, hora e identificación' },
@@ -1767,7 +1832,11 @@ return {
       { id: 'n4', name: '[PAYMENT] Process SINAC Entry Ticket Payment', type: 'n8n-nodes-base.httpRequest', description: 'Procesa el pago de entradas oficiales y tasas de conservación' },
       { id: 'n5', name: '[FIRESTORE] Save Ticket Voucher & QR Code', type: 'n8n-nodes-base.httpRequest', description: 'Registra el tiquete digital QR en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
       { id: 'n6', name: '[TELEGRAM] Alert Admin & Dispatch QR Ticket', type: 'n8n-nodes-base.telegram', description: 'Notifica al canal de reservas en Telegram (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
-      { id: 'n7', name: '[RESPONSE] Return Park Ticket Confirmation', type: 'n8n-nodes-base.respondToWebhook', description: 'Entrega respuesta JSON con confirmación y pase QR al cliente' }
+      { id: 'n7', name: '[RESPONSE] Return Park Ticket Confirmation', type: 'n8n-nodes-base.respondToWebhook', description: 'Entrega respuesta JSON con confirmación y pase QR al cliente' },
+      { id: 'n8', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n9', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n10', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n11', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       trigger: 'RESERVA_PARQUE_NACIONAL_SINAC',
@@ -1825,7 +1894,8 @@ return {
           name: "[FIRESTORE] Check Park Slot Capacity & Rates",
           type: "n8n-nodes-base.httpRequest",
           typeVersion: 4.1,
-          position: [500, 300],
+          position: [500, 300
+    ],
           credentials: {
             googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
           },
@@ -1922,7 +1992,7 @@ return {
     endpoint: '/webhook/alerta-vuelo-retrasado',
     method: 'POST',
     triggerEvent: 'ALERTA_RETRASO_VUELO',
-    nodesCount: 6,
+    nodesCount: 10,
     slaTarget: '< 1500 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] Inbound Flight Delay Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe actualización de estado del vuelo desde radar aéreo' },
@@ -1930,7 +2000,11 @@ return {
       { id: 'n3', name: '[FIRESTORE] Fetch Associated Transport Booking', type: 'n8n-nodes-base.httpRequest', description: 'Consulta reserva de transporte en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
       { id: 'n4', name: '[FIRESTORE] Update Pickup Time & Driver Schedule', type: 'n8n-nodes-base.httpRequest', description: 'Actualiza nueva hora de recogida en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
       { id: 'n5', name: '[TELEGRAM] Alert Driver & Operations Team', type: 'n8n-nodes-base.telegram', description: 'Notifica al chofer asignado con nueva hora estimada en Telegram' },
-      { id: 'n6', name: '[RESPONSE] Confirm Flight Delay Reschedule', type: 'n8n-nodes-base.respondToWebhook', description: 'Responde confirmando re-programación de logística' }
+      { id: 'n6', name: '[RESPONSE] Confirm Flight Delay Reschedule', type: 'n8n-nodes-base.respondToWebhook', description: 'Responde confirmando re-programación de logística' },
+      { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       flightNumber: 'AA-1204',
@@ -1953,7 +2027,8 @@ return {
       nodes: [
         { parameters: { httpMethod: "POST", path: "alerta-vuelo-retrasado", responseMode: "responseNode" }, name: "[TRIGGER] Inbound Flight Delay Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, status: 'delay_processed', processedAt: new Date().toISOString() } };" }, name: "[SECURITY] HMAC Auth", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
-        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Fetch Associated Transport Booking", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Fetch Associated Transport Booking", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300
+    ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[FIRESTORE] Update Pickup Time & Driver Schedule", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*✈️ ALERTA VUELO RETRASADO - REAGENDAMIENTO PICK-UP*\\n\\nVuelo: `{{$json.flightNumber || 'AA-1204'}}`\\nCliente: `{{$json.customerName || 'Carlos Mendoza'}}`\\nNueva Hora Llegada: `{{$json.newEta || '16:15'}}` (Retraso: `{{$json.delayMinutes || 105}} min`)\\nChofer Asignado: `{{$json.driverPhone || '+506 8899-1122'}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Driver & Operations Team", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"mensaje\": \"Horario de transporte actualizado exitosamente por retraso de vuelo.\"\n}" }, name: "[RESPONSE] Confirm Flight Delay Reschedule", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
@@ -1984,7 +2059,7 @@ return {
     endpoint: '/webhook/reporte-objeto-olvidado',
     method: 'POST',
     triggerEvent: 'REPORTE_OBJETO_OLVIDADO',
-    nodesCount: 6,
+    nodesCount: 10,
     slaTarget: '< 1800 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] Lost & Found Report Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe reporte de objeto olvidado por el turista' },
@@ -1992,7 +2067,11 @@ return {
       { id: 'n3', name: '[FIRESTORE] Create Lost Property Ticket', type: 'n8n-nodes-base.httpRequest', description: 'Registra incidencia en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
       { id: 'n4', name: '[TELEGRAM] Alert Guide & Driver Immediate Search', type: 'n8n-nodes-base.telegram', description: 'Notifica al chofer/guía para inspección física del vehículo' },
       { id: 'n5', name: '[WHATSAPP] Dispatch Ticket Details to Customer', type: 'n8n-nodes-base.httpRequest', description: 'Envía código de rastreo al turista por WhatsApp' },
-      { id: 'n6', name: '[RESPONSE] Ticket Confirmation', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve respuesta con número de caso' }
+      { id: 'n6', name: '[RESPONSE] Ticket Confirmation', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve respuesta con número de caso' },
+      { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       touristName: 'Emma Watson',
@@ -2013,7 +2092,8 @@ return {
       nodes: [
         { parameters: { httpMethod: "POST", path: "reporte-objeto-olvidado", responseMode: "responseNode" }, name: "[TRIGGER] Lost & Found Report Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, ticketId: 'LF-2026-' + Math.floor(Math.random()*90000+10000) } };" }, name: "[SECURITY] Payload Validator", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
-        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Create Lost Property Ticket", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Create Lost Property Ticket", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300
+    ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🎒 OBJETO OLVIDADO REPORTADO*\\n\\nTicket: `{{$json.ticketId}}`\\nObjeto: `{{$json.itemDescription}}`\\nTurista: `{{$json.touristName}}` ({{$json.phone}})\\nVehículo/Tour: `{{$json.vehiclePlate}}` / `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Guide & Driver Immediate Search", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Dispatch Ticket Details to Customer", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"ticketId\": \"{{$json.ticketId}}\",\n  \"mensaje\": \"Reporte recibido. Nuestro equipo inspeccionará la unidad de transporte de inmediato.\"\n}" }, name: "[RESPONSE] Ticket Confirmation", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
@@ -2044,14 +2124,18 @@ return {
     endpoint: '/webhook/whatsapp-traductor-soporte',
     method: 'POST',
     triggerEvent: 'TRADUCCION_CHAT_MULTILINGUE',
-    nodesCount: 5,
+    nodesCount: 9,
     slaTarget: '< 1200 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] WhatsApp Multilingual Inbound', type: 'n8n-nodes-base.webhook', description: 'Recibe mensaje entrante del cliente' },
       { id: 'n2', name: '[AI ENGINE] Gemini Translation & Sentiment Analyzer', type: 'n8n-nodes-base.openAi', description: 'Detecta idioma, traduce a español para el agente y preserva sentido turístico' },
       { id: 'n3', name: '[TELEGRAM] Relay Translated Message to Operations', type: 'n8n-nodes-base.telegram', description: 'Publica mensaje en español en canal de soporte de Telegram' },
       { id: 'n4', name: '[FIRESTORE] Log Conversation Pair', type: 'n8n-nodes-base.httpRequest', description: 'Guarda historial traducido en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
-      { id: 'n5', name: '[RESPONSE] Translation Pipeline Ready', type: 'n8n-nodes-base.respondToWebhook', description: 'Retorna payload traducido para el frontend/WhatsApp' }
+      { id: 'n5', name: '[RESPONSE] Translation Pipeline Ready', type: 'n8n-nodes-base.respondToWebhook', description: 'Retorna payload traducido para el frontend/WhatsApp' },
+      { id: 'n6', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n7', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n8', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n9', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       senderPhone: '+49 171 1234567',
@@ -2070,7 +2154,8 @@ return {
       nodes: [
         { parameters: { httpMethod: "POST", path: "whatsapp-traductor-soporte", responseMode: "responseNode" }, name: "[TRIGGER] WhatsApp Multilingual Inbound", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, translatedText: $input.item.json.body.translatedSpanishMessage || 'Mensaje traducido automáticamente', processedAt: new Date().toISOString() } };" }, name: "[AI ENGINE] Gemini Translation & Sentiment Analyzer", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🌐 CHAT TRADUCIDO (Alemán ➡️ Español)*\\n\\nCliente: `{{$json.senderName}}` ({{$json.senderPhone}})\\nOriginal: `{{$json.originalMessage}}`\\nTraducción: `{{$json.translatedText}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Relay Translated Message to Operations", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [500, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🌐 CHAT TRADUCIDO (Alemán ➡️ Español)*\\n\\nCliente: `{{$json.senderName}}` ({{$json.senderPhone}})\\nOriginal: `{{$json.originalMessage}}`\\nTraducción: `{{$json.translatedText}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Relay Translated Message to Operations", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [500, 300
+    ], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Log Conversation Pair", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"translatedMessage\": \"{{$json.translatedText}}\",\n  \"language\": \"es\"\n}" }, name: "[RESPONSE] Translation Pipeline Ready", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [900, 300] }
       ],
@@ -2099,7 +2184,7 @@ return {
     endpoint: '/webhook/recepcion-vip-aeropuerto',
     method: 'POST',
     triggerEvent: 'RECEPCION_VIP_AEROPUERTO',
-    nodesCount: 6,
+    nodesCount: 10,
     slaTarget: '< 1400 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] VIP Arrival Cron / Event Trigger', type: 'n8n-nodes-base.webhook', description: 'Se activa 2 horas antes de la llegada estimada del vuelo' },
@@ -2107,7 +2192,11 @@ return {
       { id: 'n3', name: '[LOGIC] Generate Welcome Banner & Assign Driver', type: 'n8n-nodes-base.code', description: 'Formatea cartel de bienvenida y asigna chofer certificado' },
       { id: 'n4', name: '[TELEGRAM] Dispatch Driver Board & Flight Tracking', type: 'n8n-nodes-base.telegram', description: 'Notifica al chofer con cartel digital para recibir en sala de llegadas' },
       { id: 'n5', name: '[WHATSAPP] Share Driver GPS & Meet Point to Passenger', type: 'n8n-nodes-base.httpRequest', description: 'Envía foto del chofer y ubicación GPS al turista' },
-      { id: 'n6', name: '[RESPONSE] VIP Reception Active', type: 'n8n-nodes-base.respondToWebhook', description: 'Confirma activación de protocolo VIP' }
+      { id: 'n6', name: '[RESPONSE] VIP Reception Active', type: 'n8n-nodes-base.respondToWebhook', description: 'Confirma activación de protocolo VIP' },
+      { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       passengerName: 'Sir Richard Branson',
@@ -2126,7 +2215,8 @@ return {
       ],
       nodes: [
         { parameters: { httpMethod: "POST", path: "recepcion-vip-aeropuerto", responseMode: "responseNode" }, name: "[TRIGGER] VIP Arrival Cron / Event Trigger", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
-        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Fetch VIP Customer Details", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [300, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Fetch VIP Customer Details", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [300, 300
+    ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, vipStatus: 'driver_assigned', dispatchTime: new Date().toISOString() } };" }, name: "[LOGIC] Generate Welcome Banner & Assign Driver", type: "n8n-nodes-base.code", typeVersion: 2, position: [500, 300] },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*👑 PROTOCOLO VIP ACTIVADO*\\n\\nPasajero: `{{$json.passengerName}}`\\nVuelo: `{{$json.flightNumber}}` ({{$json.airport}})\\nChofer: `{{$json.assignedDriver}}`\\nRótulo: `{{$json.welcomeText}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Dispatch Driver Board & Flight Tracking", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Share Driver GPS & Meet Point to Passenger", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
@@ -2158,7 +2248,7 @@ return {
     endpoint: '/webhook/alerta-requerimientos-especiales',
     method: 'POST',
     triggerEvent: 'ALERTA_DIETA_Y_MEDICA',
-    nodesCount: 6,
+    nodesCount: 10,
     slaTarget: '< 1500 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] Medical & Dietary Alert Trigger', type: 'n8n-nodes-base.webhook', description: 'Recibe especificaciones médicas/dietéticas del turista' },
@@ -2166,7 +2256,11 @@ return {
       { id: 'n3', name: '[FIRESTORE] Query Booking & Restaurant Partners', type: 'n8n-nodes-base.httpRequest', description: 'Consulta el itinerario y cocinas asociadas en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
       { id: 'n4', name: '[TELEGRAM] Alert Kitchen Chef & Lead Guide', type: 'n8n-nodes-base.telegram', description: 'Envía requerimiento especial al chef del restaurante del tour' },
       { id: 'n5', name: '[FIRESTORE] Update Safe Meal Pass', type: 'n8n-nodes-base.httpRequest', description: 'Genera credencial de menú seguro en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
-      { id: 'n6', name: '[RESPONSE] Dietary Confirmation', type: 'n8n-nodes-base.respondToWebhook', description: 'Confirma menú adaptado al cliente' }
+      { id: 'n6', name: '[RESPONSE] Dietary Confirmation', type: 'n8n-nodes-base.respondToWebhook', description: 'Confirma menú adaptado al cliente' },
+      { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       bookingId: 'BK-DIET-8834',
@@ -2187,7 +2281,8 @@ return {
       nodes: [
         { parameters: { httpMethod: "POST", path: "alerta-requerimientos-especiales", responseMode: "responseNode" }, name: "[TRIGGER] Medical & Dietary Alert Trigger", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, safeMealVerified: true, verifiedAt: new Date().toISOString() } };" }, name: "[SECURITY] Validate Medical Confidentiality", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
-        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Query Booking & Restaurant Partners", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Query Booking & Restaurant Partners", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300
+    ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🥗 ALERTA DIETÉTICA Y MÉDICA*\\n\\nCliente: `{{$json.passengerName}}`\\nDieta: `{{$json.dietaryType}}`\\nAlergias: `{{$json.allergies ? $json.allergies.join(', ') : 'Ninguna'}}`\\nAccesibilidad: `{{$json.accessibilityRequirements || 'Estándar'}}`\\nTour: `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Kitchen Chef & Lead Guide", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[FIRESTORE] Update Safe Meal Pass", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"status\": \"DIETARY_VERIFIED\",\n  \"mensaje\": \"Menú adaptado y requerimientos comunicados al equipo del tour.\"\n}" }, name: "[RESPONSE] Dietary Confirmation", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
@@ -2218,7 +2313,7 @@ return {
     endpoint: '/webhook/cancelacion-reembolso-inteligente',
     method: 'POST',
     triggerEvent: 'CANCELACION_REEMBOLSO_AUTOMATICO',
-    nodesCount: 7,
+    nodesCount: 11,
     slaTarget: '< 2000 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] Cancellation Request Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe solicitud de cancelación de reserva' },
@@ -2227,7 +2322,11 @@ return {
       { id: 'n4', name: '[FIRESTORE] Release Tour Seat & Update Status', type: 'n8n-nodes-base.httpRequest', description: 'Actualiza reserva a cancelled en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
       { id: 'n5', name: '[TELEGRAM] Alert Finance & Admin Chat', type: 'n8n-nodes-base.telegram', description: 'Registra la cancelación y monto devuelto en Telegram' },
       { id: 'n6', name: '[WHATSAPP] Dispatch Refund Voucher / Receipt', type: 'n8n-nodes-base.httpRequest', description: 'Envía comprobante de reembolso o crédito futuro al cliente' },
-      { id: 'n7', name: '[RESPONSE] Cancellation Result', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve respuesta JSON con detalle de la devolución' }
+      { id: 'n7', name: '[RESPONSE] Cancellation Result', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve respuesta JSON con detalle de la devolución' },
+      { id: 'n8', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n9', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n10', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n11', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       bookingId: 'BK-CANCEL-5511',
@@ -2248,7 +2347,8 @@ return {
         { parameters: { httpMethod: "POST", path: "cancelacion-reembolso-inteligente", responseMode: "responseNode" }, name: "[TRIGGER] Cancellation Request Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "const hours = $input.item.json.body.hoursNoticeBeforeTour || 72;\nlet refundPct = 100;\nif (hours < 48) refundPct = 0;\nelse if (hours < 72) refundPct = 50;\nreturn { json: { ...$input.item.json.body, refundPct, refundAmountUSD: ($input.item.json.body.totalPaidUSD || 100) * (refundPct / 100) } };" }, name: "[SECURITY] HMAC & Policy Calculator", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[PAYMENT] Execute Refund Gateway (Stripe/PayPal)", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300] },
-        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Release Tour Seat & Update Status", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Release Tour Seat & Update Status", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300
+    ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🛑 REEMBOLSO PROCESADO*\\n\\nReserva: `{{$json.bookingId}}`\\nPorcentaje: `{{$json.refundPct}}%`\\nMonto Reembolsado: `${{$json.refundAmountUSD}} USD`\\nCliente: `{{$json.customerEmail}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Finance & Admin Chat", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Dispatch Refund Voucher / Receipt", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [1100, 300] },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"reembolsoPct\": {{$json.refundPct}},\n  \"montoDevueltoUSD\": {{$json.refundAmountUSD}},\n  \"mensaje\": \"Cancelación procesada de acuerdo a las políticas de Costa Rica Tours.\"\n}" }, name: "[RESPONSE] Cancellation Result", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1300, 300] }
@@ -2280,7 +2380,7 @@ return {
     endpoint: '/webhook/entrega-fotos-recuerdos',
     method: 'POST',
     triggerEvent: 'ENTREGA_ALBUM_FOTOS',
-    nodesCount: 6,
+    nodesCount: 10,
     slaTarget: '< 1600 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] Photo Album Upload Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe imágenes del guía certificado' },
@@ -2288,7 +2388,11 @@ return {
       { id: 'n3', name: '[FIRESTORE] Save Album Entry', type: 'n8n-nodes-base.httpRequest', description: 'Registra URL del álbum en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
       { id: 'n4', name: '[WHATSAPP] Dispatch Album Link to Tourist', type: 'n8n-nodes-base.httpRequest', description: 'Envía mensaje con link de descarga al turista' },
       { id: 'n5', name: '[TELEGRAM] Notify Guide Photo Delivery Completed', type: 'n8n-nodes-base.telegram', description: 'Confirma al guía la entrega exitosa del pack' },
-      { id: 'n6', name: '[RESPONSE] Photo Pack Ready', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve respuesta JSON de éxito' }
+      { id: 'n6', name: '[RESPONSE] Photo Pack Ready', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve respuesta JSON de éxito' },
+      { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       bookingId: 'BK-PHOTO-1029',
@@ -2308,7 +2412,8 @@ return {
       nodes: [
         { parameters: { httpMethod: "POST", path: "entrega-fotos-recuerdos", responseMode: "responseNode" }, name: "[TRIGGER] Photo Album Upload Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, watermarkApplied: true, deliveredAt: new Date().toISOString() } };" }, name: "[STORAGE] Watermark & Optimize HD Images", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
-        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Save Album Entry", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Save Album Entry", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300
+    ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Dispatch Album Link to Tourist", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300] },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*📸 ÁLBUM DE FOTOS ENTREGADO*\\n\\nTour: `{{$json.tourName}}`\\nGuía: `{{$json.guideName}}`\\nFotos: `{{$json.photoCount}} HD`\\nLink: `{{$json.albumUrl}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Notify Guide Photo Delivery Completed", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"albumUrl\": \"{{$json.albumUrl}}\",\n  \"mensaje\": \"Álbum de fotos entregado al cliente por WhatsApp y correo.\"\n}" }, name: "[RESPONSE] Photo Pack Ready", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
@@ -2339,7 +2444,7 @@ return {
     endpoint: '/webhook/sincronizacion-operadores-locales',
     method: 'POST',
     triggerEvent: 'SINCRONIZACION_OPERADORES',
-    nodesCount: 6,
+    nodesCount: 10,
     slaTarget: '< 1500 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] Supplier Inventory Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe actualización de inventario del operador' },
@@ -2347,7 +2452,11 @@ return {
       { id: 'n3', name: '[FIRESTORE] Batch Update Tour Prices & Available Seats', type: 'n8n-nodes-base.httpRequest', description: 'Actualiza colección de tours en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
       { id: 'n4', name: '[TELEGRAM] Operations Change Alert', type: 'n8n-nodes-base.telegram', description: 'Alerta al equipo de operaciones sobre cambios en tarifas o cupos' },
       { id: 'n5', name: '[CACHE] Invalidate Search Cache', type: 'n8n-nodes-base.httpRequest', description: 'Invalida caché de búsquedas en el frontend' },
-      { id: 'n6', name: '[RESPONSE] Inventory Sync Ok', type: 'n8n-nodes-base.respondToWebhook', description: 'Confirma sincronización exitosa' }
+      { id: 'n6', name: '[RESPONSE] Inventory Sync Ok', type: 'n8n-nodes-base.respondToWebhook', description: 'Confirma sincronización exitosa' },
+      { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       operatorId: 'OP-ARENAL-EXPLORE-01',
@@ -2367,7 +2476,8 @@ return {
       nodes: [
         { parameters: { httpMethod: "POST", path: "sincronizacion-operadores-locales", responseMode: "responseNode" }, name: "[TRIGGER] Supplier Inventory Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, syncedAt: new Date().toISOString() } };" }, name: "[SECURITY] Validate Operator Key", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
-        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Batch Update Tour Prices & Available Seats", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Batch Update Tour Prices & Available Seats", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300
+    ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🔄 SINCRONIZACIÓN DE OPERADOR LOCAL*\\n\\nOperador: `{{$json.operatorId}}`\\nTour: `{{$json.tourCode}}`\\nCupos Disponibles: `{{$json.availableSeats}}`\\nTarifa: `${{$json.updatedPriceUSD}} USD`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Operations Change Alert", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[CACHE] Invalidate Search Cache", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"status\": \"SYNC_SUCCESS\",\n  \"mensaje\": \"Inventario y tarifas del operador sincronizadas en tiempo real.\"\n}" }, name: "[RESPONSE] Inventory Sync Ok", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
@@ -2398,7 +2508,7 @@ return {
     endpoint: '/webhook/alerta-emergencia-sos',
     method: 'POST',
     triggerEvent: 'EMERGENCIA_SOS_RUTA',
-    nodesCount: 6,
+    nodesCount: 10,
     slaTarget: '< 800 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] Emergency SOS Panic Trigger', type: 'n8n-nodes-base.webhook', description: 'Activado por botón SOS del cliente o guía' },
@@ -2406,7 +2516,11 @@ return {
       { id: 'n3', name: '[TELEGRAM] Instant SOS Alert to Emergency Command', type: 'n8n-nodes-base.telegram', description: 'Alarma sonora e informe de geolocalización GPS en Telegram' },
       { id: 'n4', name: '[FIRESTORE] Log Emergency Incident', type: 'n8n-nodes-base.httpRequest', description: 'Registra coordenadas e incidentes en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
       { id: 'n5', name: '[INSURANCE] Notify Assist-CR Travel Insurance Hotline', type: 'n8n-nodes-base.httpRequest', description: 'Activa póliza de cobertura médica y auxilio médico/vial' },
-      { id: 'n6', name: '[RESPONSE] Emergency Protocol Active', type: 'n8n-nodes-base.respondToWebhook', description: 'Responde confirmando asistencia médica o vial en camino' }
+      { id: 'n6', name: '[RESPONSE] Emergency Protocol Active', type: 'n8n-nodes-base.respondToWebhook', description: 'Responde confirmando asistencia médica o vial en camino' },
+      { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       incidentId: 'SOS-2026-911',
@@ -2426,7 +2540,8 @@ return {
       nodes: [
         { parameters: { httpMethod: "POST", path: "alerta-emergencia-sos", responseMode: "responseNode" }, name: "[TRIGGER] Emergency SOS Panic Trigger", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, emergencyLevel: 'CRITICAL', dispatchedAt: new Date().toISOString() } };" }, name: "[HIGH PRIORITY] Priority Alert Escalator", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🚨 ALERTA SOS CRÍTICA - ASISTENCIA EN CAMINO*\\n\\nIncidente: `{{$json.incidentId}}`\\nTipo: `{{$json.incidentType}}`\\nTurista: `{{$json.touristName}}` ({{$json.phone}})\\nUbicación: `{{$json.location?.placeName}}` (GPS: `{{$json.location?.lat}}, {{$json.location?.lng}}`)\\nPasajeros: `{{$json.passengersCount}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Instant SOS Alert to Emergency Command", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [500, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🚨 ALERTA SOS CRÍTICA - ASISTENCIA EN CAMINO*\\n\\nIncidente: `{{$json.incidentId}}`\\nTipo: `{{$json.incidentType}}`\\nTurista: `{{$json.touristName}}` ({{$json.phone}})\\nUbicación: `{{$json.location?.placeName}}` (GPS: `{{$json.location?.lat}}, {{$json.location?.lng}}`)\\nPasajeros: `{{$json.passengersCount}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Instant SOS Alert to Emergency Command", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [500, 300
+    ], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Log Emergency Incident", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[INSURANCE] Notify Assist-CR Travel Insurance Hotline", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"status\": \"SOS_DISPATCHED\",\n  \"mensaje\": \"Equipo de emergencia y vehículo de sustitución despachados.\"\n}" }, name: "[RESPONSE] Emergency Protocol Active", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
@@ -2457,7 +2572,7 @@ return {
     endpoint: '/webhook/booster-reseñas-incentivos',
     method: 'POST',
     triggerEvent: 'BOOSTER_RESEÑAS_INCENTIVO',
-    nodesCount: 6,
+    nodesCount: 10,
     slaTarget: '< 1500 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] NPS Promoter Score Trigger', type: 'n8n-nodes-base.webhook', description: 'Recibe evento cuando un cliente otorga NPS 9 o 10' },
@@ -2465,7 +2580,11 @@ return {
       { id: 'n3', name: '[FIRESTORE] Save Referral Coupon', type: 'n8n-nodes-base.httpRequest', description: 'Guarda cupón de descuento en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
       { id: 'n4', name: '[WHATSAPP] Send TripAdvisor & Discount Invitation', type: 'n8n-nodes-base.httpRequest', description: 'Envía invitación interactiva por WhatsApp' },
       { id: 'n5', name: '[TELEGRAM] Log Marketing Referral Campaign', type: 'n8n-nodes-base.telegram', description: 'Notifica al equipo de mercadeo en Telegram' },
-      { id: 'n6', name: '[RESPONSE] Booster Dispatch Success', type: 'n8n-nodes-base.respondToWebhook', description: 'Retorna confirmación de invitación enviada' }
+      { id: 'n6', name: '[RESPONSE] Booster Dispatch Success', type: 'n8n-nodes-base.respondToWebhook', description: 'Retorna confirmación de invitación enviada' },
+      { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
+      { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
+      { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
     ],
     samplePayload: {
       touristName: 'David Miller',
@@ -2485,7 +2604,8 @@ return {
       nodes: [
         { parameters: { httpMethod: "POST", path: "booster-reseñas-incentivos", responseMode: "responseNode" }, name: "[TRIGGER] NPS Promoter Score Trigger", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, promoCode: 'PURAVIDA15-' + Math.floor(Math.random()*9000+1000), generatedAt: new Date().toISOString() } };" }, name: "[LOGIC] Coupon Generator Engine", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
-        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Save Referral Coupon", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Save Referral Coupon", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [500, 300
+    ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Send TripAdvisor & Discount Invitation", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300] },
         { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*⭐ REPUTATION BOOSTER ENVIADO*\\n\\nCliente: `{{$json.touristName}}` (NPS: `{{$json.npsScore}}/10`)\\nCupón 15%: `{{$json.promoCode}}`\\nTour: `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Log Marketing Referral Campaign", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"promoCode\": \"{{$json.promoCode}}\",\n  \"mensaje\": \"Invitación a reseña y cupón de regalo enviado por WhatsApp.\"\n}" }, name: "[RESPONSE] Booster Dispatch Success", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
