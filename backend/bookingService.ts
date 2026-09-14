@@ -823,3 +823,59 @@ export async function getWeeklyConversionMetrics(): Promise<{
     paymentBreakdown
   };
 }
+
+/**
+ * Busca una reserva en tiempo real por código de confirmación, ID o email
+ */
+export async function findBookingByCodeOrEmail(identifier: string): Promise<any | null> {
+  if (!identifier) return null;
+  const clean = identifier.trim().toLowerCase();
+  const all = await getAllBookings();
+  const found = all.find((b: any) => {
+    const bId = (b.bookingId || b.id || '').toLowerCase();
+    const cEmail = (b.customer?.email || b.customerEmail || '').toLowerCase();
+    const cName = (b.customer?.name || b.customer?.fullName || '').toLowerCase();
+    const pnr = (b.flightDetails?.pnrLocator || '').toLowerCase();
+    return (
+      (bId && (bId === clean || bId.includes(clean) || clean.includes(bId))) ||
+      (cEmail && cEmail === clean) ||
+      (pnr && pnr === clean) ||
+      (clean.length > 5 && cName && cName.includes(clean))
+    );
+  });
+  return found || null;
+}
+
+export interface DailyOpsLogItem {
+  id: string;
+  timestamp: string;
+  type: 'emergency' | 'weather_alert' | 'route_incident' | 'provider_issue' | 'operational_note';
+  severity: 'baja' | 'media' | 'alta' | 'emergencia';
+  details: string;
+  actionTaken: string;
+  assignedTo?: string;
+  resolved: boolean;
+}
+
+const dailyOpsLogs: DailyOpsLogItem[] = [];
+
+/**
+ * Registra una acción o incidente operativo para el reporte diario de operaciones
+ */
+export function recordDailyOpsLog(item: Omit<DailyOpsLogItem, 'id' | 'timestamp'>): DailyOpsLogItem {
+  const logItem: DailyOpsLogItem = {
+    id: `OPS-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
+    timestamp: new Date().toISOString(),
+    ...item
+  };
+  dailyOpsLogs.unshift(logItem);
+  if (dailyOpsLogs.length > 200) dailyOpsLogs.pop();
+  return logItem;
+}
+
+/**
+ * Retorna los logs operativos recientes
+ */
+export function getDailyOpsLogs(): DailyOpsLogItem[] {
+  return dailyOpsLogs;
+}

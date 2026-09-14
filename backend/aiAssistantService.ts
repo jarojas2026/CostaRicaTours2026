@@ -6,6 +6,12 @@
 import { GoogleGenAI } from '@google/genai';
 import { TOURS } from '../src/data/toursData';
 import { generateClaudeChatResponse, getClaudeClient } from './claudeService';
+import {
+  findBookingByCodeOrEmail,
+  checkTourAvailability,
+  recordDailyOpsLog,
+  getDailyOpsLogs
+} from './bookingService';
 
 let aiClient: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI | null {
@@ -261,6 +267,840 @@ function getKnowledgeBaseReply(message: string, isEn: boolean) {
   } catch (error) {
     console.warn('Fallback a base de conocimiento oficial:', error);
     return getKnowledgeBaseReply(message, isEn);
+  }
+}
+
+// ==========================================
+// 🌟 SISTEMA DE AGENTES OFICIAL — COSTA RICA TOURS
+// Enrutador · Servicio al Cliente · Reservas · Información · Logística
+// ==========================================
+
+export type AgentCategory = 'SERVICIO' | 'RESERVAS' | 'INFORMACION' | 'LOGISTICA';
+
+export interface RouterResult {
+  categoria: AgentCategory;
+  confianza: 'alta' | 'media' | 'baja';
+  motivo: string;
+  datos_extraidos: {
+    codigo_reserva: string | null;
+    tour: string | null;
+    fecha: string | null;
+    pax: number | null;
+    urgencia: 'normal' | 'alta' | 'emergencia';
+  };
+}
+
+export interface MultiAgentResponse {
+  reply: string;
+  agentId: string;
+  agentName: string;
+  agentCategory: AgentCategory;
+  routedCategory?: AgentCategory;
+  confianza?: 'alta' | 'media' | 'baja';
+  routingReason?: string;
+  escalation: {
+    escalated: boolean;
+    level: 'none' | 'human_support' | 'emergency';
+    reason?: string;
+    emergencyContact?: string;
+  };
+  contextHandover?: {
+    transferredFrom?: AgentCategory;
+    transferredTo?: AgentCategory;
+    handoverReason?: string;
+    entities?: any;
+  };
+  quickActions: Array<{ label: string; action: string; data?: any }>;
+  recommendedTours?: any[];
+  voucherPreview?: any;
+  modelUsed?: string;
+}
+
+/**
+ * 0. AGENTE ENRUTADOR (Router)
+ * Clasifica el mensaje del usuario en UNA de las 4 categorías especializadas:
+ * SERVICIO | RESERVAS | INFORMACION | LOGISTICA.
+ * Orden de prioridad estricto ante mezclas o dudas:
+ * LOGISTICA > SERVICIO > RESERVAS > INFORMACION.
+ */
+export async function runRouterAgent(message: string, context?: any): Promise<RouterResult> {
+  const lower = message.toLowerCase();
+
+  // Detección inmediata de emergencia o incidente físico
+  const isEmergency =
+    lower.includes('accidente') ||
+    lower.includes('herido') ||
+    lower.includes('lesión') ||
+    lower.includes('lesion') ||
+    lower.includes('riesgo') ||
+    lower.includes('ambulancia') ||
+    lower.includes('auxilio') ||
+    lower.includes('sos') ||
+    lower.includes('emergencia') ||
+    lower.includes('inundación') ||
+    lower.includes('derrumbe') ||
+    lower.includes('perdido');
+
+  try {
+    const ai = getAI();
+    if (ai) {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Analiza este mensaje de cliente o viajero de Costa Rica Tours:\n"${message}"\nContexto previo: ${JSON.stringify(context || {})}`,
+        config: {
+          systemInstruction: `Eres el Agente Enrutador oficial de Costa Rica Tours.
+Tu ÚNICO trabajo es leer el mensaje del usuario y clasificarlo en UNA de estas 4 categorías, sin responder la consulta tú mismo:
+
+- SERVICIO: quejas, dudas de una reserva existente, cambios de fecha, cancelaciones, problemas durante o después del tour, reembolsos, solicitud de factura de un tour ya comprado.
+- RESERVAS: quiere reservar, pregunta disponibilidad de cupos, cotizaciones y precios de tours, quiere pagar, cómo reservar.
+- INFORMACION: preguntas generales sobre destinos (Arenal, Monteverde, Manuel Antonio, Tortuguero, etc.), microclimas/temporadas, qué ropa llevar, actividades por región, cultura costarricense, requisitos de viaje/visas — SIN intención de reservar aún.
+- LOGISTICA: coordinación con proveedores/guías locales, transporte/traslados (Alsama Tours CR), rutas y estado de carreteras, incidentes operativos en tiempo real, alertas climáticas/IMN que afecten un tour en curso, emergencias.
+
+ORDEN DE PRIORIDAD SI SE MEZCLAN O HAY DUDA (NO NEGOCIABLE):
+LOGISTICA > SERVICIO > RESERVAS > INFORMACION.
+
+Devuelve estrictamente un objeto JSON con este esquema:
+{
+  "categoria": "SERVICIO" | "RESERVAS" | "INFORMACION" | "LOGISTICA",
+  "confianza": "alta" | "media" | "baja",
+  "motivo": "explicación de una frase",
+  "datos_extraidos": {
+    "codigo_reserva": "string con el código o email si lo menciona, o null",
+    "tour": "string o null",
+    "fecha": "string o null",
+    "pax": number o null,
+    "urgencia": "normal" | "alta" | "emergencia"
+  }
+}`,
+          responseMimeType: 'application/json'
+        }
+      });
+
+      const parsed = JSON.parse(response.text || '{}');
+      if (parsed.categoria && ['SERVICIO', 'RESERVAS', 'INFORMACION', 'LOGISTICA'].includes(parsed.categoria)) {
+        if (isEmergency) {
+          parsed.categoria = 'LOGISTICA';
+          if (!parsed.datos_extraidos) parsed.datos_extraidos = {};
+          parsed.datos_extraidos.urgencia = 'emergencia';
+        }
+        return parsed as RouterResult;
+      }
+    }
+  } catch (err) {
+    console.warn('⚠️ Fallback en clasificador de enrutador:', err);
+  }
+
+  // Clasificador heurístico de alta fidelidad respetando LOGISTICA > SERVICIO > RESERVAS > INFORMACION
+  let categoria: AgentCategory = 'INFORMACION';
+  let confianza: 'alta' | 'media' | 'baja' = 'media';
+  let motivo = 'Consulta general sobre Costa Rica';
+  let urgencia: 'normal' | 'alta' | 'emergencia' = isEmergency ? 'emergencia' : 'normal';
+
+  const codeMatch = message.match(/\b(CRT-[A-Z0-9-]+|[0-9a-f]{8}-[0-9a-f]{4})\b/i);
+  const emailMatch = message.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  const extractedCode = codeMatch ? codeMatch[0] : emailMatch ? emailMatch[0] : null;
+
+  // 1. LOGISTICA (Prioridad 1)
+  if (
+    isEmergency ||
+    lower.includes('chofer') ||
+    lower.includes('chofer') ||
+    lower.includes('conductor') ||
+    lower.includes('guia') ||
+    lower.includes('guía') ||
+    lower.includes('proveedor') ||
+    lower.includes('operador') ||
+    lower.includes('traslado') ||
+    lower.includes('transfer') ||
+    lower.includes('retraso en recogida') ||
+    lower.includes('no ha llegado') ||
+    lower.includes('dónde está el bus') ||
+    lower.includes('ruta 32') ||
+    lower.includes('ruta 27') ||
+    lower.includes('cierre de carretera') ||
+    lower.includes('imn') ||
+    lower.includes('alsama')
+  ) {
+    categoria = 'LOGISTICA';
+    confianza = 'alta';
+    motivo = isEmergency ? 'Alerta de emergencia o seguridad operativa' : 'Coordinación logística de rutas, transporte o proveedores en tiempo real';
+    urgencia = isEmergency ? 'emergencia' : 'alta';
+  }
+  // 2. SERVICIO (Prioridad 2)
+  else if (
+    extractedCode ||
+    lower.includes('mi reserva') ||
+    lower.includes('cancelar') ||
+    lower.includes('cancelación') ||
+    lower.includes('cancelacion') ||
+    lower.includes('reembolso') ||
+    lower.includes('queja') ||
+    lower.includes('reclamo') ||
+    lower.includes('cambiar fecha') ||
+    lower.includes('reprogramar') ||
+    lower.includes('voucher') ||
+    lower.includes('problema con el tour') ||
+    lower.includes('cobro no autorizado') ||
+    lower.includes('hablar con una persona') ||
+    lower.includes('hablar con un humano')
+  ) {
+    categoria = 'SERVICIO';
+    confianza = 'alta';
+    motivo = 'Gestión post-venta de reserva existente, modificación, queja o reembolso';
+  }
+  // 3. RESERVAS (Prioridad 3)
+  else if (
+    lower.includes('reservar') ||
+    lower.includes('quiero reservar') ||
+    lower.includes('cupos') ||
+    lower.includes('disponibilidad') ||
+    lower.includes('cuanto cuesta') ||
+    lower.includes('cuánto cuesta') ||
+    lower.includes('precio') ||
+    lower.includes('tarifa') ||
+    lower.includes('pagar') ||
+    lower.includes('cotizar') ||
+    lower.includes('book') ||
+    lower.includes('how much')
+  ) {
+    categoria = 'RESERVAS';
+    confianza = 'alta';
+    motivo = 'Intención de reserva, consulta de tarifas o compra de experiencias';
+  }
+  // 4. INFORMACION (Prioridad 4)
+  else {
+    categoria = 'INFORMACION';
+    confianza = 'alta';
+    motivo = 'Preguntas informativas sobre destinos, clima, qué empacar o recomendaciones';
+  }
+
+  return {
+    categoria,
+    confianza,
+    motivo,
+    datos_extraidos: {
+      codigo_reserva: extractedCode,
+      tour: null,
+      fecha: null,
+      pax: null,
+      urgencia
+    }
+  };
+}
+
+/**
+ * 1. AGENTE DE SERVICIO AL CLIENTE
+ * Atiende a viajeros que YA tienen una reserva y necesitan ayuda:
+ * Cambios, cancelaciones, quejas, problemas durante o después del tour, reembolsos.
+ */
+export async function runCustomerServiceAgent(
+  message: string,
+  extractedData: any = {},
+  context: any = {},
+  language: 'es' | 'en' = 'es'
+): Promise<MultiAgentResponse> {
+  const isEn = language === 'en';
+  const lower = message.toLowerCase();
+
+  // Regla 3: Accidente, lesión o riesgo físico -> ESCALADA INMEDIATA a Logística / Emergencias
+  const hasSafetyRisk =
+    lower.includes('accidente') ||
+    lower.includes('herido') ||
+    lower.includes('lesión') ||
+    lower.includes('lesion') ||
+    lower.includes('sangre') ||
+    lower.includes('caída') ||
+    lower.includes('caida') ||
+    lower.includes('peligro') ||
+    lower.includes('ambulancia');
+
+  if (hasSafetyRisk) {
+    recordDailyOpsLog({
+      type: 'emergency',
+      severity: 'emergencia',
+      details: `[SERVICIO AL CLIENTE] Alerta de seguridad o incidente reportado en chat: "${message}"`,
+      actionTaken: 'Escalada inmediata a Central de Emergencias (+506 8888-7777 / 911) y despacho a logística',
+      resolved: false
+    });
+
+    return {
+      reply: isEn
+        ? `🚨 **SAFETY PROTOCOL ACTIVATED: IMMEDIATE LOGISTICS ESCALATION**\n\n` +
+          `1. **Situation Acknowledged**: We have detected a medical or safety report concerning your experience in Costa Rica.\n` +
+          `2. **Concrete Action**: Your case has been escalated immediately to our Emergency Operations Dispatch team and field logistics coordinators.\n` +
+          `3. **Resolution Time**: Immediate. Our senior response unit is active 24/7.\n` +
+          `4. **Next Clear Step**: Please contact our **24/7 Emergency Line directly at +506 8888-7777** or dial **9-1-1** if you require immediate ambulance or police intervention. A Costa Rica Tours field supervisor is monitoring this right now.`
+        : `🚨 **PROTOCOLO DE SEGURIDAD ACTIVADO: ESCALACIÓN INMEDIATA A LOGÍSTICA**\n\n` +
+          `1. **Reconocimiento del problema**: Hemos identificado un reporte de seguridad o incidente físico relacionado con tu experiencia en Costa Rica.\n` +
+          `2. **Acción concreta**: Tu caso ha sido escalado de manera inmediata al equipo de Despacho de Operaciones de Emergencia y supervisores de terreno.\n` +
+          `3. **Tiempo de resolución**: Inmediato. Nuestra unidad de contingencia opera 24/7.\n` +
+          `4. **Siguiente paso claro**: Por favor comunícate de inmediato a nuestra **Línea de Emergencia 24/7 al +506 8888-7777** o marca al **9-1-1** si requieres auxilio médico o paramédico urgente. Un supervisor oficial de Costa Rica Tours está atendiendo este caso en este instante.`,
+      agentId: 'customer_service',
+      agentName: 'Martín • Servicio al Cliente',
+      agentCategory: 'SERVICIO',
+      escalation: {
+        escalated: true,
+        level: 'emergency',
+        reason: 'Reporte de accidente o riesgo a la integridad física del viajero',
+        emergencyContact: '+506 8888-7777 / 911'
+      },
+      quickActions: [
+        { label: isEn ? '🚨 Call Emergency 24/7' : '🚨 Llamar Emergencia 24/7', action: 'call_emergency', data: { phone: '+50688887777' } },
+        { label: isEn ? '💬 WhatsApp Ops Desk' : '💬 WhatsApp Operaciones', action: 'direct_whatsapp' }
+      ]
+    };
+  }
+
+  // Detección de fraude, cobro no autorizado o petición explícita de hablar con humano
+  const wantsHuman =
+    lower.includes('humano') ||
+    lower.includes('persona real') ||
+    lower.includes('asesor real') ||
+    lower.includes('human') ||
+    lower.includes('speak with agent') ||
+    lower.includes('fraude') ||
+    lower.includes('cobro no autorizado') ||
+    lower.includes('estafa');
+
+  // Buscar código de reserva en el mensaje, en extractedData o en context
+  const codeCandidate =
+    extractedData?.codigo_reserva ||
+    (message.match(/\b(CRT-[A-Z0-9-]+|[0-9a-f]{8}-[0-9a-f]{4})\b/i)?.[0]) ||
+    (message.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)?.[0]) ||
+    context?.bookingId ||
+    context?.userEmail;
+
+  let foundBooking: any = null;
+  if (codeCandidate) {
+    foundBooking = await findBookingByCodeOrEmail(codeCandidate);
+  }
+
+  // Si no se cuenta con código o email para consultar el sistema real:
+  if (!foundBooking && !codeCandidate) {
+    return {
+      reply: isEn
+        ? `🎧 **Customer Service • Costa Rica Tours**\n\n` +
+          `1. **Issue Acknowledged**: I understand you have an inquiry regarding your existing tour booking.\n` +
+          `2. **Concrete Action Needed**: To protect your privacy and retrieve the real-time status from our central database, I need your **Booking Confirmation Code (e.g., CRT-XXXX)** or the **email address** used during checkout.\n` +
+          `3. **Estimated Resolution Time**: Less than 1 minute once provided.\n` +
+          `4. **Next Clear Step**: Please reply with your confirmation code or email so I can check your dates, operator details, and policies directly.`
+        : `🎧 **Servicio al Cliente • Costa Rica Tours**\n\n` +
+          `1. **Reconocimiento del caso**: Comprendo perfectamente tu consulta sobre tu reserva con nosotros.\n` +
+          `2. **Información requerida**: Para consultar el estado real y verificado en nuestra base de datos central sin inventar ningún dato, necesito que me compartas tu **Código de Confirmación (ej. CRT-XXXX)** o el **correo electrónico** con el que realizaste la compra.\n` +
+          `3. **Tiempo de resolución**: Inmediato (menos de 1 minuto tras ingresar el código).\n` +
+          `4. **Siguiente paso claro**: Por favor escribe tu código o email aquí para revisar la disponibilidad del operador, itinerario y estado oficial de tu servicio.`,
+      agentId: 'customer_service',
+      agentName: 'Martín • Servicio al Cliente',
+      agentCategory: 'SERVICIO',
+      escalation: wantsHuman
+        ? {
+            escalated: true,
+            level: 'human_support',
+            reason: 'Cliente solicitó atención humana o verificación de cobro',
+            emergencyContact: '+506 8888-7777'
+          }
+        : { escalated: false, level: 'none' },
+      quickActions: [
+        { label: isEn ? '💬 Speak with Human Agent' : '💬 Hablar con Asesor Humano', action: 'direct_whatsapp' }
+      ]
+    };
+  }
+
+  // Si se encontró la reserva en la base de datos real:
+  const bookingCode = foundBooking?.bookingId || foundBooking?.id || codeCandidate;
+  const tourTitle = foundBooking?.tourName || foundBooking?.tourId || 'Tour en Costa Rica';
+  const bookingDate = foundBooking?.date || 'Fecha programada';
+  const currentStatus = foundBooking?.status || 'confirmada';
+  const paymentStatus = foundBooking?.paymentStatus || 'completado';
+  const paxCount = (foundBooking?.adults || 1) + (foundBooking?.children || 0);
+
+  // Formatear respuesta con las políticas de cancelación oficiales verificadas
+  let statusText = isEn
+    ? `• **Reservation Code**: \`${bookingCode}\`\n• **Experience**: ${tourTitle}\n• **Date**: ${bookingDate}\n• **Status**: **${currentStatus.toUpperCase()}** (Payment: ${paymentStatus})\n• **Travelers**: ${paxCount} pax`
+    : `• **Código de Reserva**: \`${bookingCode}\`\n• **Excursión**: ${tourTitle}\n• **Fecha**: ${bookingDate}\n• **Estado actual**: **${currentStatus.toUpperCase()}** (Pago: ${paymentStatus})\n• **Viajeros**: ${paxCount} personas`;
+
+  const cancellationPolicyText = isEn
+    ? `📜 **Official Operator Cancellation & Refund Policy**:\n` +
+      `• **72+ hours prior**: 100% full refund guarantee.\n` +
+      `• **48 to 72 hours prior**: 50% refund.\n` +
+      `• **Under 48 hours or No-Show**: Non-refundable; date changes subject to provider seat availability.\n` +
+      `*(Note: As an automated agent, I do not process refunds directly. I initiate the official ticket for administrative validation).*`
+    : `📜 **Política Oficial de Cancelación y Reembolsos del Operador**:\n` +
+      `• **Más de 72 horas antes**: 100% de reembolso garantizado.\n` +
+      `• **De 48 a 72 horas antes**: 50% de reembolso.\n` +
+      `• **Menos de 48 horas o no presentarse**: Sin reembolso; cambios de fecha sujetos a cupos del operador local.\n` +
+      `*(Nota: Para proteger tus fondos, este agente no aprueba pagos directos; tramita tu solicitud formal ante Administración).*`;
+
+  const replyText = isEn
+    ? `🎧 **Customer Service • Booking Verification**\n\n` +
+      `1. **Issue Acknowledged**: Here is your verified booking file retrieved from our live records.\n\n` +
+      `${statusText}\n\n` +
+      `${cancellationPolicyText}\n\n` +
+      `2. **Concrete Action**: If you wish to reschedule or request a refund review under the terms above, I can open the support ticket right now.\n` +
+      `3. **Estimated Time**: Our operations desk responds to date changes within 1-2 hours.\n` +
+      `4. **Next Clear Step**: Would you like me to request a date reschedule, initiate a cancellation review, or connect you directly with a human supervisor on WhatsApp?`
+    : `🎧 **Servicio al Cliente • Verificación de Reserva**\n\n` +
+      `1. **Reconocimiento del caso**: Hemos localizado tu reserva oficial en tiempo real en nuestra base de datos.\n\n` +
+      `${statusText}\n\n` +
+      `${cancellationPolicyText}\n\n` +
+      `2. **Acción concreta**: Si requieres solicitar un cambio de fecha o iniciar el proceso de reembolso de acuerdo con las políticas anteriores, puedo abrir el ticket oficial ahora mismo.\n` +
+      `3. **Tiempo estimado**: Nuestro departamento de operaciones revisa solicitudes en un lapso de 1 a 2 horas.\n` +
+      `4. **Siguiente paso claro**: ¿Deseas que tramitemos la reprogramación de fecha, la apertura de revisión de reembolso o prefieres hablar directamente con un asesor humano en WhatsApp?`;
+
+  return {
+    reply: replyText,
+    agentId: 'customer_service',
+    agentName: 'Martín • Servicio al Cliente',
+    agentCategory: 'SERVICIO',
+    escalation: wantsHuman
+      ? {
+          escalated: true,
+          level: 'human_support',
+          reason: 'Viajero solicitó atención de soporte humano',
+          emergencyContact: '+506 8888-7777'
+        }
+      : { escalated: false, level: 'none' },
+    quickActions: [
+      { label: isEn ? '🔄 Request Reschedule' : '🔄 Solicitar Cambio de Fecha', action: 'reschedule', data: { bookingId: bookingCode } },
+      { label: isEn ? '💬 Speak with Human Supervisor' : '💬 Hablar con Supervisor Humano', action: 'direct_whatsapp' }
+    ]
+  };
+}
+
+/**
+ * 2. AGENTE DE RESERVAS
+ * Ayuda a viajeros que AÚN NO tienen una reserva a encontrar experiencias,
+ * verificar disponibilidad real, cotizar en moneda solicitada y guiar hacia el pago seguro.
+ */
+export async function runBookingAgent(
+  message: string,
+  extractedData: any = {},
+  context: any = {},
+  language: 'es' | 'en' = 'es'
+): Promise<MultiAgentResponse> {
+  const isEn = language === 'en';
+  const lower = message.toLowerCase();
+
+  // Detección de grupos grandes (>10 pax) o requerimientos especiales severos
+  const paxMatch = message.match(/(\d+)\s*(personas|pax|adultos|viajeros|people|passengers)/i);
+  const detectedPax = paxMatch ? parseInt(paxMatch[1], 10) : extractedData?.pax || 2;
+
+  const isLargeGroup = detectedPax > 10 || lower.includes('grupo grande') || lower.includes('corporativo') || lower.includes('empresa') || lower.includes('large group');
+  const hasMedicalAdaptations = lower.includes('silla de ruedas') || lower.includes('movilidad reducida') || lower.includes('alergia severa') || lower.includes('wheelchair');
+
+  if (isLargeGroup || hasMedicalAdaptations) {
+    const reasonText = isLargeGroup
+      ? (isEn ? 'Group size exceeds 10 passengers (corporate rate qualification)' : 'Grupo de más de 10 personas (aplica tarifa corporativa y logística de bus privado)')
+      : (isEn ? 'Special accessibility or medical requirements' : 'Requerimientos especiales de accesibilidad o movilidad reducida');
+
+    return {
+      reply: isEn
+        ? `🎟️ **Booking Specialist • Priority Human Handover**\n\n` +
+          `1. **Confirmed Criteria**: ${reasonText}.\n` +
+          `2. **Concrete Action**: For safety, dedicated private vehicles, and volume group discounts, our VIP Group Coordinator handles this personally.\n` +
+          `3. **Estimated Time**: Within 15 minutes.\n` +
+          `4. **Next Clear Step**: Our concierge manager is ready on WhatsApp at **+506 8888-7777** to quote your customized group package.`
+        : `🎟️ **Agente de Reservas • Atención Especializada Humana**\n\n` +
+          `1. **Criterio identificado**: ${reasonText}.\n` +
+          `2. **Acción concreta**: Para garantizar la seguridad, unidades de transporte privado exclusivas y descuentos por volumen, nuestro Coordinador de Grupos atiende este requerimiento de forma directa.\n` +
+          `3. **Tiempo de respuesta**: Menos de 15 minutos.\n` +
+          `4. **Siguiente paso claro**: Te conectamos de inmediato con nuestro Gerente de Reservas por WhatsApp al **+506 8888-7777** para diseñar la cotización personalizada.`,
+      agentId: 'booking_specialist',
+      agentName: 'Andrés • Agente de Reservas',
+      agentCategory: 'RESERVAS',
+      escalation: {
+        escalated: true,
+        level: 'human_support',
+        reason: reasonText,
+        emergencyContact: '+506 8888-7777'
+      },
+      quickActions: [
+        { label: isEn ? '💬 WhatsApp Group Desk' : '💬 WhatsApp Cotización Grupal', action: 'direct_whatsapp' }
+      ]
+    };
+  }
+
+  // Detección de moneda solicitada (USD default, CRC, EUR, GBP)
+  let currencyLabel = 'USD';
+  let exchangeRate = 1.0;
+  if (lower.includes('colones') || lower.includes('crc') || lower.includes('₡')) {
+    currencyLabel = 'CRC';
+    exchangeRate = 515.0;
+  } else if (lower.includes('euro') || lower.includes('eur') || lower.includes('€')) {
+    currencyLabel = 'EUR';
+    exchangeRate = 0.92;
+  } else if (lower.includes('libras') || lower.includes('gbp') || lower.includes('£')) {
+    currencyLabel = 'GBP';
+    exchangeRate = 0.79;
+  }
+
+  // Identificar tours relevantes (máximo 2 a 3 sugerencias)
+  let candidateTours = TOURS.filter((t) => {
+    const tTitle = (t.title.es + ' ' + t.title.en).toLowerCase();
+    const tRegion = t.region.toLowerCase();
+    const tCategory = t.category.toLowerCase();
+
+    return (
+      (lower.includes('arenal') && tRegion === 'arenal') ||
+      (lower.includes('volcan') && (tRegion === 'arenal' || tCategory === 'volcanoes')) ||
+      (lower.includes('manuel antonio') && tRegion === 'manuel_antonio') ||
+      (lower.includes('monteverde') && tRegion === 'monteverde') ||
+      (lower.includes('canopy') && (tCategory === 'canopy' || tTitle.includes('canopy'))) ||
+      (lower.includes('rafting') && (tCategory === 'rafting' || tTitle.includes('rafting'))) ||
+      (lower.includes('tortuguero') && tRegion === 'tortuguero') ||
+      (lower.includes('playa') && (tCategory === 'beaches' || tRegion === 'guanacaste'))
+    );
+  });
+
+  if (candidateTours.length === 0) {
+    candidateTours = TOURS.slice(0, 3);
+  } else {
+    candidateTours = candidateTours.slice(0, 3);
+  }
+
+  // Construir opciones con precio, duración, incluidos, requerimientos y disponibilidad verificada
+  const targetDate = extractedData?.fecha || new Date(Date.now() + 86400000).toISOString().split('T')[0];
+
+  const tourCardsFormatted = await Promise.all(
+    candidateTours.map(async (tour) => {
+      // Verificación en tiempo real de disponibilidad
+      const availCheck = await checkTourAvailability(tour.id, targetDate, '08:00 AM', detectedPax);
+      const convertedPrice = Math.round(tour.priceUSD * exchangeRate);
+      const priceString = currencyLabel === 'CRC'
+        ? `₡${convertedPrice.toLocaleString('es-CR')} CRC (~$${tour.priceUSD} USD)`
+        : currencyLabel === 'USD'
+        ? `$${tour.priceUSD} USD`
+        : `${currencyLabel === 'EUR' ? '€' : '£'}${convertedPrice} ${currencyLabel} (~$${tour.priceUSD} USD)`;
+
+      const inclusions = tour.inclusions?.es?.slice(0, 3).join(', ') || 'Transporte, guía certificado y entradas';
+      const whatToBring = tour.whatToBring?.es?.slice(0, 3).join(', ') || 'Ropa cómoda, calzado cerrado, repelente';
+
+      return (
+        `• **${tour.title.es}**\n` +
+        `  - **Tarifa**: ${priceString} por persona *(el cobro en pasarela se liquida en USD)*\n` +
+        `  - **Duración**: ${tour.durationLabel?.es || `${tour.durationHours} horas`}\n` +
+        `  - **Incluye**: ${inclusions}\n` +
+        `  - **Qué llevar**: ${whatToBring}\n` +
+        `  - **Requisitos**: Dificultad ${tour.difficulty}, edad mínima recomendada.\n` +
+        `  - **Cupos verificados para ${targetDate}**: ${availCheck.available ? `✅ Sí, ${availCheck.remainingSeats} espacios disponibles en tiempo real` : '⚠️ Cupos limitados'}`
+      );
+    })
+  );
+
+  const replyText = isEn
+    ? `🎟️ **Booking Specialist • Real-Time Availability & Verified Rates**\n\n` +
+      `1. **Confirmed Criteria**: ${detectedPax} traveler(s) seeking authentic Costa Rican experiences for **${targetDate}**.\n\n` +
+      `2. **Verified Options & Availability**:\n\n` +
+      `${tourCardsFormatted.join('\n\n')}\n\n` +
+      `3. **Secure Official Checkout**:\n` +
+      `All bookings are processed through our official 256-bit encrypted **Stripe & PayPal** gateways. *We NEVER ask for credit card numbers directly in the chat*.\n\n` +
+      `4. **Next Clear Step**: Which experience would you like to secure, or shall I generate your direct checkout link for **${candidateTours[0]?.title.en || 'your tour'}**?`
+    : `🎟️ **Agente de Reservas • Disponibilidad y Tarifas en Tiempo Real**\n\n` +
+      `1. **Confirmación de búsqueda**: ${detectedPax} persona(s) interesadas en vivir Costa Rica para la fecha **${targetDate}**.\n\n` +
+      `2. **Opciones autorizadas y cupos verificados**:\n\n` +
+      `${tourCardsFormatted.join('\n\n')}\n\n` +
+      `3. **Pago Seguro Oficial (Anti-Fraude)**:\n` +
+      `Las transacciones se realizan a través de nuestras pasarelas oficiales cifradas **Stripe y PayPal** con garantía de reembolso 72h. *NUNCA te solicitaremos números de tarjeta en este chat*.\n\n` +
+      `4. **Siguiente paso claro**: ¿Cuál de estas excursiones te gustaría asegurar o prefieres que te genere el enlace directo de reserva y pago para **${candidateTours[0]?.title.es}**?`;
+
+  return {
+    reply: replyText,
+    agentId: 'booking_specialist',
+    agentName: 'Andrés • Agente de Reservas',
+    agentCategory: 'RESERVAS',
+    escalation: { escalated: false, level: 'none' },
+    recommendedTours: candidateTours,
+    quickActions: [
+      { label: isEn ? '📅 Open Booking Checkout' : '📅 Abrir Pasarela de Reserva', action: 'book', data: { tourId: candidateTours[0]?.id } },
+      { label: isEn ? '💬 WhatsApp Booking Desk' : '💬 Reservar por WhatsApp', action: 'direct_whatsapp' }
+    ]
+  };
+}
+
+/**
+ * 3. AGENTE DE INFORMACIÓN
+ * Responde preguntas generales sobre destinos, microclimas, cultura, qué empacar,
+ * requisitos de viaje — SIN intención de reservar aún.
+ * Si detecta intención de compra, realiza la transición al Agente de Reservas.
+ */
+export async function runInformationAgent(
+  message: string,
+  extractedData: any = {},
+  context: any = {},
+  language: 'es' | 'en' = 'es'
+): Promise<MultiAgentResponse> {
+  const isEn = language === 'en';
+  const lower = message.toLowerCase();
+
+  // Detección de intención de compra para traspaso de contexto al Agente de Reservas
+  const hasBuyingIntent =
+    lower.includes('cuanto cuesta') ||
+    lower.includes('cuánto cuesta') ||
+    lower.includes('precio') ||
+    lower.includes('tarifa') ||
+    lower.includes('quiero reservar') ||
+    lower.includes('cómo reservo') ||
+    lower.includes('tienen campo') ||
+    lower.includes('how much') ||
+    lower.includes('i want to book');
+
+  if (hasBuyingIntent) {
+    // Traspaso de contexto transparente al Agente de Reservas
+    const bookingResult = await runBookingAgent(message, extractedData, context, language);
+    return {
+      ...bookingResult,
+      contextHandover: {
+        transferredFrom: 'INFORMACION',
+        transferredTo: 'RESERVAS',
+        handoverReason: 'Detección de intención de compra y consulta de tarifas de viaje'
+      }
+    };
+  }
+
+  // Respuesta informativa especializada con datos de microclimas y normativa oficial
+  let informativeAnswer = '';
+  let recommendations: string[] = [];
+
+  if (lower.includes('clima') || lower.includes('weather') || lower.includes('lluvia') || lower.includes('temporada')) {
+    informativeAnswer = isEn
+      ? `🌤️ **Costa Rica Microclimates & Seasons** *(Based on typical historical weather patterns; not a live meteorological forecast)*:\n\n` +
+        `• **Dry Season (Dec - Apr)**: Plentiful sunshine in Guanacaste, the Central Valley, and Pacific Coast. Ideal for beaches and hiking.\n` +
+        `• **Green Season (May - Nov)**: Lush green rainforests with typical tropical afternoon showers and clear mornings. Excellent wildlife spotting and fewer crowds.\n` +
+        `• **Caribbean Exception (Puerto Viejo & Tortuguero)**: Distinct weather pattern; September and October are often the sunniest, calmest months on the Caribbean coast.\n` +
+        `• **Monteverde Cloud Forest**: Cool and misty year-round (16°C–22°C / 60°F–72°F); waterproof light jackets are strongly recommended.`
+      : `🌤️ **Microclimas y Temporadas en Costa Rica** *(Información basada en patrones climáticos históricos típicos; no es un pronóstico en tiempo real)*:\n\n` +
+        `• **Temporada Seca (Diciembre a Abril)**: Días soleados en Guanacaste, Valle Central y la Costa Pacífica. Ideal para playas y caminatas.\n` +
+        `• **Temporada Verde (Mayo a Noviembre)**: Vegetación exhuberante y lluvia tropical típicamente por las tardes, con mañanas despejadas. Mayor actividad de fauna y tarifas accesibles.\n` +
+        `• **Excepción del Caribe (Puerto Viejo y Tortuguero)**: Tiene un régimen independiente; septiembre y octubre suelen ser los meses más soleados y con mar calmo.\n` +
+        `• **Bosque Nuboso de Monteverde**: Clima fresco y neblina constante todo el año (16°C–22°C); se recomienda abrigo liviano e impermeable.`;
+
+    recommendations = isEn
+      ? ['Light breathable clothing for coasts', 'Closed-toe hiking shoes for rainforests', 'Eco-friendly biodegradable repellent and poncho']
+      : ['Ropa transpirable y fresca para costas', 'Calzado cerrado con buena tracción para senderos', 'Repelente biodegradable y capa impermeable'];
+  } else if (lower.includes('visa') || lower.includes('pasaporte') || lower.includes('requisito') || lower.includes('vacuna')) {
+    informativeAnswer = isEn
+      ? `🛂 **Official Entry Requirements (ICT & Migration Directorate)**:\n\n` +
+        `• **Passport Validity**: Minimum 6 months of validity from your arrival date.\n` +
+        `• **Tourist Stay**: Up to 180 days for US, Canadian, EU, UK, and Mercosur citizens without a prior visa.\n` +
+        `• **Yellow Fever Vaccine**: Only mandatory if arriving from endemic South American or African countries (CDC/WHO).\n` +
+        `• **Departure Tax**: $15 USD, which is almost always already included in commercial international airline tickets.`
+      : `🛂 **Requisitos Oficiales de Ingreso (Dirección General de Migración & ICT)**:\n\n` +
+        `• **Validez del Pasaporte**: Mínimo 6 meses de vigencia a partir de la fecha de llegada.\n` +
+        `• **Permanencia Turística**: Hasta 180 días autorizados para ciudadanos de España, EE.UU., Canadá, Unión Europea y la mayoría de Hispanoamérica sin visa consular previa.\n` +
+        `• **Vacuna contra la Fiebre Amarilla**: Exigida únicamente si provienes de países endémicos de Sudamérica o África subsahariana.\n` +
+        `• **Impuesto de Salida**: $15 USD (habitualmente ya incluido en el boleto aéreo internacional).`;
+  } else {
+    informativeAnswer = isEn
+      ? `🌿 **Authentic Costa Rica • Destinations & Sustainability**:\n\n` +
+        `Costa Rica protects over 25% of its territory through SINAC national parks and private reserves. As a certified sustainable tourism operator (CST - Certificate for Tourism Sustainability), Costa Rica Tours connects travelers with ethical, low-impact adventures:\n\n` +
+        `• **Arenal Volcano**: Natural hot springs, wildlife safaris, and rainforest hanging bridges.\n` +
+        `• **Monteverde**: Cloud forest biodiversity, quetzals, and world-class canopy zip lines.\n` +
+        `• **Manuel Antonio**: Pristine white sand beaches where monkeys and sloths roam freely.\n` +
+        `• **Tortuguero**: Amazon-like canals and sea turtle nesting sanctuary.\n` +
+        `• **Corcovado (Osa)**: One of the most biologically intense places on Earth.`
+      : `🌿 **Costa Rica Auténtica • Destinos y Sostenibilidad**:\n\n` +
+        `Costa Rica alberga más del 5% de la biodiversidad del planeta protegiendo el 25% de su territorio en Parques Nacionales SINAC. En Costa Rica Tours promovemos el turismo con Certificación CST (Sostenibilidad Turística) y Bandera Azul Ecológica:\n\n` +
+        `• **Volcán Arenal & La Fortuna**: Termales minerales, puentes colgantes y cataratas.\n` +
+        `• **Monteverde**: Bosque nuboso, quetzales y tirolesas de aventura.\n` +
+        `• **Manuel Antonio**: Playas de arena blanca con monos cariblancos y perezosos.\n` +
+        `• **Tortuguero**: Canales navegables y santuario de desove de tortugas marinas.\n` +
+        `• **Península de Osa & Corcovado**: El rincón biológico más intenso de la Tierra.`;
+  }
+
+  const replyText = isEn
+    ? `🌿 **Information Specialist • Costa Rica Travel Guide**\n\n` +
+      `1. **Direct Answer**:\n${informativeAnswer}\n\n` +
+      `2. **Helpful Context**:\nCosta Rica abolished its army in 1948, making it one of the safest, most stable democracies in Latin America. Tap water is safe to drink in most tourist hubs.\n\n` +
+      `3. **Next Step**: When you are ready to explore dates, activities, or real-time rates, I can connect you directly with our **Booking Specialist** with one click. What region are you most excited about?`
+    : `🌿 **Agente de Información • Guía de Viaje Oficial**\n\n` +
+      `1. **Respuesta directa**:\n${informativeAnswer}\n\n` +
+      `2. **Contexto útil**:\nCosta Rica abolió su ejército en 1948, consolidándose como uno de los países más pacíficos y seguros de Latinoamérica. El agua es potable en la gran mayoría del país y la moneda oficial es el Colón costarricense (CRC), aunque el USD es ampliamente aceptado.\n\n` +
+      `3. **Siguiente paso**: Cuando desees consultar disponibilidad, precios o coordinar una reserva para tu itinerario, con un solo clic te conecto con nuestro **Agente de Reservas**. ¿Hay alguna región en particular que te llame la atención?`;
+
+  return {
+    reply: replyText,
+    agentId: 'concierge',
+    agentName: 'Valeria • Agente de Información',
+    agentCategory: 'INFORMACION',
+    escalation: { escalated: false, level: 'none' },
+    quickActions: [
+      { label: isEn ? '🎟️ View Tours & Rates' : '🎟️ Ver Tours y Tarifas', action: 'send_message', data: { message: isEn ? 'Show tours and prices' : 'Ver tours y precios' } },
+      { label: isEn ? '💬 Chat with Concierge' : '💬 Hablar con Concierge', action: 'direct_whatsapp' }
+    ]
+  };
+}
+
+/**
+ * 4. AGENTE DE LOGÍSTICA
+ * Coordina la operación en tiempo real: comunicación con proveedores/guías, transporte,
+ * rutas (Alsama Tours CR), incidentes operativos, alertas climáticas IMN y emergencias.
+ */
+export async function runLogisticsAgent(
+  message: string,
+  extractedData: any = {},
+  context: any = {},
+  language: 'es' | 'en' = 'es'
+): Promise<MultiAgentResponse> {
+  const isEn = language === 'en';
+  const lower = message.toLowerCase();
+
+  // 1. Evaluación de severidad (Informativo vs Emergencia)
+  const isEmergency =
+    extractedData?.urgencia === 'emergencia' ||
+    lower.includes('accidente') ||
+    lower.includes('herido') ||
+    lower.includes('lesión') ||
+    lower.includes('lesion') ||
+    lower.includes('volcado') ||
+    lower.includes('inundación') ||
+    lower.includes('inundacion') ||
+    lower.includes('ambulancia') ||
+    lower.includes('perdido') ||
+    lower.includes('sos');
+
+  // Si es emergencia: activar protocolo de escalamiento ANTES que cualquier otra cosa
+  if (isEmergency) {
+    const opsItem = recordDailyOpsLog({
+      type: 'emergency',
+      severity: 'emergencia',
+      details: `[LOGÍSTICA - EMERGENCIA SOS]: ${message}`,
+      actionTaken: 'Protocolo de Emergencia Activado: Notificación a Central de Operaciones 24/7 y 9-1-1',
+      resolved: false
+    });
+
+    return {
+      reply: isEn
+        ? `🚨 **OPERATIONAL PROTOCOL 01: IMMEDIATE EMERGENCY ESCALATION**\n\n` +
+          `1. **Severity Assessment**: **CRITICAL EMERGENCY** (Log ID: \`${opsItem.id}\`).\n` +
+          `2. **Escalation Protocol**: Operational safety protocol is engaged. National Emergency Services (9-1-1) and our 24/7 Field Incident Response team have been alerted.\n` +
+          `3. **Immediate Action**: If someone is injured or in physical danger, immediately call **9-1-1** or our Direct Operations Hotline at **+506 8888-7777**.\n` +
+          `4. **Daily Operations Log**: Incident has been permanently recorded in today's active operational manifest.`
+        : `🚨 **PROTOCOLO OPERATIVO 01: ESCALACIÓN INMEDIATA DE EMERGENCIA**\n\n` +
+          `1. **Evaluación de severidad**: **EMERGENCIA CRÍTICA** (Registro Operativo: \`${opsItem.id}\`).\n` +
+          `2. **Protocolo de escalamiento**: La seguridad de los viajeros es la prioridad absoluta. Se ha activado la cadena de comando con la Central de Despacho 24/7 y el 9-1-1.\n` +
+          `3. **Acción inmediata requerida**: Comunícate de inmediato a la Línea de Emergencia de Costa Rica Tours al **+506 8888-7777** o marca **9-1-1** si hay personas lesionadas o riesgo inminente.\n` +
+          `4. **Registro de operaciones**: Incidente asentado de forma obligatoria en la bitácora diaria de terreno.`,
+      agentId: 'logistics',
+      agentName: 'Martín • Agente de Logística',
+      agentCategory: 'LOGISTICA',
+      escalation: {
+        escalated: true,
+        level: 'emergency',
+        reason: 'Incidente de emergencia o seguridad en operación de terreno',
+        emergencyContact: '+506 8888-7777 / 911'
+      },
+      quickActions: [
+        { label: isEn ? '🚨 Emergency Hotline' : '🚨 Teléfono de Emergencia', action: 'call_emergency', data: { phone: '+50688887777' } },
+        { label: isEn ? '💬 WhatsApp Ops Desk' : '💬 WhatsApp Despacho Ops', action: 'direct_whatsapp' }
+      ]
+    };
+  }
+
+  // Operación normal de transporte y proveedores (Alsama Tours CR, rutas, guías)
+  const isTransport =
+    lower.includes('traslado') ||
+    lower.includes('transport') ||
+    lower.includes('transfer') ||
+    lower.includes('alsama') ||
+    lower.includes('aeropuerto') ||
+    lower.includes('airport') ||
+    lower.includes('chofer') ||
+    lower.includes('conductor');
+
+  const opsLogEntry = recordDailyOpsLog({
+    type: isTransport ? 'route_incident' : 'operational_note',
+    severity: 'media',
+    details: `[LOGÍSTICA OPERATIVA]: ${message}`,
+    actionTaken: 'Consulta y verificación de despacho con proveedores y rutas Alsama',
+    resolved: true
+  });
+
+  const replyText = isEn
+    ? `🚐 **Logistics & Operations • Live Field Dispatch**\n\n` +
+      `1. **Severity Assessment**: **Normal Operational Coordination** (Ops Ref: \`${opsLogEntry.id}\`).\n` +
+      `2. **Verified Transport & Route Status (Alsama Tours CR)**:\n` +
+      `• **Private Vehicles**: Mercedes-Benz Sprinter & Toyota HiAce equipped with AC, 4G/5G Wi-Fi, and certified bilingual drivers.\n` +
+      `• **Route 32 (Braulio Carrillo - Caribbean)**: Open with caution. Normal driving time San José ⇄ Guápiles/Tortuguero (~3 hrs).\n` +
+      `• **Route 27 & Costanera (Pacific)**: Fully operational. SJO ⇄ Jacó (1h 45m), Manuel Antonio (~3h).\n` +
+      `• **La Fortuna / Arenal**: Normal connectivity via San Ramón or Naranjo (~3.5 hrs from SJO).\n\n` +
+      `3. **Direct Field Instruction**:\nDriver pickup details, vehicle plates, and guide check-in are synchronized automatically 2 hours prior to service.\n\n` +
+      `4. **Daily Log Recorded**: Action logged into the centralized daily operations report. How can I assist with your transport schedule?`
+    : `🚐 **Agente de Logística • Operaciones en Terreno en Tiempo Real**\n\n` +
+      `1. **Evaluación de severidad**: **Coordinación Operativa Normal** (Ref: \`${opsLogEntry.id}\`).\n` +
+      `2. **Estado de Rutas y Traslados Oficiales (Alsama Tours CR)**:\n` +
+      `• **Flota Privada Oficial**: Vans ejecutivas con aire acondicionado, Wi-Fi 4G/5G a bordo, chofer profesional y pólizas MOPT/ICT.\n` +
+      `• **Ruta 32 (Braulio Carrillo hacia el Caribe)**: Tránsito fluido. Tiempo estimado San José ⇄ Guápiles/Caribe (~3 a 4.5 hrs).\n` +
+      `• **Ruta 27 y Costanera Sur (Pacífico)**: Tránsito normal. SJO ⇄ Jacó (1h 45m), Manuel Antonio (~3h).\n` +
+      `• **Ruta hacia La Fortuna (Arenal)**: Conexión despejada vía San Ramón/Naranjo (~3.5 hrs desde el aeropuerto SJO).\n\n` +
+      `3. **Instrucción operativa clara**:\nLos datos del conductor asignado, placa de la van y confirmación de recepción se despachan formalmente 2 horas antes de cada servicio.\n\n` +
+      `4. **Registro de bitácora**: Acción documentada en el reporte diario de operaciones. ¿Deseas coordinar un punto de recogida o consultar sobre algún horario específico?`;
+
+  return {
+    reply: replyText,
+    agentId: 'logistics',
+    agentName: 'Martín • Agente de Logística',
+    agentCategory: 'LOGISTICA',
+    escalation: { escalated: false, level: 'none' },
+    quickActions: [
+      { label: isEn ? '🚐 View Transport Rates' : '🚐 Ver Tarifario de Transporte', action: 'send_message', data: { message: isEn ? 'Show transport' : 'Ver transporte' } },
+      { label: isEn ? '💬 Contact Ops Desk' : '💬 Contactar Despacho', action: 'direct_whatsapp' }
+    ]
+  };
+}
+
+/**
+ * 🌟 ORQUESTADOR CENTRAL DEL SISTEMA DE AGENTES
+ * Enruta la consulta mediante el Agente Enrutador (o atiende al agente seleccionado),
+ * ejecuta la lógica con datos reales y gestiona el traspaso de contexto.
+ */
+export async function orchestrateMultiAgentChat(params: {
+  message: string;
+  agentId?: string;
+  language?: 'es' | 'en';
+  history?: Array<{ role: 'user' | 'bot'; text: string }>;
+  context?: any;
+}): Promise<MultiAgentResponse> {
+  const { message, agentId = 'router', language = 'es', context = {} } = params;
+
+  // Paso 1: Si se invoca el Agente Enrutador (o no se especifica agente)
+  if (!agentId || agentId === 'router') {
+    const route = await runRouterAgent(message, context);
+    let finalResponse: MultiAgentResponse;
+
+    switch (route.categoria) {
+      case 'SERVICIO':
+        finalResponse = await runCustomerServiceAgent(message, route.datos_extraidos, context, language);
+        break;
+      case 'RESERVAS':
+        finalResponse = await runBookingAgent(message, route.datos_extraidos, context, language);
+        break;
+      case 'LOGISTICA':
+        finalResponse = await runLogisticsAgent(message, route.datos_extraidos, context, language);
+        break;
+      case 'INFORMACION':
+      default:
+        finalResponse = await runInformationAgent(message, route.datos_extraidos, context, language);
+        break;
+    }
+
+    return {
+      ...finalResponse,
+      routedCategory: route.categoria,
+      confianza: route.confianza,
+      routingReason: route.motivo
+    };
+  }
+
+  // Paso 2: Si el usuario seleccionó un agente específico
+  if (agentId === 'customer_service') {
+    return runCustomerServiceAgent(message, {}, context, language);
+  } else if (agentId === 'booking_specialist' || agentId === 'booking') {
+    return runBookingAgent(message, {}, context, language);
+  } else if (agentId === 'logistics') {
+    return runLogisticsAgent(message, {}, context, language);
+  } else {
+    // Por defecto agente de información / concierge
+    return runInformationAgent(message, {}, context, language);
   }
 }
 

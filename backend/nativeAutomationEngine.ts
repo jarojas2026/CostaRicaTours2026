@@ -1383,7 +1383,7 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
   const specialRequests = payload.specialRequests || 'Solicitud de confirmación y coordinación 100% autónoma sin intervención humana';
 
   const unitPrice = resolvedTour.priceUSD || 145;
-  const totalUSD = (adults * unitPrice) + (children * (resolvedTour.childrenPriceUSD || Math.round(unitPrice * 0.65)));
+  const totalUSD = (adults * unitPrice) + (children * ((resolvedTour as any).childrenPriceUSD || Math.round(unitPrice * 0.65)));
   const totalCRC = totalUSD * 515;
 
   // 3. Ejecutar creación oficial de reserva en Firestore
@@ -1395,7 +1395,7 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
   const bookingResult = await createBooking({
     tourId: resolvedTour.id,
     tourName: resolvedTour.title.es,
-    providerId: resolvedTour.operatorId || 'alsama-tours-cr',
+    providerId: (resolvedTour as any).operatorId || 'alsama-tours-cr',
     date: targetDate,
     time: targetTime,
     adults,
@@ -1425,7 +1425,7 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
     throw new Error(bookingResult.message || 'No se pudo completar el flujo autónomo.');
   }
 
-  const booking = bookingResult.booking;
+  const booking = bookingResult.booking as any;
   const bookingId = booking.bookingId || booking.id;
   const duration = Date.now() - start;
 

@@ -215,6 +215,7 @@ export interface FilterState {
 }
 
 export type AgentId = 
+  | 'router'
   | 'concierge' 
   | 'booking_specialist'
   | 'biologist' 
@@ -233,6 +234,34 @@ export type AgentId =
   | 'events_culture'
   | 'currency_budget'
   | 'customer_service';
+
+export type AgentCategory = 'ROUTER' | 'SERVICIO' | 'RESERVAS' | 'INFORMACION' | 'LOGISTICA';
+
+export interface MultiAgentEscalation {
+  escalated: boolean;
+  level: 'none' | 'human_support' | 'emergency';
+  reason?: string;
+  emergencyContact?: string;
+}
+
+export interface MultiAgentContextHandover {
+  transferredFrom?: AgentCategory;
+  transferredTo?: AgentCategory;
+  handoverReason?: string;
+  accumulatedEntities?: {
+    tourName?: string;
+    tourId?: string;
+    date?: string;
+    time?: string;
+    paxAdults?: number;
+    paxChildren?: number;
+    customerName?: string;
+    customerEmail?: string;
+    specialNeeds?: string;
+    bookingCode?: string;
+    currency?: string;
+  };
+}
 
 export type AgentWorkflowCategory = 'all' | 'booking' | 'nature_adventure' | 'logistics_food' | 'specialized' | 'planning_support';
 
