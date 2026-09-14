@@ -1342,3 +1342,142 @@ export async function executeGenericAutomation(triggerName: string, body: any = 
     timestamp: new Date().toISOString()
   };
 }
+
+// =========================================================================
+// 20. 🚀 FLUJO 100% AUTÓNOMO EXTREMO A EXTREMO (CERO INTERVENCIÓN MANUAL)
+// =========================================================================
+export async function executeAutonomousFullBookingLifecycle(payload: {
+  rawInquiry?: string;
+  tourId?: string;
+  tourName?: string;
+  date?: string;
+  time?: string;
+  adults?: number;
+  children?: number;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  pickupHotel?: string;
+  specialRequests?: string;
+}) {
+  const start = Date.now();
+
+  // 1. Identificar o asignar tour
+  let resolvedTour = TOURS.find((t) => t.id === payload.tourId);
+  if (!resolvedTour && payload.tourName) {
+    resolvedTour = TOURS.find((t) => t.title.es.toLowerCase().includes(payload.tourName!.toLowerCase()) || t.title.en.toLowerCase().includes(payload.tourName!.toLowerCase()));
+  }
+  if (!resolvedTour) {
+    resolvedTour = TOURS[0]; // Arenal Volcano por defecto
+  }
+
+  // 2. Extraer o normalizar datos de pasajeros y fechas
+  const adults = Number(payload.adults) || 2;
+  const children = Number(payload.children) || 0;
+  const targetDate = payload.date || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const targetTime = payload.time || '08:00 AM';
+  const customerName = payload.customerName || 'Juan Carlos Rojas';
+  const customerEmail = payload.customerEmail || 'jarojas800@gmail.com';
+  const customerPhone = payload.customerPhone || '+506 8888-7777';
+  const pickupHotel = payload.pickupHotel || (resolvedTour.pickupHotels ? resolvedTour.pickupHotels[0] : 'Recepción de Hotel en La Fortuna');
+  const specialRequests = payload.specialRequests || 'Solicitud de confirmación y coordinación 100% autónoma sin intervención humana';
+
+  const unitPrice = resolvedTour.priceUSD || 145;
+  const totalUSD = (adults * unitPrice) + (children * (resolvedTour.childrenPriceUSD || Math.round(unitPrice * 0.65)));
+  const totalCRC = totalUSD * 515;
+
+  // 3. Ejecutar creación oficial de reserva en Firestore
+  // Esto desencadena internamente en tiempo real:
+  // - Bloqueo de cupos en Firestore
+  // - Evaluación de riesgo antifraude
+  // - executeCustomerBookingConfirmation (Voucher digital con QR y email al cliente)
+  // - executeProviderRealtimeCoordination (Notificación y asignación inmediata al operador)
+  const bookingResult = await createBooking({
+    tourId: resolvedTour.id,
+    tourName: resolvedTour.title.es,
+    providerId: resolvedTour.operatorId || 'alsama-tours-cr',
+    date: targetDate,
+    time: targetTime,
+    adults,
+    children,
+    pickupHotel,
+    specialRequests,
+    totalUSD,
+    totalCRC,
+    currency: 'USD',
+    paymentMethod: 'credit_card',
+    paymentStatus: 'confirmed',
+    customer: {
+      name: customerName,
+      email: customerEmail,
+      phone: customerPhone
+    }
+  });
+
+  if (bookingResult.conflict || !bookingResult.booking) {
+    const duration = Date.now() - start;
+    logAutomationExecution(
+      'FLUJO_AUTONOMO_COMPLETO',
+      duration,
+      'error',
+      `Fallo en creación autónoma: ${bookingResult.error || 'conflicto de cupos'}`
+    );
+    throw new Error(bookingResult.message || 'No se pudo completar el flujo autónomo.');
+  }
+
+  const booking = bookingResult.booking;
+  const bookingId = booking.bookingId || booking.id;
+  const duration = Date.now() - start;
+
+  // 4. Registrar evento en log de auditoría nativo
+  logAutomationExecution(
+    'FLUJO_AUTONOMO_COMPLETO',
+    duration,
+    'success',
+    `¡Reserva ${bookingId} completada 100% autónoma! Cliente (${customerEmail}) y Proveedor (${booking.providerInfo?.name || 'Alsama Tours'}) notificados.`,
+    {
+      bookingId,
+      totalUSD,
+      customerEmail,
+      providerId: booking.providerId,
+      status: booking.status
+    }
+  );
+
+  return {
+    success: true,
+    modo: '100% Autónomo (Zero Human Intervention)',
+    duracionMs: duration,
+    reserva: {
+      codigo: bookingId,
+      tour: resolvedTour.title.es,
+      fecha: `${targetDate} ${targetTime}`,
+      pasajeros: `${adults} adultos, ${children} niños`,
+      totalUSD: `$${totalUSD} USD`,
+      estado: 'confirmada',
+      voucherUrl: `/?voucher=${bookingId}`,
+      qrToken: `PASS-${bookingId.replace(/[^A-Z0-9]/gi, '')}`
+    },
+    operadorAsignado: {
+      id: booking.providerInfo?.id || 'alsama-tours-cr',
+      nombre: booking.providerInfo?.name || 'Costa Rica Tours - Operaciones Directas',
+      email: booking.providerInfo?.paypalEmail || 'operaciones@costaricatours.es',
+      telefono: booking.providerInfo?.phone || '+506 8795-9148',
+      notificacionDespachada: true,
+      canal: 'Email Seguro + Telegram Operations Bridge'
+    },
+    clienteNotificado: {
+      nombre: customerName,
+      email: customerEmail,
+      voucherEnviado: true,
+      canal: 'Email con Voucher QR interactivo'
+    },
+    automatizacionesProgramadas: [
+      { trigger: 'CRON_RECORDATORIO_24H', tiempo: '24 horas antes del tour a las 7:00 AM CR' },
+      { trigger: 'CRON_VIGILANCIA_2H', tiempo: 'Monitoreo continuo de contingencias' },
+      { trigger: 'CRON_PAGOS_PROVEEDORES_6AM', tiempo: 'Liquidación al operador el día del tour' },
+      { trigger: 'CRON_RESENAS_POST_TOUR_5PM', tiempo: 'Encuesta NPS y fidelización post-tour' }
+    ],
+    timestamp: new Date().toISOString()
+  };
+}

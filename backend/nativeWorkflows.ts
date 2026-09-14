@@ -16,6 +16,7 @@
 
 import { getFirestoreDb, getBookingsCollection, updateBookingStatus } from './bookingService';
 import { sendEmail, sendTelegramMessage, sendTelegramEscalation } from './notificationService';
+import { logAutomationExecution } from './nativeAutomationEngine';
 
 // Clave secreta para autenticación de webhooks entrantes
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || process.env.N8N_WEBHOOK_SECRET || 'cr-tours-secure-webhook-token-2026';
@@ -195,6 +196,7 @@ export async function executeProviderRealtimeCoordination(
 
     if (emailResult.success) {
       console.log(`✅ [PROVEEDOR NOTIFICADO] Email enviado a ${providerEmail} para reserva ${bookingId}`);
+      logAutomationExecution('WF_COORDINACION_PROVEEDOR', 0, 'success', `Proveedor ${provider.name} notificado para reserva ${bookingId}`);
       return {
         success: true,
         providerNotified: true,
@@ -320,6 +322,7 @@ export async function executeCustomerBookingConfirmation(
 
     if (emailResult.success) {
       console.log(`✅ [CLIENTE NOTIFICADO] Email de confirmación enviado a ${customerEmail}`);
+      logAutomationExecution('WF_CONFIRMACION_CLIENTE', 0, 'success', `Voucher digital enviado a ${customerEmail} (${bookingId})`);
       return {
         success: true,
         customerNotified: true,

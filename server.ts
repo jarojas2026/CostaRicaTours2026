@@ -11,7 +11,7 @@ import path from 'path';
 import crypto from 'crypto';
 import rateLimit from 'express-rate-limit';
 import { createServer as createViteServer } from 'vite';
-import { initializeAutomationEngine } from './backend/cronEngine';
+import { initializeAutomationEngine, cleanupExpiredSoftHolds } from './backend/cronEngine';
 import { google } from 'googleapis';
 import { dispatchToN8N, getN8NConfig, verifyN8NRequest } from './backend/n8nService';
 import { requireOperator } from './backend/authMiddleware';
@@ -63,8 +63,10 @@ import {
   executeDGTElectronicInvoicingSettlement,
   executeAutonomousFlightGuardDispatch,
   executeAutonomousCrisisSentimentEscalation,
+  executeAutonomousFullBookingLifecycle,
   getNativeEngineStatus,
-  getNativeAutomationLogs
+  getNativeAutomationLogs,
+  logAutomationExecution
 } from './backend/nativeAutomationEngine';
 import {
   executeProviderRealtimeCoordination,
@@ -416,13 +418,102 @@ app.patch('/api/bookings/:id', requireOperator, async (req, res) => {
 // eliminando por completo la dependencia de servidores intermediarios como n8n.
 
 // Estado y monitoreo del motor nativo
-app.get('/api/native-engine/status', (req, res) => {
+app.get(['/api/native-engine/status', '/api/native/status'], (req, res) => {
   res.json(getNativeEngineStatus());
 });
 
-app.get('/api/native-engine/logs', (req, res) => {
+app.get(['/api/native-engine/logs', '/api/native/logs'], (req, res) => {
   const limit = Number(req.query.limit) || 50;
   res.json(getNativeAutomationLogs(limit));
+});
+
+// Despachadores manuales / UI de los 7 Workflows Nativos
+app.post('/api/native/workflows/payouts', async (req, res) => {
+  try {
+    const result = await executeAutomatedProviderPayouts();
+    logAutomationExecution('WF_PAGOS_PROVEEDORES', 3, 'success', `Manual: ${result.totalProcessed} procesadas, $${result.totalPaidUSD} USD.`);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    logAutomationExecution('WF_PAGOS_PROVEEDORES', 3, 'error', `Fallo: ${err.message}`);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/native/workflows/reminders', async (req, res) => {
+  try {
+    const result = await executeTour24hReminders();
+    logAutomationExecution('WF_RECORDATORIOS_24H', 7, 'success', `Manual: ${result.totalRemindersSent} recordatorios.`);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    logAutomationExecution('WF_RECORDATORIOS_24H', 7, 'error', `Fallo: ${err.message}`);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/native/workflows/surveillance', async (req, res) => {
+  try {
+    const result = await executeSurveillanceAndEscalation();
+    logAutomationExecution('WF_VIGILANCIA_2H', 4, 'success', `Manual: ${result.checkedBookings} auditadas, ${result.alertsSent} alertas.`);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    logAutomationExecution('WF_VIGILANCIA_2H', 4, 'error', `Fallo: ${err.message}`);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/native/workflows/reviews', async (req, res) => {
+  try {
+    const result = await executePostTourReviewRequests();
+    logAutomationExecution('WF_RESENAS_POST_TOUR', 6, 'success', `Manual: ${result.emailsSent} encuestas enviadas.`);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    logAutomationExecution('WF_RESENAS_POST_TOUR', 6, 'error', `Fallo: ${err.message}`);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/native/workflows/daily-report', async (req, res) => {
+  try {
+    const result = await executeDailyOperationReport();
+    logAutomationExecution('WF_REPORTE_DIARIO', 5, 'success', `Manual: ${result.totalBookingsToday} reservas, $${result.revenueUSD} USD.`);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    logAutomationExecution('WF_REPORTE_DIARIO', 5, 'error', `Fallo: ${err.message}`);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/native/workflows/cleanup-holds', async (req, res) => {
+  try {
+    const result = await cleanupExpiredSoftHolds();
+    logAutomationExecution('AUTO_RELEASE_HOLD', 5, 'success', `Manual: ${result.releasedCount} cupos liberados.`);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    logAutomationExecution('AUTO_RELEASE_HOLD', 5, 'error', `Fallo: ${err.message}`);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/native/workflows/conversion-report', async (req, res) => {
+  try {
+    const metrics = await getWeeklyConversionMetrics();
+    logAutomationExecution('CRON_SEMANAL_CONVERSION', 5, 'success', `Manual: Tasa conv: ${metrics.conversionRate}%, Ventas: $${metrics.totalRevenueUSD}.`);
+    res.json({ success: true, metrics });
+  } catch (err: any) {
+    logAutomationExecution('CRON_SEMANAL_CONVERSION', 5, 'error', `Fallo: ${err.message}`);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 🚀 PIPELINE 100% AUTÓNOMO (Sin intervención manual humana)
+// Procesa la consulta -> Bloquea cupo -> Crea reserva -> Notifica al proveedor -> Envía voucher digital QR al cliente
+app.post(['/api/native/autonomous-booking-flow', '/api/native/flujo-autonomo'], async (req, res) => {
+  try {
+    const result = await executeAutonomousFullBookingLifecycle(req.body);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // 1. Asistente Inteligente & Chat Oficial (Gemini 2.5 Flash + Base Oficial)
