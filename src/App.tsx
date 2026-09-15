@@ -35,6 +35,8 @@ import { PhotoTourFinder } from './components/PhotoTourFinder';
 import { Compass, ArrowLeft, Home, ChevronRight, Plane, Mail, Calendar } from 'lucide-react';
 
 import { TourDetailModal } from './components/TourDetailModal';
+import { SEOHead } from './components/SEOHead';
+import { OfflineBanner } from './components/OfflineBanner';
 
 // Code-splitting via React.lazy to reduce initial JS bundle size
 const ItineraryPlanner = lazy(() => import('./components/ItineraryPlanner').then(m => ({ default: m.ItineraryPlanner })));
@@ -226,6 +228,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#041711] text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950 relative pb-16 xl:pb-0">
+      <SEOHead language={language} />
+      <OfflineBanner language={language} />
       <AmbientBackground />
       {/* Top Header Navigation */}
       <Header
