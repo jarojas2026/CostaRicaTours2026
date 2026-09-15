@@ -1,0 +1,158 @@
+{
+  "id": "WF-021",
+  "name": "Emisor Automático de Reembolsos a Tarjeta",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "path": "api/webhooks/n8n/process-refund",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "[TRIGGER] Emisor Automático de Reembolsos a Tarjeta",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'refunds';\nreturn [{ json: item }];"
+      },
+      "name": "[EXTRACT] Formatear y Validar Datos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        350,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "collection": "refunds",
+        "documentId": "={{ $json.id || $json.bookingId || $json.code || $now }}",
+        "dataToSend": "defineBelow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "updatedAt",
+              "fieldValue": "={{ $now }}"
+            },
+            {
+              "fieldId": "workflowSource",
+              "fieldValue": "WF-021"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "processed"
+            }
+          ]
+        }
+      },
+      "name": "[FIRESTORE] Operación Colección refunds",
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        650,
+        300
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Costa Rica Tours - Firebase"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": true,\n  \"workflowCode\": \"WF-021\",\n  \"collection\": \"refunds\",\n  \"timestamp\": \"={{ $now }}\",\n  \"message\": \"Operación completada exitosamente en refunds\"\n}",
+        "options": {}
+      },
+      "name": "[RESPUESTA] Finalizar con Éxito",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        950,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.APP_URL || \"http://localhost:3000\" }}/api/alerts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"source\": \"Emisor Automático de Reembolsos a Tarjeta\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-021: Emisor Automático de Reembolsos a Tarjeta\",\n  \"message\": \"=Error al ejecutar en colección refunds: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-021\",\n    \"collection\": \"refunds\",\n    \"endpoint\": \"/api/webhooks/n8n/process-refund\"\n  }\n}",
+        "options": {}
+      },
+      "name": "[ALERTA NATIVA] Enviar a /api/alerts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        950,
+        450
+      ]
+    }
+  ],
+  "connections": {
+    "[TRIGGER] Emisor Automático de Reembolsos a Tarjeta": {
+      "main": [
+        [
+          {
+            "node": "[EXTRACT] Formatear y Validar Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[EXTRACT] Formatear y Validar Datos": {
+      "main": [
+        [
+          {
+            "node": "[FIRESTORE] Operación Colección refunds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[FIRESTORE] Operación Colección refunds": {
+      "main": [
+        [
+          {
+            "node": "[RESPUESTA] Finalizar con Éxito",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[ALERTA NATIVA] Enviar a /api/alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

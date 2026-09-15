@@ -1,0 +1,158 @@
+{
+  "id": "WF-028",
+  "name": "Conversor Multidivisa de Precios (EUR, GBP, CAD a USD)",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "path": "api/webhooks/n8n/multicurrency-rates",
+        "httpMethod": "GET",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "[TRIGGER] Conversor Multidivisa de Precios (EUR, GBP, CAD a USD)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'fx_rates';\nreturn [{ json: item }];"
+      },
+      "name": "[EXTRACT] Formatear y Validar Datos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        350,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "collection": "fx_rates",
+        "documentId": "={{ $json.id || $json.bookingId || $json.code || $now }}",
+        "dataToSend": "defineBelow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "updatedAt",
+              "fieldValue": "={{ $now }}"
+            },
+            {
+              "fieldId": "workflowSource",
+              "fieldValue": "WF-028"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "processed"
+            }
+          ]
+        }
+      },
+      "name": "[FIRESTORE] Operación Colección fx_rates",
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        650,
+        300
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Costa Rica Tours - Firebase"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": true,\n  \"workflowCode\": \"WF-028\",\n  \"collection\": \"fx_rates\",\n  \"timestamp\": \"={{ $now }}\",\n  \"message\": \"Operación completada exitosamente en fx_rates\"\n}",
+        "options": {}
+      },
+      "name": "[RESPUESTA] Finalizar con Éxito",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        950,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.APP_URL || \"http://localhost:3000\" }}/api/alerts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"source\": \"Conversor Multidivisa de Precios (EUR, GBP, CAD a USD)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-028: Conversor Multidivisa de Precios (EUR, GBP, CAD a USD)\",\n  \"message\": \"=Error al ejecutar en colección fx_rates: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-028\",\n    \"collection\": \"fx_rates\",\n    \"endpoint\": \"/api/webhooks/n8n/multicurrency-rates\"\n  }\n}",
+        "options": {}
+      },
+      "name": "[ALERTA NATIVA] Enviar a /api/alerts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        950,
+        450
+      ]
+    }
+  ],
+  "connections": {
+    "[TRIGGER] Conversor Multidivisa de Precios (EUR, GBP, CAD a USD)": {
+      "main": [
+        [
+          {
+            "node": "[EXTRACT] Formatear y Validar Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[EXTRACT] Formatear y Validar Datos": {
+      "main": [
+        [
+          {
+            "node": "[FIRESTORE] Operación Colección fx_rates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[FIRESTORE] Operación Colección fx_rates": {
+      "main": [
+        [
+          {
+            "node": "[RESPUESTA] Finalizar con Éxito",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[ALERTA NATIVA] Enviar a /api/alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

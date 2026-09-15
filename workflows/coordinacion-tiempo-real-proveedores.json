@@ -241,21 +241,33 @@
     },
     {
       "id": "67fc56e4-9b3d-4e32-91b0-d6ffa63a82ea",
-      "name": "Avisar Fallo de Notificación (Telegram)",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "name": "Avisar Fallo de Notificación (Alerta Nativa)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         1120,
         192
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "sendMessage",
-        "chatId": "={{ $env.TELEGRAM_CHAT_ID || '-1002489148001' }}",
-        "text": "=⚠️ No se pudo notificar por email al proveedor de la reserva {{ $('Extraer Datos de la Reserva').item.json.bookingId }}. Coordinar chofer/guía manualmente por WhatsApp.",
-        "additionalFields": {
-          "appendAttribution": false
-        }
+        "method": "POST",
+        "url": "={{ $env.APP_URL || \"http://localhost:3000\" }}/api/alerts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"source\": \"Coordinación en Tiempo Real con Proveedores\",\n  \"severity\": \"warning\",\n  \"title\": \"Alerta en Coordinación en Tiempo Real con Proveedores\",\n  \"message\": \"={{ $json.message || $json.text || $json.error?.message || \\\"Alerta operativa registrada\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowId\": \"1wf8ZQ1XuVTpbHnw\",\n    \"originFile\": \"coordinacion-tiempo-real-proveedores.json\"\n  }\n}",
+        "options": {}
       }
     },
     {
@@ -274,21 +286,33 @@
     },
     {
       "id": "c222443f-bde3-4afd-b8e8-78fd2463012b",
-      "name": "Escalar Coordinación por Telegram",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "name": "Escalar Coordinación por Alerta Nativa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         896,
         384
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "sendMessage",
-        "chatId": "={{ $env.TELEGRAM_CHAT_ID || '-1002489148001' }}",
-        "text": "=📞 Coordinar logística manualmente con el proveedor — Reserva {{ $('Extraer Datos de la Reserva').item.json.bookingId }}\n• Tour: {{ $('Extraer Datos de la Reserva').item.json.tourName }} — {{ $('Extraer Datos de la Reserva').item.json.date }} a las {{ $('Extraer Datos de la Reserva').item.json.time }}\n• Proveedor: {{ $json.name || $('Extraer Datos de la Reserva').item.json.providerId }} (estado: {{ $json.status || 'desconocido' }})\n• Contacto proveedor: {{ $json.whatsapp || $json.phone || 'sin teléfono' }} ({{ $json.email || 'sin email' }})\n• Cliente: {{ $('Extraer Datos de la Reserva').item.json.customerName }} (Tel: {{ $('Extraer Datos de la Reserva').item.json.customerPhone }})",
-        "additionalFields": {
-          "appendAttribution": false
-        }
+        "method": "POST",
+        "url": "={{ $env.APP_URL || \"http://localhost:3000\" }}/api/alerts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"source\": \"Coordinación en Tiempo Real con Proveedores\",\n  \"severity\": \"warning\",\n  \"title\": \"Alerta en Coordinación en Tiempo Real con Proveedores\",\n  \"message\": \"={{ $json.message || $json.text || $json.error?.message || \\\"Alerta operativa registrada\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowId\": \"1wf8ZQ1XuVTpbHnw\",\n    \"originFile\": \"coordinacion-tiempo-real-proveedores.json\"\n  }\n}",
+        "options": {}
       }
     },
     {

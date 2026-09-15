@@ -110,7 +110,10 @@
       "name": "Webhook: Reserva Confirmada",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
-      "position": [0, 192]
+      "position": [
+        0,
+        192
+      ]
     },
     {
       "parameters": {
@@ -120,7 +123,10 @@
       "name": "Extraer Datos de la Reserva",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [224, 192]
+      "position": [
+        224,
+        192
+      ]
     },
     {
       "parameters": {
@@ -148,7 +154,10 @@
       "name": "¿Cliente Tiene Email?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [448, 192]
+      "position": [
+        448,
+        192
+      ]
     },
     {
       "parameters": {
@@ -164,7 +173,10 @@
       "name": "Enviar Confirmación por Email",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
-      "position": [672, 96],
+      "position": [
+        672,
+        96
+      ],
       "onError": "continueErrorOutput"
     },
     {
@@ -177,23 +189,41 @@
       "name": "Responder OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [896, 0]
+      "position": [
+        896,
+        0
+      ]
     },
     {
       "parameters": {
-        "resource": "message",
-        "operation": "sendMessage",
-        "chatId": "={{ $env.TELEGRAM_CHAT_ID || '-1002489148001' }}",
-        "text": "=⚠️ No se pudo enviar el email de confirmación de la reserva {{ $json.bookingId }} al cliente {{ $json.customerEmail }}. Revisar manualmente.",
-        "additionalFields": {
-          "appendAttribution": false
-        }
+        "method": "POST",
+        "url": "={{ $env.APP_URL || \"http://localhost:3000\" }}/api/alerts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"source\": \"Confirmación de Reserva al Cliente\",\n  \"severity\": \"warning\",\n  \"title\": \"Alerta en Confirmación de Reserva al Cliente\",\n  \"message\": \"={{ $json.message || $json.text || $json.error?.message || \\\"Alerta operativa registrada\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowId\": \"6gnDcs9Ss7QIpMRw\",\n    \"originFile\": \"confirmacion-de-reserva-al-cliente.json\"\n  }\n}",
+        "options": {}
       },
       "id": "69b755c6-cdab-45d3-9a23-bd9d65cbb08e",
-      "name": "Avisar Fallo de Email (Telegram)",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [896, 192]
+      "name": "Avisar Fallo de Email (Alerta Nativa)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        896,
+        192
+      ]
     },
     {
       "parameters": {
@@ -205,23 +235,41 @@
       "name": "Responder OK (fallo email)",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [1120, 192]
+      "position": [
+        1120,
+        192
+      ]
     },
     {
       "parameters": {
-        "resource": "message",
-        "operation": "sendMessage",
-        "chatId": "={{ $env.TELEGRAM_CHAT_ID || '-1002489148001' }}",
-        "text": "=ℹ️ La reserva {{ $json.bookingId }} de {{ $json.customerName }} no tiene email registrado. Notificar confirmación por WhatsApp o teléfono.",
-        "additionalFields": {
-          "appendAttribution": false
-        }
+        "method": "POST",
+        "url": "={{ $env.APP_URL || \"http://localhost:3000\" }}/api/alerts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"source\": \"Confirmación de Reserva al Cliente\",\n  \"severity\": \"warning\",\n  \"title\": \"Alerta en Confirmación de Reserva al Cliente\",\n  \"message\": \"={{ $json.message || $json.text || $json.error?.message || \\\"Alerta operativa registrada\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowId\": \"6gnDcs9Ss7QIpMRw\",\n    \"originFile\": \"confirmacion-de-reserva-al-cliente.json\"\n  }\n}",
+        "options": {}
       },
       "id": "2bab9040-8487-4637-b557-bfc5020e10dc",
-      "name": "Avisar Reserva Sin Email (Telegram)",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [672, 384]
+      "name": "Avisar Reserva Sin Email (Alerta Nativa)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        672,
+        384
+      ]
     },
     {
       "parameters": {
@@ -233,7 +281,10 @@
       "name": "Responder OK (sin email)",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [896, 384]
+      "position": [
+        896,
+        384
+      ]
     }
   ]
 }

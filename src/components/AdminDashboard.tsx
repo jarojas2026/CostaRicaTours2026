@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { BookingRequest, Language } from '../types';
-import { X, Server, Activity, Database, Key, Settings, ExternalLink, Zap, Mail, Bot, Network, ChevronRight, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { X, Server, Activity, Database, Key, Settings, ExternalLink, Zap, Mail, Bot, Network, ChevronRight, RefreshCw, CheckCircle2, BellRing, ShieldAlert } from 'lucide-react';
 import { CronDashboard } from './CronDashboard';
 import { N8NWorkflowStudio } from './N8NWorkflowStudio';
+import { AlertsCenter } from './AlertsCenter';
 
 interface AdminDashboardProps {
   isOpen: boolean;
@@ -15,8 +16,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
   const [loading, setLoading] = useState(true);
   const [n8nWebhookUrl, setN8nWebhookUrl] = useState('https://costaricatours.app.n8n.cloud/webhook/reservas');
   
+  // Alerts & Notifications State
+  const [unresolvedAlertsCount, setUnresolvedAlertsCount] = useState(0);
+  const [criticalAlertsCount, setCriticalAlertsCount] = useState(0);
+
   // Multi-Agent Simulation State
-  const [activeTab, setActiveTab] = useState<'bookings' | 'n8n' | 'cron' | 'swarm' | 'architecture' | 'native'>('bookings');
+  const [activeTab, setActiveTab] = useState<'bookings' | 'alerts' | 'n8n' | 'cron' | 'swarm' | 'architecture' | 'native'>('bookings');
   const [nativeStatus, setNativeStatus] = useState<any>(null);
   const [nativeLogs, setNativeLogs] = useState<any[]>([]);
   const [simEmail, setSimEmail] = useState('Hola! Somos una familia de 4 (2 adultos, 2 niños). Queremos ir a Costa Rica la primera semana de diciembre. Nos interesan los volcanes y la playa, pero uno de los niños es alérgico al maní. ¿Qué nos recomiendan?');
@@ -64,8 +69,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
     if (isOpen) {
       fetchBookings();
       fetchNativeStatus();
+      fetchAlertsCount();
+      const interval = setInterval(fetchAlertsCount, 30000);
+      return () => clearInterval(interval);
     }
   }, [isOpen]);
+
+  const fetchAlertsCount = async () => {
+    try {
+      const res = await fetch('/api/alerts?resolved=false');
+      if (res.ok) {
+        const data = await res.json();
+        const list: any[] = data.alerts || data.data || [];
+        const unresolved = list.filter(a => !a.resolved);
+        const critical = unresolved.filter(a => a.severity === 'critical');
+        setUnresolvedAlertsCount(unresolved.length);
+        setCriticalAlertsCount(critical.length);
+      }
+    } catch (e) {
+      console.error('Error fetching alerts count:', e);
+    }
+  };
 
   const fetchNativeStatus = async () => {
     try {
@@ -140,6 +164,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
             className={`whitespace-nowrap px-4 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'bookings' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
           >
             Live Bookings
+          </button>
+          <button 
+            onClick={() => setActiveTab('alerts')}
+            className={`whitespace-nowrap px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'alerts' ? 'border-rose-500 text-rose-400 bg-rose-950/20' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
+          >
+            <BellRing className="w-4 h-4 text-rose-400" />
+            <span>Centro de Alertas</span>
+            {criticalAlertsCount > 0 ? (
+              <span className="bg-rose-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-mono animate-pulse">
+                {criticalAlertsCount} 🔴
+              </span>
+            ) : unresolvedAlertsCount > 0 ? (
+              <span className="bg-amber-500/30 text-amber-300 text-[10px] px-1.5 py-0.5 rounded-full font-mono">
+                {unresolvedAlertsCount}
+              </span>
+            ) : null}
           </button>
           <button 
             onClick={() => setActiveTab('n8n')}
@@ -271,6 +311,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
             </div>
           </section>
             </>
+          )}
+
+          {activeTab === 'alerts' && (
+            <AlertsCenter
+              language={language}
+              onNavigateToBooking={(bookingId) => {
+                setActiveTab('bookings');
+              }}
+              onUnresolvedCountChange={(unresolved, critical) => {
+                setUnresolvedAlertsCount(unresolved);
+                setCriticalAlertsCount(critical);
+              }}
+            />
           )}
 
           {activeTab === 'native' && (

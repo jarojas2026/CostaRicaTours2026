@@ -832,7 +832,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     };
   }, []);
 
-  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'bot', text: string, quickActions?: {label: string, action: string, data?: any}[] }[]>(() => {
+  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'bot', text: string, quickActions?: {label: string, action: string; data?: any}[] }[]>(() => {
     try {
       const saved = localStorage.getItem('whatsapp_chat_history');
       return saved ? JSON.parse(saved) : [];
@@ -841,8 +841,34 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     }
   });
 
+  const [selectedAgent, setSelectedAgent] = useState<'concierge' | 'booking_react' | 'transporte' | 'sinpe_pagos'>('concierge');
 
-  
+  const AGENTS = [
+    {
+      id: 'concierge',
+      name: language === 'es' ? '🌴 Concierge Pura Vida' : '🌴 Pura Vida Concierge',
+      role: language === 'es' ? 'Tours, Playas y Parques' : 'Tours, Beaches & Parks',
+      badge: 'IA Concierge'
+    },
+    {
+      id: 'booking_react',
+      name: language === 'es' ? '🤖 Reservas 2026' : '🤖 Booking 2026',
+      role: language === 'es' ? 'ReAct + Cupos en Vivo' : 'ReAct + Live Slots',
+      badge: 'ReAct DB'
+    },
+    {
+      id: 'transporte',
+      name: language === 'es' ? '🚐 Traslados Alsama' : '🚐 Alsama Transfers',
+      role: language === 'es' ? 'Rutas Aeropuerto y Vans' : 'Airport Routes & Vans',
+      badge: 'Transporte'
+    },
+    {
+      id: 'sinpe_pagos',
+      name: language === 'es' ? '💳 SINPE & Pagos' : '💳 SINPE & Payments',
+      role: language === 'es' ? 'Validación y Comprobantes' : 'Validation & Receipts',
+      badge: 'SINPE'
+    }
+  ];
 
   const prevIsOpenRef = React.useRef(isOpen);
   useEffect(() => {
@@ -1346,7 +1372,11 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
 
   const handleOptionClick = (opt: any) => {
     if (opt.id === 'ai-bot') {
-      if (onOpenAIAssistant) onOpenAIAssistant();
+      if (onOpenAIAssistant) {
+        onOpenAIAssistant();
+      } else {
+        setSelectedAgent('booking_react');
+      }
       setIsOpen(false);
     } else if (opt.id === 'scan-qr') {
       setIsScanning(true);
@@ -1354,7 +1384,18 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     } else if (opt.id === 'generate-qr') {
       setIsGeneratingQR(true);
       setIsOpen(false);
-        } else {
+    } else if (opt.id === 'tours' || opt.id === 'itinerary' || opt.id === 'info') {
+      if (opt.id === 'tours') setSelectedAgent('concierge');
+      if (opt.id === 'itinerary') setSelectedAgent('booking_react');
+      if (opt.id === 'info') setSelectedAgent('concierge');
+      
+      const queryText = opt.msg || (opt.id === 'tours' ? 'Recomiéndame los mejores tours en Costa Rica' : 'Quiero planear mi itinerario');
+      setChatInput(queryText);
+      setTimeout(() => {
+        const form = document.getElementById('chat-form') as HTMLFormElement;
+        if (form) form.requestSubmit();
+      }, 50);
+    } else {
       const text = encodeURIComponent(opt.msg);
       const whatsappUrl = `https://wa.me/50687959148?text=${text}`;
       
@@ -1370,8 +1411,6 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     }
   };
 
-  
-
   const handleClearChat = () => {
     setChatHistory([]);
     setChatInput('');
@@ -1383,7 +1422,6 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     }
   };
 
-  
   const handleQuickAction = (action: string, data?: any) => {
     if (action === 'direct_whatsapp') {
       const text = encodeURIComponent(language === 'es' ? 'Hola, necesito asistencia con tours en Costa Rica.' : 'Hello, I need assistance with tours in Costa Rica.');
@@ -1391,13 +1429,18 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
       setIsOpen(false);
     } else if (action === 'send_message') {
       setChatInput(data.message);
-      // We can also auto-send it
       setTimeout(() => {
         const form = document.getElementById('chat-form') as HTMLFormElement;
         if (form) form.requestSubmit();
       }, 50);
     } else if (action === 'book') {
-      setChatInput(language === 'es' ? 'Quiero reservar' : 'I want to book');
+      setChatInput(language === 'es' ? 'Quiero reservar este tour' : 'I want to book this tour');
+      setTimeout(() => {
+        const form = document.getElementById('chat-form') as HTMLFormElement;
+        if (form) form.requestSubmit();
+      }, 50);
+    } else if (action === 'check_availability') {
+      setChatInput(language === 'es' ? 'Verificar disponibilidad de fechas' : 'Check date availability');
       setTimeout(() => {
         const form = document.getElementById('chat-form') as HTMLFormElement;
         if (form) form.requestSubmit();
@@ -1460,45 +1503,51 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
         userId = 'usr_guest_' + Date.now();
       }
 
-      const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
-      const recentHistory = chatHistory.slice(-10);
-
-      // 2. Empaquetar contexto y disparar trigger 'CONSULTA_CHAT_IA' hacia n8n
       const formattedHistory = chatHistory.map(h => ({ role: h.role, text: h.text }));
-      const payload = packageConsultaChatPayload(msg, language, formattedHistory, {
-        agente: 'asistente_pura_vida_ia'
-      });
-      const result: any = await triggerConsultaChatIA(payload);
+      let finalBotReply = '';
+      let quickActions: Array<{ label: string; action: string; data?: any }> = [];
 
-      const isSuccess = Boolean(result && (result.exito || result.success));
-      const responseData = result?.datos || result?.data || {};
-      const reply = responseData.reply || responseData.mensaje || responseData.response || responseData.output || responseData.text || null;
+      // 2. Ejecución con Servidor Full-Stack (/api/chat/inquiry)
+      try {
+        const serverChatRes = await fetch('/api/chat/inquiry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: msg,
+            language,
+            history: formattedHistory,
+            agentId: selectedAgent,
+            engine: 'auto',
+            context: {
+              source: 'floating_whatsapp_ai',
+              agentId: selectedAgent,
+              userId,
+              horaLocal: new Date().toISOString()
+            }
+          })
+        });
 
-      if (isSuccess && reply) {
-        let quickActions = responseData.quickActions || responseData.accionesRapidas || [];
-        if (quickActions.length === 0) {
-          if (msg.toLowerCase().includes('precio') || msg.toLowerCase().includes('price') || msg.toLowerCase().includes('cost')) {
-            quickActions = [
-              { label: language === 'es' ? '📅 Reservar Ahora' : '📅 Book Now', action: 'book' },
-              { label: language === 'es' ? '🔍 Ver Detalles' : '🔍 See Details', action: 'send_message', data: { message: language === 'es' ? 'Ver detalles de tours' : 'See tour details' } }
-            ];
+        if (serverChatRes.ok) {
+          const serverData = await serverChatRes.json();
+          if (serverData.reply) {
+            finalBotReply = serverData.reply;
+            quickActions = serverData.quickActions || [];
           }
         }
+      } catch (err) {
+        console.warn('⚠️ Fallback a webhook n8n y procesador local:', err);
+      }
 
-        // Si el sonido de la naturaleza está activo, reproducir tono
-        playNotification();
+      // 3. Disparar trigger n8n 'CONSULTA_CHAT_IA' en segundo plano para sincronizar workflows
+      const payload = packageConsultaChatPayload(msg, language, formattedHistory, {
+        agente: selectedAgent
+      });
+      triggerConsultaChatIA(payload).catch(err => {
+        console.warn('[n8n trigger] Background notification sync note:', err);
+      });
 
-        setChatHistory(prev => {
-          const newHistory = [...prev, { role: 'bot' as const, text: reply, quickActions }];
-          return newHistory.slice(-50);
-        });
-      } else {
-        // Manejo de estado de error cuando el webhook de n8n falla o no devuelve respuesta
-        const errorDetail = result?.error?.mensaje || result?.error?.codigo || (typeof result?.error === 'string' ? result.error : null) || (language === 'es' ? 'El servidor n8n no respondió correctamente' : 'The n8n webhook did not respond properly');
-        console.warn(`[Trigger CONSULTA_CHAT_IA] Webhook de n8n no disponible o retornó error: ${errorDetail}`);
-
-        // Intentar fallback con procesador local de agentes para garantizar atención al turista
-        let fallbackReply = '';
+      // 4. Si el backend aún no generó respuesta (modo fallback o contingencia)
+      if (!finalBotReply) {
         try {
           const triageRes = await fetch('/api/agents/triage', {
             method: 'POST',
@@ -1515,57 +1564,41 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
             if (procRes.ok) {
               const procData = await procRes.json();
               if (procData.draftResponse) {
-                fallbackReply = procData.draftResponse;
+                finalBotReply = procData.draftResponse;
               }
             }
           }
         } catch {
-          // Si el procesador local falla, se continuará con el aviso de contingencia
+          // Fallback silencioso
         }
+      }
 
-        // Acciones rápidas contextuales para el usuario ante error
-        let quickActions: any[] = [
+      if (!finalBotReply) {
+        finalBotReply = language === 'es'
+          ? `🇨🇷 **¡Pura Vida!** Recibimos tu consulta sobre tours y reservas en Costa Rica. Nuestros agentes inteligentes y asesores oficiales están a tu servicio.\n\n• **Disponibilidad**: Procesamiento en tiempo real con operadores locales certificados.\n• **Soporte Directo**: Puedes escribirnos de inmediato a nuestro WhatsApp oficial (+506 8795-9148).\n\n¿Deseas que te ayude a verificar fechas o cotizar alguna excursión específica?`
+          : `🇨🇷 **¡Pura Vida!** We received your inquiry regarding tours and bookings in Costa Rica. Our smart agents and certified advisors are at your service.\n\n• **Availability**: Real-time processing with verified local operators.\n• **Direct Support**: You can chat directly via our official WhatsApp (+506 8795-9148).\n\nWould you like me to help check dates or quote a specific excursion?`;
+      }
+
+      if (quickActions.length === 0) {
+        quickActions = [
+          {
+            label: language === 'es' ? '📅 Verificar Disponibilidad' : '📅 Check Availability',
+            action: 'check_availability'
+          },
           {
             label: language === 'es' ? '💬 WhatsApp Directo' : '💬 Direct WhatsApp',
             action: 'direct_whatsapp'
-          },
-          {
-            label: language === 'es' ? '🔄 Reintentar Envío' : '🔄 Retry Send',
-            action: 'send_message',
-            data: { message: msg }
           }
         ];
-
-        if (msg.toLowerCase().includes('precio') || msg.toLowerCase().includes('price') || msg.toLowerCase().includes('cost')) {
-          quickActions.unshift(
-            { label: language === 'es' ? '📅 Reservar Ahora' : '📅 Book Now', action: 'book' }
-          );
-        } else if (msg.toLowerCase().includes('reserv') || msg.toLowerCase().includes('book')) {
-          setBookingStatus('pending');
-          setTimeout(() => {
-            setBookingStatus('payment_required');
-            setChatHistory(prev => {
-              const newHistory = [...prev, { role: 'bot' as const, text: language === 'es' ? '🔗 Aquí tienes tu enlace de pago seguro para confirmar el cupo. Expira en 15 minutos.' : '🔗 Here is your secure payment link to confirm the spot. It expires in 15 minutes.' }];
-              return newHistory.slice(-50);
-            });
-          }, 5000);
-        } else if ((msg.toLowerCase().includes('pag') || msg.toLowerCase().includes('paid') || msg.toLowerCase().includes('listo')) && bookingStatus === 'payment_required') {
-          setBookingStatus('confirmed');
-        }
-
-        const n8nWarning = language === 'es'
-          ? `⚠️ [Aviso n8n / CONSULTA_CHAT_IA]: No fue posible contactar el webhook '/webhook/chat-consulta' (${errorDetail}).`
-          : `⚠️ [n8n Notice / CONSULTA_CHAT_IA]: Unable to reach the '/webhook/chat-consulta' endpoint (${errorDetail}).`;
-
-        const finalBotText = fallbackReply
-          ? `${n8nWarning}\n\n🤖 [Asistente de Respaldo Pura Vida]: ${fallbackReply}`
-          : `${n8nWarning}\n\n${language === 'es' ? 'Tu mensaje ha sido respaldado en la cola local de contingencia. Puedes reintentar o comunicarte directamente con un asesor vía WhatsApp oficial.' : 'Your message has been backed up in the contingency queue. You can retry or reach an advisor directly via official WhatsApp.'}`;
-
-        setChatHistory(prev => {
-          const newHistory = [...prev, { role: 'bot' as const, text: finalBotText, quickActions }];
-          return newHistory.slice(-50);
-        });
       }
+
+      playNotification();
+
+      setChatHistory(prev => {
+        const newHistory = [...prev, { role: 'bot' as const, text: finalBotReply, quickActions }];
+        return newHistory.slice(-50);
+      });
+
     } catch (unexpectedError) {
       console.error('[Trigger CONSULTA_CHAT_IA] Error fatal:', unexpectedError);
       const errText = unexpectedError instanceof Error ? unexpectedError.message : 'Error inesperado';
@@ -1575,8 +1608,8 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
           {
             role: 'bot' as const,
             text: language === 'es'
-              ? `⚠️ Error al procesar tu consulta (${errText}). Por favor contáctanos vía WhatsApp.`
-              : `⚠️ Error processing your inquiry (${errText}). Please contact us via WhatsApp.`,
+              ? `⚠️ Ocurrió una intermitencia (${errText}). Puedes escribirnos directamente a WhatsApp para atención inmediata.`
+              : `⚠️ An issue occurred (${errText}). You can contact us directly on WhatsApp for immediate support.`,
             quickActions: [
               {
                 label: language === 'es' ? '💬 WhatsApp Directo' : '💬 Direct WhatsApp',
@@ -1622,21 +1655,24 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
             <div className={`${themeClasses.header}/90 backdrop-blur-md p-3 sm:p-4 flex items-center justify-between text-white transition-colors duration-300 border-b border-black/10 shrink-0`}>
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className={`w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm`}>
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm shadow-inner">
                     <MessageCircle className="w-6 h-6 text-white" />
                   </div>
-                  <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-white rounded-full transition-colors duration-300 ${isOnline ? 'bg-teal-400' : 'bg-rose-500 animate-pulse'}`}></span>
+                  <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-white rounded-full transition-colors duration-300 ${isOnline ? 'bg-teal-400 shadow-[0_0_8px_rgba(45,212,191,0.8)]' : 'bg-rose-500 animate-pulse'}`}></span>
                 </div>
                 <div>
                   <h4 className="font-bold text-sm flex items-center gap-1.5">
                     {t.title}
+                    <span className="bg-emerald-400/20 text-emerald-300 border border-emerald-400/40 text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                      IA + DB 2026
+                    </span>
                     {!isOnline && (
                       <span className="bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full uppercase tracking-wider">
                         Offline
                       </span>
                     )}
                   </h4>
-                  <p className={`text-xs flex items-center gap-1 \${isOnline ? "text-amber-100" : "text-rose-200 font-semibold"} transition-colors duration-300`}>
+                  <p className={`text-xs flex items-center gap-1 ${isOnline ? "text-amber-100" : "text-rose-200 font-semibold"} transition-colors duration-300`}>
                     {isOnline ? <Wifi className="w-3 h-3 text-teal-300 inline" /> : <WifiOff className="w-3 h-3 text-rose-300 inline" />}
                     {t.status}
                   </p>
@@ -1664,6 +1700,28 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                   <X className="w-5 h-5" />
                 </button>
               </div>
+            </div>
+
+            {/* Agent Selector Bar */}
+            <div className="bg-[#03150f] px-3 py-2 border-b border-emerald-500/20 flex items-center gap-1.5 overflow-x-auto scrollbar-none shrink-0">
+              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider whitespace-nowrap flex items-center gap-1">
+                <Bot className="w-3 h-3 text-emerald-400" />
+                {language === 'es' ? 'Agente:' : 'Agent:'}
+              </span>
+              {AGENTS.map((agent) => (
+                <button
+                  key={agent.id}
+                  onClick={() => setSelectedAgent(agent.id as any)}
+                  className={`text-[11px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap transition-all flex items-center gap-1 ${
+                    selectedAgent === agent.id
+                      ? 'bg-emerald-600 text-white font-bold shadow-sm shadow-emerald-950 border border-emerald-400/40 scale-105'
+                      : 'bg-emerald-950/60 text-emerald-300/80 hover:bg-emerald-900/60 hover:text-emerald-100 border border-emerald-800/40'
+                  }`}
+                  title={agent.role}
+                >
+                  <span>{agent.name}</span>
+                </button>
+              ))}
             </div>
 
             {/* Offline Connectivity Warning Banner */}
@@ -2230,25 +2288,42 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
       </AnimatePresence>
 
       
+      {/* Floating WhatsApp and Autonomous AI Trigger Button */}
       <div className="flex flex-col items-center gap-3 pointer-events-auto relative">
-        <div className="relative">
+        <div className="relative group">
+          {/* Animated Glow Aura */}
+          <div className="absolute inset-0 bg-emerald-500 rounded-full blur-md opacity-40 group-hover:opacity-75 transition-opacity duration-300"></div>
+
           {needsAttention && !isOpen && (
-            <div className={`absolute inset-0 ${themeClasses.ping} rounded-full animate-ping opacity-40 transition-colors duration-300`}></div>
+            <div className={`absolute inset-0 ${themeClasses.ping} rounded-full animate-ping opacity-50 transition-colors duration-300`}></div>
           )}
+
           <button
+            id="floating-whatsapp-trigger-btn"
             onClick={() => {
               setIsOpen(!isOpen);
               setNeedsAttention(false);
             }}
-            aria-label="Toggle WhatsApp Chat"
-            className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 ${
-              isOpen ? 'bg-stone-50 text-stone-900 hover:scale-105' : '${themeClasses.button} text-white hover:scale-110 active:scale-95'
+            aria-label={isOpen ? 'Cerrar asistente y chat de WhatsApp' : 'Abrir asistente de IA y reservas WhatsApp Costa Rica Tours'}
+            title={language === 'es' ? 'Asistente Inteligente y Reservas WhatsApp Costa Rica Tours 2026' : 'AI Assistant & WhatsApp Bookings Costa Rica Tours 2026'}
+            className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 cursor-pointer ${
+              isOpen
+                ? 'bg-stone-100 text-stone-900 hover:scale-105 border-2 border-emerald-500/50'
+                : `${themeClasses.button} text-white hover:scale-110 active:scale-95 border-2 border-white/40`
             } ${needsAttention && !isOpen ? 'animate-pulse' : ''}`}
           >
-            {isOpen ? <X className="w-8 h-8" /> : <MessageCircle className="w-9 h-9 fill-white/20 stroke-white" />}
+            {isOpen ? (
+              <X className="w-8 h-8 transition-transform duration-200" />
+            ) : (
+              <div className="relative flex items-center justify-center">
+                <MessageCircle className="w-9 h-9 fill-white/20 stroke-white transition-transform duration-200 group-hover:scale-105" />
+                <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full shadow-sm animate-pulse"></span>
+              </div>
+            )}
             
             {!isOpen && (
-              <span className={`absolute -top-2 -right-2 ${themeClasses.badge} text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg border-2 border-white whitespace-nowrap animate-bounce transition-colors duration-300`}>
+              <span className={`absolute -top-2.5 -right-2 bg-gradient-to-r from-amber-500 to-emerald-600 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-lg border-2 border-white whitespace-nowrap animate-bounce transition-colors duration-300 flex items-center gap-1`}>
+                <Sparkles className="w-2.5 h-2.5 text-amber-200" />
                 {badgeText}
               </span>
             )}

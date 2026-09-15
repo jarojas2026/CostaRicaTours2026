@@ -375,20 +375,32 @@
     {
       "id": "41680d6b-b26a-4ba9-bca1-74f464d42019",
       "name": "Responder Mensaje Hoy",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         1120,
         96
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "sendMessage",
-        "chatId": "={{ $json.chatId }}",
-        "text": "={{ $json.text }}",
-        "additionalFields": {
-          "appendAttribution": false
-        }
+        "method": "POST",
+        "url": "={{ $env.APP_URL || \"http://localhost:3000\" }}/api/alerts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"source\": \"Panel de Control Móvil vía Telegram\",\n  \"severity\": \"warning\",\n  \"title\": \"Alerta en Panel de Control Móvil vía Telegram\",\n  \"message\": \"={{ $json.message || $json.text || $json.error?.message || \\\"Alerta operativa registrada\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowId\": \"pA90kLm4Qx8VnZ2e\",\n    \"originFile\": \"panel-control-movil-telegram.json\"\n  }\n}",
+        "options": {}
       }
     },
     {
@@ -433,20 +445,32 @@
     {
       "id": "51290e54-7013-4789-c243-0b345678901c",
       "name": "Responder Reservas Recientes",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         1120,
         288
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "sendMessage",
-        "chatId": "={{ $json.chatId }}",
-        "text": "={{ $json.text }}",
-        "additionalFields": {
-          "appendAttribution": false
-        }
+        "method": "POST",
+        "url": "={{ $env.APP_URL || \"http://localhost:3000\" }}/api/alerts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"source\": \"Panel de Control Móvil vía Telegram\",\n  \"severity\": \"warning\",\n  \"title\": \"Alerta en Panel de Control Móvil vía Telegram\",\n  \"message\": \"={{ $json.message || $json.text || $json.error?.message || \\\"Alerta operativa registrada\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowId\": \"pA90kLm4Qx8VnZ2e\",\n    \"originFile\": \"panel-control-movil-telegram.json\"\n  }\n}",
+        "options": {}
       }
     },
     {
@@ -493,20 +517,32 @@
     {
       "id": "84523b87-0346-4a12-f576-3e678901234f",
       "name": "Responder Detalle Reserva",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         1120,
         480
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "sendMessage",
-        "chatId": "={{ $json.chatId }}",
-        "text": "={{ $json.text }}",
-        "additionalFields": {
-          "appendAttribution": false
-        }
+        "method": "POST",
+        "url": "={{ $env.APP_URL || \"http://localhost:3000\" }}/api/alerts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"source\": \"Panel de Control Móvil vía Telegram\",\n  \"severity\": \"warning\",\n  \"title\": \"Alerta en Panel de Control Móvil vía Telegram\",\n  \"message\": \"={{ $json.message || $json.text || $json.error?.message || \\\"Alerta operativa registrada\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowId\": \"pA90kLm4Qx8VnZ2e\",\n    \"originFile\": \"panel-control-movil-telegram.json\"\n  }\n}",
+        "options": {}
       }
     },
     {
@@ -537,20 +573,32 @@
     {
       "id": "06745da9-2568-4c34-b798-50890123456b",
       "name": "Responder Confirmación Exitosa",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         896,
         672
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "sendMessage",
-        "chatId": "={{ $('Parsear Comando').item.json.chatId }}",
-        "text": "=✅ La reserva {{ $('Parsear Comando').item.json.arg }} ha sido marcada manualmente como CONFIRMADA en el sistema.",
-        "additionalFields": {
-          "appendAttribution": false
-        }
+        "method": "POST",
+        "url": "={{ $env.APP_URL || \"http://localhost:3000\" }}/api/alerts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"source\": \"Panel de Control Móvil vía Telegram\",\n  \"severity\": \"warning\",\n  \"title\": \"Alerta en Panel de Control Móvil vía Telegram\",\n  \"message\": \"={{ $json.message || $json.text || $json.error?.message || \\\"Alerta operativa registrada\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowId\": \"pA90kLm4Qx8VnZ2e\",\n    \"originFile\": \"panel-control-movil-telegram.json\"\n  }\n}",
+        "options": {}
       }
     },
     {
@@ -595,39 +643,63 @@
     {
       "id": "39078ad2-5891-4f67-ea0b-83b23456789e",
       "name": "Responder Escalaciones",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         1120,
         864
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "sendMessage",
-        "chatId": "={{ $json.chatId }}",
-        "text": "={{ $json.text }}",
-        "additionalFields": {
-          "appendAttribution": false
-        }
+        "method": "POST",
+        "url": "={{ $env.APP_URL || \"http://localhost:3000\" }}/api/alerts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"source\": \"Panel de Control Móvil vía Telegram\",\n  \"severity\": \"warning\",\n  \"title\": \"Alerta en Panel de Control Móvil vía Telegram\",\n  \"message\": \"={{ $json.message || $json.text || $json.error?.message || \\\"Alerta operativa registrada\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowId\": \"pA90kLm4Qx8VnZ2e\",\n    \"originFile\": \"panel-control-movil-telegram.json\"\n  }\n}",
+        "options": {}
       }
     },
     {
       "id": "40189be3-6902-4078-fb1c-94c34567890f",
       "name": "Enviar Menú de Ayuda",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         672,
         1056
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "sendMessage",
-        "chatId": "={{ $json.chatId }}",
-        "text": "=🌴 *Panel de Control Costa Rica Tours*\n\nComandos disponibles:\n• `/hoy` — Tours y pasajeros programados para el día de hoy\n• `/reservas` — Lista las últimas reservas registradas\n• `/buscar [id]` — Consulta información detallada de una reserva\n• `/confirmar [id]` — Confirma manualmente una reserva pendiente\n• `/alertas` — Lista escalaciones e incidencias abiertas\n• `/ayuda` — Muestra este menú de instrucciones",
-        "additionalFields": {
-          "appendAttribution": false
-        }
+        "method": "POST",
+        "url": "={{ $env.APP_URL || \"http://localhost:3000\" }}/api/alerts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"source\": \"Panel de Control Móvil vía Telegram\",\n  \"severity\": \"warning\",\n  \"title\": \"Alerta en Panel de Control Móvil vía Telegram\",\n  \"message\": \"={{ $json.message || $json.text || $json.error?.message || \\\"Alerta operativa registrada\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowId\": \"pA90kLm4Qx8VnZ2e\",\n    \"originFile\": \"panel-control-movil-telegram.json\"\n  }\n}",
+        "options": {}
       }
     }
   ]

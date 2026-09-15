@@ -25,6 +25,11 @@ import {
   getWeeklyConversionMetrics
 } from './backend/bookingService';
 import {
+  createAlert,
+  getAlerts,
+  updateAlert
+} from './backend/alertService';
+import {
   processChatInquiry,
   runTriage,
   runProcessor,
@@ -413,6 +418,87 @@ app.patch('/api/bookings/:id', requireOperator, async (req, res) => {
     }
     res.json(result);
   } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==========================================
+// 🚨 SISTEMA PROPIO DE ALERTAS ADMINISTRATIVAS (REEMPLAZO DE TELEGRAM)
+// ==========================================
+
+// 1.2 Recepción de alertas desde flujos n8n (POST /api/alerts)
+// Protegido criptográficamente con verifyN8NRequest (mismo esquema que booking-action)
+app.post('/api/alerts', async (req, res) => {
+  if (!verifyN8NRequest(req.headers)) {
+    return res.status(401).json({ error: 'Credenciales de n8n inválidas' });
+  }
+
+  const { source, severity, title, message, bookingId, providerId, metadata } = req.body || {};
+
+  if (!source || !severity || !title || !message) {
+    return res.status(400).json({
+      error: 'Faltan campos obligatorios. "source", "severity", "title" y "message" son requeridos.'
+    });
+  }
+
+  try {
+    const { alertId, alert } = await createAlert({
+      source,
+      severity,
+      title,
+      message,
+      bookingId,
+      providerId,
+      metadata
+    });
+
+    res.status(200).json({ received: true, alertId, alert });
+  } catch (err: any) {
+    console.error('Error al procesar alerta administrativa:', err);
+    res.status(500).json({ error: err.message || 'Error interno al registrar alerta' });
+  }
+});
+
+// 1.3 Listar alertas administrativas (GET /api/alerts)
+// Protegido con requireOperator (mismo esquema que GET /api/bookings)
+app.get('/api/alerts', requireOperator, async (req, res) => {
+  try {
+    const resolvedFilter = req.query.resolved !== undefined
+      ? req.query.resolved === 'true'
+      : undefined;
+    const severityFilter = req.query.severity ? String(req.query.severity) : undefined;
+
+    const alerts = await getAlerts({
+      resolved: resolvedFilter,
+      severity: severityFilter
+    });
+
+    res.json({
+      success: true,
+      alerts,
+      data: alerts,
+      count: alerts.length
+    });
+  } catch (err: any) {
+    console.error('Error al obtener alertas:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 1.4 Actualizar estado de lectura o resolución (PATCH /api/alerts/:id)
+// Protegido con requireOperator
+app.patch('/api/alerts/:id', requireOperator, async (req, res) => {
+  try {
+    const { read, resolved } = req.body || {};
+    const result = await updateAlert(req.params.id, { read, resolved });
+
+    if (!result.success) {
+      return res.status(404).json(result);
+    }
+
+    res.json(result);
+  } catch (err: any) {
+    console.error(`Error al actualizar alerta #${req.params.id}:`, err);
     res.status(500).json({ error: err.message });
   }
 });

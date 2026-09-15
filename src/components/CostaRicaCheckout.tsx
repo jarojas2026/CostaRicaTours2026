@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { CreditCard, Smartphone, CheckCircle, X, ShieldCheck, DollarSign } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CreditCard, Smartphone, CheckCircle, X, ShieldCheck, DollarSign, Clock, Calendar, Phone } from 'lucide-react';
 
 interface CostaRicaCheckoutProps {
   isOpen: boolean;
@@ -35,6 +35,21 @@ export const CostaRicaCheckout: React.FC<CostaRicaCheckoutProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [completedBookingId, setCompletedBookingId] = useState<string | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(900); // 15 minutos de reserva temporal garantizada
+
+  useEffect(() => {
+    if (completedBookingId) return;
+    const interval = setInterval(() => {
+      setSecondsLeft((prev) => (prev > 1 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [completedBookingId]);
+
+  const formatTimer = (sec: number) => {
+    const mins = Math.floor(sec / 60);
+    const secs = sec % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const exchangeRate = 515;
   const totalUSD = (priceUsd * adults) + (priceUsd * 0.65 * children);
@@ -133,24 +148,58 @@ export const CostaRicaCheckout: React.FC<CostaRicaCheckoutProps> = ({
               confirmación con el punto de encuentro en Waze y detalles por WhatsApp y correo electrónico.
             </p>
             {method === 'sinpe' && (
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 text-left mb-6">
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 text-left mb-4">
                 <span className="font-bold block mb-1">Recordatorio SINPE Móvil:</span>
                 Recuerda que si no has enviado el comprobante <strong>{sinpeRef || 'bancario'}</strong>, puedes
                 reenviarlo por WhatsApp a nuestro soporte (+506 8795-9148 / +506 8888-8888).
               </div>
             )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+              <a
+                href={`https://wa.me/50687959148?text=${encodeURIComponent(`🇨🇷 *Reserva Costa Rica Tours*\n*ID:* ${completedBookingId}\n*Tour:* ${tourTitle}\n*Fecha:* ${date}\n*Pasajeros:* ${adults} Adultos${children > 0 ? `, ${children} Niños` : ''}\n*Titular:* ${name} (${phone})`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition"
+              >
+                <Phone className="w-4 h-4" />
+                <span>Enviar a WhatsApp</span>
+              </a>
+
+              <a
+                href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`🇨🇷 Tour Costa Rica: ${tourTitle}`)}&dates=${date.replace(/-/g, '')}T140000Z/${date.replace(/-/g, '')}T180000Z&details=${encodeURIComponent(`Reserva #${completedBookingId}\nTour: ${tourTitle}\nPasajeros: ${adults} Adultos\nPickup: ${pickupHotel || 'Hotel'}`)}&location=${encodeURIComponent(pickupHotel || 'Costa Rica')}`}
+                target="_blank"
+                rel="noreferrer"
+                className="bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition border border-amber-400/30"
+              >
+                <Calendar className="w-4 h-4 text-amber-400" />
+                <span>Agregar a Calendar</span>
+              </a>
+            </div>
+
             <button
               onClick={onClose}
-              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-700/20 transition"
+              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-700/20 transition cursor-pointer"
             >
               Cerrar y Ver Mi Reserva
             </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Soft-Hold Countdown Banner */}
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-2 flex items-center justify-between text-xs text-amber-900 font-medium">
+              <span className="flex items-center gap-1.5 font-bold">
+                <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                Cupo reservado temporalmente:
+              </span>
+              <span className="bg-amber-500 text-stone-950 font-black px-2 py-0.5 rounded-md font-mono text-xs shadow-xs">
+                {formatTimer(secondsLeft)}
+              </span>
+            </div>
+
             <div className="flex justify-between items-start pr-6 mb-1">
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Reserva Inmediata</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Reserva Inmediata & Automatizada</span>
                 <h2 className="text-xl font-black text-slate-900 leading-tight">{tourTitle}</h2>
               </div>
             </div>

@@ -498,18 +498,30 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
               </a>
             </div>
             
-            <button
-              onClick={handleAddToTasks}
-              disabled={isAddingTask}
-              className="min-h-[44px] min-w-[44px] w-full bg-[#1A73E8] hover:bg-[#1557B0] text-white disabled:opacity-70 font-bold text-xs uppercase py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-xs"
-            >
-              {isAddingTask ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <ListTodo className="w-4 h-4" />
-              )}
-              <span>{isAddingTask ? (language === 'es' ? 'Añadiendo...' : 'Adding...') : (language === 'es' ? 'Añadir Recordatorio a Google Tasks' : 'Add to Google Tasks')}</span>
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <a
+                href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`🇨🇷 Tour Costa Rica: ${booking.tourName}`)}&dates=${booking.date.replace(/-/g, '')}T140000Z/${booking.date.replace(/-/g, '')}T180000Z&details=${encodeURIComponent(`Reserva Oficial #${booking.bookingId}\nTour: ${booking.tourName}\nPasajeros: ${booking.adults} Adultos${booking.children > 0 ? `, ${booking.children} Niños` : ''}\nPickup: ${booking.pickupHotel}\nTotal: $${booking.totalUSD} USD (₡${booking.totalCRC.toLocaleString()} CRC)\nSoporte WhatsApp: +506 8795-9148`)}&location=${encodeURIComponent(booking.pickupHotel || 'Costa Rica')}`}
+                target="_blank"
+                rel="noreferrer"
+                className="min-h-[44px] bg-[#0C1E14] hover:bg-[#1E4D2B] text-emerald-200 hover:text-white border border-emerald-500/40 font-bold text-xs uppercase py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-xs"
+              >
+                <Calendar className="w-4 h-4 text-amber-400" />
+                <span>{language === 'es' ? '📅 Google Calendar' : '📅 Google Calendar'}</span>
+              </a>
+
+              <button
+                onClick={handleAddToTasks}
+                disabled={isAddingTask}
+                className="min-h-[44px] bg-[#1A73E8] hover:bg-[#1557B0] text-white disabled:opacity-70 font-bold text-xs uppercase py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-xs"
+              >
+                {isAddingTask ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ListTodo className="w-4 h-4" />
+                )}
+                <span>{isAddingTask ? (language === 'es' ? 'Añadiendo...' : 'Adding...') : (language === 'es' ? 'Google Tasks' : 'Google Tasks')}</span>
+              </button>
+            </div>
           </div>
 
         </div>

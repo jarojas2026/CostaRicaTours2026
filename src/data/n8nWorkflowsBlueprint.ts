@@ -6,6 +6,10 @@
  */
 
 import { SUPER_ADVANCED_WORKFLOWS } from './superAdvancedWorkflows';
+import { WORKFLOWS_100_LIST, N8NWorkflowDef100 } from './workflows100';
+
+export { WORKFLOWS_100_LIST };
+export type { N8NWorkflowDef100 };
 
 export interface N8NWorkflowDef {
   id: string;
