@@ -31,6 +31,7 @@ import { BottomNav } from './components/BottomNav';
 import { FlightTrackerGadget } from './components/FlightTrackerGadget';
 import { LiveTouristIntelligence } from './components/LiveTouristIntelligence';
 import { GoogleWorkspaceHub } from './components/GoogleWorkspaceHub';
+import { PhotoTourFinder } from './components/PhotoTourFinder';
 import { Compass, ArrowLeft, Home, ChevronRight, Plane, Mail, Calendar } from 'lucide-react';
 
 import { TourDetailModal } from './components/TourDetailModal';
@@ -482,6 +483,10 @@ export default function App() {
         {/* Tab 3: AI Concierge Chat */}
         {activeTab === 'ai' && (
           <div className="space-y-8 pb-12">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+              <PhotoTourFinder />
+            </div>
+
             <Suspense fallback={
               <div className="py-24 text-center text-emerald-400 flex flex-col items-center justify-center gap-3">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-400"></div>

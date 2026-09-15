@@ -121,6 +121,8 @@ export interface BookingRequest {
     riskAssessment: string;
     operationalInstructions: string[];
   };
+  fraudRiskScore?: 'bajo' | 'medio' | 'alto' | string;
+  fraudRiskJustification?: string;
   customer: {
     fullName: string;
     email: string;

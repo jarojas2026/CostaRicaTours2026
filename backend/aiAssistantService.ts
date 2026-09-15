@@ -76,6 +76,7 @@ const SYSTEM_INSTRUCTION = `Eres el asistente inteligente oficial de Costa Rica 
    - NO hagas descuentos ni cambies precios por tu cuenta
    - NO prometas disponibilidad sin verificar
    - Si el usuario se queja, sé empático y ofrécele escalarlo a atención al cliente
+   - Si usas información obtenida en tiempo real de Google Search (Grounding), DEBES citar la fuente de forma visible en tu respuesta (ej. "Según [fuente], hoy...").
 
 --- FORMATO DE RESPUESTA ---
 - Empieza con saludo o respuesta directa
@@ -249,13 +250,34 @@ function getKnowledgeBaseReply(message: string, isEn: boolean) {
       return getKnowledgeBaseReply(message, isEn);
     }
 
+    let needsGrounding = false;
+    try {
+      const classifierPrompt = `Does the following user query require up-to-date, real-time information from the internet (e.g. current weather, today's events, road closures, current exchange rates)? 
+User query: "${message}"
+Reply ONLY with "YES" or "NO".`;
+      const classRes = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: classifierPrompt,
+        config: { temperature: 0 }
+      });
+      needsGrounding = classRes.text?.trim().toUpperCase().includes('YES') || false;
+    } catch(e) {
+      console.warn('Classifier error:', e);
+    }
+
+    const config: any = {
+      systemInstruction: SYSTEM_INSTRUCTION,
+      temperature: 0.7
+    };
+
+    if (needsGrounding) {
+      config.tools = [{ googleSearch: {} }];
+    }
+
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.7
-      }
+      config
     });
 
     const reply = response.text?.trim() || (isEn ? 'Hello! How can I assist you with your trip to Costa Rica?' : '¡Hola! ¿En qué puedo ayudarte hoy para tu viaje a Costa Rica?');

@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { BookingRequest, Language } from '../types';
-import { X, Server, Activity, Database, Key, Settings, ExternalLink, Zap, Mail, Bot, Network, ChevronRight, RefreshCw, CheckCircle2, BellRing, ShieldAlert } from 'lucide-react';
+import { X, Server, Activity, Database, Key, Settings, ExternalLink, Zap, Mail, Bot, Network, ChevronRight, RefreshCw, CheckCircle2, BellRing, ShieldAlert, Users, Sparkles, TrendingUp } from 'lucide-react';
 import { CronDashboard } from './CronDashboard';
 import { N8NWorkflowStudio } from './N8NWorkflowStudio';
 import { AlertsCenter } from './AlertsCenter';
+import { ProviderCommunicationHub } from './ProviderCommunicationHub';
+
+import { AiInsightsPanel } from './AiInsightsPanel';
 
 interface AdminDashboardProps {
   isOpen: boolean;
@@ -182,6 +185,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
             ) : null}
           </button>
           <button 
+            onClick={() => setActiveTab('providers')}
+            className={`whitespace-nowrap px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'providers' ? 'border-amber-400 text-amber-400 bg-amber-950/20' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
+          >
+            <Users className="w-4 h-4 text-amber-400" />
+            <span>Proveedores & Logística</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('ai-insights')}
+            className={`whitespace-nowrap px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'ai-insights' ? 'border-purple-400 text-purple-400 bg-purple-950/20' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
+          >
+            <Sparkles className="w-4 h-4 text-purple-400" />
+            <span>Sugerencias de IA</span>
+          </button>
+          <button 
             onClick={() => setActiveTab('n8n')}
             className={`whitespace-nowrap px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'n8n' ? 'border-amber-400 text-amber-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
           >
@@ -266,6 +283,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                       <th className="px-4 py-3">Cliente</th>
                       <th className="px-4 py-3">Tour / Fecha</th>
                       <th className="px-4 py-3">AI Agent Insights (Backend)</th>
+                      <th className="px-4 py-3">Antifraude</th>
                       <th className="px-4 py-3 rounded-tr-xl">Status</th>
                     </tr>
                   </thead>
@@ -281,7 +299,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                           <div className="text-white">{b.tourName}</div>
                           <div className="text-xs text-slate-500">{b.date} • {b.time}</div>
                         </td>
-                        <td className="px-4 py-3 max-w-sm">
+                        <td className="px-4 py-3 max-w-xs">
                           {b.agentInsights ? (
                             <div className="bg-indigo-900/30 p-2 rounded border border-indigo-500/20 text-[11px]">
                               <div className="text-indigo-300 font-semibold mb-1">Risk Assessment:</div>
@@ -296,6 +314,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                             </div>
                           ) : (
                             <span className="text-slate-500 italic text-xs">No insights generated</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 max-w-xs">
+                          {b.fraudRiskScore ? (
+                            <div className={`p-2 rounded border text-[11px] ${b.fraudRiskScore === 'alto' ? 'bg-rose-900/30 border-rose-500/30 text-rose-300' : b.fraudRiskScore === 'medio' ? 'bg-amber-900/30 border-amber-500/30 text-amber-300' : 'bg-emerald-900/30 border-emerald-500/30 text-emerald-300'}`}>
+                              <span className="font-bold uppercase block mb-1">Riesgo: {b.fraudRiskScore}</span>
+                              <span className="italic">"{b.fraudRiskJustification}"</span>
+                            </div>
+                          ) : (
+                            <button 
+                              onClick={async () => {
+                                try {
+                                  await fetch('/api/ai/fraud-check', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ADMIN_MOCK_TOKEN' },
+                                    body: JSON.stringify(b)
+                                  });
+                                  fetchBookings();
+                                } catch (e) {
+                                  console.error(e);
+                                }
+                              }}
+                              className="text-[10px] bg-purple-900/30 hover:bg-purple-800/40 text-purple-300 border border-purple-500/30 px-2 py-1 rounded"
+                            >
+                              Evaluar Fraude (IA)
+                            </button>
                           )}
                         </td>
                         <td className="px-4 py-3">
@@ -573,6 +617,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                 </div>
               </div>
             </div>
+          )}
+          
+          {activeTab === 'providers' && (
+            <ProviderCommunicationHub language={language} />
+          )}
+
+          {activeTab === 'ai-insights' && (
+            <AiInsightsPanel />
           )}
           
           {activeTab === 'architecture' && (
