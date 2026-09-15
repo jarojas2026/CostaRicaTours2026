@@ -307,7 +307,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
       </div>
       {/* --- END HIDDEN PDF VOUCHER --- */}
 
-      <div className="bg-[#102A1C] text-stone-900 border border-[#2D663B]/40 rounded-[2rem] sm:rounded-[2.5rem] w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden">
+      <div className="bg-[#052118] text-stone-100 border border-emerald-900/40 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden">
         
         {/* Close Button */}
         <button

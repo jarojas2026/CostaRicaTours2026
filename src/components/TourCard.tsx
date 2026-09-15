@@ -64,9 +64,9 @@ export const TourCard: React.FC<TourCardProps> = ({
     <>
       <div 
         onClick={() => onSelectTour(tour)}
-        className={`relative rounded-3xl transition-all duration-300 overflow-hidden flex ${
+        className={`relative modern-card flex overflow-hidden ${
           viewMode === 'list' ? 'flex-col lg:flex-row' : 'flex-col h-full'
-        } group cursor-pointer bg-[#07241a] border border-emerald-500/25 hover:border-amber-400 hover:shadow-[0_12px_40px_rgba(0,0,0,0.5)] hover:-translate-y-1`}
+        } group cursor-pointer`}
       >
         {/* Image Container with Crisp Aspect Ratio */}
         <div className={`relative overflow-hidden ${viewMode === 'list' ? 'shrink-0 w-full lg:w-[38%] h-56 lg:h-auto' : 'w-full aspect-[4/3] shrink-0'}`}>
@@ -199,7 +199,7 @@ export const TourCard: React.FC<TourCardProps> = ({
                 e.stopPropagation();
                 onSelectTour(tour);
               }}
-              className="bg-amber-400 hover:bg-amber-300 text-stone-950 font-black px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs uppercase tracking-wide transition-all shadow-md group-hover:scale-105 cursor-pointer"
+              className="bg-[#f59e0b] hover:bg-[#d97706] text-stone-950 font-bold px-4 py-2.5 rounded-full flex items-center justify-center gap-1.5 text-xs tracking-wide transition-all duration-200 group-hover:scale-105 cursor-pointer"
             >
               <span>{t('checkDetails')}</span>
               <ArrowRight className="w-4 h-4" />

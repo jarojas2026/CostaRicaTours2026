@@ -162,8 +162,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto overscroll-contain">
-      <div className="modal-panel w-full max-w-4xl relative text-stone-900 my-4 sm:my-8 pb-8 sm:pb-6 bg-white rounded-3xl shadow-2xl p-6 sm:p-8">
-        <button onClick={onClose} className="min-h-[44px] min-w-[44px] absolute top-4 right-4 text-stone-500 hover:text-stone-900 p-2 rounded-full hover:bg-stone-100 transition-colors">
+      <div className="modal-panel w-full max-w-4xl relative my-4 sm:my-8">
+        <button onClick={onClose} className="btn-close">
           <X size={24} />
         </button>
         
@@ -255,7 +255,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
             <button 
               disabled={isSubmitting} 
               type="submit" 
-              className="w-full py-3.5 px-6 rounded-2xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-sm uppercase tracking-wider transition-all duration-200 shadow-md cursor-pointer disabled:opacity-50 min-h-[44px] flex items-center justify-center gap-2"
+              className="w-full btn-primary disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>

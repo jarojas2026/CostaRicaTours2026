@@ -394,7 +394,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
               {filteredSlang.map((item, idx) => (
                 <div 
                   key={idx}
-                  className="bg-[#092b1f]/90 rounded-3xl p-6 border border-emerald-500/25 shadow-xl hover:border-amber-400/80 transition-all space-y-4 flex flex-col justify-between"
+                  className="modern-card p-6 flex flex-col justify-between"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -450,7 +450,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
               {TICO_DISHES.map((dish, index) => (
                 <div 
                   key={index}
-                  className="bg-[#092b1f]/90 rounded-3xl overflow-hidden border border-emerald-500/25 shadow-xl hover:border-amber-400/80 transition-all flex flex-col group"
+                  className="modern-card overflow-hidden flex flex-col group"
                 >
                   <div className="relative h-48 overflow-hidden">
                     <img 
@@ -490,7 +490,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
             </div>
 
             {/* Salsa Lizano Note */}
-            <div className="bg-[#092b1f] p-6 rounded-3xl border border-orange-500/30 flex flex-col md:flex-row items-center gap-6 max-w-4xl mx-auto">
+            <div className="bg-[#052118] p-6 rounded-2xl border border-orange-500/30 flex flex-col md:flex-row items-center gap-6 max-w-4xl mx-auto shadow-xl">
               <div className="w-14 h-14 bg-orange-500 rounded-2xl flex items-center justify-center text-stone-950 font-black text-2xl shrink-0 shadow-lg">
                 🧂
               </div>
@@ -575,7 +575,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
               
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {COFFEE_REGIONS.map((region, idx) => (
-                  <div key={idx} className="bg-[#092b1f]/80 p-5 rounded-3xl border border-emerald-500/25 space-y-3">
+                  <div key={idx} className="modern-card p-5 space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="bg-white text-amber-400 font-mono text-[10px] px-2.5 py-0.5 rounded-full font-bold">
                         {region.altitude}
@@ -742,7 +742,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
               <div className="text-center pt-4">
                 <button
                   onClick={onExploreTours}
-                  className="bg-orange-500 hover:bg-teal-600 text-stone-950 hover:text-white font-black text-xs uppercase px-8 py-4 rounded-2xl shadow-xl transition-all hover:scale-105 inline-flex items-center gap-2 cursor-pointer"
+                  className="btn-primary inline-flex"
                 >
                   <Compass className="w-4 h-4" />
                   <span>{language === 'es' ? '¡Explorar Todos los Tours en Costa Rica!' : 'Explore All Costa Rica Tours!'}</span>

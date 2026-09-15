@@ -152,7 +152,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.15 }}
-                className="relative bg-[#08261c]/90 backdrop-blur-md p-8 rounded-3xl border border-emerald-500/25 hover:border-amber-400/80 transition-all duration-300 group shadow-xl hover:shadow-2xl hover:-translate-y-1.5 flex flex-col justify-between"
+                className="relative modern-card p-8 group flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between mb-6">
@@ -214,7 +214,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: idx * 0.1 }}
-                className="bg-[#092b20]/90 backdrop-blur-md rounded-2xl p-6 border border-emerald-500/25 hover:border-amber-400/60 transition-all flex flex-col justify-between shadow-xl"
+                className="modern-card p-6 flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center gap-3 mb-4">
@@ -283,7 +283,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
           {partners.map((p) => (
             <div 
               key={p.name}
-              className="bg-[#08261c]/80 border border-emerald-500/25 hover:border-amber-400/60 rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all hover:scale-105 shadow-md"
+              className="modern-card p-4 flex flex-col items-center justify-center text-center hover:scale-105"
             >
               <span className="text-2xl mb-1">{p.icon}</span>
               <span className="text-xs font-bold text-white mt-1 leading-tight">{p.name}</span>
@@ -295,7 +295,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
 
       {/* 4. BANNER CTA ALTO IMPACTO: ARMÁ TU VIAJE A MEDIDA */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#0a2e21] via-[#07241a] to-[#041610] border-2 border-amber-500/40 p-8 sm:p-12 shadow-[0_10px_40px_rgba(0,0,0,0.7)]">
+        <div className="relative rounded-2xl overflow-hidden bg-[#052118] border border-amber-500/30 p-8 sm:p-12 shadow-xl shadow-black/50">
           {/* Subtle background glow */}
           <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
@@ -337,7 +337,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
               <button
                 type="button"
                 onClick={onOpenCustomFunnel}
-                className="w-full bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-base uppercase py-4 px-6 rounded-2xl shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-3 cursor-pointer border border-amber-300"
+                className="w-full btn-primary"
               >
                 <Sparkles className="w-5 h-5 text-stone-950" />
                 <span>{isEs ? 'Armar mi Viaje a Medida' : 'Build My Custom Trip'}</span>
@@ -346,7 +346,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
               <button
                 type="button"
                 onClick={onOpenItineraryPlanner}
-                className="w-full bg-[#03140e] hover:bg-[#051c14] border border-emerald-500/40 hover:border-emerald-400 text-white font-bold text-sm py-3.5 px-6 rounded-2xl transition-all shadow-md flex items-center justify-center gap-2.5 cursor-pointer group"
+                className="w-full btn-outline bg-transparent border-emerald-600/40 text-white hover:bg-emerald-900/40 group"
                 title={isEs ? 'Planificador inteligente con IA en segundos' : 'Smart AI trip planner in seconds'}
               >
                 <Compass className="w-4 h-4 text-amber-400 group-hover:rotate-45 transition-transform duration-300" />
