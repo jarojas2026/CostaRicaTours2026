@@ -2,7 +2,7 @@
  * ⚡ MOTOR DE PROCESAMIENTO MASIVO Y COORDINACIÓN AUTÓNOMA POR SEGUNDO
  * =========================================================================
  * Diseñado para soportar alto volumen de tráfico concurrente (cientos de consultas
- * y reservas por segundo) con aislamiento por solicitud, control de contención atómico,
+ * y reservas per segundo) con aislamiento por solicitud, control de contención atómico,
  * micro-colas no bloqueantes y ciclo de vida autónomo individual con cada proveedor.
  * =========================================================================
  */
@@ -12,7 +12,9 @@ import { EventEmitter } from 'events';
 import { 
   getAllBookings, 
   updateBookingStatus, 
-  getSlotKey 
+  getSlotKey,
+  getFirestoreDb,
+  getBookingsCollection
 } from './bookingService';
 import { 
   executeProviderRealtimeCoordination, 
@@ -47,7 +49,6 @@ export interface MassiveThroughputMetrics {
   activeWorkers: number;
   queueDepth: number;
   activeProviderMonitors: number;
-  atomicLocksActive: number;
   successfulDispatches: number;
   autoRecoveredFailovers: number;
   uptimeSeconds: number;
@@ -55,124 +56,87 @@ export interface MassiveThroughputMetrics {
 }
 
 /**
- * Gestor de Bloqueo Atómico en Memoria para Evitar Sobreventas con 1000+ Concurrencias
+ * ⚠️ AVISO DE ARQUITECTURA EFÍMERA:
+ * Este estado es efímero y se pierde en reinicio/escalado — no usar para lógica de negocio crítica.
+ * (Las colas de métricas de RPS, latencias y contadores locales son solo para observabilidad en tiempo real).
  */
-class AtomicCapacityLockManager {
-  private locks: Map<string, { lockedBy: string; expiresAt: number; count: number }> = new Map();
-
-  async acquireLock(slotKey: string, requestedSeats: number, maxCapacity: number, ttlMs = 15000): Promise<boolean> {
-    const now = Date.now();
-    const existing = this.locks.get(slotKey);
-
-    // Limpiar lock expirado
-    if (existing && existing.expiresAt < now) {
-      this.locks.delete(slotKey);
-    }
-
-    const currentHold = this.locks.get(slotKey)?.count || 0;
-    if (currentHold + requestedSeats > maxCapacity) {
-      return false; // Capacidad agotada atómicamente
-    }
-
-    this.locks.set(slotKey, {
-      lockedBy: crypto.randomUUID(),
-      expiresAt: now + ttlMs,
-      count: currentHold + requestedSeats
-    });
-
-    return true;
-  }
-
-  releaseLock(slotKey: string, seatsToRelease: number): void {
-    const existing = this.locks.get(slotKey);
-    if (!existing) return;
-
-    existing.count = Math.max(0, existing.count - seatsToRelease);
-    if (existing.count === 0) {
-      this.locks.delete(slotKey);
-    }
-  }
-
-  getActiveLocksCount(): number {
-    return this.locks.size;
-  }
-}
 
 /**
- * Monitor Autónomo del Ciclo de Vida Individual por Proveedor
- * Gestiona el seguimiento segundo a segundo de cada reserva individualmente
+ * Monitor Autónomo del Ciclo de Vida Individual por Proveedor (100% Persistente en Firestore)
+ * Gestiona el seguimiento de SLA de cada reserva de forma duradera y resistente a reinicios de Cloud Run.
  */
 class IndividualProviderLifecycleManager {
-  private activeTimers: Map<string, NodeJS.Timeout> = new Map();
-  private bookingTracking: Map<string, {
-    bookingId: string;
-    providerId: string;
-    dispatchedAt: number;
-    reminderSent: boolean;
-    escalated: boolean;
-  }> = new Map();
-
   /**
-   * Inicia el ciclo autónomo individual para una reserva
+   * Inicia el ciclo autónomo persistiendo el estado directamente en Firestore
    */
-  startAutonomousTracking(bookingId: string, providerId: string, tourData: any) {
-    if (this.activeTimers.has(bookingId)) {
-      clearTimeout(this.activeTimers.get(bookingId)!);
+  async startAutonomousTracking(bookingId: string, providerId: string, tourData: any) {
+    try {
+      const db = getFirestoreDb();
+      const col = getBookingsCollection();
+      const now = Date.now();
+
+      const trackingPayload = {
+        dispatchedAt: now,
+        providerStatus: 'pending',
+        reminderSent: false,
+        escalated: false,
+        providerId
+      };
+
+      if (col) {
+        await col.doc(bookingId).set(trackingPayload, { merge: true });
+      } else {
+        await updateBookingStatus(bookingId, trackingPayload);
+      }
+      console.log(`📡 [LIFECYCLE] Tracking autónomo persistido en Firestore para reserva #${bookingId} (Proveedor: ${providerId})`);
+    } catch (err) {
+      console.error(`Error iniciando tracking autónomo para #${bookingId}:`, err);
     }
-
-    this.bookingTracking.set(bookingId, {
-      bookingId,
-      providerId,
-      dispatchedAt: Date.now(),
-      reminderSent: false,
-      escalated: false
-    });
-
-    // Temporizador de SLA escalonado (15 min aviso, 30 min escalación, 45 min failover)
-    // En entorno de demostración o producción, ejecuta chequeo continuo
-    const timer = setTimeout(async () => {
-      await this.evaluateProviderSLA(bookingId, providerId, tourData);
-    }, 15 * 60 * 1000); // 15 minutos
-
-    this.activeTimers.set(bookingId, timer);
   }
 
   /**
-   * Evalúa el SLA y ejecuta failover autónomo si el operador no ha respondido
+   * Evalúa periódicamente los SLAs pendientes directamente consultando Firestore (Sobrevive a reinicios y escalado a cero).
    */
-  async evaluateProviderSLA(bookingId: string, providerId: string, tourData: any) {
-    const track = this.bookingTracking.get(bookingId);
-    if (!track) return;
-
+  async sweepPendingSlas(): Promise<number> {
+    let evaluatedCount = 0;
     try {
       const all = await getAllBookings();
-      const current = all.find((b: any) => (b.bookingId === bookingId || b.id === bookingId));
+      const now = Date.now();
+      const SLA_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutos
 
-      if (current && current.providerStatus === 'pending') {
-        // Enviar aviso prioritario por Telegram y activar fallback a flota Alsama Tours
-        console.warn(`⚡ [AUTONOMOUS-SLA] Operador ${providerId} no respondió en 15m para #${bookingId}. Iniciando Failover Autónomo.`);
-        
-        await executeAutonomousProviderFallback(bookingId, providerId, `SLA Expirado sin confirmación del proveedor ${providerId}`);
-        track.escalated = true;
+      for (const booking of all) {
+        const bookingId = booking.id || booking.bookingId;
+        const providerId = booking.providerId || 'alsama-tours-cr';
+        const dispatchedAt = booking.dispatchedAt ? Number(booking.dispatchedAt) : 0;
+        const providerStatus = booking.providerStatus || 'pending';
+        const escalated = booking.escalated === true;
+
+        if (
+          bookingId &&
+          providerStatus === 'pending' &&
+          !escalated &&
+          dispatchedAt > 0 &&
+          now - dispatchedAt > SLA_THRESHOLD_MS
+        ) {
+          console.warn(`⚡ [AUTONOMOUS-SLA] Operador ${providerId} no respondió en 15m para #${bookingId}. Iniciando Failover Autónomo duradero.`);
+          await executeAutonomousProviderFallback(bookingId, providerId, `SLA Expirado sin confirmación del proveedor ${providerId}`);
+          
+          await updateBookingStatus(bookingId, { escalated: true, providerStatus: 'escalated_fallback' });
+          evaluatedCount++;
+        }
       }
-    } catch (err: any) {
-      console.error(`Error en evaluación de SLA para #${bookingId}:`, err);
-    } finally {
-      this.activeTimers.delete(bookingId);
+    } catch (err) {
+      console.error('Error en barredor periódico de SLAs:', err);
     }
+    return evaluatedCount;
   }
 
   stopTracking(bookingId: string) {
-    const t = this.activeTimers.get(bookingId);
-    if (t) {
-      clearTimeout(t);
-      this.activeTimers.delete(bookingId);
-    }
-    this.bookingTracking.delete(bookingId);
+    // Ya no usa timers en memoria; el estado se gestiona en Firestore.
   }
 
   getActiveMonitorsCount(): number {
-    return this.activeTimers.size;
+    return 0; // Estado distribuido en Firestore
   }
 }
 
@@ -181,7 +145,7 @@ class IndividualProviderLifecycleManager {
  */
 export class MassiveProcessingEngine extends EventEmitter {
   private queue: MassiveTask[] = [];
-  private concurrencyLimit = 50; // Hasta 50 workers asíncronos paralelos por tick
+  private concurrencyLimit = 50;
   private activeWorkers = 0;
   private totalProcessed = 0;
   private latencies: number[] = [];
@@ -192,12 +156,12 @@ export class MassiveProcessingEngine extends EventEmitter {
   private successfulDispatches = 0;
   private autoRecoveredFailovers = 0;
 
-  public lockManager = new AtomicCapacityLockManager();
   public providerLifecycle = new IndividualProviderLifecycleManager();
 
   constructor() {
     super();
     this.startThroughputSampler();
+    this.startFirestoreSlaSweeper();
   }
 
   /**
@@ -222,7 +186,6 @@ export class MassiveProcessingEngine extends EventEmitter {
         reject
       };
 
-      // Inserción ordenada por prioridad (EMERGENCY al frente)
       const priorityWeights: Record<QueuePriority, number> = {
         EMERGENCY: 100,
         PAYMENT_VERIFICATION: 80,
@@ -278,7 +241,6 @@ export class MassiveProcessingEngine extends EventEmitter {
       task.resolve(result);
     } catch (error: any) {
       if (task.attempts < task.maxAttempts) {
-        // Reintentar con retroceso exponencial
         console.warn(`[MASSIVE-ENGINE] Reintentando tarea ${task.id} (${task.attempts}/${task.maxAttempts}):`, error.message);
         setTimeout(() => {
           this.queue.push(task);
@@ -290,7 +252,6 @@ export class MassiveProcessingEngine extends EventEmitter {
       }
     } finally {
       this.activeWorkers--;
-      // Procesar siguiente en la micro-cola
       setImmediate(() => this.processNext());
     }
   }
@@ -337,18 +298,11 @@ export class MassiveProcessingEngine extends EventEmitter {
           pickupHotel: booking.pickupHotel
         });
 
-        // 3. Iniciar monitor autónomo de SLA individual
-        this.providerLifecycle.startAutonomousTracking(bookingId, providerId, booking);
+        // 3. Iniciar monitor autónomo de SLA individual persistido en Firestore
+        await this.providerLifecycle.startAutonomousTracking(bookingId, providerId, booking);
         this.successfulDispatches++;
 
         return { success: true, bookingId, providerDispatched: coordRes.success };
-      }
-
-      case 'ATOMIC_HOLD_ACQUIRE': {
-        const { tourId, date, time, requestedPax, maxCapacity } = task.data;
-        const slotKey = getSlotKey(tourId, date, time);
-        const acquired = await this.lockManager.acquireLock(slotKey, requestedPax, maxCapacity);
-        return { success: acquired, slotKey };
       }
 
       default:
@@ -377,6 +331,19 @@ export class MassiveProcessingEngine extends EventEmitter {
   }
 
   /**
+   * Barredor periódico de SLAs pendientes en Firestore (ejecuta cada 60s)
+   */
+  private startFirestoreSlaSweeper() {
+    setInterval(async () => {
+      try {
+        await this.providerLifecycle.sweepPendingSlas();
+      } catch (err) {
+        console.error('Error en ciclo de barrido de SLA:', err);
+      }
+    }, 60000);
+  }
+
+  /**
    * Métricas en tiempo real del motor masivo
    */
   getMetrics(): MassiveThroughputMetrics {
@@ -399,8 +366,7 @@ export class MassiveProcessingEngine extends EventEmitter {
       p99LatencyMs: p99,
       activeWorkers: this.activeWorkers,
       queueDepth: this.queue.length,
-      activeProviderMonitors: this.providerLifecycle.getActiveMonitorsCount(),
-      atomicLocksActive: this.lockManager.getActiveLocksCount(),
+      activeProviderMonitors: 0,
       successfulDispatches: this.successfulDispatches,
       autoRecoveredFailovers: this.autoRecoveredFailovers,
       uptimeSeconds: Math.floor((Date.now() - this.startTime) / 1000),
