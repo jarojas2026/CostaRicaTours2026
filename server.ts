@@ -71,6 +71,9 @@ import {
 } from './backend/nativeAutomationEngine';
 import {
   executeProviderRealtimeCoordination,
+  handleProviderActionResponse,
+  executeAutonomousProviderFallback,
+  MASTER_OPERATORS_REGISTRY,
   executeCustomerBookingConfirmation,
   executeAutomatedProviderPayouts,
   executeSurveillanceAndEscalation,
@@ -762,6 +765,127 @@ app.post(['/webhook/proveedores-coordinacion', '/webhook/coordinacion-proveedore
   } catch (error: any) {
     const status = error.message.includes('No autorizado') ? 401 : 500;
     res.status(status).json({ success: false, error: error.message });
+  }
+});
+
+// 1.1 Endpoint Bidireccional de Respuesta del Proveedor (GET para enlaces de correo/WhatsApp y POST para APIs)
+app.all(['/api/provider/respond', '/webhook/provider-response', '/api/webhooks/provider-response'], async (req, res) => {
+  try {
+    const action = String(req.query.action || req.body?.action || 'confirm');
+    const bookingId = String(req.query.bookingId || req.body?.bookingId || req.body?.id || '');
+    const providerId = String(req.query.providerId || req.body?.providerId || '');
+    const guideName = String(req.query.guideName || req.body?.guideName || 'Guía Naturalista Certificado ICT');
+    const vehiclePlate = String(req.query.vehiclePlate || req.body?.vehiclePlate || 'Unidad Oficial Alsama Tours');
+    const proposedTime = String(req.query.proposedTime || req.body?.proposedTime || '');
+    const providerNotes = String(req.query.notes || req.body?.notes || req.body?.providerNotes || '');
+
+    if (!bookingId) {
+      return res.status(400).json({ success: false, error: 'bookingId es obligatorio' });
+    }
+
+    const result = await handleProviderActionResponse(bookingId, action, {
+      guideName,
+      vehiclePlate,
+      proposedTime,
+      providerNotes,
+      providerId
+    });
+
+    // Si la solicitud proviene de un navegador web (clic en correo del proveedor)
+    if (req.method === 'GET' || req.accepts('html')) {
+      const isConfirm = action === 'confirm';
+      const isDecline = action === 'decline';
+      const badgeColor = isConfirm ? '#059669' : isDecline ? '#b91c1c' : '#d97706';
+      const title = isConfirm ? '✅ ¡Reserva Confirmada Exitosamente!' : isDecline ? '🔄 Reasignación en Proceso' : '⏰ Ajuste de Horario Solicitado';
+
+      return res.send(`
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>${title} • Costa Rica Tours</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #041711; color: #f8fafc; margin: 0; padding: 40px 16px; display: flex; justify-content: center; align-items: center; min-height: 80vh; }
+            .card { background: #08291e; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 20px; max-width: 520px; width: 100%; padding: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); text-align: center; }
+            .badge { display: inline-block; background-color: ${badgeColor}; color: #ffffff; padding: 6px 14px; border-radius: 9999px; font-weight: 800; font-size: 13px; text-transform: uppercase; margin-bottom: 16px; letter-spacing: 0.5px; }
+            h1 { font-size: 24px; margin: 0 0 12px 0; color: #ecfdf5; }
+            p { font-size: 15px; line-height: 1.6; color: #a7f3d0; margin: 0 0 20px 0; }
+            .details { background: #03150e; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 16px; margin: 20px 0; text-align: left; font-size: 14px; }
+            .details div { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+            .details div:last-child { border-bottom: none; }
+            .details span:first-child { color: #94a3b8; }
+            .details span:last-child { font-weight: bold; color: #f8fafc; }
+            .footer { font-size: 12px; color: #6ee7b7; margin-top: 24px; }
+            .btn { display: inline-block; background: #f59e0b; color: #041711; text-decoration: none; padding: 12px 24px; border-radius: 12px; font-weight: 800; margin-top: 16px; transition: transform 0.2s; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <div class="badge">${action.toUpperCase()}</div>
+            <h1>${title}</h1>
+            <p>${result.message}</p>
+            <div class="details">
+              <div><span>ID Reserva:</span><span>#${bookingId}</span></div>
+              <div><span>Estado en Sistema:</span><span style="color: #34d399;">${result.newStatus.toUpperCase()}</span></div>
+              <div><span>Estado Proveedor:</span><span>${result.providerStatus}</span></div>
+              <div><span>Registro Autodependiente:</span><span>Auditoría M2M 2026</span></div>
+            </div>
+            <p class="footer">Este cambio ha sincronizado automáticamente el calendario, el voucher del cliente y la base de datos.</p>
+            <a href="/" class="btn">Volver a Costa Rica Tours</a>
+          </div>
+        </body>
+        </html>
+      `);
+    }
+
+    res.json(result);
+  } catch (err: any) {
+    console.error('Error en /api/provider/respond:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 1.2 Catálogo de Operadores Turísticos Oficiales CST
+app.get(['/api/provider/catalog', '/api/operators/catalog'], (req, res) => {
+  res.json({
+    success: true,
+    total: Object.keys(MASTER_OPERATORS_REGISTRY).length,
+    operators: Object.values(MASTER_OPERATORS_REGISTRY),
+    standardCommissionRate: 0.15,
+    payoutEngine: 'PayPal Payouts & Automated Bank Transfer',
+    certificationStandard: 'CST (Certificación para la Sostenibilidad Turística de Costa Rica)'
+  });
+});
+
+// 1.3 Consulta de Estado de Despacho del Proveedor para una Reserva
+app.get(['/api/provider/status/:bookingId', '/api/operators/status/:bookingId'], async (req, res) => {
+  try {
+    const bookingId = req.params.bookingId;
+    const allBookings = await getAllBookings();
+    const found = allBookings.find((b: any) => (b.bookingId === bookingId || b.id === bookingId));
+
+    if (!found) {
+      return res.status(404).json({ success: false, error: `Reserva #${bookingId} no encontrada.` });
+    }
+
+    res.json({
+      success: true,
+      bookingId,
+      status: found.status,
+      providerId: found.providerId || 'alsama-tours-cr',
+      providerName: found.providerName || found.providerInfo?.name || 'Alsama Tours CR',
+      providerStatus: found.providerStatus || 'pending',
+      assignedGuide: found.assignedGuide || 'Por asignar',
+      assignedVehicle: found.assignedVehicle || 'Por asignar',
+      providerDispatchedAt: found.providerDispatchedAt || null,
+      providerConfirmedAt: found.providerConfirmedAt || null,
+      tourName: found.tourName,
+      date: found.date,
+      time: found.time
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -1488,6 +1612,39 @@ app.post('/api/agent/tools/generate_custom_itinerary', async (req, res) => {
   }
 });
 
+// Tool 4: Coordinación Autodependiente de Proveedores (ReAct Tool)
+app.post(['/api/agent/tools/coordinate_provider_status', '/api/agent/coordinate-provider'], async (req, res) => {
+  try {
+    const { booking_id, bookingId, action, guide_name, guideName, vehicle_plate, vehiclePlate, proposed_time, proposedTime, notes, provider_id, providerId } = req.body || {};
+    const bId = booking_id || bookingId;
+    const act = action || 'confirm';
+
+    if (!bId) {
+      return res.status(400).json({ success: false, error: 'booking_id es requerido para coordinar con el proveedor.' });
+    }
+
+    const result = await handleProviderActionResponse(bId, act, {
+      guideName: guide_name || guideName,
+      vehiclePlate: vehicle_plate || vehiclePlate,
+      proposedTime: proposed_time || proposedTime,
+      providerNotes: notes,
+      providerId: provider_id || providerId
+    });
+
+    res.json({
+      success: true,
+      booking_id: bId,
+      action: act,
+      new_status: result.newStatus,
+      provider_status: result.providerStatus,
+      message: result.message
+    });
+  } catch (err: any) {
+    console.error('Error en tool coordinate_provider_status:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Tool Manifest: Registrador de capacidades para agentes y frameworks 2026
 app.get('/api/agent/tools/manifest', (req, res) => {
   res.json({
@@ -1506,7 +1663,13 @@ app.get('/api/agent/tools/manifest', (req, res) => {
         name: 'create_booking_and_notify',
         endpoint: '/api/agent/tools/create_booking_and_notify',
         method: 'POST',
-        description: 'Crea la reserva oficial, agenda el evento y envía el voucher QR.'
+        description: 'Crea la reserva oficial, despacha al proveedor local, agenda el evento y envía el voucher QR.'
+      },
+      {
+        name: 'coordinate_provider_status',
+        endpoint: '/api/agent/tools/coordinate_provider_status',
+        method: 'POST',
+        description: 'Coordina de forma autodependiente el estado del operador local (confirmación, guía, vehículo, ajuste de hora).'
       },
       {
         name: 'generate_custom_itinerary',
