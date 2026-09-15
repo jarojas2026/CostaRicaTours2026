@@ -16,6 +16,7 @@ export interface N8NConfig {
   telegramOpsWebhookUrl: string;
   calendarSyncWebhookUrl: string;
   multiChannelWebhookUrl: string;
+  sinpeWebhookUrl: string;
 }
 
 export const getN8NConfig = (): N8NConfig => {
@@ -48,6 +49,7 @@ export const getN8NConfig = (): N8NConfig => {
     telegramOpsWebhookUrl: process.env.N8N_TELEGRAM_OPS_WEBHOOK_URL || `${baseUrl}/webhook/telegram-ops-action`,
     calendarSyncWebhookUrl: process.env.N8N_CALENDAR_SYNC_WEBHOOK_URL || `${baseUrl}/webhook/sync-calendar`,
     multiChannelWebhookUrl: process.env.N8N_MULTICHANNEL_WEBHOOK_URL || `${baseUrl}/webhook/reserva-multicanal`,
+    sinpeWebhookUrl: process.env.N8N_SINPE_WEBHOOK_URL || `${baseUrl}/webhook/cr-tours-sinpe-verify`,
   };
 };
 

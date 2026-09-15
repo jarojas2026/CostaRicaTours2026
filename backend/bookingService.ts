@@ -14,6 +14,7 @@ import {
   executeProviderRealtimeCoordination,
   executeCustomerBookingConfirmation
 } from './nativeWorkflows';
+import { massiveEngine } from './massiveProcessingEngine';
 
 const FIRESTORE_DATABASE_ID =
   process.env.FIRESTORE_DATABASE_ID ||
@@ -557,16 +558,15 @@ export async function createBooking(data: any) {
   const fraudRiskScore = isSuspicious ? 65 : 5;
   console.log(`🛡️ [AUTOMATIZACIÓN NATIVA] Antifraude evaluado: Score ${fraudRiskScore}/100 para ${bookingId}`);
 
-  // 5. Despacho NATIVO inmediato de Workflows 1 & 2 (Confirmación al cliente y Coordinación con Proveedor)
-  // Se ejecutan en segundo plano protegido sin bloquear la respuesta inmediata al usuario
-  Promise.allSettled([
-    executeCustomerBookingConfirmation(responseBooking).catch((err) => {
-      console.error('❌ Error en despacho nativo de confirmación a cliente:', err);
-    }),
-    executeProviderRealtimeCoordination(responseBooking).catch((err) => {
-      console.error('❌ Error en despacho nativo de coordinación con proveedor:', err);
-    })
-  ]);
+  // 5. Despacho NATIVO MASIVO y AISLADO para cada reserva individual
+  // Encola la tarea en el motor de alto rendimiento para monitoreo de SLA segundo a segundo
+  massiveEngine.enqueue(
+    'INDIVIDUAL_BOOKING_AUTONOMOUS_DISPATCH',
+    { booking: responseBooking },
+    'BOOKING_LIFECYCLE'
+  ).catch((err) => {
+    console.error(`❌ [MASSIVE-ENGINE] Fallo en despacho asíncrono para ${bookingId}:`, err);
+  });
 
   // 6. Despacho opcional a n8n solo si está explícitamente activo
   if (process.env.N8N_ENABLED === 'true') {

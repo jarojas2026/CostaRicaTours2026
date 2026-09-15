@@ -81,6 +81,8 @@ import {
   executePostTourReviewRequests,
   executeTour24hReminders
 } from './backend/nativeWorkflows';
+import { executeSinpeVerification } from './backend/sinpeService';
+import { massiveEngine } from './backend/massiveProcessingEngine';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -951,6 +953,55 @@ app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], async (req, re
   }
 });
 
+// 8. Verificación y Conciliación Autónoma de Pagos SINPE Móvil (Webhook & API)
+app.post(['/webhook/cr-tours-sinpe-verify', '/webhook/sinpe-verify', '/api/payments/sinpe-verify', '/api/sinpe/verify'], async (req, res) => {
+  try {
+    const authHeader = req.headers['x-webhook-secret'] as string;
+    const result = await executeSinpeVerification(req.body, authHeader);
+    res.json(result);
+  } catch (error: any) {
+    console.error('Error en verificación SINPE:', error);
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// 9. Telemetría y Métricas en Tiempo Real de Procesamiento Masivo (RPS, Latencia, Concurrencia)
+app.get(['/api/metrics/throughput', '/api/massive/status'], (req, res) => {
+  const metrics = massiveEngine.getMetrics();
+  res.json({
+    success: true,
+    platform: 'Costa Rica Tours 2026 - Massive Real-Time Processing Engine',
+    timestamp: new Date().toISOString(),
+    metrics
+  });
+});
+
+// 10. Procesamiento Masivo Concurrente de Consultas en Lote (Batch Inquiries)
+app.post(['/api/massive/batch-inquiries', '/api/massive/process-batch'], async (req, res) => {
+  try {
+    const inquiries = Array.isArray(req.body?.inquiries) ? req.body.inquiries : [req.body];
+    const results = await Promise.allSettled(
+      inquiries.map((inquiry: any) =>
+        massiveEngine.enqueue(
+          'INQUIRY_CACHE_PROCESSING',
+          inquiry,
+          'INQUIRY_CACHE'
+        )
+      )
+    );
+
+    res.json({
+      success: true,
+      totalBatch: inquiries.length,
+      processed: results.filter(r => r.status === 'fulfilled').length,
+      failed: results.filter(r => r.status === 'rejected').length,
+      results: results.map(r => r.status === 'fulfilled' ? (r as any).value : { error: (r as any).reason?.message })
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Health check para compatibilidad
 app.all('/webhook/health-check', (req, res) => {
   res.json({ status: 'ok', service: 'costa-rica-tours-native-engine', timestamp: new Date().toISOString() });
@@ -1645,6 +1696,31 @@ app.post(['/api/agent/tools/coordinate_provider_status', '/api/agent/coordinate-
   }
 });
 
+// Tool 5: Verificación Autónoma de Comprobante SINPE Móvil
+app.post(['/api/agent/tools/verify_sinpe_payment', '/api/agent/verify-sinpe'], async (req, res) => {
+  try {
+    const { booking_id, bookingId, reference_number, numeroComprobante, amount_crc, montoCRC, raw_sms_text, rawSmsText, bank } = req.body || {};
+    const bId = booking_id || bookingId;
+
+    if (!bId) {
+      return res.status(400).json({ success: false, error: 'booking_id es requerido para verificar pago SINPE.' });
+    }
+
+    const result = await executeSinpeVerification({
+      bookingId: bId,
+      referenceNumber: reference_number || numeroComprobante,
+      amountCRC: amount_crc || montoCRC,
+      rawSmsText: raw_sms_text || rawSmsText,
+      bankEntity: bank
+    });
+
+    res.json(result);
+  } catch (err: any) {
+    console.error('Error en tool verify_sinpe_payment:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Tool Manifest: Registrador de capacidades para agentes y frameworks 2026
 app.get('/api/agent/tools/manifest', (req, res) => {
   res.json({
@@ -1670,6 +1746,12 @@ app.get('/api/agent/tools/manifest', (req, res) => {
         endpoint: '/api/agent/tools/coordinate_provider_status',
         method: 'POST',
         description: 'Coordina de forma autodependiente el estado del operador local (confirmación, guía, vehículo, ajuste de hora).'
+      },
+      {
+        name: 'verify_sinpe_payment',
+        endpoint: '/api/agent/tools/verify_sinpe_payment',
+        method: 'POST',
+        description: 'Verifica y concilia de forma autónoma comprobantes y montos de transferencias SINPE Móvil.'
       },
       {
         name: 'generate_custom_itinerary',
