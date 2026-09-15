@@ -24,6 +24,7 @@ import {
   checkTourAvailability,
   getWeeklyConversionMetrics
 } from './backend/bookingService';
+import { massiveEngine } from './backend/massiveProcessingEngine';
 import {
   createAlert,
   getAlerts,
@@ -241,6 +242,37 @@ app.post('/api/paypal/create-order', async (req, res) => {
     }
   } catch (err: any) {
     console.error('Error en PayPal:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==========================================
+// ⚡ ENDPOINT INTERNO: BARRIDO SLA AUTÓNOMO
+// ==========================================
+/**
+ * Endpoint para disparar el barrido de SLAs pendientes.
+ * NOTA: Este endpoint debe ser invocado periódicamente por un job externo
+ * como Google Cloud Scheduler cada 5-15 minutos.
+ *
+ * Configuración en Cloud Scheduler:
+ * 1. Frecuencia: * /10 * * * *
+ * 2. URL: https://[tu-dominio]/api/internal/sweep-sla
+ * 3. Método: POST
+ * 4. Auth: Headers: { "X-Operator-Key": "[TuClaveSecreta]" }
+ */
+app.post('/api/internal/sweep-sla', async (req, res) => {
+  const operatorKey = req.headers['x-operator-key'];
+  const secret = process.env.OPERATOR_API_KEY;
+
+  if (!secret || !operatorKey || !crypto.timingSafeEqual(Buffer.from(String(operatorKey)), Buffer.from(secret))) {
+    return res.status(401).json({ error: 'No autorizado' });
+  }
+
+  try {
+    const escalatedCount = await massiveEngine.providerLifecycle.sweepPendingSlas();
+    res.json({ success: true, escalatedCount });
+  } catch (err: any) {
+    console.error('Error en barrido de SLA manual:', err);
     res.status(500).json({ error: err.message });
   }
 });
