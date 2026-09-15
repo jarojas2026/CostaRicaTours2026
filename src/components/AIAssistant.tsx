@@ -31,6 +31,7 @@ interface Message {
   time: string;
   modelUsed?: string;
   recommendedTours?: Tour[];
+  quickActions?: Array<{ label: string; action: string; data?: any }>;
   voucher?: any;
   ecoFactData?: {
     region: string;
@@ -295,6 +296,24 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     setMessages((prev) => [...prev, ecoMsg]);
   };
 
+  const handleQuickActionClick = (qa: { label: string; action: string; data?: any }) => {
+    if (qa.action === 'open_itinerary_planner') {
+      if (onNavigateTab) onNavigateTab('itinerary');
+    } else if (qa.action === 'book' && qa.data?.tourId) {
+      const matching = TOURS.find(t => t.id === qa.data.tourId);
+      if (matching) onSelectTour(matching);
+      else if (onNavigateTab) onNavigateTab('tours');
+    } else if (qa.action === 'book') {
+      if (onNavigateTab) onNavigateTab('tours');
+    } else if (qa.action === 'book_itinerary') {
+      if (onNavigateTab) onNavigateTab('itinerary');
+    } else if (qa.action === 'direct_whatsapp') {
+      window.open('https://wa.me/50687959148?text=Hola%20Costa%20Rica%20Tours,%20quisiera%20consultar%20sobre%20un%20tour', '_blank');
+    } else if (qa.action === 'send_message' && qa.data?.message) {
+      handleSendMessage(qa.data.message);
+    }
+  };
+
   const handleSendMessage = async (textToSend?: string) => {
     const query = textToSend || inputMessage;
     if ((!query.trim() && !selectedImage) || isLoading) return;
@@ -427,6 +446,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         modelUsed: data.modelUsed || (aiEngine === 'claude' ? 'Claude 3.5 Sonnet' : 'Gemini 2.5 Flash'),
         recommendedTours: matchedTours.length > 0 ? matchedTours : undefined,
+        quickActions: data.quickActions || undefined,
         voucher: data.voucher || undefined,
       };
 
@@ -903,6 +923,22 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                         )}
                         <span>{msg.time}</span>
                       </div>
+
+                      {/* Botones de Acciones Rápidas del Agente */}
+                      {msg.quickActions && msg.quickActions.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-2 border-t border-emerald-500/20 mt-2">
+                          {msg.quickActions.map((qa, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => handleQuickActionClick(qa)}
+                              className="text-[11px] font-bold bg-[#041711] hover:bg-amber-400 hover:text-stone-950 text-amber-300 px-3 py-1.5 rounded-full border border-amber-400/40 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                            >
+                              <span>{qa.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Recommended Tours Widget if present */}

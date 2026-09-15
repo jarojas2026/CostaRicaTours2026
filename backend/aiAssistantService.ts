@@ -204,6 +204,19 @@ function getKnowledgeBaseReply(message: string, isEn: boolean) {
     };
   }
 
+  if (lower.includes('itinerari') || lower.includes('itinerary') || lower.includes('plan de viaje') || lower.includes('ruta de viaje')) {
+    return {
+      reply: isEn
+        ? `🧭 **Custom Pura Vida Multi-Day Itineraries (3 to 14 Days)**\n\nWe connect Costa Rica's best highlights with certified door-to-door private transfers (Alsama Tours CR) and SINAC park entries:\n\n• **Day 1**: Arrival SJO ➔ Private transfer to Arenal ➔ Mineral Hot Springs & Dinner\n• **Day 2**: 1968 Arenal Volcano Lava Trails & La Fortuna Waterfall Swim\n• **Day 3**: Lake Arenal scenic crossing ➔ Monteverde Cloud Forest Hanging Bridges\n• **Day 4**: Superman Canopy Zipline ➔ Transfer to Manuel Antonio Pacific Coast\n• **Day 5**: Manuel Antonio National Park Guided Wildlife Safari & White Sand Beach\n\n✨ **Includes**: Eco-lodges with CST certification, private AC vans with Wi-Fi, and bilingual certified guides.\n\n¿Would you like to open our AI Itinerary Planner to customize days, budget and style, or book this package?`
+        : `🧭 **Itinerarios Personalizados Multidía Pura Vida (3 a 14 Días)**\n\nConectamos los mejores destinos de Costa Rica con logística coordinada puerta a puerta por **Alsama Tours CR** y guías naturalistas bilingües:\n\n• **Día 1**: Llegada SJO ➔ Traslado privado a La Fortuna ➔ Aguas Termales y Cena Buffet\n• **Día 2**: Senderos de Lava 1968 Volcán Arenal & Catarata La Fortuna\n• **Día 3**: Cruce lacustre Lago Arenal ➔ Puentes Colgantes en Bosque Nuboso de Monteverde\n• **Día 4**: Canopy Extremo Tirolesa ➔ Traslado a Playas de Manuel Antonio\n• **Día 5**: Parque Nacional Manuel Antonio, avistamiento de perezosos y playa paradisíaca\n\n✨ **Incluye**: Alojamiento en eco-lodges sostenibles CST, traslados ejecutivos con Wi-Fi y entradas oficiales SINAC.\n\n¿Te gustaría abrir el Diseñador Inteligente de Itinerarios para personalizar días, presupuesto y compañía, o coordinar la reserva directa?`,
+      quickActions: [
+        { label: isEn ? '🧭 Open Itinerary Planner' : '🧭 Abrir Planificador de Itinerarios', action: 'open_itinerary_planner' },
+        { label: isEn ? '📅 Reserve Itinerary' : '📅 Reservar Itinerario', action: 'book_itinerary' },
+        { label: isEn ? '💬 Direct WhatsApp' : '💬 WhatsApp Directo', action: 'direct_whatsapp' }
+      ]
+    };
+  }
+
   if (lower.includes('reserv') || lower.includes('book')) {
     return {
       reply: isEn

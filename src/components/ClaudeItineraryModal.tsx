@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { X, Sparkles, Compass, Calendar, Users, MapPin, CheckCircle2, Clock, Car, Leaf, ArrowRight, Loader2 } from 'lucide-react';
+import {
+  X, Sparkles, Compass, Calendar, Users, MapPin, CheckCircle2, Clock, Car,
+  Leaf, ArrowRight, Loader2, ShieldCheck, Mail, User, Phone, Check, RefreshCw
+} from 'lucide-react';
 import { Tour } from '../types';
 import { TOURS } from '../data/toursData';
 
@@ -30,6 +33,15 @@ export const ClaudeItineraryModal: React.FC<ClaudeItineraryModalProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [resultItinerary, setResultItinerary] = useState<any | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Estados para reserva de itinerario
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [customerName, setCustomerName] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [isBookingSubmitting, setIsBookingSubmitting] = useState(false);
+  const [bookingSuccessId, setBookingSuccessId] = useState<string | null>(null);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -77,6 +89,42 @@ export const ClaudeItineraryModal: React.FC<ClaudeItineraryModalProps> = ({
       );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleBookItinerary = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBookingError(null);
+    if (!customerName || !customerEmail) {
+      setBookingError(isEn ? 'Please provide your name and email.' : 'Por favor completa tu nombre y correo.');
+      return;
+    }
+    setIsBookingSubmitting(true);
+    try {
+      const res = await fetch('/api/itinerary/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          itineraryTitle: resultItinerary?.title || `Ruta Costa Rica ${days} Días`,
+          daysCount: days,
+          travelers,
+          customerName,
+          customerEmail,
+          customerPhone: customerPhone || '+506 8000-CRTOURS',
+          totalUSD: resultItinerary?.estimatedBudgetUSD || (days * travelers * 165),
+          currency: 'USD'
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || data.error || 'Error al procesar reserva');
+      }
+      setBookingSuccessId(data.bookingId || `CR-ITIN-${Date.now().toString().slice(-6)}`);
+    } catch (err: any) {
+      console.error('Error al reservar itinerario:', err);
+      setBookingError(err.message || 'Error al procesar reserva.');
+    } finally {
+      setIsBookingSubmitting(false);
     }
   };
 
@@ -393,9 +441,17 @@ export const ClaudeItineraryModal: React.FC<ClaudeItineraryModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setResultItinerary(null)}
-                  className="flex-1 py-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs uppercase tracking-wider transition-colors"
+                  className="flex-1 py-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
                 >
                   {isEn ? 'Adjust Parameters' : 'Modificar Parámetros'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsBookingModalOpen(true)}
+                  className="flex-1 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>{isEn ? 'Book Full Itinerary' : 'Reservar Itinerario Completo'}</span>
                 </button>
                 <button
                   type="button"
@@ -407,16 +463,137 @@ export const ClaudeItineraryModal: React.FC<ClaudeItineraryModalProps> = ({
                     }
                     onClose();
                   }}
-                  className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-md"
+                  className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4" />
-                  <span>{isEn ? 'Discuss with Concierge in Chat' : 'Conversar con Asesor en el Chat'}</span>
+                  <span>{isEn ? 'Chat with Concierge' : 'Conversar en el Chat'}</span>
                 </button>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Modal Emergente de Reserva de Itinerario */}
+      {isBookingModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative text-stone-900 border border-emerald-100">
+            <button
+              onClick={() => setIsBookingModalOpen(false)}
+              className="absolute top-4 right-4 text-stone-400 hover:text-stone-600 p-1.5 rounded-full hover:bg-stone-100 transition"
+              aria-label="Cerrar"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {bookingSuccessId ? (
+              <div className="text-center py-4 space-y-3">
+                <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                  <Check className="w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-black text-stone-900">
+                  {isEn ? 'Itinerary Reserved!' : '¡Itinerario Reservado!'}
+                </h3>
+                <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-50 py-1 px-3 rounded-full inline-block">
+                  Reserva #{bookingSuccessId}
+                </span>
+                <p className="text-xs text-stone-600">
+                  {isEn
+                    ? `We sent the voucher and details to ${customerEmail}.`
+                    : `Hemos enviado el voucher y los detalles a ${customerEmail}.`}
+                </p>
+                <button
+                  onClick={() => {
+                    setIsBookingModalOpen(false);
+                    setBookingSuccessId(null);
+                  }}
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition shadow-md"
+                >
+                  {isEn ? 'Close' : 'Cerrar'}
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleBookItinerary} className="space-y-3.5">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">
+                    {isEn ? 'Instant Booking' : 'Reserva Inmediata'}
+                  </span>
+                  <h3 className="text-base font-black text-stone-900">
+                    {resultItinerary?.title || `Itinerario ${days} Días`}
+                  </h3>
+                </div>
+
+                {bookingError && (
+                  <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium">
+                    {bookingError}
+                  </div>
+                )}
+
+                <div className="space-y-2.5 text-xs">
+                  <div>
+                    <label className="font-bold text-stone-700 block mb-1">
+                      {isEn ? 'Full Name *' : 'Nombre Completo *'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="ej. María González"
+                      className="w-full p-2.5 border border-stone-300 rounded-xl text-stone-900 focus:outline-none focus:border-emerald-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-stone-700 block mb-1">
+                      {isEn ? 'Email *' : 'Correo Electrónico *'}
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      placeholder="maria@ejemplo.com"
+                      className="w-full p-2.5 border border-stone-300 rounded-xl text-stone-900 focus:outline-none focus:border-emerald-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-stone-700 block mb-1">
+                      {isEn ? 'WhatsApp Phone' : 'Teléfono / WhatsApp'}
+                    </label>
+                    <input
+                      type="tel"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="+506 8888-8888"
+                      className="w-full p-2.5 border border-stone-300 rounded-xl text-stone-900 focus:outline-none focus:border-emerald-600"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isBookingSubmitting}
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isBookingSubmitting ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>{isEn ? 'Processing...' : 'Procesando...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{isEn ? 'Confirm Booking' : 'Confirmar Reserva'}</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
