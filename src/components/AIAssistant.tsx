@@ -60,7 +60,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const { tours: TOURS } = useTours();
   const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
 
-  const [activeAgentId, setActiveAgentId] = useState<AgentId>('concierge');
+  const [activeAgentId, setActiveAgentId] = useState<AgentId>('counter_agent');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'booking' | 'nature_adventure' | 'logistics_food' | 'specialized'>('all');
   const [subTab, setSubTab] = useState<'chat' | 'n8n'>('chat');
   const currentAgent = getAIAgentById(activeAgentId);
@@ -536,7 +536,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         modelUsed: data.modelUsed || (aiEngine === 'claude' ? 'Claude 3.5 Sonnet' : 'Gemini 2.5 Flash'),
         recommendedTours: matchedTours.length > 0 ? matchedTours : undefined,
         quickActions: data.quickActions || undefined,
-        voucher: data.voucher || undefined,
+        voucher: data.voucher || data.voucherPreview || undefined,
       };
 
       setMessages((prev) => [...prev, assistantMsg]);

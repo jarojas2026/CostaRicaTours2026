@@ -32,6 +32,7 @@ import {
 } from './backend/alertService';
 import {
   processChatInquiry,
+  runCounterAgent,
   runTriage,
   runProcessor,
   runContingency,
@@ -93,7 +94,7 @@ import { getProvidersOverview, handleProviderAction } from './backend/providerCo
 import { getSelfDevelopmentOverview, runSelfHealingCycle } from './backend/selfDevelopmentEngine';
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = 3000;
 
 app.set('trust proxy', 1);
 app.use(express.json());
@@ -1446,6 +1447,21 @@ app.post('/api/gemini/concierge', async (req, res) => {
       }
     }
 
+    // Si el agente seleccionado es el Counter Agent oficial (o se solicita mostrador)
+    if (agentId === 'counter_agent') {
+      const counterResult = await runCounterAgent(userMsg, {}, context || {}, lang, history || []);
+      return res.json({
+        reply: counterResult.reply,
+        quickActions: counterResult.quickActions,
+        recommendedTours: counterResult.recommendedTours,
+        voucherPreview: counterResult.voucherPreview,
+        agentId: counterResult.agentId,
+        agentName: counterResult.agentName,
+        success: true,
+        source: counterResult.modelUsed || 'counter_agent'
+      });
+    }
+
     // Intento de despacho prioritario a n8n
     const n8nResult = await dispatchToN8N('/webhook/chat-consulta', {
       trigger: 'CONSULTA_CHAT_IA',
@@ -1481,6 +1497,30 @@ app.post('/api/gemini/concierge', async (req, res) => {
       success: false,
       error: err.message
     });
+  }
+});
+
+// Endpoint exclusivo del Counter Agent (Agente de Mostrador y Reservas)
+app.post('/api/agent/counter', async (req, res) => {
+  try {
+    const { message, language, history, context } = req.body;
+    const userMsg = message || '';
+    const lang = (language || 'es') as 'es' | 'en';
+    const result = await runCounterAgent(userMsg, {}, context || {}, lang, history || []);
+    res.json({
+      success: true,
+      reply: result.reply,
+      agentId: result.agentId,
+      agentName: result.agentName,
+      agentCategory: result.agentCategory,
+      escalation: result.escalation,
+      quickActions: result.quickActions,
+      recommendedTours: result.recommendedTours,
+      voucherPreview: result.voucherPreview,
+      modelUsed: result.modelUsed
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

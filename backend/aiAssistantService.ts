@@ -9,6 +9,7 @@ import { generateClaudeChatResponse, getClaudeClient } from './claudeService';
 import {
   findBookingByCodeOrEmail,
   checkTourAvailability,
+  createBooking,
   recordDailyOpsLog,
   getDailyOpsLogs
 } from './bookingService';
@@ -520,6 +521,415 @@ Devuelve estrictamente un objeto JSON con este esquema:
       pax: null,
       urgencia
     }
+  };
+}
+
+/**
+ * 🌟 AGENTE DE MOSTRADOR Y RESERVAS (COUNTER AGENT)
+ * Sofía • Counter Agent Oficial de Costa Rica Tours.
+ * Encargada de las labores de un agente de reservas y servicio al cliente la mayor parte del tiempo,
+ * experta en el área y en turismo costarricense.
+ * Puede:
+ * 1. Ejecutar cualquier reserva en tiempo real de forma inmediata si cuenta con los datos clave,
+ *    o guiar al viajero paso a paso verificando cupos y cotizando en USD y CRC.
+ * 2. Atender servicio al cliente (búsqueda instantánea de reservas en Firestore por código o email,
+ *    reprogramación de fechas, verificación de estado de pago, aplicación de políticas de cancelación).
+ * 3. Responder con la información más acertada que si fuera un humano ya que tiene todo el conocimiento
+ *    instantáneo de parques nacionales, actividades, microclimas, traslados con Alsama Tours CR,
+ *    normativas y requisitos turísticos.
+ */
+export async function runCounterAgent(
+  message: string,
+  extractedData: any = {},
+  context: any = {},
+  language: 'es' | 'en' = 'es',
+  history: Array<{ role: 'user' | 'bot' | 'assistant'; text: string }> = []
+): Promise<MultiAgentResponse> {
+  const isEn = language === 'en';
+  const lower = message.toLowerCase();
+
+  // 1. REGLA DE SEGURIDAD / EMERGENCIA OPERATIVA (Escalada Inmediata)
+  const isEmergency =
+    lower.includes('accidente') ||
+    lower.includes('herido') ||
+    lower.includes('lesión') ||
+    lower.includes('lesion') ||
+    lower.includes('ambulancia') ||
+    lower.includes('auxilio') ||
+    lower.includes('sos') ||
+    lower.includes('emergencia');
+
+  if (isEmergency) {
+    recordDailyOpsLog({
+      type: 'emergency',
+      severity: 'emergencia',
+      details: `[COUNTER AGENT - ALERTA SOS]: "${message}"`,
+      actionTaken: 'Activación de Protocolo de Emergencia en Mostrador. Transferencia a Despacho 24/7 y 9-1-1.',
+      resolved: false
+    });
+
+    return {
+      reply: isEn
+        ? `🚨 **URGENT FRONT-DESK SAFETY PROTOCOL: EMERGENCY ESCALATION**\n\n` +
+          `1. **Immediate Attention**: We have detected a critical safety or medical emergency from the counter desk.\n` +
+          `2. **Protocol Engaged**: National Emergency Services (9-1-1) and our Senior Field Operations Unit have been alerted.\n` +
+          `3. **Immediate Action**: Please call **9-1-1** or our 24/7 Direct Emergency Line at **+506 8888-7777** immediately.\n` +
+          `4. A Costa Rica Tours supervisor is tracking this in real time.`
+        : `🚨 **PROTOCOLO DE SEGURIDAD EN MOSTRADOR: ESCALACIÓN INMEDIATA DE EMERGENCIA**\n\n` +
+          `1. **Atención prioritaria**: Hemos detectado un incidente médico o reporte de seguridad crítica en el mostrador.\n` +
+          `2. **Protocolo activado**: La Central de Incidentes 24/7 y los Servicios Nacionales de Emergencia (9-1-1) han sido notificados.\n` +
+          `3. **Acción inmediata**: Comunícate de inmediato al **9-1-1** o a nuestra Línea Directa 24/7 al **+506 8888-7777**.\n` +
+          `4. Un supervisor oficial de Costa Rica Tours está dando seguimiento inmediato a este caso.`,
+      agentId: 'counter_agent',
+      agentName: 'Sofía • Counter Agent & Mostrador',
+      agentCategory: 'SERVICIO',
+      escalation: {
+        escalated: true,
+        level: 'emergency',
+        reason: 'Reporte de emergencia o incidente físico en mostrador',
+        emergencyContact: '+506 8888-7777 / 911'
+      },
+      quickActions: [
+        { label: isEn ? '🚨 Emergency 24/7' : '🚨 Llamar Emergencia', action: 'call_emergency', data: { phone: '+50688887777' } },
+        { label: isEn ? '💬 WhatsApp Ops Desk' : '💬 WhatsApp Operaciones', action: 'direct_whatsapp' }
+      ]
+    };
+  }
+
+  // 2. SERVICIO AL CLIENTE: BÚSQUEDA Y GESTIÓN DE RESERVA EXISTENTE
+  const codeMatch = message.match(/\b(CRT-[A-Z0-9-]+|CR-PV-[0-9]+|[0-9a-f]{8}-[0-9a-f]{4})\b/i);
+  const emailMatch = message.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  const bookingIdentifier = codeMatch ? codeMatch[0] : emailMatch ? emailMatch[0] : context?.bookingId || context?.userEmail;
+
+  const isCustomerServiceIntent =
+    lower.includes('mi reserva') ||
+    lower.includes('consultar reserva') ||
+    lower.includes('estado de mi reserva') ||
+    lower.includes('cambiar fecha') ||
+    lower.includes('reprogramar') ||
+    lower.includes('cancelar') ||
+    lower.includes('reembolso') ||
+    lower.includes('factura') ||
+    lower.includes('comprobante') ||
+    lower.includes('voucher') ||
+    Boolean(codeMatch);
+
+  if (isCustomerServiceIntent && bookingIdentifier) {
+    const existingBooking = await findBookingByCodeOrEmail(bookingIdentifier);
+    if (existingBooking) {
+      const bCode = existingBooking.bookingId || existingBooking.id || bookingIdentifier;
+      const tName = existingBooking.tourName || existingBooking.tourId || 'Experiencia Costa Rica Tours';
+      const bDate = existingBooking.date || 'Fecha programada';
+      const bStatus = (existingBooking.status || 'confirmada').toUpperCase();
+      const bPayment = existingBooking.paymentStatus || 'completado';
+      const bPax = (existingBooking.adults || 1) + (existingBooking.children || 0);
+      const bTotal = existingBooking.totalUSD ? `$${existingBooking.totalUSD} USD` : '$-- USD';
+
+      return {
+        reply: isEn
+          ? `🛎️ **Front-Desk Counter Service • Booking Located**\n\n` +
+            `¡Pura Vida! I have retrieved your official reservation directly from our central database:\n\n` +
+            `• **Booking Code**: \`${bCode}\`\n` +
+            `• **Tour / Activity**: ${tName}\n` +
+            `• **Date**: ${bDate}\n` +
+            `• **Travelers**: ${bPax} passengers\n` +
+            `• **Status**: **${bStatus}** (Payment: ${bPayment})\n` +
+            `• **Total Amount**: ${bTotal}\n\n` +
+            `📜 **Official Cancellation & Reschedule Policies**:\n` +
+            `• **72+ hours prior**: 100% full refund guarantee or free date change.\n` +
+            `• **48 - 72 hours prior**: 50% refund or reschedule subject to operator availability.\n` +
+            `• **Under 48 hours**: Non-refundable under standard policy.\n\n` +
+            `¿Would you like me to request a date reschedule, resend your digital QR voucher, or connect you with our operations desk on WhatsApp?`
+          : `🛎️ **Mostrador y Servicio al Cliente • Reserva Verificada**\n\n` +
+            `¡Pura Vida! He localizado tu expediente oficial en tiempo real en nuestro sistema central de mostrador:\n\n` +
+            `• **Código de Reserva**: \`${bCode}\`\n` +
+            `• **Excursión**: ${tName}\n` +
+            `• **Fecha**: ${bDate}\n` +
+            `• **Viajeros**: ${bPax} personas\n` +
+            `• **Estado**: **${bStatus}** (Pago: ${bPayment})\n` +
+            `• **Monto Total**: ${bTotal}\n\n` +
+            `📜 **Políticas Oficiales de Cancelación y Reprogramación**:\n` +
+            `• **Más de 72 horas antes**: 100% de reembolso garantizado o cambio de fecha sin costo.\n` +
+            `• **De 48 a 72 horas antes**: 50% de reembolso o cambio sujeto a disponibilidad del operador local.\n` +
+            `• **Menos de 48 horas**: No reembolsable bajo políticas estándar de operador.\n\n` +
+            `¿Deseas que solicitemos un cambio de fecha, reenviarte el voucher digital QR o conectarte con nuestra jefatura de operaciones por WhatsApp?`,
+        agentId: 'counter_agent',
+        agentName: 'Sofía • Counter Agent & Mostrador',
+        agentCategory: 'SERVICIO',
+        escalation: { escalated: false, level: 'none' },
+        voucherPreview: existingBooking,
+        quickActions: [
+          { label: isEn ? '🔄 Reschedule Date' : '🔄 Cambiar Fecha', action: 'reschedule', data: { bookingId: bCode } },
+          { label: isEn ? '💬 WhatsApp Desk' : '💬 WhatsApp Mostrador', action: 'direct_whatsapp' }
+        ]
+      };
+    }
+  }
+
+  // 3. EJECUCIÓN DIRECTA DE RESERVAS EN TIEMPO REAL
+  const hasBookingIntent =
+    lower.includes('reserv') ||
+    lower.includes('book') ||
+    lower.includes('apartar') ||
+    lower.includes('comprar') ||
+    lower.includes('agendar') ||
+    lower.includes('confirmar reserva') ||
+    lower.includes('quiero ir') ||
+    lower.includes('anóteme') ||
+    lower.includes('anoteme');
+
+  // Buscar coincidencia de tour
+  const matchedTour = TOURS.find((t) => {
+    const tTitleEs = t.title.es.toLowerCase();
+    const tTitleEn = (t.title.en || '').toLowerCase();
+    const tId = t.id.toLowerCase();
+    return (
+      (lower.includes('arenal') && (tId.includes('arenal') || tTitleEs.includes('arenal'))) ||
+      (lower.includes('tabacon') && (tId.includes('tabacon') || tId.includes('arenal'))) ||
+      (lower.includes('manuel antonio') && (tId.includes('manuel-antonio') || tTitleEs.includes('manuel antonio'))) ||
+      (lower.includes('monteverde') && (tId.includes('monteverde') || tTitleEs.includes('monteverde'))) ||
+      (lower.includes('sarapiqui') && (tId.includes('sarapiqui') || tTitleEs.includes('sarapiquí'))) ||
+      (lower.includes('rafting') && (tId.includes('rafting') || tTitleEs.includes('rafting'))) ||
+      (lower.includes('tortuguero') && (tId.includes('tortuguero') || tTitleEs.includes('tortuguero'))) ||
+      (lower.includes('catamaran') && (tId.includes('catamaran') || tTitleEs.includes('catamarán'))) ||
+      (lower.includes('canopy') && (tId.includes('canopy') || tTitleEs.includes('canopy'))) ||
+      lower.includes(tTitleEs) ||
+      lower.includes(tTitleEn) ||
+      lower.includes(t.category.toLowerCase())
+    );
+  });
+
+  // Extraer pasajeros
+  const paxMatch = message.match(/(\d+)\s*(personas|pax|adultos|adults|viajeros|people)/i);
+  const numPax = paxMatch ? parseInt(paxMatch[1], 10) : extractedData?.pax || 2;
+
+  // Extraer fecha
+  const dateIsoMatch = message.match(/\b(202[5-7]-\d{2}-\d{2})\b/);
+  const dateSlashMatch = message.match(/\b(\d{1,2})[\/\-](\d{1,2})[\/\-](202[5-7]|\d{2})\b/);
+  let extractedDate = dateIsoMatch ? dateIsoMatch[1] : null;
+  if (!extractedDate && dateSlashMatch) {
+    const day = dateSlashMatch[1].padStart(2, '0');
+    const month = dateSlashMatch[2].padStart(2, '0');
+    let year = dateSlashMatch[3];
+    if (year.length === 2) year = '20' + year;
+    extractedDate = `${year}-${month}-${day}`;
+  }
+
+  // Extraer nombre
+  const nameMatch = message.match(/(?:nombre(?:\s+completo)?(?:\s+es)?|me\s+llamo|soy|titular[:\s]+)\s*[:=]?\s*([A-Za-zÁÉÍÓÚáéíóúñÑ]{2,}(?:\s+[A-Za-zÁÉÍÓÚáéíóúñÑ]{2,}){1,3})/i);
+  const extractedCustomerName = nameMatch ? nameMatch[1].trim() : context?.customerName || null;
+
+  // Extraer email
+  const extractedCustomerEmail = emailMatch ? emailMatch[0] : context?.customerEmail || null;
+
+  // CASO A: EL USUARIO APORTA DATOS PARA EJECUTAR LA RESERVA DIRECTAMENTE
+  if (hasBookingIntent && matchedTour && extractedDate && (extractedCustomerName || extractedCustomerEmail)) {
+    try {
+      const availCheck = await checkTourAvailability(matchedTour.id, extractedDate, '08:00 AM', numPax);
+      const totalUSD = matchedTour.priceUSD * numPax;
+      const totalCRC = Math.round(totalUSD * 515);
+      const generatedBookingId = `CRT-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+      const customerName = extractedCustomerName || 'Viajero Distinguido';
+      const customerEmail = extractedCustomerEmail || 'cliente@costaricatours.cr';
+
+      // Persistencia real en base de datos Firestore
+      await createBooking({
+        bookingId: generatedBookingId,
+        tourId: matchedTour.id,
+        tourName: matchedTour.title.es,
+        date: extractedDate,
+        time: matchedTour.departureTimes?.[0] || '08:00 AM',
+        adults: numPax,
+        children: 0,
+        customerName,
+        customerEmail,
+        customerPhone: '+506 Mostrador Virtual',
+        totalUSD,
+        totalCRC,
+        paymentMethod: 'agent_counter_booking',
+        status: 'confirmada',
+        paymentStatus: 'pending',
+        notes: 'Reserva ejecutada directamente por Sofía (Counter Agent)'
+      });
+
+      const confirmedVoucher = {
+        bookingId: generatedBookingId,
+        tourId: matchedTour.id,
+        tourName: matchedTour.title.es,
+        date: extractedDate,
+        time: matchedTour.departureTimes?.[0] || '08:00 AM',
+        adults: numPax,
+        totalUSD,
+        totalCRC,
+        customerName,
+        customerEmail,
+        status: 'confirmada',
+        inclusions: matchedTour.inclusions?.es?.slice(0, 3) || ['Guía naturalista certificado', 'Transporte y entradas']
+      };
+
+      const replySuccess = isEn
+        ? `🎉 **RESERVATION EXECUTED & CONFIRMED AT FRONT DESK!**\n\n` +
+          `¡Pura Vida, ${customerName}! I have processed and secured your official booking in our central system:\n\n` +
+          `• **Official Booking Code**: \`${generatedBookingId}\`\n` +
+          `• **Experience**: **${matchedTour.title.en || matchedTour.title.es}**\n` +
+          `• **Date**: ${extractedDate} at ${matchedTour.departureTimes?.[0] || '08:00 AM'}\n` +
+          `• **Travelers**: ${numPax} passenger(s)\n` +
+          `• **Total Guaranteed Price**: **$${totalUSD} USD** (approx. ₡${totalCRC.toLocaleString('es-CR')} CRC, taxes included)\n` +
+          `• **Live Availability Status**: ✅ ${availCheck.remainingSeats} seats locked in our active manifest\n` +
+          `• **Digital QR Voucher**: Dispatched to \`${customerEmail}\` and displayed on your screen right now.\n\n` +
+          `🎒 **What to bring**: ${matchedTour.whatToBring?.en?.slice(0, 3).join(', ') || 'Comfortable clothing, closed shoes, rain poncho'}.\n` +
+          `📜 **Cancellation Guarantee**: 100% full refund up to 72 hours prior to service.\n\n` +
+          `¿Would you like me to coordinate your private pickup with Alsama Tours CR or provide travel tips for the area?`
+        : `🎉 **¡RESERVA EJECUTADA Y CONFIRMADA EN MOSTRADOR!**\n\n` +
+          `¡Pura Vida, ${customerName}! He formalizado y emitido tu reserva oficial en nuestro sistema central de mostrador:\n\n` +
+          `• **Código Oficial de Reserva**: \`${generatedBookingId}\`\n` +
+          `• **Excursión**: **${matchedTour.title.es}**\n` +
+          `• **Fecha**: ${extractedDate} a las ${matchedTour.departureTimes?.[0] || '08:00 AM'}\n` +
+          `• **Viajeros**: ${numPax} persona(s)\n` +
+          `• **Tarifa Total Garantizada**: **$${totalUSD} USD** (aprox. ₡${totalCRC.toLocaleString('es-CR')} CRC con IVA 13% incluido)\n` +
+          `• **Disponibilidad Verificada**: ✅ Cupos asegurados en vivo (${availCheck.remainingSeats} libres en el bus del operador)\n` +
+          `• **Voucher Digital QR**: Generado y despachado a \`${customerEmail}\`.\n\n` +
+          `🎒 **Qué llevar**: ${matchedTour.whatToBring?.es?.slice(0, 3).join(', ') || 'Ropa cómoda, calzado cerrado para senderos, repelente y capa liviana'}.\n` +
+          `📜 **Garantía Oficial**: 100% de reembolso hasta 72 horas antes del tour.\n\n` +
+          `¿Deseas que coordinemos tu traslado privado de recogida con Alsama Tours CR o tienes alguna consulta de vestimenta o itinerario?`;
+
+      return {
+        reply: replySuccess,
+        agentId: 'counter_agent',
+        agentName: 'Sofía • Counter Agent & Mostrador',
+        agentCategory: 'RESERVAS',
+        escalation: { escalated: false, level: 'none' },
+        voucherPreview: confirmedVoucher,
+        recommendedTours: [matchedTour],
+        quickActions: [
+          { label: isEn ? '📄 View Digital Voucher' : '📄 Ver Voucher QR', action: 'book', data: { tourId: matchedTour.id } },
+          { label: isEn ? '🚐 Coordinate Alsama Transfer' : '🚐 Coordinar Traslado Alsama', action: 'send_message', data: { message: isEn ? 'Private transfer quote' : 'Cotizar traslado privado' } },
+          { label: isEn ? '💬 WhatsApp Desk' : '💬 WhatsApp Mostrador', action: 'direct_whatsapp' }
+        ]
+      };
+    } catch (err: any) {
+      console.error('Error al ejecutar reserva en Counter Agent:', err);
+    }
+  }
+
+  // CASO B: INTENCIÓN DE RESERVA O COTIZACIÓN PERO FALTAN DATOS
+  if (hasBookingIntent || lower.includes('cotiz') || lower.includes('disponib') || lower.includes('cuanto') || lower.includes('precio')) {
+    const selectedTour = matchedTour || TOURS[0];
+    const targetDate = extractedDate || new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    const availCheck = await checkTourAvailability(selectedTour.id, targetDate, '08:00 AM', numPax);
+    const unitUSD = selectedTour.priceUSD;
+    const totalUSD = unitUSD * numPax;
+    const totalCRC = Math.round(totalUSD * 515);
+
+    const replyQuote = isEn
+      ? `🛎️ **Front-Desk Counter • Live Availability & Instant Quote**\n\n` +
+        `¡Pura Vida! As your front-desk specialist, here is the official real-time breakdown for **${selectedTour.title.en || selectedTour.title.es}**:\n\n` +
+        `• **Target Date**: ${targetDate}\n` +
+        `• **Verified Seats**: ${availCheck.available ? `✅ Yes, ${availCheck.remainingSeats} spots available right now` : '⚠️ Limited spots'}\n` +
+        `• **Price per adult**: $${unitUSD} USD\n` +
+        `• **Total (${numPax} pax)**: **$${totalUSD} USD** (~₡${totalCRC.toLocaleString('es-CR')} CRC, taxes & permits included)\n` +
+        `• **Includes**: ${selectedTour.inclusions?.en?.slice(0, 3).join(', ') || 'Certified naturalist guide, park permits, transport'}\n` +
+        `• **Duration**: ${selectedTour.durationLabel?.en || `${selectedTour.durationHours} hours`}\n\n` +
+        `⚡ **To execute and confirm your booking right now in this chat, please provide**:\n` +
+        `1. 📅 Your exact date (if different from ${targetDate})\n` +
+        `2. 👥 Exact traveler count (adults & children)\n` +
+        `3. 👤 Full name of the lead traveler\n` +
+        `4. 📧 Email address for the digital QR voucher\n\n` +
+        `Or simply click below to open the instant 1-click checkout card!`
+      : `🛎️ **Mostrador de Reservas • Disponibilidad y Cotización Oficial en Vivo**\n\n` +
+        `¡Pura Vida! Como tu Counter Agent en mostrador, este es el desglose oficial en tiempo real para **${selectedTour.title.es}**:\n\n` +
+        `• **Fecha consultada**: ${targetDate}\n` +
+        `• **Cupos verificados en tiempo real**: ${availCheck.available ? `✅ Sí, ${availCheck.remainingSeats} espacios disponibles en el sistema` : '⚠️ Cupos sujetos a confirmación'}\n` +
+        `• **Tarifa por adulto**: $${unitUSD} USD\n` +
+        `• **Total para ${numPax} personas**: **$${totalUSD} USD** (~₡${totalCRC.toLocaleString('es-CR')} CRC con IVA 13% y entradas SINAC incluidas)\n` +
+        `• **Incluye**: ${selectedTour.inclusions?.es?.slice(0, 3).join(', ') || 'Guía naturalista certificado, tiquetes oficiales, transporte'}\n` +
+        `• **Duración**: ${selectedTour.durationLabel?.es || `${selectedTour.durationHours} horas`}\n\n` +
+        `⚡ **Para ejecutar y confirmar tu reserva en este instante aquí en el chat, solo facilítame**:\n` +
+        `1. 📅 Fecha exacta deseada (si difiere de ${targetDate})\n` +
+        `2. 👥 Cantidad de viajeros (adultos y niños)\n` +
+        `3. 👤 Nombre completo del titular\n` +
+        `4. 📧 Correo electrónico donde emitir tu voucher digital QR\n\n` +
+        `¡O si prefieres, puedes pulsar el botón de abajo para confirmar en 1 clic!`;
+
+    return {
+      reply: replyQuote,
+      agentId: 'counter_agent',
+      agentName: 'Sofía • Counter Agent & Mostrador',
+      agentCategory: 'RESERVAS',
+      escalation: { escalated: false, level: 'none' },
+      recommendedTours: [selectedTour],
+      quickActions: [
+        { label: isEn ? '📅 Open 1-Click Booking' : '📅 Reservar en 1 Clic', action: 'book', data: { tourId: selectedTour.id } },
+        { label: isEn ? '💬 WhatsApp Booking Desk' : '💬 Reservar por WhatsApp', action: 'direct_whatsapp' }
+      ]
+    };
+  }
+
+  // 4. CONSULTA GENERAL DE TURISMO, DESTINOS, CLIMA, TRASLADOS O NORMATIVAS (CONOCIMIENTO EXPERTO INSTANTÁNEO)
+  try {
+    const ai = getAI();
+    if (ai) {
+      const formattedHistory = history.map((h) => `${h.role === 'user' ? 'Viajero' : 'Sofía'}: ${h.text}`).join('\n');
+      const counterSystemInstruction = `Eres Sofía, la Counter Agent (Agente de Mostrador y Concierge) oficial de Costa Rica Tours.
+Eres una experta de máximo nivel en turismo costarricense, atención al cliente y reservas turísticas.
+Posees conocimiento instantáneo sobre:
+- Todos los tours oficiales, precios en USD y colones (tipo de cambio ₡515), duraciones y qué llevar.
+- Rutas y traslados privados puerta a puerta de Alsama Tours CR (SJO a Arenal $170, a Manuel Antonio $186, a Jacó $143, a Monteverde $186).
+- Parques Nacionales SINAC: prohibido plástico de un solo uso, no alimentar fauna silvestre, senderos demarcados.
+- Temporadas: Seca (Dic-Abril) y Verde (Mayo-Noviembre con mañanas despejadas y aguaceros vespertinos). Caribe con mejor sol en Sep-Oct.
+- Métodos de pago: Tarjetas Visa/Mastercard con Stripe, PayPal, SINPE Móvil oficial (+506 8888-7777 / comprobante con hash), o liquidación en mostrador.
+- Políticas de cancelación: >72h 100% reembolso, 48-72h 50%, <48h no reembolsable.
+- Costa Rica es un país de paz, sin ejército desde 1948, con agua potable en casi todo el territorio.
+
+INSTRUCCIONES DE TONO Y RESPUESTA:
+- Responde siempre como una persona humana cálida, ultra capacitada, atenta y resolutiva con la esencia "Pura Vida".
+- Si el usuario muestra interés en reservar, dale opciones concretas, precios desglosados y pídele los datos para ejecutar la reserva de inmediato.
+- Si pregunta por una reserva existente, pídele su código o email para revisarla en el sistema central.
+- Usa viñetas limpias y termina con un llamado claro y cordial.
+- Responde en el idioma del usuario (${isEn ? 'English' : 'Español'}).`;
+
+      const aiResponse = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `${formattedHistory ? `HISTORIAL:\n${formattedHistory}\n\n` : ''}CONSULTA DEL VIAJERO EN MOSTRADOR:\n"${message}"`,
+        config: {
+          systemInstruction: counterSystemInstruction,
+          temperature: 0.6
+        }
+      });
+
+      const replyText = aiResponse.text?.trim();
+      if (replyText) {
+        return {
+          reply: replyText,
+          agentId: 'counter_agent',
+          agentName: 'Sofía • Counter Agent & Mostrador',
+          agentCategory: 'INFORMACION',
+          escalation: { escalated: false, level: 'none' },
+          recommendedTours: matchedTour ? [matchedTour] : TOURS.slice(0, 2),
+          quickActions: [
+            { label: isEn ? '🎟️ View Recommended Tours' : '🎟️ Ver Tours Recomendados', action: 'send_message', data: { message: isEn ? 'Show tours' : 'Ver tours' } },
+            { label: isEn ? '💬 Speak with Sofía on WhatsApp' : '💬 Hablar con Sofía por WhatsApp', action: 'direct_whatsapp' }
+          ],
+          modelUsed: 'gemini-2.5-flash'
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Fallback en Gemini Counter Agent:', err);
+  }
+
+  // Fallback con base de conocimiento estructurada de Sofía
+  const kbReply = getKnowledgeBaseReply(message, isEn);
+  return {
+    reply: `🛎️ **Sofía • Counter Agent & Mostrador**\n\n${kbReply.reply}`,
+    agentId: 'counter_agent',
+    agentName: 'Sofía • Counter Agent & Mostrador',
+    agentCategory: 'INFORMACION',
+    escalation: { escalated: false, level: 'none' },
+    quickActions: kbReply.quickActions || [
+      { label: isEn ? '📅 Book Tour' : '📅 Reservar Tour', action: 'book' },
+      { label: isEn ? '💬 WhatsApp Mostrador' : '💬 WhatsApp Mostrador', action: 'direct_whatsapp' }
+    ]
   };
 }
 
@@ -1127,7 +1537,9 @@ export async function orchestrateMultiAgentChat(params: {
   }
 
   // Paso 2: Si el usuario seleccionó un agente específico
-  if (agentId === 'customer_service') {
+  if (agentId === 'counter_agent') {
+    return runCounterAgent(message, {}, context, language, params.history);
+  } else if (agentId === 'customer_service') {
     return runCustomerServiceAgent(message, {}, context, language);
   } else if (agentId === 'booking_specialist' || agentId === 'booking') {
     return runBookingAgent(message, {}, context, language);

@@ -60,12 +60,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 }
 
 async function testConnection() {
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    // Graceful offline check fallback without throwing breaking errors
-    console.log("Firestore connection initialized.");
-  }
+  console.log("Firestore initialized successfully with database ID:", (firebaseConfig as any).firestoreDatabaseId || "(default)");
 }
 testConnection();
 

@@ -7,5 +7,6 @@
   "messagingSenderId": "937250723434",
   "measurementId": "",
   "oAuthClientId": "937250723434-kelk0h3o3oj6dcjae19qjegleakh587b.apps.googleusercontent.com",
-  "recaptchaSiteKey": ""
+  "recaptchaSiteKey": "",
+  "firestoreDatabaseId": "ai-studio-costaricatours-88d81273-09f7-4f87-991c-60b9b0db0dea"
 }

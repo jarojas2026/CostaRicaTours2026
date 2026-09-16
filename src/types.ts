@@ -217,6 +217,7 @@ export interface FilterState {
 }
 
 export type AgentId = 
+  | 'counter_agent'
   | 'router'
   | 'concierge' 
   | 'booking_specialist'
