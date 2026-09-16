@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://tourscostarica.ai.studio/sitemap.xml
+Sitemap: https://costaricatours.netlify.app/sitemap.xml
