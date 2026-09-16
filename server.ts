@@ -40,6 +40,11 @@ import {
   logException
 } from './backend/aiAssistantService';
 import {
+  callN8nMcp,
+  listN8nMcpTools,
+  executeN8nMcpTool
+} from './backend/n8nMcpBridge';
+import {
   generateClaudeChatResponse,
   generateClaudeItinerary,
   analyzeOperationalRiskWithClaude,
@@ -1519,6 +1524,31 @@ app.post('/api/agent/counter', async (req, res) => {
       voucherPreview: result.voucherPreview,
       modelUsed: result.modelUsed
     });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// =========================================================================
+// ⚡ MCP GATEWAY (Model Context Protocol) PARA n8n
+// =========================================================================
+app.get('/api/mcp/tools', async (req, res) => {
+  try {
+    const tools = await listN8nMcpTools();
+    res.json(tools);
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/mcp/call', async (req, res) => {
+  try {
+    const { name, arguments: toolArgs } = req.body;
+    if (!name) {
+      return res.status(400).json({ success: false, error: 'Parámetro "name" de herramienta requerido' });
+    }
+    const result = await executeN8nMcpTool(name, toolArgs || {});
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
