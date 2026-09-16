@@ -301,6 +301,19 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             <button
+              onClick={() => handleTabChange('workspace')}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+                currentTab === 'workspace'
+                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
+                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
+              }`}
+              title="Google Workspace (Gmail & Calendar)"
+            >
+              <Mail className="w-4 h-4 text-blue-400" />
+              <span>Workspace</span>
+            </button>
+
+            <button
               onClick={() => handleTabChange('ai')}
               className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'ai'

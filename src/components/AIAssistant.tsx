@@ -5,7 +5,8 @@ import { ArrowLeft,
   Bot, Send, Sparkles, Mic, MicOff, User, RefreshCw, X, MessageSquare, 
   Compass, ArrowRight, Trash2, HelpCircle, CheckCircle2, Ticket, 
   Image as ImageIcon, BrainCircuit, XCircle, Leaf, Trees, ShieldCheck, 
-  Info, Clock, ChevronRight, Zap, Coffee, Compass as CompassIcon, Waves, Mountain
+  Info, Clock, ChevronRight, Zap, Coffee, Compass as CompassIcon, Waves, Mountain,
+  Volume2, VolumeX, Phone, Calendar
 } from 'lucide-react';
 import { useTours } from '../contexts/ToursContext';
 import { getLangText, UI_TRANSLATIONS, formatCurrency } from '../utils/i18n';
@@ -31,6 +32,7 @@ interface Message {
   time: string;
   modelUsed?: string;
   recommendedTours?: Tour[];
+  quickActions?: Array<{ label: string; action: string; data?: any }>;
   voucher?: any;
   ecoFactData?: {
     region: string;
@@ -58,7 +60,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const { tours: TOURS } = useTours();
   const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
 
-  const [activeAgentId, setActiveAgentId] = useState<AgentId>('concierge');
+  const [activeAgentId, setActiveAgentId] = useState<AgentId>('counter_agent');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'booking' | 'nature_adventure' | 'logistics_food' | 'specialized'>('all');
   const [subTab, setSubTab] = useState<'chat' | 'n8n'>('chat');
   const currentAgent = getAIAgentById(activeAgentId);
@@ -131,6 +133,33 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const [aiEngine, setAiEngine] = useState<'claude' | 'gemini'>('claude');
   const [isItineraryModalOpen, setIsItineraryModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
+  const [inChatBookingTour, setInChatBookingTour] = useState<Tour | null>(null);
+  const [inChatDate, setInChatDate] = useState('');
+  const [inChatAdults, setInChatAdults] = useState(2);
+  const [inChatName, setInChatName] = useState('');
+  const [inChatEmail, setInChatEmail] = useState('');
+  const [inChatPhone, setInChatPhone] = useState('');
+  const [inChatPaymentMethod, setInChatPaymentMethod] = useState<'credit_card' | 'sinpe_movil' | 'paypal' | 'pay_at_pickup'>('pay_at_pickup');
+  const [isSubmittingInChatBooking, setIsSubmittingInChatBooking] = useState(false);
+
+  const handleToggleSpeak = (msgId: string, text: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (playingMessageId === msgId) {
+      window.speechSynthesis.cancel();
+      setPlayingMessageId(null);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const cleanText = text.replace(/\[TOUR:[^\]]+\]/g, '').replace(/[*_#]/g, '');
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = language === 'es' ? 'es-CR' : 'en-US';
+    utterance.rate = 1.0;
+    utterance.onend = () => setPlayingMessageId(null);
+    utterance.onerror = () => setPlayingMessageId(null);
+    setPlayingMessageId(msgId);
+    window.speechSynthesis.speak(utterance);
+  };
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -295,6 +324,85 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     setMessages((prev) => [...prev, ecoMsg]);
   };
 
+  const handleConfirmInChatBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inChatBookingTour || !inChatDate || !inChatName || !inChatEmail) return;
+    setIsSubmittingInChatBooking(true);
+    const genId = `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+    const totalUSD = inChatBookingTour.priceUSD * inChatAdults;
+    const totalCRC = Math.round(totalUSD * 515);
+
+    const payload: any = {
+      bookingId: genId,
+      tourId: inChatBookingTour.id,
+      tourName: getLangText(inChatBookingTour.title, language),
+      date: inChatDate,
+      time: inChatBookingTour.departureTimes?.[0] || '08:00 AM',
+      adults: inChatAdults,
+      children: 0,
+      pickupHotel: 'Recepción del Hotel / En coordinación WhatsApp',
+      totalUSD,
+      totalCRC,
+      paymentMethod: inChatPaymentMethod,
+      customer: { fullName: inChatName, email: inChatEmail, phone: inChatPhone || '+506', country: 'CR' },
+      status: inChatPaymentMethod === 'sinpe_movil' ? 'pendiente_pago' : 'confirmada',
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...payload,
+          customerName: inChatName,
+          customerEmail: inChatEmail,
+          customerPhone: inChatPhone
+        })
+      });
+      const data = await res.json();
+      const confirmed = data.booking || payload;
+      setInChatBookingTour(null);
+
+      const successMsg: Message = {
+        id: `booking-${Date.now()}`,
+        sender: 'assistant',
+        agentId: activeAgentId,
+        text: language === 'es'
+          ? `🎉 ¡Reserva Confirmada y Despachada!\n\nTu número de reserva oficial es: **${confirmed.bookingId}** para el tour **${confirmed.tourName}** el día **${confirmed.date}** (${confirmed.adults} adultos).\n\nHemos generado tu comprobante oficial y notificado al operador local.`
+          : `🎉 Booking Confirmed & Dispatched!\n\nYour official booking ID is: **${confirmed.bookingId}** for **${confirmed.tourName}** on **${confirmed.date}** (${confirmed.adults} adults).\n\nYour voucher is registered and the local operator has been notified.`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        voucher: confirmed
+      };
+      setMessages((prev) => [...prev, successMsg]);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmittingInChatBooking(false);
+    }
+  };
+
+  const handleQuickActionClick = (qa: { label: string; action: string; data?: any }) => {
+    if (qa.action === 'open_itinerary_planner') {
+      if (onNavigateTab) onNavigateTab('itinerary');
+    } else if (qa.action === 'express_book' && qa.data?.tourId) {
+      const matching = TOURS.find(t => t.id === qa.data.tourId);
+      if (matching) setInChatBookingTour(matching);
+    } else if (qa.action === 'book' && qa.data?.tourId) {
+      const matching = TOURS.find(t => t.id === qa.data.tourId);
+      if (matching) setInChatBookingTour(matching);
+      else if (onNavigateTab) onNavigateTab('tours');
+    } else if (qa.action === 'book') {
+      if (onNavigateTab) onNavigateTab('tours');
+    } else if (qa.action === 'book_itinerary') {
+      if (onNavigateTab) onNavigateTab('itinerary');
+    } else if (qa.action === 'direct_whatsapp') {
+      window.open('https://wa.me/50687959148?text=Hola%20Costa%20Rica%20Tours,%20quisiera%20consultar%20sobre%20un%20tour', '_blank');
+    } else if (qa.action === 'send_message' && qa.data?.message) {
+      handleSendMessage(qa.data.message);
+    }
+  };
+
   const handleSendMessage = async (textToSend?: string) => {
     const query = textToSend || inputMessage;
     if ((!query.trim() && !selectedImage) || isLoading) return;
@@ -427,7 +535,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         modelUsed: data.modelUsed || (aiEngine === 'claude' ? 'Claude 3.5 Sonnet' : 'Gemini 2.5 Flash'),
         recommendedTours: matchedTours.length > 0 ? matchedTours : undefined,
-        voucher: data.voucher || undefined,
+        quickActions: data.quickActions || undefined,
+        voucher: data.voucher || data.voucherPreview || undefined,
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
@@ -889,20 +998,119 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                       )}
 
                       <div className="flex items-center justify-between text-[9px] opacity-80 mt-1.5 font-bold">
-                        {msg.modelUsed ? (
-                          <span className={`px-2 py-0.5 rounded text-[8px] tracking-wide font-black uppercase flex items-center gap-1 ${
-                            msg.modelUsed.toLowerCase().includes('claude')
-                              ? 'bg-amber-400/20 text-amber-300 border border-amber-400/50'
-                              : 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
-                          }`}>
-                            <span>{msg.modelUsed.toLowerCase().includes('claude') ? '🧠' : '⚡'}</span>
-                            <span>{msg.modelUsed}</span>
-                          </span>
-                        ) : (
-                          <span />
-                        )}
+                        <div className="flex items-center gap-2">
+                          {msg.modelUsed && (
+                            <span className={`px-2 py-0.5 rounded text-[8px] tracking-wide font-black uppercase flex items-center gap-1 ${
+                              msg.modelUsed.toLowerCase().includes('claude')
+                                ? 'bg-amber-400/20 text-amber-300 border border-amber-400/50'
+                                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
+                            }`}>
+                              <span>{msg.modelUsed.toLowerCase().includes('claude') ? '🧠' : '⚡'}</span>
+                              <span>{msg.modelUsed}</span>
+                            </span>
+                          )}
+
+                          {msg.sender === 'assistant' && (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleSpeak(msg.id, msg.text)}
+                              title={playingMessageId === msg.id ? (language === 'es' ? 'Detener voz' : 'Stop voice') : (language === 'es' ? 'Escuchar en voz alta' : 'Listen aloud')}
+                              className={`p-1 rounded-md text-[10px] transition-colors flex items-center gap-1 cursor-pointer ${
+                                playingMessageId === msg.id
+                                  ? 'bg-amber-400 text-stone-950 font-bold'
+                                  : 'hover:bg-emerald-800/60 text-emerald-300'
+                              }`}
+                            >
+                              {playingMessageId === msg.id ? (
+                                <>
+                                  <VolumeX className="w-3 h-3 animate-pulse" />
+                                  <span className="text-[8px] uppercase">{language === 'es' ? 'Pausar' : 'Stop'}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Volume2 className="w-3 h-3" />
+                                  <span className="text-[8px] uppercase">{language === 'es' ? 'Audio' : 'Voice'}</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+
                         <span>{msg.time}</span>
                       </div>
+
+                      {/* Rich In-Chat Booking Voucher Card */}
+                      {msg.voucher && (
+                        <div className="mt-3 p-3.5 bg-[#03150d] rounded-xl border border-amber-400/60 shadow-lg space-y-2.5 text-xs">
+                          <div className="flex items-center justify-between border-b border-emerald-500/30 pb-2">
+                            <span className="font-mono font-black text-amber-400 text-[11px]">
+                              RESERVA #{msg.voucher.bookingId}
+                            </span>
+                            <span className="bg-emerald-950 text-emerald-300 text-[9px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/40">
+                              ✓ {msg.voucher.status === 'pendiente_pago' ? (language === 'es' ? 'Pendiente Pago' : 'Pending Payment') : (language === 'es' ? 'Confirmada' : 'Confirmed')}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-[11px] text-stone-300">
+                            <div>
+                              <span className="text-stone-400 block text-[9px] uppercase font-bold">Tour</span>
+                              <span className="font-bold text-white line-clamp-1">{msg.voucher.tourName}</span>
+                            </div>
+                            <div>
+                              <span className="text-stone-400 block text-[9px] uppercase font-bold">Fecha / Date</span>
+                              <span className="font-bold text-amber-300">{msg.voucher.date} ({msg.voucher.time || '08:00 AM'})</span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-1.5 pt-1">
+                            <a
+                              href={`https://wa.me/50687959148?text=${encodeURIComponent(`🇨🇷 *Reserva Costa Rica Tours*\n*ID:* ${msg.voucher.bookingId}\n*Tour:* ${msg.voucher.tourName}\n*Fecha:* ${msg.voucher.date}\n*Pasajeros:* ${msg.voucher.adults} adultos`)}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-[10px] py-1.5 px-2 rounded-lg flex items-center justify-center gap-1 shadow-sm"
+                            >
+                              <Phone className="w-3 h-3" />
+                              <span>WhatsApp</span>
+                            </a>
+
+                            <a
+                              href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`🇨🇷 Tour Costa Rica: ${msg.voucher.tourName}`)}&dates=${(msg.voucher.date || '').replace(/-/g, '')}T140000Z/${(msg.voucher.date || '').replace(/-/g, '')}T180000Z&details=${encodeURIComponent(`Reserva Oficial #${msg.voucher.bookingId}\nTour: ${msg.voucher.tourName}\nPasajeros: ${msg.voucher.adults} Adultos`)}&location=${encodeURIComponent(msg.voucher.pickupHotel || 'Costa Rica')}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-[10px] py-1.5 px-2 rounded-lg flex items-center justify-center gap-1 border border-amber-400/40"
+                            >
+                              <Calendar className="w-3 h-3 text-amber-400" />
+                              <span>Calendar</span>
+                            </a>
+
+                            <a
+                              href={`https://waze.com/ul?q=${encodeURIComponent(msg.voucher.pickupHotel || 'Costa Rica')}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="bg-[#33ccff]/20 hover:bg-[#33ccff]/30 text-[#33ccff] border border-[#33ccff]/40 font-bold text-[10px] py-1.5 px-2 rounded-lg flex items-center justify-center gap-1"
+                            >
+                              <Compass className="w-3 h-3" />
+                              <span>Waze</span>
+                            </a>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Botones de Acciones Rápidas del Agente */}
+                      {msg.quickActions && msg.quickActions.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-2 border-t border-emerald-500/20 mt-2">
+                          {msg.quickActions.map((qa, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => handleQuickActionClick(qa)}
+                              className="text-[11px] font-bold bg-[#041711] hover:bg-amber-400 hover:text-stone-950 text-amber-300 px-3 py-1.5 rounded-full border border-amber-400/40 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                            >
+                              <span>{qa.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Recommended Tours Widget if present */}
@@ -1232,6 +1440,126 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           handleSendMessage(prompt);
         }}
       />
+
+      {/* Modal de Reserva Express dentro del Asistente */}
+      {inChatBookingTour && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+          <div className="bg-[#051c14] border border-amber-400/80 rounded-3xl p-6 max-w-md w-full shadow-2xl text-emerald-50 space-y-4">
+            <div className="flex items-center justify-between border-b border-emerald-500/30 pb-3">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 block">
+                  {language === 'es' ? '⚡ RESERVA EXPRESS INTELIGENTE' : '⚡ SMART EXPRESS BOOKING'}
+                </span>
+                <h4 className="text-lg font-black text-white">{getLangText(inChatBookingTour.title, language)}</h4>
+              </div>
+              <button
+                onClick={() => setInChatBookingTour(null)}
+                className="p-1 text-stone-400 hover:text-white rounded-full bg-emerald-950/80"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmInChatBooking} className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] font-bold text-emerald-200 mb-1">
+                    {language === 'es' ? 'Fecha de Salida' : 'Departure Date'}
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={inChatDate}
+                    onChange={(e) => setInChatDate(e.target.value)}
+                    className="w-full bg-[#020e08] border border-emerald-500/40 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-emerald-200 mb-1">
+                    {language === 'es' ? 'Adultos ($' + inChatBookingTour.priceUSD + ')' : 'Adults ($' + inChatBookingTour.priceUSD + ')'}
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="20"
+                    required
+                    value={inChatAdults}
+                    onChange={(e) => setInChatAdults(Math.max(1, Number(e.target.value)))}
+                    className="w-full bg-[#020e08] border border-emerald-500/40 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-emerald-200 mb-1">
+                  {language === 'es' ? 'Nombre Completo' : 'Full Name'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: María Rodríguez"
+                  value={inChatName}
+                  onChange={(e) => setInChatName(e.target.value)}
+                  className="w-full bg-[#020e08] border border-emerald-500/40 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] font-bold text-emerald-200 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="tu@email.com"
+                    value={inChatEmail}
+                    onChange={(e) => setInChatEmail(e.target.value)}
+                    className="w-full bg-[#020e08] border border-emerald-500/40 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-emerald-200 mb-1">
+                    WhatsApp / Tel
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+506 8888-8888"
+                    value={inChatPhone}
+                    onChange={(e) => setInChatPhone(e.target.value)}
+                    className="w-full bg-[#020e08] border border-emerald-500/40 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-[#020e08] p-3 rounded-xl border border-emerald-500/30 flex items-center justify-between text-xs">
+                <span className="text-stone-300 font-bold">{language === 'es' ? 'Total Calculado:' : 'Total Calculated:'}</span>
+                <span className="text-amber-400 font-black text-sm">
+                  ${(inChatBookingTour.priceUSD * inChatAdults).toFixed(2)} USD (₡{(inChatBookingTour.priceUSD * inChatAdults * 515).toLocaleString()} CRC)
+                </span>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmittingInChatBooking}
+                className="w-full py-3 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-stone-950 font-black rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-amber-400/20"
+              >
+                {isSubmittingInChatBooking ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>{language === 'es' ? 'Despachando Reserva...' : 'Dispatching Booking...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{language === 'es' ? 'Confirmar y Recibir Voucher' : 'Confirm & Get Voucher'}</span>
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

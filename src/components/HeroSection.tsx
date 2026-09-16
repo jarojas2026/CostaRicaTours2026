@@ -22,7 +22,7 @@ interface HeroSectionProps {
 const HERO_SLIDES = [
   {
     id: 1,
-    image: "https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80",
+    image: "/src/assets/images/costa_rica_hero_1789327541732.jpg",
     badge: "🔥 Experiencia VIP",
     badgeEn: "🔥 VIP Experience",
     title: "Volcán Arenal & Aguas Termales",
@@ -33,7 +33,7 @@ const HERO_SLIDES = [
   },
   {
     id: 2,
-    image: "https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=1200&q=80",
+    image: "/src/assets/images/manuel_antonio_beach_1789327578996.jpg",
     badge: "🐒 Favorito de los Viajeros",
     badgeEn: "🐒 Traveler's Favorite",
     title: "Playas de Manuel Antonio",
@@ -44,13 +44,13 @@ const HERO_SLIDES = [
   },
   {
     id: 3,
-    image: "https://images.unsplash.com/photo-1530866495561-507c9faab2ed?auto=format&fit=crop&w=1200&q=80",
-    badge: "🚣 Pura Adrenalina",
-    badgeEn: "🚣 Pure Adrenaline",
-    title: "Rafting en el Río Pacuare",
-    titleEn: "Pacuare River Rafting",
-    desc: "Desafía rápidos de clase III y IV en uno de los ríos más escénicos del mundo. Una aventura épica y segura con instructores certificados.",
-    descEn: "Brave Class III and IV rapids in one of the most scenic rivers in the world. An epic and safe adventure with certified instructors.",
+    image: "/src/assets/images/monteverde_canopy_1789327567266.jpg",
+    badge: "🌱 Puentes Colgantes & Bosque Nuboso",
+    badgeEn: "🌱 Canopy & Cloud Forest",
+    title: "Monteverde & Bosque Nuboso",
+    titleEn: "Monteverde Cloud Forest",
+    desc: "Siente la magia de caminar sobre el dosel de la selva nubosa en puentes colgantes rodeado de quetzales y orquídeas exóticas.",
+    descEn: "Experience the magic of walking over the cloud forest canopy on suspension bridges surrounded by quetzals and exotic orchids.",
     price: "$110"
   }
 ];
@@ -118,7 +118,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </p>
 
             {/* Search and Filters Island */}
-            <div className="bg-[#062016]/95 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-emerald-500/30 shadow-[0_12px_40px_rgba(0,0,0,0.5)] space-y-4 mt-4">
+            <div className="bg-[#052118]/95 backdrop-blur-xl p-5 sm:p-6 rounded-2xl border border-emerald-900/40 shadow-2xl space-y-4 mt-4">
               <div className="text-xs uppercase font-extrabold text-amber-400 tracking-wider flex items-center gap-2">
                 <Search className="w-4 h-4 text-amber-400" />
                 <span>{t('toursAndAdventures')}</span>
@@ -175,7 +175,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   <button
                     type="button"
                     onClick={onOpenCustomFunnel}
-                    className="w-full sm:w-auto bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-sm uppercase py-3.5 px-6 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full sm:w-auto btn-primary shadow-lg shadow-amber-500/20"
                   >
                     <Sparkles className="w-4 h-4 text-stone-950" />
                     <span>{language === 'es' ? 'Viaje a Medida' : 'Custom Trip'}</span>
@@ -185,7 +185,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <button
                   type="button"
                   onClick={onExploreTours}
-                  className="w-full sm:w-auto flex-1 bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-500/40 text-white font-bold text-sm uppercase py-3.5 px-6 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto flex-1 btn-secondary shadow-lg shadow-emerald-600/20"
                 >
                   <Compass className="w-4 h-4 text-amber-400" />
                   <span>{t('exploreCatalog')}</span>
@@ -194,7 +194,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <button
                   type="button"
                   onClick={onOpenItineraryPlanner}
-                  className="w-full sm:w-auto bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-100 font-bold text-sm py-3.5 px-6 rounded-xl border border-emerald-500/30 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto btn-outline bg-transparent border-emerald-700/50 text-emerald-100 hover:bg-emerald-900/40 hover:border-emerald-600/80"
                 >
                   <Sparkles className="w-4 h-4 text-amber-400" />
                   <span>{t('aiPlannerBtn')}</span>
@@ -259,7 +259,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           >
             <div 
               onClick={onExploreTours}
-              className="absolute inset-0 bg-[#07241a] rounded-3xl border border-emerald-500/30 overflow-hidden shadow-2xl group cursor-pointer"
+              className="absolute inset-0 bg-[#052118] rounded-2xl border border-emerald-900/40 overflow-hidden shadow-2xl group cursor-pointer"
             >
               <AnimatePresence mode="wait">
                 <motion.div
@@ -298,7 +298,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                            {formatCurrency(Number(slide.price.replace(/[^0-9]/g, '')) || 0, currency)}
                          </span>
                       </div>
-                      <span className="bg-amber-400 hover:bg-amber-300 text-stone-950 font-black px-5 py-2.5 rounded-xl text-xs uppercase tracking-wide transition-all shadow-md flex items-center gap-1.5">
+                      <span className="btn-primary px-5 py-2.5 text-xs">
                         <span>{language === 'es' ? 'Ver Detalles' : 'View Details'}</span>
                         <ArrowRight className="w-4 h-4" />
                       </span>

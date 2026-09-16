@@ -581,26 +581,20 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       const priceFormatted = formatCurrency(tour.priceUSD, currency);
 
       const htmlString = `
-        <div class="relative cursor-pointer transition-transform duration-300 ${isSelected ? 'scale-125 z-50' : 'hover:scale-110 z-20'}">
-          ${isSelected ? '<div class="absolute -inset-2 bg-emerald-400/50 rounded-full animate-ping"></div>' : ''}
-          <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full shadow-2xl border-2 ${
-            isSelected 
-              ? 'bg-emerald-500 border-white text-stone-950 font-black ring-4 ring-emerald-400/40' 
-              : 'bg-stone-900/95 border-emerald-500/80 text-white hover:bg-stone-900'
-          }">
-            <span class="text-xs leading-none">${emoji}</span>
-            <span class="text-[11px] font-bold tracking-tight whitespace-nowrap">${priceFormatted}</span>
+        <div class="relative flex items-center justify-center w-8 h-8 cursor-pointer transition-transform duration-300 ${isSelected ? 'scale-125 z-50' : 'hover:scale-110 z-20'}">
+          ${isSelected ? '<div class="absolute -inset-2 bg-emerald-500/40 rounded-full animate-ping"></div>' : ''}
+          <div class="relative bg-white border-2 ${isSelected ? 'border-emerald-600 shadow-emerald-500/50 shadow-lg' : 'border-emerald-500 shadow-sm'} rounded-full w-full h-full flex items-center justify-center">
+            <span class="text-[13px] leading-none">${emoji}</span>
           </div>
-          <div class="w-2 h-2 mx-auto rotate-45 -mt-1 ${isSelected ? 'bg-emerald-500 border-r-2 border-b-2 border-white' : 'bg-stone-900'}"></div>
         </div>
       `;
 
       const customIcon = L.divIcon({
         className: 'custom-tour-pin',
         html: htmlString,
-        iconSize: [80, 42],
-        iconAnchor: [40, 42],
-        popupAnchor: [0, -42]
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -16]
       });
 
       const marker = L.marker([tour.location.lat, tour.location.lng], {
@@ -659,26 +653,20 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       }
 
       const htmlString = `
-        <div class="relative cursor-pointer transition-transform duration-300 ${isSelected ? 'scale-125 z-50' : 'hover:scale-110 z-25'}">
-          ${isSelected ? '<div class="absolute -inset-2 bg-amber-400/60 rounded-full animate-ping"></div>' : ''}
-          <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full shadow-2xl border-2 ${
-            isSelected 
-              ? 'bg-amber-400 border-white text-stone-950 font-black ring-4 ring-amber-400/40' 
-              : 'bg-stone-950/95 ' + meta.border + ' text-white hover:bg-stone-900'
-          }">
-            <span class="text-xs leading-none">${meta.emoji}</span>
-            <span class="text-[10px] font-bold tracking-tight whitespace-nowrap">${badgeContent}</span>
+        <div class="relative flex items-center justify-center w-7 h-7 cursor-pointer transition-transform duration-300 ${isSelected ? 'scale-125 z-50' : 'hover:scale-110 z-20'}">
+          ${isSelected ? '<div class="absolute -inset-2 bg-slate-400/40 rounded-full animate-ping"></div>' : ''}
+          <div class="relative bg-white border-2 ${isSelected ? 'border-slate-800 shadow-slate-500/50 shadow-lg' : meta.border + ' shadow-sm'} rounded-full w-full h-full flex items-center justify-center">
+            <span class="text-[11px] leading-none">${meta.emoji}</span>
           </div>
-          <div class="w-2 h-2 mx-auto rotate-45 -mt-1 ${isSelected ? 'bg-amber-400 border-r-2 border-b-2 border-white' : 'bg-stone-950'}"></div>
         </div>
       `;
 
       const customIcon = L.divIcon({
         className: `custom-srv-pin custom-${srv.type}-pin`,
         html: htmlString,
-        iconSize: [84, 42],
-        iconAnchor: [42, 42],
-        popupAnchor: [0, -42]
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+        popupAnchor: [0, -14]
       });
 
       const marker = L.marker([srv.coordinates.lat, srv.coordinates.lng], {
@@ -1160,9 +1148,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, tours: !prev.tours }))}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
-                    layerFilters.tours 
-                      ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm' 
-                      : 'bg-slate-100 border-slate-200 text-slate-500 opacity-70'
+                    layerFilters.tours ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
                   }`}
                 >
                   <span>📍</span>
@@ -1174,9 +1160,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, hotels: !prev.hotels }))}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
-                    layerFilters.hotels 
-                      ? 'bg-amber-500 text-white border-amber-400 shadow-sm' 
-                      : 'bg-slate-100 border-slate-200 text-slate-500 opacity-70'
+                    layerFilters.hotels ? 'bg-amber-50 text-amber-700 border-amber-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
                   }`}
                 >
                   <span>🏨</span>
@@ -1188,9 +1172,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, parks: !prev.parks }))}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
-                    layerFilters.parks 
-                      ? 'bg-teal-600 text-white border-teal-500 shadow-sm' 
-                      : 'bg-slate-100 border-slate-200 text-slate-500 opacity-70'
+                    layerFilters.parks ? 'bg-teal-50 text-teal-700 border-teal-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
                   }`}
                 >
                   <span>🌿</span>
@@ -1202,9 +1184,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, buses: !prev.buses }))}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
-                    layerFilters.buses 
-                      ? 'bg-blue-600 text-white border-blue-500 shadow-sm' 
-                      : 'bg-slate-100 border-slate-200 text-slate-500 opacity-70'
+                    layerFilters.buses ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
                   }`}
                 >
                   <span>🚌</span>
@@ -1216,9 +1196,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, trains: !prev.trains }))}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
-                    layerFilters.trains 
-                      ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm' 
-                      : 'bg-slate-100 border-slate-200 text-slate-500 opacity-70'
+                    layerFilters.trains ? 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
                   }`}
                 >
                   <span>🚆</span>
@@ -1230,9 +1208,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, taxis: !prev.taxis }))}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
-                    layerFilters.taxis 
-                      ? 'bg-amber-600 text-white border-amber-500 shadow-sm' 
-                      : 'bg-slate-100 border-slate-200 text-slate-500 opacity-70'
+                    layerFilters.taxis ? 'bg-orange-50 text-orange-700 border-orange-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
                   }`}
                 >
                   <span>🚕</span>
@@ -1244,9 +1220,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, airports: !prev.airports }))}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
-                    layerFilters.airports 
-                      ? 'bg-purple-600 text-white border-purple-500 shadow-sm' 
-                      : 'bg-slate-100 border-slate-200 text-slate-500 opacity-70'
+                    layerFilters.airports ? 'bg-purple-50 text-purple-700 border-purple-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
                   }`}
                 >
                   <span>✈️</span>
@@ -1335,30 +1309,30 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           <button
             id="map-zoom-in-control"
             onClick={handleZoomIn}
-            className="w-11 h-11 bg-[#06241a]/95 hover:bg-emerald-900 border border-emerald-500/40 hover:border-emerald-400 text-emerald-100 rounded-2xl flex items-center justify-center shadow-2xl backdrop-blur-md transition-all active:scale-95"
+            className="w-9 h-9 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl flex items-center justify-center shadow-sm transition-all active:scale-95"
             title={language === 'es' ? 'Acercar zoom (+)' : 'Zoom In (+)'}
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4" />
           </button>
 
           {/* Zoom Out */}
           <button
             id="map-zoom-out-control"
             onClick={handleZoomOut}
-            className="w-11 h-11 bg-[#06241a]/95 hover:bg-emerald-900 border border-emerald-500/40 hover:border-emerald-400 text-emerald-100 rounded-2xl flex items-center justify-center shadow-2xl backdrop-blur-md transition-all active:scale-95"
+            className="w-9 h-9 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl flex items-center justify-center shadow-sm transition-all active:scale-95"
             title={language === 'es' ? 'Alejar zoom (-)' : 'Zoom Out (-)'}
           >
-            <Minus className="w-5 h-5" />
+            <Minus className="w-4 h-4" />
           </button>
 
           {/* Recenter Costa Rica */}
           <button
             id="map-recenter-control"
             onClick={handleRecenterCostaRica}
-            className="w-11 h-11 bg-[#06241a]/95 hover:bg-emerald-900 border border-emerald-500/40 hover:border-emerald-400 text-emerald-100 rounded-2xl flex items-center justify-center shadow-2xl backdrop-blur-md transition-all active:scale-95"
+            className="w-9 h-9 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl flex items-center justify-center shadow-sm transition-all active:scale-95"
             title={language === 'es' ? 'Centrar en Costa Rica' : 'Recenter Costa Rica'}
           >
-            <Compass className="w-5 h-5 text-emerald-400" />
+            <Compass className="w-5 h-5" />
           </button>
 
           {/* Geolocation */}
@@ -1366,26 +1340,23 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             id="map-locate-gps-control"
             onClick={handleLocateMe}
             disabled={gpsLoading}
-            className="w-11 h-11 bg-[#06241a]/95 hover:bg-emerald-900 border border-emerald-500/40 hover:border-emerald-400 text-emerald-100 rounded-2xl flex items-center justify-center shadow-2xl backdrop-blur-md transition-all active:scale-95 disabled:opacity-50"
+            className="w-9 h-9 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl flex items-center justify-center shadow-sm transition-all active:scale-95 disabled:opacity-50"
             title={language === 'es' ? 'Mi ubicación GPS' : 'My GPS Location'}
           >
-            <LocateFixed className={`w-5 h-5 ${gpsLoading ? 'animate-spin text-amber-400' : 'text-emerald-400'}`} />
+            <LocateFixed className={`w-5 h-5 ${gpsLoading ? 'animate-spin text-amber-500' : ''}`} />
           </button>
 
           {/* Fullscreen Toggle */}
           <button
             id="map-fullscreen-control"
             onClick={handleToggleFullscreen}
-            className="w-11 h-11 bg-[#06241a]/95 hover:bg-emerald-900 border border-emerald-500/40 hover:border-emerald-400 text-emerald-100 rounded-2xl flex items-center justify-center shadow-2xl backdrop-blur-md transition-all active:scale-95"
+            className="w-9 h-9 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl flex items-center justify-center shadow-sm transition-all active:scale-95"
             title={language === 'es' ? 'Pantalla completa' : 'Fullscreen toggle'}
           >
-            {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
 
-          {/* Zoom Level Badge */}
-          <div className="bg-black/60 backdrop-blur-md border border-emerald-500/20 px-2 py-1 rounded-lg text-[10px] font-mono text-emerald-300 text-center">
-            {currentZoom}x
-          </div>
+
         </div>
 
         {/* BOTTOM LEFT: Quick Itinerary Status Pill */}

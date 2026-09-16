@@ -218,7 +218,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 hover:text-white flex items-center justify-center transition-all"
+            className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-full bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 hover:text-white flex items-center justify-center transition-all"
           >
             <X className="w-5 h-5" />
           </button>
@@ -271,7 +271,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
               <div className="pt-2 flex gap-3">
                 <button
                   onClick={onClose}
-                  className="w-full py-3 bg-emerald-400 hover:bg-emerald-300 text-stone-950 font-black rounded-xl text-xs uppercase tracking-wider shadow-lg transition-all"
+                  className="min-h-[44px] min-w-[44px] w-full py-3 bg-emerald-400 hover:bg-emerald-300 text-stone-950 font-black rounded-xl text-xs uppercase tracking-wider shadow-lg transition-all"
                 >
                   {language === 'es' ? 'Listo, Continuar Explorando el Mapa' : 'Done, Keep Exploring Map'}
                 </button>
@@ -590,7 +590,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto px-6 py-3.5 bg-emerald-400 hover:bg-emerald-300 text-stone-950 font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 active:scale-98 disabled:opacity-50"
+                  className="min-h-[44px] min-w-[44px] w-full sm:w-auto px-6 py-3.5 bg-emerald-400 hover:bg-emerald-300 text-stone-950 font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 active:scale-98 disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <span>{language === 'es' ? 'Procesando...' : 'Processing...'}</span>

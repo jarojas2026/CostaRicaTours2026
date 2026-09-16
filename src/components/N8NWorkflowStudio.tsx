@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Language } from '../types';
 import { N8N_WORKFLOWS, N8NWorkflowDef } from '../data/n8nWorkflowsBlueprint';
+import { WORKFLOWS_100_LIST, N8NWorkflowDef100 } from '../data/workflows100';
 import {
   Zap, Play, CheckCircle2, AlertCircle, Copy, Download, RefreshCw,
   Terminal, Server, Code, FileText, ArrowRight, ShieldCheck, Clock,
   Cpu, Send, ExternalLink, ChevronRight, Layers, Bot, HelpCircle,
-  Key, Mail, ShieldAlert, Sliders, Settings, Check, Sparkles, X, Eye
+  Key, Mail, ShieldAlert, Sliders, Settings, Check, Sparkles, X, Eye,
+  Search, Database, FolderArchive, BellRing
 } from 'lucide-react';
 
 interface N8NWorkflowStudioProps {
@@ -14,9 +16,14 @@ interface N8NWorkflowStudioProps {
 
 export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }) => {
   const isEs = language === 'es';
-  const [selectedWfId, setSelectedWfId] = useState<string>(N8N_WORKFLOWS[0].id);
+  
+  // Suite mode: 'matrix100' (100 DB-backed workflows) or 'production14' (14 complex workflows)
+  const [suiteMode, setSuiteMode] = useState<'matrix100' | 'production14'>('matrix100');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedWfId, setSelectedWfId] = useState<string>(WORKFLOWS_100_LIST[0].id);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [showCredentialsGuide, setShowCredentialsGuide] = useState<boolean>(false);
+  const [showAlertsArchitecture, setShowAlertsArchitecture] = useState<boolean>(false);
   const [activeNodeModal, setActiveNodeModal] = useState<any | null>(null);
 
   // Form input mode: 'visual' (form fields) or 'json' (raw code)
@@ -48,51 +55,27 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
     timestamp: string;
   } | null>(null);
 
-  // Autonomous Daemon State
-  const [autonomousLoading, setAutonomousLoading] = useState<boolean>(false);
-  const [autonomousResult, setAutonomousResult] = useState<any>(null);
-
   // Copy feedback
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const activeWf = N8N_WORKFLOWS.find((w) => w.id === selectedWfId) || N8N_WORKFLOWS[0];
+  const currentWorkflowPool: any[] = suiteMode === 'matrix100' ? WORKFLOWS_100_LIST : N8N_WORKFLOWS;
+
+  const activeWf = useMemo(() => {
+    return currentWorkflowPool.find((w) => w.id === selectedWfId) || currentWorkflowPool[0];
+  }, [currentWorkflowPool, selectedWfId]);
 
   // Update test payload whenever active workflow changes
   useEffect(() => {
-    setTestPayload(JSON.stringify(activeWf.samplePayload, null, 2));
-    setRunResult(null);
-  }, [activeWf.id]);
+    if (activeWf) {
+      setTestPayload(JSON.stringify(activeWf.samplePayload || {}, null, 2));
+      setRunResult(null);
+    }
+  }, [activeWf?.id]);
 
   // Check n8n status on mount
   useEffect(() => {
     checkN8NStatus();
-    fetchAutonomousStatus();
   }, []);
-
-  const fetchAutonomousStatus = async () => {
-    try {
-      const res = await fetch('/api/agents/autonomous-daemon');
-      if (res.ok) {
-        const data = await res.json();
-        setAutonomousResult(data);
-      }
-    } catch {
-      // ignore
-    }
-  };
-
-  const handleRunAutonomousDaemon = async () => {
-    setAutonomousLoading(true);
-    try {
-      const res = await fetch('/api/agents/autonomous-daemon', { method: 'POST' });
-      const data = await res.json();
-      setAutonomousResult(data.status || data);
-    } catch (err: any) {
-      console.error('Error running autonomous loop:', err);
-    } finally {
-      setAutonomousLoading(false);
-    }
-  };
 
   const checkN8NStatus = async () => {
     try {
@@ -219,7 +202,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
     setTimeout(() => setCopiedKey(null), 2500);
   };
 
-  const handleDownloadBlueprint = (wf: N8NWorkflowDef) => {
+  const handleDownloadBlueprint = (wf: any) => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(wf.blueprintJson, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
@@ -229,8 +212,48 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
     downloadAnchor.remove();
   };
 
-  const filteredWorkflows = N8N_WORKFLOWS.filter((wf) => {
+  const handleDownloadAll100Bundle = () => {
+    const bundle = {
+      app: "Costa Rica Tours 2026",
+      version: "2.0.0",
+      description: "Matriz Maestra de 100 Workflows n8n con persistencia en Firestore y alertas nativas /api/alerts",
+      totalWorkflows: WORKFLOWS_100_LIST.length,
+      generatedAt: new Date().toISOString(),
+      workflows: WORKFLOWS_100_LIST.map(w => w.blueprintJson)
+    };
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bundle, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `costa_rica_tours_100_workflows_bundle_${new Date().toISOString().slice(0, 10)}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  const filteredWorkflows = currentWorkflowPool.filter((wf: any) => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchCode = wf.code?.toLowerCase().includes(q);
+      const matchNameEs = wf.name?.es?.toLowerCase().includes(q);
+      const matchNameEn = wf.name?.en?.toLowerCase().includes(q);
+      const matchEndpoint = wf.endpoint?.toLowerCase().includes(q);
+      const matchCollection = wf.collection?.toLowerCase().includes(q);
+      const matchDesc = ((wf.description?.es || '') + ' ' + (wf.description?.en || '')).toLowerCase().includes(q);
+      if (!matchCode && !matchNameEs && !matchNameEn && !matchEndpoint && !matchCollection && !matchDesc) {
+        return false;
+      }
+    }
+
     if (categoryFilter === 'all') return true;
+    if (categoryFilter === 'enterprise_complex') return wf.isComplex === true || wf.complexityTier === 'enterprise_complex';
+    if (categoryFilter === 'booking') return wf.category === 'booking';
+    if (categoryFilter === 'payment') return wf.category === 'payment';
+    if (categoryFilter === 'fulfillment') return wf.category === 'fulfillment';
+    if (categoryFilter === 'operations') return wf.category === 'operations' || wf.category === 'flight';
+    if (categoryFilter === 'chat') return wf.category === 'chat' || wf.category === 'concierge' || wf.category === 'itinerary';
+    if (categoryFilter === 'fraud') return wf.category === 'fraud' || wf.category === 'emergency';
+    if (categoryFilter === 'marketing') return wf.category === 'marketing' || wf.category === 'feedback' || wf.category === 'vip';
+    if (categoryFilter === 'analytics') return wf.category === 'analytics' || wf.category === 'calendar';
     return wf.category === categoryFilter;
   });
 
@@ -253,55 +276,67 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
               <span className="bg-amber-400 text-stone-950 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                 n8n Enterprise Automation
               </span>
-              <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold">
+              <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                {isEs ? `${N8N_WORKFLOWS.length} Flujos en Producción` : `${N8N_WORKFLOWS.length} Production Workflows`}
+                {isEs ? `${WORKFLOWS_100_LIST.length} Blueprints en Base de Datos` : `${WORKFLOWS_100_LIST.length} Database Blueprints`}
+              </span>
+              <span className="text-[10px] font-bold text-amber-300 bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-amber-400" />
+                {isEs ? 'Alertas Nativas /api/alerts (Sin Telegram)' : 'Native /api/alerts (Telegram Replaced)'}
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
               <Server className="w-5 h-5 text-amber-400" />
               <span>{isEs ? 'Orquestador de Automatizaciones & Workflows n8n' : 'n8n Automation & Workflow Orchestrator'}</span>
             </h2>
-            <p className="text-xs sm:text-sm text-stone-300 max-w-2xl mt-1 leading-relaxed">
+            <p className="text-xs sm:text-sm text-stone-300 max-w-3xl mt-1 leading-relaxed">
               {isEs
-                ? 'Conectamos el chat de viajeros, el motor de reservas en Firestore, pasarelas de pago, análisis antifraude, contingencias climáticas y panel de guías en Telegram mediante webhooks asíncronos.'
-                : 'Connecting traveler chat, Firestore booking engine, payment gateways, fraud scoring, weather contingencies, and Telegram guide ops panel via asynchronous webhooks.'}
+                ? 'Matriz completa de 100 workflows de automatización para Costa Rica Tours con persistencia nativa en Firestore, validación antifraude, facturación DGT, asignación de flota, concierge IA y enrutamiento directo de excepciones a /api/alerts.'
+                : 'Complete 100-workflow automation matrix for Costa Rica Tours with native Firestore persistence, antifraud validation, DGT invoicing, fleet dispatch, AI concierge, and direct exception routing to /api/alerts.'}
             </p>
           </div>
 
           {/* Connection Pill & Actions */}
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
-              onClick={handleRunAutonomousDaemon}
-              disabled={autonomousLoading}
-              className="px-3.5 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 border border-emerald-400/60 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg cursor-pointer disabled:opacity-50"
+              onClick={() => setShowAlertsArchitecture(!showAlertsArchitecture)}
+              className={`px-3 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 border cursor-pointer ${
+                showAlertsArchitecture
+                  ? 'bg-rose-500 text-white border-rose-400 shadow-md'
+                  : 'bg-emerald-950/80 hover:bg-emerald-900 text-rose-300 border-rose-500/40'
+              }`}
             >
-              <Bot className={`w-3.5 h-3.5 ${autonomousLoading ? 'animate-spin' : 'animate-bounce'}`} />
-              <span>
-                {autonomousLoading
-                  ? (isEs ? 'Ejecutando Autonomía...' : 'Running Autonomous Loop...')
-                  : (isEs ? '🤖 Modo 100% Autónomo' : '🤖 100% Autonomous Mode')}
-              </span>
+              <BellRing className="w-3.5 h-3.5" />
+              <span>{isEs ? 'Flujo de Alertas' : 'Alerts Flow'}</span>
             </button>
 
             <button
               onClick={() => setShowCredentialsGuide(!showCredentialsGuide)}
-              className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 border cursor-pointer ${
+              className={`px-3 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 border cursor-pointer ${
                 showCredentialsGuide
                   ? 'bg-amber-400 text-stone-950 border-amber-300 shadow-md'
                   : 'bg-emerald-950/80 hover:bg-emerald-900 text-amber-400 border-amber-400/40'
               }`}
             >
               <Key className="w-3.5 h-3.5" />
-              <span>{isEs ? 'Credenciales Oficiales' : 'Official Credentials'}</span>
+              <span>{isEs ? 'Credenciales' : 'Credentials'}</span>
             </button>
 
-            <div className="bg-[#020e08] border border-emerald-500/30 rounded-2xl p-3 flex items-center gap-3 shadow-inner">
+            <button
+              onClick={handleDownloadAll100Bundle}
+              className="px-3.5 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 shadow-lg cursor-pointer"
+              title={isEs ? 'Descargar los 100 workflows en un único archivo JSON bundle listo para n8n' : 'Download all 100 workflows in a single JSON bundle for n8n'}
+            >
+              <FolderArchive className="w-3.5 h-3.5" />
+              <span>{isEs ? 'Exportar 100 (Bundle)' : 'Export 100 (Bundle)'}</span>
+            </button>
+
+            <div className="bg-[#020e08] border border-emerald-500/30 rounded-2xl p-2.5 flex items-center gap-3 shadow-inner">
               <div className="space-y-0.5">
-                <div className="text-[10px] uppercase font-bold text-emerald-300/70 tracking-wider">
+                <div className="text-[9px] uppercase font-bold text-emerald-300/70 tracking-wider">
                   {isEs ? 'Endpoint n8n' : 'n8n Endpoint'}
                 </div>
-                <div className="text-xs font-mono font-bold text-amber-300 truncate max-w-[170px]">
+                <div className="text-xs font-mono font-bold text-amber-300 truncate max-w-[150px]">
                   {connectionStatus.baseUrl}
                 </div>
               </div>
@@ -309,7 +344,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
               <button
                 onClick={handleTestPing}
                 disabled={connectionStatus.loading}
-                className="px-3 py-1.5 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-200 hover:text-white rounded-xl text-xs font-black transition-all flex items-center gap-1 border border-emerald-500/40 cursor-pointer disabled:opacity-50"
+                className="px-2.5 py-1.5 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-200 hover:text-white rounded-xl text-xs font-black transition-all flex items-center gap-1 border border-emerald-500/40 cursor-pointer disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${connectionStatus.loading ? 'animate-spin text-amber-400' : ''}`} />
                 <span>Ping</span>
@@ -318,6 +353,64 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
           </div>
         </div>
 
+        {/* Alerts Architecture Guide Panel (Expandable) */}
+        {showAlertsArchitecture && (
+          <div className="mt-4 p-5 rounded-2xl bg-[#020e08]/95 border border-rose-500/40 space-y-3 animate-in fade-in">
+            <div className="flex items-center justify-between border-b border-rose-500/20 pb-3">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-rose-400" />
+                <h3 className="font-black text-sm text-white uppercase tracking-wider">
+                  {isEs ? 'Arquitectura de Alertas Nativas (Reemplazo de Telegram)' : 'Native Alerts Architecture (Telegram Replacement)'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowAlertsArchitecture(false)}
+                className="text-stone-400 hover:text-white text-xs font-bold px-2 py-1"
+              >
+                ✕ {isEs ? 'Cerrar' : 'Close'}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div className="bg-[#051c14] p-3.5 rounded-xl border border-emerald-500/30 space-y-1.5">
+                <div className="font-bold text-amber-400 flex items-center gap-1.5">
+                  <Terminal className="w-4 h-4" />
+                  <span>1. Captura en n8n & Error Handler</span>
+                </div>
+                <p className="text-stone-300 text-[11px] leading-relaxed">
+                  {isEs 
+                    ? 'Los 100 workflows incluyen un nodo [ALERTA NATIVA] que invoca POST /api/alerts con la cabecera de seguridad X-Webhook-Secret.'
+                    : 'All 100 workflows include a native alert node calling POST /api/alerts with X-Webhook-Secret.'}
+                </p>
+              </div>
+
+              <div className="bg-[#051c14] p-3.5 rounded-xl border border-emerald-500/30 space-y-1.5">
+                <div className="font-bold text-emerald-400 flex items-center gap-1.5">
+                  <Database className="w-4 h-4" />
+                  <span>2. Firestore admin_alerts</span>
+                </div>
+                <p className="text-stone-300 text-[11px] leading-relaxed">
+                  {isEs 
+                    ? 'Cada alerta se guarda con source, severity (critical/warning/info), title, message, bookingId, read: false y resolved: false.'
+                    : 'Each alert is logged with source, severity, title, message, bookingId, read: false, and resolved: false.'}
+                </p>
+              </div>
+
+              <div className="bg-[#051c14] p-3.5 rounded-xl border border-emerald-500/30 space-y-1.5">
+                <div className="font-bold text-rose-400 flex items-center gap-1.5">
+                  <Mail className="w-4 h-4" />
+                  <span>3. Notificación Admin & SMTP</span>
+                </div>
+                <p className="text-stone-300 text-[11px] leading-relaxed">
+                  {isEs 
+                    ? 'Visible en tiempo real en la pestaña "Centro de Alertas" del Admin Dashboard y despachada por correo vía ADMIN_ALERT_EMAIL.'
+                    : 'Visible in real time in the Admin Dashboard "Centro de Alertas" tab and emailed via ADMIN_ALERT_EMAIL.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Official Credentials Guide Panel (Expandable) */}
         {showCredentialsGuide && (
           <div className="mt-4 p-5 rounded-2xl bg-[#020e08]/95 border border-amber-400/40 space-y-4 animate-in fade-in">
@@ -325,7 +418,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
               <div className="flex items-center gap-2">
                 <Key className="w-5 h-5 text-amber-400" />
                 <h3 className="font-black text-sm text-white uppercase tracking-wider">
-                  {isEs ? 'Configuración de las 3 Credenciales de n8n para Producción' : '3 Official n8n Production Credentials Setup'}
+                  {isEs ? 'Configuración de Credenciales de n8n para Producción' : 'n8n Production Credentials Setup'}
                 </h3>
               </div>
               <button
@@ -368,21 +461,6 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
                       {copiedKey === 'project-id' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
-                  <div className="text-[10px] text-emerald-400/80 mt-1">Database ID:</div>
-                  <div className="flex items-center justify-between text-stone-300 text-[10px] truncate">
-                    <span className="truncate">ai-studio-costaricatours-88d81273-09f7-4f87-991c-60b9b0db0dea</span>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText('ai-studio-costaricatours-88d81273-09f7-4f87-991c-60b9b0db0dea');
-                        setCopiedKey('database-id');
-                        setTimeout(() => setCopiedKey(null), 2000);
-                      }}
-                      className="text-stone-400 hover:text-white p-1"
-                      title="Copiar Database ID"
-                    >
-                      {copiedKey === 'database-id' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
                 </div>
               </div>
 
@@ -391,7 +469,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
                     <Mail className="w-3.5 h-3.5 text-amber-400" />
-                    <span>2. Gmail (Vouchers)</span>
+                    <span>2. Gmail / SMTP</span>
                   </div>
                   <span className="text-[10px] bg-amber-950 text-amber-400 px-2 py-0.5 rounded font-mono">OAuth2 / SMTP</span>
                 </div>
@@ -415,28 +493,26 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
                       {copiedKey === 'email-sender' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
-                  <div className="text-[10px] text-stone-400 mt-1">Scope: https://mail.google.com/</div>
                 </div>
               </div>
 
-              {/* Credential 3: Telegram (Ops Bot) */}
+              {/* Credential 3: Webhook Secret HMAC */}
               <div className="bg-[#051c14] p-4 rounded-xl border border-emerald-500/30 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-sky-300">
-                    <Send className="w-3.5 h-3.5 text-sky-400" />
-                    <span>3. Telegram (Bot Operativo)</span>
+                    <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
+                    <span>3. Webhook Secret (HMAC)</span>
                   </div>
-                  <span className="text-[10px] bg-sky-950 text-sky-400 px-2 py-0.5 rounded font-mono">Telegram API</span>
+                  <span className="text-[10px] bg-sky-950 text-sky-400 px-2 py-0.5 rounded font-mono">Header Auth</span>
                 </div>
                 <p className="text-[11px] text-stone-300">
                   {isEs 
-                    ? 'Conecta a los guías en campo para confirmar recogidas y traslados mediante botones inline interactivos.' 
-                    : 'Connects field guides to confirm pickups and transfers using interactive inline buttons.'}
+                    ? 'Cabecera X-Webhook-Secret obligatoria en todos los endpoints de Express y llamadas a /api/alerts.' 
+                    : 'Mandatory X-Webhook-Secret header for all Express endpoints and /api/alerts calls.'}
                 </p>
                 <div className="space-y-1 text-xs font-mono bg-black/40 p-2.5 rounded-lg border border-emerald-500/20">
-                  <div className="text-[10px] text-sky-400/80">Bot Provider:</div>
-                  <div className="text-stone-200 text-xs">@BotFather (Telegram)</div>
-                  <div className="text-[10px] text-stone-400 mt-1">Webhook: /webhook/telegram-ops-action</div>
+                  <div className="text-[10px] text-sky-400/80">Header Name:</div>
+                  <div className="text-stone-200 text-xs">X-Webhook-Secret</div>
                 </div>
               </div>
 
@@ -470,45 +546,121 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
         )}
       </div>
 
+      {/* Mode Switcher & Search Bar */}
+      <div className="bg-[#03150d]/80 border border-emerald-500/20 rounded-2xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        {/* Suite mode toggle */}
+        <div className="flex items-center gap-1.5 bg-[#020e08] p-1 rounded-xl border border-emerald-500/30 flex-wrap">
+          <button
+            onClick={() => {
+              setSuiteMode('matrix100');
+              setSelectedWfId(WORKFLOWS_100_LIST[0].id);
+              setCategoryFilter('all');
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+              suiteMode === 'matrix100'
+                ? 'bg-amber-400 text-stone-950 shadow-md'
+                : 'text-stone-300 hover:text-white'
+            }`}
+          >
+            <Database className="w-3.5 h-3.5" />
+            <span>{isEs ? `Matriz 100 Workflows BD (${WORKFLOWS_100_LIST.length})` : `100 DB Workflows Matrix (${WORKFLOWS_100_LIST.length})`}</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setSuiteMode('production14');
+              setSelectedWfId(N8N_WORKFLOWS[0].id);
+              setCategoryFilter('all');
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+              suiteMode === 'production14'
+                ? 'bg-amber-400 text-stone-950 shadow-md'
+                : 'text-stone-300 hover:text-white'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{isEs ? `14 Flujos Avanzados Producción` : `14 Advanced Production Workflows`}</span>
+          </button>
+        </div>
+
+        {/* Search input */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-emerald-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={isEs ? 'Buscar por código (WF-016), nombre, colección Firestore o endpoint...' : 'Search by code (WF-016), name, Firestore collection or endpoint...'}
+            className="w-full bg-[#020e08] border border-emerald-500/30 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-amber-400 transition-colors"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-white text-xs"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Category Filter Tabs */}
       <div className="flex flex-wrap items-center gap-2">
-        {[
-          { id: 'all', label: { es: `Todos (${N8N_WORKFLOWS.length})`, en: `All (${N8N_WORKFLOWS.length})` } },
-          { id: 'flight', label: { es: '✈️ Vuelos & Retrasos', en: '✈️ Flights & Delays' } },
-          { id: 'concierge', label: { es: '🎒 Objetos Olvidados', en: '🎒 Lost & Found' } },
-          { id: 'vip', label: { es: '👑 Recepción VIP', en: '👑 VIP Reception' } },
-          { id: 'emergency', label: { es: '🚨 Emergencias SOS', en: '🚨 Emergency SOS' } },
-          { id: 'marketing', label: { es: '⭐ Reseñas & Cupones', en: '⭐ Reviews & Promos' } },
-          { id: 'operations', label: { es: '🔄 Operadores Locales', en: '🔄 Local Operators' } },
-          { id: 'analytics', label: { es: '📊 Reportes & Telegram', en: '📊 Reports & Telegram' } },
-          { id: 'chat', label: { es: 'Chat & Triage', en: 'Chat & Triage' } },
-          { id: 'booking', label: { es: 'Bloqueo Cupos', en: 'Seat Hold' } },
-          { id: 'payment', label: { es: 'Pagos & HMAC', en: 'Payments' } },
-          { id: 'fraud', label: { es: 'Antifraude & Riesgo', en: 'Fraud & Risk' } },
-          { id: 'telegram', label: { es: 'Panel Telegram', en: 'Telegram Panel' } },
-          { id: 'calendar', label: { es: 'Google Calendar Sync', en: 'Calendar Sync' } },
-          { id: 'feedback', label: { es: 'NPS & Post-Tour', en: 'NPS & Feedback' } },
-          { id: 'fulfillment', label: { es: 'Vouchers & Fotos', en: 'Vouchers & Photos' } },
-          { id: 'itinerary', label: { es: 'Itinerarios', en: 'Itineraries' } },
-          { id: 'contingency', label: { es: 'Contingencias', en: 'Contingency' } },
-          { id: 'supervision', label: { es: 'Supervisor', en: 'Supervisor' } },
-          { id: 'support', label: { es: 'Soporte & Dietas', en: 'Support & Dietary' } }
-        ].map((cat) => {
-          const isActive = categoryFilter === cat.id;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => setCategoryFilter(cat.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border ${
-                isActive
-                  ? 'bg-amber-400 text-stone-950 border-amber-400 shadow-md font-black'
-                  : 'bg-[#03150d] text-emerald-200/80 hover:bg-[#072418] border-emerald-500/20'
-              }`}
-            >
-              {cat.label[isEs ? 'es' : 'en']}
-            </button>
-          );
-        })}
+        {suiteMode === 'matrix100' ? (
+          [
+            { id: 'all', label: { es: `Todos (${WORKFLOWS_100_LIST.length})`, en: `All (${WORKFLOWS_100_LIST.length})` } },
+            { id: 'booking', label: { es: '📅 Reservas & Cupos (15)', en: '📅 Bookings (15)' } },
+            { id: 'payment', label: { es: '💳 Pagos & Facturas DGT (13)', en: '💳 Payments (13)' } },
+            { id: 'fulfillment', label: { es: '🤝 Proveedores & CST (12)', en: '🤝 Providers & CST (12)' } },
+            { id: 'operations', label: { es: '🚐 Flota, Choferes & Rutas (10)', en: '🚐 Fleet & Routes (10)' } },
+            { id: 'chat', label: { es: '🤖 IA Concierge & Chat (14)', en: '🤖 AI Concierge (14)' } },
+            { id: 'fraud', label: { es: '🛡️ Seguridad & Clima CNE (12)', en: '🛡️ Security & Weather (12)' } },
+            { id: 'marketing', label: { es: '⭐ Marketing & Reseñas (12)', en: '⭐ Marketing & Reviews (12)' } },
+            { id: 'analytics', label: { es: '📊 Analítica & BD Sync (12)', en: '📊 Analytics & Sync (12)' } }
+          ].map((cat) => {
+            const isActive = categoryFilter === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setCategoryFilter(cat.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border ${
+                  isActive
+                    ? 'bg-amber-400 text-stone-950 border-amber-400 shadow-md font-black'
+                    : 'bg-[#03150d] text-emerald-200/80 hover:bg-[#072418] border-emerald-500/20'
+                }`}
+              >
+                {cat.label[isEs ? 'es' : 'en']}
+              </button>
+            );
+          })
+        ) : (
+          [
+            { id: 'all', label: { es: `Todos (${N8N_WORKFLOWS.length})`, en: `All (${N8N_WORKFLOWS.length})` } },
+            { id: 'enterprise_complex', label: { es: '🚀 Súper Avanzados (6)', en: '🚀 Super Advanced (6)' } },
+            { id: 'flight', label: { es: '✈️ Vuelos & Retrasos', en: '✈️ Flights & Delays' } },
+            { id: 'concierge', label: { es: '🎒 Objetos Olvidados', en: '🎒 Lost & Found' } },
+            { id: 'vip', label: { es: '👑 Recepción VIP', en: '👑 VIP Reception' } },
+            { id: 'emergency', label: { es: '🚨 Emergencias SOS', en: '🚨 Emergency SOS' } },
+            { id: 'marketing', label: { es: '⭐ Reseñas & Cupones', en: '⭐ Reviews & Promos' } },
+            { id: 'operations', label: { es: '🔄 Operadores Locales', en: '🔄 Local Operators' } },
+            { id: 'analytics', label: { es: '📊 Reportes & Estadísticas', en: '📊 Reports & Stats' } }
+          ].map((cat) => {
+            const isActive = categoryFilter === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setCategoryFilter(cat.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border ${
+                  isActive
+                    ? 'bg-amber-400 text-stone-950 border-amber-400 shadow-md font-black'
+                    : 'bg-[#03150d] text-emerald-200/80 hover:bg-[#072418] border-emerald-500/20'
+                }`}
+              >
+                {cat.label[isEs ? 'es' : 'en']}
+              </button>
+            );
+          })
+        )}
       </div>
 
       {/* Main Grid: Workflow Cards (Left) & Active Workflow Studio (Right) */}
@@ -516,61 +668,84 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
         
         {/* Workflows Navigation List (5 cols) */}
         <div className="lg:col-span-5 space-y-3">
-          <div className="text-xs font-black text-emerald-400 uppercase tracking-wider px-1">
-            {isEs ? 'Catálogo de Flujos n8n' : 'n8n Workflows Catalog'}
+          <div className="flex items-center justify-between text-xs font-black text-emerald-400 uppercase tracking-wider px-1">
+            <span>{isEs ? `Catálogo de Flujos (${filteredWorkflows.length})` : `Workflows Catalog (${filteredWorkflows.length})`}</span>
+            {searchQuery && (
+              <span className="text-[10px] text-amber-300 font-normal">
+                {isEs ? `Filtro: "${searchQuery}"` : `Filter: "${searchQuery}"`}
+              </span>
+            )}
           </div>
 
           <div className="space-y-2.5 max-h-[720px] overflow-y-auto pr-1">
-            {filteredWorkflows.map((wf) => {
-              const isSelected = wf.id === activeWf.id;
-              return (
-                <button
-                  key={wf.id}
-                  onClick={() => setSelectedWfId(wf.id)}
-                  className={`w-full text-left p-4 rounded-2xl transition-all cursor-pointer border flex flex-col gap-2 relative ${
-                    isSelected
-                      ? 'bg-[#062417] border-amber-400 shadow-xl ring-1 ring-amber-400/40'
-                      : 'bg-[#03150d]/80 hover:bg-[#062014] border-emerald-500/20 text-stone-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
-                        isSelected ? 'bg-amber-400 text-stone-950' : 'bg-emerald-950 text-emerald-300 border border-emerald-500/30'
-                      }`}>
-                        {wf.code}
-                      </span>
-                      <span className="text-[10px] font-mono text-stone-400">
-                        {wf.method} {wf.endpoint}
+            {filteredWorkflows.length === 0 ? (
+              <div className="p-8 text-center bg-[#03150d]/60 border border-emerald-500/20 rounded-2xl text-stone-400 text-xs">
+                {isEs ? 'No se encontraron workflows con este criterio de búsqueda.' : 'No workflows found matching your search criteria.'}
+              </div>
+            ) : (
+              filteredWorkflows.map((wf: any) => {
+                const isSelected = wf.id === activeWf?.id;
+                return (
+                  <button
+                    key={wf.id}
+                    onClick={() => setSelectedWfId(wf.id)}
+                    className={`w-full text-left p-4 rounded-2xl transition-all cursor-pointer border flex flex-col gap-2 relative ${
+                      isSelected
+                        ? 'bg-[#062417] border-amber-400 shadow-xl ring-1 ring-amber-400/40'
+                        : 'bg-[#03150d]/80 hover:bg-[#062014] border-emerald-500/20 text-stone-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                          isSelected ? 'bg-amber-400 text-stone-950' : 'bg-emerald-950 text-emerald-300 border border-emerald-500/30'
+                        }`}>
+                          {wf.code}
+                        </span>
+                        {wf.collection && (
+                          <span className="text-[10px] font-mono font-bold bg-black/40 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/20 flex items-center gap-1">
+                            <Database className="w-2.5 h-2.5 text-amber-400" />
+                            <span>/{wf.collection}</span>
+                          </span>
+                        )}
+                        <span className="text-[10px] font-mono text-stone-400">
+                          {wf.method} {wf.endpoint}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-400/80 flex items-center gap-1 shrink-0">
+                        <Clock className="w-3 h-3 text-amber-400" />
+                        {wf.slaTarget}
                       </span>
                     </div>
-                    <span className="text-[10px] font-bold text-emerald-400/80 flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-amber-400" />
-                      {wf.slaTarget}
-                    </span>
-                  </div>
 
-                  <div className="font-bold text-sm text-white leading-snug">
-                    {wf.name[isEs ? 'es' : 'en']}
-                  </div>
+                    <div className="font-bold text-sm text-white leading-snug flex items-center justify-between gap-2">
+                      <span>{wf.name[isEs ? 'es' : 'en']}</span>
+                      {wf.isComplex && (
+                        <span className="shrink-0 bg-gradient-to-r from-amber-400 to-amber-300 text-stone-950 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
+                          <Sparkles className="w-2.5 h-2.5" />
+                          <span>Súper Avanzado</span>
+                        </span>
+                      )}
+                    </div>
 
-                  <p className="text-xs text-stone-300 line-clamp-2 leading-relaxed">
-                    {wf.description[isEs ? 'es' : 'en']}
-                  </p>
+                    <p className="text-xs text-stone-300 line-clamp-2 leading-relaxed">
+                      {wf.description[isEs ? 'es' : 'en']}
+                    </p>
 
-                  <div className="flex items-center justify-between pt-1 text-[11px] text-emerald-300/80 border-t border-emerald-500/15">
-                    <span className="flex items-center gap-1">
-                      <Layers className="w-3 h-3 text-amber-400" />
-                      {wf.nodesCount} {isEs ? 'Nodos n8n' : 'n8n Nodes'}
-                    </span>
-                    <span className="text-amber-400 font-bold flex items-center gap-0.5">
-                      <span>{isEs ? 'Inspeccionar' : 'Inspect'}</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
+                    <div className="flex items-center justify-between pt-1 text-[11px] text-emerald-300/80 border-t border-emerald-500/15">
+                      <span className="flex items-center gap-1">
+                        <Layers className="w-3 h-3 text-amber-400" />
+                        {wf.nodesCount} {isEs ? 'Nodos n8n' : 'n8n Nodes'}
+                      </span>
+                      <span className="text-amber-400 font-bold flex items-center gap-0.5">
+                        <span>{isEs ? 'Inspeccionar' : 'Inspect'}</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+                  </button>
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -619,6 +794,63 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
             <p className="text-xs sm:text-sm text-stone-300 leading-relaxed">
               {activeWf.description[isEs ? 'es' : 'en']}
             </p>
+
+            {/* Si es un flujo Enterprise Multi-Etapa, renderizamos las Etapas y Resiliencia */}
+            {activeWf.orchestrationStages && activeWf.orchestrationStages.length > 0 && (
+              <div className="bg-[#020f09] border border-amber-400/30 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{isEs ? 'Etapas de Orquestación Enterprise' : 'Enterprise Orchestration Stages'}</span>
+                  </div>
+                  <span className="text-[10px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-md font-mono font-bold">
+                    {activeWf.orchestrationStages.length} {isEs ? 'Etapas Autónomas' : 'Autonomous Stages'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {activeWf.orchestrationStages.map((stage, sIdx) => (
+                    <div key={sIdx} className="bg-black/40 border border-emerald-500/20 rounded-xl p-3 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-400 text-stone-950 text-[10px] font-black flex items-center justify-center">
+                          {sIdx + 1}
+                        </span>
+                        <span className="text-xs font-bold text-white">
+                          {stage.stageName}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-stone-300 leading-relaxed">
+                        {stage.description}
+                      </p>
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {stage.nodes.map((nodeName, nIdx) => (
+                          <span key={nIdx} className="text-[9px] font-mono bg-emerald-950/80 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                            {nodeName}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {activeWf.resilienceFeatures && activeWf.resilienceFeatures.length > 0 && (
+                  <div className="pt-2 border-t border-emerald-500/15">
+                    <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                      <span>{isEs ? 'Garantías de Resiliencia & Tolerancia a Fallos' : 'Resilience & Fault-Tolerance Guarantees'}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {activeWf.resilienceFeatures.map((feature, fIdx) => (
+                        <span key={fIdx} className="text-[10px] bg-emerald-950/60 text-emerald-200 px-2 py-0.5 rounded-full border border-emerald-500/25 flex items-center gap-1">
+                          <Check className="w-2.5 h-2.5 text-amber-400" />
+                          <span>{feature}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Pipeline Visual Node Architecture - Modern Interactive Canvas */}
             <div className="space-y-3 pt-3 border-t border-emerald-500/20">

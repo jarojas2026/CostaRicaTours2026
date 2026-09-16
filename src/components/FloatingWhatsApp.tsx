@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { MessageCircle, X, ChevronRight, Info, Map, Calendar, MessageSquare, Palette, Bot, QrCode, CheckCircle2, CheckCheck, Volume2, VolumeX, Share2, Download, Trash2, Sparkles, Leaf, Clock, AlertTriangle, AlertCircle, CalendarCheck, CalendarX, XCircle, Wifi, WifiOff } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { MessageCircle, X, ChevronRight, Info, Map, Calendar, MessageSquare, Palette, Bot, QrCode, CheckCircle2, CheckCheck, Volume2, VolumeX, Share2, Download, Trash2, Sparkles, Leaf, Clock, AlertTriangle, AlertCircle, CalendarCheck, CalendarX, XCircle, Wifi, WifiOff, Mic, MicOff, ExternalLink, Ear, Volume1 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import QRCode from 'qrcode';
 import { Scanner } from '@yudiel/react-qr-scanner';
@@ -832,7 +832,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     };
   }, []);
 
-  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'bot', text: string, quickActions?: {label: string, action: string, data?: any}[] }[]>(() => {
+  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'bot', text: string, quickActions?: {label: string, action: string; data?: any}[] }[]>(() => {
     try {
       const saved = localStorage.getItem('whatsapp_chat_history');
       return saved ? JSON.parse(saved) : [];
@@ -841,8 +841,34 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     }
   });
 
+  const [selectedAgent, setSelectedAgent] = useState<'concierge' | 'booking_react' | 'transporte' | 'sinpe_pagos'>('concierge');
 
-  
+  const AGENTS = [
+    {
+      id: 'concierge',
+      name: language === 'es' ? '🌴 Concierge Pura Vida' : '🌴 Pura Vida Concierge',
+      role: language === 'es' ? 'Tours, Playas y Parques' : 'Tours, Beaches & Parks',
+      badge: 'IA Concierge'
+    },
+    {
+      id: 'booking_react',
+      name: language === 'es' ? '🤖 Reservas 2026' : '🤖 Booking 2026',
+      role: language === 'es' ? 'ReAct + Cupos en Vivo' : 'ReAct + Live Slots',
+      badge: 'ReAct DB'
+    },
+    {
+      id: 'transporte',
+      name: language === 'es' ? '🚐 Traslados Alsama' : '🚐 Alsama Transfers',
+      role: language === 'es' ? 'Rutas Aeropuerto y Vans' : 'Airport Routes & Vans',
+      badge: 'Transporte'
+    },
+    {
+      id: 'sinpe_pagos',
+      name: language === 'es' ? '💳 SINPE & Pagos' : '💳 SINPE & Payments',
+      role: language === 'es' ? 'Validación y Comprobantes' : 'Validation & Receipts',
+      badge: 'SINPE'
+    }
+  ];
 
   const prevIsOpenRef = React.useRef(isOpen);
   useEffect(() => {
@@ -863,10 +889,291 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     prevChatLengthRef.current = chatHistory.length;
   }, [chatHistory, isOpen, playNotification]);
 
-  const [chatInput, setChatInput] = useState('');
+  const [chatInput, setChatInput] = useState(() => {
+    try {
+      return localStorage.getItem('whatsapp_chat_input_draft') || '';
+    } catch {
+      return '';
+    }
+  });
   const [showTyping, setShowTyping] = useState(false);
   const [isSendingToWebhook, setIsSendingToWebhook] = useState(false);
   const [bookingStatus, setBookingStatus] = useState<"none" | "pending" | "payment_required" | "confirmed">("none");
+
+  // Autoguardado del borrador de mensaje en localStorage para prevenir pérdida accidental
+  useEffect(() => {
+    try {
+      if (chatInput.trim()) {
+        localStorage.setItem('whatsapp_chat_input_draft', chatInput);
+      } else {
+        localStorage.removeItem('whatsapp_chat_input_draft');
+      }
+    } catch (e) {
+      console.warn('Error saving chat draft to localStorage:', e);
+    }
+  }, [chatInput]);
+
+  // Voice-to-text recording state & controller
+  const [isWhisperMode, setIsWhisperMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('whatsapp_whisper_mode') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [audioLevel, setAudioLevel] = useState<number>(0);
+  const [isListening, setIsListening] = useState(false);
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const [voiceNotice, setVoiceNotice] = useState<{
+    title: string;
+    description: string;
+    guideUrl?: string;
+    guideLabel?: string;
+  } | null>(null);
+
+  const recognitionRef = useRef<any>(null);
+  const audioStreamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {}
+      recognitionRef.current = null;
+    }
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+    if (audioStreamRef.current) {
+      audioStreamRef.current.getTracks().forEach((track) => track.stop());
+      audioStreamRef.current = null;
+    }
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      try {
+        audioContextRef.current.close();
+      } catch (e) {}
+      audioContextRef.current = null;
+    }
+    setIsListening(false);
+    setInterimTranscript('');
+    setAudioLevel(0);
+  };
+
+  const startListeningSession = async (whisperMode: boolean) => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setVoiceNotice({
+        title: language === 'es'
+          ? 'Reconocimiento de voz no disponible'
+          : 'Speech recognition unavailable',
+        description: language === 'es'
+          ? 'La API de reconocimiento de voz está deshabilitada o no es compatible con este navegador. Te recomendamos usar Google Chrome, Microsoft Edge o Safari.'
+          : 'The Speech Recognition API is disabled or unsupported in this browser. We recommend using Google Chrome, Microsoft Edge, or Safari.',
+        guideUrl: 'https://support.google.com/chrome/answer/2693767',
+        guideLabel: language === 'es' ? 'Ver guía de permisos y compatibilidad' : 'View permissions & compatibility guide'
+      });
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      // Whisper mode evaluates up to 5 multi-phonemic alternatives to capture low-energy whisper formants
+      recognition.maxAlternatives = whisperMode ? 5 : 1;
+      recognition.lang = language === 'es' ? 'es-CR' : 'en-US';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        setVoiceNotice(null);
+      };
+
+      recognition.onresult = (event: any) => {
+        let interim = '';
+        let finalChunk = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const item = event.results[i];
+          let text = item[0]?.transcript || '';
+
+          // In whisper mode, evaluate candidate hypotheses for low-volume confidence
+          if (whisperMode && item.length > 1) {
+            let bestMatch = item[0];
+            for (let k = 1; k < item.length; k++) {
+              if ((item[k]?.confidence || 0) > (bestMatch?.confidence || 0) && item[k]?.transcript?.trim()) {
+                bestMatch = item[k];
+              }
+            }
+            text = bestMatch?.transcript || text;
+          }
+
+          if (item.isFinal) {
+            finalChunk += text;
+          } else {
+            interim += text;
+          }
+        }
+
+        if (finalChunk.trim()) {
+          setChatInput((prev) => {
+            const trimmedPrev = prev.trim();
+            const trimmedFinal = finalChunk.trim();
+            return trimmedPrev ? `${trimmedPrev} ${trimmedFinal}` : trimmedFinal;
+          });
+        }
+        setInterimTranscript(interim);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn('Speech recognition event warning:', event.error);
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          setVoiceNotice({
+            title: language === 'es'
+              ? 'Permiso de micrófono bloqueado'
+              : 'Microphone permission blocked',
+            description: language === 'es'
+              ? 'El acceso al micrófono está deshabilitado en los permisos de este sitio o navegador. Haz clic en el ícono del candado/configuración de la barra de direcciones para habilitarlo.'
+              : 'Microphone access is blocked by browser site permissions. Click the lock/settings icon in your browser address bar to allow it.',
+            guideUrl: 'https://support.google.com/chrome/answer/2693767',
+            guideLabel: language === 'es' ? '¿Cómo activar el micrófono en tu navegador?' : 'How to enable microphone in your browser'
+          });
+        } else if (event.error === 'audio-capture') {
+          setVoiceNotice({
+            title: language === 'es' ? 'Micrófono no detectado' : 'No microphone detected',
+            description: language === 'es'
+              ? 'No se encontró ningún micrófono conectado o activo en tu dispositivo.'
+              : 'No microphone was found or active on your device.',
+            guideUrl: 'https://support.google.com/chrome/answer/2693767',
+            guideLabel: language === 'es' ? 'Guía de solución de audio' : 'Audio troubleshooting guide'
+          });
+        } else if (event.error !== 'no-speech') {
+          setVoiceNotice({
+            title: language === 'es' ? 'Audio no reconocido' : 'Speech not recognized',
+            description: language === 'es'
+              ? whisperMode
+                ? 'No se detectó el susurro con suficiente claridad. Acércate más al micrófono y susurra despacio.'
+                : 'No se logró capturar audio con suficiente claridad. Por favor vuelve a pulsar el micrófono e intenta hablar cerca de tu dispositivo.'
+              : whisperMode
+                ? 'Whisper was too quiet to detect. Move closer to the microphone and whisper slowly.'
+                : 'Could not capture clear speech. Please tap the microphone again and speak clearly near your device.'
+          });
+          setTimeout(() => setVoiceNotice(null), 5000);
+        }
+        stopListening();
+      };
+
+      recognition.onend = () => {
+        stopListening();
+      };
+
+      // In whisper mode, activate proximity hardware AGC booster and live sensitivity meter
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              autoGainControl: true,
+              echoCancellation: true,
+              // In whisper mode, relax aggressive noise suppression so soft whisper fricatives aren't clipped
+              noiseSuppression: !whisperMode,
+            }
+          });
+          audioStreamRef.current = stream;
+
+          const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+          if (AudioContextClass) {
+            const ctx = new AudioContextClass();
+            audioContextRef.current = ctx;
+            const source = ctx.createMediaStreamSource(stream);
+            const analyser = ctx.createAnalyser();
+            analyser.fftSize = 128;
+            analyser.smoothingTimeConstant = 0.4;
+
+            if (whisperMode) {
+              const gainNode = ctx.createGain();
+              gainNode.gain.value = 3.5; // +350% proximity amplifier for whispers
+              source.connect(gainNode);
+              gainNode.connect(analyser);
+            } else {
+              source.connect(analyser);
+            }
+
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            const checkLevel = () => {
+              if (!recognitionRef.current) return;
+              analyser.getByteFrequencyData(dataArray);
+              let total = 0;
+              for (let idx = 0; idx < dataArray.length; idx++) {
+                total += dataArray[idx];
+              }
+              const avg = total / dataArray.length;
+              const boostFactor = whisperMode ? 2.8 : 1.4;
+              const val = Math.min(100, Math.round((avg / 128) * 100 * boostFactor));
+              setAudioLevel(val);
+              animFrameRef.current = requestAnimationFrame(checkLevel);
+            };
+            animFrameRef.current = requestAnimationFrame(checkLevel);
+          }
+        } catch (mediaErr) {
+          console.debug('MediaStream proximity AGC boost note:', mediaErr);
+        }
+      }
+
+      recognition.start();
+    } catch (err) {
+      console.error('Failed to initialize speech recognition:', err);
+      stopListening();
+      setVoiceNotice({
+        title: language === 'es' ? 'Acceso al micrófono restringido' : 'Microphone access restricted',
+        description: language === 'es'
+          ? 'No se pudo iniciar el dictado debido a restricciones de seguridad del navegador o configuración de permisos de sitio.'
+          : 'Could not start voice dictation due to browser security restrictions or site permission settings.',
+        guideUrl: 'https://support.google.com/chrome/answer/2693767',
+        guideLabel: language === 'es' ? 'Ver guía para permitir micrófono' : 'See guide to allow microphone'
+      });
+    }
+  };
+
+  const toggleWhisperMode = (forcedState?: boolean) => {
+    const next = typeof forcedState === 'boolean' ? forcedState : !isWhisperMode;
+    setIsWhisperMode(next);
+    try {
+      localStorage.setItem('whatsapp_whisper_mode', String(next));
+    } catch (e) {}
+    // If currently listening, restart listening so the new sensitivity profile takes effect immediately
+    if (isListening) {
+      stopListening();
+      setTimeout(() => {
+        startListeningSession(next);
+      }, 150);
+    }
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListeningSession(isWhisperMode);
+    }
+  };
+
+  // Clean up speech recognition on close or unmount
+  useEffect(() => {
+    if (!isOpen && isListening) {
+      stopListening();
+    }
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+      }
+    };
+  }, [isOpen, isListening]);
 
   useEffect(() => {
     let typingTimer: NodeJS.Timeout;
@@ -1065,7 +1372,11 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
 
   const handleOptionClick = (opt: any) => {
     if (opt.id === 'ai-bot') {
-      if (onOpenAIAssistant) onOpenAIAssistant();
+      if (onOpenAIAssistant) {
+        onOpenAIAssistant();
+      } else {
+        setSelectedAgent('booking_react');
+      }
       setIsOpen(false);
     } else if (opt.id === 'scan-qr') {
       setIsScanning(true);
@@ -1073,7 +1384,18 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     } else if (opt.id === 'generate-qr') {
       setIsGeneratingQR(true);
       setIsOpen(false);
-        } else {
+    } else if (opt.id === 'tours' || opt.id === 'itinerary' || opt.id === 'info') {
+      if (opt.id === 'tours') setSelectedAgent('concierge');
+      if (opt.id === 'itinerary') setSelectedAgent('booking_react');
+      if (opt.id === 'info') setSelectedAgent('concierge');
+      
+      const queryText = opt.msg || (opt.id === 'tours' ? 'Recomiéndame los mejores tours en Costa Rica' : 'Quiero planear mi itinerario');
+      setChatInput(queryText);
+      setTimeout(() => {
+        const form = document.getElementById('chat-form') as HTMLFormElement;
+        if (form) form.requestSubmit();
+      }, 50);
+    } else {
       const text = encodeURIComponent(opt.msg);
       const whatsappUrl = `https://wa.me/50687959148?text=${text}`;
       
@@ -1089,14 +1411,17 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     }
   };
 
-  
-
   const handleClearChat = () => {
     setChatHistory([]);
-    localStorage.removeItem('whatsapp_chat_history');
+    setChatInput('');
+    try {
+      localStorage.removeItem('whatsapp_chat_history');
+      localStorage.removeItem('whatsapp_chat_input_draft');
+    } catch (e) {
+      console.warn('Error clearing chat history or draft:', e);
+    }
   };
 
-  
   const handleQuickAction = (action: string, data?: any) => {
     if (action === 'direct_whatsapp') {
       const text = encodeURIComponent(language === 'es' ? 'Hola, necesito asistencia con tours en Costa Rica.' : 'Hello, I need assistance with tours in Costa Rica.');
@@ -1104,13 +1429,18 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
       setIsOpen(false);
     } else if (action === 'send_message') {
       setChatInput(data.message);
-      // We can also auto-send it
       setTimeout(() => {
         const form = document.getElementById('chat-form') as HTMLFormElement;
         if (form) form.requestSubmit();
       }, 50);
     } else if (action === 'book') {
-      setChatInput(language === 'es' ? 'Quiero reservar' : 'I want to book');
+      setChatInput(language === 'es' ? 'Quiero reservar este tour' : 'I want to book this tour');
+      setTimeout(() => {
+        const form = document.getElementById('chat-form') as HTMLFormElement;
+        if (form) form.requestSubmit();
+      }, 50);
+    } else if (action === 'check_availability') {
+      setChatInput(language === 'es' ? 'Verificar disponibilidad de fechas' : 'Check date availability');
       setTimeout(() => {
         const form = document.getElementById('chat-form') as HTMLFormElement;
         if (form) form.requestSubmit();
@@ -1120,6 +1450,9 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isListening) {
+      stopListening();
+    }
     if (!chatInput.trim() || isSendingToWebhook) return;
     
     const msg = chatInput.trim();
@@ -1140,6 +1473,9 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
         return newHistory.slice(-50);
       });
       setChatInput('');
+      try {
+        localStorage.removeItem('whatsapp_chat_input_draft');
+      } catch {}
       return;
     }
 
@@ -1149,6 +1485,9 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
     });
     
     setChatInput('');
+    try {
+      localStorage.removeItem('whatsapp_chat_input_draft');
+    } catch {}
     setIsSendingToWebhook(true);
 
     try {
@@ -1164,45 +1503,51 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
         userId = 'usr_guest_' + Date.now();
       }
 
-      const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
-      const recentHistory = chatHistory.slice(-10);
-
-      // 2. Empaquetar contexto y disparar trigger 'CONSULTA_CHAT_IA' hacia n8n
       const formattedHistory = chatHistory.map(h => ({ role: h.role, text: h.text }));
-      const payload = packageConsultaChatPayload(msg, language, formattedHistory, {
-        agente: 'asistente_pura_vida_ia'
-      });
-      const result: any = await triggerConsultaChatIA(payload);
+      let finalBotReply = '';
+      let quickActions: Array<{ label: string; action: string; data?: any }> = [];
 
-      const isSuccess = Boolean(result && (result.exito || result.success));
-      const responseData = result?.datos || result?.data || {};
-      const reply = responseData.reply || responseData.mensaje || responseData.response || responseData.output || responseData.text || null;
+      // 2. Ejecución con Servidor Full-Stack (/api/chat/inquiry)
+      try {
+        const serverChatRes = await fetch('/api/chat/inquiry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: msg,
+            language,
+            history: formattedHistory,
+            agentId: selectedAgent,
+            engine: 'auto',
+            context: {
+              source: 'floating_whatsapp_ai',
+              agentId: selectedAgent,
+              userId,
+              horaLocal: new Date().toISOString()
+            }
+          })
+        });
 
-      if (isSuccess && reply) {
-        let quickActions = responseData.quickActions || responseData.accionesRapidas || [];
-        if (quickActions.length === 0) {
-          if (msg.toLowerCase().includes('precio') || msg.toLowerCase().includes('price') || msg.toLowerCase().includes('cost')) {
-            quickActions = [
-              { label: language === 'es' ? '📅 Reservar Ahora' : '📅 Book Now', action: 'book' },
-              { label: language === 'es' ? '🔍 Ver Detalles' : '🔍 See Details', action: 'send_message', data: { message: language === 'es' ? 'Ver detalles de tours' : 'See tour details' } }
-            ];
+        if (serverChatRes.ok) {
+          const serverData = await serverChatRes.json();
+          if (serverData.reply) {
+            finalBotReply = serverData.reply;
+            quickActions = serverData.quickActions || [];
           }
         }
+      } catch (err) {
+        console.warn('⚠️ Fallback a webhook n8n y procesador local:', err);
+      }
 
-        // Si el sonido de la naturaleza está activo, reproducir tono
-        playNotification();
+      // 3. Disparar trigger n8n 'CONSULTA_CHAT_IA' en segundo plano para sincronizar workflows
+      const payload = packageConsultaChatPayload(msg, language, formattedHistory, {
+        agente: selectedAgent
+      });
+      triggerConsultaChatIA(payload).catch(err => {
+        console.warn('[n8n trigger] Background notification sync note:', err);
+      });
 
-        setChatHistory(prev => {
-          const newHistory = [...prev, { role: 'bot' as const, text: reply, quickActions }];
-          return newHistory.slice(-50);
-        });
-      } else {
-        // Manejo de estado de error cuando el webhook de n8n falla o no devuelve respuesta
-        const errorDetail = result?.error?.mensaje || result?.error?.codigo || (typeof result?.error === 'string' ? result.error : null) || (language === 'es' ? 'El servidor n8n no respondió correctamente' : 'The n8n webhook did not respond properly');
-        console.warn(`[Trigger CONSULTA_CHAT_IA] Webhook de n8n no disponible o retornó error: ${errorDetail}`);
-
-        // Intentar fallback con procesador local de agentes para garantizar atención al turista
-        let fallbackReply = '';
+      // 4. Si el backend aún no generó respuesta (modo fallback o contingencia)
+      if (!finalBotReply) {
         try {
           const triageRes = await fetch('/api/agents/triage', {
             method: 'POST',
@@ -1219,57 +1564,41 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
             if (procRes.ok) {
               const procData = await procRes.json();
               if (procData.draftResponse) {
-                fallbackReply = procData.draftResponse;
+                finalBotReply = procData.draftResponse;
               }
             }
           }
         } catch {
-          // Si el procesador local falla, se continuará con el aviso de contingencia
+          // Fallback silencioso
         }
+      }
 
-        // Acciones rápidas contextuales para el usuario ante error
-        let quickActions: any[] = [
+      if (!finalBotReply) {
+        finalBotReply = language === 'es'
+          ? `🇨🇷 **¡Pura Vida!** Recibimos tu consulta sobre tours y reservas en Costa Rica. Nuestros agentes inteligentes y asesores oficiales están a tu servicio.\n\n• **Disponibilidad**: Procesamiento en tiempo real con operadores locales certificados.\n• **Soporte Directo**: Puedes escribirnos de inmediato a nuestro WhatsApp oficial (+506 8795-9148).\n\n¿Deseas que te ayude a verificar fechas o cotizar alguna excursión específica?`
+          : `🇨🇷 **¡Pura Vida!** We received your inquiry regarding tours and bookings in Costa Rica. Our smart agents and certified advisors are at your service.\n\n• **Availability**: Real-time processing with verified local operators.\n• **Direct Support**: You can chat directly via our official WhatsApp (+506 8795-9148).\n\nWould you like me to help check dates or quote a specific excursion?`;
+      }
+
+      if (quickActions.length === 0) {
+        quickActions = [
+          {
+            label: language === 'es' ? '📅 Verificar Disponibilidad' : '📅 Check Availability',
+            action: 'check_availability'
+          },
           {
             label: language === 'es' ? '💬 WhatsApp Directo' : '💬 Direct WhatsApp',
             action: 'direct_whatsapp'
-          },
-          {
-            label: language === 'es' ? '🔄 Reintentar Envío' : '🔄 Retry Send',
-            action: 'send_message',
-            data: { message: msg }
           }
         ];
-
-        if (msg.toLowerCase().includes('precio') || msg.toLowerCase().includes('price') || msg.toLowerCase().includes('cost')) {
-          quickActions.unshift(
-            { label: language === 'es' ? '📅 Reservar Ahora' : '📅 Book Now', action: 'book' }
-          );
-        } else if (msg.toLowerCase().includes('reserv') || msg.toLowerCase().includes('book')) {
-          setBookingStatus('pending');
-          setTimeout(() => {
-            setBookingStatus('payment_required');
-            setChatHistory(prev => {
-              const newHistory = [...prev, { role: 'bot' as const, text: language === 'es' ? '🔗 Aquí tienes tu enlace de pago seguro para confirmar el cupo. Expira en 15 minutos.' : '🔗 Here is your secure payment link to confirm the spot. It expires in 15 minutes.' }];
-              return newHistory.slice(-50);
-            });
-          }, 5000);
-        } else if ((msg.toLowerCase().includes('pag') || msg.toLowerCase().includes('paid') || msg.toLowerCase().includes('listo')) && bookingStatus === 'payment_required') {
-          setBookingStatus('confirmed');
-        }
-
-        const n8nWarning = language === 'es'
-          ? `⚠️ [Aviso n8n / CONSULTA_CHAT_IA]: No fue posible contactar el webhook '/webhook/chat-consulta' (${errorDetail}).`
-          : `⚠️ [n8n Notice / CONSULTA_CHAT_IA]: Unable to reach the '/webhook/chat-consulta' endpoint (${errorDetail}).`;
-
-        const finalBotText = fallbackReply
-          ? `${n8nWarning}\n\n🤖 [Asistente de Respaldo Pura Vida]: ${fallbackReply}`
-          : `${n8nWarning}\n\n${language === 'es' ? 'Tu mensaje ha sido respaldado en la cola local de contingencia. Puedes reintentar o comunicarte directamente con un asesor vía WhatsApp oficial.' : 'Your message has been backed up in the contingency queue. You can retry or reach an advisor directly via official WhatsApp.'}`;
-
-        setChatHistory(prev => {
-          const newHistory = [...prev, { role: 'bot' as const, text: finalBotText, quickActions }];
-          return newHistory.slice(-50);
-        });
       }
+
+      playNotification();
+
+      setChatHistory(prev => {
+        const newHistory = [...prev, { role: 'bot' as const, text: finalBotReply, quickActions }];
+        return newHistory.slice(-50);
+      });
+
     } catch (unexpectedError) {
       console.error('[Trigger CONSULTA_CHAT_IA] Error fatal:', unexpectedError);
       const errText = unexpectedError instanceof Error ? unexpectedError.message : 'Error inesperado';
@@ -1279,8 +1608,8 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
           {
             role: 'bot' as const,
             text: language === 'es'
-              ? `⚠️ Error al procesar tu consulta (${errText}). Por favor contáctanos vía WhatsApp.`
-              : `⚠️ Error processing your inquiry (${errText}). Please contact us via WhatsApp.`,
+              ? `⚠️ Ocurrió una intermitencia (${errText}). Puedes escribirnos directamente a WhatsApp para atención inmediata.`
+              : `⚠️ An issue occurred (${errText}). You can contact us directly on WhatsApp for immediate support.`,
             quickActions: [
               {
                 label: language === 'es' ? '💬 WhatsApp Directo' : '💬 Direct WhatsApp',
@@ -1326,21 +1655,24 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
             <div className={`${themeClasses.header}/90 backdrop-blur-md p-3 sm:p-4 flex items-center justify-between text-white transition-colors duration-300 border-b border-black/10 shrink-0`}>
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className={`w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm`}>
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm shadow-inner">
                     <MessageCircle className="w-6 h-6 text-white" />
                   </div>
-                  <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-white rounded-full transition-colors duration-300 ${isOnline ? 'bg-teal-400' : 'bg-rose-500 animate-pulse'}`}></span>
+                  <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-white rounded-full transition-colors duration-300 ${isOnline ? 'bg-teal-400 shadow-[0_0_8px_rgba(45,212,191,0.8)]' : 'bg-rose-500 animate-pulse'}`}></span>
                 </div>
                 <div>
                   <h4 className="font-bold text-sm flex items-center gap-1.5">
                     {t.title}
+                    <span className="bg-emerald-400/20 text-emerald-300 border border-emerald-400/40 text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                      IA + DB 2026
+                    </span>
                     {!isOnline && (
                       <span className="bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full uppercase tracking-wider">
                         Offline
                       </span>
                     )}
                   </h4>
-                  <p className={`text-xs flex items-center gap-1 \${isOnline ? "text-amber-100" : "text-rose-200 font-semibold"} transition-colors duration-300`}>
+                  <p className={`text-xs flex items-center gap-1 ${isOnline ? "text-amber-100" : "text-rose-200 font-semibold"} transition-colors duration-300`}>
                     {isOnline ? <Wifi className="w-3 h-3 text-teal-300 inline" /> : <WifiOff className="w-3 h-3 text-rose-300 inline" />}
                     {t.status}
                   </p>
@@ -1368,6 +1700,28 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                   <X className="w-5 h-5" />
                 </button>
               </div>
+            </div>
+
+            {/* Agent Selector Bar */}
+            <div className="bg-[#03150f] px-3 py-2 border-b border-emerald-500/20 flex items-center gap-1.5 overflow-x-auto scrollbar-none shrink-0">
+              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider whitespace-nowrap flex items-center gap-1">
+                <Bot className="w-3 h-3 text-emerald-400" />
+                {language === 'es' ? 'Agente:' : 'Agent:'}
+              </span>
+              {AGENTS.map((agent) => (
+                <button
+                  key={agent.id}
+                  onClick={() => setSelectedAgent(agent.id as any)}
+                  className={`text-[11px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap transition-all flex items-center gap-1 ${
+                    selectedAgent === agent.id
+                      ? 'bg-emerald-600 text-white font-bold shadow-sm shadow-emerald-950 border border-emerald-400/40 scale-105'
+                      : 'bg-emerald-950/60 text-emerald-300/80 hover:bg-emerald-900/60 hover:text-emerald-100 border border-emerald-800/40'
+                  }`}
+                  title={agent.role}
+                >
+                  <span>{agent.name}</span>
+                </button>
+              ))}
             </div>
 
             {/* Offline Connectivity Warning Banner */}
@@ -1540,19 +1894,271 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
                 </motion.div>
               )}
 
+              {/* Draft Autosave indicator & Whisper Mode toggle */}
+              <div className="flex items-center justify-between px-2 pt-1 pb-0.5 text-[10px] select-none">
+                {chatInput.trim().length > 0 ? (
+                  <div className="flex items-center gap-1 text-emerald-400/80 font-medium">
+                    <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400 shrink-0" />
+                    <span className="truncate">{language === 'es' ? 'Borrador autoguardado' : 'Draft autosaved'}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setChatInput('');
+                        try {
+                          localStorage.removeItem('whatsapp_chat_input_draft');
+                        } catch {}
+                      }}
+                      className="text-stone-400 hover:text-rose-400 ml-1 transition-colors cursor-pointer text-[10px] underline decoration-stone-500/40"
+                      title={language === 'es' ? 'Descartar borrador' : 'Discard draft'}
+                    >
+                      {language === 'es' ? 'Descartar' : 'Discard'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-[10px] text-emerald-300/50 flex items-center gap-1">
+                    <Volume1 className="w-2.5 h-2.5 opacity-60" />
+                    <span>{language === 'es' ? 'Dictado por voz disponible' : 'Voice dictation available'}</span>
+                  </div>
+                )}
+
+                {/* Whisper Mode Toggle Button */}
+                <button
+                  type="button"
+                  id="whatsapp-whisper-mode-toggle"
+                  onClick={() => toggleWhisperMode()}
+                  title={
+                    isWhisperMode
+                      ? (language === 'es'
+                          ? 'Modo Susurro ACTIVADO: Alta sensibilidad de cercanía (+350%) y tolerancia fonética para hablar en voz baja en lugares públicos. Clic para desactivar.'
+                          : 'Whisper Mode ACTIVE: High proximity sensitivity (+350%) and phonetic tolerance for speaking softly in public. Click to disable.')
+                      : (language === 'es'
+                          ? 'Modo Susurro DESACTIVADO: Clic para activar modo de alta sensibilidad para lugares públicos o silenciosos.'
+                          : 'Whisper Mode OFF: Click to enable high-sensitivity mode for quiet or public places.')
+                  }
+                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium transition-all cursor-pointer border ${
+                    isWhisperMode
+                      ? 'bg-violet-950/90 border-violet-400/60 text-violet-200 shadow-sm shadow-violet-900/40'
+                      : 'bg-emerald-950/50 border-emerald-500/20 text-emerald-300/70 hover:text-emerald-100 hover:border-emerald-500/40'
+                  }`}
+                >
+                  <Ear className={`w-3 h-3 ${isWhisperMode ? 'text-violet-300' : 'text-emerald-400/70'}`} />
+                  <span>{language === 'es' ? 'Modo Susurro' : 'Whisper Mode'}</span>
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      isWhisperMode ? 'bg-violet-400 shadow-[0_0_6px_#a78bfa] animate-pulse' : 'bg-emerald-800'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Voice-to-text recording active or error notice */}
+              <AnimatePresence>
+                {isListening && (
+                  isWhisperMode ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      className="flex flex-col gap-1.5 px-3 py-2 bg-violet-950/90 border border-violet-500/50 rounded-xl text-violet-200 text-xs shadow-md mt-1 select-none"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <span className="relative flex h-2.5 w-2.5 shrink-0">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-violet-500"></span>
+                          </span>
+                          <span className="font-semibold text-[11px] text-violet-100 flex items-center gap-1.5">
+                            <span>🤫 {language === 'es' ? 'Modo Susurro Activo' : 'Whisper Mode Active'}</span>
+                            <span className="text-[9px] bg-violet-800/90 px-1.5 py-0.5 rounded text-violet-200 font-medium">
+                              {language === 'es' ? 'Alta Sensibilidad' : 'High Sensitivity'}
+                            </span>
+                          </span>
+                        </div>
+
+                        {/* Real-time audio sensitivity equalizer bars */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex items-center gap-0.5 h-3.5 px-1 py-0.5 bg-violet-900/40 rounded border border-violet-700/40" title={language === 'es' ? 'Nivel de sensibilidad de audio' : 'Audio sensitivity level'}>
+                            {[10, 25, 40, 55, 75].map((threshold, idx) => (
+                              <span
+                                key={idx}
+                                className={`w-0.5 rounded-full transition-all duration-75 ${
+                                  audioLevel >= threshold
+                                    ? 'bg-violet-300 h-3 shadow-[0_0_4px_#c4b5fd]'
+                                    : 'bg-violet-950 h-1'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={stopListening}
+                            className="px-2 py-0.5 text-[10px] font-bold bg-violet-600 hover:bg-violet-500 text-white rounded-md transition-colors shrink-0 shadow-sm cursor-pointer"
+                          >
+                            {language === 'es' ? 'Listo' : 'Done'}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[10px] text-violet-300/80 px-0.5">
+                        <span className="truncate italic">
+                          {interimTranscript
+                            ? `"${interimTranscript}"`
+                            : (language === 'es' ? 'Susurra cerca del micrófono. Ajustado para lugares públicos.' : 'Whisper close to mic. Tuned for quiet public spaces.')}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => toggleWhisperMode(false)}
+                          className="text-violet-400 hover:text-white underline ml-2 shrink-0 cursor-pointer text-[10px]"
+                          title={language === 'es' ? 'Cambiar a modo de voz normal' : 'Switch to normal voice mode'}
+                        >
+                          {language === 'es' ? 'Modo normal' : 'Normal mode'}
+                        </button>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      className="flex items-center justify-between gap-2 px-3 py-1.5 bg-rose-950/70 border border-rose-500/40 rounded-xl text-rose-200 text-xs shadow-inner mt-1 select-none"
+                    >
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <span className="relative flex h-2.5 w-2.5 shrink-0">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                        </span>
+                        <span className="font-medium text-[11px] truncate text-rose-100">
+                          {interimTranscript
+                            ? `"${interimTranscript}"`
+                            : (language === 'es' ? '🎙️ Escuchando... Di tu consulta sobre tours o reservas' : '🎙️ Listening hands-free... Speak your query')}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => toggleWhisperMode(true)}
+                          className="px-1.5 py-0.5 text-[10px] bg-stone-900/80 hover:bg-stone-800 text-violet-300 rounded border border-violet-500/40 transition-colors cursor-pointer flex items-center gap-1"
+                          title={language === 'es' ? '¿En lugar público? Activa el modo susurro de alta sensibilidad' : 'In public? Enable high-sensitivity whisper mode'}
+                        >
+                          <span>🤫</span>
+                          <span>{language === 'es' ? 'Susurro' : 'Whisper'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={stopListening}
+                          className="px-2 py-0.5 text-[10px] font-bold bg-rose-600 hover:bg-rose-500 text-white rounded-md transition-colors shrink-0 shadow-sm cursor-pointer"
+                        >
+                          {language === 'es' ? 'Listo' : 'Done'}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )
+                )}
+
+                {voiceNotice && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 4 }}
+                    className="p-2.5 bg-amber-950/90 border border-amber-500/40 rounded-xl text-amber-200 text-xs shadow-md mt-1.5"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-semibold text-amber-200 text-[11px]">{voiceNotice.title}</p>
+                          <p className="text-amber-200/80 text-[10px] leading-relaxed mt-0.5">{voiceNotice.description}</p>
+                          {voiceNotice.guideUrl && (
+                            <a
+                              href={voiceNotice.guideUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-300 hover:text-amber-100 hover:underline mt-1.5 transition-colors"
+                            >
+                              <span>{voiceNotice.guideLabel || (language === 'es' ? 'Cómo activar el micrófono' : 'How to enable microphone')}</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setVoiceNotice(null)}
+                        className="text-amber-400 hover:text-white p-0.5 text-xs font-bold cursor-pointer shrink-0 rounded transition-colors"
+                        title={language === 'es' ? 'Cerrar aviso' : 'Dismiss notice'}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Chat Input */}
-              <form id="chat-form" onSubmit={handleSendMessage} className="mt-2 flex gap-2 shrink-0">
-                <input
-                  type="text"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  placeholder={language === 'es' ? 'Mandá un mensaje mae...' : 'Type a message...'}
-                  className="flex-1 bg-emerald-950/80 text-white placeholder-emerald-200/50 border border-emerald-500/30 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-shadow"
-                />
+              <form id="chat-form" onSubmit={handleSendMessage} className="mt-2 flex gap-2 shrink-0 items-center">
+                <div className="relative flex-1 flex items-center">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder={
+                      isListening
+                        ? isWhisperMode
+                          ? (language === 'es' ? '🤫 Susurrando... Escuchando de cerca' : '🤫 Whispering... Listening closely')
+                          : (language === 'es' ? 'Escuchando tu voz...' : 'Listening to your voice...')
+                        : isWhisperMode
+                          ? (language === 'es' ? '🤫 Escribe o susurra de cerca...' : '🤫 Type or whisper closely...')
+                          : (language === 'es' ? 'Escribe o dicta tu consulta...' : 'Type or dictate your query...')
+                    }
+                    className={`w-full bg-emerald-950/80 text-white placeholder-emerald-200/50 border rounded-full pl-4 pr-11 py-2 text-sm focus:outline-none transition-all ${
+                      isWhisperMode
+                        ? 'border-violet-500/40 focus:border-violet-400 focus:ring-1 focus:ring-violet-400'
+                        : 'border-emerald-500/30 focus:border-amber-400 focus:ring-1 focus:ring-amber-400'
+                    }`}
+                  />
+                  
+                  {/* Voice-to-text recording button inside the chat input area */}
+                  <button
+                    type="button"
+                    id="whatsapp-voice-record-btn"
+                    onClick={toggleListening}
+                    aria-label={
+                      isListening
+                        ? (language === 'es' ? 'Detener dictado por voz' : 'Stop voice dictation')
+                        : isWhisperMode
+                          ? (language === 'es' ? 'Dictar en modo susurro' : 'Dictate in whisper mode')
+                          : (language === 'es' ? 'Dictar consulta por voz' : 'Dictate query by voice')
+                    }
+                    title={
+                      isListening
+                        ? (language === 'es' ? 'Detener dictado por voz' : 'Stop voice dictation')
+                        : isWhisperMode
+                          ? (language === 'es' ? 'Dictar en Modo Susurro (alta sensibilidad para lugares públicos)' : 'Dictate in Whisper Mode (high sensitivity for public places)')
+                          : (language === 'es' ? 'Dictar por voz (manos libres)' : 'Dictate by voice (hands-free)')
+                    }
+                    className={`absolute right-1.5 w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                      isListening
+                        ? isWhisperMode
+                          ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/50 scale-105 animate-pulse'
+                          : 'bg-rose-500 text-white shadow-lg shadow-rose-500/50 scale-105 animate-pulse'
+                        : isWhisperMode
+                          ? 'text-violet-300 hover:text-white hover:bg-violet-900/60 active:scale-95'
+                          : 'text-emerald-400 hover:text-white hover:bg-emerald-800/60 active:scale-95'
+                    }`}
+                  >
+                    {isListening ? (
+                      <MicOff className="w-4 h-4" />
+                    ) : (
+                      <Mic className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+
                 <button
                   type="submit"
                   disabled={!chatInput.trim()}
-                  className="bg-[#25D366] text-white p-2 rounded-full hover:bg-[#20bd5a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center w-10 h-10 shrink-0 shadow-sm"
+                  className="bg-[#25D366] text-white p-2 rounded-full hover:bg-[#20bd5a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center w-10 h-10 shrink-0 shadow-sm cursor-pointer"
+                  title={language === 'es' ? 'Enviar mensaje' : 'Send message'}
                 >
                   {isSendingToWebhook ? <Sparkles className="w-5 h-5 animate-spin" /> : <ChevronRight className="w-5 h-5 ml-0.5" />}
                 </button>
@@ -1682,25 +2288,42 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
       </AnimatePresence>
 
       
+      {/* Floating WhatsApp and Autonomous AI Trigger Button */}
       <div className="flex flex-col items-center gap-3 pointer-events-auto relative">
-        <div className="relative">
+        <div className="relative group">
+          {/* Animated Glow Aura */}
+          <div className="absolute inset-0 bg-emerald-500 rounded-full blur-md opacity-40 group-hover:opacity-75 transition-opacity duration-300"></div>
+
           {needsAttention && !isOpen && (
-            <div className={`absolute inset-0 ${themeClasses.ping} rounded-full animate-ping opacity-40 transition-colors duration-300`}></div>
+            <div className={`absolute inset-0 ${themeClasses.ping} rounded-full animate-ping opacity-50 transition-colors duration-300`}></div>
           )}
+
           <button
+            id="floating-whatsapp-trigger-btn"
             onClick={() => {
               setIsOpen(!isOpen);
               setNeedsAttention(false);
             }}
-            aria-label="Toggle WhatsApp Chat"
-            className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 ${
-              isOpen ? 'bg-stone-50 text-stone-900 hover:scale-105' : '${themeClasses.button} text-white hover:scale-110 active:scale-95'
+            aria-label={isOpen ? 'Cerrar asistente y chat de WhatsApp' : 'Abrir asistente de IA y reservas WhatsApp Costa Rica Tours'}
+            title={language === 'es' ? 'Asistente Inteligente y Reservas WhatsApp Costa Rica Tours 2026' : 'AI Assistant & WhatsApp Bookings Costa Rica Tours 2026'}
+            className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 cursor-pointer ${
+              isOpen
+                ? 'bg-stone-100 text-stone-900 hover:scale-105 border-2 border-emerald-500/50'
+                : `${themeClasses.button} text-white hover:scale-110 active:scale-95 border-2 border-white/40`
             } ${needsAttention && !isOpen ? 'animate-pulse' : ''}`}
           >
-            {isOpen ? <X className="w-8 h-8" /> : <MessageCircle className="w-9 h-9 fill-white/20 stroke-white" />}
+            {isOpen ? (
+              <X className="w-8 h-8 transition-transform duration-200" />
+            ) : (
+              <div className="relative flex items-center justify-center">
+                <MessageCircle className="w-9 h-9 fill-white/20 stroke-white transition-transform duration-200 group-hover:scale-105" />
+                <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full shadow-sm animate-pulse"></span>
+              </div>
+            )}
             
             {!isOpen && (
-              <span className={`absolute -top-2 -right-2 ${themeClasses.badge} text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg border-2 border-white whitespace-nowrap animate-bounce transition-colors duration-300`}>
+              <span className={`absolute -top-2.5 -right-2 bg-gradient-to-r from-amber-500 to-emerald-600 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-lg border-2 border-white whitespace-nowrap animate-bounce transition-colors duration-300 flex items-center gap-1`}>
+                <Sparkles className="w-2.5 h-2.5 text-amber-200" />
                 {badgeText}
               </span>
             )}

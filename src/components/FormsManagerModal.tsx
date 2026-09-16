@@ -158,7 +158,7 @@ export const FormsManagerModal: React.FC<FormsManagerModalProps> = ({ isOpen, on
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-stone-600 hover:text-stone-900 hover:bg-white/10 rounded-full transition-colors">
+          <button onClick={onClose} className="min-h-[44px] min-w-[44px] p-2 text-stone-600 hover:text-stone-900 hover:bg-white/10 rounded-full transition-colors">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -173,7 +173,7 @@ export const FormsManagerModal: React.FC<FormsManagerModalProps> = ({ isOpen, on
               <button
                 onClick={fetchForms}
                 disabled={loading}
-                className="p-2 text-orange-400 hover:bg-orange-400/10 rounded-full transition-colors disabled:opacity-50"
+                className="min-h-[44px] min-w-[44px] p-2 text-orange-400 hover:bg-orange-400/10 rounded-full transition-colors disabled:opacity-50"
                 title={language === 'es' ? 'Actualizar' : 'Refresh'}
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -181,7 +181,7 @@ export const FormsManagerModal: React.FC<FormsManagerModalProps> = ({ isOpen, on
               <button
                 onClick={handleCreateForm}
                 disabled={creating}
-                className="flex items-center gap-2 bg-orange-500 hover:bg-teal-600 text-stone-900 px-4 py-2 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                className="min-h-[44px] min-w-[44px] flex items-center gap-2 bg-orange-500 hover:bg-teal-600 text-stone-900 px-4 py-2 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
               >
                 {creating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 {language === 'es' ? 'Crear Formulario de Feedback' : 'Create Feedback Form'}

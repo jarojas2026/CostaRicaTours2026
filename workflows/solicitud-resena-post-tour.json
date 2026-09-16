@@ -312,21 +312,33 @@
     },
     {
       "id": "eb3f5922-8a26-43ea-8e9f-417145f89ebf",
-      "name": "Avisar Fallo de Solicitud (Telegram)",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "name": "Avisar Fallo de Solicitud (Alerta Nativa)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         1344,
         192
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "sendMessage",
-        "chatId": "={{ $env.TELEGRAM_CHAT_ID || '-1002489148001' }}",
-        "text": "=⚠️ No se pudo enviar por email la solicitud de reseña de la reserva {{ $('Bucle Reservas de Hoy').item.json.bookingId }}.",
-        "additionalFields": {
-          "appendAttribution": false
-        }
+        "method": "POST",
+        "url": "={{ $env.APP_URL || \"http://localhost:3000\" }}/api/alerts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"source\": \"Solicitud de Reseña Post-Tour\",\n  \"severity\": \"warning\",\n  \"title\": \"Alerta en Solicitud de Reseña Post-Tour\",\n  \"message\": \"={{ $json.message || $json.text || $json.error?.message || \\\"Alerta operativa registrada\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowId\": \"Er8taaV6RsA539xp\",\n    \"originFile\": \"solicitud-resena-post-tour.json\"\n  }\n}",
+        "options": {}
       }
     }
   ]

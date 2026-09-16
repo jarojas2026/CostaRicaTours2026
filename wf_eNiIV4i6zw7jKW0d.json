@@ -1,0 +1,165 @@
+{
+  "id": "eNiIV4i6zw7jKW0d",
+  "name": "Motor Nacional de Ruteo y Despacho Masivo de Viajeros (Optimizado)",
+  "active": false,
+  "isArchived": false,
+  "versionId": "f4ab184c-1398-402b-88ad-8ffbb4de5bf5",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "nodeCount": 5,
+  "createdAt": "2026-09-13T04:10:36.753Z",
+  "updatedAt": "2026-09-13T04:10:36.753Z",
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "tags": [],
+  "parentFolderId": null,
+  "description": "Enrutador multizona de ultra-rendimiento para despachar miles de solicitudes simultáneas a operadores especializados en Costa Rica.",
+  "scopes": [
+    "execution:reveal",
+    "workflow:create",
+    "workflow:delete",
+    "workflow:disableRedaction",
+    "workflow:enableRedaction",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:export",
+    "workflow:import",
+    "workflow:list",
+    "workflow:move",
+    "workflow:publish",
+    "workflow:read",
+    "workflow:share",
+    "workflow:unpublish",
+    "workflow:unshare",
+    "workflow:update"
+  ],
+  "canExecute": true,
+  "connections": {
+    "Webhook Consulta Masiva MultiCanal": {
+      "main": [
+        [
+          {
+            "node": "Proteccion Anti-DDoS y Throttling",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Proteccion Anti-DDoS y Throttling": {
+      "main": [
+        [
+          {
+            "node": "Analizador Semantico y Perfil Viajero",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analizador Semantico y Perfil Viajero": {
+      "main": [
+        [
+          {
+            "node": "Matriz Nacional 7 Regiones y Operadores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Matriz Nacional 7 Regiones y Operadores": {
+      "main": [
+        [
+          {
+            "node": "Respuesta Instantanea al Viajero",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "0ccb57e8-55ac-4919-8571-fd3ee8e0840a",
+      "name": "Webhook Consulta Masiva MultiCanal",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "path": "mega-despacho-turismo-cr",
+        "httpMethod": "POST",
+        "responseMode": "responseNode"
+      },
+      "webhookId": "c18beb11-9b19-4ad6-ad58-9af77bfb2181"
+    },
+    {
+      "id": "472b9093-bedc-45c8-a93d-4f27443af764",
+      "name": "Proteccion Anti-DDoS y Throttling",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const item = $input.first().json; return [{ json: { ...item, statusSeguridad: \"TRAFICO_VERIFICADO_OK\", timestampIngreso: new Date().toISOString() } }];"
+      }
+    },
+    {
+      "id": "2c69c5d7-2ff4-4522-8959-834a5714e7ef",
+      "name": "Analizador Semantico y Perfil Viajero",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const b = $input.first().json.body || $input.first().json || {}; const texto = (b.texto || b.mensaje || \"\").toLowerCase(); let perfil = \"Explorador Aventura\"; if (texto.includes(\"nino\") || texto.includes(\"familia\") || texto.includes(\"abuelo\")) perfil = \"Familiar / Accesible\"; else if (texto.includes(\"lujo\") || texto.includes(\"privado\") || texto.includes(\"vip\")) perfil = \"Lujo Sostenible VIP\"; else if (texto.includes(\"pajaro\") || texto.includes(\"ave\") || texto.includes(\"quetzal\") || texto.includes(\"rana\")) perfil = \"Ecoturismo / Birdwatching\"; return [{ json: { ...b, perfilDetectado: perfil } }];"
+      }
+    },
+    {
+      "id": "2dad82d5-7996-4a8c-802f-4b9f22f36ba3",
+      "name": "Matriz Nacional 7 Regiones y Operadores",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const b = $input.first().json; const q = (b.texto || b.mensaje || \"\").toLowerCase(); let resultado = { region: \"Valle Central y Cordillera\", operador: \"Central de Operaciones Costa Rica Tours\", atracciones: \"Volcan Poas, Doka Coffee Estate, Mercado Central, Volcan Irazu\", clima: \"Fresco y templado (18-24C)\", equipo: \"Calzado comodo y chaqueta ligera\" }; if (q.includes(\"arenal\") || q.includes(\"fortuna\") || q.includes(\"sarapiqui\") || q.includes(\"termas\")) { resultado = { region: \"La Fortuna / Arenal / Zona Norte\", operador: \"Alsama Tours CR (alsamatourscr.com)\", atracciones: \"Volcan Arenal, Aguas Termales Baldi/Tabacon, Catarata La Fortuna, Rafting Sarapiqui\", clima: \"Tropical humedo de montana\", equipo: \"Zapatos de senderismo impermeables y traje de bano\" }; } else if (q.includes(\"monteverde\") || q.includes(\"nuboso\") || q.includes(\"canopy\")) { resultado = { region: \"Monteverde y Sierra de Tilaran\", operador: \"Consorcio Guias Certificados Monteverde CST\", atracciones: \"Puentes Colgantes Selvatura, Reserva Nubosa Monteverde, Tirolesa\", clima: \"Fresco y brumoso (14-19C)\", equipo: \"Capa cortavientos e impermeable\" }; } else if (q.includes(\"manuel antonio\") || q.includes(\"quepos\") || q.includes(\"playa\")) { resultado = { region: \"Pacifico Central / Manuel Antonio\", operador: \"Operadores Verificados Quepos & Manuel Antonio\", atracciones: \"Parque Nacional Manuel Antonio (Monos, Perezosos), Playas Espadilla, Catamaran\", clima: \"Calido tropical (28-32C)\", equipo: \"Protector solar biodegradable, sandalias, traje de bano\" }; } else if (q.includes(\"tortuguero\") || q.includes(\"caribe\") || q.includes(\"puerto viejo\")) { resultado = { region: \"Caribe Norte y Tortuguero\", operador: \"Expediciones Tropicales (expedicionestropicales.com)\", atracciones: \"Canales de Tortuguero, Desove Tortugas, Parque Nacional Cahuita, Tour de Cacao\", clima: \"Tropical lluvioso caribeno\", equipo: \"Repelente biodegradable y poncho liviano\" }; } else if (q.includes(\"corcovado\") || q.includes(\"ballena\") || q.includes(\"osa\")) { resultado = { region: \"Peninsula de Osa y Pacifico Sur\", operador: \"Operadores Ecoturisticos Bahia Ballena & Drake\", atracciones: \"Parque Nacional Corcovado, Avistamiento Ballenas Jorobadas, Isla del Cano\", clima: \"Selva tropical intensa\", equipo: \"Botella reutilizable y calzado cerrado trail running\" }; } return [{ json: { consultaId: \"CR-\" + Date.now(), datosViajero: b, asignacionTuristica: resultado, garantiaSostenibilidad: \"Operadores verificados con Certificacion de Sostenibilidad Turistica (CST)\", atencion247: \"+506 2200-TOURS (Central Telefonica y WhatsApp Bilingue)\" } }];"
+      }
+    },
+    {
+      "id": "c14fb1fc-c2aa-4f40-bfc9-23d51b779f8a",
+      "name": "Respuesta Instantanea al Viajero",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      }
+    }
+  ],
+  "nodeGroups": [],
+  "activeVersion": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  }
+}

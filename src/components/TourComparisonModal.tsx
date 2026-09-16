@@ -40,7 +40,7 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
     >
       <div 
         onClick={(e) => e.stopPropagation()}
-        className="relative bg-white w-full max-w-5xl max-h-[88vh] modal-scrollable overflow-y-auto rounded-[2.5rem] border-4 border-black/10 shadow-2xl space-y-0 text-white cursor-default animate-in fade-in zoom-in-95 duration-200"
+        className="relative bg-white w-full max-w-5xl max-h-[88vh] modal-scrollable overflow-y-auto rounded-[2.5rem] border-4 border-black/10 shadow-2xl space-y-0 text-stone-900 cursor-default animate-in fade-in zoom-in-95 duration-200"
       >
         
         {/* Header */}
@@ -64,7 +64,7 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="bg-red-500/20 hover:bg-red-600 text-red-200 hover:text-white px-3.5 py-2 rounded-full flex items-center gap-1.5 font-bold text-xs border border-red-500/40 transition-colors shadow-md flex-shrink-0"
+            className="min-h-[44px] min-w-[44px] bg-red-500/20 hover:bg-red-600 text-red-200 hover:text-white px-3.5 py-2 rounded-full flex items-center gap-1.5 font-bold text-xs border border-red-500/40 transition-colors shadow-md flex-shrink-0"
           >
             <X className="w-4 h-4" />
             <span>{language === 'es' ? 'Cerrar' : 'Close'}</span>
@@ -225,7 +225,7 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="bg-orange-500 hover:bg-teal-600 text-neutral-900 font-black text-xs uppercase px-6 py-2.5 rounded-full shadow-lg transition-colors"
+            className="min-h-[44px] min-w-[44px] bg-orange-500 hover:bg-teal-600 text-neutral-900 font-black text-xs uppercase px-6 py-2.5 rounded-full shadow-lg transition-colors"
           >
             {language === 'es' ? 'Entendido / Regresar' : 'Got it / Go Back'}
           </button>

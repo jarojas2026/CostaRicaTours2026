@@ -33,7 +33,7 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[200] overflow-y-auto bg-white/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-stone-50 border-2 border-black/10 rounded-[2rem] w-full max-w-2xl overflow-hidden shadow-2xl relative text-white my-8 p-6 sm:p-8 space-y-6">
+      <div className="bg-stone-50 border-2 border-black/10 rounded-[2rem] w-full max-w-2xl overflow-hidden shadow-2xl relative text-stone-900 my-8 p-6 sm:p-8 space-y-6">
         
         <div className="flex items-center justify-between border-b border-black/10 pb-4">
           <div className="flex items-center gap-3">
@@ -44,13 +44,13 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
               <h3 className="text-xl font-black text-orange-400 uppercase">
                 {language === 'es' ? 'Mis Reservas Confirmadas' : 'My Confirmed Bookings'}
               </h3>
-              <span className="text-xs text-[#A7F3D0]">
+              <span className="text-xs text-stone-500">
                 {bookings.length} {language === 'es' ? 'vouchers registrados' : 'vouchers registered'}
               </span>
             </div>
           </div>
 
-          <button onClick={onClose} className="p-2 text-white hover:text-[#FF8C00] cursor-pointer">
+          <button onClick={onClose} className="min-h-[44px] min-w-[44px] p-2 text-stone-400 hover:text-orange-500 cursor-pointer">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -63,7 +63,7 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={language === 'es' ? 'Buscar por ID de reserva, email o tour...' : 'Search by booking ID, email or tour...'}
-              className="w-full bg-white border border-black/10 focus:border-orange-400 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-stone-500 focus:outline-none"
+              className="w-full bg-white border border-black/10 focus:border-orange-400 rounded-xl pl-10 pr-4 py-2.5 text-xs text-stone-900 placeholder-stone-400 focus:outline-none"
             />
           </div>
         )}
@@ -74,10 +74,10 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
               🎟️
             </div>
             <div className="space-y-1">
-              <h4 className="text-lg font-bold text-white">
+              <h4 className="text-lg font-bold text-stone-900">
                 {language === 'es' ? 'Aún no tenés reservas' : 'No bookings yet'}
               </h4>
-              <p className="text-xs text-[#A7F3D0] max-w-sm mx-auto">
+              <p className="text-xs text-stone-500 max-w-sm mx-auto">
                 {language === 'es'
                   ? 'Aún no tenés reservas. Explorá nuestros tours y viví la experiencia Pura Vida!'
                   : 'You have no bookings yet. Explore our tours and live the Pura Vida experience!'}
@@ -112,14 +112,14 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
                   <span className="bg-orange-500 text-stone-950 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                     ID: {b.bookingId}
                   </span>
-                  <span className="text-xs text-[#A7F3D0] font-bold">
+                  <span className="text-xs text-stone-500 font-bold">
                     ${b.totalUSD} USD
                   </span>
                 </div>
 
-                <h4 className="text-sm font-black text-white uppercase">{b.tourName}</h4>
+                <h4 className="text-sm font-black text-stone-900 uppercase">{b.tourName}</h4>
 
-                <div className="grid grid-cols-2 gap-2 text-xs text-[#A7F3D0]">
+                <div className="grid grid-cols-2 gap-2 text-xs text-stone-500">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5 text-orange-400" />
                     <span>{b.date} ({b.time})</span>
@@ -131,12 +131,12 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
                 </div>
 
                 {b.electronicInvoice?.wantsInvoice && (
-                  <div className="text-[10px] text-teal-300 font-bold flex items-center gap-1 mb-1">
+                  <div className="text-[10px] text-teal-700 font-bold flex items-center gap-1 mb-1">
                     🧾 {language === 'es' ? 'Factura Electrónica' : 'Electronic Invoice'}
                   </div>
                 )}
 
-                <div className="pt-2 border-t border-black/10 flex items-center justify-between text-[11px] text-[#A7F3D0]">
+                <div className="pt-2 border-t border-black/10 flex items-center justify-between text-[11px] text-stone-500">
                   <span>Titular: {b.customer.fullName}</span>
                   <span className="text-orange-400 font-bold flex items-center gap-1">
                     Ver Voucher <Ticket className="w-3.5 h-3.5" />
@@ -158,7 +158,7 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
           </a>
           <button
             onClick={onClose}
-            className="flex-1 bg-stone-100 hover:bg-stone-200 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider transition-colors cursor-pointer"
+            className="min-h-[44px] min-w-[44px] flex-1 bg-stone-100 hover:bg-stone-200 text-stone-900 font-black py-3 rounded-xl text-xs uppercase tracking-wider transition-colors cursor-pointer"
           >
             {language === 'es' ? 'Cerrar' : 'Close'}
           </button>

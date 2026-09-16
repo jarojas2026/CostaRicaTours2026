@@ -75,63 +75,63 @@ export const REGIONS: RegionInfo[] = [
     id: 'arenal',
     name: 'La Fortuna / Volcán Arenal',
     tagline: { es: 'La Capital de la Aventura y Termales', en: 'The Adventure & Hot Springs Capital' },
-    image: 'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 42, y: 38 }
   },
   {
     id: 'monteverde',
     name: 'Monteverde',
     tagline: { es: 'Mágico Bosque Nuboso y Biodiversidad', en: 'Magical Cloud Forest & Biodiversity' },
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 33, y: 44 }
   },
   {
     id: 'manuel_antonio',
     name: 'Manuel Antonio',
     tagline: { es: 'Donde el Bosque Encuentra el Mar', en: 'Where Rainforest Meets Ocean' },
-    image: 'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 50, y: 68 }
   },
   {
     id: 'pacuare',
     name: 'Río Pacuare / Turrialba',
     tagline: { es: 'Los Mejores Rápidos de Costa Rica', en: 'World-Class Whitewater Rafting' },
-    image: 'https://images.unsplash.com/photo-1530866495561-507c9faab2ed?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 62, y: 52 }
   },
   {
     id: 'guanacaste',
     name: 'Guanacaste / Tamarindo',
     tagline: { es: 'Sol, Surf y Playas Doradas', en: 'Sunshine, Surf & Golden Beaches' },
-    image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 18, y: 32 }
   },
   {
     id: 'tortuguero',
     name: 'Tortuguero',
     tagline: { es: 'El Amazonas Costarricense y Tortugas Verdes', en: 'Costa Rican Amazon & Sea Turtles' },
-    image: 'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 70, y: 30 }
   },
   {
     id: 'osa',
     name: 'Península de Osa / Corcovado',
     tagline: { es: 'El Lugar Más Intenso del Planeta', en: 'Most Biologically Intense Place' },
-    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 72, y: 88 }
   },
   {
     id: 'sjo',
     name: 'San José / Valle Central',
     tagline: { es: 'Cultura, Volcanes y Café Premium', en: 'Culture, Volcanoes & Heritage Coffee' },
-    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 52, y: 50 }
   },
   {
     id: 'caribe',
     name: 'Caribe Sur / Puerto Viejo',
     tagline: { es: 'Ritmo Afrocaribeño, Arrecifes y Naturaleza', en: 'Afro-Caribbean Vibe, Reefs & Wildlife' },
-    image: 'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 82, y: 62 }
   }
 ];
@@ -149,11 +149,10 @@ export const TOURS: Tour[] = [
     },
     category: 'combos',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80',
+    image: '/src/assets/images/poas_waterfall_1789327555369.jpg',
     gallery: [
-      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80'
+      '/src/assets/images/poas_waterfall_1789327555369.jpg',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=1200&q=85'
     ],
     priceUSD: 145,
     durationHours: 10,
@@ -198,11 +197,6 @@ export const TOURS: Tour[] = [
       lng: -84.2307,
       placeName: 'Volcán Poás, Alajuela, Costa Rica'
     },
-    operatorName: 'Expediciones Tropicales',
-    operatorBadge: {
-      es: 'Operador Oficial Certificado #1',
-      en: 'Certified Official Operator #1'
-    },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -218,11 +212,10 @@ export const TOURS: Tour[] = [
     },
     category: 'volcanoes',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80',
+    image: '/src/assets/images/costa_rica_hero_1789327541732.jpg',
     gallery: [
-      'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=1000&q=80'
+      '/src/assets/images/costa_rica_hero_1789327541732.jpg',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=1200&q=85'
     ],
     priceUSD: 125,
     durationHours: 10,
@@ -297,11 +290,10 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'monteverde',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
+    image: '/src/assets/images/monteverde_canopy_1789327567266.jpg',
     gallery: [
-      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1000&q=80'
+      '/src/assets/images/monteverde_canopy_1789327567266.jpg',
+      'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=1200&q=85'
     ],
     priceUSD: 89,
     durationHours: 5,
@@ -374,11 +366,10 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=1200&q=80',
+    image: '/src/assets/images/manuel_antonio_beach_1789327578996.jpg',
     gallery: [
-      'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1574063413132-355dbfd83e12?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1000&q=80'
+      '/src/assets/images/manuel_antonio_beach_1789327578996.jpg',
+      'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=1200&q=85'
     ],
     priceUSD: 65,
     durationHours: 4,
@@ -451,11 +442,10 @@ export const TOURS: Tour[] = [
     },
     category: 'rafting',
     region: 'pacuare',
-    image: 'https://images.unsplash.com/photo-1530866495561-507c9faab2ed?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1530866495561-507c9faab2ed?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1530541930197-ff16ac917b0e?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1530866495561-507c9faab2ed?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 110,
     durationHours: 9,
@@ -527,11 +517,10 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'tortuguero',
-    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1550853024-fae8cd4be47f?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 95,
     durationHours: 8,
@@ -598,10 +587,10 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'guanacaste',
-    image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 90,
     durationHours: 5,
@@ -673,11 +662,10 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'osa',
-    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1550853024-fae8cd4be47f?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1574063413132-355dbfd83e12?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 165,
     durationHours: 10,
@@ -746,10 +734,10 @@ export const TOURS: Tour[] = [
     },
     category: 'culture',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 45,
     durationHours: 2.5,
@@ -814,10 +802,10 @@ export const TOURS: Tour[] = [
     },
     category: 'volcanoes',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1589556264800-08ae9e129a8c?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1589556264800-08ae9e129a8c?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 98,
     durationHours: 7,
@@ -886,10 +874,10 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 52,
     durationHours: 2.5,
@@ -956,10 +944,10 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 72,
     durationHours: 3.5,
@@ -1023,10 +1011,10 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'osa',
-    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 145,
     durationHours: 8,
@@ -1092,10 +1080,10 @@ export const TOURS: Tour[] = [
     },
     category: 'volcanoes',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 115,
     durationHours: 9,
@@ -1167,10 +1155,10 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'osa',
-    image: 'https://images.unsplash.com/photo-1550853024-fae8cd4be47f?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1550853024-fae8cd4be47f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 175,
     durationHours: 10,
@@ -1240,10 +1228,10 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'guanacaste',
-    image: 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 135,
     durationHours: 8,
@@ -1316,10 +1304,10 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1574063413132-355dbfd83e12?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1574063413132-355dbfd83e12?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 49,
     durationHours: 3,
@@ -1387,10 +1375,10 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'caribe',
-    image: 'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1574063413132-355dbfd83e12?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 79,
     durationHours: 6,
@@ -1459,10 +1447,10 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 85,
     durationHours: 6,
@@ -1529,10 +1517,10 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1568430462989-44163eb1752f?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1568430462989-44163eb1752f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 95,
     durationHours: 4,
@@ -1601,10 +1589,10 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'monteverde',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 45,
     durationHours: 2.5,
@@ -1672,10 +1660,10 @@ export const TOURS: Tour[] = [
     },
     category: 'volcanoes',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 89,
     durationHours: 7,
@@ -1741,10 +1729,10 @@ export const TOURS: Tour[] = [
     },
     category: 'culture',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 55,
     durationHours: 4,
@@ -1810,10 +1798,10 @@ export const TOURS: Tour[] = [
     },
     category: 'culture',
     region: 'caribe',
-    image: 'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?auto=format&fit=crop&w=1000&q=80'
+      'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 75,
     durationHours: 6,
@@ -1879,10 +1867,10 @@ export const TOURS: Tour[] = [
     },
     category: 'volcanoes',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80'
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 127,
     durationHours: 9,
@@ -1919,119 +1907,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['San José Palacio', 'Radisson San José', 'Gran Hotel Costa Rica', 'Hilton Garden Inn San José', 'Intercontinental Escazú'],
     departureTimes: ['07:30 AM'],
     location: { lat: 9.9791, lng: -83.8528, placeName: 'Volcán Irazú, Cartago, Costa Rica' },
-    operatorName: 'Expediciones Tropicales',
-    operatorBadge: { es: 'Operador Certificado #1 San José', en: 'Certified #1 San Jose Operator' },
-    instantConfirmation: true,
-    bestPriceGuaranteed: true
-  },
-  {
-    id: 'sjo-tortuga-island-cruise',
-    title: {
-      es: 'Crucero en Catamarán a Isla Tortuga & Playa Blanca',
-      en: 'Tortuga Island Catamaran Cruise & White Sand Beach'
-    },
-    subtitle: {
-      es: 'Navegación en el Golfo de Nicoya con almuerzo buffet y snorkel',
-      en: 'Gulf of Nicoya sailing with gourmet buffet lunch & snorkeling'
-    },
-    category: 'beaches',
-    region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80'
-    ],
-    priceUSD: 150,
-    durationHours: 11,
-    durationLabel: { es: 'Día Completo (11 hrs)', en: 'Full Day (11 hrs)' },
-    difficulty: 'fácil',
-    difficultyLabel: { es: 'Fácil - Familiar', en: 'Easy - Family' },
-    rating: 4.9,
-    reviewsCount: 540,
-    featured: true,
-    bestseller: true,
-    ecoCert: true,
-    tourType: 'group',
-    maxGroupSize: 45,
-    freeCancellation: true,
-    description: {
-      es: 'Aborda un confortable catamarán de alta tecnología en el puerto de Puntarenas y navega por las aguas turquesas del Golfo de Nicoya hasta llegar a las playas vírgenes de arena blanca de Isla Tortuga. Disfruta de música en vivo, frutas tropicales, snorkel en arrecifes de roca volcánica, tour de banana boat y un exquisito almuerzo servido bajo las palmeras.',
-      en: 'Board a comfortable modern catamaran in Puntarenas and sail across the turquoise waters of the Gulf of Nicoya to the pristine white sands of Tortuga Island. Enjoy live music, fresh tropical fruit, coral reef snorkeling, banana boat rides, and an exquisite 4-course lunch served right under the coconut palms.'
-    },
-    highlights: {
-      es: ['Navegación en catamarán de lujo por el Golfo', 'Playa de arena blanca y aguas transparentes', 'Tour de snorkel con equipo completo', 'Almuerzo buffet gourmet en la playa', 'Transporte desde San José'],
-      en: ['Luxury catamaran cruise across Nicoya Gulf', 'White sand beach and crystal waters', 'Guided reef snorkel tour with gear', 'Gourmet beach buffet lunch', 'Roundtrip transport from San Jose']
-    },
-    inclusions: {
-      es: ['Transporte A/C terrestre San José - Puntarenas', 'Desayuno ligero', 'Almuerzo buffet gourmet', 'Frutas tropicales y bebidas naturales', 'Equipo de snorkel y banana boat'],
-      en: ['A/C ground transfer San Jose - Puntarenas', 'Light breakfast on board', 'Gourmet buffet lunch', 'Fresh fruits and fruit punch', 'Snorkel gear and banana boat']
-    },
-    exclusions: {
-      es: ['Bebidas alcohólicas premium', 'Alquiler de kayaks o sillas reclinables privadas'],
-      en: ['Premium alcoholic drinks', 'Private beach lounger upgrades']
-    },
-    whatToBring: {
-      es: ['Traje de baño', 'Toalla', 'Bloqueador biodegradable', 'Gafas de sol', 'Cambio de ropa seca'],
-      en: ['Swimsuit', 'Towel', 'Biodegradable sunscreen', 'Sunglasses', 'Dry change of clothes']
-    },
-    pickupHotels: ['San José Palacio', 'Gran Hotel Costa Rica', 'Radisson', 'Crown Plaza', 'Hoteles en Puntarenas'],
-    departureTimes: ['06:00 AM'],
-    location: { lat: 9.7744, lng: -84.9017, placeName: 'Isla Tortuga, Golfo de Nicoya, Costa Rica' },
-    operatorName: 'Expediciones Tropicales / Bay Island Cruises',
-    operatorBadge: { es: 'Crucero Oficial Certificado', en: 'Certified Official Cruise' },
-    instantConfirmation: true,
-    bestPriceGuaranteed: true
-  },
-  {
-    id: 'sjo-city-heritage-tour',
-    title: {
-      es: 'San José City Tour VIP & Teatro Nacional',
-      en: 'San José VIP City Tour & National Theater'
-    },
-    subtitle: {
-      es: 'Museo de Oro Precolombino, Mercado Central y arquitectura histórica',
-      en: 'Pre-Columbian Gold Museum, Central Market & historic architecture'
-    },
-    category: 'culture',
-    region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=800&q=80'],
-    priceUSD: 74,
-    durationHours: 5,
-    durationLabel: { es: 'Medio Día (5 hrs)', en: 'Half Day (5 hrs)' },
-    difficulty: 'fácil',
-    difficultyLabel: { es: 'Fácil', en: 'Easy' },
-    rating: 4.8,
-    reviewsCount: 190,
-    ecoCert: true,
-    tourType: 'group',
-    maxGroupSize: 18,
-    freeCancellation: true,
-    description: {
-      es: 'Descubre la rica historia, arquitectura y vida cotidiana de la capital de Costa Rica. Visitaremos el emblemático Teatro Nacional (joya arquitectónica de 1897), el Museo del Oro Precolombino, la Catedral Metropolitana, el Parque Central y nos sumergiremos en los aromas del Mercado Central para probar café gourmet y comida típica.',
-      en: 'Immerse yourself in the history, architecture, and vibrant culture of Costa Rica’s capital. Visit the iconic National Theater (1897 architectural masterpiece), the Pre-Columbian Gold Museum, the Metropolitan Cathedral, Central Park, and taste gourmet coffee while exploring the lively historic Central Market.'
-    },
-    highlights: {
-      es: ['Teatro Nacional de Costa Rica', 'Museo de Oro Precolombino', 'Recorrido por el Mercado Central', 'Guía historiador bilingüe', 'Degustación de café costarricense'],
-      en: ['National Theater guided visit', 'Pre-Columbian Gold Museum entrance', 'Central Market cultural stroll', 'Bilingual historian guide', 'Costa Rican coffee tasting']
-    },
-    inclusions: {
-      es: ['Transporte hotelero ida y vuelta', 'Guía profesional bilingüe', 'Entrada al Teatro Nacional', 'Entrada al Museo de Oro', 'Degustación de café'],
-      en: ['Roundtrip hotel transport', 'Professional bilingual guide', 'National Theater entrance', 'Gold Museum entrance', 'Coffee tasting']
-    },
-    exclusions: {
-      es: ['Almuerzo completo', 'Propinas'],
-      en: ['Full lunch', 'Gratuities']
-    },
-    whatToBring: {
-      es: ['Zapatos cómodos para caminar', 'Cámara fotográfica', 'Sombrilla o impermeable'],
-      en: ['Comfortable walking shoes', 'Camera', 'Umbrella or light rain jacket']
-    },
-    pickupHotels: ['Hoteles céntricos de San José, Escazú, Belén y Santa Ana'],
-    departureTimes: ['08:30 AM', '01:30 PM'],
-    location: { lat: 9.9333, lng: -84.0833, placeName: 'San José Centro, Costa Rica' },
-    operatorName: 'Expediciones Tropicales',
-    operatorBadge: { es: 'Tour Cultural Oficial', en: 'Official Cultural Tour' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2047,8 +1922,11 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+    ],
     priceUSD: 119,
     durationHours: 4,
     durationLabel: { es: 'Medio Día (4 hrs)', en: 'Half Day (4 hrs)' },
@@ -2085,8 +1963,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['The Springs Resort', 'Tabacón Resort', 'Nayara Resorts', 'Baldi Hot Springs', 'Hoteles en La Fortuna'],
     departureTimes: ['07:30 AM', '11:30 AM'],
     location: { lat: 10.4500, lng: -84.6600, placeName: 'Cañón Pure Trek, La Fortuna, San Carlos, Costa Rica' },
-    operatorName: 'Pure Trek Canyoning',
-    operatorBadge: { es: 'Operador #1 Cañonismo La Fortuna', en: '#1 Canyoning Operator in Arenal' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2102,8 +1978,11 @@ export const TOURS: Tour[] = [
     },
     category: 'rafting',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=800&q=80'],
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+    ],
     priceUSD: 75,
     durationHours: 5,
     durationLabel: { es: 'Medio Día (5 hrs)', en: 'Half Day (5 hrs)' },
@@ -2139,8 +2018,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Todos los hoteles en La Fortuna, Arenal y alrededores'],
     departureTimes: ['09:00 AM', '12:30 PM'],
     location: { lat: 10.3800, lng: -84.5800, placeName: 'Río Balsa, San Carlos, Alajuela, Costa Rica' },
-    operatorName: 'Wave Expeditions & Arenal Rafting',
-    operatorBadge: { es: 'Operador Oficial Rafting Arenal', en: 'Official Arenal Rafting Operator' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2156,8 +2033,11 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+    ],
     priceUSD: 145,
     durationHours: 6,
     durationLabel: { es: 'Día Completo (6 hrs)', en: 'Full Day (6 hrs)' },
@@ -2193,8 +2073,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Hoteles en La Fortuna y zona volcánica de Arenal'],
     departureTimes: ['08:00 AM', '10:30 AM', '01:00 PM'],
     location: { lat: 10.4350, lng: -84.7100, placeName: 'Sky Adventures Arenal Park, El Castillo, Alajuela, Costa Rica' },
-    operatorName: 'Sky Adventures Costa Rica',
-    operatorBadge: { es: 'Parque de Aventura Certificado', en: 'Certified Adventure Park' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2210,8 +2088,11 @@ export const TOURS: Tour[] = [
     },
     category: 'combos',
     region: 'guanacaste',
-    image: 'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+    ],
     priceUSD: 129,
     durationHours: 8,
     durationLabel: { es: 'Día Completo (8 hrs)', en: 'Full Day (8 hrs)' },
@@ -2248,8 +2129,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Hoteles en Tamarindo, Conchal, Flamingo, Playas del Coco, Papagayo y Liberia'],
     departureTimes: ['07:00 AM'],
     location: { lat: 10.7500, lng: -85.3800, placeName: 'Hacienda Guachipelín, Rincón de la Vieja, Guanacaste, Costa Rica' },
-    operatorName: 'Hacienda Guachipelín Adventure Center',
-    operatorBadge: { es: 'Parque Oficial Rincón de la Vieja', en: 'Official Rincón de la Vieja Park' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2265,8 +2144,11 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'guanacaste',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
+    ],
     priceUSD: 118,
     durationHours: 6,
     durationLabel: { es: 'Día Completo (6 hrs)', en: 'Full Day (6 hrs)' },
@@ -2301,8 +2183,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Hoteles en Golfo de Papagayo, Playas del Coco, Hermosa, Tamarindo y Conchal'],
     departureTimes: ['08:30 AM'],
     location: { lat: 10.5800, lng: -85.6700, placeName: 'Diamante Eco Adventure Park, Matapalo, Guanacaste, Costa Rica' },
-    operatorName: 'Diamante Eco Adventure Park',
-    operatorBadge: { es: 'Parque Eco-Aventura Certificado', en: 'Certified Eco-Adventure Park' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2318,8 +2198,11 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'guanacaste',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'],
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
+    ],
     priceUSD: 95,
     durationHours: 5,
     durationLabel: { es: 'Tarde de Atardecer (5 hrs)', en: 'Sunset Afternoon (5 hrs)' },
@@ -2356,8 +2239,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Puntos de encuentro en Playa Tamarindo y Playas del Coco'],
     departureTimes: ['01:30 PM'],
     location: { lat: 10.2990, lng: -85.8400, placeName: 'Playa Tamarindo, Guanacaste, Costa Rica' },
-    operatorName: 'Marlin del Rey Catamarans',
-    operatorBadge: { es: 'Operador #1 Catamarán Guanacaste', en: '#1 Catamaran Operator in Guanacaste' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2373,8 +2254,11 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'monteverde',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=800&q=85'
+    ],
     priceUSD: 120,
     durationHours: 6,
     durationLabel: { es: 'Día Completo (6 hrs)', en: 'Full Day (6 hrs)' },
@@ -2411,8 +2295,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Todos los hoteles y eco-lodges de Santa Elena y Monteverde'],
     departureTimes: ['08:30 AM', '11:00 AM', '01:00 PM'],
     location: { lat: 10.3300, lng: -84.7900, placeName: 'Selvatura Park, Santa Elena, Monteverde, Puntarenas, Costa Rica' },
-    operatorName: 'Selvatura Park Monteverde',
-    operatorBadge: { es: 'Parque Ecológico Oficial Monteverde', en: 'Official Monteverde Eco-Park' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2428,8 +2310,11 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'monteverde',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=800&q=85'
+    ],
     priceUSD: 65,
     durationHours: 3,
     durationLabel: { es: 'Medio Día (3 hrs)', en: 'Half Day (3 hrs)' },
@@ -2464,8 +2349,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Hoteles en Monteverde y Santa Elena'],
     departureTimes: ['08:00 AM', '11:00 AM', '01:00 PM', '03:00 PM'],
     location: { lat: 10.3150, lng: -84.8200, placeName: '100% Aventura Park, Monteverde, Costa Rica' },
-    operatorName: '100% Aventura Monteverde',
-    operatorBadge: { es: 'Canopy Extremo Oficial', en: 'Official Extreme Canopy' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2481,8 +2364,11 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
+    ],
     priceUSD: 75,
     durationHours: 4,
     durationLabel: { es: 'Medio Día (4 hrs)', en: 'Half Day (4 hrs)' },
@@ -2517,8 +2403,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Hoteles en Manuel Antonio y Quepos'],
     departureTimes: ['08:00 AM', '01:00 PM'],
     location: { lat: 9.4700, lng: -84.2200, placeName: 'Estero Isla Damas, Quepos, Puntarenas, Costa Rica' },
-    operatorName: 'Iguana Tours Manuel Antonio',
-    operatorBadge: { es: 'Operador Oficial #1 Quepos', en: '#1 Operator in Quepos' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2534,8 +2418,11 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'],
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
+    ],
     priceUSD: 90,
     durationHours: 4,
     durationLabel: { es: 'Medio Día (4 hrs)', en: 'Half Day (4 hrs)' },
@@ -2572,8 +2459,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Todos los hoteles en Manuel Antonio y Quepos'],
     departureTimes: ['09:00 AM', '02:00 PM'],
     location: { lat: 9.4200, lng: -84.1600, placeName: 'Marina Pez Vela, Quepos, Puntarenas, Costa Rica' },
-    operatorName: 'Ocean King / Iguana Tours',
-    operatorBadge: { es: 'Mega Catamarán Oficial', en: 'Official Mega Catamaran' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2589,8 +2474,11 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
+    ],
     priceUSD: 88,
     durationHours: 4,
     durationLabel: { es: 'Medio Día (4 hrs)', en: 'Half Day (4 hrs)' },
@@ -2626,8 +2514,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Punto de salida autorizada en Bahía Aventuras, Uvita'],
     departureTimes: ['08:30 AM', '01:00 PM'],
     location: { lat: 9.1550, lng: -83.7450, placeName: 'Parque Nacional Marino Ballena, Uvita, Osa, Costa Rica' },
-    operatorName: 'Bahía Aventuras Uvita',
-    operatorBadge: { es: 'Operador Oficial Marino Ballena', en: 'Official Marino Ballena Operator' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2643,8 +2529,11 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'],
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
+    ],
     priceUSD: 145,
     durationHours: 7,
     durationLabel: { es: 'Día Completo (7 hrs)', en: 'Full Day (7 hrs)' },
@@ -2680,8 +2569,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Bahía Aventuras en Uvita o Playa Drake'],
     departureTimes: ['07:30 AM'],
     location: { lat: 8.7050, lng: -83.8800, placeName: 'Reserva Biológica Isla del Caño, Osa, Puntarenas, Costa Rica' },
-    operatorName: 'Bahía Aventuras',
-    operatorBadge: { es: 'Operador Autorizado Reserva Marina', en: 'Authorized Marine Reserve Operator' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2697,8 +2584,11 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'osa',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
+    ],
     priceUSD: 145,
     durationHours: 8,
     durationLabel: { es: 'Día Completo (8 hrs)', en: 'Full Day (8 hrs)' },
@@ -2735,8 +2625,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Playa Drake, Sierpe o Puerto Jiménez'],
     departureTimes: ['06:00 AM'],
     location: { lat: 8.4800, lng: -83.5900, placeName: 'Estación Biológica Sirena, Parque Nacional Corcovado, Osa, Costa Rica' },
-    operatorName: 'Corcovado Info Center & Osa Wild',
-    operatorBadge: { es: 'Guías Oficiales Certificados SINAC', en: 'Certified Official SINAC Guides' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2752,8 +2640,11 @@ export const TOURS: Tour[] = [
     },
     category: 'multiday',
     region: 'tortuguero',
-    image: 'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80'],
+    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=85'
+    ],
     priceUSD: 390,
     durationHours: 72,
     durationLabel: { es: 'Paquete 3 Días / 2 Noches', en: 'Package 3 Days / 2 Nights' },
@@ -2789,8 +2680,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Hoteles en San José, Heredia, Alajuela y Guápiles'],
     departureTimes: ['06:00 AM'],
     location: { lat: 10.5400, lng: -83.5000, placeName: 'Parque Nacional Tortuguero, Limón, Costa Rica' },
-    operatorName: 'Grupo Mawamba / Pachira Lodge',
-    operatorBadge: { es: 'Operador Líder Todo Incluido Tortuguero', en: 'Premier All-Inclusive Tortuguero Operator' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2806,8 +2695,11 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'caribe',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-    gallery: ['https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'],
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
+    ],
     priceUSD: 65,
     durationHours: 5,
     durationLabel: { es: 'Medio Día (5 hrs)', en: 'Half Day (5 hrs)' },
@@ -2842,8 +2734,6 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Hoteles en Puerto Viejo, Cahuita, Cocles, Playa Chiquita y Manzanillo'],
     departureTimes: ['08:30 AM', '01:00 PM'],
     location: { lat: 9.7350, lng: -82.8400, placeName: 'Parque Nacional Cahuita, Limón, Costa Rica' },
-    operatorName: 'Caribe Fun Sunrise & Terraventuras',
-    operatorBadge: { es: 'Operador Oficial Caribe Sur', en: 'Official South Caribbean Operator' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2859,11 +2749,10 @@ export const TOURS: Tour[] = [
     },
     category: 'multiday',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 780,
     durationHours: 120,
@@ -2901,8 +2790,257 @@ export const TOURS: Tour[] = [
     pickupHotels: ['Aeropuerto Internacional Juan Santamaría (SJO) o cualquier hotel en San José'],
     departureTimes: ['07:00 AM'],
     location: { lat: 9.9333, lng: -84.0833, placeName: 'San José / Arenal / Monteverde / Manuel Antonio, Costa Rica' },
-    operatorName: 'Horizontes Nature Tours & Swiss Travel',
-    operatorBadge: { es: 'Circuito Nacional Garantizado', en: 'Guaranteed National Circuit' },
+    instantConfirmation: true,
+    bestPriceGuaranteed: true,
+    verifiedBadge: { es: 'Costa Rica Tours - Verificado', en: 'Costa Rica Tours - Verified' }
+  },
+  {
+    id: 'irazu-cartago-orosi-tour',
+    title: {
+      es: 'Volcán Irazú, Basílica de Los Ángeles y Valle de Orosí',
+      en: 'Irazú Volcano Summit, Cartago Basilica & Orosí Valley'
+    },
+    subtitle: {
+      es: 'El volcán más alto de Costa Rica (3,432m), historia colonial y exuberantes valles verdes',
+      en: 'Costa Rica’s highest volcano (11,260 ft), colonial heritage & lush coffee valleys'
+    },
+    category: 'volcanoes',
+    region: 'sjo',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+    ],
+    priceUSD: 115,
+    durationHours: 8,
+    durationLabel: { es: 'Día Completo (8 hrs)', en: 'Full Day (8 hrs)' },
+    difficulty: 'fácil',
+    difficultyLabel: { es: 'Fácil - Para toda la familia', en: 'Easy - Family Friendly' },
+    rating: 4.93,
+    reviewsCount: 260,
+    featured: true,
+    bestseller: false,
+    ecoCert: true,
+    tourType: 'group',
+    maxGroupSize: 18,
+    freeCancellation: true,
+    description: {
+      es: 'Sube al punto más alto de la Cordillera Volcánica Central en el Volcán Irazú, con sus impresionantes cráteres lunares Diego de la Haya y Principal. Después descenderemos a la colonial ciudad de Cartago para visitar la famosa Basílica de Nuestra Señora de Los Ángeles. El tour continúa hacia el verde y pintoresco Valle de Orosí, visitando la iglesia colonial más antigua de Costa Rica y disfrutando de un delicioso almuerzo típico con vistas panorámicas.',
+      en: 'Ascend to the highest volcanic peak in Costa Rica at Irazú Volcano (11,260 feet above sea level), gazing into its moon-like Diego de la Haya crater lagoon. Next, descend to the historic capital Cartago to tour the famous Basilica of Our Lady of the Angels. Continue into the scenic Orosí Valley, visiting Costa Rica’s oldest colonial church and enjoying a gourmet traditional lunch surrounded by mountains.'
+    },
+    highlights: {
+      es: ['Cráter lunar del Volcán Irazú a 3,432 metros sobre el nivel del mar', 'Visita histórica a la Basílica de Los Ángeles en Cartago', 'Ruinas de Ujarrás y la Iglesia Colonial de Orosí (1743)', 'Almuerzo típico buffet costarricense con vista al valle', 'Transporte panorámico con paradas para fotos'],
+      en: ['Spectacular lunar crater views at Irazú Volcano summit (3,432m)', 'Historic tour of Cartago’s Basilica of Our Lady of the Angels', 'Colonial Church of Orosí (1743) and Ujarrás Ruins', 'Traditional Costa Rican buffet lunch with valley vistas', 'Comfortable A/C scenic transfer with photo stops']
+    },
+    inclusions: {
+      es: ['Transporte de turismo ida y vuelta desde San José', 'Entrada oficial al Parque Nacional Volcán Irazú', 'Visitas guiadas a la Basílica de Cartago e Iglesia de Orosí', 'Almuerzo típico completo en restaurante local', 'Guía naturalista y cultural bilingüe'],
+      en: ['Roundtrip transportation from San José hotels', 'Official Irazú Volcano National Park entrance ticket', 'Guided visits to Cartago Basilica & Orosí Church', 'Full traditional lunch at local restaurant', 'Certified bilingual naturalist & cultural guide']
+    },
+    exclusions: {
+      es: ['Bebidas alcohólicas', 'Propinas voluntarias'],
+      en: ['Alcoholic beverages', 'Optional gratuities']
+    },
+    whatToBring: {
+      es: ['Abrigo o chaqueta abrigada (la cima del Irazú puede estar fría y ventosa)', 'Zapatos cómodos para caminar', 'Cámara fotográfica', 'Bloqueador solar y gafas de sol'],
+      en: ['Warm jacket or fleece (Irazú summit can be cold and windy)', 'Comfortable walking shoes', 'Camera', 'Sunscreen and sunglasses']
+    },
+    pickupHotels: [
+      'Hoteles en San José Centro', 'Hoteles en La Sabana', 'Hoteles en San Pedro y Curridabat', 'Hoteles en Escazú y Santa Ana'
+    ],
+    departureTimes: ['07:30 AM'],
+    location: {
+      lat: 9.9791,
+      lng: -83.8528,
+      placeName: 'Volcán Irazú / Valle de Orosí, Cartago, Costa Rica'
+    },
+    instantConfirmation: true,
+    bestPriceGuaranteed: true,
+    verifiedBadge: { es: 'Costa Rica Tours - Verificado', en: 'Costa Rica Tours - Verified' }
+  },
+  {
+    id: 'bay-island-sunset-cruise',
+    providerId: 'bay-island-cruises',
+    title: {
+      es: 'Crucero al Atardecer y Cena Tropical en Catamarán (Bay Island Cruises)',
+      en: 'Bay Island Sunset Dinner Catamaran Cruise'
+    },
+    subtitle: {
+      es: 'Navegación romántica por el Golfo de Nicoya con puesta de sol, música en vivo y cena buffet',
+      en: 'Romantic sunset sailing across the Gulf of Nicoya with live music and tropical dinner'
+    },
+    category: 'beaches',
+    region: 'sjo',
+    image: 'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=85'
+    ],
+    priceUSD: 115,
+    durationHours: 6,
+    durationLabel: { es: '6 horas (Tarde/Noche)', en: '6 hours (Afternoon/Evening)' },
+    difficulty: 'fácil',
+    difficultyLabel: { es: 'Fácil - Relajación y Romance', en: 'Easy - Relaxation & Romance' },
+    rating: 4.94,
+    reviewsCount: 280,
+    featured: true,
+    bestseller: false,
+    ecoCert: true,
+    tourType: 'group',
+    maxGroupSize: 45,
+    freeCancellation: true,
+    description: {
+      es: 'Disfruta de la magia del atardecer en el Golfo de Nicoya a bordo del catamarán de lujo operado por Bay Island Cruises. Salida por la tarde desde Puntarenas tras cómodo traslado desde San José, navegación entre islas con barra abierta de cócteles tropicales, cena buffet servida bajo las estrellas y música ambiental para vivir una experiencia inolvidable.',
+      en: 'Experience the magic of the Pacific sunset in the Gulf of Nicoya aboard Bay Island Cruises signature luxury catamaran. Afternoon departure from Puntarenas with open tropical bar, delicious dinner under the stars, and music as the sun dips below the horizon.'
+    },
+    highlights: {
+      es: ['Espectacular puesta de sol en el Golfo de Nicoya', 'Barra abierta con cócteles tropicales y refrescos', 'Cena buffet caliente a bordo', 'Música en vivo y ambiente festivo o romántico'],
+      en: ['Breathtaking Gulf of Nicoya sunset views', 'Open tropical bar and rum punch', 'Hot buffet dinner served on board', 'Live music and wonderful ambiance']
+    },
+    inclusions: {
+      es: ['Transporte A/C ida y vuelta desde San José', 'Navegación en catamarán', 'Cena buffet a bordo', 'Barra abierta de bebidas', 'Guía y animación'],
+      en: ['Roundtrip A/C transport from San José', 'Catamaran cruise', 'Onboard buffet dinner', 'Open bar', 'Host and crew']
+    },
+    exclusions: {
+      es: ['Bebidas licores premium', 'Propinas'],
+      en: ['Premium liquor', 'Gratuities']
+    },
+    whatToBring: {
+      es: ['Ropa casual elegante o cómoda', 'Suéter ligero para la brisa marina', 'Cámara'],
+      en: ['Smart casual wear', 'Light sweater for sea breeze', 'Camera']
+    },
+    pickupHotels: [
+      'San José Centro', 'Escazú', 'Santa Ana', 'Alajuela'
+    ],
+    departureTimes: ['01:00 PM'],
+    location: {
+      lat: 9.9791,
+      lng: -84.8528,
+      placeName: 'Golfo de Nicoya / Puntarenas, Costa Rica'
+    },
+    instantConfirmation: true,
+    bestPriceGuaranteed: true
+  },
+  {
+    id: 'doka-grecia-sarchi-tour',
+    title: {
+      es: 'Tour Doka Coffee Estate, Ciudad de Grecia y Cuna Artesanal de Sarchí',
+      en: 'Doka Coffee Estate, Grecia Church & Sarchí Artisan Village'
+    },
+    subtitle: {
+      es: 'El tour cultural más auténtico: café de altura, la famosa iglesia metálica y carretas típicas',
+      en: 'The definitive cultural journey: high-altitude coffee, metal church & Costa Rican oxcarts'
+    },
+    category: 'culture',
+    region: 'sjo',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+    ],
+    priceUSD: 75,
+    durationHours: 6,
+    durationLabel: { es: 'Medio Día (6 hrs)', en: 'Half Day (6 hrs)' },
+    difficulty: 'fácil',
+    difficultyLabel: { es: 'Fácil - Para todas las edades', en: 'Easy - All ages' },
+    rating: 4.88,
+    reviewsCount: 195,
+    featured: false,
+    bestseller: false,
+    ecoCert: true,
+    tourType: 'group',
+    maxGroupSize: 20,
+    freeCancellation: true,
+    description: {
+      es: 'Conoce las tradiciones vivas del Valle Central. Comenzamos en la prestigiosa finca Doka Coffee Estate en las faldas del Volcán Poás, conociendo el proceso completo del café de semilla a taza y catación profesional. Luego visitamos la pintoresca ciudad de Grecia con su emblemática Iglesia metálica roja traída de Bélgica en el siglo XIX. Concluimos en Sarchí, cuna de los artesanos de Costa Rica, donde verás el taller de pintura tradicional de la famosa Carreta Típica (Patrimonio Cultural de la Humanidad por la UNESCO).',
+      en: 'Explore the living traditions and craftsmanship of Costa Rica’s Central Valley. Begin at Doka Coffee Estate on the fertile slopes of Poás Volcano to learn the seed-to-cup harvesting and roasting methods with a professional coffee tasting. Continue to the charming town of Grecia to see its unique red metal church imported from Belgium. Finish in Sarchí, the cradle of Costa Rican artisans, watching master craftsmen paint the world-renowned traditional oxcarts (UNESCO Intangible Cultural Heritage).'
+    },
+    highlights: {
+      es: ['Tour integral del café en Doka Estate con catación guiada', 'Visita a la famosa Iglesia de Metal de Grecia (Nuestra Señora de Las Mercedes)', 'Taller artesanal de carretas típicas de Sarchí y la carreta más grande del mundo', 'Almuerzo buffet tradicional costarricense incluido', 'Oportunidad de comprar recuerdos auténticos directamente de los artesanos'],
+      en: ['Full bean-to-cup coffee tour at Doka Estate with cupping session', 'Visit to the historic all-metal church in Grecia', 'Live painting demonstrations at Sarchí traditional oxcart factory', 'Delicious authentic Costa Rican buffet lunch included', 'Time to shop handcrafted souvenirs directly from master artisans']
+    },
+    inclusions: {
+      es: ['Transporte turístico ida y vuelta desde San José', 'Guía profesional bilingüe', 'Entrada y tour guiado en Doka Coffee Estate', 'Almuerzo buffet típico costarricense', 'Visitas a Grecia y talleres de Sarchí'],
+      en: ['Roundtrip transportation from San José hotels', 'Certified bilingual tour guide', 'Doka Coffee Estate tour & coffee tasting', 'Traditional Costa Rican buffet lunch', 'Grecia and Sarchí artisan workshop tours']
+    },
+    exclusions: {
+      es: ['Compras personales', 'Propinas voluntarias'],
+      en: ['Personal souvenirs', 'Optional gratuities']
+    },
+    whatToBring: {
+      es: ['Ropa cómoda', 'Zapatos para caminar', 'Sombrero y bloqueador solar', 'Cámara fotográfica', 'Efectivo o tarjeta para compras de artesanías'],
+      en: ['Comfortable clothes', 'Walking shoes', 'Sun hat and sunscreen', 'Camera', 'Cash or card for souvenirs']
+    },
+    pickupHotels: [
+      'Hoteles en San José', 'Hoteles en Alajuela', 'Hoteles en Heredia', 'Hoteles en Escazú'
+    ],
+    departureTimes: ['08:00 AM'],
+    location: {
+      lat: 10.0894,
+      lng: -84.3122,
+      placeName: 'Doka Estate / Grecia / Sarchí, Alajuela, Costa Rica'
+    },
+    instantConfirmation: true,
+    bestPriceGuaranteed: true
+  },
+  {
+    id: 'sarapiqui-boat-rainforest-sjo',
+    title: {
+      es: 'Safari en Bote Río Sarapiquí, Reserva Selva Verde y Teleférico del Bosque Lluvioso',
+      en: 'Sarapiquí River Boat Wildlife Safari & Rainforest Aerial Tram'
+    },
+    subtitle: {
+      es: 'Aventura en la selva caribeña: caimanes, tucanes, monos y vuelo en teleférico sobre el dosel',
+      en: 'Caribbean rainforest safari: caimans, toucans, monkeys & aerial tram canopy glide'
+    },
+    category: 'wildlife',
+    region: 'sjo',
+    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+    gallery: [
+      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=800&q=85'
+    ],
+    priceUSD: 130,
+    durationHours: 9,
+    durationLabel: { es: 'Día Completo (9 hrs)', en: 'Full Day (9 hrs)' },
+    difficulty: 'fácil',
+    difficultyLabel: { es: 'Fácil - Naturaleza Pura', en: 'Easy - Pure Nature' },
+    rating: 4.92,
+    reviewsCount: 220,
+    featured: false,
+    bestseller: false,
+    ecoCert: true,
+    tourType: 'group',
+    maxGroupSize: 16,
+    freeCancellation: true,
+    description: {
+      es: 'Atraviesa la majestuosa Cordillera Central pasando por el Parque Nacional Braulio Carrillo hacia las tierras bajas del Caribe en Sarapiquí. Abordaremos una lancha techada para un safari fluvial de 2 horas por el Río Sarapiquí buscando caimanes, nutrias, perezosos, iguanas y garzas tigre. Después de un almuerzo buffet campesino, caminaremos por la reserva privada Selva Verde y subiremos al emocionante Teleférico del Bosque Lluvioso para flotar entre las copas de los árboles gigantes.',
+      en: 'Drive through the breathtaking primary rainforest of Braulio Carrillo National Park toward the lush Caribbean lowlands of Sarapiquí. Board a covered riverboat for a 2-hour wildlife safari down the Sarapiquí River, spotting caimans, river otters, sloths, iguanas, and exotic toucans. After a hearty farm-to-table lunch, take a guided nature walk through Selva Verde private reserve and glide through the tree canopy on the famous Rainforest Aerial Tram.'
+    },
+    highlights: {
+      es: ['Safari en lancha por el Río Sarapiquí observando fauna acuática y selva virgen', 'Paseo panorámico por el Parque Nacional Braulio Carrillo', 'Caminata guiada en senderos de la Reserva Privada Selva Verde', 'Vuelo en góndola en el Teleférico del Bosque Lluvioso del Atlántico', 'Almuerzo buffet campestre con ingredientes frescos locales'],
+      en: ['2-hour covered boat safari along Sarapiquí River with expert spotter', 'Scenic drive through Braulio Carrillo National Park', 'Guided nature walk at Selva Verde Private Rainforest Reserve', 'Aerial tram gondola ride through pristine rainforest canopy', 'Farm-to-table Costa Rican buffet lunch included']
+    },
+    inclusions: {
+      es: ['Transporte ida y vuelta desde hoteles en San José', 'Paseo en lancha de 2 horas en Río Sarapiquí', 'Entrada al Teleférico del Bosque Lluvioso', 'Almuerzo completo buffet campesino', 'Guía naturalista bilingüe experimentado'],
+      en: ['Roundtrip hotel transportation from San José', '2-hour Sarapiquí riverboat safari tour', 'Rainforest Aerial Tram admission ticket', 'Full traditional country buffet lunch', 'Certified bilingual naturalist guide']
+    },
+    exclusions: {
+      es: ['Bebidas alcohólicas', 'Propinas para el guía y capitán'],
+      en: ['Alcoholic beverages', 'Captain and guide tips']
+    },
+    whatToBring: {
+      es: ['Ropa fresca y cómoda', 'Capa impermeable o poncho para lluvia', 'Zapatos cerrados para caminar', 'Repelente de mosquitos y bloqueador', 'Cámara con buen zoom o binoculares'],
+      en: ['Lightweight comfortable clothing', 'Rain jacket or poncho', 'Closed-toe walking shoes', 'Bug repellent and sunscreen', 'Zoom camera or binoculars']
+    },
+    pickupHotels: [
+      'Hoteles en San José', 'Hoteles en Heredia', 'Hoteles en Alajuela', 'Hoteles en Escazú'
+    ],
+    departureTimes: ['06:30 AM'],
+    location: {
+      lat: 10.4532,
+      lng: -84.0152,
+      placeName: 'Sarapiquí / Braulio Carrillo, Heredia, Costa Rica'
+    },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   }
@@ -2923,12 +3061,21 @@ export interface TouristService {
 export const TOURIST_SERVICES: TouristService[] = [
   {
     id: 'sjo-shuttle',
-    title: { es: 'Traslado Privado Aeropuerto (SJO / LIR) a Hoteles', en: 'Private Airport Transfer (SJO / LIR) to Hotels' },
+    title: { es: 'Traslado Privado Aeropuerto SJO a Hoteles San José', en: 'Private Airport Transfer SJO to San José Hotels' },
     category: 'transport',
-    description: { es: 'Microbús A/C moderno con chofer profesional y recepción en terminal por nombre de pasajero.', en: 'Modern A/C van with professional bilingual driver and passenger name terminal greeting.' },
-    priceUSD: 85,
+    description: { es: 'Servicio oficial de Costa Rica Tours. Van ejecutiva A/C con Wi-Fi a bordo, agua embotellada y recepción con cartel en terminal.', en: 'Official Costa Rica Tours service. Executive A/C van with on-board Wi-Fi, bottled water, and airport name greeting.' },
+    priceUSD: 50,
     icon: 'Bus',
-    badge: { es: 'Servicio 24/7', en: '24/7 Service' }
+    badge: { es: 'Servicio Oficial • CST', en: 'Official Service • CST' }
+  },
+  {
+    id: 'sjo-arenal-private-transfer',
+    title: { es: 'Traslado Privado San José / SJO a La Fortuna (Volcán Arenal)', en: 'Private Transfer San José / SJO to La Fortuna (Arenal Volcano)' },
+    category: 'transport',
+    description: { es: 'Servicio puerta a puerta exclusivo de Costa Rica Tours (1-5 pax $170 / 6-10 pax $200), chofer bilingüe y paradas escénicas.', en: 'Exclusive door-to-door service by Costa Rica Tours (1-5 pax $170 / 6-10 pax $200), bilingual driver, and scenic stops.' },
+    priceUSD: 170,
+    icon: 'Bus',
+    badge: { es: 'Transporte VIP • CST', en: 'VIP Transport • CST' }
   },
   {
     id: 'car-rental-4x4',

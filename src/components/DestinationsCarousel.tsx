@@ -14,28 +14,28 @@ const destinations = [
     id: 'arenal' as TourRegion,
     name: { es: 'La Fortuna & Arenal', en: 'La Fortuna & Arenal' },
     desc: { es: 'Volcán majestuoso, aguas termales y la capital de la aventura.', en: 'Majestic volcano, hot springs, and the adventure capital.' },
-    img: 'https://images.unsplash.com/photo-1614531341773-3bff8b7cb3fc?auto=format&fit=crop&w=800&q=80',
+    img: '/src/assets/images/costa_rica_hero_1789327541732.jpg',
     color: 'from-amber-600/80 to-amber-900/90'
   },
   {
     id: 'manuel_antonio' as TourRegion,
     name: { es: 'Manuel Antonio', en: 'Manuel Antonio' },
     desc: { es: 'Playas de arena blanca y avistamiento de perezosos garantizado.', en: 'White sand beaches and guaranteed sloth sightings.' },
-    img: 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=800&q=80',
+    img: '/src/assets/images/manuel_antonio_beach_1789327578996.jpg',
     color: 'from-teal-600/80 to-stone-900/90'
   },
   {
     id: 'guanacaste' as TourRegion,
     name: { es: 'Guanacaste (Tamarindo)', en: 'Guanacaste (Tamarindo)' },
     desc: { es: 'Cultura de surf, atardeceres dorados y resorts todo incluido.', en: 'Surf culture, golden sunsets, and all-inclusive resorts.' },
-    img: 'https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=800&q=80',
+    img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
     color: 'from-blue-600/80 to-blue-900/90'
   },
   {
     id: 'monteverde' as TourRegion,
     name: { es: 'Monteverde', en: 'Monteverde' },
     desc: { es: 'Bosque nuboso místico, puentes colgantes y biodiversidad única.', en: 'Mystical cloud forest, hanging bridges, and unique biodiversity.' },
-    img: 'https://images.unsplash.com/photo-1629851610410-61b6c86996d1?auto=format&fit=crop&w=800&q=80',
+    img: '/src/assets/images/monteverde_canopy_1789327567266.jpg',
     color: 'from-green-700/80 to-green-950/90'
   },
   {

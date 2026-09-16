@@ -187,7 +187,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer relative z-10"
+            className="min-h-[44px] min-w-[44px] p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer relative z-10"
           >
             <X className="w-5 h-5" />
           </button>
@@ -264,7 +264,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
 
             <button
               onClick={onClose}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl text-xs uppercase tracking-wider transition-all shadow-lg cursor-pointer"
+              className="min-h-[44px] min-w-[44px] w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl text-xs uppercase tracking-wider transition-all shadow-lg cursor-pointer"
             >
               {language === 'es' ? 'Cerrar y Ver Mi Itinerario' : 'Close & View My Itinerary'}
             </button>
@@ -558,7 +558,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-6 py-3.5 rounded-2xl text-xs uppercase tracking-wider transition-all shadow-lg flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="min-h-[44px] min-w-[44px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-6 py-3.5 rounded-2xl text-xs uppercase tracking-wider transition-all shadow-lg flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <span>{language === 'es' ? 'Generando PNR...' : 'Generating PNR...'}</span>

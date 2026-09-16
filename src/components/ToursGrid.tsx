@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Compass, Search, Filter, SlidersHorizontal, Sparkles, LayoutGrid, List, 
   Map, Heart, Scale, X, Flame, Leaf, Check, RotateCcw, ArrowUpDown, ArrowLeft, Mic, MicOff, Loader2,
-  MapPin, ChevronDown, CheckCircle2
+  MapPin, ChevronDown, CheckCircle2, Clock, Star, Zap
 } from 'lucide-react';
 
 interface ToursGridProps {
@@ -84,10 +84,16 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
 
+  // Real-Time Reactive Sliders State ("Update Everything as Sliders Move")
+  const [maxDurationHours, setMaxDurationHours] = useState<number>(14);
+  const [minRating, setMinRating] = useState<number>(0);
+  const [showLiveSliders, setShowLiveSliders] = useState<boolean>(false);
+  const [isSliding, setIsSliding] = useState<boolean>(false);
+
   // Favorites / Wishlist LocalStorage Sync
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategory, selectedRegion, searchQuery, difficultyFilter, maxPrice, sortBy, bestsellerOnly, ecoFriendlyOnly, freeCancellationOnly]);
+  }, [selectedCategory, selectedRegion, searchQuery, difficultyFilter, maxPrice, maxDurationHours, minRating, sortBy, bestsellerOnly, ecoFriendlyOnly, freeCancellationOnly]);
 
   const [favorites, setFavorites] = useState<string[]>(() => {
     try {
@@ -157,6 +163,12 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
     // Price Filter
     if (tour.priceUSD > maxPrice) return false;
 
+    // Real-Time Duration Filter
+    if (maxDurationHours < 14 && tour.durationHours > maxDurationHours) return false;
+
+    // Real-Time Rating Filter
+    if (minRating > 0 && tour.rating < minRating) return false;
+
     // Bestseller Toggle
     if (bestsellerOnly && !tour.bestseller) return false;
 
@@ -192,6 +204,8 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
     (difficultyFilter !== 'all' ? 1 : 0) +
     (searchQuery.trim() ? 1 : 0) +
     (maxPrice < 200 ? 1 : 0) +
+    (maxDurationHours < 14 ? 1 : 0) +
+    (minRating > 0 ? 1 : 0) +
     (bestsellerOnly ? 1 : 0) +
     (ecoFriendlyOnly ? 1 : 0) +
     (favoritesOnly ? 1 : 0);
@@ -202,6 +216,8 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
     setDifficultyFilter('all');
     setSearchQuery('');
     setMaxPrice(200);
+    setMaxDurationHours(14);
+    setMinRating(0);
     setBestsellerOnly(false);
     setEcoFriendlyOnly(false);
     setFavoritesOnly(false);
@@ -273,6 +289,25 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               </select>
               <MapPin className="w-3.5 h-3.5 text-amber-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
+
+            {/* Real-time Sliders Quick Toggle */}
+            <button
+              type="button"
+              id="toggle-realtime-sliders-btn"
+              onClick={() => setShowLiveSliders(!showLiveSliders)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold transition-all cursor-pointer border ${
+                showLiveSliders || maxPrice < 200 || maxDurationHours < 14 || minRating > 0
+                  ? 'bg-amber-400 text-stone-950 border-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.35)]'
+                  : 'bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-200/90 border-emerald-500/30'
+              }`}
+              title={language === 'es' ? 'Controles deslizantes en tiempo real (precio, horas, rating)' : 'Real-time interactive sliders'}
+            >
+              <Zap className={`w-3.5 h-3.5 ${isSliding ? 'animate-bounce text-stone-950' : ''}`} />
+              <span>{language === 'es' ? 'Sliders en Vivo' : 'Live Sliders'}</span>
+              {(maxPrice < 200 || maxDurationHours < 14 || minRating > 0) && (
+                <span className="w-2 h-2 rounded-full bg-emerald-950 animate-pulse"></span>
+              )}
+            </button>
 
             {/* Dedicated Filters Drawer Button */}
             <button
@@ -350,6 +385,158 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
 
           </div>
         </div>
+
+        {/* Interactive Real-Time Sliders Island ("Update Everything in Real Time as Sliders Move") */}
+        <AnimatePresence>
+          {showLiveSliders && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden border-t border-emerald-500/20 pt-3 space-y-3"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                  </span>
+                  <span className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                    <span>⚡ {language === 'es' ? 'Ajuste en Tiempo Real' : 'Real-Time Tuning'}</span>
+                  </span>
+                  <span className="text-[10px] text-emerald-300/70 bg-emerald-950/90 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    {language === 'es' ? 'Se actualiza inmediatamente al deslizar' : 'Updates immediately as sliders move'}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="text-emerald-200 font-bold">
+                    {language === 'es' ? `${processedTours.length} de ${tours.length} tours` : `${processedTours.length} of ${tours.length} tours`}
+                  </span>
+                  {(maxPrice < 200 || maxDurationHours < 14 || minRating > 0) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMaxPrice(200);
+                        setMaxDurationHours(14);
+                        setMinRating(0);
+                      }}
+                      className="text-stone-400 hover:text-amber-400 text-[11px] underline cursor-pointer transition-colors"
+                    >
+                      {language === 'es' ? 'Restablecer sliders' : 'Reset sliders'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* 3 Interactive Sliders Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                
+                {/* Slider 1: Presupuesto Máximo */}
+                <div className="bg-emerald-950/70 border border-emerald-500/25 p-3 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-stone-300 font-semibold flex items-center gap-1">
+                      <span>💰</span>
+                      <span>{language === 'es' ? 'Precio Máx:' : 'Max Price:'}</span>
+                    </span>
+                    <span className="font-mono font-bold text-amber-300 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-500/30 text-[11px]">
+                      {maxPrice >= 200 ? (language === 'es' ? 'Sin límite' : 'No limit') : `${formatCurrency(maxPrice, currency)} (${maxPrice} USD)`}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={40}
+                    max={200}
+                    step={5}
+                    value={maxPrice}
+                    onMouseDown={() => setIsSliding(true)}
+                    onMouseUp={() => setIsSliding(false)}
+                    onTouchStart={() => setIsSliding(true)}
+                    onTouchEnd={() => setIsSliding(false)}
+                    onChange={(e) => setMaxPrice(Number(e.target.value))}
+                    className="w-full accent-amber-400 cursor-pointer h-1.5 bg-emerald-900/80 rounded-lg"
+                    aria-label={language === 'es' ? 'Filtrar por precio máximo' : 'Filter by max price'}
+                  />
+                  <div className="flex justify-between text-[9px] text-stone-400 font-mono">
+                    <span>$40</span>
+                    <span>$100</span>
+                    <span>$150</span>
+                    <span>$200+ USD</span>
+                  </div>
+                </div>
+
+                {/* Slider 2: Duración Máxima en Horas */}
+                <div className="bg-emerald-950/70 border border-emerald-500/25 p-3 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-stone-300 font-semibold flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-teal-400" />
+                      <span>{language === 'es' ? 'Duración Máx:' : 'Max Duration:'}</span>
+                    </span>
+                    <span className="font-mono font-bold text-teal-300 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-500/30 text-[11px]">
+                      {maxDurationHours >= 14 
+                        ? (language === 'es' ? 'Cualquiera (1-14h)' : 'Any (1-14h)') 
+                        : `${maxDurationHours}h ${maxDurationHours <= 4 ? (language === 'es' ? '(Medio día)' : '(Half-day)') : (language === 'es' ? '(Día completo)' : '(Full-day)')}`}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={2}
+                    max={14}
+                    step={1}
+                    value={maxDurationHours}
+                    onMouseDown={() => setIsSliding(true)}
+                    onMouseUp={() => setIsSliding(false)}
+                    onTouchStart={() => setIsSliding(true)}
+                    onTouchEnd={() => setIsSliding(false)}
+                    onChange={(e) => setMaxDurationHours(Number(e.target.value))}
+                    className="w-full accent-teal-400 cursor-pointer h-1.5 bg-emerald-900/80 rounded-lg"
+                    aria-label={language === 'es' ? 'Filtrar por duración máxima' : 'Filter by max duration'}
+                  />
+                  <div className="flex justify-between text-[9px] text-stone-400 font-mono">
+                    <span>2h</span>
+                    <span>4h</span>
+                    <span>8h</span>
+                    <span>14h+</span>
+                  </div>
+                </div>
+
+                {/* Slider 3: Calificación Mínima */}
+                <div className="bg-emerald-950/70 border border-emerald-500/25 p-3 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-stone-300 font-semibold flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                      <span>{language === 'es' ? 'Calificación Mín:' : 'Min Rating:'}</span>
+                    </span>
+                    <span className="font-mono font-bold text-amber-300 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-500/30 text-[11px]">
+                      {minRating === 0 ? (language === 'es' ? 'Todas las notas' : 'All ratings') : `≥ ${minRating.toFixed(1)} ⭐`}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={4.9}
+                    step={0.1}
+                    value={minRating}
+                    onMouseDown={() => setIsSliding(true)}
+                    onMouseUp={() => setIsSliding(false)}
+                    onTouchStart={() => setIsSliding(true)}
+                    onTouchEnd={() => setIsSliding(false)}
+                    onChange={(e) => setMinRating(Number(e.target.value))}
+                    className="w-full accent-amber-400 cursor-pointer h-1.5 bg-emerald-900/80 rounded-lg"
+                    aria-label={language === 'es' ? 'Filtrar por calificación mínima' : 'Filter by min rating'}
+                  />
+                  <div className="flex justify-between text-[9px] text-stone-400 font-mono">
+                    <span>0.0</span>
+                    <span>4.0 ⭐</span>
+                    <span>4.5 ⭐</span>
+                    <span>4.9 ⭐</span>
+                  </div>
+                </div>
+
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Horizontal Category Carousel (Slim Pills with Smooth Scroll) */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar pt-1 border-t border-emerald-500/15">
@@ -477,6 +664,20 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               <span className="bg-emerald-950/80 text-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1 text-[11px] font-medium">
                 💰 ≤ ${maxPrice}
                 <X className="w-3 h-3 cursor-pointer text-stone-400 hover:text-white ml-0.5" onClick={() => setMaxPrice(200)} />
+              </span>
+            )}
+
+            {maxDurationHours < 14 && (
+              <span className="bg-emerald-950/80 text-teal-300 px-2.5 py-0.5 rounded-full border border-teal-500/30 flex items-center gap-1 text-[11px] font-medium">
+                ⏱️ ≤ {maxDurationHours}h
+                <X className="w-3 h-3 cursor-pointer text-stone-400 hover:text-white ml-0.5" onClick={() => setMaxDurationHours(14)} />
+              </span>
+            )}
+
+            {minRating > 0 && (
+              <span className="bg-emerald-950/80 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-500/30 flex items-center gap-1 text-[11px] font-medium">
+                ⭐ ≥ {minRating.toFixed(1)}
+                <X className="w-3 h-3 cursor-pointer text-stone-400 hover:text-white ml-0.5" onClick={() => setMinRating(0)} />
               </span>
             )}
 
@@ -617,6 +818,66 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                         {preset === 200 ? (language === 'es' ? 'Todos' : 'All') : `≤ $${preset}`}
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                {/* Section 1.5: Maximum Duration in Drawer */}
+                <div className="space-y-3 bg-[#07241a]/60 p-4 rounded-2xl border border-emerald-500/20">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-teal-400" />
+                      <span>{language === 'es' ? 'Duración Máxima del Tour' : 'Max Tour Duration'}</span>
+                    </label>
+                    <span className="text-xs font-mono font-bold text-teal-300 bg-emerald-950 px-2.5 py-1 rounded-full border border-emerald-500/40">
+                      {maxDurationHours >= 14 ? (language === 'es' ? 'Cualquiera (1-14h)' : 'Any (1-14h)') : `≤ ${maxDurationHours} horas`}
+                    </span>
+                  </div>
+
+                  <input
+                    type="range"
+                    min={2}
+                    max={14}
+                    step={1}
+                    value={maxDurationHours}
+                    onChange={(e) => setMaxDurationHours(Number(e.target.value))}
+                    className="w-full accent-teal-400 cursor-pointer h-2 bg-emerald-950 rounded-lg"
+                  />
+
+                  <div className="flex justify-between text-[10px] text-stone-400 font-mono">
+                    <span>2h (Corto)</span>
+                    <span>5h (Medio)</span>
+                    <span>8h (Extenso)</span>
+                    <span>14h (Todo el día)</span>
+                  </div>
+                </div>
+
+                {/* Section 1.6: Minimum Rating in Drawer */}
+                <div className="space-y-3 bg-[#07241a]/60 p-4 rounded-2xl border border-emerald-500/20">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+                      <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                      <span>{language === 'es' ? 'Calificación Mínima' : 'Minimum Rating'}</span>
+                    </label>
+                    <span className="text-xs font-mono font-bold text-amber-300 bg-emerald-950 px-2.5 py-1 rounded-full border border-emerald-500/40">
+                      {minRating === 0 ? (language === 'es' ? 'Todas' : 'All') : `≥ ${minRating.toFixed(1)} ⭐`}
+                    </span>
+                  </div>
+
+                  <input
+                    type="range"
+                    min={0}
+                    max={4.9}
+                    step={0.1}
+                    value={minRating}
+                    onChange={(e) => setMinRating(Number(e.target.value))}
+                    className="w-full accent-amber-400 cursor-pointer h-2 bg-emerald-950 rounded-lg"
+                  />
+
+                  <div className="flex justify-between text-[10px] text-stone-400 font-mono">
+                    <span>Cualquiera</span>
+                    <span>4.0+ ⭐</span>
+                    <span>4.5+ ⭐</span>
+                    <span>4.8+ ⭐</span>
                   </div>
                 </div>
 

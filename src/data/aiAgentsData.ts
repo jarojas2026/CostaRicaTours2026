@@ -2,6 +2,138 @@ import { AIAgent, AgentId, Language, AgentWorkflowCategory } from '../types';
 
 export const AI_AGENTS: AIAgent[] = [
   {
+    id: 'counter_agent',
+    workflowCategory: 'booking',
+    name: {
+      es: 'Sofía • Counter Agent & Mostrador',
+      en: 'Sofía • Front-Desk Counter Agent',
+      de: 'Sofía • Counter-Agentur & Schalter',
+      fr: 'Sofía • Agente de Comptoir & Accueil',
+      zh: 'Sofía • 前台柜台客服专员',
+      ja: 'ソフィア • カウンター＆予約デスク'
+    },
+    role: {
+      es: 'Experta en Turismo, Ejecución Inmediata de Reservas & Servicio al Cliente',
+      en: 'Tourism Expert, Instant Booking Execution & Customer Service',
+      de: 'Tourismusexpertin, Sofortbuchung & Kundenservice',
+      fr: 'Experte en Tourisme, Réservations Immédiates & Service Client',
+      zh: '哥斯达黎加旅游专家、即时预订执行与客户服务',
+      ja: '観光エキスパート・即時予約執行・カスタマーサービス'
+    },
+    badge: {
+      es: 'Mostrador 24/7',
+      en: 'Front Desk 24/7',
+      de: 'Schalter 24/7',
+      fr: 'Comptoir 24/7',
+      zh: '24小时前台',
+      ja: '24時間デスク'
+    },
+    avatarEmoji: '🛎️',
+    themeColor: 'amber',
+    bgGradient: 'from-amber-500/20 via-emerald-500/10 to-stone-900/40',
+    borderColor: '#F59E0B',
+    description: {
+      es: 'Agente integral de mostrador turístico. Gestiona y ejecuta reservas en tiempo real, verifica disponibilidad, coordina pagos, atiende dudas de clientes y brinda asesoría experta sobre Costa Rica con conocimiento instantáneo de alto nivel.',
+      en: 'Comprehensive front-desk tourism agent. Manages and executes real-time bookings, verifies availability, coordinates payments, handles customer inquiries, and delivers expert Costa Rica guidance with instant knowledge.',
+      de: 'Umfassende Counter-Agentin für Tourismus. Verwaltet und führt Sofortbuchungen aus, prüft Verfügbarkeiten und bietet Expertenrat für Costa Rica.',
+      fr: 'Agente de comptoir touristique polyvalente. Gère et exécute les réservations en direct, vérifie les disponibilités et conseille avec expertise.',
+      zh: '全能前台旅游专员。实时执行预订、查验空位、协调支付并提供权威的哥斯达黎加旅游咨询。',
+      ja: '総合カウンターデスク専門員。リアルタイムでの予約実行、空き枠確認、決済案内、観光案内を即座に提供します。'
+    },
+    welcomeMessage: {
+      es: '¡Pura Vida! Bienvenida(o) al Mostrador de Costa Rica Tours. Soy Sofía, tu Counter Agent oficial. Como experta en turismo costarricense, puedo ejecutar tus reservas al instante, verificar cupos en vivo, resolver cualquier duda sobre tus reservas existentes y orientarte con conocimiento instantáneo. ¿Qué tour o gestión deseas realizar hoy?',
+      en: 'Pura Vida! Welcome to the Costa Rica Tours Front Desk. I am Sofía, your official Counter Agent. As a tourism specialist, I can execute your bookings immediately, check live availability, assist with existing bookings, and answer any travel question with instant precision. How can I assist you today?',
+      de: 'Pura Vida! Willkommen am Schalter von Costa Rica Tours. Ich bin Sofía, Ihre offizielle Counter-Agentin. Ich kann Buchungen sofort ausführen, Plätze prüfen und Ihnen bei allen Fragen helfen. Wie kann ich behilflich sein?',
+      fr: 'Pura Vida ! Bienvenue au comptoir de Costa Rica Tours. Je suis Sofía, votre agente officielle. Je peux exécuter vos réservations instantanément et répondre à toutes vos questions.',
+      zh: 'Pura Vida！欢迎光临 Costa Rica Tours 官方服务台。我是您的专属前台专员 Sofía。我可以为您即时执行预订、查验实时席位、查询现有订单，并以专家水准提供解答。今天您想了解或预订什么呢？',
+      ja: 'プラ・ビダ！コスタリカツアーズの受付デスクへようこそ。公式カウンターエージェントのソフィアです。即時予約の実行、空席の確認、既存予約の管理、現地観光のご案内を承ります。本日はどのようなご用件でしょうか？'
+    },
+    suggestedQuestions: {
+      es: [
+        'Quiero hacer una reserva inmediata',
+        'Consultar o cambiar mi reserva existente',
+        '¿Cuáles son los mejores tours en Arenal y Manuel Antonio?',
+        '¿Cómo funcionan los pagos por SINPE Móvil y tarjeta?'
+      ],
+      en: [
+        'I want to make an instant booking',
+        'Check or modify my existing reservation',
+        'What are the best tours in Arenal and Manuel Antonio?',
+        'How do payments work (Card, PayPal, SINPE)?'
+      ],
+      de: [
+        'Ich möchte eine Sofortbuchung vornehmen',
+        'Meine bestehende Buchung einsehen oder ändern',
+        'Was sind die besten Touren in Arenal und Manuel Antonio?',
+        'Wie funktionieren Zahlungen per Karte oder PayPal?'
+      ],
+      fr: [
+        'Je souhaite effectuer une réservation immédiate',
+        'Consulter ou modifier ma réservation existante',
+        'Quels sont les meilleurs circuits à Arenal et Manuel Antonio ?',
+        'Comment fonctionnent les paiements par carte ou PayPal ?'
+      ],
+      zh: [
+        '我想立即预订行程',
+        '查询或修改我的现有预订',
+        '阿雷纳尔与曼努埃尔安东尼奥的最佳行程有哪些？',
+        '信用卡与移动支付如何操作？'
+      ],
+      ja: [
+        '今すぐ予約手続きを行いたいです',
+        '既存の予約状況を確認・変更したいです',
+        'アレナルやマヌエル・アントニオのおすすめツアーは？',
+        'クレジットカードやSINPE決済の仕組みを教えてください'
+      ]
+    },
+    specialtyTags: {
+      es: ['Reservas Inmediatas', 'Servicio al Cliente', 'Experta en Turismo', 'Disponibilidad en Vivo', 'Políticas & Pagos'],
+      en: ['Instant Bookings', 'Customer Service', 'Tourism Expert', 'Live Availability', 'Policies & Payments'],
+      de: ['Sofortbuchungen', 'Kundenservice', 'Tourismus-Expertin', 'Live-Verfügbarkeit', 'Zahlungsmethoden'],
+      fr: ['Réservations Immédiates', 'Service Client', 'Experte Tourisme', 'Disponibilité en Direct', 'Paiements'],
+      zh: ['即时预订', '客户服务', '旅游专家', '实时席位', '政策与付款'],
+      ja: ['即時予約', 'カスタマーサポート', '観光エキスパート', 'リアルタイム空き枠', '決済・規約']
+    },
+    workflowSteps: {
+      es: [
+        '1. Cotización y verificación de cupos en tiempo real (USD y CRC)',
+        '2. Captura y validación de datos del viajero',
+        '3. Ejecución directa de reserva y emisión de voucher digital QR',
+        '4. Asistencia post-venta: reprogramaciones, traslados y atención multicanal'
+      ],
+      en: [
+        '1. Real-time availability check & price quote (USD & CRC)',
+        '2. Traveler details capture & verification',
+        '3. Direct booking execution & digital QR voucher issuance',
+        '4. Post-sale customer care: reschedules, transfers & support'
+      ],
+      de: [
+        '1. Live-Verfügbarkeitsprüfung & Angebot (USD & CRC)',
+        '2. Erfassung der Reisedaten',
+        '3. Sofortige Buchungsausführung & QR-Voucher',
+        '4. Kundenservice & Umbuchungen'
+      ],
+      fr: [
+        '1. Vérification en direct des places et devis (USD & CRC)',
+        '2. Saisie des coordonnées voyageurs',
+        '3. Exécution directe et bon QR numérique',
+        '4. Suivi client et modifications'
+      ],
+      zh: [
+        '1. 实时查验空位与报价（美元与科朗）',
+        '2. 采集并核对旅客资料',
+        '3. 直接执行预订并签发带二维码的电子凭证',
+        '4. 售后保障：改签、专车接送与多渠道关怀'
+      ],
+      ja: [
+        '1. リアルタイムでの空席確認と見積提示（USD・CRC）',
+        '2. 旅行者情報の入力と検証',
+        '3. 即時予約の成立とQRバウチャーの発行',
+        '4. アフターケア：日程変更・送迎手配・サポート'
+      ]
+    }
+  },
+  {
     id: 'customer_service',
     workflowCategory: 'planning_support',
     name: {

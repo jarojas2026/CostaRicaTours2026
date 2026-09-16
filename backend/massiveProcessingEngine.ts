@@ -1,0 +1,379 @@
+/**
+ * ⚡ MOTOR DE PROCESAMIENTO MASIVO Y COORDINACIÓN AUTÓNOMA POR SEGUNDO
+ * =========================================================================
+ * Diseñado para soportar alto volumen de tráfico concurrente (cientos de consultas
+ * y reservas per segundo) con aislamiento por solicitud, control de contención atómico,
+ * micro-colas no bloqueantes y ciclo de vida autónomo individual con cada proveedor.
+ * =========================================================================
+ */
+
+import crypto from 'crypto';
+import { EventEmitter } from 'events';
+import { 
+  getAllBookings, 
+  updateBookingStatus, 
+  getSlotKey,
+  getFirestoreDb,
+  getBookingsCollection
+} from './bookingService';
+import { 
+  executeProviderRealtimeCoordination, 
+  executeCustomerBookingConfirmation, 
+  executeAutonomousProviderFallback,
+  MASTER_OPERATORS_REGISTRY 
+} from './nativeWorkflows';
+import { logAutomationExecution } from './nativeAutomationEngine';
+import { sendTelegramEscalation } from './notificationService';
+
+// Tipos de Prioridad en la Cola de Alto Rendimiento
+export type QueuePriority = 'EMERGENCY' | 'PAYMENT_VERIFICATION' | 'PROVIDER_DISPATCH' | 'BOOKING_LIFECYCLE' | 'INQUIRY_CACHE' | 'BACKGROUND_AUDIT';
+
+export interface MassiveTask<T = any> {
+  id: string;
+  type: string;
+  priority: QueuePriority;
+  data: T;
+  createdAt: number;
+  attempts: number;
+  maxAttempts: number;
+  resolve: (value: any) => void;
+  reject: (reason?: any) => void;
+}
+
+export interface MassiveThroughputMetrics {
+  totalRequestsProcessed: number;
+  requestsPerSecond: number;
+  peakRps: number;
+  averageLatencyMs: number;
+  p99LatencyMs: number;
+  activeWorkers: number;
+  queueDepth: number;
+  activeProviderMonitors: number;
+  successfulDispatches: number;
+  autoRecoveredFailovers: number;
+  uptimeSeconds: number;
+  systemHealth: 'OPTIMAL' | 'HIGH_LOAD' | 'CONGESTION_MANAGED';
+}
+
+/**
+ * ⚠️ AVISO DE ARQUITECTURA EFÍMERA:
+ * Este estado es efímero y se pierde en reinicio/escalado — no usar para lógica de negocio crítica.
+ * (Las colas de métricas de RPS, latencias y contadores locales son solo para observabilidad en tiempo real).
+ */
+
+/**
+ * Monitor Autónomo del Ciclo de Vida Individual por Proveedor (100% Persistente en Firestore)
+ * Gestiona el seguimiento de SLA de cada reserva de forma duradera y resistente a reinicios de Cloud Run.
+ */
+class IndividualProviderLifecycleManager {
+  /**
+   * Inicia el ciclo autónomo persistiendo el estado directamente en Firestore
+   */
+  async startAutonomousTracking(bookingId: string, providerId: string, tourData: any) {
+    try {
+      const db = getFirestoreDb();
+      const col = getBookingsCollection();
+      const now = Date.now();
+
+      const trackingPayload = {
+        dispatchedAt: now,
+        providerStatus: 'pending',
+        reminderSent: false,
+        escalated: false,
+        providerId
+      };
+
+      if (col) {
+        await col.doc(bookingId).set(trackingPayload, { merge: true });
+      } else {
+        await updateBookingStatus(bookingId, trackingPayload);
+      }
+      console.log(`📡 [LIFECYCLE] Tracking autónomo persistido en Firestore para reserva #${bookingId} (Proveedor: ${providerId})`);
+    } catch (err) {
+      console.error(`Error iniciando tracking autónomo para #${bookingId}:`, err);
+    }
+  }
+
+  /**
+   * Evalúa periódicamente los SLAs pendientes directamente consultando Firestore (Sobrevive a reinicios y escalado a cero).
+   */
+  async sweepPendingSlas(): Promise<number> {
+    let evaluatedCount = 0;
+    try {
+      const all = await getAllBookings();
+      const now = Date.now();
+      const SLA_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutos
+
+      for (const booking of all) {
+        const bookingId = booking.id || booking.bookingId;
+        const providerId = booking.providerId || 'alsama-tours-cr';
+        const dispatchedAt = booking.dispatchedAt ? Number(booking.dispatchedAt) : 0;
+        const providerStatus = booking.providerStatus || 'pending';
+        const escalated = booking.escalated === true;
+
+        if (
+          bookingId &&
+          providerStatus === 'pending' &&
+          !escalated &&
+          dispatchedAt > 0 &&
+          now - dispatchedAt > SLA_THRESHOLD_MS
+        ) {
+          console.warn(`⚡ [AUTONOMOUS-SLA] Operador ${providerId} no respondió en 15m para #${bookingId}. Iniciando Failover Autónomo duradero.`);
+          await executeAutonomousProviderFallback(bookingId, providerId, `SLA Expirado sin confirmación del proveedor ${providerId}`);
+          
+          await updateBookingStatus(bookingId, { escalated: true, providerStatus: 'escalated_fallback' });
+          evaluatedCount++;
+        }
+      }
+    } catch (err) {
+      console.error('Error en barredor periódico de SLAs:', err);
+    }
+    return evaluatedCount;
+  }
+
+  stopTracking(bookingId: string) {
+    // Ya no usa timers en memoria; el estado se gestiona en Firestore.
+  }
+
+  getActiveMonitorsCount(): number {
+    return 0; // Estado distribuido en Firestore
+  }
+}
+
+/**
+ * Orquestador Principal de Procesamiento Masivo
+ */
+export class MassiveProcessingEngine extends EventEmitter {
+  private queue: MassiveTask[] = [];
+  private concurrencyLimit = 50;
+  private activeWorkers = 0;
+  private totalProcessed = 0;
+  private latencies: number[] = [];
+  private lastSecondRequests = 0;
+  private currentRps = 0;
+  private peakRps = 0;
+  private startTime = Date.now();
+  private successfulDispatches = 0;
+  private autoRecoveredFailovers = 0;
+
+  public providerLifecycle = new IndividualProviderLifecycleManager();
+
+  constructor() {
+    super();
+    this.startThroughputSampler();
+    this.startFirestoreSlaSweeper();
+  }
+
+  /**
+   * Encola una tarea con prioridad para procesamiento masivo no bloqueante
+   */
+  async enqueue<T = any>(
+    type: string, 
+    data: T, 
+    priority: QueuePriority = 'BOOKING_LIFECYCLE',
+    maxAttempts = 3
+  ): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const task: MassiveTask<T> = {
+        id: `task_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        type,
+        priority,
+        data,
+        createdAt: Date.now(),
+        attempts: 0,
+        maxAttempts,
+        resolve,
+        reject
+      };
+
+      const priorityWeights: Record<QueuePriority, number> = {
+        EMERGENCY: 100,
+        PAYMENT_VERIFICATION: 80,
+        PROVIDER_DISPATCH: 70,
+        BOOKING_LIFECYCLE: 50,
+        INQUIRY_CACHE: 30,
+        BACKGROUND_AUDIT: 10
+      };
+
+      const taskWeight = priorityWeights[priority] || 50;
+      let inserted = false;
+
+      for (let i = 0; i < this.queue.length; i++) {
+        const itemWeight = priorityWeights[this.queue[i].priority] || 50;
+        if (taskWeight > itemWeight) {
+          this.queue.splice(i, 0, task);
+          inserted = true;
+          break;
+        }
+      }
+
+      if (!inserted) {
+        this.queue.push(task);
+      }
+
+      this.lastSecondRequests++;
+      this.processNext();
+    });
+  }
+
+  /**
+   * Bucle de ejecución concurrente de la cola
+   */
+  private async processNext() {
+    if (this.activeWorkers >= this.concurrencyLimit || this.queue.length === 0) {
+      return;
+    }
+
+    const task = this.queue.shift();
+    if (!task) return;
+
+    this.activeWorkers++;
+    const taskStart = Date.now();
+
+    try {
+      task.attempts++;
+      const result = await this.executeTask(task);
+      
+      const duration = Date.now() - taskStart;
+      this.recordLatency(duration);
+      this.totalProcessed++;
+
+      task.resolve(result);
+    } catch (error: any) {
+      if (task.attempts < task.maxAttempts) {
+        console.warn(`[MASSIVE-ENGINE] Reintentando tarea ${task.id} (${task.attempts}/${task.maxAttempts}):`, error.message);
+        setTimeout(() => {
+          this.queue.push(task);
+          this.processNext();
+        }, 100 * Math.pow(2, task.attempts));
+      } else {
+        console.error(`[MASSIVE-ENGINE] Fallo definitivo en tarea ${task.id}:`, error);
+        task.reject(error);
+      }
+    } finally {
+      this.activeWorkers--;
+      setImmediate(() => this.processNext());
+    }
+  }
+
+  /**
+   * Ejecutor especializado por tipo de tarea
+   */
+  private async executeTask(task: MassiveTask): Promise<any> {
+    switch (task.type) {
+      case 'INDIVIDUAL_BOOKING_AUTONOMOUS_DISPATCH': {
+        const { booking } = task.data;
+        const bookingId = booking.bookingId || booking.id;
+        const providerId = booking.providerId || 'alsama-tours-cr';
+
+        // 1. Despacho en tiempo real al proveedor
+        const coordRes = await executeProviderRealtimeCoordination({
+          bookingId,
+          idReserva: bookingId,
+          tourName: booking.tourName,
+          tourDate: booking.date,
+          tourTime: booking.time,
+          adults: booking.adults,
+          children: booking.children,
+          totalUSD: booking.totalUSD,
+          customerName: booking.customerName,
+          customerPhone: booking.customerPhone,
+          pickupHotel: booking.pickupHotel,
+          providerId
+        });
+
+        // 2. Notificación y Voucher al Cliente
+        await executeCustomerBookingConfirmation({
+          bookingId,
+          idReserva: bookingId,
+          tourName: booking.tourName,
+          tourDate: booking.date,
+          tourTime: booking.time,
+          adults: booking.adults,
+          children: booking.children,
+          totalUSD: booking.totalUSD,
+          customerName: booking.customerName,
+          customerEmail: booking.customerEmail,
+          customerPhone: booking.customerPhone,
+          pickupHotel: booking.pickupHotel
+        });
+
+        // 3. Iniciar monitor autónomo de SLA individual persistido en Firestore
+        await this.providerLifecycle.startAutonomousTracking(bookingId, providerId, booking);
+        this.successfulDispatches++;
+
+        return { success: true, bookingId, providerDispatched: coordRes.success };
+      }
+
+      default:
+        return { success: true, message: `Task ${task.type} ejecutada con éxito` };
+    }
+  }
+
+  private recordLatency(latencyMs: number) {
+    this.latencies.push(latencyMs);
+    if (this.latencies.length > 500) {
+      this.latencies.shift();
+    }
+  }
+
+  /**
+   * Muestreador de throughput por segundo
+   */
+  private startThroughputSampler() {
+    setInterval(() => {
+      this.currentRps = this.lastSecondRequests;
+      if (this.currentRps > this.peakRps) {
+        this.peakRps = this.currentRps;
+      }
+      this.lastSecondRequests = 0;
+    }, 1000);
+  }
+
+  /**
+   * Barredor periódico de SLAs pendientes en Firestore (ejecuta cada 60s)
+   */
+  private startFirestoreSlaSweeper() {
+    setInterval(async () => {
+      try {
+        await this.providerLifecycle.sweepPendingSlas();
+      } catch (err) {
+        console.error('Error en ciclo de barrido de SLA:', err);
+      }
+    }, 60000);
+  }
+
+  /**
+   * Métricas en tiempo real del motor masivo
+   */
+  getMetrics(): MassiveThroughputMetrics {
+    const avgLatency = this.latencies.length > 0
+      ? Math.round(this.latencies.reduce((a, b) => a + b, 0) / this.latencies.length)
+      : 5;
+
+    const sorted = [...this.latencies].sort((a, b) => a - b);
+    const p99 = sorted.length > 0 ? sorted[Math.floor(sorted.length * 0.99)] || avgLatency : avgLatency;
+
+    let health: 'OPTIMAL' | 'HIGH_LOAD' | 'CONGESTION_MANAGED' = 'OPTIMAL';
+    if (this.queue.length > 100) health = 'CONGESTION_MANAGED';
+    else if (this.activeWorkers > 35 || this.currentRps > 80) health = 'HIGH_LOAD';
+
+    return {
+      totalRequestsProcessed: this.totalProcessed,
+      requestsPerSecond: this.currentRps,
+      peakRps: this.peakRps,
+      averageLatencyMs: avgLatency,
+      p99LatencyMs: p99,
+      activeWorkers: this.activeWorkers,
+      queueDepth: this.queue.length,
+      activeProviderMonitors: 0,
+      successfulDispatches: this.successfulDispatches,
+      autoRecoveredFailovers: this.autoRecoveredFailovers,
+      uptimeSeconds: Math.floor((Date.now() - this.startTime) / 1000),
+      systemHealth: health
+    };
+  }
+}
+
+// Instancia singleton para toda la aplicación
+export const massiveEngine = new MassiveProcessingEngine();

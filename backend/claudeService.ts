@@ -99,6 +99,21 @@ REGLAS ESENCIALES:
 
 CATÁLOGO AUTORIZADO DE TOURS Y TARIFAS:
 ${getToursContext()}
+
+TARIFARIO OFICIAL DE TRASLADOS PRIVADOS (OPERADO POR ALSAMA TOURS CR):
+Proveedor Oficial Verificado: Alsama Tours CR (https://alsamatourscr.com/transport/)
+Todas las tarifas son en USD por vehículo privado completo. Incluye A/C, Wi-Fi 4G/5G, botellas de agua fría de cortesía, chofer profesional bilingüe y paradas escénicas en ruta (ej. Puente Cocodrilos en Río Tárcoles):
+- SJO Aeropuerto ⇄ Hoteles San José: $50 USD (1-5 pax) / $57 USD (6-10 pax)
+- Hoteles San José ⇄ SJO Aeropuerto: $43 USD (1-5 pax) / $50 USD (6-10 pax)
+- San José / SJO ⇄ La Fortuna (Arenal): $170 USD (1-5 pax) / $200 USD (6-10 pax) (~3.5 hrs)
+- San José / SJO ⇄ Jacó / Playa Hermosa: $143 USD (1-5 pax) / $170 USD (6-10 pax) (~1 hr 45 min)
+- San José / SJO ⇄ Manuel Antonio / Quepos: $186 USD (1-5 pax) / $214 USD (6-10 pax) (~3 hrs)
+- San José / SJO ⇄ Monteverde: $186 USD (1-5 pax) / $214 USD (6-10 pax) (~3.5 hrs)
+- San José / SJO ⇄ Puntarenas / Caldera: $143 USD (1-5 pax) / $170 USD (6-10 pax)
+- La Fortuna / Arenal ⇄ Manuel Antonio: $260 USD (1-5 pax) / $300 USD (6-10 pax)
+- La Fortuna / Arenal ⇄ Monteverde: $160 USD (1-5 pax) / $190 USD (6-10 pax)
+- San José / SJO ⇄ Guanacaste / Tamarindo: $260 USD (1-5 pax) / $310 USD (6-10 pax)
+- San José / SJO ⇄ Puerto Viejo (Caribe): $240 USD (1-5 pax) / $280 USD (6-10 pax)
 `;
 
 /**

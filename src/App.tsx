@@ -30,10 +30,15 @@ import { HomeTrustSections } from './components/HomeTrustSections';
 import { BottomNav } from './components/BottomNav';
 import { FlightTrackerGadget } from './components/FlightTrackerGadget';
 import { LiveTouristIntelligence } from './components/LiveTouristIntelligence';
-import { Compass, ArrowLeft, Home, ChevronRight, Plane } from 'lucide-react';
+import { GoogleWorkspaceHub } from './components/GoogleWorkspaceHub';
+import { PhotoTourFinder } from './components/PhotoTourFinder';
+import { Compass, ArrowLeft, Home, ChevronRight, Plane, Mail, Calendar } from 'lucide-react';
+
+import { TourDetailModal } from './components/TourDetailModal';
+import { SEOHead } from './components/SEOHead';
+import { OfflineBanner } from './components/OfflineBanner';
 
 // Code-splitting via React.lazy to reduce initial JS bundle size
-const TourDetailModal = lazy(() => import('./components/TourDetailModal').then(m => ({ default: m.TourDetailModal })));
 const ItineraryPlanner = lazy(() => import('./components/ItineraryPlanner').then(m => ({ default: m.ItineraryPlanner })));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const AIAssistant = lazy(() => import('./components/AIAssistant').then(m => ({ default: m.AIAssistant })));
@@ -46,7 +51,7 @@ export default function App() {
   const { tours: TOURS, loading: toursLoading } = useTours();
   const [language, setLanguage] = useState<Language>(detectBrowserLanguage);
   const [currency, setCurrency] = useState<Currency>('USD');
-  const [activeTab, setActiveTab] = useState<'home' | 'tours' | 'map' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'culture' | 'flights'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'tours' | 'map' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'culture' | 'flights' | 'workspace'>('home');
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
@@ -223,6 +228,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#041711] text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950 relative pb-16 xl:pb-0">
+      <SEOHead language={language} />
+      <OfflineBanner language={language} />
       <AmbientBackground />
       {/* Top Header Navigation */}
       <Header
@@ -263,6 +270,7 @@ export default function App() {
                   {activeTab === 'itinerary' && `✨ ${language === 'es' ? 'Planificador Inteligente de Itinerarios' : 'AI Trip Planner'}`}
                   {activeTab === 'culture' && `🇨🇷 ${language === 'es' ? 'Rincón Tico: Cultura, Comida y Café' : 'Tico Culture & Slang'}`}
                   {activeTab === 'tools' && `🚐 ${language === 'es' ? 'Transporte, Shuttles & Buses' : 'Transport & Shuttles'}`}
+                  {activeTab === 'workspace' && `✉️ 📅 ${language === 'es' ? 'Google Workspace (Gmail & Calendar)' : 'Google Workspace (Gmail & Calendar)'}`}
                 </span>
               </div>
 
@@ -361,7 +369,12 @@ export default function App() {
           </div>
         )}
 
-        {/* Tab: Authentic Costa Rican Culture (Rincón Tico) */}
+        {/* Tab: Google Workspace (Gmail & Calendar) */}
+        {activeTab === 'workspace' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <GoogleWorkspaceHub language={language} />
+          </div>
+        )}
         {activeTab === 'culture' && (
           <div className="py-8">
             <TicoCultureSection language={language} onBack={() => setActiveTab('home')} onExploreTours={() => setActiveTab('tours')} />
@@ -474,6 +487,10 @@ export default function App() {
         {/* Tab 3: AI Concierge Chat */}
         {activeTab === 'ai' && (
           <div className="space-y-8 pb-12">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+              <PhotoTourFinder />
+            </div>
+
             <Suspense fallback={
               <div className="py-24 text-center text-emerald-400 flex flex-col items-center justify-center gap-3">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-400"></div>
@@ -525,24 +542,15 @@ export default function App() {
 
       {/* Tour Details Booking Modal */}
       {selectedTour && (
-        <Suspense fallback={
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-[#07241a] border border-emerald-500/30 rounded-2xl p-6 text-stone-100 flex items-center gap-3">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-400"></div>
-              <span>{language === 'es' ? 'Cargando detalles del tour...' : 'Loading tour details...'}</span>
-            </div>
-          </div>
-        }>
-          <TourDetailModal
-            tour={selectedTour}
-            isOpen={!!selectedTour}
-            language={language}
-            currency={currency}
-            onClose={() => setSelectedTour(null)}
-            onConfirmBooking={handleBookingSuccess}
-            onBookingSuccess={handleBookingSuccess}
-          />
-        </Suspense>
+        <TourDetailModal
+          tour={selectedTour}
+          isOpen={!!selectedTour}
+          language={language}
+          currency={currency}
+          onClose={() => setSelectedTour(null)}
+          onConfirmBooking={handleBookingSuccess}
+          onBookingSuccess={handleBookingSuccess}
+        />
       )}
 
       {/* Booking Confirmation Voucher Modal */}

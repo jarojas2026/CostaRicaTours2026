@@ -1,52 +1,71 @@
 @import "tailwindcss";
 
+@theme {
+  --color-jungle-950: #041711;
+  --color-jungle-900: #052118;
+  --color-jungle-800: #072e21;
+  --color-jungle-700: #0a402d;
+  
+  --color-accent-amber: #f59e0b;
+  --color-accent-coral: #fb7185;
+  --color-sand: #f8fafc;
+}
+
 @layer base {
   :root {
     --font-heading: 'Fraunces', serif;
     --font-body: 'Work Sans', sans-serif;
+    --radius-card: 12px;
+    --radius-pill: 9999px;
   }
   
   body {
-    background-color: #041711; /* Deep Costa Rican Rainforest Emerald */
-    color: #F8FAFC;
-    font-family: 'Work Sans', sans-serif;
+    background-color: var(--color-jungle-950);
+    color: var(--color-sand);
+    font-family: var(--font-body);
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Fraunces', serif;
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
   }
 }
 
 @layer components {
-  /* Ultra-Modern Glassmorphism & Cyber Card Utilities */
+  /* Premium Card Styles (Anti-Slop) */
   .modern-card {
-    @apply bg-[#07241a]/85 backdrop-blur-xl border border-emerald-500/30 rounded-3xl transition-all duration-300 shadow-2xl;
+    @apply bg-[#052118] border border-emerald-900/40 rounded-[12px] transition-all duration-300;
   }
+  
   .modern-card:hover {
-    @apply border-amber-400/80 shadow-[0_10px_40px_rgba(245,158,11,0.15)] -translate-y-1;
+    @apply border-emerald-500/30 shadow-xl shadow-black/40 -translate-y-1;
   }
 
   .modern-gradient-border {
     position: relative;
-    background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(245,158,11,0.1));
+    background: #052118;
     border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 12px;
   }
 
-  /* Cyber Node & Interactive Pipeline Flow Styles */
+  /* Node Flow Styles */
   .node-cyber-card {
-    @apply relative overflow-hidden bg-[#041d13]/90 backdrop-blur-xl border border-emerald-500/25 rounded-2xl transition-all duration-300 shadow-lg;
-  }
-  .node-cyber-card:hover {
-    @apply border-amber-400/70 shadow-[0_0_25px_rgba(245,158,11,0.2)] -translate-y-0.5;
-  }
-  .node-cyber-card.active {
-    @apply border-amber-400 ring-2 ring-amber-400/30 bg-[#072a1c] shadow-[0_0_30px_rgba(245,158,11,0.25)];
+    @apply relative overflow-hidden bg-[#052118] border border-emerald-900/50 rounded-xl transition-all duration-300 shadow-lg;
   }
 
-  /* Animated pulse connector line between nodes */
+  .node-cyber-card:hover {
+    @apply border-amber-500/50 -translate-y-0.5;
+  }
+
+  .node-cyber-card.active {
+    @apply border-amber-400 bg-[#072e21] shadow-lg shadow-amber-900/20;
+  }
+
   .pipeline-connector-animated {
-    background: linear-gradient(90deg, #10b981 0%, #f59e0b 50%, #10b981 100%);
+    background: linear-gradient(90deg, #059669 0%, #f59e0b 50%, #059669 100%);
     background-size: 200% 100%;
     animation: pipelineFlow 2.5s linear infinite;
   }
@@ -56,7 +75,6 @@
     100% { background-position: -200% 0; }
   }
 
-  /* Node pulse radar effect */
   .node-pulse-ring {
     position: relative;
   }
@@ -76,152 +94,112 @@
 
   /* Modern Form Controls */
   .input-modern {
-    @apply w-full px-4 py-3 min-h-[44px] border border-stone-200 bg-stone-50 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all duration-300 text-stone-800 font-medium placeholder-stone-400 text-sm;
+    @apply w-full px-4 py-3 min-h-[44px] border border-stone-200 bg-stone-50 rounded-xl focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition-all duration-200 text-stone-800 font-medium placeholder-stone-400 text-base;
   }
   
   .label-modern {
-    @apply text-[11px] font-black tracking-wider text-stone-500 uppercase mb-2 block;
+    @apply text-[11px] font-bold tracking-wide text-stone-500 mb-2 block;
   }
   
-  /* Modern Professional Buttons */
+  /* Solid, high-contrast buttons */
   .btn-primary {
-    @apply bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black py-3.5 px-6 min-h-[44px] rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 flex justify-center items-center gap-2 cursor-pointer;
+    @apply bg-[#f59e0b] text-stone-950 font-bold py-3 px-6 min-h-[44px] rounded-full hover:bg-[#d97706] active:scale-[0.98] transition-all duration-200 flex justify-center items-center gap-2 cursor-pointer;
   }
   
   .btn-secondary {
-    @apply bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-black py-3.5 px-6 min-h-[44px] rounded-xl shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 flex justify-center items-center gap-2 cursor-pointer;
+    @apply bg-[#059669] text-white font-bold py-3 px-6 min-h-[44px] rounded-full hover:bg-[#047857] active:scale-[0.98] transition-all duration-200 flex justify-center items-center gap-2 cursor-pointer;
   }
   
   .btn-outline {
-    @apply border-2 border-stone-200 bg-white text-stone-700 font-bold py-3 px-6 min-h-[44px] rounded-xl hover:bg-stone-50 hover:border-stone-300 active:scale-[0.98] transition-all duration-300 flex justify-center items-center gap-2 cursor-pointer;
+    @apply border border-stone-300 bg-white text-stone-700 font-bold py-3 px-6 min-h-[44px] rounded-full hover:bg-stone-50 hover:border-stone-400 active:scale-[0.98] transition-all duration-200 flex justify-center items-center gap-2 cursor-pointer;
   }
-  
+
   /* Polished Modal Panel */
   .modal-panel {
-    @apply bg-white p-4 sm:p-6 md:p-8 rounded-[24px] shadow-2xl shadow-black/50 border border-stone-100/50 relative text-stone-900 max-h-[92vh] overflow-y-auto;
+    @apply bg-white p-5 sm:p-8 rounded-2xl shadow-2xl shadow-black/60 relative text-stone-900 max-h-[92vh] overflow-y-auto;
   }
-  
-  /* Modern close button */
+
   .btn-close {
-    @apply absolute top-3 right-3 sm:top-4 sm:right-4 text-stone-400 hover:text-stone-800 z-10 bg-stone-100 hover:bg-stone-200 rounded-full w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors duration-200 cursor-pointer;
+    @apply absolute top-4 right-4 text-stone-400 hover:text-stone-800 z-10 bg-stone-100 hover:bg-stone-200 rounded-full w-[44px] h-[44px] flex items-center justify-center transition-colors duration-200 cursor-pointer;
   }
 }
 
-
-/* Subtle Rainforest Scrollbar */
+/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #03120d;
+  background: var(--color-jungle-950);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(16, 185, 129, 0.35);
-  border-radius: 9999px;
-  border: 2px solid transparent;
-  background-clip: content-box;
+  background: var(--color-jungle-800);
+  border-radius: var(--radius-pill);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(245, 158, 11, 0.7);
-  border: 2px solid transparent;
-  background-clip: content-box;
+  background: var(--color-jungle-700);
 }
-
-/* For Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(16, 185, 129, 0.4) #03120d;
+  scrollbar-color: var(--color-jungle-800) var(--color-jungle-950);
 }
 
-/* Glassmorphism & Tropical Jungle Panel Utilities */
+/* Glassmorphism Removal / Solidification */
 .glass-panel {
-  background: rgba(8, 35, 25, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+  background: #052118;
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
 }
-
 .glass-panel-light {
-  background: rgba(11, 45, 33, 0.9);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: #072e21;
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 .glow-orange {
-  box-shadow: 0 4px 25px -2px rgba(245, 158, 11, 0.45);
+  box-shadow: 0 4px 15px -3px rgba(245, 158, 11, 0.15);
 }
-
 .glow-green {
-  box-shadow: 0 4px 25px -2px rgba(16, 185, 129, 0.35);
+  box-shadow: 0 4px 15px -3px rgba(16, 185, 129, 0.15);
 }
 
-/* Custom Scrollbar for Modal Windows */
 .modal-scrollable {
   overflow-y: auto;
   scrollbar-width: thin;
 }
 
-/* Keyframes for slow ambient animations */
 @keyframes pulseGlow {
-  0%, 100% { opacity: 0.35; transform: scale(1); }
-  50% { opacity: 0.65; transform: scale(1.06); }
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
 }
-
 .animate-pulse-glow {
-  animation: pulseGlow 7s ease-in-out infinite;
+  animation: pulseGlow 4s ease-in-out infinite;
 }
 
-/* WhatsApp Modal Mini Card Pulse Animation */
 @keyframes whatsappMiniCardPulse {
-  0% {
-    transform: scale(0.92);
-    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
-  }
-  25% {
-    transform: scale(1.04);
-    box-shadow: 0 0 0 12px rgba(245, 158, 11, 0.35);
-  }
-  50% {
-    transform: scale(0.98);
-    box-shadow: 0 0 0 18px rgba(245, 158, 11, 0);
-  }
-  75% {
-    transform: scale(1.02);
-    box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.2);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
-  }
+  0% { transform: scale(0.96); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  50% { transform: scale(1.02); box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+  100% { transform: scale(1); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
 }
-
 .whatsapp-modal-window .whatsapp-mini-card-pulse,
 .whatsapp-modal-window .mini-card-pulsing {
-  animation: whatsappMiniCardPulse 1.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  animation: whatsappMiniCardPulse 1.2s ease-out forwards;
 }
 
 @keyframes floatDrift {
-  0%, 100% { transform: translateY(0) translateX(0); }
-  33% { transform: translateY(-6px) translateX(-3px); }
-  66% { transform: translateY(-3px) translateX(4px); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
-
 .floating-whatsapp-container {
-  animation: floatDrift 8s ease-in-out infinite;
+  animation: floatDrift 6s ease-in-out infinite;
 }
 
 @keyframes scanLine {
   0% { top: 0%; }
-  50% { top: 100%; }
-  100% { top: 0%; }
+  100% { top: 100%; }
 }
-
 .animate-scan {
-  animation: scanLine 3s linear infinite;
-  height: 2px;
+  animation: scanLine 2.5s linear infinite;
+  height: 1px;
 }
 
 .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -229,27 +207,23 @@
 
 @media screen and (max-height: 600px) {
   .whatsapp-modal-window {
-    max-height: 80vh !important;
+    max-height: 85vh !important;
   }
 }
 
-/* Leaflet Map Custom Enhancements */
 .leaflet-div-icon {
   background: transparent !important;
   border: none !important;
 }
-
 .leaflet-tour-tooltip {
-  background: rgba(4, 23, 17, 0.95) !important;
+  background: #052118 !important;
   color: #F8FAFC !important;
-  border: 1px solid rgba(16, 185, 129, 0.4) !important;
-  border-radius: 10px !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  border-radius: 8px !important;
   padding: 6px 10px !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6) !important;
   font-family: inherit !important;
-  backdrop-filter: blur(12px) !important;
 }
-
 .leaflet-tour-tooltip::before {
-  border-top-color: rgba(4, 23, 17, 0.95) !important;
+  border-top-color: #052118 !important;
 }
