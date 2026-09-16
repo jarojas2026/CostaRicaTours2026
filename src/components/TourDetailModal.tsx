@@ -153,8 +153,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     }
   };
 
-  const tourImage = Array.isArray(tour.images) && tour.images.length > 0 
-    ? tour.images[0] 
+  const tourImage = Array.isArray(tour.gallery) && tour.gallery.length > 0 
+    ? tour.gallery[0] 
     : (tour.image || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80');
 
   const modalTitle = getLangText(tour.title, language, 'Tour de Costa Rica');

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { WifiOff, Wifi, ShieldCheck, QrCode } from 'lucide-react';
-import { BookingRequest } from '../types';
+import { BookingRequest, Language } from '../types';
 
 interface OfflineBannerProps {
-  language?: 'es' | 'en';
+  language?: Language;
 }
 
 export const OfflineBanner: React.FC<OfflineBannerProps> = ({ language = 'es' }) => {
@@ -105,7 +105,7 @@ export const OfflineBanner: React.FC<OfflineBannerProps> = ({ language = 'es' })
                     <div className="text-xs text-stone-300 grid grid-cols-2 gap-1 pt-1">
                       <div>📅 Fecha: <strong className="text-white">{b.date}</strong></div>
                       <div>👥 Personas: <strong className="text-white">{b.adults} Ad.</strong></div>
-                      <div>👤 Titular: <strong className="text-white">{b.customerName}</strong></div>
+                      <div>👤 Titular: <strong className="text-white">{b.customer?.fullName}</strong></div>
                       <div>💵 Total: <strong className="text-amber-400">${b.totalUSD}</strong></div>
                     </div>
                   </div>

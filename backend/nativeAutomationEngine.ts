@@ -588,7 +588,7 @@ export async function executeEvaluarAntifraude(body: any) {
 // =========================================================================
 // 9. PANEL DE CONTROL & ACCIÓN OPERATIVA (Guías & Choferes)
 // =========================================================================
-export async function executeTelegramOpsAction(body: any) {
+export async function executeAIOpsAction(body: any) {
   const start = Date.now();
   const opAction = body.action || body.accion || 'confirmar_recogida';
   const reservationId = body.idReserva || body.bookingId || 'CRT-2026-8819';
@@ -602,11 +602,11 @@ export async function executeTelegramOpsAction(body: any) {
     notasOperador: body.notas || body.notes || 'Confirmado sin novedades'
   }).catch(() => {});
 
-  const telegramNotification = `✅ *RECOGIDA CONFIRMADA EN SISTEMA*\n━━━━━━━━━━━━━━━━━━━━━━━━\n📍 *Reserva:* \`${reservationId}\`\n👤 *Guía Asignado:* ${guideName}\n⏰ *Hora Estimada:* ${pickupTime}\n🚐 *Unidad Móvil:* Toyota HiAce 2024 (Placa: SJ-8924)\n🌱 *Estatus:* Pasajeros contactados y listos en lobby.`;
+  const aiNotification = `✅ *RECOGIDA CONFIRMADA EN SISTEMA*\n━━━━━━━━━━━━━━━━━━━━━━━━\n📍 *Reserva:* \`${reservationId}\`\n👤 *Guía Asignado:* ${guideName}\n⏰ *Hora Estimada:* ${pickupTime}\n🚐 *Unidad Móvil:* Toyota HiAce 2024 (Placa: SJ-8924)\n🌱 *Estatus:* Pasajeros contactados y listos en lobby.`;
 
   const duration = Date.now() - start;
   logAutomationExecution(
-    'ACCION_PANEL_TELEGRAM',
+    'ACCION_PANEL_AI',
     duration,
     'success',
     `Acción operativa '${opAction}' ejecutada por ${guideName} para ${reservationId}`
@@ -618,7 +618,7 @@ export async function executeTelegramOpsAction(body: any) {
     accionEjecutada: opAction,
     operador: guideName,
     nuevoEstado: 'recogida_confirmada_por_guia',
-    telegramNotification,
+    aiNotification,
     timestamp: new Date().toISOString(),
     motor: 'código_nativo_node',
     mensaje: 'Acción operativa ejecutada y estado actualizado en Firestore nativamente.'

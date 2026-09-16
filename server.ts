@@ -60,7 +60,7 @@ import {
   executeSolicitudSoporte,
   executeNotificarProveedor,
   executeEvaluarAntifraude,
-  executeTelegramOpsAction,
+  executeAIOpsAction,
   executeSyncCalendar,
   executePostTourNPS,
   executeReporteSemanalConversion,
@@ -812,7 +812,7 @@ app.post(['/webhook/evaluar-antifraude', '/webhook/antifraude-evaluacion', '/api
 // 10. Operaciones de Terreno, Telegram Ops & Despacho a Guías
 app.post(['/webhook/panel-control-telegram', '/webhook/telegram-ops-action', '/api/ops/telegram-action'], async (req, res) => {
   try {
-    const result = await executeTelegramOpsAction(req.body);
+    const result = await executeAIOpsAction(req.body);
     res.json(result);
   } catch (error: any) {
     res.status(500).json({ exito: false, error: error.message });
