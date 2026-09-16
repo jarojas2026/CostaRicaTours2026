@@ -42,11 +42,14 @@ export async function getPhotoRecommendations(base64Image: string) {
       keywords = [];
     }
 
-    // Match keywords with TOURS
+    // Match keywords with TOURS (usando los campos reales del tipo Tour:
+    // title/subtitle son objetos localizados {es, en}, no hay campo 'summary',
+    // y las categorías están en inglés: volcanoes, wildlife, canopy, beaches,
+    // rafting, culture, multiday, combos — no en español)
     const scoredTours = TOURS.map(tour => {
       let score = 0;
-      const textToSearch = `${tour.title} ${tour.summary} ${tour.location} ${tour.category}`.toLowerCase();
-      
+      const textToSearch = `${tour.title.es} ${tour.subtitle.es} ${tour.region} ${tour.category}`.toLowerCase();
+
       keywords.forEach(kw => {
         if (textToSearch.includes(kw.toLowerCase())) {
           score += 2;
@@ -54,9 +57,9 @@ export async function getPhotoRecommendations(base64Image: string) {
       });
 
       // Boost based on category matching common keywords
-      if (keywords.includes('beach') && tour.category === 'playa') score += 5;
-      if (keywords.includes('volcano') && tour.category === 'aventura') score += 5;
-      if (keywords.includes('wildlife') && tour.category === 'naturaleza') score += 5;
+      if (keywords.includes('beach') && tour.category === 'beaches') score += 5;
+      if (keywords.includes('volcano') && tour.category === 'volcanoes') score += 5;
+      if (keywords.includes('wildlife') && tour.category === 'wildlife') score += 5;
 
       return { tour, score };
     });
