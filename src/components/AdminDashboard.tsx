@@ -631,7 +631,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
           )}
           
           {activeTab === 'providers' && (
-            <ProviderCommunicationHub language={language} />
+            <ProviderCommunicationHub language={language === 'es' ? 'es' : 'en'} />
           )}
 
           {activeTab === 'ai-insights' && (

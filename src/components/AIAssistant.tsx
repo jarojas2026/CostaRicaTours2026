@@ -1434,7 +1434,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       <ClaudeItineraryModal
         isOpen={isItineraryModalOpen}
         onClose={() => setIsItineraryModalOpen(false)}
-        language={language}
+        language={language === 'es' ? 'es' : 'en'}
         onSelectTour={onSelectTour}
         onSendToChat={(prompt) => {
           handleSendMessage(prompt);

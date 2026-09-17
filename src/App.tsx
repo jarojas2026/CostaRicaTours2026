@@ -81,6 +81,12 @@ export default function App() {
         bookingId: "VERIFICANDO...",
         tourId: "procesando",
         tourName: "Tu Experiencia en Costa Rica",
+        customer: {
+          fullName: "Verificando...",
+          email: "",
+          phone: "",
+          country: ""
+        },
         date: "Confirmando fecha...",
         time: "Confirmando hora...",
         adults: 1,
@@ -294,6 +300,7 @@ export default function App() {
             {/* Hero Section */}
             <HeroSection
               language={language}
+              currency={currency}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
               selectedCategory={selectedCategory}
@@ -372,7 +379,7 @@ export default function App() {
         {/* Tab: Google Workspace (Gmail & Calendar) */}
         {activeTab === 'workspace' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <GoogleWorkspaceHub language={language} />
+            <GoogleWorkspaceHub language={language === 'es' ? 'es' : 'en'} />
           </div>
         )}
         {activeTab === 'culture' && (

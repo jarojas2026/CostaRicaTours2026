@@ -34,8 +34,8 @@ interface HeaderProps {
   setLanguage: (lang: Language) => void;
   currency: Currency;
   setCurrency: (curr: Currency) => void;
-  activeTab?: 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights';
-  setActiveTab?: (tab: 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights') => void;
+  activeTab?: 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights' | 'workspace';
+  setActiveTab?: (tab: 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights' | 'workspace') => void;
   bookingsCount?: number;
   onOpenBookingList?: () => void;
   cartCount?: number;
