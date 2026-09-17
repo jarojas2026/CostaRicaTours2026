@@ -1,24 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { Home, Compass, Map, Bot, Bus, Coffee, Sparkles, Plane } from 'lucide-react';
+import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Home, Compass, Map, Bot, Plane } from 'lucide-react';
 import { Language } from '../types';
 
 interface BottomNavProps {
   language: Language;
   activeTab: string;
-  setActiveTab: (tab: any) => void;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ language, activeTab, setActiveTab }) => {
+export const BottomNav: React.FC<BottomNavProps> = ({ language, activeTab }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const t = (es: string, en: string) => language === 'es' ? es : en;
   
-  
-
-  const handleTabSelect = (tab: any) => {
-    setActiveTab(tab);
+  const handleTabSelect = (tab: string) => {
+    if (tab === 'home') navigate('/');
+    else navigate(`/${tab}`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  
 
   const navItems = [
     { id: 'home', label: t('Inicio', 'Home'), icon: <Home className="w-5 h-5" /> },

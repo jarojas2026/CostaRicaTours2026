@@ -30,6 +30,12 @@ interface ToursGridProps {
   onSelectTour?: (tour: Tour) => void;
   onBack?: () => void;
   onOpenMap?: () => void;
+  favorites: string[];
+  toggleFavorite: (tourId: string) => void;
+  comparedTours: Tour[];
+  toggleCompare: (tour: Tour) => void;
+  viewMode: 'grid' | 'list';
+  setViewMode: (mode: 'grid' | 'list') => void;
 }
 
 export const ToursGrid: React.FC<ToursGridProps> = ({
@@ -48,6 +54,13 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
   setMaxPrice,
   onOpenMap,
   onBack,
+  onSelectTour,
+  favorites,
+  toggleFavorite,
+  comparedTours,
+  toggleCompare,
+  viewMode,
+  setViewMode
 }) => {
   const navigate = useNavigate();
   // Local Catalog State
@@ -77,7 +90,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
     
     recognition.start();
   };
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
   const [sortBy, setSortBy] = useState<'popular' | 'rating' | 'price_asc' | 'price_desc' | 'duration'>('popular');
   const [bestsellerOnly, setBestsellerOnly] = useState(false);
   const [ecoFriendlyOnly, setEcoFriendlyOnly] = useState(false);
@@ -91,54 +104,15 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
   const [showLiveSliders, setShowLiveSliders] = useState<boolean>(false);
   const [isSliding, setIsSliding] = useState<boolean>(false);
 
-  // Favorites / Wishlist LocalStorage Sync
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedCategory, selectedRegion, searchQuery, difficultyFilter, maxPrice, maxDurationHours, minRating, sortBy, bestsellerOnly, ecoFriendlyOnly, freeCancellationOnly]);
 
-  const [favorites, setFavorites] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('costa_rica_favorite_tours');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('costa_rica_favorite_tours', JSON.stringify(favorites));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [favorites]);
-
-  const toggleFavorite = (tourId: string) => {
-    setFavorites(prev => 
-      prev.includes(tourId) ? prev.filter(id => id !== tourId) : [...prev, tourId]
-    );
-  };
-
-  // Compare Dock State
-  const [comparedTours, setComparedTours] = useState<Tour[]>([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
 
-  const toggleCompare = (tour: Tour) => {
-    setComparedTours(prev => {
-      const exists = prev.some(t => t.id === tour.id);
-      if (exists) {
-        return prev.filter(t => t.id !== tour.id);
-      }
-      if (prev.length >= 3) {
-        alert(language === 'es' ? 'Puedes comparar un máximo de 3 tours a la vez.' : 'You can compare up to 3 tours at a time.');
-        return prev;
-      }
-      return [...prev, tour];
-    });
-  };
-
   const removeComparedTour = (tourId: string) => {
-    setComparedTours(prev => prev.filter(t => t.id !== tourId));
+    const tour = tours.find(t => t.id === tourId);
+    if (tour) toggleCompare(tour);
   };
 
   // Apply All Filtering & Sorting

@@ -13,6 +13,13 @@ interface ToursPageProps {
   setSelectedRegion: (reg: TourRegion | 'all') => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  onSelectTour?: (tour: Tour) => void;
+  favorites: string[];
+  toggleFavorite: (tourId: string) => void;
+  comparedTours: Tour[];
+  toggleCompare: (tour: Tour) => void;
+  viewMode: 'grid' | 'list';
+  setViewMode: (mode: 'grid' | 'list') => void;
 }
 
 export const ToursPage: React.FC<ToursPageProps> = ({
@@ -23,7 +30,14 @@ export const ToursPage: React.FC<ToursPageProps> = ({
   selectedRegion,
   setSelectedRegion,
   searchQuery,
-  setSearchQuery
+  setSearchQuery,
+  onSelectTour,
+  favorites,
+  toggleFavorite,
+  comparedTours,
+  toggleCompare,
+  viewMode,
+  setViewMode
 }) => {
   const navigate = useNavigate();
   const [selectedDifficulty, setSelectedDifficulty] = React.useState<'all' | 'fácil' | 'moderado' | 'exigente'>('all');
@@ -39,17 +53,23 @@ export const ToursPage: React.FC<ToursPageProps> = ({
       <ToursGrid
         language={language}
         currency={currency}
-        onSelectTour={(tour) => navigate(`/tour/${tour.id}`)}
+        onSelectTour={onSelectTour || ((tour) => navigate(`/tour/${tour.id}`))}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
         selectedRegion={selectedRegion}
         setSelectedRegion={setSelectedRegion}
-        selectedDifficulty={selectedDifficulty}
-        setSelectedDifficulty={setSelectedDifficulty}
+        difficultyFilter={selectedDifficulty}
+        setDifficultyFilter={setSelectedDifficulty}
         maxPrice={maxPrice}
         setMaxPrice={setMaxPrice}
+        favorites={favorites}
+        toggleFavorite={toggleFavorite}
+        comparedTours={comparedTours}
+        toggleCompare={toggleCompare}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
       />
     </motion.div>
   );
