@@ -62,6 +62,14 @@ export async function dispatchToN8N(
   retries = 2,
   backoffMs = 400
 ): Promise<{ success: boolean; status?: number; data?: any; error?: string }> {
+  if (process.env.N8N_ENABLED !== 'true') {
+    return {
+      success: true,
+      status: 200,
+      data: { message: 'Ejecutado de forma nativa por código (n8n deshabilitado por completo)', payload }
+    };
+  }
+
   const config = getN8NConfig();
 
   let targetUrl = endpointOrFullUrl;
