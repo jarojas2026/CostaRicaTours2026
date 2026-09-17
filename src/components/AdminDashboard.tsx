@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { BookingRequest, Language } from '../types';
-import { X, Server, Activity, Database, Key, Settings, ExternalLink, Zap, Mail, Bot, Network, ChevronRight, RefreshCw, CheckCircle2, BellRing, ShieldAlert, Users, Sparkles, TrendingUp } from 'lucide-react';
+import { X, Server, Activity, Database, Key, Settings, ExternalLink, Zap, Mail, Bot, Network, ChevronRight, RefreshCw, CheckCircle2, BellRing, ShieldAlert, Users, Sparkles, TrendingUp, Cpu } from 'lucide-react';
 import { CronDashboard } from './CronDashboard';
 import { N8NWorkflowStudio } from './N8NWorkflowStudio';
 import { AlertsCenter } from './AlertsCenter';
 import { ProviderCommunicationHub } from './ProviderCommunicationHub';
-
 import { AiInsightsPanel } from './AiInsightsPanel';
+import { AiN8nMonitorPanel } from './AiN8nMonitorPanel';
 
 interface AdminDashboardProps {
   isOpen: boolean;
@@ -24,7 +24,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
   const [criticalAlertsCount, setCriticalAlertsCount] = useState(0);
 
   // Multi-Agent Simulation State
-  const [activeTab, setActiveTab] = useState<'bookings' | 'alerts' | 'n8n' | 'cron' | 'swarm' | 'architecture' | 'native'>('bookings');
+  const [activeTab, setActiveTab] = useState<'bookings' | 'alerts' | 'n8n' | 'cron' | 'swarm' | 'architecture' | 'native' | 'providers' | 'ai-insights' | 'ai-n8n-monitor'>('ai-n8n-monitor');
   const [nativeStatus, setNativeStatus] = useState<any>(null);
   const [nativeLogs, setNativeLogs] = useState<any[]>([]);
   const [simEmail, setSimEmail] = useState('Hola! Somos una familia de 4 (2 adultos, 2 niños). Queremos ir a Costa Rica la primera semana de diciembre. Nos interesan los volcanes y la playa, pero uno de los niños es alérgico al maní. ¿Qué nos recomiendan?');
@@ -155,6 +155,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
         {/* Tabs */}
         <div className="flex overflow-x-auto border-b border-slate-700/50 bg-[#1e293b]/50 px-6 hide-scrollbar shrink-0">
           <button 
+            onClick={() => setActiveTab('ai-n8n-monitor')}
+            className={`whitespace-nowrap px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'ai-n8n-monitor' ? 'border-purple-400 text-purple-400 bg-purple-950/20' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
+          >
+            <Cpu className="w-4 h-4 text-purple-400" />
+            <span>Monitoreo IA & n8n</span>
+          </button>
+          <button 
             onClick={() => setActiveTab('native')}
             className={`whitespace-nowrap px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'native' ? 'border-emerald-400 text-emerald-400 bg-emerald-950/20' : 'border-transparent text-emerald-300/80 hover:text-emerald-200'}`}
           >
@@ -227,6 +234,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-8">
           
+          {activeTab === 'ai-n8n-monitor' && (
+            <AiN8nMonitorPanel language={language} />
+          )}
+
           {activeTab === 'bookings' && (
             <>
               {/* n8n Configuration Panel */}

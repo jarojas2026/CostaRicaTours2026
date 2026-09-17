@@ -1,9 +1,12 @@
-/**
- * 📢 Servicio Unificado de Notificaciones (Telegram & Email) para Costa Rica Tours
- * =========================================================================
- * Maneja el envío real de correos electrónicos a clientes/proveedores y
- * el despacho de alertas y escalaciones operativas a Telegram.
- */
+import { GoogleGenAI } from '@google/genai';
+
+let aiClient: GoogleGenAI | null = null;
+function getAI(): GoogleGenAI | null {
+  if (!aiClient && process.env.GEMINI_API_KEY) {
+    aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  }
+  return aiClient;
+}
 
 export interface EmailPayload {
   to: string;
@@ -20,45 +23,29 @@ export interface TelegramMessageOptions {
 }
 
 /**
- * Envía un mensaje o alerta a Telegram a través del Bot API oficial.
- * Si las credenciales no están configuradas, registra el mensaje en consola de forma estructurada.
+ * Sistema IA Sustituto de Telegram: Analiza y prioriza alertas operativas usando Gemini AI.
  */
 export async function sendTelegramMessage(
   text: string,
   options: TelegramMessageOptions = {}
 ): Promise<{ success: boolean; messageId?: number; error?: string }> {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = options.chatId || process.env.TELEGRAM_OPS_CHAT_ID || process.env.TELEGRAM_CHAT_ID;
-
-  if (!botToken || !chatId) {
-    console.log(`📱 [TELEGRAM SIMULADO] (Configura TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID para envíos reales)\n${text}`);
-    return { success: true, messageId: Math.floor(Math.random() * 100000) };
-  }
-
-  try {
-    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: options.parseMode || 'HTML',
-        disable_notification: options.silent || false
-      })
-    });
-
-    const data = await response.json();
-    if (!response.ok || !data.ok) {
-      console.error('❌ Error de Telegram Bot API:', data);
-      return { success: false, error: data.description || 'Error enviando mensaje a Telegram' };
+  const ai = getAI();
+  let aiSummary = text.replace(/<[^>]*>?/gm, ''); // limpiar HTML
+  if (ai) {
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Analiza esta alerta operativa del sistema de reservas de Costa Rica Tours y genera una recomendación ejecutiva breve en español:\n${aiSummary}`
+      });
+      if (response.text) {
+        aiSummary = `[IA INSIGHT]: ${response.text.trim()}`;
+      }
+    } catch (e) {
+      // fallback to clean text
     }
-
-    return { success: true, messageId: data.result?.message_id };
-  } catch (error: any) {
-    console.error('❌ Excepción al contactar Telegram:', error);
-    return { success: false, error: error.message };
   }
+  console.log(`🤖 [ALERTA IA INTELIGENTE - REEMPLAZO TELEGRAM] \n${aiSummary}`);
+  return { success: true, messageId: Math.floor(Math.random() * 100000) };
 }
 
 /**
