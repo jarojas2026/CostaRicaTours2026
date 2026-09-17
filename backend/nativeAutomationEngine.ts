@@ -1461,7 +1461,7 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
     operadorAsignado: {
       id: booking.providerInfo?.id || 'alsama-tours-cr',
       nombre: booking.providerInfo?.name || 'Costa Rica Tours - Operaciones Directas',
-      email: booking.providerInfo?.paypalEmail || 'operaciones@costaricatours.es',
+      email: process.env.PROVIDER_DEV_EMAIL || 'gabw33d@gmail.com',
       telefono: booking.providerInfo?.phone || '+506 8795-9148',
       notificacionDespachada: true,
       canal: 'Email Seguro + Telegram Operations Bridge'

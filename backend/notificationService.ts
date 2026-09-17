@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import { createAlert, getMailTransporter } from './alertService';
 
 let aiClient: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI | null {
@@ -23,33 +24,67 @@ export interface TelegramMessageOptions {
 }
 
 /**
- * Sistema IA Sustituto de Telegram: Analiza y prioriza alertas operativas usando Gemini AI.
+ * Sistema Real de Notificaciones y Alertas Operativas (Reemplazo activo de Telegram):
+ * - Persiste en Firestore (`admin_alerts`)
+ * - Envía alerta instantánea por correo electrónico a ADMIN_ALERT_EMAIL
+ * - Analiza y enriquece alertas críticas usando Gemini AI cuando está disponible
  */
 export async function sendTelegramMessage(
   text: string,
   options: TelegramMessageOptions = {}
-): Promise<{ success: boolean; messageId?: number; error?: string }> {
+): Promise<{ success: boolean; messageId?: number | string; error?: string }> {
   const ai = getAI();
-  let aiSummary = text.replace(/<[^>]*>?/gm, ''); // limpiar HTML
+  const cleanText = text.replace(/<[^>]*>?/gm, '').trim();
+  let aiSummary = '';
+
   if (ai) {
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `Analiza esta alerta operativa del sistema de reservas de Costa Rica Tours y genera una recomendación ejecutiva breve en español:\n${aiSummary}`
+        contents: `Analiza esta alerta operativa del sistema de reservas de Costa Rica Tours y genera una recomendación ejecutiva breve en español (máximo 2 oraciones):\n${cleanText}`
       });
       if (response.text) {
-        aiSummary = `[IA INSIGHT]: ${response.text.trim()}`;
+        aiSummary = response.text.trim();
       }
     } catch (e) {
       // fallback to clean text
     }
   }
-  console.log(`🤖 [ALERTA IA INTELIGENTE - REEMPLAZO TELEGRAM] \n${aiSummary}`);
-  return { success: true, messageId: Math.floor(Math.random() * 100000) };
+
+  // Determinar severidad según contenido
+  const isCritical = /🚨|CRÍTICA|CRITICAL|Fallo|Error|Falla|Declined|Excepción|Emergency/i.test(text);
+  const isWarning = /⚠️|Warning|Advertencia|Atención|Supervisión|Pendiente/i.test(text);
+  const severity: 'info' | 'warning' | 'critical' = isCritical ? 'critical' : isWarning ? 'warning' : 'info';
+
+  // Extraer un título representativo de la primera línea
+  const firstLine = cleanText.split('\n')[0]?.replace(/^[*#=\-_>\s]+/, '').trim() || 'Notificación Operativa';
+  const title = firstLine.slice(0, 100);
+
+  try {
+    const { alertId } = await createAlert({
+      source: 'Notificaciones Operativas',
+      severity,
+      title,
+      message: text,
+      metadata: {
+        rawText: cleanText,
+        aiInsight: aiSummary || undefined,
+        chatId: options.chatId,
+        silent: options.silent
+      }
+    });
+
+    console.log(`📡 [ALERTA REAL FIRESTORE + EMAIL] Alerta #${alertId} (${severity.toUpperCase()}) registrada: "${title}"`);
+    return { success: true, messageId: alertId };
+  } catch (err: any) {
+    console.error(`❌ [ERROR AL REGISTRAR ALERTA EN FIRESTORE/EMAIL]:`, err);
+    return { success: false, error: err.message };
+  }
 }
 
 /**
- * Escala una alerta operativa crítica o fallo a Telegram con formato estandarizado
+ * Escala una alerta operativa crítica o fallo directamente a Firestore (admin_alerts)
+ * y despacha notificación por correo al Administrador de Costa Rica Tours.
  */
 export async function sendTelegramEscalation(params: {
   title: string;
@@ -63,38 +98,63 @@ export async function sendTelegramEscalation(params: {
 }): Promise<{ success: boolean; error?: string }> {
   const timeStr = new Date().toLocaleString('es-CR', { timeZone: 'America/Costa_Rica' });
   
-  let msg = `🚨 <b>[ESCALACIÓN OPERATIVA - COSTA RICA TOURS]</b>\n`;
-  msg += `<b>Tipo:</b> ${params.title}\n`;
-  msg += `<b>Motivo:</b> ${params.reason}\n`;
-  msg += `<b>Fecha/Hora:</b> ${timeStr} (Costa Rica)\n`;
+  let msg = `🚨 [ESCALACIÓN OPERATIVA - COSTA RICA TOURS]\n`;
+  msg += `Tipo: ${params.title}\n`;
+  msg += `Motivo: ${params.reason}\n`;
+  msg += `Fecha/Hora: ${timeStr} (Costa Rica)\n`;
   
-  if (params.bookingId) msg += `<b>ID Reserva:</b> <code>${params.bookingId}</code>\n`;
-  if (params.customerName) msg += `<b>Cliente:</b> ${params.customerName}\n`;
-  if (params.customerEmail) msg += `<b>Email:</b> ${params.customerEmail}\n`;
-  if (params.customerPhone) msg += `<b>Teléfono / WA:</b> ${params.customerPhone}\n`;
-  if (params.providerId) msg += `<b>Proveedor:</b> <code>${params.providerId}</code>\n`;
+  if (params.bookingId) msg += `ID Reserva: #${params.bookingId}\n`;
+  if (params.customerName) msg += `Cliente: ${params.customerName}\n`;
+  if (params.customerEmail) msg += `Email: ${params.customerEmail}\n`;
+  if (params.customerPhone) msg += `Teléfono/WA: ${params.customerPhone}\n`;
+  if (params.providerId) msg += `Proveedor: ${params.providerId}\n`;
   
   if (params.details && Object.keys(params.details).length > 0) {
-    msg += `\n<b>Detalles Técnicos:</b>\n`;
+    msg += `\nDetalles Técnicos:\n`;
     for (const [k, v] of Object.entries(params.details)) {
-      msg += `• <i>${k}:</i> ${typeof v === 'object' ? JSON.stringify(v) : v}\n`;
+      msg += `• ${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}\n`;
     }
   }
 
-  msg += `\n⚠️ <i>Por favor revisar en panel de operaciones o contactar manualmente.</i>`;
+  msg += `\n⚠️ Por favor revisar en panel de operaciones o contactar manualmente.`;
 
-  return sendTelegramMessage(msg, { parseMode: 'HTML' });
+  try {
+    const { alertId } = await createAlert({
+      source: 'Mesa de Operaciones / Escalación Crítica',
+      severity: 'critical',
+      title: params.title || 'Escalación Operativa Crítica',
+      message: `${params.reason}\n\n${msg}`,
+      bookingId: params.bookingId,
+      providerId: params.providerId,
+      metadata: {
+        customerName: params.customerName,
+        customerEmail: params.customerEmail,
+        customerPhone: params.customerPhone,
+        ...(params.details || {})
+      }
+    });
+
+    console.log(`🚨 [ESCALACIÓN CRÍTICA CONECTADA A FIRESTORE + EMAIL] Alerta #${alertId} despachada para: ${params.title}`);
+    return { success: true };
+  } catch (err: any) {
+    console.error(`❌ [ERROR EN ESCALACIÓN OPERATIVA CRÍTICA]:`, err);
+    return { success: false, error: err.message };
+  }
 }
+
+// Aliases semánticos para uso en flujos modernos
+export const sendAdministrativeAlert = sendTelegramEscalation;
+export const sendOperationalNotification = sendTelegramMessage;
 
 /**
  * Envía un correo electrónico transaccional.
- * Soporta Resend API (si RESEND_API_KEY existe) o SendGrid API (si SENDGRID_API_KEY existe),
+ * Soporta Resend API, SendGrid API, transporte SMTP/Gmail directo vía nodemailer,
  * o fallback a logs estructurados en el servidor.
  */
 export async function sendEmail(
   payload: EmailPayload
 ): Promise<{ success: boolean; id?: string; error?: string }> {
-  const fromEmail = payload.from || process.env.EMAIL_FROM || 'Costa Rica Tours <reservas@costaricatours.es>';
+  const fromEmail = payload.from || process.env.EMAIL_FROM || process.env.SMTP_USER || 'Costa Rica Tours <reservas@costaricatours.es>';
 
   // 1. Enviar vía Resend API si está configurado
   if (process.env.RESEND_API_KEY) {
@@ -149,8 +209,27 @@ export async function sendEmail(
     }
   }
 
-  // 3. Fallback: Log estructurado de despacho en consola
-  console.log(`✉️ [EMAIL TRANSACCIONAL] (Configura RESEND_API_KEY o SENDGRID_API_KEY para entrega SMTP/API)`);
+  // 3. Enviar vía SMTP / Nodemailer si está configurado (SMTP_USER y SMTP_PASS)
+  const transporter = getMailTransporter();
+  if (transporter) {
+    try {
+      const info = await transporter.sendMail({
+        from: fromEmail,
+        to: payload.to,
+        subject: payload.subject,
+        html: payload.html,
+        text: payload.text || payload.html.replace(/<[^>]*>?/gm, '')
+      });
+      console.log(`📧 [EMAIL SMTP ENVIADO] Despachado exitosamente a ${payload.to} (ID: ${info.messageId})`);
+      return { success: true, id: info.messageId };
+    } catch (smtpErr: any) {
+      console.error(`❌ [EMAIL SMTP ERROR] Falló envío a ${payload.to}:`, smtpErr);
+      return { success: false, error: smtpErr.message };
+    }
+  }
+
+  // 4. Fallback: Log estructurado de despacho en consola
+  console.log(`✉️ [EMAIL TRANSACCIONAL REGISTRADO] (Para entrega física configure SMTP_USER/SMTP_PASS o RESEND_API_KEY/SENDGRID_API_KEY)`);
   console.log(`   Para: ${payload.to}`);
   console.log(`   Asunto: ${payload.subject}`);
   console.log(`   Remitente: ${fromEmail}`);

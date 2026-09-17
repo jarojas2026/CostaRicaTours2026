@@ -19,9 +19,9 @@ interface HomeProps {
   setSelectedCategory: (cat: TourCategory | 'all') => void;
   selectedRegion: TourRegion | 'all';
   setSelectedRegion: (reg: TourRegion | 'all') => void;
-  onNavigateTab: (tab: any) => void;
+  onNavigateTab?: (tab: any) => void;
   setIsCustomFunnelOpen: (isOpen: boolean) => void;
-  setSelectedTour: (tour: Tour) => void;
+  setSelectedTour?: (tour: Tour) => void;
 }
 
 export const Home: React.FC<HomeProps> = ({
@@ -73,6 +73,9 @@ export const Home: React.FC<HomeProps> = ({
 
       <DestinationsSection 
         language={language}
+        onSelectRegion={(regId) => {
+          setSelectedRegion(regId as any);
+        }}
       />
 
       {/* Trust & Conversion Sections */}

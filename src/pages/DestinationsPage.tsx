@@ -36,7 +36,10 @@ export const DestinationsPage: React.FC<DestinationsPageProps> = ({ language }) 
       />
       
       <div className="py-10">
-        <DestinationsCarousel language={language} />
+        <DestinationsCarousel 
+          language={language} 
+          onSelectRegion={(reg) => navigate(`/tours?region=${reg}`)} 
+        />
       </div>
     </motion.div>
   );

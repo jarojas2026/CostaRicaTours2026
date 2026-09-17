@@ -49,7 +49,7 @@ export function getSeverityEmoji(severity: 'info' | 'warning' | 'critical'): str
 /**
  * Configura y devuelve el cliente transportador SMTP / Gmail de nodemailer
  */
-function getMailTransporter(): Transporter | null {
+export function getMailTransporter(): Transporter | null {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT) || 587;
   const user = process.env.SMTP_USER;

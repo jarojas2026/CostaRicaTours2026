@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Language, TourRegion } from '../types';
 import { motion, useScroll, useTransform } from 'motion/react';
 import { ChevronRight, ChevronLeft, MapPin } from 'lucide-react';
@@ -6,7 +7,7 @@ import { LazyImage } from './LazyImage';
 
 interface DestinationsCarouselProps {
   language: Language;
-  onSelectRegion: (region: TourRegion) => void;
+  onSelectRegion?: (region: TourRegion) => void;
 }
 
 const destinations = [
@@ -55,6 +56,7 @@ const destinations = [
 ];
 
 export const DestinationsCarousel: React.FC<DestinationsCarouselProps> = ({ language, onSelectRegion }) => {
+  const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scrollLeft = () => {
@@ -105,7 +107,10 @@ export const DestinationsCarousel: React.FC<DestinationsCarouselProps> = ({ lang
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5, delay: idx * 0.1 }}
-              onClick={() => onSelectRegion(dest.id)}
+              onClick={() => {
+                if (onSelectRegion) onSelectRegion(dest.id);
+                else navigate(`/tours?region=${dest.id}`);
+              }}
               className="relative min-w-[280px] sm:min-w-[320px] aspect-[4/5] rounded-[2rem] overflow-hidden snap-start cursor-pointer group shadow-md hover:shadow-xl transition-all duration-300"
             >
               {/* Background Image */}

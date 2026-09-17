@@ -78,13 +78,31 @@ export async function recordEscalation(data: {
  * Catálogo Maestro de Operadores Turísticos y Transporte Verificados de Costa Rica
  * Se utiliza como base y fallback determinista resiliente con soporte de base de datos.
  */
+/**
+ * =========================================================================
+ * ENRUTAMIENTO DE CORREOS DE PROVEEDORES EN ETAPA DE PRUEBA Y DESARROLLO
+ * =========================================================================
+ * Por directriz de desarrollo, todos los correos de proveedores y operadores
+ * se centralizan en gabw33d@gmail.com para pruebas operativas seguras.
+ */
+export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || 'gabw33d@gmail.com';
+
+export function getEffectiveProviderEmail(officialEmail?: string | null): string {
+  if (process.env.DISABLE_PROVIDER_EMAIL_OVERRIDE === 'true' && officialEmail) {
+    return officialEmail;
+  }
+  return process.env.PROVIDER_DEV_EMAIL || 'gabw33d@gmail.com';
+}
+
 export const MASTER_OPERATORS_REGISTRY: Record<string, {
   id: string;
   name: string;
   email: string;
+  officialEmail?: string;
   phone: string;
   whatsapp: string;
   paypalEmail: string;
+  officialPaypalEmail?: string;
   commissionRate: number;
   certificacion: string;
   website: string;
@@ -94,10 +112,12 @@ export const MASTER_OPERATORS_REGISTRY: Record<string, {
   'alsama-tours-cr': {
     id: 'alsama-tours-cr',
     name: 'Alsama Tours CR • Operaciones Directas & Transporte Oficial',
-    email: 'operaciones@alsamatourscr.com',
+    email: PROVIDER_DEV_EMAIL,
+    officialEmail: 'operaciones@alsamatourscr.com',
     phone: '+506 8795-9148',
     whatsapp: '50687959148',
-    paypalEmail: 'operaciones@costaricatours.es',
+    paypalEmail: PROVIDER_DEV_EMAIL,
+    officialPaypalEmail: 'operaciones@costaricatours.es',
     commissionRate: 0.15,
     certificacion: 'CST Nivel Elite • Transporte Ejecutivo Certificado ICT',
     website: 'https://costaricatours.netlify.app/',
@@ -107,10 +127,12 @@ export const MASTER_OPERATORS_REGISTRY: Record<string, {
   'bay-island-cruises': {
     id: 'bay-island-cruises',
     name: 'Bay Island Cruises • Isla Tortuga Catamarán',
-    email: 'reservations@bayislandcruises.com',
+    email: PROVIDER_DEV_EMAIL,
+    officialEmail: 'reservations@bayislandcruises.com',
     phone: '+506 2661-1111',
     whatsapp: '50688001111',
-    paypalEmail: 'accounting@bayislandcruises.com',
+    paypalEmail: PROVIDER_DEV_EMAIL,
+    officialPaypalEmail: 'accounting@bayislandcruises.com',
     commissionRate: 0.15,
     certificacion: 'CST 5 Hojas • Certificación Marítima Internacional',
     website: 'https://bayislandcruises.com/',
@@ -120,10 +142,12 @@ export const MASTER_OPERATORS_REGISTRY: Record<string, {
   'arenal-volcano-ops': {
     id: 'arenal-volcano-ops',
     name: 'Arenal Eco-Adventures & Hot Springs Operations',
-    email: 'reservas@arenalecoadventures.cr',
+    email: PROVIDER_DEV_EMAIL,
+    officialEmail: 'reservas@arenalecoadventures.cr',
     phone: '+506 2479-1000',
     whatsapp: '50684791000',
-    paypalEmail: 'pagos@arenalecoadventures.cr',
+    paypalEmail: PROVIDER_DEV_EMAIL,
+    officialPaypalEmail: 'pagos@arenalecoadventures.cr',
     commissionRate: 0.15,
     certificacion: 'CST Nivel 5 • Guías Naturalistas Arenal',
     website: 'https://arenalecoadventures.cr/',
@@ -133,10 +157,12 @@ export const MASTER_OPERATORS_REGISTRY: Record<string, {
   'monteverde-canopy-ops': {
     id: 'monteverde-canopy-ops',
     name: 'Selvatura Park & Monteverde Cloud Forest Guides',
-    email: 'operations@selvaturapark.cr',
+    email: PROVIDER_DEV_EMAIL,
+    officialEmail: 'operations@selvaturapark.cr',
     phone: '+506 2645-5929',
     whatsapp: '50686455929',
-    paypalEmail: 'finanzas@selvaturapark.cr',
+    paypalEmail: PROVIDER_DEV_EMAIL,
+    officialPaypalEmail: 'finanzas@selvaturapark.cr',
     commissionRate: 0.15,
     certificacion: 'CST Sostenibilidad Bosque Nuboso',
     website: 'https://selvaturapark.cr/',
@@ -146,10 +172,12 @@ export const MASTER_OPERATORS_REGISTRY: Record<string, {
   'manuel-antonio-ops': {
     id: 'manuel-antonio-ops',
     name: 'Manuel Antonio Expeditions & Wildlife Guides',
-    email: 'tours@manuelantonioexpeditions.cr',
+    email: PROVIDER_DEV_EMAIL,
+    officialEmail: 'tours@manuelantonioexpeditions.cr',
     phone: '+506 2777-0100',
     whatsapp: '50687770100',
-    paypalEmail: 'contabilidad@manuelantonioexpeditions.cr',
+    paypalEmail: PROVIDER_DEV_EMAIL,
+    officialPaypalEmail: 'contabilidad@manuelantonioexpeditions.cr',
     commissionRate: 0.15,
     certificacion: 'CST Oficial • SINAC Guías Acreditados',
     website: 'https://manuelantonioexpeditions.cr/',
@@ -159,10 +187,12 @@ export const MASTER_OPERATORS_REGISTRY: Record<string, {
   'pacuare-rafting-ops': {
     id: 'pacuare-rafting-ops',
     name: 'Pacuare River Expeditions & Whitewater Rafting',
-    email: 'rafting@pacuareriverexpeditions.cr',
+    email: PROVIDER_DEV_EMAIL,
+    officialEmail: 'rafting@pacuareriverexpeditions.cr',
     phone: '+506 2253-2400',
     whatsapp: '50682532400',
-    paypalEmail: 'billing@pacuareriverexpeditions.cr',
+    paypalEmail: PROVIDER_DEV_EMAIL,
+    officialPaypalEmail: 'billing@pacuareriverexpeditions.cr',
     commissionRate: 0.15,
     certificacion: 'IRF International Rafting Federation • CST',
     website: 'https://pacuareriverexpeditions.cr/',
@@ -172,10 +202,12 @@ export const MASTER_OPERATORS_REGISTRY: Record<string, {
   'tortuguero-ops': {
     id: 'tortuguero-ops',
     name: 'Tortuguero Eco Canals & Green Sea Turtle Sanctuary',
-    email: 'canales@tortugueroecotours.cr',
+    email: PROVIDER_DEV_EMAIL,
+    officialEmail: 'canales@tortugueroecotours.cr',
     phone: '+506 2709-8000',
     whatsapp: '50687098000',
-    paypalEmail: 'admin@tortugueroecotours.cr',
+    paypalEmail: PROVIDER_DEV_EMAIL,
+    officialPaypalEmail: 'admin@tortugueroecotours.cr',
     commissionRate: 0.15,
     certificacion: 'CST Caribe Verde • Protección Marina',
     website: 'https://tortugueroecotours.cr/',
@@ -185,10 +217,12 @@ export const MASTER_OPERATORS_REGISTRY: Record<string, {
   'doka-estate-coffee': {
     id: 'doka-estate-coffee',
     name: 'Doka Estate Coffee & Cacao Heritage Tour',
-    email: 'tours@dokaestate.com',
+    email: PROVIDER_DEV_EMAIL,
+    officialEmail: 'tours@dokaestate.com',
     phone: '+506 2449-5152',
     whatsapp: '50684495152',
-    paypalEmail: 'pagos@dokaestate.com',
+    paypalEmail: PROVIDER_DEV_EMAIL,
+    officialPaypalEmail: 'pagos@dokaestate.com',
     commissionRate: 0.15,
     certificacion: 'CST Cafetal Sostenible • Rainforest Alliance',
     website: 'https://dokaestate.com/',
@@ -198,10 +232,12 @@ export const MASTER_OPERATORS_REGISTRY: Record<string, {
   'guanacaste-blue-ocean': {
     id: 'guanacaste-blue-ocean',
     name: 'Guanacaste Blue Ocean Adventures & Snorkel Safari',
-    email: 'info@guanacasteblueocean.cr',
+    email: PROVIDER_DEV_EMAIL,
+    officialEmail: 'info@guanacasteblueocean.cr',
     phone: '+506 2670-0000',
     whatsapp: '50686700000',
-    paypalEmail: 'payouts@guanacasteblueocean.cr',
+    paypalEmail: PROVIDER_DEV_EMAIL,
+    officialPaypalEmail: 'payouts@guanacasteblueocean.cr',
     commissionRate: 0.15,
     certificacion: 'CST Bandera Azul Ecológica',
     website: 'https://guanacasteblueocean.cr/',
@@ -211,10 +247,12 @@ export const MASTER_OPERATORS_REGISTRY: Record<string, {
   'tarcoles-crocodile-safari': {
     id: 'tarcoles-crocodile-safari',
     name: 'Tárcoles River Crocodile & Mangrove Birding Safari',
-    email: 'reservas@tarcolescrocodilesafari.cr',
+    email: PROVIDER_DEV_EMAIL,
+    officialEmail: 'reservas@tarcolescrocodilesafari.cr',
     phone: '+506 2637-0333',
     whatsapp: '50686370333',
-    paypalEmail: 'operaciones@tarcolescrocodilesafari.cr',
+    paypalEmail: PROVIDER_DEV_EMAIL,
+    officialPaypalEmail: 'operaciones@tarcolescrocodilesafari.cr',
     commissionRate: 0.15,
     certificacion: 'CST Manglares del Pacífico Central',
     website: 'https://tarcolescrocodilesafari.cr/',
@@ -235,16 +273,56 @@ export async function getProviderFromDb(providerId: string): Promise<any | null>
   if (db) {
     try {
       let doc = await db.collection('operators').doc(providerId).get();
-      if (doc.exists) return { id: doc.id, ...doc.data() };
+      if (doc.exists) {
+        const data = doc.data() || {};
+        return {
+          id: doc.id,
+          ...data,
+          officialEmail: data.email,
+          email: getEffectiveProviderEmail(data.email),
+          officialPaypalEmail: data.paypalEmail,
+          paypalEmail: getEffectiveProviderEmail(data.paypalEmail)
+        };
+      }
 
       doc = await db.collection('proveedores').doc(providerId).get();
-      if (doc.exists) return { id: doc.id, ...doc.data() };
+      if (doc.exists) {
+        const data = doc.data() || {};
+        return {
+          id: doc.id,
+          ...data,
+          officialEmail: data.email,
+          email: getEffectiveProviderEmail(data.email),
+          officialPaypalEmail: data.paypalEmail,
+          paypalEmail: getEffectiveProviderEmail(data.paypalEmail)
+        };
+      }
 
       const opSnap = await db.collection('operators').where('code', '==', providerId).limit(1).get();
-      if (!opSnap.empty) return { id: opSnap.docs[0].id, ...opSnap.docs[0].data() };
+      if (!opSnap.empty) {
+        const data = opSnap.docs[0].data() || {};
+        return {
+          id: opSnap.docs[0].id,
+          ...data,
+          officialEmail: data.email,
+          email: getEffectiveProviderEmail(data.email),
+          officialPaypalEmail: data.paypalEmail,
+          paypalEmail: getEffectiveProviderEmail(data.paypalEmail)
+        };
+      }
 
       const provSnap = await db.collection('proveedores').where('code', '==', providerId).limit(1).get();
-      if (!provSnap.empty) return { id: provSnap.docs[0].id, ...provSnap.docs[0].data() };
+      if (!provSnap.empty) {
+        const data = provSnap.docs[0].data() || {};
+        return {
+          id: provSnap.docs[0].id,
+          ...data,
+          officialEmail: data.email,
+          email: getEffectiveProviderEmail(data.email),
+          officialPaypalEmail: data.paypalEmail,
+          paypalEmail: getEffectiveProviderEmail(data.paypalEmail)
+        };
+      }
     } catch (err) {
       console.warn(`Error buscando proveedor ${providerId} en Firestore:`, err);
     }
@@ -933,7 +1011,8 @@ export async function executeAutomatedProviderPayouts(): Promise<{
 
       // Buscar datos y correo PayPal del proveedor
       const provider = await getProviderFromDb(providerId);
-      const paypalEmail = provider?.paypalEmail || booking.providerInfo?.paypalEmail || (providerId === 'alsama-tours-cr' ? 'operaciones@alsamatourscr.com' : null);
+      const rawPaypal = provider?.paypalEmail || booking.providerInfo?.paypalEmail || (providerId === 'alsama-tours-cr' ? 'operaciones@alsamatourscr.com' : null);
+      const paypalEmail = getEffectiveProviderEmail(rawPaypal);
       const commissionRate = provider?.commissionRate ?? 0.15; // 15% comisión plataforma
       const payoutAmountUSD = Math.max(1, Number((totalUSD * (1 - commissionRate)).toFixed(2)));
 
@@ -1504,3 +1583,422 @@ export async function executeTour24hReminders(): Promise<{
 
   return summary;
 }
+
+// =========================================================================
+// 8. ALERTA METEOROLÓGICA AUTOMÁTICA Y ADAPTACIÓN DE ITINERARIO (Cron c/4h)
+// =========================================================================
+export async function executeWeatherMonitoringAlerts(): Promise<{
+  checkedBookings: number;
+  alertsSent: number;
+  affectedBookings: string[];
+}> {
+  console.log('🌦️ [CLIMA Y SEGURIDAD C/4H] Evaluando condiciones meteorológicas en rutas de Costa Rica...');
+  const bookingsCol = getBookingsCollection();
+  const result = {
+    checkedBookings: 0,
+    alertsSent: 0,
+    affectedBookings: [] as string[]
+  };
+
+  if (!bookingsCol) return result;
+
+  try {
+    const todayCR = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Costa_Rica' });
+    const snapshot = await bookingsCol.where('date', '==', todayCR).get();
+
+    for (const doc of snapshot.docs) {
+      const b = doc.data();
+      result.checkedBookings++;
+      const bookingId = b.bookingId || doc.id;
+      const isConfirmed = b.status === 'confirmada' || b.paymentStatus === 'completed';
+      const notAlertedYet = b.weatherNoticeSent !== true;
+
+      if (!isConfirmed || !notAlertedYet) continue;
+
+      const tourName = (b.tourName || '').toLowerCase();
+      // Zonas de alta pluviosidad o aventura que requieren monitoreo meteorológico activo
+      const isSensitiveZone = 
+        tourName.includes('arenal') || 
+        tourName.includes('fortuna') || 
+        tourName.includes('sarapiquí') || 
+        tourName.includes('rafting') || 
+        tourName.includes('canopy') || 
+        tourName.includes('monteverde') || 
+        tourName.includes('tortuguero') || 
+        tourName.includes('ballena') ||
+        tourName.includes('corcovado');
+
+      if (isSensitiveZone) {
+        const customerEmail = b.customerEmail || b.customer?.email;
+        const customerName = b.customerName || b.customer?.name || 'Estimado Viajero';
+        const operatorName = b.operator || 'Alsama Tours CR';
+
+        if (customerEmail && customerEmail.includes('@')) {
+          await sendEmail({
+            to: customerEmail,
+            subject: `🌿 Aviso Preventivo de Seguridad y Clima: Tu tour "${b.tourName}" de hoy`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 580px; margin: 0 auto; color: #1c1917; border: 1px solid #e7e5e4; border-radius: 16px; overflow: hidden; background-color: #ffffff;">
+                <div style="background-color: #064e3b; color: #ffffff; padding: 20px; text-align: center;">
+                  <h3 style="margin: 0; font-size: 18px;">🌿 Monitoreo Preventivo de Seguridad</h3>
+                  <p style="margin: 4px 0 0 0; font-size: 13px; color: #a7f3d0;">Costa Rica Tours & ${operatorName}</p>
+                </div>
+                <div style="padding: 24px;">
+                  <p>Hola <strong>${customerName}</strong>,</p>
+                  <p>Nuestro equipo de operaciones y tu operador oficial (${operatorName}) monitorean continuamente las condiciones meteorológicas y el estado de los senderos para tu tour de hoy: <strong>${b.tourName}</strong>.</p>
+                  
+                  <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 16px; margin: 16px 0;">
+                    <h4 style="margin: 0 0 6px 0; color: #166534; font-size: 14px;">☀️ Consejos Operativos del Guía:</h4>
+                    <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #14532d; line-height: 1.5;">
+                      <li>Llevar capa impermeable ligera o poncho de lluvia tropical.</li>
+                      <li>Calzado antideslizante con sujeción segura.</li>
+                      <li>Protector para dispositivos electrónicos o bolsa seca.</li>
+                      <li>Tu guía certificado coordinará cualquier ajuste menor de ruta para garantizar tu máxima seguridad y confort.</li>
+                    </ul>
+                  </div>
+
+                  <p style="font-size: 12px; color: #64748b; text-align: center;">
+                    Para cualquier consulta inmediata, contáctanos vía WhatsApp oficial al <strong>+506 8795 9148</strong>. ¡Pura Vida!
+                  </p>
+                </div>
+              </div>
+            `
+          });
+        }
+
+        await updateBookingStatus(bookingId, {
+          weatherNoticeSent: true,
+          weatherNoticeSentAt: new Date().toISOString()
+        });
+
+        result.alertsSent++;
+        result.affectedBookings.push(bookingId);
+      }
+    }
+
+    console.log(`✅ [CLIMA Y SEGURIDAD] Evaluadas ${result.checkedBookings} reservas de hoy. Avisos despachados: ${result.alertsSent}`);
+  } catch (err) {
+    console.error('❌ Error en monitoreo meteorológico:', err);
+  }
+
+  return result;
+}
+
+// =========================================================================
+// 9. CONCIERGE MATUTINO Y TIPS DE SEGURIDAD (Cron Diario 6:30 AM Costa Rica)
+// =========================================================================
+export async function executeMorningConciergeTips(): Promise<{
+  checkedBookings: number;
+  tipsSent: number;
+  sentBookings: string[];
+}> {
+  console.log('🌅 [CONCIERGE 6:30 AM CR] Enviando recomendaciones matutinas para salidas de hoy...');
+  const bookingsCol = getBookingsCollection();
+  const result = {
+    checkedBookings: 0,
+    tipsSent: 0,
+    sentBookings: [] as string[]
+  };
+
+  if (!bookingsCol) return result;
+
+  try {
+    const todayCR = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Costa_Rica' });
+    const snapshot = await bookingsCol.where('date', '==', todayCR).get();
+
+    for (const doc of snapshot.docs) {
+      const b = doc.data();
+      result.checkedBookings++;
+      const bookingId = b.bookingId || doc.id;
+      const isConfirmed = b.status === 'confirmada' || b.paymentStatus === 'completed';
+      const notSent = b.morningConciergeSent !== true;
+
+      if (isConfirmed && notSent) {
+        const customerEmail = b.customerEmail || b.customer?.email;
+        const customerName = b.customerName || b.customer?.name || 'Viajero';
+        const tourName = b.tourName || 'Experiencia Costa Rica';
+        const tourTime = b.time || '08:00 AM';
+        const pickupHotel = b.pickupHotel || 'Lobby de tu Hotel';
+
+        if (customerEmail && customerEmail.includes('@')) {
+          await sendEmail({
+            to: customerEmail,
+            subject: `🌅 ¡Buenos días ${customerName}! Hoy es tu gran día: ${tourName}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 580px; margin: 0 auto; color: #1c1917; border: 1px solid #e7e5e4; border-radius: 16px; overflow: hidden; background-color: #ffffff;">
+                <div style="background-color: #064e3b; color: #ffffff; padding: 22px; text-align: center;">
+                  <h2 style="margin: 0; font-size: 20px;">¡Tu aventura de hoy está lista! 🇨🇷</h2>
+                  <p style="margin: 4px 0 0 0; font-size: 13px; color: #a7f3d0;">Concierge Digital - Costa Rica Tours</p>
+                </div>
+                <div style="padding: 24px;">
+                  <p>¡Buenos días <strong>${customerName}</strong>!</p>
+                  <p>Hoy vivirás la magia de <strong>${tourName}</strong>. Aquí tienes tu check-list matutino para que disfrutes al máximo:</p>
+
+                  <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin: 16px 0;">
+                    <p style="margin: 4px 0; font-size: 14px;">⏰ <strong>Hora de salida / pick-up:</strong> ${tourTime}</p>
+                    <p style="margin: 4px 0; font-size: 14px;">📍 <strong>Punto de encuentro:</strong> ${pickupHotel}</p>
+                    <p style="margin: 4px 0; font-size: 14px;">🎫 <strong>Código de reserva:</strong> <code>${bookingId}</code></p>
+                  </div>
+
+                  <div style="background-color: #fefce8; border: 1px solid #fef08a; border-radius: 12px; padding: 14px; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 4px 0; font-size: 13px; color: #854d0e;">🎒 Qué no olvidar en tu mochila:</h4>
+                    <p style="margin: 0; font-size: 12px; color: #713f12; line-height: 1.5;">
+                      Protector solar biodegradable, repelente de insectos ecológico, botella reutilizable con agua fresca, calzado cómodo para caminar y tu cámara fotográfica.
+                    </p>
+                  </div>
+
+                  <p style="font-size: 12px; color: #64748b; text-align: center;">
+                    Nuestro equipo te desea un recorrido inolvidable. ¡Pura Vida! 🌿
+                  </p>
+                </div>
+              </div>
+            `
+          });
+
+          await updateBookingStatus(bookingId, {
+            morningConciergeSent: true,
+            morningConciergeSentAt: new Date().toISOString()
+          });
+
+          result.tipsSent++;
+          result.sentBookings.push(bookingId);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('❌ Error enviando concierge matutino:', err);
+  }
+
+  return result;
+}
+
+// =========================================================================
+// 10. RECUPERACIÓN DE PROSPECTOS Y CARRITOS ABANDONADOS (Cron Cada 1 Hora)
+// =========================================================================
+export async function executePreSaleProspectRecovery(): Promise<{
+  checkedBookings: number;
+  recoveredSent: number;
+  prospectsContacted: string[];
+}> {
+  console.log('🛒 [RECUPERACIÓN PRE-VENTA C/1H] Escaneando reservas pendientes entre 2h y 24h...');
+  const bookingsCol = getBookingsCollection();
+  const result = {
+    checkedBookings: 0,
+    recoveredSent: 0,
+    prospectsContacted: [] as string[]
+  };
+
+  if (!bookingsCol) return result;
+
+  try {
+    const now = Date.now();
+    const twoHoursAgo = now - 2 * 60 * 60 * 1000;
+    const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
+
+    const snapshot = await bookingsCol.get();
+
+    for (const doc of snapshot.docs) {
+      const b = doc.data();
+      result.checkedBookings++;
+      const bookingId = b.bookingId || doc.id;
+      const isPending = b.status === 'pendiente_pago' || b.status === 'hold' || b.paymentStatus === 'pending';
+      const notRecoveredYet = b.preSaleRecoverySent !== true;
+
+      const createdDate = normalizeDate(b.createdAt);
+      const createdTime = createdDate.getTime();
+      const inWindow = createdTime >= twentyFourHoursAgo && createdTime <= twoHoursAgo;
+
+      if (isPending && notRecoveredYet && inWindow) {
+        const customerEmail = b.customerEmail || b.customer?.email;
+        const customerName = b.customerName || b.customer?.name || 'Viajero';
+        const tourName = b.tourName || 'Experiencia en Costa Rica';
+        const totalUSD = b.totalUSD || b.totalAmount || 0;
+
+        if (customerEmail && customerEmail.includes('@')) {
+          await sendEmail({
+            to: customerEmail,
+            subject: `🌿 ¿Tienes alguna duda con tu reserva para ${tourName}?`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 580px; margin: 0 auto; color: #1c1917; border: 1px solid #e7e5e4; border-radius: 16px; overflow: hidden; background-color: #ffffff;">
+                <div style="background-color: #064e3b; color: #ffffff; padding: 22px; text-align: center;">
+                  <h2 style="margin: 0; font-size: 20px;">Estamos aquí para ayudarte a planear tu viaje</h2>
+                  <p style="margin: 4px 0 0 0; font-size: 13px; color: #a7f3d0;">Asistencia Personalizada - Costa Rica Tours</p>
+                </div>
+                <div style="padding: 24px;">
+                  <p>Hola <strong>${customerName}</strong>,</p>
+                  <p>Notamos que iniciaste tu reserva para <strong>${tourName}</strong> pero no lograste completar el pago.</p>
+                  
+                  <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin: 16px 0;">
+                    <p style="margin: 4px 0;">🎫 <strong>Código de Reserva:</strong> <code>${bookingId}</code></p>
+                    <p style="margin: 4px 0;">💰 <strong>Monto Total:</strong> $${totalUSD} USD</p>
+                    <p style="margin: 4px 0;">💳 <strong>Métodos disponibles:</strong> Tarjetas internacionales (Stripe), PayPal y SINPE Móvil local.</p>
+                  </div>
+
+                  <p>Si tienes preguntas sobre horarios, políticas de cancelación o requieres ayuda con el pago, nuestro equipo local de Pérez Zeledón te atiende directamente por WhatsApp:</p>
+
+                  <div style="text-align: center; margin: 24px 0;">
+                    <a href="https://wa.me/50687959148?text=${encodeURIComponent(`Hola, tengo una consulta sobre mi reserva #${bookingId} para ${tourName}`)}" style="background-color: #25d366; color: #ffffff; padding: 14px 28px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block;">
+                      💬 Hablar con un Asesor por WhatsApp
+                    </a>
+                  </div>
+
+                  <p style="font-size: 12px; color: #64748b; text-align: center;">
+                    Tu espacio se mantiene reservado temporalmente. ¡Pura Vida!
+                  </p>
+                </div>
+              </div>
+            `
+          });
+
+          await updateBookingStatus(bookingId, {
+            preSaleRecoverySent: true,
+            preSaleRecoverySentAt: new Date().toISOString()
+          });
+
+          result.recoveredSent++;
+          result.prospectsContacted.push(bookingId);
+        }
+      }
+    }
+    console.log(`✅ [RECUPERACIÓN PRE-VENTA] Escaneo completado. Prospectos asistidos: ${result.recoveredSent}`);
+  } catch (err) {
+    console.error('❌ Error en recuperación pre-venta:', err);
+  }
+
+  return result;
+}
+
+// =========================================================================
+// 11. FIDELIZACIÓN Y CUPONES VIP POST-VENTA (Cron Diario 10:00 AM Costa Rica)
+// =========================================================================
+export async function executePostSaleVipLoyalty(): Promise<{
+  checkedBookings: number;
+  couponsSent: number;
+  rewardedBookings: string[];
+}> {
+  console.log('🎁 [FIDELIZACIÓN 10:00 AM CR] Buscando viajeros de hace 3 días para obsequio VIP...');
+  const bookingsCol = getBookingsCollection();
+  const result = {
+    checkedBookings: 0,
+    couponsSent: 0,
+    rewardedBookings: [] as string[]
+  };
+
+  if (!bookingsCol) return result;
+
+  try {
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() - 3);
+    const targetStr = targetDate.toLocaleDateString('en-CA', { timeZone: 'America/Costa_Rica' });
+
+    const snapshot = await bookingsCol.where('date', '==', targetStr).get();
+
+    for (const doc of snapshot.docs) {
+      const b = doc.data();
+      result.checkedBookings++;
+      const bookingId = b.bookingId || doc.id;
+      const isConfirmed = b.status === 'confirmada' || b.paymentStatus === 'completed';
+      const notRewardedYet = b.vipCouponSent !== true;
+
+      if (isConfirmed && notRewardedYet) {
+        const customerEmail = b.customerEmail || b.customer?.email;
+        const customerName = b.customerName || b.customer?.name || 'Apreciado Viajero';
+        const tourName = b.tourName || 'Costa Rica';
+        const vipCode = `PURAVIDA15-${bookingId.slice(-6).toUpperCase()}`;
+
+        if (customerEmail && customerEmail.includes('@')) {
+          await sendEmail({
+            to: customerEmail,
+            subject: `🎁 15% OFF de Regalo VIP para tu próxima aventura en Costa Rica`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 580px; margin: 0 auto; color: #1c1917; border: 1px solid #e7e5e4; border-radius: 16px; overflow: hidden; background-color: #ffffff;">
+                <div style="background-color: #064e3b; color: #ffffff; padding: 24px; text-align: center;">
+                  <h2 style="margin: 0; font-size: 22px;">¡Gracias por viajar con nosotros! ✨</h2>
+                  <p style="margin: 6px 0 0 0; font-size: 13px; color: #a7f3d0;">Beneficio Exclusivo Comunidad Costa Rica Tours</p>
+                </div>
+                <div style="padding: 24px;">
+                  <p>Hola <strong>${customerName}</strong>,</p>
+                  <p>Esperamos que tu experiencia en <strong>${tourName}</strong> haya dejado memorias inolvidables en tu corazón.</p>
+                  
+                  <div style="text-align: center; margin: 24px 0; background-color: #fefce8; border: 2px dashed #eab308; border-radius: 16px; padding: 20px;">
+                    <p style="margin: 0 0 6px 0; font-size: 13px; color: #854d0e; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Tu Cupón de Descuento VIP:</p>
+                    <div style="font-size: 24px; font-weight: 900; color: #065f46; letter-spacing: 2px; margin: 8px 0;">${vipCode}</div>
+                    <p style="margin: 0; font-size: 13px; color: #713f12;"><strong>15% de Descuento</strong> en cualquier tour o actividad de nuestro catálogo oficial.</p>
+                  </div>
+
+                  <p style="font-size: 13px; color: #44403c;">
+                    Este beneficio es válido por 1 año y puedes transferirlo a amigos o familiares que planeen visitar Costa Rica.
+                  </p>
+
+                  <div style="text-align: center; margin: 20px 0;">
+                    <a href="${APP_URL}/tours" style="background-color: #059669; color: #ffffff; padding: 12px 28px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block;">
+                      Explorar Más Experiencias
+                    </a>
+                  </div>
+
+                  <p style="font-size: 12px; color: #78716c; text-align: center;">
+                    Siempre serás bienvenido/a en Costa Rica. ¡Pura Vida! 🇨🇷
+                  </p>
+                </div>
+              </div>
+            `
+          });
+
+          await updateBookingStatus(bookingId, {
+            vipCouponSent: true,
+            vipCouponCode: vipCode,
+            vipCouponSentAt: new Date().toISOString()
+          });
+
+          result.couponsSent++;
+          result.rewardedBookings.push(bookingId);
+        }
+      }
+    }
+
+    console.log(`✅ [FIDELIZACIÓN 10AM] Proceso terminado. Cupones VIP entregados: ${result.couponsSent}`);
+  } catch (err) {
+    console.error('❌ Error en fidelización post-venta:', err);
+  }
+
+  return result;
+}
+
+// =========================================================================
+// 12. MANEJADOR GLOBAL DE ERRORES Y RESILIENCIA NATIVA (Sustituto n8n Error Handler)
+// =========================================================================
+export async function handleGlobalWorkflowError(params: {
+  workflowName: string;
+  failedNodeOrAction: string;
+  error: any;
+  context?: Record<string, any>;
+}): Promise<{ recorded: boolean; alertId?: string }> {
+  const errorMessage = params.error?.message || String(params.error) || 'Error no especificado';
+  console.error(`🚨 [MANEJADOR GLOBAL DE ERRORES NATIVO] Fallo en ${params.workflowName} -> ${params.failedNodeOrAction}:`, errorMessage);
+
+  try {
+    const escalResult = await sendTelegramEscalation({
+      title: `Fallo en Workflow: ${params.workflowName}`,
+      reason: `Error durante la acción "${params.failedNodeOrAction}": ${errorMessage}`,
+      details: {
+        Workflow: params.workflowName,
+        Accion: params.failedNodeOrAction,
+        MensajeError: errorMessage,
+        ...(params.context || {})
+      }
+    });
+
+    logAutomationExecution(
+      `ERR_${params.workflowName.toUpperCase().replace(/\s+/g, '_')}`,
+      0,
+      'error',
+      `Fallo interceptado: ${errorMessage}`
+    );
+
+    return { recorded: escalResult.success };
+  } catch (secondaryErr) {
+    console.error('❌ Fallo crítico secundario al registrar error global:', secondaryErr);
+    return { recorded: false };
+  }
+}
+
