@@ -22,7 +22,8 @@ import {
   Plane,
   Palette,
   Home,
-  Calendar
+  Calendar,
+  Heart
 } from 'lucide-react';
 import { Language, Currency } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';

@@ -39,7 +39,7 @@ interface ToursGridProps {
 }
 
 export const ToursGrid: React.FC<ToursGridProps> = ({
-  tours,
+  tours: propTours,
   language,
   currency,
   selectedCategory,
@@ -55,14 +55,15 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
   onOpenMap,
   onBack,
   onSelectTour,
-  favorites,
-  toggleFavorite,
-  comparedTours,
-  toggleCompare,
-  viewMode,
-  setViewMode
+  favorites = [],
+  toggleFavorite = () => {},
+  comparedTours = [],
+  toggleCompare = () => {},
+  viewMode = 'grid',
+  setViewMode = () => {}
 }) => {
   const navigate = useNavigate();
+  const tours = propTours || [];
   // Local Catalog State
   const [currentPage, setCurrentPage] = useState(1);
   const [isListening, setIsListening] = useState(false);
