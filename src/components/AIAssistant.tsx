@@ -520,7 +520,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       const combinedText = (query + ' ' + (data.reply || '')).toLowerCase();
       const matchedTours = explicitRecommendedTours || TOURS.filter(t => 
         combinedText.includes(t.title.es.toLowerCase()) ||
-        combinedText.includes(t.title.en.toLowerCase()) ||
+        (t.title.en && combinedText.includes(t.title.en.toLowerCase())) ||
         (combinedText.includes('arenal') && t.region === 'arenal') ||
         (combinedText.includes('monteverde') && t.region === 'monteverde') ||
         ((combinedText.includes('perezoso') || combinedText.includes('sloth')) && t.category === 'wildlife') ||
@@ -892,7 +892,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 </button>
 
                 <button
-                  onClick={() => handleSendMessage(undefined, language === 'es' ? 'Deseo consultar el estado de mi reserva con mi código o email' : 'I would like to check my booking status using my code or email')}
+                  onClick={() => handleSendMessage(language === 'es' ? 'Deseo consultar el estado de mi reserva con mi código o email' : 'I would like to check my booking status using my code or email')}
                   className="px-2 py-1 rounded-lg bg-[#041d13] hover:bg-[#072a1c] text-stone-200 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap"
                 >
                   <span>🔍</span>
@@ -900,7 +900,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 </button>
 
                 <button
-                  onClick={() => handleSendMessage(undefined, language === 'es' ? '¿Cuáles son las tarifas oficiales y rutas de traslados privados de Alsama Tours?' : 'What are the official private transfer rates and routes by Alsama Tours?')}
+                  onClick={() => handleSendMessage(language === 'es' ? '¿Cuáles son las tarifas oficiales y rutas de traslados privados de Alsama Tours?' : 'What are the official private transfer rates and routes by Alsama Tours?')}
                   className="px-2 py-1 rounded-lg bg-[#041d13] hover:bg-[#072a1c] text-stone-200 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap"
                 >
                   <span>🚐</span>

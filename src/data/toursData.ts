@@ -1,4 +1,4 @@
-import { Tour, CategoryInfo, RegionInfo, Review } from '../types';
+import { Tour, CategoryInfo, RegionInfo, Review, OperatorProfile } from '../types';
 
 
 
@@ -7,7 +7,7 @@ import { Tour, CategoryInfo, RegionInfo, Review } from '../types';
 export const CATEGORIES: CategoryInfo[] = [
   {
     id: 'volcanoes',
-    name: { es: 'Volcanes y Termales Chuzos', en: 'Volcanoes & Hot Springs' },
+    name: { es: 'Volcanes y Termales', en: 'Volcanoes & Hot Springs', fr: 'Volcans & Sources Chaudes', de: 'Vulkane & Heiße Quellen', zh: '火山与温泉' },
     iconName: 'Flame',
     description: {
       es: 'Explora coladas de lava del Volcán Arenal y relájate en aguas termales minerales naturales.',
@@ -16,7 +16,7 @@ export const CATEGORIES: CategoryInfo[] = [
   },
   {
     id: 'canopy',
-    name: { es: 'Canopy y Tirolesas', en: 'Zip-line & Canopy' },
+    name: { es: 'Aventura y Canopy', en: 'Adventure & Zipline', fr: 'Aventure & Tyrolienne', de: 'Abenteuer & Zipline', zh: '探险与滑索' },
     iconName: 'Zap',
     description: {
       es: 'Siente la adrenalina volando sobre las copas de los árboles en el bosque nuboso.',
@@ -25,7 +25,7 @@ export const CATEGORIES: CategoryInfo[] = [
   },
   {
     id: 'wildlife',
-    name: { es: 'Fauna Silvestre y Perezosos', en: 'Wildlife & Sloths' },
+    name: { es: 'Naturaleza y Fauna', en: 'Nature & Wildlife', fr: 'Nature & Faune', de: 'Natur & Wildtiere', zh: '自然与野生动物' },
     iconName: 'Trees',
     description: {
       es: 'Observa perezosos, monos capuchinos, tucanes y ranas de ojos rojos con guías experimentados.',
@@ -34,16 +34,16 @@ export const CATEGORIES: CategoryInfo[] = [
   },
   {
     id: 'beaches',
-    name: { es: 'Playas y Catamarán', en: 'Beaches & Catamaran' },
+    name: { es: 'Playas y Sol', en: 'Beaches & Sun', fr: 'Plages & Soleil', de: 'Strände & Sonne', zh: '海滩与阳光' },
     iconName: 'Sun',
     description: {
-      es: 'Playas tuanis de arena blanca, snorkel y atardeceres de película en el Pacífico.',
+      es: 'Playas de arena blanca, snorkel y atardeceres de película en el Pacífico.',
       en: 'Pristine white sand beaches, snorkeling, and sunset catamaran cruises on the Pacific.'
     }
   },
   {
     id: 'rafting',
-    name: { es: 'Rafting y Ríos', en: 'Whitewater Rafting' },
+    name: { es: 'Rafting y Ríos', en: 'Whitewater Rafting', fr: 'Rafting en Rivière', de: 'Wildwasser-Rafting', zh: '漂流探险' },
     iconName: 'Waves',
     description: {
       es: 'Desciende los cañones vírgenes del Río Pacuare, votado uno de los más bellos del mundo.',
@@ -52,7 +52,7 @@ export const CATEGORIES: CategoryInfo[] = [
   },
   {
     id: 'culture',
-    name: { es: 'Café, Chocolate y Cultura', en: 'Coffee, Chocolate & Culture' },
+    name: { es: 'Cultura y Café', en: 'Culture & Coffee', fr: 'Culture & Café', de: 'Kultur & Kaffee', zh: '文化与咖啡' },
     iconName: 'Coffee',
     description: {
       es: 'Aprende el proceso del café costarricense "El Grano de Oro" y chocolate artesanal de cacao puro.',
@@ -60,77 +60,181 @@ export const CATEGORIES: CategoryInfo[] = [
     }
   },
   {
-    id: 'multiday',
-    name: { es: 'Paquetes Multidía', en: 'Multi-Day Packages' },
-    iconName: 'Compass',
+    id: 'hiking',
+    name: { es: 'Senderismo', en: 'Hiking', fr: 'Randonnée', de: 'Wandern', zh: '徒步旅行' },
+    iconName: 'Footprints',
     description: {
-      es: 'Itinerarios completos de 3 a 7 días combinando montaña, bosque nuboso y playa tropical.',
-      en: 'Complete 3 to 7 day all-inclusive tours combining volcano, cloud forest, and coast.'
+      es: 'Camina por senderos naturales y descubre paisajes impresionantes.',
+      en: 'Hike through natural trails and discover breathtaking landscapes.'
     }
+  },
+  {
+    id: 'waterfalls',
+    name: { es: 'Cataratas', en: 'Waterfalls', fr: 'Cascades', de: 'Wasserfälle', zh: '瀑布' },
+    iconName: 'Droplet',
+    description: {
+      es: 'Visita las cataratas más espectaculares escondidas en la selva.',
+      en: 'Visit the most spectacular waterfalls hidden in the jungle.'
+    }
+  },
+  {
+    id: 'surf',
+    name: { es: 'Surf', en: 'Surf', fr: 'Surf', de: 'Surfen', zh: '冲浪' },
+    iconName: 'Waves',
+    description: {
+      es: 'Aprende o mejora tu surf en las mejores playas de Costa Rica.',
+      en: 'Learn or improve your surfing in the best beaches of Costa Rica.'
+    }
+  },
+  {
+    id: 'snorkeling',
+    name: { es: 'Snorkel y Buceo', en: 'Snorkeling & Diving', fr: 'Snorkeling & Plongée', de: 'Schnorcheln & Tauchen', zh: '浮潜与潜水' },
+    iconName: 'Waves',
+    description: {
+      es: 'Explora la vida marina en arrecifes de coral protegidos.',
+      en: 'Explore marine life in protected coral reefs.'
+    }
+  },
+  {
+    id: 'whale_watching',
+    name: { es: 'Observación de Ballenas', en: 'Whale Watching', fr: 'Observation des Baleines', de: 'Walbeobachtung', zh: '赏鲸' },
+    iconName: 'Waves',
+    description: {
+      es: 'Vive el espectáculo natural del avistamiento de ballenas jorobadas en el Parque Marino Ballena.',
+      en: 'Experience the natural spectacle of humpback whale watching in Marino Ballena Park.'
+    }
+  }
+];
+
+export const OPERATORS: OperatorProfile[] = [
+  {
+    id: 'alsama-tours',
+    name: 'ALSAMA Tours',
+    slug: 'alsama-tours',
+    tagline: { es: 'Expertos en Marino Ballena y Uvita', en: 'Marino Ballena & Uvita Experts' },
+    description: {
+      es: 'ALSAMA Tours es un operador local especializado en experiencias marinas y de naturaleza en la zona de Uvita y el Parque Nacional Marino Ballena.',
+      en: 'ALSAMA Tours is a local operator specializing in marine and nature experiences in the Uvita area and Marino Ballena National Park.'
+    },
+    location: 'Uvita, Puntarenas',
+    region: 'osa',
+    rating: 4.9,
+    reviewsCount: 150,
+    yearsExperience: 12,
+    verifiedBadge: true,
+    commissionRate: 0.20,
+    contact: {
+      phone: '+506 8888 8888',
+      whatsapp: '+506 8888 8888',
+      email: 'info@alsamatours.com'
+    },
+    specialties: { es: ['Avistamiento de Ballenas', 'Delfines', 'Snorkel'], en: ['Whale Watching', 'Dolphins', 'Snorkel'] },
+    cancellationPolicy: { es: 'Cancelación gratuita hasta 24 horas antes.', en: 'Free cancellation up to 24 hours before.' }
+  },
+  {
+    id: 'expediciones-tropicales',
+    name: 'Expediciones Tropicales',
+    slug: 'expediciones-tropicales',
+    tagline: { es: 'Líderes en tours de un día desde San José', en: 'Leaders in day tours from San Jose' },
+    description: {
+      es: 'Con más de 25 años de experiencia, ofrecemos los mejores combos de un día a los volcanes y parques nacionales más emblemáticos.',
+      en: 'With over 25 years of experience, we offer the best one-day combos to the most emblematic volcanoes and national parks.'
+    },
+    location: 'San José',
+    region: 'sjo',
+    rating: 4.8,
+    reviewsCount: 3200,
+    yearsExperience: 25,
+    verifiedBadge: true,
+    commissionRate: 0.20,
+    contact: {
+      phone: '+506 2222 2222',
+      whatsapp: '+506 2222 2222',
+      email: 'info@tropicalexpeditions.com'
+    },
+    specialties: { es: ['Volcanes', 'Cataratas', 'Combos'], en: ['Volcanoes', 'Waterfalls', 'Combos'] },
+    cancellationPolicy: { es: 'Cancelación gratuita hasta 48 horas antes.', en: 'Free cancellation up to 48 hours before.' }
   }
 ];
 
 export const REGIONS: RegionInfo[] = [
   {
     id: 'arenal',
-    name: 'La Fortuna / Volcán Arenal',
+    name: { es: 'La Fortuna / Volcán Arenal', en: 'La Fortuna / Arenal Volcano' },
     tagline: { es: 'La Capital de la Aventura y Termales', en: 'The Adventure & Hot Springs Capital' },
+    description: { es: 'Famoso por su volcán cónico casi perfecto y sus relajantes aguas termales.', en: 'Famous for its nearly perfect conical volcano and relaxing hot springs.' },
     image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 42, y: 38 }
   },
   {
     id: 'monteverde',
-    name: 'Monteverde',
+    name: { es: 'Monteverde', en: 'Monteverde' },
     tagline: { es: 'Mágico Bosque Nuboso y Biodiversidad', en: 'Magical Cloud Forest & Biodiversity' },
+    description: { es: 'Un paraíso de neblina, puentes colgantes y el místico quetzal resplandeciente.', en: 'A paradise of mist, hanging bridges, and the mystical resplendent quetzal.' },
     image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 33, y: 44 }
   },
   {
     id: 'manuel_antonio',
-    name: 'Manuel Antonio',
+    name: { es: 'Manuel Antonio', en: 'Manuel Antonio' },
     tagline: { es: 'Donde el Bosque Encuentra el Mar', en: 'Where Rainforest Meets Ocean' },
+    description: { es: 'Playas de arena blanca y exuberante selva llena de perezosos y monos.', en: 'White sand beaches and lush rainforest full of sloths and monkeys.' },
     image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 50, y: 68 }
   },
   {
     id: 'pacuare',
-    name: 'Río Pacuare / Turrialba',
+    name: { es: 'Río Pacuare / Turrialba', en: 'Pacuare River / Turrialba' },
     tagline: { es: 'Los Mejores Rápidos de Costa Rica', en: 'World-Class Whitewater Rafting' },
+    description: { es: 'Uno de los ríos más bellos del mundo para el rafting de aguas bravas.', en: 'One of the most beautiful rivers in the world for whitewater rafting.' },
     image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 62, y: 52 }
   },
   {
     id: 'guanacaste',
-    name: 'Guanacaste / Tamarindo',
+    name: { es: 'Guanacaste / Tamarindo', en: 'Guanacaste / Tamarindo' },
     tagline: { es: 'Sol, Surf y Playas Doradas', en: 'Sunshine, Surf & Golden Beaches' },
+    description: { es: 'Famoso por su clima seco, surf de clase mundial y atardeceres espectaculares.', en: 'Famous for its dry weather, world-class surf, and spectacular sunsets.' },
     image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 18, y: 32 }
   },
   {
     id: 'tortuguero',
-    name: 'Tortuguero',
+    name: { es: 'Tortuguero', en: 'Tortuguero' },
     tagline: { es: 'El Amazonas Costarricense y Tortugas Verdes', en: 'Costa Rican Amazon & Sea Turtles' },
+    description: { es: 'Navega por canales remotos y observa el desove de las tortugas marinas.', en: 'Navigate remote canals and witness the nesting of sea turtles.' },
     image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 70, y: 30 }
   },
   {
     id: 'osa',
-    name: 'Península de Osa / Corcovado',
-    tagline: { es: 'El Lugar Más Intenso del Planeta', en: 'Most Biologically Intense Place' },
-    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=85',
-    coordinates: { x: 72, y: 88 }
+    name: { es: 'Uvita / Marino Ballena / Osa', en: 'Uvita / Marino Ballena / Osa' },
+    tagline: { es: 'El Hogar de las Ballenas y Corcovado', en: 'Home of Whales & Corcovado' },
+    description: { es: 'Famoso por el tómbolo en cola de ballena y el Parque Nacional Corcovado, el más biodiverso del mundo.', en: 'Famous for the Whale Tail sandbar and Corcovado National Park, the most biodiverse on Earth.' },
+    image: 'https://images.unsplash.com/photo-1568430462989-441609751427?auto=format&fit=crop&w=1200&q=85',
+    coordinates: { x: 58, y: 82 }
+  },
+  {
+    id: 'caribe_sur',
+    name: { es: 'Puerto Viejo / Cahuita', en: 'Puerto Viejo / Cahuita' },
+    tagline: { es: 'Ritmos Afrocaribeños y Playas de Ensueño', en: 'Afro-Caribbean Rhythms & Dreamy Beaches' },
+    description: { es: 'Cultura vibrante, gastronomía caribeña y arrecifes de coral protegidos.', en: 'Vibrant culture, Caribbean gastronomy, and protected coral reefs.' },
+    image: 'https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?auto=format&fit=crop&w=1200&q=85',
+    coordinates: { x: 85, y: 55 }
   },
   {
     id: 'sjo',
-    name: 'San José / Valle Central',
+    name: { es: 'San José / Valle Central', en: 'San Jose / Central Valley' },
     tagline: { es: 'Cultura, Volcanes y Café Premium', en: 'Culture, Volcanoes & Heritage Coffee' },
+    description: { es: 'El corazón cultural de Costa Rica y punto de partida hacia volcanes activos.', en: 'The cultural heart of Costa Rica and starting point to active volcanoes.' },
     image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 52, y: 50 }
   },
   {
     id: 'caribe',
-    name: 'Caribe Sur / Puerto Viejo',
+    name: { es: 'Caribe Sur / Puerto Viejo', en: 'South Caribbean / Puerto Viejo' },
     tagline: { es: 'Ritmo Afrocaribeño, Arrecifes y Naturaleza', en: 'Afro-Caribbean Vibe, Reefs & Wildlife' },
+    description: { es: 'Playas turquesa, cultura rasta y un ambiente relajado inigualable.', en: 'Turquoise beaches, rasta culture, and an unmatched relaxed vibe.' },
     image: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 82, y: 62 }
   }

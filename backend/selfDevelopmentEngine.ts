@@ -181,8 +181,8 @@ export function calculateOptimizedRoutes(): RouteOptimizationResult[] {
 /**
  * Cálculo inteligente de elasticidad y demanda dinámica basado en reservas reales
  */
-export function calculateDynamicPricingInsights(): DynamicPricingInsight[] {
-  const allBookings = getAllBookings();
+export async function calculateDynamicPricingInsights(): Promise<DynamicPricingInsight[]> {
+  const allBookings = await getAllBookings();
   const insights: DynamicPricingInsight[] = [];
 
   // Analizar los 3 tours principales del catálogo
@@ -234,14 +234,14 @@ export function calculateDynamicPricingInsights(): DynamicPricingInsight[] {
 /**
  * Retorna el estado global del motor de auto-desarrollo
  */
-export function getSelfDevelopmentOverview() {
+export async function getSelfDevelopmentOverview() {
   return {
     status: 'ACTIVE_SELF_EVOLVING',
     systemHealthScore: 99.7,
     autoHealingActionsTotal: selfDevelopmentLog.length,
     recentHealingLogs: selfDevelopmentLog.slice(0, 15),
     routeOptimizations: calculateOptimizedRoutes(),
-    pricingIntelligence: calculateDynamicPricingInsights(),
+    pricingIntelligence: await calculateDynamicPricingInsights(),
     version: '2026.4-AutonomousPro',
     uptimeSeconds: Math.floor(process.uptime()),
     timestamp: new Date().toISOString()

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Sparkles, 
   Compass, 
@@ -19,17 +20,14 @@ import { Language } from '../types';
 interface HomeTrustSectionsProps {
   language: Language;
   onOpenCustomFunnel: () => void;
-  onOpenItineraryPlanner: () => void;
-  onExploreTours: () => void;
 }
 
 export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
   language,
-  onOpenCustomFunnel,
-  onOpenItineraryPlanner,
-  onExploreTours
+  onOpenCustomFunnel
 }) => {
   const isEs = language === 'es';
+  const navigate = useNavigate();
 
   const steps = [
     {
@@ -198,7 +196,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
               </h2>
             </div>
             <button
-              onClick={onExploreTours}
+              onClick={() => navigate('/tours')}
               className="inline-flex items-center gap-2 text-sm font-bold text-amber-400 hover:text-amber-300 transition-colors cursor-pointer"
             >
               <span>{isEs ? 'Ver todos los tours disponibles' : 'View all available tours'}</span>
@@ -345,7 +343,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
 
               <button
                 type="button"
-                onClick={onOpenItineraryPlanner}
+                onClick={() => navigate('/itinerary')}
                 className="w-full btn-outline bg-transparent border-emerald-600/40 text-white hover:bg-emerald-900/40 group"
                 title={isEs ? 'Planificador inteligente con IA en segundos' : 'Smart AI trip planner in seconds'}
               >

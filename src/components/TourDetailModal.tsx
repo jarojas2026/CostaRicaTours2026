@@ -4,8 +4,9 @@ import {
   ChevronRight, ChevronLeft, X, AlertCircle, CreditCard, Smartphone, Banknote, 
   Lock, Sparkles, Check, Info, ArrowRight, Phone, Save, Wifi, WifiOff, Trash2
 } from 'lucide-react';
-import { Tour, Language, Currency, BookingRequest } from '../types';
+import { Tour, Language, Currency, BookingRequest, OperatorProfile } from '../types';
 import { getLangText, formatCurrency } from '../utils/i18n';
+import { OPERATORS } from '../data/toursData';
 
 interface TourDetailModalProps {
   tour: Tour | null;
@@ -157,116 +158,165 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     ? tour.gallery[0] 
     : (tour.image || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80');
 
+  const operator = tour.operatorId ? OPERATORS.find(op => op.id === tour.operatorId) : null;
+
   const modalTitle = getLangText(tour.title, language, 'Tour de Costa Rica');
   const modalDescription = getLangText(tour.description, language, '');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto overscroll-contain">
-      <div className="modal-panel w-full max-w-4xl relative my-4 sm:my-8">
-        <button onClick={onClose} className="btn-close">
-          <X size={24} />
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto overscroll-contain">
+      <div className="modal-panel w-full max-w-5xl relative my-4 sm:my-8 bg-stone-900 border-emerald-500/20 text-stone-100 rounded-[2.5rem] overflow-hidden">
+        <button onClick={onClose} className="btn-close absolute top-6 right-6 z-20 bg-stone-950/50 backdrop-blur-md hover:bg-stone-950 transition-colors p-2 rounded-full border border-white/10">
+          <X size={24} className="text-white" />
         </button>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-2">
-          <div>
-            <img src={tourImage} alt={modalTitle} className="w-full h-64 object-cover rounded-2xl mb-4 shadow-sm" />
-            <h2 className="text-2xl font-black mb-2 uppercase text-stone-900">{modalTitle}</h2>
-            <p className="text-sm text-stone-600 mb-4 leading-relaxed">{modalDescription}</p>
-            <div className="flex items-center justify-between font-black text-xl mb-4 text-emerald-800 bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
-              <span className="text-sm uppercase tracking-wider text-emerald-900">{language === 'es' ? 'Total Calculado:' : 'Calculated Total:'}</span>
-              <span>{currency === 'USD' ? `$${totalUSD} USD` : `₡${totalCRC.toLocaleString('es-CR')} CRC`}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+          {/* Left Column: Info */}
+          <div className="p-8 md:p-12 space-y-8 bg-stone-950/20 max-h-[85vh] overflow-y-auto custom-scrollbar">
+            <div>
+              <div className="flex items-center gap-2 text-emerald-400 font-black uppercase tracking-[0.2em] text-[10px] mb-4">
+                <MapPin className="w-3.5 h-3.5" />
+                <span>{tour.location?.placeName || 'Costa Rica'}</span>
+              </div>
+              <h2 className="text-3xl md:text-5xl font-black mb-6 tracking-tighter leading-tight text-white">{modalTitle}</h2>
+              
+              <div className="flex flex-wrap gap-4 mb-8">
+                <div className="px-4 py-2 bg-stone-900 rounded-full border border-white/5 flex items-center gap-2 text-sm">
+                  <Clock className="w-4 h-4 text-amber-500" />
+                  <span className="text-stone-300 font-bold">{tour.duration || getLangText(tour.durationLabel, language)}</span>
+                </div>
+                <div className="px-4 py-2 bg-stone-900 rounded-full border border-white/5 flex items-center gap-2 text-sm">
+                  <Star className="w-4 h-4 text-amber-500" />
+                  <span className="text-stone-300 font-bold">{tour.rating} (150+)</span>
+                </div>
+                <div className="px-4 py-2 bg-stone-900 rounded-full border border-white/5 flex items-center gap-2 text-sm">
+                  <Users className="w-4 h-4 text-emerald-500" />
+                  <span className="text-stone-300 font-bold">{language === 'es' ? 'Grupos Pequeños' : 'Small Groups'}</span>
+                </div>
+              </div>
+
+              <div className="prose prose-invert prose-stone max-w-none mb-10">
+                <p className="text-stone-400 leading-relaxed text-lg">{modalDescription}</p>
+              </div>
+
+              {/* Operator Info */}
+              {operator && (
+                <div className="p-6 bg-stone-900/50 border border-emerald-500/10 rounded-3xl mb-10">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center border border-emerald-500/30">
+                      <ShieldCheck className="w-6 h-6 text-emerald-400" />
+                    </div>
+                    <div>
+                      <div className="text-stone-500 text-[10px] uppercase font-black tracking-widest">{language === 'es' ? 'Operado por' : 'Operated by'}</div>
+                      <div className="text-white font-bold text-lg">{operator.name}</div>
+                    </div>
+                  </div>
+                  <p className="text-stone-400 text-sm italic mb-4">"{getLangText(operator.tagline, language)}"</p>
+                  <div className="flex items-center gap-2 text-[10px] font-black text-emerald-400 uppercase tracking-widest">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    {language === 'es' ? 'Operador Local Verificado' : 'Verified Local Operator'}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <h4 className="font-bold text-white uppercase tracking-widest text-xs flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  {language === 'es' ? 'Lo que incluye' : 'What is included'}
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {(tour.inclusions[language] || tour.inclusions.es || []).slice(0, 6).map((item, i) => (
+                    <div key={i} className="flex items-center gap-2 text-stone-400 text-sm">
+                      <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <h3 className="font-black text-lg border-b pb-2 text-stone-800 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-amber-500" />
-              <span>{language === 'es' ? 'Detalles de la Reserva' : 'Booking Details'}</span>
-            </h3>
-
-            {errorMessage && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                <span>{errorMessage}</span>
+          {/* Right Column: Form */}
+          <div className="p-8 md:p-12 bg-stone-900/50 border-l border-white/5">
+            <div className="mb-10">
+              <div className="text-stone-500 text-xs font-black uppercase tracking-widest mb-2">{language === 'es' ? 'Desde' : 'From'}</div>
+              <div className="text-4xl md:text-5xl font-black text-emerald-400 mb-1">
+                {currency === 'USD' ? `$${totalUSD}` : `₡${totalCRC.toLocaleString('es-CR')}`}
               </div>
-            )}
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-stone-700 block mb-1">{language === 'es' ? 'Fecha del Tour' : 'Tour Date'}</label>
-                <input required type="date" className="w-full p-2.5 border border-stone-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-stone-700 block mb-1">{language === 'es' ? 'Adultos' : 'Adults'}</label>
-                <input type="number" min="1" max="30" className="w-full p-2.5 border border-stone-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]" value={adults} onChange={e => setAdults(Number(e.target.value))} />
-              </div>
+              <div className="text-stone-500 text-xs">{language === 'es' ? 'Precio por persona' : 'Price per person'}</div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-stone-700 block mb-1">{language === 'es' ? 'Nombre Completo' : 'Full Name'}</label>
-                <input required type="text" placeholder="Ej: María González" className="w-full p-2.5 border border-stone-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]" value={fullName} onChange={e => setFullName(e.target.value)} />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-stone-700 block mb-1">{language === 'es' ? 'Correo Electrónico' : 'Email Address'}</label>
-                <input required type="email" placeholder="maria@ejemplo.com" className="w-full p-2.5 border border-stone-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]" value={email} onChange={e => setEmail(e.target.value)} />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-stone-700 block mb-1">{language === 'es' ? 'WhatsApp / Teléfono (+506)' : 'WhatsApp / Phone (+506)'}</label>
-              <input required type="tel" placeholder="+506 8888-8888" className="w-full p-2.5 border border-stone-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]" value={phone} onChange={e => setPhone(e.target.value)} />
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-stone-700 block mb-1">{language === 'es' ? 'Hotel / Lugar de Recogida' : 'Pickup Hotel / Location'}</label>
-              <input type="text" placeholder="Ej: Hotel Real Intercontinental Escazú" className="w-full p-2.5 border border-stone-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]" value={pickupHotel} onChange={e => setPickupHotel(e.target.value)} />
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-stone-700 block mb-1">{language === 'es' ? 'Método de Pago' : 'Payment Method'}</label>
-              <select className="w-full p-2.5 border border-stone-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px] bg-white" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value as any)}>
-                <option value="sinpe_movil">📱 SINPE Móvil (Costa Rica ₡)</option>
-                <option value="paypal">💳 PayPal Express</option>
-                <option value="credit_card">💳 Tarjeta de Crédito / Débito (Stripe)</option>
-                <option value="pay_at_pickup">💵 Pago al Abordar (Efectivo/Tarjeta)</option>
-              </select>
-            </div>
-
-            {paymentMethod === 'sinpe_movil' && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-950 space-y-2">
-                <div className="flex justify-between items-baseline font-bold">
-                  <span>Transferir al SINPE Móvil:</span>
-                  <span className="text-sm text-emerald-800">+506 8795-9148</span>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-stone-500 uppercase tracking-widest ml-4">{language === 'es' ? 'Fecha' : 'Date'}</label>
+                    <input required type="date" className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-stone-500 uppercase tracking-widest ml-4">{language === 'es' ? 'Adultos' : 'Adults'}</label>
+                    <input type="number" min="1" max="30" className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors" value={adults} onChange={e => setAdults(Number(e.target.value))} />
+                  </div>
                 </div>
-                <p className="text-[11px] text-emerald-800">
-                  Total en colones: <strong>₡{totalCRC.toLocaleString('es-CR')}</strong>. Ingresa el comprobante bancario para confirmación instantánea:
-                </p>
-                <input
-                  type="text"
-                  placeholder="Número de comprobante SINPE (ej: 492014)"
-                  value={sinpeRef}
-                  onChange={e => setSinpeRef(e.target.value)}
-                  className="w-full p-2 border border-emerald-300 rounded-lg bg-white text-xs outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-            )}
 
-            <button 
-              disabled={isSubmitting} 
-              type="submit" 
-              className="w-full btn-primary disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-stone-950 border-t-transparent rounded-full animate-spin" />
-                  <span>{language === 'es' ? 'Validando con Servidor...' : 'Processing...'}</span>
-                </>
-              ) : (
-                <span>{language === 'es' ? 'Confirmar Reserva Oficial' : 'Confirm Official Booking'}</span>
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-stone-500 uppercase tracking-widest ml-4">{language === 'es' ? 'Nombre Completo' : 'Full Name'}</label>
+                  <input required type="text" className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors" value={fullName} onChange={e => setFullName(e.target.value)} />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-stone-500 uppercase tracking-widest ml-4">{language === 'es' ? 'Email' : 'Email'}</label>
+                  <input required type="email" className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors" value={email} onChange={e => setEmail(e.target.value)} />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-stone-500 uppercase tracking-widest ml-4">{language === 'es' ? 'Teléfono / WhatsApp' : 'Phone / WhatsApp'}</label>
+                  <input required type="tel" className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors" value={phone} onChange={e => setPhone(e.target.value)} />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-stone-500 uppercase tracking-widest ml-4">{language === 'es' ? 'Método de Pago' : 'Payment Method'}</label>
+                  <select className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors appearance-none" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value as any)}>
+                    <option value="sinpe_movil">📱 SINPE Móvil (Costa Rica ₡)</option>
+                    <option value="paypal">💳 PayPal Express</option>
+                    <option value="credit_card">💳 Tarjeta (Stripe)</option>
+                    <option value="pay_at_pickup">💵 Pago al Abordar</option>
+                  </select>
+                </div>
+              </div>
+
+              {errorMessage && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-xs text-red-400 flex items-center gap-3">
+                  <AlertCircle className="w-5 h-5 shrink-0" />
+                  <span>{errorMessage}</span>
+                </div>
               )}
-            </button>
-          </form>
+
+              <button 
+                disabled={isSubmitting} 
+                type="submit" 
+                className="w-full bg-emerald-500 hover:bg-emerald-400 text-stone-950 font-black py-5 rounded-2xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-3 transition-all transform hover:-translate-y-1 active:translate-y-0 disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <div className="w-5 h-5 border-2 border-stone-950 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <CreditCard className="w-5 h-5" />
+                )}
+                <span>{language === 'es' ? 'Confirmar Reserva Oficial' : 'Confirm Official Booking'}</span>
+              </button>
+              
+              <div className="flex items-center justify-center gap-4 text-[10px] text-stone-500 uppercase font-black tracking-widest">
+                <div className="flex items-center gap-1">
+                  <Lock className="w-3 h-3" />
+                  {language === 'es' ? 'Pago Seguro' : 'Secure Payment'}
+                </div>
+                <div className="flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3" />
+                  {language === 'es' ? 'Garantía Local' : 'Local Guarantee'}
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>

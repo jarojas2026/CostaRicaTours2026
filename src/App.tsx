@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { motion } from 'motion/react';
 import { REGIONS } from './data/toursData';
 import { useTours } from './contexts/ToursContext';
 import { Tour, Language, Currency, TourCategory, TourRegion, BookingRequest } from './types';
@@ -7,6 +8,11 @@ import { Header } from './components/Header';
 import { OurStory } from './components/OurStory';
 import { DestinationsCarousel } from './components/DestinationsCarousel';
 import { HeroSection } from './components/HeroSection';
+import { CategoriesSection } from './components/CategoriesSection';
+import { DestinationsSection } from './components/DestinationsSection';
+import { BlogSection } from './components/BlogSection';
+import { AboutSection } from './components/AboutSection';
+import { ContactSection } from './components/ContactSection';
 import { ServicesSection } from './components/ServicesSection';
 import { ToursGrid } from './components/ToursGrid';
 import { TourCard } from './components/TourCard';
@@ -25,13 +31,7 @@ import { LocalBusesModal } from './components/LocalBusesModal';
 import { FormsManagerModal } from './components/FormsManagerModal';
 import { NationalTransportSection } from './components/NationalTransportSection';
 import { TicoCultureSection } from './components/TicoCultureSection';
-import { HomeQuickNav } from './components/HomeQuickNav';
-import { HomeTrustSections } from './components/HomeTrustSections';
-import { BottomNav } from './components/BottomNav';
-import { FlightTrackerGadget } from './components/FlightTrackerGadget';
-import { LiveTouristIntelligence } from './components/LiveTouristIntelligence';
-import { GoogleWorkspaceHub } from './components/GoogleWorkspaceHub';
-import { PhotoTourFinder } from './components/PhotoTourFinder';
+import { Home as HomePage } from './pages/Home';
 import { Compass, ArrowLeft, Home, ChevronRight, Plane, Mail, Calendar } from 'lucide-react';
 
 import { TourDetailModal } from './components/TourDetailModal';
@@ -51,7 +51,7 @@ export default function App() {
   const { tours: TOURS, loading: toursLoading } = useTours();
   const [language, setLanguage] = useState<Language>(detectBrowserLanguage);
   const [currency, setCurrency] = useState<Currency>('USD');
-  const [activeTab, setActiveTab] = useState<'home' | 'tours' | 'map' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'culture' | 'flights' | 'workspace'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'tours' | 'map' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'culture' | 'flights' | 'workspace' | 'destinations' | 'activities' | 'about' | 'blog'>('home');
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
@@ -271,6 +271,10 @@ export default function App() {
                 <ChevronRight className="w-3.5 h-3.5 text-emerald-500/40 shrink-0" />
                 <span className="font-bold text-amber-400 truncate flex items-center gap-1.5">
                   {activeTab === 'tours' && `🧭 ${language === 'es' ? 'Catálogo de Tours y Aventuras' : 'Tours & Adventures Catalog'}`}
+                  {activeTab === 'destinations' && `📍 ${language === 'es' ? 'Destinos de Costa Rica' : 'Costa Rica Destinations'}`}
+                  {activeTab === 'activities' && `🧗 ${language === 'es' ? 'Actividades & Experiencias' : 'Activities & Experiences'}`}
+                  {activeTab === 'blog' && `📝 ${language === 'es' ? 'Blog de Viajes' : 'Travel Blog'}`}
+                  {activeTab === 'about' && `🌿 ${language === 'es' ? 'Sobre Nosotros' : 'About Us'}`}
                   {activeTab === 'flights' && `✈️ ${language === 'es' ? 'Rastreador en Vivo de Vuelos a Costa Rica' : 'Live Flight Radar to Costa Rica'}`}
                   {activeTab === 'ai' && `🤖 ${language === 'es' ? 'Motor Inteligente & Asistente Turístico' : 'AI Concierge & Automations'}`}
                   {activeTab === 'itinerary' && `✨ ${language === 'es' ? 'Planificador Inteligente de Itinerarios' : 'AI Trip Planner'}`}
@@ -294,60 +298,80 @@ export default function App() {
         )}
 
         {/* Tab 0: Home / Discover */}
-        {activeTab === 'home' && (
-          <div className="space-y-12">
-            
-            {/* Hero Section */}
-            <HeroSection
-              language={language}
-              currency={currency}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              selectedRegion={selectedRegion}
-              setSelectedRegion={setSelectedRegion}
-              onOpenItineraryPlanner={() => {
-                setActiveTab('itinerary');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              onExploreTours={() => {
-                setActiveTab('tours');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              onOpenCustomFunnel={() => setIsCustomFunnelOpen(true)}
-            />
-            {/* Quick Navigation Hub & Curated Highlights */}
-            <HomeQuickNav
-              language={language}
-              currency={currency}
-              onNavigateTab={(tab) => {
-                setActiveTab(tab);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              onSelectCategory={(cat) => {
-                setSelectedCategory(cat);
-                setActiveTab('tours');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              onSelectTour={(t) => setSelectedTour(t)}
-              onOpenCustomFunnel={() => setIsCustomFunnelOpen(true)}
-            />
+  {activeTab === 'home' && (
+    <HomePage
+      language={language}
+      currency={currency}
+      searchQuery={searchQuery}
+      setSearchQuery={setSearchQuery}
+      selectedCategory={selectedCategory}
+      setSelectedCategory={setSelectedCategory}
+      selectedRegion={selectedRegion}
+      setSelectedRegion={setSelectedRegion}
+      onNavigateTab={(tab) => {
+        setActiveTab(tab);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }}
+      setIsCustomFunnelOpen={setIsCustomFunnelOpen}
+      setSelectedTour={setSelectedTour}
+    />
+  )}
 
-            {/* Trust & Conversion Sections: How it works, Testimonials, Official Partners & VIP CTA */}
-            <HomeTrustSections
+        {/* Tab Destinations */}
+        {activeTab === 'destinations' && (
+          <div className="max-w-7xl mx-auto px-4 py-16 space-y-12">
+            <div className="text-center">
+              <h2 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tighter">
+                {language === 'es' ? 'Destinos de Costa Rica' : 'Costa Rica Destinations'}
+              </h2>
+              <p className="text-stone-400 max-w-2xl mx-auto text-lg">
+                {language === 'es' 
+                  ? 'Costa Rica está dividida en regiones únicas, cada una con su propio microclima y maravillas naturales.' 
+                  : 'Costa Rica is divided into unique regions, each with its own microclimate and natural wonders.'}
+              </p>
+            </div>
+            <DestinationsSection 
               language={language}
-              onOpenCustomFunnel={() => setIsCustomFunnelOpen(true)}
-              onOpenItineraryPlanner={() => {
-                setActiveTab('itinerary');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              onExploreTours={() => {
+              onSelectRegion={(regionId) => {
+                setSelectedRegion(regionId as any);
                 setActiveTab('tours');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             />
+          </div>
+        )}
 
+        {/* Tab Activities */}
+        {activeTab === 'activities' && (
+          <div className="max-w-7xl mx-auto px-4 py-16 space-y-12">
+            <div className="text-center">
+              <h2 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tighter">
+                {language === 'es' ? 'Actividades & Aventuras' : 'Activities & Adventures'}
+              </h2>
+              <p className="text-stone-400 max-w-2xl mx-auto text-lg">
+                {language === 'es' 
+                  ? 'Desde la calma del yoga hasta el vértigo del canopy, tenemos la experiencia perfecta para ti.' 
+                  : 'From the calm of yoga to the adrenaline of ziplining, we have the perfect experience for you.'}
+              </p>
+            </div>
+            <CategoriesSection 
+              language={language} 
+              onSelectCategory={(catId) => {
+                setSelectedCategory(catId as any);
+                setActiveTab('tours');
+              }}
+            />
+          </div>
+        )}
+
+        {activeTab === 'blog' && (
+          <div className="py-12">
+            <BlogSection language={language} />
+          </div>
+        )}
+
+        {activeTab === 'about' && (
+          <div className="py-12">
+            <AboutSection language={language} />
           </div>
         )}
 

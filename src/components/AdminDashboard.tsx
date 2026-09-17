@@ -355,7 +355,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                         </td>
                         <td className="px-4 py-3">
                           <span className="bg-stone-100/40 text-teal-400 px-2 py-1 rounded text-xs font-bold border border-stone-200">
-                            {b.status.toUpperCase()}
+                            {(b.status || 'pendiente').toUpperCase()}
                           </span>
                         </td>
                       </tr>

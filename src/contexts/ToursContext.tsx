@@ -7,13 +7,40 @@ import { TOURS } from '../data/toursData';
 interface ToursContextType {
   tours: Tour[];
   loading: boolean;
+  favorites: string[];
+  toggleFavorite: (tourId: string) => void;
+  isFavorite: (tourId: string) => boolean;
 }
 
-const ToursContext = createContext<ToursContextType>({ tours: TOURS, loading: false });
+const ToursContext = createContext<ToursContextType>({ 
+  tours: TOURS, 
+  loading: false,
+  favorites: [],
+  toggleFavorite: () => {},
+  isFavorite: () => false
+});
 
 export const ToursProvider = ({ children }: { children: ReactNode }) => {
   const [tours, setTours] = useState<Tour[]>(TOURS);
   const [loading, setLoading] = useState(true);
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    const saved = localStorage.getItem('costa_rica_tours_favorites');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('costa_rica_tours_favorites', JSON.stringify(favorites));
+  }, [favorites]);
+
+  const toggleFavorite = (tourId: string) => {
+    setFavorites(prev => 
+      prev.includes(tourId) 
+        ? prev.filter(id => id !== tourId) 
+        : [...prev, tourId]
+    );
+  };
+
+  const isFavorite = (tourId: string) => favorites.includes(tourId);
 
   useEffect(() => {
     try {
@@ -45,7 +72,13 @@ export const ToursProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <ToursContext.Provider value={{ tours: tours.length > 0 ? tours : TOURS, loading }}>
+    <ToursContext.Provider value={{ 
+      tours: tours.length > 0 ? tours : TOURS, 
+      loading,
+      favorites,
+      toggleFavorite,
+      isFavorite
+    }}>
       {children}
     </ToursContext.Provider>
   );

@@ -5,7 +5,7 @@ import {
   ShieldCheck, Info, ArrowRight, CheckCircle2
 } from 'lucide-react';
 import { Language, Currency } from '../types';
-import { formatCurrency } from '../utils/i18n';
+import { formatCurrency, getLangText } from '../utils/i18n';
 
 interface LocalBusesModalProps {
   isOpen: boolean;
@@ -250,10 +250,10 @@ export const LocalBusesModal: React.FC<LocalBusesModalProps> = ({
   if (!isOpen) return null;
 
   const filteredRoutes = BUS_ROUTES.filter(route => {
-    const fromText = route.from[language] || route.from.es;
-    const toText = route.to[language] || route.to.es;
+    const fromText = getLangText(route.from, language);
+    const toText = getLangText(route.to, language);
     const companyText = route.company;
-    const terminalText = route.terminal[language] || route.terminal.es;
+    const terminalText = getLangText(route.terminal, language);
 
     const q = searchQuery.toLowerCase();
     const matchesSearch = !q || (
@@ -385,12 +385,12 @@ export const LocalBusesModal: React.FC<LocalBusesModalProps> = ({
           {/* Bus Route Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredRoutes.map((route) => {
-              const destination = route.to[language] || route.to.es;
-              const origin = route.from[language] || route.from.es;
-              const terminalName = route.terminal[language] || route.terminal.es;
-              const scheduleText = route.schedules[language] || route.schedules.es;
-              const durationText = route.duration[language] || route.duration.es;
-              const tipText = route.tips[language] || route.tips.es;
+              const destination = getLangText(route.to, language);
+              const origin = getLangText(route.from, language);
+              const terminalName = getLangText(route.terminal, language);
+              const scheduleText = getLangText(route.schedules, language);
+              const durationText = getLangText(route.duration, language);
+              const tipText = getLangText(route.tips, language);
 
               const displayPrice = currency === 'CRC' 
                 ? `₡${route.priceCRC.toLocaleString('es-CR')} CRC` 

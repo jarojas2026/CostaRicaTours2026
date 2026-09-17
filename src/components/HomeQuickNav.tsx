@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { Compass, Map, Sparkles, Bus, Coffee, ArrowRight, ShieldCheck, CheckCircle2, Star, Clock, Flame, Users, Bot, Plane } from 'lucide-react';
 import { Language, Currency, Tour } from '../types';
 import { useTours } from '../contexts/ToursContext';
@@ -8,20 +9,18 @@ import { getLangText, formatCurrency } from '../utils/i18n';
 interface HomeQuickNavProps {
   language: Language;
   currency: Currency;
-  onNavigateTab: (tab: 'tours' | 'map' | 'culture' | 'tools' | 'itinerary' | 'ai' | 'flights') => void;
-  onSelectCategory: (category: any) => void;
-  onSelectTour: (tour: Tour) => void;
+  onNavigateTab?: (tab: 'tours' | 'map' | 'culture' | 'tools' | 'itinerary' | 'ai' | 'flights') => void;
+  onSelectCategory?: (category: any) => void;
+  onSelectTour?: (tour: Tour) => void;
   onOpenCustomFunnel?: () => void;
 }
 
 export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
   language,
   currency,
-  onNavigateTab,
-  onSelectCategory,
-  onSelectTour,
   onOpenCustomFunnel
 }) => {
+  const navigate = useNavigate();
   const { tours: TOURS } = useTours();
   const tico = language === 'es';
 
@@ -151,7 +150,10 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
               whileTap={{ scale: 0.98 }}
               viewport={{ once: true }}
               transition={{ duration: 0.25, delay: idx * 0.04 }}
-              onClick={() => onNavigateTab(card.tab)}
+              onClick={() => {
+                if (card.tab === 'home') navigate('/');
+                else navigate(`/${card.tab}`);
+              }}
               className={`group relative p-5 rounded-2xl bg-gradient-to-br ${card.gradient} border border-teal-500/20 hover:border-amber-400/80 hover:shadow-[0_10px_30px_rgba(255,140,0,0.15)] transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden`}
             >
               <div className="space-y-3">
@@ -197,7 +199,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
           </div>
 
           <button
-            onClick={() => onNavigateTab('tours')}
+            onClick={() => navigate('/tours')}
             className="inline-flex items-center gap-2 text-sm font-bold text-orange-400 hover:text-orange-300 transition-colors cursor-pointer group"
           >
             <span>{tico ? 'Ver los 20+ tours oficiales' : 'View all 20+ official tours'}</span>
@@ -214,7 +216,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
                 key={tour.id}
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.2 }}
-                onClick={() => onSelectTour(tour)}
+                onClick={() => navigate(`/tour/${tour.id}`)}
                 className="group relative rounded-3xl bg-[#08241b]/90 border border-emerald-500/30 overflow-hidden shadow-xl hover:border-amber-400/60 cursor-pointer flex flex-col justify-between"
               >
                 <div className="relative h-48 overflow-hidden">

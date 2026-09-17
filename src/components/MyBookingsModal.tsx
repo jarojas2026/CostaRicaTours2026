@@ -23,8 +23,9 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
 
   const filteredBookings = bookings.filter(b => {
     const q = searchQuery.toLowerCase();
+    const bId = b.bookingId || '';
     return (
-      b.bookingId.toLowerCase().includes(q) ||
+      bId.toLowerCase().includes(q) ||
       b.tourName.toLowerCase().includes(q) ||
       (b.customer?.email && b.customer.email.toLowerCase().includes(q)) ||
       (b.customer?.fullName && b.customer.fullName.toLowerCase().includes(q))

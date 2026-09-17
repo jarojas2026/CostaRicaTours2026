@@ -60,6 +60,7 @@ export interface Tour {
   image: string;
   gallery: string[];
   priceUSD: number;
+  duration?: string; // Friendly duration (e.g. "4 hours", "Full day")
   durationHours: number;
   durationLabel: Localized<string>;
   difficulty: 'fácil' | 'moderado' | 'exigente';
@@ -73,6 +74,7 @@ export interface Tour {
   maxGroupSize?: number;
   ageMinimum?: number;
   // ID y nombre del operador local que ejecuta el tour
+  operatorId?: string;
   providerId?: string;
   operatorName?: string;
   operatorLogo?: string;
@@ -82,6 +84,7 @@ export interface Tour {
   description: Localized<string>;
   highlights: Localized<string[]>;
   inclusions: Localized<string[]>;
+  included?: Localized<string[]>; // Added for compatibility with some components
   exclusions: Localized<string[]>;
   whatToBring: Localized<string[]>;
   medicalRestrictions?: Localized<string[]>;
@@ -161,8 +164,9 @@ export interface CategoryInfo {
 
 export interface RegionInfo {
   id: TourRegion;
-  name: string;
+  name: Localized<string>;
   tagline: Localized<string>;
+  description: Localized<string>;
   image: string;
   coordinates: { x: number; y: number }; // percentage on SVG map
 }
@@ -364,4 +368,30 @@ export interface AIAgent {
   suggestedQuestions: Localized<string[]>;
   specialtyTags: Localized<string[]>;
   workflowSteps?: Localized<string[]>;
+  workflowStatus?: 'active' | 'beta' | 'maintenance';
+  webhookEndpoint?: string;
+  n8nTemplateId?: string;
+}
+
+export interface BusRoute {
+  id: string;
+  from: string;
+  to: string;
+  operator: string;
+  duration: string;
+  priceCRC: number;
+  priceUSD: number;
+  schedule: string[];
+  stops?: string[];
+  category: 'directo' | 'colectivo' | 'shuttle';
+  terminal?: string;
+}
+
+export interface TerminalInfo {
+  id: string;
+  name: string;
+  location: string;
+  phone: string;
+  routes: string[];
+  coordinates: { lat: number; lng: number };
 }

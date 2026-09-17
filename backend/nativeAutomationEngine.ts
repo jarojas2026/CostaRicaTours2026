@@ -1365,7 +1365,7 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
   // 1. Identificar o asignar tour
   let resolvedTour = TOURS.find((t) => t.id === payload.tourId);
   if (!resolvedTour && payload.tourName) {
-    resolvedTour = TOURS.find((t) => t.title.es.toLowerCase().includes(payload.tourName!.toLowerCase()) || t.title.en.toLowerCase().includes(payload.tourName!.toLowerCase()));
+    resolvedTour = TOURS.find((t) => t.title.es.toLowerCase().includes(payload.tourName!.toLowerCase()) || (t.title.en && t.title.en.toLowerCase().includes(payload.tourName!.toLowerCase())));
   }
   if (!resolvedTour) {
     resolvedTour = TOURS[0]; // Arenal Volcano por defecto

@@ -809,7 +809,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                  {activeWf.orchestrationStages.map((stage, sIdx) => (
+                  {activeWf.orchestrationStages.map((stage: any, sIdx: number) => (
                     <div key={sIdx} className="bg-black/40 border border-emerald-500/20 rounded-xl p-3 space-y-1.5">
                       <div className="flex items-center gap-2">
                         <span className="w-5 h-5 rounded-full bg-amber-400 text-stone-950 text-[10px] font-black flex items-center justify-center">
@@ -823,7 +823,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
                         {stage.description}
                       </p>
                       <div className="flex flex-wrap gap-1 pt-1">
-                        {stage.nodes.map((nodeName, nIdx) => (
+                        {stage.nodes.map((nodeName: string, nIdx: number) => (
                           <span key={nIdx} className="text-[9px] font-mono bg-emerald-950/80 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/20">
                             {nodeName}
                           </span>
@@ -840,7 +840,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
                       <span>{isEs ? 'Garantías de Resiliencia & Tolerancia a Fallos' : 'Resilience & Fault-Tolerance Guarantees'}</span>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      {activeWf.resilienceFeatures.map((feature, fIdx) => (
+                      {activeWf.resilienceFeatures.map((feature: string, fIdx: number) => (
                         <span key={fIdx} className="text-[10px] bg-emerald-950/60 text-emerald-200 px-2 py-0.5 rounded-full border border-emerald-500/25 flex items-center gap-1">
                           <Check className="w-2.5 h-2.5 text-amber-400" />
                           <span>{feature}</span>
@@ -869,7 +869,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
 
               {/* Animated Horizontal Pipeline Preview on Desktop */}
               <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
-                {activeWf.nodes.map((node, index) => (
+                {activeWf.nodes.map((node: any, index: number) => (
                   <React.Fragment key={`mini-${node.id}`}>
                     <div className="flex items-center gap-1 bg-[#020e08] border border-emerald-500/30 px-2.5 py-1 rounded-lg shrink-0">
                       <span className="w-4 h-4 rounded-full bg-amber-400 text-stone-950 text-[9px] font-black flex items-center justify-center">
@@ -888,7 +888,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
 
               {/* Detailed Node Grid Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {activeWf.nodes.map((node, index) => {
+                {activeWf.nodes.map((node: any, index: number) => {
                   const isWebhook = node.type.includes('webhook') || node.type.includes('scheduleTrigger');
                   const isAi = node.type.includes('openAi') || node.type.includes('ai') || node.name.toLowerCase().includes('ia') || node.name.toLowerCase().includes('triage');
                   const isDatabase = node.type.includes('httpRequest') || node.name.toLowerCase().includes('firestore') || node.name.toLowerCase().includes('inventario');

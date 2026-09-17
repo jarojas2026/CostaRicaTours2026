@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Tour, TourCategory, TourRegion, Language, Currency } from '../types';
 import { TourCard } from './TourCard';
 import { LazyImage } from './LazyImage';
 import { TourComparisonModal } from './TourComparisonModal';
 import { REGIONS } from '../data/toursData';
-import { formatCurrency } from '../utils/i18n';
+import { formatCurrency, getLangText } from '../utils/i18n';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Compass, Search, Filter, SlidersHorizontal, Sparkles, LayoutGrid, List, 
@@ -26,7 +27,7 @@ interface ToursGridProps {
   setDifficultyFilter: (diff: 'all' | 'fácil' | 'moderado' | 'exigente') => void;
   maxPrice: number;
   setMaxPrice: (price: number) => void;
-  onSelectTour: (tour: Tour) => void;
+  onSelectTour?: (tour: Tour) => void;
   onBack?: () => void;
   onOpenMap?: () => void;
 }
@@ -45,10 +46,10 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
   setDifficultyFilter,
   maxPrice,
   setMaxPrice,
-  onSelectTour,
   onOpenMap,
   onBack,
 }) => {
+  const navigate = useNavigate();
   // Local Catalog State
   const [currentPage, setCurrentPage] = useState(1);
   const [isListening, setIsListening] = useState(false);
@@ -145,8 +146,8 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
     // Search Filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      const title = (tour.title[language] || tour.title.es || '').toLowerCase();
-      const desc = (tour.description[language] || tour.description.es || '').toLowerCase();
+      const title = getLangText(tour.title, language).toLowerCase();
+      const desc = getLangText(tour.description, language).toLowerCase();
       const place = tour.location.placeName.toLowerCase();
       if (!title.includes(q) && !desc.includes(q) && !place.includes(q)) return false;
     }
@@ -283,7 +284,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 <option value="all">📍 {language === 'es' ? 'Todas las Regiones' : 'All Regions'}</option>
                 {REGIONS.map(reg => (
                   <option key={reg.id} value={reg.id}>
-                    📍 {reg.name.split('/')[0]}
+                    📍 {getLangText(reg.name, language).split('/')[0]}
                   </option>
                 ))}
               </select>
@@ -648,7 +649,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
 
             {selectedRegion !== 'all' && (
               <span className="bg-emerald-950/80 text-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1 text-[11px] font-medium">
-                📍 {REGIONS.find(r => r.id === selectedRegion)?.name.split('/')[0]}
+                📍 {getLangText(REGIONS.find(r => r.id === selectedRegion)?.name || { es: '' }, language).split('/')[0]}
                 <X className="w-3 h-3 cursor-pointer text-stone-400 hover:text-white ml-0.5" onClick={() => setSelectedRegion('all')} />
               </span>
             )}
@@ -1073,7 +1074,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                             : 'bg-emerald-950/60 text-emerald-200/80 border-emerald-500/20 hover:border-emerald-500/40'
                         }`}
                       >
-                        📍 {reg.name.split('/')[0]}
+                        📍 {getLangText(reg.name, language).split('/')[0]}
                       </button>
                     ))}
                   </div>
@@ -1182,7 +1183,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                     tour={tour}
                     language={language}
                     currency={currency}
-                    onSelectTour={onSelectTour}
+                    onSelectTour={(t) => navigate(`/tour/${t.id}`)}
                     isFavorite={favorites.includes(tour.id)}
                     onToggleFavorite={toggleFavorite}
                     isCompared={comparedTours.some(t => t.id === tour.id)}
@@ -1254,7 +1255,10 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
           currency={currency}
           onClose={() => setShowCompareModal(false)}
           onRemoveTour={removeComparedTour}
-          onSelectTour={onSelectTour}
+          onSelectTour={(t) => {
+            setShowCompareModal(false);
+            navigate(`/tour/${t.id}`);
+          }}
         />
       )}
 

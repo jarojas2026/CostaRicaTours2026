@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   ShoppingBag, 
   Globe, 
@@ -13,6 +14,7 @@ import {
   X, 
   Compass, 
   Map, 
+  MapPin,
   Coffee, 
   Bot, 
   Clock,
@@ -34,8 +36,8 @@ interface HeaderProps {
   setLanguage: (lang: Language) => void;
   currency: Currency;
   setCurrency: (curr: Currency) => void;
-  activeTab?: 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights' | 'workspace';
-  setActiveTab?: (tab: 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights' | 'workspace') => void;
+  activeTab?: 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights' | 'workspace' | 'destinations' | 'activities' | 'about' | 'blog';
+  setActiveTab?: (tab: 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights' | 'workspace' | 'destinations' | 'activities' | 'about' | 'blog') => void;
   bookingsCount?: number;
   onOpenBookingList?: () => void;
   cartCount?: number;
@@ -66,6 +68,8 @@ export const Header: React.FC<HeaderProps> = ({
   activeSection,
   setActiveSection
 }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [isCurrencyMenuOpen, setIsCurrencyMenuOpen] = useState(false);
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -143,9 +147,9 @@ export const Header: React.FC<HeaderProps> = ({
   const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
   const currentTab = activeTab || activeSection || 'home';
 
-  const handleTabChange = (tab: any) => {
-    if (setActiveTab) setActiveTab(tab);
-    if (setActiveSection) setActiveSection(tab);
+  const handleTabChange = (tab: string) => {
+    if (tab === 'home') navigate('/');
+    else navigate(`/${tab}`);
     setIsMobileDrawerOpen(false);
   };
 
@@ -220,8 +224,8 @@ export const Header: React.FC<HeaderProps> = ({
         }`}>
           
           {/* Brand Logo */}
-          <button
-            onClick={() => handleTabChange('home')}
+          <Link
+            to="/"
             className="flex items-center gap-2.5 group text-left cursor-pointer shrink-0"
           >
             <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center text-stone-950 font-black shadow-md shadow-emerald-900/30 group-hover:scale-105 transition-transform">
@@ -236,12 +240,12 @@ export const Header: React.FC<HeaderProps> = ({
                 {language === 'es' ? 'Operador Oficial' : 'Official Operator'}
               </span>
             </div>
-          </button>
+          </Link>
 
           {/* Unified High-Tech Desktop Navigation (Visible on lg screens and up) */}
           <nav className="hidden lg:flex items-center gap-1 bg-[#010e08]/80 p-1.5 rounded-full border border-emerald-500/25 backdrop-blur-xl shadow-inner">
-            <button
-              onClick={() => handleTabChange('home')}
+            <Link
+              to="/"
               className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'home'
                   ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
@@ -250,10 +254,10 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Home className="w-4 h-4" />
               <span>{language === 'es' ? 'Inicio' : 'Home'}</span>
-            </button>
+            </Link>
 
-            <button
-              onClick={() => handleTabChange('tours')}
+            <Link
+              to="/tours"
               className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'tours'
                   ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
@@ -262,10 +266,34 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Compass className="w-4 h-4" />
               <span>{language === 'es' ? 'Tours' : 'Tours'}</span>
-            </button>
+            </Link>
 
-            <button
-              onClick={() => handleTabChange('map')}
+            <Link
+              to="/destinations"
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+                currentTab === 'destinations'
+                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
+                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
+              }`}
+            >
+              <MapPin className="w-4 h-4" />
+              <span>{language === 'es' ? 'Destinos' : 'Destinations'}</span>
+            </Link>
+
+            <Link
+              to="/activities"
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+                currentTab === 'activities'
+                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
+                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
+              }`}
+            >
+              <Palette className="w-4 h-4" />
+              <span>{language === 'es' ? 'Actividades' : 'Activities'}</span>
+            </Link>
+
+            <Link
+              to="/map"
               className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'map'
                   ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
@@ -274,47 +302,22 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Map className="w-4 h-4" />
               <span>{language === 'es' ? 'Mapa' : 'Map'}</span>
-            </button>
+            </Link>
 
-            <button
-              onClick={() => handleTabChange('flights')}
+            <Link
+              to="/blog"
               className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                currentTab === 'flights'
+                currentTab === 'blog'
                   ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
                   : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
               }`}
             >
-              <Plane className="w-4 h-4" />
-              <span>{language === 'es' ? 'Vuelos' : 'Flights'}</span>
-            </button>
+              <Mail className="w-4 h-4" />
+              <span>Blog</span>
+            </Link>
 
-            <button
-              onClick={() => handleTabChange('itinerary')}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                currentTab === 'itinerary'
-                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
-                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
-              }`}
-            >
-              <Calendar className="w-4 h-4" />
-              <span>{language === 'es' ? 'Itinerario' : 'Itinerary'}</span>
-            </button>
-
-            <button
-              onClick={() => handleTabChange('workspace')}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                currentTab === 'workspace'
-                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
-                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
-              }`}
-              title="Google Workspace (Gmail & Calendar)"
-            >
-              <Mail className="w-4 h-4 text-blue-400" />
-              <span>Workspace</span>
-            </button>
-
-            <button
-              onClick={() => handleTabChange('ai')}
+            <Link
+              to="/ai"
               className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'ai'
                   ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
@@ -324,7 +327,7 @@ export const Header: React.FC<HeaderProps> = ({
               <Bot className="w-4 h-4 text-amber-400" />
               <span>{language === 'es' ? 'Asistente IA' : 'AI Concierge'}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            </button>
+            </Link>
           </nav>
 
           {/* Right Action Tools & Controls */}
@@ -423,21 +426,36 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             {/* My Bookings Button */}
-            <button
-              onClick={handleOpenBookings}
-              className="relative flex items-center gap-1.5 bg-emerald-900/80 hover:bg-emerald-800 text-white px-2.5 sm:px-3 py-1.5 rounded-xl font-bold text-xs border border-emerald-500/40 transition-all hover:scale-105 cursor-pointer shadow-sm shrink-0"
-              aria-label={language === 'es' ? 'Ver mis reservas' : 'View my bookings'}
-            >
-              <ShoppingBag className="w-3.5 h-3.5 text-orange-400" />
-              <span className="hidden md:inline text-[11px] font-black uppercase whitespace-nowrap">
-                {language === 'es' ? 'Reservas' : 'Bookings'}
-              </span>
-              {count > 0 && (
-                <span className="w-5 h-5 rounded-full bg-orange-500 text-stone-950 font-black text-[10px] flex items-center justify-center border-2 border-stone-950 shadow-sm animate-pulse">
-                  {count}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => {
+                  if (setActiveTab) setActiveTab('tours');
+                  // Filter for favorites somehow or just open a list
+                  // For now, let's just make it a visual indicator that they have favorites
+                }}
+                className="relative flex items-center justify-center w-9 h-9 bg-emerald-950/70 hover:bg-emerald-900 text-rose-400 p-2 rounded-xl border border-emerald-500/40 transition-all hover:scale-105 cursor-pointer shadow-sm shrink-0"
+                aria-label={language === 'es' ? 'Ver favoritos' : 'View favorites'}
+              >
+                <Heart className="w-4 h-4 fill-rose-500" />
+                <span className="sr-only">Favoritos</span>
+              </button>
+
+              <button
+                onClick={handleOpenBookings}
+                className="relative flex items-center gap-1.5 bg-emerald-900/80 hover:bg-emerald-800 text-white px-2.5 sm:px-3 py-1.5 rounded-xl font-bold text-xs border border-emerald-500/40 transition-all hover:scale-105 cursor-pointer shadow-sm shrink-0"
+                aria-label={language === 'es' ? 'Ver mis reservas' : 'View my bookings'}
+              >
+                <ShoppingBag className="w-3.5 h-3.5 text-orange-400" />
+                <span className="hidden md:inline text-[11px] font-black uppercase whitespace-nowrap">
+                  {language === 'es' ? 'Reservas' : 'Bookings'}
                 </span>
-              )}
-            </button>
+                {count > 0 && (
+                  <span className="w-5 h-5 rounded-full bg-orange-500 text-stone-950 font-black text-[10px] flex items-center justify-center border-2 border-stone-950 shadow-sm animate-pulse">
+                    {count}
+                  </span>
+                )}
+              </button>
+            </div>
 
             {/* Google User Profile / Sign-in */}
             {user ? (

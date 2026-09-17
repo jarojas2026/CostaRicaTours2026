@@ -568,8 +568,8 @@ app.post('/api/providers/action', async (req, res) => {
   }
 });
 
-app.get('/api/self-dev/status', (req, res) => {
-  res.json(getSelfDevelopmentOverview());
+app.get('/api/self-dev/status', async (req, res) => {
+  res.json(await getSelfDevelopmentOverview());
 });
 
 app.post('/api/self-dev/run-healing', async (req, res) => {
@@ -823,7 +823,7 @@ app.post(['/webhook/panel-control-telegram', '/webhook/telegram-ops-action', '/a
 app.post('/webhook/reserva-multicanal', async (req, res) => {
   try {
     const result = await executeConfirmacionReserva(req.body);
-    res.json({ exito: true, mensaje: 'Despacho multicanal ejecutado en código nativo', ...result });
+    res.json({ ...result, systemMessage: 'Despacho multicanal ejecutado en código nativo' });
   } catch (error: any) {
     res.status(500).json({ exito: false, error: error.message });
   }

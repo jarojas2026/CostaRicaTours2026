@@ -409,7 +409,7 @@ export const ClaudeItineraryModal: React.FC<ClaudeItineraryModalProps> = ({
                           const matchedTour = TOURS.find(
                             (t) =>
                               t.title.es.toLowerCase().includes(tName.toLowerCase()) ||
-                              t.title.en.toLowerCase().includes(tName.toLowerCase())
+                              (t.title.en && t.title.en.toLowerCase().includes(tName.toLowerCase()))
                           );
                           return (
                             <button

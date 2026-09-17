@@ -1,6 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Language } from '../types';
-import { Phone, MapPin, Mail, ShieldCheck, Heart, Globe, Sparkles, MessageCircle, Lock, CreditCard } from 'lucide-react';
+import { Phone, MapPin, Mail, ShieldCheck, Heart, Globe, Sparkles, MessageCircle, Lock, CreditCard, ChevronRight } from 'lucide-react';
 
 interface FooterProps {
   language: Language;
@@ -8,6 +9,7 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
+  const isEs = language === 'es';
   return (
     <footer className="bg-[#041711] text-emerald-100/80 border-t-4 border-emerald-500/40 mt-12">
       {/* Trust & Payment Bar */}
@@ -32,112 +34,135 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
       </div>
 
       {/* Top Main Footer Row */}
-      <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row justify-between items-center gap-8">
-        
-        {/* Brand & Contacts */}
-        <div className="flex flex-wrap items-center gap-8 text-left">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-teal-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg border border-teal-400">
-              🇨🇷
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+          {/* Brand & Contacts */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 bg-teal-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg border border-teal-400">
+                🇨🇷
+              </div>
+              <div>
+                <span className="text-xl font-black uppercase tracking-tighter block leading-none text-white">
+                  Costa Rica <span className="text-orange-400">Tours</span>
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-teal-400">
+                  {isEs ? 'Tours Oficiales & Aventura' : 'Official Tours & Adventure'}
+                </span>
+              </div>
             </div>
-            <div>
-              <span className="text-xl font-black uppercase tracking-tighter block leading-none text-white">
-                Costa Rica <span className="text-orange-400">Tours</span>
-              </span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-teal-400">
-                {language === 'es' ? '🇨🇷 costaricatours.es • Tours Oficiales & Aventura Pura Vida' : '🇨🇷 costaricatours.es • Official Tours & Pura Vida Adventures'}
-              </span>
+            
+            <p className="text-xs leading-relaxed text-stone-400">
+              {isEs 
+                ? 'Plataforma líder en experiencias ecoturísticas sostenibles en Costa Rica. Conectamos viajeros con los mejores operadores locales certificados.' 
+                : 'Leading platform for sustainable ecotourism experiences in Costa Rica. We connect travelers with the best certified local operators.'}
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <a
+                href="https://wa.me/50687959148"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-extrabold text-sm flex items-center gap-2 text-white hover:text-teal-300 transition-colors"
+              >
+                <MessageCircle className="w-5 h-5 text-[#25D366]" />
+                +506 8795-9148
+              </a>
+              <a
+                href="mailto:info@costaricatours.es"
+                className="font-extrabold text-xs flex items-center gap-2 text-white hover:text-teal-300 transition-colors"
+              >
+                <Mail className="w-4 h-4 text-teal-400" />
+                info@costaricatours.es
+              </a>
             </div>
           </div>
 
-          <div className="hidden sm:block w-[1px] h-12 bg-emerald-500/30" />
-
-          <div className="flex flex-col text-xs">
-            <span className="text-[10px] uppercase font-black text-teal-400">
-              {language === 'es' ? 'Atención & WhatsApp 24/7' : 'WhatsApp Support 24/7'}
-            </span>
-            <a
-              href="https://wa.me/50687959148?text=Hola,%20quisiera%20consultar%20sobre%20tours%20en%20Costa%20Rica"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-extrabold text-sm flex items-center gap-1.5 text-white hover:text-teal-300 transition-colors"
-            >
-              <MessageCircle className="w-4 h-4 text-[#25D366]" />
-              +506 8795-9148
-            </a>
+          {/* Quick Links */}
+          <div className="space-y-6">
+            <h4 className="text-white font-black uppercase tracking-widest text-xs">{isEs ? 'Explorar' : 'Explore'}</h4>
+            <ul className="space-y-3 text-sm">
+              <li>
+                <Link to="/tours" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
+                  <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
+                  {isEs ? 'Todos los Tours' : 'All Tours'}
+                </Link>
+              </li>
+              <li>
+                <Link to="/destinations" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
+                  <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
+                  {isEs ? 'Destinos' : 'Destinations'}
+                </Link>
+              </li>
+              <li>
+                <Link to="/itinerary" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
+                  <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
+                  {isEs ? 'Itinerario IA' : 'AI Itinerary'}
+                </Link>
+              </li>
+              <li>
+                <Link to="/blog" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
+                  <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
+                  {isEs ? 'Blog de Viajes' : 'Travel Blog'}
+                </Link>
+              </li>
+            </ul>
           </div>
 
-          <div className="flex flex-col text-xs">
-            <span className="text-[10px] uppercase font-black text-teal-400">
-              {language === 'es' ? 'Llamadas de Emergencia 24/7' : '24/7 Emergency Calls'}
-            </span>
-            <a
-              href="tel:+50687959148"
-              className="font-extrabold text-xs flex items-center gap-1 text-white hover:text-teal-300 transition-colors"
-            >
-              <Phone className="w-3.5 h-3.5 text-teal-400" />
-              +506 8795-9148
-            </a>
+          {/* Categories */}
+          <div className="space-y-6">
+            <h4 className="text-white font-black uppercase tracking-widest text-xs">{isEs ? 'Categorías' : 'Categories'}</h4>
+            <ul className="space-y-3 text-sm">
+              <li>
+                <Link to="/tours?category=adventure" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
+                  <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
+                  {isEs ? 'Aventura' : 'Adventure'}
+                </Link>
+              </li>
+              <li>
+                <Link to="/tours?category=wildlife" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
+                  <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
+                  {isEs ? 'Vida Silvestre' : 'Wildlife'}
+                </Link>
+              </li>
+              <li>
+                <Link to="/tours?category=beaches" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
+                  <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
+                  {isEs ? 'Playas' : 'Beaches'}
+                </Link>
+              </li>
+              <li>
+                <Link to="/tours?category=volcanoes" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
+                  <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
+                  {isEs ? 'Volcanes' : 'Volcanoes'}
+                </Link>
+              </li>
+            </ul>
           </div>
 
-          <div className="flex flex-col text-xs">
-            <span className="text-[10px] uppercase font-black text-teal-400">
-              {language === 'es' ? 'Correo Electrónico' : 'Email Support'}
-            </span>
-            <a
-              href="mailto:info@costaricatours.es"
-              className="font-extrabold text-xs flex items-center gap-1 text-white hover:text-teal-300 transition-colors"
-            >
-              <Mail className="w-3.5 h-3.5 text-teal-400" />
-              info@costaricatours.es
-            </a>
-          </div>
-
-          <div className="flex flex-col text-xs">
-            <span className="text-[10px] uppercase font-black text-teal-400">
-              {language === 'es' ? 'Oficina Principal' : 'Main Office'}
-            </span>
-            <span className="font-extrabold flex items-center gap-1 text-emerald-100/90">
-              <MapPin className="w-3.5 h-3.5 text-teal-400" />
-              San José, Paseo Colón, Centro Corporativo Costa Rica Tours
-            </span>
-            <button 
-              onClick={() => document.dispatchEvent(new CustomEvent('open-admin-dashboard'))}
-              className="mt-2 text-[10px] text-stone-900 hover:text-teal-500 transition-colors text-left"
-              title="Admin Access"
-            >
-              • Backend Ops
-            </button>
+          {/* Trust Badges */}
+          <div className="space-y-6">
+            <h4 className="text-white font-black uppercase tracking-widest text-xs">{isEs ? 'Confianza' : 'Trust'}</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 bg-stone-900/50 rounded-xl border border-white/5 flex flex-col items-center text-center gap-1">
+                <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                <span className="text-[10px] font-bold uppercase">{isEs ? 'Seguro' : 'Secure'}</span>
+              </div>
+              <div className="p-3 bg-stone-900/50 rounded-xl border border-white/5 flex flex-col items-center text-center gap-1">
+                <Heart className="w-5 h-5 text-rose-500" />
+                <span className="text-[10px] font-bold uppercase">{isEs ? 'Pura Vida' : 'Pura Vida'}</span>
+              </div>
+              <div className="p-3 bg-stone-900/50 rounded-xl border border-white/5 flex flex-col items-center text-center gap-1">
+                <Globe className="w-5 h-5 text-teal-400" />
+                <span className="text-[10px] font-bold uppercase">{isEs ? 'Global' : 'Global'}</span>
+              </div>
+              <div className="p-3 bg-stone-900/50 rounded-xl border border-white/5 flex flex-col items-center text-center gap-1">
+                <Sparkles className="w-5 h-5 text-amber-500" />
+                <span className="text-[10px] font-bold uppercase">{isEs ? 'Premium' : 'Premium'}</span>
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Social Proof & Badges */}
-        <div className="flex items-center gap-6">
-          <div className="hidden lg:flex flex-col text-right">
-            <span className="text-sm font-black italic uppercase text-white">
-              ¿Listo para la Aventura?
-            </span>
-            <span className="text-[10px] font-bold text-teal-300">
-              {language === 'es' ? '+12,000 viajeros felices desde 2018' : '+12,000 happy travelers since 2018'}
-            </span>
-          </div>
-
-          <div className="flex -space-x-3">
-            <div className="w-10 h-10 rounded-full border-2 border-teal-400 bg-white text-white text-xs font-bold flex items-center justify-center">
-              🦜
-            </div>
-            <div className="w-10 h-10 rounded-full border-2 border-teal-400 bg-stone-50 text-white text-xs font-bold flex items-center justify-center">
-              🌺
-            </div>
-            <div className="w-10 h-10 rounded-full border-2 border-teal-400 bg-stone-100 text-white text-xs font-bold flex items-center justify-center">
-              🐒
-            </div>
-            <div className="w-10 h-10 rounded-full border-2 border-teal-400 bg-teal-600 text-white text-[10px] font-black flex items-center justify-center shadow-lg">
-              +12k
-            </div>
-          </div>
-        </div>
-
       </div>
 
       {/* Bottom Sub-bar */}

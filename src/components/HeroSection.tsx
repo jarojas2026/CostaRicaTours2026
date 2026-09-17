@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Sparkles, MapPin, Compass, ShieldCheck, ChevronRight, ChevronLeft, ArrowRight } from 'lucide-react';
 import { formatCurrency } from '../utils/i18n';
 import { motion, AnimatePresence } from 'motion/react';
@@ -14,15 +15,26 @@ interface HeroSectionProps {
   setSelectedRegion: (r: TourRegion | 'all') => void;
   selectedCategory: TourCategory | 'all';
   setSelectedCategory: (c: TourCategory | 'all') => void;
-  onOpenItineraryPlanner: () => void;
-  onExploreTours: () => void;
+  onOpenItineraryPlanner?: () => void;
+  onExploreTours?: () => void;
   onOpenCustomFunnel?: () => void;
 }
 
 const HERO_SLIDES = [
   {
     id: 1,
-    image: "/src/assets/images/costa_rica_hero_1789327541732.jpg",
+    image: "https://images.unsplash.com/photo-1568430462989-441609751427?auto=format&fit=crop&w=1920&q=80",
+    badge: "🐋 Temporada de Ballenas",
+    badgeEn: "🐋 Whale Season",
+    title: "Avistamiento en Marino Ballena",
+    titleEn: "Whale Watching in Marino Ballena",
+    desc: "Vive el espectáculo natural más grande del océano en Uvita. Observa ballenas jorobadas y delfines en el emblemático Parque Nacional Marino Ballena.",
+    descEn: "Experience the ocean's greatest natural show in Uvita. Watch humpback whales and dolphins in the iconic Marino Ballena National Park.",
+    price: "$85"
+  },
+  {
+    id: 2,
+    image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80",
     badge: "🔥 Experiencia VIP",
     badgeEn: "🔥 VIP Experience",
     title: "Volcán Arenal & Aguas Termales",
@@ -32,23 +44,12 @@ const HERO_SLIDES = [
     price: "$125"
   },
   {
-    id: 2,
-    image: "/src/assets/images/manuel_antonio_beach_1789327578996.jpg",
-    badge: "🐒 Favorito de los Viajeros",
-    badgeEn: "🐒 Traveler's Favorite",
-    title: "Playas de Manuel Antonio",
-    titleEn: "Manuel Antonio Beaches",
-    desc: "Un paraíso donde la jungla se encuentra con el océano. Nuestro guía experto te mostrará perezosos y monos en su hábitat natural.",
-    descEn: "A paradise where the jungle meets the ocean. Our expert guide will show you sloths and monkeys in their natural habitat.",
-    price: "$65"
-  },
-  {
     id: 3,
-    image: "/src/assets/images/monteverde_canopy_1789327567266.jpg",
-    badge: "🌱 Puentes Colgantes & Bosque Nuboso",
-    badgeEn: "🌱 Canopy & Cloud Forest",
-    title: "Monteverde & Bosque Nuboso",
-    titleEn: "Monteverde Cloud Forest",
+    image: "https://images.unsplash.com/photo-1585551756655-7ca9704ec576?auto=format&fit=crop&w=1920&q=80",
+    badge: "🌱 Bosque Nuboso",
+    badgeEn: "🌱 Cloud Forest",
+    title: "Monteverde: Puentes Colgantes",
+    titleEn: "Monteverde: Hanging Bridges",
     desc: "Siente la magia de caminar sobre el dosel de la selva nubosa en puentes colgantes rodeado de quetzales y orquídeas exóticas.",
     descEn: "Experience the magic of walking over the cloud forest canopy on suspension bridges surrounded by quetzals and exotic orchids.",
     price: "$110"
@@ -64,10 +65,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   setSelectedRegion,
   selectedCategory,
   setSelectedCategory,
-  onOpenItineraryPlanner,
-  onExploreTours,
   onOpenCustomFunnel
 }) => {
+  const navigate = useNavigate();
   const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -184,7 +184,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
                 <button
                   type="button"
-                  onClick={onExploreTours}
+                  onClick={() => navigate('/tours')}
                   className="w-full sm:w-auto flex-1 btn-secondary shadow-lg shadow-emerald-600/20"
                 >
                   <Compass className="w-4 h-4 text-amber-400" />
@@ -193,7 +193,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
                 <button
                   type="button"
-                  onClick={onOpenItineraryPlanner}
+                  onClick={() => navigate('/itinerary')}
                   className="w-full sm:w-auto btn-outline bg-transparent border-emerald-700/50 text-emerald-100 hover:bg-emerald-900/40 hover:border-emerald-600/80"
                 >
                   <Sparkles className="w-4 h-4 text-amber-400" />
@@ -210,7 +210,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   type="button"
                   onClick={() => {
                     setSelectedCategory('volcanoes');
-                    onExploreTours();
+                    navigate('/tours');
                   }}
                   className="px-3 py-1 rounded-full bg-[#03150e] hover:bg-amber-400 hover:text-stone-950 border border-emerald-500/30 text-stone-200 transition-colors cursor-pointer font-medium"
                 >
@@ -220,7 +220,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   type="button"
                   onClick={() => {
                     setSelectedCategory('wildlife');
-                    onExploreTours();
+                    navigate('/tours');
                   }}
                   className="px-3 py-1 rounded-full bg-[#03150e] hover:bg-amber-400 hover:text-stone-950 border border-emerald-500/30 text-stone-200 transition-colors cursor-pointer font-medium"
                 >
@@ -230,7 +230,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   type="button"
                   onClick={() => {
                     setSelectedCategory('rafting');
-                    onExploreTours();
+                    navigate('/tours');
                   }}
                   className="px-3 py-1 rounded-full bg-[#03150e] hover:bg-amber-400 hover:text-stone-950 border border-emerald-500/30 text-stone-200 transition-colors cursor-pointer font-medium"
                 >
@@ -240,7 +240,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   type="button"
                   onClick={() => {
                     setSelectedCategory('beaches');
-                    onExploreTours();
+                    navigate('/tours');
                   }}
                   className="px-3 py-1 rounded-full bg-[#03150e] hover:bg-amber-400 hover:text-stone-950 border border-emerald-500/30 text-stone-200 transition-colors cursor-pointer font-medium"
                 >
@@ -250,7 +250,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </div>
           </motion.div>
 
-          {/* Right Cards Showcase */}
           <motion.div 
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -258,7 +257,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             className="lg:col-span-5 relative h-[500px]"
           >
             <div 
-              onClick={onExploreTours}
+              onClick={() => navigate('/tours')}
               className="absolute inset-0 bg-[#052118] rounded-2xl border border-emerald-900/40 overflow-hidden shadow-2xl group cursor-pointer"
             >
               <AnimatePresence mode="wait">
