@@ -6,6 +6,9 @@ if (typeof (global as any).__dirname !== 'undefined' && (global as any).__dirnam
   delete (global as any).__dirname;
 }
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import path from 'path';
 import crypto from 'crypto';
