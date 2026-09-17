@@ -6,7 +6,7 @@ import { ArrowLeft,
   Compass, ArrowRight, Trash2, HelpCircle, CheckCircle2, Ticket, 
   Image as ImageIcon, BrainCircuit, XCircle, Leaf, Trees, ShieldCheck, 
   Info, Clock, ChevronRight, Zap, Coffee, Compass as CompassIcon, Waves, Mountain,
-  Volume2, VolumeX, Phone, Calendar
+  Volume2, VolumeX, Phone, Calendar, Code, Copy, Check
 } from 'lucide-react';
 import { useTours } from '../contexts/ToursContext';
 import { getLangText, UI_TRANSLATIONS, formatCurrency } from '../utils/i18n';
@@ -134,6 +134,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const [isItineraryModalOpen, setIsItineraryModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
+  const [showWidgetModal, setShowWidgetModal] = useState(false);
+  const [copiedWidget, setCopiedWidget] = useState(false);
   const [inChatBookingTour, setInChatBookingTour] = useState<Tour | null>(null);
   const [inChatDate, setInChatDate] = useState('');
   const [inChatAdults, setInChatAdults] = useState(2);
@@ -862,6 +864,60 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
             </div>
           </div>
 
+          {/* Mostrador Turístico Digital & Virtual: Quick Operations Bar */}
+          {activeAgentId === 'counter_agent' && (
+            <div className="bg-[#020e08]/95 border-b border-emerald-500/20 px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span className="text-emerald-300 font-bold text-[11px]">
+                  {language === 'es' ? 'Mostrador 24/7 En Vivo • Tours Costa Rica' : '24/7 Live Counter Desk • Tours Costa Rica'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
+                <button
+                  onClick={() => {
+                    if (TOURS.length > 0) {
+                      setInChatBookingTour(TOURS[0]);
+                      setInChatDate(new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0]);
+                    }
+                  }}
+                  className="px-2 py-1 rounded-lg bg-emerald-950/80 hover:bg-emerald-900/90 text-emerald-200 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap"
+                >
+                  <span>🛎️</span>
+                  <span>{language === 'es' ? 'Nueva Reserva' : 'New Booking'}</span>
+                </button>
+
+                <button
+                  onClick={() => handleSendMessage(undefined, language === 'es' ? 'Deseo consultar el estado de mi reserva con mi código o email' : 'I would like to check my booking status using my code or email')}
+                  className="px-2 py-1 rounded-lg bg-[#041d13] hover:bg-[#072a1c] text-stone-200 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap"
+                >
+                  <span>🔍</span>
+                  <span>{language === 'es' ? 'Consultar Reserva' : 'Check Booking'}</span>
+                </button>
+
+                <button
+                  onClick={() => handleSendMessage(undefined, language === 'es' ? '¿Cuáles son las tarifas oficiales y rutas de traslados privados de Alsama Tours?' : 'What are the official private transfer rates and routes by Alsama Tours?')}
+                  className="px-2 py-1 rounded-lg bg-[#041d13] hover:bg-[#072a1c] text-stone-200 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap"
+                >
+                  <span>🚐</span>
+                  <span>{language === 'es' ? 'Traslados Alsama' : 'Alsama Transfers'}</span>
+                </button>
+
+                <button
+                  onClick={() => setShowWidgetModal(true)}
+                  className="px-2 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border border-amber-400/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap"
+                >
+                  <Code className="w-3 h-3 text-amber-400" />
+                  <span>{language === 'es' ? 'Widget Web' : 'Web Widget'}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Messages Body */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-[#020e08]/60">
             <AnimatePresence initial={false}>
@@ -1557,6 +1613,88 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 )}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Integración del Mostrador Digital (Web Widget) */}
+      {showWidgetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#051c14] border border-emerald-500/40 rounded-2xl max-w-xl w-full p-5 sm:p-6 shadow-2xl relative text-left">
+            <button
+              onClick={() => setShowWidgetModal(false)}
+              className="absolute top-4 right-4 p-1.5 text-stone-400 hover:text-white rounded-lg bg-[#020e08] border border-emerald-500/20 cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-stone-950 font-black text-xl shadow-lg shadow-amber-400/20">
+                🛎️
+              </div>
+              <div>
+                <h3 className="text-base font-black text-white">
+                  {language === 'es' ? 'Mostrador Digital: Código de Integración Web' : 'Digital Counter: Web Integration Code'}
+                </h3>
+                <p className="text-xs text-emerald-400 font-bold">
+                  {language === 'es' ? 'Incrusta a Sofía en cualquier sitio web o CMS' : 'Embed Sofia into any website or CMS'}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-stone-300 mb-3 leading-relaxed">
+              {language === 'es'
+                ? 'Copia y pega este script en cualquier sitio web (HTML, WordPress, Shopify, Webflow) justo antes de cerrar </body> para habilitar el mostrador 24/7 de reservas y atención:'
+                : 'Copy and paste this script into any website (HTML, WordPress, Shopify, Webflow) just before </body> to activate the 24/7 booking and support counter:'}
+            </p>
+
+            <div className="bg-[#020e08] p-3 rounded-xl border border-emerald-500/30 mb-4 relative font-mono text-[11px] text-emerald-300 break-all">
+              <code>{`<script src="https://costaricatours.es/counter-widget.js" data-endpoint="https://costaricatours.es/api/agent/counter" data-lang="${language}" data-color="#059669"></script>`}</code>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <button
+                onClick={() => {
+                  const code = `<script src="https://costaricatours.es/counter-widget.js" data-endpoint="https://costaricatours.es/api/agent/counter" data-lang="${language}" data-color="#059669"></script>`;
+                  navigator.clipboard.writeText(code);
+                  setCopiedWidget(true);
+                  setTimeout(() => setCopiedWidget(false), 3000);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs flex items-center gap-2 cursor-pointer transition-colors shadow-md"
+              >
+                {copiedWidget ? <Check className="w-4 h-4 text-stone-950" /> : <Copy className="w-4 h-4 text-stone-950" />}
+                <span>{copiedWidget ? (language === 'es' ? '¡Código Copiado!' : 'Code Copied!') : (language === 'es' ? 'Copiar Script HTML' : 'Copy HTML Script')}</span>
+              </button>
+
+              <a
+                href="/counter-widget.html"
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2.5 rounded-xl bg-[#03150d] hover:bg-[#072618] text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <span>🌐</span>
+                <span>{language === 'es' ? 'Probar Demo en Vivo' : 'Test Live Demo'}</span>
+              </a>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-[11px] text-stone-400 border-t border-emerald-500/20 pt-3">
+              <div className="flex items-center gap-1.5">
+                <span className="text-emerald-400 font-bold">✓</span>
+                <span>{language === 'es' ? 'Ligero (<14 KB, sin librerías)' : 'Lightweight (<14 KB, zero-dep)'}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-emerald-400 font-bold">✓</span>
+                <span>{language === 'es' ? 'Consultas & Reservas Directas' : 'Inquiries & Direct Bookings'}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-emerald-400 font-bold">✓</span>
+                <span>{language === 'es' ? 'Soporte Bilingüe Español/Inglés' : 'Bilingual Support (ES/EN)'}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-emerald-400 font-bold">✓</span>
+                <span>{language === 'es' ? 'Guía completa en /docs' : 'Complete docs in /docs'}</span>
+              </div>
+            </div>
           </div>
         </div>
       )}

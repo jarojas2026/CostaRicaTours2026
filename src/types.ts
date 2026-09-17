@@ -5,6 +5,52 @@ export type Localized<T> = {
   es: T;
 } & Partial<Record<Language, T>>;
 
+export type TourCategory = 
+  | 'volcanoes'
+  | 'wildlife'
+  | 'canopy'
+  | 'beaches'
+  | 'rafting'
+  | 'culture'
+  | 'multiday'
+  | 'combos'
+  | 'adventure'
+  | 'nature'
+  | 'hiking'
+  | 'waterfalls'
+  | 'rural'
+  | 'gastronomy'
+  | 'surf'
+  | 'snorkeling'
+  | 'diving'
+  | 'whale_watching'
+  | 'kayak'
+  | 'fishing'
+  | 'family';
+
+export type TourRegion =
+  | 'arenal'
+  | 'monteverde'
+  | 'manuel_antonio'
+  | 'guanacaste'
+  | 'tortuguero'
+  | 'pacuare'
+  | 'san_jose'
+  | 'sjo'
+  | 'caribe'
+  | 'osa'
+  | 'marino_ballena'
+  | 'perez_zeledon'
+  | 'dominical'
+  | 'uvita'
+  | 'puerto_viejo'
+  | 'cahuita'
+  | 'jaco'
+  | 'cartago'
+  | 'turrialba'
+  | 'corcovado'
+  | 'golfo_dulce';
+
 export interface Tour {
   id: string;
   title: Localized<string>;
@@ -25,11 +71,13 @@ export interface Tour {
   ecoCert: boolean;
   tourType?: 'private' | 'group';
   maxGroupSize?: number;
-  // ID del proveedor/operador local que ejecuta este tour, usado por la
-  // automatización de pagos en n8n para saber a quién pagarle después del
-  // viaje. Si se omite, se usa un proveedor por defecto (ver bookingService.ts)
-  // que representa "Costa Rica Tours operando el tour directamente".
+  ageMinimum?: number;
+  // ID y nombre del operador local que ejecuta el tour
   providerId?: string;
+  operatorName?: string;
+  operatorLogo?: string;
+  // Indicador explícito si el dato o precio es una demostración no confirmada
+  isDemoData?: boolean;
   freeCancellation?: boolean;
   description: Localized<string>;
   highlights: Localized<string[]>;
@@ -39,6 +87,15 @@ export interface Tour {
   medicalRestrictions?: Localized<string[]>;
   pickupHotels: string[];
   departureTimes: string[];
+  itinerarySteps?: {
+    time?: string;
+    title: Localized<string>;
+    desc: Localized<string>;
+  }[];
+  faqs?: {
+    q: Localized<string>;
+    a: Localized<string>;
+  }[];
   location: {
     lat: number;
     lng: number;
@@ -49,27 +106,51 @@ export interface Tour {
   verifiedBadge?: Localized<string>;
 }
 
-export type TourCategory = 
-  | 'volcanoes'
-  | 'wildlife'
-  | 'canopy'
-  | 'beaches'
-  | 'rafting'
-  | 'culture'
-  | 'multiday'
-  | 'combos';
+export interface OperatorProfile {
+  id: string;
+  name: string;
+  slug: string;
+  tagline: Localized<string>;
+  description: Localized<string>;
+  location: string;
+  region: TourRegion;
+  rating: number;
+  reviewsCount: number;
+  yearsExperience: number;
+  verifiedBadge: boolean;
+  commissionRate: number; // e.g. 0.20 for 20%
+  contact: {
+    phone: string;
+    whatsapp: string;
+    email: string;
+    website?: string;
+  };
+  specialties: Localized<string[]>;
+  cancellationPolicy: Localized<string>;
+  avatarUrl?: string;
+  coverImage?: string;
+}
 
-export type TourRegion =
-  | 'arenal'
-  | 'monteverde'
-  | 'manuel_antonio'
-  | 'guanacaste'
-  | 'tortuguero'
-  | 'pacuare'
-  | 'san_jose'
-  | 'sjo'
-  | 'caribe'
-  | 'osa';
+export interface BlogArticle {
+  id: string;
+  slug: string;
+  title: Localized<string>;
+  summary: Localized<string>;
+  content: Localized<string>;
+  coverImage: string;
+  author: {
+    name: string;
+    role: Localized<string>;
+    avatar?: string;
+  };
+  date: string;
+  readTimeMinutes: number;
+  categories: string[];
+  tags: string[];
+  relatedTourIds: string[];
+  seoTitle: Localized<string>;
+  seoDescription: Localized<string>;
+}
 
 export interface CategoryInfo {
   id: TourCategory;

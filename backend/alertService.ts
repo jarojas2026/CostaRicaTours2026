@@ -8,6 +8,7 @@
  */
 
 import nodemailer, { type Transporter } from 'nodemailer';
+import type { Query } from 'firebase-admin/firestore';
 import { getFirestoreDb } from './bookingService';
 
 export interface AlertInput {
@@ -240,7 +241,7 @@ export async function getAlerts(filters?: { resolved?: boolean; severity?: strin
   try {
     const db = getFirestoreDb();
     if (db) {
-      let query: FirebaseFirestore.Query = db.collection('admin_alerts').orderBy('createdAt', 'desc').limit(200);
+      let query: Query = db.collection('admin_alerts').orderBy('createdAt', 'desc').limit(200);
 
       if (filters?.resolved !== undefined) {
         query = query.where('resolved', '==', filters.resolved);

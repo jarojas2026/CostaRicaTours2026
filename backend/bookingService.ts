@@ -5,7 +5,13 @@
  */
 
 import admin from 'firebase-admin';
-import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
+import {
+  getFirestore,
+  FieldValue,
+  Timestamp,
+  type Firestore,
+  type CollectionReference
+} from 'firebase-admin/firestore';
 import { GoogleGenAI } from '@google/genai';
 import Stripe from 'stripe';
 import { dispatchToN8N, getN8NConfig } from './n8nService';
@@ -20,14 +26,14 @@ const FIRESTORE_DATABASE_ID =
   process.env.FIRESTORE_DATABASE_ID ||
   'ai-studio-costaricatours-88d81273-09f7-4f87-991c-60b9b0db0dea';
 
-let dbInstance: FirebaseFirestore.Firestore | null = null;
+let dbInstance: Firestore | null = null;
 const inMemoryBookings: Map<string, any> = new Map();
 const inMemorySlots: Map<string, number> = new Map();
 
 /**
  * Inicializa y devuelve la instancia de Firestore Admin
  */
-export function getFirestoreDb(): FirebaseFirestore.Firestore | null {
+export function getFirestoreDb(): Firestore | null {
   if (dbInstance) return dbInstance;
 
   try {
@@ -61,7 +67,7 @@ export function getFirestoreDb(): FirebaseFirestore.Firestore | null {
 /**
  * Obtiene la referencia a la colección de reservas
  */
-export function getBookingsCollection(): FirebaseFirestore.CollectionReference | null {
+export function getBookingsCollection(): CollectionReference | null {
   const db = getFirestoreDb();
   if (!db) return null;
   try {

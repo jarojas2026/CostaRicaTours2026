@@ -13,8 +13,10 @@
  */
 
 import { getAllBookings } from './bookingService';
+import { cleanupExpiredSoftHolds } from './cronEngine';
 import { createAlert } from './alertService';
 import { getProvidersOverview, handleProviderAction } from './providerCommunicationService';
+import { TOURS } from '../src/data/toursData';
 
 export interface SelfHealingAction {
   id: string;
@@ -45,33 +47,8 @@ export interface DynamicPricingInsight {
   justification: string;
 }
 
-// Historial de eventos de auto-desarrollo en memoria
-const selfDevelopmentLog: SelfHealingAction[] = [
-  {
-    id: `sh_${Date.now()}_1`,
-    timestamp: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
-    category: 'soft_hold_cleanup',
-    description: 'Liberación de 4 cupos en soft-hold que excedieron los 15 minutos en Arenal Volcano Tour',
-    impact: 'Disponibilidad restaurada al 100% para nuevos turistas',
-    resolved: true
-  },
-  {
-    id: `sh_${Date.now()}_2`,
-    timestamp: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
-    category: 'route_optimization',
-    description: 'Reagrupamiento de 6 puntos de recogida en hoteles de San José y Heredia',
-    impact: '28 minutos de tráfico ahorrados y reducción estimada de 4.2 kg CO2',
-    resolved: true
-  },
-  {
-    id: `sh_${Date.now()}_3`,
-    timestamp: new Date(Date.now() - 1000 * 60 * 80).toISOString(),
-    category: 'dynamic_pricing',
-    description: 'Ajuste proactivo de tarifa en temporada verde para Rafting Sarapiquí',
-    impact: 'Incremento del 14% en la tasa de conversión durante fines de semana',
-    resolved: true
-  }
-];
+// Historial de eventos de auto-desarrollo en memoria (inicia limpio y registra únicamente ejecuciones reales)
+const selfDevelopmentLog: SelfHealingAction[] = [];
 
 /**
  * Ejecuta un ciclo completo de auto-diagnóstico y auto-reparación
@@ -89,18 +66,22 @@ export async function runSelfHealingCycle(): Promise<{
   const actions: SelfHealingAction[] = [];
   const now = new Date();
 
-  // 1. Detección y liberación de soft-holds expirados
-  const freedLocksCount = Math.floor(Math.random() * 3) + 1;
-  const lockAction: SelfHealingAction = {
-    id: `sh_${Date.now()}_lock`,
-    timestamp: now.toISOString(),
-    category: 'soft_hold_cleanup',
-    description: `Auto-limpieza de ${freedLocksCount} bloqueos temporales que alcanzaron el límite de tiempo sin pago`,
-    impact: `${freedLocksCount * 2} cupos devueltos al inventario público de reservas`,
-    resolved: true
-  };
-  actions.push(lockAction);
-  selfDevelopmentLog.unshift(lockAction);
+  // 1. Detección y liberación REAL de soft-holds expirados en base de datos
+  const cleanupResult = await cleanupExpiredSoftHolds().catch(() => ({ success: false, releasedCount: 0, totalChecked: 0 }));
+  const freedLocksCount = cleanupResult.releasedCount || 0;
+
+  if (freedLocksCount > 0) {
+    const lockAction: SelfHealingAction = {
+      id: `sh_${Date.now()}_lock`,
+      timestamp: now.toISOString(),
+      category: 'soft_hold_cleanup',
+      description: `Auto-limpieza de ${freedLocksCount} bloqueos temporales que alcanzaron el límite de 15 minutos sin pago`,
+      impact: `${freedLocksCount} cupos liberados y devueltos al inventario público de reservas`,
+      resolved: true
+    };
+    actions.push(lockAction);
+    selfDevelopmentLog.unshift(lockAction);
+  }
 
   // 2. Verificación de SLAs de Operadores y Proveedores
   const providerOverview = getProvidersOverview();
@@ -198,38 +179,56 @@ export function calculateOptimizedRoutes(): RouteOptimizationResult[] {
 }
 
 /**
- * Cálculo inteligente de elasticidad y demanda dinámica
+ * Cálculo inteligente de elasticidad y demanda dinámica basado en reservas reales
  */
 export function calculateDynamicPricingInsights(): DynamicPricingInsight[] {
-  return [
-    {
-      tourId: 'arenal-volcano-hot-springs',
-      tourName: 'Volcán Arenal & Aguas Termales Tabacón',
-      basePriceUSD: 145,
-      currentDemandMultiplier: 1.08,
-      recommendedPriceUSD: 156.60,
-      demandFactor: 'high',
-      justification: 'Alta ocupación (>82% de cupos tomados para este fin de semana). Ajuste de rendimiento recomendado.'
-    },
-    {
-      tourId: 'sarapiqui-rafting-class-3',
-      tourName: 'Rafting Río Sarapiquí Nivel III',
-      basePriceUSD: 85,
-      currentDemandMultiplier: 0.95,
-      recommendedPriceUSD: 80.75,
-      demandFactor: 'normal',
-      justification: 'Descuento inteligente del 5% aplicado automáticamente para acelerar el llenado de la segunda embarcación.'
-    },
-    {
-      tourId: 'monteverde-cloud-forest-canopy',
-      tourName: 'Canopy Extremo y Puentes Colgantes Monteverde',
-      basePriceUSD: 110,
-      currentDemandMultiplier: 1.12,
-      recommendedPriceUSD: 123.20,
-      demandFactor: 'very_high',
-      justification: 'Pico de demanda por reservas de turistas internacionales y condiciones meteorológicas óptimas.'
+  const allBookings = getAllBookings();
+  const insights: DynamicPricingInsight[] = [];
+
+  // Analizar los 3 tours principales del catálogo
+  const targetTours = TOURS.slice(0, 5);
+
+  for (const tour of targetTours) {
+    const tourBookings = allBookings.filter(b => b.tourId === tour.id || (b.tourName && b.tourName.toLowerCase().includes(tour.id)));
+    const totalPax = tourBookings.reduce((sum, b) => sum + (b.adults || 1) + (b.children || 0), 0);
+    const capacity = (tour.maxGroupSize || 15) * 4; // Cupo mensual base de 4 salidas
+
+    let demandFactor: 'very_high' | 'high' | 'normal' | 'low' = 'normal';
+    let multiplier = 1.0;
+    let justification = 'Demanda estándar del tour con cupos normales.';
+
+    const occupancyRate = capacity > 0 ? totalPax / capacity : 0;
+
+    if (occupancyRate > 0.75) {
+      demandFactor = 'very_high';
+      multiplier = 1.12;
+      justification = `Alta demanda real (${totalPax} pasajeros registrados, >75% del cupo base). Rendimiento dinámico optimizado.`;
+    } else if (occupancyRate > 0.4) {
+      demandFactor = 'high';
+      multiplier = 1.06;
+      justification = `Demanda activa comprobada (${totalPax} pasajeros registrados). Tarifa estándar con alta preferencia.`;
+    } else if (occupancyRate > 0.15) {
+      demandFactor = 'normal';
+      multiplier = 1.0;
+      justification = `Ocupación regular (${totalPax} pasajeros en base de datos). Tarifa base de catálogo garantizada.`;
+    } else {
+      demandFactor = 'low';
+      multiplier = 0.95;
+      justification = `Temporada con cupos disponibles (${totalPax} pasajeros). Oportunidad de incentivo de reserva anticipada (-5%).`;
     }
-  ];
+
+    insights.push({
+      tourId: tour.id,
+      tourName: tour.title.es,
+      basePriceUSD: tour.priceUSD,
+      currentDemandMultiplier: multiplier,
+      recommendedPriceUSD: Math.round(tour.priceUSD * multiplier * 100) / 100,
+      demandFactor,
+      justification
+    });
+  }
+
+  return insights.slice(0, 3);
 }
 
 /**
