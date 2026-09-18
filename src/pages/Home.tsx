@@ -4,6 +4,8 @@ import { HeroSection } from '../components/HeroSection';
 import { HomeQuickNav } from '../components/HomeQuickNav';
 import { CategoriesSection } from '../components/CategoriesSection';
 import { DestinationsSection } from '../components/DestinationsSection';
+import { FeaturedToursSection } from '../components/FeaturedToursSection';
+import { OperatorsSection } from '../components/OperatorsSection';
 import { HomeTrustSections } from '../components/HomeTrustSections';
 import { AboutSection } from '../components/AboutSection';
 import { BlogSection } from '../components/BlogSection';
@@ -33,7 +35,8 @@ export const Home: React.FC<HomeProps> = ({
   setSelectedCategory,
   selectedRegion,
   setSelectedRegion,
-  setIsCustomFunnelOpen
+  setIsCustomFunnelOpen,
+  setSelectedTour
 }) => {
   return (
     <motion.div
@@ -64,6 +67,7 @@ export const Home: React.FC<HomeProps> = ({
         />
       </div>
 
+      {/* Categories Visual Section */}
       <CategoriesSection 
         language={language} 
         onSelectCategory={(catId) => {
@@ -71,11 +75,28 @@ export const Home: React.FC<HomeProps> = ({
         }}
       />
 
+      {/* Featured Tours Showcase */}
+      <FeaturedToursSection
+        language={language}
+        currency={currency}
+        onSelectTour={(tour) => {
+          if (setSelectedTour) setSelectedTour(tour);
+        }}
+        onOpenCustomFunnel={() => setIsCustomFunnelOpen(true)}
+      />
+
+      {/* Destinations Section */}
       <DestinationsSection 
         language={language}
         onSelectRegion={(regId) => {
           setSelectedRegion(regId as any);
         }}
+      />
+
+      {/* Verified Local Operators */}
+      <OperatorsSection
+        language={language}
+        onSelectOperator={() => {}}
       />
 
       {/* Trust & Conversion Sections */}

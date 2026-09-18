@@ -31,6 +31,7 @@ import { AboutSection } from './components/AboutSection';
 import { BottomNav } from './components/BottomNav';
 import { SEOHead } from './components/SEOHead';
 import { OfflineBanner } from './components/OfflineBanner';
+import { DigitalCounterWidget } from './components/DigitalCounterWidget';
 import { Home, ChevronRight, ArrowLeft } from 'lucide-react';
 
 // Code-splitting via React.lazy to reduce initial JS bundle size
@@ -477,6 +478,7 @@ export default function App() {
       )}
 
       <BottomNav language={language} activeTab={activeTab} />
+      <DigitalCounterWidget language={language} currency={currency} onSelectTour={(t) => navigate(`/tour/${t.id}`)} />
       <FloatingWhatsApp language={language} initialMessage={whatsappMessage} onOpenAIAssistant={() => navigate('/ai')} />
       <Footer language={language} onOpenLegal={() => setIsLegalModalOpen(true)} />
       <CookiesBanner language={language} />
