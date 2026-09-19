@@ -1976,7 +1976,18 @@ app.post(['/api/agent/tools/create_booking_and_notify', '/api/agent/create-booki
       });
     }
 
-    const calculatedUSD = total_usd || 85 * Number(party_size);
+    const authoritativeTotal = calculateAuthoritativeCheckoutTotal({
+      tourId: tour_id,
+      adults: Number(party_size) || 1,
+      children: 0
+    });
+    if (authoritativeTotal === null) {
+      return res.status(400).json({
+        success: false,
+        error: 'tour_id válido y precio de catálogo requerido; el total no puede ser proporcionado por el cliente.'
+      });
+    }
+    const calculatedUSD = authoritativeTotal;
     const bookingDate = appointment_datetime.split('T')[0] || new Date().toISOString().split('T')[0];
 
     // Invocar el ciclo de vida de reserva nativa
@@ -1989,7 +2000,7 @@ app.post(['/api/agent/tools/create_booking_and_notify', '/api/agent/create-booki
       totalUSD: calculatedUSD,
       customerName: customer_name,
       customerEmail: customer_email,
-      customerPhone: customer_phone || '+506 8000-CRTOURS'
+      customerPhone: customer_phone || ''
     });
 
     const bookingId = initialHold.idReserva || initialHold.bookingId || `CR-${Date.now().toString().slice(-6)}`;
