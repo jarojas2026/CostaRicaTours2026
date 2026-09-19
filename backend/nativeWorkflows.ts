@@ -22,6 +22,8 @@ export async function recordEscalation(data: {
   reason: string;
   details?: any;
   status?: 'pending' | 'resolved' | 'acknowledged';
+  customerEmail?: string;
+  customerPhone?: string;
 }): Promise<string> {
   const db = getFirestoreDb();
   const escalationId = `esc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
