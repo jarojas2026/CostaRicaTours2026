@@ -1,6 +1,7 @@
 import { TOURS, REGIONS } from '../src/data/toursData';
 import { retrieveRelevantMemory } from './memoryService';
 import { getWeatherForRegion } from './weatherPulseService';
+import { selectSkills } from './skillGenome';
 
 export type AgentIdentity = {
   id: string;
@@ -34,6 +35,8 @@ export async function buildAgentKnowledgeContext(input: {
   }).slice(0, 8);
   const region = input.regionId ? REGIONS.find(r => r.id === input.regionId) : undefined;
   const weather = input.regionId ? await getWeatherForRegion(input.regionId).catch(() => null) : null;
+  const skillAgent = ['concierge','triage','booking','provider_liaison','operations','supervisor','learning'].includes('concierge') ? 'concierge' : 'concierge';
+  const skillHints = selectSkills(skillAgent, input.query, 1).slice(0, 3).map(s => `${s.name} v${s.version} [${s.risk}]`).join(' | ');
 
   return [
     'FUENTE DE VERDAD OPERATIVA: usa los servicios de dominio; no inventes disponibilidad, precios, reservas ni políticas.',
@@ -42,6 +45,7 @@ export async function buildAgentKnowledgeContext(input: {
     memory?.relevantTurns?.length ? `CONTEXTO RELEVANTE: ${memory.relevantTurns.map(t => `${t.role}: ${t.text}`).join(' | ')}` : '',
     region ? `REGIÓN: ${region.name.es} / ${region.name.en}` : '',
     weather ? `CLIMA ACTUAL: ${weather.temperatureC}°C, ${weather.labelEs}, lluvia ${weather.precipitationProbability}%, viento ${weather.windKmh} km/h, fuente ${weather.source}` : '',
+    skillHints ? `SKILLS DISPONIBLES: ${skillHints}` : '',
     relevantTours.length ? `TOURS RELEVANTES: ${relevantTours.map(t => JSON.stringify({ id: t.id, title: t.title.es, priceUSD: t.priceUSD, region: t.region, category: t.category })).join(' | ')}` : ''
   ].filter(Boolean).join('\n');
 }
