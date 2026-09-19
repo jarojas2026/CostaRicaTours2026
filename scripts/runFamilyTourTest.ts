@@ -37,7 +37,7 @@ async function runCliente de pruebaTest() {
     console.log(`✅ [ÉXITO] Reserva familiar ${bId} registrada correctamente en el sistema.`);
 
     // Despacho del flujo oficial de Proforma con PDF e Itinerario hacia Cliente de prueba por Correo y WhatsApp
-    console.log(`\n📲 [DISPARO OFICIAL WHATSAPP Y PROFORMA] Ejecutando envío oficial a Cliente de ejemplo ()...`);
+    console.log(`\n📲 [DISPARO OFICIAL WHATSAPP Y PROFORMA] Ejecutando envío oficial a cliente de prueba ()...`);
     const proformaResult = await executeCustomerProformaConfirmation({
       bookingId: bId,
       customerName: bookingPayload.customerName,
