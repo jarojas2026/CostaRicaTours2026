@@ -8,7 +8,6 @@ import { getLangText } from '../utils/i18n';
 import { useTours } from '../contexts/ToursContext';
 import { useNatureSounds } from "../hooks/useNatureSounds";
 import { api } from '../lib/apiManager';
-import { triggerConsultaChatIA } from '../lib/n8nTriggers.js';
 
 interface FloatingWhatsAppProps {
   language: Language;
@@ -697,96 +696,6 @@ const ChatMiniCard: React.FC<ChatMiniCardProps> = ({ tour, language, onSelectTou
 };
 
 /**
- * Esquema JSON requerido para el trigger 'CONSULTA_CHAT_IA' de n8n
- */
-export interface ConsultaChatIAPayload {
-  trigger: 'CONSULTA_CHAT_IA';
-  idUsuario: string;
-  mensaje: string;
-  agenteSeleccionado: string;
-  idioma: Language;
-  timestamp: string;
-  contexto: {
-    origen: string;
-    paginaActual: string;
-    historialChat: Array<{ role: 'user' | 'bot'; text: string }>;
-    tourSeleccionado?: string | null;
-    dispositivo: string;
-    horaLocal: string;
-    agenteActivo: string;
-  };
-  // Propiedades espejo para compatibilidad con flujos en inglés en n8n
-  message: string;
-  language: Language;
-  context: {
-    source: string;
-    currentPage: string;
-    chatHistory: Array<{ role: 'user' | 'bot'; text: string }>;
-  };
-}
-
-export interface ConsultaChatIAResult {
-  success: boolean;
-  reply: string | null;
-  quickActions: Array<{ label: string; action: string; data?: any }>;
-  error: string | null;
-  raw?: any;
-}
-
-/**
- * Empaqueta los mensajes del usuario y el contexto relevante en el esquema JSON
- * requerido para el trigger 'CONSULTA_CHAT_IA'.
- */
-export const packageConsultaChatPayload = (
-  mensaje: string,
-  idioma: Language,
-  historial: Array<{ role: 'user' | 'bot'; text: string }> = [],
-  contextExtra?: {
-    tourSeleccionado?: string | null;
-    agente?: string;
-  }
-): ConsultaChatIAPayload => {
-  let userId = '';
-  try {
-    userId = localStorage.getItem('crt_user_id') || '';
-    if (!userId) {
-      userId = 'usr_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
-      localStorage.setItem('crt_user_id', userId);
-    }
-  } catch {
-    userId = 'usr_guest_' + Date.now();
-  }
-
-  const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
-  const now = new Date();
-  const activeAgent = contextExtra?.agente || 'asistente_pura_vida_ia';
-  const recentHistory = historial.slice(-10);
-
-  return {
-    trigger: 'CONSULTA_CHAT_IA',
-    idUsuario: userId,
-    mensaje,
-    agenteSeleccionado: activeAgent,
-    idioma,
-    timestamp: now.toISOString(),
-    contexto: {
-      origen: 'floating_whatsapp_widget',
-      paginaActual: currentUrl,
-      historialChat: recentHistory,
-      tourSeleccionado: contextExtra?.tourSeleccionado || null,
-      dispositivo: typeof navigator !== 'undefined' ? navigator.userAgent : 'browser',
-      horaLocal: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      agenteActivo: activeAgent
-    },
-    message: mensaje,
-    language: idioma,
-    context: {
-      source: 'floating_whatsapp_widget',
-      currentPage: currentUrl,
-      chatHistory: recentHistory
-    }
-  };
-};
 
 export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, initialMessage, onOpenAIAssistant, onSelectTour }) => {
   const { tours: TOURS } = useTours();
@@ -1535,18 +1444,10 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language, in
           }
         }
       } catch (err) {
-        console.warn('⚠️ Fallback a webhook n8n y procesador local:', err);
+        console.warn('⚠️ Fallback a motor de IA nativo y procesador local:', err);
       }
 
-      // 3. Disparar trigger n8n 'CONSULTA_CHAT_IA' en segundo plano para sincronizar workflows
-      const payload = packageConsultaChatPayload(msg, language, formattedHistory, {
-        agente: selectedAgent
-      });
-      triggerConsultaChatIA(payload).catch(err => {
-        console.warn('[n8n trigger] Background notification sync note:', err);
-      });
-
-      // 4. Si el backend aún no generó respuesta (modo fallback o contingencia)
+      // 3. El backend nativo registra y procesa el evento de IA; no se usan orquestadores externos.\n\n      // 4. Si el backend aún no generó respuesta (modo fallback o contingencia)
       if (!finalBotReply) {
         try {
           const triageRes = await fetch('/api/agents/triage', {
