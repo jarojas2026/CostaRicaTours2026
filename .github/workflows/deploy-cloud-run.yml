@@ -1,8 +1,8 @@
 name: Deploy to Google Cloud Run
 
-# Se ejecuta automáticamente cada vez que hay un push a "main" que ya
-# pasó el chequeo de build-check.yml. También se puede lanzar a mano
-# desde la pestaña "Actions" de GitHub (workflow_dispatch).
+# Se ejecuta automáticamente cada vez que hay un push a "main".
+# También se puede lanzar manualmente desde la pestaña "Actions" de GitHub.
+# Este workflow solo se encarga del despliegue; no modifica el código de la aplicación.
 on:
   push:
     branches: [main]
@@ -24,10 +24,9 @@ jobs:
   deploy:
     name: Build y despliegue a Cloud Run
     runs-on: ubuntu-latest
-    # Se ejecuta solo si el secreto GCP_SA_KEY está configurado en GitHub Repository Secrets.
-    # Si Google Cloud ya tiene conectado Cloud Build (trigger nativo), este job se omite
-    # automáticamente para no marcar error rojo en los checks de GitHub.
-    if: ${{ secrets.GCP_SA_KEY != '' }}
+    # No se usa "if" con secrets aquí. GitHub no permite usar directamente
+    # el contexto "secrets" en la condición de un job. Si faltan los secretos,
+    # el propio paso de autenticación mostrará el error correspondiente.
     steps:
       - name: Descargar el código del repositorio
         uses: actions/checkout@v4
