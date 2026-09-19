@@ -232,16 +232,18 @@ export async function processChatInquiry(
   message: string,
   language: 'es' | 'en' = 'es',
   history: Array<{ role: 'user' | 'assistant' | 'bot'; text: string }> = [],
-  engine: 'auto' | 'claude' | 'gemini' = 'auto',
+  engine: 'auto' | 'claude' | 'gemini' | 'counter_agent' = 'auto',
   sessionId?: string
 ): Promise<{ reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string; agentId?: string }> {
   const isEn = language === 'en';
+  const requestedAgentId = engine === 'counter_agent' ? 'counter_agent' : 'concierge';
   let liveToolContext = '';
   try {
     const { buildAgentKnowledgeContext } = await import('./agentKnowledgeFabric');
     liveToolContext += '\nFABRICA DE CONOCIMIENTO OPERATIVO:\n' + await buildAgentKnowledgeContext({
       query: message,
-      sessionId
+      sessionId,
+      agentId: engine === 'counter_agent' ? 'counter_agent' : 'concierge'
     });
   } catch (knowledgeErr) {
     console.warn('Agent knowledge fabric unavailable:', knowledgeErr);
@@ -265,7 +267,7 @@ export async function processChatInquiry(
           reply: claudeRes.reply,
           quickActions: claudeRes.quickActions || [],
           modelUsed: claudeRes.modelUsed,
-          agentId: engine === 'claude' ? 'concierge' : undefined
+          agentId: requestedAgentId
         };
       }
     } catch (claudeErr) {
@@ -331,7 +333,7 @@ Reply ONLY with "YES" or "NO".`;
       action: 'direct_whatsapp'
     });
 
-    return { reply, quickActions, agentId: 'concierge', modelUsed: 'gemini-2.5-flash' };
+    return { reply, quickActions, agentId: requestedAgentId, modelUsed: 'gemini-2.5-flash' };
   } catch (error) {
     console.warn('Fallback a base de conocimiento oficial:', error);
     return getKnowledgeBaseReply(message, isEn);
