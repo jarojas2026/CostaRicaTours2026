@@ -42,28 +42,15 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
 
-      - name: Configurar Docker para usar Artifact Registry
-        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
-
-      - name: Construir la imagen de Docker
+      - name: Desplegar directamente desde el código en Cloud Run
         run: |
-          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/costa-rica-tours/${{ env.SERVICE_NAME }}:${{ github.sha }} .
-
-      - name: Subir la imagen a Artifact Registry
-        run: |
-          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/costa-rica-tours/${{ env.SERVICE_NAME }}:${{ github.sha }}
-
-      - name: Desplegar en Cloud Run
-        uses: google-github-actions/deploy-cloudrun@v2
-        with:
-          service: ${{ env.SERVICE_NAME }}
-          region: ${{ env.REGION }}
-          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/costa-rica-tours/${{ env.SERVICE_NAME }}:${{ github.sha }}
-          # Las llaves reales (Stripe, PayPal, Gemini, etc.) NUNCA van
-          # escritas aquí. Se configuran una sola vez directamente en
-          # Cloud Run (consola web o "gcloud run services update" con
-          # --set-secrets), para que no queden expuestas en GitHub.
-          flags: "--allow-unauthenticated --min-instances=0 --max-instances=4"
+          gcloud run deploy "$SERVICE_NAME" \
+            --source . \
+            --region "$REGION" \
+            --project "$PROJECT_ID" \
+            --allow-unauthenticated \
+            --min-instances=0 \
+            --max-instances=4
 
       - name: Mostrar la URL del servicio desplegado
         run: |
