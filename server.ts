@@ -103,7 +103,7 @@ import { askCounterDesk, getCounterOperationsSnapshot, organizeCounterDesk } fro
 import { runEvaluationSuite } from './backend/agentEvaluationService';
 import { buildLearningDataset } from './backend/learningPipelineService';
 import { autonomyPolicy, parseAutonomyLevel } from './backend/autonomyPolicy';
-import { listSkillVersions, selectSkills } from './backend/skillGenome';
+import { listSkillVersions, selectSkills, hydrateSkillGenome, registerSkillVersion, recordSkillEvaluation, promoteSkillVersion, rollbackSkillVersion } from './backend/skillGenome';
 import { emitOperationalEvent } from './backend/operationalEventBus';
 
 const app = express();
@@ -171,12 +171,8 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
     const { tourName, totalUSD, customerEmail } = req.body;
     const stripe = getStripe();
     if (!stripe) {
-      if (process.env.NODE_ENV === 'production') {
-        console.error('🔴 STRIPE_SECRET_KEY no configurada en PRODUCCIÓN. Se rechaza el pago.');
-        return res.status(503).json({ error: 'Pagos no disponibles temporalmente. Contacta a soporte.' });
-      }
-      console.warn('⚠️ STRIPE_SECRET_KEY no configurada (modo desarrollo). Simulando enlace de pago.');
-      return res.json({ url: `${req.protocol}://${req.get('host')}?booking=success` });
+      console.error('🔴 STRIPE_SECRET_KEY no configurada. Se rechaza el intento de pago.');
+      return res.status(503).json({ error: 'Pagos no disponibles: Stripe no está configurado en el servidor.' });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -213,15 +209,8 @@ app.post('/api/paypal/create-order', async (req, res) => {
       paypalMode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
 
     if (!paypalClientId || !paypalSecret) {
-      if (process.env.NODE_ENV === 'production') {
-        console.error('🔴 PAYPAL_CLIENT_ID/SECRET no configurados en PRODUCCIÓN. Se rechaza el pago.');
-        return res.status(503).json({ error: 'Pagos no disponibles temporalmente. Contacta a soporte.' });
-      }
-      console.warn('⚠️ PAYPAL_CLIENT_ID o PAYPAL_SECRET no configurados (modo desarrollo). Simulando pago.');
-      return res.json({
-        url: `${req.protocol}://${req.get('host')}?booking=success`,
-        id: 'mock_paypal_id'
-      });
+      console.error('🔴 PAYPAL_CLIENT_ID/SECRET no configurados. Se rechaza el intento de pago.');
+      return res.status(503).json({ error: 'Pagos no disponibles: PayPal no está configurado en el servidor.' });
     }
 
     const authStr = Buffer.from(`${paypalClientId}:${paypalSecret}`).toString('base64');
@@ -499,20 +488,8 @@ app.get('/api/bookings/:id/download-pdf', async (req, res) => {
   try {
     const bookingId = req.params.id;
     const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId) || {
-      bookingId: bookingId,
-      tourName: 'Costa Rica Familiar 15 Días: Relax, Volcanes y Playas Seguras (Especial Bebé 3 Años)',
-      date: '2026-10-15',
-      time: '09:00 AM',
-      adults: 2,
-      children: 1,
-      totalUSD: 2450,
-      customerName: 'Cliente de ejemplo',
-      customerEmail: 'cliente@example.com',
-      customerPhone: '+506 0000-0000',
-      specialRequests: 'Presupuesto familiar, relajado y seguro. Bebé de 3 años.',
-      createdAt: new Date().toISOString()
-    };
+    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
+    if (!booking) return res.status(404).json({ error: 'Reserva no encontrada' });
 
     const pdfBuffer = await generateBookingPDFBuffer(booking as any);
     res.setHeader('Content-Type', 'application/pdf');
@@ -538,96 +515,72 @@ app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confi
 // Aprobación de Itinerario por parte del Cliente (Confirmación de Proforma) -> Despacho a Proveedores
 app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
   try {
-    const bookingId = req.params.id;
+    const bookingId = String(req.params.id);
     const action = req.query.action === 'reject' ? 'rechazado' : 'aprobado';
+    const allBookings = await getAllBookings();
+    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
 
-    console.log(`🛎️ [CONFIRMACIÓN DE CLIENTE] Reserva #${bookingId} acción: ${action}`);
+    if (!booking) return res.status(404).send('Reserva no encontrada.');
 
-    // 1. Actualizar estado de la reserva
-    try {
-      await updateBookingStatus(bookingId, {
-        status: action === 'aprobado' ? 'confirmada' : 'cancelada',
-        customerConfirmedAt: new Date().toISOString()
-      });
-    } catch (e) {
-      console.warn(`⚠️ [STATUS UPDATE]:`, e);
-    }
+    const updateResult = await updateBookingStatus(bookingId, {
+      status: action === 'aprobado' ? 'confirmada' : 'cancelada',
+      customerConfirmedAt: new Date().toISOString()
+    });
+    if (!updateResult.success) return res.status(409).send(updateResult.error || 'No se pudo actualizar la reserva.');
 
-    // 2. Si fue aprobada, despachar inmediatamente la coordinación con operadores locales
-    let providerCoordinationResult = null;
+    let providerCoordinationResult: any = null;
     if (action === 'aprobado') {
       try {
         providerCoordinationResult = await executeProviderRealtimeCoordination({
           bookingId,
-          customerName: 'Cliente de ejemplo',
-          customerEmail: 'cliente@example.com',
-          customerPhone: '+506 0000-0000',
-          tourName: 'Costa Rica Familiar 15 Días: Relax, Volcanes y Playas Seguras (Especial Bebé 3 Años)',
-          date: '2026-10-15',
-          tourDate: '2026-10-15',
-          totalUSD: 2450,
-          pax: 3,
-          specialRequests: 'Presupuesto familiar, relajado y seguro. Bebé de 3 años. Minivan con silla ISOFIX y vuelo Sansa.'
+          customerName: booking.customerName,
+          customerEmail: booking.customerEmail,
+          customerPhone: booking.customerPhone,
+          tourName: booking.tourName,
+          date: booking.date,
+          tourDate: booking.date,
+          totalUSD: booking.totalUSD,
+          pax: (Number(booking.adults) || 0) + (Number(booking.children) || 0),
+          specialRequests: booking.specialRequests
         });
-        console.log(`✅ [PROVEEDORES DESPACHADOS] Notificación enviada a operadores locales.`);
       } catch (provErr) {
-        console.warn(`⚠️ [FALLO EN COORDINACIÓN DE PROVEEDORES]:`, provErr);
+        console.warn('⚠️ [FALLO EN COORDINACIÓN DE PROVEEDORES]:', provErr);
       }
     }
 
-    // 3. Renderizar vista de agradecimiento y confirmación oficial
     const downloadPdfUrl = `/api/bookings/${bookingId}/download-pdf`;
+    const customerName = String(booking.customerName || 'Cliente').replace(/[<>]/g, '');
+    const providerMessage = providerCoordinationResult
+      ? 'La coordinación con el proveedor fue iniciada.'
+      : 'La coordinación con el proveedor quedó pendiente de seguimiento.';
+
     res.send(`
       <!DOCTYPE html>
-      <html lang="es">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>¡Itinerario Confirmado! • Costa Rica Tours</title>
+      <html lang="es"><head>
+        <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Confirmación • Costa Rica Tours</title>
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #041711; color: #f8fafc; margin: 0; padding: 24px 16px; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }
-          .card { background-color: #ffffff; color: #1e293b; max-width: 580px; width: 100%; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); }
-          .hero { background: linear-gradient(135deg, #064e3b 0%, #047857 100%); color: white; padding: 32px 24px; text-align: center; }
-          .content { padding: 28px 24px; }
-          .badge { display: inline-block; background-color: #ecfdf5; color: #047857; font-weight: 800; font-size: 12px; padding: 6px 14px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; border: 1px solid #a7f3d0; }
-          .btn-primary { display: block; width: 100%; background-color: #059669; color: white; text-align: center; padding: 14px; border-radius: 10px; font-weight: 800; text-decoration: none; font-size: 15px; margin-bottom: 12px; box-sizing: border-box; }
-          .btn-secondary { display: block; width: 100%; background-color: #f1f5f9; color: #334155; text-align: center; padding: 12px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 14px; box-sizing: border-box; border: 1px solid #cbd5e1; }
-          .step-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin: 18px 0; font-size: 13px; color: #475569; }
+          body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#041711;color:#f8fafc;margin:0;padding:24px 16px;display:flex;justify-content:center;align-items:center;min-height:100vh}
+          .card{background:#fff;color:#1e293b;max-width:580px;width:100%;border-radius:20px;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,.5)}
+          .hero{background:linear-gradient(135deg,#064e3b,#047857);color:#fff;padding:32px 24px;text-align:center}.content{padding:28px 24px}
+          .badge{display:inline-block;background:#ecfdf5;color:#047857;font-weight:800;font-size:12px;padding:6px 14px;border-radius:9999px;text-transform:uppercase;letter-spacing:.5px;border:1px solid #a7f3d0}
+          .btn{display:block;width:100%;background:#059669;color:#fff;text-align:center;padding:14px;border-radius:10px;font-weight:800;text-decoration:none;font-size:15px;margin-top:12px;box-sizing:border-box}
+          .box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin:18px 0;font-size:13px;color:#475569}
         </style>
-      </head>
-      <body>
-        <div class="card">
-          <div class="hero">
-            <div style="font-size: 40px; margin-bottom: 10px;">🎉🌿</div>
-            <h1 style="margin: 0; font-size: 22px; font-weight: 900;">¡Itinerario Confirmado Exitosamente!</h1>
-            <p style="margin: 8px 0 0 0; font-size: 14px; color: #a7f3d0;">Estimada Cliente, hemos recibido su aprobación.</p>
-          </div>
-          <div class="content">
-            <div style="text-align: center;">
-              <span class="badge">Expediente #${bookingId}</span>
-            </div>
-            <p style="font-size: 14px; line-height: 1.6; color: #334155; margin-top: 6px;">
-              Su itinerario familiar de <strong>15 Días (Costa Rica de Costa a Costa)</strong> ha sido validado. Nuestro equipo de Mostrador Digital ha procedido con:
-            </p>
-            <div class="step-box">
-              <div style="margin-bottom: 8px;"><strong>✈️ Vuelos Domésticos Sansa:</strong> Bloqueo y emisión de pasajes para los 3 pasajeros.</div>
-              <div style="margin-bottom: 8px;"><strong>🚐 Transporte Ejecutivo Privado:</strong> Asignación de minivan y montaje de silla infantil homologada ISOFIX para su bebé de 3 años.</div>
-              <div style="margin-bottom: 8px;"><strong>🏨 Eco-Lodges & Parques:</strong> Confirmación de reservas hoteleras y entradas accesibles.</div>
-              <div><strong>👨‍💼 Asesoría Continua:</strong> Seguimiento en tiempo real vía WhatsApp (+506 8795 9148).</div>
-            </div>
-            <a href="${downloadPdfUrl}" class="btn-primary">📥 Descargar Voucher & Itinerario (PDF)</a>
-            <a href="https://wa.me/50687959148?text=${encodeURIComponent(`Hola, soy Cliente. Acabo de confirmar el itinerario #${bookingId}.`)}" class="btn-secondary">💬 Escribir al Mostrador (+506 8795 9148)</a>
-          </div>
+      </head><body><div class="card">
+        <div class="hero"><div style="font-size:40px">🌿</div><h1>Solicitud procesada</h1><p>${customerName}, recibimos tu decisión.</p></div>
+        <div class="content"><div style="text-align:center"><span class="badge">Expediente #${bookingId}</span></div>
+          <div class="box"><strong>Tour:</strong> ${String(booking.tourName || 'Experiencia Costa Rica')}<br/>
+          <strong>Fecha:</strong> ${String(booking.date || 'No especificada')}<br/>
+          <strong>Estado:</strong> ${String(action)}<br/><br/>${providerMessage}</div>
+          <a href="${downloadPdfUrl}" class="btn">Descargar comprobante</a>
         </div>
-      </body>
-      </html>
-    `);
+      </div></body></html>`);
   } catch (err: any) {
     res.status(500).send(`Error al procesar confirmación: ${err.message}`);
   }
 });
 
-// ==========================================
 // 🚨 SISTEMA PROPIO DE ALERTAS ADMINISTRATIVAS
 // ==========================================
 
@@ -750,6 +703,53 @@ app.get('/api/ai/skills/select', requireAdmin, (req, res) => {
   const task = String(req.query.task || '');
   const level = parseAutonomyLevel(req.query.level);
   res.json({ success: true, skills: selectSkills(agentId, task, level) });
+});
+
+app.get('/api/ai/skills/governance', requireAdmin, (_req, res) => {
+  res.json({ success: true, skills: listSkillVersions() });
+});
+
+app.post('/api/ai/skills/register', requireAdmin, async (req, res) => {
+  try {
+    const skill = await registerSkillVersion(req.body);
+    res.status(201).json({ success: true, skill });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message || 'No se pudo registrar la skill' });
+  }
+});
+
+app.post('/api/ai/skills/evaluate', requireAdmin, async (req, res) => {
+  try {
+    const { id, version, groundedness, safety, quality, criticalFailure } = req.body || {};
+    if (!id || !version) return res.status(400).json({ success: false, error: 'id y version son requeridos' });
+    const skill = await recordSkillEvaluation(String(id), String(version), {
+      groundedness: Number(groundedness),
+      safety: Number(safety),
+      quality: Number(quality),
+      criticalFailure: Boolean(criticalFailure)
+    });
+    res.json({ success: true, skill });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message || 'No se pudo registrar evaluación' });
+  }
+});
+
+app.post('/api/ai/skills/promote', requireAdmin, async (req, res) => {
+  try {
+    const result = await promoteSkillVersion(String(req.body?.id || ''), String(req.body?.version || ''), req.body?.target === 'canary' ? 'canary' : 'active');
+    res.status(result.success ? 200 : 409).json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message || 'No se pudo promover la skill' });
+  }
+});
+
+app.post('/api/ai/skills/rollback', requireAdmin, async (req, res) => {
+  try {
+    const result = await rollbackSkillVersion(String(req.body?.id || ''), String(req.body?.version || ''), String(req.body?.reason || 'manual_rollback'));
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message || 'No se pudo revertir la skill' });
+  }
 });
 
 app.get('/api/ai/learning/examples', requireAdmin, async (req, res) => {
@@ -2128,6 +2128,7 @@ async function startServer() {
     });
   }
 
+  await hydrateSkillGenome();
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor Full-Stack corriendo en http://0.0.0.0:${PORT}`);
     console.log(`🧠 Motor de IA nativo listo: Gemini/Vertex + Claude + automatización Node.js/Firestore.`);
