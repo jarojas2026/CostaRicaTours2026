@@ -38,11 +38,11 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
-    if (!loading && TOURS.length > 0) {
-      const foundTour = TOURS.find(t => t.id === id);
+    if (TOURS.length > 0) {
+      const foundTour = TOURS.find(t => t.id === id || t.slug === id);
       if (foundTour) {
         setTour(foundTour);
-      } else {
+      } else if (!loading) {
         navigate('/tours');
       }
     }

@@ -6,6 +6,7 @@ import { useTours } from './contexts/ToursContext';
 import { Tour, Language, Currency, TourCategory, TourRegion, BookingRequest } from './types';
 import { detectBrowserLanguage, getLangText, fetchExchangeRates } from './utils/i18n';
 import { Header } from './components/Header';
+import { TourDetailModal } from './components/TourDetailModal';
 import { InteractiveMap } from './components/InteractiveMap';
 import { BookingConfirmationModal } from './components/BookingConfirmationModal';
 import { MyBookingsModal } from './components/MyBookingsModal';
@@ -199,7 +200,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#041711] text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950 relative pb-16 lg:pb-0">
+    <div className="min-h-screen max-h-screen overflow-y-auto bg-[#041711] text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950 relative pb-16 lg:pb-0">
       <SEOHead language={language} />
       <OfflineBanner language={language} />
       <AmbientBackground />
@@ -278,6 +279,7 @@ export default function App() {
                       setSelectedCategory={setSelectedCategory}
                       selectedRegion={selectedRegion}
                       setSelectedRegion={setSelectedRegion}
+                      onSelectTour={setSelectedTour}
                     />
                   } />
 
@@ -413,6 +415,23 @@ export default function App() {
           </Routes>
         </AnimatePresence>
       </main>
+
+      {/* Tour Detail Modal */}
+      {selectedTour && (
+        <TourDetailModal
+          tour={selectedTour}
+          isOpen={!!selectedTour}
+          onClose={() => setSelectedTour(null)}
+          language={language}
+          currency={currency}
+          onConfirmBooking={(booking) => {
+            setSelectedTour(null);
+            setRecentBooking(booking);
+            setMyBookings(prev => [booking, ...prev]);
+          }}
+          onBookingSuccess={handleBookingSuccess}
+        />
+      )}
 
       {/* Booking Confirmation Voucher Modal */}
       {recentBooking && (
