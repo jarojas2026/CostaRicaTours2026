@@ -81,10 +81,10 @@ export async function generateBookingPDFBuffer(booking: BookingPDFData): Promise
       doc.fillColor('#1e293b')
         .fontSize(10)
         .font('Helvetica')
-        .text(`Titular: ${booking.customerName || 'Hester Viviana Marín Elizondo'}`, 55, startY + 32)
-        .text(`Email: ${booking.customerEmail || 'viviana19942011@gmail.com'}`, 55, startY + 48)
-        .text(`WhatsApp / Teléfono: ${booking.customerPhone || '+506 84005018'}`, 55, startY + 64)
-        .text(`Composición: ${booking.adults || 2} Adultos + ${booking.children || 1} Bebé (3 años)`, 55, startY + 80);
+        .text(`Titular: ${booking.customerName || 'Cliente de ejemplo'}`, 55, startY + 32)
+        .text(`Email: ${booking.customerEmail || 'cliente@example.com'}`, 55, startY + 48)
+        .text(`WhatsApp / Teléfono: ${booking.customerPhone || '+506 0000-0000'}`, 55, startY + 64)
+        .text(`Composición: ${booking.adults || ${booking.adults || 0} Adultos + ${booking.children || 0} Niños`, 55, startY + 80);
 
       doc.text(`Fecha Inicio: ${booking.date || '2026-10-15'} (${booking.time || '09:00 AM'})`, 310, startY + 32)
         .text(`Modalidad: Family Budget, Relaxing & Safe`, 310, startY + 48)
@@ -177,7 +177,7 @@ export async function generateBookingPDFBuffer(booking: BookingPDFData): Promise
         .font('Helvetica')
         .text('• Ropa cómoda, protector solar biodegradable infantil, repelente orgánico y cochecito plegable.', 50, currentY + 26)
         .text('• Todos los vehículos cuentan con botiquín de primeros auxilios pediátrico y choferes certificados.', 50, currentY + 37)
-        .text('• Asistencia y Concierge 24/7 vía WhatsApp: +506 8795 9148  |  Atención a Viviana: +506 84005018.', 50, currentY + 48);
+        .text('• Asistencia y Concierge 24/7 vía WhatsApp: +506 8795 9148  |  Atención a Viviana: +506 0000-0000.', 50, currentY + 48);
 
       // --- PIE DE PÁGINA ---
       doc.fillColor('#94a3b8')
@@ -396,10 +396,10 @@ export function generateBookingPrintableHTML(booking: BookingPDFData): string {
         <div class="grid-2">
           <div class="card">
             <div class="card-title">👤 Datos del Titular y Pasajeros</div>
-            <div class="info-row"><span>Titular:</span><span>${booking.customerName || 'Hester Viviana Marín Elizondo'}</span></div>
-            <div class="info-row"><span>Correo Electrónico:</span><span>${booking.customerEmail || 'viviana19942011@gmail.com'}</span></div>
-            <div class="info-row"><span>WhatsApp / Teléfono:</span><span>${booking.customerPhone || '+506 84005018'}</span></div>
-            <div class="info-row"><span>Pasajeros:</span><span>${booking.adults || 2} Adultos + ${booking.children || 1} Bebé (3 años)</span></div>
+            <div class="info-row"><span>Titular:</span><span>${booking.customerName || 'Cliente de ejemplo'}</span></div>
+            <div class="info-row"><span>Correo Electrónico:</span><span>${booking.customerEmail || 'cliente@example.com'}</span></div>
+            <div class="info-row"><span>WhatsApp / Teléfono:</span><span>${booking.customerPhone || '+506 0000-0000'}</span></div>
+            <div class="info-row"><span>Pasajeros:</span><span>${booking.adults || ${booking.adults || 0} Adultos + ${booking.children || 0} Niños</span></div>
             <div class="info-row"><span>Concepto:</span><span>Family Budget, Relaxing & Safe</span></div>
           </div>
           <div class="card">
@@ -476,7 +476,7 @@ export function generateBookingPrintableHTML(booking: BookingPDFData): string {
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
               <strong style="color: #0f172a; font-size: 13px;">📞 Asistencia y Mostrador 24/7</strong>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">WhatsApp de soporte oficial: +506 8795 9148 | Canal prioritario para Viviana: +506 84005018</p>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">WhatsApp de soporte oficial: +506 8795 9148 | Canal prioritario para Viviana: +506 0000-0000</p>
             </div>
             <a href="https://wa.me/50687959148" class="btn" style="background: #25D366; color: #000; font-weight: 800; font-size: 12px;">
               💬 Chat WhatsApp
