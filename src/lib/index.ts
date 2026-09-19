@@ -1,6 +1,6 @@
-
 import { api } from './apiManager';
-import * as triggers from './n8nTriggers';
 
-// Log loaded
-console.log('n8n Triggers Ready:', Object.keys(triggers).length, 'triggers available.');
+// Motor de comunicaciones nativo: API interna + Firestore + servicios de IA.
+console.log('[Native Core] API Manager listo.');
+
+export { api };
