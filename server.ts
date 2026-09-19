@@ -584,7 +584,7 @@ app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
 // 🚨 SISTEMA PROPIO DE ALERTAS ADMINISTRATIVAS
 // ==========================================
 
-app.post('/api/alerts', async (req, res) => {
+app.post('/api/alerts', requireAdmin, async (req, res) => {
   const { source, severity, title, message, bookingId, providerId, metadata } = req.body || {};
   if (!source || !severity || !title || !message) {
     return res.status(400).json({ error: 'source, severity, title y message son requeridos.' });
@@ -613,7 +613,7 @@ app.get('/api/providers', (req, res) => {
   res.json(getProvidersOverview());
 });
 
-app.post('/api/providers/action', async (req, res) => {
+app.post('/api/providers/action', requireAdmin, async (req, res) => {
   try {
     const { orderId, action, notes } = req.body;
     const result = await handleProviderAction({ orderId, action, notes });
@@ -783,7 +783,7 @@ app.get('/api/self-dev/status', async (req, res) => {
   res.json(await getSelfDevelopmentOverview());
 });
 
-app.post('/api/self-dev/run-healing', async (req, res) => {
+app.post('/api/self-dev/run-healing', requireAdmin, async (req, res) => {
   try {
     const result = await runSelfHealingCycle();
     res.json(result);
@@ -829,13 +829,13 @@ app.post('/api/ai/fraud-check', requireAdmin, async (req, res) => {
   }
 });
 
-app.get(['/api/native-engine/logs', '/api/native/logs'], (req, res) => {
+app.get(['/api/native-engine/logs', '/api/native/logs'], requireAdmin, (req, res) => {
   const limit = Number(req.query.limit) || 50;
   res.json(getNativeAutomationLogs(limit));
 });
 
 // Despachadores manuales / UI de los 7 Workflows Nativos
-app.post('/api/native/workflows/payouts', async (req, res) => {
+app.post('/api/native/workflows/payouts', requireAdmin, async (req, res) => {
   try {
     const result = await executeAutomatedProviderPayouts();
     logAutomationExecution('WF_PAGOS_PROVEEDORES', 3, 'success', `Manual: ${result.totalProcessed} procesadas, $${result.totalPaidUSD} USD.`);
@@ -846,7 +846,7 @@ app.post('/api/native/workflows/payouts', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/reminders', async (req, res) => {
+app.post('/api/native/workflows/reminders', requireAdmin, async (req, res) => {
   try {
     const result = await executeTour24hReminders();
     logAutomationExecution('WF_RECORDATORIOS_24H', 7, 'success', `Manual: ${result.totalRemindersSent} recordatorios.`);
@@ -857,7 +857,7 @@ app.post('/api/native/workflows/reminders', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/surveillance', async (req, res) => {
+app.post('/api/native/workflows/surveillance', requireAdmin, async (req, res) => {
   try {
     const result = await executeSurveillanceAndEscalation();
     logAutomationExecution('WF_VIGILANCIA_2H', 4, 'success', `Manual: ${result.checkedBookings} auditadas, ${result.alertsSent} alertas.`);
@@ -868,7 +868,7 @@ app.post('/api/native/workflows/surveillance', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/reviews', async (req, res) => {
+app.post('/api/native/workflows/reviews', requireAdmin, async (req, res) => {
   try {
     const result = await executePostTourReviewRequests();
     logAutomationExecution('WF_RESENAS_POST_TOUR', 6, 'success', `Manual: ${result.emailsSent} encuestas enviadas.`);
@@ -879,7 +879,7 @@ app.post('/api/native/workflows/reviews', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/daily-report', async (req, res) => {
+app.post('/api/native/workflows/daily-report', requireAdmin, async (req, res) => {
   try {
     const result = await executeDailyOperationReport();
     logAutomationExecution('WF_REPORTE_DIARIO', 5, 'success', `Manual: ${result.totalBookingsToday} reservas, $${result.revenueUSD} USD.`);
@@ -890,7 +890,7 @@ app.post('/api/native/workflows/daily-report', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/cleanup-holds', async (req, res) => {
+app.post('/api/native/workflows/cleanup-holds', requireAdmin, async (req, res) => {
   try {
     const result = await cleanupExpiredSoftHolds();
     logAutomationExecution('AUTO_RELEASE_HOLD', 5, 'success', `Manual: ${result.releasedCount} cupos liberados.`);
@@ -901,7 +901,7 @@ app.post('/api/native/workflows/cleanup-holds', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/conversion-report', async (req, res) => {
+app.post('/api/native/workflows/conversion-report', requireAdmin, async (req, res) => {
   try {
     const metrics = await getWeeklyConversionMetrics();
     logAutomationExecution('CRON_SEMANAL_CONVERSION', 5, 'success', `Manual: Tasa conv: ${metrics.conversionRate}%, Ventas: $${metrics.totalRevenueUSD}.`);
@@ -912,7 +912,7 @@ app.post('/api/native/workflows/conversion-report', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/weather', async (req, res) => {
+app.post('/api/native/workflows/weather', requireAdmin, async (req, res) => {
   try {
     const result = await executeWeatherMonitoringAlerts();
     logAutomationExecution('WF_CLIMA_SEGURIDAD', 0, 'success', `Manual: ${result.checkedBookings} revisadas, ${result.alertsSent} avisos.`);
@@ -923,7 +923,7 @@ app.post('/api/native/workflows/weather', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/concierge', async (req, res) => {
+app.post('/api/native/workflows/concierge', requireAdmin, async (req, res) => {
   try {
     const result = await executeMorningConciergeTips();
     logAutomationExecution('WF_CONCIERGE_MATUTINO', 0, 'success', `Manual: ${result.tipsSent} tips enviados.`);
@@ -934,7 +934,7 @@ app.post('/api/native/workflows/concierge', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/prospects', async (req, res) => {
+app.post('/api/native/workflows/prospects', requireAdmin, async (req, res) => {
   try {
     const result = await executePreSaleProspectRecovery();
     logAutomationExecution('WF_RECUPERACION_PROSPECTOS', 0, 'success', `Manual: ${result.recoveredSent} prospectos contactados.`);
@@ -945,7 +945,7 @@ app.post('/api/native/workflows/prospects', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/loyalty', async (req, res) => {
+app.post('/api/native/workflows/loyalty', requireAdmin, async (req, res) => {
   try {
     const result = await executePostSaleVipLoyalty();
     logAutomationExecution('WF_FIDELIZACION_VIP', 0, 'success', `Manual: ${result.couponsSent} cupones VIP emitidos.`);
@@ -958,7 +958,7 @@ app.post('/api/native/workflows/loyalty', async (req, res) => {
 
 // 🚀 PIPELINE 100% AUTÓNOMO (Sin intervención manual humana)
 // Procesa la consulta -> Bloquea cupo -> Crea reserva -> Notifica al proveedor -> Envía voucher digital QR al cliente
-app.post(['/api/native/autonomous-booking-flow', '/api/native/flujo-autonomo'], async (req, res) => {
+app.post(['/api/native/autonomous-booking-flow', '/api/native/flujo-autonomo'], requireAdmin, async (req, res) => {
   try {
     const result = await executeAutonomousFullBookingLifecycle(req.body);
     res.json(result);
@@ -1060,16 +1060,6 @@ app.post(['/webhook/panel-control-ops', '/api/ops/action'], async (req, res) => 
   try {
     const result = await executeAIOpsAction(req.body);
     res.json(result);
-  } catch (error: any) {
-    res.status(500).json({ exito: false, error: error.message });
-  }
-});
-
-// 11. Despacho de confirmaciones mediante los servicios nativos de la plataforma
-app.post('/webhook/reserva-confirmada', async (req, res) => {
-  try {
-    const result = await executeConfirmacionReserva(req.body);
-    res.json({ ...result, systemMessage: 'Despacho ejecutado por motor nativo' });
   } catch (error: any) {
     res.status(500).json({ exito: false, error: error.message });
   }
