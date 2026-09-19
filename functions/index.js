@@ -15,7 +15,7 @@ exports.createStripeCheckout = functions.https.onRequest((req, res) => {
       
       if (!process.env.STRIPE_SECRET_KEY) {
         console.warn("⚠️ STRIPE_SECRET_KEY no configurada en Cloud Functions.");
-        return res.json({ url: `${returnUrl}?booking=success` });
+        return res.status(503).json({ error: "Stripe no está configurado. No se simula un pago." });
       }
 
       const session = await stripe.checkout.sessions.create({
@@ -54,7 +54,7 @@ exports.createPayPalOrder = functions.https.onRequest((req, res) => {
       
       if (!paypalClientId || !paypalSecret) {
         console.warn("⚠️ PAYPAL variables no configuradas.");
-        return res.json({ url: `${returnUrl}?booking=success`, id: "mock_paypal_id" });
+        return res.status(503).json({ error: "PayPal no está configurado. No se simula un pago." });
       }
       
       // Node 18+ nativo soporta fetch globalmente
