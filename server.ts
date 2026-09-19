@@ -423,7 +423,8 @@ app.post('/api/sinpe/verify', requireOperator, async (req, res) => {
 // Crear reserva (con verificación server-side de pago, cupos en Firestore y automatización nativa)
 app.post('/api/bookings', async (req, res) => {
   try {
-    const result = await createBooking(req.body);
+    const idempotencyKey = req.headers['idempotency-key'];
+    const result = await createBooking({ ...req.body, idempotencyKey });
 
     if (result.conflict) {
       return res.status(409).json(result);
