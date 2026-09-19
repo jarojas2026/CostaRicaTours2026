@@ -899,6 +899,7 @@ export async function executeCustomerBookingConfirmation(
     bookingId,
     customerEmail,
     customerPhone,
+    reason: 'No se pudo notificar al cliente por los canales configurados.',
     details: {
       Tour: tourName,
       Fecha: tourDate,
