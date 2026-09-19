@@ -4,7 +4,10 @@ import { ArrowRight, CloudSun, Droplets, MapPin, Sparkles, Sun, Waves } from 'lu
 import { Language } from '../types';
 import { REGIONS } from '../data/toursData';
 
-interface DestinationPulseProps { language: Language; onSelectRegion: (regionId: string) => void; }
+interface DestinationPulseProps {
+  language: Language;
+  onSelectRegion: (regionId: string) => void;
+}
 
 type PulseCard = {
   id: string;
@@ -20,8 +23,10 @@ type PulseCard = {
 
 type Weather = {
   temperatureC: number;
+  apparentTemperatureC: number;
   humidity: number;
   precipitationProbability: number;
+  windKmh: number;
   labelEs: string;
   labelEn: string;
   source: string;
@@ -41,17 +46,16 @@ export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, on
   const es = language === 'es';
 
   useEffect(() => {
-    let cancelled = false;
-    fetch('/api/weather/destinations')
+    const controller = new AbortController();
+    fetch('/api/weather/destinations', { signal: controller.signal })
       .then(r => r.ok ? r.json() : Promise.reject(new Error('weather unavailable')))
       .then(data => {
-        if (cancelled) return;
         const next: Record<string, Weather> = {};
         for (const item of data.destinations || []) next[item.regionId] = item;
         setLiveWeather(next);
       })
-      .catch(() => undefined);
-    return () => { cancelled = true; };
+      .catch(() => {});
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -64,96 +68,127 @@ export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, on
     return () => window.clearInterval(timer);
   }, []);
 
-  const active = useMemo(() => PULSE_CARDS.find(c => c.id === activeId) || PULSE_CARDS[0], [activeId]);
-  const activeWeather = liveWeather[active.regionId];
+  const active = useMemo(
+    () => PULSE_CARDS.find(c => c.id === activeId) || PULSE_CARDS[0],
+    [activeId]
+  );
 
   return (
-    <section className="relative overflow-hidden bg-[#061b13] py-12 sm:py-16">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_10%,rgba(34,197,94,0.18),transparent_30%),radial-gradient(circle_at_90%_70%,rgba(14,165,233,0.14),transparent_32%)]" />
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-6 flex flex-col gap-4 sm:mb-8 md:flex-row md:items-end md:justify-between">
+    <section className="relative overflow-hidden bg-[#dff5ff] py-10 sm:py-14">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_8%,rgba(14,165,233,0.28),transparent_30%),radial-gradient(circle_at_90%_90%,rgba(16,185,129,0.22),transparent_35%)]" />
+      <div className="absolute -right-24 top-12 h-64 w-64 rounded-full bg-white/50 blur-3xl" />
+
+      <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6">
+        <div className="mb-5 flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/25 bg-emerald-200/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-100">
+            <div className="inline-flex items-center gap-2 rounded-full border border-sky-900/10 bg-white/65 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-sky-950 shadow-sm backdrop-blur">
               <Sparkles className="h-3.5 w-3.5" />
-              Costa Rica Live Pulse
+              Costa Rica Pulse
             </div>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-5xl">
-              {es ? 'Así se siente Costa Rica ahora.' : 'This is how Costa Rica feels right now.'}
+            <h2 className="mt-3 max-w-3xl text-3xl font-black tracking-tight text-sky-950 sm:text-5xl">
+              {es ? 'Elige tu clima. Elige tu experiencia.' : 'Choose your climate. Choose your experience.'}
             </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-emerald-50/65">
-              {es ? 'Una vista visual y dinámica de nuestros destinos, clima y ambiente antes de elegir tu experiencia.' : 'A dynamic visual view of destinations, weather and atmosphere before choosing your experience.'}
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-sky-950/65">
+              {es
+                ? 'Una vista rápida y visual de los destinos, con clima actualizado para ayudarte a decidir dónde vivir tu próxima aventura.'
+                : 'A quick visual view of destinations with updated weather to help you choose your next adventure.'}
             </p>
           </div>
-          <div className="flex items-center gap-2 text-[11px] font-semibold text-emerald-100/65">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+          <div className="flex shrink-0 items-center gap-2 self-start rounded-full bg-white/65 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-sky-950/65 shadow-sm backdrop-blur sm:self-auto">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
             {Object.keys(liveWeather).length
-              ? (es ? 'Datos en vivo · Open-Meteo' : 'Live data · Open-Meteo')
-              : (es ? 'Actualizando destinos…' : 'Updating destinations…')}
+              ? (es ? 'Clima en vivo' : 'Live weather')
+              : (es ? 'Actualizando clima' : 'Updating weather')}
           </div>
         </div>
 
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="relative space-y-3 sm:space-y-4">
+          <div className="absolute -left-2 top-0 hidden h-full w-1 rounded-full bg-sky-900/10 sm:block">
+            <motion.div
+              key={activeId}
+              className="w-full rounded-full bg-sky-500"
+              initial={{ height: 0 }}
+              animate={{ height: '100%' }}
+              transition={{ duration: 5.2, ease: 'linear' }}
+            />
+          </div>
+
           {PULSE_CARDS.map((card, index) => {
             const selected = card.id === activeId;
             const weather = liveWeather[card.regionId];
             const temp = Math.round(weather?.temperatureC ?? card.tempC);
+            const feels = Math.round(weather?.apparentTemperatureC ?? temp);
             const humidity = Math.round(weather?.humidity ?? card.humidity);
             const rain = Math.round(weather?.precipitationProbability ?? 0);
+            const condition = weather
+              ? (es ? weather.labelEs : weather.labelEn)
+              : (es ? card.moodEs : card.moodEn);
 
             return (
               <motion.button
                 key={card.id}
                 type="button"
                 layout
-                whileHover={{ y: -3, scale: 1.005 }}
-                whileTap={{ scale: 0.985 }}
-                onClick={() => setActiveId(card.id)}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.995 }}
+                onClick={() => {
+                  setActiveId(card.id);
+                  onSelectRegion(card.regionId);
+                }}
                 className={
-                  'group relative min-h-[154px] overflow-hidden rounded-[25px] border text-left shadow-2xl transition-all duration-300 sm:min-h-[178px] ' +
+                  'group relative block h-[112px] w-full overflow-hidden rounded-[24px] border text-left shadow-[0_12px_30px_rgba(15,23,42,0.13)] transition-all duration-300 sm:h-[132px] sm:rounded-[28px] ' +
                   (selected
-                    ? 'border-emerald-200/80 ring-2 ring-emerald-200/20'
-                    : 'border-white/10 hover:border-white/30')
+                    ? 'border-white ring-2 ring-sky-500/35 shadow-[0_18px_42px_rgba(14,116,144,0.22)]'
+                    : 'border-white/70 hover:border-white')
                 }
-                aria-label={es ? 'Ver ' + card.nameEs : 'View ' + card.nameEn}
+                aria-label={es ? 'Explorar ' + card.nameEs : 'Explore ' + card.nameEn}
               >
-                <img src={card.image} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" loading="lazy" />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/20 to-black/45" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/10" />
+                <img
+                  src={card.image}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/25 to-black/10" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
 
-                <div className="absolute inset-x-0 top-0 flex items-start justify-between p-4 sm:p-5">
-                  <div className="flex items-center gap-1.5 rounded-full bg-black/30 px-2.5 py-1.5 text-[10px] font-bold text-white/85 backdrop-blur-md">
-                    <MapPin className="h-3 w-3 text-emerald-300" />
-                    Costa Rica
-                  </div>
-                  {index === 0 && (
-                    <span className="rounded-full bg-white/15 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wider text-white backdrop-blur-md">
-                      {es ? 'Capital' : 'Capital'}
-                    </span>
-                  )}
-                </div>
-
-                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-4 sm:p-5">
+                <div className="absolute inset-x-0 inset-y-0 flex items-center justify-between gap-4 px-5 sm:px-7">
                   <div className="min-w-0">
-                    <div className="text-xl font-black leading-[1.05] text-white sm:text-2xl">{es ? card.nameEs : card.nameEn}</div>
-                    <div className="mt-1.5 max-w-[240px] text-xs font-medium text-white/75">
-                      {weather ? (es ? weather.labelEs : weather.labelEn) : (es ? card.moodEs : card.moodEn)}
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-3.5 w-3.5 shrink-0 text-white/80" />
+                      <span className="truncate text-[10px] font-black uppercase tracking-[0.16em] text-white/75">
+                        {index === 0 ? (es ? 'Capital' : 'Capital') : 'Costa Rica'}
+                      </span>
                     </div>
-                    <div className="mt-2 flex items-center gap-2 text-[9px] font-bold uppercase tracking-wider text-white/55">
-                      <span>{humidity}% {es ? 'humedad' : 'humidity'}</span>
-                      <span>•</span>
-                      <span>{rain}% {es ? 'lluvia' : 'rain'}</span>
+                    <div className="mt-1 text-xl font-black leading-tight text-white drop-shadow sm:text-2xl">
+                      {es ? card.nameEs : card.nameEn}
                     </div>
+                    <div className="mt-1 text-xs font-medium text-white/80 sm:text-sm">{condition}</div>
                   </div>
-                  <div className="shrink-0 text-right">
-                    <div className="text-4xl font-black leading-none tracking-tight text-white sm:text-5xl">{temp}°</div>
-                    <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-white/60">°C · {es ? 'ahora' : 'now'}</div>
+
+                  <div className="flex shrink-0 items-center gap-4 sm:gap-7">
+                    <div className="hidden text-right sm:block">
+                      <div className="text-[9px] font-black uppercase tracking-wider text-white/60">
+                        {es ? 'Sensación' : 'Feels like'}
+                      </div>
+                      <div className="mt-1 text-sm font-bold text-white">{feels}°C</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-4xl font-black leading-none tracking-tight text-white drop-shadow sm:text-5xl">
+                        {temp}°
+                      </div>
+                      <div className="mt-1 text-[9px] font-black uppercase tracking-wider text-white/70">
+                        {humidity}% · {rain}% {es ? 'lluvia' : 'rain'}
+                      </div>
+                    </div>
+                    <ArrowRight className={'h-5 w-5 text-white/70 transition-transform ' + (selected ? 'translate-x-1 text-white' : 'group-hover:translate-x-1')} />
                   </div>
                 </div>
 
                 {selected && (
                   <motion.div
                     key={activeId}
-                    className="absolute bottom-0 left-0 h-1 bg-emerald-300"
+                    className="absolute bottom-0 left-0 h-1 bg-sky-300"
                     initial={{ width: '0%' }}
                     animate={{ width: '100%' }}
                     transition={{ duration: 5.2, ease: 'linear' }}
@@ -168,36 +203,33 @@ export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, on
           key={active.id}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-4 grid grid-cols-2 gap-3 rounded-[26px] border border-white/10 bg-white/[0.045] p-4 backdrop-blur-xl sm:grid-cols-4 sm:p-5"
+          className="mt-4 grid grid-cols-2 gap-3 rounded-[24px] border border-white/80 bg-white/70 p-4 shadow-[0_12px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:grid-cols-4 sm:gap-5 sm:p-5"
         >
           <div>
-            <div className="flex items-center gap-2 text-[9px] font-black uppercase text-emerald-100/50"><CloudSun className="h-4 w-4" />{es ? 'Condición' : 'Condition'}</div>
-            <div className="mt-1 text-sm font-bold text-white">{activeWeather ? (es ? activeWeather.labelEs : activeWeather.labelEn) : (es ? active.moodEs : active.moodEn)}</div>
+            <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-sky-950/50">
+              <CloudSun className="h-3.5 w-3.5" />{es ? 'Condición' : 'Condition'}
+            </div>
+            <div className="mt-1 truncate text-sm font-bold text-sky-950">{liveWeather[active.regionId] ? (es ? liveWeather[active.regionId].labelEs : liveWeather[active.regionId].labelEn) : (es ? active.moodEs : active.moodEn)}</div>
           </div>
           <div>
-            <div className="flex items-center gap-2 text-[9px] font-black uppercase text-emerald-100/50"><Droplets className="h-4 w-4" />{es ? 'Humedad' : 'Humidity'}</div>
-            <div className="mt-1 text-sm font-bold text-white">{Math.round(activeWeather?.humidity ?? active.humidity)}%</div>
+            <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-sky-950/50">
+              <Droplets className="h-3.5 w-3.5" />{es ? 'Humedad' : 'Humidity'}
+            </div>
+            <div className="mt-1 text-sm font-bold text-sky-950">{Math.round(liveWeather[active.regionId]?.humidity ?? active.humidity)}%</div>
           </div>
           <div>
-            <div className="flex items-center gap-2 text-[9px] font-black uppercase text-emerald-100/50"><Sun className="h-4 w-4" />{es ? 'Temperatura' : 'Temperature'}</div>
-            <div className="mt-1 text-sm font-bold text-white">{Math.round(activeWeather?.temperatureC ?? active.tempC)}°C</div>
+            <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-sky-950/50">
+              <Sun className="h-3.5 w-3.5" />{es ? 'Temperatura' : 'Temperature'}
+            </div>
+            <div className="mt-1 text-sm font-bold text-sky-950">{Math.round(liveWeather[active.regionId]?.temperatureC ?? active.tempC)}°C</div>
           </div>
           <div>
-            <div className="flex items-center gap-2 text-[9px] font-black uppercase text-emerald-100/50"><Waves className="h-4 w-4" />{es ? 'Ambiente' : 'Vibe'}</div>
-            <div className="mt-1 text-sm font-bold text-white">{es ? active.moodEs : active.moodEn}</div>
+            <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-sky-950/50">
+              <Waves className="h-3.5 w-3.5" />{es ? 'Ambiente' : 'Vibe'}
+            </div>
+            <div className="mt-1 truncate text-sm font-bold text-sky-950">{es ? active.moodEs : active.moodEn}</div>
           </div>
         </motion.div>
-
-        <div className="mt-4 flex justify-end">
-          <button
-            type="button"
-            onClick={() => onSelectRegion(active.regionId)}
-            className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full bg-emerald-300 px-6 py-3 text-sm font-black text-[#041711] transition hover:bg-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-200/60"
-          >
-            {es ? 'Explorar destino' : 'Explore destination'}
-            <ArrowRight className="h-4 w-4" />
-          </button>
-        </div>
       </div>
     </section>
   );
