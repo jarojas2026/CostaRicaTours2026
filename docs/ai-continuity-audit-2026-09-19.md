@@ -60,3 +60,13 @@ El run histórico inspeccionado probó un merge ref anterior y falló por errore
 
 ## CI trigger
 The PR is now ready for review so the next synchronize event can run the current merge result.
+
+## Evolución avanzada añadida
+
+- `backend/skillEvolutionEngine.ts`: selección contextual determinista con exposición canary limitada, scoring de evidencia y penalización por riesgo.
+- El selector usa hash estable por agente/sesión/tarea: no introduce aleatoriedad insegura.
+- Las evaluaciones ahora alimentan directamente la evidencia de la skill seleccionada.
+- Se añadió propuesta de upgrades mediante Gemini con salida JSON estructurada; las propuestas requieren aprobación humana y no generan código ni modifican políticas.
+- Nuevos endpoints administrativos: `/api/ai/skills/evolution`, `/api/ai/skills/select`, `/api/ai/skills/outcome`, `/api/ai/skills/propose-upgrade`.
+- AI Ops muestra el estado vivo del Skill Genome.
+- Los itinerarios personalizados dejaron de aceptar el total de cobro como autoridad del cliente; el backend calcula el importe base.
