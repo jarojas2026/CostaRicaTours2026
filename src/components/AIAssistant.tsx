@@ -586,15 +586,15 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         <div className="text-center space-y-2.5">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#051c14] text-amber-400 rounded-full text-xs font-bold uppercase tracking-widest border border-amber-400/30 shadow-inner">
             <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-            {language === 'es' ? 'Motor de Inteligencia Artificial & Orquestación con automatización nativa' : 'AI Intelligence Engine & automatización nativa Workflow Orchestration'}
+            {language === 'es' ? 'Motor de Inteligencia Artificial & Automatización Nativa' : 'AI Intelligence Engine & Native Automation'}
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight">
             {language === 'es' ? 'Centro de Asistentes & Agentes IA de Costa Rica' : 'Costa Rica AI Travel Agents & Workflows'}
           </h2>
           <p className="text-sm sm:text-base text-emerald-100/70 max-w-3xl mx-auto leading-relaxed">
             {language === 'es'
-              ? 'Interactúa con nuestro Asistente Unificado o explora los 19 flujos operativos en automatización nativa que orquestan reservas en Firestore, pasarelas de pago y contingencias climáticas.'
-              : 'Interact with our Unified Concierge or explore the 19 operational automatización nativa workflows orchestrating Firestore bookings, payment gateways, and weather contingencies.'
+              ? 'Interactúa con nuestro Asistente Unificado o explora los 19 flujos operativos nativos que ejecutan reservas en Firestore, pasarelas de pago y contingencias climáticas.'
+              : 'Interact with our Unified Concierge or explore the 19 operational native workflows executing Firestore bookings, payment gateways, and weather contingencies.'
             }
           </p>
 
@@ -622,7 +622,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 }`}
               >
                 <Zap className="w-4 h-4 text-amber-400" />
-                <span>{language === 'es' ? 'Flujos & Automatizaciones automatización nativa' : 'automatización nativa Workflows & Pipelines'}</span>
+                <span>{language === 'es' ? 'Flujos & Automatizaciones Nativas' : 'Native Workflows & Pipelines'}</span>
                 <span className="bg-emerald-500 text-stone-950 text-[9px] font-black px-1.5 py-0.5 rounded-full">
                   PROD
                 </span>
@@ -672,7 +672,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               className="text-amber-400 hover:text-amber-300 text-[10px] font-black flex items-center gap-1 cursor-pointer transition-colors"
             >
               <Zap className="w-3 h-3 text-amber-400" />
-              <span>{language === 'es' ? 'Ver Pipelines en automatización nativa Studio ⚡' : 'View Pipelines in automatización nativa Studio ⚡'}</span>
+              <span>{language === 'es' ? 'Ver Centro de Automatización ⚡' : 'View Automation Center ⚡'}</span>
             </button>
           </div>
 
