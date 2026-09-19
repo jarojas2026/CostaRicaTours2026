@@ -688,6 +688,15 @@ export async function handleProviderActionResponse(
         payload: { bookingId, providerId: options?.providerId, guide, vehicle, tourName, tourDate }
       });
       await publishAgentEvent('provider.booking.confirmed', { bookingId, providerId: options?.providerId, guide, vehicle }, bookingId);
+      const { recordLearningEvent } = await import('./learningEngine');
+      await recordLearningEvent({
+        agentId: 'provider_liaison',
+        input: `Coordinación de proveedor para ${bookingId}`,
+        output: 'Proveedor confirmó logística',
+        outcome: 'success',
+        reward: 1,
+        metadata: { bookingId, providerId: options?.providerId, action: 'confirm' }
+      });
     } catch (meshErr) { console.warn('Agent mesh provider confirmation unavailable:', meshErr); }
 
     logAutomationExecution('WF_COORDINACION_PROVEEDOR', 0, 'success', `Reserva #${bookingId} confirmada por operador con guía ${guide}`);
@@ -723,6 +732,15 @@ export async function handleProviderActionResponse(
         payload: { bookingId, proposedTime, providerId: options?.providerId, notes: options?.providerNotes }
       });
       await publishAgentEvent('provider.booking.time_change_requested', { bookingId, proposedTime, providerId: options?.providerId }, bookingId);
+      const { recordLearningEvent } = await import('./learningEngine');
+      await recordLearningEvent({
+        agentId: 'provider_liaison',
+        input: `Cambio de horario solicitado para ${bookingId}`,
+        output: proposedTime,
+        outcome: 'partial',
+        reward: 0.1,
+        metadata: { bookingId, providerId: options?.providerId, action: 'modify_time' }
+      });
     } catch (meshErr) { console.warn('Agent mesh provider time-change unavailable:', meshErr); }
 
     if (customerEmail) {
