@@ -6,6 +6,7 @@ import { NativeAutomationStudio } from './NativeAutomationStudio';
 import { AlertsCenter } from './AlertsCenter';
 import { ProviderCommunicationHub } from './ProviderCommunicationHub';
 import { AiInsightsPanel } from './AiInsightsPanel';
+import { auth } from '../firebase';
 
 
 interface AdminDashboardProps {
@@ -337,9 +338,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                             <button 
                               onClick={async () => {
                                 try {
+                                  const token = await auth.currentUser?.getIdToken();
+                                  if (!token) throw new Error('Sesión de operador no disponible');
                                   await fetch('/api/ai/fraud-check', {
                                     method: 'POST',
-                                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ADMIN_MOCK_TOKEN' },
+                                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                                     body: JSON.stringify(b)
                                   });
                                   fetchBookings();
