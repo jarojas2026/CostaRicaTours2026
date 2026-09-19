@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import type { Language } from '../types';
 import { BrainCircuit, Activity, ShieldCheck, RefreshCw, Sparkles, ServerCog } from 'lucide-react';
 
-interface Props { language?: 'es' | 'en'; }
+interface Props { language?: Language; }
 
 export const NativeAutomationStudio: React.FC<Props> = ({ language = 'es' }) => {
   const es = language === 'es';
