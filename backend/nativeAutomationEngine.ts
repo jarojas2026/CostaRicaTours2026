@@ -100,6 +100,7 @@ export async function executeChatInquiry(payload: {
   contexto?: any;
   context?: any;
   agenteSeleccionado?: string;
+  sessionId?: string;
 }) {
   const start = Date.now();
   const userMsg = payload.mensaje || payload.message || '';
