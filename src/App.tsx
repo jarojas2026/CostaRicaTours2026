@@ -264,6 +264,7 @@ export default function App() {
                       setSelectedRegion={setSelectedRegion}
                       setIsCustomFunnelOpen={setIsCustomFunnelOpen}
                       setSelectedTour={setSelectedTour}
+                      onNavigateTab={(tab) => navigate(tab === 'home' ? '/' : `/${tab}`)}
                     />
                   } />
 

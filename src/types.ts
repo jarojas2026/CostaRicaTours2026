@@ -38,6 +38,7 @@ export type TourRegion =
   | 'san_jose'
   | 'sjo'
   | 'caribe'
+  | 'caribe_sur'
   | 'osa'
   | 'marino_ballena'
   | 'perez_zeledon'

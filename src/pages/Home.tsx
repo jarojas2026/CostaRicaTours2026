@@ -33,6 +33,7 @@ export const Home: React.FC<HomeProps> = ({
   setSelectedCategory,
   selectedRegion,
   setSelectedRegion,
+  onNavigateTab,
   setIsCustomFunnelOpen
 }) => {
   return (
@@ -73,6 +74,10 @@ export const Home: React.FC<HomeProps> = ({
 
       <DestinationsSection 
         language={language}
+        onSelectRegion={(reg) => {
+          setSelectedRegion(reg as TourRegion);
+          onNavigateTab('tours');
+        }}
       />
 
       {/* Trust & Conversion Sections */}

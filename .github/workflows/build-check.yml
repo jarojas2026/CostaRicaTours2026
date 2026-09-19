@@ -23,7 +23,7 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
 
       - name: Instalar dependencias
@@ -31,10 +31,21 @@ jobs:
 
       - name: Verificar tipos de TypeScript (equivalente a "npm run lint")
         run: npm run lint
+        env:
+          # El proyecto creció lo suficiente para que tsc necesite más
+          # memoria de la que Node asigna por defecto (colapsaba con
+          # "JavaScript heap out of memory" sin este ajuste).
+          NODE_OPTIONS: "--max-old-space-size=4096"
+        env:
+          # El proyecto creció lo suficiente para que tsc necesite más
+          # memoria que el límite por defecto de Node — sin esto, el
+          # chequeo de tipos falla con "JavaScript heap out of memory".
+          NODE_OPTIONS: "--max-old-space-size=4096"
 
       - name: Compilar el proyecto (frontend + servidor)
         run: npm run build
         env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
           # Variables de entorno "falsas" solo para que la compilación no
           # falle por falta de claves reales. Esto NO despliega nada ni
           # usa dinero real — es solo para verificar que el código compila.

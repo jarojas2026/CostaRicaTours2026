@@ -150,10 +150,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
               whileTap={{ scale: 0.98 }}
               viewport={{ once: true }}
               transition={{ duration: 0.25, delay: idx * 0.04 }}
-              onClick={() => {
-                if (card.tab === 'home') navigate('/');
-                else navigate(`/${card.tab}`);
-              }}
+              onClick={() => navigate(`/${card.tab}`)}
               className={`group relative p-5 rounded-2xl bg-gradient-to-br ${card.gradient} border border-teal-500/20 hover:border-amber-400/80 hover:shadow-[0_10px_30px_rgba(255,140,0,0.15)] transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden`}
             >
               <div className="space-y-3">
