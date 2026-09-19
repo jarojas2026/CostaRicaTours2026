@@ -27,11 +27,8 @@ export async function requireOperator(req: Request, res: Response, next: NextFun
 
   const operatorKey = process.env.OPERATOR_API_KEY;
   if (!operatorKey) {
-    if (process.env.NODE_ENV === 'production') {
-      console.error('❌ [SEGURIDAD] OPERATOR_API_KEY no configurada y no se recibió Firebase ID token.');
-      return res.status(401).json({ error: 'No autorizado' });
-    }
-    return next();
+    console.error('❌ [SEGURIDAD] OPERATOR_API_KEY no configurada y no se recibió Firebase ID token.');
+    return res.status(503).json({ error: 'Autenticación de operaciones no configurada' });
   }
 
   const providedKey = req.headers['x-operator-key'];
