@@ -272,9 +272,10 @@ app.post('/api/internal/sweep-sla', async (req, res) => {
   const operatorKey = req.headers['x-operator-key'];
   const secret = process.env.OPERATOR_API_KEY;
 
-  if (!secret || !operatorKey || !crypto.timingSafeEqual(Buffer.from(String(operatorKey)), Buffer.from(secret))) {
-    return res.status(401).json({ error: 'No autorizado' });
-  }
+  if (!secret || !operatorKey) return res.status(401).json({ error: 'No autorizado' });
+  const provided = Buffer.from(String(operatorKey));
+  const expected = Buffer.from(secret);
+  if (provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) return res.status(401).json({ error: 'No autorizado' });
 
   try {
     const escalatedCount = await massiveEngine.providerLifecycle.sweepPendingSlas();
