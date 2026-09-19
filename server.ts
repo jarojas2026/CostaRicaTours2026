@@ -474,9 +474,9 @@ app.get('/api/bookings/:id/download-pdf', async (req, res) => {
       adults: 2,
       children: 1,
       totalUSD: 2450,
-      customerName: 'Hester Viviana Marín Elizondo',
-      customerEmail: 'viviana19942011@gmail.com',
-      customerPhone: '+506 84005018',
+      customerName: 'Cliente de ejemplo',
+      customerEmail: 'cliente@example.com',
+      customerPhone: '+506 0000-0000',
       specialRequests: 'Presupuesto familiar, relajado y seguro. Bebé de 3 años.',
       createdAt: new Date().toISOString()
     };
@@ -526,9 +526,9 @@ app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
       try {
         providerCoordinationResult = await executeProviderRealtimeCoordination({
           bookingId,
-          customerName: 'Hester Viviana Marín Elizondo',
-          customerEmail: 'viviana19942011@gmail.com',
-          customerPhone: '+506 84005018',
+          customerName: 'Cliente de ejemplo',
+          customerEmail: 'cliente@example.com',
+          customerPhone: '+506 0000-0000',
           tourName: 'Costa Rica Familiar 15 Días: Relax, Volcanes y Playas Seguras (Especial Bebé 3 Años)',
           date: '2026-10-15',
           tourDate: '2026-10-15',
