@@ -2155,8 +2155,10 @@ startServer();function calculateAuthoritativeCheckoutTotal(body: any): number | 
 
   const tour = TOURS.find(item => item.id === tourId);
   if (!tour || typeof tour.priceUSD !== 'number') return null;
-  const adults = Math.max(0, Number(body?.adults) || passengers);
-  const children = Math.max(0, Number(body?.children) || 0);
+  const adultsRaw = Number(body?.adults);
+  const childrenRaw = Number(body?.children);
+  const adults = Number.isFinite(adultsRaw) ? Math.max(0, adultsRaw) : passengers;
+  const children = Number.isFinite(childrenRaw) ? Math.max(0, childrenRaw) : 0;
   return Number((tour.priceUSD * adults + tour.priceUSD * 0.7 * children).toFixed(2));
 }
 
