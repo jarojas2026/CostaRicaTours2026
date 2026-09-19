@@ -1,0 +1,133 @@
+import { getAllBookings, checkTourAvailability } from './bookingService';
+import { getAlerts } from './alertService';
+import { getProvidersOverview } from './providerCommunicationService';
+import { getNativeEngineStatus } from './nativeAutomationEngine';
+import { processChatInquiry } from './aiAssistantService';
+import { getOperationalMemory, rememberTurn } from './memoryService';
+import { buildAgentKnowledgeContext } from './agentKnowledgeFabric';
+
+export type CounterDeskAskInput = {
+  message: string;
+  sessionId?: string;
+  language?: 'es' | 'en';
+  context?: Record<string, any>;
+};
+
+export async function askCounterDesk(input: CounterDeskAskInput) {
+  const message = String(input.message || '').trim().slice(0, 5000);
+  if (!message) throw new Error('message es requerido');
+
+  const language = input.language === 'en' ? 'en' : 'es';
+  const sessionId = String(input.sessionId || '').trim();
+  const history = sessionId ? (await getOperationalMemory(sessionId)).turns : [];
+  const knowledge = await buildAgentKnowledgeContext(message, language, sessionId || undefined);
+
+  const result = await processChatInquiry(
+    message,
+    language,
+    history.map(t => ({ role: t.role, text: t.text })),
+    'counter_agent',
+    sessionId || undefined
+  );
+
+  if (sessionId) {
+    await rememberTurn(sessionId, { role: 'user', text: message }, { agentId: result.agentId || 'counter_agent' });
+    await rememberTurn(sessionId, { role: 'assistant', text: result.reply }, { agentId: result.agentId || 'counter_agent' });
+  }
+
+  return {
+    success: true,
+    agentId: result.agentId || 'counter_agent',
+    reply: result.reply,
+    quickActions: result.quickActions || [],
+    modelUsed: result.modelUsed,
+    knowledge: {
+      region: knowledge.region,
+      weather: knowledge.weather,
+      matchedTours: knowledge.tours.map((t: any) => ({ id: t.id, name: t.title?.[language] || t.title?.es, priceUSD: t.priceUSD }))
+    },
+    timestamp: new Date().toISOString()
+  };
+}
+
+export async function getCounterOperationsSnapshot() {
+  const [bookings, alerts, providers] = await Promise.all([
+    getAllBookings(),
+    getAlerts({ resolved: false }),
+    Promise.resolve(getProvidersOverview())
+  ]);
+
+  const now = Date.now();
+  const upcoming = bookings.filter((b: any) => {
+    const d = new Date(String(b.date || '') + 'T' + String(b.time || '00:00:00')).getTime();
+    return Number.isFinite(d) && d >= now && d <= now + 72 * 60 * 60 * 1000;
+  });
+
+  const pendingPayments = bookings.filter((b: any) => ['pending', 'pendiente_pago'].includes(String(b.paymentStatus || b.status || '').toLowerCase()));
+  const unresolvedCritical = alerts.filter((a: any) => a.severity === 'critical').length;
+
+  const providerList = Array.isArray((providers as any).providers)
+    ? (providers as any).providers
+    : Array.isArray(providers) ? providers : [];
+
+  return {
+    generatedAt: new Date().toISOString(),
+    engine: getNativeEngineStatus(),
+    counters: {
+      totalBookings: bookings.length,
+      upcoming72h: upcoming.length,
+      pendingPayments: pendingPayments.length,
+      unresolvedAlerts: alerts.length,
+      criticalAlerts: unresolvedCritical,
+      activeProviders: providerList.filter((p: any) => p.status === 'active').length
+    },
+    upcoming: upcoming.slice(0, 12).map((b: any) => ({
+      bookingId: b.bookingId || b.id,
+      date: b.date,
+      time: b.time,
+      tourName: b.tourName,
+      status: b.status,
+      paymentStatus: b.paymentStatus,
+      providerName: b.providerName
+    })),
+    alerts: alerts.slice(0, 12).map((a: any) => ({
+      id: a.id, severity: a.severity, title: a.title, message: a.message,
+      bookingId: a.bookingId, providerId: a.providerId, createdAt: a.createdAt
+    })),
+    providers: providerList.slice(0, 20).map((p: any) => ({
+      id: p.id, name: p.name, region: p.region, status: p.status,
+      slaTargetMinutes: p.slaTargetMinutes, averageResponseMinutes: p.averageResponseMinutes,
+      acceptanceRate: p.acceptanceRate
+    }))
+  };
+}
+
+export async function runCounterSafeAutopilot() {
+  const snapshot = await getCounterOperationsSnapshot();
+  const actions: Array<{id:string; priority:'high'|'medium'|'low'; action:string; reason:string; safe:boolean}> = [];
+
+  if (snapshot.counters.criticalAlerts > 0) {
+    actions.push({ id: 'critical-alerts', priority: 'high', action: 'Revisar y escalar alertas críticas', reason: 'Hay alertas operativas críticas sin resolver.', safe: true });
+  }
+  if (snapshot.counters.pendingPayments > 0) {
+    actions.push({ id: 'pending-payments', priority: 'high', action: 'Revisar pagos pendientes y conciliación', reason: 'Existen reservas con pago pendiente.', safe: true });
+  }
+  if (snapshot.counters.upcoming72h > 0) {
+    actions.push({ id: 'upcoming-ops', priority: 'medium', action: 'Verificar proveedores y SLA de las salidas de las próximas 72 horas', reason: 'Hay operaciones próximas que requieren cobertura.', safe: true });
+  }
+  if (snapshot.counters.unresolvedAlerts === 0 && snapshot.counters.pendingPayments === 0) {
+    actions.push({ id: 'preventive-check', priority: 'low', action: 'Ejecutar revisión preventiva de operaciones', reason: 'No hay incidencias pendientes; mantener vigilancia.', safe: true });
+  }
+
+  return {
+    success: true,
+    generatedAt: new Date().toISOString(),
+    mode: 'recommendation_first',
+    actions,
+    snapshot
+  };
+}
+
+export async function checkCounterAvailability(tourId: string, date: string, time: string | undefined, seats: number) {
+  return checkTourAvailability(tourId, date, time, Math.max(1, Math.min(50, Number(seats) || 1)));
+}
