@@ -71,7 +71,7 @@ const ChatMiniCard: React.FC<{
   );
 };
 
-const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
+export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
   language,
   initialMessage = '',
   onOpenAIAssistant,
