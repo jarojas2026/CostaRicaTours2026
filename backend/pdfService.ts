@@ -399,7 +399,7 @@ export function generateBookingPrintableHTML(booking: BookingPDFData): string {
             <div class="info-row"><span>Titular:</span><span>${booking.customerName || 'Cliente de ejemplo'}</span></div>
             <div class="info-row"><span>Correo Electrónico:</span><span>${booking.customerEmail || 'cliente@example.com'}</span></div>
             <div class="info-row"><span>WhatsApp / Teléfono:</span><span>${booking.customerPhone || '+506 0000-0000'}</span></div>
-            <div class="info-row"><span>Pasajeros:</span><span>${booking.adults || ${booking.adults || 0} Adultos + ${booking.children || 0} Niños</span></div>
+            <div class="info-row"><span>Pasajeros:</span><span>${booking.adults || 0} Adultos + ${booking.children || 0} Niños</span></div>
             <div class="info-row"><span>Concepto:</span><span>Family Budget, Relaxing & Safe</span></div>
           </div>
           <div class="card">
