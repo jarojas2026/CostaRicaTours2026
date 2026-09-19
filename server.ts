@@ -568,7 +568,7 @@ app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
           <div class="hero">
             <div style="font-size: 40px; margin-bottom: 10px;">🎉🌿</div>
             <h1 style="margin: 0; font-size: 22px; font-weight: 900;">¡Itinerario Confirmado Exitosamente!</h1>
-            <p style="margin: 8px 0 0 0; font-size: 14px; color: #a7f3d0;">Estimada Hester Viviana, hemos recibido su aprobación.</p>
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #a7f3d0;">Estimada Cliente, hemos recibido su aprobación.</p>
           </div>
           <div class="content">
             <div style="text-align: center;">
@@ -584,7 +584,7 @@ app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
               <div><strong>👨‍💼 Asesoría Continua:</strong> Seguimiento en tiempo real vía WhatsApp (+506 8795 9148).</div>
             </div>
             <a href="${downloadPdfUrl}" class="btn-primary">📥 Descargar Voucher & Itinerario (PDF)</a>
-            <a href="https://wa.me/50687959148?text=${encodeURIComponent(`Hola, soy Hester Viviana. Acabo de confirmar el itinerario #${bookingId}.`)}" class="btn-secondary">💬 Escribir al Mostrador (+506 8795 9148)</a>
+            <a href="https://wa.me/50687959148?text=${encodeURIComponent(`Hola, soy Cliente. Acabo de confirmar el itinerario #${bookingId}.`)}" class="btn-secondary">💬 Escribir al Mostrador (+506 8795 9148)</a>
           </div>
         </div>
       </body>
