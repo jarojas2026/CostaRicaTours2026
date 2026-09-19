@@ -9,12 +9,20 @@ function getAI(): GoogleGenAI | null {
   return aiClient;
 }
 
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer | string;
+  contentType?: string;
+  path?: string;
+}
+
 export interface EmailPayload {
   to: string;
   subject: string;
   html: string;
   text?: string;
   from?: string;
+  attachments?: EmailAttachment[];
 }
 
 export interface TelegramMessageOptions {
@@ -159,6 +167,11 @@ export async function sendEmail(
   // 1. Enviar vía Resend API si está configurado
   if (process.env.RESEND_API_KEY) {
     try {
+      const resendAttachments = payload.attachments?.map(att => ({
+        filename: att.filename,
+        content: Buffer.isBuffer(att.content) ? att.content.toString('base64') : att.content
+      }));
+
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -170,7 +183,8 @@ export async function sendEmail(
           to: [payload.to],
           subject: payload.subject,
           html: payload.html,
-          text: payload.text
+          text: payload.text,
+          attachments: resendAttachments && resendAttachments.length > 0 ? resendAttachments : undefined
         })
       });
       const data = await response.json();
@@ -186,6 +200,13 @@ export async function sendEmail(
   // 2. Enviar vía SendGrid si está configurado
   if (process.env.SENDGRID_API_KEY) {
     try {
+      const sendGridAttachments = payload.attachments?.map(att => ({
+        content: Buffer.isBuffer(att.content) ? att.content.toString('base64') : att.content,
+        filename: att.filename,
+        type: att.contentType || 'application/pdf',
+        disposition: 'attachment'
+      }));
+
       const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
         headers: {
@@ -196,7 +217,8 @@ export async function sendEmail(
           personalizations: [{ to: [{ email: payload.to }] }],
           from: { email: fromEmail.includes('<') ? fromEmail.match(/<([^>]+)>/)?.[1] || fromEmail : fromEmail },
           subject: payload.subject,
-          content: [{ type: 'text/html', value: payload.html }]
+          content: [{ type: 'text/html', value: payload.html }],
+          attachments: sendGridAttachments && sendGridAttachments.length > 0 ? sendGridAttachments : undefined
         })
       });
       if (!response.ok) {
@@ -213,14 +235,21 @@ export async function sendEmail(
   const transporter = getMailTransporter();
   if (transporter) {
     try {
+      const nodemailerAttachments = payload.attachments?.map(att => ({
+        filename: att.filename,
+        content: att.content,
+        contentType: att.contentType || 'application/pdf'
+      }));
+
       const info = await transporter.sendMail({
         from: fromEmail,
         to: payload.to,
         subject: payload.subject,
         html: payload.html,
-        text: payload.text || payload.html.replace(/<[^>]*>?/gm, '')
+        text: payload.text || payload.html.replace(/<[^>]*>?/gm, ''),
+        attachments: nodemailerAttachments && nodemailerAttachments.length > 0 ? nodemailerAttachments : undefined
       });
-      console.log(`📧 [EMAIL SMTP ENVIADO] Despachado exitosamente a ${payload.to} (ID: ${info.messageId})`);
+      console.log(`📧 [EMAIL SMTP ENVIADO] Despachado exitosamente a ${payload.to} (ID: ${info.messageId}) con ${payload.attachments?.length || 0} adjuntos`);
       return { success: true, id: info.messageId };
     } catch (smtpErr: any) {
       console.error(`❌ [EMAIL SMTP ERROR] Falló envío a ${payload.to}:`, smtpErr);
@@ -233,5 +262,11 @@ export async function sendEmail(
   console.log(`   Para: ${payload.to}`);
   console.log(`   Asunto: ${payload.subject}`);
   console.log(`   Remitente: ${fromEmail}`);
+  if (payload.attachments && payload.attachments.length > 0) {
+    payload.attachments.forEach(att => {
+      const size = Buffer.isBuffer(att.content) ? att.content.length : att.content.length;
+      console.log(`   📎 Adjunto: ${att.filename} (${size} bytes, tipo: ${att.contentType || 'application/pdf'})`);
+    });
+  }
   return { success: true, id: `sim-mail-${Date.now()}` };
 }

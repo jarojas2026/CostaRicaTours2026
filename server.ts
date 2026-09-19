@@ -27,6 +27,7 @@ import {
   checkTourAvailability,
   getWeeklyConversionMetrics
 } from './backend/bookingService';
+import { generateBookingPDFBuffer, generateBookingPrintableHTML } from './backend/pdfService';
 import { massiveEngine } from './backend/massiveProcessingEngine';
 import {
   createAlert,
@@ -468,7 +469,7 @@ app.patch('/api/bookings/:id', requireOperator, async (req, res) => {
   }
 });
 
-// Generar e imprimir Vale Oficial / Itinerario PDF de Reserva
+// Generar e imprimir Vale Oficial / Itinerario Web de Reserva
 app.get('/api/bookings/:id/pdf', async (req, res) => {
   try {
     const bookingId = req.params.id;
@@ -488,120 +489,39 @@ app.get('/api/bookings/:id/pdf', async (req, res) => {
       createdAt: new Date().toISOString()
     };
 
-    const htmlPdf = `
-      <!DOCTYPE html>
-      <html lang="es">
-      <head>
-        <meta charset="UTF-8">
-        <title>Vale Oficial e Itinerario - Reserva #${booking.bookingId}</title>
-        <style>
-          body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; margin: 0; padding: 40px; background: #ffffff; }
-          .header { border-bottom: 3px solid #059669; padding-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-          .logo { font-size: 24px; font-weight: 900; color: #047857; text-transform: uppercase; letter-spacing: 1px; }
-          .badge { background: #d1fae5; color: #065f46; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-          .section { margin-top: 30px; }
-          .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px; }
-          .card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; }
-          .title { font-size: 16px; font-weight: bold; color: #0f766e; margin-bottom: 10px; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-          th, td { border: 1px solid #cbd5e1; padding: 10px 14px; text-align: left; font-size: 13px; }
-          th { background: #f1f5f9; color: #334155; }
-          .footer { margin-top: 50px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 20px; }
-          @media print {
-            body { padding: 20px; }
-            .no-print { display: none; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div>
-            <div class="logo">🌿 Costa Rica Tours</div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Plataforma Oficial de Ecoturismo y Turismo Sostenible CST</div>
-          </div>
-          <div>
-            <span class="badge">RESERVA CONFIRMADA • PAGADA</span>
-            <div style="font-size: 11px; color: #64748b; text-align: right; margin-top: 6px;">ID: #${booking.bookingId}</div>
-          </div>
-        </div>
-
-        <div style="margin-top: 30px; text-align: center;" class="no-print">
-          <button onclick="window.print()" style="background: #059669; color: white; border: none; padding: 12px 24px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            🖨️ Imprimir / Guardar como PDF
-          </button>
-        </div>
-
-        <div class="grid">
-          <div class="card">
-            <div class="title">👤 Datos del Titular y Pasajeros</div>
-            <p><strong>Titular:</strong> ${booking.customerName || 'Hester Viviana Marín Elizondo'}</p>
-            <p><strong>Correo Electrónico:</strong> ${booking.customerEmail || 'viviana19942011@gmail.com'}</p>
-            <p><strong>Teléfono / WhatsApp:</strong> ${booking.customerPhone || '+506 84005018'}</p>
-            <p><strong>Composición Grupo:</strong> ${booking.adults || 2} Adultos + ${booking.children || 1} Bebé (3 años)</p>
-          </div>
-          <div class="card">
-            <div class="title">🌴 Detalles del Paquete / Tour</div>
-            <p><strong>Experiencia:</strong> ${booking.tourName}</p>
-            <p><strong>Fecha de Inicio:</strong> ${booking.date} (${booking.time || '09:00 AM'})</p>
-            <p><strong>Modalidad:</strong> Family Budget, Relaxing & Safe (Paquete 15 Días)</p>
-            <p><strong>Inversión Total:</strong> $${booking.totalUSD || 2450} USD</p>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="card">
-            <div class="title">🗺️ Itinerario Detallado (15 Días - Costa Rica Esencial Familia)</div>
-            <table>
-              <tr>
-                <th>Días</th>
-                <th>Destino</th>
-                <th>Actividades & Enfoque Familiar</th>
-                <th>Alojamiento / Traslado</th>
-              </tr>
-              <tr>
-                <td>Días 1 - 4</td>
-                <td>Arenal / La Fortuna</td>
-                <td>Aguas termales termolúdicas relajantes, senderos accesibles con coche de bebé en Parque Nacional Volcán Arenal, mariposario y jardín de perezosos.</td>
-                <td>Hotel con piscinas termales infantiles + Traslado privado SJO-Arenal</td>
-              </tr>
-              <tr>
-                <td>Días 5 - 8</td>
-                <td>Monteverde</td>
-                <td>Puentes colgantes de baja altura y alta seguridad con doble baranda, tour guiado de chocolate y café artesanal en horario matutino.</td>
-                <td>Lodge familiar de montaña + Transporte privado con silla ISOFIX</td>
-              </tr>
-              <tr>
-                <td>Días 9 - 12</td>
-                <td>Manuel Antonio & Quepos</td>
-                <td>Playas de arena blanca sin fuerte oleaje dentro del Parque Nacional, avistamiento guiado de fauna silvestre segura para niños.</td>
-                <td>Resort familiar cerca de playa Espadilla</td>
-              </tr>
-              <tr>
-                <td>Días 13 - 15</td>
-                <td>Valle del General & San José</td>
-                <td>Turismo rural comunitario en Pérez Zeledón, gastronomía típica, compras artesanales y traslado al Aeropuerto SJO.</td>
-                <td>Hotel ejecutivo SJO + Vuelo doméstico / Shuttle privado</td>
-              </tr>
-            </table>
-          </div>
-        </div>
-
-        <div class="section" style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 15px 20px; border-radius: 12px;">
-          <h4 style="margin: 0 0 8px 0; color: #065f46; font-size: 14px;">✅ Garantía de Operador Local y Asistencia 24/7</h4>
-          <p style="margin: 0; font-size: 12px; color: #047857; line-height: 1.5;">
-            Este documento certifica que su reserva ha sido procesada mediante intermediación oficial con operadores certificados CST (Certificación para Sostenibilidad Turística). Para asistencia inmediata durante su viaje, comuníquese al WhatsApp de mostrador: <strong>+506 8795 9148</strong> o con la titular al <strong>+506 84005018</strong>.
-          </p>
-        </div>
-
-        <div class="footer">
-          <p>Costa Rica Tours • Documento Oficial Generado Electrónicamente el ${new Date().toLocaleDateString('es-CR')} • Válido como Comprobante de Reserva</p>
-        </div>
-      </body>
-      </html>
-    `;
-
+    const html = generateBookingPrintableHTML(booking as any);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(htmlPdf);
+    res.send(html);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Descarga directa binaria del Vale Oficial e Itinerario en PDF
+app.get('/api/bookings/:id/download-pdf', async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const allBookings = await getAllBookings();
+    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId) || {
+      bookingId: bookingId,
+      tourName: 'Costa Rica Familiar 15 Días: Relax, Volcanes y Playas Seguras (Especial Bebé 3 Años)',
+      date: '2026-10-15',
+      time: '09:00 AM',
+      adults: 2,
+      children: 1,
+      totalUSD: 2450,
+      customerName: 'Hester Viviana Marín Elizondo',
+      customerEmail: 'viviana19942011@gmail.com',
+      customerPhone: '+506 84005018',
+      specialRequests: 'Presupuesto familiar, relajado y seguro. Bebé de 3 años.',
+      createdAt: new Date().toISOString()
+    };
+
+    const pdfBuffer = await generateBookingPDFBuffer(booking as any);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="CostaRicaTours-Voucher-${bookingId}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.end(pdfBuffer);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

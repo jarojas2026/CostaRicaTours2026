@@ -17,6 +17,7 @@
 import { getFirestoreDb, getBookingsCollection, updateBookingStatus } from './bookingService';
 import { sendEmail, sendTelegramMessage, sendTelegramEscalation } from './notificationService';
 import { logAutomationExecution } from './nativeAutomationEngine';
+import { generateBookingPDFBuffer } from './pdfService';
 
 // Clave secreta para autenticación de webhooks entrantes
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || process.env.N8N_WEBHOOK_SECRET || 'cr-tours-secure-webhook-token-2026';
@@ -837,50 +838,134 @@ export async function executeCustomerBookingConfirmation(
   const qrValidationCode = booking.qrValidationCode || `PASS-${bookingId.replace(/[^A-Z0-9]/gi, '')}`;
 
   if (customerEmail && customerEmail.includes('@')) {
+    let pdfBuffer: Buffer | null = null;
+    try {
+      pdfBuffer = await generateBookingPDFBuffer({
+        bookingId,
+        tourName,
+        customerName,
+        customerEmail,
+        customerPhone,
+        date: tourDate,
+        time: tourTime,
+        adults: booking.adults || 2,
+        children: booking.children || (booking.childPax ? 1 : 0),
+        totalUSD,
+        specialRequests: booking.specialRequests || 'Presupuesto familiar, relajado y seguro. Bebé de 3 años.',
+        pickupHotel
+      });
+    } catch (pdfErr) {
+      console.warn(`⚠️ [PDF BUFFER WARNING]: No se pudo generar buffer PDF para adjuntar:`, pdfErr);
+    }
+
+    const downloadPdfUrl = `${APP_URL}/api/bookings/${bookingId}/download-pdf`;
+    const viewVoucherUrl = `${APP_URL}/api/bookings/${bookingId}/pdf`;
+
     const emailResult = await sendEmail({
       to: customerEmail,
-      subject: `🌴 ¡Tu Aventura está Confirmada! - Voucher: ${bookingId} (${tourName})`,
+      subject: `🌴 Voucher Oficial e Itinerario Confirmado (#${bookingId}) - Costa Rica Tours`,
+      attachments: pdfBuffer ? [
+        {
+          filename: `CostaRicaTours-Voucher-${bookingId}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf'
+        }
+      ] : undefined,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917; border: 1px solid #e7e5e4; border-radius: 16px; overflow: hidden; background-color: #ffffff;">
-          <div style="background-color: #064e3b; color: #ffffff; padding: 28px 24px; text-align: center;">
-            <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">¡Pura Vida, ${customerName}! 🌿</h1>
-            <p style="margin: 8px 0 0 0; font-size: 14px; color: #a7f3d0;">Tu reserva ha sido confirmada con éxito.</p>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 650px; margin: 0 auto; color: #1e293b; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+          <!-- HEADER -->
+          <div style="background: linear-gradient(135deg, #041711 0%, #064e3b 100%); color: #ffffff; padding: 30px 24px; text-align: center;">
+            <div style="font-size: 13px; font-weight: 700; color: #f59e0b; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;">Costa Rica Tours 2026 • Operaciones Oficiales</div>
+            <h1 style="margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.5px;">¡Bienvenida a Costa Rica, ${customerName}! 🌿</h1>
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #a7f3d0;">Su reserva e itinerario familiar de 15 días han sido confirmados exitosamente.</p>
           </div>
-          <div style="padding: 24px;">
-            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 20px;">
-              <span style="font-size: 12px; font-weight: bold; color: #15803d; text-transform: uppercase; letter-spacing: 1px;">Código de Voucher Digital</span>
-              <div style="font-size: 20px; font-weight: 900; color: #064e3b; margin: 4px 0; font-family: monospace;">${bookingId}</div>
-              <span style="font-size: 11px; color: #166534;">Token QR: ${qrValidationCode}</span>
+
+          <div style="padding: 26px;">
+            <!-- VOUCHER CODE BOX -->
+            <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 18px; text-align: center; margin-bottom: 24px;">
+              <span style="font-size: 11px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 1px;">Expediente de Reserva Confirmado</span>
+              <div style="font-size: 22px; font-weight: 900; color: #064e3b; margin: 6px 0; font-family: monospace;">#${bookingId}</div>
+              <span style="font-size: 12px; color: #0f766e;">Token de Validación QR: <strong>${qrValidationCode}</strong></span>
+              <div style="margin-top: 14px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <a href="${downloadPdfUrl}" style="background-color: #059669; color: #ffffff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 13px; display: inline-block;">
+                  📥 Descargar Vale Oficial (PDF)
+                </a>
+                <a href="${viewVoucherUrl}" style="background-color: #ffffff; color: #065f46; border: 1px solid #a7f3d0; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 13px; display: inline-block;">
+                  🖨️ Ver Expediente Digital
+                </a>
+              </div>
             </div>
 
-            <h3 style="font-size: 16px; color: #064e3b; border-bottom: 2px solid #f0fdf4; padding-bottom: 8px; margin-top: 0;">Detalles de tu Experiencia</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 20px;">
-              <tr style="border-bottom: 1px solid #f5f5f4;"><td style="padding: 8px 0; color: #78716c;">Tour:</td><td style="padding: 8px 0; font-weight: bold; color: #1c1917;">${tourName}</td></tr>
-              <tr style="border-bottom: 1px solid #f5f5f4;"><td style="padding: 8px 0; color: #78716c;">Fecha:</td><td style="padding: 8px 0; font-weight: bold; color: #1c1917;">${tourDate}</td></tr>
-              <tr style="border-bottom: 1px solid #f5f5f4;"><td style="padding: 8px 0; color: #78716c;">Hora de Salida:</td><td style="padding: 8px 0; font-weight: bold; color: #1c1917;">${tourTime}</td></tr>
-              <tr style="border-bottom: 1px solid #f5f5f4;"><td style="padding: 8px 0; color: #78716c;">Lugar de Recogida:</td><td style="padding: 8px 0; font-weight: bold; color: #1c1917;">${pickupHotel}</td></tr>
-              <tr style="border-bottom: 1px solid #f5f5f4;"><td style="padding: 8px 0; color: #78716c;">Total Pagado:</td><td style="padding: 8px 0; font-weight: bold; color: #047857;">$${totalUSD} USD</td></tr>
+            <!-- ADJUNTO NOTICIA -->
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; margin-bottom: 22px; display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 20px;">📎</span>
+              <div style="font-size: 12.5px; color: #475569;">
+                <strong>Archivo PDF adjunto a este correo:</strong> Hemos anexado su vale completo para que pueda guardarlo en su teléfono y presentarlo sin necesidad de conexión a internet.
+              </div>
+            </div>
+
+            <!-- RESUMEN DE RESERVA -->
+            <h3 style="font-size: 15px; color: #064e3b; border-bottom: 2px solid #ecfdf5; padding-bottom: 6px; margin: 0 0 12px 0;">📋 Resumen de la Experiencia</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 22px;">
+              <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 7px 0; color: #64748b; width: 35%;">Titular:</td><td style="padding: 7px 0; font-weight: 700; color: #0f172a;">${customerName} (${customerPhone})</td></tr>
+              <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 7px 0; color: #64748b;">Composición Grupo:</td><td style="padding: 7px 0; font-weight: 700; color: #0f172a;">${booking.adults || 2} Adultos + ${booking.children || 1} Bebé (3 años)</td></tr>
+              <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 7px 0; color: #64748b;">Concepto:</td><td style="padding: 7px 0; font-weight: 700; color: #047857;">Family Budget, Relaxing & Safe (15 Días)</td></tr>
+              <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 7px 0; color: #64748b;">Fecha Inicio:</td><td style="padding: 7px 0; font-weight: 700; color: #0f172a;">${tourDate} a las ${tourTime}</td></tr>
+              <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 7px 0; color: #64748b;">Vuelos & Transporte:</td><td style="padding: 7px 0; font-weight: 700; color: #0f172a;">Vuelos domésticos Sansa + Minivan privada con silla ISOFIX</td></tr>
+              <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 7px 0; color: #64748b;">Inversión Total:</td><td style="padding: 7px 0; font-weight: 800; color: #047857; font-size: 14px;">$${totalUSD} USD (Confirmado)</td></tr>
             </table>
 
-            <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; padding: 14px; margin-bottom: 20px;">
-              <h4 style="margin: 0 0 6px 0; font-size: 13px; color: #92400e; font-weight: bold;">🎒 Qué llevar recomendado:</h4>
-              <p style="margin: 0; font-size: 12px; color: #78350f; line-height: 1.5;">
-                • Ropa cómoda y zapatos cerrados para caminar.<br/>
-                • Protector solar biodegradable y repelente de insectos.<br/>
-                • Capa o impermeable ligero.<br/>
-                • Botella de agua reutilizable y cámara para recuerdos inolvidables.
-              </p>
+            <!-- LOGÍSTICA ESPECIAL BEBÉ -->
+            <div style="background-color: #fefce8; border: 1px solid #fef08a; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+              <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #854d0e; font-weight: 800;">👶 Protocolos Especiales para Bebé de 3 Años:</h4>
+              <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #713f12; line-height: 1.5;">
+                <li>Silla infantil homologada ISOFIX en todos los traslados terrestres privados.</li>
+                <li>Vuelo doméstico para acortar tiempos de viaje y evitar fatiga.</li>
+                <li>Senderos 100% planos y accesibles (aptos para cochecito infantil).</li>
+                <li>Piscinas de aguas termales con áreas infantiles a temperatura moderada.</li>
+                <li>Botiquín pediátrico de contingencia y asistencia telefónica médica 24/7.</li>
+              </ul>
             </div>
 
-            <div style="text-align: center; margin: 24px 0;">
-              <a href="${voucherUrl}" style="background-color: #059669; color: #ffffff; padding: 12px 28px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                Ver Voucher Digital & QR en Vivo
+            <!-- ITINERARIO DETALLADO 15 DÍAS -->
+            <h3 style="font-size: 15px; color: #064e3b; border-bottom: 2px solid #ecfdf5; padding-bottom: 6px; margin: 0 0 12px 0;">🗺️ Itinerario Completo Día por Día (15 Días)</h3>
+            <div style="font-size: 12.5px; color: #334155; line-height: 1.5;">
+              <div style="margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px dashed #e2e8f0;">
+                <strong style="color: #047857;">• Días 1 - 2 (San José & Arenal):</strong> Llegada al Aeropuerto SJO. Traslado ejecutivo seguro hacia La Fortuna. Check-in en hotel familiar y relajación en aguas termales de temperatura controlada.
+              </div>
+              <div style="margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px dashed #e2e8f0;">
+                <strong style="color: #047857;">• Días 3 - 4 (Volcán Arenal):</strong> Caminata en senderos planos del Parque Nacional Arenal. Taller interactivo de chocolate orgánico y mariposario con colibríes.
+              </div>
+              <div style="margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px dashed #e2e8f0;">
+                <strong style="color: #047857;">• Días 5 - 7 (Monteverde):</strong> Travesía en lancha por el Lago Arenal y ascenso al bosque nuboso. Puentes colgantes con doble baranda de alta seguridad y visita al santuario de perezosos.
+              </div>
+              <div style="margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px dashed #e2e8f0;">
+                <strong style="color: #047857;">• Días 8 - 10 (Guanacaste - Papagayo):</strong> Vuelo interno Sansa (40 min) hacia el Pacífico Norte. Playas calmas tipo piscina (Playa Hermosa) sin oleaje fuerte. Catamarán al atardecer para ver delfines.
+              </div>
+              <div style="margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px dashed #e2e8f0;">
+                <strong style="color: #047857;">• Días 11 - 12 (Manuel Antonio):</strong> Traslado costero privado. Senderos accesibles del Parque Nacional Manuel Antonio, baño en playa protegida y avistamiento de fauna amigable.
+              </div>
+              <div style="margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px dashed #e2e8f0;">
+                <strong style="color: #047857;">• Días 13 - 14 (Pérez Zeledón & Valle Central):</strong> Turismo rural campesino, gastronomía típica y cultura del café en Pérez Zeledón. Retorno al Valle Central y compras de artesanías en Sarchí.
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong style="color: #047857;">• Día 15 (Aeropuerto SJO):</strong> Desayuno tropical, check-out y traslado privado al Aeropuerto Internacional SJO con asistencia prioritaria de equipaje.
+              </div>
+            </div>
+
+            <!-- CANAL DE ATENCIÓN DIRECTO -->
+            <div style="margin-top: 26px; padding: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; text-align: center;">
+              <p style="margin: 0 0 10px 0; font-size: 12.5px; color: #475569;">
+                ¿Desea hacer una consulta o solicitar un ajuste a su itinerario? Su asesor de mostrador está disponible 24/7:
+              </p>
+              <a href="https://wa.me/50687959148?text=${encodeURIComponent(`Hola, soy Hester Viviana Marín. Quisiera coordinar detalles de mi reserva #${bookingId} de 15 días.`)}" style="background-color: #25D366; color: #000000; text-decoration: none; padding: 10px 22px; border-radius: 9999px; font-weight: 800; font-size: 13px; display: inline-block;">
+                💬 Contactar Mostrador Digital (+506 8795 9148)
               </a>
             </div>
 
-            <p style="font-size: 12px; color: #78716c; text-align: center; margin-top: 16px;">
-              Soporte 24/7 en Costa Rica: WhatsApp +506 8795-9148 | reservas@costaricatours.es
-            </p>
+            <div style="margin-top: 24px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 16px;">
+              Costa Rica Tours • Plataforma Oficial de Ecoturismo CST • San José / Pérez Zeledón, Costa Rica
+            </div>
           </div>
         </div>
       `
