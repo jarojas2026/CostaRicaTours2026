@@ -638,6 +638,42 @@ app.post('/api/providers/action', async (req, res) => {
   }
 });
 
+app.get('/api/weather/destinations', async (_req, res) => {
+  try {
+    const { getDestinationWeather } = await import('./backend/weatherPulseService');
+    res.json({ success: true, source: 'open-meteo', generatedAt: new Date().toISOString(), destinations: await getDestinationWeather() });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/ai/learning/examples', requireAdmin, async (req, res) => {
+  try {
+    const { buildTrainingExamples } = await import('./backend/learningEngine');
+    res.json({ success: true, examples: await buildTrainingExamples(Number(req.query.limit) || 100) });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/ai/learning/reflect', requireAdmin, async (_req, res) => {
+  try {
+    const { runLearningReflection } = await import('./backend/learningEngine');
+    res.json({ success: true, result: await runLearningReflection(60) });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/ai/mesh/inbox/:agentId', requireAdmin, async (req, res) => {
+  try {
+    const { getAgentInbox } = await import('./backend/agentMeshService');
+    res.json({ success: true, messages: await getAgentInbox(String(req.params.agentId), Number(req.query.limit) || 20) });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.get('/api/self-dev/status', async (req, res) => {
   res.json(await getSelfDevelopmentOverview());
 });
