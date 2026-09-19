@@ -144,7 +144,9 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
             totalUSD,
             customerEmail: email,
             date: selectedDate,
-            passengers: adults + children
+            passengers: adults + children,
+            adults,
+            children
           })
         });
         const stripeData = await stripeRes.json();
