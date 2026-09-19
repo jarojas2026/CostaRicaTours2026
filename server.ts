@@ -230,7 +230,7 @@ app.post('/api/paypal/create-order', paymentLimiter, async (req, res) => {
       }
       console.warn('⚠️ PAYPAL_CLIENT_ID o PAYPAL_SECRET no configurados (modo desarrollo). Simulando pago.');
       return res.json({
-        url: `${req.protocol}://${req.get('host')}?booking=success`,
+        url: `${req.protocol}://${req.get('host')}?booking=demo`,
         id: 'mock_paypal_id'
       });
     }
