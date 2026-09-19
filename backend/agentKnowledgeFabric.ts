@@ -1,7 +1,7 @@
 import { TOURS, REGIONS } from '../src/data/toursData';
 import { retrieveRelevantMemory } from './memoryService';
 import { getWeatherForRegion } from './weatherPulseService';
-import { selectSkills } from './skillGenome';
+import { selectEvolvedSkill } from './skillEvolutionEngine';
 
 export type AgentIdentity = {
   id: string;
@@ -37,7 +37,8 @@ export async function buildAgentKnowledgeContext(input: {
   const region = input.regionId ? REGIONS.find(r => r.id === input.regionId) : undefined;
   const weather = input.regionId ? await getWeatherForRegion(input.regionId).catch(() => null) : null;
   const skillAgent = input.agentId || 'concierge';
-  const skillHints = selectSkills(skillAgent, input.query, 1).slice(0, 3).map(s => `${s.name} v${s.version} [${s.risk}]`).join(' | ');
+  const evolved = selectEvolvedSkill(skillAgent, input.query, input.sessionId || '');
+  const skillHints = evolved ? `${evolved.name} v${evolved.version} [${evolved.lifecycle}/${evolved.exposure}] score=${evolved.routingScore}` : '';
 
   return [
     'FUENTE DE VERDAD OPERATIVA: usa los servicios de dominio; no inventes disponibilidad, precios, reservas ni políticas.',
