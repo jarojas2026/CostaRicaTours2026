@@ -7,7 +7,6 @@ import { Language, Tour } from '../types';
 import { getLangText } from '../utils/i18n';
 import { useTours } from '../contexts/ToursContext';
 import { useNatureSounds } from "../hooks/useNatureSounds";
-import { api } from '../lib/apiManager';
 
 interface FloatingWhatsAppProps {
   language: Language;
