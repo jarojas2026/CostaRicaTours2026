@@ -222,7 +222,8 @@ export async function processChatInquiry(
   message: string,
   language: 'es' | 'en' = 'es',
   history: Array<{ role: 'user' | 'bot'; text: string }> = [],
-  engine: 'auto' | 'claude' | 'gemini' = 'auto'
+  engine: 'auto' | 'claude' | 'gemini' = 'auto',
+  sessionId?: string
 ): Promise<{ reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string }> {
   const isEn = language === 'en';
   let liveToolContext = '';
@@ -230,7 +231,7 @@ export async function processChatInquiry(
     const { buildAgentKnowledgeContext } = await import('./agentKnowledgeFabric');
     liveToolContext += '\nFABRICA DE CONOCIMIENTO OPERATIVO:\n' + await buildAgentKnowledgeContext({
       query: message,
-      sessionId: (history as any)?.sessionId
+      sessionId
     });
   } catch (knowledgeErr) {
     console.warn('Agent knowledge fabric unavailable:', knowledgeErr);
