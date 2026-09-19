@@ -1636,7 +1636,7 @@ app.post('/api/gemini/booking/urgent', async (req, res) => {
     });
   } catch (err: any) {
     res.json({
-      reply: 'Atención prioritaria registrada. Por favor comunícate a nuestro WhatsApp de soporte: +506 8888-7777.',
+      reply: 'Atención prioritaria registrada. Por favor comunícate por el canal de soporte configurado.',
       success: false
     });
   }
