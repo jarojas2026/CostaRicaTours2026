@@ -1472,7 +1472,7 @@ app.get('/api/ai/tools', (req, res) => {
     tools: [
       'counter_agent', 'triage', 'itinerary_generator', 'availability_checker',
       'booking_creator', 'provider_coordinator', 'sinpe_verifier', 'fraud_checker',
-      'contingency_manager', 'customer_support', 'demand_forecast'
+      'contingency_manager', 'customer_support', 'demand_forecast', 'search_tours', 'check_availability', 'lookup_booking', 'recall_memory'
     ]
   });
 });
