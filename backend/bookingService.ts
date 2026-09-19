@@ -637,7 +637,7 @@ export async function getBookingById(bookingId: string): Promise<any | null> {
     const doc = await col.doc(bookingId).get();
     if (!doc.exists) return null;
     const data = doc.data() || {};
-    const booking = {
+    const booking: any = {
       id: doc.id,
       ...data,
       createdAt: normalizeTimestampToDate(data.createdAt).toISOString(),
