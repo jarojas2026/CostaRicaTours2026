@@ -104,24 +104,3 @@ exports.createPayPalOrder = functions.https.onRequest((req, res) => {
 // ==========================================
 
 // ==========================================
-exports.notifyN8N = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
-    try {
-      const booking = req.body;
-      const N8N_URL = process.env.N8N_BOOKING_WEBHOOK_URL;
-      
-      if (N8N_URL && (booking.status === "confirmada" || booking.paymentStatus === "completed")) {
-        await fetch(N8N_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(booking)
-        });
-      }
-      
-      res.json({ success: true });
-    } catch (err) {
-      console.error("Error notificando a n8n:", err);
-      res.status(500).json({ error: err.message });
-    }
-  });
-});
