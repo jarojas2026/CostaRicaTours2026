@@ -38,7 +38,7 @@ function safeSessionId(raw: string): string {
 }
 
 function cleanText(value: unknown, max = MAX_TEXT): string {
-  return String(value ?? '').replace(/\\s+/g, ' ').trim().slice(0, max);
+  return String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
 }
 
 function tokenize(text: string): Set<string> {
@@ -93,10 +93,10 @@ function extractFacts(text: string, facts: Record<string, string>) {
   const phone = text.match(/(?:\\+?506[ -]?)?[0-9]{4}[ -]?[0-9]{4}/)?.[0];
   if (phone) facts.phone = phone;
 
-  const date = text.match(/\\b20\\d{2}-\\d{2}-\\d{2}\\b/)?.[0];
+  const date = text.match(/\b20\d{2}-\d{2}-\d{2}\b/)?.[0];
   if (date) facts.date = date;
 
-  const pax = text.match(/\\b(\\d{1,2})\\s*(?:personas|pax|viajeros|people|passengers)\\b/i)?.[1];
+  const pax = text.match(/\b(\d{1,2})\s*/(?:personas|pax|viajeros|people|passengers)\\b/i)?.[1];
   if (pax) facts.pax = pax;
 
   const name = text.match(/(?:me llamo|mi nombre es|soy|nombre(?: completo)? es)\\s+([A-Za-zÁÉÍÓÚáéíóúñÑ]+(?:\\s+[A-Za-zÁÉÍÓÚáéíóúñÑ]+){1,3})/i)?.[1];
