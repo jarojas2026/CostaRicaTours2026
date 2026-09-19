@@ -410,12 +410,12 @@ export default function App() {
             <Route path="/counter" element={
               <Suspense fallback={<div className="py-24 text-center text-emerald-400">Cargando Mostrador Digital...</div>}>
                 <CounterDeskPage language={language} />
-            <Route path="/ops" element={
-              <Suspense fallback={<div className="py-24 text-center text-emerald-400">Cargando Centro Operativo...</div>}>
-                <AutonomousOperationsPage language={language} />
               </Suspense>
             } />
 
+            <Route path="/ops" element={
+              <Suspense fallback={<div className="py-24 text-center text-emerald-400">Cargando Centro Operativo...</div>}>
+                <AutonomousOperationsPage language={language} />
               </Suspense>
             } />
 
