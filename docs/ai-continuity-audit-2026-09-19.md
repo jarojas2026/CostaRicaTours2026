@@ -57,3 +57,6 @@ El run histórico inspeccionado probó un merge ref anterior y falló por errore
 2. Sincronizar `package-lock.json` para volver a `npm ci`.
 3. Ejecutar un nuevo CI sobre el head actual y corregir cualquier error residual que aparezca.
 4. El entrenamiento de modelos sigue siendo infraestructura preparada, no un modelo propio ya entrenado.
+
+## CI trigger
+The PR is now ready for review so the next synchronize event can run the current merge result.
