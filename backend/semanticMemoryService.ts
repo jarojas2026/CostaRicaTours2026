@@ -55,6 +55,7 @@ export async function indexSemanticMemory(input: {
     role: input.role,
     agentId: input.agentId || null,
     timestamp: input.timestamp,
+    expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
     model: EMBEDDING_MODEL,
     dimensions: vector.length,
     embedding: vector
@@ -74,12 +75,13 @@ export async function retrieveSemanticMemory(sessionId: string, query: string, l
     .limit(250)
     .get();
 
+  const now = Date.now();
   return snap.docs
     .map(doc => {
       const x = doc.data() as any;
       return { ...x, score: cosineSimilarity(q, Array.isArray(x.embedding) ? x.embedding : []) };
     })
-    .filter(x => x.score > 0.15)
+    .filter(x => (!x.expiresAt || new Date(x.expiresAt).getTime() > now) && x.score > 0.15)
     .sort((a, b) => b.score - a.score)
     .slice(0, Math.min(12, Math.max(1, limit)))
     .map(({ embedding, ...x }) => x);
