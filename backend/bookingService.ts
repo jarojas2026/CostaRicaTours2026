@@ -399,7 +399,7 @@ export async function createBooking(data: any) {
       return { conflict: true, error: 'idempotency_conflict', message: 'La misma Idempotency-Key fue usada con datos diferentes.' };
     }
     if (previous?.bookingId) {
-      const existing = inMemoryBookings.get(previous.bookingId);
+      const existing = await getBookingById(previous.bookingId);
       return { conflict: false, idempotent: true, booking: existing || { bookingId: previous.bookingId } };
     }
   }
@@ -561,7 +561,8 @@ export async function createBooking(data: any) {
     } catch (err: any) {
       if (err.message === 'IDEMPOTENT_REPLAY' && idempotencyKey) {
         const previous = await getIdempotentResult(idempotencyKey);
-        return { conflict: false, idempotent: true, booking: previous?.bookingId ? (inMemoryBookings.get(previous.bookingId) || { bookingId: previous.bookingId }) : undefined };
+        const replay = previous?.bookingId ? await getBookingById(previous.bookingId) : null;
+        return { conflict: false, idempotent: true, booking: replay || (previous?.bookingId ? { bookingId: previous.bookingId } : undefined) };
       }
       if (err.message === 'IDEMPOTENCY_CONFLICT') {
         return { conflict: true, error: 'idempotency_conflict', message: 'La misma Idempotency-Key fue usada con datos diferentes.' };
@@ -627,6 +628,29 @@ export async function createBooking(data: any) {
  * Lee todas las reservas desde Firestore (o caché en memoria)
  * Normalizando Timestamps de Firestore a formato serializable.
  */
+export async function getBookingById(bookingId: string): Promise<any | null> {
+  const cached = inMemoryBookings.get(bookingId);
+  if (cached) return cached;
+  const col = getBookingsCollection();
+  if (!col) return null;
+  try {
+    const doc = await col.doc(bookingId).get();
+    if (!doc.exists) return null;
+    const data = doc.data() || {};
+    const booking = {
+      id: doc.id,
+      ...data,
+      createdAt: normalizeTimestampToDate(data.createdAt).toISOString(),
+      updatedAt: normalizeTimestampToDate(data.updatedAt).toISOString()
+    };
+    inMemoryBookings.set(booking.bookingId || booking.id, booking);
+    return booking;
+  } catch (error) {
+    console.warn('Error recuperando reserva por ID:', error);
+    return null;
+  }
+}
+
 export async function getAllBookings(): Promise<any[]> {
   const col = getBookingsCollection();
   if (col) {
