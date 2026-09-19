@@ -26,6 +26,7 @@ export async function buildAgentKnowledgeContext(input: {
   query: string;
   regionId?: string;
   includeTours?: boolean;
+  agentId?: string;
 }): Promise<string> {
   const memory = input.sessionId ? await retrieveRelevantMemory(input.sessionId, input.query, 6).catch(() => null) : null;
   const q = input.query.toLowerCase();
@@ -35,7 +36,7 @@ export async function buildAgentKnowledgeContext(input: {
   }).slice(0, 8);
   const region = input.regionId ? REGIONS.find(r => r.id === input.regionId) : undefined;
   const weather = input.regionId ? await getWeatherForRegion(input.regionId).catch(() => null) : null;
-  const skillAgent = ['concierge','triage','booking','provider_liaison','operations','supervisor','learning'].includes('concierge') ? 'concierge' : 'concierge';
+  const skillAgent = input.agentId || 'concierge';
   const skillHints = selectSkills(skillAgent, input.query, 1).slice(0, 3).map(s => `${s.name} v${s.version} [${s.risk}]`).join(' | ');
 
   return [
