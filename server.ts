@@ -680,16 +680,9 @@ app.post('/api/ai/photo-recommendations', async (req, res) => {
   }
 });
 
-// Admin endpoint check function
-const requireAdmin = (req: any, res: any, next: any) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'No autorizado' });
-  }
-  // In a real app we verify the token. Here we rely on requireOperator for n8n or admin checks.
-  // For simplicity, we just pass through or we can reuse existing admin middlewares if there were any.
-  next();
-};
+// Admin endpoints use the same server-side operator gate until Firebase Admin
+// token verification is added. Never accept arbitrary Bearer tokens.
+const requireAdmin = requireOperator;
 
 app.get('/api/ai/demand-forecast', requireAdmin, async (req, res) => {
   try {
