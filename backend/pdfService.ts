@@ -181,7 +181,7 @@ export function generateBookingPrintableHTML(booking: BookingPDFData): string {
   const passengers = (Number(booking.adults) || 0) + (Number(booking.children) || 0);
   const flight = booking.flightDetails
     ? [booking.flightDetails.flightNumber, booking.flightDetails.originCountry, booking.flightDetails.transportMode]
-        .filter(Boolean).map(safe).join(' • ')
+        .filter(Boolean).map((value) => safe(value)).join(' • ')
     : 'No especificado';
 
   return `
