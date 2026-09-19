@@ -12,7 +12,7 @@ export const AiInsightsPanel: React.FC = () => {
     try {
       const res = await fetch('/api/ai/demand-forecast', {
         headers: {
-          'Authorization': 'Bearer ADMIN_MOCK_TOKEN'
+          'X-Operator-Key': import.meta.env.VITE_OPERATOR_API_KEY || ''
         }
       });
       const data = await res.json();
