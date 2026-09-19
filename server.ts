@@ -18,6 +18,7 @@ import { initializeAutomationEngine, cleanupExpiredSoftHolds } from './backend/c
 import { google } from 'googleapis';
 import { requireOperator } from './backend/authMiddleware';
 import { TOURS } from './src/data/toursData';
+import { FLIGHT_ROUTES } from './src/data/flightsData';
 import {
   getStripe,
   createBooking,
@@ -169,6 +170,11 @@ app.get('/api/health', (req, res) => {
 app.post('/api/stripe/create-checkout-session', async (req, res) => {
   try {
     const { tourName, totalUSD, customerEmail } = req.body;
+    const authoritativeTotal = calculateAuthoritativeCheckoutTotal(req.body);
+    if (authoritativeTotal === null) return res.status(400).json({ error: 'No se pudo verificar el precio de la reserva en el catálogo.' });
+    if (Math.abs(Number(totalUSD) - authoritativeTotal) > 0.01) {
+      return res.status(409).json({ error: 'El importe enviado no coincide con el precio calculado en el servidor.', expectedTotalUSD: authoritativeTotal });
+    }
     const stripe = getStripe();
     if (!stripe) {
       console.error('🔴 STRIPE_SECRET_KEY no configurada. Se rechaza el intento de pago.');
@@ -202,6 +208,11 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
 app.post('/api/paypal/create-order', async (req, res) => {
   try {
     const { totalUSD, tourName } = req.body;
+    const authoritativeTotal = calculateAuthoritativeCheckoutTotal(req.body);
+    if (authoritativeTotal === null) return res.status(400).json({ error: 'No se pudo verificar el precio de la reserva en el catálogo.' });
+    if (Math.abs(Number(totalUSD) - authoritativeTotal) > 0.01) {
+      return res.status(409).json({ error: 'El importe enviado no coincide con el precio calculado en el servidor.', expectedTotalUSD: authoritativeTotal });
+    }
     const paypalClientId = process.env.PAYPAL_CLIENT_ID;
     const paypalSecret = process.env.PAYPAL_SECRET;
     const paypalMode = process.env.PAYPAL_MODE || 'sandbox';
@@ -2126,4 +2137,25 @@ async function startServer() {
   });
 }
 
-startServer();
+startServer();function calculateAuthoritativeCheckoutTotal(body: any): number | null {
+  const passengers = Math.max(1, Number(body?.passengers) || (Number(body?.adults) || 0) + (Number(body?.children) || 0));
+  const tourId = String(body?.tourId || '');
+
+  if (tourId.startsWith('flight-')) {
+    const flightNumber = String(body?.flightNumber || '');
+    const flight = FLIGHT_ROUTES.find(route => route.flightNumber === flightNumber);
+    if (!flight) return null;
+    const cabin = body?.cabinClass === 'Business' ? 'Business' : 'Economy';
+    const base = flight.basePriceUSD * (cabin === 'Business' ? 2.2 : 1);
+    const addOns = (body?.includeAirportTransfer ? 45 : 0)
+      + (body?.includeWelcomeSimKit ? 15 : 0)
+      + (body?.includeTravelInsurance ? 29 : 0);
+    return Number((base + addOns).toFixed(2)) * passengers;
+  }
+
+  const tour = TOURS.find(item => item.id === tourId);
+  if (!tour || typeof tour.priceUSD !== 'number') return null;
+  return Number((tour.priceUSD * passengers).toFixed(2));
+}
+
+
