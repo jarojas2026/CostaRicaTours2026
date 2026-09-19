@@ -698,7 +698,7 @@ export async function executeReporteSemanalConversion() {
   const start = Date.now();
   const metrics = await getWeeklyConversionMetrics();
 
-  const telegramFormattedReport = [
+  const operationsFormattedReport = [
     '📊 *REPORTE SEMANAL DE RENDIMIENTO & CONVERSIÓN*',
     '🇨🇷 *Costa Rica Tours — Equipo Administrativo*',
     '━━━━━━━━━━━━━━━━━━━━━━━━',
@@ -731,7 +731,7 @@ export async function executeReporteSemanalConversion() {
     exito: true,
     mensaje: 'Reporte semanal de conversión y volumen calculado directamente desde Firestore',
     metrics,
-    telegramReportPreview: telegramFormattedReport,
+    operationsReportPreview: operationsFormattedReport,
     motor: 'código_nativo_node'
   };
 }
@@ -1124,7 +1124,7 @@ export async function executeEmergencyContingencyRerouting(body: any) {
       cobertura: '100% Sin costo para el turista bajo póliza de responsabilidad turística'
     },
     despachoChoferesAlsamaTours: 'UNIDADES_NOTIFICADAS_Y_RUTAS_ACTUALIZADAS',
-    alertaMesaOperacionesTelegram: 'ENVIADA',
+    alertaMesaOperaciones: 'ENVIADA',
     timestamp: new Date().toISOString()
   };
 }
@@ -1265,7 +1265,7 @@ export async function executeAutonomousFlightGuardDispatch(body: any) {
         texto: `¡Pura Vida, ${pasajero.nombre}! Estamos monitoreando tu vuelo ${vuelo}. Tu chofer Carlos ya conoce el retraso de ${retraso} minutos y te estará esperando puntualmente en la salida exterior a las ${nuevaHoraSalidaTerminal}. ¡Relájate y disfruta tu viaje!`
       }
     },
-    alertaMesaOperacionesTelegram: 'ENVIADA',
+    alertaMesaOperaciones: 'ENVIADA',
     timestamp: new Date().toISOString()
   };
 }
@@ -1312,7 +1312,7 @@ export async function executeAutonomousCrisisSentimentEscalation(body: any) {
     },
     escalamientoOperativo: {
       ticketId: `INC-${Date.now().toString(36).toUpperCase()}`,
-      canalTelegramDirectorAlerta: 'DISPARADA_CON_SONIDO_DE_EMERGENCIA',
+      canalDirectorAlerta: 'DISPARADA_CON_SONIDO_DE_EMERGENCIA',
       contactoDirectoWhatsAppSupervisor: 'https://wa.me/50687959148?text=Urgencia%20Reserva%20David%20Morales',
       guardiaAsignado: 'Director de Operaciones en Turno'
     },
@@ -1464,7 +1464,7 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
       email: process.env.PROVIDER_DEV_EMAIL || 'gabw33d@gmail.com',
       telefono: booking.providerInfo?.phone || '+506 8795-9148',
       notificacionDespachada: true,
-      canal: 'Email Seguro + Telegram Operations Bridge'
+      canal: 'Email Seguro + Native Operations Center'
     },
     clienteNotificado: {
       nombre: customerName,
