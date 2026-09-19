@@ -44,6 +44,7 @@ const LiveTouristIntelligence = lazy(() => import('./components/LiveTouristIntel
 const PhotoTourFinder = lazy(() => import('./components/PhotoTourFinder').then(m => ({ default: m.PhotoTourFinder })));
 const GoogleWorkspaceHub = lazy(() => import('./components/GoogleWorkspaceHub').then(m => ({ default: m.GoogleWorkspaceHub })));
 const CounterDeskPage = lazy(() => import('./pages/CounterDeskPage').then(m => ({ default: m.CounterDeskPage })));
+const AutonomousOperationsPage = lazy(() => import('./pages/AutonomousOperationsPage'));
 
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -409,6 +410,12 @@ export default function App() {
             <Route path="/counter" element={
               <Suspense fallback={<div className="py-24 text-center text-emerald-400">Cargando Mostrador Digital...</div>}>
                 <CounterDeskPage language={language} />
+            <Route path="/ops" element={
+              <Suspense fallback={<div className="py-24 text-center text-emerald-400">Cargando Centro Operativo...</div>}>
+                <AutonomousOperationsPage language={language} />
+              </Suspense>
+            } />
+
               </Suspense>
             } />
 
