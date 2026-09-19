@@ -663,7 +663,7 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     <span className="flex items-center gap-2">
                       <Bot className="w-4 h-4 text-amber-400" />
-                      <span className="text-xs font-bold">{language === 'es' ? 'Motor de Inteligencia & n8n' : 'AI Engine & Automations'}</span>
+                      <span className="text-xs font-bold">{language === 'es' ? 'Motor de Inteligencia IA' : 'AI Engine & Automations'}</span>
                     </span>
                     <span className="text-[9px] uppercase bg-amber-400 text-stone-950 px-2 py-0.5 rounded-full font-black">
                       10 Flujos
