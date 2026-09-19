@@ -1,3 +1,41 @@
+import { getFirestoreDb, getBookingsCollection, updateBookingStatus } from './bookingService';
+import { sendEmail, sendAdministrativeAlert, sendOperationalNotification, sendWhatsAppMessage } from './notificationService';
+import { logAutomationExecution } from './nativeAutomationEngine';
+import { generateBookingPDFBuffer } from './pdfService';
+
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || '';
+const APP_URL = process.env.APP_URL || '';
+
+export function normalizeDate(dateVal: any): Date {
+  if (!dateVal) return new Date(0);
+  if (typeof dateVal.toDate === 'function') return dateVal.toDate();
+  if (typeof dateVal._seconds === 'number') return new Date(dateVal._seconds * 1000);
+  if (typeof dateVal.seconds === 'number') return new Date(dateVal.seconds * 1000);
+  const d = new Date(dateVal);
+  return Number.isNaN(d.getTime()) ? new Date(0) : d;
+}
+
+export async function recordEscalation(data: {
+  type: string;
+  bookingId?: string;
+  providerId?: string;
+  reason: string;
+  details?: any;
+  status?: 'pending' | 'resolved' | 'acknowledged';
+}): Promise<string> {
+  const db = getFirestoreDb();
+  const escalationId = `esc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  if (db) {
+    await db.collection('escalations').doc(escalationId).set({
+      id: escalationId,
+      ...data,
+      createdAt: new Date().toISOString(),
+      status: data.status || 'pending'
+    }).catch((error) => console.warn('No se pudo persistir escalación:', error));
+  }
+  return escalationId;
+}
+
 /** Configuración de correo de pruebas; nunca se incrustan cuentas personales. */
 export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || 'provider@example.invalid';
 
