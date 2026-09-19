@@ -225,6 +225,16 @@ export async function processChatInquiry(
   engine: 'auto' | 'claude' | 'gemini' = 'auto'
 ): Promise<{ reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string }> {
   const isEn = language === 'en';
+  let liveToolContext = '';
+  try {
+    const { executeAgentTool } = await import('./agentTools');
+    const hits = await executeAgentTool('search_tours', { query: message });
+    if (Array.isArray(hits) && hits.length) liveToolContext += '\nCATÁLOGO AUTORITATIVO RELEVANTE:\n' + JSON.stringify(hits.slice(0, 5));
+    const bookingCode = message.match(/\b(?:CRT-[A-Z0-9-]+|CR-PV-\d+|CR-HLD-\d+)\b/i)?.[0];
+    const email = message.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0];
+    if (bookingCode) { const booking = await executeAgentTool('lookup_booking', { bookingId: bookingCode }); if (booking) liveToolContext += '\nRESERVA VERIFICADA:\n' + JSON.stringify(booking); }
+    else if (email) { const booking = await executeAgentTool('lookup_booking', { email }); if (booking) liveToolContext += '\nRESERVA VERIFICADA:\n' + JSON.stringify(booking); }
+  } catch (toolErr) { console.warn('Agent tool context unavailable:', toolErr); }
 
   // Si se solicita o prefiere Claude en Vertex AI
   if (engine === 'claude' || (engine === 'auto' && process.env.ANTHROPIC_VERTEX_MODEL)) {
@@ -245,7 +255,7 @@ export async function processChatInquiry(
 
   try {
     const formattedHistory = history.map((h) => `${h.role === 'user' ? 'Usuario' : 'Asistente'}: ${h.text}`).join('\n');
-    const prompt = `${formattedHistory ? `HISTORIAL DE LA CONVERSACIÓN:\n${formattedHistory}\n\n` : ''}CONSULTA ACTUAL DEL USUARIO:\n${message}`;
+    const prompt = `${formattedHistory ? `HISTORIAL DE LA CONVERSACIÓN:\n${formattedHistory}\n\n` : ''}${liveToolContext ? `CONTEXTO OBTENIDO MEDIANTE HERRAMIENTAS INTERNAS:\n${liveToolContext}\n\n` : ''}CONSULTA ACTUAL DEL USUARIO:\n${message}`;
 
     const ai = getAI();
     if (!ai) {
