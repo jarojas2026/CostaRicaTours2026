@@ -16,7 +16,6 @@ import rateLimit from 'express-rate-limit';
 import { createServer as createViteServer } from 'vite';
 import { initializeAutomationEngine, cleanupExpiredSoftHolds } from './backend/cronEngine';
 import { google } from 'googleapis';
-import { dispatchToN8N, getN8NConfig, verifyN8NRequest } from './backend/n8nService';
 import { requireOperator } from './backend/authMiddleware';
 import { TOURS } from './src/data/toursData';
 import {
@@ -43,11 +42,6 @@ import {
   runSupervisor,
   logException
 } from './backend/aiAssistantService';
-import {
-  callN8nMcp,
-  listN8nMcpTools,
-  executeN8nMcpTool
-} from './backend/n8nMcpBridge';
 import {
   generateClaudeChatResponse,
   generateClaudeItinerary,
@@ -406,25 +400,7 @@ app.post('/api/sinpe/verify', requireOperator, async (req, res) => {
       booking: updateResult.booking
     });
 
-    // Notificar al webhook de n8n en segundo plano
-    const n8nSinpeUrl =
-      process.env.N8N_SINPE_WEBHOOK_URL ||
-      `${getN8NConfig().baseUrl}/webhook/cr-tours-sinpe-verify`;
-
-    dispatchToN8N(n8nSinpeUrl, {
-      trigger: 'VERIFICACION_SINPE',
-      event: 'sinpe.pending_verification',
-      bookingId,
-      sinpeReference,
-      customerPhone:
-        customerPhone ||
-        updateResult.booking?.customerPhone ||
-        updateResult.booking?.customer?.phone,
-      amount,
-      timestamp: new Date().toISOString()
-    }).catch((err) => {
-      console.warn('Fallo silencioso al notificar n8n (sinpe verify):', err);
-    });
+    // La verificación SINPE continúa dentro del motor nativo; no depende de orquestadores externos.
   } catch (err: any) {
     console.error('Error al verificar SINPE:', err);
     res.status(500).json({ error: err.message || 'Error al verificar comprobante' });
@@ -1023,8 +999,8 @@ app.post(['/webhook/evaluar-antifraude', '/webhook/antifraude-evaluacion', '/api
   }
 });
 
-// 10. Operaciones de Terreno, Telegram Ops & Despacho a Guías
-app.post(['/webhook/panel-control-telegram', '/webhook/telegram-ops-action', '/api/ops/telegram-action'], async (req, res) => {
+// 10. Operaciones de Terreno y Despacho a Guías (100% nativo)
+app.post(['/webhook/panel-control-ops', '/api/ops/action'], async (req, res) => {
   try {
     const result = await executeAIOpsAction(req.body);
     res.json(result);
@@ -1033,11 +1009,11 @@ app.post(['/webhook/panel-control-telegram', '/webhook/telegram-ops-action', '/a
   }
 });
 
-// 11. Despacho Multicanal (WhatsApp + Email + Telegram)
-app.post('/webhook/reserva-multicanal', async (req, res) => {
+// 11. Despacho de confirmaciones mediante los servicios nativos de la plataforma
+app.post('/webhook/reserva-confirmada', async (req, res) => {
   try {
     const result = await executeConfirmacionReserva(req.body);
-    res.json({ ...result, systemMessage: 'Despacho multicanal ejecutado en código nativo' });
+    res.json({ ...result, systemMessage: 'Despacho ejecutado por motor nativo' });
   } catch (error: any) {
     res.status(500).json({ exito: false, error: error.message });
   }
@@ -1421,195 +1397,37 @@ app.all('/webhook/health-check', (req, res) => {
 });
 
 // ==========================================
-// 📥 WEBHOOKS ENTRANTES DESDE N8N (CALLBACKS)
+// 📊 ANALÍTICA NATIVA Y ACCIONES DE RESERVA
 // ==========================================
-
-// Endpoint para que n8n actualice una reserva en Firestore
-app.post('/api/webhooks/n8n/update-booking', async (req, res) => {
-  if (!verifyN8NRequest(req.headers)) {
-    return res.status(401).json({ error: 'Credenciales de n8n inválidas' });
-  }
-
-  const { bookingId, status, paymentStatus, notes, voucherUrl, operatorAssigned } = req.body;
-  if (!bookingId) {
-    return res.status(400).json({ error: 'Se requiere "bookingId"' });
-  }
-
-  const result = await updateBookingStatus(bookingId, {
-    ...(status ? { status } : {}),
-    ...(paymentStatus ? { paymentStatus } : {}),
-    ...(notes ? { notes } : {}),
-    ...(voucherUrl ? { voucherUrl } : {}),
-    ...(operatorAssigned ? { operatorAssigned } : {}),
-    n8nLastUpdated: new Date().toISOString()
-  });
-
-  if (!result.success) {
-    return res.status(404).json(result);
-  }
-
-  res.json({ success: true, message: 'Reserva actualizada desde n8n', booking: result.booking });
-});
-
-// Callback de verificación de pago de reserva
-// ⚠️ Este endpoint marca una reserva como PAGADA en Firestore. Sin esta
-// verificación, cualquiera en internet podría marcar cualquier reserva
-// como pagada sin pagar un centavo. Se exige el mismo secreto compartido
-// que ya se usa en /api/webhooks/n8n/booking-action.
-app.post('/webhook/verificar-pago-reserva', async (req, res) => {
-  if (!verifyN8NRequest(req.headers)) {
-    return res.status(401).json({ error: 'Credenciales de n8n inválidas' });
-  }
-  const { bookingId, paymentStatus, status } = req.body;
-  if (bookingId) {
-    await updateBookingStatus(bookingId, {
-      paymentStatus: paymentStatus || 'completed',
-      status: status || 'confirmada',
-      verifiedByWebhook: true
-    });
-  }
-  res.json({ success: true, message: 'Pago verificado correctamente' });
-});
-
-// Acciones ejecutivas disparadas por n8n (cancelar, re-agendar, emitir voucher)
-app.post('/api/webhooks/n8n/booking-action', async (req, res) => {
-  if (!verifyN8NRequest(req.headers)) {
-    return res.status(401).json({ error: 'Credenciales de n8n inválidas' });
-  }
-
-  const { bookingId, action, payload } = req.body;
-  if (!bookingId || !action) {
-    return res.status(400).json({ error: 'Faltan bookingId y action' });
-  }
-
-  let updates: any = {};
-  if (action === 'confirm') {
-    updates = { status: 'confirmada', paymentStatus: 'completed' };
-  } else if (action === 'cancel') {
-    updates = { status: 'cancelada', cancellationReason: payload?.reason || 'Cancelado por n8n' };
-  } else if (action === 'reschedule') {
-    updates = { date: payload?.date, time: payload?.time || '08:00 AM' };
-  } else if (action === 'add_voucher') {
-    updates = { voucherUrl: payload?.voucherUrl, voucherCode: payload?.voucherCode };
-  }
-
-  const result = await updateBookingStatus(bookingId, updates);
-  res.json({ success: result.success, action, booking: result.booking });
-});
-
-// Endpoint para que n8n extraiga el reporte consolidado de conversión semanal de Firestore
 app.get('/api/analytics/conversion-report', async (req, res) => {
   try {
     const metrics = await getWeeklyConversionMetrics();
-    res.json({
-      success: true,
-      data: metrics,
-      source: 'firestore-database'
-    });
+    res.json({ success: true, data: metrics, source: 'firestore-native' });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// Endpoint para disparar el flujo semanal de n8n manualmente o vía cron
-app.post('/api/n8n/dispatch-weekly-report', async (req, res) => {
+// Acciones internas autenticadas para operaciones: confirmar, cancelar, reagendar o emitir voucher.
+app.post('/api/ops/booking-action', requireOperator, async (req, res) => {
   try {
-    const metrics = await getWeeklyConversionMetrics();
-    const config = getN8NConfig();
-    const targetUrl = `${config.baseUrl}/webhook/reporte-semanal-conversion`;
-
-    const dispatchResult = await dispatchToN8N(targetUrl, {
-      trigger: 'CRON_SEMANAL_CONVERSION',
-      periodo: metrics.period,
-      tasaConversion: `${metrics.conversionRate}%`,
-      volumenReservas: metrics.totalBookings,
-      reservasConfirmadas: metrics.confirmedBookings,
-      reservasPendientes: metrics.pendingBookings,
-      ingresosTotalesUSD: `$${metrics.totalRevenueUSD.toLocaleString()} USD`,
-      ticketPromedioUSD: `$${metrics.averageTicketUSD} USD`,
-      topTours: metrics.topTours,
-      desglosePagos: metrics.paymentBreakdown,
-      generadoEl: new Date().toISOString()
-    });
-
-    res.json({
-      success: true,
-      message: 'Reporte de conversión y volumen extraído de Firestore y enviado al webhook de n8n',
-      metrics,
-      n8nDispatch: dispatchResult
-    });
+    const { bookingId, action, payload } = req.body || {};
+    if (!bookingId || !action) return res.status(400).json({ error: 'Faltan bookingId y action' });
+    const updates: any = action === 'confirm'
+      ? { status: 'confirmada', paymentStatus: 'completed' }
+      : action === 'cancel'
+        ? { status: 'cancelada', cancellationReason: payload?.reason || 'Cancelado por operaciones' }
+        : action === 'reschedule'
+          ? { date: payload?.date, time: payload?.time || '08:00 AM' }
+          : action === 'add_voucher'
+            ? { voucherUrl: payload?.voucherUrl, voucherCode: payload?.voucherCode }
+            : null;
+    if (!updates) return res.status(400).json({ error: 'Acción no soportada' });
+    const result = await updateBookingStatus(bookingId, updates);
+    res.json({ success: result.success, action, booking: result.booking });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
-});
-
-// ==========================================
-// 🔍 ESTADO Y DIAGNÓSTICO DE N8N
-// ==========================================
-
-app.get('/api/n8n/status', (req, res) => {
-  const config = getN8NConfig();
-  const isCustomConfigured = !config.baseUrl.includes('tu-instancia-n8n');
-
-  res.json({
-    status: 'ok',
-    configured: isCustomConfigured,
-    baseUrl: isCustomConfigured ? config.baseUrl : 'Sin configurar (Modo Simulación / Fallback IA Activo)',
-    endpoints: {
-      outboundTriggers: [
-        '/webhook/chat-consulta',
-        '/webhook/inicio-reserva',
-        '/webhook/solicitud-pago',
-        '/webhook/confirmacion-reserva',
-        '/webhook/reserva-confirmada',
-        '/webhook/notificar-proveedor',
-        '/webhook/evaluar-antifraude',
-        '/webhook/antifraude-evaluacion',
-        '/webhook/panel-control-telegram',
-        '/webhook/telegram-ops-action',
-        '/webhook/reserva-multicanal',
-        '/webhook/sync-calendar',
-        '/webhook/solicitud-itinerario',
-        '/webhook/evento-analitica',
-        '/webhook/solicitud-soporte',
-        '/webhook/reporte-semanal-conversion',
-        '/webhook/reserva-parques-sinac',
-        '/webhook/alerta-vuelo-retrasado',
-        '/webhook/reporte-objeto-olvidado',
-        '/webhook/whatsapp-traductor-soporte',
-        '/webhook/recepcion-vip-aeropuerto',
-        '/webhook/alerta-requerimientos-especiales',
-        '/webhook/cancelacion-reembolso-inteligente',
-        '/webhook/entrega-fotos-recuerdos',
-        '/webhook/sincronizacion-operadores-locales',
-        '/webhook/alerta-emergencia-sos',
-        '/webhook/booster-reseñas-incentivos'
-      ],
-      inboundWebhooks: [
-        '/api/webhooks/n8n/update-booking',
-        '/webhook/verificar-pago-reserva',
-        '/api/webhooks/n8n/booking-action',
-        '/api/analytics/conversion-report'
-      ]
-    },
-    authSecurity: {
-      secretConfigured: Boolean(process.env.N8N_WEBHOOK_SECRET),
-      apiKeyConfigured: Boolean(process.env.N8N_API_KEY)
-    }
-  });
-});
-
-app.post('/api/n8n/test-connection', async (req, res) => {
-  const testResult = await dispatchToN8N('/webhook/health-check', {
-    ping: 'costa-rica-tours-test',
-    timestamp: new Date().toISOString()
-  });
-
-  res.json({
-    connected: testResult.success,
-    status: testResult.status || null,
-    details: testResult.data || testResult.error
-  });
 });
 
 // ==========================================
@@ -1680,28 +1498,7 @@ app.post('/api/gemini/concierge', async (req, res) => {
       });
     }
 
-    // Intento de despacho prioritario a n8n
-    const n8nResult = await dispatchToN8N('/webhook/chat-consulta', {
-      trigger: 'CONSULTA_CHAT_IA',
-      mensaje: userMsg,
-      idioma: lang,
-      agenteSeleccionado: agentId || 'concierge',
-      historial: history || [],
-      contexto: context || {}
-    });
-
-    if (n8nResult.success && n8nResult.data) {
-      const reply = n8nResult.data.reply || n8nResult.data.mensaje || n8nResult.data.output;
-      if (reply) {
-        return res.json({
-          reply,
-          quickActions: n8nResult.data.quickActions || [],
-          success: true,
-          source: 'n8n'
-        });
-      }
-    }
-
+    // El flujo de IA es 100% nativo: Claude/Vertex o Gemini, con fallback interno.
     const assistantResult = await processChatInquiry(userMsg, lang, history || [], engine || 'auto');
     res.json({
       reply: assistantResult.reply,
@@ -1743,28 +1540,18 @@ app.post('/api/agent/counter', async (req, res) => {
 });
 
 // =========================================================================
-// ⚡ MCP GATEWAY (Model Context Protocol) PARA n8n
+// ⚡ GATEWAY DE HERRAMIENTAS IA NATIVAS
 // =========================================================================
-app.get('/api/mcp/tools', async (req, res) => {
-  try {
-    const tools = await listN8nMcpTools();
-    res.json(tools);
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.post('/api/mcp/call', async (req, res) => {
-  try {
-    const { name, arguments: toolArgs } = req.body;
-    if (!name) {
-      return res.status(400).json({ success: false, error: 'Parámetro "name" de herramienta requerido' });
-    }
-    const result = await executeN8nMcpTool(name, toolArgs || {});
-    res.json(result);
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+app.get('/api/ai/tools', (req, res) => {
+  res.json({
+    success: true,
+    architecture: 'native-code-ai',
+    tools: [
+      'counter_agent', 'triage', 'itinerary_generator', 'availability_checker',
+      'booking_creator', 'provider_coordinator', 'sinpe_verifier', 'fraud_checker',
+      'contingency_manager', 'customer_support', 'demand_forecast'
+    ]
+  });
 });
 
 app.post('/api/gemini/booking/urgent', async (req, res) => {
@@ -1773,14 +1560,8 @@ app.post('/api/gemini/booking/urgent', async (req, res) => {
     const lang = (language || 'es') as 'es' | 'en';
     const assistantResult = await processChatInquiry(message || '', lang, history || []);
     
-    // Despacho a n8n trigger de soporte/urgencia
-    dispatchToN8N('/webhook/solicitud-soporte', {
-      trigger: 'SOLICITUD_SOPORTE',
-      tipo: 'urgencia_reserva',
-      mensaje: message,
-      idioma: lang,
-      timestamp: new Date().toISOString()
-    }).catch(() => {});
+    // Escalación y seguimiento se registran en el motor nativo de alertas.
+    await createAlert({ source: 'AI Support', severity: 'critical', title: 'Solicitud urgente', message: message || 'Solicitud urgente recibida' });
 
     res.json({
       reply: `🚨 **[ATENCIÓN PRIORITARIA COSTA RICA TOURS]**\n\n${assistantResult.reply}`,
@@ -2265,7 +2046,7 @@ async function startServer() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor Full-Stack corriendo en http://0.0.0.0:${PORT}`);
-    console.log(`⚡ Backend n8n listo con triggers salientes y webhooks entrantes.`);
+    console.log(`🧠 Motor de IA nativo listo: Gemini/Vertex + Claude + automatización Node.js/Firestore.`);
     initializeAutomationEngine();
   });
 }
