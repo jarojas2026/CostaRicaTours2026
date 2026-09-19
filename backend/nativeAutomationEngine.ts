@@ -117,12 +117,30 @@ export async function executeChatInquiry(payload: {
   }
 
   try {
-    const assistantResult = await processChatInquiry(userMsg, lang, chatHistory);
+    const assistantResult = await processChatInquiry(userMsg, lang, chatHistory, 'auto', sessionId || undefined);
     const duration = Date.now() - start;
 
     if (sessionId) {
       await rememberTurn(sessionId, { role: 'user', text: userMsg }, { agentId: assistantResult.agentId || payload.agenteSeleccionado });
       await rememberTurn(sessionId, { role: 'assistant', text: assistantResult.reply }, { agentId: assistantResult.agentId || payload.agenteSeleccionado });
+    }
+
+    try {
+      const { recordLearningEvent } = await import('./learningEngine');
+      const { publishAgentEvent } = await import('./agentMeshService');
+      const agentId = assistantResult.agentId || payload.agenteSeleccionado || 'concierge';
+      await recordLearningEvent({
+        sessionId: sessionId || undefined,
+        agentId,
+        input: userMsg,
+        output: assistantResult.reply,
+        outcome: 'success',
+        reward: 0.25,
+        metadata: { modelUsed: assistantResult.modelUsed || 'unknown', latencyMs: duration }
+      });
+      await publishAgentEvent('conversation.turn.completed', { sessionId: sessionId || undefined, agentId, language: lang }, sessionId || 'system');
+    } catch (learningErr) {
+      console.warn('AI learning telemetry unavailable:', learningErr);
     }
 
     logAutomationExecution(
