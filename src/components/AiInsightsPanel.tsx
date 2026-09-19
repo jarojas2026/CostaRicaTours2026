@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { auth } from '../firebase';
 import { Sparkles, TrendingUp, TrendingDown, Minus, Loader2, RefreshCw } from 'lucide-react';
 
 export const AiInsightsPanel: React.FC = () => {
@@ -10,10 +11,13 @@ export const AiInsightsPanel: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
+      const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+      if (!token) {
+        setError('Inicia sesión como operador para consultar las predicciones.');
+        return;
+      }
       const res = await fetch('/api/ai/demand-forecast', {
-        headers: {
-          'Authorization': 'Bearer ADMIN_MOCK_TOKEN'
-        }
+        headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
       if (data.success) {

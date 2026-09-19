@@ -14,7 +14,7 @@
 # ============================================================
 
 # ---------- Etapa 1: Build ----------
-FROM node:20-slim AS builder
+FROM node:22-slim AS builder
 
 WORKDIR /app
 
@@ -22,14 +22,15 @@ WORKDIR /app
 # el cache de Docker: si no cambian las dependencias, no se vuelven a
 # instalar en cada build, ahorrando tiempo y minutos de CI.
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install --no-audit --no-fund --include=optional
+RUN npm install lightningcss-linux-x64-gnu@1.33.0 --no-save --no-package-lock --no-audit --no-fund
 
 # Ahora sí copiamos el resto del código y compilamos.
 COPY . .
 RUN npm run build
 
 # ---------- Etapa 2: Producción ----------
-FROM node:20-slim AS runner
+FROM node:22-slim AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production
@@ -37,7 +38,7 @@ ENV NODE_ENV=production
 # Solo dependencias de producción (más liviano, sin herramientas de
 # desarrollo como Vite, TypeScript, esbuild, etc.)
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm install --omit=dev --no-audit --no-fund --include=optional
 
 # Copiamos el resultado ya compilado desde la etapa "builder":
 # dist/ contiene tanto el frontend (HTML/JS/CSS) como server.cjs

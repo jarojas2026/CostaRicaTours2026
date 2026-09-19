@@ -23,7 +23,7 @@ import {
   MASTER_OPERATORS_REGISTRY 
 } from './nativeWorkflows';
 import { logAutomationExecution } from './nativeAutomationEngine';
-import { sendTelegramEscalation } from './notificationService';
+import { sendAdministrativeAlert } from './notificationService';
 
 // Tipos de Prioridad en la Cola de Alto Rendimiento
 export type QueuePriority = 'EMERGENCY' | 'PAYMENT_VERIFICATION' | 'PROVIDER_DISPATCH' | 'BOOKING_LIFECYCLE' | 'INQUIRY_CACHE' | 'BACKGROUND_AUDIT';

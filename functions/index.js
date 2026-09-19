@@ -15,7 +15,7 @@ exports.createStripeCheckout = functions.https.onRequest((req, res) => {
       
       if (!process.env.STRIPE_SECRET_KEY) {
         console.warn("⚠️ STRIPE_SECRET_KEY no configurada en Cloud Functions.");
-        return res.json({ url: `${returnUrl}?booking=success` });
+        return res.status(503).json({ error: "Stripe no está configurado. No se simula un pago." });
       }
 
       const session = await stripe.checkout.sessions.create({
@@ -54,7 +54,7 @@ exports.createPayPalOrder = functions.https.onRequest((req, res) => {
       
       if (!paypalClientId || !paypalSecret) {
         console.warn("⚠️ PAYPAL variables no configuradas.");
-        return res.json({ url: `${returnUrl}?booking=success`, id: "mock_paypal_id" });
+        return res.status(503).json({ error: "PayPal no está configurado. No se simula un pago." });
       }
       
       // Node 18+ nativo soporta fetch globalmente
@@ -102,26 +102,5 @@ exports.createPayPalOrder = functions.https.onRequest((req, res) => {
 });
 
 // ==========================================
-// 🚀 ENDPOINT: WEBHOOK N8N (Notificación)
+
 // ==========================================
-exports.notifyN8N = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
-    try {
-      const booking = req.body;
-      const N8N_URL = process.env.N8N_BOOKING_WEBHOOK_URL;
-      
-      if (N8N_URL && (booking.status === "confirmada" || booking.paymentStatus === "completed")) {
-        await fetch(N8N_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(booking)
-        });
-      }
-      
-      res.json({ success: true });
-    } catch (err) {
-      console.error("Error notificando a n8n:", err);
-      res.status(500).json({ error: err.message });
-    }
-  });
-});

@@ -10,6 +10,7 @@ import { HomeTrustSections } from '../components/HomeTrustSections';
 import { AboutSection } from '../components/AboutSection';
 import { BlogSection } from '../components/BlogSection';
 import { ContactSection } from '../components/ContactSection';
+import { DestinationPulse } from '../components/DestinationPulse';
 import { Tour, Language, Currency, TourCategory, TourRegion } from '../types';
 
 interface HomeProps {
@@ -68,6 +69,15 @@ export const Home: React.FC<HomeProps> = ({
         />
       </div>
 
+      {/* Costa Rica Pulse — visual destination/weather inspiration */}
+      <DestinationPulse
+        language={language}
+        onSelectRegion={(regionId) => {
+          setSelectedRegion(regionId as any);
+          document.getElementById('destinations')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }}
+      />
+
       {/* Categories Visual Section */}
       <CategoriesSection 
         language={language} 
@@ -87,13 +97,13 @@ export const Home: React.FC<HomeProps> = ({
       />
 
       {/* Destinations Section */}
-      <DestinationsSection 
+      <div id="destinations"><DestinationsSection 
         language={language}
         onSelectRegion={(reg) => {
           setSelectedRegion(reg as TourRegion);
           if (onNavigateTab) onNavigateTab('tours');
         }}
-      />
+      /></div>
 
       {/* Verified Local Operators */}
       <OperatorsSection

@@ -47,6 +47,14 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'availability' | 'embed'>('chat');
+  const [sessionId] = useState(() => {
+    const key = 'crt-counter-widget-session';
+    const existing = localStorage.getItem(key);
+    if (existing) return existing;
+    const created = 'counter_' + Math.random().toString(36).slice(2, 15);
+    localStorage.setItem(key, created);
+    return created;
+  });
   const { tours: TOURS } = useTours();
   const isEs = language === 'es';
 
@@ -70,6 +78,8 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
   const [availAdults, setAvailAdults] = useState(2);
   const [availChildren, setAvailChildren] = useState(0);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [availability, setAvailability] = useState<any>(null);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
 
   // Quick prompt suggestions
   const suggestions = isEs ? [
@@ -84,9 +94,9 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
     'Tours with ALSAMA Tours in Marino Ballena'
   ];
 
-  const handleSendMessage = (textToSend?: string) => {
-    const text = textToSend || inputMessage;
-    if (!text.trim()) return;
+  const handleSendMessage = async (textToSend?: string) => {
+    const text = (textToSend || inputMessage).trim();
+    if (!text || isTyping) return;
 
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -96,51 +106,66 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
     };
 
     setMessages(prev => [...prev, userMsg]);
-    if (!textToSend) setInputMessage('');
+    setInputMessage('');
     setIsTyping(true);
 
-    // AI Counter response logic with precise, warm knowledge
-    setTimeout(() => {
-      let replyText = '';
-      const lower = text.toLowerCase();
-
-      if (lower.includes('ballena') || lower.includes('whale') || lower.includes('uvita')) {
-        replyText = isEs 
-          ? '🐋 **Temporada de Ballenas en Costa Rica**: Tenemos 2 temporadas de avistamiento en el Parque Nacional Marino Ballena (Uvita):\n• **Julio a Noviembre** (migración del hemisferio sur, la más activa).\n• **Diciembre a Abril** (migración del norte).\n\nOperado oficialmente por **ALSAMA Tours**. Salidas diarias a las 8:30 AM y 1:00 PM desde Bahía Ballena.'
-          : '🐋 **Whale Watching in Costa Rica**: There are 2 seasons in Marino Ballena National Park (Uvita):\n• **July to November** (Southern migration, peak activity).\n• **December to April** (Northern migration).\n\nOperated officially by **ALSAMA Tours**. Daily departures at 8:30 AM & 1:00 PM.';
-      } else if (lower.includes('arenal') || lower.includes('volc') || lower.includes('terma') || lower.includes('spring')) {
-        replyText = isEs
-          ? '🌋 **Arenal & Aguas Termales**: El tour incluye caminata por el sendero de lava del Parque Nacional Volcán Arenal, almuerzo típico y pase de tarde/noche en aguas termales minerales. Tarifa desde $145 USD por persona.'
-          : '🌋 **Arenal & Hot Springs**: Includes guided lava flow trail hike at Arenal Volcano National Park, traditional lunch, and afternoon/evening pass at natural thermal springs. Rates start from $145 USD per person.';
-      } else if (lower.includes('cancel') || lower.includes('pago') || lower.includes('pay')) {
-        replyText = isEs
-          ? '💳 **Políticas de Pago y Cancelación**:\n• Aceptamos tarjetas internacionales (Stripe), PayPal y SINPE Móvil local (+506 8795-9148).\n• **Cancelación 100% gratuita** hasta 24 horas antes del inicio del tour.\n• Toda reserva recibe voucher oficial y soporte 24/7.'
-          : '💳 **Payment & Cancellation Policies**:\n• We accept international credit/debit cards (Stripe), PayPal, and local SINPE Móvil.\n• **100% Free Cancellation** up to 24 hours before your tour start time.\n• Instant official voucher and 24/7 support.';
-      } else if (lower.includes('alsama')) {
-        replyText = isEs
-          ? '⭐ **ALSAMA Tours** es nuestro operador local oficial en Uvita y Parque Marino Ballena con más de 12 años de trayectoria, guías certificados por el ICT y embarcaciones con chalecos y seguro al día.'
-          : '⭐ **ALSAMA Tours** is our verified local operator in Uvita & Marino Ballena with 12+ years of experience, ICT-certified guides, and fully insured boats.';
-      } else {
-        replyText = isEs
-          ? `¡Con gusto! Para brindarte la tarifa exacta y cupos con el operador certificado, indícame la fecha deseada y número de personas. También puedo conectarte de inmediato con nuestro asesor de guardia en WhatsApp (+506 8795-9148).`
-          : `I’d love to assist! To give you exact availability and rates with our certified operators, let me know your desired date and party size. Or connect directly with our 24/7 WhatsApp counter (+506 8795-9148).`;
-      }
+    try {
+      const response = await fetch('/api/counter/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, sessionId, language })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Counter Agent unavailable');
 
       const agentMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: 'agent',
-        text: replyText,
+        text: data.reply || (isEs ? 'No pude completar la respuesta.' : 'I could not complete the response.'),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
-
       setMessages(prev => [...prev, agentMsg]);
+    } catch (error) {
+      console.error('Counter Agent error:', error);
+      const fallback: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: 'agent',
+        text: isEs
+          ? 'El mostrador está temporalmente sin conexión con el motor IA. Puedes continuar por WhatsApp o intentar de nuevo.'
+          : 'The counter is temporarily disconnected from the AI engine. You can continue on WhatsApp or try again.'
+      ,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages(prev => [...prev, fallback]);
+    } finally {
       setIsTyping(false);
-    }, 800);
+    }
   };
 
   const selectedTour = TOURS.find(t => t.id === availTourId) || TOURS[0];
   const totalUSD = selectedTour ? (selectedTour.priceUSD * availAdults) + (selectedTour.priceUSD * 0.7 * availChildren) : 0;
   const tourName = selectedTour ? getLangText(selectedTour.title, language) : 'Tour';
+
+  const checkLiveAvailability = async () => {
+    if (!availDate || !selectedTour) return;
+    setAvailabilityLoading(true);
+    try {
+      const seats = availAdults + availChildren;
+      const params = new URLSearchParams({
+        date: availDate,
+        seats: String(seats)
+      });
+      const response = await fetch('/api/tours/' + encodeURIComponent(selectedTour.id) + '/availability?' + params.toString());
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Availability error');
+      setAvailability(data);
+    } catch (error) {
+      console.error('Live availability error:', error);
+      setAvailability({ available: false, reason: isEs ? 'No se pudo verificar el cupo en este momento.' : 'Availability could not be verified right now.' });
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  };
 
   const generateWhatsAppLink = () => {
     const msg = isEs
@@ -407,6 +432,33 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                         />
                       </div>
                     </div>
+
+                    <button
+                      onClick={checkLiveAvailability}
+                      disabled={!availDate || availabilityLoading}
+                      className="w-full rounded-xl border border-amber-400/30 bg-amber-400/10 hover:bg-amber-400/20 disabled:opacity-40 text-amber-100 font-black px-4 py-2.5 text-xs flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <ShieldCheck className="w-4 h-4" />
+                      {availabilityLoading
+                        ? (isEs ? 'Verificando cupos reales…' : 'Checking live availability…')
+                        : (isEs ? 'Verificar cupos reales ahora' : 'Check live availability now')}
+                    </button>
+
+                    {availability && (
+                      <div className={`rounded-2xl border p-4 ${availability.available ? 'border-emerald-400/30 bg-emerald-400/5' : 'border-rose-400/30 bg-rose-400/5'}`}>
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <div className="text-xs font-black text-white">
+                              {availability.available ? (isEs ? 'Cupo disponible' : 'Space available') : (isEs ? 'Cupo no confirmado' : 'Space not confirmed')}
+                            </div>
+                            <div className="text-[11px] text-stone-400 mt-1">
+                              {availability.reason || (availability.remainingSeats != null ? (isEs ? 'Cupos restantes: ' : 'Remaining seats: ') + availability.remainingSeats : '')}
+                            </div>
+                          </div>
+                          <ShieldCheck className="w-6 h-6 text-emerald-300 shrink-0" />
+                        </div>
+                      </div>
+                    )}
 
                     {/* Summary Box */}
                     <div className="mt-4 p-4 bg-[#020e09] rounded-2xl border border-emerald-500/20 flex items-center justify-between">

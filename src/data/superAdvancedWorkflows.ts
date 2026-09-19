@@ -714,9 +714,9 @@ export const SUPER_ADVANCED_WORKFLOWS: SuperAdvancedWorkflowDef[] = [
       trigger: 'CRISIS_SENTIMENT_ESCALATION',
       mensaje: 'Llevo 40 minutos esperando en el lobby de mi hotel en La Fortuna y el chofer no llega. Tengo un vuelo en la tarde y nadie me contesta, esto es inaceptable.',
       turista: {
-        nombre: 'David Morales',
-        email: 'david.morales@globaltech.com',
-        telefono: '+17185559812',
+        nombre: 'Test Traveler',
+        email: 'test@example.com',
+        telefono: '',
         idioma: 'es'
       },
       reservaId: 'RES-TRANSF-8821',
@@ -730,7 +730,7 @@ export const SUPER_ADVANCED_WORKFLOWS: SuperAdvancedWorkflowDef[] = [
         { parameters: { httpMethod: "POST", path: "autonomous-crisis-sentiment-escalation", responseMode: "responseNode" }, name: "[TRIGGER] Inbound Omnichannel Message", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { prompt: "Evalúa el mensaje del turista, calcula el puntaje de urgencia y enojo, e identifica la reserva afectada." }, name: "[AI SENTIMENT] Multidimensional Tone & Urgency Classifier", type: "@n8n/n8n-nodes-langchain.agent", typeVersion: 1, position: [300, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "const voucherCode = 'PURA-VIDA-COMP-40';\nreturn { json: { voucherCode, creditUSD: 40, priority: 'P1_CRITICAL', escalated: true } };" }, name: "[GOODWILL VOUCHER] Auto-Authorize Compensation Credit", type: "n8n-nodes-base.code", typeVersion: 2, position: [500, 300] },
-        { parameters: { chatId: "-1002348576921", text: "=*🚨 ALERTA CRÍTICA P1: RETRASO EN LOBBY*=\n\nTurista: David Morales (Nayara Springs)\nServicio: Traslado a SJO (Alsama Tours)\nEstado: Escalado de urgencia a despachador de guardia\nCupón emitido: `$40 USD` (PURA-VIDA-COMP-40)", additionalFields: { parse_mode: "Markdown" } }, name: "[TIER-1 ESCALATION] Telegram Emergency Ops Dispatch", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: GOOGLE_SERVICE_ACCOUNT_CREDENTIAL } },
+        { parameters: { chatId: "-1002348576921", text: "=*🚨 ALERTA CRÍTICA P1: RETRASO EN LOBBY*=\n\nTurista: Test Traveler (Nayara Springs)\nServicio: Traslado a SJO (Alsama Tours)\nEstado: Escalado de urgencia a despachador de guardia\nCupón emitido: `$40 USD` (PURA-VIDA-COMP-40)", additionalFields: { parse_mode: "Markdown" } }, name: "[TIER-1 ESCALATION] Telegram Emergency Ops Dispatch", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: GOOGLE_SERVICE_ACCOUNT_CREDENTIAL } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"prioridad\": \"P1_CRITICAL\",\n  \"cuponCortesia\": \"PURA-VIDA-COMP-40\",\n  \"mensaje\": \"Lamentamos profundamente la demora. Un supervisor de guardia se ha comunicado con la unidad de Alsama Tours y te está contactando de inmediato.\"\n}" }, name: "[RESPONSE] Send Empathetic Resolution to Traveler", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [900, 300] }
       ],
       connections: {

@@ -1,7 +1,7 @@
 /**
  * 🚨 Servicio de Gestión y Notificación de Alertas Administrativas (admin_alerts)
  * ==============================================================================
- * Reemplaza el canal de Telegram por infraestructura 100% propia:
+ * Reemplaza el canal de Centro de Operaciones por infraestructura 100% propia:
  * - Persistencia estructurada en Firestore (`admin_alerts`)
  * - Envío transaccional de alertas críticas/operativas por correo electrónico vía SMTP / Gmail
  * - Historial y gestión de estado (leído / resuelto) para el Admin Dashboard
@@ -258,7 +258,7 @@ export async function getAlerts(filters?: { resolved?: boolean; severity?: strin
         const data = doc.data();
         firestoreAlerts.push({
           id: doc.id,
-          source: data.source || 'n8n Workflow',
+          source: data.source || 'Motor nativo',
           severity: data.severity || 'info',
           title: data.title || 'Alerta',
           message: data.message || '',

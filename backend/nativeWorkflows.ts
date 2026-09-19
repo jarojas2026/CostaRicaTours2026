@@ -1,48 +1,20 @@
-/**
- * 🌿 WORKFLOWS NATIVOS DE NEGOCIO (COSTA RICA TOURS)
- * =========================================================================
- * Implementación 100% en TypeScript nativo de los 7 workflows clave
- * para eliminar dependencias externas (n8n, proxies, servicios no-code).
- *
- * Contenido:
- * 1. Coordinación en Tiempo Real con Proveedores (Webhook)
- * 2. Confirmación de Reserva al Cliente (Webhook)
- * 3. Pagos Automáticos a Proveedores (Cron 6am CR / PayPal Payouts Idempotente)
- * 4. Vigilancia y Escalamiento de Reservas Pendientes (Cron c/2h)
- * 5. Reporte Diario de Operación (Cron 8pm CR con normalización de Timestamps)
- * 6. Solicitud de Reseña Post-Tour (Cron 5pm CR con formulario propio)
- * 7. Recordatorio 24h antes del Tour (Cron 7am CR)
- */
-
 import { getFirestoreDb, getBookingsCollection, updateBookingStatus } from './bookingService';
-import { sendEmail, sendTelegramMessage, sendTelegramEscalation } from './notificationService';
+import { sendEmail, sendAdministrativeAlert, sendOperationalNotification, sendWhatsAppMessage } from './notificationService';
 import { logAutomationExecution } from './nativeAutomationEngine';
+import { generateBookingPDFBuffer } from './pdfService';
 
-// Clave secreta para autenticación de webhooks entrantes
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || process.env.N8N_WEBHOOK_SECRET || 'cr-tours-secure-webhook-token-2026';
-const APP_URL = process.env.APP_URL || 'https://ais-dev-bkbwi5trklm5ra7pjehfgn-650141017629.us-east1.run.app';
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || '';
+const APP_URL = process.env.APP_URL || '';
 
-/**
- * Normaliza fechas provenientes de Firestore (soporta Timestamp de Firestore, objetos con _seconds, y strings ISO)
- */
 export function normalizeDate(dateVal: any): Date {
   if (!dateVal) return new Date(0);
-  if (typeof dateVal.toDate === 'function') {
-    return dateVal.toDate();
-  }
-  if (typeof dateVal._seconds === 'number') {
-    return new Date(dateVal._seconds * 1000);
-  }
-  if (typeof dateVal.seconds === 'number') {
-    return new Date(dateVal.seconds * 1000);
-  }
+  if (typeof dateVal.toDate === 'function') return dateVal.toDate();
+  if (typeof dateVal._seconds === 'number') return new Date(dateVal._seconds * 1000);
+  if (typeof dateVal.seconds === 'number') return new Date(dateVal.seconds * 1000);
   const d = new Date(dateVal);
-  return isNaN(d.getTime()) ? new Date(0) : d;
+  return Number.isNaN(d.getTime()) ? new Date(0) : d;
 }
 
-/**
- * Registra una escalación en la colección 'escalations' de Firestore
- */
 export async function recordEscalation(data: {
   type: string;
   bookingId?: string;
@@ -50,48 +22,30 @@ export async function recordEscalation(data: {
   reason: string;
   details?: any;
   status?: 'pending' | 'resolved' | 'acknowledged';
+  customerEmail?: string;
+  customerPhone?: string;
 }): Promise<string> {
   const db = getFirestoreDb();
-  const escalationId = `esc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-  const payload = {
-    id: escalationId,
-    type: data.type,
-    bookingId: data.bookingId || null,
-    providerId: data.providerId || null,
-    reason: data.reason,
-    details: data.details || {},
-    status: data.status || 'pending',
-    createdAt: new Date().toISOString()
-  };
-
+  const escalationId = `esc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   if (db) {
-    try {
-      await db.collection('escalations').doc(escalationId).set(payload);
-    } catch (err) {
-      console.warn('⚠️ No se pudo persistir la escalación en Firestore:', err);
-    }
+    await db.collection('escalations').doc(escalationId).set({
+      id: escalationId,
+      ...data,
+      createdAt: new Date().toISOString(),
+      status: data.status || 'pending'
+    }).catch((error) => console.warn('No se pudo persistir escalación:', error));
   }
   return escalationId;
 }
 
-/**
- * Catálogo Maestro de Operadores Turísticos y Transporte Verificados de Costa Rica
- * Se utiliza como base y fallback determinista resiliente con soporte de base de datos.
- */
-/**
- * =========================================================================
- * ENRUTAMIENTO DE CORREOS DE PROVEEDORES EN ETAPA DE PRUEBA Y DESARROLLO
- * =========================================================================
- * Por directriz de desarrollo, todos los correos de proveedores y operadores
- * se centralizan en gabw33d@gmail.com para pruebas operativas seguras.
- */
-export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || 'gabw33d@gmail.com';
+/** Configuración de correo de pruebas; nunca se incrustan cuentas personales. */
+export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || 'provider@example.invalid';
 
 export function getEffectiveProviderEmail(officialEmail?: string | null): string {
-  if (process.env.DISABLE_PROVIDER_EMAIL_OVERRIDE === 'true' && officialEmail) {
-    return officialEmail;
-  }
-  return process.env.PROVIDER_DEV_EMAIL || 'gabw33d@gmail.com';
+  const useOfficial = process.env.NODE_ENV === 'production'
+    || process.env.DISABLE_PROVIDER_EMAIL_OVERRIDE === 'true';
+  if (useOfficial && officialEmail) return officialEmail;
+  return process.env.PROVIDER_DEV_EMAIL || 'provider@example.invalid';
 }
 
 export const MASTER_OPERATORS_REGISTRY: Record<string, {
@@ -393,7 +347,7 @@ export async function executeProviderRealtimeCoordination(
   message: string;
 }> {
   // Verificación de autenticación de Webhook si aplica
-  if (process.env.NODE_ENV === 'production' && authHeader && authHeader !== WEBHOOK_SECRET) {
+  if (process.env.NODE_ENV === 'production' && (!WEBHOOK_SECRET || authHeader !== WEBHOOK_SECRET)) {
     throw new Error('No autorizado: X-Webhook-Secret inválido o ausente.');
   }
 
@@ -409,8 +363,8 @@ export async function executeProviderRealtimeCoordination(
   const pickupHotel = booking.pickupHotel || 'Recepción del Hotel';
   const specialRequests = booking.specialRequests || 'Ninguna';
   const customerName = booking.customerName || booking.customer?.name || 'Cliente Verificado';
-  const customerPhone = booking.customerPhone || booking.customer?.phone || '+506 8000-CRTOURS';
-  const customerEmail = booking.customerEmail || booking.customer?.email || 'viajero@costaricatours.es';
+  const customerPhone = booking.customerPhone || booking.customer?.phone || '';
+  const customerEmail = booking.customerEmail || booking.customer?.email || '';
 
   // Obtener datos del proveedor
   const provider = await getProviderFromDb(providerId) || MASTER_OPERATORS_REGISTRY['alsama-tours-cr'];
@@ -566,7 +520,7 @@ export async function executeProviderRealtimeCoordination(
     details: { tourName, tourDate, tourTime, pickupHotel, customerName, customerPhone, whatsappUrl }
   });
 
-  await sendTelegramEscalation({
+  await sendAdministrativeAlert({
     title: 'Despacho a Proveedor Requiere Supervisión',
     reason,
     bookingId,
@@ -675,6 +629,29 @@ export async function handleProviderActionResponse(
       }).catch(() => {});
     }
 
+    try {
+      const { sendAgentMessage, publishAgentEvent } = await import('./agentMeshService');
+      await sendAgentMessage({
+        conversationId: bookingId,
+        fromAgent: 'provider_liaison',
+        toAgent: 'customer_service',
+        audience: 'internal',
+        type: 'response',
+        subject: 'Proveedor confirmó logística',
+        payload: { bookingId, providerId: options?.providerId, guide, vehicle, tourName, tourDate }
+      });
+      await publishAgentEvent('provider.booking.confirmed', { bookingId, providerId: options?.providerId, guide, vehicle }, bookingId);
+      const { recordLearningEvent } = await import('./learningEngine');
+      await recordLearningEvent({
+        agentId: 'provider_liaison',
+        input: `Coordinación de proveedor para ${bookingId}`,
+        output: 'Proveedor confirmó logística',
+        outcome: 'success',
+        reward: 1,
+        metadata: { bookingId, providerId: options?.providerId, action: 'confirm' }
+      });
+    } catch (meshErr) { console.warn('Agent mesh provider confirmation unavailable:', meshErr); }
+
     logAutomationExecution('WF_COORDINACION_PROVEEDOR', 0, 'success', `Reserva #${bookingId} confirmada por operador con guía ${guide}`);
 
     return {
@@ -695,6 +672,29 @@ export async function handleProviderActionResponse(
       proposedTime,
       providerNotes: options?.providerNotes || `Operador sugiere horario ${proposedTime}`
     }).catch(() => {});
+
+    try {
+      const { sendAgentMessage, publishAgentEvent } = await import('./agentMeshService');
+      await sendAgentMessage({
+        conversationId: bookingId,
+        fromAgent: 'provider_liaison',
+        toAgent: 'customer_service',
+        audience: 'internal',
+        type: 'request',
+        subject: 'Proveedor solicita cambio de horario',
+        payload: { bookingId, proposedTime, providerId: options?.providerId, notes: options?.providerNotes }
+      });
+      await publishAgentEvent('provider.booking.time_change_requested', { bookingId, proposedTime, providerId: options?.providerId }, bookingId);
+      const { recordLearningEvent } = await import('./learningEngine');
+      await recordLearningEvent({
+        agentId: 'provider_liaison',
+        input: `Cambio de horario solicitado para ${bookingId}`,
+        output: proposedTime,
+        outcome: 'partial',
+        reward: 0.1,
+        metadata: { bookingId, providerId: options?.providerId, action: 'modify_time' }
+      });
+    } catch (meshErr) { console.warn('Agent mesh provider time-change unavailable:', meshErr); }
 
     if (customerEmail) {
       await sendEmail({
@@ -788,7 +788,7 @@ export async function executeAutonomousProviderFallback(
     `
   }).catch(() => {});
 
-  await sendTelegramEscalation({
+  await sendAdministrativeAlert({
     title: 'Failover Autónomo de Proveedor Ejecutado',
     reason: `Operador ${failedProviderId} declinó por: ${reason}`,
     bookingId,
@@ -819,123 +819,200 @@ export async function executeCustomerBookingConfirmation(
   payload: any,
   authHeader?: string
 ): Promise<{ success: boolean; customerNotified: boolean; escalated: boolean; message: string }> {
-  if (process.env.NODE_ENV === 'production' && authHeader && authHeader !== WEBHOOK_SECRET) {
+  if (process.env.NODE_ENV === 'production' && authHeader !== WEBHOOK_SECRET) {
     throw new Error('No autorizado: X-Webhook-Secret inválido o ausente.');
   }
 
   const booking = payload.booking || payload;
-  const bookingId = booking.bookingId || booking.id || 'CRT-CONF';
-  const customerEmail = booking.customerEmail || booking.customer?.email;
-  const customerName = booking.customerName || booking.customer?.name || 'Estimado Viajero';
-  const customerPhone = booking.customerPhone || booking.customer?.phone || '';
-  const tourName = booking.tourName || 'Tour en Costa Rica';
-  const tourDate = booking.date || 'Fecha por confirmar';
-  const tourTime = booking.time || '08:00 AM';
-  const pickupHotel = booking.pickupHotel || 'Recepción de su hotel';
-  const totalUSD = booking.totalUSD || booking.totalAmount || 0;
-  const voucherUrl = booking.voucherUrl || `${APP_URL}?voucher=${bookingId}`;
-  const qrValidationCode = booking.qrValidationCode || `PASS-${bookingId.replace(/[^A-Z0-9]/gi, '')}`;
+  const bookingId = String(booking.bookingId || booking.id || 'CRT-CONF');
+  const customerEmail = String(booking.customerEmail || booking.customer?.email || '');
+  const customerName = String(booking.customerName || booking.customer?.name || 'Cliente');
+  const customerPhone = String(booking.customerPhone || booking.customer?.phone || '');
+  const tourName = String(booking.tourName || 'Tour en Costa Rica');
+  const tourDate = String(booking.date || 'Fecha por confirmar');
+  const tourTime = String(booking.time || '08:00 AM');
+  const pickupHotel = String(booking.pickupHotel || 'No especificado');
+  const totalUSD = Number(booking.totalUSD || booking.totalAmount || 0);
+  const downloadPdfUrl = `${APP_URL}/api/bookings/${bookingId}/download-pdf`;
+  const viewVoucherUrl = `${APP_URL}/api/bookings/${bookingId}/pdf`;
+  const confirmationUrl = `${APP_URL}/api/bookings/${bookingId}/customer-confirm?action=approve`;
 
-  if (customerEmail && customerEmail.includes('@')) {
-    const emailResult = await sendEmail({
-      to: customerEmail,
-      subject: `🌴 ¡Tu Aventura está Confirmada! - Voucher: ${bookingId} (${tourName})`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917; border: 1px solid #e7e5e4; border-radius: 16px; overflow: hidden; background-color: #ffffff;">
-          <div style="background-color: #064e3b; color: #ffffff; padding: 28px 24px; text-align: center;">
-            <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">¡Pura Vida, ${customerName}! 🌿</h1>
-            <p style="margin: 8px 0 0 0; font-size: 14px; color: #a7f3d0;">Tu reserva ha sido confirmada con éxito.</p>
-          </div>
-          <div style="padding: 24px;">
-            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 20px;">
-              <span style="font-size: 12px; font-weight: bold; color: #15803d; text-transform: uppercase; letter-spacing: 1px;">Código de Voucher Digital</span>
-              <div style="font-size: 20px; font-weight: 900; color: #064e3b; margin: 4px 0; font-family: monospace;">${bookingId}</div>
-              <span style="font-size: 11px; color: #166534;">Token QR: ${qrValidationCode}</span>
-            </div>
-
-            <h3 style="font-size: 16px; color: #064e3b; border-bottom: 2px solid #f0fdf4; padding-bottom: 8px; margin-top: 0;">Detalles de tu Experiencia</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 20px;">
-              <tr style="border-bottom: 1px solid #f5f5f4;"><td style="padding: 8px 0; color: #78716c;">Tour:</td><td style="padding: 8px 0; font-weight: bold; color: #1c1917;">${tourName}</td></tr>
-              <tr style="border-bottom: 1px solid #f5f5f4;"><td style="padding: 8px 0; color: #78716c;">Fecha:</td><td style="padding: 8px 0; font-weight: bold; color: #1c1917;">${tourDate}</td></tr>
-              <tr style="border-bottom: 1px solid #f5f5f4;"><td style="padding: 8px 0; color: #78716c;">Hora de Salida:</td><td style="padding: 8px 0; font-weight: bold; color: #1c1917;">${tourTime}</td></tr>
-              <tr style="border-bottom: 1px solid #f5f5f4;"><td style="padding: 8px 0; color: #78716c;">Lugar de Recogida:</td><td style="padding: 8px 0; font-weight: bold; color: #1c1917;">${pickupHotel}</td></tr>
-              <tr style="border-bottom: 1px solid #f5f5f4;"><td style="padding: 8px 0; color: #78716c;">Total Pagado:</td><td style="padding: 8px 0; font-weight: bold; color: #047857;">$${totalUSD} USD</td></tr>
-            </table>
-
-            <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; padding: 14px; margin-bottom: 20px;">
-              <h4 style="margin: 0 0 6px 0; font-size: 13px; color: #92400e; font-weight: bold;">🎒 Qué llevar recomendado:</h4>
-              <p style="margin: 0; font-size: 12px; color: #78350f; line-height: 1.5;">
-                • Ropa cómoda y zapatos cerrados para caminar.<br/>
-                • Protector solar biodegradable y repelente de insectos.<br/>
-                • Capa o impermeable ligero.<br/>
-                • Botella de agua reutilizable y cámara para recuerdos inolvidables.
-              </p>
-            </div>
-
-            <div style="text-align: center; margin: 24px 0;">
-              <a href="${voucherUrl}" style="background-color: #059669; color: #ffffff; padding: 12px 28px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                Ver Voucher Digital & QR en Vivo
-              </a>
-            </div>
-
-            <p style="font-size: 12px; color: #78716c; text-align: center; margin-top: 16px;">
-              Soporte 24/7 en Costa Rica: WhatsApp +506 8795-9148 | reservas@costaricatours.es
-            </p>
-          </div>
-        </div>
-      `
+  let pdfBuffer: Buffer | null = null;
+  try {
+    pdfBuffer = await generateBookingPDFBuffer({
+      bookingId,
+      tourName,
+      customerName,
+      customerEmail,
+      customerPhone,
+      date: tourDate,
+      time: tourTime,
+      adults: Math.max(0, Number(booking.adults) || 0),
+      children: Math.max(0, Number(booking.children) || 0),
+      totalUSD,
+      specialRequests: booking.specialRequests || 'Ninguna registrada',
+      pickupHotel
     });
-
-    if (emailResult.success) {
-      console.log(`✅ [CLIENTE NOTIFICADO] Email de confirmación enviado a ${customerEmail}`);
-      logAutomationExecution('WF_CONFIRMACION_CLIENTE', 0, 'success', `Voucher digital enviado a ${customerEmail} (${bookingId})`);
-      return {
-        success: true,
-        customerNotified: true,
-        escalated: false,
-        message: `Confirmación enviada exitosamente al cliente (${customerEmail}).`
-      };
-    }
+  } catch (error) {
+    console.warn('No se pudo generar voucher de confirmación:', error);
   }
 
-  // Falla de envío o cliente sin email -> Escalar por Telegram
-  const reason = !customerEmail
-    ? 'La reserva no cuenta con correo electrónico del cliente.'
-    : `Fallo al enviar correo de confirmación a ${customerEmail}.`;
+  let emailSent = false;
+  if (customerEmail.includes('@')) {
+    const emailResult = await sendEmail({
+      to: customerEmail,
+      subject: `Reserva confirmada #${bookingId} — Costa Rica Tours`,
+      attachments: pdfBuffer ? [{
+        filename: `CostaRicaTours-${bookingId}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+      }] : undefined,
+      html: `<p>Hola ${customerName.replace(/[<>]/g, '')},</p>
+        <p>Tu reserva <strong>#${bookingId}</strong> está confirmada.</p>
+        <p><strong>Tour:</strong> ${tourName}<br><strong>Fecha:</strong> ${tourDate} ${tourTime}<br>
+        <strong>Recogida:</strong> ${pickupHotel}<br><strong>Total:</strong> $${totalUSD.toFixed(2)} USD</p>
+        <p><a href="${downloadPdfUrl}">Descargar comprobante</a> · <a href="${viewVoucherUrl}">Ver comprobante</a></p>`
+    });
+    emailSent = Boolean(emailResult.success);
+  }
+
+  let whatsappSent = false;
+  if (customerPhone) {
+    const wa = await sendWhatsAppMessage({
+      toPhone: customerPhone,
+      customerName,
+      message: `🌿 Reserva #${bookingId} confirmada. Tour: ${tourName}. Fecha: ${tourDate} ${tourTime}. Comprobante: ${downloadPdfUrl}`,
+      bookingId,
+      pdfUrl: downloadPdfUrl,
+      confirmationUrl
+    });
+    whatsappSent = Boolean(wa.success);
+  }
+
+  if (emailSent || whatsappSent) {
+    logAutomationExecution('WF_CONFIRMACION_RESERVA', 0, 'success', `Cliente notificado para reserva #${bookingId}`);
+    return { success: true, customerNotified: true, escalated: false, message: 'Cliente notificado usando datos de la reserva.' };
+  }
 
   await recordEscalation({
-    type: 'CUSTOMER_CONFIRMATION_FAILED',
+    type: 'CUSTOMER_NOTIFICATION_FAILED',
     bookingId,
-    reason,
-    details: { customerName, customerEmail, customerPhone, tourName, tourDate, totalUSD }
-  });
-
-  await sendTelegramEscalation({
-    title: 'Fallo al Notificar Confirmación al Cliente',
-    reason,
-    bookingId,
-    customerName,
     customerEmail,
     customerPhone,
+    reason: 'No se pudo notificar al cliente por los canales configurados.',
     details: {
       Tour: tourName,
       Fecha: tourDate,
-      MontoUSD: `$${totalUSD}`,
-      AccionRequerida: 'Enviar voucher manualmente por WhatsApp al número del cliente.'
+      MontoUSD: totalUSD
     }
   });
+  return { success: false, customerNotified: false, escalated: true, message: 'No se pudo notificar al cliente; se registró una escalación operativa.' };
+}
+
+export async function executeCustomerProformaConfirmation(payload: {
+  bookingId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  adults?: number;
+  children?: number;
+  childAge?: number;
+  tourName?: string;
+  startDate?: string;
+  time?: string;
+  totalUSD?: number;
+  specialRequests?: string;
+}): Promise<{
+  success: boolean;
+  bookingId: string;
+  emailSent: boolean;
+  emailId?: string;
+  whatsappSent: boolean;
+  whatsappUrl: string;
+  whatsappMessage: string;
+  pdfGenerated: boolean;
+  downloadPdfUrl: string;
+  viewVoucherUrl: string;
+  approvalUrl: string;
+  message: string;
+}> {
+  const bookingId = payload.bookingId || `CRT-${Date.now().toString(36).toUpperCase()}`;
+  const customerName = payload.customerName || 'Cliente';
+  const customerEmail = payload.customerEmail || '';
+  const customerPhone = payload.customerPhone || '';
+  const adults = Math.max(0, Number(payload.adults) || 0);
+  const children = Math.max(0, Number(payload.children) || 0);
+  const tourName = payload.tourName || 'Experiencia Costa Rica';
+  const startDate = payload.startDate || new Date().toISOString().slice(0, 10);
+  const time = payload.time || '08:00 AM';
+  const totalUSD = Number(payload.totalUSD) || 0;
+  const specialRequests = payload.specialRequests || 'Ninguna registrada';
+
+  const downloadPdfUrl = `${APP_URL}/api/bookings/${bookingId}/download-pdf`;
+  const viewVoucherUrl = `${APP_URL}/api/bookings/${bookingId}/pdf`;
+  const approvalUrl = `${APP_URL}/api/bookings/${bookingId}/customer-confirm?action=approve`;
+  const whatsappMessageText = `🌿 Costa Rica Tours — Reserva #${bookingId}\\n\\nTour: ${tourName}\\nFecha: ${startDate} ${time}\\nPasajeros: ${adults + children}\\n\\nComprobante: ${downloadPdfUrl}`;
+
+  let pdfBuffer: Buffer | null = null;
+  try {
+    pdfBuffer = await generateBookingPDFBuffer({
+      bookingId, tourName, customerName, customerEmail, customerPhone,
+      date: startDate, time, adults, children, totalUSD, specialRequests
+    });
+  } catch (error) {
+    console.warn('No se pudo generar PDF de proforma:', error);
+  }
+
+  let emailResult: any = { success: false };
+  if (customerEmail.includes('@')) {
+    emailResult = await sendEmail({
+      to: customerEmail,
+      subject: `Comprobante de reserva #${bookingId} — Costa Rica Tours`,
+      attachments: pdfBuffer ? [{
+        filename: `CostaRicaTours-${bookingId}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+      }] : undefined,
+      html: `<p>Hola ${customerName.replace(/[<>]/g, '')},</p>
+        <p>Tu reserva <strong>#${bookingId}</strong> fue registrada.</p>
+        <p><strong>Tour:</strong> ${tourName}<br><strong>Fecha:</strong> ${startDate} ${time}<br>
+        <strong>Pasajeros:</strong> ${adults + children}<br><strong>Total:</strong> $${totalUSD.toFixed(2)} USD</p>
+        <p>Solicitudes especiales: ${specialRequests}</p>
+        <p><a href="${downloadPdfUrl}">Descargar comprobante</a></p>`
+    });
+  }
+
+  let waResult: any = { success: false, url: '' };
+  if (customerPhone) {
+    waResult = await sendWhatsAppMessage({
+      toPhone: customerPhone,
+      customerName,
+      message: whatsappMessageText,
+      bookingId,
+      pdfUrl: downloadPdfUrl,
+      confirmationUrl: approvalUrl
+    });
+  }
+
+  logAutomationExecution('WF_PROFORMA_CONFIRMACION', 0, emailResult.success || waResult.success ? 'success' : 'warning',
+    `Proforma #${bookingId}: email=${Boolean(emailResult.success)}, whatsapp=${Boolean(waResult.success)}`);
 
   return {
-    success: true,
-    customerNotified: false,
-    escalated: true,
-    message: `No se pudo enviar correo al cliente. Escalado a Telegram para despacho manual: ${reason}`
+    success: Boolean(emailResult.success || waResult.success || pdfBuffer),
+    bookingId,
+    emailSent: Boolean(emailResult.success),
+    emailId: emailResult.id,
+    whatsappSent: Boolean(waResult.success),
+    whatsappUrl: waResult.url || '',
+    whatsappMessage: whatsappMessageText,
+    pdfGenerated: Boolean(pdfBuffer),
+    downloadPdfUrl,
+    viewVoucherUrl,
+    approvalUrl,
+    message: 'Proforma procesada usando únicamente datos de la reserva.'
   };
 }
 
-// =========================================================================
-// 3. PAGOS AUTOMÁTICOS A PROVEEDORES (Trigger: Cron Diario 6:00 AM Costa Rica)
-// =========================================================================
 export async function executeAutomatedProviderPayouts(): Promise<{
   success: boolean;
   totalProcessed: number;
@@ -1125,19 +1202,19 @@ export async function executeAutomatedProviderPayouts(): Promise<{
       }
     }
 
-    // Enviar resumen final a Telegram si hubo actividad o fallos
+    // Enviar resumen final a Centro de Operaciones si hubo actividad o fallos
     if (results.totalProcessed > 0 || results.escalationsCount > 0) {
-      let telegramSummary = `💰 <b>[RESUMEN BATCH PAGOS 6:00 AM]</b>\n`;
-      telegramSummary += `• <b>Total Procesadas:</b> ${results.totalProcessed}\n`;
-      telegramSummary += `• <b>Monto Total Liquidado:</b> $${results.totalPaidUSD} USD\n`;
-      telegramSummary += `• <b>Pagos Exitosos:</b> ${results.payouts.filter(p => p.status.includes('SUCCESS')).length}\n`;
-      telegramSummary += `• <b>Escalaciones / Fallos:</b> ${results.escalationsCount}\n`;
+      let operacionesSummary = `💰 <b>[RESUMEN BATCH PAGOS 6:00 AM]</b>\n`;
+      operacionesSummary += `• <b>Total Procesadas:</b> ${results.totalProcessed}\n`;
+      operacionesSummary += `• <b>Monto Total Liquidado:</b> $${results.totalPaidUSD} USD\n`;
+      operacionesSummary += `• <b>Pagos Exitosos:</b> ${results.payouts.filter(p => p.status.includes('SUCCESS')).length}\n`;
+      operacionesSummary += `• <b>Escalaciones / Fallos:</b> ${results.escalationsCount}\n`;
 
       if (results.escalationsCount > 0) {
-        telegramSummary += `\n⚠️ <i>Se registraron ${results.escalationsCount} fallos en Firestore (escalations). Revisar correos PayPal faltantes.</i>`;
+        operacionesSummary += `\n⚠️ <i>Se registraron ${results.escalationsCount} fallos en Firestore (escalations). Revisar correos PayPal faltantes.</i>`;
       }
 
-      await sendTelegramMessage(telegramSummary, { parseMode: 'HTML' });
+      await sendOperationalNotification(operacionesSummary, { parseMode: 'HTML' });
     }
   } catch (err: any) {
     console.error('❌ Error general en cron de pagos a proveedores:', err);
@@ -1203,8 +1280,8 @@ export async function executeSurveillanceAndEscalation(): Promise<{
           details: { customerName, customerEmail, customerPhone, tourName, totalUSD, createdAt: createdDate.toISOString() }
         });
 
-        // 3. Notificar por Telegram
-        await sendTelegramEscalation({
+        // 3. Notificar por Centro de Operaciones
+        await sendAdministrativeAlert({
           title: 'Reserva Pendiente de Pago Estancada (>2h)',
           reason: 'El cliente inició el proceso pero no completó el pago en la pasarela o SINPE Móvil.',
           bookingId,
@@ -1309,7 +1386,7 @@ export async function executeDailyOperationReport(): Promise<{
     .sort((a, b) => b.count - a.count)
     .slice(0, 3);
 
-  // Formatear y despachar mensaje a Telegram
+  // Formatear y despachar mensaje a Centro de Operaciones
   let reportText = `🇨🇷 <b>[REPORTE DIARIO DE OPERACIÓN - 8:00 PM]</b>\n`;
   reportText += `📅 <b>Fecha:</b> ${todayCR} (Hora Costa Rica)\n\n`;
   reportText += `📈 <b>Métricas de Ventas:</b>\n`;
@@ -1329,7 +1406,7 @@ export async function executeDailyOperationReport(): Promise<{
 
   reportText += `\n✨ <i>Operaciones fluidas bajo estándar CST. ¡Pura Vida!</i>`;
 
-  await sendTelegramMessage(reportText, { parseMode: 'HTML' });
+  await sendOperationalNotification(reportText, { parseMode: 'HTML' });
 
   return {
     reportDate: todayCR,
@@ -1425,7 +1502,7 @@ export async function executePostTourReviewRequests(): Promise<{
           }
         }
 
-        // Si falló el envío o no tiene correo -> Escalar por Telegram
+        // Si falló el envío o no tiene correo -> Escalar por Centro de Operaciones
         summary.escalatedCount += 1;
         await recordEscalation({
           type: 'REVIEW_REQUEST_FAILED',
@@ -1434,7 +1511,7 @@ export async function executePostTourReviewRequests(): Promise<{
           details: { customerName, customerEmail, tourName, reviewUrl: internalReviewUrl }
         });
 
-        await sendTelegramEscalation({
+        await sendAdministrativeAlert({
           title: 'Solicitud de Reseña no Entregada',
           reason: 'No se pudo enviar el correo de reseña post-tour.',
           bookingId,
@@ -1551,7 +1628,7 @@ export async function executeTour24hReminders(): Promise<{
           }
         }
 
-        // Si falló o no tiene email -> Escalar por Telegram
+        // Si falló o no tiene email -> Escalar por Centro de Operaciones
         summary.escalationsCount += 1;
         await recordEscalation({
           type: 'REMINDER_24H_FAILED',
@@ -1560,7 +1637,7 @@ export async function executeTour24hReminders(): Promise<{
           details: { customerName, customerEmail, tourName, tourTime, pickupHotel, tomorrowStr }
         });
 
-        await sendTelegramEscalation({
+        await sendAdministrativeAlert({
           title: 'Fallo al Enviar Recordatorio 24h',
           reason: 'No se pudo contactar al cliente por correo para el recordatorio de mañana.',
           bookingId,
@@ -1977,7 +2054,7 @@ export async function handleGlobalWorkflowError(params: {
   console.error(`🚨 [MANEJADOR GLOBAL DE ERRORES NATIVO] Fallo en ${params.workflowName} -> ${params.failedNodeOrAction}:`, errorMessage);
 
   try {
-    const escalResult = await sendTelegramEscalation({
+    const escalResult = await sendAdministrativeAlert({
       title: `Fallo en Workflow: ${params.workflowName}`,
       reason: `Error durante la acción "${params.failedNodeOrAction}": ${errorMessage}`,
       details: {

@@ -16,9 +16,9 @@ import rateLimit from 'express-rate-limit';
 import { createServer as createViteServer } from 'vite';
 import { initializeAutomationEngine, cleanupExpiredSoftHolds } from './backend/cronEngine';
 import { google } from 'googleapis';
-import { dispatchToN8N, getN8NConfig, verifyN8NRequest } from './backend/n8nService';
 import { requireOperator } from './backend/authMiddleware';
 import { TOURS } from './src/data/toursData';
+import { FLIGHT_ROUTES } from './src/data/flightsData';
 import {
   getStripe,
   createBooking,
@@ -27,6 +27,7 @@ import {
   checkTourAvailability,
   getWeeklyConversionMetrics
 } from './backend/bookingService';
+import { generateBookingPDFBuffer, generateBookingPrintableHTML } from './backend/pdfService';
 import { massiveEngine } from './backend/massiveProcessingEngine';
 import {
   createAlert,
@@ -42,11 +43,6 @@ import {
   runSupervisor,
   logException
 } from './backend/aiAssistantService';
-import {
-  callN8nMcp,
-  listN8nMcpTools,
-  executeN8nMcpTool
-} from './backend/n8nMcpBridge';
 import {
   generateClaudeChatResponse,
   generateClaudeItinerary,
@@ -90,6 +86,7 @@ import {
   executeAutonomousProviderFallback,
   MASTER_OPERATORS_REGISTRY,
   executeCustomerBookingConfirmation,
+  executeCustomerProformaConfirmation,
   executeAutomatedProviderPayouts,
   executeSurveillanceAndEscalation,
   executeDailyOperationReport,
@@ -103,9 +100,19 @@ import {
 import { executeSinpeVerification } from './backend/sinpeService';
 import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
 import { getSelfDevelopmentOverview, runSelfHealingCycle } from './backend/selfDevelopmentEngine';
+import { askCounterDesk, getCounterOperationsSnapshot, organizeCounterDesk } from './backend/counterDeskService';
+import { runEvaluationSuite } from './backend/agentEvaluationService';
+import { buildLearningDataset } from './backend/learningPipelineService';
+import { autonomyPolicy, parseAutonomyLevel } from './backend/autonomyPolicy';
+import { listSkillVersions, selectSkills, hydrateSkillGenome, registerSkillVersion, recordSkillEvaluation, promoteSkillVersion, rollbackSkillVersion } from './backend/skillGenome';
+import { emitOperationalEvent } from './backend/operationalEventBus';
+import { buildSkillEvolutionReport, selectEvolvedSkill, recordSkillOutcome, proposeSkillUpgrade } from './backend/skillEvolutionEngine';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
+
+// Admin gate is defined before any route registration that uses it.
+const requireAdmin = requireOperator;
 
 app.set('trust proxy', 1);
 app.use(express.json());
@@ -119,6 +126,14 @@ const paymentLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Demasiadas solicitudes de pago desde esta IP. Por favor intente más tarde.' }
+});
+
+const counterLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Límite del Counter Digital excedido. Por favor espere un momento.' }
 });
 
 const chatLimiter = rateLimit({
@@ -156,14 +171,15 @@ app.get('/api/health', (req, res) => {
 app.post('/api/stripe/create-checkout-session', async (req, res) => {
   try {
     const { tourName, totalUSD, customerEmail } = req.body;
+    const authoritativeTotal = calculateAuthoritativeCheckoutTotal(req.body);
+    if (authoritativeTotal === null) return res.status(400).json({ error: 'No se pudo verificar el precio de la reserva en el catálogo.' });
+    if (Math.abs(Number(totalUSD) - authoritativeTotal) > 0.01) {
+      return res.status(409).json({ error: 'El importe enviado no coincide con el precio calculado en el servidor.', expectedTotalUSD: authoritativeTotal });
+    }
     const stripe = getStripe();
     if (!stripe) {
-      if (process.env.NODE_ENV === 'production') {
-        console.error('🔴 STRIPE_SECRET_KEY no configurada en PRODUCCIÓN. Se rechaza el pago.');
-        return res.status(503).json({ error: 'Pagos no disponibles temporalmente. Contacta a soporte.' });
-      }
-      console.warn('⚠️ STRIPE_SECRET_KEY no configurada (modo desarrollo). Simulando enlace de pago.');
-      return res.json({ url: `${req.protocol}://${req.get('host')}?booking=success` });
+      console.error('🔴 STRIPE_SECRET_KEY no configurada. Se rechaza el intento de pago.');
+      return res.status(503).json({ error: 'Pagos no disponibles: Stripe no está configurado en el servidor.' });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -193,6 +209,11 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
 app.post('/api/paypal/create-order', async (req, res) => {
   try {
     const { totalUSD, tourName } = req.body;
+    const authoritativeTotal = calculateAuthoritativeCheckoutTotal(req.body);
+    if (authoritativeTotal === null) return res.status(400).json({ error: 'No se pudo verificar el precio de la reserva en el catálogo.' });
+    if (Math.abs(Number(totalUSD) - authoritativeTotal) > 0.01) {
+      return res.status(409).json({ error: 'El importe enviado no coincide con el precio calculado en el servidor.', expectedTotalUSD: authoritativeTotal });
+    }
     const paypalClientId = process.env.PAYPAL_CLIENT_ID;
     const paypalSecret = process.env.PAYPAL_SECRET;
     const paypalMode = process.env.PAYPAL_MODE || 'sandbox';
@@ -200,15 +221,8 @@ app.post('/api/paypal/create-order', async (req, res) => {
       paypalMode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
 
     if (!paypalClientId || !paypalSecret) {
-      if (process.env.NODE_ENV === 'production') {
-        console.error('🔴 PAYPAL_CLIENT_ID/SECRET no configurados en PRODUCCIÓN. Se rechaza el pago.');
-        return res.status(503).json({ error: 'Pagos no disponibles temporalmente. Contacta a soporte.' });
-      }
-      console.warn('⚠️ PAYPAL_CLIENT_ID o PAYPAL_SECRET no configurados (modo desarrollo). Simulando pago.');
-      return res.json({
-        url: `${req.protocol}://${req.get('host')}?booking=success`,
-        id: 'mock_paypal_id'
-      });
+      console.error('🔴 PAYPAL_CLIENT_ID/SECRET no configurados. Se rechaza el intento de pago.');
+      return res.status(503).json({ error: 'Pagos no disponibles: PayPal no está configurado en el servidor.' });
     }
 
     const authStr = Buffer.from(`${paypalClientId}:${paypalSecret}`).toString('base64');
@@ -276,9 +290,10 @@ app.post('/api/internal/sweep-sla', async (req, res) => {
   const operatorKey = req.headers['x-operator-key'];
   const secret = process.env.OPERATOR_API_KEY;
 
-  if (!secret || !operatorKey || !crypto.timingSafeEqual(Buffer.from(String(operatorKey)), Buffer.from(secret))) {
-    return res.status(401).json({ error: 'No autorizado' });
-  }
+  if (!secret || !operatorKey) return res.status(401).json({ error: 'No autorizado' });
+  const provided = Buffer.from(String(operatorKey));
+  const expected = Buffer.from(secret);
+  if (provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) return res.status(401).json({ error: 'No autorizado' });
 
   try {
     const escalatedCount = await massiveEngine.providerLifecycle.sweepPendingSlas();
@@ -404,35 +419,32 @@ app.post('/api/sinpe/verify', requireOperator, async (req, res) => {
       booking: updateResult.booking
     });
 
-    // Notificar al webhook de n8n en segundo plano
-    const n8nSinpeUrl =
-      process.env.N8N_SINPE_WEBHOOK_URL ||
-      `${getN8NConfig().baseUrl}/webhook/cr-tours-sinpe-verify`;
-
-    dispatchToN8N(n8nSinpeUrl, {
-      trigger: 'VERIFICACION_SINPE',
-      event: 'sinpe.pending_verification',
-      bookingId,
-      sinpeReference,
-      customerPhone:
-        customerPhone ||
-        updateResult.booking?.customerPhone ||
-        updateResult.booking?.customer?.phone,
-      amount,
-      timestamp: new Date().toISOString()
-    }).catch((err) => {
-      console.warn('Fallo silencioso al notificar n8n (sinpe verify):', err);
-    });
+    // La verificación SINPE continúa dentro del motor nativo; no depende de orquestadores externos.
   } catch (err: any) {
     console.error('Error al verificar SINPE:', err);
     res.status(500).json({ error: err.message || 'Error al verificar comprobante' });
   }
 });
 
-// Crear reserva (con verificación server-side de pago, cupos en Firestore y notificación a n8n)
+// Crear reserva (con verificación server-side de pago, cupos en Firestore y automatización nativa)
 app.post('/api/bookings', async (req, res) => {
   try {
-    const result = await createBooking(req.body);
+    const idempotencyKey = req.headers['idempotency-key'];
+    const result = await createBooking({ ...req.body, idempotencyKey });
+    if (!result.conflict) {
+      void emitOperationalEvent({
+        type: 'booking.created',
+        source: 'booking_api',
+        conversationId: result.booking?.bookingId || idempotencyKey || 'booking',
+        payload: {
+          bookingId: result.booking?.bookingId,
+          tourId: result.booking?.tourId,
+          date: result.booking?.date,
+          status: result.booking?.status,
+          paymentStatus: result.booking?.paymentStatus
+        }
+      }).catch(err => console.error('Event bus booking.created:', err));
+    }
 
     if (result.conflict) {
       return res.status(409).json(result);
@@ -468,84 +480,132 @@ app.patch('/api/bookings/:id', requireOperator, async (req, res) => {
   }
 });
 
-// ==========================================
-// 🚨 SISTEMA PROPIO DE ALERTAS ADMINISTRATIVAS (REEMPLAZO DE TELEGRAM)
-// ==========================================
-
-// 1.2 Recepción de alertas desde flujos n8n (POST /api/alerts)
-// Protegido criptográficamente con verifyN8NRequest (mismo esquema que booking-action)
-app.post('/api/alerts', async (req, res) => {
-  if (!verifyN8NRequest(req.headers)) {
-    return res.status(401).json({ error: 'Credenciales de n8n inválidas' });
-  }
-
-  const { source, severity, title, message, bookingId, providerId, metadata } = req.body || {};
-
-  if (!source || !severity || !title || !message) {
-    return res.status(400).json({
-      error: 'Faltan campos obligatorios. "source", "severity", "title" y "message" son requeridos.'
-    });
-  }
-
+// Generar e imprimir Vale Oficial / Itinerario Web de Reserva
+app.get('/api/bookings/:id/pdf', async (req, res) => {
   try {
-    const { alertId, alert } = await createAlert({
-      source,
-      severity,
-      title,
-      message,
-      bookingId,
-      providerId,
-      metadata
-    });
+    const bookingId = req.params.id;
+    const allBookings = await getAllBookings();
+    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
 
-    res.status(200).json({ received: true, alertId, alert });
+    const html = generateBookingPrintableHTML(booking as any);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
   } catch (err: any) {
-    console.error('Error al procesar alerta administrativa:', err);
-    res.status(500).json({ error: err.message || 'Error interno al registrar alerta' });
-  }
-});
-
-// 1.3 Listar alertas administrativas (GET /api/alerts)
-// Protegido con requireOperator (mismo esquema que GET /api/bookings)
-app.get('/api/alerts', requireOperator, async (req, res) => {
-  try {
-    const resolvedFilter = req.query.resolved !== undefined
-      ? req.query.resolved === 'true'
-      : undefined;
-    const severityFilter = req.query.severity ? String(req.query.severity) : undefined;
-
-    const alerts = await getAlerts({
-      resolved: resolvedFilter,
-      severity: severityFilter
-    });
-
-    res.json({
-      success: true,
-      alerts,
-      data: alerts,
-      count: alerts.length
-    });
-  } catch (err: any) {
-    console.error('Error al obtener alertas:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 1.4 Actualizar estado de lectura o resolución (PATCH /api/alerts/:id)
-// Protegido con requireOperator
-app.patch('/api/alerts/:id', requireOperator, async (req, res) => {
+// Descarga directa binaria del Vale Oficial e Itinerario en PDF
+app.get('/api/bookings/:id/download-pdf', async (req, res) => {
   try {
-    const { read, resolved } = req.body || {};
-    const result = await updateAlert(req.params.id, { read, resolved });
+    const bookingId = req.params.id;
+    const allBookings = await getAllBookings();
+    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
+    if (!booking) return res.status(404).json({ error: 'Reserva no encontrada' });
 
-    if (!result.success) {
-      return res.status(404).json(result);
-    }
+    const pdfBuffer = await generateBookingPDFBuffer(booking as any);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="CostaRicaTours-Voucher-${bookingId}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.end(pdfBuffer);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
+// Despacho de Proforma e Itinerario con Notificación Email (PDF Adjunto) y WhatsApp
+app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confirmation'], async (req, res) => {
+  try {
+    const result = await executeCustomerProformaConfirmation(req.body);
     res.json(result);
   } catch (err: any) {
-    console.error(`Error al actualizar alerta #${req.params.id}:`, err);
-    res.status(500).json({ error: err.message });
+    console.error('Error al despachar proforma de confirmación:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Aprobación de Itinerario por parte del Cliente (Confirmación de Proforma) -> Despacho a Proveedores
+app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
+  try {
+    const bookingId = String(req.params.id);
+    const action = req.query.action === 'reject' ? 'rechazado' : 'aprobado';
+    const allBookings = await getAllBookings();
+    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
+
+    if (!booking) return res.status(404).send('Reserva no encontrada.');
+
+    const updateResult = await updateBookingStatus(bookingId, {
+      status: action === 'aprobado' ? 'confirmada' : 'cancelada',
+      customerConfirmedAt: new Date().toISOString()
+    });
+    if (!updateResult.success) return res.status(409).send(updateResult.error || 'No se pudo actualizar la reserva.');
+
+    let providerCoordinationResult: any = null;
+    if (action === 'aprobado') {
+      try {
+        providerCoordinationResult = await executeProviderRealtimeCoordination({
+          bookingId,
+          customerName: booking.customerName,
+          customerEmail: booking.customerEmail,
+          customerPhone: booking.customerPhone,
+          tourName: booking.tourName,
+          date: booking.date,
+          tourDate: booking.date,
+          totalUSD: booking.totalUSD,
+          pax: (Number(booking.adults) || 0) + (Number(booking.children) || 0),
+          specialRequests: booking.specialRequests
+        });
+      } catch (provErr) {
+        console.warn('⚠️ [FALLO EN COORDINACIÓN DE PROVEEDORES]:', provErr);
+      }
+    }
+
+    const downloadPdfUrl = `/api/bookings/${bookingId}/download-pdf`;
+    const customerName = String(booking.customerName || 'Cliente').replace(/[<>]/g, '');
+    const providerMessage = providerCoordinationResult
+      ? 'La coordinación con el proveedor fue iniciada.'
+      : 'La coordinación con el proveedor quedó pendiente de seguimiento.';
+
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="es"><head>
+        <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Confirmación • Costa Rica Tours</title>
+        <style>
+          body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#041711;color:#f8fafc;margin:0;padding:24px 16px;display:flex;justify-content:center;align-items:center;min-height:100vh}
+          .card{background:#fff;color:#1e293b;max-width:580px;width:100%;border-radius:20px;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,.5)}
+          .hero{background:linear-gradient(135deg,#064e3b,#047857);color:#fff;padding:32px 24px;text-align:center}.content{padding:28px 24px}
+          .badge{display:inline-block;background:#ecfdf5;color:#047857;font-weight:800;font-size:12px;padding:6px 14px;border-radius:9999px;text-transform:uppercase;letter-spacing:.5px;border:1px solid #a7f3d0}
+          .btn{display:block;width:100%;background:#059669;color:#fff;text-align:center;padding:14px;border-radius:10px;font-weight:800;text-decoration:none;font-size:15px;margin-top:12px;box-sizing:border-box}
+          .box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin:18px 0;font-size:13px;color:#475569}
+        </style>
+      </head><body><div class="card">
+        <div class="hero"><div style="font-size:40px">🌿</div><h1>Solicitud procesada</h1><p>${customerName}, recibimos tu decisión.</p></div>
+        <div class="content"><div style="text-align:center"><span class="badge">Expediente #${bookingId}</span></div>
+          <div class="box"><strong>Tour:</strong> ${String(booking.tourName || 'Experiencia Costa Rica')}<br/>
+          <strong>Fecha:</strong> ${String(booking.date || 'No especificada')}<br/>
+          <strong>Estado:</strong> ${String(action)}<br/><br/>${providerMessage}</div>
+          <a href="${downloadPdfUrl}" class="btn">Descargar comprobante</a>
+        </div>
+      </div></body></html>`);
+  } catch (err: any) {
+    res.status(500).send(`Error al procesar confirmación: ${err.message}`);
+  }
+});
+
+// 🚨 SISTEMA PROPIO DE ALERTAS ADMINISTRATIVAS
+// ==========================================
+
+app.post('/api/alerts', requireAdmin, async (req, res) => {
+  const { source, severity, title, message, bookingId, providerId, metadata } = req.body || {};
+  if (!source || !severity || !title || !message) {
+    return res.status(400).json({ error: 'source, severity, title y message son requeridos.' });
+  }
+  try {
+    const result = await createAlert({ source, severity, title, message, bookingId, providerId, metadata });
+    res.status(201).json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -553,7 +613,7 @@ app.patch('/api/alerts/:id', requireOperator, async (req, res) => {
 // ⚡ MOTOR DE AUTOMATIZACIÓN 100% EN CÓDIGO NATIVO
 // ==========================================
 // Ejecución directa en Node.js/Express y Firestore con 0ms de latencia externa,
-// eliminando por completo la dependencia de servidores intermediarios como n8n.
+// eliminando por completo la dependencia de servicios externos de orquestación.
 
 // Estado y monitoreo del motor nativo
 app.get(['/api/native-engine/status', '/api/native/status'], (req, res) => {
@@ -565,7 +625,7 @@ app.get('/api/providers', (req, res) => {
   res.json(getProvidersOverview());
 });
 
-app.post('/api/providers/action', async (req, res) => {
+app.post('/api/providers/action', requireAdmin, async (req, res) => {
   try {
     const { orderId, action, notes } = req.body;
     const result = await handleProviderAction({ orderId, action, notes });
@@ -575,11 +635,167 @@ app.post('/api/providers/action', async (req, res) => {
   }
 });
 
+// ==========================================
+// 🛎️ COUNTER DESK FULL STACK + ORGANIZADOR IA
+// ==========================================
+// Atención pública: usa el mismo conocimiento operativo del backend.
+// Operaciones internas: snapshot/organización protegidos por autenticación.
+app.post('/api/counter/ask', counterLimiter, async (req, res) => {
+  try {
+    const result = await askCounterDesk({
+      message: req.body?.message,
+      sessionId: req.body?.sessionId,
+      language: req.body?.language,
+      context: req.body?.context
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Error en Counter Agent' });
+  }
+});
+
+app.get('/api/counter/operations', requireAdmin, async (_req, res) => {
+  try {
+    res.json({ success: true, snapshot: await getCounterOperationsSnapshot() });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Error al obtener operaciones' });
+  }
+});
+
+app.get('/api/counter/autopilot', requireAdmin, async (_req, res) => {
+  try {
+    const { runCounterSafeAutopilot } = await import('./backend/counterDeskService');
+    res.json(await runCounterSafeAutopilot());
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Error del autopilot' });
+  }
+});
+
+app.post('/api/counter/organize', requireAdmin, async (_req, res) => {
+  try {
+    res.json(await organizeCounterDesk());
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Error del organizador IA' });
+  }
+});
+
+app.get('/api/weather/destinations', async (_req, res) => {
+  try {
+    const { getDestinationWeather } = await import('./backend/weatherPulseService');
+    res.json({ success: true, source: 'open-meteo', generatedAt: new Date().toISOString(), destinations: await getDestinationWeather() });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/ai/evaluation/suite', requireAdmin, async (_req, res) => {
+  try { res.json(await runEvaluationSuite()); }
+  catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Evaluation error' }); }
+});
+
+app.get('/api/ai/learning/dataset', requireAdmin, async (req, res) => {
+  try {
+    const dataset = await buildLearningDataset(Number(req.query.limit) || 500);
+    res.json(dataset);
+  } catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Dataset error' }); }
+});
+
+app.get('/api/ai/autonomy/policy', requireAdmin, (req, res) => {
+  const level = parseAutonomyLevel(req.query.level);
+  const action = String(req.query.action || 'observe') as any;
+  res.json({ success: true, policy: autonomyPolicy(level, action) });
+});
+
+app.get('/api/ai/skills', requireAdmin, (_req, res) => {
+  res.json({ success: true, skills: listSkillVersions() });
+});
+
+app.get('/api/ai/skills/select', requireAdmin, (req, res) => {
+  const agentId = String(req.query.agentId || 'concierge');
+  const task = String(req.query.task || '');
+  const level = parseAutonomyLevel(req.query.level);
+  res.json({ success: true, skills: selectSkills(agentId, task, level) });
+});
+
+app.get('/api/ai/skills/governance', requireAdmin, (_req, res) => {
+  res.json({ success: true, skills: listSkillVersions() });
+});
+
+app.post('/api/ai/skills/register', requireAdmin, async (req, res) => {
+  try {
+    const skill = await registerSkillVersion(req.body);
+    res.status(201).json({ success: true, skill });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message || 'No se pudo registrar la skill' });
+  }
+});
+
+app.post('/api/ai/skills/evaluate', requireAdmin, async (req, res) => {
+  try {
+    const { id, version, groundedness, safety, quality, criticalFailure } = req.body || {};
+    if (!id || !version) return res.status(400).json({ success: false, error: 'id y version son requeridos' });
+    const skill = await recordSkillEvaluation(String(id), String(version), {
+      groundedness: Number(groundedness),
+      safety: Number(safety),
+      quality: Number(quality),
+      criticalFailure: Boolean(criticalFailure)
+    });
+    res.json({ success: true, skill });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message || 'No se pudo registrar evaluación' });
+  }
+});
+
+app.post('/api/ai/skills/promote', requireAdmin, async (req, res) => {
+  try {
+    const result = await promoteSkillVersion(String(req.body?.id || ''), String(req.body?.version || ''), req.body?.target === 'canary' ? 'canary' : 'active');
+    res.status(result.success ? 200 : 409).json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message || 'No se pudo promover la skill' });
+  }
+});
+
+app.post('/api/ai/skills/rollback', requireAdmin, async (req, res) => {
+  try {
+    const result = await rollbackSkillVersion(String(req.body?.id || ''), String(req.body?.version || ''), String(req.body?.reason || 'manual_rollback'));
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message || 'No se pudo revertir la skill' });
+  }
+});
+
+app.get('/api/ai/learning/examples', requireAdmin, async (req, res) => {
+  try {
+    const { buildTrainingExamples } = await import('./backend/learningEngine');
+    res.json({ success: true, examples: await buildTrainingExamples(Number(req.query.limit) || 100) });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/ai/learning/reflect', requireAdmin, async (_req, res) => {
+  try {
+    const { runLearningReflection } = await import('./backend/learningEngine');
+    res.json({ success: true, result: await runLearningReflection(60) });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/ai/mesh/inbox/:agentId', requireAdmin, async (req, res) => {
+  try {
+    const { getAgentInbox } = await import('./backend/agentMeshService');
+    res.json({ success: true, messages: await getAgentInbox(String(req.params.agentId), Number(req.query.limit) || 20) });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.get('/api/self-dev/status', async (req, res) => {
   res.json(await getSelfDevelopmentOverview());
 });
 
-app.post('/api/self-dev/run-healing', async (req, res) => {
+app.post('/api/self-dev/run-healing', requireAdmin, async (req, res) => {
   try {
     const result = await runSelfHealingCycle();
     res.json(result);
@@ -605,17 +821,8 @@ app.post('/api/ai/photo-recommendations', async (req, res) => {
   }
 });
 
-// Admin endpoint check function
-const requireAdmin = (req: any, res: any, next: any) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'No autorizado' });
-  }
-  // In a real app we verify the token. Here we rely on verifyN8NRequest for n8n or admin checks.
-  // For simplicity, we just pass through or we can reuse existing admin middlewares if there were any.
-  next();
-};
-
+// Admin endpoints use the same server-side operator gate until Firebase Admin
+// token verification is added. Never accept arbitrary Bearer tokens.
 app.get('/api/ai/demand-forecast', requireAdmin, async (req, res) => {
   try {
     const result = await getDemandForecast();
@@ -634,13 +841,13 @@ app.post('/api/ai/fraud-check', requireAdmin, async (req, res) => {
   }
 });
 
-app.get(['/api/native-engine/logs', '/api/native/logs'], (req, res) => {
+app.get(['/api/native-engine/logs', '/api/native/logs'], requireAdmin, (req, res) => {
   const limit = Number(req.query.limit) || 50;
   res.json(getNativeAutomationLogs(limit));
 });
 
 // Despachadores manuales / UI de los 7 Workflows Nativos
-app.post('/api/native/workflows/payouts', async (req, res) => {
+app.post('/api/native/workflows/payouts', requireAdmin, async (req, res) => {
   try {
     const result = await executeAutomatedProviderPayouts();
     logAutomationExecution('WF_PAGOS_PROVEEDORES', 3, 'success', `Manual: ${result.totalProcessed} procesadas, $${result.totalPaidUSD} USD.`);
@@ -651,7 +858,7 @@ app.post('/api/native/workflows/payouts', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/reminders', async (req, res) => {
+app.post('/api/native/workflows/reminders', requireAdmin, async (req, res) => {
   try {
     const result = await executeTour24hReminders();
     logAutomationExecution('WF_RECORDATORIOS_24H', 7, 'success', `Manual: ${result.totalRemindersSent} recordatorios.`);
@@ -662,7 +869,7 @@ app.post('/api/native/workflows/reminders', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/surveillance', async (req, res) => {
+app.post('/api/native/workflows/surveillance', requireAdmin, async (req, res) => {
   try {
     const result = await executeSurveillanceAndEscalation();
     logAutomationExecution('WF_VIGILANCIA_2H', 4, 'success', `Manual: ${result.checkedBookings} auditadas, ${result.alertsSent} alertas.`);
@@ -673,7 +880,7 @@ app.post('/api/native/workflows/surveillance', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/reviews', async (req, res) => {
+app.post('/api/native/workflows/reviews', requireAdmin, async (req, res) => {
   try {
     const result = await executePostTourReviewRequests();
     logAutomationExecution('WF_RESENAS_POST_TOUR', 6, 'success', `Manual: ${result.emailsSent} encuestas enviadas.`);
@@ -684,7 +891,7 @@ app.post('/api/native/workflows/reviews', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/daily-report', async (req, res) => {
+app.post('/api/native/workflows/daily-report', requireAdmin, async (req, res) => {
   try {
     const result = await executeDailyOperationReport();
     logAutomationExecution('WF_REPORTE_DIARIO', 5, 'success', `Manual: ${result.totalBookingsToday} reservas, $${result.revenueUSD} USD.`);
@@ -695,7 +902,7 @@ app.post('/api/native/workflows/daily-report', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/cleanup-holds', async (req, res) => {
+app.post('/api/native/workflows/cleanup-holds', requireAdmin, async (req, res) => {
   try {
     const result = await cleanupExpiredSoftHolds();
     logAutomationExecution('AUTO_RELEASE_HOLD', 5, 'success', `Manual: ${result.releasedCount} cupos liberados.`);
@@ -706,7 +913,7 @@ app.post('/api/native/workflows/cleanup-holds', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/conversion-report', async (req, res) => {
+app.post('/api/native/workflows/conversion-report', requireAdmin, async (req, res) => {
   try {
     const metrics = await getWeeklyConversionMetrics();
     logAutomationExecution('CRON_SEMANAL_CONVERSION', 5, 'success', `Manual: Tasa conv: ${metrics.conversionRate}%, Ventas: $${metrics.totalRevenueUSD}.`);
@@ -717,7 +924,7 @@ app.post('/api/native/workflows/conversion-report', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/weather', async (req, res) => {
+app.post('/api/native/workflows/weather', requireAdmin, async (req, res) => {
   try {
     const result = await executeWeatherMonitoringAlerts();
     logAutomationExecution('WF_CLIMA_SEGURIDAD', 0, 'success', `Manual: ${result.checkedBookings} revisadas, ${result.alertsSent} avisos.`);
@@ -728,7 +935,7 @@ app.post('/api/native/workflows/weather', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/concierge', async (req, res) => {
+app.post('/api/native/workflows/concierge', requireAdmin, async (req, res) => {
   try {
     const result = await executeMorningConciergeTips();
     logAutomationExecution('WF_CONCIERGE_MATUTINO', 0, 'success', `Manual: ${result.tipsSent} tips enviados.`);
@@ -739,7 +946,7 @@ app.post('/api/native/workflows/concierge', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/prospects', async (req, res) => {
+app.post('/api/native/workflows/prospects', requireAdmin, async (req, res) => {
   try {
     const result = await executePreSaleProspectRecovery();
     logAutomationExecution('WF_RECUPERACION_PROSPECTOS', 0, 'success', `Manual: ${result.recoveredSent} prospectos contactados.`);
@@ -750,7 +957,7 @@ app.post('/api/native/workflows/prospects', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/loyalty', async (req, res) => {
+app.post('/api/native/workflows/loyalty', requireAdmin, async (req, res) => {
   try {
     const result = await executePostSaleVipLoyalty();
     logAutomationExecution('WF_FIDELIZACION_VIP', 0, 'success', `Manual: ${result.couponsSent} cupones VIP emitidos.`);
@@ -763,7 +970,7 @@ app.post('/api/native/workflows/loyalty', async (req, res) => {
 
 // 🚀 PIPELINE 100% AUTÓNOMO (Sin intervención manual humana)
 // Procesa la consulta -> Bloquea cupo -> Crea reserva -> Notifica al proveedor -> Envía voucher digital QR al cliente
-app.post(['/api/native/autonomous-booking-flow', '/api/native/flujo-autonomo'], async (req, res) => {
+app.post(['/api/native/autonomous-booking-flow', '/api/native/flujo-autonomo'], requireAdmin, async (req, res) => {
   try {
     const result = await executeAutonomousFullBookingLifecycle(req.body);
     res.json(result);
@@ -860,21 +1067,11 @@ app.post(['/webhook/evaluar-antifraude', '/webhook/antifraude-evaluacion', '/api
   }
 });
 
-// 10. Operaciones de Terreno, Telegram Ops & Despacho a Guías
-app.post(['/webhook/panel-control-telegram', '/webhook/telegram-ops-action', '/api/ops/telegram-action'], async (req, res) => {
+// 10. Operaciones de Terreno y Despacho a Guías (100% nativo)
+app.post(['/webhook/panel-control-ops', '/api/ops/action'], async (req, res) => {
   try {
     const result = await executeAIOpsAction(req.body);
     res.json(result);
-  } catch (error: any) {
-    res.status(500).json({ exito: false, error: error.message });
-  }
-});
-
-// 11. Despacho Multicanal (WhatsApp + Email + Telegram)
-app.post('/webhook/reserva-multicanal', async (req, res) => {
-  try {
-    const result = await executeConfirmacionReserva(req.body);
-    res.json({ ...result, systemMessage: 'Despacho multicanal ejecutado en código nativo' });
   } catch (error: any) {
     res.status(500).json({ exito: false, error: error.message });
   }
@@ -1258,195 +1455,37 @@ app.all('/webhook/health-check', (req, res) => {
 });
 
 // ==========================================
-// 📥 WEBHOOKS ENTRANTES DESDE N8N (CALLBACKS)
+// 📊 ANALÍTICA NATIVA Y ACCIONES DE RESERVA
 // ==========================================
-
-// Endpoint para que n8n actualice una reserva en Firestore
-app.post('/api/webhooks/n8n/update-booking', async (req, res) => {
-  if (!verifyN8NRequest(req.headers)) {
-    return res.status(401).json({ error: 'Credenciales de n8n inválidas' });
-  }
-
-  const { bookingId, status, paymentStatus, notes, voucherUrl, operatorAssigned } = req.body;
-  if (!bookingId) {
-    return res.status(400).json({ error: 'Se requiere "bookingId"' });
-  }
-
-  const result = await updateBookingStatus(bookingId, {
-    ...(status ? { status } : {}),
-    ...(paymentStatus ? { paymentStatus } : {}),
-    ...(notes ? { notes } : {}),
-    ...(voucherUrl ? { voucherUrl } : {}),
-    ...(operatorAssigned ? { operatorAssigned } : {}),
-    n8nLastUpdated: new Date().toISOString()
-  });
-
-  if (!result.success) {
-    return res.status(404).json(result);
-  }
-
-  res.json({ success: true, message: 'Reserva actualizada desde n8n', booking: result.booking });
-});
-
-// Callback de verificación de pago de reserva
-// ⚠️ Este endpoint marca una reserva como PAGADA en Firestore. Sin esta
-// verificación, cualquiera en internet podría marcar cualquier reserva
-// como pagada sin pagar un centavo. Se exige el mismo secreto compartido
-// que ya se usa en /api/webhooks/n8n/booking-action.
-app.post('/webhook/verificar-pago-reserva', async (req, res) => {
-  if (!verifyN8NRequest(req.headers)) {
-    return res.status(401).json({ error: 'Credenciales de n8n inválidas' });
-  }
-  const { bookingId, paymentStatus, status } = req.body;
-  if (bookingId) {
-    await updateBookingStatus(bookingId, {
-      paymentStatus: paymentStatus || 'completed',
-      status: status || 'confirmada',
-      verifiedByWebhook: true
-    });
-  }
-  res.json({ success: true, message: 'Pago verificado correctamente' });
-});
-
-// Acciones ejecutivas disparadas por n8n (cancelar, re-agendar, emitir voucher)
-app.post('/api/webhooks/n8n/booking-action', async (req, res) => {
-  if (!verifyN8NRequest(req.headers)) {
-    return res.status(401).json({ error: 'Credenciales de n8n inválidas' });
-  }
-
-  const { bookingId, action, payload } = req.body;
-  if (!bookingId || !action) {
-    return res.status(400).json({ error: 'Faltan bookingId y action' });
-  }
-
-  let updates: any = {};
-  if (action === 'confirm') {
-    updates = { status: 'confirmada', paymentStatus: 'completed' };
-  } else if (action === 'cancel') {
-    updates = { status: 'cancelada', cancellationReason: payload?.reason || 'Cancelado por n8n' };
-  } else if (action === 'reschedule') {
-    updates = { date: payload?.date, time: payload?.time || '08:00 AM' };
-  } else if (action === 'add_voucher') {
-    updates = { voucherUrl: payload?.voucherUrl, voucherCode: payload?.voucherCode };
-  }
-
-  const result = await updateBookingStatus(bookingId, updates);
-  res.json({ success: result.success, action, booking: result.booking });
-});
-
-// Endpoint para que n8n extraiga el reporte consolidado de conversión semanal de Firestore
 app.get('/api/analytics/conversion-report', async (req, res) => {
   try {
     const metrics = await getWeeklyConversionMetrics();
-    res.json({
-      success: true,
-      data: metrics,
-      source: 'firestore-database'
-    });
+    res.json({ success: true, data: metrics, source: 'firestore-native' });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// Endpoint para disparar el flujo semanal de n8n manualmente o vía cron
-app.post('/api/n8n/dispatch-weekly-report', async (req, res) => {
+// Acciones internas autenticadas para operaciones: confirmar, cancelar, reagendar o emitir voucher.
+app.post('/api/ops/booking-action', requireOperator, async (req, res) => {
   try {
-    const metrics = await getWeeklyConversionMetrics();
-    const config = getN8NConfig();
-    const targetUrl = `${config.baseUrl}/webhook/reporte-semanal-conversion`;
-
-    const dispatchResult = await dispatchToN8N(targetUrl, {
-      trigger: 'CRON_SEMANAL_CONVERSION',
-      periodo: metrics.period,
-      tasaConversion: `${metrics.conversionRate}%`,
-      volumenReservas: metrics.totalBookings,
-      reservasConfirmadas: metrics.confirmedBookings,
-      reservasPendientes: metrics.pendingBookings,
-      ingresosTotalesUSD: `$${metrics.totalRevenueUSD.toLocaleString()} USD`,
-      ticketPromedioUSD: `$${metrics.averageTicketUSD} USD`,
-      topTours: metrics.topTours,
-      desglosePagos: metrics.paymentBreakdown,
-      generadoEl: new Date().toISOString()
-    });
-
-    res.json({
-      success: true,
-      message: 'Reporte de conversión y volumen extraído de Firestore y enviado al webhook de n8n',
-      metrics,
-      n8nDispatch: dispatchResult
-    });
+    const { bookingId, action, payload } = req.body || {};
+    if (!bookingId || !action) return res.status(400).json({ error: 'Faltan bookingId y action' });
+    const updates: any = action === 'confirm'
+      ? { status: 'confirmada', paymentStatus: 'completed' }
+      : action === 'cancel'
+        ? { status: 'cancelada', cancellationReason: payload?.reason || 'Cancelado por operaciones' }
+        : action === 'reschedule'
+          ? { date: payload?.date, time: payload?.time || '08:00 AM' }
+          : action === 'add_voucher'
+            ? { voucherUrl: payload?.voucherUrl, voucherCode: payload?.voucherCode }
+            : null;
+    if (!updates) return res.status(400).json({ error: 'Acción no soportada' });
+    const result = await updateBookingStatus(bookingId, updates);
+    res.json({ success: result.success, action, booking: result.booking });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
-});
-
-// ==========================================
-// 🔍 ESTADO Y DIAGNÓSTICO DE N8N
-// ==========================================
-
-app.get('/api/n8n/status', (req, res) => {
-  const config = getN8NConfig();
-  const isCustomConfigured = !config.baseUrl.includes('tu-instancia-n8n');
-
-  res.json({
-    status: 'ok',
-    configured: isCustomConfigured,
-    baseUrl: isCustomConfigured ? config.baseUrl : 'Sin configurar (Modo Simulación / Fallback IA Activo)',
-    endpoints: {
-      outboundTriggers: [
-        '/webhook/chat-consulta',
-        '/webhook/inicio-reserva',
-        '/webhook/solicitud-pago',
-        '/webhook/confirmacion-reserva',
-        '/webhook/reserva-confirmada',
-        '/webhook/notificar-proveedor',
-        '/webhook/evaluar-antifraude',
-        '/webhook/antifraude-evaluacion',
-        '/webhook/panel-control-telegram',
-        '/webhook/telegram-ops-action',
-        '/webhook/reserva-multicanal',
-        '/webhook/sync-calendar',
-        '/webhook/solicitud-itinerario',
-        '/webhook/evento-analitica',
-        '/webhook/solicitud-soporte',
-        '/webhook/reporte-semanal-conversion',
-        '/webhook/reserva-parques-sinac',
-        '/webhook/alerta-vuelo-retrasado',
-        '/webhook/reporte-objeto-olvidado',
-        '/webhook/whatsapp-traductor-soporte',
-        '/webhook/recepcion-vip-aeropuerto',
-        '/webhook/alerta-requerimientos-especiales',
-        '/webhook/cancelacion-reembolso-inteligente',
-        '/webhook/entrega-fotos-recuerdos',
-        '/webhook/sincronizacion-operadores-locales',
-        '/webhook/alerta-emergencia-sos',
-        '/webhook/booster-reseñas-incentivos'
-      ],
-      inboundWebhooks: [
-        '/api/webhooks/n8n/update-booking',
-        '/webhook/verificar-pago-reserva',
-        '/api/webhooks/n8n/booking-action',
-        '/api/analytics/conversion-report'
-      ]
-    },
-    authSecurity: {
-      secretConfigured: Boolean(process.env.N8N_WEBHOOK_SECRET),
-      apiKeyConfigured: Boolean(process.env.N8N_API_KEY)
-    }
-  });
-});
-
-app.post('/api/n8n/test-connection', async (req, res) => {
-  const testResult = await dispatchToN8N('/webhook/health-check', {
-    ping: 'costa-rica-tours-test',
-    timestamp: new Date().toISOString()
-  });
-
-  res.json({
-    connected: testResult.success,
-    status: testResult.status || null,
-    details: testResult.data || testResult.error
-  });
 });
 
 // ==========================================
@@ -1482,8 +1521,9 @@ app.post('/api/agents/log_exception', (req, res) => {
 
 app.post('/api/gemini/concierge', async (req, res) => {
   try {
-    const { message, language, history, agentId, context, engine } = req.body;
+    const { message, language, history, agentId, context, engine, sessionId } = req.body;
     const userMsg = message || '';
+    const memorySessionId = String(sessionId || context?.sessionId || '');
     const lang = (language || 'es') as 'es' | 'en';
     
     // Si se especifica o prefiere motor Claude 3.5 Sonnet
@@ -1498,7 +1538,7 @@ app.post('/api/gemini/concierge', async (req, res) => {
           modelUsed: claudeResult.modelUsed
         });
       } catch (claudeErr: any) {
-        console.warn('Fallback de Claude a n8n / Gemini:', claudeErr.message);
+        console.warn('Fallback de Claude a Gemini:', claudeErr.message);
       }
     }
 
@@ -1517,29 +1557,13 @@ app.post('/api/gemini/concierge', async (req, res) => {
       });
     }
 
-    // Intento de despacho prioritario a n8n
-    const n8nResult = await dispatchToN8N('/webhook/chat-consulta', {
-      trigger: 'CONSULTA_CHAT_IA',
-      mensaje: userMsg,
-      idioma: lang,
-      agenteSeleccionado: agentId || 'concierge',
-      historial: history || [],
-      contexto: context || {}
-    });
-
-    if (n8nResult.success && n8nResult.data) {
-      const reply = n8nResult.data.reply || n8nResult.data.mensaje || n8nResult.data.output;
-      if (reply) {
-        return res.json({
-          reply,
-          quickActions: n8nResult.data.quickActions || [],
-          success: true,
-          source: 'n8n'
-        });
-      }
-    }
-
+    // El flujo de IA es 100% nativo: Claude/Vertex o Gemini, con fallback interno.
     const assistantResult = await processChatInquiry(userMsg, lang, history || [], engine || 'auto');
+    if (memorySessionId) {
+      const { rememberTurn } = await import('./backend/memoryService');
+      await rememberTurn(memorySessionId, { role: 'user', text: userMsg }, { agentId: assistantResult.agentId || agentId });
+      await rememberTurn(memorySessionId, { role: 'assistant', text: assistantResult.reply }, { agentId: assistantResult.agentId || agentId });
+    }
     res.json({
       reply: assistantResult.reply,
       quickActions: assistantResult.quickActions,
@@ -1580,28 +1604,65 @@ app.post('/api/agent/counter', async (req, res) => {
 });
 
 // =========================================================================
-// ⚡ MCP GATEWAY (Model Context Protocol) PARA n8n
+// ⚡ GATEWAY DE HERRAMIENTAS IA NATIVAS
 // =========================================================================
-app.get('/api/mcp/tools', async (req, res) => {
+app.get('/api/ai/skills/evolution', requireAdmin, async (_req, res) => {
+  res.json({ success: true, ...buildSkillEvolutionReport() });
+});
+
+app.post('/api/ai/skills/select', requireAdmin, async (req, res) => {
   try {
-    const tools = await listN8nMcpTools();
-    res.json(tools);
+    const skill = selectEvolvedSkill(
+      String(req.body?.agentId || 'counter_agent'),
+      String(req.body?.task || ''),
+      String(req.body?.sessionId || '')
+    );
+    res.json({ success: Boolean(skill), skill });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: err.message });
   }
 });
 
-app.post('/api/mcp/call', async (req, res) => {
+app.post('/api/ai/skills/outcome', requireAdmin, async (req, res) => {
   try {
-    const { name, arguments: toolArgs } = req.body;
-    if (!name) {
-      return res.status(400).json({ success: false, error: 'Parámetro "name" de herramienta requerido' });
-    }
-    const result = await executeN8nMcpTool(name, toolArgs || {});
+    const result = await recordSkillOutcome({
+      id: String(req.body?.id || ''),
+      version: String(req.body?.version || ''),
+      outcome: req.body?.outcome || 'partial',
+      groundedness: Number(req.body?.groundedness || 0),
+      safety: Number(req.body?.safety || 0),
+      quality: Number(req.body?.quality || 0)
+    });
     res.json(result);
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: err.message });
   }
+});
+
+app.post('/api/ai/skills/propose-upgrade', requireAdmin, async (req, res) => {
+  try {
+    const result = await proposeSkillUpgrade({
+      id: String(req.body?.id || ''),
+      version: String(req.body?.version || ''),
+      observedFailure: String(req.body?.observedFailure || ''),
+      desiredOutcome: String(req.body?.desiredOutcome || '')
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/ai/tools', (req, res) => {
+  res.json({
+    success: true,
+    architecture: 'native-code-ai',
+    tools: [
+      'counter_agent', 'triage', 'itinerary_generator', 'availability_checker',
+      'booking_creator', 'provider_coordinator', 'sinpe_verifier', 'fraud_checker',
+      'contingency_manager', 'customer_support', 'demand_forecast', 'search_tours', 'check_availability', 'lookup_booking', 'recall_memory'
+    ]
+  });
 });
 
 app.post('/api/gemini/booking/urgent', async (req, res) => {
@@ -1610,14 +1671,8 @@ app.post('/api/gemini/booking/urgent', async (req, res) => {
     const lang = (language || 'es') as 'es' | 'en';
     const assistantResult = await processChatInquiry(message || '', lang, history || []);
     
-    // Despacho a n8n trigger de soporte/urgencia
-    dispatchToN8N('/webhook/solicitud-soporte', {
-      trigger: 'SOLICITUD_SOPORTE',
-      tipo: 'urgencia_reserva',
-      mensaje: message,
-      idioma: lang,
-      timestamp: new Date().toISOString()
-    }).catch(() => {});
+    // Escalación y seguimiento se registran en el motor nativo de alertas.
+    await createAlert({ source: 'AI Support', severity: 'critical', title: 'Solicitud urgente', message: message || 'Solicitud urgente recibida' });
 
     res.json({
       reply: `🚨 **[ATENCIÓN PRIORITARIA COSTA RICA TOURS]**\n\n${assistantResult.reply}`,
@@ -1630,7 +1685,7 @@ app.post('/api/gemini/booking/urgent', async (req, res) => {
     });
   } catch (err: any) {
     res.json({
-      reply: 'Atención prioritaria registrada. Por favor comunícate a nuestro WhatsApp de soporte: +506 8888-7777.',
+      reply: 'Atención prioritaria registrada. Por favor comunícate por el canal de soporte configurado.',
       success: false
     });
   }
@@ -1754,7 +1809,6 @@ app.post('/api/itinerary/book', async (req, res) => {
       customerPhone,
       startDate,
       currency,
-      totalUSD,
       specialRequests
     } = req.body;
 
@@ -1764,19 +1818,23 @@ app.post('/api/itinerary/book', async (req, res) => {
 
     const bookingDate = startDate || new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0];
     const generatedId = `CR-ITIN-${Math.floor(100000 + Math.random() * 900000)}`;
-    const calculatedUSD = Number(totalUSD) || (Number(daysCount || 5) * Number(travelers || 2) * 165);
+    const normalizedDays = Math.max(1, Math.min(30, Number(daysCount) || 5));
+    const normalizedTravelers = Math.max(1, Math.min(30, Number(travelers) || 2));
+    // Precio base autoritativo para itinerarios personalizados. El total generado por IA
+    // se conserva solo como referencia, nunca como importe de cobro controlado por cliente.
+    const calculatedUSD = Number((normalizedDays * normalizedTravelers * 165).toFixed(2));
 
     const bookingRecord = await createBooking({
       bookingId: generatedId,
       tourId: 'custom-multi-day-itinerary',
-      tourName: itineraryTitle || `Paquete Costa Rica ${daysCount || 5} Días`,
+      tourName: itineraryTitle || `Paquete Costa Rica ${normalizedDays} Días`,
       date: bookingDate,
       time: '08:00 AM',
-      adults: Number(travelers) || 2,
+      adults: normalizedTravelers,
       children: 0,
       customerName,
       customerEmail,
-      customerPhone: customerPhone || '+506 8000-CRTOURS',
+      customerPhone: customerPhone || '',
       totalUSD: calculatedUSD,
       totalAmount: currency === 'CRC' ? Math.round(calculatedUSD * 515) : calculatedUSD,
       currency: currency || 'USD',
@@ -1819,12 +1877,34 @@ app.post('/api/gemini/:action', (req, res) => {
   res.json({ success: true, text: `Respuesta de Gemini para ${req.params.action}` });
 });
 
-app.get('/api/chat/history', (req, res) => {
-  res.json({ history: [] });
+app.get('/api/chat/history', async (req, res) => {
+  try {
+    const { getOperationalMemory } = await import('./backend/memoryService');
+    const sessionId = String(req.query.sessionId || '');
+    if (!sessionId) return res.status(400).json({ error: 'sessionId es requerido' });
+    const memory = await getOperationalMemory(sessionId);
+    res.json({ history: memory.turns, memory: { summary: memory.summary, facts: memory.facts, preferences: memory.preferences, activeGoals: memory.activeGoals, decisions: memory.decisions, lastAgent: memory.lastAgent, lastUpdatedAt: memory.lastUpdatedAt }});
+  } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo cargar la memoria' }); }
 });
 
-app.delete('/api/chat/history', (req, res) => {
-  res.json({ success: true });
+app.post('/api/chat/history', async (req, res) => {
+  try {
+    const { saveChatHistory } = await import('./backend/memoryService');
+    const sessionId = String(req.body?.sessionId || '');
+    if (!sessionId || !Array.isArray(req.body?.history)) return res.status(400).json({ error: 'sessionId e history son requeridos' });
+    const memory = await saveChatHistory(sessionId, req.body.history);
+    res.json({ success: true, memory: { summary: memory.summary, facts: memory.facts, preferences: memory.preferences, activeGoals: memory.activeGoals, decisions: memory.decisions, lastAgent: memory.lastAgent, lastUpdatedAt: memory.lastUpdatedAt }});
+  } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo guardar la memoria' }); }
+});
+
+app.delete('/api/chat/history', async (req, res) => {
+  try {
+    const { clearOperationalMemory } = await import('./backend/memoryService');
+    const sessionId = String(req.query.sessionId || req.body?.sessionId || '');
+    if (!sessionId) return res.status(400).json({ error: 'sessionId es requerido' });
+    await clearOperationalMemory(sessionId);
+    res.json({ success: true });
+  } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo borrar la memoria' }); }
 });
 
 // ==========================================
@@ -1896,7 +1976,18 @@ app.post(['/api/agent/tools/create_booking_and_notify', '/api/agent/create-booki
       });
     }
 
-    const calculatedUSD = total_usd || 85 * Number(party_size);
+    const authoritativeTotal = calculateAuthoritativeCheckoutTotal({
+      tourId: tour_id,
+      adults: Number(party_size) || 1,
+      children: 0
+    });
+    if (authoritativeTotal === null) {
+      return res.status(400).json({
+        success: false,
+        error: 'tour_id válido y precio de catálogo requerido; el total no puede ser proporcionado por el cliente.'
+      });
+    }
+    const calculatedUSD = authoritativeTotal;
     const bookingDate = appointment_datetime.split('T')[0] || new Date().toISOString().split('T')[0];
 
     // Invocar el ciclo de vida de reserva nativa
@@ -1909,7 +2000,7 @@ app.post(['/api/agent/tools/create_booking_and_notify', '/api/agent/create-booki
       totalUSD: calculatedUSD,
       customerName: customer_name,
       customerEmail: customer_email,
-      customerPhone: customer_phone || '+506 8000-CRTOURS'
+      customerPhone: customer_phone || ''
     });
 
     const bookingId = initialHold.idReserva || initialHold.bookingId || `CR-${Date.now().toString().slice(-6)}`;
@@ -2100,11 +2191,37 @@ async function startServer() {
     });
   }
 
+  await hydrateSkillGenome();
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor Full-Stack corriendo en http://0.0.0.0:${PORT}`);
-    console.log(`⚡ Backend n8n listo con triggers salientes y webhooks entrantes.`);
+    console.log(`🧠 Motor de IA nativo listo: Gemini/Vertex + Claude + automatización Node.js/Firestore.`);
     initializeAutomationEngine();
   });
 }
 
-startServer();
+startServer();function calculateAuthoritativeCheckoutTotal(body: any): number | null {
+  const passengers = Math.max(1, Number(body?.passengers) || (Number(body?.adults) || 0) + (Number(body?.children) || 0));
+  const tourId = String(body?.tourId || '');
+
+  if (tourId.startsWith('flight-')) {
+    const flightNumber = String(body?.flightNumber || '');
+    const flight = FLIGHT_ROUTES.find(route => route.flightNumber === flightNumber);
+    if (!flight) return null;
+    const cabin = body?.cabinClass === 'Business' ? 'Business' : 'Economy';
+    const base = flight.basePriceUSD * (cabin === 'Business' ? 2.2 : 1);
+    const addOns = (body?.includeAirportTransfer ? 45 : 0)
+      + (body?.includeWelcomeSimKit ? 15 : 0)
+      + (body?.includeTravelInsurance ? 29 : 0);
+    return Number((base + addOns).toFixed(2)) * passengers;
+  }
+
+  const tour = TOURS.find(item => item.id === tourId);
+  if (!tour || typeof tour.priceUSD !== 'number') return null;
+  const adultsRaw = Number(body?.adults);
+  const childrenRaw = Number(body?.children);
+  const adults = Number.isFinite(adultsRaw) ? Math.max(0, adultsRaw) : passengers;
+  const children = Number.isFinite(childrenRaw) ? Math.max(0, childrenRaw) : 0;
+  return Number((tour.priceUSD * adults + tour.priceUSD * 0.7 * children).toFixed(2));
+}
+
+

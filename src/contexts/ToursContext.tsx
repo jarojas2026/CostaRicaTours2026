@@ -22,7 +22,7 @@ const ToursContext = createContext<ToursContextType>({
 
 export const ToursProvider = ({ children }: { children: ReactNode }) => {
   const [tours, setTours] = useState<Tour[]>(TOURS);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [favorites, setFavorites] = useState<string[]>(() => {
     const saved = localStorage.getItem('costa_rica_tours_favorites');
     return saved ? JSON.parse(saved) : [];

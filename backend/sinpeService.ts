@@ -126,7 +126,7 @@ export async function executeSinpeVerification(
   let bank = payload.bankEntity || payload.banco || 'SINPE Móvil';
   let phone = payload.senderPhone || payload.telefonoEmisor || '';
 
-  // Si se envió un texto SMS crudo (vía webhook de pasarela SMS o webhook de n8n)
+  // Si se envió un texto SMS crudo (vía webhook de pasarela SMS o servicio de integración)
   if (payload.rawSmsText) {
     const parsed = parseSinpeSmsText(payload.rawSmsText);
     if (!comprobante && parsed.referenceNumber) comprobante = parsed.referenceNumber;

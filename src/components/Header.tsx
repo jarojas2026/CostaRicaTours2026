@@ -23,6 +23,7 @@ import {
   Palette,
   Home,
   Calendar,
+  Activity,
   Heart
 } from 'lucide-react';
 import { Language, Currency } from '../types';
@@ -171,10 +172,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      {/* Structural Spacer: Prevents content clipping under fixed header */}
-      <div className={`w-full shrink-0 transition-all duration-300 ${isScrolled ? 'h-[58px]' : 'h-[86px] sm:h-[90px]'}`} aria-hidden="true" />
-      
-      <header id="main-header" className={`w-full fixed top-0 left-0 right-0 z-[70] bg-[#031710]/95 backdrop-blur-xl border-b border-emerald-500/20 text-white shadow-xl transition-all duration-300 ${isScrolled ? 'shadow-emerald-950/40' : ''}`}>
+      <header id="main-header" className={`w-full sticky top-0 z-[70] bg-[#031710]/95 backdrop-blur-xl border-b border-emerald-500/20 text-white shadow-xl transition-all duration-300 ${isScrolled ? 'shadow-emerald-950/40' : ''}`}>
         
         {/* Top Assistance & Trust Strip (Collapses smoothly on scroll to maximize visible screen) */}
         <div className={`bg-[#010e08] text-xs px-3 sm:px-6 border-b border-emerald-500/15 text-stone-200 transition-all duration-300 overflow-hidden ${
@@ -329,6 +327,14 @@ export const Header: React.FC<HeaderProps> = ({
               <span>{language === 'es' ? 'Asistente IA' : 'AI Concierge'}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             </Link>
+            <Link
+              to="/ops"
+              className="px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer text-stone-300 hover:text-white hover:bg-emerald-950/60"
+            >
+              <Activity className="w-4 h-4 text-emerald-300" />
+              <span>{language === 'es' ? 'Ops IA' : 'AI Ops'}</span>
+            </Link>
+
           </nav>
 
           {/* Right Action Tools & Controls */}
@@ -666,7 +672,7 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     <span className="flex items-center gap-2">
                       <Bot className="w-4 h-4 text-amber-400" />
-                      <span className="text-xs font-bold">{language === 'es' ? 'Motor de Inteligencia & n8n' : 'AI Engine & Automations'}</span>
+                      <span className="text-xs font-bold">{language === 'es' ? 'Motor de Inteligencia IA' : 'AI Engine & Automations'}</span>
                     </span>
                     <span className="text-[9px] uppercase bg-amber-400 text-stone-950 px-2 py-0.5 rounded-full font-black">
                       10 Flujos

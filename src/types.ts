@@ -54,6 +54,7 @@ export type TourRegion =
 
 export interface Tour {
   id: string;
+  slug?: string; // SEO friendly URL slug (e.g. 'avistamiento-ballenas')
   title: Localized<string>;
   subtitle: Localized<string>;
   category: TourCategory;

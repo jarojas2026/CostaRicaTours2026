@@ -211,7 +211,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
   );
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0A1A10]/85 backdrop-blur-md flex items-start sm:items-center justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain">
+    <div className="fixed inset-0 z-[9999] bg-[#0A1A10]/90 backdrop-blur-md flex items-start sm:items-center justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain">
       {/* --- HIDDEN PROFESSIONAL PRINTABLE VOUCHER --- */}
       <div style={{ position: 'absolute', left: '-9999px', top: 0, zIndex: -1 }}>
         <div id="pdf-voucher-content" style={{ width: '800px', padding: '50px', backgroundColor: '#FAF8F5', color: '#1C1917', fontFamily: 'system-ui, sans-serif' }}>
@@ -312,10 +312,11 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="min-h-[44px] min-w-[44px] absolute top-4 right-4 sm:top-6 sm:right-6 z-30 w-10 h-10 bg-[#0C1E14]/90 hover:bg-[#1E4D2B] text-stone-800 rounded-full flex items-center justify-center border border-[#2D663B]/60 transition-colors shadow-lg cursor-pointer"
+          className="w-10 h-10 absolute top-4 right-4 sm:top-6 sm:right-6 z-30 bg-stone-900/90 hover:bg-amber-500 text-stone-300 hover:text-stone-950 rounded-full flex items-center justify-center border border-white/20 hover:border-amber-400 transition-colors shadow-lg cursor-pointer"
           aria-label="Cerrar modal"
+          title="Cerrar (Esc)"
         >
-          <X className="w-5 h-5" />
+          <X className="w-5 h-5 stroke-[2.5]" />
         </button>
 
         <div className="overflow-y-auto p-5 sm:p-7 custom-scrollbar w-full flex-1 space-y-5">

@@ -12,7 +12,7 @@ import { useTours } from '../contexts/ToursContext';
 import { getLangText, UI_TRANSLATIONS, formatCurrency } from '../utils/i18n';
 import { getEcoFactForTour, getEcoFactForRegion } from '../data/ecoFacts';
 import { AI_AGENTS, getAIAgentById } from '../data/aiAgentsData';
-import { N8NWorkflowStudio } from './N8NWorkflowStudio';
+import { NativeAutomationStudio } from './NativeAutomationStudio';
 import { ClaudeItineraryModal } from './ClaudeItineraryModal';
 
 interface AIAssistantProps {
@@ -62,7 +62,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
   const [activeAgentId, setActiveAgentId] = useState<AgentId>('counter_agent');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'booking' | 'nature_adventure' | 'logistics_food' | 'specialized'>('all');
-  const [subTab, setSubTab] = useState<'chat' | 'n8n'>('chat');
+  const [subTab, setSubTab] = useState<'chat' | 'automation'>('chat');
   const currentAgent = getAIAgentById(activeAgentId);
 
   const [chatSessionId] = useState(() => {
@@ -468,8 +468,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           thinking: thinkingMode,
           agentId: activeAgentId,
           engine: aiEngine,
+          sessionId: chatSessionId,
           context: {
             bookings: userBookings,
+            sessionId: chatSessionId,
           },
         }),
       });
@@ -586,19 +588,19 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         <div className="text-center space-y-2.5">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#051c14] text-amber-400 rounded-full text-xs font-bold uppercase tracking-widest border border-amber-400/30 shadow-inner">
             <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-            {language === 'es' ? 'Motor de Inteligencia Artificial & Orquestación con n8n' : 'AI Intelligence Engine & n8n Workflow Orchestration'}
+            {language === 'es' ? 'Motor de Inteligencia Artificial & Automatización Nativa' : 'AI Intelligence Engine & Native Automation'}
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight">
             {language === 'es' ? 'Centro de Asistentes & Agentes IA de Costa Rica' : 'Costa Rica AI Travel Agents & Workflows'}
           </h2>
           <p className="text-sm sm:text-base text-emerald-100/70 max-w-3xl mx-auto leading-relaxed">
             {language === 'es'
-              ? 'Interactúa con nuestro Asistente Unificado o explora los 19 flujos operativos en n8n que orquestan reservas en Firestore, pasarelas de pago y contingencias climáticas.'
-              : 'Interact with our Unified Concierge or explore the 19 operational n8n workflows orchestrating Firestore bookings, payment gateways, and weather contingencies.'
+              ? 'Interactúa con nuestro Asistente Unificado o explora los 19 flujos operativos nativos que ejecutan reservas en Firestore, pasarelas de pago y contingencias climáticas.'
+              : 'Interact with our Unified Concierge or explore the 19 operational native workflows executing Firestore bookings, payment gateways, and weather contingencies.'
             }
           </p>
 
-          {/* SubTab Switcher: Chat Agents vs n8n Workflows */}
+          {/* SubTab Switcher: Chat Agents vs automatización nativa Workflows */}
           <div className="flex items-center justify-center pt-3">
             <div className="bg-[#020e08] p-1.5 rounded-2xl border border-emerald-500/30 inline-flex items-center gap-2 shadow-2xl">
               <button
@@ -614,15 +616,15 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               </button>
 
               <button
-                onClick={() => setSubTab('n8n')}
+                onClick={() => setSubTab('automation')}
                 className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
-                  subTab === 'n8n'
+                  subTab === 'automation'
                     ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-stone-950 shadow-md scale-105'
                     : 'text-emerald-200/80 hover:text-white hover:bg-[#072418]'
                 }`}
               >
                 <Zap className="w-4 h-4 text-amber-400" />
-                <span>{language === 'es' ? 'Flujos & Automatizaciones n8n' : 'n8n Workflows & Pipelines'}</span>
+                <span>{language === 'es' ? 'Flujos & Automatizaciones Nativas' : 'Native Workflows & Pipelines'}</span>
                 <span className="bg-emerald-500 text-stone-950 text-[9px] font-black px-1.5 py-0.5 rounded-full">
                   PROD
                 </span>
@@ -631,8 +633,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           </div>
         </div>
 
-        {subTab === 'n8n' ? (
-          <N8NWorkflowStudio language={language} />
+        {subTab === 'automation' ? (
+          <NativeAutomationStudio language={language} />
         ) : (
           <>
             {/* Workflow Category Filter Tabs */}
@@ -668,11 +670,11 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           <div className="flex items-center justify-between px-2 pb-2 text-[11px] font-bold text-emerald-400/80 uppercase tracking-wider">
             <span>{language === 'es' ? 'Selecciona tu Agente Especialista:' : 'Select your Specialist Agent:'}</span>
             <button
-              onClick={() => setSubTab('n8n')}
+              onClick={() => setSubTab('automation')}
               className="text-amber-400 hover:text-amber-300 text-[10px] font-black flex items-center gap-1 cursor-pointer transition-colors"
             >
               <Zap className="w-3 h-3 text-amber-400" />
-              <span>{language === 'es' ? 'Ver Pipelines en n8n Studio ⚡' : 'View Pipelines in n8n Studio ⚡'}</span>
+              <span>{language === 'es' ? 'Ver Centro de Automatización ⚡' : 'View Automation Center ⚡'}</span>
             </button>
           </div>
 
