@@ -231,10 +231,10 @@ function getKnowledgeBaseReply(message: string, isEn: boolean) {
 export async function processChatInquiry(
   message: string,
   language: 'es' | 'en' = 'es',
-  history: Array<{ role: 'user' | 'bot'; text: string }> = [],
+  history: Array<{ role: 'user' | 'assistant' | 'bot'; text: string }> = [],
   engine: 'auto' | 'claude' | 'gemini' = 'auto',
   sessionId?: string
-): Promise<{ reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string }> {
+): Promise<{ reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string; agentId?: string }> {
   const isEn = language === 'en';
   let liveToolContext = '';
   try {
@@ -264,7 +264,8 @@ export async function processChatInquiry(
         return {
           reply: claudeRes.reply,
           quickActions: claudeRes.quickActions || [],
-          modelUsed: claudeRes.modelUsed
+          modelUsed: claudeRes.modelUsed,
+          agentId: engine === 'claude' ? 'concierge' : undefined
         };
       }
     } catch (claudeErr) {
@@ -330,7 +331,7 @@ Reply ONLY with "YES" or "NO".`;
       action: 'direct_whatsapp'
     });
 
-    return { reply, quickActions };
+    return { reply, quickActions, agentId: 'concierge', modelUsed: 'gemini-2.5-flash' };
   } catch (error) {
     console.warn('Fallback a base de conocimiento oficial:', error);
     return getKnowledgeBaseReply(message, isEn);
