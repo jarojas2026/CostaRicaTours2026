@@ -15,12 +15,12 @@
  */
 
 import { getFirestoreDb, getBookingsCollection, updateBookingStatus } from './bookingService';
-import { sendEmail, sendTelegramMessage, sendTelegramEscalation, sendWhatsAppMessage } from './notificationService';
+import { sendEmail, sendAdministrativeAlert, sendOperationalNotification, sendWhatsAppMessage } from './notificationService';
 import { logAutomationExecution } from './nativeAutomationEngine';
 import { generateBookingPDFBuffer } from './pdfService';
 
 // Clave secreta para autenticación de webhooks entrantes
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || process.env.N8N_WEBHOOK_SECRET || 'cr-tours-secure-webhook-token-2026';
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || '';
 const APP_URL = process.env.APP_URL || 'https://ais-dev-bkbwi5trklm5ra7pjehfgn-650141017629.us-east1.run.app';
 
 /**
@@ -567,7 +567,7 @@ export async function executeProviderRealtimeCoordination(
     details: { tourName, tourDate, tourTime, pickupHotel, customerName, customerPhone, whatsappUrl }
   });
 
-  await sendTelegramEscalation({
+  await sendAdministrativeAlert({
     title: 'Despacho a Proveedor Requiere Supervisión',
     reason,
     bookingId,
@@ -789,7 +789,7 @@ export async function executeAutonomousProviderFallback(
     `
   }).catch(() => {});
 
-  await sendTelegramEscalation({
+  await sendAdministrativeAlert({
     title: 'Failover Autónomo de Proveedor Ejecutado',
     reason: `Operador ${failedProviderId} declinó por: ${reason}`,
     bookingId,
@@ -983,7 +983,7 @@ export async function executeCustomerBookingConfirmation(
     }
   }
 
-  // Falla de envío o cliente sin email -> Escalar por Telegram
+  // Falla de envío o cliente sin email -> Escalar por Centro de Operaciones
   const reason = !customerEmail
     ? 'La reserva no cuenta con correo electrónico del cliente.'
     : `Fallo al enviar correo de confirmación a ${customerEmail}.`;
@@ -995,7 +995,7 @@ export async function executeCustomerBookingConfirmation(
     details: { customerName, customerEmail, customerPhone, tourName, tourDate, totalUSD }
   });
 
-  await sendTelegramEscalation({
+  await sendAdministrativeAlert({
     title: 'Fallo al Notificar Confirmación al Cliente',
     reason,
     bookingId,
@@ -1014,7 +1014,7 @@ export async function executeCustomerBookingConfirmation(
     success: true,
     customerNotified: false,
     escalated: true,
-    message: `No se pudo enviar correo al cliente. Escalado a Telegram para despacho manual: ${reason}`
+    message: `No se pudo enviar correo al cliente. Escalado a Centro de Operaciones para despacho manual: ${reason}`
   };
 }
 
@@ -1439,19 +1439,19 @@ export async function executeAutomatedProviderPayouts(): Promise<{
       }
     }
 
-    // Enviar resumen final a Telegram si hubo actividad o fallos
+    // Enviar resumen final a Centro de Operaciones si hubo actividad o fallos
     if (results.totalProcessed > 0 || results.escalationsCount > 0) {
-      let telegramSummary = `💰 <b>[RESUMEN BATCH PAGOS 6:00 AM]</b>\n`;
-      telegramSummary += `• <b>Total Procesadas:</b> ${results.totalProcessed}\n`;
-      telegramSummary += `• <b>Monto Total Liquidado:</b> $${results.totalPaidUSD} USD\n`;
-      telegramSummary += `• <b>Pagos Exitosos:</b> ${results.payouts.filter(p => p.status.includes('SUCCESS')).length}\n`;
-      telegramSummary += `• <b>Escalaciones / Fallos:</b> ${results.escalationsCount}\n`;
+      let operacionesSummary = `💰 <b>[RESUMEN BATCH PAGOS 6:00 AM]</b>\n`;
+      operacionesSummary += `• <b>Total Procesadas:</b> ${results.totalProcessed}\n`;
+      operacionesSummary += `• <b>Monto Total Liquidado:</b> $${results.totalPaidUSD} USD\n`;
+      operacionesSummary += `• <b>Pagos Exitosos:</b> ${results.payouts.filter(p => p.status.includes('SUCCESS')).length}\n`;
+      operacionesSummary += `• <b>Escalaciones / Fallos:</b> ${results.escalationsCount}\n`;
 
       if (results.escalationsCount > 0) {
-        telegramSummary += `\n⚠️ <i>Se registraron ${results.escalationsCount} fallos en Firestore (escalations). Revisar correos PayPal faltantes.</i>`;
+        operacionesSummary += `\n⚠️ <i>Se registraron ${results.escalationsCount} fallos en Firestore (escalations). Revisar correos PayPal faltantes.</i>`;
       }
 
-      await sendTelegramMessage(telegramSummary, { parseMode: 'HTML' });
+      await sendOperationalNotification(operacionesSummary, { parseMode: 'HTML' });
     }
   } catch (err: any) {
     console.error('❌ Error general en cron de pagos a proveedores:', err);
@@ -1517,8 +1517,8 @@ export async function executeSurveillanceAndEscalation(): Promise<{
           details: { customerName, customerEmail, customerPhone, tourName, totalUSD, createdAt: createdDate.toISOString() }
         });
 
-        // 3. Notificar por Telegram
-        await sendTelegramEscalation({
+        // 3. Notificar por Centro de Operaciones
+        await sendAdministrativeAlert({
           title: 'Reserva Pendiente de Pago Estancada (>2h)',
           reason: 'El cliente inició el proceso pero no completó el pago en la pasarela o SINPE Móvil.',
           bookingId,
@@ -1623,7 +1623,7 @@ export async function executeDailyOperationReport(): Promise<{
     .sort((a, b) => b.count - a.count)
     .slice(0, 3);
 
-  // Formatear y despachar mensaje a Telegram
+  // Formatear y despachar mensaje a Centro de Operaciones
   let reportText = `🇨🇷 <b>[REPORTE DIARIO DE OPERACIÓN - 8:00 PM]</b>\n`;
   reportText += `📅 <b>Fecha:</b> ${todayCR} (Hora Costa Rica)\n\n`;
   reportText += `📈 <b>Métricas de Ventas:</b>\n`;
@@ -1643,7 +1643,7 @@ export async function executeDailyOperationReport(): Promise<{
 
   reportText += `\n✨ <i>Operaciones fluidas bajo estándar CST. ¡Pura Vida!</i>`;
 
-  await sendTelegramMessage(reportText, { parseMode: 'HTML' });
+  await sendOperationalNotification(reportText, { parseMode: 'HTML' });
 
   return {
     reportDate: todayCR,
@@ -1739,7 +1739,7 @@ export async function executePostTourReviewRequests(): Promise<{
           }
         }
 
-        // Si falló el envío o no tiene correo -> Escalar por Telegram
+        // Si falló el envío o no tiene correo -> Escalar por Centro de Operaciones
         summary.escalatedCount += 1;
         await recordEscalation({
           type: 'REVIEW_REQUEST_FAILED',
@@ -1748,7 +1748,7 @@ export async function executePostTourReviewRequests(): Promise<{
           details: { customerName, customerEmail, tourName, reviewUrl: internalReviewUrl }
         });
 
-        await sendTelegramEscalation({
+        await sendAdministrativeAlert({
           title: 'Solicitud de Reseña no Entregada',
           reason: 'No se pudo enviar el correo de reseña post-tour.',
           bookingId,
@@ -1865,7 +1865,7 @@ export async function executeTour24hReminders(): Promise<{
           }
         }
 
-        // Si falló o no tiene email -> Escalar por Telegram
+        // Si falló o no tiene email -> Escalar por Centro de Operaciones
         summary.escalationsCount += 1;
         await recordEscalation({
           type: 'REMINDER_24H_FAILED',
@@ -1874,7 +1874,7 @@ export async function executeTour24hReminders(): Promise<{
           details: { customerName, customerEmail, tourName, tourTime, pickupHotel, tomorrowStr }
         });
 
-        await sendTelegramEscalation({
+        await sendAdministrativeAlert({
           title: 'Fallo al Enviar Recordatorio 24h',
           reason: 'No se pudo contactar al cliente por correo para el recordatorio de mañana.',
           bookingId,
@@ -2291,7 +2291,7 @@ export async function handleGlobalWorkflowError(params: {
   console.error(`🚨 [MANEJADOR GLOBAL DE ERRORES NATIVO] Fallo en ${params.workflowName} -> ${params.failedNodeOrAction}:`, errorMessage);
 
   try {
-    const escalResult = await sendTelegramEscalation({
+    const escalResult = await sendAdministrativeAlert({
       title: `Fallo en Workflow: ${params.workflowName}`,
       reason: `Error durante la acción "${params.failedNodeOrAction}": ${errorMessage}`,
       details: {
