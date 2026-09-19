@@ -1,6 +1,4 @@
 import crypto from 'crypto';
-import { getFirestoreDb } from './bookingService';
-
 export function normalizeIdempotencyKey(raw: unknown): string | null {
   const key = String(raw || '').trim();
   if (!key) return null;
@@ -13,6 +11,7 @@ export function requestFingerprint(payload: unknown): string {
 }
 
 export async function getIdempotentResult(key: string) {
+  const { getFirestoreDb } = await import('./bookingService');
   const db = getFirestoreDb();
   if (!db) return null;
   const doc = await db.collection('idempotency_keys').doc(crypto.createHash('sha256').update(key).digest('hex')).get();
