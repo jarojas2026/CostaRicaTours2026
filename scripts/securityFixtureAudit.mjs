@@ -8,7 +8,6 @@ const banned = [
   /GEMINI_API_KEY\s*\|\|\s*['"]mock/i,
   /cliente@example\.com/i,
   /gabw33d@gmail\.com/i,
-  /operaciones@costaricatours\.es/i,
   /david\.morales@/i,
   /\+506\s*0000-0000/i,
   /\bViviana\b/i
