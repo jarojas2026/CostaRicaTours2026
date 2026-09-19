@@ -4,7 +4,6 @@
  */
 import { GoogleGenAI } from '@google/genai';
 import { randomUUID } from 'crypto';
-import { getFirestoreDb } from './bookingService';
 
 const EMBEDDING_MODEL = process.env.GEMINI_EMBEDDING_MODEL || 'gemini-embedding-001';
 const MAX_DIMENSIONS = 3072;
@@ -42,6 +41,7 @@ export async function indexSemanticMemory(input: {
   agentId?: string;
   timestamp: string;
 }) {
+  const { getFirestoreDb } = await import('./bookingService');
   const db = getFirestoreDb();
   if (!db) return { indexed: false, reason: 'firestore_unavailable' };
   const vector = await embed(input.text);
