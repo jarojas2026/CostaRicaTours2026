@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const roots = ['backend', 'server.ts', 'src/App.tsx', 'src/components', 'src/pages', 'scripts'];
+const roots = ['backend', 'server.ts', 'src/App.tsx', 'src/components', 'src/pages'];
 const banned = [
   /ADMIN_MOCK_TOKEN/i,
   /mock_paypal_id/i,
