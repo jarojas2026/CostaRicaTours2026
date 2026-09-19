@@ -2,9 +2,9 @@
 export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || 'provider@example.invalid';
 
 export function getEffectiveProviderEmail(officialEmail?: string | null): string {
-  if (process.env.DISABLE_PROVIDER_EMAIL_OVERRIDE === 'true' && officialEmail) {
-    return officialEmail;
-  }
+  const useOfficial = process.env.NODE_ENV === 'production'
+    || process.env.DISABLE_PROVIDER_EMAIL_OVERRIDE === 'true';
+  if (useOfficial && officialEmail) return officialEmail;
   return process.env.PROVIDER_DEV_EMAIL || 'provider@example.invalid';
 }
 
@@ -307,7 +307,7 @@ export async function executeProviderRealtimeCoordination(
   message: string;
 }> {
   // Verificación de autenticación de Webhook si aplica
-  if (process.env.NODE_ENV === 'production' && authHeader && authHeader !== WEBHOOK_SECRET) {
+  if (process.env.NODE_ENV === 'production' && (!WEBHOOK_SECRET || authHeader !== WEBHOOK_SECRET)) {
     throw new Error('No autorizado: X-Webhook-Secret inválido o ausente.');
   }
 
@@ -323,8 +323,8 @@ export async function executeProviderRealtimeCoordination(
   const pickupHotel = booking.pickupHotel || 'Recepción del Hotel';
   const specialRequests = booking.specialRequests || 'Ninguna';
   const customerName = booking.customerName || booking.customer?.name || 'Cliente Verificado';
-  const customerPhone = booking.customerPhone || booking.customer?.phone || '+506 8000-CRTOURS';
-  const customerEmail = booking.customerEmail || booking.customer?.email || 'viajero@costaricatours.es';
+  const customerPhone = booking.customerPhone || booking.customer?.phone || '';
+  const customerEmail = booking.customerEmail || booking.customer?.email || '';
 
   // Obtener datos del proveedor
   const provider = await getProviderFromDb(providerId) || MASTER_OPERATORS_REGISTRY['alsama-tours-cr'];
