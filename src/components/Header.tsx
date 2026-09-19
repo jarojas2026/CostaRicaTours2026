@@ -334,6 +334,14 @@ export const Header: React.FC<HeaderProps> = ({
               <ShieldCheck className="w-4 h-4 text-amber-400" />
               <span>{language === 'es' ? 'Counter' : 'Counter Desk'}</span>
             </Link>
+
+            <Link
+              to="/ops"
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${currentTab === 'ops' ? 'bg-violet-400 text-stone-950 font-extrabold shadow-sm' : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'}`}
+            >
+              <Activity className="w-4 h-4 text-violet-300" />
+              <span>{language === 'es' ? 'Ops IA' : 'AI Ops'}</span>
+            </Link>
           </nav>
 
           {/* Right Action Tools & Controls */}
