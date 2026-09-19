@@ -31,7 +31,7 @@ const LEGACY_MAP: Record<string, BookingLifecycle> = {
 const TRANSITIONS: Record<BookingLifecycle, BookingLifecycle[]> = {
   prospect: ['hold', 'cancelled'],
   hold: ['payment_pending', 'cancelled'],
-  payment_pending: ['paid', 'cancelled'],
+  payment_pending: ['paid', 'confirmed', 'cancelled'],
   paid: ['provider_pending', 'confirmed', 'cancelled', 'refunded'],
   provider_pending: ['confirmed', 'cancelled'],
   confirmed: ['in_operation', 'cancelled'],
