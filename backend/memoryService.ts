@@ -87,32 +87,32 @@ export async function getOperationalMemory(rawSessionId: string): Promise<Operat
 }
 
 function extractFacts(text: string, facts: Record<string, string>) {
-  const email = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/i)?.[0];
+  const email = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0];
   if (email) facts.email = email.toLowerCase();
 
-  const phone = text.match(/(?:\\+?506[ -]?)?[0-9]{4}[ -]?[0-9]{4}/)?.[0];
+  const phone = text.match(/(?:\+?506[ -]?)?[0-9]{4}[ -]?[0-9]{4}/)?.[0];
   if (phone) facts.phone = phone;
 
   const date = text.match(/\b20\d{2}-\d{2}-\d{2}\b/)?.[0];
   if (date) facts.date = date;
 
-  const pax = text.match(/\b(\d{1,2})\s*/(?:personas|pax|viajeros|people|passengers)\\b/i)?.[1];
+  const pax = text.match(/\b(\d{1,2})\s*(?:personas|pax|viajeros|people|passengers)\b/i)?.[1];
   if (pax) facts.pax = pax;
 
-  const name = text.match(/(?:me llamo|mi nombre es|soy|nombre(?: completo)? es)\\s+([A-Za-zÁÉÍÓÚáéíóúñÑ]+(?:\\s+[A-Za-zÁÉÍÓÚáéíóúñÑ]+){1,3})/i)?.[1];
+  const name = text.match(/(?:me llamo|mi nombre es|soy|nombre(?: completo)? es)\s+([A-Za-zÁÉÍÓÚáéíóúñÑ]+(?:\s+[A-Za-zÁÉÍÓÚáéíóúñÑ]+){1,3})/i)?.[1];
   if (name) facts.customerName = cleanText(name, 160);
 
-  const booking = text.match(/\\b(?:CRT-[A-Z0-9-]+|CR-PV-\\d+|CR-HLD-\\d+)\\b/i)?.[0];
+  const booking = text.match(/\b(?:CRT-[A-Z0-9-]+|CR-PV-\d+|CR-HLD-\d+)\b/i)?.[0];
   if (booking) facts.bookingId = booking.toUpperCase();
 
   const lower = text.toLowerCase();
   const prefs: string[] = [];
-  if (/\\b(familia|familiar|niñ|bebe|bebé|children)\\b/i.test(lower)) prefs.push('viaje familiar');
-  if (/\\b(privado|private|exclusivo)\\b/i.test(lower)) prefs.push('transporte privado');
-  if (/\\b(aventura|adventure|rafting|canopy)\\b/i.test(lower)) prefs.push('aventura');
-  if (/\\b(relaj|spa|termal|hot spring)\\b/i.test(lower)) prefs.push('relax/termales');
-  if (/\\b(playa|beach)\\b/i.test(lower)) prefs.push('playa');
-  if (/\\b(naturaleza|nature|bosque|wildlife)\\b/i.test(lower)) prefs.push('naturaleza');
+  if (/\b(familia|familiar|niñ|bebe|bebé|children)\b/i.test(lower)) prefs.push('viaje familiar');
+  if (/\b(privado|private|exclusivo)\b/i.test(lower)) prefs.push('transporte privado');
+  if (/\b(aventura|adventure|rafting|canopy)\b/i.test(lower)) prefs.push('aventura');
+  if (/\b(relaj|spa|termal|hot spring)\b/i.test(lower)) prefs.push('relax/termales');
+  if (/\b(playa|beach)\b/i.test(lower)) prefs.push('playa');
+  if (/\b(naturaleza|nature|bosque|wildlife)\b/i.test(lower)) prefs.push('naturaleza');
   return prefs;
 }
 
