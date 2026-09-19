@@ -7,6 +7,7 @@ export default function AutonomousOperationsPage({ language = 'es' }: { language
   const [plan, setPlan] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [skillReport, setSkillReport] = useState<any>(null);
 
   const organize = async () => {
     setLoading(true); setError('');
@@ -20,6 +21,8 @@ export default function AutonomousOperationsPage({ language = 'es' }: { language
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Organizer error');
       setPlan(data);
+      const skillResponse = await fetch('/api/ai/skills/evolution', { headers: { Authorization: 'Bearer ' + token } });
+      if (skillResponse.ok) setSkillReport(await skillResponse.json());
     } catch (e: any) {
       setError(e.message || 'Error');
     } finally {
@@ -64,6 +67,32 @@ export default function AutonomousOperationsPage({ language = 'es' }: { language
               <div className="text-xs text-stone-400 mt-1">{label}</div>
             </div>
           ))}
+        </section>
+
+        <section className="rounded-3xl border border-cyan-400/20 bg-cyan-400/5 p-5">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div>
+              <h2 className="font-black">{es ? 'Skill Genome evolutivo' : 'Evolving Skill Genome'}</h2>
+              <p className="text-xs text-stone-400 mt-1">{es ? 'Canary controlado + evidencia + rollback. Ninguna skill cambia código automáticamente.' : 'Bounded canary + evidence + rollback. Skills never mutate code automatically.'}</p>
+            </div>
+            <span className="text-xs font-black text-cyan-300">{skillReport?.canaryPercent ?? 10}% canary</span>
+          </div>
+          <div className="grid sm:grid-cols-4 gap-2 mb-4">
+            {['candidate','canary','active','retired'].map((state) => (
+              <div key={state} className="rounded-2xl bg-black/20 border border-white/10 p-3">
+                <div className="text-lg font-black">{skillReport?.byLifecycle?.[state] || 0}</div>
+                <div className="text-[10px] uppercase tracking-wider text-stone-500">{state}</div>
+              </div>
+            ))}
+          </div>
+          <div className="grid md:grid-cols-2 gap-2">
+            {(skillReport?.skills || []).slice(0, 8).map((skill: any) => (
+              <div key={skill.id + skill.version} className="rounded-2xl border border-cyan-300/10 bg-black/20 p-3">
+                <div className="flex justify-between gap-3"><span className="font-bold text-sm">{skill.id}</span><span className="text-xs text-cyan-300">v{skill.version}</span></div>
+                <div className="text-[10px] text-stone-500 mt-1">{skill.lifecycle} · eval {skill.evidence?.evaluations || 0} · safety {Math.round((skill.evidence?.safety || 0) * 100)}%</div>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="grid lg:grid-cols-[1.5fr_1fr] gap-5">
