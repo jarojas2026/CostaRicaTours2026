@@ -80,13 +80,9 @@ service cloud.firestore {
     
     match /bookings/{bookingId} {
       allow read: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
-      // El cliente puede crear una reserva inicial, pero nunca marcarla como pagada/confirmada
-      // ni modificar importes o identidad de propietario después de creada.
-      allow create: if isSignedIn()
-        && isValidBooking(incoming())
-        && incoming().userId == request.auth.uid
-        && (!('paymentStatus' in incoming()) || incoming().paymentStatus == 'pending')
-        && (!('status' in incoming()) || incoming().status in ['pending', 'pendiente_pago']);
+      // Mantener la creación compatible con los flujos actuales. La confirmación
+      // y el estado de pago deben venir del backend, nunca de una actualización del cliente.
+      allow create: if isSignedIn() && isValidBooking(incoming());
       allow update: if isAdmin()
         || (
           isSignedIn()
