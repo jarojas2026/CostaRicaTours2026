@@ -1,0 +1,135 @@
+{
+  "name": "CostaRicaTours - 04. Asistente IA WhatsApp & Chat",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat-consulta",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-chat-trigger",
+      "name": "Webhook: Consulta Chat o WhatsApp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [220, 300],
+      "webhookId": "chat-consulta-trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.item.json.body || $input.item.json;\nconst userMsg = body.mensaje || body.message || '';\nconst lang = (body.idioma || body.language || 'es').toLowerCase();\nconst phone = body.customerPhone || body.phone || '';\nconst sender = body.customerName || body.sender || 'Viajero';\n\nreturn {\n  userMsg: userMsg,\n  lang: lang,\n  customerPhone: phone,\n  customerName: sender,\n  timestamp: new Date().toISOString()\n};"
+      },
+      "id": "node-chat-input-prep",
+      "name": "Normalizar Pregunta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $env.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"systemInstruction\": {\n    \"parts\": [{\n      \"text\": \"Eres el Asistente Oficial Inteligente de Costa Rica Tours. Especialista certificado en turismo costarricense, parques nacionales, La Fortuna/Arenal, Monteverde, Manuel Antonio, Tortuguero, Guanacaste y el Caribe. Responde siempre con amabilidad Pura Vida, datos certeros, precios oficiales en USD y CRC (cambio ref: ₡515/USD), recomendaciones de clima, equipo necesario y normas de conservación. Si preguntan por reservar, solicita amablemente: Tour, Fecha, Personas, Nombre y Teléfono. Responde en el mismo idioma de la pregunta (español o inglés).\"\n    }]\n  },\n  \"contents\": [{\n    \"parts\": [{\n      \"text\": \"{{ $json.userMsg }}\"\n    }]\n  }]\n}"
+      },
+      "id": "node-gemini-ai",
+      "name": "Gemini 2.5 Flash: Asistente Pura Vida",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const responseData = $input.item.json;\nlet replyText = '¡Pura Vida! Gracias por comunicarte con Costa Rica Tours. ¿En qué aventura podemos ayudarte hoy?';\n\ntry {\n  const candidates = responseData.candidates || [];\n  if (candidates.length > 0 && candidates[0].content && candidates[0].content.parts) {\n    replyText = candidates[0].content.parts.map(p => p.text).join('\\n');\n  }\n} catch (e) {\n  replyText = '¡Pura Vida! Tuvimos una breve interrupción al consultar con nuestros guías locales. Por favor escríbenos a reservas@costaricatours.com o al WhatsApp +506 8795-9148.';\n}\n\nreturn {\n  reply: replyText,\n  mensaje: replyText,\n  response: replyText,\n  quickActions: [\n    { label: 'Ver Tours La Fortuna', action: 'tours_fortuna' },\n    { label: 'Disponibilidad Manuel Antonio', action: 'tours_ma' },\n    { label: 'Pagar con SINPE Móvil', action: 'sinpe_info' }\n  ]\n};"
+      },
+      "id": "node-format-reply",
+      "name": "Formatear Respuesta & Acciones Rápidas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"exito\": true,\n  \"reply\": \"{{ $json.reply.replace(/\"/g, '\\\\\"').replace(/\\n/g, '\\\\n') }}\",\n  \"mensaje\": \"{{ $json.reply.replace(/\"/g, '\\\\\"').replace(/\\n/g, '\\\\n') }}\",\n  \"quickActions\": {{ JSON.stringify($json.quickActions) }}\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-respond-chat",
+      "name": "Responder al Frontend / WhatsApp",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [1100, 300]
+    }
+  ],
+  "connections": {
+    "Webhook: Consulta Chat o WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Pregunta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Pregunta": {
+      "main": [
+        [
+          {
+            "node": "Gemini 2.5 Flash: Asistente Pura Vida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini 2.5 Flash: Asistente Pura Vida": {
+      "main": [
+        [
+          {
+            "node": "Formatear Respuesta & Acciones Rápidas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Respuesta & Acciones Rápidas": {
+      "main": [
+        [
+          {
+            "node": "Responder al Frontend / WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
