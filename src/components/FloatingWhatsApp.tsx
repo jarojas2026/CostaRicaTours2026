@@ -9,7 +9,9 @@ import {
   Clock,
   Compass,
   ExternalLink,
+  MapPin,
   MessageCircle,
+  Search,
   ShieldCheck,
   Sparkles,
   X
@@ -159,6 +161,34 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
   const [sending, setSending] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [bookingStatus, setBookingStatus] = useState('none');
+  const [tourSearchQuery, setTourSearchQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const filteredTours = useMemo(() => {
+    const query = tourSearchQuery.trim().toLowerCase();
+    if (!query) return [];
+    return tours.filter((tour) => {
+      const title = getLangText(tour.title, language).toLowerCase();
+      const subtitle = getLangText(tour.subtitle, language).toLowerCase();
+      const region = (tour.region || '').toLowerCase();
+      const category = (tour.category || '').toLowerCase();
+      return (
+        title.includes(query) ||
+        subtitle.includes(query) ||
+        region.includes(query) ||
+        category.includes(query)
+      );
+    }).slice(0, 6);
+  }, [tours, tourSearchQuery, language]);
+
+  const quickSearchSuggestions = useMemo(() => [
+    language === 'es' ? 'Arenal' : 'Arenal',
+    language === 'es' ? 'Manuel Antonio' : 'Manuel Antonio',
+    language === 'es' ? 'Ballenas' : 'Whales',
+    language === 'es' ? 'Monteverde' : 'Monteverde',
+    language === 'es' ? 'Rafting' : 'Rafting'
+  ], [language]);
   const initialQuickActions = useMemo<QuickAction[]>(() => [
     {
       label: language === 'es' ? 'Consultar disponibilidad' : 'Check availability',
@@ -363,6 +393,27 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
     }
   };
 
+  const handleSelectTourFromSearch = (tour: Tour, actionType: 'chat' | 'whatsapp' | 'view' = 'chat') => {
+    const title = getLangText(tour.title, language);
+    if (actionType === 'whatsapp') {
+      const msg = language === 'es'
+        ? `Hola, encontré el tour "${title}" en el buscador del chat y quisiera consultar disponibilidad.`
+        : `Hello, I found the tour "${title}" in the chat search and would like to check availability.`;
+      openDirectWhatsApp(msg);
+      return;
+    }
+    if (actionType === 'view' && onSelectTour) {
+      onSelectTour(tour);
+      return;
+    }
+    const prompt = language === 'es'
+      ? `Quiero consultar disponibilidad, horarios y precios para el tour "${title}".`
+      : `I would like to check availability, schedule and details for the tour "${title}".`;
+    setTourSearchQuery('');
+    setIsSearchFocused(false);
+    void sendMessage(prompt);
+  };
+
   return (
     <div className="fixed bottom-[calc(4.8rem+env(safe-area-inset-bottom))] right-3 sm:right-4 lg:bottom-6 lg:right-6 z-[80]">
       <AnimatePresence>
@@ -371,24 +422,182 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
             initial={{ opacity: 0, y: 20, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.96 }}
-            className="mb-3 w-[90vw] max-w-[400px] h-[min(620px,calc(100vh-120px))] rounded-2xl overflow-hidden bg-[#07241a] border border-emerald-500/30 shadow-2xl flex flex-col"
+            className="whatsapp-modal-window mb-3 w-[90vw] max-w-[400px] h-[min(620px,calc(100vh-120px))] rounded-2xl overflow-hidden bg-[#07241a] border border-emerald-500/30 shadow-2xl flex flex-col relative"
           >
-            <div className="p-4 bg-[#1E7B4A] text-white flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center">
+            <div className="p-3.5 bg-[#1E7B4A] text-white flex items-center justify-between shadow-md">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center">
                   <MessageCircle className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="font-black text-sm flex items-center gap-2">
+                  <div className="font-black text-sm flex items-center gap-1.5">
                     Costa Rica Tours
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-300/20">IA</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-300/20 font-bold tracking-wider">IA</span>
                   </div>
-                  <div className="text-[10px] text-emerald-100">{isOnline ? 'Online' : 'Offline'}</div>
+                  <div className="text-[10px] text-emerald-100 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+                    {isOnline ? 'Online' : 'Offline'}
+                  </div>
                 </div>
               </div>
-              <button type="button" onClick={() => setIsOpen(false)} className="p-2 rounded-full hover:bg-white/10" aria-label="Close">
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSearchOpen((prev) => !prev);
+                    if (!isSearchOpen) setIsSearchFocused(true);
+                  }}
+                  className={`p-2 rounded-full transition-colors ${isSearchOpen ? 'bg-white/25 text-white' : 'hover:bg-white/15 text-white/90'}`}
+                  aria-label={language === 'es' ? 'Buscar tours' : 'Search tours'}
+                  title={language === 'es' ? 'Filtrar tours en el chat' : 'Filter tours in chat'}
+                >
+                  <Search className="w-4 h-4" />
+                </button>
+                <button type="button" onClick={() => setIsOpen(false)} className="p-2 rounded-full hover:bg-white/10" aria-label="Close">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Barra de Búsqueda Inteligente de Tours */}
+            <div className="bg-[#051c14] border-b border-emerald-900/60 p-2.5 relative z-30">
+              <div className="relative flex items-center">
+                <Search className="w-3.5 h-3.5 text-emerald-400 absolute left-2.5 pointer-events-none" />
+                <input
+                  type="text"
+                  value={tourSearchQuery}
+                  onChange={(e) => setTourSearchQuery(e.target.value)}
+                  onFocus={() => {
+                    setIsSearchFocused(true);
+                    setIsSearchOpen(true);
+                  }}
+                  placeholder={
+                    language === 'es'
+                      ? 'Filtrar tours (ej: Arenal, Ballenas, Rafting)...'
+                      : 'Filter tours (e.g. Arenal, Whales, Rafting)...'
+                  }
+                  className="w-full pl-8 pr-7 py-1.5 bg-black/40 border border-emerald-500/30 rounded-lg text-xs text-white placeholder-stone-400 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50 transition-all"
+                />
+                {tourSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setTourSearchQuery('')}
+                    className="absolute right-2 text-stone-400 hover:text-white p-0.5 rounded-full"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Chips de sugerencias rápidas cuando el buscador está enfocado o vacío */}
+              {isSearchFocused && !tourSearchQuery && (
+                <div className="flex items-center gap-1.5 mt-2 overflow-x-auto pb-1 text-[10px] scrollbar-none">
+                  <span className="text-stone-400 text-[10px] shrink-0">
+                    {language === 'es' ? 'Filtros rápidos:' : 'Quick filters:'}
+                  </span>
+                  {quickSearchSuggestions.map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onClick={() => setTourSearchQuery(suggestion)}
+                      className="px-2 py-0.5 rounded-full bg-emerald-950/80 hover:bg-emerald-800 text-emerald-300 border border-emerald-700/50 shrink-0 transition-colors cursor-pointer"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Resultados flotantes de la búsqueda inteligente de tours */}
+              {tourSearchQuery.trim().length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 mx-2 p-2 bg-[#041711]/98 backdrop-blur-md rounded-xl border border-emerald-500/40 shadow-2xl max-h-[260px] overflow-y-auto space-y-2 z-40">
+                  <div className="flex items-center justify-between text-[11px] text-emerald-300 font-semibold px-1 pb-1 border-b border-emerald-900/60">
+                    <span>
+                      {filteredTours.length}{' '}
+                      {language === 'es' ? 'tours encontrados' : 'tours found'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTourSearchQuery('');
+                        setIsSearchFocused(false);
+                      }}
+                      className="text-stone-400 hover:text-white text-[10px] px-1 py-0.5 rounded hover:bg-white/10"
+                    >
+                      {language === 'es' ? 'Cerrar' : 'Close'}
+                    </button>
+                  </div>
+
+                  {filteredTours.length === 0 ? (
+                    <div className="py-4 text-center text-xs text-stone-400">
+                      <p>
+                        {language === 'es'
+                          ? 'No encontramos tours para tu búsqueda.'
+                          : 'No tours found matching your search.'}
+                      </p>
+                      <p className="text-[10px] text-emerald-400 mt-1">
+                        {language === 'es'
+                          ? 'Pregúntale al Concierge en el chat para buscar en todo el catálogo.'
+                          : 'Ask the Concierge in the chat to search the full catalog.'}
+                      </p>
+                    </div>
+                  ) : (
+                    filteredTours.map((tour) => {
+                      const title = getLangText(tour.title, language);
+                      return (
+                        <div
+                          key={tour.id}
+                          className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-emerald-500/20 transition-all flex flex-col gap-1.5"
+                        >
+                          <div className="flex items-start gap-2">
+                            <img
+                              src={tour.image}
+                              alt={title}
+                              className="w-11 h-11 rounded-md object-cover shrink-0 border border-emerald-500/30"
+                              loading="lazy"
+                              referrerPolicy="no-referrer"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-xs font-semibold text-white truncate">{title}</h4>
+                              <div className="flex items-center gap-2 text-[10px] text-stone-300 mt-0.5">
+                                <span className="flex items-center gap-0.5 text-emerald-300">
+                                  <MapPin className="w-2.5 h-2.5" />
+                                  {tour.region}
+                                </span>
+                                <span>•</span>
+                                <span className="text-amber-300 font-bold">${tour.priceUSD} USD</span>
+                                <span>•</span>
+                                <span>{tour.durationHours}h</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 pt-1 border-t border-white/5">
+                            <button
+                              type="button"
+                              onClick={() => handleSelectTourFromSearch(tour, 'chat')}
+                              className="flex-1 py-1 px-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                            >
+                              <Bot className="w-3 h-3" />
+                              {language === 'es' ? 'Consultar en chat' : 'Ask in chat'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSelectTourFromSearch(tour, 'whatsapp')}
+                              className="py-1 px-2 rounded-md bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] border border-[#25D366]/40 text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                              title="WhatsApp (+506)"
+                            >
+                              <MessageCircle className="w-3 h-3" />
+                              WA
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
             </div>
 
             <BookingProgressIndicator status={bookingStatus} language={language} />
