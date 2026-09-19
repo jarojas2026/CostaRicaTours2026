@@ -102,7 +102,7 @@ exports.createPayPalOrder = functions.https.onRequest((req, res) => {
 });
 
 // ==========================================
-// 🚀 ENDPOINT: WEBHOOK N8N (Notificación)
+
 // ==========================================
 exports.notifyN8N = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
