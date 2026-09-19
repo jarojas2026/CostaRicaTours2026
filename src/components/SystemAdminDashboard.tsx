@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BookingRequest, Language } from '../types';
+import { auth } from '../firebase';
 import { X, Server, Activity, Database, Key, Settings, ExternalLink, Zap, Mail, Bot, Network, ChevronRight, RefreshCw, CheckCircle2, BellRing, ShieldAlert, Users, Sparkles, TrendingUp, Cpu } from 'lucide-react';
 import { CronDashboard } from './CronDashboard';
 import { N8NWorkflowStudio } from './N8NWorkflowStudio';
@@ -337,9 +338,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                             <button 
                               onClick={async () => {
                                 try {
+                                  const user = auth.currentUser;
+                                  if (!user) throw new Error('Debes iniciar sesión como administrador.');
+                                  const token = await user.getIdToken();
                                   await fetch('/api/ai/fraud-check', {
                                     method: 'POST',
-                                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ADMIN_MOCK_TOKEN' },
+                                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                                     body: JSON.stringify(b)
                                   });
                                   fetchBookings();
