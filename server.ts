@@ -1819,19 +1819,23 @@ app.post('/api/itinerary/book', async (req, res) => {
 
     const bookingDate = startDate || new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0];
     const generatedId = `CR-ITIN-${Math.floor(100000 + Math.random() * 900000)}`;
-    const calculatedUSD = Number(totalUSD) || (Number(daysCount || 5) * Number(travelers || 2) * 165);
+    const normalizedDays = Math.max(1, Math.min(30, Number(daysCount) || 5));
+    const normalizedTravelers = Math.max(1, Math.min(30, Number(travelers) || 2));
+    // Precio base autoritativo para itinerarios personalizados. El total generado por IA
+    // se conserva solo como referencia, nunca como importe de cobro controlado por cliente.
+    const calculatedUSD = Number((normalizedDays * normalizedTravelers * 165).toFixed(2));
 
     const bookingRecord = await createBooking({
       bookingId: generatedId,
       tourId: 'custom-multi-day-itinerary',
-      tourName: itineraryTitle || `Paquete Costa Rica ${daysCount || 5} Días`,
+      tourName: itineraryTitle || `Paquete Costa Rica ${normalizedDays} Días`,
       date: bookingDate,
       time: '08:00 AM',
-      adults: Number(travelers) || 2,
+      adults: normalizedTravelers,
       children: 0,
       customerName,
       customerEmail,
-      customerPhone: customerPhone || '+506 8000-CRTOURS',
+      customerPhone: customerPhone || '',
       totalUSD: calculatedUSD,
       totalAmount: currency === 'CRC' ? Math.round(calculatedUSD * 515) : calculatedUSD,
       currency: currency || 'USD',
