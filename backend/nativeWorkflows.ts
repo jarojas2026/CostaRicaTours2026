@@ -1055,9 +1055,9 @@ export async function executeCustomerProformaConfirmation(payload: {
   message: string;
 }> {
   const bookingId = payload.bookingId || `CRT-FAM15-${Date.now().toString().slice(-5)}`;
-  const customerName = payload.customerName || 'Hester Viviana Marín Elizondo';
-  const customerEmail = payload.customerEmail || 'viviana19942011@gmail.com';
-  const customerPhone = payload.customerPhone || '+506 84005018';
+  const customerName = payload.customerName || 'Cliente de ejemplo';
+  const customerEmail = payload.customerEmail || 'cliente@example.com';
+  const customerPhone = payload.customerPhone || '+506 0000-0000';
   const adults = payload.adults ?? 2;
   const children = payload.children ?? 1;
   const tourName = payload.tourName || 'Costa Rica Familiar 15 Días: Relax, Volcanes y Playas Seguras (Especial Bebé 3 Años)';
@@ -1200,7 +1200,7 @@ export async function executeCustomerProformaConfirmation(payload: {
     ] : undefined
   });
 
-  // 3. Formatear y Despachar Mensaje de WhatsApp a Viviana (+506 84005018)
+  // 3. Formatear y Despachar Mensaje de WhatsApp a Viviana (+506 0000-0000)
   const whatsappMessageText = 
 `🌿 *¡Hola Hester Viviana!* Le saluda el Mostrador Digital de *Costa Rica Tours* (+506 8795 9148).
 
