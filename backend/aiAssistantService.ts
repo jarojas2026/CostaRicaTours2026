@@ -227,6 +227,15 @@ export async function processChatInquiry(
   const isEn = language === 'en';
   let liveToolContext = '';
   try {
+    const { buildAgentKnowledgeContext } = await import('./agentKnowledgeFabric');
+    liveToolContext += '\nFABRICA DE CONOCIMIENTO OPERATIVO:\n' + await buildAgentKnowledgeContext({
+      query: message,
+      sessionId: (history as any)?.sessionId
+    });
+  } catch (knowledgeErr) {
+    console.warn('Agent knowledge fabric unavailable:', knowledgeErr);
+  }
+  try {
     const { executeAgentTool } = await import('./agentTools');
     const hits = await executeAgentTool('search_tours', { query: message });
     if (Array.isArray(hits) && hits.length) liveToolContext += '\nCATÁLOGO AUTORITATIVO RELEVANTE:\n' + JSON.stringify(hits.slice(0, 5));
@@ -255,7 +264,7 @@ export async function processChatInquiry(
 
   try {
     const formattedHistory = history.map((h) => `${h.role === 'user' ? 'Usuario' : 'Asistente'}: ${h.text}`).join('\n');
-    const prompt = `${formattedHistory ? `HISTORIAL DE LA CONVERSACIÓN:\n${formattedHistory}\n\n` : ''}${liveToolContext ? `CONTEXTO OBTENIDO MEDIANTE HERRAMIENTAS INTERNAS:\n${liveToolContext}\n\n` : ''}CONSULTA ACTUAL DEL USUARIO:\n${message}`;
+    const prompt = `${formattedHistory ? `HISTORIAL DE LA CONVERSACIÓN:\n${formattedHistory}\n\n` : ''}${liveToolContext ? `CONTEXTO OPERATIVO VERIFICADO:\n${liveToolContext}\n\n` : ''}CONSULTA ACTUAL DEL USUARIO:\n${message}`;
 
     const ai = getAI();
     if (!ai) {
