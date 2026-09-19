@@ -6,7 +6,8 @@
  * compatibility metadata. Selection is deterministic; execution remains gated.
  */
 import crypto from 'crypto';
-import { autonomyPolicy, AutonomyLevel } from './autonomyPolicy';
+import { autonomyPolicy } from './autonomyPolicy';
+import type { AutonomyLevel } from './autonomyPolicy';
 
 export type SkillRisk = 'read' | 'reversible' | 'sensitive' | 'irreversible';
 
@@ -24,6 +25,8 @@ export type SkillVersion = {
   createdAt: string;
 };
 
+const SKILL_CREATED_AT = '2026-09-19T00:00:00.000Z';
+
 const SKILLS: SkillVersion[] = [
   {
     id: 'counter-orchestration',
@@ -36,7 +39,7 @@ const SKILLS: SkillVersion[] = [
     prerequisites: ['knowledge_fabric', 'booking_availability'],
     tools: ['/api/counter/ask', '/api/tours/:id/availability'],
     guardrails: ['No confirmar cupo sin fuente operativa.', 'No cobrar desde conversación.'],
-    createdAt: new Date().toISOString()
+    createdAt: SKILL_CREATED_AT
   },
   {
     id: 'provider-diplomacy',
@@ -49,7 +52,7 @@ const SKILLS: SkillVersion[] = [
     prerequisites: ['agent_mesh', 'booking_state_machine'],
     tools: ['provider_communication', 'agent_mesh'],
     guardrails: ['No alterar una reserva sin autorización.', 'Conservar versión anterior del dato.'],
-    createdAt: new Date().toISOString()
+    createdAt: SKILL_CREATED_AT
   },
   {
     id: 'recovery-pilot',
@@ -62,7 +65,7 @@ const SKILLS: SkillVersion[] = [
     prerequisites: ['event_bus', 'autonomy_policy', 'weather'],
     tools: ['alerts', 'weather', 'agent_mesh'],
     guardrails: ['No emitir reembolsos automáticamente.', 'Escalar eventos críticos.'],
-    createdAt: new Date().toISOString()
+    createdAt: SKILL_CREATED_AT
   },
   {
     id: 'learning-curator',
@@ -75,7 +78,7 @@ const SKILLS: SkillVersion[] = [
     prerequisites: ['learning_events', 'evaluation_harness'],
     tools: ['learning_engine', 'evaluation'],
     guardrails: ['Eliminar PII antes de dataset.', 'Nunca modificar código automáticamente.'],
-    createdAt: new Date().toISOString()
+    createdAt: SKILL_CREATED_AT
   }
 ];
 
