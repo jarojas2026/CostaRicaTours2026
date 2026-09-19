@@ -103,6 +103,8 @@ import { askCounterDesk, getCounterOperationsSnapshot, organizeCounterDesk } fro
 import { runEvaluationSuite } from './backend/agentEvaluationService';
 import { buildLearningDataset } from './backend/learningPipelineService';
 import { autonomyPolicy, parseAutonomyLevel } from './backend/autonomyPolicy';
+import { listSkillVersions, selectSkills } from './backend/skillGenome';
+import { emitOperationalEvent } from './backend/operationalEventBus';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -428,6 +430,20 @@ app.post('/api/bookings', async (req, res) => {
   try {
     const idempotencyKey = req.headers['idempotency-key'];
     const result = await createBooking({ ...req.body, idempotencyKey });
+    if (!result.conflict) {
+      void emitOperationalEvent({
+        type: 'booking.created',
+        source: 'booking_api',
+        conversationId: result.booking?.bookingId || idempotencyKey || 'booking',
+        payload: {
+          bookingId: result.booking?.bookingId,
+          tourId: result.booking?.tourId,
+          date: result.booking?.date,
+          status: result.booking?.status,
+          paymentStatus: result.booking?.paymentStatus
+        }
+      }).catch(err => console.error('Event bus booking.created:', err));
+    }
 
     if (result.conflict) {
       return res.status(409).json(result);
@@ -723,6 +739,17 @@ app.get('/api/ai/autonomy/policy', requireAdmin, (req, res) => {
   const level = parseAutonomyLevel(req.query.level);
   const action = String(req.query.action || 'observe') as any;
   res.json({ success: true, policy: autonomyPolicy(level, action) });
+});
+
+app.get('/api/ai/skills', requireAdmin, (_req, res) => {
+  res.json({ success: true, skills: listSkillVersions() });
+});
+
+app.get('/api/ai/skills/select', requireAdmin, (req, res) => {
+  const agentId = String(req.query.agentId || 'concierge');
+  const task = String(req.query.task || '');
+  const level = parseAutonomyLevel(req.query.level);
+  res.json({ success: true, skills: selectSkills(agentId, task, level) });
 });
 
 app.get('/api/ai/learning/examples', requireAdmin, async (req, res) => {
