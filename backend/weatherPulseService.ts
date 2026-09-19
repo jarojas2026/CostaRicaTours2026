@@ -1,5 +1,3 @@
-import { REGIONS } from '../src/data/toursData';
-
 type WeatherPulse = {
   regionId: string;
   name: string;
