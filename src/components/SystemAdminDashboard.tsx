@@ -17,14 +17,14 @@ interface AdminDashboardProps {
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose, language }) => {
   const [bookings, setBookings] = useState<BookingRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [nativeAutomationUrl, setNATIVE_AIWebhookUrl] = useState('https://costaricatours.app.NATIVE_AI.cloud/webhook/reservas');
+  const [nativeAutomationUrl, setNativeAutomationUrl] = useState('/api/native-engine');
   
   // Alerts & Notifications State
   const [unresolvedAlertsCount, setUnresolvedAlertsCount] = useState(0);
   const [criticalAlertsCount, setCriticalAlertsCount] = useState(0);
 
   // Multi-Agent Simulation State
-  const [activeTab, setActiveTab] = useState<'bookings' | 'alerts' | 'NATIVE_AI' | 'cron' | 'swarm' | 'architecture' | 'native' | 'providers' | 'ai-insights' | 'ai-NATIVE_AI-monitor'>('ai-NATIVE_AI-monitor');
+  const [activeTab, setActiveTab] = useState<'bookings' | 'alerts' | 'automation' | 'cron' | 'swarm' | 'architecture' | 'native' | 'providers' | 'ai-insights' | 'ai-native-monitor'>('ai-native-monitor');
   const [nativeStatus, setNativeStatus] = useState<any>(null);
   const [nativeLogs, setNativeLogs] = useState<any[]>([]);
   const [simEmail, setSimEmail] = useState('Hola! Somos una familia de 4 (2 adultos, 2 niños). Queremos ir a Costa Rica la primera semana de diciembre. Nos interesan los volcanes y la playa, pero uno de los niños es alérgico al maní. ¿Qué nos recomiendan?');
@@ -155,11 +155,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
         {/* Tabs */}
         <div className="flex overflow-x-auto border-b border-slate-700/50 bg-[#1e293b]/50 px-6 hide-scrollbar shrink-0">
           <button 
-            onClick={() => setActiveTab('ai-NATIVE_AI-monitor')}
-            className={`whitespace-nowrap px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'ai-NATIVE_AI-monitor' ? 'border-purple-400 text-purple-400 bg-purple-950/20' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
+            onClick={() => setActiveTab('ai-native-monitor')}
+            className={`whitespace-nowrap px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'ai-native-monitor' ? 'border-purple-400 text-purple-400 bg-purple-950/20' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
           >
             <Cpu className="w-4 h-4 text-purple-400" />
-            <span>Monitoreo IA & NATIVE_AI</span>
+            <span>Monitoreo IA & Native AI</span>
           </button>
           <button 
             onClick={() => setActiveTab('native')}
@@ -206,8 +206,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
             <span>Sugerencias de IA</span>
           </button>
           <button 
-            onClick={() => setActiveTab('NATIVE_AI')}
-            className={`whitespace-nowrap px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'NATIVE_AI' ? 'border-amber-400 text-amber-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
+            onClick={() => setActiveTab('automation')}
+            className={`whitespace-nowrap px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'automation' ? 'border-amber-400 text-amber-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
           >
             <Zap className="w-4 h-4 text-amber-400" /> Blueprints de Flujos
           </button>
@@ -234,18 +234,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-8">
           
-          {activeTab === 'ai-NATIVE_AI-monitor' && (
+          {activeTab === 'ai-native-monitor' && (
             <NativeAutomationStudio language={language} />
           )}
 
           {activeTab === 'bookings' && (
             <>
-              {/* NATIVE_AI Configuration Panel */}
+              {/* Native AI Configuration Panel */}
           <section className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <Zap className="w-4 h-4 text-orange-400" />
-                <h3 className="text-white font-bold text-sm">NATIVE_AI Global Webhook URL</h3>
+                <h3 className="text-white font-bold text-sm">Native AI Internal API</h3>
               </div>
               <p className="text-xs text-slate-400">Target for booking dispatch (used in fallback/demo if environment var is not set).</p>
             </div>
@@ -253,9 +253,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
               <input 
                 type="text" 
                 value={nativeAutomationUrl}
-                onChange={(e) => setNATIVE_AIWebhookUrl(e.target.value)}
+                onChange={(e) => setNativeAutomationUrl(e.target.value)}
                 className="w-full sm:w-80 bg-slate-900/80 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-500"
-                placeholder="https://tu-NATIVE_AI.com/webhook/..."
+                placeholder="https://tu-Native AI.com/webhook/..."
               />
               <button className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-colors flex items-center gap-1.5 shrink-0">
                 <Settings className="w-3.5 h-3.5" />
@@ -395,7 +395,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                       <h3 className="text-xl font-black text-white tracking-tight">Motor de Automatización Nativo 100% en Código</h3>
                     </div>
                     <p className="text-sm text-slate-300 max-w-2xl">
-                      La plataforma opera con lógica nativa en Node.js/Express, eliminando servidores intermedios de NATIVE_AI. Todas las consultas turísticas, reservas, confirmaciones y pasarelas de pago se ejecutan en milisegundos con cero costo de suscripción.
+                      La plataforma opera con lógica nativa en Node.js/Express, eliminando servidores intermedios de Native AI. Todas las consultas turísticas, reservas, confirmaciones y pasarelas de pago se ejecutan en milisegundos con cero costo de suscripción.
                     </p>
                   </div>
                   <button 
@@ -420,7 +420,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                     <p className="text-[10px] text-slate-400 mt-0.5">Ejecución en memoria</p>
                   </div>
                   <div className="bg-slate-900/80 border border-emerald-500/20 p-4 rounded-xl">
-                    <p className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider">Costo Mensual NATIVE_AI</p>
+                    <p className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider">Costo Mensual Native AI</p>
                     <p className="text-2xl font-black text-white mt-1">$0 USD</p>
                     <p className="text-[10px] text-emerald-400 mt-0.5">Ahorro permanente</p>
                   </div>
@@ -524,7 +524,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
             </div>
           )}
 
-          {activeTab === 'NATIVE_AI' && (
+          {activeTab === 'automation' && (
             <div className="py-1">
               <NativeAutomationStudio language={language || 'es'} />
             </div>
@@ -538,7 +538,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                   <h3 className="text-white font-bold text-lg">Enjambre de Agentes (Multi-Agent Swarm)</h3>
                 </div>
                 <p className="text-slate-400 text-sm">
-                  Simula el flujo de NATIVE_AI: Un correo entra al Inbox, el <strong>Agente Triage</strong> lo lee y clasifica, y luego el <strong>Agente Procesador</strong> redacta la cotización y define las acciones en BD.
+                  Simula el flujo de Native AI: Un correo entra al Inbox, el <strong>Agente Triage</strong> lo lee y clasifica, y luego el <strong>Agente Procesador</strong> redacta la cotización y define las acciones en BD.
                 </p>
               </div>
 
@@ -561,7 +561,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                     className="mt-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-lg text-sm transition-colors flex justify-center items-center gap-2 disabled:opacity-50"
                   >
                     {simLoading ? <Activity className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
-                    {simLoading ? 'Ejecutando Agentes...' : 'Simular Pipeline NATIVE_AI'}
+                    {simLoading ? 'Ejecutando Agentes...' : 'Simular Pipeline Native AI'}
                   </button>
                 </div>
 
@@ -590,7 +590,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                           <pre className="text-slate-300 font-mono overflow-x-auto">{JSON.stringify(triageResult.extractedData, null, 2)}</pre>
                         </div>
                         <div className="col-span-2 bg-indigo-900/20 p-2 rounded-lg border border-indigo-500/30 text-indigo-300">
-                          <span className="font-bold">Enrutar hacia NATIVE_AI Node:</span> {triageResult.nextAgentRoute}
+                          <span className="font-bold">Enrutar hacia Native AI Node:</span> {triageResult.nextAgentRoute}
                         </div>
                       </div>
                     )}
@@ -643,7 +643,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
               
               <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-5">
                 <h3 className="text-white font-bold text-xl mb-4">Motor Operativo de Alta Concurrencia</h3>
-                <p className="text-slate-400 text-sm mb-6">Esta es la arquitectura distribuida por agentes lista para ser orquestada vía NATIVE_AI, capaz de soportar concurrencia masiva, caídas de proveedores y fallas de formato de datos.</p>
+                <p className="text-slate-400 text-sm mb-6">Esta es la arquitectura distribuida por agentes lista para ser orquestada vía Native AI, capaz de soportar concurrencia masiva, caídas de proveedores y fallas de formato de datos.</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   
@@ -659,7 +659,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                   {/* Pillar 2 */}
                   <div className="bg-slate-900/50 border border-teal-500/30 rounded-lg p-4">
                     <h4 className="font-bold text-teal-400 mb-2 flex items-center gap-2"><Settings className="w-4 h-4"/> 2. Formularios y Bloqueo</h4>
-                    <p className="text-xs text-slate-300 mb-2">Captura dinámica de datos (restricciones, pesos). Soft Hold de 15 mins con links de pago con expiración. Timeouts automáticos en NATIVE_AI.</p>
+                    <p className="text-xs text-slate-300 mb-2">Captura dinámica de datos (restricciones, pesos). Soft Hold de 15 mins con links de pago con expiración. Timeouts automáticos en Native AI.</p>
                     <div className="bg-stone-100/20 text-teal-300 text-[10px] p-2 rounded font-mono">
                       Dynamic Form Hooks & Webhook Handlers
                     </div>
