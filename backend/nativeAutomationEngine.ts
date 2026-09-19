@@ -104,11 +104,25 @@ export async function executeChatInquiry(payload: {
   const start = Date.now();
   const userMsg = payload.mensaje || payload.message || '';
   const lang = (payload.idioma || payload.language || 'es') as 'es' | 'en';
-  const chatHistory = payload.contexto?.historialChat || payload.context?.chatHistory || [];
+  const sessionId = String(payload.sessionId || payload.contexto?.sessionId || payload.context?.sessionId || '');
+  const { getOperationalMemory, rememberTurn } = await import('./memoryService');
+  let chatHistory = payload.contexto?.historialChat || payload.context?.chatHistory || [];
+  if (sessionId) {
+    const memory = await getOperationalMemory(sessionId);
+    chatHistory = [
+      ...memory.turns.map((t: any) => ({ role: t.role, text: t.text })),
+      ...chatHistory
+    ].slice(-80);
+  }
 
   try {
     const assistantResult = await processChatInquiry(userMsg, lang, chatHistory);
     const duration = Date.now() - start;
+
+    if (sessionId) {
+      await rememberTurn(sessionId, { role: 'user', text: userMsg }, { agentId: assistantResult.agentId || payload.agenteSeleccionado });
+      await rememberTurn(sessionId, { role: 'assistant', text: assistantResult.reply }, { agentId: assistantResult.agentId || payload.agenteSeleccionado });
+    }
 
     logAutomationExecution(
       'CONSULTA_CHAT_IA',
