@@ -20,7 +20,7 @@ export async function askCounterDesk(input: CounterDeskAskInput) {
   const language = input.language === 'en' ? 'en' : 'es';
   const sessionId = String(input.sessionId || '').trim();
   const history = sessionId ? (await getOperationalMemory(sessionId)).turns : [];
-  const knowledge = await buildAgentKnowledgeContext(message, language, sessionId || undefined);
+  const knowledgeContext = await buildAgentKnowledgeContext({ query: message, sessionId: sessionId || undefined });
 
   const result = await processChatInquiry(
     message,
@@ -41,11 +41,7 @@ export async function askCounterDesk(input: CounterDeskAskInput) {
     reply: result.reply,
     quickActions: result.quickActions || [],
     modelUsed: result.modelUsed,
-    knowledge: {
-      region: knowledge.region,
-      weather: knowledge.weather,
-      matchedTours: knowledge.tours.map((t: any) => ({ id: t.id, name: t.title?.[language] || t.title?.es, priceUSD: t.priceUSD }))
-    },
+    knowledgeContext: knowledgeContext.slice(0, 12000),
     timestamp: new Date().toISOString()
   };
 }
