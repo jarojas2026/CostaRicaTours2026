@@ -63,6 +63,7 @@ export async function indexSemanticMemory(input: {
 }
 
 export async function retrieveSemanticMemory(sessionId: string, query: string, limit = 8) {
+  const { getFirestoreDb } = await import('./bookingService');
   const db = getFirestoreDb();
   if (!db) return [];
   const q = await embed(query);
