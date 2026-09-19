@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Bot, CalendarCheck, CircleAlert, Gauge, MessageCircle, RefreshCw, Send, ShieldCheck, Sparkles, Users, Zap } from 'lucide-react';
 import { Language } from '../types';
+import { auth } from '../firebase';
 
 interface Props { language: Language; }
 
@@ -18,17 +19,41 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
   const [reply, setReply] = useState('');
   const [loading, setLoading] = useState(false);
   const [autopilot, setAutopilot] = useState<any>(null);
+  const [aiPlan, setAiPlan] = useState<any>(null);
   const [error, setError] = useState('');
 
   const loadAutopilot = async () => {
     try {
-      const r = await fetch('/api/counter/autopilot');
+      const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+      if (!token) return;
+      const r = await fetch('/api/counter/autopilot', { headers: { Authorization: 'Bearer ' + token } });
       const data = await r.json();
       if (r.ok) setAutopilot(data);
     } catch {}
   };
 
-  useEffect(() => { loadAutopilot(); }, []);
+  const organizeWithAI = async () => {
+    setLoading(true); setError('');
+    try {
+      const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+      if (!token) throw new Error(es ? 'Inicia sesión como operador para organizar operaciones.' : 'Sign in as an operator to organize operations.');
+      const r = await fetch('/api/counter/organize', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Error');
+      setAiPlan(data);
+      setAutopilot(data);
+    } catch (e: any) { setError(e.message || 'Error'); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    loadAutopilot();
+    const id = window.setInterval(loadAutopilot, 60000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const counters = useMemo(() => autopilot?.snapshot?.counters || {}, [autopilot]);
 
@@ -53,7 +78,9 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
   const refresh = async () => {
     setLoading(true);
     try {
-      const r = await fetch('/api/counter/autopilot');
+      const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+      if (!token) throw new Error(es ? 'Inicia sesión como operador.' : 'Sign in as an operator.');
+      const r = await fetch('/api/counter/autopilot', { headers: { Authorization: 'Bearer ' + token } });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || 'Error');
       setAutopilot(data);
@@ -128,7 +155,13 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
         </div>
 
         <div className="rounded-3xl border border-violet-400/20 bg-[#0b0a18] p-5">
-          <div className="flex items-center gap-2 mb-4"><Sparkles className="text-violet-300" size={18} /><h2 className="font-black text-white">{es ? 'Organizador IA' : 'AI Organizer'}</h2></div>
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="text-violet-300" size={18} />
+            <h2 className="font-black text-white">{es ? 'Organizador IA' : 'AI Organizer'}</h2>
+            <button onClick={organizeWithAI} disabled={loading} className="ml-auto rounded-xl bg-violet-500/20 border border-violet-400/30 px-3 py-1.5 text-[10px] font-black text-violet-200 hover:bg-violet-500/30 disabled:opacity-50">
+              {loading ? (es ? 'Analizando…' : 'Analyzing…') : (es ? 'Organizar con IA' : 'Organize with AI')}
+            </button>
+          </div>
           <p className="text-xs text-stone-400 mb-4">{es ? 'Prioriza tareas con datos operativos actuales. No ejecuta acciones irreversibles por sí solo.' : 'Prioritizes tasks using current operational data. It does not execute irreversible actions by itself.'}</p>
           <div className="space-y-3">
             {(autopilot?.actions || []).map((a: any) => (
@@ -137,7 +170,15 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
                 <p className="text-xs text-stone-400 mt-1">{a.reason}</p>
               </div>
             ))}
-            {!autopilot?.actions?.length && <p className="text-sm text-stone-500">Sin acciones sugeridas.</p>}
+            {!autopilot?.actions?.length && !aiPlan?.priorities?.length && <p className="text-sm text-stone-500">Sin acciones sugeridas.</p>}
+            {aiPlan?.summary && <div className="mt-3 rounded-xl border border-violet-400/20 bg-violet-400/5 p-3 text-xs text-violet-100">{aiPlan.summary}</div>}
+            {(aiPlan?.priorities || []).slice(0, 8).map((a: any) => (
+              <div key={'ai-' + a.id} className="rounded-2xl border border-violet-400/20 bg-violet-400/5 p-3">
+                <div className="text-[9px] uppercase font-black text-violet-300">{a.priority || 'medium'}</div>
+                <div className="text-sm font-bold text-white">{a.action}</div>
+                <div className="text-xs text-stone-400 mt-1">{a.reason}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
