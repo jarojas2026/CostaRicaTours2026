@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, TrendingUp, TrendingDown, Minus, Loader2, RefreshCw } from 'lucide-react';
+import { auth } from '../firebase';
 
 export const AiInsightsPanel: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -10,9 +11,12 @@ export const AiInsightsPanel: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Debes iniciar sesión como administrador.');
+      const token = await user.getIdToken();
       const res = await fetch('/api/ai/demand-forecast', {
         headers: {
-          'Authorization': 'Bearer ADMIN_MOCK_TOKEN'
+          'Authorization': `Bearer ${token}`
         }
       });
       const data = await res.json();
