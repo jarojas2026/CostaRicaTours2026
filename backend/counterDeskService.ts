@@ -128,6 +128,43 @@ export async function runCounterSafeAutopilot() {
   };
 }
 
+
+export async function organizeCounterDesk() {
+  const snapshot = await getCounterOperationsSnapshot();
+  const fallback = await runCounterSafeAutopilot();
+  if (!process.env.GEMINI_API_KEY) {
+    return { ...fallback, ai: { enabled: false, note: 'GEMINI_API_KEY no configurada; se usa organización determinista.' } };
+  }
+
+  const { GoogleGenAI } = await import('@google/genai');
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const prompt = [
+    'Eres el supervisor operativo de una plataforma de tours en Costa Rica.',
+    'Organiza el trabajo a partir del snapshot real. No inventes datos, no cambies precios, reservas ni pagos.',
+    'Devuelve JSON con: summary, priorities (máximo 8 objetos con id, priority high|medium|low, action, reason), watchlist (máximo 6 strings), handoffs (máximo 6 strings).',
+    'Prioriza seguridad, pagos pendientes, salidas próximas, alertas y cobertura de proveedores.',
+    JSON.stringify(snapshot).slice(0, 60000)
+  ].join('\n\n');
+
+  const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+  const raw = response.text || '{}';
+  let parsed: any;
+  try {
+    parsed = JSON.parse(raw.trim().replace(/^json\s*/i, ''));
+  } catch {
+    parsed = { summary: raw.slice(0, 2000), priorities: fallback.actions, watchlist: [], handoffs: [] };
+  }
+
+  return {
+    success: true,
+    generatedAt: new Date().toISOString(),
+    mode: 'ai_supervisor',
+    ai: { enabled: true, model: 'gemini-2.5-flash' },
+    ...parsed,
+    snapshot
+  };
+}
+
 export async function checkCounterAvailability(tourId: string, date: string, time: string | undefined, seats: number) {
   return checkTourAvailability(tourId, date, time, Math.max(1, Math.min(50, Number(seats) || 1)));
 }
