@@ -29,6 +29,9 @@ jobs:
       - name: Instalar dependencias
         run: npm install --no-audit --no-fund
 
+      - name: Auditar fixtures y tokens mock
+        run: node scripts/securityFixtureAudit.mjs
+
       - name: Verificar tipos de TypeScript (equivalente a "npm run lint")
         run: npm run lint
 
