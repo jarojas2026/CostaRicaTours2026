@@ -156,7 +156,7 @@ function normalizeEvidence(value: any): SkillEvidence {
 }
 
 function semverOk(version: string): boolean {
-  return /^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$/.test(version);
+  return /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version);
 }
 
 function promotionGate(skill: GovernedSkillVersion, target: 'canary' | 'active') {
