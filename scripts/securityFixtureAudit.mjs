@@ -14,6 +14,7 @@ const banned = [
   /\bViviana\b/i
 ];
 const ignored = new Set(['node_modules', '.git', 'dist', 'build']);
+const selfPath = path.normalize('scripts/securityFixtureAudit.mjs');
 
 function walk(target) {
   const stat = fs.statSync(target);
@@ -26,6 +27,7 @@ function walk(target) {
 const files = roots.flatMap(root => fs.existsSync(root) ? walk(root) : []);
 const findings = [];
 for (const file of files) {
+  if (path.normalize(file) === selfPath) continue;
   if (!/\.(ts|tsx|js|mjs|json|yml|yaml|env)$/.test(file)) continue;
   const content = fs.readFileSync(file, 'utf8');
   for (const pattern of banned) {
