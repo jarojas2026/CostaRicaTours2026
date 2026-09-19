@@ -1,7 +1,7 @@
 /**
  * ⚡ Blueprints y Esquemas Oficiales de Workflows n8n para Costa Rica Tours
  * Contiene la definición COMPLETA de los 14 workflows operativos, esquemas de entrada/salida,
- * mapeo explícito de credenciales ('Google Service Account' ID 5NiYz8gX64lPYIdK)
+ * mapeo explícito de credenciales ('Google Service Account' ID ENV_CONFIGURED_CREDENTIAL_ID)
  * y plantillas JSON oficiales totalmente terminadas listas para importar en instancias n8n.
  */
 
@@ -43,7 +43,7 @@ export interface N8NWorkflowDef {
 }
 
 export const GOOGLE_SERVICE_ACCOUNT_CREDENTIAL = {
-  id: "5NiYz8gX64lPYIdK",
+  id: "ENV_CONFIGURED_CREDENTIAL_ID",
   name: "Google Service Account"
 };
 
@@ -57,8 +57,8 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     },
     category: 'chat',
     description: {
-      es: 'Captura mensajes entrantes desde Web y WhatsApp, clasifica intención turística mediante IA, consulta la base de datos de tours autorizados en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK) y responde en menos de 1.5s.',
-      en: 'Captures incoming messages from Web and WhatsApp, classifies tourist intent via AI, queries authorized tours in Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK), and responds in under 1.5s.'
+      es: 'Captura mensajes entrantes desde Web y WhatsApp, clasifica intención turística mediante IA, consulta la base de datos de tours autorizados en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID) y responde en menos de 1.5s.',
+      en: 'Captures incoming messages from Web and WhatsApp, classifies tourist intent via AI, queries authorized tours in Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID), and responds in under 1.5s.'
     },
     icon: 'Bot',
     color: '#10b981',
@@ -71,13 +71,13 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
       { id: 'n1', name: '[TRIGGER] Webhook Inbound', type: 'n8n-nodes-base.webhook', description: 'Recibe payload JSON del usuario con token de seguridad' },
       { id: 'n2', name: '[SECURITY] HMAC Authenticator', type: 'n8n-nodes-base.crypto', description: 'Verifica firma SHA-256 en cabecera X-Webhook-Secret' },
       { id: 'n3', name: '[AI ENGINE] Gemini Triage Agent', type: 'n8n-nodes-base.openAi', description: 'Evalúa mensaje, idioma y extrae entidades (tour, destino, fechas)' },
-      { id: 'n4', name: '[FIRESTORE] Query Authorized Tours', type: 'n8n-nodes-base.httpRequest', description: 'Obtiene tarifas vigentes y cupos en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'n4', name: '[FIRESTORE] Query Authorized Tours', type: 'n8n-nodes-base.httpRequest', description: 'Obtiene tarifas vigentes y cupos en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n5', name: '[LOGIC] Official Concierge Formatter', type: 'n8n-nodes-base.code', description: 'Estructura respuesta con viñetas, precios USD y botones de reserva' },
       { id: 'n6', name: '[RESPONSE] Respond to Client', type: 'n8n-nodes-base.respondToWebhook', description: 'Entrega respuesta JSON al cliente' },
       { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       trigger: 'CONSULTA_CHAT_IA',
@@ -97,7 +97,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
       stickyNotes: [
         { name: "⚡ INBOUND TRIGGER & SECURITY", color: 6, width: 280, height: 160, position: [80, 240] },
         { name: "🧠 GEMINI AI TRIAGE", color: 3, width: 280, height: 160, position: [380, 240] },
-        { name: "🗄️ FIRESTORE TOURS (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [680, 240] }
+        { name: "🗄️ FIRESTORE TOURS (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 340, height: 160, position: [680, 240] }
       ],
       nodes: [
         {
@@ -165,14 +165,14 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
       ],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Consulta catálogo de tours en Firestore con Google Service Account (ID: 5NiYz8gX64lPYIdK)"
+          notes: "Consulta catálogo de tours en Firestore con Google Service Account (ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -215,8 +215,8 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     },
     category: 'booking',
     description: {
-      es: 'Valida disponibilidad real en Firestore con Google Service Account (5NiYz8gX64lPYIdK). Genera un bloqueo temporal de 15 minutos en inventario y programa liberación por timeout si no se liquida el pago.',
-      en: 'Validates real-time availability in Firestore using Google Service Account (5NiYz8gX64lPYIdK). Applies 15-minute seat hold with automated auto-release timer.'
+      es: 'Valida disponibilidad real en Firestore con Google Service Account (ENV_CONFIGURED_CREDENTIAL_ID). Genera un bloqueo temporal de 15 minutos en inventario y programa liberación por timeout si no se liquida el pago.',
+      en: 'Validates real-time availability in Firestore using Google Service Account (ENV_CONFIGURED_CREDENTIAL_ID). Applies 15-minute seat hold with automated auto-release timer.'
     },
     icon: 'Clock',
     color: '#f59e0b',
@@ -227,16 +227,16 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     slaTarget: '< 800 ms',
     nodes: [
       { id: 'b1', name: '[TRIGGER] Webhook Inicio Reserva', type: 'n8n-nodes-base.webhook', description: 'Recibe solicitud de reserva preliminar' },
-      { id: 'b2', name: '[FIRESTORE] Check Tour Availability', type: 'n8n-nodes-base.httpRequest', description: 'Valida cupos en tiempo real en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'b2', name: '[FIRESTORE] Check Tour Availability', type: 'n8n-nodes-base.httpRequest', description: 'Valida cupos en tiempo real en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'b3', name: '[LOGIC] Evaluate Available Seats', type: 'n8n-nodes-base.if', description: 'Determina si cuposDisponibles >= pasajeros' },
-      { id: 'b4', name: '[FIRESTORE] Create Soft Hold Record', type: 'n8n-nodes-base.httpRequest', description: 'Crea documento de reserva temporal en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'b4', name: '[FIRESTORE] Create Soft Hold Record', type: 'n8n-nodes-base.httpRequest', description: 'Crea documento de reserva temporal en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'b5', name: '[LOGIC] Set 15m Expiration Timeout', type: 'n8n-nodes-base.wait', description: 'Espera 15 minutos para auditoría de pago' },
-      { id: 'b6', name: '[FIRESTORE] Auto Release Expired Lock', type: 'n8n-nodes-base.httpRequest', description: 'Libera cupos en Firestore si expira el tiempo sin pago (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'b6', name: '[FIRESTORE] Auto Release Expired Lock', type: 'n8n-nodes-base.httpRequest', description: 'Libera cupos en Firestore si expira el tiempo sin pago (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'b7', name: '[RESPONSE] Confirm Soft Hold', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve bookingId y enlace de pago' },
       { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       trigger: 'INICIO_RESERVA',
@@ -257,7 +257,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
       name: "Costa Rica Tours - WF02 Pre-reserva & Soft Hold",
       stickyNotes: [
         { name: "⚡ INBOUND HOOK", color: 6, width: 260, height: 160, position: [80, 240] },
-        { name: "🗄️ FIRESTORE AVAILABILITY & HOLD (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 520, height: 160, position: [360, 240] },
+        { name: "🗄️ FIRESTORE AVAILABILITY & HOLD (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 520, height: 160, position: [360, 240] },
         { name: "⏳ 15m EXPIRATION CRON", color: 1, width: 320, height: 160, position: [900, 240] }
       ],
       nodes: [
@@ -305,14 +305,14 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
       ],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Valida inventario Firestore con Google Service Account (ID: 5NiYz8gX64lPYIdK)"
+          notes: "Valida inventario Firestore con Google Service Account (ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -340,10 +340,10 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           typeVersion: 4.1,
           position: [700, 200],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Crea registro con status 'pendiente_pago' en Firestore (ID: 5NiYz8gX64lPYIdK)"
+          notes: "Crea registro con status 'pendiente_pago' en Firestore (ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -370,10 +370,10 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           typeVersion: 4.1,
           position: [1100, 200],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Libera cupos en Firestore tras 15m sin pago (ID: 5NiYz8gX64lPYIdK)"
+          notes: "Libera cupos en Firestore tras 15m sin pago (ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -407,8 +407,8 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     },
     category: 'payment',
     description: {
-      es: 'Genera sesiones seguras en Stripe Checkout, valida la firma HMAC criptográfica de la pasarela y actualiza el estado de la reserva en Firestore mediante Google Service Account (5NiYz8gX64lPYIdK).',
-      en: 'Generates secure Stripe Checkout sessions, validates cryptographic HMAC signatures, and updates booking payment status in Firestore via Google Service Account (5NiYz8gX64lPYIdK).'
+      es: 'Genera sesiones seguras en Stripe Checkout, valida la firma HMAC criptográfica de la pasarela y actualiza el estado de la reserva en Firestore mediante Google Service Account (ENV_CONFIGURED_CREDENTIAL_ID).',
+      en: 'Generates secure Stripe Checkout sessions, validates cryptographic HMAC signatures, and updates booking payment status in Firestore via Google Service Account (ENV_CONFIGURED_CREDENTIAL_ID).'
     },
     icon: 'CreditCard',
     color: '#6366f1',
@@ -422,12 +422,12 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
       { id: 'p2', name: '[LOGIC] Gateway Selector', type: 'n8n-nodes-base.switch', description: 'Enruta hacia Stripe Checkout o PayPal Orders API' },
       { id: 'p3', name: '[SECURITY] Generate Stripe Checkout Session', type: 'n8n-nodes-base.httpRequest', description: 'Genera enlace seguro de pago de Stripe' },
       { id: 'p4', name: '[SECURITY] Verify HMAC Payment Signature', type: 'n8n-nodes-base.crypto', description: 'Valida firma criptográfica SHA-256' },
-      { id: 'p5', name: '[FIRESTORE] Update Booking Payment Status', type: 'n8n-nodes-base.httpRequest', description: 'Marca reserva pagada en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'p5', name: '[FIRESTORE] Update Booking Payment Status', type: 'n8n-nodes-base.httpRequest', description: 'Marca reserva pagada en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'p6', name: '[RESPONSE] Return Payment URL', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve URL de checkout al cliente' },
       { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       trigger: 'SOLICITUD_PAGO',
@@ -443,7 +443,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
       stickyNotes: [
         { name: "⚡ PAYMENT INBOUND HOOK", color: 6, width: 260, height: 160, position: [80, 240] },
         { name: "💳 GATEWAY & HMAC SECURITY", color: 3, width: 500, height: 160, position: [360, 240] },
-        { name: "🗄️ FIRESTORE PAYMENT UPDATE (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [880, 240] }
+        { name: "🗄️ FIRESTORE PAYMENT UPDATE (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 340, height: 160, position: [880, 240] }
       ],
       nodes: [
         {
@@ -542,14 +542,14 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
       ],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Actualiza el estado de pago en Firestore vía Google Service Account (ID: 5NiYz8gX64lPYIdK)"
+          notes: "Actualiza el estado de pago en Firestore vía Google Service Account (ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -582,8 +582,8 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     },
     category: 'fulfillment',
     description: {
-      es: 'Una vez confirmado el pago, genera el voucher digital con código QR firmado, actualiza la reserva en Firestore con Google Service Account (5NiYz8gX64lPYIdK) y despacha por WhatsApp y Email.',
-      en: 'Generates QR-coded voucher, updates Firestore using Google Service Account (5NiYz8gX64lPYIdK), and dispatches WhatsApp and Email notifications.'
+      es: 'Una vez confirmado el pago, genera el voucher digital con código QR firmado, actualiza la reserva en Firestore con Google Service Account (ENV_CONFIGURED_CREDENTIAL_ID) y despacha por WhatsApp y Email.',
+      en: 'Generates QR-coded voucher, updates Firestore using Google Service Account (ENV_CONFIGURED_CREDENTIAL_ID), and dispatches WhatsApp and Email notifications.'
     },
     icon: 'FileCheck',
     color: '#059669',
@@ -595,14 +595,14 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     nodes: [
       { id: 'v1', name: '[TRIGGER] Webhook Confirmación', type: 'n8n-nodes-base.webhook', description: 'Recibe evento de reserva pagada' },
       { id: 'v2', name: '[SECURITY] QR Code & Validation Generator', type: 'n8n-nodes-base.code', description: 'Genera hash de validación QR para operadores' },
-      { id: 'v3', name: '[FIRESTORE] Save Voucher & Update Booking', type: 'n8n-nodes-base.httpRequest', description: 'Almacena enlace de voucher y confirma reserva en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'v3', name: '[FIRESTORE] Save Voucher & Update Booking', type: 'n8n-nodes-base.httpRequest', description: 'Almacena enlace de voucher y confirma reserva en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'v4', name: '[WHATSAPP] Dispatch WhatsApp Voucher', type: 'n8n-nodes-base.httpRequest', description: 'Envía plantilla oficial de WhatsApp Business API' },
       { id: 'v5', name: '[EMAIL] Send PDF Voucher Email', type: 'n8n-nodes-base.emailSend', description: 'Envía correo electrónico con voucher PDF adjunto' },
       { id: 'v6', name: '[RESPONSE] Confirm Dispatch Completion', type: 'n8n-nodes-base.respondToWebhook', description: 'Retorna estatus de entrega multicanal' },
       { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       trigger: 'CONFIRMACION_RESERVA',
@@ -624,7 +624,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
       name: "Costa Rica Tours - WF04 Emisión de Vouchers & WhatsApp",
       stickyNotes: [
         { name: "⚡ CONFIRMATION HOOK", color: 6, width: 260, height: 160, position: [80, 240] },
-        { name: "🗄️ FIRESTORE VOUCHER PERSISTENCE (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 480, height: 160, position: [360, 240] },
+        { name: "🗄️ FIRESTORE VOUCHER PERSISTENCE (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 480, height: 160, position: [360, 240] },
         { name: "📱 MULTICHANNEL NOTIFICATIONS (WHATSAPP + EMAIL)", color: 2, width: 440, height: 160, position: [860, 240] }
       ],
       nodes: [
@@ -693,14 +693,14 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
       ],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Guardado oficial de voucher en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)"
+          notes: "Guardado oficial de voucher en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -762,8 +762,8 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     },
     category: 'itinerary',
     description: {
-      es: 'Calcula rutas terrestres, genera itinerarios personalizados por día mediante IA Gemini y enlaza el catálogo de tours reservables en Firestore con Google Service Account (5NiYz8gX64lPYIdK).',
-      en: 'Calculates road transit routes, generates custom multi-day plans using Gemini AI, and maps bookable tours in Firestore via Google Service Account (5NiYz8gX64lPYIdK).'
+      es: 'Calcula rutas terrestres, genera itinerarios personalizados por día mediante IA Gemini y enlaza el catálogo de tours reservables en Firestore con Google Service Account (ENV_CONFIGURED_CREDENTIAL_ID).',
+      en: 'Calculates road transit routes, generates custom multi-day plans using Gemini AI, and maps bookable tours in Firestore via Google Service Account (ENV_CONFIGURED_CREDENTIAL_ID).'
     },
     icon: 'Sparkles',
     color: '#8b5cf6',
@@ -776,12 +776,12 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
       { id: 'i1', name: '[TRIGGER] Webhook Solicitud Itinerario', type: 'n8n-nodes-base.webhook', description: 'Recibe preferencias de viaje' },
       { id: 'i2', name: '[LOGIC] Region Transit Matrix', type: 'n8n-nodes-base.code', description: 'Calcula tiempos reales de viaje por carretera entre San José, Arenal y Manuel Antonio' },
       { id: 'i3', name: '[AI ENGINE] Gemini Itinerary Planner', type: 'n8n-nodes-base.openAi', description: 'Genera plan detallado día por día' },
-      { id: 'i4', name: '[FIRESTORE] Fetch Tour Catalog Mapping', type: 'n8n-nodes-base.httpRequest', description: 'Asocia actividades con el catálogo Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'i4', name: '[FIRESTORE] Fetch Tour Catalog Mapping', type: 'n8n-nodes-base.httpRequest', description: 'Asocia actividades con el catálogo Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'i5', name: '[RESPONSE] Deliver Full Itinerary', type: 'n8n-nodes-base.respondToWebhook', description: 'Entrega itinerario JSON completo' },
       { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       trigger: 'SOLICITUD_ITINERARIO',
@@ -798,7 +798,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
       stickyNotes: [
         { name: "⚡ INBOUND REQUEST", color: 6, width: 260, height: 160, position: [80, 240] },
         { name: "🧠 GEMINI AI PLANNER", color: 3, width: 480, height: 160, position: [360, 240] },
-        { name: "🗄️ FIRESTORE CATALOG MAPPING (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 360, height: 160, position: [860, 240] }
+        { name: "🗄️ FIRESTORE CATALOG MAPPING (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 360, height: 160, position: [860, 240] }
       ],
       nodes: [
         {
@@ -865,14 +865,14 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
       ],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Obtiene información de tours en Firestore con Google Service Account (ID: 5NiYz8gX64lPYIdK)"
+          notes: "Obtiene información de tours en Firestore con Google Service Account (ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -904,8 +904,8 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     },
     category: 'contingency',
     description: {
-      es: 'Monitorea alertas climáticas. Consulta reservas afectadas en la región usando Firestore con Google Service Account (5NiYz8gX64lPYIdK), genera tokens de cambio a 1-clic y despacha notificaciones empáticas.',
-      en: 'Monitors weather alerts. Queries impacted region bookings in Firestore via Google Service Account (5NiYz8gX64lPYIdK), generates 1-click reschedule links, and dispatches alerts.'
+      es: 'Monitorea alertas climáticas. Consulta reservas afectadas en la región usando Firestore con Google Service Account (ENV_CONFIGURED_CREDENTIAL_ID), genera tokens de cambio a 1-clic y despacha notificaciones empáticas.',
+      en: 'Monitors weather alerts. Queries impacted region bookings in Firestore via Google Service Account (ENV_CONFIGURED_CREDENTIAL_ID), generates 1-click reschedule links, and dispatches alerts.'
     },
     icon: 'CloudRain',
     color: '#f97316',
@@ -916,7 +916,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     slaTarget: '< 1000 ms',
     nodes: [
       { id: 'c1', name: '[TRIGGER] Weather Alert Hook', type: 'n8n-nodes-base.webhook', description: 'Recibe alerta de crecida o temporal' },
-      { id: 'c2', name: '[FIRESTORE] Query Impacted Region Bookings', type: 'n8n-nodes-base.httpRequest', description: 'Filtra reservas activas en la zona afectada en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'c2', name: '[FIRESTORE] Query Impacted Region Bookings', type: 'n8n-nodes-base.httpRequest', description: 'Filtra reservas activas en la zona afectada en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'c3', name: '[AI ENGINE] Evaluate Alternative Tours', type: 'n8n-nodes-base.code', description: 'Selecciona actividades bajo techo o termales cercanas' },
       { id: 'c4', name: '[SECURITY] Generate 1-Click Reschedule Token', type: 'n8n-nodes-base.crypto', description: 'Crea token seguro de cambio de fecha sin costo' },
       { id: 'c5', name: '[WHATSAPP] Send Empathetic Notification', type: 'n8n-nodes-base.httpRequest', description: 'Envía mensaje explicativo con alternativas' },
@@ -924,7 +924,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
       { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       tourId: 'sarapiqui-white-water-rafting-class-iii',
@@ -937,7 +937,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
       name: "Costa Rica Tours - WF06 Contingencias de Clima",
       stickyNotes: [
         { name: "⚡ WEATHER HOOK", color: 6, width: 260, height: 160, position: [80, 240] },
-        { name: "🗄️ FIRESTORE IMPACTED REGION QUERY (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 440, height: 160, position: [360, 240] },
+        { name: "🗄️ FIRESTORE IMPACTED REGION QUERY (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 440, height: 160, position: [360, 240] },
         { name: "🛡️ RESCHEDULE & WHATSAPP DISPATCH", color: 1, width: 440, height: 160, position: [820, 240] }
       ],
       nodes: [
@@ -991,14 +991,14 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
       ],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Obtiene reservas afectadas en Firestore con Google Service Account (ID: 5NiYz8gX64lPYIdK)"
+          notes: "Obtiene reservas afectadas en Firestore con Google Service Account (ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -1069,8 +1069,8 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     },
     category: 'supervision',
     description: {
-      es: 'Audita fallos de interpretación en Firestore (5NiYz8gX64lPYIdK), diagnostica causas raíz con Gemini y envía parches recomendados al canal técnico de Telegram mediante Google Service Account (5NiYz8gX64lPYIdK).',
-      en: 'Audits interpretation failures in Firestore (5NiYz8gX64lPYIdK), diagnoses root causes via Gemini, and dispatches prompt hotfixes to Telegram tech channel using Google Service Account (5NiYz8gX64lPYIdK).'
+      es: 'Audita fallos de interpretación en Firestore (ENV_CONFIGURED_CREDENTIAL_ID), diagnostica causas raíz con Gemini y envía parches recomendados al canal técnico de Telegram mediante Google Service Account (ENV_CONFIGURED_CREDENTIAL_ID).',
+      en: 'Audits interpretation failures in Firestore (ENV_CONFIGURED_CREDENTIAL_ID), diagnoses root causes via Gemini, and dispatches prompt hotfixes to Telegram tech channel using Google Service Account (ENV_CONFIGURED_CREDENTIAL_ID).'
     },
     icon: 'ShieldAlert',
     color: '#ef4444',
@@ -1081,15 +1081,15 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     slaTarget: '< 1800 ms',
     nodes: [
       { id: 's1', name: '[TRIGGER] Cron Exception Auditor', type: 'n8n-nodes-base.cron', description: 'Se dispara periódicamente o tras 3 errores' },
-      { id: 's2', name: '[FIRESTORE] Fetch Unhandled Exception Logs', type: 'n8n-nodes-base.httpRequest', description: 'Consulta excepciones no controladas en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 's2', name: '[FIRESTORE] Fetch Unhandled Exception Logs', type: 'n8n-nodes-base.httpRequest', description: 'Consulta excepciones no controladas en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 's3', name: '[AI ENGINE] Gemini Failure Pattern Analyzer', type: 'n8n-nodes-base.openAi', description: 'Analiza la causa raíz en modismos locales' },
       { id: 's4', name: '[LOGIC] Generate Prompt Hotfix Rule', type: 'n8n-nodes-base.code', description: 'Genera parche de normalización en tiempo real' },
-      { id: 's5', name: '[TELEGRAM] Send Alert to Ops Tech Channel', type: 'n8n-nodes-base.telegram', description: 'Despacha alerta técnica a Telegram (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 's5', name: '[TELEGRAM] Send Alert to Ops Tech Channel', type: 'n8n-nodes-base.telegram', description: 'Despacha alerta técnica a Telegram (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 's6', name: '[RESPONSE] Deliver Self-Healing Diagnosis', type: 'n8n-nodes-base.respondToWebhook', description: 'Entrega diagnóstico de auto-recuperación' },
       { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       agentName: 'OperationsTriage',
@@ -1100,8 +1100,8 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
       name: "Costa Rica Tours - WF07 Supervisor Self-Healing",
       stickyNotes: [
         { name: "⚡ CRON EXCEPTION HOOK", color: 6, width: 260, height: 160, position: [80, 240] },
-        { name: "🗄️ FIRESTORE ERROR LOGS (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
-        { name: "✈️ TELEGRAM TECH BOT DISPATCH (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 2, width: 440, height: 160, position: [720, 240] }
+        { name: "🗄️ FIRESTORE ERROR LOGS (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "✈️ TELEGRAM TECH BOT DISPATCH (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 2, width: 440, height: 160, position: [720, 240] }
       ],
       nodes: [
         {
@@ -1148,14 +1148,14 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
       ],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Obtiene bitácora de errores en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)"
+          notes: "Obtiene bitácora de errores en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -1188,10 +1188,10 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           typeVersion: 1.1,
           position: [950, 300],
           credentials: {
-            telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Notificación enviada al Bot de Telegram (Credential: 5NiYz8gX64lPYIdK)"
+          notes: "Notificación enviada al Bot de Telegram (Credential: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -1224,8 +1224,8 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     },
     category: 'support',
     description: {
-      es: 'Genera un ticket de alta prioridad en Firestore (5NiYz8gX64lPYIdK), notifica inmediatamente al canal de guardia en Telegram (5NiYz8gX64lPYIdK) y responde con empatía al cliente.',
-      en: 'Creates a priority support ticket in Firestore (5NiYz8gX64lPYIdK), dispatches an urgent Telegram alert (5NiYz8gX64lPYIdK), and delivers a reassuring response.'
+      es: 'Genera un ticket de alta prioridad en Firestore (ENV_CONFIGURED_CREDENTIAL_ID), notifica inmediatamente al canal de guardia en Telegram (ENV_CONFIGURED_CREDENTIAL_ID) y responde con empatía al cliente.',
+      en: 'Creates a priority support ticket in Firestore (ENV_CONFIGURED_CREDENTIAL_ID), dispatches an urgent Telegram alert (ENV_CONFIGURED_CREDENTIAL_ID), and delivers a reassuring response.'
     },
     icon: 'Headphones',
     color: '#ec4899',
@@ -1237,13 +1237,13 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     nodes: [
       { id: 'u1', name: '[TRIGGER] Support Escalation Webhook', type: 'n8n-nodes-base.webhook', description: 'Detecta solicitud humana o urgencia' },
       { id: 'u2', name: '[AI ENGINE] Sentiment & Severity Classifier', type: 'n8n-nodes-base.code', description: 'Calcula severidad del caso y asigna urgencia' },
-      { id: 'u3', name: '[FIRESTORE] Create High-Priority Support Ticket', type: 'n8n-nodes-base.httpRequest', description: 'Almacena el ticket en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
-      { id: 'u4', name: '[TELEGRAM] Dispatch Priority Alert to Ops Chat', type: 'n8n-nodes-base.telegram', description: 'Avisa al personal de guardia en Telegram (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'u3', name: '[FIRESTORE] Create High-Priority Support Ticket', type: 'n8n-nodes-base.httpRequest', description: 'Almacena el ticket en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
+      { id: 'u4', name: '[TELEGRAM] Dispatch Priority Alert to Ops Chat', type: 'n8n-nodes-base.telegram', description: 'Avisa al personal de guardia en Telegram (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'u5', name: '[RESPONSE] Reassure Traveler', type: 'n8n-nodes-base.respondToWebhook', description: 'Informa al usuario sobre el contacto humano inmediato' },
       { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       trigger: 'SOLICITUD_SOPORTE',
@@ -1262,8 +1262,8 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
       name: "Costa Rica Tours - WF08 Escalado a Soporte Humano",
       stickyNotes: [
         { name: "⚡ SUPPORT HOOK", color: 6, width: 260, height: 160, position: [80, 240] },
-        { name: "🗄️ FIRESTORE TICKET DB (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
-        { name: "✈️ TELEGRAM VIP ALERT BOT (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 2, width: 440, height: 160, position: [720, 240] }
+        { name: "🗄️ FIRESTORE TICKET DB (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "✈️ TELEGRAM VIP ALERT BOT (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 2, width: 440, height: 160, position: [720, 240] }
       ],
       nodes: [
         {
@@ -1327,14 +1327,14 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
       ],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Inserta ticket prioritario en Firestore con Google Service Account (ID: 5NiYz8gX64lPYIdK)"
+          notes: "Inserta ticket prioritario en Firestore con Google Service Account (ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -1347,10 +1347,10 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           typeVersion: 1.1,
           position: [700, 300],
           credentials: {
-            telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Despacha alerta VIP al Bot de Telegram (Credential ID: 5NiYz8gX64lPYIdK)"
+          notes: "Despacha alerta VIP al Bot de Telegram (Credential ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -1382,8 +1382,8 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     },
     category: 'fraud',
     description: {
-      es: 'Consulta historial de transacciones en Firestore (5NiYz8gX64lPYIdK), calcula la matriz de riesgo (IP vs BIN, reintentos) y notifica intentos sospechosos a Telegram (5NiYz8gX64lPYIdK).',
-      en: 'Queries past transaction logs in Firestore (5NiYz8gX64lPYIdK), evaluates risk matrix, and alerts suspicious payments to Telegram (5NiYz8gX64lPYIdK).'
+      es: 'Consulta historial de transacciones en Firestore (ENV_CONFIGURED_CREDENTIAL_ID), calcula la matriz de riesgo (IP vs BIN, reintentos) y notifica intentos sospechosos a Telegram (ENV_CONFIGURED_CREDENTIAL_ID).',
+      en: 'Queries past transaction logs in Firestore (ENV_CONFIGURED_CREDENTIAL_ID), evaluates risk matrix, and alerts suspicious payments to Telegram (ENV_CONFIGURED_CREDENTIAL_ID).'
     },
     icon: 'ShieldAlert',
     color: '#ef4444',
@@ -1394,15 +1394,15 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     slaTarget: '< 850 ms',
     nodes: [
       { id: 'f1', name: '[TRIGGER] Fraud Check Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe datos de pago previa a emisión' },
-      { id: 'f2', name: '[FIRESTORE] Fetch Customer Transaction History', type: 'n8n-nodes-base.httpRequest', description: 'Valida reintentos y lista negra en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'f2', name: '[FIRESTORE] Fetch Customer Transaction History', type: 'n8n-nodes-base.httpRequest', description: 'Valida reintentos y lista negra en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'f3', name: '[LOGIC] Calculate Risk Score Engine', type: 'n8n-nodes-base.code', description: 'Calcula score 0-100 por discordancia geográfica y montos' },
       { id: 'f4', name: '[LOGIC] Decision Switch (Pass / Review / Block)', type: 'n8n-nodes-base.if', description: 'Switchea según score <40 (Aprobado), 40-69 (Revisión), >=70 (Bloqueado)' },
-      { id: 'f5', name: '[TELEGRAM] Send High-Risk Fraud Alert', type: 'n8n-nodes-base.telegram', description: 'Alert al equipo de seguridad en Telegram (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'f5', name: '[TELEGRAM] Send High-Risk Fraud Alert', type: 'n8n-nodes-base.telegram', description: 'Alert al equipo de seguridad en Telegram (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'f6', name: '[RESPONSE] Respond Risk Verdict', type: 'n8n-nodes-base.respondToWebhook', description: 'Retorna veredicto final' },
       { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       trigger: 'EVALUACION_ANTIFRAUDE',
@@ -1425,8 +1425,8 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
       name: "Costa Rica Tours - WF09 Motor Antifraude & Risk Scoring",
       stickyNotes: [
         { name: "⚡ FRAUD CHECK HOOK", color: 6, width: 260, height: 160, position: [80, 240] },
-        { name: "🗄️ FIRESTORE RISK LOOKUP (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
-        { name: "✈️ TELEGRAM FRAUD BOT ALERT (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 2, width: 440, height: 160, position: [720, 240] }
+        { name: "🗄️ FIRESTORE RISK LOOKUP (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "✈️ TELEGRAM FRAUD BOT ALERT (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 2, width: 440, height: 160, position: [720, 240] }
       ],
       nodes: [
         {
@@ -1473,14 +1473,14 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
       ],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Obtiene antecedentes en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)"
+          notes: "Obtiene antecedentes en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -1512,10 +1512,10 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           typeVersion: 1.1,
           position: [950, 300],
           credentials: {
-            telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Despacha alerta de fraude a Telegram (Credential ID: 5NiYz8gX64lPYIdK)"
+          notes: "Despacha alerta de fraude a Telegram (Credential ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -1548,8 +1548,8 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     },
     category: 'telegram',
     description: {
-      es: 'Bot interactivo de Telegram (5NiYz8gX64lPYIdK) para guías y choferes con actualización instantánea de estado operativo en Firestore (5NiYz8gX64lPYIdK) en 1 clic.',
-      en: 'Interactive Telegram Bot (5NiYz8gX64lPYIdK) for tour guides and drivers with 1-click operational status synchronization in Firestore (5NiYz8gX64lPYIdK).'
+      es: 'Bot interactivo de Telegram (ENV_CONFIGURED_CREDENTIAL_ID) para guías y choferes con actualización instantánea de estado operativo en Firestore (ENV_CONFIGURED_CREDENTIAL_ID) en 1 clic.',
+      en: 'Interactive Telegram Bot (ENV_CONFIGURED_CREDENTIAL_ID) for tour guides and drivers with 1-click operational status synchronization in Firestore (ENV_CONFIGURED_CREDENTIAL_ID).'
     },
     icon: 'Send',
     color: '#0284c7',
@@ -1559,16 +1559,16 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     nodesCount: 10,
     slaTarget: '< 950 ms',
     nodes: [
-      { id: 't1', name: '[TRIGGER] Telegram Bot Trigger', type: 'n8n-nodes-base.telegramTrigger', description: 'Escucha clics en botones inline en Telegram Bot (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 't1', name: '[TRIGGER] Telegram Bot Trigger', type: 'n8n-nodes-base.telegramTrigger', description: 'Escucha clics en botones inline en Telegram Bot (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 't2', name: '[LOGIC] Parse Telegram Action Callback', type: 'n8n-nodes-base.code', description: 'Extrae el bookingId y la acción seleccionada por el guía' },
-      { id: 't3', name: '[FIRESTORE] Sync Booking Operational Status', type: 'n8n-nodes-base.httpRequest', description: 'Actualiza el estado de la reserva en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 't3', name: '[FIRESTORE] Sync Booking Operational Status', type: 'n8n-nodes-base.httpRequest', description: 'Actualiza el estado de la reserva en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 't4', name: '[TELEGRAM] Update Inline Button Markup', type: 'n8n-nodes-base.telegram', description: 'Modifica el texto de la tarjeta en Telegram a "✅ CONFIRMADO POR GUÍA"' },
-      { id: 't5', name: '[TELEGRAM] Notify Ops Telegram Group', type: 'n8n-nodes-base.telegram', description: 'Informa al grupo general de logística (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 't5', name: '[TELEGRAM] Notify Ops Telegram Group', type: 'n8n-nodes-base.telegram', description: 'Informa al grupo general de logística (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 't6', name: '[RESPONSE] Answer Callback Query Toast', type: 'n8n-nodes-base.respondToWebhook', description: 'Despacha notificación emergente toast en la interfaz de Telegram' },
       { id: 'n1', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n2', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n3', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n4', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       trigger: 'ACCION_PANEL_TELEGRAM',
@@ -1584,9 +1584,9 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     blueprintJson: {
       name: "Costa Rica Tours - WF10 Panel Operativo Telegram Bot",
       stickyNotes: [
-        { name: "✈️ TELEGRAM BOT TRIGGER & PARSER (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 2, width: 340, height: 160, position: [80, 240] },
-        { name: "🗄️ FIRESTORE OPERATIONAL STATUS SYNC (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 360, height: 160, position: [460, 240] },
-        { name: "✈️ TELEGRAM MARKUP & GROUP DISPATCH (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 2, width: 440, height: 160, position: [860, 240] }
+        { name: "✈️ TELEGRAM BOT TRIGGER & PARSER (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 2, width: 340, height: 160, position: [80, 240] },
+        { name: "🗄️ FIRESTORE OPERATIONAL STATUS SYNC (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 360, height: 160, position: [460, 240] },
+        { name: "✈️ TELEGRAM MARKUP & GROUP DISPATCH (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 2, width: 440, height: 160, position: [860, 240] }
       ],
       nodes: [
         {
@@ -1623,14 +1623,14 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
       ],
           credentials: {
-            telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Escucha eventos con credencial certificada (ID: 5NiYz8gX64lPYIdK)"
+          notes: "Escucha eventos con credencial certificada (ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -1662,10 +1662,10 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           typeVersion: 4.1,
           position: [500, 300],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Sincroniza estado operativo en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)"
+          notes: "Sincroniza estado operativo en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -1678,10 +1678,10 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           typeVersion: 1.1,
           position: [700, 300],
           credentials: {
-            telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Actualiza el texto en Telegram (Credential ID: 5NiYz8gX64lPYIdK)"
+          notes: "Actualiza el texto en Telegram (Credential ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -1694,10 +1694,10 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           typeVersion: 1.1,
           position: [900, 300],
           credentials: {
-            telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Reporte grupal vía Bot Telegram (Credential ID: 5NiYz8gX64lPYIdK)"
+          notes: "Reporte grupal vía Bot Telegram (Credential ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -1730,8 +1730,8 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     },
     category: 'analytics',
     description: {
-      es: 'Extrae reservas de los últimos 7 días desde Firestore (5NiYz8gX64lPYIdK), calcula KPIs de conversión e ingresos, y despacha un informe ejecutivo al canal de Telegram (5NiYz8gX64lPYIdK).',
-      en: 'Extracts 7-day bookings from Firestore (5NiYz8gX64lPYIdK), calculates conversion KPIs and revenue, and dispatches an executive report to Telegram (5NiYz8gX64lPYIdK).'
+      es: 'Extrae reservas de los últimos 7 días desde Firestore (ENV_CONFIGURED_CREDENTIAL_ID), calcula KPIs de conversión e ingresos, y despacha un informe ejecutivo al canal de Telegram (ENV_CONFIGURED_CREDENTIAL_ID).',
+      en: 'Extracts 7-day bookings from Firestore (ENV_CONFIGURED_CREDENTIAL_ID), calculates conversion KPIs and revenue, and dispatches an executive report to Telegram (ENV_CONFIGURED_CREDENTIAL_ID).'
     },
     icon: 'BarChart3',
     color: '#0ea5e9',
@@ -1742,19 +1742,19 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
     slaTarget: '< 2500 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] Weekly Schedule Trigger', type: 'n8n-nodes-base.scheduleTrigger', description: 'Se activa todos los lunes a las 07:00 AM (Hora Costa Rica, UTC-6)' },
-      { id: 'n2', name: '[FIRESTORE] Fetch Weekly Bookings & Analytics', type: 'n8n-nodes-base.httpRequest', description: 'Consulta consolidada de reservas en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'n2', name: '[FIRESTORE] Fetch Weekly Bookings & Analytics', type: 'n8n-nodes-base.httpRequest', description: 'Consulta consolidada de reservas en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n3', name: '[LOGIC] Conversion Rate & KPI Engine', type: 'n8n-nodes-base.code', description: 'Calcula % de conversión, ingresos USD y top tours demandados' },
       { id: 'n4', name: '[LOGIC] Telegram Executive Markdown Formatter', type: 'n8n-nodes-base.code', description: 'Formatea reporte ejecutivo en Markdown con métricas clave' },
-      { id: 'n5', name: '[TELEGRAM] Send to Admin Telegram Channel', type: 'n8n-nodes-base.telegram', description: 'Despacha reporte al chat administrativo en Telegram (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'n5', name: '[TELEGRAM] Send to Admin Telegram Channel', type: 'n8n-nodes-base.telegram', description: 'Despacha reporte al chat administrativo en Telegram (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n6', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n7', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n8', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n9', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n9', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       trigger: 'CRON_SEMANAL_CONVERSION',
       periodo: { dias: 7, rango: 'Lunes a Domingo' },
-      origenDatos: 'Firestore Collection: bookings (Credential ID: 5NiYz8gX64lPYIdK)',
+      origenDatos: 'Firestore Collection: bookings (Credential ID: ENV_CONFIGURED_CREDENTIAL_ID)',
       canalTelegram: '@CostaRicaToursAdminOps',
       simulacionModo: 'manual_trigger'
     },
@@ -1762,8 +1762,8 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
       name: "Costa Rica Tours - WF11 Reporte Semanal Conversión a Telegram",
       stickyNotes: [
         { name: "⚡ WEEKLY CRON TRIGGER", color: 6, width: 260, height: 160, position: [80, 240] },
-        { name: "🗄️ FIRESTORE ANALYTICS QUERY (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 360, height: 160, position: [360, 240] },
-        { name: "✈️ TELEGRAM ADMIN CHANNEL DISPATCH (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 2, width: 440, height: 160, position: [760, 240] }
+        { name: "🗄️ FIRESTORE ANALYTICS QUERY (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 360, height: 160, position: [360, 240] },
+        { name: "✈️ TELEGRAM ADMIN CHANNEL DISPATCH (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 2, width: 440, height: 160, position: [760, 240] }
       ],
       nodes: [
         {
@@ -1798,7 +1798,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
       ], triggerAtHour: 7, triggerAtMinute: 0 }]
             }
@@ -1821,10 +1821,10 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
           typeVersion: 4.1,
           position: [350, 300],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Consulta consolidada en Firestore con Google Service Account (ID: 5NiYz8gX64lPYIdK)"
+          notes: "Consulta consolidada en Firestore con Google Service Account (ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -1880,7 +1880,7 @@ const telegramText = [
   d.topTours,
   '━━━━━━━━━━━━━━━━━━━━━━━━',
   '🌱 *Estatus de Operación:* 100% Sostenible (CST Verificado)',
-  '🤖 *Origen de Datos:* Firestore Admin Sync (Credential ID: 5NiYz8gX64lPYIdK)'
+  '🤖 *Origen de Datos:* Firestore Admin Sync (Credential ID: ENV_CONFIGURED_CREDENTIAL_ID)'
 ].join('\\n');
 
 return {
@@ -1907,10 +1907,10 @@ return {
           typeVersion: 1.1,
           position: [950, 300],
           credentials: {
-            telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Despacha informe al canal de Telegram (Credential ID: 5NiYz8gX64lPYIdK)"
+          notes: "Despacha informe al canal de Telegram (Credential ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         }
       ],
       connections: {
@@ -1932,8 +1932,8 @@ return {
     },
     category: 'calendar',
     description: {
-      es: 'Sincroniza detalles del itinerario desde Firestore (5NiYz8gX64lPYIdK) con el calendario oficial de Google Calendar para guías y transportistas asignados.',
-      en: 'Syncs trip itinerary details from Firestore (5NiYz8gX64lPYIdK) into assigned guides and drivers official Google Calendars.'
+      es: 'Sincroniza detalles del itinerario desde Firestore (ENV_CONFIGURED_CREDENTIAL_ID) con el calendario oficial de Google Calendar para guías y transportistas asignados.',
+      en: 'Syncs trip itinerary details from Firestore (ENV_CONFIGURED_CREDENTIAL_ID) into assigned guides and drivers official Google Calendars.'
     },
     icon: 'Calendar',
     color: '#8b5cf6',
@@ -1944,13 +1944,13 @@ return {
     slaTarget: '< 1800 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] Calendar Trigger Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe payload con bookingId y asignaciones' },
-      { id: 'n2', name: '[FIRESTORE] Query Guide & Driver Trip Details', type: 'n8n-nodes-base.httpRequest', description: 'Consulta datos en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
-      { id: 'n3', name: '[CALENDAR] Google Calendar Event Creator', type: 'n8n-nodes-base.googleCalendar', description: 'Crea evento en Google Calendar con alertas (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'n2', name: '[FIRESTORE] Query Guide & Driver Trip Details', type: 'n8n-nodes-base.httpRequest', description: 'Consulta datos en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
+      { id: 'n3', name: '[CALENDAR] Google Calendar Event Creator', type: 'n8n-nodes-base.googleCalendar', description: 'Crea evento en Google Calendar con alertas (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n4', name: '[RESPONSE] Confirm Calendar Sync', type: 'n8n-nodes-base.respondToWebhook', description: 'Retorna ID de evento y confirma sincronización' },
       { id: 'n5', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n6', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n7', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n8', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n8', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       trigger: 'SYNC_CALENDAR',
@@ -1966,8 +1966,8 @@ return {
       name: "Costa Rica Tours - WF12 Sincronización Google Calendar",
       stickyNotes: [
         { name: "⚡ CALENDAR HOOK", color: 6, width: 260, height: 160, position: [80, 240] },
-        { name: "🗄️ FIRESTORE TRIP LOOKUP (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
-        { name: "📅 GOOGLE CALENDAR SYNC (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 5, width: 440, height: 160, position: [720, 240] }
+        { name: "🗄️ FIRESTORE TRIP LOOKUP (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "📅 GOOGLE CALENDAR SYNC (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 5, width: 440, height: 160, position: [720, 240] }
       ],
       nodes: [
         {
@@ -2014,14 +2014,14 @@ return {
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
       ],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Obtiene información del itinerario en Firestore (ID: 5NiYz8gX64lPYIdK)"
+          notes: "Obtiene información del itinerario en Firestore (ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -2035,10 +2035,10 @@ return {
           typeVersion: 1.1,
           position: [600, 300],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Crea evento en Google Calendar usando Google Service Account (ID: 5NiYz8gX64lPYIdK)"
+          notes: "Crea evento en Google Calendar usando Google Service Account (ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -2069,8 +2069,8 @@ return {
     },
     category: 'feedback',
     description: {
-      es: 'Consulta en Firestore (5NiYz8gX64lPYIdK) tours finalizados hace 24h, solicita calificación NPS vía WhatsApp y enruta detractores (NPS <= 6) a alertas de Telegram (5NiYz8gX64lPYIdK).',
-      en: 'Queries completed tours in Firestore (5NiYz8gX64lPYIdK), triggers 1-10 NPS WhatsApp survey, and routes detractor scores (<= 6) to Telegram (5NiYz8gX64lPYIdK).'
+      es: 'Consulta en Firestore (ENV_CONFIGURED_CREDENTIAL_ID) tours finalizados hace 24h, solicita calificación NPS vía WhatsApp y enruta detractores (NPS <= 6) a alertas de Telegram (ENV_CONFIGURED_CREDENTIAL_ID).',
+      en: 'Queries completed tours in Firestore (ENV_CONFIGURED_CREDENTIAL_ID), triggers 1-10 NPS WhatsApp survey, and routes detractor scores (<= 6) to Telegram (ENV_CONFIGURED_CREDENTIAL_ID).'
     },
     icon: 'HeartHandshake',
     color: '#ec4899',
@@ -2081,15 +2081,15 @@ return {
     slaTarget: '< 1200 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] Post-Tour Cron Trigger', type: 'n8n-nodes-base.webhook', description: 'Se ejecuta 24 horas después de finalizar el tour' },
-      { id: 'n2', name: '[FIRESTORE] Fetch Completed Tours 24h Prior', type: 'n8n-nodes-base.httpRequest', description: 'Obtiene clientes con tours completados ayer en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'n2', name: '[FIRESTORE] Fetch Completed Tours 24h Prior', type: 'n8n-nodes-base.httpRequest', description: 'Obtiene clientes con tours completados ayer en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n3', name: '[WHATSAPP] WhatsApp NPS Interactive Dispatcher', type: 'n8n-nodes-base.httpRequest', description: 'Despacha botones interactivos 1-10 por WhatsApp Business' },
       { id: 'n4', name: '[LOGIC] NPS Score Classifier', type: 'n8n-nodes-base.code', description: 'Clasifica en Promotor (9-10) o Detractor (1-6)' },
-      { id: 'n5', name: '[TELEGRAM] Alert Detractor Score to Admin Chat', type: 'n8n-nodes-base.telegram', description: 'Notifica al Gerente de Experiencia en Telegram si la nota es <= 6 (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'n5', name: '[TELEGRAM] Alert Detractor Score to Admin Chat', type: 'n8n-nodes-base.telegram', description: 'Notifica al Gerente de Experiencia en Telegram si la nota es <= 6 (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n6', name: '[RESPONSE] Confirm Survey Dispatch', type: 'n8n-nodes-base.respondToWebhook', description: 'Confirma la ejecución de encuestas post-tour' },
       { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       trigger: 'POST_TOUR_NPS',
@@ -2103,8 +2103,8 @@ return {
       name: "Costa Rica Tours - WF13 Encuesta NPS Post-Tour",
       stickyNotes: [
         { name: "⚡ POST-TOUR HOOK", color: 6, width: 260, height: 160, position: [80, 240] },
-        { name: "🗄️ FIRESTORE TOUR LOGS (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
-        { name: "✈️ TELEGRAM DETRACTOR ALERT (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 2, width: 440, height: 160, position: [720, 240] }
+        { name: "🗄️ FIRESTORE TOUR LOGS (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "✈️ TELEGRAM DETRACTOR ALERT (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 2, width: 440, height: 160, position: [720, 240] }
       ],
       nodes: [
         {
@@ -2151,14 +2151,14 @@ return {
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
       ],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Obtiene reservas completadas en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)"
+          notes: "Obtiene reservas completadas en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -2197,10 +2197,10 @@ return {
           typeVersion: 1.1,
           position: [950, 300],
           credentials: {
-            telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Alerta de detractor enviada a Telegram (Google Service Account ID: 5NiYz8gX64lPYIdK)"
+          notes: "Alerta de detractor enviada a Telegram (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -2232,8 +2232,8 @@ return {
     },
     category: 'booking',
     description: {
-      es: 'Procesa la reserva y compra automatizada de entradas oficiales a Parques Nacionales de Costa Rica (Manuel Antonio, Poás, Tortuguero, Corcovado, Irazú), valida franjas horarias y cédula/pasaporte, almacena el tiquete QR en Firestore (Credencial: 5NiYz8gX64lPYIdK) y envía el comprobante digital con código QR a Telegram y WhatsApp.',
-      en: 'Processes automated booking and ticket purchase for official Costa Rica National Parks (Manuel Antonio, Poás, Tortuguero, Corcovado, Irazú), validates time slots and passport/ID, stores QR ticket in Firestore (Credential: 5NiYz8gX64lPYIdK), and dispatches digital voucher with QR code to Telegram and WhatsApp.'
+      es: 'Procesa la reserva y compra automatizada de entradas oficiales a Parques Nacionales de Costa Rica (Manuel Antonio, Poás, Tortuguero, Corcovado, Irazú), valida franjas horarias y cédula/pasaporte, almacena el tiquete QR en Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID) y envía el comprobante digital con código QR a Telegram y WhatsApp.',
+      en: 'Processes automated booking and ticket purchase for official Costa Rica National Parks (Manuel Antonio, Poás, Tortuguero, Corcovado, Irazú), validates time slots and passport/ID, stores QR ticket in Firestore (Credential: ENV_CONFIGURED_CREDENTIAL_ID), and dispatches digital voucher with QR code to Telegram and WhatsApp.'
     },
     icon: 'Ticket',
     color: '#059669',
@@ -2245,15 +2245,15 @@ return {
     nodes: [
       { id: 'n1', name: '[TRIGGER] Webhook SINAC Park Booking', type: 'n8n-nodes-base.webhook', description: 'Recibe datos de visitantes, parque seleccionado, fecha, hora e identificación' },
       { id: 'n2', name: '[SECURITY] HMAC & Identity Validator', type: 'n8n-nodes-base.code', description: 'Valida formato de cédula/pasaporte y firma de seguridad del payload' },
-      { id: 'n3', name: '[FIRESTORE] Check Park Slot Capacity & Rates', type: 'n8n-nodes-base.httpRequest', description: 'Verifica cupos por franja horaria en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'n3', name: '[FIRESTORE] Check Park Slot Capacity & Rates', type: 'n8n-nodes-base.httpRequest', description: 'Verifica cupos por franja horaria en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n4', name: '[PAYMENT] Process SINAC Entry Ticket Payment', type: 'n8n-nodes-base.httpRequest', description: 'Procesa el pago de entradas oficiales y tasas de conservación' },
-      { id: 'n5', name: '[FIRESTORE] Save Ticket Voucher & QR Code', type: 'n8n-nodes-base.httpRequest', description: 'Registra el tiquete digital QR en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
-      { id: 'n6', name: '[TELEGRAM] Alert Admin & Dispatch QR Ticket', type: 'n8n-nodes-base.telegram', description: 'Notifica al canal de reservas en Telegram (Google Service Account ID: 5NiYz8gX64lPYIdK)' },
+      { id: 'n5', name: '[FIRESTORE] Save Ticket Voucher & QR Code', type: 'n8n-nodes-base.httpRequest', description: 'Registra el tiquete digital QR en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
+      { id: 'n6', name: '[TELEGRAM] Alert Admin & Dispatch QR Ticket', type: 'n8n-nodes-base.telegram', description: 'Notifica al canal de reservas en Telegram (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n7', name: '[RESPONSE] Return Park Ticket Confirmation', type: 'n8n-nodes-base.respondToWebhook', description: 'Entrega respuesta JSON con confirmación y pase QR al cliente' },
       { id: 'n8', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n9', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n10', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n11', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n11', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       trigger: 'RESERVA_PARQUE_NACIONAL_SINAC',
@@ -2281,9 +2281,9 @@ return {
       name: "Costa Rica Tours - WF14 Reservas Parques Nacionales SINAC",
       stickyNotes: [
         { name: "⚡ SINAC INBOUND WEBHOOK", color: 6, width: 260, height: 160, position: [80, 240] },
-        { name: "🗄️ FIRESTORE PARK SLOTS (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "🗄️ FIRESTORE PARK SLOTS (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 340, height: 160, position: [360, 240] },
         { name: "💳 SINAC PAYMENT GATEWAY", color: 3, width: 280, height: 160, position: [720, 240] },
-        { name: "✈️ TELEGRAM PARK VOUCHER (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 2, width: 440, height: 160, position: [1020, 240] }
+        { name: "✈️ TELEGRAM PARK VOUCHER (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 2, width: 440, height: 160, position: [1020, 240] }
       ],
       nodes: [
         {
@@ -2340,14 +2340,14 @@ return {
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
       ],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Verifica cupos del parque SINAC en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)"
+          notes: "Verifica cupos del parque SINAC en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -2380,10 +2380,10 @@ return {
           typeVersion: 4.1,
           position: [900, 300],
           credentials: {
-            googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Guarda tiquete digital QR en Firestore (Google Service Account ID: 5NiYz8gX64lPYIdK)"
+          notes: "Guarda tiquete digital QR en Firestore (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -2396,10 +2396,10 @@ return {
           typeVersion: 1.1,
           position: [1100, 300],
           credentials: {
-            telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" }
+            telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" }
           },
           notesInFlow: true,
-          notes: "Notifica venta de entrada SINAC a Telegram (Google Service Account ID: 5NiYz8gX64lPYIdK)"
+          notes: "Notifica venta de entrada SINAC a Telegram (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)"
         },
         {
           parameters: {
@@ -2432,8 +2432,8 @@ return {
     },
     category: 'flight',
     description: {
-      es: 'Monitorea retrasos en vuelos internacionales a SJO/LIR, actualiza la hora de transporte en Firestore (Credencial: 5NiYz8gX64lPYIdK) y alinea automáticamente al chofer vía Telegram.',
-      en: 'Monitors flight delays to SJO/LIR, updates transport pickup time in Firestore (Credential: 5NiYz8gX64lPYIdK) and syncs driver via Telegram.'
+      es: 'Monitorea retrasos en vuelos internacionales a SJO/LIR, actualiza la hora de transporte en Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID) y alinea automáticamente al chofer vía Telegram.',
+      en: 'Monitors flight delays to SJO/LIR, updates transport pickup time in Firestore (Credential: ENV_CONFIGURED_CREDENTIAL_ID) and syncs driver via Telegram.'
     },
     icon: 'Plane',
     color: '#0284c7',
@@ -2445,14 +2445,14 @@ return {
     nodes: [
       { id: 'n1', name: '[TRIGGER] Inbound Flight Delay Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe actualización de estado del vuelo desde radar aéreo' },
       { id: 'n2', name: '[SECURITY] HMAC Auth', type: 'n8n-nodes-base.crypto', description: 'Verifica firma de seguridad del payload' },
-      { id: 'n3', name: '[FIRESTORE] Fetch Associated Transport Booking', type: 'n8n-nodes-base.httpRequest', description: 'Consulta reserva de transporte en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
-      { id: 'n4', name: '[FIRESTORE] Update Pickup Time & Driver Schedule', type: 'n8n-nodes-base.httpRequest', description: 'Actualiza nueva hora de recogida en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n3', name: '[FIRESTORE] Fetch Associated Transport Booking', type: 'n8n-nodes-base.httpRequest', description: 'Consulta reserva de transporte en Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID)' },
+      { id: 'n4', name: '[FIRESTORE] Update Pickup Time & Driver Schedule', type: 'n8n-nodes-base.httpRequest', description: 'Actualiza nueva hora de recogida en Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n5', name: '[TELEGRAM] Alert Driver & Operations Team', type: 'n8n-nodes-base.telegram', description: 'Notifica al chofer asignado con nueva hora estimada en Telegram' },
       { id: 'n6', name: '[RESPONSE] Confirm Flight Delay Reschedule', type: 'n8n-nodes-base.respondToWebhook', description: 'Responde confirmando re-programación de logística' },
       { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       flightNumber: 'AA-1204',
@@ -2469,7 +2469,7 @@ return {
       name: "Costa Rica Tours - WF15 Monitoreo Vuelos & Pick-up Reschedule",
       stickyNotes: [
         { name: "✈️ FLIGHT RADAR INBOUND", color: 6, width: 260, height: 160, position: [80, 240] },
-        { name: "🗄️ FIRESTORE RESCHEDULE (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "🗄️ FIRESTORE RESCHEDULE (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 340, height: 160, position: [360, 240] },
         { name: "✈️ TELEGRAM DRIVER ALERT", color: 2, width: 340, height: 160, position: [720, 240] }
       ],
       nodes: [
@@ -2504,11 +2504,11 @@ return {
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
-      ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
-        { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[FIRESTORE] Update Pickup Time & Driver Schedule", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*✈️ ALERTA VUELO RETRASADO - REAGENDAMIENTO PICK-UP*\\n\\nVuelo: `{{$json.flightNumber || 'AA-1204'}}`\\nCliente: `{{$json.customerName || 'Carlos Mendoza'}}`\\nNueva Hora Llegada: `{{$json.newEta || '16:15'}}` (Retraso: `{{$json.delayMinutes || 105}} min`)\\nChofer Asignado: `{{$json.driverPhone || '+506 8899-1122'}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Driver & Operations Team", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+      ], credentials: { googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[FIRESTORE] Update Pickup Time & Driver Schedule", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*✈️ ALERTA VUELO RETRASADO - REAGENDAMIENTO PICK-UP*\\n\\nVuelo: `{{$json.flightNumber || 'AA-1204'}}`\\nCliente: `{{$json.customerName || 'Carlos Mendoza'}}`\\nNueva Hora Llegada: `{{$json.newEta || '16:15'}}` (Retraso: `{{$json.delayMinutes || 105}} min`)\\nChofer Asignado: `{{$json.driverPhone || '+506 8899-1122'}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Driver & Operations Team", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"mensaje\": \"Horario de transporte actualizado exitosamente por retraso de vuelo.\"\n}" }, name: "[RESPONSE] Confirm Flight Delay Reschedule", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
       ],
       connections: {
@@ -2530,8 +2530,8 @@ return {
     },
     category: 'concierge',
     description: {
-      es: 'Gestiona reportes de pertenencias olvidadas en transporte o tours, crea ticket en Firestore (Credencial: 5NiYz8gX64lPYIdK) y coordina al chofer vía Telegram.',
-      en: 'Manages lost item reports in vehicles/tours, creates ticket in Firestore (Credential: 5NiYz8gX64lPYIdK) and coordinates driver via Telegram.'
+      es: 'Gestiona reportes de pertenencias olvidadas en transporte o tours, crea ticket en Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID) y coordina al chofer vía Telegram.',
+      en: 'Manages lost item reports in vehicles/tours, creates ticket in Firestore (Credential: ENV_CONFIGURED_CREDENTIAL_ID) and coordinates driver via Telegram.'
     },
     icon: 'Search',
     color: '#8b5cf6',
@@ -2543,14 +2543,14 @@ return {
     nodes: [
       { id: 'n1', name: '[TRIGGER] Lost & Found Report Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe reporte de objeto olvidado por el turista' },
       { id: 'n2', name: '[SECURITY] Payload Validator', type: 'n8n-nodes-base.code', description: 'Valida datos de la reserva y objeto reportado' },
-      { id: 'n3', name: '[FIRESTORE] Create Lost Property Ticket', type: 'n8n-nodes-base.httpRequest', description: 'Registra incidencia en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n3', name: '[FIRESTORE] Create Lost Property Ticket', type: 'n8n-nodes-base.httpRequest', description: 'Registra incidencia en Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n4', name: '[TELEGRAM] Alert Guide & Driver Immediate Search', type: 'n8n-nodes-base.telegram', description: 'Notifica al chofer/guía para inspección física del vehículo' },
       { id: 'n5', name: '[WHATSAPP] Dispatch Ticket Details to Customer', type: 'n8n-nodes-base.httpRequest', description: 'Envía código de rastreo al turista por WhatsApp' },
       { id: 'n6', name: '[RESPONSE] Ticket Confirmation', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve respuesta con número de caso' },
       { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       touristName: 'Emma Watson',
@@ -2565,7 +2565,7 @@ return {
       name: "Costa Rica Tours - WF16 Lost & Found Property Concierge",
       stickyNotes: [
         { name: "🔍 LOST & FOUND REPORT", color: 6, width: 260, height: 160, position: [80, 240] },
-        { name: "🗄️ FIRESTORE TICKET (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "🗄️ FIRESTORE TICKET (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 340, height: 160, position: [360, 240] },
         { name: "💬 TELEGRAM & WHATSAPP DISPATCH", color: 2, width: 340, height: 160, position: [720, 240] }
       ],
       nodes: [
@@ -2600,10 +2600,10 @@ return {
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
-      ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🎒 OBJETO OLVIDADO REPORTADO*\\n\\nTicket: `{{$json.ticketId}}`\\nObjeto: `{{$json.itemDescription}}`\\nTurista: `{{$json.touristName}}` ({{$json.phone}})\\nVehículo/Tour: `{{$json.vehiclePlate}}` / `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Guide & Driver Immediate Search", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+      ], credentials: { googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🎒 OBJETO OLVIDADO REPORTADO*\\n\\nTicket: `{{$json.ticketId}}`\\nObjeto: `{{$json.itemDescription}}`\\nTurista: `{{$json.touristName}}` ({{$json.phone}})\\nVehículo/Tour: `{{$json.vehiclePlate}}` / `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Guide & Driver Immediate Search", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Dispatch Ticket Details to Customer", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"ticketId\": \"{{$json.ticketId}}\",\n  \"mensaje\": \"Reporte recibido. Nuestro equipo inspeccionará la unidad de transporte de inmediato.\"\n}" }, name: "[RESPONSE] Ticket Confirmation", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
       ],
@@ -2640,12 +2640,12 @@ return {
       { id: 'n1', name: '[TRIGGER] WhatsApp Multilingual Inbound', type: 'n8n-nodes-base.webhook', description: 'Recibe mensaje entrante del cliente' },
       { id: 'n2', name: '[AI ENGINE] Gemini Translation & Sentiment Analyzer', type: 'n8n-nodes-base.openAi', description: 'Detecta idioma, traduce a español para el agente y preserva sentido turístico' },
       { id: 'n3', name: '[TELEGRAM] Relay Translated Message to Operations', type: 'n8n-nodes-base.telegram', description: 'Publica mensaje en español en canal de soporte de Telegram' },
-      { id: 'n4', name: '[FIRESTORE] Log Conversation Pair', type: 'n8n-nodes-base.httpRequest', description: 'Guarda historial traducido en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n4', name: '[FIRESTORE] Log Conversation Pair', type: 'n8n-nodes-base.httpRequest', description: 'Guarda historial traducido en Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n5', name: '[RESPONSE] Translation Pipeline Ready', type: 'n8n-nodes-base.respondToWebhook', description: 'Retorna payload traducido para el frontend/WhatsApp' },
       { id: 'n6', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n7', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n8', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n9', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n9', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       senderPhone: '+49 171 1234567',
@@ -2693,10 +2693,10 @@ return {
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
-      ], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
-        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Log Conversation Pair", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+      ], credentials: { telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Log Conversation Pair", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"translatedMessage\": \"{{$json.translatedText}}\",\n  \"language\": \"es\"\n}" }, name: "[RESPONSE] Translation Pipeline Ready", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [900, 300] }
       ],
       connections: {
@@ -2717,8 +2717,8 @@ return {
     },
     category: 'vip',
     description: {
-      es: 'Emite el rótulo digital con nombre 2h antes de aterrizar, asigna chofer en Firestore (Credencial: 5NiYz8gX64lPYIdK) y comparte GPS en vivo.',
-      en: 'Generates digital sign 2h before landing, assigns driver in Firestore (Credential: 5NiYz8gX64lPYIdK) and shares live GPS.'
+      es: 'Emite el rótulo digital con nombre 2h antes de aterrizar, asigna chofer en Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID) y comparte GPS en vivo.',
+      en: 'Generates digital sign 2h before landing, assigns driver in Firestore (Credential: ENV_CONFIGURED_CREDENTIAL_ID) and shares live GPS.'
     },
     icon: 'Sparkles',
     color: '#f59e0b',
@@ -2729,7 +2729,7 @@ return {
     slaTarget: '< 1400 ms',
     nodes: [
       { id: 'n1', name: '[TRIGGER] VIP Arrival Cron / Event Trigger', type: 'n8n-nodes-base.webhook', description: 'Se activa 2 horas antes de la llegada estimada del vuelo' },
-      { id: 'n2', name: '[FIRESTORE] Fetch VIP Customer Details', type: 'n8n-nodes-base.httpRequest', description: 'Obtiene preferencias VIP en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n2', name: '[FIRESTORE] Fetch VIP Customer Details', type: 'n8n-nodes-base.httpRequest', description: 'Obtiene preferencias VIP en Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n3', name: '[LOGIC] Generate Welcome Banner & Assign Driver', type: 'n8n-nodes-base.code', description: 'Formatea cartel de bienvenida y asigna chofer certificado' },
       { id: 'n4', name: '[TELEGRAM] Dispatch Driver Board & Flight Tracking', type: 'n8n-nodes-base.telegram', description: 'Notifica al chofer con cartel digital para recibir en sala de llegadas' },
       { id: 'n5', name: '[WHATSAPP] Share Driver GPS & Meet Point to Passenger', type: 'n8n-nodes-base.httpRequest', description: 'Envía foto del chofer y ubicación GPS al turista' },
@@ -2737,7 +2737,7 @@ return {
       { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       passengerName: 'Sir Richard Branson',
@@ -2751,7 +2751,7 @@ return {
       name: "Costa Rica Tours - WF18 VIP Airport Meet & Greet Dispatch",
       stickyNotes: [
         { name: "👑 VIP RECEPTION INBOUND", color: 6, width: 260, height: 160, position: [80, 240] },
-        { name: "🗄️ FIRESTORE VIP DETAILS (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "🗄️ FIRESTORE VIP DETAILS (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 340, height: 160, position: [360, 240] },
         { name: "✈️ TELEGRAM & WHATSAPP DISPATCH", color: 2, width: 340, height: 160, position: [720, 240] }
       ],
       nodes: [
@@ -2785,11 +2785,11 @@ return {
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
-      ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+      ], credentials: { googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, vipStatus: 'driver_assigned', dispatchTime: new Date().toISOString() } };" }, name: "[LOGIC] Generate Welcome Banner & Assign Driver", type: "n8n-nodes-base.code", typeVersion: 2, position: [500, 300] },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*👑 PROTOCOLO VIP ACTIVADO*\\n\\nPasajero: `{{$json.passengerName}}`\\nVuelo: `{{$json.flightNumber}}` ({{$json.airport}})\\nChofer: `{{$json.assignedDriver}}`\\nRótulo: `{{$json.welcomeText}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Dispatch Driver Board & Flight Tracking", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*👑 PROTOCOLO VIP ACTIVADO*\\n\\nPasajero: `{{$json.passengerName}}`\\nVuelo: `{{$json.flightNumber}}` ({{$json.airport}})\\nChofer: `{{$json.assignedDriver}}`\\nRótulo: `{{$json.welcomeText}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Dispatch Driver Board & Flight Tracking", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Share Driver GPS & Meet Point to Passenger", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"status\": \"VIP_DISPATCHED\",\n  \"mensaje\": \"Chofer asignado y rótulo de bienvenida generado con éxito.\"\n}" }, name: "[RESPONSE] VIP Reception Active", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
       ],
@@ -2825,14 +2825,14 @@ return {
     nodes: [
       { id: 'n1', name: '[TRIGGER] Medical & Dietary Alert Trigger', type: 'n8n-nodes-base.webhook', description: 'Recibe especificaciones médicas/dietéticas del turista' },
       { id: 'n2', name: '[SECURITY] Validate Medical Confidentiality', type: 'n8n-nodes-base.code', description: 'Encripta y protege datos sensibles bajo HIPAA/GDPR' },
-      { id: 'n3', name: '[FIRESTORE] Query Booking & Restaurant Partners', type: 'n8n-nodes-base.httpRequest', description: 'Consulta el itinerario y cocinas asociadas en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n3', name: '[FIRESTORE] Query Booking & Restaurant Partners', type: 'n8n-nodes-base.httpRequest', description: 'Consulta el itinerario y cocinas asociadas en Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n4', name: '[TELEGRAM] Alert Kitchen Chef & Lead Guide', type: 'n8n-nodes-base.telegram', description: 'Envía requerimiento especial al chef del restaurante del tour' },
-      { id: 'n5', name: '[FIRESTORE] Update Safe Meal Pass', type: 'n8n-nodes-base.httpRequest', description: 'Genera credencial de menú seguro en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n5', name: '[FIRESTORE] Update Safe Meal Pass', type: 'n8n-nodes-base.httpRequest', description: 'Genera credencial de menú seguro en Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n6', name: '[RESPONSE] Dietary Confirmation', type: 'n8n-nodes-base.respondToWebhook', description: 'Confirma menú adaptado al cliente' },
       { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       bookingId: 'BK-DIET-8834',
@@ -2847,7 +2847,7 @@ return {
       name: "Costa Rica Tours - WF19 Dietary & Medical Logistics Protocol",
       stickyNotes: [
         { name: "🥗 DIETARY ALERT INBOUND", color: 6, width: 260, height: 160, position: [80, 240] },
-        { name: "🗄️ FIRESTORE RESTAURANT PARTNERS (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "🗄️ FIRESTORE RESTAURANT PARTNERS (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 340, height: 160, position: [360, 240] },
         { name: "✈️ TELEGRAM CHEF & GUIDE ALERT", color: 2, width: 340, height: 160, position: [720, 240] }
       ],
       nodes: [
@@ -2882,11 +2882,11 @@ return {
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
-      ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🥗 ALERTA DIETÉTICA Y MÉDICA*\\n\\nCliente: `{{$json.passengerName}}`\\nDieta: `{{$json.dietaryType}}`\\nAlergias: `{{$json.allergies ? $json.allergies.join(', ') : 'Ninguna'}}`\\nAccesibilidad: `{{$json.accessibilityRequirements || 'Estándar'}}`\\nTour: `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Kitchen Chef & Lead Guide", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
-        { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[FIRESTORE] Update Safe Meal Pass", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+      ], credentials: { googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🥗 ALERTA DIETÉTICA Y MÉDICA*\\n\\nCliente: `{{$json.passengerName}}`\\nDieta: `{{$json.dietaryType}}`\\nAlergias: `{{$json.allergies ? $json.allergies.join(', ') : 'Ninguna'}}`\\nAccesibilidad: `{{$json.accessibilityRequirements || 'Estándar'}}`\\nTour: `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Kitchen Chef & Lead Guide", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[FIRESTORE] Update Safe Meal Pass", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300], credentials: { googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"status\": \"DIETARY_VERIFIED\",\n  \"mensaje\": \"Menú adaptado y requerimientos comunicados al equipo del tour.\"\n}" }, name: "[RESPONSE] Dietary Confirmation", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
       ],
       connections: {
@@ -2908,8 +2908,8 @@ return {
     },
     category: 'payment',
     description: {
-      es: 'Aplica reglas de reembolso según anticipación, libera cupos en Firestore (Credencial: 5NiYz8gX64lPYIdK) y procesa reembolso en Stripe/PayPal o voucher.',
-      en: 'Applies refund rules by lead time, releases slots in Firestore (Credential: 5NiYz8gX64lPYIdK) and processes refund or voucher.'
+      es: 'Aplica reglas de reembolso según anticipación, libera cupos en Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID) y procesa reembolso en Stripe/PayPal o voucher.',
+      en: 'Applies refund rules by lead time, releases slots in Firestore (Credential: ENV_CONFIGURED_CREDENTIAL_ID) and processes refund or voucher.'
     },
     icon: 'RefreshCw',
     color: '#ef4444',
@@ -2922,14 +2922,14 @@ return {
       { id: 'n1', name: '[TRIGGER] Cancellation Request Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe solicitud de cancelación de reserva' },
       { id: 'n2', name: '[SECURITY] HMAC & Policy Calculator', type: 'n8n-nodes-base.code', description: 'Calcula porcentaje de reembolso (72h+ 100%, 48-72h 50%, <48h 0%)' },
       { id: 'n3', name: '[PAYMENT] Execute Refund Gateway (Stripe/PayPal)', type: 'n8n-nodes-base.httpRequest', description: 'Procesa devolución financiera parcial o total' },
-      { id: 'n4', name: '[FIRESTORE] Release Tour Seat & Update Status', type: 'n8n-nodes-base.httpRequest', description: 'Actualiza reserva a cancelled en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n4', name: '[FIRESTORE] Release Tour Seat & Update Status', type: 'n8n-nodes-base.httpRequest', description: 'Actualiza reserva a cancelled en Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n5', name: '[TELEGRAM] Alert Finance & Admin Chat', type: 'n8n-nodes-base.telegram', description: 'Registra la cancelación y monto devuelto en Telegram' },
       { id: 'n6', name: '[WHATSAPP] Dispatch Refund Voucher / Receipt', type: 'n8n-nodes-base.httpRequest', description: 'Envía comprobante de reembolso o crédito futuro al cliente' },
       { id: 'n7', name: '[RESPONSE] Cancellation Result', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve respuesta JSON con detalle de la devolución' },
       { id: 'n8', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n9', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n10', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n11', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n11', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       bookingId: 'BK-CANCEL-5511',
@@ -2944,7 +2944,7 @@ return {
       stickyNotes: [
         { name: "🛑 CANCELLATION REQUEST", color: 6, width: 260, height: 160, position: [80, 240] },
         { name: "💳 STRIPE/PAYPAL REFUND GATEWAY", color: 3, width: 340, height: 160, position: [360, 240] },
-        { name: "🗄️ FIRESTORE SEAT RELEASE (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [720, 240] }
+        { name: "🗄️ FIRESTORE SEAT RELEASE (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 340, height: 160, position: [720, 240] }
       ],
       nodes: [
         { parameters: { httpMethod: "POST", path: "cancelacion-reembolso-inteligente", responseMode: "responseNode" }, name: "[TRIGGER] Cancellation Request Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
@@ -2979,10 +2979,10 @@ return {
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
-      ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🛑 REEMBOLSO PROCESADO*\\n\\nReserva: `{{$json.bookingId}}`\\nPorcentaje: `{{$json.refundPct}}%`\\nMonto Reembolsado: `${{$json.refundAmountUSD}} USD`\\nCliente: `{{$json.customerEmail}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Finance & Admin Chat", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+      ], credentials: { googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🛑 REEMBOLSO PROCESADO*\\n\\nReserva: `{{$json.bookingId}}`\\nPorcentaje: `{{$json.refundPct}}%`\\nMonto Reembolsado: `${{$json.refundAmountUSD}} USD`\\nCliente: `{{$json.customerEmail}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Finance & Admin Chat", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Dispatch Refund Voucher / Receipt", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [1100, 300] },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"reembolsoPct\": {{$json.refundPct}},\n  \"montoDevueltoUSD\": {{$json.refundAmountUSD}},\n  \"mensaje\": \"Cancelación procesada de acuerdo a las políticas de Costa Rica Tours.\"\n}" }, name: "[RESPONSE] Cancellation Result", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1300, 300] }
       ],
@@ -3019,14 +3019,14 @@ return {
     nodes: [
       { id: 'n1', name: '[TRIGGER] Photo Album Upload Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe imágenes del guía certificado' },
       { id: 'n2', name: '[STORAGE] Watermark & Optimize HD Images', type: 'n8n-nodes-base.code', description: 'Aplica marca de agua Costa Rica Tours y comprime para web' },
-      { id: 'n3', name: '[FIRESTORE] Save Album Entry', type: 'n8n-nodes-base.httpRequest', description: 'Registra URL del álbum en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n3', name: '[FIRESTORE] Save Album Entry', type: 'n8n-nodes-base.httpRequest', description: 'Registra URL del álbum en Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n4', name: '[WHATSAPP] Dispatch Album Link to Tourist', type: 'n8n-nodes-base.httpRequest', description: 'Envía mensaje con link de descarga al turista' },
       { id: 'n5', name: '[TELEGRAM] Notify Guide Photo Delivery Completed', type: 'n8n-nodes-base.telegram', description: 'Confirma al guía la entrega exitosa del pack' },
       { id: 'n6', name: '[RESPONSE] Photo Pack Ready', type: 'n8n-nodes-base.respondToWebhook', description: 'Devuelve respuesta JSON de éxito' },
       { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       bookingId: 'BK-PHOTO-1029',
@@ -3040,7 +3040,7 @@ return {
       name: "Costa Rica Tours - WF21 Post-Tour HD Photo Album Dispatcher",
       stickyNotes: [
         { name: "📸 GUIDE PHOTO UPLOAD", color: 6, width: 260, height: 160, position: [80, 240] },
-        { name: "🗄️ FIRESTORE ALBUM (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "🗄️ FIRESTORE ALBUM (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 340, height: 160, position: [360, 240] },
         { name: "💬 WHATSAPP ALBUM DISPATCH", color: 2, width: 340, height: 160, position: [720, 240] }
       ],
       nodes: [
@@ -3075,11 +3075,11 @@ return {
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
-      ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+      ], credentials: { googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Dispatch Album Link to Tourist", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300] },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*📸 ÁLBUM DE FOTOS ENTREGADO*\\n\\nTour: `{{$json.tourName}}`\\nGuía: `{{$json.guideName}}`\\nFotos: `{{$json.photoCount}} HD`\\nLink: `{{$json.albumUrl}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Notify Guide Photo Delivery Completed", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*📸 ÁLBUM DE FOTOS ENTREGADO*\\n\\nTour: `{{$json.tourName}}`\\nGuía: `{{$json.guideName}}`\\nFotos: `{{$json.photoCount}} HD`\\nLink: `{{$json.albumUrl}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Notify Guide Photo Delivery Completed", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"albumUrl\": \"{{$json.albumUrl}}\",\n  \"mensaje\": \"Álbum de fotos entregado al cliente por WhatsApp y correo.\"\n}" }, name: "[RESPONSE] Photo Pack Ready", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
       ],
       connections: {
@@ -3101,8 +3101,8 @@ return {
     },
     category: 'operations',
     description: {
-      es: 'Sincroniza cupos en tiempo real, cierres climáticos y variaciones de tarifas entre operadores turísticos en La Fortuna, Monteverde y Firestore (Credencial: 5NiYz8gX64lPYIdK).',
-      en: 'Syncs real-time inventory, weather blocks and operator rates across La Fortuna, Monteverde and Firestore (Credential: 5NiYz8gX64lPYIdK).'
+      es: 'Sincroniza cupos en tiempo real, cierres climáticos y variaciones de tarifas entre operadores turísticos en La Fortuna, Monteverde y Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID).',
+      en: 'Syncs real-time inventory, weather blocks and operator rates across La Fortuna, Monteverde and Firestore (Credential: ENV_CONFIGURED_CREDENTIAL_ID).'
     },
     icon: 'Database',
     color: '#6366f1',
@@ -3114,14 +3114,14 @@ return {
     nodes: [
       { id: 'n1', name: '[TRIGGER] Supplier Inventory Webhook', type: 'n8n-nodes-base.webhook', description: 'Recibe actualización de inventario del operador' },
       { id: 'n2', name: '[SECURITY] Validate Operator Key', type: 'n8n-nodes-base.code', description: 'Verifica autenticidad del operador verificado' },
-      { id: 'n3', name: '[FIRESTORE] Batch Update Tour Prices & Available Seats', type: 'n8n-nodes-base.httpRequest', description: 'Actualiza colección de tours en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n3', name: '[FIRESTORE] Batch Update Tour Prices & Available Seats', type: 'n8n-nodes-base.httpRequest', description: 'Actualiza colección de tours en Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n4', name: '[TELEGRAM] Operations Change Alert', type: 'n8n-nodes-base.telegram', description: 'Alerta al equipo de operaciones sobre cambios en tarifas o cupos' },
       { id: 'n5', name: '[CACHE] Invalidate Search Cache', type: 'n8n-nodes-base.httpRequest', description: 'Invalida caché de búsquedas en el frontend' },
       { id: 'n6', name: '[RESPONSE] Inventory Sync Ok', type: 'n8n-nodes-base.respondToWebhook', description: 'Confirma sincronización exitosa' },
       { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       operatorId: 'OP-ARENAL-EXPLORE-01',
@@ -3135,7 +3135,7 @@ return {
       name: "Costa Rica Tours - WF22 Local Supplier Rate & Inventory Sync",
       stickyNotes: [
         { name: "🔄 SUPPLIER INVENTORY SYNC", color: 6, width: 260, height: 160, position: [80, 240] },
-        { name: "🗄️ FIRESTORE TOUR BATCH (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "🗄️ FIRESTORE TOUR BATCH (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 340, height: 160, position: [360, 240] },
         { name: "✈️ TELEGRAM OPS BROADCAST", color: 2, width: 340, height: 160, position: [720, 240] }
       ],
       nodes: [
@@ -3170,10 +3170,10 @@ return {
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
-      ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🔄 SINCRONIZACIÓN DE OPERADOR LOCAL*\\n\\nOperador: `{{$json.operatorId}}`\\nTour: `{{$json.tourCode}}`\\nCupos Disponibles: `{{$json.availableSeats}}`\\nTarifa: `${{$json.updatedPriceUSD}} USD`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Operations Change Alert", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+      ], credentials: { googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🔄 SINCRONIZACIÓN DE OPERADOR LOCAL*\\n\\nOperador: `{{$json.operatorId}}`\\nTour: `{{$json.tourCode}}`\\nCupos Disponibles: `{{$json.availableSeats}}`\\nTarifa: `${{$json.updatedPriceUSD}} USD`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Operations Change Alert", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[CACHE] Invalidate Search Cache", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"status\": \"SYNC_SUCCESS\",\n  \"mensaje\": \"Inventario y tarifas del operador sincronizadas en tiempo real.\"\n}" }, name: "[RESPONSE] Inventory Sync Ok", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
       ],
@@ -3210,13 +3210,13 @@ return {
       { id: 'n1', name: '[TRIGGER] Emergency SOS Panic Trigger', type: 'n8n-nodes-base.webhook', description: 'Activado por botón SOS del cliente o guía' },
       { id: 'n2', name: '[HIGH PRIORITY] Priority Alert Escalator', type: 'n8n-nodes-base.code', description: 'Eleva prioridad de respuesta al 100% inmediato' },
       { id: 'n3', name: '[TELEGRAM] Instant SOS Alert to Emergency Command', type: 'n8n-nodes-base.telegram', description: 'Alarma sonora e informe de geolocalización GPS en Telegram' },
-      { id: 'n4', name: '[FIRESTORE] Log Emergency Incident', type: 'n8n-nodes-base.httpRequest', description: 'Registra coordenadas e incidentes en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n4', name: '[FIRESTORE] Log Emergency Incident', type: 'n8n-nodes-base.httpRequest', description: 'Registra coordenadas e incidentes en Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n5', name: '[INSURANCE] Notify Assist-CR Travel Insurance Hotline', type: 'n8n-nodes-base.httpRequest', description: 'Activa póliza de cobertura médica y auxilio médico/vial' },
       { id: 'n6', name: '[RESPONSE] Emergency Protocol Active', type: 'n8n-nodes-base.respondToWebhook', description: 'Responde confirmando asistencia médica o vial en camino' },
       { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       incidentId: 'SOS-2026-911',
@@ -3231,7 +3231,7 @@ return {
       stickyNotes: [
         { name: "🚨 CRITICAL SOS TRIGGER", color: 7, width: 260, height: 160, position: [80, 240] },
         { name: "✈️ TELEGRAM EMERGENCY COMMAND", color: 2, width: 340, height: 160, position: [360, 240] },
-        { name: "🗄️ FIRESTORE SOS INCIDENT (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [720, 240] }
+        { name: "🗄️ FIRESTORE SOS INCIDENT (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 340, height: 160, position: [720, 240] }
       ],
       nodes: [
         { parameters: { httpMethod: "POST", path: "alerta-emergencia-sos", responseMode: "responseNode" }, name: "[TRIGGER] Emergency SOS Panic Trigger", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
@@ -3265,10 +3265,10 @@ return {
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
-      ], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
-        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Log Emergency Incident", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+      ], credentials: { telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
+        { parameters: { url: "http://localhost:3000/api/tours", method: "GET" }, name: "[FIRESTORE] Log Emergency Incident", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[INSURANCE] Notify Assist-CR Travel Insurance Hotline", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"status\": \"SOS_DISPATCHED\",\n  \"mensaje\": \"Equipo de emergencia y vehículo de sustitución despachados.\"\n}" }, name: "[RESPONSE] Emergency Protocol Active", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
       ],
@@ -3304,14 +3304,14 @@ return {
     nodes: [
       { id: 'n1', name: '[TRIGGER] NPS Promoter Score Trigger', type: 'n8n-nodes-base.webhook', description: 'Recibe evento cuando un cliente otorga NPS 9 o 10' },
       { id: 'n2', name: '[LOGIC] Coupon Generator Engine', type: 'n8n-nodes-base.code', description: 'Genera código promocional único de 15% de descuento' },
-      { id: 'n3', name: '[FIRESTORE] Save Referral Coupon', type: 'n8n-nodes-base.httpRequest', description: 'Guarda cupón de descuento en Firestore (Credencial: 5NiYz8gX64lPYIdK)' },
+      { id: 'n3', name: '[FIRESTORE] Save Referral Coupon', type: 'n8n-nodes-base.httpRequest', description: 'Guarda cupón de descuento en Firestore (Credencial: ENV_CONFIGURED_CREDENTIAL_ID)' },
       { id: 'n4', name: '[WHATSAPP] Send TripAdvisor & Discount Invitation', type: 'n8n-nodes-base.httpRequest', description: 'Envía invitación interactiva por WhatsApp' },
       { id: 'n5', name: '[TELEGRAM] Log Marketing Referral Campaign', type: 'n8n-nodes-base.telegram', description: 'Notifica al equipo de mercadeo en Telegram' },
       { id: 'n6', name: '[RESPONSE] Booster Dispatch Success', type: 'n8n-nodes-base.respondToWebhook', description: 'Retorna confirmación de invitación enviada' },
       { id: 'n7', name: '[ROUTING] Data Validation Switch', type: 'n8n-nodes-base.switch', description: 'Evalúa la integridad del payload y redirige si faltan datos críticos' },
       { id: 'n8', name: '[TRANSFORM] Payload Standardizer', type: 'n8n-nodes-base.set', description: 'Mapeo, limpieza y formato de variables (Fechas, Monedas, Nombres)' },
       { id: 'n9', name: '[ERROR HANDLER] Catch Workflow Exceptions', type: 'n8n-nodes-base.errorTrigger', description: 'Intercepta cualquier fallo en ejecución del flujo para prevención de caídas' },
-      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: 5NiYz8gX64lPYIdK)' }
+      { id: 'n10', name: '[OPS ALERT] Telegram Ops Notify', type: 'n8n-nodes-base.telegram', description: 'Envía alerta de diagnóstico al equipo de soporte de Costa Rica Tours (Google Service Account ID: ENV_CONFIGURED_CREDENTIAL_ID)' }
     ],
     samplePayload: {
       touristName: 'David Miller',
@@ -3325,7 +3325,7 @@ return {
       name: "Costa Rica Tours - WF24 TripAdvisor & Google Review Booster",
       stickyNotes: [
         { name: "⭐ PROMOTER NPS TRIGGER", color: 6, width: 260, height: 160, position: [80, 240] },
-        { name: "🎁 COUPON GENERATOR & FIRESTORE (CREDENTIAL: 5NiYz8gX64lPYIdK)", color: 4, width: 340, height: 160, position: [360, 240] },
+        { name: "🎁 COUPON GENERATOR & FIRESTORE (CREDENTIAL: ENV_CONFIGURED_CREDENTIAL_ID)", color: 4, width: 340, height: 160, position: [360, 240] },
         { name: "💬 WHATSAPP & TELEGRAM DISPATCH", color: 2, width: 340, height: 160, position: [720, 240] }
       ],
       nodes: [
@@ -3360,11 +3360,11 @@ return {
           type: 'n8n-nodes-base.telegram',
           typeVersion: 1.1,
           position: [300, 500],
-          credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
+          credentials: { telegramApi: { id: 'ENV_CONFIGURED_CREDENTIAL_ID', name: 'Google Service Account' } }
         }
-      ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+      ], credentials: { googleApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Send TripAdvisor & Discount Invitation", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300] },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*⭐ REPUTATION BOOSTER ENVIADO*\\n\\nCliente: `{{$json.touristName}}` (NPS: `{{$json.npsScore}}/10`)\\nCupón 15%: `{{$json.promoCode}}`\\nTour: `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Log Marketing Referral Campaign", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*⭐ REPUTATION BOOSTER ENVIADO*\\n\\nCliente: `{{$json.touristName}}` (NPS: `{{$json.npsScore}}/10`)\\nCupón 15%: `{{$json.promoCode}}`\\nTour: `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Log Marketing Referral Campaign", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "ENV_CONFIGURED_CREDENTIAL_ID", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"promoCode\": \"{{$json.promoCode}}\",\n  \"mensaje\": \"Invitación a reseña y cupón de regalo enviado por WhatsApp.\"\n}" }, name: "[RESPONSE] Booster Dispatch Success", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
       ],
       connections: {
