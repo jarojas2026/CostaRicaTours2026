@@ -11,7 +11,7 @@ import { getAllBookings, updateBookingStatus } from './bookingService';
 import { createAlert } from './alertService';
 import { sendEmail } from './notificationService';
 
-export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || 'gabw33d@gmail.com';
+export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || 'provider@example.invalid';
 
 export interface TourProvider {
   id: string;
@@ -275,7 +275,7 @@ export async function dispatchServiceOrder(params: {
 
   console.log(`📡 [PROVEEDORES] Orden de servicio ${orderId} despachada a ${provider.name} (Email: ${provider.email} | WhatsApp: ${provider.whatsapp}). SLA: ${provider.slaTargetMinutes}m.`);
 
-  // Enviar correo de orden de servicio al proveedor (centralizado a gabw33d@gmail.com en pruebas)
+  // Enviar correo de orden de servicio al proveedor (centralizado a provider@example.invalid en pruebas)
   if (provider.email) {
     sendEmail({
       to: provider.email,
