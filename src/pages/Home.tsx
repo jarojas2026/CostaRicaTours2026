@@ -91,7 +91,7 @@ export const Home: React.FC<HomeProps> = ({
         language={language}
         onSelectRegion={(reg) => {
           setSelectedRegion(reg as TourRegion);
-          onNavigateTab('tours');
+          if (onNavigateTab) onNavigateTab('tours');
         }}
       />
 
