@@ -43,6 +43,7 @@ const FlightTrackerGadget = lazy(() => import('./components/FlightTrackerGadget'
 const LiveTouristIntelligence = lazy(() => import('./components/LiveTouristIntelligence').then(m => ({ default: m.LiveTouristIntelligence })));
 const PhotoTourFinder = lazy(() => import('./components/PhotoTourFinder').then(m => ({ default: m.PhotoTourFinder })));
 const GoogleWorkspaceHub = lazy(() => import('./components/GoogleWorkspaceHub').then(m => ({ default: m.GoogleWorkspaceHub })));
+const CounterDeskPage = lazy(() => import('./pages/CounterDeskPage').then(m => ({ default: m.CounterDeskPage })));
 
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -202,6 +203,7 @@ export default function App() {
       case 'culture': return `🇨🇷 ${language === 'es' ? 'Rincón Tico: Cultura' : 'Tico Culture'}`;
       case 'tools': return `🚐 ${language === 'es' ? 'Transporte & Guía' : 'Transport & Guide'}`;
       case 'workspace': return `✉️ 📅 Google Workspace`;
+      case 'counter': return `🛎️ ${language === 'es' ? 'Mostrador Digital Full Stack' : 'Full-Stack Digital Counter'}`;
       default: return '';
     }
   };
@@ -402,6 +404,12 @@ export default function App() {
                   onOpenTripBuilder={() => setIsCustomFunnelOpen(true)}
                 />
               </div>
+            } />
+
+            <Route path="/counter" element={
+              <Suspense fallback={<div className="py-24 text-center text-emerald-400">Cargando Mostrador Digital...</div>}>
+                <CounterDeskPage language={language} />
+              </Suspense>
             } />
 
             <Route path="/workspace" element={
