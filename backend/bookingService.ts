@@ -359,7 +359,7 @@ export async function generateOperationalInsights(booking: any) {
     Genera un JSON con automatedTags, riskAssessment e instrucciones paso a paso para el operador local.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       contents: prompt,
       config: {
         systemInstruction:

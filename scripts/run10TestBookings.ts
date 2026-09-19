@@ -202,7 +202,7 @@ async function runTest() {
 
     try {
       const result = await createBooking(bookingPayload);
-      if (!result.conflict) {
+      if (!result.conflict && result.booking) {
         successCount++;
         console.log(`✅ [ÉXITO] Reserva ${result.booking.bookingId} creada exitosamente.`);
 

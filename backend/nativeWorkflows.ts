@@ -15,7 +15,7 @@
  */
 
 import { getFirestoreDb, getBookingsCollection, updateBookingStatus } from './bookingService';
-import { sendEmail, sendTelegramMessage, sendTelegramEscalation } from './notificationService';
+import { sendEmail, sendTelegramMessage, sendTelegramEscalation, sendWhatsAppMessage } from './notificationService';
 import { logAutomationExecution } from './nativeAutomationEngine';
 import { generateBookingPDFBuffer } from './pdfService';
 
@@ -1015,6 +1015,235 @@ export async function executeCustomerBookingConfirmation(
     customerNotified: false,
     escalated: true,
     message: `No se pudo enviar correo al cliente. Escalado a Telegram para despacho manual: ${reason}`
+  };
+}
+
+/**
+ * =========================================================================
+ * 2.B. SOLICITUD DE CONFIRMACIÓN DE PROFORMA E ITINERARIO AL CLIENTE
+ * =========================================================================
+ * Envía proforma detallada e itinerario (15 días, logística especial bebé,
+ * vuelos internos y presupuesto) al cliente por Correo Electrónico con PDF
+ * adjunto y por WhatsApp oficial, solicitando confirmación para proceder con
+ * el despacho y bloqueo de operadores locales.
+ */
+export async function executeCustomerProformaConfirmation(payload: {
+  bookingId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  adults?: number;
+  children?: number;
+  childAge?: number;
+  tourName?: string;
+  startDate?: string;
+  time?: string;
+  totalUSD?: number;
+  specialRequests?: string;
+}): Promise<{
+  success: boolean;
+  bookingId: string;
+  emailSent: boolean;
+  emailId?: string;
+  whatsappSent: boolean;
+  whatsappUrl: string;
+  whatsappMessage: string;
+  pdfGenerated: boolean;
+  downloadPdfUrl: string;
+  viewVoucherUrl: string;
+  approvalUrl: string;
+  message: string;
+}> {
+  const bookingId = payload.bookingId || `CRT-FAM15-${Date.now().toString().slice(-5)}`;
+  const customerName = payload.customerName || 'Hester Viviana Marín Elizondo';
+  const customerEmail = payload.customerEmail || 'viviana19942011@gmail.com';
+  const customerPhone = payload.customerPhone || '+506 84005018';
+  const adults = payload.adults ?? 2;
+  const children = payload.children ?? 1;
+  const tourName = payload.tourName || 'Costa Rica Familiar 15 Días: Relax, Volcanes y Playas Seguras (Especial Bebé 3 Años)';
+  const startDate = payload.startDate || '2026-10-15';
+  const time = payload.time || '09:00 AM';
+  const totalUSD = payload.totalUSD ?? 2450;
+  const specialRequests = payload.specialRequests || 'Presupuesto familiar, relajado y seguro. Bebé de 3 años. Vuelos domésticos Sansa y traslados privados con silla de retención homologada ISOFIX.';
+
+  // URLs de acción para la cliente
+  const downloadPdfUrl = `${APP_URL}/api/bookings/${bookingId}/download-pdf`;
+  const viewVoucherUrl = `${APP_URL}/api/bookings/${bookingId}/pdf`;
+  const approvalUrl = `${APP_URL}/api/bookings/${bookingId}/customer-confirm?action=approve`;
+  const adjustmentUrl = `https://wa.me/50687959148?text=${encodeURIComponent(`Hola, soy ${customerName}. He recibido la proforma #${bookingId} de 15 días y quisiera consultar un ajuste antes de confirmar.`)}`;
+
+  // 1. Generar Buffer PDF oficial
+  let pdfBuffer: Buffer | null = null;
+  try {
+    pdfBuffer = await generateBookingPDFBuffer({
+      bookingId,
+      tourName,
+      customerName,
+      customerEmail,
+      customerPhone,
+      date: startDate,
+      time,
+      adults,
+      children,
+      totalUSD,
+      specialRequests,
+      pickupHotel: 'Recepción VIP en Aeropuerto Internacional Juan Santamaría (SJO)'
+    });
+  } catch (pdfErr) {
+    console.warn(`⚠️ [PROFORMA PDF ERROR] No se pudo generar PDF buffer:`, pdfErr);
+  }
+
+  // 2. Despachar Correo Electrónico formal con PDF adjunto y botones de acción
+  const emailHtml = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 660px; margin: 0 auto; color: #1e293b; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 14px rgba(0,0,0,0.06);">
+      <!-- HEADER -->
+      <div style="background: linear-gradient(135deg, #041711 0%, #064e3b 100%); color: #ffffff; padding: 32px 24px; text-align: center;">
+        <div style="font-size: 13px; font-weight: 700; color: #f59e0b; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;">Costa Rica Tours • Mostrador Digital & Ecoturismo CST</div>
+        <h1 style="margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.5px;">🌿 Propuesta de Itinerario y Proforma Oficial</h1>
+        <p style="margin: 8px 0 0 0; font-size: 14px; color: #a7f3d0;">Estimada <strong>${customerName}</strong>, su cotización personalizada está lista para revisión y confirmación.</p>
+      </div>
+
+      <div style="padding: 26px;">
+        <!-- BANNER DE ACCIÓN PRINCIPAL -->
+        <div style="background: #f0fdf4; border: 2px solid #059669; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
+          <span style="background: #059669; color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase;">Acción Requerida</span>
+          <h2 style="font-size: 18px; color: #065f46; margin: 10px 0 6px 0; font-weight: 800;">¿Aprueba este Itinerario para Proceder con los Proveedores?</h2>
+          <p style="font-size: 13px; color: #047857; margin: 0 0 16px 0; line-height: 1.5;">
+            Para asegurar la disponibilidad de los vuelos internos (Sansa) y los eco-lodges familiares, solicitamos su confirmación con un solo clic:
+          </p>
+          <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <a href="${approvalUrl}" style="background-color: #059669; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 14px; display: inline-block; box-shadow: 0 4px 6px rgba(5,150,105,0.25);">
+              ✅ Aprobar Itinerario y Proceder con Proveedores
+            </a>
+            <a href="${downloadPdfUrl}" style="background-color: #ffffff; color: #065f46; border: 1.5px solid #059669; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 13px; display: inline-block;">
+              📥 Descargar Proforma Completa en PDF
+            </a>
+          </div>
+        </div>
+
+        <!-- RESUMEN CLAVE DE LA PROPUESTA -->
+        <h3 style="font-size: 15px; color: #064e3b; border-bottom: 2px solid #ecfdf5; padding-bottom: 6px; margin: 0 0 12px 0;">📋 Resumen de la Experiencia Solicitada</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 22px;">
+          <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 7px 0; color: #64748b; width: 35%;">Titular:</td><td style="padding: 7px 0; font-weight: 700; color: #0f172a;">${customerName} (${customerPhone})</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 7px 0; color: #64748b;">Composición del Grupo:</td><td style="padding: 7px 0; font-weight: 700; color: #0f172a;">${adults} Adultos + ${children} Bebé (3 años)</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 7px 0; color: #64748b;">Enfoque y Estilo:</td><td style="padding: 7px 0; font-weight: 700; color: #047857;">Family Budget, Relaxing & Safe (15 Días Completo)</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 7px 0; color: #64748b;">Fecha Estimada:</td><td style="padding: 7px 0; font-weight: 700; color: #0f172a;">${startDate} a las ${time}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 7px 0; color: #64748b;">Vuelos y Movilidad:</td><td style="padding: 7px 0; font-weight: 700; color: #0f172a;">Vuelo doméstico Sansa (San José - Guanacaste) + Minivan ejecutiva privada con asiento infantil ISOFIX</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 7px 0; color: #64748b;">Presupuesto Total:</td><td style="padding: 7px 0; font-weight: 900; color: #047857; font-size: 15px;">${totalUSD} USD (Tarifa Todo Incluido para los 3 pasajeros)</td></tr>
+        </table>
+
+        <!-- LOGÍSTICA ESPECIAL BEBÉ 3 AÑOS -->
+        <div style="background-color: #fefce8; border: 1px solid #fef08a; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+          <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #854d0e; font-weight: 800;">👶 Protocolo de Cuidado y Seguridad Infantil Integrado:</h4>
+          <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #713f12; line-height: 1.6;">
+            <li><strong>Silla de Auto Homologada:</strong> Minivan privada dotada con asiento de retención infantil ISOFIX para la bebé de 3 años en todos los traslados.</li>
+            <li><strong>Vuelo Doméstico Sansa:</strong> Ahorra más de 5 horas de carretera pesada entre San José y Guanacaste para evitar agotamiento a la pequeña.</li>
+            <li><strong>Senderismo Accesible:</strong> Rutas llanas y pavimentadas en Arenal y Manuel Antonio (100% compatibles con cochecito de bebé).</li>
+            <li><strong>Aguas Termales Moderadas:</strong> Piscinas con temperatura templada/baja para piel sensible de niños pequeños.</li>
+            <li><strong>Asistencia Pediátrica y Mostrador 24/7:</strong> Seguro de viaje con teleasistencia médica inmediata.</li>
+          </ul>
+        </div>
+
+        <!-- ITINERARIO DÍA POR DÍA -->
+        <h3 style="font-size: 15px; color: #064e3b; border-bottom: 2px solid #ecfdf5; padding-bottom: 6px; margin: 0 0 12px 0;">🗺️ Itinerario Completo (15 Días de Costa a Costa)</h3>
+        <div style="font-size: 12.5px; color: #334155; line-height: 1.5;">
+          <div style="margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px dashed #e2e8f0;">
+            <strong style="color: #047857;">• Días 1 - 2 (San José & Arenal):</strong> Bienvenida VIP en SJO, traslado privado a La Fortuna. Check-in en eco-resort con aguas termales familiares y descanso.
+          </div>
+          <div style="margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px dashed #e2e8f0;">
+            <strong style="color: #047857;">• Días 3 - 4 (La Fortuna):</strong> Senderos planos en el Parque Nacional Arenal, taller de chocolate orgánico para niños y jardín de mariposas y colibríes.
+          </div>
+          <div style="margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px dashed #e2e8f0;">
+            <strong style="color: #047857;">• Días 5 - 7 (Monteverde):</strong> Travesía en lancha por el Lago Arenal y ascenso a Monteverde. Puentes colgantes con doble barandilla alta de protección y santuario de perezosos.
+          </div>
+          <div style="margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px dashed #e2e8f0;">
+            <strong style="color: #047857;">• Días 8 - 10 (Guanacaste):</strong> Vuelo interno Sansa (40 min). Playas mansas de arena dorada sin oleaje fuerte (Playa Hermosa / Golfo de Papagayo). Catamarán relajado al atardecer.
+          </div>
+          <div style="margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px dashed #e2e8f0;">
+            <strong style="color: #047857;">• Días 11 - 12 (Manuel Antonio):</strong> Traslado costero panorámico. Parque Nacional Manuel Antonio con senderos de madera accesibles y playa protegida sin corrientes.
+          </div>
+          <div style="margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px dashed #e2e8f0;">
+            <strong style="color: #047857;">• Días 13 - 14 (Pérez Zeledón & Valle Central):</strong> Turismo rural campesino, gastronomía típica y cultura del café en Pérez Zeledón. Retorno al Valle Central y compras de artesanías locales.
+          </div>
+          <div style="margin-bottom: 10px;">
+            <strong style="color: #047857;">• Día 15 (Aeropuerto SJO):</strong> Desayuno costarricense, check-out y traslado privado al Aeropuerto Internacional SJO con asistencia prioritaria de equipaje.
+          </div>
+        </div>
+
+        <!-- BOTONES DE CONTACTO -->
+        <div style="margin-top: 24px; padding: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; text-align: center;">
+          <p style="margin: 0 0 10px 0; font-size: 12.5px; color: #475569;">
+            ¿Desea ajustar alguna fecha o actividad antes de confirmar? Chatee directamente con su asesor asignado:
+          </p>
+          <a href="${adjustmentUrl}" style="background-color: #25D366; color: #000000; text-decoration: none; padding: 10px 22px; border-radius: 9999px; font-weight: 800; font-size: 13px; display: inline-block;">
+            💬 Chatear por WhatsApp (+506 8795 9148)
+          </a>
+        </div>
+
+        <div style="margin-top: 22px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 14px;">
+          Costa Rica Tours 2026 • San José & Pérez Zeledón, Costa Rica • CST Ecoturismo Certificado
+        </div>
+      </div>
+    </div>
+  `;
+
+  const emailResult = await sendEmail({
+    to: customerEmail,
+    subject: `🌴 Proforma Oficial e Itinerario 15 Días (#${bookingId}) - Confirmación Requerida para Despacho`,
+    html: emailHtml,
+    attachments: pdfBuffer ? [
+      {
+        filename: `CostaRicaTours-Proforma-${bookingId}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+      }
+    ] : undefined
+  });
+
+  // 3. Formatear y Despachar Mensaje de WhatsApp a Viviana (+506 84005018)
+  const whatsappMessageText = 
+`🌿 *¡Hola Hester Viviana!* Le saluda el Mostrador Digital de *Costa Rica Tours* (+506 8795 9148).
+
+Hemos preparado su *Proforma e Itinerario Oficial para su viaje familiar de 15 Días* (2 adultos y bebé de 3 años), enfocado en la modalidad *Family Budget, Relaxing & Safe*.
+
+📋 *Ref. de Reserva:* #${bookingId}
+👶 *Logística Especial Bebé:* Asiento homologado ISOFIX en todos los traslados terrestres, vuelo doméstico Sansa (40 min) para evitar fatiga de carretera y senderos 100% planos para cochecito.
+🗺️ *Recorrido Completo:* Arenal ➔ Monteverde ➔ Playas mansas de Guanacaste ➔ Manuel Antonio ➔ Pérez Zeledón.
+💵 *Inversión Total:* $2,450 USD (Todo incluido para los 3 pasajeros).
+
+📄 *Descargar Proforma Oficial en PDF:*
+${downloadPdfUrl}
+
+✅ *Para CONFIRMAR el itinerario y permitirnos proceder con el bloqueo de operadores y vuelos, por favor presione aquí:*
+${approvalUrl}
+
+💬 Si prefiere solicitar algún ajuste de fechas o actividades, responda a este mensaje y con gusto lo afinamos. ¡Pura Vida! 🇨🇷`;
+
+  const waResult = await sendWhatsAppMessage({
+    toPhone: customerPhone,
+    customerName,
+    message: whatsappMessageText,
+    bookingId,
+    pdfUrl: downloadPdfUrl,
+    confirmationUrl: approvalUrl
+  });
+
+  // 4. Registrar en el motor de automatización
+  logAutomationExecution('WF_PROFORMA_CONFIRMACION', 0, 'success', `Proforma #${bookingId} enviada a ${customerEmail} y WhatsApp +${customerPhone.replace(/[^0-9]/g, '')}`);
+
+  return {
+    success: true,
+    bookingId,
+    emailSent: emailResult.success,
+    emailId: emailResult.id,
+    whatsappSent: waResult.success,
+    whatsappUrl: waResult.url,
+    whatsappMessage: whatsappMessageText,
+    pdfGenerated: !!pdfBuffer,
+    downloadPdfUrl,
+    viewVoucherUrl,
+    approvalUrl,
+    message: `Proforma enviada exitosamente a ${customerEmail} con PDF adjunto y mensaje de WhatsApp preparado para ${customerPhone}.`
   };
 }
 

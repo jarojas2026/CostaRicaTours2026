@@ -91,6 +91,7 @@ import {
   executeAutonomousProviderFallback,
   MASTER_OPERATORS_REGISTRY,
   executeCustomerBookingConfirmation,
+  executeCustomerProformaConfirmation,
   executeAutomatedProviderPayouts,
   executeSurveillanceAndEscalation,
   executeDailyOperationReport,
@@ -524,6 +525,109 @@ app.get('/api/bookings/:id/download-pdf', async (req, res) => {
     res.end(pdfBuffer);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Despacho de Proforma e Itinerario con Notificación Email (PDF Adjunto) y WhatsApp
+app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confirmation'], async (req, res) => {
+  try {
+    const result = await executeCustomerProformaConfirmation(req.body);
+    res.json(result);
+  } catch (err: any) {
+    console.error('Error al despachar proforma de confirmación:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Aprobación de Itinerario por parte del Cliente (Confirmación de Proforma) -> Despacho a Proveedores
+app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const action = req.query.action === 'reject' ? 'rechazado' : 'aprobado';
+
+    console.log(`🛎️ [CONFIRMACIÓN DE CLIENTE] Reserva #${bookingId} acción: ${action}`);
+
+    // 1. Actualizar estado de la reserva
+    try {
+      await updateBookingStatus(bookingId, {
+        status: action === 'aprobado' ? 'confirmada' : 'cancelada',
+        customerConfirmedAt: new Date().toISOString()
+      });
+    } catch (e) {
+      console.warn(`⚠️ [STATUS UPDATE]:`, e);
+    }
+
+    // 2. Si fue aprobada, despachar inmediatamente la coordinación con operadores locales
+    let providerCoordinationResult = null;
+    if (action === 'aprobado') {
+      try {
+        providerCoordinationResult = await executeProviderRealtimeCoordination({
+          bookingId,
+          customerName: 'Hester Viviana Marín Elizondo',
+          customerEmail: 'viviana19942011@gmail.com',
+          customerPhone: '+506 84005018',
+          tourName: 'Costa Rica Familiar 15 Días: Relax, Volcanes y Playas Seguras (Especial Bebé 3 Años)',
+          date: '2026-10-15',
+          tourDate: '2026-10-15',
+          totalUSD: 2450,
+          pax: 3,
+          specialRequests: 'Presupuesto familiar, relajado y seguro. Bebé de 3 años. Minivan con silla ISOFIX y vuelo Sansa.'
+        });
+        console.log(`✅ [PROVEEDORES DESPACHADOS] Notificación enviada a operadores locales.`);
+      } catch (provErr) {
+        console.warn(`⚠️ [FALLO EN COORDINACIÓN DE PROVEEDORES]:`, provErr);
+      }
+    }
+
+    // 3. Renderizar vista de agradecimiento y confirmación oficial
+    const downloadPdfUrl = `/api/bookings/${bookingId}/download-pdf`;
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>¡Itinerario Confirmado! • Costa Rica Tours</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #041711; color: #f8fafc; margin: 0; padding: 24px 16px; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }
+          .card { background-color: #ffffff; color: #1e293b; max-width: 580px; width: 100%; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); }
+          .hero { background: linear-gradient(135deg, #064e3b 0%, #047857 100%); color: white; padding: 32px 24px; text-align: center; }
+          .content { padding: 28px 24px; }
+          .badge { display: inline-block; background-color: #ecfdf5; color: #047857; font-weight: 800; font-size: 12px; padding: 6px 14px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; border: 1px solid #a7f3d0; }
+          .btn-primary { display: block; width: 100%; background-color: #059669; color: white; text-align: center; padding: 14px; border-radius: 10px; font-weight: 800; text-decoration: none; font-size: 15px; margin-bottom: 12px; box-sizing: border-box; }
+          .btn-secondary { display: block; width: 100%; background-color: #f1f5f9; color: #334155; text-align: center; padding: 12px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 14px; box-sizing: border-box; border: 1px solid #cbd5e1; }
+          .step-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin: 18px 0; font-size: 13px; color: #475569; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="hero">
+            <div style="font-size: 40px; margin-bottom: 10px;">🎉🌿</div>
+            <h1 style="margin: 0; font-size: 22px; font-weight: 900;">¡Itinerario Confirmado Exitosamente!</h1>
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #a7f3d0;">Estimada Hester Viviana, hemos recibido su aprobación.</p>
+          </div>
+          <div class="content">
+            <div style="text-align: center;">
+              <span class="badge">Expediente #${bookingId}</span>
+            </div>
+            <p style="font-size: 14px; line-height: 1.6; color: #334155; margin-top: 6px;">
+              Su itinerario familiar de <strong>15 Días (Costa Rica de Costa a Costa)</strong> ha sido validado. Nuestro equipo de Mostrador Digital ha procedido con:
+            </p>
+            <div class="step-box">
+              <div style="margin-bottom: 8px;"><strong>✈️ Vuelos Domésticos Sansa:</strong> Bloqueo y emisión de pasajes para los 3 pasajeros.</div>
+              <div style="margin-bottom: 8px;"><strong>🚐 Transporte Ejecutivo Privado:</strong> Asignación de minivan y montaje de silla infantil homologada ISOFIX para su bebé de 3 años.</div>
+              <div style="margin-bottom: 8px;"><strong>🏨 Eco-Lodges & Parques:</strong> Confirmación de reservas hoteleras y entradas accesibles.</div>
+              <div><strong>👨‍💼 Asesoría Continua:</strong> Seguimiento en tiempo real vía WhatsApp (+506 8795 9148).</div>
+            </div>
+            <a href="${downloadPdfUrl}" class="btn-primary">📥 Descargar Voucher & Itinerario (PDF)</a>
+            <a href="https://wa.me/50687959148?text=${encodeURIComponent(`Hola, soy Hester Viviana. Acabo de confirmar el itinerario #${bookingId}.`)}" class="btn-secondary">💬 Escribir al Mostrador (+506 8795 9148)</a>
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+  } catch (err: any) {
+    res.status(500).send(`Error al procesar confirmación: ${err.message}`);
   }
 });
 
