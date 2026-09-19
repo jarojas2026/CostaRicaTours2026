@@ -958,7 +958,7 @@ export async function executeCustomerBookingConfirmation(
               <p style="margin: 0 0 10px 0; font-size: 12.5px; color: #475569;">
                 ¿Desea hacer una consulta o solicitar un ajuste a su itinerario? Su asesor de mostrador está disponible 24/7:
               </p>
-              <a href="https://wa.me/50687959148?text=${encodeURIComponent(`Hola, soy Hester Viviana Marín. Quisiera coordinar detalles de mi reserva #${bookingId} de 15 días.`)}" style="background-color: #25D366; color: #000000; text-decoration: none; padding: 10px 22px; border-radius: 9999px; font-weight: 800; font-size: 13px; display: inline-block;">
+              <a href="https://wa.me/50687959148?text=${encodeURIComponent(`Hola, soy Cliente de ejemplo. Quisiera coordinar detalles de mi reserva #${bookingId} de 15 días.`)}" style="background-color: #25D366; color: #000000; text-decoration: none; padding: 10px 22px; border-radius: 9999px; font-weight: 800; font-size: 13px; display: inline-block;">
                 💬 Contactar Mostrador Digital (+506 8795 9148)
               </a>
             </div>
@@ -1202,7 +1202,7 @@ export async function executeCustomerProformaConfirmation(payload: {
 
   // 3. Formatear y Despachar Mensaje de WhatsApp a Viviana (+506 0000-0000)
   const whatsappMessageText = 
-`🌿 *¡Hola Hester Viviana!* Le saluda el Mostrador Digital de *Costa Rica Tours* (+506 8795 9148).
+`🌿 *¡Hola Cliente!* Le saluda el Mostrador Digital de *Costa Rica Tours* (+506 8795 9148).
 
 Hemos preparado su *Proforma e Itinerario Oficial para su viaje familiar de 15 Días* (2 adultos y bebé de 3 años), enfocado en la modalidad *Family Budget, Relaxing & Safe*.
 
