@@ -37,8 +37,8 @@ interface HeaderProps {
   setLanguage: (lang: Language) => void;
   currency: Currency;
   setCurrency: (curr: Currency) => void;
-  activeTab?: 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights' | 'workspace' | 'destinations' | 'activities' | 'about' | 'blog';
-  setActiveTab?: (tab: 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights' | 'workspace' | 'destinations' | 'activities' | 'about' | 'blog') => void;
+  activeTab?: 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights' | 'workspace' | 'counter' | 'destinations' | 'activities' | 'about' | 'blog';
+  setActiveTab?: (tab: 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights' | 'workspace' | 'counter' | 'destinations' | 'activities' | 'about' | 'blog') => void;
   bookingsCount?: number;
   onOpenBookingList?: () => void;
   cartCount?: number;
@@ -325,6 +325,14 @@ export const Header: React.FC<HeaderProps> = ({
               <Bot className="w-4 h-4 text-amber-400" />
               <span>{language === 'es' ? 'Asistente IA' : 'AI Concierge'}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            </Link>
+
+            <Link
+              to="/counter"
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${currentTab === 'counter' ? 'bg-amber-400 text-stone-950 font-extrabold shadow-sm' : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'}`}
+            >
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
+              <span>{language === 'es' ? 'Counter' : 'Counter Desk'}</span>
             </Link>
           </nav>
 
@@ -668,6 +676,17 @@ export const Header: React.FC<HeaderProps> = ({
                     <span className="text-[9px] uppercase bg-amber-400 text-stone-950 px-2 py-0.5 rounded-full font-black">
                       10 Flujos
                     </span>
+                  </button>
+
+                  <button
+                    onClick={() => handleTabChange('counter')}
+                    className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left border ${currentTab === 'counter' ? 'bg-amber-400 text-stone-950 font-black border-amber-300 shadow-md' : 'bg-[#041910] border-emerald-500/25 text-emerald-100 hover:bg-[#07261b]'}`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-amber-400" />
+                      <span className="text-xs font-bold">{language === 'es' ? 'Mostrador Digital Full Stack' : 'Full-Stack Digital Counter'}</span>
+                    </span>
+                    <span className="text-[9px] uppercase bg-emerald-400/20 text-emerald-300 px-1.5 py-0.5 rounded-full font-black">Live</span>
                   </button>
 
                   <button
