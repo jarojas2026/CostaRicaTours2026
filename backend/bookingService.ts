@@ -14,7 +14,6 @@ import {
 } from 'firebase-admin/firestore';
 import { GoogleGenAI } from '@google/genai';
 import Stripe from 'stripe';
-import { dispatchToN8N, getN8NConfig } from './n8nService';
 import { TOURS } from '../src/data/toursData';
 import {
   executeProviderRealtimeCoordination,
@@ -574,20 +573,7 @@ export async function createBooking(data: any) {
     console.error(`❌ [MASSIVE-ENGINE] Fallo en despacho asíncrono para ${bookingId}:`, err);
   });
 
-  // 6. Despacho opcional a n8n solo si está explícitamente activo
-  if (process.env.N8N_ENABLED === 'true') {
-    try {
-      const config = getN8NConfig();
-      dispatchToN8N(config.bookingWebhookUrl, {
-        trigger: 'RESERVA_CONFIRMADA',
-        event: 'booking.created',
-        timestamp: new Date().toISOString(),
-        booking: responseBooking
-      }).catch(() => {});
-    } catch (n8nErr) {
-      console.warn('⚠️ n8n no despachado:', n8nErr);
-    }
-  }
+  // 6. Automatización y notificaciones se ejecutan directamente en el motor nativo.
 
   return { conflict: false, booking: responseBooking };
 }
