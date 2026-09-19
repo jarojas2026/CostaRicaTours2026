@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, CloudSun, Droplets, MapPin, Sparkles, Sun, Waves } from 'lucide-react';
 import { Language } from '../types';
@@ -25,8 +25,20 @@ const PULSE_CARDS: PulseCard[] = [
 
 export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, onSelectRegion }) => {
   const [activeId, setActiveId] = useState(PULSE_CARDS[0].id);
+  const [liveWeather, setLiveWeather] = useState<Record<string, { temperatureC: number; humidity: number; precipitationProbability: number; labelEs: string; labelEn: string; source: string }>>({});
+  useEffect(() => {
+    fetch('/api/weather/destinations')
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('weather unavailable')))
+      .then(data => {
+        const next: Record<string, any> = {};
+        for (const item of data.destinations || []) next[item.regionId] = item;
+        setLiveWeather(next);
+      })
+      .catch(() => {});
+  }, []);
   const active = useMemo(() => PULSE_CARDS.find(c => c.id === activeId) || PULSE_CARDS[0], [activeId]);
   const es = language === 'es';
+  const currentWeather = liveWeather[active.regionId];
 
   return (
     <section className="relative overflow-hidden bg-[#061b13] py-10 sm:py-14">
@@ -38,7 +50,7 @@ export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, on
             <h2 className="mt-3 text-3xl sm:text-5xl font-black tracking-tight text-white">{es ? '¿A dónde te lleva hoy Costa Rica?' : 'Where will Costa Rica take you today?'}</h2>
             <p className="mt-2 max-w-2xl text-sm text-emerald-100/65">{es ? 'Una vista rápida de destinos, microclimas y ambiente para inspirarte antes de elegir tu experiencia.' : 'A quick visual pulse of destinations, microclimates and vibes before choosing your experience.'}</p>
           </div>
-          <div className="flex items-center gap-2 text-[11px] text-emerald-200/60"><span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />{es ? 'Condiciones de referencia' : 'Reference conditions'}</div>
+          <div className="flex items-center gap-2 text-[11px] text-emerald-200/60"><span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />{currentWeather ? (es ? `Datos en vivo · ${currentWeather.source}` : `Live data · ${currentWeather.source}`) : (es ? 'Cargando clima…' : 'Loading weather…')}</div>
         </div>
 
         <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide">
@@ -55,9 +67,9 @@ export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, on
 
         <motion.div key={active.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-4 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-5 rounded-3xl border border-white/10 bg-white/[0.045] p-5 sm:p-6 backdrop-blur-xl">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div><div className="flex items-center gap-2 text-emerald-200/55 text-[10px] uppercase font-black"><CloudSun className="w-4 h-4" />{es ? 'Condición' : 'Condition'}</div><div className="mt-1 font-bold text-white">{es ? active.moodEs : active.moodEn}</div></div>
-            <div><div className="flex items-center gap-2 text-emerald-200/55 text-[10px] uppercase font-black"><Droplets className="w-4 h-4" />{es ? 'Humedad' : 'Humidity'}</div><div className="mt-1 font-bold text-white">{active.humidity}%</div></div>
-            <div><div className="flex items-center gap-2 text-emerald-200/55 text-[10px] uppercase font-black"><Sun className="w-4 h-4" />{es ? 'Temperatura' : 'Temperature'}</div><div className="mt-1 font-bold text-white">{active.tempC}°C / {active.tempF}°F</div></div>
+            <div><div className="flex items-center gap-2 text-emerald-200/55 text-[10px] uppercase font-black"><CloudSun className="w-4 h-4" />{es ? 'Condición' : 'Condition'}</div><div className="mt-1 font-bold text-white">{currentWeather ? (es ? currentWeather.labelEs : currentWeather.labelEn) : (es ? active.moodEs : active.moodEn)}</div></div>
+            <div><div className="flex items-center gap-2 text-emerald-200/55 text-[10px] uppercase font-black"><Droplets className="w-4 h-4" />{es ? 'Humedad' : 'Humidity'}</div><div className="mt-1 font-bold text-white">{Math.round(currentWeather?.humidity ?? active.humidity)}%</div></div>
+            <div><div className="flex items-center gap-2 text-emerald-200/55 text-[10px] uppercase font-black"><Sun className="w-4 h-4" />{es ? 'Temperatura' : 'Temperature'}</div><div className="mt-1 font-bold text-white">{Math.round(currentWeather?.temperatureC ?? active.tempC)}°C / {active.tempF}°F</div></div>
             <div><div className="flex items-center gap-2 text-emerald-200/55 text-[10px] uppercase font-black"><Waves className="w-4 h-4" />{es ? 'Ambiente' : 'Vibe'}</div><div className="mt-1 font-bold text-white">Pura vida</div></div>
           </div>
           <button type="button" onClick={() => onSelectRegion(active.regionId)} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-5 py-3 text-sm font-black text-[#041711] hover:bg-emerald-300 transition-colors">{es ? 'Explorar destino' : 'Explore destination'}<ArrowRight className="w-4 h-4" /></button>
