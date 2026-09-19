@@ -4,6 +4,7 @@
  */
 import crypto from 'crypto';
 import { getFirestoreDb } from './bookingService';
+import { indexSemanticMemory, retrieveSemanticMemory } from './semanticMemoryService';
 
 export type MemoryTurn = {
   role: 'user' | 'assistant';
@@ -167,6 +168,14 @@ export async function rememberTurn(
   if (db) {
     await db.collection('agent_memory').doc(sessionId).set(updated, { merge: true });
   }
+  // Embedding is best-effort; the canonical memory above is never blocked by AI availability.
+  void indexSemanticMemory({
+    sessionId,
+    text,
+    role: turn.role,
+    agentId: options.agentId || turn.agentId,
+    timestamp: updated.lastUpdatedAt
+  });
   return updated;
 }
 
@@ -198,6 +207,8 @@ export async function retrieveRelevantMemory(
   limit = 8
 ): Promise<{ summary: string; facts: Record<string, string>; relevantTurns: MemoryTurn[] }> {
   const memory = await getOperationalMemory(rawSessionId);
+  const semantic = await retrieveSemanticMemory(memory.sessionId, query, limit).catch(() => []);
+  const semanticTexts = new Set(semantic.map((x: any) => x.text));
   const queryTokens = tokenize(query);
   const scored = memory.turns
     .map((turn) => {
@@ -211,7 +222,19 @@ export async function retrieveRelevantMemory(
     .slice(0, Math.max(1, Math.min(limit, 12)))
     .map((x) => x.turn);
 
-  return { summary: memory.summary, facts: memory.facts, relevantTurns: scored };
+  const lexicalTurns = scored;
+  const semanticTurns: MemoryTurn[] = semantic
+    .filter((x: any) => !semanticTexts.has(''))
+    .map((x: any) => ({
+      role: x.role === 'user' ? 'user' : 'assistant',
+      text: String(x.text || '').slice(0, MAX_TEXT),
+      agentId: x.agentId || undefined,
+      timestamp: x.timestamp || new Date(0).toISOString()
+    }));
+  const merged = [...semanticTurns, ...lexicalTurns].filter((turn, index, all) =>
+    all.findIndex(x => x.text === turn.text && x.role === turn.role) === index
+  ).slice(0, Math.min(12, Math.max(limit, 8)));
+  return { summary: memory.summary, facts: memory.facts, relevantTurns: merged };
 }
 
 export async function clearOperationalMemory(rawSessionId: string): Promise<void> {
