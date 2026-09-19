@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Activity, Bot, RefreshCw, ShieldCheck, Users, CreditCard, AlertTriangle } from 'lucide-react';
+import type { Language } from '../types';
 import { auth } from '../firebase';
 
-export default function AutonomousOperationsPage({ language = 'es' }: { language?: 'es' | 'en' }) {
+export default function AutonomousOperationsPage({ language = 'es' }: { language?: Language }) {
   const es = language === 'es';
   const [plan, setPlan] = useState<any>(null);
   const [loading, setLoading] = useState(true);
