@@ -99,9 +99,13 @@ import {
 import { executeSinpeVerification } from './backend/sinpeService';
 import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
 import { getSelfDevelopmentOverview, runSelfHealingCycle } from './backend/selfDevelopmentEngine';
+import { askCounterDesk, getCounterOperationsSnapshot, organizeCounterDesk } from './backend/counterDeskService';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
+
+// Admin gate is defined before any route registration that uses it.
+const requireAdmin = requireOperator;
 
 app.set('trust proxy', 1);
 app.use(express.json());
@@ -115,6 +119,14 @@ const paymentLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Demasiadas solicitudes de pago desde esta IP. Por favor intente más tarde.' }
+});
+
+const counterLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Límite del Counter Digital excedido. Por favor espere un momento.' }
 });
 
 const chatLimiter = rateLimit({
@@ -638,6 +650,50 @@ app.post('/api/providers/action', async (req, res) => {
   }
 });
 
+// ==========================================
+// 🛎️ COUNTER DESK FULL STACK + ORGANIZADOR IA
+// ==========================================
+// Atención pública: usa el mismo conocimiento operativo del backend.
+// Operaciones internas: snapshot/organización protegidos por autenticación.
+app.post('/api/counter/ask', counterLimiter, async (req, res) => {
+  try {
+    const result = await askCounterDesk({
+      message: req.body?.message,
+      sessionId: req.body?.sessionId,
+      language: req.body?.language,
+      context: req.body?.context
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Error en Counter Agent' });
+  }
+});
+
+app.get('/api/counter/operations', requireAdmin, async (_req, res) => {
+  try {
+    res.json({ success: true, snapshot: await getCounterOperationsSnapshot() });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Error al obtener operaciones' });
+  }
+});
+
+app.get('/api/counter/autopilot', requireAdmin, async (_req, res) => {
+  try {
+    const { runCounterSafeAutopilot } = await import('./backend/counterDeskService');
+    res.json(await runCounterSafeAutopilot());
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Error del autopilot' });
+  }
+});
+
+app.post('/api/counter/organize', requireAdmin, async (_req, res) => {
+  try {
+    res.json(await organizeCounterDesk());
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Error del organizador IA' });
+  }
+});
+
 app.get('/api/weather/destinations', async (_req, res) => {
   try {
     const { getDestinationWeather } = await import('./backend/weatherPulseService');
@@ -706,8 +762,6 @@ app.post('/api/ai/photo-recommendations', async (req, res) => {
 
 // Admin endpoints use the same server-side operator gate until Firebase Admin
 // token verification is added. Never accept arbitrary Bearer tokens.
-const requireAdmin = requireOperator;
-
 app.get('/api/ai/demand-forecast', requireAdmin, async (req, res) => {
   try {
     const result = await getDemandForecast();
