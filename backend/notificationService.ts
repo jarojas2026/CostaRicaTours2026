@@ -25,21 +25,15 @@ export interface EmailPayload {
   attachments?: EmailAttachment[];
 }
 
-export interface TelegramMessageOptions {
-  parseMode?: 'HTML' | 'Markdown' | 'MarkdownV2';
-  chatId?: string;
-  silent?: boolean;
-}
-
 /**
- * Sistema Real de Notificaciones y Alertas Operativas (Reemplazo activo de Telegram):
+ * Sistema Real de Notificaciones y Alertas Operativas (Reemplazo activo de Centro de Operaciones):
  * - Persiste en Firestore (`admin_alerts`)
  * - Envía alerta instantánea por correo electrónico a ADMIN_ALERT_EMAIL
  * - Analiza y enriquece alertas críticas usando Gemini AI cuando está disponible
  */
-export async function sendTelegramMessage(
+export async function sendOperationalNotification(
   text: string,
-  options: TelegramMessageOptions = {}
+  options: { silent?: boolean; channel?: string } = {}
 ): Promise<{ success: boolean; messageId?: number | string; error?: string }> {
   const ai = getAI();
   const cleanText = text.replace(/<[^>]*>?/gm, '').trim();
@@ -94,7 +88,7 @@ export async function sendTelegramMessage(
  * Escala una alerta operativa crítica o fallo directamente a Firestore (admin_alerts)
  * y despacha notificación por correo al Administrador de Costa Rica Tours.
  */
-export async function sendTelegramEscalation(params: {
+export async function sendAdministrativeAlert(params: {
   title: string;
   reason: string;
   bookingId?: string;
@@ -150,9 +144,6 @@ export async function sendTelegramEscalation(params: {
   }
 }
 
-// Aliases semánticos para uso en flujos modernos
-export const sendAdministrativeAlert = sendTelegramEscalation;
-export const sendOperationalNotification = sendTelegramMessage;
 
 /**
  * Envía un correo electrónico transaccional.
