@@ -249,7 +249,8 @@ export async function executeSolicitudPago(body: any) {
   const email = body.correoCliente || body.customerEmail || 'cliente@costaricatours.cr';
 
   // Firma criptográfica HMAC SHA-256 generada en código seguro del servidor
-  const hmacSecret = process.env.PAYMENT_HMAC_SECRET || 'crt-secret-key-prod-2026';
+  const hmacSecret = process.env.PAYMENT_HMAC_SECRET;
+  if (!hmacSecret) throw new Error('PAYMENT_HMAC_SECRET no configurado; no se puede firmar la operación de pago.');
   const signaturePayload = `${reservationId}:${totalAmount}:${method}:${email}`;
   const hmacSignature = crypto.createHmac('sha256', hmacSecret).update(signaturePayload).digest('hex');
 
