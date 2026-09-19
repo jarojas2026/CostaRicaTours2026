@@ -20,8 +20,8 @@ import { logAutomationExecution } from './nativeAutomationEngine';
 import { generateBookingPDFBuffer } from './pdfService';
 
 // Clave secreta para autenticación de webhooks entrantes
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || process.env.N8N_WEBHOOK_SECRET || 'cr-tours-secure-webhook-token-2026';
-const APP_URL = process.env.APP_URL || 'https://ais-dev-bkbwi5trklm5ra7pjehfgn-650141017629.us-east1.run.app';
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || process.env.N8N_WEBHOOK_SECRET || '';
+const APP_URL = process.env.APP_URL || 'http://localhost:3000';
 
 /**
  * Normaliza fechas provenientes de Firestore (soporta Timestamp de Firestore, objetos con _seconds, y strings ISO)
@@ -370,8 +370,21 @@ export async function getProviderFromDb(providerId: string): Promise<any | null>
     return MASTER_OPERATORS_REGISTRY['tarcoles-crocodile-safari'];
   }
 
-  // Fallback seguro: Operaciones Directas Alsama Tours CR
-  return MASTER_OPERATORS_REGISTRY['alsama-tours-cr'];
+  // No inventar un operador si no existe una asignación real en Firestore.
+  // Operaciones podrá asignarlo después mediante el flujo de proveedores.
+  return {
+    id: 'unassigned',
+    name: 'Proveedor local pendiente de asignación',
+    email: '',
+    phone: '',
+    whatsapp: '',
+    paypalEmail: '',
+    commissionRate: 0,
+    certificacion: 'Pendiente de verificación',
+    website: '',
+    active: false,
+    region: 'Costa Rica'
+  };
 }
 
 /**
