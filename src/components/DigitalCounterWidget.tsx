@@ -78,6 +78,8 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
   const [availAdults, setAvailAdults] = useState(2);
   const [availChildren, setAvailChildren] = useState(0);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [availability, setAvailability] = useState<any>(null);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
 
   // Quick prompt suggestions
   const suggestions = isEs ? [
@@ -143,6 +145,27 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
   const selectedTour = TOURS.find(t => t.id === availTourId) || TOURS[0];
   const totalUSD = selectedTour ? (selectedTour.priceUSD * availAdults) + (selectedTour.priceUSD * 0.7 * availChildren) : 0;
   const tourName = selectedTour ? getLangText(selectedTour.title, language) : 'Tour';
+
+  const checkLiveAvailability = async () => {
+    if (!availDate || !selectedTour) return;
+    setAvailabilityLoading(true);
+    try {
+      const seats = availAdults + availChildren;
+      const params = new URLSearchParams({
+        date: availDate,
+        seats: String(seats)
+      });
+      const response = await fetch('/api/tours/' + encodeURIComponent(selectedTour.id) + '/availability?' + params.toString());
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Availability error');
+      setAvailability(data);
+    } catch (error) {
+      console.error('Live availability error:', error);
+      setAvailability({ available: false, reason: isEs ? 'No se pudo verificar el cupo en este momento.' : 'Availability could not be verified right now.' });
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  };
 
   const generateWhatsAppLink = () => {
     const msg = isEs
@@ -409,6 +432,33 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                         />
                       </div>
                     </div>
+
+                    <button
+                      onClick={checkLiveAvailability}
+                      disabled={!availDate || availabilityLoading}
+                      className="w-full rounded-xl border border-amber-400/30 bg-amber-400/10 hover:bg-amber-400/20 disabled:opacity-40 text-amber-100 font-black px-4 py-2.5 text-xs flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <ShieldCheck className="w-4 h-4" />
+                      {availabilityLoading
+                        ? (isEs ? 'Verificando cupos reales…' : 'Checking live availability…')
+                        : (isEs ? 'Verificar cupos reales ahora' : 'Check live availability now')}
+                    </button>
+
+                    {availability && (
+                      <div className={`rounded-2xl border p-4 ${availability.available ? 'border-emerald-400/30 bg-emerald-400/5' : 'border-rose-400/30 bg-rose-400/5'}`}>
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <div className="text-xs font-black text-white">
+                              {availability.available ? (isEs ? 'Cupo disponible' : 'Space available') : (isEs ? 'Cupo no confirmado' : 'Space not confirmed')}
+                            </div>
+                            <div className="text-[11px] text-stone-400 mt-1">
+                              {availability.reason || (availability.remainingSeats != null ? (isEs ? 'Cupos restantes: ' : 'Remaining seats: ') + availability.remainingSeats : '')}
+                            </div>
+                          </div>
+                          <ShieldCheck className="w-6 h-6 text-emerald-300 shrink-0" />
+                        </div>
+                      </div>
+                    )}
 
                     {/* Summary Box */}
                     <div className="mt-4 p-4 bg-[#020e09] rounded-2xl border border-emerald-500/20 flex items-center justify-between">
