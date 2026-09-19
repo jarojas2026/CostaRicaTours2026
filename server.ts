@@ -1379,8 +1379,9 @@ app.post('/api/agents/log_exception', (req, res) => {
 
 app.post('/api/gemini/concierge', async (req, res) => {
   try {
-    const { message, language, history, agentId, context, engine } = req.body;
+    const { message, language, history, agentId, context, engine, sessionId } = req.body;
     const userMsg = message || '';
+    const memorySessionId = String(sessionId || context?.sessionId || '');
     const lang = (language || 'es') as 'es' | 'en';
     
     // Si se especifica o prefiere motor Claude 3.5 Sonnet
@@ -1416,6 +1417,11 @@ app.post('/api/gemini/concierge', async (req, res) => {
 
     // El flujo de IA es 100% nativo: Claude/Vertex o Gemini, con fallback interno.
     const assistantResult = await processChatInquiry(userMsg, lang, history || [], engine || 'auto');
+    if (memorySessionId) {
+      const { rememberTurn } = await import('./backend/memoryService');
+      await rememberTurn(memorySessionId, { role: 'user', text: userMsg }, { agentId: assistantResult.agentId || agentId });
+      await rememberTurn(memorySessionId, { role: 'assistant', text: assistantResult.reply }, { agentId: assistantResult.agentId || agentId });
+    }
     res.json({
       reply: assistantResult.reply,
       quickActions: assistantResult.quickActions,
