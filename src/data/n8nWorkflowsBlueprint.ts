@@ -110,7 +110,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
         {
           parameters: {
             mode: "runOnceForEachItem",
-            jsCode: "const crypto = require('crypto');\nconst body = $input.item.json.body || $input.item.json;\nconst signature = $input.item.json.headers?.['x-webhook-signature'];\nconst secret = 'dev-secret-key-123';\nconst hash = crypto.createHmac('sha256', secret).update(JSON.stringify(body)).digest('hex');\nif(hash !== signature && signature !== undefined) throw new Error('Invalid HMAC Signature');\nreturn { json: { ...body, authenticated: true, receivedAt: new Date().toISOString() } };"
+            jsCode: "const crypto = require('crypto');\nconst body = $input.item.json.body || $input.item.json;\nconst signature = $input.item.json.headers?.['x-webhook-signature'];\nconst secret = '${N8N_WEBHOOK_SECRET}';\nconst hash = crypto.createHmac('sha256', secret).update(JSON.stringify(body)).digest('hex');\nif(hash !== signature && signature !== undefined) throw new Error('Invalid HMAC Signature');\nreturn { json: { ...body, authenticated: true, receivedAt: new Date().toISOString() } };"
           },
           name: "[SECURITY] HMAC Authenticator",
           type: "n8n-nodes-base.code",
@@ -491,7 +491,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
             action: "hmac",
             algorithm: "sha256",
             value: "={{JSON.stringify($json)}}",
-            secret: "dev-secret-key-123"
+            secret: "${N8N_WEBHOOK_SECRET}"
           },
           name: "[SECURITY] Verify HMAC Payment Signature",
           type: "n8n-nodes-base.crypto",
@@ -650,7 +650,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
             url: "http://localhost:3000/api/webhooks/n8n/update-booking",
             method: "POST",
             headerParameters: {
-              parameters: [{ name: "X-Webhook-Secret", value: "dev-secret-key-123" }]
+              parameters: [{ name: "X-Webhook-Secret", value: "${N8N_WEBHOOK_SECRET}" }]
             },
             bodyParameters: {
               parameters: [
@@ -722,7 +722,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
         {
           parameters: {
             fromEmail: "reservas@costaricatours.es",
-            toEmail: "={{$json.customer?.email || 'cliente@example.com'}}",
+            toEmail: "={{$json.customer?.email || 'test@example.com'}}",
             subject: "🇨🇷 Tu Voucher Oficial de Reserva - Costa Rica Tours",
             html: "<h1>¡Reserva Confirmada!</h1><p>Adjunto encontrarás tu voucher oficial de viaje.</p>"
           },
@@ -1647,7 +1647,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
             url: "http://localhost:3000/api/webhooks/n8n/update-booking",
             method: "POST",
             headerParameters: {
-              parameters: [{ name: "X-Webhook-Secret", value: "dev-secret-key-123" }]
+              parameters: [{ name: "X-Webhook-Secret", value: "${N8N_WEBHOOK_SECRET}" }]
             },
             bodyParameters: {
               parameters: [
@@ -1813,7 +1813,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
             url: "http://localhost:3000/api/analytics/conversion-report",
             method: "GET",
             headerParameters: {
-              parameters: [{ name: "X-Webhook-Secret", value: "dev-secret-key-123" }]
+              parameters: [{ name: "X-Webhook-Secret", value: "${N8N_WEBHOOK_SECRET}" }]
             }
           },
           name: "[FIRESTORE] Fetch Weekly Bookings & Analytics",

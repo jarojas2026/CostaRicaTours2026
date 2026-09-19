@@ -15,6 +15,8 @@ import {
 import { GoogleGenAI } from '@google/genai';
 import Stripe from 'stripe';
 import { TOURS } from '../src/data/toursData';
+import { getIdempotentResult, idempotencyDocId, normalizeIdempotencyKey, requestFingerprint } from './idempotencyService';
+import { assertBookingTransition, normalizeBookingLifecycle } from './bookingStateMachine';
 import {
   executeProviderRealtimeCoordination,
   executeCustomerBookingConfirmation
@@ -114,7 +116,13 @@ export function getStripe(): Stripe | null {
   return stripeClient;
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || 'mock-key' });
+let aiClient: GoogleGenAI | null = null;
+function getAI(): GoogleGenAI | null {
+  if (!aiClient && process.env.GEMINI_API_KEY) {
+    aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  }
+  return aiClient;
+}
 
 /**
  * 5. OBTENCIÓN DINÁMICA DE OPERADORES DESDE FIRESTORE
@@ -133,15 +141,15 @@ export async function getOperatorById(providerId: string): Promise<{
 }> {
   const db = getFirestoreDb();
   const defaultFallback = {
-    id: providerId || 'proveedor-directo-crtours',
-    name: 'Costa Rica Tours - Operaciones Directas',
-    paypalEmail: 'operaciones@costaricatours.es',
-    commissionRate: 0.15,
-    phone: '+506 8795-9148',
-    website: 'https://costaricatours.netlify.app/',
-    verified: true,
-    certificacion: 'CST Oficial Sostenible',
-    active: true
+    id: providerId || 'provider-unconfigured',
+    name: 'Operador no configurado',
+    paypalEmail: process.env.PROVIDER_DEV_EMAIL || '',
+    commissionRate: 0,
+    phone: process.env.PROVIDER_DEV_PHONE || '',
+    website: process.env.PROVIDER_WEBSITE || '',
+    verified: false,
+    certificacion: undefined,
+    active: false
   };
 
   if (!db) return defaultFallback;
@@ -185,16 +193,16 @@ export async function getOperatorById(providerId: string): Promise<{
   }
 
   // Fallback seguro si no existe en base de datos
-  if (providerId === 'alsama-tours-cr') {
+  if (providerId === 'alsama-tours-cr' && process.env.PROVIDER_DEV_EMAIL) {
     return {
       id: 'alsama-tours-cr',
-      name: 'Alsama Tours CR',
-      paypalEmail: 'operaciones@alsamatourscr.com',
-      commissionRate: 0.15,
-      phone: '+506 8795-9148',
-      website: 'https://alsamatourscr.com/',
+      name: process.env.PROVIDER_DEV_NAME || 'Operador configurado',
+      paypalEmail: process.env.PROVIDER_DEV_EMAIL,
+      commissionRate: Number(process.env.PROVIDER_COMMISSION_RATE || 0.15),
+      phone: process.env.PROVIDER_DEV_PHONE || '',
+      website: process.env.PROVIDER_WEBSITE || '',
       verified: true,
-      certificacion: 'CST Nivel Avanzado • Transporte Ejecutivo Oficial',
+      certificacion: process.env.PROVIDER_CERTIFICATION || 'Proveedor configurado',
       active: true
     };
   }
@@ -345,7 +353,8 @@ export async function verifyPaymentServerSide(
  * Genera insights operativos mediante IA para el operador local
  */
 export async function generateOperationalInsights(booking: any) {
-  if (!process.env.GEMINI_API_KEY) return null;
+  const ai = getAI();
+  if (!ai) return null;
 
   try {
     const prompt = `Analiza la siguiente reserva turística en Costa Rica y automatiza las tareas operativas requeridas:
@@ -382,6 +391,19 @@ export async function generateOperationalInsights(booking: any) {
  * actualizando el contador en `availability_slots` y guardando la reserva en `bookings`.
  */
 export async function createBooking(data: any) {
+  const idempotencyKey = normalizeIdempotencyKey(data.idempotencyKey);
+  const fingerprint = idempotencyKey ? requestFingerprint(data) : null;
+  if (idempotencyKey) {
+    const previous = await getIdempotentResult(idempotencyKey);
+    if (previous?.fingerprint && previous.fingerprint !== fingerprint) {
+      return { conflict: true, error: 'idempotency_conflict', message: 'La misma Idempotency-Key fue usada con datos diferentes.' };
+    }
+    if (previous?.bookingId) {
+      const existing = await getBookingById(previous.bookingId);
+      return { conflict: false, idempotent: true, booking: existing || { bookingId: previous.bookingId } };
+    }
+  }
+
   const bookingId = data.bookingId || `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
   const bookingTime = data.time || '08:00 AM';
   const numAdults = Number(data.adults) || 1;
@@ -487,8 +509,17 @@ export async function createBooking(data: any) {
       await db.runTransaction(async (transaction) => {
         const slotRef = db.collection('availability_slots').doc(slotKey);
         const bookingRef = db.collection('bookings').doc(bookingId);
+        const idempotencyRef = idempotencyKey ? db.collection('idempotency_keys').doc(idempotencyDocId(idempotencyKey)) : null;
 
-        // 1. Lectura transaccional del cupo
+        // 1. Idempotencia + lectura transaccional del cupo
+        if (idempotencyRef) {
+          const idemDoc = await transaction.get(idempotencyRef);
+          if (idemDoc.exists) {
+            const existing = idemDoc.data() || {};
+            if (existing.fingerprint && existing.fingerprint !== fingerprint) throw new Error('IDEMPOTENCY_CONFLICT');
+            throw new Error('IDEMPOTENT_REPLAY');
+          }
+        }
         const slotDoc = await transaction.get(slotRef);
         const currentBooked = slotDoc.exists ? (Number(slotDoc.data()?.bookedSeats) || 0) : 0;
 
@@ -517,10 +548,25 @@ export async function createBooking(data: any) {
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp()
         });
+        if (idempotencyRef) {
+          transaction.set(idempotencyRef, {
+            fingerprint,
+            bookingId,
+            createdAt: FieldValue.serverTimestamp()
+          }, { merge: true });
+        }
       });
 
       console.log(`✅ [TRANSACCIÓN ATÓMICA ÉXITO] Reserva ${bookingId} creada. Slot ${slotKey} incrementado en ${totalPassengers}.`);
     } catch (err: any) {
+      if (err.message === 'IDEMPOTENT_REPLAY' && idempotencyKey) {
+        const previous = await getIdempotentResult(idempotencyKey);
+        const replay = previous?.bookingId ? await getBookingById(previous.bookingId) : null;
+        return { conflict: false, idempotent: true, booking: replay || (previous?.bookingId ? { bookingId: previous.bookingId } : undefined) };
+      }
+      if (err.message === 'IDEMPOTENCY_CONFLICT') {
+        return { conflict: true, error: 'idempotency_conflict', message: 'La misma Idempotency-Key fue usada con datos diferentes.' };
+      }
       if (err.message && err.message.startsWith('NO_AVAILABILITY:')) {
         return {
           conflict: true,
@@ -582,6 +628,29 @@ export async function createBooking(data: any) {
  * Lee todas las reservas desde Firestore (o caché en memoria)
  * Normalizando Timestamps de Firestore a formato serializable.
  */
+export async function getBookingById(bookingId: string): Promise<any | null> {
+  const cached = inMemoryBookings.get(bookingId);
+  if (cached) return cached;
+  const col = getBookingsCollection();
+  if (!col) return null;
+  try {
+    const doc = await col.doc(bookingId).get();
+    if (!doc.exists) return null;
+    const data = doc.data() || {};
+    const booking: any = {
+      id: doc.id,
+      ...data,
+      createdAt: normalizeTimestampToDate(data.createdAt).toISOString(),
+      updatedAt: normalizeTimestampToDate(data.updatedAt).toISOString()
+    };
+    inMemoryBookings.set(booking.bookingId || booking.id, booking);
+    return booking;
+  } catch (error) {
+    console.warn('Error recuperando reserva por ID:', error);
+    return null;
+  }
+}
+
 export async function getAllBookings(): Promise<any[]> {
   const col = getBookingsCollection();
   if (col) {
@@ -645,6 +714,16 @@ export async function updateBookingStatus(
 
   const previousStatus = existing.status;
   const newStatus = updates.status;
+  const fromLifecycle = normalizeBookingLifecycle(previousStatus, existing.paymentStatus);
+  const toLifecycle = updates.status
+    ? normalizeBookingLifecycle(updates.status)
+    : normalizeBookingLifecycle(previousStatus, updates.paymentStatus);
+  try {
+    assertBookingTransition(fromLifecycle, toLifecycle);
+  } catch (transitionErr: any) {
+    return { success: false, error: transitionErr.message };
+  }
+
   const isCancelling = (newStatus === 'cancelada' || newStatus === 'cancelled') &&
                        (previousStatus !== 'cancelada' && previousStatus !== 'cancelled');
 

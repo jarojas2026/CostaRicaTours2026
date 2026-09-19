@@ -122,7 +122,12 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
              totalUSD: totalUSD,
              customerEmail: email,
              date: departureDate,
-             passengers: passengersCount
+             passengers: passengersCount,
+             flightNumber: flight.flightNumber,
+             cabinClass: selectedCabin,
+             includeAirportTransfer,
+             includeWelcomeSimKit,
+             includeTravelInsurance
            })
         });
         const stripeData = await stripeRes.json();

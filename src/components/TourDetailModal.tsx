@@ -144,7 +144,9 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
             totalUSD,
             customerEmail: email,
             date: selectedDate,
-            passengers: adults + children
+            passengers: adults + children,
+            adults,
+            children
           })
         });
         const stripeData = await stripeRes.json();
@@ -156,7 +158,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
         const paypalRes = await fetch('/api/paypal/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ totalUSD, tourName: modalTitle })
+          body: JSON.stringify({ totalUSD, tourName: modalTitle, tourId: tour.id, passengers: adults + children, adults, children })
         });
         const paypalData = await paypalRes.json();
         if (paypalData.url) {

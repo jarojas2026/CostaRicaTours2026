@@ -468,8 +468,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           thinking: thinkingMode,
           agentId: activeAgentId,
           engine: aiEngine,
+          sessionId: chatSessionId,
           context: {
             bookings: userBookings,
+            sessionId: chatSessionId,
           },
         }),
       });

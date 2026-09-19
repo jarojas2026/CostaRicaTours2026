@@ -1,7 +1,7 @@
 import { createBooking } from '../backend/bookingService';
 import { sendEmail } from '../backend/notificationService';
 
-const TEST_EMAIL = 'gabw33d@gmail.com';
+const TEST_EMAIL = 'test@example.com';
 
 const scenarios = [
   {
@@ -206,7 +206,7 @@ async function runTest() {
         successCount++;
         console.log(`✅ [ÉXITO] Reserva ${result.booking.bookingId} creada exitosamente.`);
 
-        // Enviar correo transaccional directo a gabw33d@gmail.com
+        // Enviar correo transaccional directo a test@example.com
         const emailRes = await sendEmail({
           to: TEST_EMAIL,
           subject: `[CONFIRMACIÓN DE RESERVA REAL #2026] ${sc.tourName} (${sc.country})`,
@@ -227,7 +227,7 @@ async function runTest() {
               </div>
 
               <p>Operado con estándares de turismo sostenible y respaldo de operadores locales certificados en Costa Rica.</p>
-              <p style="font-size: 12px; color: #64748b;">Atención 24/7 vía WhatsApp: +506 8795 9148 | Email: gabw33d@gmail.com</p>
+              <p style="font-size: 12px; color: #64748b;">Atención 24/7 vía WhatsApp: +506 8795 9148 | Email: test@example.com</p>
             </div>
           `
         });

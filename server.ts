@@ -18,6 +18,7 @@ import { initializeAutomationEngine, cleanupExpiredSoftHolds } from './backend/c
 import { google } from 'googleapis';
 import { requireOperator } from './backend/authMiddleware';
 import { TOURS } from './src/data/toursData';
+import { FLIGHT_ROUTES } from './src/data/flightsData';
 import {
   getStripe,
   createBooking,
@@ -99,9 +100,19 @@ import {
 import { executeSinpeVerification } from './backend/sinpeService';
 import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
 import { getSelfDevelopmentOverview, runSelfHealingCycle } from './backend/selfDevelopmentEngine';
+import { askCounterDesk, getCounterOperationsSnapshot, organizeCounterDesk } from './backend/counterDeskService';
+import { runEvaluationSuite } from './backend/agentEvaluationService';
+import { buildLearningDataset } from './backend/learningPipelineService';
+import { autonomyPolicy, parseAutonomyLevel } from './backend/autonomyPolicy';
+import { listSkillVersions, selectSkills, hydrateSkillGenome, registerSkillVersion, recordSkillEvaluation, promoteSkillVersion, rollbackSkillVersion } from './backend/skillGenome';
+import { emitOperationalEvent } from './backend/operationalEventBus';
+import { buildSkillEvolutionReport, selectEvolvedSkill, recordSkillOutcome, proposeSkillUpgrade } from './backend/skillEvolutionEngine';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
+
+// Admin gate is defined before any route registration that uses it.
+const requireAdmin = requireOperator;
 
 app.set('trust proxy', 1);
 app.use(express.json());
@@ -115,6 +126,14 @@ const paymentLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Demasiadas solicitudes de pago desde esta IP. Por favor intente más tarde.' }
+});
+
+const counterLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Límite del Counter Digital excedido. Por favor espere un momento.' }
 });
 
 const chatLimiter = rateLimit({
@@ -152,14 +171,15 @@ app.get('/api/health', (req, res) => {
 app.post('/api/stripe/create-checkout-session', async (req, res) => {
   try {
     const { tourName, totalUSD, customerEmail } = req.body;
+    const authoritativeTotal = calculateAuthoritativeCheckoutTotal(req.body);
+    if (authoritativeTotal === null) return res.status(400).json({ error: 'No se pudo verificar el precio de la reserva en el catálogo.' });
+    if (Math.abs(Number(totalUSD) - authoritativeTotal) > 0.01) {
+      return res.status(409).json({ error: 'El importe enviado no coincide con el precio calculado en el servidor.', expectedTotalUSD: authoritativeTotal });
+    }
     const stripe = getStripe();
     if (!stripe) {
-      if (process.env.NODE_ENV === 'production') {
-        console.error('🔴 STRIPE_SECRET_KEY no configurada en PRODUCCIÓN. Se rechaza el pago.');
-        return res.status(503).json({ error: 'Pagos no disponibles temporalmente. Contacta a soporte.' });
-      }
-      console.warn('⚠️ STRIPE_SECRET_KEY no configurada (modo desarrollo). Simulando enlace de pago.');
-      return res.json({ url: `${req.protocol}://${req.get('host')}?booking=success` });
+      console.error('🔴 STRIPE_SECRET_KEY no configurada. Se rechaza el intento de pago.');
+      return res.status(503).json({ error: 'Pagos no disponibles: Stripe no está configurado en el servidor.' });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -189,6 +209,11 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
 app.post('/api/paypal/create-order', async (req, res) => {
   try {
     const { totalUSD, tourName } = req.body;
+    const authoritativeTotal = calculateAuthoritativeCheckoutTotal(req.body);
+    if (authoritativeTotal === null) return res.status(400).json({ error: 'No se pudo verificar el precio de la reserva en el catálogo.' });
+    if (Math.abs(Number(totalUSD) - authoritativeTotal) > 0.01) {
+      return res.status(409).json({ error: 'El importe enviado no coincide con el precio calculado en el servidor.', expectedTotalUSD: authoritativeTotal });
+    }
     const paypalClientId = process.env.PAYPAL_CLIENT_ID;
     const paypalSecret = process.env.PAYPAL_SECRET;
     const paypalMode = process.env.PAYPAL_MODE || 'sandbox';
@@ -196,15 +221,8 @@ app.post('/api/paypal/create-order', async (req, res) => {
       paypalMode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
 
     if (!paypalClientId || !paypalSecret) {
-      if (process.env.NODE_ENV === 'production') {
-        console.error('🔴 PAYPAL_CLIENT_ID/SECRET no configurados en PRODUCCIÓN. Se rechaza el pago.');
-        return res.status(503).json({ error: 'Pagos no disponibles temporalmente. Contacta a soporte.' });
-      }
-      console.warn('⚠️ PAYPAL_CLIENT_ID o PAYPAL_SECRET no configurados (modo desarrollo). Simulando pago.');
-      return res.json({
-        url: `${req.protocol}://${req.get('host')}?booking=success`,
-        id: 'mock_paypal_id'
-      });
+      console.error('🔴 PAYPAL_CLIENT_ID/SECRET no configurados. Se rechaza el intento de pago.');
+      return res.status(503).json({ error: 'Pagos no disponibles: PayPal no está configurado en el servidor.' });
     }
 
     const authStr = Buffer.from(`${paypalClientId}:${paypalSecret}`).toString('base64');
@@ -272,9 +290,10 @@ app.post('/api/internal/sweep-sla', async (req, res) => {
   const operatorKey = req.headers['x-operator-key'];
   const secret = process.env.OPERATOR_API_KEY;
 
-  if (!secret || !operatorKey || !crypto.timingSafeEqual(Buffer.from(String(operatorKey)), Buffer.from(secret))) {
-    return res.status(401).json({ error: 'No autorizado' });
-  }
+  if (!secret || !operatorKey) return res.status(401).json({ error: 'No autorizado' });
+  const provided = Buffer.from(String(operatorKey));
+  const expected = Buffer.from(secret);
+  if (provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) return res.status(401).json({ error: 'No autorizado' });
 
   try {
     const escalatedCount = await massiveEngine.providerLifecycle.sweepPendingSlas();
@@ -410,7 +429,22 @@ app.post('/api/sinpe/verify', requireOperator, async (req, res) => {
 // Crear reserva (con verificación server-side de pago, cupos en Firestore y automatización nativa)
 app.post('/api/bookings', async (req, res) => {
   try {
-    const result = await createBooking(req.body);
+    const idempotencyKey = req.headers['idempotency-key'];
+    const result = await createBooking({ ...req.body, idempotencyKey });
+    if (!result.conflict) {
+      void emitOperationalEvent({
+        type: 'booking.created',
+        source: 'booking_api',
+        conversationId: result.booking?.bookingId || idempotencyKey || 'booking',
+        payload: {
+          bookingId: result.booking?.bookingId,
+          tourId: result.booking?.tourId,
+          date: result.booking?.date,
+          status: result.booking?.status,
+          paymentStatus: result.booking?.paymentStatus
+        }
+      }).catch(err => console.error('Event bus booking.created:', err));
+    }
 
     if (result.conflict) {
       return res.status(409).json(result);
@@ -451,20 +485,7 @@ app.get('/api/bookings/:id/pdf', async (req, res) => {
   try {
     const bookingId = req.params.id;
     const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId) || {
-      bookingId: bookingId,
-      tourName: 'Costa Rica Familiar 15 Días: Relax, Volcanes y Playas Seguras (Especial Bebé 3 Años)',
-      date: '2026-10-15',
-      time: '09:00 AM',
-      adults: 2,
-      children: 1,
-      totalUSD: 2450,
-      customerName: 'Hester Viviana Marín Elizondo',
-      customerEmail: 'viviana19942011@gmail.com',
-      customerPhone: '+506 84005018',
-      specialRequests: 'Presupuesto familiar, relajado y seguro. Bebé de 3 años.',
-      createdAt: new Date().toISOString()
-    };
+    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
 
     const html = generateBookingPrintableHTML(booking as any);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -479,20 +500,8 @@ app.get('/api/bookings/:id/download-pdf', async (req, res) => {
   try {
     const bookingId = req.params.id;
     const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId) || {
-      bookingId: bookingId,
-      tourName: 'Costa Rica Familiar 15 Días: Relax, Volcanes y Playas Seguras (Especial Bebé 3 Años)',
-      date: '2026-10-15',
-      time: '09:00 AM',
-      adults: 2,
-      children: 1,
-      totalUSD: 2450,
-      customerName: 'Hester Viviana Marín Elizondo',
-      customerEmail: 'viviana19942011@gmail.com',
-      customerPhone: '+506 84005018',
-      specialRequests: 'Presupuesto familiar, relajado y seguro. Bebé de 3 años.',
-      createdAt: new Date().toISOString()
-    };
+    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
+    if (!booking) return res.status(404).json({ error: 'Reserva no encontrada' });
 
     const pdfBuffer = await generateBookingPDFBuffer(booking as any);
     res.setHeader('Content-Type', 'application/pdf');
@@ -518,100 +527,76 @@ app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confi
 // Aprobación de Itinerario por parte del Cliente (Confirmación de Proforma) -> Despacho a Proveedores
 app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
   try {
-    const bookingId = req.params.id;
+    const bookingId = String(req.params.id);
     const action = req.query.action === 'reject' ? 'rechazado' : 'aprobado';
+    const allBookings = await getAllBookings();
+    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
 
-    console.log(`🛎️ [CONFIRMACIÓN DE CLIENTE] Reserva #${bookingId} acción: ${action}`);
+    if (!booking) return res.status(404).send('Reserva no encontrada.');
 
-    // 1. Actualizar estado de la reserva
-    try {
-      await updateBookingStatus(bookingId, {
-        status: action === 'aprobado' ? 'confirmada' : 'cancelada',
-        customerConfirmedAt: new Date().toISOString()
-      });
-    } catch (e) {
-      console.warn(`⚠️ [STATUS UPDATE]:`, e);
-    }
+    const updateResult = await updateBookingStatus(bookingId, {
+      status: action === 'aprobado' ? 'confirmada' : 'cancelada',
+      customerConfirmedAt: new Date().toISOString()
+    });
+    if (!updateResult.success) return res.status(409).send(updateResult.error || 'No se pudo actualizar la reserva.');
 
-    // 2. Si fue aprobada, despachar inmediatamente la coordinación con operadores locales
-    let providerCoordinationResult = null;
+    let providerCoordinationResult: any = null;
     if (action === 'aprobado') {
       try {
         providerCoordinationResult = await executeProviderRealtimeCoordination({
           bookingId,
-          customerName: 'Hester Viviana Marín Elizondo',
-          customerEmail: 'viviana19942011@gmail.com',
-          customerPhone: '+506 84005018',
-          tourName: 'Costa Rica Familiar 15 Días: Relax, Volcanes y Playas Seguras (Especial Bebé 3 Años)',
-          date: '2026-10-15',
-          tourDate: '2026-10-15',
-          totalUSD: 2450,
-          pax: 3,
-          specialRequests: 'Presupuesto familiar, relajado y seguro. Bebé de 3 años. Minivan con silla ISOFIX y vuelo Sansa.'
+          customerName: booking.customerName,
+          customerEmail: booking.customerEmail,
+          customerPhone: booking.customerPhone,
+          tourName: booking.tourName,
+          date: booking.date,
+          tourDate: booking.date,
+          totalUSD: booking.totalUSD,
+          pax: (Number(booking.adults) || 0) + (Number(booking.children) || 0),
+          specialRequests: booking.specialRequests
         });
-        console.log(`✅ [PROVEEDORES DESPACHADOS] Notificación enviada a operadores locales.`);
       } catch (provErr) {
-        console.warn(`⚠️ [FALLO EN COORDINACIÓN DE PROVEEDORES]:`, provErr);
+        console.warn('⚠️ [FALLO EN COORDINACIÓN DE PROVEEDORES]:', provErr);
       }
     }
 
-    // 3. Renderizar vista de agradecimiento y confirmación oficial
     const downloadPdfUrl = `/api/bookings/${bookingId}/download-pdf`;
+    const customerName = String(booking.customerName || 'Cliente').replace(/[<>]/g, '');
+    const providerMessage = providerCoordinationResult
+      ? 'La coordinación con el proveedor fue iniciada.'
+      : 'La coordinación con el proveedor quedó pendiente de seguimiento.';
+
     res.send(`
       <!DOCTYPE html>
-      <html lang="es">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>¡Itinerario Confirmado! • Costa Rica Tours</title>
+      <html lang="es"><head>
+        <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Confirmación • Costa Rica Tours</title>
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #041711; color: #f8fafc; margin: 0; padding: 24px 16px; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }
-          .card { background-color: #ffffff; color: #1e293b; max-width: 580px; width: 100%; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); }
-          .hero { background: linear-gradient(135deg, #064e3b 0%, #047857 100%); color: white; padding: 32px 24px; text-align: center; }
-          .content { padding: 28px 24px; }
-          .badge { display: inline-block; background-color: #ecfdf5; color: #047857; font-weight: 800; font-size: 12px; padding: 6px 14px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; border: 1px solid #a7f3d0; }
-          .btn-primary { display: block; width: 100%; background-color: #059669; color: white; text-align: center; padding: 14px; border-radius: 10px; font-weight: 800; text-decoration: none; font-size: 15px; margin-bottom: 12px; box-sizing: border-box; }
-          .btn-secondary { display: block; width: 100%; background-color: #f1f5f9; color: #334155; text-align: center; padding: 12px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 14px; box-sizing: border-box; border: 1px solid #cbd5e1; }
-          .step-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin: 18px 0; font-size: 13px; color: #475569; }
+          body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#041711;color:#f8fafc;margin:0;padding:24px 16px;display:flex;justify-content:center;align-items:center;min-height:100vh}
+          .card{background:#fff;color:#1e293b;max-width:580px;width:100%;border-radius:20px;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,.5)}
+          .hero{background:linear-gradient(135deg,#064e3b,#047857);color:#fff;padding:32px 24px;text-align:center}.content{padding:28px 24px}
+          .badge{display:inline-block;background:#ecfdf5;color:#047857;font-weight:800;font-size:12px;padding:6px 14px;border-radius:9999px;text-transform:uppercase;letter-spacing:.5px;border:1px solid #a7f3d0}
+          .btn{display:block;width:100%;background:#059669;color:#fff;text-align:center;padding:14px;border-radius:10px;font-weight:800;text-decoration:none;font-size:15px;margin-top:12px;box-sizing:border-box}
+          .box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin:18px 0;font-size:13px;color:#475569}
         </style>
-      </head>
-      <body>
-        <div class="card">
-          <div class="hero">
-            <div style="font-size: 40px; margin-bottom: 10px;">🎉🌿</div>
-            <h1 style="margin: 0; font-size: 22px; font-weight: 900;">¡Itinerario Confirmado Exitosamente!</h1>
-            <p style="margin: 8px 0 0 0; font-size: 14px; color: #a7f3d0;">Estimada Hester Viviana, hemos recibido su aprobación.</p>
-          </div>
-          <div class="content">
-            <div style="text-align: center;">
-              <span class="badge">Expediente #${bookingId}</span>
-            </div>
-            <p style="font-size: 14px; line-height: 1.6; color: #334155; margin-top: 6px;">
-              Su itinerario familiar de <strong>15 Días (Costa Rica de Costa a Costa)</strong> ha sido validado. Nuestro equipo de Mostrador Digital ha procedido con:
-            </p>
-            <div class="step-box">
-              <div style="margin-bottom: 8px;"><strong>✈️ Vuelos Domésticos Sansa:</strong> Bloqueo y emisión de pasajes para los 3 pasajeros.</div>
-              <div style="margin-bottom: 8px;"><strong>🚐 Transporte Ejecutivo Privado:</strong> Asignación de minivan y montaje de silla infantil homologada ISOFIX para su bebé de 3 años.</div>
-              <div style="margin-bottom: 8px;"><strong>🏨 Eco-Lodges & Parques:</strong> Confirmación de reservas hoteleras y entradas accesibles.</div>
-              <div><strong>👨‍💼 Asesoría Continua:</strong> Seguimiento en tiempo real vía WhatsApp (+506 8795 9148).</div>
-            </div>
-            <a href="${downloadPdfUrl}" class="btn-primary">📥 Descargar Voucher & Itinerario (PDF)</a>
-            <a href="https://wa.me/50687959148?text=${encodeURIComponent(`Hola, soy Hester Viviana. Acabo de confirmar el itinerario #${bookingId}.`)}" class="btn-secondary">💬 Escribir al Mostrador (+506 8795 9148)</a>
-          </div>
+      </head><body><div class="card">
+        <div class="hero"><div style="font-size:40px">🌿</div><h1>Solicitud procesada</h1><p>${customerName}, recibimos tu decisión.</p></div>
+        <div class="content"><div style="text-align:center"><span class="badge">Expediente #${bookingId}</span></div>
+          <div class="box"><strong>Tour:</strong> ${String(booking.tourName || 'Experiencia Costa Rica')}<br/>
+          <strong>Fecha:</strong> ${String(booking.date || 'No especificada')}<br/>
+          <strong>Estado:</strong> ${String(action)}<br/><br/>${providerMessage}</div>
+          <a href="${downloadPdfUrl}" class="btn">Descargar comprobante</a>
         </div>
-      </body>
-      </html>
-    `);
+      </div></body></html>`);
   } catch (err: any) {
     res.status(500).send(`Error al procesar confirmación: ${err.message}`);
   }
 });
 
-// ==========================================
 // 🚨 SISTEMA PROPIO DE ALERTAS ADMINISTRATIVAS
 // ==========================================
 
-app.post('/api/alerts', async (req, res) => {
+app.post('/api/alerts', requireAdmin, async (req, res) => {
   const { source, severity, title, message, bookingId, providerId, metadata } = req.body || {};
   if (!source || !severity || !title || !message) {
     return res.status(400).json({ error: 'source, severity, title y message son requeridos.' });
@@ -640,7 +625,7 @@ app.get('/api/providers', (req, res) => {
   res.json(getProvidersOverview());
 });
 
-app.post('/api/providers/action', async (req, res) => {
+app.post('/api/providers/action', requireAdmin, async (req, res) => {
   try {
     const { orderId, action, notes } = req.body;
     const result = await handleProviderAction({ orderId, action, notes });
@@ -650,11 +635,167 @@ app.post('/api/providers/action', async (req, res) => {
   }
 });
 
+// ==========================================
+// 🛎️ COUNTER DESK FULL STACK + ORGANIZADOR IA
+// ==========================================
+// Atención pública: usa el mismo conocimiento operativo del backend.
+// Operaciones internas: snapshot/organización protegidos por autenticación.
+app.post('/api/counter/ask', counterLimiter, async (req, res) => {
+  try {
+    const result = await askCounterDesk({
+      message: req.body?.message,
+      sessionId: req.body?.sessionId,
+      language: req.body?.language,
+      context: req.body?.context
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Error en Counter Agent' });
+  }
+});
+
+app.get('/api/counter/operations', requireAdmin, async (_req, res) => {
+  try {
+    res.json({ success: true, snapshot: await getCounterOperationsSnapshot() });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Error al obtener operaciones' });
+  }
+});
+
+app.get('/api/counter/autopilot', requireAdmin, async (_req, res) => {
+  try {
+    const { runCounterSafeAutopilot } = await import('./backend/counterDeskService');
+    res.json(await runCounterSafeAutopilot());
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Error del autopilot' });
+  }
+});
+
+app.post('/api/counter/organize', requireAdmin, async (_req, res) => {
+  try {
+    res.json(await organizeCounterDesk());
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Error del organizador IA' });
+  }
+});
+
+app.get('/api/weather/destinations', async (_req, res) => {
+  try {
+    const { getDestinationWeather } = await import('./backend/weatherPulseService');
+    res.json({ success: true, source: 'open-meteo', generatedAt: new Date().toISOString(), destinations: await getDestinationWeather() });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/ai/evaluation/suite', requireAdmin, async (_req, res) => {
+  try { res.json(await runEvaluationSuite()); }
+  catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Evaluation error' }); }
+});
+
+app.get('/api/ai/learning/dataset', requireAdmin, async (req, res) => {
+  try {
+    const dataset = await buildLearningDataset(Number(req.query.limit) || 500);
+    res.json(dataset);
+  } catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Dataset error' }); }
+});
+
+app.get('/api/ai/autonomy/policy', requireAdmin, (req, res) => {
+  const level = parseAutonomyLevel(req.query.level);
+  const action = String(req.query.action || 'observe') as any;
+  res.json({ success: true, policy: autonomyPolicy(level, action) });
+});
+
+app.get('/api/ai/skills', requireAdmin, (_req, res) => {
+  res.json({ success: true, skills: listSkillVersions() });
+});
+
+app.get('/api/ai/skills/select', requireAdmin, (req, res) => {
+  const agentId = String(req.query.agentId || 'concierge');
+  const task = String(req.query.task || '');
+  const level = parseAutonomyLevel(req.query.level);
+  res.json({ success: true, skills: selectSkills(agentId, task, level) });
+});
+
+app.get('/api/ai/skills/governance', requireAdmin, (_req, res) => {
+  res.json({ success: true, skills: listSkillVersions() });
+});
+
+app.post('/api/ai/skills/register', requireAdmin, async (req, res) => {
+  try {
+    const skill = await registerSkillVersion(req.body);
+    res.status(201).json({ success: true, skill });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message || 'No se pudo registrar la skill' });
+  }
+});
+
+app.post('/api/ai/skills/evaluate', requireAdmin, async (req, res) => {
+  try {
+    const { id, version, groundedness, safety, quality, criticalFailure } = req.body || {};
+    if (!id || !version) return res.status(400).json({ success: false, error: 'id y version son requeridos' });
+    const skill = await recordSkillEvaluation(String(id), String(version), {
+      groundedness: Number(groundedness),
+      safety: Number(safety),
+      quality: Number(quality),
+      criticalFailure: Boolean(criticalFailure)
+    });
+    res.json({ success: true, skill });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message || 'No se pudo registrar evaluación' });
+  }
+});
+
+app.post('/api/ai/skills/promote', requireAdmin, async (req, res) => {
+  try {
+    const result = await promoteSkillVersion(String(req.body?.id || ''), String(req.body?.version || ''), req.body?.target === 'canary' ? 'canary' : 'active');
+    res.status(result.success ? 200 : 409).json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message || 'No se pudo promover la skill' });
+  }
+});
+
+app.post('/api/ai/skills/rollback', requireAdmin, async (req, res) => {
+  try {
+    const result = await rollbackSkillVersion(String(req.body?.id || ''), String(req.body?.version || ''), String(req.body?.reason || 'manual_rollback'));
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message || 'No se pudo revertir la skill' });
+  }
+});
+
+app.get('/api/ai/learning/examples', requireAdmin, async (req, res) => {
+  try {
+    const { buildTrainingExamples } = await import('./backend/learningEngine');
+    res.json({ success: true, examples: await buildTrainingExamples(Number(req.query.limit) || 100) });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/ai/learning/reflect', requireAdmin, async (_req, res) => {
+  try {
+    const { runLearningReflection } = await import('./backend/learningEngine');
+    res.json({ success: true, result: await runLearningReflection(60) });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/ai/mesh/inbox/:agentId', requireAdmin, async (req, res) => {
+  try {
+    const { getAgentInbox } = await import('./backend/agentMeshService');
+    res.json({ success: true, messages: await getAgentInbox(String(req.params.agentId), Number(req.query.limit) || 20) });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.get('/api/self-dev/status', async (req, res) => {
   res.json(await getSelfDevelopmentOverview());
 });
 
-app.post('/api/self-dev/run-healing', async (req, res) => {
+app.post('/api/self-dev/run-healing', requireAdmin, async (req, res) => {
   try {
     const result = await runSelfHealingCycle();
     res.json(result);
@@ -682,8 +823,6 @@ app.post('/api/ai/photo-recommendations', async (req, res) => {
 
 // Admin endpoints use the same server-side operator gate until Firebase Admin
 // token verification is added. Never accept arbitrary Bearer tokens.
-const requireAdmin = requireOperator;
-
 app.get('/api/ai/demand-forecast', requireAdmin, async (req, res) => {
   try {
     const result = await getDemandForecast();
@@ -702,13 +841,13 @@ app.post('/api/ai/fraud-check', requireAdmin, async (req, res) => {
   }
 });
 
-app.get(['/api/native-engine/logs', '/api/native/logs'], (req, res) => {
+app.get(['/api/native-engine/logs', '/api/native/logs'], requireAdmin, (req, res) => {
   const limit = Number(req.query.limit) || 50;
   res.json(getNativeAutomationLogs(limit));
 });
 
 // Despachadores manuales / UI de los 7 Workflows Nativos
-app.post('/api/native/workflows/payouts', async (req, res) => {
+app.post('/api/native/workflows/payouts', requireAdmin, async (req, res) => {
   try {
     const result = await executeAutomatedProviderPayouts();
     logAutomationExecution('WF_PAGOS_PROVEEDORES', 3, 'success', `Manual: ${result.totalProcessed} procesadas, $${result.totalPaidUSD} USD.`);
@@ -719,7 +858,7 @@ app.post('/api/native/workflows/payouts', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/reminders', async (req, res) => {
+app.post('/api/native/workflows/reminders', requireAdmin, async (req, res) => {
   try {
     const result = await executeTour24hReminders();
     logAutomationExecution('WF_RECORDATORIOS_24H', 7, 'success', `Manual: ${result.totalRemindersSent} recordatorios.`);
@@ -730,7 +869,7 @@ app.post('/api/native/workflows/reminders', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/surveillance', async (req, res) => {
+app.post('/api/native/workflows/surveillance', requireAdmin, async (req, res) => {
   try {
     const result = await executeSurveillanceAndEscalation();
     logAutomationExecution('WF_VIGILANCIA_2H', 4, 'success', `Manual: ${result.checkedBookings} auditadas, ${result.alertsSent} alertas.`);
@@ -741,7 +880,7 @@ app.post('/api/native/workflows/surveillance', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/reviews', async (req, res) => {
+app.post('/api/native/workflows/reviews', requireAdmin, async (req, res) => {
   try {
     const result = await executePostTourReviewRequests();
     logAutomationExecution('WF_RESENAS_POST_TOUR', 6, 'success', `Manual: ${result.emailsSent} encuestas enviadas.`);
@@ -752,7 +891,7 @@ app.post('/api/native/workflows/reviews', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/daily-report', async (req, res) => {
+app.post('/api/native/workflows/daily-report', requireAdmin, async (req, res) => {
   try {
     const result = await executeDailyOperationReport();
     logAutomationExecution('WF_REPORTE_DIARIO', 5, 'success', `Manual: ${result.totalBookingsToday} reservas, $${result.revenueUSD} USD.`);
@@ -763,7 +902,7 @@ app.post('/api/native/workflows/daily-report', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/cleanup-holds', async (req, res) => {
+app.post('/api/native/workflows/cleanup-holds', requireAdmin, async (req, res) => {
   try {
     const result = await cleanupExpiredSoftHolds();
     logAutomationExecution('AUTO_RELEASE_HOLD', 5, 'success', `Manual: ${result.releasedCount} cupos liberados.`);
@@ -774,7 +913,7 @@ app.post('/api/native/workflows/cleanup-holds', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/conversion-report', async (req, res) => {
+app.post('/api/native/workflows/conversion-report', requireAdmin, async (req, res) => {
   try {
     const metrics = await getWeeklyConversionMetrics();
     logAutomationExecution('CRON_SEMANAL_CONVERSION', 5, 'success', `Manual: Tasa conv: ${metrics.conversionRate}%, Ventas: $${metrics.totalRevenueUSD}.`);
@@ -785,7 +924,7 @@ app.post('/api/native/workflows/conversion-report', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/weather', async (req, res) => {
+app.post('/api/native/workflows/weather', requireAdmin, async (req, res) => {
   try {
     const result = await executeWeatherMonitoringAlerts();
     logAutomationExecution('WF_CLIMA_SEGURIDAD', 0, 'success', `Manual: ${result.checkedBookings} revisadas, ${result.alertsSent} avisos.`);
@@ -796,7 +935,7 @@ app.post('/api/native/workflows/weather', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/concierge', async (req, res) => {
+app.post('/api/native/workflows/concierge', requireAdmin, async (req, res) => {
   try {
     const result = await executeMorningConciergeTips();
     logAutomationExecution('WF_CONCIERGE_MATUTINO', 0, 'success', `Manual: ${result.tipsSent} tips enviados.`);
@@ -807,7 +946,7 @@ app.post('/api/native/workflows/concierge', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/prospects', async (req, res) => {
+app.post('/api/native/workflows/prospects', requireAdmin, async (req, res) => {
   try {
     const result = await executePreSaleProspectRecovery();
     logAutomationExecution('WF_RECUPERACION_PROSPECTOS', 0, 'success', `Manual: ${result.recoveredSent} prospectos contactados.`);
@@ -818,7 +957,7 @@ app.post('/api/native/workflows/prospects', async (req, res) => {
   }
 });
 
-app.post('/api/native/workflows/loyalty', async (req, res) => {
+app.post('/api/native/workflows/loyalty', requireAdmin, async (req, res) => {
   try {
     const result = await executePostSaleVipLoyalty();
     logAutomationExecution('WF_FIDELIZACION_VIP', 0, 'success', `Manual: ${result.couponsSent} cupones VIP emitidos.`);
@@ -831,7 +970,7 @@ app.post('/api/native/workflows/loyalty', async (req, res) => {
 
 // 🚀 PIPELINE 100% AUTÓNOMO (Sin intervención manual humana)
 // Procesa la consulta -> Bloquea cupo -> Crea reserva -> Notifica al proveedor -> Envía voucher digital QR al cliente
-app.post(['/api/native/autonomous-booking-flow', '/api/native/flujo-autonomo'], async (req, res) => {
+app.post(['/api/native/autonomous-booking-flow', '/api/native/flujo-autonomo'], requireAdmin, async (req, res) => {
   try {
     const result = await executeAutonomousFullBookingLifecycle(req.body);
     res.json(result);
@@ -933,16 +1072,6 @@ app.post(['/webhook/panel-control-ops', '/api/ops/action'], async (req, res) => 
   try {
     const result = await executeAIOpsAction(req.body);
     res.json(result);
-  } catch (error: any) {
-    res.status(500).json({ exito: false, error: error.message });
-  }
-});
-
-// 11. Despacho de confirmaciones mediante los servicios nativos de la plataforma
-app.post('/webhook/reserva-confirmada', async (req, res) => {
-  try {
-    const result = await executeConfirmacionReserva(req.body);
-    res.json({ ...result, systemMessage: 'Despacho ejecutado por motor nativo' });
   } catch (error: any) {
     res.status(500).json({ exito: false, error: error.message });
   }
@@ -1392,8 +1521,9 @@ app.post('/api/agents/log_exception', (req, res) => {
 
 app.post('/api/gemini/concierge', async (req, res) => {
   try {
-    const { message, language, history, agentId, context, engine } = req.body;
+    const { message, language, history, agentId, context, engine, sessionId } = req.body;
     const userMsg = message || '';
+    const memorySessionId = String(sessionId || context?.sessionId || '');
     const lang = (language || 'es') as 'es' | 'en';
     
     // Si se especifica o prefiere motor Claude 3.5 Sonnet
@@ -1429,6 +1559,11 @@ app.post('/api/gemini/concierge', async (req, res) => {
 
     // El flujo de IA es 100% nativo: Claude/Vertex o Gemini, con fallback interno.
     const assistantResult = await processChatInquiry(userMsg, lang, history || [], engine || 'auto');
+    if (memorySessionId) {
+      const { rememberTurn } = await import('./backend/memoryService');
+      await rememberTurn(memorySessionId, { role: 'user', text: userMsg }, { agentId: assistantResult.agentId || agentId });
+      await rememberTurn(memorySessionId, { role: 'assistant', text: assistantResult.reply }, { agentId: assistantResult.agentId || agentId });
+    }
     res.json({
       reply: assistantResult.reply,
       quickActions: assistantResult.quickActions,
@@ -1471,6 +1606,53 @@ app.post('/api/agent/counter', async (req, res) => {
 // =========================================================================
 // ⚡ GATEWAY DE HERRAMIENTAS IA NATIVAS
 // =========================================================================
+app.get('/api/ai/skills/evolution', requireAdmin, async (_req, res) => {
+  res.json({ success: true, ...buildSkillEvolutionReport() });
+});
+
+app.post('/api/ai/skills/select', requireAdmin, async (req, res) => {
+  try {
+    const skill = selectEvolvedSkill(
+      String(req.body?.agentId || 'counter_agent'),
+      String(req.body?.task || ''),
+      String(req.body?.sessionId || '')
+    );
+    res.json({ success: Boolean(skill), skill });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/ai/skills/outcome', requireAdmin, async (req, res) => {
+  try {
+    const result = await recordSkillOutcome({
+      id: String(req.body?.id || ''),
+      version: String(req.body?.version || ''),
+      outcome: req.body?.outcome || 'partial',
+      groundedness: Number(req.body?.groundedness || 0),
+      safety: Number(req.body?.safety || 0),
+      quality: Number(req.body?.quality || 0)
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/ai/skills/propose-upgrade', requireAdmin, async (req, res) => {
+  try {
+    const result = await proposeSkillUpgrade({
+      id: String(req.body?.id || ''),
+      version: String(req.body?.version || ''),
+      observedFailure: String(req.body?.observedFailure || ''),
+      desiredOutcome: String(req.body?.desiredOutcome || '')
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
 app.get('/api/ai/tools', (req, res) => {
   res.json({
     success: true,
@@ -1478,7 +1660,7 @@ app.get('/api/ai/tools', (req, res) => {
     tools: [
       'counter_agent', 'triage', 'itinerary_generator', 'availability_checker',
       'booking_creator', 'provider_coordinator', 'sinpe_verifier', 'fraud_checker',
-      'contingency_manager', 'customer_support', 'demand_forecast'
+      'contingency_manager', 'customer_support', 'demand_forecast', 'search_tours', 'check_availability', 'lookup_booking', 'recall_memory'
     ]
   });
 });
@@ -1503,7 +1685,7 @@ app.post('/api/gemini/booking/urgent', async (req, res) => {
     });
   } catch (err: any) {
     res.json({
-      reply: 'Atención prioritaria registrada. Por favor comunícate a nuestro WhatsApp de soporte: +506 8888-7777.',
+      reply: 'Atención prioritaria registrada. Por favor comunícate por el canal de soporte configurado.',
       success: false
     });
   }
@@ -1627,7 +1809,6 @@ app.post('/api/itinerary/book', async (req, res) => {
       customerPhone,
       startDate,
       currency,
-      totalUSD,
       specialRequests
     } = req.body;
 
@@ -1637,19 +1818,23 @@ app.post('/api/itinerary/book', async (req, res) => {
 
     const bookingDate = startDate || new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0];
     const generatedId = `CR-ITIN-${Math.floor(100000 + Math.random() * 900000)}`;
-    const calculatedUSD = Number(totalUSD) || (Number(daysCount || 5) * Number(travelers || 2) * 165);
+    const normalizedDays = Math.max(1, Math.min(30, Number(daysCount) || 5));
+    const normalizedTravelers = Math.max(1, Math.min(30, Number(travelers) || 2));
+    // Precio base autoritativo para itinerarios personalizados. El total generado por IA
+    // se conserva solo como referencia, nunca como importe de cobro controlado por cliente.
+    const calculatedUSD = Number((normalizedDays * normalizedTravelers * 165).toFixed(2));
 
     const bookingRecord = await createBooking({
       bookingId: generatedId,
       tourId: 'custom-multi-day-itinerary',
-      tourName: itineraryTitle || `Paquete Costa Rica ${daysCount || 5} Días`,
+      tourName: itineraryTitle || `Paquete Costa Rica ${normalizedDays} Días`,
       date: bookingDate,
       time: '08:00 AM',
-      adults: Number(travelers) || 2,
+      adults: normalizedTravelers,
       children: 0,
       customerName,
       customerEmail,
-      customerPhone: customerPhone || '+506 8000-CRTOURS',
+      customerPhone: customerPhone || '',
       totalUSD: calculatedUSD,
       totalAmount: currency === 'CRC' ? Math.round(calculatedUSD * 515) : calculatedUSD,
       currency: currency || 'USD',
@@ -1692,12 +1877,34 @@ app.post('/api/gemini/:action', (req, res) => {
   res.json({ success: true, text: `Respuesta de Gemini para ${req.params.action}` });
 });
 
-app.get('/api/chat/history', (req, res) => {
-  res.json({ history: [] });
+app.get('/api/chat/history', async (req, res) => {
+  try {
+    const { getOperationalMemory } = await import('./backend/memoryService');
+    const sessionId = String(req.query.sessionId || '');
+    if (!sessionId) return res.status(400).json({ error: 'sessionId es requerido' });
+    const memory = await getOperationalMemory(sessionId);
+    res.json({ history: memory.turns, memory: { summary: memory.summary, facts: memory.facts, preferences: memory.preferences, activeGoals: memory.activeGoals, decisions: memory.decisions, lastAgent: memory.lastAgent, lastUpdatedAt: memory.lastUpdatedAt }});
+  } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo cargar la memoria' }); }
 });
 
-app.delete('/api/chat/history', (req, res) => {
-  res.json({ success: true });
+app.post('/api/chat/history', async (req, res) => {
+  try {
+    const { saveChatHistory } = await import('./backend/memoryService');
+    const sessionId = String(req.body?.sessionId || '');
+    if (!sessionId || !Array.isArray(req.body?.history)) return res.status(400).json({ error: 'sessionId e history son requeridos' });
+    const memory = await saveChatHistory(sessionId, req.body.history);
+    res.json({ success: true, memory: { summary: memory.summary, facts: memory.facts, preferences: memory.preferences, activeGoals: memory.activeGoals, decisions: memory.decisions, lastAgent: memory.lastAgent, lastUpdatedAt: memory.lastUpdatedAt }});
+  } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo guardar la memoria' }); }
+});
+
+app.delete('/api/chat/history', async (req, res) => {
+  try {
+    const { clearOperationalMemory } = await import('./backend/memoryService');
+    const sessionId = String(req.query.sessionId || req.body?.sessionId || '');
+    if (!sessionId) return res.status(400).json({ error: 'sessionId es requerido' });
+    await clearOperationalMemory(sessionId);
+    res.json({ success: true });
+  } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo borrar la memoria' }); }
 });
 
 // ==========================================
@@ -1769,7 +1976,18 @@ app.post(['/api/agent/tools/create_booking_and_notify', '/api/agent/create-booki
       });
     }
 
-    const calculatedUSD = total_usd || 85 * Number(party_size);
+    const authoritativeTotal = calculateAuthoritativeCheckoutTotal({
+      tourId: tour_id,
+      adults: Number(party_size) || 1,
+      children: 0
+    });
+    if (authoritativeTotal === null) {
+      return res.status(400).json({
+        success: false,
+        error: 'tour_id válido y precio de catálogo requerido; el total no puede ser proporcionado por el cliente.'
+      });
+    }
+    const calculatedUSD = authoritativeTotal;
     const bookingDate = appointment_datetime.split('T')[0] || new Date().toISOString().split('T')[0];
 
     // Invocar el ciclo de vida de reserva nativa
@@ -1782,7 +2000,7 @@ app.post(['/api/agent/tools/create_booking_and_notify', '/api/agent/create-booki
       totalUSD: calculatedUSD,
       customerName: customer_name,
       customerEmail: customer_email,
-      customerPhone: customer_phone || '+506 8000-CRTOURS'
+      customerPhone: customer_phone || ''
     });
 
     const bookingId = initialHold.idReserva || initialHold.bookingId || `CR-${Date.now().toString().slice(-6)}`;
@@ -1973,6 +2191,7 @@ async function startServer() {
     });
   }
 
+  await hydrateSkillGenome();
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor Full-Stack corriendo en http://0.0.0.0:${PORT}`);
     console.log(`🧠 Motor de IA nativo listo: Gemini/Vertex + Claude + automatización Node.js/Firestore.`);
@@ -1980,4 +2199,29 @@ async function startServer() {
   });
 }
 
-startServer();
+startServer();function calculateAuthoritativeCheckoutTotal(body: any): number | null {
+  const passengers = Math.max(1, Number(body?.passengers) || (Number(body?.adults) || 0) + (Number(body?.children) || 0));
+  const tourId = String(body?.tourId || '');
+
+  if (tourId.startsWith('flight-')) {
+    const flightNumber = String(body?.flightNumber || '');
+    const flight = FLIGHT_ROUTES.find(route => route.flightNumber === flightNumber);
+    if (!flight) return null;
+    const cabin = body?.cabinClass === 'Business' ? 'Business' : 'Economy';
+    const base = flight.basePriceUSD * (cabin === 'Business' ? 2.2 : 1);
+    const addOns = (body?.includeAirportTransfer ? 45 : 0)
+      + (body?.includeWelcomeSimKit ? 15 : 0)
+      + (body?.includeTravelInsurance ? 29 : 0);
+    return Number((base + addOns).toFixed(2)) * passengers;
+  }
+
+  const tour = TOURS.find(item => item.id === tourId);
+  if (!tour || typeof tour.priceUSD !== 'number') return null;
+  const adultsRaw = Number(body?.adults);
+  const childrenRaw = Number(body?.children);
+  const adults = Number.isFinite(adultsRaw) ? Math.max(0, adultsRaw) : passengers;
+  const children = Number.isFinite(childrenRaw) ? Math.max(0, childrenRaw) : 0;
+  return Number((tour.priceUSD * adults + tour.priceUSD * 0.7 * children).toFixed(2));
+}
+
+

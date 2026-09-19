@@ -23,11 +23,16 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
 
       - name: Instalar dependencias
-        run: npm ci
+        run: |
+          npm install --no-audit --no-fund --include=optional
+          npm install lightningcss-linux-x64-gnu@1.33.0 --no-save --no-package-lock --no-audit --no-fund
+
+      - name: Auditar fixtures y tokens mock
+        run: node scripts/securityFixtureAudit.mjs
 
       - name: Verificar tipos de TypeScript (equivalente a "npm run lint")
         run: npm run lint

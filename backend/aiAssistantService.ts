@@ -79,6 +79,16 @@ const SYSTEM_INSTRUCTION = `Eres el asistente inteligente oficial de Costa Rica 
    - Si el usuario se queja, sé empático y ofrécele escalarlo a atención al cliente
    - Si usas información obtenida en tiempo real de Google Search (Grounding), DEBES citar la fuente de forma visible en tu respuesta (ej. "Según [fuente], hoy...").
 
+--- INTELIGENCIA MULTIAGENTE Y MEMORIA OPERATIVA ---
+- Actúas como parte de un enjambre: concierge, triage, reservas, proveedor, operaciones, supervisor y aprendizaje comparten contexto.
+- No repitas preguntas que ya estén resueltas en la memoria o en el contexto verificado.
+- Distingue siempre entre conocimiento estable, datos actuales y datos suministrados por un cliente/proveedor.
+- Para disponibilidad, precio, estado de reserva, pago, proveedor o logística, usa herramientas/datos de dominio; nunca improvises.
+- Cuando detectes una contradicción entre cliente, proveedor, reserva o herramienta, conserva ambas versiones, marca la discrepancia y escala al supervisor.
+- Antes de una acción irreversible, exige verificación de autorización y del estado transaccional.
+- Las conversaciones exitosas, correcciones humanas, confirmaciones de proveedores y resultados operativos alimentan el sistema de aprendizaje; no alteres código, permisos ni políticas por cuenta propia.
+- La memoria sirve para continuidad, no para inventar hechos. No expongas PII innecesaria a otros agentes.
+
 --- FORMATO DE RESPUESTA ---
 - Empieza con saludo o respuesta directa
 - Usa viñetas para listar información (precios, qué incluye, recomendaciones)
@@ -221,10 +231,32 @@ function getKnowledgeBaseReply(message: string, isEn: boolean) {
 export async function processChatInquiry(
   message: string,
   language: 'es' | 'en' = 'es',
-  history: Array<{ role: 'user' | 'bot'; text: string }> = [],
-  engine: 'auto' | 'claude' | 'gemini' = 'auto'
-): Promise<{ reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string }> {
+  history: Array<{ role: 'user' | 'assistant' | 'bot'; text: string }> = [],
+  engine: 'auto' | 'claude' | 'gemini' | 'counter_agent' = 'auto',
+  sessionId?: string
+): Promise<{ reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string; agentId?: string }> {
   const isEn = language === 'en';
+  const requestedAgentId = engine === 'counter_agent' ? 'counter_agent' : 'concierge';
+  let liveToolContext = '';
+  try {
+    const { buildAgentKnowledgeContext } = await import('./agentKnowledgeFabric');
+    liveToolContext += '\nFABRICA DE CONOCIMIENTO OPERATIVO:\n' + await buildAgentKnowledgeContext({
+      query: message,
+      sessionId,
+      agentId: engine === 'counter_agent' ? 'counter_agent' : 'concierge'
+    });
+  } catch (knowledgeErr) {
+    console.warn('Agent knowledge fabric unavailable:', knowledgeErr);
+  }
+  try {
+    const { executeAgentTool } = await import('./agentTools');
+    const hits = await executeAgentTool('search_tours', { query: message });
+    if (Array.isArray(hits) && hits.length) liveToolContext += '\nCATÁLOGO AUTORITATIVO RELEVANTE:\n' + JSON.stringify(hits.slice(0, 5));
+    const bookingCode = message.match(/\b(?:CRT-[A-Z0-9-]+|CR-PV-\d+|CR-HLD-\d+)\b/i)?.[0];
+    const email = message.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0];
+    if (bookingCode) { const booking = await executeAgentTool('lookup_booking', { bookingId: bookingCode }); if (booking) liveToolContext += '\nRESERVA VERIFICADA:\n' + JSON.stringify(booking); }
+    else if (email) { const booking = await executeAgentTool('lookup_booking', { email }); if (booking) liveToolContext += '\nRESERVA VERIFICADA:\n' + JSON.stringify(booking); }
+  } catch (toolErr) { console.warn('Agent tool context unavailable:', toolErr); }
 
   // Si se solicita o prefiere Claude en Vertex AI
   if (engine === 'claude' || (engine === 'auto' && process.env.ANTHROPIC_VERTEX_MODEL)) {
@@ -234,7 +266,8 @@ export async function processChatInquiry(
         return {
           reply: claudeRes.reply,
           quickActions: claudeRes.quickActions || [],
-          modelUsed: claudeRes.modelUsed
+          modelUsed: claudeRes.modelUsed,
+          agentId: requestedAgentId
         };
       }
     } catch (claudeErr) {
@@ -245,7 +278,7 @@ export async function processChatInquiry(
 
   try {
     const formattedHistory = history.map((h) => `${h.role === 'user' ? 'Usuario' : 'Asistente'}: ${h.text}`).join('\n');
-    const prompt = `${formattedHistory ? `HISTORIAL DE LA CONVERSACIÓN:\n${formattedHistory}\n\n` : ''}CONSULTA ACTUAL DEL USUARIO:\n${message}`;
+    const prompt = `${formattedHistory ? `HISTORIAL DE LA CONVERSACIÓN:\n${formattedHistory}\n\n` : ''}${liveToolContext ? `CONTEXTO OPERATIVO VERIFICADO:\n${liveToolContext}\n\n` : ''}CONSULTA ACTUAL DEL USUARIO:\n${message}`;
 
     const ai = getAI();
     if (!ai) {
@@ -300,7 +333,7 @@ Reply ONLY with "YES" or "NO".`;
       action: 'direct_whatsapp'
     });
 
-    return { reply, quickActions };
+    return { reply, quickActions, agentId: requestedAgentId, modelUsed: 'gemini-2.5-flash' };
   } catch (error) {
     console.warn('Fallback a base de conocimiento oficial:', error);
     return getKnowledgeBaseReply(message, isEn);

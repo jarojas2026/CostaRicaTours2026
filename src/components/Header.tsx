@@ -23,6 +23,7 @@ import {
   Palette,
   Home,
   Calendar,
+  Activity,
   Heart
 } from 'lucide-react';
 import { Language, Currency } from '../types';
@@ -326,6 +327,14 @@ export const Header: React.FC<HeaderProps> = ({
               <span>{language === 'es' ? 'Asistente IA' : 'AI Concierge'}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             </Link>
+            <Link
+              to="/ops"
+              className="px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer text-stone-300 hover:text-white hover:bg-emerald-950/60"
+            >
+              <Activity className="w-4 h-4 text-emerald-300" />
+              <span>{language === 'es' ? 'Ops IA' : 'AI Ops'}</span>
+            </Link>
+
           </nav>
 
           {/* Right Action Tools & Controls */}
