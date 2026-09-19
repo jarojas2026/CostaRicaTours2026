@@ -3,10 +3,10 @@ import { sendEmail } from '../backend/notificationService';
 import { executeCustomerProformaConfirmation } from '../backend/nativeWorkflows';
 
 const TEST_EMAIL = 'test@example.com';
-const TEST_ADMIN_EMAIL = 'gabw33d@gmail.com';
+const TEST_ADMIN_EMAIL = 'test@example.com';
 
-async function runVivianaTest() {
-  console.log(`🚀 [TEST VIVIANA MARÍN] Iniciando simulación de reserva de 15 días (Familia: 2 adultos + 1 bebé de 3 años)...`);
+async function runCliente de pruebaTest() {
+  console.log(`🚀 [TEST CLIENTE_PRUEBA MARÍN] Iniciando simulación de reserva de 15 días (Familia: 2 adultos + 1 bebé de 3 años)...`);
 
   const bookingPayload = {
     bookingId: `CR-FAM-2026-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -17,13 +17,13 @@ async function runVivianaTest() {
     adults: 2,
     children: 1, // 1 bebé de 3 años
     pickupHotel: 'Aeropuerto SJO / Hoteles Ecológicos Familiares Seleccionados',
-    specialRequests: 'Pasajeros: 2 adultos + 1 bebé (3 años). Estilo: Familiar, presupuesto moderado (family budget), relajado y seguro. Incluye vuelos internos cortos y traslados privados con silla para bebé certificada. WhatsApp de contacto: +506 0000-0000.',
+    specialRequests: 'Pasajeros: 2 adultos + 1 bebé (3 años). Estilo: Familiar, presupuesto moderado (family budget), relajado y seguro. Incluye vuelos internos cortos y traslados privados con silla para bebé certificada. WhatsApp de contacto: .',
     totalUSD: 2450,
     currency: 'USD',
     paymentMethod: 'credit_card',
     customerName: 'Cliente Prueba Familiar',
     customerEmail: TEST_EMAIL,
-    customerPhone: '+506 0000-0000',
+    customerPhone: '',
     flightDetails: {
       flightNumber: 'Iberia / Avianca Vuelo Internacional + Sansa Doméstico',
       originCountry: 'Costa Rica / Internacional',
@@ -36,8 +36,8 @@ async function runVivianaTest() {
     const bId = result.booking ? result.booking.bookingId : bookingPayload.bookingId;
     console.log(`✅ [ÉXITO] Reserva familiar ${bId} registrada correctamente en el sistema.`);
 
-    // Despacho del flujo oficial de Proforma con PDF e Itinerario hacia Viviana por Correo y WhatsApp
-    console.log(`\n📲 [DISPARO OFICIAL WHATSAPP Y PROFORMA] Ejecutando envío oficial a Cliente de ejemplo (+506 0000-0000)...`);
+    // Despacho del flujo oficial de Proforma con PDF e Itinerario hacia Cliente de prueba por Correo y WhatsApp
+    console.log(`\n📲 [DISPARO OFICIAL WHATSAPP Y PROFORMA] Ejecutando envío oficial a Cliente de ejemplo ()...`);
     const proformaResult = await executeCustomerProformaConfirmation({
       bookingId: bId,
       customerName: bookingPayload.customerName,
@@ -53,11 +53,11 @@ async function runVivianaTest() {
     });
 
     console.log(`\n======================================================`);
-    console.log(`✅ [RESULTADO PROFORMA Y WHATSAPP CLIENTE VIVIANA]`);
+    console.log(`✅ [RESULTADO PROFORMA Y WHATSAPP CLIENTE CLIENTE_PRUEBA]`);
     console.log(`   ID Reserva: #${proformaResult.bookingId}`);
     console.log(`   PDF Generado: ${proformaResult.pdfGenerated ? 'SÍ' : 'NO'}`);
     console.log(`   Email Enviado: ${proformaResult.emailSent ? 'SÍ' : 'NO'} (${TEST_EMAIL})`);
-    console.log(`   WhatsApp Despachado: ${proformaResult.whatsappSent ? 'SÍ' : 'NO'} (+506 0000-0000)`);
+    console.log(`   WhatsApp Despachado: ${proformaResult.whatsappSent ? 'SÍ' : 'NO'} ()`);
     console.log(`   Link Descarga PDF: ${proformaResult.downloadPdfUrl}`);
     console.log(`   Link Aprobación Cliente: ${proformaResult.approvalUrl}`);
     console.log(`   Enlace Directo WhatsApp:`);
@@ -65,8 +65,8 @@ async function runVivianaTest() {
     console.log(`======================================================\n`);
 
   } catch (err: any) {
-    console.error(`❌ [ERROR] Falló simulación de prueba para Viviana:`, err);
+    console.error(`❌ [ERROR] Falló simulación de prueba para Cliente de prueba:`, err);
   }
 }
 
-runVivianaTest().catch(console.error);
+runCliente de pruebaTest().catch(console.error);
