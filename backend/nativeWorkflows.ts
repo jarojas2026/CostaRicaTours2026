@@ -1,98 +1,11 @@
-/**
- * 🌿 WORKFLOWS NATIVOS DE NEGOCIO (COSTA RICA TOURS)
- * =========================================================================
- * Implementación 100% en TypeScript nativo de los 7 workflows clave
- * para eliminar dependencias externas (n8n, proxies, servicios no-code).
- *
- * Contenido:
- * 1. Coordinación en Tiempo Real con Proveedores (Webhook)
- * 2. Confirmación de Reserva al Cliente (Webhook)
- * 3. Pagos Automáticos a Proveedores (Cron 6am CR / PayPal Payouts Idempotente)
- * 4. Vigilancia y Escalamiento de Reservas Pendientes (Cron c/2h)
- * 5. Reporte Diario de Operación (Cron 8pm CR con normalización de Timestamps)
- * 6. Solicitud de Reseña Post-Tour (Cron 5pm CR con formulario propio)
- * 7. Recordatorio 24h antes del Tour (Cron 7am CR)
- */
-
-import { getFirestoreDb, getBookingsCollection, updateBookingStatus } from './bookingService';
-import { sendEmail, sendAdministrativeAlert, sendOperationalNotification, sendWhatsAppMessage } from './notificationService';
-import { logAutomationExecution } from './nativeAutomationEngine';
-import { generateBookingPDFBuffer } from './pdfService';
-
-// Clave secreta para autenticación de webhooks entrantes
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || '';
-const APP_URL = process.env.APP_URL || 'https://ais-dev-bkbwi5trklm5ra7pjehfgn-650141017629.us-east1.run.app';
-
-/**
- * Normaliza fechas provenientes de Firestore (soporta Timestamp de Firestore, objetos con _seconds, y strings ISO)
- */
-export function normalizeDate(dateVal: any): Date {
-  if (!dateVal) return new Date(0);
-  if (typeof dateVal.toDate === 'function') {
-    return dateVal.toDate();
-  }
-  if (typeof dateVal._seconds === 'number') {
-    return new Date(dateVal._seconds * 1000);
-  }
-  if (typeof dateVal.seconds === 'number') {
-    return new Date(dateVal.seconds * 1000);
-  }
-  const d = new Date(dateVal);
-  return isNaN(d.getTime()) ? new Date(0) : d;
-}
-
-/**
- * Registra una escalación en la colección 'escalations' de Firestore
- */
-export async function recordEscalation(data: {
-  type: string;
-  bookingId?: string;
-  providerId?: string;
-  reason: string;
-  details?: any;
-  status?: 'pending' | 'resolved' | 'acknowledged';
-}): Promise<string> {
-  const db = getFirestoreDb();
-  const escalationId = `esc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-  const payload = {
-    id: escalationId,
-    type: data.type,
-    bookingId: data.bookingId || null,
-    providerId: data.providerId || null,
-    reason: data.reason,
-    details: data.details || {},
-    status: data.status || 'pending',
-    createdAt: new Date().toISOString()
-  };
-
-  if (db) {
-    try {
-      await db.collection('escalations').doc(escalationId).set(payload);
-    } catch (err) {
-      console.warn('⚠️ No se pudo persistir la escalación en Firestore:', err);
-    }
-  }
-  return escalationId;
-}
-
-/**
- * Catálogo Maestro de Operadores Turísticos y Transporte Verificados de Costa Rica
- * Se utiliza como base y fallback determinista resiliente con soporte de base de datos.
- */
-/**
- * =========================================================================
- * ENRUTAMIENTO DE CORREOS DE PROVEEDORES EN ETAPA DE PRUEBA Y DESARROLLO
- * =========================================================================
- * Por directriz de desarrollo, todos los correos de proveedores y operadores
- * se centralizan en gabw33d@gmail.com para pruebas operativas seguras.
- */
-export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || 'gabw33d@gmail.com';
+/** Configuración de correo de pruebas; nunca se incrustan cuentas personales. */
+export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || 'provider@example.invalid';
 
 export function getEffectiveProviderEmail(officialEmail?: string | null): string {
   if (process.env.DISABLE_PROVIDER_EMAIL_OVERRIDE === 'true' && officialEmail) {
     return officialEmail;
   }
-  return process.env.PROVIDER_DEV_EMAIL || 'gabw33d@gmail.com';
+  return process.env.PROVIDER_DEV_EMAIL || 'provider@example.invalid';
 }
 
 export const MASTER_OPERATORS_REGISTRY: Record<string, {
