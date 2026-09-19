@@ -110,7 +110,9 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
             totalUSD,
             customerEmail: email,
             date: selectedDate,
-            passengers: adults + children
+            passengers: adults + children,
+            adults,
+            children
           })
         });
         const stripeData = await stripeRes.json();
