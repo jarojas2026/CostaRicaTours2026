@@ -206,7 +206,7 @@ export async function executeInicioReserva(body: any) {
   const bookingCustomer = body.cliente || body.customer || {
     nombre: 'Carlos Montero',
     email: process.env.TEST_CUSTOMER_EMAIL || 'test@example.com',
-    telefono: process.env.SINPE_SUPPORT_PHONE || ''',
+    telefono: process.env.SINPE_SUPPORT_PHONE || '',
     hotelRecogida: 'Hotel Los Lagos, La Fortuna'
   };
 
