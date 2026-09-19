@@ -33,7 +33,7 @@ export interface EmailPayload {
  */
 export async function sendOperationalNotification(
   text: string,
-  options: { silent?: boolean; channel?: string } = {}
+  options: { silent?: boolean; channel?: string; chatId?: string } = {}
 ): Promise<{ success: boolean; messageId?: number | string; error?: string }> {
   const ai = getAI();
   const cleanText = text.replace(/<[^>]*>?/gm, '').trim();
