@@ -1,9 +1,31 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Bot, Calendar, CheckCheck, ChevronRight, ExternalLink, MessageCircle, Sparkles, X } from 'lucide-react';
+import {
+  ArrowRight,
+  Bot,
+  Calendar,
+  CalendarCheck,
+  CheckCheck,
+  ChevronRight,
+  Clock,
+  Compass,
+  ExternalLink,
+  MessageCircle,
+  ShieldCheck,
+  Sparkles,
+  X
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language, Tour } from '../types';
 import { getLangText } from '../utils/i18n';
 import { useTours } from '../contexts/ToursContext';
+
+export interface QuickAction {
+  label: string;
+  action: string;
+  variant?: 'primary' | 'whatsapp' | 'amber' | 'teal' | 'default' | string;
+  icon?: 'calendar' | 'whatsapp' | 'compass' | 'sparkles' | 'shield' | 'clock' | 'external' | string;
+  data?: unknown;
+}
 
 interface FloatingWhatsAppProps {
   language: Language;
@@ -15,10 +37,64 @@ interface FloatingWhatsAppProps {
 type ChatMessage = {
   role: 'user' | 'bot';
   text: string;
-  quickActions?: Array<{ label: string; action: string; data?: unknown }>;
+  quickActions?: QuickAction[];
 };
 
 const WHATSAPP_NUMBER = '50687959148';
+
+const getQuickActionIcon = (action: QuickAction) => {
+  const iconType = action.icon || (
+    action.action === 'whatsapp' ? 'whatsapp' :
+    action.action === 'availability' ? 'calendar' :
+    action.action === 'recommend' ? 'compass' :
+    action.action === 'policies' ? 'shield' :
+    action.action.includes('date') || action.action.includes('calendar') ? 'calendar' :
+    action.action.includes('tour') ? 'compass' :
+    'sparkles'
+  );
+
+  switch (iconType) {
+    case 'whatsapp':
+      return <MessageCircle className="w-3.5 h-3.5 text-emerald-300 group-hover:text-stone-950 transition-colors shrink-0" />;
+    case 'calendar':
+      return <CalendarCheck className="w-3.5 h-3.5 text-emerald-300 group-hover:text-stone-950 transition-colors shrink-0" />;
+    case 'compass':
+      return <Compass className="w-3.5 h-3.5 text-amber-300 group-hover:text-stone-950 transition-colors shrink-0" />;
+    case 'shield':
+      return <ShieldCheck className="w-3.5 h-3.5 text-teal-300 group-hover:text-stone-950 transition-colors shrink-0" />;
+    case 'clock':
+      return <Clock className="w-3.5 h-3.5 text-sky-300 group-hover:text-stone-950 transition-colors shrink-0" />;
+    case 'external':
+      return <ExternalLink className="w-3.5 h-3.5 text-stone-300 group-hover:text-stone-950 transition-colors shrink-0" />;
+    case 'sparkles':
+    default:
+      return <Sparkles className="w-3.5 h-3.5 text-amber-300 group-hover:text-stone-950 transition-colors shrink-0" />;
+  }
+};
+
+const getQuickActionStyles = (variant?: string, actionName?: string) => {
+  const resolved = variant || (
+    actionName === 'whatsapp' ? 'whatsapp' :
+    actionName === 'availability' ? 'primary' :
+    actionName === 'recommend' ? 'amber' :
+    actionName === 'policies' ? 'teal' :
+    'default'
+  );
+
+  switch (resolved) {
+    case 'whatsapp':
+      return 'border-[#25D366]/50 bg-[#25D366]/15 hover:bg-[#25D366] text-[#6ee7b7] hover:text-stone-950 shadow-emerald-950/20';
+    case 'amber':
+      return 'border-amber-400/50 bg-amber-400/15 hover:bg-amber-400 text-amber-200 hover:text-stone-950 shadow-amber-950/20';
+    case 'teal':
+      return 'border-teal-400/50 bg-teal-500/15 hover:bg-teal-400 text-teal-200 hover:text-stone-950 shadow-teal-950/20';
+    case 'primary':
+      return 'border-emerald-400/50 bg-emerald-500/15 hover:bg-emerald-400 text-emerald-200 hover:text-stone-950 shadow-emerald-950/20';
+    case 'default':
+    default:
+      return 'border-white/20 bg-white/10 hover:bg-emerald-400 text-stone-100 hover:text-stone-950 shadow-black/20';
+  }
+};
 
 const MessageStatus: React.FC<{ isBot?: boolean }> = ({ isBot = false }) => (
   <span className="inline-flex items-center gap-1 ml-2 float-right text-[10px] opacity-60">
@@ -83,12 +159,65 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
   const [sending, setSending] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [bookingStatus, setBookingStatus] = useState('none');
+  const initialQuickActions = useMemo<QuickAction[]>(() => [
+    {
+      label: language === 'es' ? 'Consultar disponibilidad' : 'Check availability',
+      action: 'availability',
+      variant: 'primary',
+      icon: 'calendar'
+    },
+    {
+      label: language === 'es' ? 'WhatsApp directo (+506)' : 'Direct WhatsApp (+506)',
+      action: 'whatsapp',
+      variant: 'whatsapp',
+      icon: 'whatsapp'
+    },
+    {
+      label: language === 'es' ? 'Tours recomendados' : 'Top tours',
+      action: 'recommend',
+      variant: 'amber',
+      icon: 'compass'
+    },
+    {
+      label: language === 'es' ? 'Políticas y cancelación' : 'Policies & 24h cancellation',
+      action: 'policies',
+      variant: 'teal',
+      icon: 'shield'
+    }
+  ], [language]);
+
   const [history, setHistory] = useState<ChatMessage[]>([
     {
       role: 'bot',
       text: language === 'es'
-        ? '¡Pura Vida! Soy el Concierge IA de Costa Rica Tours. Puedo ayudarte a consultar tours, fechas y próximos pasos de reserva.'
-        : 'Pura Vida! I am the Costa Rica Tours AI Concierge. I can help with tours, dates and booking next steps.'
+        ? '¡Pura Vida! Soy el Concierge de Costa Rica Tours. Puedo ayudarte a consultar tours, fechas en tiempo real y coordinar tu reserva con operadores locales.'
+        : 'Pura Vida! I am the Costa Rica Tours Concierge. I can help you check tours, real-time availability and coordinate your booking with local operators.',
+      quickActions: [
+        {
+          label: language === 'es' ? 'Consultar disponibilidad' : 'Check availability',
+          action: 'availability',
+          variant: 'primary',
+          icon: 'calendar'
+        },
+        {
+          label: language === 'es' ? 'WhatsApp directo (+506)' : 'Direct WhatsApp (+506)',
+          action: 'whatsapp',
+          variant: 'whatsapp',
+          icon: 'whatsapp'
+        },
+        {
+          label: language === 'es' ? 'Tours recomendados' : 'Top tours',
+          action: 'recommend',
+          variant: 'amber',
+          icon: 'compass'
+        },
+        {
+          label: language === 'es' ? 'Políticas y cancelación' : 'Policies & cancellation',
+          action: 'policies',
+          variant: 'teal',
+          icon: 'shield'
+        }
+      ]
     }
   ]);
 
@@ -129,15 +258,31 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
       const data = await response.json().catch(() => ({}));
       const reply = data.reply || data.message || data.response || (
         language === 'es'
-          ? 'Recibí tu consulta. Puedo ayudarte a verificar disponibilidad y preparar una reserva.'
-          : 'I received your inquiry. I can help verify availability and prepare a booking.'
+          ? 'Recibí tu consulta. Puedo ayudarte a verificar disponibilidad y preparar los detalles de tu reserva.'
+          : 'I received your inquiry. I can help verify availability and prepare your booking details.'
       );
       setHistory((prev) => [...prev, {
         role: 'bot' as const,
         text: reply,
         quickActions: [
-          { label: language === 'es' ? 'Consultar disponibilidad' : 'Check availability', action: 'availability' },
-          { label: language === 'es' ? 'WhatsApp directo' : 'Direct WhatsApp', action: 'whatsapp' }
+          {
+            label: language === 'es' ? 'Verificar fechas' : 'Check dates',
+            action: 'availability',
+            variant: 'primary',
+            icon: 'calendar'
+          },
+          {
+            label: language === 'es' ? 'WhatsApp directo (+506)' : 'Direct WhatsApp (+506)',
+            action: 'whatsapp',
+            variant: 'whatsapp',
+            icon: 'whatsapp'
+          },
+          {
+            label: language === 'es' ? 'Políticas de reserva' : 'Booking policies',
+            action: 'policies',
+            variant: 'teal',
+            icon: 'shield'
+          }
         ]
       }].slice(-30));
       if (data.bookingStatus) setBookingStatus(data.bookingStatus);
@@ -147,8 +292,22 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
       setHistory((prev) => [...prev, {
         role: 'bot' as const,
         text: language === 'es'
-          ? 'No pude completar la consulta en este momento. Puedes continuar por WhatsApp directo.'
-          : 'I could not complete the inquiry right now. You can continue through direct WhatsApp.'
+          ? 'No pude completar la consulta en este momento. Nuestro equipo local está disponible de inmediato por WhatsApp directo.'
+          : 'I could not complete the inquiry right now. Our local team is available immediately via direct WhatsApp.',
+        quickActions: [
+          {
+            label: language === 'es' ? 'Abrir WhatsApp (+506 8795 9148)' : 'Open WhatsApp (+506 8795 9148)',
+            action: 'whatsapp',
+            variant: 'whatsapp',
+            icon: 'whatsapp'
+          },
+          {
+            label: language === 'es' ? 'Reintentar consulta' : 'Retry inquiry',
+            action: 'retry',
+            variant: 'primary',
+            icon: 'sparkles'
+          }
+        ]
       }].slice(-30));
       setBookingStatus('none');
     } finally {
@@ -157,15 +316,51 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
   };
 
   const openDirectWhatsApp = (message = '') => {
-    const text = encodeURIComponent(message || (language === 'es'
-      ? 'Hola, quiero información sobre un tour en Costa Rica.'
-      : 'Hello, I would like information about a Costa Rica tour.'));
+    const contextualMessage = message || (mentionedTour
+      ? (language === 'es'
+          ? `Hola, estoy interesado en el tour "${getLangText(mentionedTour.title, language)}" en Costa Rica. Quisiera consultar disponibilidad y tarifas.`
+          : `Hello, I am interested in the tour "${getLangText(mentionedTour.title, language)}" in Costa Rica. I would like to check availability and rates.`)
+      : (language === 'es'
+          ? 'Hola, quiero información y consultar disponibilidad sobre un tour en Costa Rica.'
+          : 'Hello, I would like information and availability for a tour in Costa Rica.'));
+    const text = encodeURIComponent(contextualMessage);
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${text}`, '_blank', 'noopener,noreferrer');
   };
 
-  const handleAction = (action: string) => {
-    if (action === 'whatsapp') openDirectWhatsApp();
-    if (action === 'availability') setInput(language === 'es' ? 'Quiero verificar disponibilidad para una fecha.' : 'I want to check availability for a date.');
+  const handleAction = (action: string, data?: unknown) => {
+    if (action === 'whatsapp') {
+      openDirectWhatsApp();
+      return;
+    }
+    if (action === 'availability') {
+      const tourName = mentionedTour ? `para "${getLangText(mentionedTour.title, language)}"` : '';
+      const prompt = language === 'es'
+        ? `Quiero verificar disponibilidad y próximas fechas ${tourName}.`.trim()
+        : `I want to check availability and upcoming dates ${tourName ? `for "${mentionedTour ? getLangText(mentionedTour.title, language) : ''}"` : ''}.`.trim();
+      void sendMessage(prompt);
+      return;
+    }
+    if (action === 'recommend') {
+      const prompt = language === 'es'
+        ? '¿Cuáles son los tours y experiencias más recomendados en Costa Rica?'
+        : 'What are the top recommended tours and experiences in Costa Rica?';
+      void sendMessage(prompt);
+      return;
+    }
+    if (action === 'policies') {
+      const prompt = language === 'es'
+        ? '¿Cuáles son las políticas de cancelación 24h y formas de pago aceptadas?'
+        : 'What are the 24h cancellation policies and accepted payment methods?';
+      void sendMessage(prompt);
+      return;
+    }
+    if (action === 'retry') {
+      void sendMessage(language === 'es' ? 'Consultar tours disponibles en Costa Rica' : 'Check available tours in Costa Rica');
+      return;
+    }
+    if (typeof data === 'string' && data.trim()) {
+      void sendMessage(data);
+    }
   };
 
   return (
@@ -205,11 +400,20 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
                     <div className="whitespace-pre-wrap">{message.text}</div>
                     <MessageStatus isBot={message.role === 'bot'} />
                     {message.quickActions?.length ? (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {message.quickActions.map((action) => (
-                          <button key={action.action} type="button" onClick={() => handleAction(action.action)} className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20">
-                            {action.label}
-                          </button>
+                      <div className="mt-2.5 pt-2 border-t border-white/10 flex flex-wrap gap-1.5">
+                        {message.quickActions.map((action, actionIdx) => (
+                          <motion.button
+                            key={`${action.action}-${actionIdx}`}
+                            type="button"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.96 }}
+                            onClick={() => handleAction(action.action, action.data)}
+                            className={`group inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] sm:text-xs font-semibold rounded-full border shadow-sm transition-all duration-150 cursor-pointer ${getQuickActionStyles(action.variant, action.action)}`}
+                          >
+                            {getQuickActionIcon(action)}
+                            <span className="truncate max-w-[210px]">{action.label}</span>
+                            <ChevronRight className="w-3 h-3 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
+                          </motion.button>
                         ))}
                       </div>
                     ) : null}
