@@ -205,8 +205,8 @@ export async function executeInicioReserva(body: any) {
 
   const bookingCustomer = body.cliente || body.customer || {
     nombre: 'Carlos Montero',
-    email: 'carlos.m@example.com',
-    telefono: '+506 8888-7777',
+    email: 'process.env.TEST_CUSTOMER_EMAIL || 'test@example.com'',
+    telefono: 'process.env.SINPE_SUPPORT_PHONE || 'configured by operator'',
     hotelRecogida: 'Hotel Los Lagos, La Fortuna'
   };
 
@@ -265,7 +265,7 @@ export async function executeSolicitudPago(body: any) {
   const totalAmount = Number(body.montoUSD || body.amount || 290);
   const method = (body.metodoPago || body.paymentMethod || 'credit_card').toLowerCase();
   const tour = body.nombreTour || body.tourName || 'Tour Oficial Costa Rica';
-  const email = body.correoCliente || body.customerEmail || 'cliente@costaricatours.cr';
+  const email = body.correoCliente || body.customerEmail || 'process.env.SUPPORT_EMAIL || 'support@example.invalid'';
 
   // Firma criptográfica HMAC SHA-256 generada en código seguro del servidor
   const hmacSecret = process.env.PAYMENT_HMAC_SECRET;
@@ -316,8 +316,8 @@ export async function executeConfirmacionReserva(body: any) {
 
   const clientData = body.customer || body.cliente || {
     name: 'Carlos Montero',
-    email: 'carlos.m@example.com',
-    phone: '+506 8888-7777'
+    email: 'process.env.TEST_CUSTOMER_EMAIL || 'test@example.com'',
+    phone: 'process.env.SINPE_SUPPORT_PHONE || 'configured by operator''
   };
 
   // Actualizar estado en Firestore nativamente
@@ -475,7 +475,7 @@ export async function executeSolicitudItinerario(body: any) {
 }
 
 // =========================================================================
-// 6. GESTOR DE SOPORTE & CONCIERGE URGENTE (+506 8888-7777)
+// 6. GESTOR DE SOPORTE & CONCIERGE URGENTE (process.env.SINPE_SUPPORT_PHONE || 'configured by operator')
 // =========================================================================
 export async function executeSolicitudSoporte(body: any) {
   const start = Date.now();
@@ -702,7 +702,7 @@ export async function executePostTourNPS(body: any) {
   const reservationId = body.bookingId || body.idReserva || 'CRT-2026-8819';
   const tour = body.tourName || 'Arenal Volcano & Hot Springs';
   const name = body.customerName || 'Carlos Montero';
-  const phone = body.customerPhone || '+506 8888-7777';
+  const phone = body.customerPhone || 'process.env.SINPE_SUPPORT_PHONE || 'configured by operator'';
   const promoCode = `PURAVIDA15-${Math.floor(1000 + Math.random() * 9000)}`;
 
   const duration = Date.now() - start;
@@ -1125,7 +1125,7 @@ export async function executeEmergencyContingencyRerouting(body: any) {
     actividadSustituta: 'Aguas Termales de Lujo Tabacón + Pase de Día con Almuerzo',
     diferenciaTarifaUSD: 0,
     transporteAlsamaAjustado: {
-      choferAsignado: 'Carlos Valverde (Alsama Tours CR)',
+      choferAsignado: 'process.env.PROVIDER_DEV_NAME || 'Operador de prueba' (Alsama Tours CR)',
       nuevaRuta: `${viajero.hotel} ➔ Tabacón Thermal Resort`,
       horaRecogida: '10:30 AM (Desplazamiento seguro sin riesgo de río)'
     },
@@ -1285,7 +1285,7 @@ export async function executeAutonomousFlightGuardDispatch(body: any) {
     },
     despachoChoferAlsamaTours: {
       proveedor: 'Alsama Tours CR',
-      choferAsignado: 'Carlos Valverde (+506 8795-9148)',
+      choferAsignado: 'process.env.PROVIDER_DEV_NAME || 'Operador de prueba' (process.env.PROVIDER_DEV_PHONE || 'configured by operator')',
       vehiculo: 'Van Ejecutiva A/C (Placa TS-882)',
       cartelDigital: `Bienvenido a Costa Rica: ${pasajero.nombre}`,
       puntoEncuentro: 'Salida Exterior Terminal SJO (Frente a Restaurante Malinche)',
@@ -1310,7 +1310,7 @@ export async function executeAutonomousFlightGuardDispatch(body: any) {
 export async function executeAutonomousCrisisSentimentEscalation(body: any) {
   const start = Date.now();
   const mensaje = body.mensaje || '';
-  const turista = body.turista || { nombre: 'David Morales', email: 'david.morales@travelers.com' };
+  const turista = body.turista || { nombre: 'Cliente de prueba', email: 'process.env.TEST_CUSTOMER_EMAIL || 'test@example.com'' };
 
   // Scoring de sentimiento multidimensional
   const urgencyScore = 0.88;
@@ -1411,8 +1411,8 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
   const targetDate = payload.date || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const targetTime = payload.time || '08:00 AM';
   const customerName = payload.customerName || 'Juan Carlos Rojas';
-  const customerEmail = payload.customerEmail || 'jarojas800@gmail.com';
-  const customerPhone = payload.customerPhone || '+506 8888-7777';
+  const customerEmail = payload.customerEmail || 'process.env.ADMIN_EMAIL || 'admin@example.invalid'';
+  const customerPhone = payload.customerPhone || 'process.env.SINPE_SUPPORT_PHONE || 'configured by operator'';
   const pickupHotel = payload.pickupHotel || (resolvedTour.pickupHotels ? resolvedTour.pickupHotels[0] : 'Recepción de Hotel en La Fortuna');
   const specialRequests = payload.specialRequests || 'Solicitud de confirmación y coordinación 100% autónoma sin intervención humana';
 
@@ -1495,8 +1495,8 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
     operadorAsignado: {
       id: booking.providerInfo?.id || 'alsama-tours-cr',
       nombre: booking.providerInfo?.name || 'Costa Rica Tours - Operaciones Directas',
-      email: process.env.PROVIDER_DEV_EMAIL || 'gabw33d@gmail.com',
-      telefono: booking.providerInfo?.phone || '+506 8795-9148',
+      email: process.env.PROVIDER_DEV_EMAIL || 'process.env.PROVIDER_DEV_EMAIL || 'provider@example.invalid'',
+      telefono: booking.providerInfo?.phone || 'process.env.PROVIDER_DEV_PHONE || 'configured by operator'',
       notificacionDespachada: true,
       canal: 'Email Seguro + Native Operations Center'
     },
