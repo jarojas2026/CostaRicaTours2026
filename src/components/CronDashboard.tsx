@@ -47,7 +47,7 @@ export function CronDashboard({ language = 'es' }: { language?: 'es' | 'en' }) {
         id: 'WF_REPORTE_DIARIO',
         name: language === 'es' ? 'Reporte Diario de Operación' : 'Daily Operations Report',
         schedule: 'Diario / Daily 08:00 PM (CR)',
-        desc: language === 'es' ? 'Consolida ingresos, pasajeros y estatus en Telegram operativo' : 'Consolidates daily revenue, passenger counts and alerts to Telegram',
+        desc: language === 'es' ? 'Consolida ingresos, pasajeros y alertas en el Centro de Operaciones' : 'Consolidates daily revenue, passenger counts and alerts in the Operations Center',
         endpoint: '/api/native/workflows/daily-report',
       },
       {
