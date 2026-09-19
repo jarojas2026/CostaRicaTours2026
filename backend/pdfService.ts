@@ -84,7 +84,7 @@ export async function generateBookingPDFBuffer(booking: BookingPDFData): Promise
         .text(`Titular: ${booking.customerName || 'Cliente de ejemplo'}`, 55, startY + 32)
         .text(`Email: ${booking.customerEmail || 'cliente@example.com'}`, 55, startY + 48)
         .text(`WhatsApp / Teléfono: ${booking.customerPhone || '+506 0000-0000'}`, 55, startY + 64)
-        .text(`Composición: ${booking.adults || ${booking.adults || 0} Adultos + ${booking.children || 0} Niños`, 55, startY + 80);
+        .text(`Composición: ${booking.adults || 0} Adultos + ${booking.children || 0} Niños`, 55, startY + 80);
 
       doc.text(`Fecha Inicio: ${booking.date || '2026-10-15'} (${booking.time || '09:00 AM'})`, 310, startY + 32)
         .text(`Modalidad: Family Budget, Relaxing & Safe`, 310, startY + 48)
@@ -476,7 +476,7 @@ export function generateBookingPrintableHTML(booking: BookingPDFData): string {
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
               <strong style="color: #0f172a; font-size: 13px;">📞 Asistencia y Mostrador 24/7</strong>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">WhatsApp de soporte oficial: +506 8795 9148 | Canal prioritario para Viviana: +506 0000-0000</p>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">WhatsApp de soporte oficial: +506 8795 9148 | Canal prioritario para el cliente: +506 0000-0000</p>
             </div>
             <a href="https://wa.me/50687959148" class="btn" style="background: #25D366; color: #000; font-weight: 800; font-size: 12px;">
               💬 Chat WhatsApp
