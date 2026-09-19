@@ -116,7 +116,13 @@ export function getStripe(): Stripe | null {
   return stripeClient;
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || 'mock-key' });
+let aiClient: GoogleGenAI | null = null;
+function getAI(): GoogleGenAI | null {
+  if (!aiClient && process.env.GEMINI_API_KEY) {
+    aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  }
+  return aiClient;
+}
 
 /**
  * 5. OBTENCIÓN DINÁMICA DE OPERADORES DESDE FIRESTORE
@@ -135,15 +141,15 @@ export async function getOperatorById(providerId: string): Promise<{
 }> {
   const db = getFirestoreDb();
   const defaultFallback = {
-    id: providerId || 'proveedor-directo-crtours',
-    name: 'Costa Rica Tours - Operaciones Directas',
-    paypalEmail: 'operaciones@costaricatours.es',
-    commissionRate: 0.15,
-    phone: '+506 8795-9148',
-    website: 'https://costaricatours.netlify.app/',
-    verified: true,
-    certificacion: 'CST Oficial Sostenible',
-    active: true
+    id: providerId || 'provider-unconfigured',
+    name: 'Operador no configurado',
+    paypalEmail: process.env.PROVIDER_DEV_EMAIL || '',
+    commissionRate: 0,
+    phone: process.env.PROVIDER_DEV_PHONE || '',
+    website: process.env.PROVIDER_WEBSITE || '',
+    verified: false,
+    certificacion: undefined,
+    active: false
   };
 
   if (!db) return defaultFallback;
@@ -187,16 +193,16 @@ export async function getOperatorById(providerId: string): Promise<{
   }
 
   // Fallback seguro si no existe en base de datos
-  if (providerId === 'alsama-tours-cr') {
+  if (providerId === 'alsama-tours-cr' && process.env.PROVIDER_DEV_EMAIL) {
     return {
       id: 'alsama-tours-cr',
-      name: 'Alsama Tours CR',
-      paypalEmail: 'operaciones@alsamatourscr.com',
-      commissionRate: 0.15,
-      phone: '+506 8795-9148',
-      website: 'https://alsamatourscr.com/',
+      name: process.env.PROVIDER_DEV_NAME || 'Operador configurado',
+      paypalEmail: process.env.PROVIDER_DEV_EMAIL,
+      commissionRate: Number(process.env.PROVIDER_COMMISSION_RATE || 0.15),
+      phone: process.env.PROVIDER_DEV_PHONE || '',
+      website: process.env.PROVIDER_WEBSITE || '',
       verified: true,
-      certificacion: 'CST Nivel Avanzado • Transporte Ejecutivo Oficial',
+      certificacion: process.env.PROVIDER_CERTIFICATION || 'Proveedor configurado',
       active: true
     };
   }
@@ -347,7 +353,8 @@ export async function verifyPaymentServerSide(
  * Genera insights operativos mediante IA para el operador local
  */
 export async function generateOperationalInsights(booking: any) {
-  if (!process.env.GEMINI_API_KEY) return null;
+  const ai = getAI();
+  if (!ai) return null;
 
   try {
     const prompt = `Analiza la siguiente reserva turística en Costa Rica y automatiza las tareas operativas requeridas:
