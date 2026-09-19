@@ -12,6 +12,7 @@ dotenv.config();
 import express from 'express';
 import path from 'path';
 import crypto from 'crypto';
+import admin from 'firebase-admin';
 import rateLimit from 'express-rate-limit';
 import { createServer as createViteServer } from 'vite';
 import { initializeAutomationEngine, cleanupExpiredSoftHolds } from './backend/cronEngine';
@@ -110,7 +111,18 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
 app.set('trust proxy', 1);
-app.use(express.json());
+app.disable('x-powered-by');
+app.use(express.json({ limit: '1mb' }));
+
+// Cabeceras de seguridad sin depender de un paquete adicional.
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
+  if (process.env.NODE_ENV === 'production') res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  next();
+});
 
 // ==========================================
 // 🛡️ RATE LIMITING MIDDLEWARES
@@ -155,9 +167,11 @@ app.get('/api/health', (req, res) => {
 // 💳 PASARELAS DE PAGO (STRIPE & PAYPAL)
 // ==========================================
 
-app.post('/api/stripe/create-checkout-session', async (req, res) => {
+app.post('/api/stripe/create-checkout-session', paymentLimiter, async (req, res) => {
   try {
-    const { tourName, totalUSD, customerEmail } = req.body;
+    const { tourName, totalUSD, customerEmail, bookingId, tourId, date, passengers } = req.body;
+    const amount = Number(totalUSD);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 10000) return res.status(400).json({ error: 'Importe de reserva inválido.' });
     const stripe = getStripe();
     if (!stripe) {
       if (process.env.NODE_ENV === 'production') {
@@ -165,7 +179,7 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
         return res.status(503).json({ error: 'Pagos no disponibles temporalmente. Contacta a soporte.' });
       }
       console.warn('⚠️ STRIPE_SECRET_KEY no configurada (modo desarrollo). Simulando enlace de pago.');
-      return res.json({ url: `${req.protocol}://${req.get('host')}?booking=success` });
+      return res.json({ url: `${req.protocol}://${req.get('host')}?booking=demo` });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -175,7 +189,7 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
           price_data: {
             currency: 'usd',
             product_data: { name: tourName || 'Tour Costa Rica Tours' },
-            unit_amount: Math.round(Number(totalUSD || 0) * 100)
+            unit_amount: Math.round(amount * 100)
           },
           quantity: 1
         }
@@ -183,7 +197,13 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
       mode: 'payment',
       success_url: `${req.protocol}://${req.get('host')}?booking=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.protocol}://${req.get('host')}?booking=canceled`,
-      customer_email: customerEmail
+      customer_email: customerEmail,
+      metadata: {
+        bookingId: String(bookingId || ''),
+        tourId: String(tourId || ''),
+        date: String(date || ''),
+        passengers: String(passengers || '')
+      }
     });
     res.json({ url: session.url, id: session.id });
   } catch (err: any) {
@@ -192,9 +212,11 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
   }
 });
 
-app.post('/api/paypal/create-order', async (req, res) => {
+app.post('/api/paypal/create-order', paymentLimiter, async (req, res) => {
   try {
     const { totalUSD, tourName } = req.body;
+    const amount = Number(totalUSD);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 10000) return res.status(400).json({ error: 'Importe de reserva inválido.' });
     const paypalClientId = process.env.PAYPAL_CLIENT_ID;
     const paypalSecret = process.env.PAYPAL_SECRET;
     const paypalMode = process.env.PAYPAL_MODE || 'sandbox';
@@ -769,16 +791,43 @@ app.post('/api/ai/photo-recommendations', async (req, res) => {
 });
 
 // Admin endpoint check function
-const requireAdmin = (req: any, res: any, next: any) => {
+const requireAdmin = async (req: any, res: any, next: any) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'No autorizado' });
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'No autorizado' });
+  const token = authHeader.slice('Bearer '.length).trim();
+  if (!token) return res.status(401).json({ error: 'No autorizado' });
+  try {
+    if (!getFirestoreDb()) return res.status(503).json({ error: 'Autenticación administrativa no disponible.' });
+    const decoded = await admin.auth().verifyIdToken(token);
+    const configuredAdmins = (process.env.ADMIN_EMAILS || process.env.ADMIN_ALERT_EMAIL || '')
+      .split(',').map((email) => email.trim().toLowerCase()).filter(Boolean);
+    const isAdminClaim = decoded.admin === true || decoded.role === 'admin';
+    const isAllowlistedEmail = !!decoded.email && decoded.email_verified === true && configuredAdmins.includes(decoded.email.toLowerCase());
+    if (!isAdminClaim && !isAllowlistedEmail) return res.status(403).json({ error: 'Permisos administrativos requeridos.' });
+    req.adminUser = decoded;
+    next();
+  } catch (error) {
+    console.warn('Admin auth rejected:', error);
+    return res.status(401).json({ error: 'Token de administración inválido o expirado.' });
   }
-  // In a real app we verify the token. Here we rely on verifyN8NRequest for n8n or admin checks.
-  // For simplicity, we just pass through or we can reuse existing admin middlewares if there were any.
-  next();
 };
 
+// Verificación server-side de una sesión Stripe. El frontend nunca debe asumir
+// que regresar desde Stripe significa que el pago fue acreditado.
+app.get('/api/stripe/verify-session', async (req, res) => {
+  try {
+    const sessionId = String(req.query.sessionId || '').trim();
+    if (!sessionId || !/^cs_[A-Za-z0-9_]+$/.test(sessionId)) return res.status(400).json({ error: 'sessionId inválido.' });
+    const stripe = getStripe();
+    if (!stripe) return res.status(503).json({ error: 'Stripe no está configurado.' });
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const paid = session.status === 'complete' && session.payment_status === 'paid';
+    res.json({ verified: paid, status: session.status, paymentStatus: session.payment_status, sessionId: session.id, amountTotal: session.amount_total ?? null, currency: session.currency ?? null, metadata: session.metadata || {} });
+  } catch (error: any) {
+    console.error('Stripe session verification error:', error);
+    res.status(400).json({ error: 'No se pudo verificar la sesión de pago.' });
+  }
+});
 app.get('/api/ai/demand-forecast', requireAdmin, async (req, res) => {
   try {
     const result = await getDemandForecast();
