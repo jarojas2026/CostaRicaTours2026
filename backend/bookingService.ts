@@ -16,6 +16,7 @@ import { GoogleGenAI } from '@google/genai';
 import Stripe from 'stripe';
 import { TOURS } from '../src/data/toursData';
 import { getIdempotentResult, idempotencyDocId, normalizeIdempotencyKey, requestFingerprint } from './idempotencyService';
+import { assertBookingTransition, normalizeBookingLifecycle } from './bookingStateMachine';
 import {
   executeProviderRealtimeCoordination,
   executeCustomerBookingConfirmation
@@ -682,6 +683,16 @@ export async function updateBookingStatus(
 
   const previousStatus = existing.status;
   const newStatus = updates.status;
+  const fromLifecycle = normalizeBookingLifecycle(previousStatus, existing.paymentStatus);
+  const toLifecycle = updates.status
+    ? normalizeBookingLifecycle(updates.status)
+    : normalizeBookingLifecycle(previousStatus, updates.paymentStatus);
+  try {
+    assertBookingTransition(fromLifecycle, toLifecycle);
+  } catch (transitionErr: any) {
+    return { success: false, error: transitionErr.message };
+  }
+
   const isCancelling = (newStatus === 'cancelada' || newStatus === 'cancelled') &&
                        (previousStatus !== 'cancelada' && previousStatus !== 'cancelled');
 
