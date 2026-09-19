@@ -100,6 +100,9 @@ import { executeSinpeVerification } from './backend/sinpeService';
 import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
 import { getSelfDevelopmentOverview, runSelfHealingCycle } from './backend/selfDevelopmentEngine';
 import { askCounterDesk, getCounterOperationsSnapshot, organizeCounterDesk } from './backend/counterDeskService';
+import { runEvaluationSuite } from './backend/agentEvaluationService';
+import { buildLearningDataset } from './backend/learningPipelineService';
+import { autonomyPolicy, parseAutonomyLevel } from './backend/autonomyPolicy';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -702,6 +705,24 @@ app.get('/api/weather/destinations', async (_req, res) => {
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
+});
+
+app.get('/api/ai/evaluation/suite', requireAdmin, async (_req, res) => {
+  try { res.json(await runEvaluationSuite()); }
+  catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Evaluation error' }); }
+});
+
+app.get('/api/ai/learning/dataset', requireAdmin, async (req, res) => {
+  try {
+    const dataset = await buildLearningDataset(Number(req.query.limit) || 500);
+    res.json(dataset);
+  } catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Dataset error' }); }
+});
+
+app.get('/api/ai/autonomy/policy', requireAdmin, (req, res) => {
+  const level = parseAutonomyLevel(req.query.level);
+  const action = String(req.query.action || 'observe') as any;
+  res.json({ success: true, policy: autonomyPolicy(level, action) });
 });
 
 app.get('/api/ai/learning/examples', requireAdmin, async (req, res) => {
