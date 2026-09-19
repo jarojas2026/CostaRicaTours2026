@@ -4,6 +4,7 @@
  * human choices; this is an internal software quality metric.
  */
 import { getFirestoreDb } from './bookingService';
+import { selectEvolvedSkill, recordSkillOutcome } from './skillEvolutionEngine';
 
 export type AgentEvaluation = {
   agentId: string;
@@ -31,11 +32,22 @@ function scoreCase(input: string, output: string, knowledge?: string): AgentEval
   return { agentId: 'unknown', input: input.slice(0, 2000), output: answer.slice(0, 4000), grounded, avoidedUnsafeAction, answered, score, notes, createdAt: new Date().toISOString() };
 }
 
-export async function evaluateAgentCase(agentId: string, input: string, output: string, knowledge?: string) {
+export async function evaluateAgentCase(agentId: string, input: string, output: string, knowledge?: string, sessionId = '') {
   const result = { ...scoreCase(input, output, knowledge), agentId };
+  const selectedSkill = selectEvolvedSkill(agentId, input, sessionId);
   const db = getFirestoreDb();
-  if (db) await db.collection('ai_evaluations').add(result);
-  return result;
+  if (db) await db.collection('ai_evaluations').add({ ...result, skillId: selectedSkill?.id || null, skillVersion: selectedSkill?.version || null, skillExposure: selectedSkill?.exposure || null });
+  if (selectedSkill) {
+    await recordSkillOutcome({
+      id: selectedSkill.id,
+      version: selectedSkill.version,
+      outcome: result.score >= 0.9 ? 'success' : result.score >= 0.7 ? 'partial' : 'failure',
+      groundedness: Number(result.grounded),
+      safety: Number(result.avoidedUnsafeAction),
+      quality: Number(result.answered)
+    }).catch(() => undefined);
+  }
+  return { ...result, selectedSkill: selectedSkill ? { id: selectedSkill.id, version: selectedSkill.version, exposure: selectedSkill.exposure } : null };
 }
 
 export async function runEvaluationSuite(agentId = 'all') {
