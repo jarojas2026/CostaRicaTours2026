@@ -13,7 +13,11 @@ import {
   executeSurveillanceAndEscalation,
   executeDailyOperationReport,
   executePostTourReviewRequests,
-  executeTour24hReminders
+  executeTour24hReminders,
+  executeWeatherMonitoringAlerts,
+  executeMorningConciergeTips,
+  executePreSaleProspectRecovery,
+  executePostSaleVipLoyalty
 } from './nativeWorkflows';
 
 // =========================================================================
@@ -119,7 +123,55 @@ export function initializeAutomationEngine() {
     }
   }, CR_TIMEZONE);
 
-  // 6. CRON: Liberación Automática de Soft Holds Expirados (Cada 5 minutos)
+  // 6. CRON: ALERTA METEOROLÓGICA Y ADAPTACIÓN DE ITINERARIO (Cada 4 Horas)
+  cron.schedule('0 */4 * * *', async () => {
+    console.log('🕒 [CRON C/4H] Ejecutando: Monitoreo Meteorológico y Seguridad');
+    try {
+      const res = await executeWeatherMonitoringAlerts();
+      logAutomationExecution('CRON_CLIMA_4H', 0, 'success', `Monitoreo de clima: ${res.checkedBookings} evaluadas, ${res.alertsSent} avisos emitidos.`);
+    } catch (error: any) {
+      console.error('❌ Error ejecutando CRON_CLIMA_4H:', error);
+      logAutomationExecution('CRON_CLIMA_4H', 0, 'error', `Fallo: ${error.message}`);
+    }
+  }, CR_TIMEZONE);
+
+  // 7. CRON: CONCIERGE MATUTINO Y TIPS DE SEGURIDAD (Diario 6:30 AM Costa Rica)
+  cron.schedule('30 6 * * *', async () => {
+    console.log('🕒 [CRON 06:30 AM CR] Ejecutando: Concierge Matutino para Tours de Hoy');
+    try {
+      const res = await executeMorningConciergeTips();
+      logAutomationExecution('CRON_CONCIERGE_MATUTINO_630AM', 0, 'success', `Concierge matutino: ${res.tipsSent} recomendaciones enviadas.`);
+    } catch (error: any) {
+      console.error('❌ Error ejecutando CRON_CONCIERGE_MATUTINO_630AM:', error);
+      logAutomationExecution('CRON_CONCIERGE_MATUTINO_630AM', 0, 'error', `Fallo: ${error.message}`);
+    }
+  }, CR_TIMEZONE);
+
+  // 8. CRON: RECUPERACIÓN DE PROSPECTOS Y CARRITOS ABANDONADOS (Cada 1 Hora)
+  cron.schedule('0 * * * *', async () => {
+    console.log('🕒 [CRON CADA HORA] Ejecutando: Recuperación de Prospectos Pre-Venta');
+    try {
+      const res = await executePreSaleProspectRecovery();
+      logAutomationExecution('CRON_RECUPERACION_PREVENTA_1H', 0, 'success', `Recuperación pre-venta: ${res.recoveredSent} prospectos asistidos.`);
+    } catch (error: any) {
+      console.error('❌ Error ejecutando CRON_RECUPERACION_PREVENTA_1H:', error);
+      logAutomationExecution('CRON_RECUPERACION_PREVENTA_1H', 0, 'error', `Fallo: ${error.message}`);
+    }
+  }, CR_TIMEZONE);
+
+  // 9. CRON: FIDELIZACIÓN Y CUPONES VIP POST-VENTA (Diario 10:00 AM Costa Rica)
+  cron.schedule('0 10 * * *', async () => {
+    console.log('🕒 [CRON 10:00 AM CR] Ejecutando: Fidelización y Cupones VIP Post-Venta');
+    try {
+      const res = await executePostSaleVipLoyalty();
+      logAutomationExecution('CRON_FIDELIZACION_VIP_10AM', 0, 'success', `Fidelización VIP: ${res.couponsSent} cupones generados.`);
+    } catch (error: any) {
+      console.error('❌ Error ejecutando CRON_FIDELIZACION_VIP_10AM:', error);
+      logAutomationExecution('CRON_FIDELIZACION_VIP_10AM', 0, 'error', `Fallo: ${error.message}`);
+    }
+  }, CR_TIMEZONE);
+
+  // 10. CRON: Liberación Automática de Soft Holds Expirados (Cada 5 minutos)
   cron.schedule('*/5 * * * *', async () => {
     await cleanupExpiredSoftHolds();
   });

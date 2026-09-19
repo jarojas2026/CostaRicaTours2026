@@ -6,6 +6,9 @@ if (typeof (global as any).__dirname !== 'undefined' && (global as any).__dirnam
   delete (global as any).__dirname;
 }
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import path from 'path';
 import crypto from 'crypto';
@@ -91,7 +94,11 @@ import {
   executeSurveillanceAndEscalation,
   executeDailyOperationReport,
   executePostTourReviewRequests,
-  executeTour24hReminders
+  executeTour24hReminders,
+  executeWeatherMonitoringAlerts,
+  executeMorningConciergeTips,
+  executePreSaleProspectRecovery,
+  executePostSaleVipLoyalty
 } from './backend/nativeWorkflows';
 import { executeSinpeVerification } from './backend/sinpeService';
 import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
@@ -710,6 +717,50 @@ app.post('/api/native/workflows/conversion-report', async (req, res) => {
   }
 });
 
+app.post('/api/native/workflows/weather', async (req, res) => {
+  try {
+    const result = await executeWeatherMonitoringAlerts();
+    logAutomationExecution('WF_CLIMA_SEGURIDAD', 0, 'success', `Manual: ${result.checkedBookings} revisadas, ${result.alertsSent} avisos.`);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    logAutomationExecution('WF_CLIMA_SEGURIDAD', 0, 'error', `Fallo: ${err.message}`);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/native/workflows/concierge', async (req, res) => {
+  try {
+    const result = await executeMorningConciergeTips();
+    logAutomationExecution('WF_CONCIERGE_MATUTINO', 0, 'success', `Manual: ${result.tipsSent} tips enviados.`);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    logAutomationExecution('WF_CONCIERGE_MATUTINO', 0, 'error', `Fallo: ${err.message}`);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/native/workflows/prospects', async (req, res) => {
+  try {
+    const result = await executePreSaleProspectRecovery();
+    logAutomationExecution('WF_RECUPERACION_PROSPECTOS', 0, 'success', `Manual: ${result.recoveredSent} prospectos contactados.`);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    logAutomationExecution('WF_RECUPERACION_PROSPECTOS', 0, 'error', `Fallo: ${err.message}`);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/native/workflows/loyalty', async (req, res) => {
+  try {
+    const result = await executePostSaleVipLoyalty();
+    logAutomationExecution('WF_FIDELIZACION_VIP', 0, 'success', `Manual: ${result.couponsSent} cupones VIP emitidos.`);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    logAutomationExecution('WF_FIDELIZACION_VIP', 0, 'error', `Fallo: ${err.message}`);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // 🚀 PIPELINE 100% AUTÓNOMO (Sin intervención manual humana)
 // Procesa la consulta -> Bloquea cupo -> Crea reserva -> Notifica al proveedor -> Envía voucher digital QR al cliente
 app.post(['/api/native/autonomous-booking-flow', '/api/native/flujo-autonomo'], async (req, res) => {
@@ -957,8 +1008,8 @@ app.post(additionalWebhooks, async (req, res) => {
 // 🌿 LOS 7 WORKFLOWS NATIVOS DE NEGOCIO MIGRADOS
 // ==========================================
 
-// 1. Coordinación en Tiempo Real con Proveedores (Webhook)
-app.post(['/webhook/proveedores-coordinacion', '/webhook/coordinacion-proveedores', '/api/webhooks/provider-coordination'], async (req, res) => {
+// 1. Coordinación en Tiempo Real con Proveedores (Webhook & API Nativa)
+app.post(['/webhook/proveedores-coordinacion', '/webhook/coordinacion-proveedores', '/api/webhooks/provider-coordination', '/api/native/workflows/coordinacion-proveedor', '/api/native/workflows/notificar-proveedor'], async (req, res) => {
   try {
     const authHeader = req.headers['x-webhook-secret'] as string;
     const result = await executeProviderRealtimeCoordination(req.body, authHeader);

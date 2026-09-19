@@ -4,6 +4,8 @@ import { HeroSection } from '../components/HeroSection';
 import { HomeQuickNav } from '../components/HomeQuickNav';
 import { CategoriesSection } from '../components/CategoriesSection';
 import { DestinationsSection } from '../components/DestinationsSection';
+import { FeaturedToursSection } from '../components/FeaturedToursSection';
+import { OperatorsSection } from '../components/OperatorsSection';
 import { HomeTrustSections } from '../components/HomeTrustSections';
 import { AboutSection } from '../components/AboutSection';
 import { BlogSection } from '../components/BlogSection';
@@ -19,9 +21,9 @@ interface HomeProps {
   setSelectedCategory: (cat: TourCategory | 'all') => void;
   selectedRegion: TourRegion | 'all';
   setSelectedRegion: (reg: TourRegion | 'all') => void;
-  onNavigateTab: (tab: any) => void;
+  onNavigateTab?: (tab: any) => void;
   setIsCustomFunnelOpen: (isOpen: boolean) => void;
-  setSelectedTour: (tour: Tour) => void;
+  setSelectedTour?: (tour: Tour) => void;
 }
 
 export const Home: React.FC<HomeProps> = ({
@@ -34,7 +36,8 @@ export const Home: React.FC<HomeProps> = ({
   selectedRegion,
   setSelectedRegion,
   onNavigateTab,
-  setIsCustomFunnelOpen
+  setIsCustomFunnelOpen,
+  setSelectedTour
 }) => {
   return (
     <motion.div
@@ -65,6 +68,7 @@ export const Home: React.FC<HomeProps> = ({
         />
       </div>
 
+      {/* Categories Visual Section */}
       <CategoriesSection 
         language={language} 
         onSelectCategory={(catId) => {
@@ -72,12 +76,29 @@ export const Home: React.FC<HomeProps> = ({
         }}
       />
 
+      {/* Featured Tours Showcase */}
+      <FeaturedToursSection
+        language={language}
+        currency={currency}
+        onSelectTour={(tour) => {
+          if (setSelectedTour) setSelectedTour(tour);
+        }}
+        onOpenCustomFunnel={() => setIsCustomFunnelOpen(true)}
+      />
+
+      {/* Destinations Section */}
       <DestinationsSection 
         language={language}
         onSelectRegion={(reg) => {
           setSelectedRegion(reg as TourRegion);
           onNavigateTab('tours');
         }}
+      />
+
+      {/* Verified Local Operators */}
+      <OperatorsSection
+        language={language}
+        onSelectOperator={() => {}}
       />
 
       {/* Trust & Conversion Sections */}

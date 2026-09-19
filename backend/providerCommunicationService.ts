@@ -9,6 +9,9 @@
 
 import { getAllBookings, updateBookingStatus } from './bookingService';
 import { createAlert } from './alertService';
+import { sendEmail } from './notificationService';
+
+export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || 'gabw33d@gmail.com';
 
 export interface TourProvider {
   id: string;
@@ -19,6 +22,7 @@ export interface TourProvider {
   phone: string;
   whatsapp: string;
   email: string;
+  officialEmail?: string;
   cstLevel: number; // Certificación para la Sostenibilidad Turística (1 a 5)
   insPolicyNumber: string;
   ictLicense: string;
@@ -76,7 +80,8 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     contactName: 'Maynor Alvarado (Director de Operaciones)',
     phone: '+506 2766-4100',
     whatsapp: '+506 8795-9148',
-    email: 'operaciones@sarapiquirafting.cr',
+    email: PROVIDER_DEV_EMAIL,
+    officialEmail: 'operaciones@sarapiquirafting.cr',
     cstLevel: 5,
     insPolicyNumber: 'INS-RC-2026-88194',
     ictLicense: 'ICT-AV-0419',
@@ -100,7 +105,8 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     contactName: 'Elena Brenes Chacón',
     phone: '+506 2645-5020',
     whatsapp: '+506 8888-7777',
-    email: 'reservas@monteverdeadventures.com',
+    email: PROVIDER_DEV_EMAIL,
+    officialEmail: 'reservas@monteverdeadventures.com',
     cstLevel: 4,
     insPolicyNumber: 'INS-RC-2026-99201',
     ictLicense: 'ICT-AV-0210',
@@ -124,7 +130,8 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     contactName: 'Don Rodrigo Solano (Jefe de Flota)',
     phone: '+506 2220-3344',
     whatsapp: '+506 8412-9900',
-    email: 'flota@ecotranscostarica.com',
+    email: PROVIDER_DEV_EMAIL,
+    officialEmail: 'flota@ecotranscostarica.com',
     cstLevel: 5,
     insPolicyNumber: 'INS-VEH-2026-77312',
     ictLicense: 'MOPT-TUR-9012',
@@ -148,7 +155,8 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     contactName: 'Guía Juan Carlos Monge (Lic. ICT #112)',
     phone: '+506 2777-1890',
     whatsapp: '+506 8301-4455',
-    email: 'guias@manuelantoniopark.cr',
+    email: PROVIDER_DEV_EMAIL,
+    officialEmail: 'guias@manuelantoniopark.cr',
     cstLevel: 5,
     insPolicyNumber: 'INS-GUIDE-2026-3391',
     ictLicense: 'ICT-GN-0112',
@@ -172,7 +180,8 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     contactName: 'Yolanda Campbell',
     phone: '+506 2709-8012',
     whatsapp: '+506 8654-3210',
-    email: 'booking@tortuguerosafaris.cr',
+    email: PROVIDER_DEV_EMAIL,
+    officialEmail: 'booking@tortuguerosafaris.cr',
     cstLevel: 4,
     insPolicyNumber: 'INS-MAR-2026-6612',
     ictLicense: 'ICT-MAR-0089',
@@ -264,7 +273,37 @@ export async function dispatchServiceOrder(params: {
 
   serviceOrdersStore.set(orderId, order);
 
-  console.log(`📡 [PROVEEDORES] Orden de servicio ${orderId} despachada a ${provider.name} (WhatsApp: ${provider.whatsapp}). SLA: ${provider.slaTargetMinutes}m.`);
+  console.log(`📡 [PROVEEDORES] Orden de servicio ${orderId} despachada a ${provider.name} (Email: ${provider.email} | WhatsApp: ${provider.whatsapp}). SLA: ${provider.slaTargetMinutes}m.`);
+
+  // Enviar correo de orden de servicio al proveedor (centralizado a gabw33d@gmail.com en pruebas)
+  if (provider.email) {
+    sendEmail({
+      to: provider.email,
+      subject: `📋 [ORDEN DE SERVICIO] ${orderId} - ${params.tourName} (${params.date})`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+          <div style="background: #041711; color: white; padding: 20px; text-align: center;">
+            <h2 style="margin: 0; font-size: 20px;">Orden de Servicio Oficial • Costa Rica Tours</h2>
+            <p style="margin: 4px 0 0; font-size: 13px; color: #a7f3d0;">Operador: ${provider.name}</p>
+          </div>
+          <div style="background: #fef3c7; padding: 8px 16px; font-size: 12px; color: #92400e; border-bottom: 1px solid #fde68a;">
+            🛠️ <strong>MODO DE PRUEBA ACTIVO:</strong> Notificación de proveedor dirigida a <strong>${provider.email}</strong>.
+          </div>
+          <div style="padding: 24px; font-size: 14px; line-height: 1.6;">
+            <p><strong>ID Orden:</strong> <code>${orderId}</code> (Reserva: #${params.bookingId})</p>
+            <p><strong>Tour:</strong> ${params.tourName}</p>
+            <p><strong>Fecha & Hora:</strong> ${params.date} a las ${params.time}</p>
+            <p><strong>Pasajeros:</strong> ${params.adults} adultos, ${params.children} niños</p>
+            <p><strong>Punto Pick-up:</strong> ${params.pickupLocation}</p>
+            <p><strong>Waze / Navegación:</strong> <a href="${wazeUrl}" style="color: #059669; font-weight: bold;">Abrir en Waze</a></p>
+            <p><strong>Cliente:</strong> ${params.customer.name} (${params.customer.phone})</p>
+            <p><strong>Liquidación Operador:</strong> $${payoutAmountUSD} USD (₡${payoutAmountCRC.toLocaleString('es-CR')} CRC)</p>
+            <p><strong>SLA de Aceptación:</strong> ${provider.slaTargetMinutes} minutos</p>
+          </div>
+        </div>
+      `
+    }).catch(err => console.warn(`⚠️ Error enviando correo de orden de servicio a ${provider.email}:`, err));
+  }
 
   // Actualizar estado en reserva
   await updateBookingStatus(params.bookingId, {

@@ -38,7 +38,7 @@ export type TourRegion =
   | 'san_jose'
   | 'sjo'
   | 'caribe'
-  | 'caribe_sur'
+  | 'caribe_sur' // Región Caribe Sur / Puerto Viejo / Cahuita requerida por catálogo de tours
   | 'osa'
   | 'marino_ballena'
   | 'perez_zeledon'

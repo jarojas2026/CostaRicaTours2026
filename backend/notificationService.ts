@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { createAlert } from './alertService';
+import { createAlert, getMailTransporter } from './alertService';
 
 let aiClient: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI | null {
@@ -21,49 +21,70 @@ export interface TelegramMessageOptions {
   parseMode?: 'HTML' | 'Markdown' | 'MarkdownV2';
   chatId?: string;
   silent?: boolean;
-  // Campos opcionales para clasificar mejor la alerta real que se genera
-  severity?: 'info' | 'warning' | 'critical';
-  source?: string;
-  bookingId?: string;
-  providerId?: string;
 }
 
 /**
- * Reemplazo real de Telegram (sin costo, sin dependencia externa):
- * registra la alerta en Firestore (colección admin_alerts) y envía un
- * email al operador vía createAlert(). Antes, esta función solo hacía
- * console.log() y devolvía éxito sin avisar a nadie realmente — se
- * corrigió porque significaba que ningún fallo operativo llegaba al
- * dueño del negocio.
+ * Sistema Real de Notificaciones y Alertas Operativas (Reemplazo activo de Telegram):
+ * - Persiste en Firestore (`admin_alerts`)
+ * - Envía alerta instantánea por correo electrónico a ADMIN_ALERT_EMAIL
+ * - Analiza y enriquece alertas críticas usando Gemini AI cuando está disponible
  */
 export async function sendTelegramMessage(
   text: string,
   options: TelegramMessageOptions = {}
-): Promise<{ success: boolean; messageId?: number; error?: string }> {
-  const cleanText = text.replace(/<[^>]*>?/gm, ''); // limpiar HTML para el email/log
+): Promise<{ success: boolean; messageId?: number | string; error?: string }> {
+  const ai = getAI();
+  const cleanText = text.replace(/<[^>]*>?/gm, '').trim();
+  let aiSummary = '';
+
+  if (ai) {
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Analiza esta alerta operativa del sistema de reservas de Costa Rica Tours y genera una recomendación ejecutiva breve en español (máximo 2 oraciones):\n${cleanText}`
+      });
+      if (response.text) {
+        aiSummary = response.text.trim();
+      }
+    } catch (e) {
+      // fallback to clean text
+    }
+  }
+
+  // Determinar severidad según contenido
+  const isCritical = /🚨|CRÍTICA|CRITICAL|Fallo|Error|Falla|Declined|Excepción|Emergency/i.test(text);
+  const isWarning = /⚠️|Warning|Advertencia|Atención|Supervisión|Pendiente/i.test(text);
+  const severity: 'info' | 'warning' | 'critical' = isCritical ? 'critical' : isWarning ? 'warning' : 'info';
+
+  // Extraer un título representativo de la primera línea
+  const firstLine = cleanText.split('\n')[0]?.replace(/^[*#=\-_>\s]+/, '').trim() || 'Notificación Operativa';
+  const title = firstLine.slice(0, 100);
 
   try {
-    await createAlert({
-      source: options.source || 'Sistema de Automatización',
-      severity: options.severity || 'warning',
-      title: cleanText.slice(0, 120),
-      message: cleanText,
-      bookingId: options.bookingId,
-      providerId: options.providerId,
+    const { alertId } = await createAlert({
+      source: 'Notificaciones Operativas',
+      severity,
+      title,
+      message: text,
+      metadata: {
+        rawText: cleanText,
+        aiInsight: aiSummary || undefined,
+        chatId: options.chatId,
+        silent: options.silent
+      }
     });
-    console.log(`✅ [ALERTA REGISTRADA Y NOTIFICADA] ${cleanText.slice(0, 100)}...`);
-    return { success: true, messageId: Math.floor(Math.random() * 100000) };
-  } catch (error: any) {
-    // Si incluso el registro de la alerta falla, esto SÍ debe quedar
-    // visible en los logs del servidor como último recurso.
-    console.error('🔴 FALLO CRÍTICO: no se pudo registrar ni notificar una alerta:', error.message, '| Contenido original:', cleanText);
-    return { success: false, error: error.message };
+
+    console.log(`📡 [ALERTA REAL FIRESTORE + EMAIL] Alerta #${alertId} (${severity.toUpperCase()}) registrada: "${title}"`);
+    return { success: true, messageId: alertId };
+  } catch (err: any) {
+    console.error(`❌ [ERROR AL REGISTRAR ALERTA EN FIRESTORE/EMAIL]:`, err);
+    return { success: false, error: err.message };
   }
 }
 
 /**
- * Escala una alerta operativa crítica o fallo — ahora vía Firestore + email
- * real en vez de Telegram.
+ * Escala una alerta operativa crítica o fallo directamente a Firestore (admin_alerts)
+ * y despacha notificación por correo al Administrador de Costa Rica Tours.
  */
 export async function sendTelegramEscalation(params: {
   title: string;
@@ -76,17 +97,18 @@ export async function sendTelegramEscalation(params: {
   details?: Record<string, any>;
 }): Promise<{ success: boolean; error?: string }> {
   const timeStr = new Date().toLocaleString('es-CR', { timeZone: 'America/Costa_Rica' });
-
-  let msg = `Tipo: ${params.title}\n`;
+  
+  let msg = `🚨 [ESCALACIÓN OPERATIVA - COSTA RICA TOURS]\n`;
+  msg += `Tipo: ${params.title}\n`;
   msg += `Motivo: ${params.reason}\n`;
   msg += `Fecha/Hora: ${timeStr} (Costa Rica)\n`;
-
-  if (params.bookingId) msg += `ID Reserva: ${params.bookingId}\n`;
+  
+  if (params.bookingId) msg += `ID Reserva: #${params.bookingId}\n`;
   if (params.customerName) msg += `Cliente: ${params.customerName}\n`;
   if (params.customerEmail) msg += `Email: ${params.customerEmail}\n`;
-  if (params.customerPhone) msg += `Teléfono / WA: ${params.customerPhone}\n`;
+  if (params.customerPhone) msg += `Teléfono/WA: ${params.customerPhone}\n`;
   if (params.providerId) msg += `Proveedor: ${params.providerId}\n`;
-
+  
   if (params.details && Object.keys(params.details).length > 0) {
     msg += `\nDetalles Técnicos:\n`;
     for (const [k, v] of Object.entries(params.details)) {
@@ -94,25 +116,45 @@ export async function sendTelegramEscalation(params: {
     }
   }
 
-  msg += `\nRevisar en el panel de Alertas o contactar manualmente.`;
+  msg += `\n⚠️ Por favor revisar en panel de operaciones o contactar manualmente.`;
 
-  return sendTelegramMessage(msg, {
-    severity: 'critical',
-    source: params.title,
-    bookingId: params.bookingId,
-    providerId: params.providerId,
-  });
+  try {
+    const { alertId } = await createAlert({
+      source: 'Mesa de Operaciones / Escalación Crítica',
+      severity: 'critical',
+      title: params.title || 'Escalación Operativa Crítica',
+      message: `${params.reason}\n\n${msg}`,
+      bookingId: params.bookingId,
+      providerId: params.providerId,
+      metadata: {
+        customerName: params.customerName,
+        customerEmail: params.customerEmail,
+        customerPhone: params.customerPhone,
+        ...(params.details || {})
+      }
+    });
+
+    console.log(`🚨 [ESCALACIÓN CRÍTICA CONECTADA A FIRESTORE + EMAIL] Alerta #${alertId} despachada para: ${params.title}`);
+    return { success: true };
+  } catch (err: any) {
+    console.error(`❌ [ERROR EN ESCALACIÓN OPERATIVA CRÍTICA]:`, err);
+    return { success: false, error: err.message };
+  }
 }
+
+// Aliases semánticos para uso en flujos modernos
+export const sendAdministrativeAlert = sendTelegramEscalation;
+export const sendOperationalNotification = sendTelegramMessage;
 
 /**
  * Envía un correo electrónico transaccional.
- * Soporta Resend API (si RESEND_API_KEY existe) o SendGrid API (si SENDGRID_API_KEY existe),
+ * Soporta Resend API, SendGrid API, transporte SMTP/Gmail directo vía nodemailer,
  * o fallback a logs estructurados en el servidor.
  */
 export async function sendEmail(
   payload: EmailPayload
 ): Promise<{ success: boolean; id?: string; error?: string }> {
-  const fromEmail = payload.from || process.env.EMAIL_FROM || 'Costa Rica Tours <reservas@costaricatours.es>';
+  const fromEmail = payload.from || process.env.EMAIL_FROM || process.env.SMTP_USER || 'Costa Rica Tours <reservas@costaricatours.es>';
 
   // 1. Enviar vía Resend API si está configurado
   if (process.env.RESEND_API_KEY) {
@@ -167,8 +209,27 @@ export async function sendEmail(
     }
   }
 
-  // 3. Fallback: Log estructurado de despacho en consola
-  console.log(`✉️ [EMAIL TRANSACCIONAL] (Configura RESEND_API_KEY o SENDGRID_API_KEY para entrega SMTP/API)`);
+  // 3. Enviar vía SMTP / Nodemailer si está configurado (SMTP_USER y SMTP_PASS)
+  const transporter = getMailTransporter();
+  if (transporter) {
+    try {
+      const info = await transporter.sendMail({
+        from: fromEmail,
+        to: payload.to,
+        subject: payload.subject,
+        html: payload.html,
+        text: payload.text || payload.html.replace(/<[^>]*>?/gm, '')
+      });
+      console.log(`📧 [EMAIL SMTP ENVIADO] Despachado exitosamente a ${payload.to} (ID: ${info.messageId})`);
+      return { success: true, id: info.messageId };
+    } catch (smtpErr: any) {
+      console.error(`❌ [EMAIL SMTP ERROR] Falló envío a ${payload.to}:`, smtpErr);
+      return { success: false, error: smtpErr.message };
+    }
+  }
+
+  // 4. Fallback: Log estructurado de despacho en consola
+  console.log(`✉️ [EMAIL TRANSACCIONAL REGISTRADO] (Para entrega física configure SMTP_USER/SMTP_PASS o RESEND_API_KEY/SENDGRID_API_KEY)`);
   console.log(`   Para: ${payload.to}`);
   console.log(`   Asunto: ${payload.subject}`);
   console.log(`   Remitente: ${fromEmail}`);

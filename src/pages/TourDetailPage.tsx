@@ -5,7 +5,7 @@ import {
   Star, Clock, MapPin, CheckCircle2, ShieldCheck, Calendar, Users, Hotel, 
   ChevronRight, ChevronLeft, X, AlertCircle, CreditCard, Smartphone, Banknote, 
   Lock, Sparkles, Check, Info, ArrowRight, Phone, Save, Wifi, WifiOff, Trash2,
-  Heart, Share2, ArrowLeft
+  Heart, Share2, ArrowLeft, MessageCircle
 } from 'lucide-react';
 import { Tour, Language, Currency, BookingRequest, OperatorProfile } from '../types';
 import { getLangText, formatCurrency } from '../utils/i18n';
@@ -272,12 +272,25 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                 <div className="mb-8">
                   <div className="text-stone-500 text-xs font-black uppercase tracking-widest mb-2">{language === 'es' ? 'Desde' : 'From'}</div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-black text-emerald-400">
-                      {currency === 'USD' ? `$${totalUSD}` : `₡${totalCRC.toLocaleString('es-CR')}`}
+                    <span className="text-4xl sm:text-5xl font-black text-emerald-400">
+                      {formatCurrency(totalUSD, currency)}
                     </span>
-                    <span className="text-stone-500 text-sm">/ {language === 'es' ? 'total' : 'total'}</span>
+                    <span className="text-stone-400 text-xs font-bold uppercase">{currency} / {language === 'es' ? 'total' : 'total'}</span>
                   </div>
                 </div>
+
+                {operator && (
+                  <div className="mb-6 p-4 bg-stone-950/70 rounded-2xl border border-emerald-500/20 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">
+                        {language === 'es' ? 'Operador Oficial' : 'Verified Operator'}
+                      </span>
+                      <span className="text-[10px] text-emerald-300 font-bold">★ {operator.rating} ({operator.reviewsCount})</span>
+                    </div>
+                    <div className="text-sm font-black text-white">{operator.name}</div>
+                    <div className="text-xs text-stone-400">{operator.location}</div>
+                  </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="space-y-4">
@@ -360,12 +373,17 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                   </div>
                 </div>
                 <a 
-                  href="https://wa.me/50687959148" 
+                  href={`https://wa.me/50687959148?text=${encodeURIComponent(
+                    language === 'es'
+                      ? `Hola, estoy interesado en el tour ${getLangText(tour.title, language)}. Quisiera consultar disponibilidad para ${selectedDate || '[fecha]'} para ${adults + children} personas.`
+                      : `Hello, I am interested in the tour ${getLangText(tour.title, language)}. I would like to check availability for ${selectedDate || '[date]'} for ${adults + children} people.`
+                  )}`}
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="block w-full text-center bg-stone-900 hover:bg-stone-800 text-white font-bold py-4 rounded-xl border border-white/5 transition-colors"
+                  className="block w-full text-center bg-[#25D366] hover:bg-[#20ba59] text-stone-950 font-black py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2"
                 >
-                  {language === 'es' ? 'Hablar con un Agente' : 'Chat with an Agent'}
+                  <MessageCircle className="w-5 h-5" />
+                  <span>{language === 'es' ? 'Consultar por WhatsApp' : 'Inquire via WhatsApp'}</span>
                 </a>
               </div>
             </div>
