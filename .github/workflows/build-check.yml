@@ -38,11 +38,6 @@ jobs:
         run: npm run lint
         env:
           # El proyecto creció lo suficiente para que tsc necesite más
-          # memoria de la que Node asigna por defecto (colapsaba con
-          # "JavaScript heap out of memory" sin este ajuste).
-          NODE_OPTIONS: "--max-old-space-size=4096"
-        env:
-          # El proyecto creció lo suficiente para que tsc necesite más
           # memoria que el límite por defecto de Node — sin esto, el
           # chequeo de tipos falla con "JavaScript heap out of memory".
           NODE_OPTIONS: "--max-old-space-size=4096"

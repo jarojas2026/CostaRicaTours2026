@@ -44,13 +44,19 @@ jobs:
 
       - name: Desplegar directamente desde el código en Cloud Run
         run: |
+          # Asegurar que los servicios requeridos de Google Cloud estén activos
+          echo "Habilitando APIs requeridas en Google Cloud..."
+          gcloud services enable cloudbuild.googleapis.com run.googleapis.com artifactregistry.googleapis.com --project "$PROJECT_ID" --quiet || true
+
+          echo "Iniciando despliegue en Google Cloud Run..."
           gcloud run deploy "$SERVICE_NAME" \
             --source . \
             --region "$REGION" \
             --project "$PROJECT_ID" \
             --allow-unauthenticated \
             --min-instances=0 \
-            --max-instances=4
+            --max-instances=4 \
+            --quiet
 
       - name: Mostrar la URL del servicio desplegado
         run: |
