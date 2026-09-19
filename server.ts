@@ -1809,7 +1809,6 @@ app.post('/api/itinerary/book', async (req, res) => {
       customerPhone,
       startDate,
       currency,
-      totalUSD,
       specialRequests
     } = req.body;
 
