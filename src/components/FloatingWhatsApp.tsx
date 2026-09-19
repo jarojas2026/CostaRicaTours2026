@@ -117,7 +117,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
     if (!text || sending) return;
     setSending(true);
     setBookingStatus('pending');
-    setHistory((prev) => [...prev, { role: 'user', text }].slice(-30));
+    setHistory((prev) => [...prev, { role: 'user' as const, text }].slice(-30));
     setInput('');
 
     try {
@@ -133,7 +133,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
           : 'I received your inquiry. I can help verify availability and prepare a booking.'
       );
       setHistory((prev) => [...prev, {
-        role: 'bot',
+        role: 'bot' as const,
         text: reply,
         quickActions: [
           { label: language === 'es' ? 'Consultar disponibilidad' : 'Check availability', action: 'availability' },
@@ -145,7 +145,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
     } catch (error) {
       console.error('Floating WhatsApp AI error:', error);
       setHistory((prev) => [...prev, {
-        role: 'bot',
+        role: 'bot' as const,
         text: language === 'es'
           ? 'No pude completar la consulta en este momento. Puedes continuar por WhatsApp directo.'
           : 'I could not complete the inquiry right now. You can continue through direct WhatsApp.'
