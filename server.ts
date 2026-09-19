@@ -451,20 +451,7 @@ app.get('/api/bookings/:id/pdf', async (req, res) => {
   try {
     const bookingId = req.params.id;
     const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId) || {
-      bookingId: bookingId,
-      tourName: 'Costa Rica Familiar 15 Días: Relax, Volcanes y Playas Seguras (Especial Bebé 3 Años)',
-      date: '2026-10-15',
-      time: '09:00 AM',
-      adults: 2,
-      children: 1,
-      totalUSD: 2450,
-      customerName: 'Hester Viviana Marín Elizondo',
-      customerEmail: 'viviana19942011@gmail.com',
-      customerPhone: '+506 84005018',
-      specialRequests: 'Presupuesto familiar, relajado y seguro. Bebé de 3 años.',
-      createdAt: new Date().toISOString()
-    };
+    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
 
     const html = generateBookingPrintableHTML(booking as any);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -1692,12 +1679,34 @@ app.post('/api/gemini/:action', (req, res) => {
   res.json({ success: true, text: `Respuesta de Gemini para ${req.params.action}` });
 });
 
-app.get('/api/chat/history', (req, res) => {
-  res.json({ history: [] });
+app.get('/api/chat/history', async (req, res) => {
+  try {
+    const { getOperationalMemory } = await import('./backend/memoryService');
+    const sessionId = String(req.query.sessionId || '');
+    if (!sessionId) return res.status(400).json({ error: 'sessionId es requerido' });
+    const memory = await getOperationalMemory(sessionId);
+    res.json({ history: memory.turns, memory: { summary: memory.summary, facts: memory.facts, preferences: memory.preferences, activeGoals: memory.activeGoals, decisions: memory.decisions, lastAgent: memory.lastAgent, lastUpdatedAt: memory.lastUpdatedAt }});
+  } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo cargar la memoria' }); }
 });
 
-app.delete('/api/chat/history', (req, res) => {
-  res.json({ success: true });
+app.post('/api/chat/history', async (req, res) => {
+  try {
+    const { saveChatHistory } = await import('./backend/memoryService');
+    const sessionId = String(req.body?.sessionId || '');
+    if (!sessionId || !Array.isArray(req.body?.history)) return res.status(400).json({ error: 'sessionId e history son requeridos' });
+    const memory = await saveChatHistory(sessionId, req.body.history);
+    res.json({ success: true, memory: { summary: memory.summary, facts: memory.facts, preferences: memory.preferences, activeGoals: memory.activeGoals, decisions: memory.decisions, lastAgent: memory.lastAgent, lastUpdatedAt: memory.lastUpdatedAt }});
+  } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo guardar la memoria' }); }
+});
+
+app.delete('/api/chat/history', async (req, res) => {
+  try {
+    const { clearOperationalMemory } = await import('./backend/memoryService');
+    const sessionId = String(req.query.sessionId || req.body?.sessionId || '');
+    if (!sessionId) return res.status(400).json({ error: 'sessionId es requerido' });
+    await clearOperationalMemory(sessionId);
+    res.json({ success: true });
+  } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo borrar la memoria' }); }
 });
 
 // ==========================================
