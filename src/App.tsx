@@ -122,6 +122,13 @@ export default function App() {
     fetchExchangeRates();
   }, []);
 
+  // Ensure modal state does not conflict with direct /tour/:id SPA routing
+  useEffect(() => {
+    if (location.pathname.startsWith('/tour/')) {
+      setSelectedTour(null);
+    }
+  }, [location.pathname]);
+
   // Load bookings from Firestore on mount
   useEffect(() => {
     let unsubscribeBookings: (() => void) | undefined;

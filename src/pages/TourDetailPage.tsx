@@ -22,7 +22,9 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
   const navigate = useNavigate();
   const { tours: TOURS, loading } = useTours();
   
-  const [tour, setTour] = useState<Tour | null>(null);
+  const [tour, setTour] = useState<Tour | null>(() => {
+    return TOURS.find(t => t.id === id || t.slug === id) || null;
+  });
   const [selectedDate, setSelectedDate] = useState('');
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
