@@ -225,200 +225,194 @@ export default function App() {
         onOpenFormsManager={() => setIsFormsManagerModalOpen(true)}
       />
 
-      <main className="flex-1 relative z-10 isolate">
+      <main className="flex-1 relative z-10 isolate flex flex-col">
+        {/* Breadcrumbs for sub-pages */}
+        {activeTab !== 'home' && activeTab !== 'map' && !location.pathname.startsWith('/tour/') && (
+          <div className="bg-[#02130c]/90 backdrop-blur-md border-b border-emerald-500/20 py-2 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 text-stone-300 min-w-0">
+                <button
+                  onClick={() => navigate('/')}
+                  className="flex items-center gap-1 text-emerald-200/80 hover:text-amber-400 font-bold transition-colors cursor-pointer shrink-0"
+                >
+                  <Home className="w-3.5 h-3.5" />
+                  <span>{language === 'es' ? 'Inicio' : 'Home'}</span>
+                </button>
+                <ChevronRight className="w-3.5 h-3.5 text-emerald-500/40 shrink-0" />
+                <span className="font-bold text-amber-400 truncate flex items-center gap-1.5">
+                  {getActiveTabLabel()}
+                </span>
+              </div>
+
+              <button
+                onClick={() => navigate('/')}
+                className="flex items-center gap-1.5 text-[11px] font-bold bg-[#041910] hover:bg-[#07261b] text-emerald-200 hover:text-white px-3 py-1 rounded-full border border-emerald-500/30 transition-all cursor-pointer shrink-0 shadow-sm"
+              >
+                <ArrowLeft className="w-3 h-3 text-amber-400" />
+                <span className="hidden sm:inline">{language === 'es' ? 'Volver al Inicio' : 'Back to Home'}</span>
+                <span className="sm:hidden">{language === 'es' ? 'Inicio' : 'Home'}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
-            {/* Breadcrumbs for sub-pages */}
-            <Route path="*" element={
-              <div className="flex flex-col min-h-[calc(100vh-80px)]">
-                {activeTab !== 'home' && activeTab !== 'map' && !location.pathname.startsWith('/tour/') && (
-                  <div className="bg-[#02130c]/90 backdrop-blur-md border-b border-emerald-500/20 py-2 px-4 sm:px-6 lg:px-8">
-                    <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs">
-                      <div className="flex items-center gap-2 text-stone-300 min-w-0">
-                        <button
-                          onClick={() => navigate('/')}
-                          className="flex items-center gap-1 text-emerald-200/80 hover:text-amber-400 font-bold transition-colors cursor-pointer shrink-0"
-                        >
-                          <Home className="w-3.5 h-3.5" />
-                          <span>{language === 'es' ? 'Inicio' : 'Home'}</span>
-                        </button>
-                        <ChevronRight className="w-3.5 h-3.5 text-emerald-500/40 shrink-0" />
-                        <span className="font-bold text-amber-400 truncate flex items-center gap-1.5">
-                          {getActiveTabLabel()}
-                        </span>
-                      </div>
+            <Route path="/" element={
+              <HomePage
+                language={language}
+                currency={currency}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                selectedRegion={selectedRegion}
+                setSelectedRegion={setSelectedRegion}
+                setIsCustomFunnelOpen={setIsCustomFunnelOpen}
+                setSelectedTour={setSelectedTour}
+              />
+            } />
 
-                      <button
-                        onClick={() => navigate('/')}
-                        className="flex items-center gap-1.5 text-[11px] font-bold bg-[#041910] hover:bg-[#07261b] text-emerald-200 hover:text-white px-3 py-1 rounded-full border border-emerald-500/30 transition-all cursor-pointer shrink-0 shadow-sm"
-                      >
-                        <ArrowLeft className="w-3 h-3 text-amber-400" />
-                        <span className="hidden sm:inline">{language === 'es' ? 'Volver al Inicio' : 'Back to Home'}</span>
-                        <span className="sm:hidden">{language === 'es' ? 'Inicio' : 'Home'}</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
+            <Route path="/tours" element={
+              <ToursPage
+                language={language}
+                currency={currency}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                selectedRegion={selectedRegion}
+                setSelectedRegion={setSelectedRegion}
+                onSelectTour={setSelectedTour}
+              />
+            } />
 
-                <Routes>
-                  <Route path="/" element={
-                    <HomePage
-                      language={language}
-                      currency={currency}
-                      searchQuery={searchQuery}
-                      setSearchQuery={setSearchQuery}
-                      selectedCategory={selectedCategory}
-                      setSelectedCategory={setSelectedCategory}
-                      selectedRegion={selectedRegion}
-                      setSelectedRegion={setSelectedRegion}
-                      setIsCustomFunnelOpen={setIsCustomFunnelOpen}
-                      setSelectedTour={setSelectedTour}
-                    />
-                  } />
+            <Route path="/tour/:id" element={
+              <TourDetailPage language={language} currency={currency} />
+            } />
 
-                  <Route path="/tours" element={
-                    <ToursPage
-                      language={language}
-                      currency={currency}
-                      searchQuery={searchQuery}
-                      setSearchQuery={setSearchQuery}
-                      selectedCategory={selectedCategory}
-                      setSelectedCategory={setSelectedCategory}
-                      selectedRegion={selectedRegion}
-                      setSelectedRegion={setSelectedRegion}
-                      onSelectTour={setSelectedTour}
-                    />
-                  } />
-
-                  <Route path="/tour/:id" element={
-                    <TourDetailPage language={language} currency={currency} />
-                  } />
-
-                  <Route path="/destinations" element={
-                    <div className="max-w-7xl mx-auto px-4 py-16 space-y-12">
-                      <div className="text-center">
-                        <h2 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tighter">
-                          {language === 'es' ? 'Destinos de Costa Rica' : 'Costa Rica Destinations'}
-                        </h2>
-                      </div>
-                      <DestinationsSection 
-                        language={language}
-                        onSelectRegion={(regionId) => {
-                          setSelectedRegion(regionId as any);
-                          navigate('/tours');
-                        }}
-                      />
-                    </div>
-                  } />
-
-                  <Route path="/activities" element={
-                    <div className="max-w-7xl mx-auto px-4 py-16 space-y-12">
-                      <div className="text-center">
-                        <h2 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tighter">
-                          {language === 'es' ? 'Actividades & Aventuras' : 'Activities & Adventures'}
-                        </h2>
-                      </div>
-                      <CategoriesSection 
-                        language={language} 
-                        onSelectCategory={(catId) => {
-                          setSelectedCategory(catId as any);
-                          navigate('/tours');
-                        }}
-                      />
-                    </div>
-                  } />
-
-                  <Route path="/map" element={
-                    <div className="w-full min-h-[calc(100vh-80px)]">
-                      <InteractiveMap
-                        language={language}
-                        currency={currency}
-                        tours={toursLoading ? [] : TOURS}
-                        selectedRegion={selectedRegion}
-                        onSelectRegion={setSelectedRegion}
-                        onExploreRegionTours={(reg) => {
-                          setSelectedRegion(reg);
-                          navigate('/tours');
-                        }}
-                        onExitMap={() => navigate('/tours')}
-                        onSelectTour={(t) => navigate(`/tour/${t.id}`)}
-                        onOpenItineraryTab={() => setIsCustomFunnelOpen(true)}
-                        onOpenLocalBusesModal={() => setIsLocalBusesOpen(true)}
-                      />
-                    </div>
-                  } />
-
-                  <Route path="/ai" element={
-                    <div className="space-y-8 pb-12 py-8">
-                      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <Suspense fallback={<div className="h-40 animate-pulse bg-emerald-950/20 rounded-2xl" />}>
-                          <PhotoTourFinder />
-                        </Suspense>
-                      </div>
-                      <Suspense fallback={<div className="py-24 text-center text-emerald-400">Cargando...</div>}>
-                        <AIAssistant
-                          language={language}
-                          onSelectTour={(t) => navigate(`/tour/${t.id}`)}
-                          userBookings={myBookings}
-                        />
-                      </Suspense>
-                    </div>
-                  } />
-
-                  <Route path="/itinerary" element={
-                    <Suspense fallback={<div className="py-24 text-center">Cargando...</div>}>
-                      <ItineraryPlanner
-                        language={language}
-                        onSelectTour={(t) => navigate(`/tour/${t.id}`)}
-                      />
-                    </Suspense>
-                  } />
-
-                  <Route path="/flights" element={
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-                      <Suspense fallback={<div className="h-60 animate-pulse bg-emerald-950/20 rounded-2xl" />}>
-                        <FlightTrackerGadget
-                          language={language}
-                          currency={currency}
-                          onBookingSuccess={handleBookingSuccess}
-                        />
-                      </Suspense>
-                    </div>
-                  } />
-
-                  <Route path="/blog" element={<div className="py-12"><BlogSection language={language} /></div>} />
-                  <Route path="/about" element={<div className="py-12"><AboutSection language={language} /></div>} />
-                  <Route path="/culture" element={<TicoCultureSection language={language} onExploreTours={() => navigate('/tours')} />} />
-                  
-                  <Route path="/tools" element={
-                    <div className="space-y-12 py-8">
-                      <TravelerToolkit
-                        language={language}
-                        currency={currency}
-                        onOpenTripBuilder={() => setIsCustomFunnelOpen(true)}
-                        onOpenLocalBuses={() => setIsLocalBusesOpen(true)}
-                      />
-                      <NationalTransportSection
-                        language={language}
-                        currency={currency}
-                        onOpenLocalBuses={() => setIsLocalBusesOpen(true)}
-                        onOpenTripBuilder={() => setIsCustomFunnelOpen(true)}
-                      />
-                    </div>
-                  } />
-
-                  <Route path="/workspace" element={
-                    <div className="max-w-7xl mx-auto px-4 py-8">
-                      <Suspense fallback={<div>Cargando...</div>}>
-                        <GoogleWorkspaceHub language={language === 'es' ? 'es' : 'en'} />
-                      </Suspense>
-                    </div>
-                  } />
-
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
+            <Route path="/destinations" element={
+              <div className="max-w-7xl mx-auto px-4 py-16 space-y-12">
+                <div className="text-center">
+                  <h2 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tighter">
+                    {language === 'es' ? 'Destinos de Costa Rica' : 'Costa Rica Destinations'}
+                  </h2>
+                </div>
+                <DestinationsSection 
+                  language={language}
+                  onSelectRegion={(regionId) => {
+                    setSelectedRegion(regionId as any);
+                    navigate('/tours');
+                  }}
+                />
               </div>
             } />
+
+            <Route path="/activities" element={
+              <div className="max-w-7xl mx-auto px-4 py-16 space-y-12">
+                <div className="text-center">
+                  <h2 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tighter">
+                    {language === 'es' ? 'Actividades & Aventuras' : 'Activities & Adventures'}
+                  </h2>
+                </div>
+                <CategoriesSection 
+                  language={language} 
+                  onSelectCategory={(catId) => {
+                    setSelectedCategory(catId as any);
+                    navigate('/tours');
+                  }}
+                />
+              </div>
+            } />
+
+            <Route path="/map" element={
+              <div className="w-full min-h-[calc(100vh-80px)]">
+                <InteractiveMap
+                  language={language}
+                  currency={currency}
+                  tours={toursLoading ? [] : TOURS}
+                  selectedRegion={selectedRegion}
+                  onSelectRegion={setSelectedRegion}
+                  onExploreRegionTours={(reg) => {
+                    setSelectedRegion(reg);
+                    navigate('/tours');
+                  }}
+                  onExitMap={() => navigate('/tours')}
+                  onSelectTour={(t) => navigate(`/tour/${t.id}`)}
+                  onOpenItineraryTab={() => setIsCustomFunnelOpen(true)}
+                  onOpenLocalBusesModal={() => setIsLocalBusesOpen(true)}
+                />
+              </div>
+            } />
+
+            <Route path="/ai" element={
+              <div className="space-y-8 pb-12 py-8">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <Suspense fallback={<div className="h-40 animate-pulse bg-emerald-950/20 rounded-2xl" />}>
+                    <PhotoTourFinder />
+                  </Suspense>
+                </div>
+                <Suspense fallback={<div className="py-24 text-center text-emerald-400">Cargando...</div>}>
+                  <AIAssistant
+                    language={language}
+                    onSelectTour={(t) => navigate(`/tour/${t.id}`)}
+                    userBookings={myBookings}
+                  />
+                </Suspense>
+              </div>
+            } />
+
+            <Route path="/itinerary" element={
+              <Suspense fallback={<div className="py-24 text-center">Cargando...</div>}>
+                <ItineraryPlanner
+                  language={language}
+                  onSelectTour={(t) => navigate(`/tour/${t.id}`)}
+                />
+              </Suspense>
+            } />
+
+            <Route path="/flights" element={
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+                <Suspense fallback={<div className="h-60 animate-pulse bg-emerald-950/20 rounded-2xl" />}>
+                  <FlightTrackerGadget
+                    language={language}
+                    currency={currency}
+                    onBookingSuccess={handleBookingSuccess}
+                  />
+                </Suspense>
+              </div>
+            } />
+
+            <Route path="/blog" element={<div className="py-12"><BlogSection language={language} /></div>} />
+            <Route path="/about" element={<div className="py-12"><AboutSection language={language} /></div>} />
+            <Route path="/culture" element={<TicoCultureSection language={language} onExploreTours={() => navigate('/tours')} />} />
+            
+            <Route path="/tools" element={
+              <div className="space-y-12 py-8">
+                <TravelerToolkit
+                  language={language}
+                  currency={currency}
+                  onOpenTripBuilder={() => setIsCustomFunnelOpen(true)}
+                  onOpenLocalBuses={() => setIsLocalBusesOpen(true)}
+                />
+                <NationalTransportSection
+                  language={language}
+                  currency={currency}
+                  onOpenLocalBuses={() => setIsLocalBusesOpen(true)}
+                  onOpenTripBuilder={() => setIsCustomFunnelOpen(true)}
+                />
+              </div>
+            } />
+
+            <Route path="/workspace" element={
+              <div className="max-w-7xl mx-auto px-4 py-8">
+                <Suspense fallback={<div>Cargando...</div>}>
+                  <GoogleWorkspaceHub language={language === 'es' ? 'es' : 'en'} />
+                </Suspense>
+              </div>
+            } />
+
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AnimatePresence>
       </main>
