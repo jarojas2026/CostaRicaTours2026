@@ -218,7 +218,10 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                   {language === 'es' ? 'Qué incluye' : 'What is included'}
                 </h4>
                 <ul className="space-y-3">
-                  {(tour.inclusions[language] || []).map((item, i) => (
+                  {(Array.isArray(tour.inclusions) 
+                    ? tour.inclusions 
+                    : (tour.inclusions?.[language] || tour.inclusions?.es || tour.inclusions?.en || [])
+                  ).map((item, i) => (
                     <li key={i} className="flex items-start gap-3 text-stone-400 text-sm">
                       <Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
                       <span>{item}</span>
@@ -233,7 +236,10 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                   {language === 'es' ? 'Qué llevar' : 'What to bring'}
                 </h4>
                 <ul className="space-y-3">
-                  {(tour.whatToBring[language] || []).map((item, i) => (
+                  {(Array.isArray(tour.whatToBring) 
+                    ? tour.whatToBring 
+                    : (tour.whatToBring?.[language] || tour.whatToBring?.es || tour.whatToBring?.en || [])
+                  ).map((item, i) => (
                     <li key={i} className="flex items-start gap-3 text-stone-400 text-sm">
                       <Check className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                       <span>{item}</span>

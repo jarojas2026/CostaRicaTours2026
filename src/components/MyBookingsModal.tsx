@@ -33,26 +33,31 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-[200] overflow-y-auto bg-white/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-stone-50 border-2 border-black/10 rounded-[2rem] w-full max-w-2xl overflow-hidden shadow-2xl relative text-stone-900 my-8 p-6 sm:p-8 space-y-6">
+    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-[#051c14] border border-emerald-500/30 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative text-stone-100 my-8 p-6 sm:p-8 space-y-6">
         
-        <div className="flex items-center justify-between border-b border-black/10 pb-4">
+        <div className="flex items-center justify-between border-b border-emerald-500/20 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center text-neutral-900">
-              <Ticket className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 bg-emerald-500/20 border border-emerald-500/40 rounded-xl flex items-center justify-center text-emerald-400">
+              <Ticket className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-xl font-black text-orange-400 uppercase">
+              <h3 className="text-xl font-black text-white uppercase tracking-tight">
                 {language === 'es' ? 'Mis Reservas Confirmadas' : 'My Confirmed Bookings'}
               </h3>
-              <span className="text-xs text-stone-500">
+              <span className="text-xs text-stone-400">
                 {bookings.length} {language === 'es' ? 'vouchers registrados' : 'vouchers registered'}
               </span>
             </div>
           </div>
 
-          <button onClick={onClose} className="min-h-[44px] min-w-[44px] p-2 text-stone-400 hover:text-orange-500 cursor-pointer">
-            <X className="w-6 h-6" />
+          <button 
+            onClick={onClose} 
+            className="w-10 h-10 rounded-full bg-stone-900/90 hover:bg-amber-500 text-stone-300 hover:text-stone-950 border border-white/20 hover:border-amber-400 flex items-center justify-center transition-all cursor-pointer shadow-lg"
+            title="Cerrar (Esc)"
+            aria-label="Cerrar modal"
+          >
+            <X className="w-5 h-5 stroke-[2.5]" />
           </button>
         </div>
 

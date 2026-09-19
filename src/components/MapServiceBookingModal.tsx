@@ -188,7 +188,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
   return (
     <div 
       id="map-service-booking-modal-backdrop"
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200"
     >
       <div 
         id="map-service-booking-modal-dialog"
@@ -218,9 +218,11 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-full bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 hover:text-white flex items-center justify-center transition-all"
+            className="w-10 h-10 rounded-full bg-stone-900/90 hover:bg-amber-500 text-stone-300 hover:text-stone-950 border border-white/20 hover:border-amber-400 flex items-center justify-center transition-all cursor-pointer shadow-lg"
+            title="Cerrar"
+            aria-label="Cerrar modal"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 stroke-[2.5]" />
           </button>
         </div>
 
