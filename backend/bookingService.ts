@@ -15,6 +15,7 @@ import {
 import { GoogleGenAI } from '@google/genai';
 import Stripe from 'stripe';
 import { TOURS } from '../src/data/toursData';
+import { getIdempotentResult, idempotencyDocId, normalizeIdempotencyKey, requestFingerprint } from './idempotencyService';
 import {
   executeProviderRealtimeCoordination,
   executeCustomerBookingConfirmation
@@ -382,6 +383,19 @@ export async function generateOperationalInsights(booking: any) {
  * actualizando el contador en `availability_slots` y guardando la reserva en `bookings`.
  */
 export async function createBooking(data: any) {
+  const idempotencyKey = normalizeIdempotencyKey(data.idempotencyKey);
+  const fingerprint = idempotencyKey ? requestFingerprint(data) : null;
+  if (idempotencyKey) {
+    const previous = await getIdempotentResult(idempotencyKey);
+    if (previous?.fingerprint && previous.fingerprint !== fingerprint) {
+      return { conflict: true, error: 'idempotency_conflict', message: 'La misma Idempotency-Key fue usada con datos diferentes.' };
+    }
+    if (previous?.bookingId) {
+      const existing = inMemoryBookings.get(previous.bookingId);
+      return { conflict: false, idempotent: true, booking: existing || { bookingId: previous.bookingId } };
+    }
+  }
+
   const bookingId = data.bookingId || `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
   const bookingTime = data.time || '08:00 AM';
   const numAdults = Number(data.adults) || 1;
@@ -487,8 +501,17 @@ export async function createBooking(data: any) {
       await db.runTransaction(async (transaction) => {
         const slotRef = db.collection('availability_slots').doc(slotKey);
         const bookingRef = db.collection('bookings').doc(bookingId);
+        const idempotencyRef = idempotencyKey ? db.collection('idempotency_keys').doc(idempotencyDocId(idempotencyKey)) : null;
 
-        // 1. Lectura transaccional del cupo
+        // 1. Idempotencia + lectura transaccional del cupo
+        if (idempotencyRef) {
+          const idemDoc = await transaction.get(idempotencyRef);
+          if (idemDoc.exists) {
+            const existing = idemDoc.data() || {};
+            if (existing.fingerprint && existing.fingerprint !== fingerprint) throw new Error('IDEMPOTENCY_CONFLICT');
+            throw new Error('IDEMPOTENT_REPLAY');
+          }
+        }
         const slotDoc = await transaction.get(slotRef);
         const currentBooked = slotDoc.exists ? (Number(slotDoc.data()?.bookedSeats) || 0) : 0;
 
@@ -517,10 +540,24 @@ export async function createBooking(data: any) {
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp()
         });
+        if (idempotencyRef) {
+          transaction.set(idempotencyRef, {
+            fingerprint,
+            bookingId,
+            createdAt: FieldValue.serverTimestamp()
+          }, { merge: true });
+        }
       });
 
       console.log(`✅ [TRANSACCIÓN ATÓMICA ÉXITO] Reserva ${bookingId} creada. Slot ${slotKey} incrementado en ${totalPassengers}.`);
     } catch (err: any) {
+      if (err.message === 'IDEMPOTENT_REPLAY' && idempotencyKey) {
+        const previous = await getIdempotentResult(idempotencyKey);
+        return { conflict: false, idempotent: true, booking: previous?.bookingId ? (inMemoryBookings.get(previous.bookingId) || { bookingId: previous.bookingId }) : undefined };
+      }
+      if (err.message === 'IDEMPOTENCY_CONFLICT') {
+        return { conflict: true, error: 'idempotency_conflict', message: 'La misma Idempotency-Key fue usada con datos diferentes.' };
+      }
       if (err.message && err.message.startsWith('NO_AVAILABILITY:')) {
         return {
           conflict: true,
