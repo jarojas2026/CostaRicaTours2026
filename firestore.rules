@@ -80,8 +80,24 @@ service cloud.firestore {
     
     match /bookings/{bookingId} {
       allow read: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
-      allow create: if isSignedIn() && isValidBooking(incoming());
-      allow update: if (isSignedIn() && isValidBooking(incoming()) && (incoming().userId == existing().userId || !('userId' in existing()))) || isAdmin();
+      // El cliente puede crear una reserva inicial, pero nunca marcarla como pagada/confirmada
+      // ni modificar importes o identidad de propietario después de creada.
+      allow create: if isSignedIn()
+        && isValidBooking(incoming())
+        && incoming().userId == request.auth.uid
+        && (!('paymentStatus' in incoming()) || incoming().paymentStatus == 'pending')
+        && (!('status' in incoming()) || incoming().status in ['pending', 'pendiente_pago']);
+      allow update: if isAdmin()
+        || (
+          isSignedIn()
+          && resource.data.userId == request.auth.uid
+          && isValidBooking(incoming())
+          && incoming().userId == existing().userId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'pickupHotel', 'specialRequests', 'customerName', 'customerEmail',
+            'customerPhone', 'customerCountry'
+          ])
+        );
       allow delete: if isAdmin();
     }
 
@@ -104,8 +120,10 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // El historial de chat puede contener PII. El backend usa Admin SDK para
+    // persistirlo; el cliente no obtiene acceso directo a la colección.
     match /chat_sessions/{sessionId} {
-      allow read, write: if true;
+      allow read, write: if isAdmin();
     }
   }
 }
