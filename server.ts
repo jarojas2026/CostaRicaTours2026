@@ -106,6 +106,7 @@ import { buildLearningDataset } from './backend/learningPipelineService';
 import { autonomyPolicy, parseAutonomyLevel } from './backend/autonomyPolicy';
 import { listSkillVersions, selectSkills, hydrateSkillGenome, registerSkillVersion, recordSkillEvaluation, promoteSkillVersion, rollbackSkillVersion } from './backend/skillGenome';
 import { emitOperationalEvent } from './backend/operationalEventBus';
+import { buildSkillEvolutionReport, selectEvolvedSkill, recordSkillOutcome, proposeSkillUpgrade } from './backend/skillEvolutionEngine';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -1605,6 +1606,53 @@ app.post('/api/agent/counter', async (req, res) => {
 // =========================================================================
 // ⚡ GATEWAY DE HERRAMIENTAS IA NATIVAS
 // =========================================================================
+app.get('/api/ai/skills/evolution', requireAdmin, async (_req, res) => {
+  res.json({ success: true, ...buildSkillEvolutionReport() });
+});
+
+app.post('/api/ai/skills/select', requireAdmin, async (req, res) => {
+  try {
+    const skill = selectEvolvedSkill(
+      String(req.body?.agentId || 'counter_agent'),
+      String(req.body?.task || ''),
+      String(req.body?.sessionId || '')
+    );
+    res.json({ success: Boolean(skill), skill });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/ai/skills/outcome', requireAdmin, async (req, res) => {
+  try {
+    const result = await recordSkillOutcome({
+      id: String(req.body?.id || ''),
+      version: String(req.body?.version || ''),
+      outcome: req.body?.outcome || 'partial',
+      groundedness: Number(req.body?.groundedness || 0),
+      safety: Number(req.body?.safety || 0),
+      quality: Number(req.body?.quality || 0)
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/ai/skills/propose-upgrade', requireAdmin, async (req, res) => {
+  try {
+    const result = await proposeSkillUpgrade({
+      id: String(req.body?.id || ''),
+      version: String(req.body?.version || ''),
+      observedFailure: String(req.body?.observedFailure || ''),
+      desiredOutcome: String(req.body?.desiredOutcome || '')
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
 app.get('/api/ai/tools', (req, res) => {
   res.json({
     success: true,
