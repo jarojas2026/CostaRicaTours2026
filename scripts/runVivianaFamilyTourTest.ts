@@ -2,7 +2,7 @@ import { createBooking } from '../backend/bookingService';
 import { sendEmail } from '../backend/notificationService';
 import { executeCustomerProformaConfirmation } from '../backend/nativeWorkflows';
 
-const VIVIANA_EMAIL = 'test@example.com';
+const TEST_EMAIL = 'test@example.com';
 const TEST_ADMIN_EMAIL = 'gabw33d@gmail.com';
 
 async function runVivianaTest() {
@@ -22,7 +22,7 @@ async function runVivianaTest() {
     currency: 'USD',
     paymentMethod: 'credit_card',
     customerName: 'Cliente Prueba Familiar',
-    customerEmail: VIVIANA_EMAIL,
+    customerEmail: TEST_EMAIL,
     customerPhone: '+506 0000-0000',
     flightDetails: {
       flightNumber: 'Iberia / Avianca Vuelo Internacional + Sansa Doméstico',
@@ -37,11 +37,11 @@ async function runVivianaTest() {
     console.log(`✅ [ÉXITO] Reserva familiar ${bId} registrada correctamente en el sistema.`);
 
     // Despacho del flujo oficial de Proforma con PDF e Itinerario hacia Viviana por Correo y WhatsApp
-    console.log(`\n📲 [DISPARO OFICIAL WHATSAPP Y PROFORMA] Ejecutando envío oficial a Hester Viviana Marín (+506 0000-0000)...`);
+    console.log(`\n📲 [DISPARO OFICIAL WHATSAPP Y PROFORMA] Ejecutando envío oficial a Cliente de ejemplo (+506 0000-0000)...`);
     const proformaResult = await executeCustomerProformaConfirmation({
       bookingId: bId,
       customerName: bookingPayload.customerName,
-      customerEmail: VIVIANA_EMAIL,
+      customerEmail: TEST_EMAIL,
       customerPhone: bookingPayload.customerPhone,
       adults: bookingPayload.adults,
       children: bookingPayload.children,
@@ -56,7 +56,7 @@ async function runVivianaTest() {
     console.log(`✅ [RESULTADO PROFORMA Y WHATSAPP CLIENTE VIVIANA]`);
     console.log(`   ID Reserva: #${proformaResult.bookingId}`);
     console.log(`   PDF Generado: ${proformaResult.pdfGenerated ? 'SÍ' : 'NO'}`);
-    console.log(`   Email Enviado: ${proformaResult.emailSent ? 'SÍ' : 'NO'} (${VIVIANA_EMAIL})`);
+    console.log(`   Email Enviado: ${proformaResult.emailSent ? 'SÍ' : 'NO'} (${TEST_EMAIL})`);
     console.log(`   WhatsApp Despachado: ${proformaResult.whatsappSent ? 'SÍ' : 'NO'} (+506 0000-0000)`);
     console.log(`   Link Descarga PDF: ${proformaResult.downloadPdfUrl}`);
     console.log(`   Link Aprobación Cliente: ${proformaResult.approvalUrl}`);
