@@ -2,9 +2,9 @@
   "mcpServers": {
     "n8n-mcp": {
       "type": "http",
-      "url": "https://costaricatours2026.app.n8n.cloud/mcp-server/http",
+      "url": "${N8N_MCP_SERVER_URL}",
       "headers": {
-        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3Y2NhNmZjZS1iZGJmLTQ0OGMtYTgwZC0zYWUxMjY1ZTM0Y2IiLCJpc3MiOiJuOG4iLCJhdWQiOiJtY3Atc2VydmVyLWFwaSIsImp0aSI6ImRkMWIzODM0LTg4MmItNDBlMS04Zjk3LTcxNDFjZDkwZTAwNCIsImlhdCI6MTc4OTUyOTM0MH0.DlzYmDxhqQg_GlDWhv_Ix5_kLL54ST274fCSxWvpJVQ"
+        "Authorization": "Bearer ${N8N_MCP_TOKEN}"
       }
     }
   }
