@@ -489,7 +489,7 @@ export async function createBooking(data: any) {
     specialRequests: data.specialRequests || '',
     totalUSD: calculatedUSD,
     totalCRC: Math.round(calculatedUSD * getUsdToCrcRate()),
-    totalAmount: data.currency === 'CRC' ? Math.round(calculatedUSD * 515) : calculatedUSD,
+    totalAmount: data.currency === 'CRC' ? Math.round(calculatedUSD * getUsdToCrcRate()) : calculatedUSD,
     currency: data.currency || 'USD',
     paymentMethod: data.paymentMethod || 'credit_card',
     paymentStatus: paymentResult.paymentStatus,
