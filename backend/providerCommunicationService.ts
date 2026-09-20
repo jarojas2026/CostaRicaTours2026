@@ -11,7 +11,7 @@ import { getAllBookings, updateBookingStatus } from './bookingService';
 import { createAlert } from './alertService';
 import { sendEmail } from './notificationService';
 
-export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || 'provider@example.invalid';
+export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || '';
 
 export interface TourProvider {
   id: string;
@@ -93,8 +93,8 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     payoutAccount: {
       type: 'sinpe_movil',
       number: '87959148',
-      bank: 'Banco Nacional de Costa Rica',
-      holderName: 'Sarapiquí Expeditions S.A.'
+      bank: '',
+      holderName: ''
     }
   },
   {
@@ -118,8 +118,8 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     payoutAccount: {
       type: 'iban_dolares',
       number: 'CR05015100010026455020',
-      bank: 'BAC Credomatic',
-      holderName: 'Monteverde Adventures Corp'
+      bank: '',
+      holderName: ''
     }
   },
   {
@@ -143,8 +143,8 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     payoutAccount: {
       type: 'sinpe_movil',
       number: '84129900',
-      bank: 'Banco de Costa Rica (BCR)',
-      holderName: 'EcoTrans CR S.A.'
+      bank: '',
+      holderName: ''
     }
   },
   {
@@ -168,8 +168,8 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     payoutAccount: {
       type: 'sinpe_movil',
       number: '83014455',
-      bank: 'Banco Nacional',
-      holderName: 'Juan Carlos Monge'
+      bank: '',
+      holderName: ''
     }
   },
   {
@@ -193,8 +193,8 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     payoutAccount: {
       type: 'iban_colones',
       number: 'CR12015202001027098012',
-      bank: 'Banco Popular',
-      holderName: 'Campbell & Asociados Caribe S.A.'
+      bank: '',
+      holderName: ''
     }
   }
 ];
@@ -243,7 +243,7 @@ export async function dispatchServiceOrder(params: {
   // Desglose de liquidación: 85% para el operador local, 15% comisión de plataforma
   const payoutAmountUSD = Math.round(params.totalUSD * 0.85 * 100) / 100;
   const platformFeeUSD = Math.round(params.totalUSD * 0.15 * 100) / 100;
-  const exchangeRate = 515;
+  const exchangeRate = Number(process.env.USD_TO_CRC_RATE);\n  if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {\n    throw new Error('USD_TO_CRC_RATE no está configurado; no se puede calcular la liquidación en CRC.');\n  }
   const payoutAmountCRC = Math.round(payoutAmountUSD * exchangeRate);
 
   const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(params.pickupLocation || 'San Jose Costa Rica')}`;
