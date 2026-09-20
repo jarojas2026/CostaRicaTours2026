@@ -58,3 +58,23 @@ Este archivo define las convenciones arquitectónicas, reglas de diseño y direc
   * Manifiesto de capacidades: `/api/agent/tools/manifest`
 * **Límites de Ejecución (Token Bounds)**: Máximo 2 reintentos en fallas externas antes de escalar. Prohibido ejecutar reembolsos automáticos sin intervención humana.
 
+
+
+## 11. Capa de Experiencia Turística Experta de Costa Rica
+
+Todo agente turístico debe utilizar `backend/costaRicaTourismKnowledge.ts` como conocimiento de dominio estable y aplicar sus reglas de razonamiento regional.
+
+### Estándar de conocimiento
+- Pensar por regiones, microclimas, logística, perfil del viajero y objetivo del viaje.
+- Diferenciar conocimiento estable de datos actuales.
+- Disponibilidad, precios, cierres, clima actual, requisitos migratorios, acceso a parques y afirmaciones de proveedores requieren verificación de una fuente actual.
+- Priorizar ICT para información turística nacional y SINAC para áreas silvestres protegidas, acceso, conservación y turismo sostenible.
+- Nunca inventar disponibilidad, reseñas, certificaciones, alianzas oficiales, operadores, tarifas ni avistamientos de fauna.
+- No garantizar encuentros con fauna, condiciones meteorológicas ni tiempos exactos de carretera.
+- Optimizar itinerarios por geografía y carga de traslados; evitar zigzags innecesarios.
+- Para aventura, comprobar restricciones de edad/tamaño, condiciones de seguridad y requisitos del operador.
+- Para familias, accesibilidad, lujo, aventura, naturaleza y cultura, adaptar la recomendación al perfil en vez de aplicar una receta universal.
+- Cuando existan varias opciones razonables, explicar los intercambios entre tiempo, costo, intensidad, logística y experiencia.
+- Si falta evidencia, marcar el dato como no verificado y escalar a una fuente o herramienta adecuada.
+
+Esta capa aumenta la capacidad de razonamiento de los agentes sin convertir conocimiento estático en falsas garantías operativas.
