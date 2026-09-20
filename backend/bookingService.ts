@@ -25,7 +25,7 @@ import { massiveEngine } from './massiveProcessingEngine';
 
 const FIRESTORE_DATABASE_ID =
   process.env.FIRESTORE_DATABASE_ID ||
-  'ai-studio-costaricatours-88d81273-09f7-4f87-991c-60b9b0db0dea';
+  process.env.FIRESTORE_DATABASE_ID || 'ai-studio-costaricatours-88d81273-09f7-4f87-991c-60b9b0db0dea';
 
 let dbInstance: Firestore | null = null;
 const inMemoryBookings: Map<string, any> = new Map();
@@ -43,7 +43,7 @@ export function getFirestoreDb(): Firestore | null {
       if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         adminAny.initializeApp({
           credential: adminAny.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
-          projectId: 'gen-lang-client-0782739149'
+          projectId: process.env.FIREBASE_PROJECT_ID
         });
       } else {
         adminAny.initializeApp({
