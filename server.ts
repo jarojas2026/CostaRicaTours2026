@@ -114,6 +114,26 @@ const PORT = Number(process.env.PORT) || 3000;
 // Admin gate is defined before any route registration that uses it.
 const requireAdmin = requireOperator;
 
+/**
+ * Autenticación para herramientas internas de agentes. Estas rutas pueden crear
+ * efectos persistentes, por lo que nunca deben quedar expuestas sin una credencial.
+ */
+function requireAgentTool(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const configured = process.env.AGENT_INTERNAL_TOKEN;
+  if (!configured) {
+    return res.status(503).json({ error: 'Herramientas internas de agentes no configuradas.' });
+  }
+  const authorization = req.headers.authorization;
+  const provided = authorization?.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
+  if (!provided) return res.status(401).json({ error: 'Autenticación requerida.' });
+  const expectedBuffer = Buffer.from(configured);
+  const providedBuffer = Buffer.from(provided);
+  if (expectedBuffer.length !== providedBuffer.length || !crypto.timingSafeEqual(expectedBuffer, providedBuffer)) {
+    return res.status(401).json({ error: 'No autorizado.' });
+  }
+  next();
+}
+
 app.set('trust proxy', 1);
 app.use(express.json());
 
@@ -380,12 +400,20 @@ app.get('/api/tours/:id/availability', async (req, res) => {
   }
 });
 
-// Tipo de cambio oficial Costa Rica (BCCR / Fallback)
-app.get('/api/currency/exchange-rate', (req, res) => {
+// Tipo de cambio configurable. No se usa un valor fijo obsoleto en producción.
+app.get('/api/currency/exchange-rate', (_req, res) => {
+  const configuredRate = Number(process.env.USD_TO_CRC_RATE);
+  if (!Number.isFinite(configuredRate) || configuredRate <= 0) {
+    return res.status(503).json({
+      error: 'Tipo de cambio no configurado.',
+      message: 'Configure USD_TO_CRC_RATE con el valor vigente de una fuente oficial antes de emitir cotizaciones en CRC.'
+    });
+  }
   res.json({
-    usdToCrc: 515.0,
-    crcToUsd: 1 / 515.0,
+    usdToCrc: configuredRate,
+    crcToUsd: 1 / configuredRate,
     currency: 'CRC',
+    source: 'runtime-config',
     updatedAt: new Date().toISOString()
   });
 });
@@ -1913,7 +1941,7 @@ app.delete('/api/chat/history', async (req, res) => {
 // ==========================================
 
 // Tool 1: check_calendar_availability
-app.post(['/api/agent/tools/check_calendar_availability', '/api/agent/check-availability'], async (req, res) => {
+app.post(['/api/agent/tools/check_calendar_availability', '/api/agent/check-availability'], requireAgentTool, async (req, res) => {
   try {
     const { target_date, service_duration_minutes, tour_id, party_size = 1 } = req.body;
     if (!target_date) {
@@ -1956,7 +1984,7 @@ app.post(['/api/agent/tools/check_calendar_availability', '/api/agent/check-avai
 });
 
 // Tool 2: create_booking_and_notify
-app.post(['/api/agent/tools/create_booking_and_notify', '/api/agent/create-booking'], async (req, res) => {
+app.post(['/api/agent/tools/create_booking_and_notify', '/api/agent/create-booking'], requireAgentTool, async (req, res) => {
   try {
     const {
       customer_name,
