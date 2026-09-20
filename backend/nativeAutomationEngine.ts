@@ -1495,7 +1495,7 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
     operadorAsignado: {
       id: booking.providerInfo?.id || 'alsama-tours-cr',
       nombre: booking.providerInfo?.name || 'Costa Rica Tours - Operaciones Directas',
-      email: process.env.PROVIDER_DEV_EMAIL || 'provider@example.invalid',
+      email: process.env.PROVIDER_DEV_EMAIL || '',
       telefono: booking.providerInfo?.phone || process.env.PROVIDER_DEV_PHONE || '',
       notificacionDespachada: true,
       canal: 'Email Seguro + Native Operations Center'
