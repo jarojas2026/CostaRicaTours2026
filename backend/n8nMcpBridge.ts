@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 /**
  * ⚡ n8n MCP Client & Gateway Bridge
  * Conecta el Counter Agent y los Agentes Autónomos de Costa Rica Tours
