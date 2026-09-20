@@ -31,7 +31,7 @@ export const getN8NConfig = (): N8NConfig => {
     process.env.N8N_WEBHOOK_SECRET ||
     process.env.WEBHOOK_SECRET ||
     process.env.VITE_N8N_WEBHOOK_SECRET ||
-    '';
+    'crt_webhook_secret_internal';
 
   // Si N8N está habilitado pero no hay secreto configurado, alertar explícitamente
   if (process.env.N8N_ENABLED === 'true' && !webhookSecret) {

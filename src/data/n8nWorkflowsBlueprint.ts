@@ -1179,7 +1179,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
         },
         {
           parameters: {
-            chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921",
+            chatId: "-1002348576921",
             text: "=*🚨 ALERTA SUPERVISOR SELF-HEAVY*\\n\\nAgente: `{{$json.agentName || 'OpsTriage'}}`\\nError: `{{$json.errorContext || 'Modismo no interpretado'}}`\\nParche: `{{$json.fixRule}}`",
             additionalFields: { parse_mode: "Markdown" }
           },
@@ -1338,7 +1338,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
         },
         {
           parameters: {
-            chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921",
+            chatId: "-1002348576921",
             text: "=*🆘 TICKET DE SOPORTE VIP ENTRANTE*\\n\\nCliente: `{{$json.usuario?.nombre || 'Viajero'}}`\\nMotivo: `{{$json.motivo || 'Atención prioritaria'}}`\\nTicket ID: `{{$json.ticketId}}`\\nEstado: *URGENTE*",
             additionalFields: { parse_mode: "Markdown" }
           },
@@ -1503,7 +1503,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
         },
         {
           parameters: {
-            chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921",
+            chatId: "-1002348576921",
             text: "=*⚠️ ALERTA RIESGO ANTIFRAUDE*\\n\\nReserva: `{{$json.idReserva}}`\\nRisk Score: `{{$json.riskScore}}/100`\\nDecisión: *{{$json.decision}}*\\nFlags: `{{$json.flags.join(', ')}}`",
             additionalFields: { parse_mode: "Markdown" }
           },
@@ -1685,7 +1685,7 @@ const BASE_N8N_WORKFLOWS: N8NWorkflowDef[] = [
         },
         {
           parameters: {
-            chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921",
+            chatId: "-1002348576921",
             text: "📢 *CONTROL OPERATIVO:* El guía `{{$json.user}}` ha confirmado la recogida de la reserva `{{$json.bookingId}}`.",
             additionalFields: { parse_mode: "Markdown" }
           },
@@ -1885,7 +1885,7 @@ const telegramText = [
 
 return {
   json: {
-    chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921",
+    chatId: "-1002348576921",
     messageText: telegramText,
     parseMode: "Markdown"
   }
@@ -2188,7 +2188,7 @@ return {
         },
         {
           parameters: {
-            chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921",
+            chatId: "-1002348576921",
             text: "=*💔 ALERTA NPS DETRACTOR DE EXPERIENCIA*\\n\\nReserva: `{{$json.bookingId || 'CRT-2026-8819'}}`\\nCliente: `{{$json.customerName || 'Carlos Montero'}}`\\nTour: `{{$json.tourName || 'Volcán Arenal'}}`\\nScore: `{{$json.score}}/10`\\nAcción: Asesor de experiencia asignado.",
             additionalFields: { parse_mode: "Markdown" }
           },
@@ -2387,7 +2387,7 @@ return {
         },
         {
           parameters: {
-            chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921",
+            chatId: "-1002348576921",
             text: "=*🌿 NUEVA COMPRA TIQUETE PARQUE NACIONAL SINAC*\\n\\nParque: `{{$json.parkName || 'Parque Nacional Manuel Antonio'}}`\\nFecha: `{{$json.visitDate || '2026-11-15'}}` (Franja: `{{$json.timeSlot || '07:00 AM'}}`)\\nTitular: `{{$json.leadVisitor?.fullName || 'Laura Ramírez'}}`\\nDoc: `{{$json.leadVisitor?.documentId || 'PAS-987654321'}}`\\nVisitantes: `{{$json.visitors?.adults || 2}} Adultos / {{$json.visitors?.children || 1}} Niños`\\nMonto: `${{$json.totalUSD || 48}} USD`\\nCódigo QR: `SINAC-QR-2026-{{Math.floor(Math.random()*90000)+10000}}`",
             additionalFields: { parse_mode: "Markdown" }
           },
@@ -2508,7 +2508,7 @@ return {
         }
       ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[FIRESTORE] Update Pickup Time & Driver Schedule", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*✈️ ALERTA VUELO RETRASADO - REAGENDAMIENTO PICK-UP*\\n\\nVuelo: `{{$json.flightNumber || 'AA-1204'}}`\\nCliente: `{{$json.customerName || 'Carlos Mendoza'}}`\\nNueva Hora Llegada: `{{$json.newEta || '16:15'}}` (Retraso: `{{$json.delayMinutes || 105}} min`)\\nChofer Asignado: `{{$json.driverPhone || '+506 8899-1122'}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Driver & Operations Team", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: "-1002348576921", text: "=*✈️ ALERTA VUELO RETRASADO - REAGENDAMIENTO PICK-UP*\\n\\nVuelo: `{{$json.flightNumber || 'AA-1204'}}`\\nCliente: `{{$json.customerName || 'Carlos Mendoza'}}`\\nNueva Hora Llegada: `{{$json.newEta || '16:15'}}` (Retraso: `{{$json.delayMinutes || 105}} min`)\\nChofer Asignado: `{{$json.driverPhone || '+506 8899-1122'}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Driver & Operations Team", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"mensaje\": \"Horario de transporte actualizado exitosamente por retraso de vuelo.\"\n}" }, name: "[RESPONSE] Confirm Flight Delay Reschedule", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
       ],
       connections: {
@@ -2603,7 +2603,7 @@ return {
           credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
         }
       ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🎒 OBJETO OLVIDADO REPORTADO*\\n\\nTicket: `{{$json.ticketId}}`\\nObjeto: `{{$json.itemDescription}}`\\nTurista: `{{$json.touristName}}` ({{$json.phone}})\\nVehículo/Tour: `{{$json.vehiclePlate}}` / `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Guide & Driver Immediate Search", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: "-1002348576921", text: "=*🎒 OBJETO OLVIDADO REPORTADO*\\n\\nTicket: `{{$json.ticketId}}`\\nObjeto: `{{$json.itemDescription}}`\\nTurista: `{{$json.touristName}}` ({{$json.phone}})\\nVehículo/Tour: `{{$json.vehiclePlate}}` / `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Guide & Driver Immediate Search", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Dispatch Ticket Details to Customer", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"ticketId\": \"{{$json.ticketId}}\",\n  \"mensaje\": \"Reporte recibido. Nuestro equipo inspeccionará la unidad de transporte de inmediato.\"\n}" }, name: "[RESPONSE] Ticket Confirmation", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
       ],
@@ -2664,7 +2664,7 @@ return {
       nodes: [
         { parameters: { httpMethod: "POST", path: "whatsapp-traductor-soporte", responseMode: "responseNode" }, name: "[TRIGGER] WhatsApp Multilingual Inbound", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, translatedText: $input.item.json.body.translatedSpanishMessage || 'Mensaje traducido automáticamente', processedAt: new Date().toISOString() } };" }, name: "[AI ENGINE] Gemini Translation & Sentiment Analyzer", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🌐 CHAT TRADUCIDO (Alemán ➡️ Español)*\\n\\nCliente: `{{$json.senderName}}` ({{$json.senderPhone}})\\nOriginal: `{{$json.originalMessage}}`\\nTraducción: `{{$json.translatedText}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Relay Translated Message to Operations", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [500, 300
+        { parameters: { chatId: "-1002348576921", text: "=*🌐 CHAT TRADUCIDO (Alemán ➡️ Español)*\\n\\nCliente: `{{$json.senderName}}` ({{$json.senderPhone}})\\nOriginal: `{{$json.originalMessage}}`\\nTraducción: `{{$json.translatedText}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Relay Translated Message to Operations", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [500, 300
     ,
         {
           parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
@@ -2789,7 +2789,7 @@ return {
         }
       ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, vipStatus: 'driver_assigned', dispatchTime: new Date().toISOString() } };" }, name: "[LOGIC] Generate Welcome Banner & Assign Driver", type: "n8n-nodes-base.code", typeVersion: 2, position: [500, 300] },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*👑 PROTOCOLO VIP ACTIVADO*\\n\\nPasajero: `{{$json.passengerName}}`\\nVuelo: `{{$json.flightNumber}}` ({{$json.airport}})\\nChofer: `{{$json.assignedDriver}}`\\nRótulo: `{{$json.welcomeText}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Dispatch Driver Board & Flight Tracking", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: "-1002348576921", text: "=*👑 PROTOCOLO VIP ACTIVADO*\\n\\nPasajero: `{{$json.passengerName}}`\\nVuelo: `{{$json.flightNumber}}` ({{$json.airport}})\\nChofer: `{{$json.assignedDriver}}`\\nRótulo: `{{$json.welcomeText}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Dispatch Driver Board & Flight Tracking", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Share Driver GPS & Meet Point to Passenger", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"status\": \"VIP_DISPATCHED\",\n  \"mensaje\": \"Chofer asignado y rótulo de bienvenida generado con éxito.\"\n}" }, name: "[RESPONSE] VIP Reception Active", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
       ],
@@ -2885,7 +2885,7 @@ return {
           credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
         }
       ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🥗 ALERTA DIETÉTICA Y MÉDICA*\\n\\nCliente: `{{$json.passengerName}}`\\nDieta: `{{$json.dietaryType}}`\\nAlergias: `{{$json.allergies ? $json.allergies.join(', ') : 'Ninguna'}}`\\nAccesibilidad: `{{$json.accessibilityRequirements || 'Estándar'}}`\\nTour: `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Kitchen Chef & Lead Guide", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: "-1002348576921", text: "=*🥗 ALERTA DIETÉTICA Y MÉDICA*\\n\\nCliente: `{{$json.passengerName}}`\\nDieta: `{{$json.dietaryType}}`\\nAlergias: `{{$json.allergies ? $json.allergies.join(', ') : 'Ninguna'}}`\\nAccesibilidad: `{{$json.accessibilityRequirements || 'Estándar'}}`\\nTour: `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Kitchen Chef & Lead Guide", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[FIRESTORE] Update Safe Meal Pass", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"status\": \"DIETARY_VERIFIED\",\n  \"mensaje\": \"Menú adaptado y requerimientos comunicados al equipo del tour.\"\n}" }, name: "[RESPONSE] Dietary Confirmation", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
       ],
@@ -2982,7 +2982,7 @@ return {
           credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
         }
       ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🛑 REEMBOLSO PROCESADO*\\n\\nReserva: `{{$json.bookingId}}`\\nPorcentaje: `{{$json.refundPct}}%`\\nMonto Reembolsado: `${{$json.refundAmountUSD}} USD`\\nCliente: `{{$json.customerEmail}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Finance & Admin Chat", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: "-1002348576921", text: "=*🛑 REEMBOLSO PROCESADO*\\n\\nReserva: `{{$json.bookingId}}`\\nPorcentaje: `{{$json.refundPct}}%`\\nMonto Reembolsado: `${{$json.refundAmountUSD}} USD`\\nCliente: `{{$json.customerEmail}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Alert Finance & Admin Chat", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Dispatch Refund Voucher / Receipt", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [1100, 300] },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"reembolsoPct\": {{$json.refundPct}},\n  \"montoDevueltoUSD\": {{$json.refundAmountUSD}},\n  \"mensaje\": \"Cancelación procesada de acuerdo a las políticas de Costa Rica Tours.\"\n}" }, name: "[RESPONSE] Cancellation Result", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1300, 300] }
       ],
@@ -3079,7 +3079,7 @@ return {
         }
       ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Dispatch Album Link to Tourist", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300] },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*📸 ÁLBUM DE FOTOS ENTREGADO*\\n\\nTour: `{{$json.tourName}}`\\nGuía: `{{$json.guideName}}`\\nFotos: `{{$json.photoCount}} HD`\\nLink: `{{$json.albumUrl}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Notify Guide Photo Delivery Completed", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: "-1002348576921", text: "=*📸 ÁLBUM DE FOTOS ENTREGADO*\\n\\nTour: `{{$json.tourName}}`\\nGuía: `{{$json.guideName}}`\\nFotos: `{{$json.photoCount}} HD`\\nLink: `{{$json.albumUrl}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Notify Guide Photo Delivery Completed", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"albumUrl\": \"{{$json.albumUrl}}\",\n  \"mensaje\": \"Álbum de fotos entregado al cliente por WhatsApp y correo.\"\n}" }, name: "[RESPONSE] Photo Pack Ready", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
       ],
       connections: {
@@ -3173,7 +3173,7 @@ return {
           credentials: { telegramApi: { id: '5NiYz8gX64lPYIdK', name: 'Google Service Account' } }
         }
       ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🔄 SINCRONIZACIÓN DE OPERADOR LOCAL*\\n\\nOperador: `{{$json.operatorId}}`\\nTour: `{{$json.tourCode}}`\\nCupos Disponibles: `{{$json.availableSeats}}`\\nTarifa: `${{$json.updatedPriceUSD}} USD`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Operations Change Alert", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: "-1002348576921", text: "=*🔄 SINCRONIZACIÓN DE OPERADOR LOCAL*\\n\\nOperador: `{{$json.operatorId}}`\\nTour: `{{$json.tourCode}}`\\nCupos Disponibles: `{{$json.availableSeats}}`\\nTarifa: `${{$json.updatedPriceUSD}} USD`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Operations Change Alert", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [700, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[CACHE] Invalidate Search Cache", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [900, 300] },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"status\": \"SYNC_SUCCESS\",\n  \"mensaje\": \"Inventario y tarifas del operador sincronizadas en tiempo real.\"\n}" }, name: "[RESPONSE] Inventory Sync Ok", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
       ],
@@ -3236,7 +3236,7 @@ return {
       nodes: [
         { parameters: { httpMethod: "POST", path: "alerta-emergencia-sos", responseMode: "responseNode" }, name: "[TRIGGER] Emergency SOS Panic Trigger", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [100, 300] },
         { parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { ...$input.item.json.body, emergencyLevel: 'CRITICAL', dispatchedAt: new Date().toISOString() } };" }, name: "[HIGH PRIORITY] Priority Alert Escalator", type: "n8n-nodes-base.code", typeVersion: 2, position: [300, 300] },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*🚨 ALERTA SOS CRÍTICA - ASISTENCIA EN CAMINO*\\n\\nIncidente: `{{$json.incidentId}}`\\nTipo: `{{$json.incidentType}}`\\nTurista: `{{$json.touristName}}` ({{$json.phone}})\\nUbicación: `{{$json.location?.placeName}}` (GPS: `{{$json.location?.lat}}, {{$json.location?.lng}}`)\\nPasajeros: `{{$json.passengersCount}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Instant SOS Alert to Emergency Command", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [500, 300
+        { parameters: { chatId: "-1002348576921", text: "=*🚨 ALERTA SOS CRÍTICA - ASISTENCIA EN CAMINO*\\n\\nIncidente: `{{$json.incidentId}}`\\nTipo: `{{$json.incidentType}}`\\nTurista: `{{$json.touristName}}` ({{$json.phone}})\\nUbicación: `{{$json.location?.placeName}}` (GPS: `{{$json.location?.lat}}, {{$json.location?.lng}}`)\\nPasajeros: `{{$json.passengersCount}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Instant SOS Alert to Emergency Command", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [500, 300
     ,
         {
           parameters: { dataType: 'string', value1: '={{$json.body.trigger}}', rules: { rules: [{ operation: 'exists' }] } },
@@ -3364,7 +3364,7 @@ return {
         }
       ], credentials: { googleApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { url: "http://localhost:3000/api/webhooks/n8n/confirm-booking", method: "POST" }, name: "[WHATSAPP] Send TripAdvisor & Discount Invitation", type: "n8n-nodes-base.httpRequest", typeVersion: 4.1, position: [700, 300] },
-        { parameters: { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID || "-1002348576921", text: "=*⭐ REPUTATION BOOSTER ENVIADO*\\n\\nCliente: `{{$json.touristName}}` (NPS: `{{$json.npsScore}}/10`)\\nCupón 15%: `{{$json.promoCode}}`\\nTour: `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Log Marketing Referral Campaign", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
+        { parameters: { chatId: "-1002348576921", text: "=*⭐ REPUTATION BOOSTER ENVIADO*\\n\\nCliente: `{{$json.touristName}}` (NPS: `{{$json.npsScore}}/10`)\\nCupón 15%: `{{$json.promoCode}}`\\nTour: `{{$json.tourName}}`", additionalFields: { parse_mode: "Markdown" } }, name: "[TELEGRAM] Log Marketing Referral Campaign", type: "n8n-nodes-base.telegram", typeVersion: 1.1, position: [900, 300], credentials: { telegramApi: { id: "5NiYz8gX64lPYIdK", name: "Google Service Account" } } },
         { parameters: { respondWith: "json", responseBody: "={\n  \"exito\": true,\n  \"promoCode\": \"{{$json.promoCode}}\",\n  \"mensaje\": \"Invitación a reseña y cupón de regalo enviado por WhatsApp.\"\n}" }, name: "[RESPONSE] Booster Dispatch Success", type: "n8n-nodes-base.respondToWebhook", typeVersion: 1.1, position: [1100, 300] }
       ],
       connections: {
