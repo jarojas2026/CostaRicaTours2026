@@ -39,13 +39,13 @@ export async function recordEscalation(data: {
 }
 
 /** Configuración de correo de pruebas; nunca se incrustan cuentas personales. */
-export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || 'provider@example.invalid';
+export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || '';
 
 export function getEffectiveProviderEmail(officialEmail?: string | null): string {
   const useOfficial = process.env.NODE_ENV === 'production'
     || process.env.DISABLE_PROVIDER_EMAIL_OVERRIDE === 'true';
   if (useOfficial && officialEmail) return officialEmail;
-  return process.env.PROVIDER_DEV_EMAIL || 'provider@example.invalid';
+  return process.env.PROVIDER_DEV_EMAIL || '';
 }
 
 export const MASTER_OPERATORS_REGISTRY: Record<string, {

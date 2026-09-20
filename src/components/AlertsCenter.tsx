@@ -162,7 +162,7 @@ export const AlertsCenter: React.FC<AlertsCenterProps> = ({
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer cr-tours-n8n-production-key-2026'
+          'Authorization': 'Bearer ' + (import.meta.env.VITE_N8N_ALERTS_TOKEN || '')
         },
         body: JSON.stringify({
           source: 'n8n Workflow • Pagos Automáticos a Proveedores',

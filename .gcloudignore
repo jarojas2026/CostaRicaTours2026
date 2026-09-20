@@ -1,0 +1,13 @@
+.gcloudignore
+.git
+.github
+node_modules
+dist
+build
+docs
+*.log
+.env
+.env.*
+!.env.example
+coverage
+tests

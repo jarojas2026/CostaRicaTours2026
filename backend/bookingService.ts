@@ -23,9 +23,15 @@ import {
 } from './nativeWorkflows';
 import { massiveEngine } from './massiveProcessingEngine';
 
-const FIRESTORE_DATABASE_ID =
-  process.env.FIRESTORE_DATABASE_ID ||
-  'ai-studio-costaricatours-88d81273-09f7-4f87-991c-60b9b0db0dea';
+const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID || 'ai-studio-costaricatours-88d81273-09f7-4f87-991c-60b9b0db0dea';
+
+function getUsdToCrcRate(): number {
+  const rate = Number(process.env.USD_TO_CRC_RATE);
+  if (!Number.isFinite(rate) || rate <= 0) {
+    throw new Error('USD_TO_CRC_RATE no configurado. No se puede calcular un importe CRC de forma segura.');
+  }
+  return rate;
+}
 
 let dbInstance: Firestore | null = null;
 const inMemoryBookings: Map<string, any> = new Map();
@@ -43,12 +49,10 @@ export function getFirestoreDb(): Firestore | null {
       if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         adminAny.initializeApp({
           credential: adminAny.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
-          projectId: 'gen-lang-client-0782739149'
+          projectId: process.env.FIREBASE_PROJECT_ID
         });
       } else {
-        adminAny.initializeApp({
-          projectId: 'gen-lang-client-0782739149'
-        });
+        adminAny.initializeApp();
       }
     }
 
@@ -458,7 +462,7 @@ export async function createBooking(data: any) {
 
   const calculatedUSD = Number(
     data.totalUSD ||
-    (data.currency === 'CRC' ? Number(data.totalAmount || 0) / 515 : data.totalAmount) ||
+    (data.currency === 'CRC' ? Number(data.totalAmount || 0) / getUsdToCrcRate() : data.totalAmount) ||
     0
   );
 
@@ -484,8 +488,8 @@ export async function createBooking(data: any) {
     pickupHotel: data.pickupHotel || 'Recepción del Hotel',
     specialRequests: data.specialRequests || '',
     totalUSD: calculatedUSD,
-    totalCRC: Math.round(calculatedUSD * 515),
-    totalAmount: data.currency === 'CRC' ? Math.round(calculatedUSD * 515) : calculatedUSD,
+    totalCRC: Math.round(calculatedUSD * getUsdToCrcRate()),
+    totalAmount: data.currency === 'CRC' ? Math.round(calculatedUSD * getUsdToCrcRate()) : calculatedUSD,
     currency: data.currency || 'USD',
     paymentMethod: data.paymentMethod || 'credit_card',
     paymentStatus: paymentResult.paymentStatus,

@@ -37,7 +37,7 @@ export const API_CONFIG = {
     webhookSecret: 
       (typeof import.meta !== 'undefined' && import.meta.env?.VITE_N8N_WEBHOOK_SECRET) ||
       (typeof process !== 'undefined' && process.env?.N8N_WEBHOOK_SECRET) ||
-      'dev-secret-key-123',
+      '',
     apiKey: 
       (typeof import.meta !== 'undefined' && import.meta.env?.VITE_N8N_API_KEY) ||
       (typeof process !== 'undefined' && process.env?.N8N_API_KEY) ||
@@ -45,7 +45,7 @@ export const API_CONFIG = {
     hmacSecret: 
       (typeof import.meta !== 'undefined' && (import.meta.env?.VITE_N8N_HMAC_SECRET || import.meta.env?.VITE_N8N_WEBHOOK_SECRET)) ||
       (typeof process !== 'undefined' && (process.env?.N8N_HMAC_SECRET || process.env?.N8N_WEBHOOK_SECRET)) ||
-      'costa-rica-tours-hmac-key',
+      '',
     timeoutMs: 10000,
     maxRetries: 3,
     backoffMs: 350
@@ -68,7 +68,7 @@ export const API_CONFIG = {
   // Pasarelas de pago y servicios auxiliares
   pagos: {
     stripe: {
-      publicKey: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_STRIPE_PUBLIC_KEY) || 'pk_test_123'
+      publicKey: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_STRIPE_PUBLIC_KEY) || ''
     },
     paypal: {
       clientId: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PAYPAL_CLIENT_ID) || ''
