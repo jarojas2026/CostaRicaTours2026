@@ -9,7 +9,9 @@ const banned = [
   /cliente@example\.com/i,
   /gabw33d@gmail\.com/i,
   /david\.morales@/i,
-  /\+506\s*0000-0000/i,\n  /Bearer\s+eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/i,\n  /N8N_MCP_TOKEN\s*[:=]\s*['\"]eyJ/i,
+  /\+506\s*0000-0000/i,
+  /Bearer\s+eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/i,
+  /N8N_MCP_TOKEN\s*[:=]\s*['\"]eyJ/i,
   /\bViviana\b/i
 ];
 const ignored = new Set(['node_modules', '.git', 'dist', 'build']);

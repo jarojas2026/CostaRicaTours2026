@@ -243,7 +243,10 @@ export async function dispatchServiceOrder(params: {
   // Desglose de liquidación: 85% para el operador local, 15% comisión de plataforma
   const payoutAmountUSD = Math.round(params.totalUSD * 0.85 * 100) / 100;
   const platformFeeUSD = Math.round(params.totalUSD * 0.15 * 100) / 100;
-  const exchangeRate = Number(process.env.USD_TO_CRC_RATE);\n  if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {\n    throw new Error('USD_TO_CRC_RATE no está configurado; no se puede calcular la liquidación en CRC.');\n  }
+  const exchangeRate = Number(process.env.USD_TO_CRC_RATE);
+  if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {
+    throw new Error('USD_TO_CRC_RATE no está configurado; no se puede calcular la liquidación en CRC.');
+  }
   const payoutAmountCRC = Math.round(payoutAmountUSD * exchangeRate);
 
   const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(params.pickupLocation || 'San Jose Costa Rica')}`;

@@ -2,6 +2,7 @@
  * 🤖 Servicio de Asistente Inteligente y Agentes de IA para Costa Rica Tours
  * Proporciona el motor conversacional oficial y los agentes del Enjambre Operativo (Triage, Procesador, Contingencia, Supervisor).
  */
+import { COSTA_RICA_REGION_PLAYBOOK, buildCostaRicaTourismKnowledgePrompt } from './costaRicaTourismKnowledge';
 
 import { GoogleGenAI } from '@google/genai';
 import { TOURS } from '../src/data/toursData';
