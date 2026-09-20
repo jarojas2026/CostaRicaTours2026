@@ -265,7 +265,7 @@ export async function executeSolicitudPago(body: any) {
   const totalAmount = Number(body.montoUSD || body.amount || 290);
   const method = (body.metodoPago || body.paymentMethod || 'credit_card').toLowerCase();
   const tour = body.nombreTour || body.tourName || 'Tour Oficial Costa Rica';
-  const email = body.correoCliente || body.customerEmail || process.env.SUPPORT_EMAIL || 'support@example.invalid';
+  const email = body.correoCliente || body.customerEmail || process.env.SUPPORT_EMAIL || '';
 
   // Firma criptográfica HMAC SHA-256 generada en código seguro del servidor
   const hmacSecret = process.env.PAYMENT_HMAC_SECRET;
