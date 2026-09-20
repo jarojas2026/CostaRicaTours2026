@@ -4,8 +4,6 @@ import {
   CheckCircle2, Printer, Share2, ShieldCheck, Phone, Calendar, Clock, 
   MapPin, Users, Hotel, X, Loader2, ListTodo, CreditCard, Smartphone, Banknote, Check 
 } from 'lucide-react';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 import { getAccessToken, signInWithGoogle } from '../firebase';
 import QRCode from 'qrcode';
 
@@ -156,6 +154,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
       element.style.top = '0';
       element.style.zIndex = '-1';
       
+      const [{ jsPDF }, { default: html2canvas }] = await Promise.all([import('jspdf'), import('html2canvas')]);
       const canvas = await html2canvas(element, { 
         scale: 2,
         useCORS: true,
