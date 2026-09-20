@@ -1,23 +1,39 @@
 # ESTADO REAL DEL SISTEMA - Costa Rica Tours 2026
-*(Actualizado: Septiembre 2026)*
 
-Este documento refleja con **honestidad total** qué partes del sistema están terminadas, cuáles funcionan con datos reales, y cuáles son simulaciones o marcadores de posición (placeholders). El objetivo es que la directiva de la empresa conozca exactamente el progreso real sin tecnicismos ni "métricas falsas".
+**Actualizado: 19 de septiembre de 2026**
 
-## 1. Conexiones Reales y Funcionales (Datos Verídicos)
-* **Lógica de Reservas (Backend):** El sistema puede crear, validar y almacenar reservas, con tipos de datos estructurados para cada tour.
-* **Alertas y Sistema de Soporte:** El backend cuenta con alertas multicanal. (Nota: Se ha eliminado exitosamente la integración de Telegram en favor de herramientas nativas de Inteligencia Artificial que asumirán el rol del Counter Agent y notificaciones).
-* **N8N y Reglas de Automatización:** Los endpoints webhooks están preparados para recibir llamadas cifradas desde la plataforma de automatización (n8n), requiriendo validación `X-Webhook-Secret`. Las llaves y variables han sido preservadas.
-* **Agente AI (Counter Agent):** El sistema está pre-configurado para conectarse a Gemini/Vertex AI mediante las credenciales de Google Cloud (`ANTHROPIC_VERTEX_PROJECT`, `GEMINI_API_KEY`, etc.) suministradas en el entorno, listo para inyectarse como widget en el frontend.
+## Estado actual
 
-## 2. Lo que es "Placeholder" (Datos Simulados / Falsos que deben cambiarse)
-* **Panel Autónomo (Autonomous Engine):** Este módulo ha sido **ELIMINADO**. Anteriormente, mostraba métricas ficticias ("148 acciones", "38 choferes"). Cualquier estadística de ese tipo que aparezca debe generarse calculando la base de datos real (Firestore), pero por ahora, esa UI no está conectada.
-* **Imágenes de Tours:** Muchas provienen de placeholders o URLs genéricas de prueba. Se necesita integrarlas con fotos reales de los operadores o el Storage de Firebase.
-* **Integración de Pagos:** Las llaves de Stripe y la lógica están presentes en el backend, pero hay mecanismos de seguridad explícitos para no ejecutar cobros simulados en producción.
+La base principal de reservas, autenticación de operadores, idempotencia, control de concurrencia, automatización nativa, agentes de IA y experiencia de destinos está integrada en `main`. Esta auditoría añade endurecimiento de producción sobre la integración n8n/MCP y elimina credenciales incrustadas del código activo.
 
-## 3. Lo que Falta (Próximos Pasos Prioritarios)
-* **Flujo de Pago y Checkout Final:** Conectar de manera definitiva la pasarela de pagos al frontend sin simulaciones, manejando respuestas reales del banco o Stripe.
-* **Conexión a N8N en Producción:** Reemplazar las URLs locales por la instancia real (`costaricatours2026.app.n8n.cloud`), validando los flujos de "Flash Deal", pagos a choferes de Alsama Tours, etc.
-* **Carga de Datos (Catálogo de Tours):** Alimentar el sistema con los tours reales, precios exactos, y disponibilidades correctas.
+## Corregido en esta auditoría
 
----
-*Fin del reporte.* No se seguirán añadiendo "botones o vistas nuevas" hasta que los cimientos aquí descritos estén conectados de punta a punta con datos 100% reales.
+- Credenciales Bearer de n8n MCP retiradas de `mcp.json`, `n8n-mcp-config.json` y del bridge TypeScript. Ahora se requieren `N8N_MCP_SERVER_URL` y `N8N_MCP_TOKEN` por entorno.
+- Las herramientas internas de agentes que pueden producir efectos persistentes requieren `AGENT_INTERNAL_TOKEN`.
+- El endpoint de tipo de cambio ya no devuelve ₡515 fijo. En producción requiere `USD_TO_CRC_RATE` configurado desde una fuente oficial.
+- La identidad de Firebase Admin usa `FIREBASE_PROJECT_ID` en lugar de depender de un project ID incrustado.
+- Los fallbacks de correo de proveedor con dominios ficticios fueron eliminados.
+- Las órdenes de servicio ya no se reconstruyen con reservas ficticias si no existen en el almacenamiento operativo.
+- Los datos bancarios sintéticos del registro de proveedores dejaron de actuar como datos operativos.
+- El auditor de seguridad ahora inspecciona también los archivos de configuración MCP y patrones de JWT incrustados.
+
+## Dependencias externas que siguen requiriendo configuración real
+
+1. **Firebase/Firestore:** credenciales de servidor, proyecto y database ID mediante secretos de despliegue.
+2. **Pagos:** `STRIPE_SECRET_KEY`, PayPal client/secret y configuración de producción. El backend rechaza pagos cuando no están configurados.
+3. **Tipo de cambio:** `USD_TO_CRC_RATE` debe mantenerse actualizado desde una fuente oficial del BCCR; no debe utilizarse un valor histórico fijo para cotizaciones financieras.
+4. **n8n MCP (opcional):** solo habilitar `N8N_ENABLED=true` si existen URL y token válidos en secretos del entorno.
+5. **Proveedores:** los correos, teléfonos, cuentas de liquidación y disponibilidad deben proceder de datos operativos verificados, no de fixtures de código.
+6. **CI/CD:** el pipeline debe ejecutar instalación, auditoría de fixtures, TypeScript y build antes de permitir la integración.
+
+## Pendientes funcionales de producto
+
+- Sustituir cualquier imagen/catálogo provisional por activos y disponibilidad reales de cada operador.
+- Completar la alimentación de disponibilidad por proveedor y sincronización de calendario en producción.
+- Conectar el frontend a un servicio de tipo de cambio vigente en lugar de multiplicadores históricos embebidos en componentes de UI.
+- Validar el flujo completo de Stripe/PayPal/SINPE en entorno real antes de activar cobros.
+- Ejecutar pruebas end-to-end contra Firebase y proveedores reales antes del lanzamiento público.
+
+## Regla de producción
+
+No se consideran "completadas" las funciones que dependan de credenciales, datos de proveedores, cuentas bancarias, pagos o fuentes externas no configuradas. El código debe fallar de forma explícita y segura en lugar de simular una operación real.

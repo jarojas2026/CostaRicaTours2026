@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const roots = ['backend', 'server.ts', 'src/App.tsx', 'src/components', 'src/pages'];
+const roots = ['backend', 'server.ts', 'src/App.tsx', 'src/components', 'src/pages', 'mcp.json', 'n8n-mcp-config.json'];
 const banned = [
   /ADMIN_MOCK_TOKEN/i,
   /mock_paypal_id/i,
@@ -9,7 +9,7 @@ const banned = [
   /cliente@example\.com/i,
   /gabw33d@gmail\.com/i,
   /david\.morales@/i,
-  /\+506\s*0000-0000/i,
+  /\+506\s*0000-0000/i,\n  /Bearer\s+eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/i,\n  /N8N_MCP_TOKEN\s*[:=]\s*['\"]eyJ/i,
   /\bViviana\b/i
 ];
 const ignored = new Set(['node_modules', '.git', 'dist', 'build']);

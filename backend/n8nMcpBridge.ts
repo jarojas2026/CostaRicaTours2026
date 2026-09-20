@@ -1,7 +1,9 @@
+import crypto from 'crypto';
+
 /**
  * ⚡ n8n MCP Client & Gateway Bridge
  * Conecta el Counter Agent y los Agentes Autónomos de Costa Rica Tours
- * al servidor MCP oficial de n8n (costaricatours2026.app.n8n.cloud/mcp-server/http).
+ * al servidor MCP de n8n cuando está explícitamente habilitado.
  */
 
 export interface McpToolCallRequest {
@@ -16,17 +18,15 @@ export interface McpToolCallResponse {
   rawResponse?: any;
 }
 
-const MCP_SERVER_URL = process.env.N8N_MCP_SERVER_URL || 'https://costaricatours2026.app.n8n.cloud/mcp-server/http';
-const MCP_TOKEN = process.env.N8N_MCP_TOKEN || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3Y2NhNmZjZS1iZGJmLTQ0OGMtYTgwZC0zYWUxMjY1ZTM0Y2IiLCJpc3MiOiJuOG4iLCJhdWQiOiJtY3Atc2VydmVyLWFwaSIsImp0aSI6ImRkMWIzODM0LTg4MmItNDBlMS04Zjk3LTcxNDFjZDkwZTAwNCIsImlhdCI6MTc4OTUyOTM0MH0.DlzYmDxhqQg_GlDWhv_Ix5_kLL54ST274fCSxWvpJVQ';
+const MCP_SERVER_URL = process.env.N8N_MCP_SERVER_URL || '';
+const MCP_TOKEN = process.env.N8N_MCP_TOKEN || '';
 
-/**
- * Invoca una herramienta o prompt a través del servidor MCP de n8n mediante HTTP JSON-RPC
- */
+/** Invoca una herramienta o prompt a través del servidor MCP de n8n mediante HTTP JSON-RPC. */
 export async function callN8nMcp(
   method: string,
   params: Record<string, any> = {}
 ): Promise<{ success: boolean; result?: any; error?: string }> {
-  // 100% Nativo si n8n está deshabilitado
+  // El modo nativo es el comportamiento seguro por defecto.
   if (process.env.N8N_ENABLED !== 'true') {
     if (method === 'tools/list') {
       return {
@@ -48,14 +48,15 @@ export async function callN8nMcp(
     };
   }
 
-  try {
-    const payload = {
-      jsonrpc: '2.0',
-      id: Date.now(),
-      method,
-      params
+  if (!MCP_SERVER_URL || !MCP_TOKEN) {
+    return {
+      success: false,
+      error: 'N8N_ENABLED=true requiere N8N_MCP_SERVER_URL y N8N_MCP_TOKEN configurados como secretos de entorno.'
     };
+  }
 
+  try {
+    const payload = { jsonrpc: '2.0', id: crypto.randomUUID(), method, params };
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
 
@@ -73,17 +74,11 @@ export async function callN8nMcp(
     clearTimeout(timeout);
 
     if (!response.ok) {
-      return {
-        success: false,
-        error: `MCP HTTP Error ${response.status}: ${response.statusText}`
-      };
+      return { success: false, error: `MCP HTTP Error ${response.status}: ${response.statusText}` };
     }
 
     const data = await response.json();
-    return {
-      success: true,
-      result: data.result || data
-    };
+    return { success: true, result: data.result || data };
   } catch (err: any) {
     return {
       success: false,
@@ -92,19 +87,10 @@ export async function callN8nMcp(
   }
 }
 
-/**
- * Consulta la lista de herramientas disponibles expuestas por n8n en el servidor MCP
- */
 export async function listN8nMcpTools() {
   return callN8nMcp('tools/list', {});
 }
 
-/**
- * Ejecuta una herramienta específica expuesta por los flujos de n8n
- */
 export async function executeN8nMcpTool(name: string, toolArguments: Record<string, any> = {}) {
-  return callN8nMcp('tools/call', {
-    name,
-    arguments: toolArguments
-  });
+  return callN8nMcp('tools/call', { name, arguments: toolArguments });
 }

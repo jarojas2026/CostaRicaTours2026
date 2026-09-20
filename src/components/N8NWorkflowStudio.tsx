@@ -28,7 +28,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
 
   // Form input mode: 'visual' (form fields) or 'json' (raw code)
   const [inputMode, setInputMode] = useState<'visual' | 'json'>('visual');
-  const [authSecretHeader, setAuthSecretHeader] = useState<string>('dev-secret-key-123');
+  const [authSecretHeader, setAuthSecretHeader] = useState<string>('');
   const [retryOnFail, setRetryOnFail] = useState<boolean>(true);
   
   // Connection status state
@@ -154,7 +154,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
         method: activeWf.method,
         headers: {
           'Content-Type': 'application/json',
-          'X-Webhook-Secret': authSecretHeader || 'dev-secret-key-123'
+          'X-Webhook-Secret': authSecretHeader || ''
         },
         body: JSON.stringify(parsedPayload)
       });
