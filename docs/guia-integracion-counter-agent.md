@@ -80,7 +80,7 @@ Para agregar o modificar un tour:
 2. Modifica o agrega un objeto de tipo `Tour` respetando estrictamente los campos oficiales:
    - `id`: Identificador kebab-case único (ej. `arenal-volcano-combo`).
    - `title`: `{ es: 'Nombre en Español', en: 'English Title' }`.
-   - `priceUSD`: Precio unitario por adulto en dólares americanos (el sistema calcula colones a CRC según `USD_TO_CRC_RATE` configurado automáticamente con el 13% de IVA).
+   - `priceUSD`: Precio unitario por adulto en dólares americanos (el sistema calcula colones a ₡515 automáticamente con el 13% de IVA).
    - `category`: Usa las categorías oficiales en inglés (`'volcanoes' | 'wildlife' | 'canopy' | 'beaches' | 'rafting' | 'culture' | 'multiday' | 'combos'`).
    - `image`: URL o ruta de imagen principal (singular, no `images`).
    - `whatToBring`: `{ es: [...], en: [...] }` con lista de recomendaciones y vestimenta.

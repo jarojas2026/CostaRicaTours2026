@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Language, Tour } from '../types';
-import { convertUsdToCrc } from '../utils/currency';
 import {
   Calendar, Sparkles, ArrowLeft, Clock, Compass, CheckCircle2,
   ArrowRight, RefreshCw, MapPin, DollarSign, Users, ShieldCheck,

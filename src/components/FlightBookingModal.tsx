@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { convertUsdToCrc } from '../utils/currency';
 import { 
   X, Plane, Calendar, User, Mail, Phone, Globe, ShieldCheck, 
   CheckCircle2, Clock, Luggage, MapPin, Sparkles, CreditCard, 

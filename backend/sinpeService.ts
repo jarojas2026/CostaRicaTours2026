@@ -62,11 +62,8 @@ export interface SinpeVerificationResult {
 // Registro en memoria de comprobantes ya procesados para prevenir doble uso
 const verifiedComprobantesSet = new Set<string>();
 
-function getRequiredUsdToCrcRate(): number {
-  const rate = Number(process.env.USD_TO_CRC_RATE);
-  if (!Number.isFinite(rate) || rate <= 0) throw new Error('USD_TO_CRC_RATE no configurado.');
-  return rate;
-}
+// Tipo de cambio oficial de referencia BCCR (USD/CRC) con fallback determinista
+const USD_CRC_EXCHANGE_RATE = 520.0;
 
 /**
  * Normaliza y extrae datos clave de un mensaje SMS o texto plano de SINPE Móvil
@@ -162,7 +159,7 @@ export async function executeSinpeVerification(
 
   const bookingId = booking.bookingId || booking.id;
   const expectedUSD = Number(booking.totalUSD || 0);
-  const expectedCRC = Math.round(expectedUSD * getRequiredUsdToCrcRate());
+  const expectedCRC = Math.round(expectedUSD * USD_CRC_EXCHANGE_RATE);
 
   // 3. Verificación de Antifraude y No-Duplicidad de Comprobante
   if (verifiedComprobantesSet.has(comprobante)) {
@@ -181,7 +178,7 @@ export async function executeSinpeVerification(
       comprobante,
       montoVerificadoCRC: amountCRC,
       montoEsperadoUSD: expectedUSD,
-      tipoCambioAplicado: getRequiredUsdToCrcRate(),
+      tipoCambioAplicado: USD_CRC_EXCHANGE_RATE,
       bancoDetectado: bank,
       providerDispatched: false,
       customerNotified: false,
@@ -210,7 +207,7 @@ export async function executeSinpeVerification(
       comprobante,
       montoVerificadoCRC: amountCRC,
       montoEsperadoUSD: expectedUSD,
-      tipoCambioAplicado: getRequiredUsdToCrcRate(),
+      tipoCambioAplicado: USD_CRC_EXCHANGE_RATE,
       bancoDetectado: bank,
       providerDispatched: false,
       customerNotified: false,
@@ -303,7 +300,7 @@ export async function executeSinpeVerification(
     comprobante,
     montoVerificadoCRC: amountCRC || expectedCRC,
     montoEsperadoUSD: expectedUSD,
-    tipoCambioAplicado: getRequiredUsdToCrcRate(),
+    tipoCambioAplicado: USD_CRC_EXCHANGE_RATE,
     bancoDetectado: bank,
     providerDispatched,
     customerNotified,

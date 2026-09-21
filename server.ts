@@ -947,7 +947,7 @@ app.post('/api/native/workflows/cleanup-holds', requireAdmin, async (req, res) =
 app.post('/api/native/workflows/conversion-report', requireAdmin, async (req, res) => {
   try {
     const metrics = await getWeeklyConversionMetrics();
-    logAutomationExecution('CRON_SEMANAL_CONVERSION', 5, 'success', `Manual: Tasa conv: ${metrics.conversionRate == null ? 'N/D' : metrics.conversionRate + '%'}, Ventas: $${metrics.totalRevenueUSD}.`);
+    logAutomationExecution('CRON_SEMANAL_CONVERSION', 5, 'success', `Manual: Tasa conv: ${metrics.conversionRate}%, Ventas: $${metrics.totalRevenueUSD}.`);
     res.json({ success: true, metrics });
   } catch (err: any) {
     logAutomationExecution('CRON_SEMANAL_CONVERSION', 5, 'error', `Fallo: ${err.message}`);
