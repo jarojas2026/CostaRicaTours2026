@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Language, Tour, BookingRequest, AgentId, AIAgent } from '../types';
+import { convertUsdToCrc } from '../utils/currency';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft,
   Bot, Send, Sparkles, Mic, MicOff, User, RefreshCw, X, MessageSquare, 
