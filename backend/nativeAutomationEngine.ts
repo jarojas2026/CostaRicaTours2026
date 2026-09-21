@@ -736,7 +736,7 @@ export async function executeReporteSemanalConversion() {
     '🇨🇷 *Costa Rica Tours — Equipo Administrativo*',
     '━━━━━━━━━━━━━━━━━━━━━━━━',
     `🗓 *Período:* ${metrics.period.start} al ${metrics.period.end} (${metrics.period.days} días)`,
-    `🎯 *Tasa de Conversión:* \`${metrics.conversionRate}%\``,
+    `🎯 *Tasa de Conversión:* \`${metrics.conversionRate == null ? 'N/D' : metrics.conversionRate + '%'}\``,
     `📦 *Volumen de Reservas:* ${metrics.totalBookings} solicitudes`,
     `   ✅ Confirmadas y Pagadas: *${metrics.confirmedBookings}*`,
     `   ⏳ En Espera de Pago: *${metrics.pendingBookings}*`,
@@ -757,7 +757,7 @@ export async function executeReporteSemanalConversion() {
     'REPORTE_SEMANAL_CONVERSION',
     duration,
     'success',
-    `Reporte semanal generado: ${metrics.totalBookings} reservas, ${metrics.conversionRate}% conversión`
+    `Reporte semanal generado: ${metrics.totalBookings} reservas, ${metrics.conversionRate == null ? 'N/D' : metrics.conversionRate + '%'} conversión`
   );
 
   return {
