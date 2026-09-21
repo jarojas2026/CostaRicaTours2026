@@ -1,14 +1,14 @@
 /**
  * ⚡ API MANAGER - Costa Rica Tours
- * Gestor centralizado para comunicaciones con n8n y microservicios externos.
+ * Gestor centralizado para comunicaciones con APIs propias y servicios autorizados.
  * 
  * ESPECIFICACIONES DE ARQUITECTURA:
  * 1. Configuración Centralizada: URLs base, endpoints, secretos, timeouts y cabeceras por defecto.
  * 2. Cliente Fetch Unificado: Reintentos exponenciales (backoff), control de timeout por AbortController.
- * 3. Soporte para Firmas Criptográficas HMAC (SHA-256): Autenticación robusta de payloads salientes para n8n.
+ * 3. Soporte para Firmas Criptográficas HMAC (SHA-256): Autenticación robusta de payloads salientes.
  * 4. Estructura de Respuesta Estandarizada: Respuestas normalizadas { exito, datos, error, timestamp, metadatos }.
  * 5. Cola de Contingencia Offline: Reintento automático en reconexión vía localStorage.
- * 6. Triggers de n8n: Wrappers tipados y estructurados para cada evento del flujo de automatización.
+ * 6. Automatización: wrappers tipados y estructurados para operaciones del flujo nativo.
  */
 
 // ============================================================================
