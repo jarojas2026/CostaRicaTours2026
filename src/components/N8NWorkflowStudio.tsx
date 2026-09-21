@@ -38,8 +38,8 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
     loading: boolean;
     pingResult?: { connected: boolean; status?: number; latencyMs?: number; details?: any };
   }>({
-    configured: true,
-    baseUrl: 'https://costaricatours2026.app.n8n.cloud',
+    configured: false,
+    baseUrl: '',
     loading: false
   });
 
@@ -86,7 +86,7 @@ export const N8NWorkflowStudio: React.FC<N8NWorkflowStudioProps> = ({ language }
         setConnectionStatus((prev) => ({
           ...prev,
           configured: data.configured,
-          baseUrl: data.baseUrl || 'https://costaricatours2026.app.n8n.cloud',
+          baseUrl: data.baseUrl || '',
           loading: false
         }));
       } else {
