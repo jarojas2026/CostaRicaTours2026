@@ -1,5 +1,6 @@
 import React from 'react';
 import { Tour, Language, Currency } from '../types';
+import { formatUsdToCrc } from '../utils/currency';
 import { getLangText } from '../utils/i18n';
 import { getUsdToCrcRate, formatCrc } from '../utils/currencies';
 import { X, Scale, Star, Leaf, Clock, MapPin, Check, ExternalLink, ArrowRight } from 'lucide-react';
