@@ -28,42 +28,7 @@ const getEnvironment = () => {
 export const ENV = getEnvironment();
 
 export const API_CONFIG = {
-  // Configuración de conexión nativa en código (reemplaza proxies externos)
-  n8n: {
-    baseUrl: 
-      (typeof import.meta !== 'undefined' && (import.meta.env?.VITE_N8N_BASE_URL || import.meta.env?.VITE_N8N_WEBHOOK_URL)) ||
-      (typeof process !== 'undefined' && (process.env?.N8N_BASE_URL || process.env?.VITE_N8N_WEBHOOK_URL)) ||
-      '',
-    webhookSecret: 
-      (typeof import.meta !== 'undefined' && import.meta.env?.VITE_N8N_WEBHOOK_SECRET) ||
-      (typeof process !== 'undefined' && process.env?.N8N_WEBHOOK_SECRET) ||
-      '',
-    apiKey: 
-      (typeof import.meta !== 'undefined' && import.meta.env?.VITE_N8N_API_KEY) ||
-      (typeof process !== 'undefined' && process.env?.N8N_API_KEY) ||
-      '',
-    hmacSecret: 
-      (typeof import.meta !== 'undefined' && (import.meta.env?.VITE_N8N_HMAC_SECRET || import.meta.env?.VITE_N8N_WEBHOOK_SECRET)) ||
-      (typeof process !== 'undefined' && (process.env?.N8N_HMAC_SECRET || process.env?.N8N_WEBHOOK_SECRET)) ||
-      '',
-    timeoutMs: 10000,
-    maxRetries: 3,
-    backoffMs: 350
-  },
-
-  // Catálogo de endpoints de webhooks n8n
-  endpoints: {
-    chatConsulta: '/webhook/chat-consulta',
-    inicioReserva: '/webhook/inicio-reserva',
-    solicitudPago: '/webhook/solicitud-pago',
-    confirmacionReserva: '/webhook/confirmacion-reserva',
-    solicitudItinerario: '/webhook/solicitud-itinerario',
-    eventoAnalitica: '/webhook/evento-analitica',
-    solicitudSoporte: '/webhook/solicitud-soporte',
-    actualizarReserva: '/api/webhooks/n8n/update-booking',
-    accionReserva: '/api/webhooks/n8n/booking-action',
-    verificarPago: '/webhook/verificar-pago-reserva'
-  },
+  http: { timeoutMs: 10000, maxRetries: 3, backoffMs: 350 },
 
   // Pasarelas de pago y servicios auxiliares
   pagos: {
@@ -75,6 +40,8 @@ export const API_CONFIG = {
     }
   }
 };
+
+
 
 // ============================================================================
 // 2. UTILIDADES DE SEGURIDAD Y FIRMA HMAC (SHA-256)
@@ -199,9 +166,9 @@ export const api = {
    * @param {number} [attempt] 
    * @returns {Promise<Response>}
    */
-  async fetchWithRetry(url, options = {}, retries = API_CONFIG.n8n.maxRetries, backoff = API_CONFIG.n8n.backoffMs, attempt = 1) {
+  async fetchWithRetry(url, options = {}, retries = API_CONFIG.http.maxRetries, backoff = API_CONFIG.http.backoffMs, attempt = 1) {
     const controller = new AbortController();
-    const timeout = options.timeout || API_CONFIG.n8n.timeoutMs;
+    const timeout = options.timeout || API_CONFIG.http.timeoutMs;
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     const mergedOptions = {
@@ -254,7 +221,7 @@ export const api = {
     if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
       url = endpoint;
     } else {
-      const cleanBase = (API_CONFIG.n8n.baseUrl || '').replace(/\/+$/, '');
+      const cleanBase = (API_CONFIG.http.baseUrl || '').replace(/\/+$/, '');
       const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
       url = `${cleanBase}${cleanEndpoint}`;
     }
@@ -262,20 +229,16 @@ export const api = {
     // 2. Preparar cabeceras base
     const headers = {
       'Content-Type': 'application/json',
-      'X-Webhook-Secret': API_CONFIG.n8n.webhookSecret,
+      'X-Webhook-Secret': API_CONFIG.http.webhookSecret,
       'X-Timestamp': timestamp,
       'X-Client-Version': 'CostaRicaTours-API/2.0',
       ...customHeaders
     };
 
-    if (API_CONFIG.n8n.apiKey) {
-      headers['Authorization'] = `Bearer ${API_CONFIG.n8n.apiKey}`;
-    }
-
-    // 3. Soporte de Firma Criptográfica HMAC (SHA-256)
+        // 3. Soporte de Firma Criptográfica HMAC (SHA-256)
     const shouldSign = options.signWithHMAC !== false && (method === 'POST' || method === 'PUT' || method === 'PATCH');
     if (shouldSign && data) {
-      const hmacSecret = options.hmacSecret || API_CONFIG.n8n.hmacSecret;
+      const hmacSecret = options.hmacSecret || API_CONFIG.http.hmacSecret;
       const signature = await generateHMACSignature(data, hmacSecret, timestamp);
       if (signature) {
         headers['X-HMAC-Signature'] = signature;
@@ -287,7 +250,7 @@ export const api = {
     const fetchOptions = {
       method,
       headers,
-      timeout: options.timeout || API_CONFIG.n8n.timeoutMs,
+      timeout: options.timeout || API_CONFIG.http.timeoutMs,
       ...(data !== null && data !== undefined ? { body: JSON.stringify(data) } : {})
     };
 
@@ -299,8 +262,8 @@ export const api = {
       const response = await this.fetchWithRetry(
         url,
         fetchOptions,
-        options.retries ?? API_CONFIG.n8n.maxRetries,
-        options.backoff ?? API_CONFIG.n8n.backoffMs
+        options.retries ?? API_CONFIG.http.maxRetries,
+        options.backoff ?? API_CONFIG.http.backoffMs
       );
 
       const durationMs = Date.now() - startTime;
@@ -372,51 +335,6 @@ export const api = {
   // ==========================================================================
   // CONFIGURACIÓN DINÁMICA DE ENTORNO (DEV / PROD)
   // ==========================================================================
-  getEnvironment() {
-    return API_CONFIG.n8n.activeEnv || ENV;
-  },
-
-  setEnvironment(env) {
-    const isProd = env === 'production' || env === 'prod';
-    API_CONFIG.n8n.activeEnv = isProd ? 'production' : 'development';
-    
-    // Si no se proporcionó una URL específica por variable de entorno, ajusta el baseURL
-    if (isProd) {
-      API_CONFIG.n8n.baseUrl = 
-        (typeof import.meta !== 'undefined' && import.meta.env?.VITE_N8N_BASE_URL) ||
-        'https://costaricatours.app.n8n.cloud';
-    } else {
-      API_CONFIG.n8n.baseUrl = 
-        (typeof import.meta !== 'undefined' && (import.meta.env?.VITE_N8N_DEV_URL || import.meta.env?.VITE_N8N_WEBHOOK_URL)) ||
-        'https://costaricatours.app.n8n.cloud';
-    }
-    console.log(`[API Manager] 🌐 Entorno establecido a "${API_CONFIG.n8n.activeEnv}": ${API_CONFIG.n8n.baseUrl}`);
-    return API_CONFIG.n8n.activeEnv;
-  },
-
-  setBaseUrl(url) {
-    if (typeof url === 'string' && url.trim()) {
-      API_CONFIG.n8n.baseUrl = url.trim().replace(/\/+$/, '');
-      console.log(`[API Manager] 🔗 URL Base de n8n actualizada a: ${API_CONFIG.n8n.baseUrl}`);
-    }
-  },
-
-  setSecrets({ webhookSecret, hmacSecret, apiKey } = {}) {
-    if (webhookSecret !== undefined) API_CONFIG.n8n.webhookSecret = webhookSecret;
-    if (hmacSecret !== undefined) API_CONFIG.n8n.hmacSecret = hmacSecret;
-    if (apiKey !== undefined) API_CONFIG.n8n.apiKey = apiKey;
-  },
-
-  async checkHealth() {
-    try {
-      const pingUrl = `${API_CONFIG.n8n.baseUrl.replace(/\/+$/, '')}/healthz`;
-      const res = await this.fetchWithRetry(pingUrl, { method: 'GET', timeout: 4000 }, 1, 200);
-      return { ok: res.ok, status: res.status, url: pingUrl };
-    } catch (err) {
-      return { ok: false, error: err.message, baseUrl: API_CONFIG.n8n.baseUrl };
-    }
-  },
-
   // ==========================================================================
   // 5. GESTIÓN DE COLA DE CONTINGENCIA OFFLINE
   // ==========================================================================
@@ -479,164 +397,3 @@ export const api = {
   }
 };
 
-// ============================================================================
-// 6. TRIGGERS DE N8N Y MÉTODOS DE INTEGRACIÓN DE NEGOCIO
-// ============================================================================
-
-export const n8nTriggers = {
-  /**
-   * 1. TRIGGER: CONSULTA_CHAT_IA
-   * Despacha una consulta de chat al flujo de IA en n8n
-   */
-  enviarConsultaChat: async (idUsuario, mensaje, agenteSeleccionado, idioma = 'es', contexto = {}) => {
-    const payload = {
-      trigger: 'CONSULTA_CHAT_IA',
-      idUsuario,
-      mensaje,
-      message: mensaje,
-      agenteSeleccionado,
-      idioma,
-      language: idioma,
-      timestamp: new Date().toISOString(),
-      ...(contexto ? { contexto, context: contexto } : {})
-    };
-    return api.post(API_CONFIG.endpoints.chatConsulta, payload);
-  },
-
-  /**
-   * 2. TRIGGER: INICIO_RESERVA
-   * Notifica cuando un cliente abre el modal o inicia la selección de cupos
-   */
-  iniciarReserva: async (idTour, nombreTour, precio, fechaSeleccionada, cantidadPersonas, cliente = {}) => {
-    const payload = {
-      trigger: 'INICIO_RESERVA',
-      idTour,
-      tourId: idTour,
-      nombreTour,
-      tourName: nombreTour,
-      precio,
-      totalUSD: precio,
-      fechaSeleccionada,
-      date: fechaSeleccionada,
-      cantidadPersonas,
-      cliente,
-      timestamp: new Date().toISOString()
-    };
-    return api.post(API_CONFIG.endpoints.inicioReserva, payload);
-  },
-
-  /**
-   * 3. TRIGGER: SOLICITUD_PAGO
-   * Se dispara cuando el cliente selecciona una pasarela (Stripe, PayPal, Sinpe)
-   */
-  solicitarPago: async (idReserva, datosCliente, monto, moneda = 'USD', metodoPago = 'credit_card', email = '', telefono = '') => {
-    const payload = {
-      trigger: 'SOLICITUD_PAGO',
-      idReserva,
-      bookingId: idReserva,
-      datosCliente,
-      customer: datosCliente,
-      monto,
-      amount: monto,
-      moneda,
-      currency: moneda,
-      metodoPago,
-      paymentMethod: metodoPago,
-      email,
-      telefono,
-      timestamp: new Date().toISOString()
-    };
-    return api.post(API_CONFIG.endpoints.solicitudPago, payload);
-  },
-
-  /**
-   * 4. TRIGGER: CONFIRMACION_RESERVA
-   * Se ejecuta al verificarse el pago exitoso en el backend
-   */
-  confirmarReserva: async (idReserva, referenciaPago, datosCliente, detallesTour, voucherQR = '') => {
-    const payload = {
-      trigger: 'CONFIRMACION_RESERVA',
-      event: 'booking.confirmed',
-      idReserva,
-      bookingId: idReserva,
-      referenciaPago,
-      paymentReference: referenciaPago,
-      datosCliente,
-      customer: datosCliente,
-      detallesTour,
-      tourDetails: detallesTour,
-      voucherQR,
-      timestamp: new Date().toISOString()
-    };
-    return api.post(API_CONFIG.endpoints.confirmacionReserva, payload);
-  },
-
-  /**
-   * 5. TRIGGER: SOLICITUD_ITINERARIO
-   * Envía las preferencias del cliente para que n8n arme una propuesta a medida
-   */
-  solicitarItinerario: async (preferencias, presupuesto, fechas, cantidadPersonas, intereses = []) => {
-    const payload = {
-      trigger: 'SOLICITUD_ITINERARIO',
-      preferencias,
-      presupuesto,
-      budget: presupuesto,
-      fechas,
-      dates: fechas,
-      cantidadPersonas,
-      passengers: cantidadPersonas,
-      intereses,
-      interests: intereses,
-      timestamp: new Date().toISOString()
-    };
-    return api.post(API_CONFIG.endpoints.solicitudItinerario, payload);
-  },
-
-  /**
-   * 6. TRIGGER: EVENTO_ANALITICA
-   * Registra eventos de telemetría y conversión sin bloquear la interfaz
-   */
-  registrarEvento: async (tipoEvento, datos = {}, pagina = '') => {
-    const payload = {
-      trigger: 'EVENTO_ANALITICA',
-      tipoEvento,
-      eventType: tipoEvento,
-      datos,
-      pagina: pagina || (typeof window !== 'undefined' ? window.location.pathname : ''),
-      timestamp: new Date().toISOString(),
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Node/SSR'
-    };
-    api.post(API_CONFIG.endpoints.eventoAnalitica, payload, {}, { skipQueue: true }).catch(() => {});
-  },
-
-  /**
-   * 7. TRIGGER: SOLICITUD_SOPORTE
-   * Conecta clientes con operadores humanos y crea tickets en n8n
-   */
-  solicitarSoporte: async (nombre, email, telefono, asunto, mensaje, historialChat = []) => {
-    const payload = {
-      trigger: 'SOLICITUD_SOPORTE',
-      nombre,
-      name: nombre,
-      email,
-      telefono,
-      phone: telefono,
-      asunto,
-      subject: asunto,
-      mensaje,
-      message: mensaje,
-      historialChat,
-      timestamp: new Date().toISOString()
-    };
-    return api.post(API_CONFIG.endpoints.solicitudSoporte, payload);
-  }
-};
-
-// Auto-procesamiento de cola si se restablece la conexión
-if (typeof window !== 'undefined') {
-  window.addEventListener('online', () => {
-    api.processQueue();
-  });
-}
-
-export default api;
