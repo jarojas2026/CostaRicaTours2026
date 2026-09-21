@@ -285,7 +285,7 @@ export async function sendWhatsAppMessage(
   console.log(`📱 [WHATSAPP DISPATCH] Mensaje oficial preparado para: +${cleanPhone} (${payload.customerName})`);
   console.log(`   Enlace Directo: ${clickToChatUrl}`);
 
-  // Soporte para Gateway HTTP genérico de WhatsApp (Evolution API, Z-API, n8n, UltraMsg, etc.)
+  // Soporte para Gateway HTTP genérico de WhatsApp (Evolution API, Z-API, automatización nativa, UltraMsg, etc.)
   if (process.env.WHATSAPP_WEBHOOK_URL) {
     try {
       const resp = await fetch(process.env.WHATSAPP_WEBHOOK_URL, {

@@ -2043,7 +2043,7 @@ export async function executePostSaleVipLoyalty(): Promise<{
 }
 
 // =========================================================================
-// 12. MANEJADOR GLOBAL DE ERRORES Y RESILIENCIA NATIVA (Sustituto n8n Error Handler)
+// 12. MANEJADOR GLOBAL DE ERRORES Y RESILIENCIA NATIVA (Sustituto automatización nativa Error Handler)
 // =========================================================================
 export async function handleGlobalWorkflowError(params: {
   workflowName: string;

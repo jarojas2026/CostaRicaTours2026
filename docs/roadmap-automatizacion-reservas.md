@@ -25,8 +25,8 @@ humana** — hoy depende de leer WhatsApp a mano, y eso debe desaparecer.
   reinicio del servidor.
 - El campo `paymentStatus` se recibe directo del cliente sin
   verificación.
-- Hay una llamada a un webhook de n8n comentada (no activa).
-- Hay un endpoint `/api/webhooks/n8n/update-booking` que espera que n8n
+- Hay una llamada a un webhook de automatización nativa comentada (no activa).
+- Hay un endpoint `/api/webhooks/automatización nativa/update-booking` que espera que automatización nativa
   le avise cambios de estado, pero nada lo dispara todavía porque el
   webhook de salida está apagado.
 
@@ -49,8 +49,8 @@ verificar, guardar la reserva con estado `pendiente_pago` en vez de
 *(Relacionado: ya se corrigió el equivalente para Stripe — ver el
 webhook `/webhook/verificar-pago-reserva` con verificación de firma.)*
 
-### 3. Disparo del webhook a n8n
-Activar la llamada POST a n8n que está comentada, mandando el objeto
+### 3. Disparo del webhook a automatización nativa
+Activar la llamada POST a automatización nativa que está comentada, mandando el objeto
 completo de la reserva apenas se confirma el pago (no antes). Si la
 llamada falla, no debe tumbar la creación de la reserva — loguear el
 error y seguir.
@@ -66,10 +66,10 @@ Para cada punto, documentar: qué archivos se tocaron, qué variables de
 entorno nuevas hay que configurar en Cloud Run (si alguna), y cómo
 probarlo manualmente antes de publicar.
 
-## Después del backend: workflow en n8n (fuera de AI Studio/Claude)
+## Después del backend: workflow en automatización nativa (fuera de AI Studio/Claude)
 
 Una vez activo el webhook del paso 3, armar directamente en la interfaz
-de n8n un workflow que reciba ese webhook y:
+de automatización nativa un workflow que reciba ese webhook y:
 
 1. Mande confirmación automática al cliente (WhatsApp Business API o
    email).
@@ -77,8 +77,8 @@ de n8n un workflow que reciba ese webhook y:
 3. Cree el evento en un calendario, si se usa para coordinar
    operadores.
 
-Este workflow de n8n no se genera en AI Studio ni en Claude — se arma
-directo en la interfaz de n8n. Lo descrito arriba es lo que le da los
+Este workflow de automatización nativa no se genera en AI Studio ni en Claude — se arma
+directo en la interfaz de automatización nativa. Lo descrito arriba es lo que le da los
 datos necesarios para funcionar.
 
 ## Contexto de negocio

@@ -1744,7 +1744,7 @@ export async function runProcessor(rawMessage: string, intent: string, extracted
     return {
       draftResponse:
         '¡Pura Vida! Con gusto te asistimos con información de nuestras excursiones oficiales en Costa Rica. ¿En qué fecha planeas visitarnos?',
-      databaseActions: ['Registrar contacto en CRM', 'Crear lead prospecto en n8n'],
+      databaseActions: ['Registrar contacto en CRM', 'Crear lead prospecto en automatización nativa'],
       priority: 'medium'
     };
   }
@@ -1850,7 +1850,7 @@ REGLA DE NORMALIZACIÓN HORARIA TICA:
     exito: true,
     auditedCount: analysis.totalExceptionsAudited,
     status: 'parches_aplicados_self_healing',
-    summary: 'Diagnóstico completado: Se generaron 2 parches de normalización léxica para operadores locales en n8n y en el Enjambre IA.',
+    summary: 'Diagnóstico completado: Se generaron 2 parches de normalización léxica para operadores locales en automatización nativa y en el Enjambre IA.',
     analysis,
     suggestedFixPrompt,
     hotfixDeployed: true,

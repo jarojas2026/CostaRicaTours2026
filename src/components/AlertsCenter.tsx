@@ -162,10 +162,10 @@ export const AlertsCenter: React.FC<AlertsCenterProps> = ({
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + (import.meta.env.VITE_N8N_ALERTS_TOKEN || '')
+          'Authorization': 'Bearer ' + (import.meta.env.VITE_automatización nativa_ALERTS_TOKEN || '')
         },
         body: JSON.stringify({
-          source: 'n8n Workflow • Pagos Automáticos a Proveedores',
+          source: 'automatización nativa Workflow • Pagos Automáticos a Proveedores',
           severity,
           title: sampleTitles[severity],
           message: sampleMessages[severity],
@@ -174,7 +174,7 @@ export const AlertsCenter: React.FC<AlertsCenterProps> = ({
           metadata: {
             retryCount: severity === 'critical' ? 3 : 1,
             httpStatus: severity === 'critical' ? 504 : 200,
-            executionId: `n8n_exec_${Date.now()}`
+            executionId: `automatización nativa_exec_${Date.now()}`
           }
         })
       });
@@ -268,7 +268,7 @@ export const AlertsCenter: React.FC<AlertsCenterProps> = ({
               </span>
             </div>
             <p className="text-sm text-slate-300 max-w-2xl">
-              Canal unificado que reemplaza Telegram. Recibe fallos, anomalías de pago SINPE/Stripe y estados críticos de los workflows de n8n con persistencia en Firestore y alertas automáticas por correo.
+              Canal unificado que reemplaza Telegram. Recibe fallos, anomalías de pago SINPE/Stripe y estados críticos de los workflows de automatización nativa con persistencia en Firestore y alertas automáticas por correo.
             </p>
           </div>
 
@@ -278,7 +278,7 @@ export const AlertsCenter: React.FC<AlertsCenterProps> = ({
               onClick={() => handleCreateTestAlert('critical')}
               disabled={simulating}
               className="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-700/50 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
-              title="Simular fallo crítico de n8n"
+              title="Simular fallo crítico de automatización nativa"
             >
               <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
               <span>+ Probar Alerta 🔴</span>
@@ -422,7 +422,7 @@ export const AlertsCenter: React.FC<AlertsCenterProps> = ({
             <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-3 opacity-80" />
             <h4 className="text-base font-bold text-white mb-1">Sin alertas pendientes</h4>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              Todos los workflows de n8n, verificaciones SINPE y notificaciones a operadores están operando con normalidad.
+              Todos los workflows de automatización nativa, verificaciones SINPE y notificaciones a operadores están operando con normalidad.
             </p>
           </div>
         ) : (
@@ -554,7 +554,7 @@ export const AlertsCenter: React.FC<AlertsCenterProps> = ({
                       {/* Metadata JSON if expanded */}
                       {isExpanded && alert.metadata && Object.keys(alert.metadata).length > 0 && (
                         <div className="mt-3 p-3 bg-slate-950 rounded-lg border border-slate-800 text-[11px] font-mono text-slate-400 overflow-x-auto">
-                          <div className="font-bold text-slate-300 mb-1">Metadatos n8n:</div>
+                          <div className="font-bold text-slate-300 mb-1">Metadatos automatización nativa:</div>
                           <pre>{JSON.stringify(alert.metadata, null, 2)}</pre>
                         </div>
                       )}

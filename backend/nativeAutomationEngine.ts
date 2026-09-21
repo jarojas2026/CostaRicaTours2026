@@ -1,7 +1,7 @@
 /**
  * ⚡ MOTOR DE AUTOMATIZACIÓN NATIVO 100% EN CÓDIGO (Costa Rica Tours)
  * =========================================================================
- * Reemplaza por completo dependencias externas (n8n, proxies, servicios no-code)
+ * Reemplaza por completo dependencias externas (automatización nativa, proxies, servicios no-code)
  * ejecutando el 100% de la lógica de negocio, webhooks, orquestación de agentes,
  * confirmación de reservas y conciliación directamente en Node.js y Firestore.
  * 

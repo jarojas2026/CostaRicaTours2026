@@ -295,7 +295,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                   }`}
                 >
                   <Code className="w-4 h-4" />
-                  <span>{isEs ? 'Integración & N8N' : 'Embed & API'}</span>
+                  <span>{isEs ? 'Integración & automatización nativa' : 'Embed & API'}</span>
                 </button>
               </div>
 
@@ -485,7 +485,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                 </div>
               )}
 
-              {/* Tab 3: Embed Widget & N8N Webhook Integration */}
+              {/* Tab 3: Embed Widget & automatización nativa Webhook Integration */}
               {activeTab === 'embed' && (
                 <div className="p-5 sm:p-6 overflow-y-auto modal-scrollable space-y-6 flex-1 text-xs sm:text-sm">
                   <div className="space-y-3">
@@ -511,16 +511,16 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                     </div>
                   </div>
 
-                  {/* N8N & Netlify Deployment Guide */}
+                  {/* automatización nativa & Netlify Deployment Guide */}
                   <div className="bg-[#041910] p-4 rounded-2xl border border-emerald-500/30 space-y-3">
                     <h4 className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-2">
                       <Layers className="w-4 h-4" />
-                      <span>{isEs ? 'Automatizaciones N8N & Webhooks Activos' : 'N8N Automations & Webhooks'}</span>
+                      <span>{isEs ? 'Automatizaciones automatización nativa & Webhooks Activos' : 'automatización nativa Automations & Webhooks'}</span>
                     </h4>
                     <ul className="space-y-2 text-xs text-stone-300">
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                        <span><strong>Instancia n8n:</strong> <code className="text-amber-300">costaricatours2026.app.n8n.cloud</code></span>
+                        <span><strong>Instancia automatización nativa:</strong> <code className="text-amber-300">costaricatours2026.app.automatización nativa.cloud</code></span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
