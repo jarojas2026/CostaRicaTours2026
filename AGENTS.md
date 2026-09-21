@@ -31,15 +31,11 @@ Este archivo define las convenciones arquitectónicas, reglas de diseño y direc
 
 ---
 
-## 4. Automatización con n8n y Base de Datos (Firestore)
-* **Instancia n8n**: `costaricatours2026.app.n8n.cloud`.
-* **Flujos de Trabajo**: Mantener la compatibilidad con los 12 workflows documentados en `workflow-status.md` (pagos a operadores, confirmación de reservas, evaluación antifraude, notificaciones multicanal).
-* **Cabeceras de Webhook**: Toda petición hacia endpoints de webhook debe incluir la cabecera de autenticación `X-Webhook-Secret`.
-* **Reglas de Firestore (`firestore.rules`)**:
-  * Conservar el modelo *Default Deny* (`allow read, write: if false;`).
-  * Toda creación o actualización de reserva debe validar el usuario autenticado (`request.auth.uid`) y pasar la validación estricta de esquema y campos.
-
----
+## 4. Automatización nativa con IA y Base de Datos (Firestore)
+* **Motor nativo**: la automatización operativa se ejecuta dentro del backend con TypeScript/Node.js, Firestore y los agentes IA.
+* **Agentes IA**: `aiAssistantService`, `agentTools`, `agentKnowledgeFabric` y `nativeAutomationEngine` coordinan razonamiento, herramientas y acciones verificables.
+* **Eventos y tareas**: los procesos se disparan mediante endpoints, eventos y tareas nativas; no dependen de orquestadores externos.
+* **Seguridad**: conservar el modelo Default Deny de Firestore y autenticación/autorización interna para operaciones con efectos persistentes.
 
 ## 5. Calidad Visual y Estándares "Anti-Slop"
 * **Paleta Natural de Costa Rica**: Tonos esmeralda oscuros (`#041711`, `#051c14`), acentos ámbar/dorado (`#f59e0b`), y toques turquesa/coral para badges de estado.
