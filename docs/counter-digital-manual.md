@@ -1,6 +1,6 @@
 # 🛎️ MANUAL MAESTRO: COUNTER DIGITAL & COUNTER AGENT (COSTA RICA TOURS 2026)
 
-Este documento contiene la arquitectura, instrucciones de sistema, esquemas de automatización en N8N, integraciones en Netlify/GitHub y casos de prueba para el Mostrador Digital y la Agente Inteligente **Sofía (Counter Agent CR)**.
+Este documento contiene la arquitectura, instrucciones de sistema, esquemas de automatización en automatización nativa, integraciones en Netlify/GitHub y casos de prueba para el Mostrador Digital y la Agente Inteligente **Sofía (Counter Agent CR)**.
 
 ---
 
