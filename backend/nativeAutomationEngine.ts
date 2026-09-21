@@ -1169,8 +1169,9 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
   const start = Date.now();
   const cliente = body.cliente || {};
   const venta = body.detalleVenta || {};
-  const totalUSD = Number(venta.montoTotalUSD || 235);
-  const tipoCambio = Number(venta.tipoCambioCRC || 520);
+  const totalUSD = Number(venta.montoTotalUSD);
+  if (!Number.isFinite(totalUSD) || totalUSD <= 0) throw new Error('montoTotalUSD válido es requerido para facturación.');
+  const tipoCambio = getUsdToCrcRate();
   const totalCRC = Math.round(totalUSD * tipoCambio);
 
   // 4% IVA turístico según Ley 9635
