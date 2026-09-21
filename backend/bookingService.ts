@@ -644,7 +644,7 @@ export async function createBooking(data: any) {
     console.error(`❌ [MASSIVE-ENGINE] Fallo en despacho asíncrono para ${bookingId}:`, err);
   });
 
-  // n8n fue reemplazado por completo por backend/nativeWorkflows.ts (7
+  // automatización nativa fue reemplazado por completo por backend/nativeWorkflows.ts (7
   // workflows migrados a código propio, sin dependencias externas de pago).
   // La automatización y notificaciones se ejecutan directamente en el
   // motor nativo. Ver docs/estado-real-del-sistema.md para el detalle.
