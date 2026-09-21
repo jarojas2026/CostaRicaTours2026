@@ -7,7 +7,7 @@ Este documento contiene la arquitectura, instrucciones de sistema, esquemas de a
 ## 1. Arquitectura del Sistema
 El sistema opera en dos componentes simbióticos:
 - **Counter Agent (Sofía)**: Agente cognitivo con más de 15 años de conocimiento implícito en turismo costarricense, conectado a Gemini 2.5 Flash / Gemini Pro y validación atómica en Firestore.
-- **Counter Digital**: Widget y plataforma de atención 24/7 con soporte para chat en vivo, cotizaciones instantáneas en USD y colones (₡515), captura de reservas y emisión de voucher QR.
+- **Counter Digital**: Widget y plataforma de atención 24/7 con soporte para chat en vivo, cotizaciones instantáneas en USD y colones (CRC según `USD_TO_CRC_RATE` configurado), captura de reservas y emisión de voucher QR.
 
 ---
 

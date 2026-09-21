@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { convertUsdToCrc } from '../utils/currency';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 

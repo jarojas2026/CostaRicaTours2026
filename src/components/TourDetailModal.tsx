@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { convertUsdToCrc } from '../utils/currency';
 import { 
   Star, Clock, MapPin, CheckCircle2, ShieldCheck, Calendar, Users, Hotel, 
   ChevronRight, ChevronLeft, X, AlertCircle, CreditCard, Smartphone, Banknote, 

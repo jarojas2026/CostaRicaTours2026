@@ -32,8 +32,9 @@ Este archivo define las convenciones arquitectónicas, reglas de diseño y direc
 ---
 
 ## 4. Automatización con n8n y Base de Datos (Firestore)
-* **Instancia n8n**: `costaricatours2026.app.n8n.cloud`.
-* **Flujos de Trabajo**: Mantener la compatibilidad con los 12 workflows documentados en `workflow-status.md` (pagos a operadores, confirmación de reservas, evaluación antifraude, notificaciones multicanal).
+* **n8n**: integración secundaria/opcional. El motor nativo es la fuente primaria para reservas, disponibilidad, pagos y operaciones críticas.
+* **Instancia n8n**: se configura exclusivamente mediante `N8N_BASE_URL`/secretos del entorno; no se debe asumir una URL fija en código o UI.
+* **Flujos de Trabajo**: mantener compatibilidad con los workflows documentados en `workflow-status.md` cuando n8n esté habilitado.
 * **Cabeceras de Webhook**: Toda petición hacia endpoints de webhook debe incluir la cabecera de autenticación `X-Webhook-Secret`.
 * **Reglas de Firestore (`firestore.rules`)**:
   * Conservar el modelo *Default Deny* (`allow read, write: if false;`).
