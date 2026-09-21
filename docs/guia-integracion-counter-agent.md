@@ -1,7 +1,7 @@
 # 🛎️ Guía de Integración y Operación Oficial • Counter Agent & Mostrador Turístico Digital
 ### Tours Costa Rica (costaricatours.es) — Versión 2026 Ultra Full-Stack
 
-Esta guía proporciona el manual definitivo de arquitectura, código de integración web, despliegue continuo (Netlify / GitHub), mantenimiento de la base de conocimientos y orquestación con n8n para **Sofía (Counter Agent)**, la experta en reservas y servicio al cliente de Tours Costa Rica.
+Esta guía proporciona el manual definitivo de arquitectura, código de integración web, despliegue continuo (Netlify / GitHub), mantenimiento de la base de conocimientos y orquestación con automatización nativa para **Sofía (Counter Agent)**, la experta en reservas y servicio al cliente de Tours Costa Rica.
 
 ---
 
@@ -59,8 +59,8 @@ Asegúrate de que el repositorio en GitHub contenga:
 En el panel de Netlify (`Site configuration > Environment variables`):
 - `GEMINI_API_KEY`: Tu clave de Google AI Studio / Gemini API.
 - `VITE_FIREBASE_PROJECT_ID`: ID del proyecto en Firebase.
-- `VITE_N8N_WEBHOOK_BASE_URL`: URL base de la instancia n8n (`https://costaricatours2026.app.n8n.cloud`).
-- `VITE_N8N_WEBHOOK_SECRET`: Secreto compartido para autenticar los webhooks (`X-Webhook-Secret`).
+- `VITE_automatización nativa_WEBHOOK_BASE_URL`: URL base de la instancia automatización nativa (`https://costaricatours2026.app.automatización nativa.cloud`).
+- `VITE_automatización nativa_WEBHOOK_SECRET`: Secreto compartido para autenticar los webhooks (`X-Webhook-Secret`).
 
 ### Paso 2.3 — Despliegue Automático (CI/CD)
 Cada commit a la rama principal (`main` o `master`) en GitHub disparará automáticamente el build en Netlify:
@@ -108,9 +108,9 @@ El agente comunica y hace cumplir las siguientes condiciones comerciales:
 
 ---
 
-## 4. Configuración de n8n para Automatizaciones de Reservas y Notificaciones
+## 4. Configuración de automatización nativa para Automatizaciones de Reservas y Notificaciones
 
-Instancia de producción: `https://costaricatours2026.app.n8n.cloud`
+Instancia de producción: `https://costaricatours2026.app.automatización nativa.cloud`
 
 ### Flujo A: Creación y Confirmación de Reserva (`/webhook/crear-reserva`)
 1. **Trigger de Entrada (Webhook Node)**:
