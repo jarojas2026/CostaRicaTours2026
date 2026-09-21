@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { convertUsdToCrc } from '../utils/currency';
 import { CreditCard, Smartphone, CheckCircle, X, ShieldCheck, DollarSign, Clock, Calendar, Phone } from 'lucide-react';
 import { getUsdToCrcRate } from '../utils/currencies';
 
