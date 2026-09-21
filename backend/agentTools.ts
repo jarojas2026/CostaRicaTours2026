@@ -229,4 +229,39 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
       }
     }
   }
+,
+  {
+    name: 'plan_itinerary',
+    description: 'Draft a day-by-day itinerary outline from the authoritative Costa Rica tour catalog.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        days: { type: 'NUMBER', description: 'Number of days, 1-14' },
+        interests: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Preferred activity categories' },
+        regions: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Preferred Costa Rica regions' }
+      },
+      required: ['days']
+    }
+  },
+  {
+    name: 'season_advice',
+    description: 'Provide non-guaranteed seasonal guidance for a month in Costa Rica.',
+    parameters: {
+      type: 'OBJECT',
+      properties: { month: { type: 'NUMBER', description: 'Month number 1-12' } },
+      required: ['month']
+    }
+  },
+  {
+    name: 'recall_memory',
+    description: 'Retrieve relevant verified operational memory for the current session.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        sessionId: { type: 'STRING', description: 'Current session identifier' },
+        query: { type: 'STRING', description: 'What context to retrieve' }
+      },
+      required: ['sessionId']
+    }
+  }
 ];
