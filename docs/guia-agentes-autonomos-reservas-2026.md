@@ -219,7 +219,7 @@ Crea el registro oficial en la base de datos, bloquea el cupo, agenda el evento 
    * El cliente llama a la línea de atención de Costa Rica Tours (+506).
    * El servicio Speech-to-Text convierte la voz a texto y la transfiere al agente en Google AI Studio.
    * Gemini procesa mediante ReAct y sintetiza la respuesta con voz ultrarrealista mediante Text-to-Speech (TTS), gestionando objeciones y cerrando la reserva durante la misma llamada con un 30% más de conversiones.
-2. **WhatsApp Business (Twilio Webhooks / n8n)**:
+2. **WhatsApp Business (Twilio Webhooks / automatización nativa)**:
    * Mensajes entrantes en WhatsApp se redirigen por webhook seguro (`/api/chat` con cabecera `X-Webhook-Secret`).
    * El agente ejecuta la misma lógica de `AGENTS.md`, manteniendo coherencia de marca, verificando cupos y enviando links de pago o vouchers en PDF directamente por chat.
 
@@ -231,7 +231,7 @@ Crea el registro oficial en la base de datos, bloquea el cupo, agenda el evento 
    * Credenciales con permisos acotados exclusivamente a leer/escribir eventos de calendario y colecciones autorizadas de reservas en Firestore.
    * Prohibición absoluta de acceso administrativo a otros clientes o datos financieros brutos.
 2. **Aislamiento de Red (Network Allow List)**:
-   * Dominios autorizados: `googleapis.com`, `api.stripe.com`, `costaricatours2026.app.n8n.cloud`.
+   * Dominios autorizados: `googleapis.com`, `api.stripe.com`, `costaricatours2026.app.automatización nativa.cloud`.
 3. **Protección Contra Inyección de Prompts**:
    * Separación estricta entre directrices del sistema y entradas no confiables de usuarios.
 4. **Límites de Ejecución (Token Bounds)**:
