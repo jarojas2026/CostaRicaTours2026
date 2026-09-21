@@ -2,6 +2,7 @@ import { TOURS, REGIONS } from '../src/data/toursData';
 import { retrieveRelevantMemory } from './memoryService';
 import { getWeatherForRegion } from './weatherPulseService';
 import { selectEvolvedSkill } from './skillEvolutionEngine';
+import { EXTRA_AGENT_KNOWLEDGE, EXTENSION_AGENT_IDENTITIES, buildSkillInsights } from './agentSkillPack';
 
 export type AgentIdentity = {
   id: string;
@@ -12,7 +13,9 @@ export type AgentIdentity = {
   knowledge: string[];
 };
 
-export const AGENT_IDENTITIES: AgentIdentity[] = [
+// Los 7 agentes originales se conservan tal cual. El conocimiento adicional
+// (agentSkillPack.ts) se SUMA al final y los agentes nuevos se agregan a la lista.
+const BASE_AGENT_IDENTITIES: AgentIdentity[] = [
   {
     id: 'concierge', mission: 'Descubrir necesidades, orientar y mantener continuidad con el viajero.',
     canRead: ['catalog', 'availability', 'memory', 'weather'], canWrite: ['memory', 'tasks'], escalation: ['booking', 'support'],
@@ -74,6 +77,14 @@ export const AGENT_IDENTITIES: AgentIdentity[] = [
   }
 ];
 
+export const AGENT_IDENTITIES: AgentIdentity[] = [
+  ...BASE_AGENT_IDENTITIES.map((agent) => ({
+    ...agent,
+    knowledge: [...agent.knowledge, ...(EXTRA_AGENT_KNOWLEDGE[agent.id] ?? [])]
+  })),
+  ...EXTENSION_AGENT_IDENTITIES
+];
+
 export async function buildAgentKnowledgeContext(input: {
   sessionId?: string;
   query: string;
@@ -98,6 +109,7 @@ export async function buildAgentKnowledgeContext(input: {
     'FUENTE DE VERDAD OPERATIVA: usa los servicios de dominio; no inventes disponibilidad, precios, reservas ni políticas.',
     'AGENTES: comparte contexto mediante memoria/eventos; no dupliques preguntas que ya fueron respondidas.',
     identity?.knowledge?.length ? `CONOCIMIENTO ESPECIALIZADO (${identity.id}):\n- ${identity.knowledge.join('\n- ')}` : '',
+    ...buildSkillInsights(input.query),
     memory?.summary ? `MEMORIA DEL VIAJERO: ${memory.summary}` : '',
     memory?.relevantTurns?.length ? `CONTEXTO RELEVANTE: ${memory.relevantTurns.map(t => `${t.role}: ${t.text}`).join(' | ')}` : '',
     region ? `REGIÓN: ${region.name.es} / ${region.name.en}` : '',
