@@ -27,9 +27,7 @@ jobs:
           cache: "npm"
 
       - name: Instalar dependencias
-        run: |
-          npm install --no-audit --no-fund --include=optional
-          npm install lightningcss-linux-x64-gnu@1.33.0 --no-save --no-package-lock --no-audit --no-fund
+        run: npm ci --include=optional || npm install --no-audit --no-fund --include=optional
 
       - name: Auditar fixtures y tokens mock
         run: node scripts/securityFixtureAudit.mjs

@@ -1380,7 +1380,8 @@ export async function executeDailyOperationReport(): Promise<{
     }
   }
 
-  const revenueCRC = Math.round(revenueUSD * 515);
+  const usdRate = Number(process.env.USD_TO_CRC_RATE) || 0;
+  const revenueCRC = usdRate > 0 ? Math.round(revenueUSD * usdRate) : 0;
   const topTours = Object.entries(tourCounts)
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count)

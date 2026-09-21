@@ -1,6 +1,7 @@
 import React from 'react';
 import { Tour, Language, Currency } from '../types';
 import { getLangText } from '../utils/i18n';
+import { getUsdToCrcRate, formatCrc } from '../utils/currencies';
 import { X, Scale, Star, Leaf, Clock, MapPin, Check, ExternalLink, ArrowRight } from 'lucide-react';
 
 interface TourComparisonModalProps {
@@ -83,9 +84,10 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
 
               {comparedTours.map((tour) => {
                 const titleText = getLangText(tour.title, language);
-                const priceFormatted = currency === 'USD'
-                  ? `$${tour.priceUSD}`
-                  : `₡${Math.round(tour.priceUSD * 515).toLocaleString('es-CR')}`;
+                const crcFormatted = formatCrc(tour.priceUSD);
+                const priceFormatted = currency === 'CRC' && crcFormatted
+                  ? crcFormatted
+                  : `$${tour.priceUSD}`;
 
                 return (
                   <div key={tour.id} className="bg-stone-50 p-4 rounded-2xl border border-black/10 flex flex-col justify-between space-y-3 relative group">
@@ -137,11 +139,14 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
               <div className="font-bold text-[#A7F3D0]">
                 💰 {language === 'es' ? 'Precio por persona' : 'Price per person'}
               </div>
-              {comparedTours.map((tour) => (
-                <div key={tour.id} className="font-black text-white text-sm">
-                  {currency === 'USD' ? `$${tour.priceUSD}` : `₡${Math.round(tour.priceUSD * 515).toLocaleString('es-CR')}`}
-                </div>
-              ))}
+              {comparedTours.map((tour) => {
+                const crcFormatted = formatCrc(tour.priceUSD);
+                return (
+                  <div key={tour.id} className="font-black text-white text-sm">
+                    {currency === 'CRC' && crcFormatted ? crcFormatted : `$${tour.priceUSD}`}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Duration & Difficulty Row */}

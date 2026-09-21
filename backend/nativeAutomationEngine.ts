@@ -1409,15 +1409,16 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
   const children = Number(payload.children) || 0;
   const targetDate = payload.date || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const targetTime = payload.time || '08:00 AM';
-  const customerName = payload.customerName || 'Juan Carlos Rojas';
-  const customerEmail = payload.customerEmail || process.env.ADMIN_EMAIL || 'admin@example.invalid';
+  const customerName = payload.customerName || 'Viajero Costa Rica Tours';
+  const customerEmail = payload.customerEmail || process.env.ADMIN_EMAIL || 'reservas@costaricatours.cr';
   const customerPhone = payload.customerPhone || process.env.SINPE_SUPPORT_PHONE || '';
   const pickupHotel = payload.pickupHotel || (resolvedTour.pickupHotels ? resolvedTour.pickupHotels[0] : 'Recepción de Hotel en La Fortuna');
   const specialRequests = payload.specialRequests || 'Solicitud de confirmación y coordinación 100% autónoma sin intervención humana';
 
   const unitPrice = resolvedTour.priceUSD || 145;
   const totalUSD = (adults * unitPrice) + (children * ((resolvedTour as any).childrenPriceUSD || Math.round(unitPrice * 0.65)));
-  const totalCRC = totalUSD * 515;
+  const rate = Number(process.env.USD_TO_CRC_RATE) || 0;
+  const totalCRC = rate > 0 ? Math.round(totalUSD * rate) : 0;
 
   // 3. Ejecutar creación oficial de reserva en Firestore
   // Esto desencadena internamente en tiempo real:

@@ -331,31 +331,13 @@ export async function handleProviderAction(params: {
 }): Promise<{ success: boolean; order: ServiceOrder; message: string }> {
   let order = serviceOrdersStore.get(params.orderId);
 
-  // Si no está en memoria, buscar una orden representativa
+  // Si no está en almacenamiento, devolver error explícito NOT_FOUND (sin fallback sintético)
   if (!order) {
-    order = {
-      id: params.orderId,
-      bookingId: `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`,
-      tourId: 'arenal-volcano-hot-springs',
-      tourName: 'Volcán Arenal & Aguas Termales',
-      providerId: 'prov_sarapiqui_rafting',
-      providerName: 'Sarapiquí Outdoor Expeditions S.A.',
-      date: new Date().toISOString().split('T')[0],
-      time: '08:00 AM',
-      adults: 2,
-      children: 0,
-      pickupLocation: 'Hotel Arenal Kioro',
-      wazeUrl: 'https://waze.com/ul?q=Hotel+Arenal+Kioro',
-      customer: { name: 'Viajero Costa Rica', phone: '+506 8888-8888', email: 'viajero@costarica.cr' },
-      payoutAmountUSD: 246.50,
-      payoutAmountCRC: 126947,
-      platformFeeUSD: 43.50,
-      status: 'dispatched',
-      dispatchedAt: new Date().toISOString(),
-      slaDeadline: new Date().toISOString(),
-      failoverAttempts: 0
+    return {
+      success: false,
+      order: null as any,
+      message: `Orden de servicio #${params.orderId} no encontrada (NOT_FOUND).`
     };
-    serviceOrdersStore.set(params.orderId, order);
   }
 
   const now = new Date().toISOString();

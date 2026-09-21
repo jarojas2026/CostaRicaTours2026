@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, Smartphone, CheckCircle, X, ShieldCheck, DollarSign, Clock, Calendar, Phone } from 'lucide-react';
+import { getUsdToCrcRate } from '../utils/currencies';
 
 interface CostaRicaCheckoutProps {
   isOpen: boolean;
@@ -51,9 +52,9 @@ export const CostaRicaCheckout: React.FC<CostaRicaCheckoutProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const exchangeRate = 515;
+  const exchangeRate = getUsdToCrcRate();
   const totalUSD = (priceUsd * adults) + (priceUsd * 0.65 * children);
-  const totalCRC = Math.round(totalUSD * exchangeRate);
+  const totalCRC = exchangeRate > 0 ? Math.round(totalUSD * exchangeRate) : 0;
 
   const totalDisplay =
     currency === 'USD'

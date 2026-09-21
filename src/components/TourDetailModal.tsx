@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Tour, Language, Currency, BookingRequest } from '../types';
 import { getLangText, formatCurrency } from '../utils/i18n';
+import { getUsdToCrcRate } from '../utils/currencies';
 import { OPERATORS } from '../data/toursData';
 import { LazyImage } from './LazyImage';
 
@@ -54,7 +55,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
   if (!tour || !isOpen) return null;
 
   const totalUSD = (tour.priceUSD * adults) + (tour.priceUSD * 0.7 * children);
-  const totalCRC = Math.round(totalUSD * 515);
+  const crcRate = getUsdToCrcRate();
+  const totalCRC = crcRate > 0 ? Math.round(totalUSD * crcRate) : 0;
 
   const galleryImages: string[] = Array.isArray(tour.gallery) && tour.gallery.length > 0 
     ? tour.gallery 

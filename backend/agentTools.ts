@@ -135,3 +135,98 @@ export async function executeAgentTool(
       return seasonAdvice(Number(args.month));
   }
 }
+
+/**
+ * Declaraciones oficiales de herramientas estructuradas para Function Calling de Gemini SDK
+ */
+export const GEMINI_FUNCTION_DECLARATIONS = [
+  {
+    name: 'search_tours',
+    description: 'Search the authoritative catalog of Costa Rica tours and activities by text, region, or category.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        query: { type: 'STRING', description: 'Search term or keyword (e.g., ballenas, rafting, tabacon, arenal, manuel antonio)' },
+        region: { type: 'STRING', description: 'Costa Rica region (e.g., Guanacaste, Arenal, Monteverde, Manuel Antonio, Osa)' },
+        category: { type: 'STRING', description: 'Activity category (e.g., wildlife, adventure, beaches, volcanoes, water)' }
+      }
+    }
+  },
+  {
+    name: 'check_availability',
+    description: 'Check live Firestore availability and capacity for a specific tour, date, and party size.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        tourId: { type: 'STRING', description: 'Tour ID slug' },
+        date: { type: 'STRING', description: 'Tour date in YYYY-MM-DD format' },
+        time: { type: 'STRING', description: 'Optional time slot (e.g., 08:00 AM)' },
+        seats: { type: 'NUMBER', description: 'Number of participants requested' }
+      },
+      required: ['tourId', 'date']
+    }
+  },
+  {
+    name: 'lookup_booking',
+    description: 'Look up an existing booking reservation by confirmation code or customer email.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        bookingId: { type: 'STRING', description: 'Reservation code (e.g. CR-PV-123456)' },
+        email: { type: 'STRING', description: 'Customer email' }
+      }
+    }
+  },
+  {
+    name: 'quote_price',
+    description: 'Calculate an accurate price quote for a tour based on adults and children.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        tourId: { type: 'STRING', description: 'Tour ID' },
+        adults: { type: 'NUMBER', description: 'Number of adults' },
+        children: { type: 'NUMBER', description: 'Number of children' }
+      },
+      required: ['tourId', 'adults']
+    }
+  },
+  {
+    name: 'compare_tours',
+    description: 'Compare 2-4 tours side-by-side on duration, price, rating, difficulty, and location.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        tourIds: {
+          type: 'ARRAY',
+          items: { type: 'STRING' },
+          description: 'Array of tour IDs to compare'
+        }
+      },
+      required: ['tourIds']
+    }
+  },
+  {
+    name: 'cancellation_policy',
+    description: 'Retrieve official cancellation policy terms and refund timelines.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        tourId: { type: 'STRING', description: 'Optional tour ID' }
+      }
+    }
+  },
+  {
+    name: 'whatsapp_handoff',
+    description: 'Generate a contextual WhatsApp link for direct booking or human agent assistance.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        tourTitle: { type: 'STRING', description: 'Tour title' },
+        date: { type: 'STRING', description: 'Target date' },
+        people: { type: 'NUMBER', description: 'Number of people' },
+        language: { type: 'STRING', description: 'es or en' },
+        note: { type: 'STRING', description: 'Context note' }
+      }
+    }
+  }
+];

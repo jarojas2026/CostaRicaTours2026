@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { FlightRoute, Language, Currency, BookingRequest } from '../types';
 import { formatCurrency, getLangText } from '../utils/i18n';
+import { getUsdToCrcRate } from '../utils/currencies';
 import { auth, db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -60,7 +61,8 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
   const insurancePrice = includeTravelInsurance ? 29 : 0;
   const pricePerPerson = basePrice + transferPrice + simKitPrice + insurancePrice;
   const totalUSD = pricePerPerson * passengersCount;
-  const totalCRC = Math.round(totalUSD * 515);
+  const crcRate = getUsdToCrcRate();
+  const totalCRC = crcRate > 0 ? Math.round(totalUSD * crcRate) : 0;
 
   const pnrPreview = `CR-AIR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 

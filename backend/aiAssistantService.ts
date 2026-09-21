@@ -14,6 +14,7 @@ import {
   recordDailyOpsLog,
   getDailyOpsLogs
 } from './bookingService';
+import { GEMINI_FUNCTION_DECLARATIONS, executeAgentTool } from './agentTools';
 
 let aiClient: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI | null {
@@ -338,6 +339,8 @@ Reply ONLY with "YES" or "NO".`;
 
     if (needsGrounding) {
       config.tools = [{ googleSearch: {} }];
+    } else {
+      config.tools = [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }];
     }
 
     const response = await ai.models.generateContent({
@@ -346,7 +349,58 @@ Reply ONLY with "YES" or "NO".`;
       config
     });
 
-    const reply = response.text?.trim() || (isEn ? 'Hello! How can I assist you with your trip to Costa Rica?' : '¡Hola! ¿En qué puedo ayudarte hoy para tu viaje a Costa Rica?');
+    let reply = response.text?.trim() || '';
+
+    // Manejo de llamadas a herramientas estructuradas (Function Calling)
+    if (response.functionCalls && response.functionCalls.length > 0) {
+      const toolResponses: Array<{ name: string; response: any }> = [];
+      for (const call of response.functionCalls) {
+        const toolName = call.name || 'unknown_tool';
+        try {
+          const result = await executeAgentTool(toolName as any, call.args || {});
+          toolResponses.push({ name: toolName, response: result });
+        } catch (callErr: any) {
+          toolResponses.push({ name: toolName, response: { error: callErr.message } });
+        }
+      }
+
+      try {
+        const followUp = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: [
+            { role: 'user', parts: [{ text: prompt }] },
+            response.candidates?.[0]?.content || { role: 'model', parts: [{ text: '' }] },
+            {
+              role: 'tool',
+              parts: toolResponses.map((tr) => ({
+                functionResponse: {
+                  name: tr.name,
+                  response: { result: tr.response }
+                }
+              }))
+            }
+          ],
+          config: {
+            systemInstruction: SYSTEM_INSTRUCTION,
+            temperature: 0.4
+          }
+        });
+        if (followUp.text?.trim()) {
+          reply = followUp.text.trim();
+        }
+      } catch (followUpErr) {
+        console.warn('Fallback en síntesis de function-calling:', followUpErr);
+        if (!reply) {
+          reply = toolResponses
+            .map((t) => (t.response?.error ? `Error: ${t.response.error}` : JSON.stringify(t.response)))
+            .join('\n');
+        }
+      }
+    }
+
+    if (!reply) {
+      reply = isEn ? 'Hello! How can I assist you with your trip to Costa Rica?' : '¡Hola! ¿En qué puedo ayudarte hoy para tu viaje a Costa Rica?';
+    }
 
     // Deducir acciones rápidas contextuales
     const quickActions: Array<{ label: string; action: string; data?: any }> = [];
@@ -792,7 +846,8 @@ export async function runCounterAgent(
     try {
       const availCheck = await checkTourAvailability(matchedTour.id, extractedDate, '08:00 AM', numPax);
       const totalUSD = matchedTour.priceUSD * numPax;
-      const totalCRC = Math.round(totalUSD * 515);
+      const rate = Number(process.env.USD_TO_CRC_RATE) || 0;
+      const totalCRC = rate > 0 ? Math.round(totalUSD * rate) : 0;
       const generatedBookingId = `CRT-PV-${Math.floor(100000 + Math.random() * 900000)}`;
       const customerName = extractedCustomerName || 'Viajero Distinguido';
       const customerEmail = extractedCustomerEmail || 'cliente@costaricatours.cr';
@@ -884,7 +939,10 @@ export async function runCounterAgent(
     const availCheck = await checkTourAvailability(selectedTour.id, targetDate, '08:00 AM', numPax);
     const unitUSD = selectedTour.priceUSD;
     const totalUSD = unitUSD * numPax;
-    const totalCRC = Math.round(totalUSD * 515);
+    const rate = Number(process.env.USD_TO_CRC_RATE) || 0;
+    const totalCRC = rate > 0 ? Math.round(totalUSD * rate) : 0;
+    const crcEn = totalCRC > 0 ? ` (~₡${totalCRC.toLocaleString('es-CR')} CRC, taxes & permits included)` : ' (taxes & permits included)';
+    const crcEs = totalCRC > 0 ? ` (~₡${totalCRC.toLocaleString('es-CR')} CRC con IVA 13% y entradas SINAC incluidas)` : ' (con IVA 13% y entradas SINAC incluidas)';
 
     const replyQuote = isEn
       ? `🛎️ **Front-Desk Counter • Live Availability & Instant Quote**\n\n` +
@@ -892,7 +950,7 @@ export async function runCounterAgent(
         `• **Target Date**: ${targetDate}\n` +
         `• **Verified Seats**: ${availCheck.available ? `✅ Yes, ${availCheck.remainingSeats} spots available right now` : '⚠️ Limited spots'}\n` +
         `• **Price per adult**: $${unitUSD} USD\n` +
-        `• **Total (${numPax} pax)**: **$${totalUSD} USD** (~₡${totalCRC.toLocaleString('es-CR')} CRC, taxes & permits included)\n` +
+        `• **Total (${numPax} pax)**: **$${totalUSD} USD**${crcEn}\n` +
         `• **Includes**: ${selectedTour.inclusions?.en?.slice(0, 3).join(', ') || 'Certified naturalist guide, park permits, transport'}\n` +
         `• **Duration**: ${selectedTour.durationLabel?.en || `${selectedTour.durationHours} hours`}\n\n` +
         `⚡ **To execute and confirm your booking right now in this chat, please provide**:\n` +
@@ -906,7 +964,7 @@ export async function runCounterAgent(
         `• **Fecha consultada**: ${targetDate}\n` +
         `• **Cupos verificados en tiempo real**: ${availCheck.available ? `✅ Sí, ${availCheck.remainingSeats} espacios disponibles en el sistema` : '⚠️ Cupos sujetos a confirmación'}\n` +
         `• **Tarifa por adulto**: $${unitUSD} USD\n` +
-        `• **Total para ${numPax} personas**: **$${totalUSD} USD** (~₡${totalCRC.toLocaleString('es-CR')} CRC con IVA 13% y entradas SINAC incluidas)\n` +
+        `• **Total para ${numPax} personas**: **$${totalUSD} USD**${crcEs}\n` +
         `• **Incluye**: ${selectedTour.inclusions?.es?.slice(0, 3).join(', ') || 'Guía naturalista certificado, tiquetes oficiales, transporte'}\n` +
         `• **Duración**: ${selectedTour.durationLabel?.es || `${selectedTour.durationHours} horas`}\n\n` +
         `⚡ **Para ejecutar y confirmar tu reserva en este instante aquí en el chat, solo facilítame**:\n` +
@@ -1251,7 +1309,7 @@ export async function runBookingAgent(
   let exchangeRate = 1.0;
   if (lower.includes('colones') || lower.includes('crc') || lower.includes('₡')) {
     currencyLabel = 'CRC';
-    exchangeRate = 515.0;
+    exchangeRate = Number(process.env.USD_TO_CRC_RATE) || 0;
   } else if (lower.includes('euro') || lower.includes('eur') || lower.includes('€')) {
     currencyLabel = 'EUR';
     exchangeRate = 0.92;

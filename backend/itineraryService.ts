@@ -272,7 +272,8 @@ export function generateDeterministicItinerary(params: ItineraryParams): Generat
 
   const baseRatePerDay = style.includes('lujo') ? 260 : (style.includes('econom') ? 110 : 165);
   const estimatedBudgetUSD = Math.round(baseRatePerDay * totalDays * pax);
-  const estimatedBudgetCRC = Math.round(estimatedBudgetUSD * 515);
+  const usdRate = Number(process.env.USD_TO_CRC_RATE) || 0;
+  const estimatedBudgetCRC = usdRate > 0 ? Math.round(estimatedBudgetUSD * usdRate) : 0;
 
   const title = isEn
     ? `${totalDays}-Day Master ${style.includes('aventura') ? 'Adventure & Volcano' : 'Pura Vida Highlights'} Route`
@@ -445,7 +446,8 @@ Devuelve SIEMPRE JSON estructurado estricto conforme al esquema solicitado.`,
     }));
 
     const totalUsd = Number(parsed.estimatedBudgetUSD) || (daysCount * pax * 175);
-    const totalCrc = Math.round(totalUsd * 515);
+    const usdRate = Number(process.env.USD_TO_CRC_RATE) || 0;
+    const totalCrc = usdRate > 0 ? Math.round(totalUsd * usdRate) : 0;
 
     return {
       title: parsed.title || (isEn ? `${daysCount}-Day Costa Rica Itinerary` : `Itinerario de ${daysCount} Días en Costa Rica`),

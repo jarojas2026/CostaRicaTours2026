@@ -14,6 +14,7 @@ import { getEcoFactForTour, getEcoFactForRegion } from '../data/ecoFacts';
 import { AI_AGENTS, getAIAgentById } from '../data/aiAgentsData';
 import { NativeAutomationStudio } from './NativeAutomationStudio';
 import { ClaudeItineraryModal } from './ClaudeItineraryModal';
+import { getUsdToCrcRate, formatCrc } from '../utils/currencies';
 
 interface AIAssistantProps {
   language: Language;
@@ -332,7 +333,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     setIsSubmittingInChatBooking(true);
     const genId = `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
     const totalUSD = inChatBookingTour.priceUSD * inChatAdults;
-    const totalCRC = Math.round(totalUSD * 515);
+    const rate = getUsdToCrcRate();
+    const totalCRC = rate > 0 ? Math.round(totalUSD * rate) : 0;
 
     const payload: any = {
       bookingId: genId,
@@ -1593,7 +1595,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               <div className="bg-[#020e08] p-3 rounded-xl border border-emerald-500/30 flex items-center justify-between text-xs">
                 <span className="text-stone-300 font-bold">{language === 'es' ? 'Total Calculado:' : 'Total Calculated:'}</span>
                 <span className="text-amber-400 font-black text-sm">
-                  ${(inChatBookingTour.priceUSD * inChatAdults).toFixed(2)} USD (₡{(inChatBookingTour.priceUSD * inChatAdults * 515).toLocaleString()} CRC)
+                  ${(inChatBookingTour.priceUSD * inChatAdults).toFixed(2)} USD
+                  {getUsdToCrcRate() > 0 && ` (${formatCrc(inChatBookingTour.priceUSD * inChatAdults)} CRC)`}
                 </span>
               </div>
 

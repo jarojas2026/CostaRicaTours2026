@@ -657,6 +657,9 @@ app.post('/api/providers/action', requireAdmin, async (req, res) => {
   try {
     const { orderId, action, notes } = req.body;
     const result = await handleProviderAction({ orderId, action, notes });
+    if (!result.success && result.message?.includes('NOT_FOUND')) {
+      return res.status(404).json(result);
+    }
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -1693,6 +1696,19 @@ app.get('/api/ai/tools', (req, res) => {
   });
 });
 
+app.get('/api/agent/tools/functions', async (req, res) => {
+  try {
+    const { GEMINI_FUNCTION_DECLARATIONS } = await import('./backend/agentTools');
+    res.json({
+      success: true,
+      format: 'gemini_function_calling_v2',
+      tools: GEMINI_FUNCTION_DECLARATIONS
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.post('/api/gemini/booking/urgent', async (req, res) => {
   try {
     const { message, language, history, agentId } = req.body;
@@ -1864,7 +1880,9 @@ app.post('/api/itinerary/book', async (req, res) => {
       customerEmail,
       customerPhone: customerPhone || '',
       totalUSD: calculatedUSD,
-      totalAmount: currency === 'CRC' ? Math.round(calculatedUSD * 515) : calculatedUSD,
+      totalAmount: currency === 'CRC' 
+        ? (Number(process.env.USD_TO_CRC_RATE) > 0 ? Math.round(calculatedUSD * Number(process.env.USD_TO_CRC_RATE)) : calculatedUSD) 
+        : calculatedUSD,
       currency: currency || 'USD',
       paymentMethod: 'itinerary_deposit',
       paymentStatus: 'pending',

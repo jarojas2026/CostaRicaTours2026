@@ -4,6 +4,8 @@
  * verificación de pagos del lado del servidor y resolución dinámica de operadores.
  */
 
+import fs from 'fs';
+import path from 'path';
 import admin from 'firebase-admin';
 import {
   getFirestore,
@@ -23,14 +25,33 @@ import {
 } from './nativeWorkflows';
 import { massiveEngine } from './massiveProcessingEngine';
 
-const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID || 'ai-studio-costaricatours-88d81273-09f7-4f87-991c-60b9b0db0dea';
+function resolveFirestoreDatabaseId(): string {
+  if (process.env.FIRESTORE_DATABASE_ID) {
+    return process.env.FIRESTORE_DATABASE_ID;
+  }
+  try {
+    const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (config.firestoreDatabaseId) return config.firestoreDatabaseId;
+    }
+  } catch {}
+  return '(default)';
+}
 
-function getUsdToCrcRate(): number {
+const FIRESTORE_DATABASE_ID = resolveFirestoreDatabaseId();
+
+export function getUsdToCrcRate(): number {
   const rate = Number(process.env.USD_TO_CRC_RATE);
   if (!Number.isFinite(rate) || rate <= 0) {
     throw new Error('USD_TO_CRC_RATE no configurado. No se puede calcular un importe CRC de forma segura.');
   }
   return rate;
+}
+
+export function getUsdToCrcRateOptional(): number {
+  const rate = Number(process.env.USD_TO_CRC_RATE);
+  return Number.isFinite(rate) && rate > 0 ? rate : 0;
 }
 
 let dbInstance: Firestore | null = null;

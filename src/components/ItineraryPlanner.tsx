@@ -6,6 +6,7 @@ import {
   Leaf, Car, Luggage, X, Phone, Mail, User, Check
 } from 'lucide-react';
 import { useTours } from '../contexts/ToursContext';
+import { getUsdToCrcRate } from '../utils/currencies';
 
 interface ItineraryPlannerProps {
   language: Language;
@@ -106,7 +107,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
         summary: data.summary || (isEn ? 'Custom route crafted specifically to your travel preferences with verified tours and local logistics.' : 'Ruta maestra diseñada con guías certificados y logística garantizada en Costa Rica.'),
         totalDays: data.totalDays || daysCount,
         estimatedBudgetUSD: data.estimatedBudgetUSD || data.estimated_budget_usd || (daysCount * 2 * 165),
-        estimatedBudgetCRC: data.estimatedBudgetCRC || data.estimated_budget_crc || Math.round((daysCount * 2 * 165) * 515),
+        estimatedBudgetCRC: data.estimatedBudgetCRC || data.estimated_budget_crc || (getUsdToCrcRate() > 0 ? Math.round((daysCount * 2 * 165) * getUsdToCrcRate()) : 0),
         recommendedSeason: data.recommendedSeason || data.recommended_season || (isEn ? 'December - May (Dry Season) / June - Nov (Green Season)' : 'Diciembre - Mayo (Temporada Seca) / Junio - Noviembre (Temporada Verde)'),
         packingList: data.packingList || data.packing_list || [
           isEn ? 'Sturdy hiking boots' : 'Zapatos de senderismo cerrados',

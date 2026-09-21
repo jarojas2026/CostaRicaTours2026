@@ -11,6 +11,7 @@ import { Tour, Language, Currency, BookingRequest, OperatorProfile } from '../ty
 import { getLangText, formatCurrency } from '../utils/i18n';
 import { OPERATORS } from '../data/toursData';
 import { useTours } from '../contexts/ToursContext';
+import { getUsdToCrcRate } from '../utils/currencies';
 
 interface TourDetailPageProps {
   language: Language;
@@ -59,7 +60,8 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
   }
 
   const totalUSD = (tour.priceUSD * adults) + (tour.priceUSD * 0.7 * children);
-  const totalCRC = Math.round(totalUSD * 515);
+  const crcRate = getUsdToCrcRate();
+  const totalCRC = crcRate > 0 ? Math.round(totalUSD * crcRate) : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

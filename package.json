@@ -63,5 +63,8 @@
     "sharp": "^0.35.4",
     "typescript": "^5.8.2",
     "vercel": "^59.17.0"
+  },
+  "optionalDependencies": {
+    "lightningcss-linux-x64-gnu": "1.33.0"
   }
 }
