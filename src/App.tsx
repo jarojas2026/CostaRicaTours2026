@@ -107,7 +107,7 @@ export default function App() {
         totalUSD: 0,
         totalCRC: 0,
         paymentMethod: "credit_card",
-        status: "confirmada",
+        status: "pendiente_pago",
         createdAt: new Date().toISOString()
       });
 
