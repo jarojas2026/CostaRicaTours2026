@@ -86,6 +86,20 @@ export const AdminFinancialLegalPage: React.FC<Props> = ({ language }) => {
       </div>
     </section>
 
+    <section className="rounded-3xl border border-cyan-400/15 bg-[#06161c] p-5">
+      <div className="flex items-center gap-2"><Landmark className="text-cyan-300" size={18}/><h2 className="font-black text-white">{es?'Libro contable, conciliación y auditoría':'Ledger, reconciliation & audit'}</h2></div>
+      <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-3">
+        {[
+          ['Asientos',data?.accounting?.control?.journalEntries||0],
+          ['Conciliaciones',data?.accounting?.control?.bankReconciliations||0],
+          ['Pendientes',data?.accounting?.control?.openReconciliations||0],
+          ['Eventos auditoría',data?.accounting?.control?.auditEvents||0],
+          ['Período',data?.accounting?.control?.periodStatus||'open']
+        ].map(([a,b])=><div key={String(a)} className="rounded-2xl border border-white/5 bg-black/20 p-3"><div className="text-lg font-black text-white">{b}</div><div className="text-[9px] uppercase text-stone-500">{a}</div></div>)}
+      </div>
+      <div className="mt-4 overflow-x-auto"><table className="w-full text-left text-xs"><thead className="text-[9px] uppercase text-stone-500"><tr><th className="p-2">Código</th><th className="p-2">{es?'Cuenta':'Account'}</th></tr></thead><tbody>{(data?.accounting?.control?.chartOfAccounts||[]).map((x:any)=><tr key={x.code} className="border-t border-white/5"><td className="p-2 text-cyan-300">{x.code}</td><td className="p-2 text-white">{x.name}</td></tr>)}</tbody></table></div>
+    </section>
+
     <section className="grid xl:grid-cols-2 gap-5">
       <div className="rounded-3xl border border-emerald-500/15 bg-[#061d14] p-5"><div className="flex items-center gap-2"><FileCheck2 className="text-emerald-300" size={18}/><h2 className="font-black text-white">{es?'Control de facturación y cierres':'Invoicing & period control'}</h2></div>
         <div className="mt-4 grid sm:grid-cols-2 gap-3">{[['fiscal_document_required','Documento fiscal requerido'],['electronic_invoicing_enabled','Facturación electrónica conectada'],['accounting_period_lock','Bloqueo de período contable'],['require_financial_approval','Aprobación financiera'],['require_refund_approval','Aprobación de reembolsos'],['require_provider_payout_approval','Aprobación de pagos a proveedores']].map(([key,label])=><div key={key} className="rounded-2xl border border-white/5 bg-black/20 p-3"><div className="text-xs font-bold text-white">{label}</div>{toggle(String(key))}</div>)}</div>
