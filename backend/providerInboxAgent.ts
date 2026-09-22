@@ -30,7 +30,7 @@ function senderEmail(value: string) {
   return value.match(/<([^>]+)>/)?.[1]?.toLowerCase() || value.toLowerCase().replace(/^.*\s+/, '');
 }
 function knownProviderEmails() {
-  return new Set(REGISTERED_PROVIDERS.flatMap(p => [p.officialEmail, p.email]).filter(Boolean).map(x => String(x).trim().toLowerCase()));
+  return new Set(REGISTERED_PROVIDERS.flatMap(p => [p.email]).filter(Boolean).map(x => String(x).trim().toLowerCase()));
 }
 async function gmailClient() {
   const clientId = process.env.GMAIL_CLIENT_ID, clientSecret = process.env.GMAIL_CLIENT_SECRET, refreshToken = process.env.GMAIL_REFRESH_TOKEN;
