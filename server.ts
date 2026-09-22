@@ -111,6 +111,7 @@ import { assessTripFit, buildPackingList, buildRouteStrategy, getDestinationInte
 import { buildTripJourney, adaptTravelerJourney, getTravelerJourney } from './backend/travelJourneyOrchestrator';
 import { processProviderInboxOnce } from './backend/providerInboxAgent';
 import { getAdminControlCenterSnapshot } from './backend/adminControlCenterService';
+import { getPlatformControls, updatePlatformControls } from './backend/platformControlService';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -233,6 +234,16 @@ app.post('/api/ops/provider-inbox/check', requireAdmin, async (_req, res) => {
 
 // ==========================================
 // 📊 ADMIN CONTROL CENTER
+app.get('/api/admin/platform-controls', requireAdmin, async (_req, res) => {
+  try { return res.json(await getPlatformControls()); }
+  catch (error: any) { return res.status(500).json({ error: error?.message || 'No se pudieron cargar los parámetros.' }); }
+});
+
+app.patch('/api/admin/platform-controls', requireAdmin, async (req, res) => {
+  try { return res.json(await updatePlatformControls(req.body || {})); }
+  catch (error: any) { return res.status(400).json({ error: error?.message || 'No se pudieron guardar los parámetros.' }); }
+});
+
 app.get('/api/admin/control-center', requireAdmin, async (_req, res) => {
   try {
     res.json(await getAdminControlCenterSnapshot());
