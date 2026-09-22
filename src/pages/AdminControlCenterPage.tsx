@@ -75,6 +75,19 @@ export const AdminControlCenterPage: React.FC<Props> = ({ language }) => {
         </div>
       </section>
 
+      <section className="grid xl:grid-cols-3 gap-5">
+        <div className="xl:col-span-2 rounded-3xl border border-violet-400/20 bg-gradient-to-br from-[#110b24] to-[#070412] p-5">
+          <div className="flex items-center gap-2"><Bot className="text-violet-300" size={19}/><h2 className="font-black text-white">{es?'Copiloto ejecutivo con IA':'AI executive copilot'}</h2></div>
+          <p className="mt-2 text-xs text-stone-400">{es?'Analiza ventas, operaciones, finanzas y riesgos y prepara acciones para aprobación humana.':'Analyze sales, operations, finance and risk, then prepare actions for human approval.'}</p>
+          <button onClick={()=>window.location.assign('/admin/ai-command')} className="mt-4 rounded-xl bg-violet-500 px-4 py-2 text-xs font-black text-white">{es?'Abrir sala de mando IA':'Open AI command room'}</button>
+        </div>
+        <div className="rounded-3xl border border-emerald-400/20 bg-[#071510] p-5">
+          <div className="text-[10px] uppercase tracking-widest text-emerald-300 font-black">{es?'Gobierno de acceso':'Access governance'}</div>
+          <div className="mt-2 text-2xl font-black text-white">{es?'Personal autorizado':'Authorized staff'}</div>
+          <p className="mt-2 text-xs text-stone-400">{es?'Las rutas administrativas se validan en backend mediante Firebase y rol administrativo.':'Admin routes are enforced server-side through Firebase roles.'}</p>
+        </div>
+      </section>
+
       <section className="rounded-3xl border border-amber-400/20 bg-[#111006] p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div><div className="flex items-center gap-2"><Settings2 className="text-amber-300" size={18}/><h2 className="font-black text-white">{es ? 'Parámetros maestros de la plataforma' : 'Master platform parameters'}</h2></div><button onClick={() => window.location.assign('/admin/financial-legal')} className="mt-3 inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs font-black text-amber-200 hover:bg-amber-400/20">{es ? 'Abrir control financiero, contable y legal' : 'Open financial, accounting & legal control'}</button><p className="mt-1 text-xs text-stone-500">{es ? 'Controles humanos persistentes para gobernar el comportamiento operativo de los agentes.' : 'Persistent human controls for governing agent operational behavior.'}</p></div>
