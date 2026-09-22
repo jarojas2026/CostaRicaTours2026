@@ -432,11 +432,11 @@ export default function App() {
               </Suspense>
             </AdminRouteGuard>} />
 
-            <Route path="/ops" element={
+            <Route path="/ops" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
               <Suspense fallback={<div className="py-24 text-center text-emerald-400">Cargando Centro Operativo...</div>}>
                 <AutonomousOperationsPage language={language} />
               </Suspense>
-            } />
+            </AdminRouteGuard>} />
 
             <Route path="/workspace" element={
               <div className="max-w-7xl mx-auto px-4 py-8">
