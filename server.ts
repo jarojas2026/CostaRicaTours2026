@@ -107,6 +107,10 @@ import { autonomyPolicy, parseAutonomyLevel } from './backend/autonomyPolicy';
 import { listSkillVersions, selectSkills, hydrateSkillGenome, registerSkillVersion, recordSkillEvaluation, promoteSkillVersion, rollbackSkillVersion } from './backend/skillGenome';
 import { emitOperationalEvent } from './backend/operationalEventBus';
 import { buildSkillEvolutionReport, selectEvolvedSkill, recordSkillOutcome, proposeSkillUpgrade } from './backend/skillEvolutionEngine';
+import { assessTripFit, buildPackingList, buildRouteStrategy, getDestinationIntelligence, screenActivitySuitability } from './backend/tourismIntelligenceEngine';
+import { buildTripJourney, adaptTravelerJourney, getTravelerJourney } from './backend/travelJourneyOrchestrator';
+import { processProviderInboxOnce } from './backend/providerInboxAgent';
+import { getAdminControlCenterSnapshot } from './backend/adminControlCenterService';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -182,6 +186,158 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime(),
     timestamp: new Date().toISOString()
   });
+});
+
+// ==========================================
+// 🧠 AI TRAVEL INTELLIGENCE — READ ONLY
+// ==========================================
+// ==========================================
+/* 🧭 FULL TRAVEL JOURNEY — MEMORY + CATALOG + LIVE DATA + SALES */
+app.post('/api/ai/journey', async (req, res) => {
+  try {
+    const result = await buildTripJourney(req.body || {});
+    res.json({ success: true, journey: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'No se pudo construir el viaje.' });
+  }
+});
+
+app.get('/api/ai/journey/:journeyId', async (req, res) => {
+  try {
+    const result = await getTravelerJourney(String(req.params.journeyId || ''));
+    if (!result) return res.status(404).json({ success: false, error: 'Viaje no encontrado.' });
+    res.json({ success: true, journey: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'No se pudo recuperar el viaje.' });
+  }
+});
+
+app.patch('/api/ai/journey/:journeyId', async (req, res) => {
+  try {
+    const result = await adaptTravelerJourney(String(req.params.journeyId || ''), req.body || {});
+    res.json({ success: true, journey: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'No se pudo adaptar el viaje.' });
+  }
+});
+
+// ==========================================
+// 📬 PROVIDER INBOX — lectura operativa del correo cada minuto
+app.post('/api/ops/provider-inbox/check', requireAdmin, async (_req, res) => {
+  try {
+    res.json({ success: true, result: await processProviderInboxOnce() });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'No se pudo revisar la bandeja.' });
+  }
+});
+
+// ==========================================
+// 📊 ADMIN CONTROL CENTER
+app.get('/api/admin/control-center', requireAdmin, async (_req, res) => {
+  try {
+    res.json(await getAdminControlCenterSnapshot());
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'No se pudo cargar el centro de control.' });
+  }
+});
+
+app.post('/api/ai/intelligence', (req, res) => {
+  try {
+    const action = String(req.body?.action || '').trim();
+    switch (action) {
+      case 'trip_fit':
+        return res.json(assessTripFit({ query: typeof req.body.query === 'string' ? req.body.query.slice(0, 2000) : '', days: Number(req.body.days), airport: typeof req.body.airport === 'string' ? req.body.airport.slice(0, 20) : undefined, profile: req.body.profile, intensity: req.body.intensity, regions: Array.isArray(req.body.regions) ? req.body.regions.slice(0, 8).map(String) : undefined }));
+      case 'packing_list':
+        return res.json(buildPackingList({ activities: Array.isArray(req.body.activities) ? req.body.activities.slice(0, 12).map(String) : [], regions: Array.isArray(req.body.regions) ? req.body.regions.slice(0, 8).map(String) : [], profile: req.body.profile }));
+      case 'activity_safety_check':
+        return res.json(screenActivitySuitability({ activity: String(req.body.activity || '').slice(0, 200), age: req.body.age === undefined ? undefined : Number(req.body.age), canSwim: req.body.canSwim === undefined ? undefined : Boolean(req.body.canSwim), mobility: typeof req.body.mobility === 'string' ? req.body.mobility.slice(0, 300) : undefined, fearOfHeights: req.body.fearOfHeights === undefined ? undefined : Boolean(req.body.fearOfHeights), medicalConstraint: typeof req.body.medicalConstraint === 'string' ? req.body.medicalConstraint.slice(0, 300) : undefined }));
+      case 'route_strategy':
+        return res.json(buildRouteStrategy({ regions: Array.isArray(req.body.regions) ? req.body.regions.slice(0, 8).map(String) : [], days: Number(req.body.days), arrivalAirport: typeof req.body.arrivalAirport === 'string' ? req.body.arrivalAirport.slice(0, 20) : undefined, departureAirport: typeof req.body.departureAirport === 'string' ? req.body.departureAirport.slice(0, 20) : undefined }));
+      case 'destination_intelligence':
+        return res.json(getDestinationIntelligence(String(req.body.regionId || '').slice(0, 60)));
+      default:
+        return res.status(400).json({ error: 'Acción de inteligencia no soportada.' });
+    }
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || 'No se pudo procesar la consulta de inteligencia.' });
+  }
+});
+
+// ==========================================
+ // 🧭 VIAJE COMPLETO: MEMORIA + CATÁLOGO + CLIMA + DISPONIBILIDAD + ITINERARIO + VENTAS
+ // ==========================================
+app.post('/api/journey/build', async (req, res) => {
+  try {
+    const journey = await buildTripJourney({
+      sessionId: typeof req.body?.sessionId === 'string' ? req.body.sessionId : undefined,
+      query: typeof req.body?.query === 'string' ? req.body.query : '',
+      days: req.body?.days, travelers: req.body?.travelers, profile: req.body?.profile,
+      regions: Array.isArray(req.body?.regions) ? req.body.regions.map(String).slice(0, 6) : undefined,
+      arrivalAirport: typeof req.body?.arrivalAirport === 'string' ? req.body.arrivalAirport : undefined,
+      departureAirport: typeof req.body?.departureAirport === 'string' ? req.body.departureAirport : undefined,
+      date: typeof req.body?.date === 'string' ? req.body.date : undefined,
+      time: typeof req.body?.time === 'string' ? req.body.time : undefined,
+      selectedTourIds: Array.isArray(req.body?.selectedTourIds) ? req.body.selectedTourIds.map(String).slice(0, 8) : undefined,
+      activities: Array.isArray(req.body?.activities) ? req.body.activities.map(String).slice(0, 12) : undefined,
+      language: req.body?.language === 'en' ? 'en' : 'es'
+    });
+    return res.json(journey);
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || 'No se pudo construir el viaje.' });
+  }
+});
+
+app.get('/api/journey/:journeyId', async (req, res) => {
+  try {
+    const journey = await getTravelerJourney(String(req.params.journeyId || ''));
+    if (!journey) return res.status(404).json({ error: 'Viaje no encontrado.' });
+    return res.json(journey);
+  } catch (error: any) {
+    return res.status(500).json({ error: error?.message || 'No se pudo leer el viaje.' });
+  }
+});
+
+app.post('/api/journey/:journeyId/adapt', async (req, res) => {
+  try {
+    const journey = await adaptTravelerJourney(String(req.params.journeyId || ''), {
+      sessionId: typeof req.body?.sessionId === 'string' ? req.body.sessionId : undefined,
+      query: typeof req.body?.query === 'string' ? req.body.query : undefined,
+      days: req.body?.days, travelers: req.body?.travelers, profile: req.body?.profile,
+      regions: Array.isArray(req.body?.regions) ? req.body.regions.map(String).slice(0, 6) : undefined,
+      arrivalAirport: typeof req.body?.arrivalAirport === 'string' ? req.body.arrivalAirport : undefined,
+      departureAirport: typeof req.body?.departureAirport === 'string' ? req.body.departureAirport : undefined,
+      date: typeof req.body?.date === 'string' ? req.body.date : undefined,
+      time: typeof req.body?.time === 'string' ? req.body.time : undefined,
+      selectedTourIds: Array.isArray(req.body?.selectedTourIds) ? req.body.selectedTourIds.map(String).slice(0, 8) : undefined,
+      activities: Array.isArray(req.body?.activities) ? req.body.activities.map(String).slice(0, 12) : undefined,
+      language: req.body?.language === 'en' ? 'en' : undefined
+    });
+    return res.json(journey);
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || 'No se pudo adaptar el viaje.' });
+  }
+});
+
+// ==========================================
+// 🛎️ CENTRO EJECUTIVO ADMINISTRATIVO
+// ==========================================
+app.get('/api/admin/control-center', requireAdmin, async (_req, res) => {
+  try {
+    return res.json(await getAdminControlCenterSnapshot());
+  } catch (error: any) {
+    return res.status(500).json({ error: error?.message || 'No se pudo generar el centro de control.' });
+  }
+});
+
+// ==========================================
+// 📬 AGENTE INTERNO DE CORREO DE PROVEEDORES
+// ==========================================
+app.post('/api/internal/provider-inbox/sweep', requireAgentTool, async (_req, res) => {
+  try {
+    return res.json(await processProviderInboxOnce());
+  } catch (error: any) {
+    return res.status(500).json({ error: error?.message || 'No se pudo procesar la bandeja de proveedores.' });
+  }
 });
 
 // ==========================================

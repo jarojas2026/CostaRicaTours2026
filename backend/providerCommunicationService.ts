@@ -13,6 +13,20 @@ import { sendEmail } from './notificationService';
 
 export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || '';
 
+function resolveConfiguredProviderEmail(provider: TourProvider): string {
+  const raw = process.env.PROVIDER_EMAILS_JSON;
+  if (raw) {
+    try {
+      const mapping = JSON.parse(raw) as Record<string, string>;
+      const configured = mapping[provider.id];
+      if (configured && /@/.test(configured)) return configured.trim();
+    } catch {
+      console.warn('⚠️ PROVIDER_EMAILS_JSON no es JSON válido.');
+    }
+  }
+  return provider.email && /@/.test(provider.email) ? provider.email.trim() : '';
+}
+
 export interface TourProvider {
   id: string;
   name: string;
@@ -202,6 +216,25 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
 // Registro en memoria de órdenes de servicio
 const serviceOrdersStore: Map<string, ServiceOrder> = new Map();
 
+async function persistServiceOrder(order: ServiceOrder) {
+  const db = (await import('./bookingService')).getFirestoreDb();
+  if (db) {
+    await db.collection('service_orders').doc(order.id).set(order, { merge: true });
+  }
+}
+
+async function loadServiceOrder(orderId: string): Promise<ServiceOrder | null> {
+  const cached = serviceOrdersStore.get(orderId);
+  if (cached) return cached;
+  const db = (await import('./bookingService')).getFirestoreDb();
+  if (!db) return null;
+  const doc = await db.collection('service_orders').doc(orderId).get();
+  if (!doc.exists) return null;
+  const order = doc.data() as ServiceOrder;
+  serviceOrdersStore.set(orderId, order);
+  return order;
+}
+
 /**
  * Obtiene o asigna el proveedor ideal para un tour
  */
@@ -275,13 +308,15 @@ export async function dispatchServiceOrder(params: {
   };
 
   serviceOrdersStore.set(orderId, order);
+  await persistServiceOrder(order).catch(err => console.warn('⚠️ No se pudo persistir la orden de servicio:', err));
 
-  console.log(`📡 [PROVEEDORES] Orden de servicio ${orderId} despachada a ${provider.name} (Email: ${provider.email} | WhatsApp: ${provider.whatsapp}). SLA: ${provider.slaTargetMinutes}m.`);
+  const providerEmail = resolveConfiguredProviderEmail(provider);
+  console.log(`📡 [PROVEEDORES] Orden de servicio ${orderId} despachada a ${provider.name} (Email: ${providerEmail || 'no configurado'} | WhatsApp: ${provider.whatsapp}). SLA: ${provider.slaTargetMinutes}m.`);
 
-  // Enviar correo de orden de servicio al proveedor (centralizado a provider@example.invalid en pruebas)
-  if (provider.email) {
+  // Enviar correo únicamente a la dirección oficial/configurada del proveedor.
+  if (providerEmail) {
     sendEmail({
-      to: provider.email,
+      to: providerEmail,
       subject: `📋 [ORDEN DE SERVICIO] ${orderId} - ${params.tourName} (${params.date})`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
@@ -290,7 +325,7 @@ export async function dispatchServiceOrder(params: {
             <p style="margin: 4px 0 0; font-size: 13px; color: #a7f3d0;">Operador: ${provider.name}</p>
           </div>
           <div style="background: #fef3c7; padding: 8px 16px; font-size: 12px; color: #92400e; border-bottom: 1px solid #fde68a;">
-            🛠️ <strong>MODO DE PRUEBA ACTIVO:</strong> Notificación de proveedor dirigida a <strong>${provider.email}</strong>.
+            📡 <strong>SOLICITUD AUTOMÁTICA:</strong> Esta orden fue generada por el motor de reservas de Costa Rica Tours.
           </div>
           <div style="padding: 24px; font-size: 14px; line-height: 1.6;">
             <p><strong>ID Orden:</strong> <code>${orderId}</code> (Reserva: #${params.bookingId})</p>
@@ -306,6 +341,17 @@ export async function dispatchServiceOrder(params: {
         </div>
       `
     }).catch(err => console.warn(`⚠️ Error enviando correo de orden de servicio a ${provider.email}:`, err));
+  }
+
+  if (!providerEmail) {
+    await createAlert({
+      source: 'Comunicación con Proveedores',
+      severity: 'warning',
+      title: 'Proveedor sin email configurado',
+      message: 'La orden ' + orderId + ' fue creada pero no se envió correo porque el proveedor no tiene un email operativo configurado en PROVIDER_EMAILS_JSON/PROVIDER_DEV_EMAIL.',
+      bookingId: params.bookingId,
+      providerId: provider.id
+    }).catch(() => {});
   }
 
   // Actualizar estado en reserva
@@ -329,9 +375,9 @@ export async function handleProviderAction(params: {
   operatorContact?: string;
   estimatedDelayMinutes?: number;
 }): Promise<{ success: boolean; order: ServiceOrder; message: string }> {
-  let order = serviceOrdersStore.get(params.orderId);
+  let order = await loadServiceOrder(params.orderId);
 
-  // Si no está en almacenamiento, devolver error explícito NOT_FOUND (sin fallback sintético)
+  // Si no existe ni en memoria ni en Firestore, devolver NOT_FOUND real.
   if (!order) {
     return {
       success: false,
@@ -351,6 +397,7 @@ export async function handleProviderAction(params: {
       serviceOrderStatus: 'confirmed',
       providerConfirmedAt: now
     }).catch(() => {});
+    await persistServiceOrder(order).catch(() => {});
 
     return {
       success: true,
@@ -443,6 +490,22 @@ async function triggerAutoFailoverReassignment(rejectedOrder: ServiceOrder): Pro
   rejectedOrder.slaDeadline = new Date(Date.now() + alternateProvider.slaTargetMinutes * 60000).toISOString();
 
   serviceOrdersStore.set(rejectedOrder.id, rejectedOrder);
+  await persistServiceOrder(rejectedOrder).catch(() => {});
+  await updateBookingStatus(rejectedOrder.bookingId, {
+    serviceOrderStatus: 'reassigned',
+    providerId: alternateProvider.id,
+    providerName: alternateProvider.name,
+    providerFailoverAt: new Date().toISOString()
+  }).catch(() => {});
+
+  const alternateEmail = alternateProvider.officialEmail || alternateProvider.email;
+  if (alternateEmail) {
+    await sendEmail({
+      to: alternateEmail,
+      subject: `📋 [REASIGNACIÓN DE SERVICIO] ${rejectedOrder.id} - ${rejectedOrder.tourName}`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:24px"><h2>Solicitud de servicio reasignada</h2><p>Orden: <strong>${rejectedOrder.id}</strong></p><p>Tour: <strong>${rejectedOrder.tourName}</strong></p><p>Fecha: <strong>${rejectedOrder.date}</strong> ${rejectedOrder.time || ''}</p><p>Pasajeros: ${rejectedOrder.adults} adultos, ${rejectedOrder.children} niños</p><p>Punto de recogida: ${rejectedOrder.pickupLocation}</p><p>Por favor responda a este correo indicando si puede atender la solicitud.</p></div>`
+    }).catch(() => {});
+  }
 
   await createAlert({
     source: 'Motor Autónomo de Reasignación de Operadores',
