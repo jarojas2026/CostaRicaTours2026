@@ -27,7 +27,7 @@ jobs:
           cache: "npm"
 
       - name: Instalar dependencias
-        run: npm ci --include=optional || npm install --no-audit --no-fund --include=optional
+        run: npm ci --include=optional
 
       - name: Auditar fixtures y tokens mock
         run: node scripts/securityFixtureAudit.mjs
