@@ -402,14 +402,6 @@ Reply ONLY with "YES" or "NO".`;
     }
 
     if (!reply) {
-          reply = toolResponses
-            .map((t) => (t.response?.error ? `Error: ${t.response.error}` : JSON.stringify(t.response)))
-            .join('\n');
-        }
-      }
-    }
-
-    if (!reply) {
       reply = isEn ? 'Hello! How can I assist you with your trip to Costa Rica?' : '¡Hola! ¿En qué puedo ayudarte hoy para tu viaje a Costa Rica?';
     }
 

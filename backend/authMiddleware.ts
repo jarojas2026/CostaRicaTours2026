@@ -6,6 +6,10 @@ import admin from 'firebase-admin';
  * Autenticación de operaciones:
  * 1) Firebase ID token (preferido en producción), con claim role=admin|operator.
  * 2) X-Operator-Key como compatibilidad controlada para herramientas servidor-a-servidor.
+ *
+ * Admin policy: when ADMIN_ALLOWED_EMAILS is configured, admin/operator access is
+ * restricted to that explicit allowlist. This keeps the dashboard private to the
+ * owner and a small number of collaborators without changing public auth flows.
  */
 export async function requireOperator(req: Request, res: Response, next: NextFunction) {
   const authorization = req.headers.authorization;
@@ -16,8 +20,20 @@ export async function requireOperator(req: Request, res: Response, next: NextFun
       const token = authorization.slice('Bearer '.length).trim();
       const decoded = await adminAny.auth().verifyIdToken(token);
       const role = decoded.role || decoded.adminRole || (decoded.email === process.env.ADMIN_EMAIL ? 'admin' : undefined);
-      if (role === 'admin' || role === 'operator') {
+      const allowedEmails = String(process.env.ADMIN_ALLOWED_EMAILS || '')
+        .split(',')
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean);
+      const email = String(decoded.email || '').trim().toLowerCase();
+      const isPrivilegedRole = role === 'admin' || role === 'operator';
+      const isExplicitlyAllowed = allowedEmails.length === 0 || allowedEmails.includes(email);
+      if (isPrivilegedRole && isExplicitlyAllowed) {
         (req as any).user = decoded;
+        (req as any).adminAccess = {
+          role,
+          email: email || null,
+          scope: role === 'admin' ? 'full' : 'operations'
+        };
         return next();
       }
       return res.status(403).json({ error: 'Permisos insuficientes' });

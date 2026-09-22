@@ -34,6 +34,7 @@ import { SEOHead } from './components/SEOHead';
 import { OfflineBanner } from './components/OfflineBanner';
 import { DigitalCounterWidget } from './components/DigitalCounterWidget';
 import { Home, ChevronRight, ArrowLeft } from 'lucide-react';
+import { AdminRouteGuard } from './components/AdminRouteGuard';
 
 // Code-splitting via React.lazy to reduce initial JS bundle size
 const ItineraryPlanner = lazy(() => import('./components/ItineraryPlanner').then(m => ({ default: m.ItineraryPlanner })));
@@ -417,25 +418,25 @@ export default function App() {
               </Suspense>
             } />
 
-            <Route path="/admin/ai-command" element={<Suspense fallback={<div className="py-24 text-center text-violet-300">Cargando sala de mando IA...</div>}><AdminAICommandPage language={language} /></Suspense>} />
+            <Route path="/admin/ai-command" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}><Suspense fallback={<div className="py-24 text-center text-violet-300">Cargando sala de mando IA...</div>}><AdminAICommandPage language={language} /></Suspense></AdminRouteGuard>} />
 
-            <Route path="/admin" element={
+            <Route path="/admin" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
               <Suspense fallback={<div className="py-24 text-center text-amber-300">Cargando Centro de Control...</div>}>
                 <AdminControlCenterPage language={language} />
               </Suspense>
-            } />
+            </AdminRouteGuard>} />
 
-            <Route path="/admin/financial-legal" element={
+            <Route path="/admin/financial-legal" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
               <Suspense fallback={<div className="py-24 text-center text-amber-300">Cargando Gobierno Financiero...</div>}>
                 <AdminFinancialLegalPage language={language} />
               </Suspense>
-            } />
+            </AdminRouteGuard>} />
 
-            <Route path="/ops" element={
+            <Route path="/ops" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
               <Suspense fallback={<div className="py-24 text-center text-emerald-400">Cargando Centro Operativo...</div>}>
                 <AutonomousOperationsPage language={language} />
               </Suspense>
-            } />
+            </AdminRouteGuard>} />
 
             <Route path="/workspace" element={
               <div className="max-w-7xl mx-auto px-4 py-8">
