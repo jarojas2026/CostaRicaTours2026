@@ -250,6 +250,21 @@ app.post('/api/ops/provider-inbox/check', requireAdmin, async (_req, res) => {
 
 // ==========================================
 // 📊 ADMIN CONTROL CENTER
+app.get('/api/admin/access-policy', requireAdmin, async (req, res) => {
+  const user:any=(req as any).user||{};
+  res.json({allowed:true,role:user.role||user.adminRole||'operator',email:user.email||null,scope:user.role==='admin'?'full':'operator'});
+});
+
+app.get('/api/admin/command-center', requireAdmin, async (_req, res) => {
+  const { getAdminControlCenterSnapshot } = await import('./backend/adminControlCenterService');
+  const snapshot=await getAdminControlCenterSnapshot();
+  res.json({
+    ...snapshot,
+    aiCommand:{enabled:true,mode:'proposal-first',humanApprovalRequired:true},
+    security:{adminOnly:true,operatorScopes:['read','analysis'],mutationsRequireExplicitAction:true}
+  });
+});
+
 app.get('/api/admin/platform-controls', requireAdmin, async (_req, res) => {
   try { return res.json(await getPlatformControls()); }
   catch (error: any) { return res.status(500).json({ error: error?.message || 'No se pudieron cargar los parámetros.' }); }
