@@ -944,3 +944,130 @@ La plataforma ya contiene una arquitectura avanzada de:
 - Executive Control Center.
 
 Este README es parte de la arquitectura y debe actualizarse cada vez que una capacidad estructural nueva sea incorporada.
+
+---
+
+# 20. Manual maestro para futuras inteligencias artificiales
+
+Este README es el mapa operativo del proyecto. Una IA nueva debe leer todo el repositorio, no solamente este documento, antes de tocar código. Este documento describe intención y arquitectura; el código fuente es la autoridad final sobre comportamiento.
+
+## 20.1 Principio de evolución
+
+La plataforma es un sistema comercial vivo. La prioridad es evolucionar lo existente: descubrir, comprender, reutilizar, conectar, mejorar, verificar, medir y documentar.
+
+No se debe sustituir un servicio funcional por una implementación paralela solo porque resulte más sencilla.
+
+## 20.2 Clasificación de la información
+
+- STABLE_KNOWLEDGE: conocimiento turístico relativamente estable.
+- LIVE_VERIFIED: información comprobada mediante una fuente o servicio vivo.
+- CUSTOMER_PROVIDED: dato proporcionado por el viajero.
+- PROVIDER_PROVIDED: dato recibido del proveedor.
+- AUTHORITATIVE_CATALOG: dato del catálogo comercial interno.
+- UNVERIFIED: información que todavía no ha sido comprobada.
+
+Una IA nunca debe convertir UNVERIFIED en LIVE_VERIFIED por inferencia.
+
+## 20.3 Ciclo completo del viajero
+
+El objetivo comercial es que un visitante pueda pasar de pregunta → descubrimiento → preferencias → planificación → catálogo → disponibilidad → proforma → solicitud → proveedor → confirmación → pago → voucher → operación → seguimiento → fidelización.
+
+El Journey Orchestrator, backend/travelJourneyOrchestrator.ts, coordina la planificación sin sustituir el motor de reservas.
+
+## 20.4 Memoria
+
+La memoria existe para dar continuidad, no para inventar información.
+
+Cuando exista sessionId, los agentes deben intentar recuperar contexto relevante antes de volver a preguntar lo mismo. Deben guardar únicamente información útil para el servicio y evitar datos sensibles innecesarios.
+
+Colecciones principales: agent_memory, agent_memory_vectors y traveler_journeys.
+
+## 20.5 Ventas asistidas por IA
+
+Los agentes comerciales deben comportarse como asesores turísticos humanos de alta calidad: escuchar antes de vender, detectar intención, preguntar solo lo necesario, reconocer presupuesto/tiempo/ritmo, ofrecer alternativas, explicar incertidumbre, recordar decisiones, reducir fricción y facilitar formulario, proforma, WhatsApp o email.
+
+El objetivo es reducir fricción, no simplemente aumentar mensajes.
+
+## 20.6 Disponibilidad y reserva
+
+backend/bookingService.ts es la autoridad para reservas y cupos.
+
+Regla: recomendación ≠ disponibilidad ≠ reserva confirmada ≠ pago confirmado.
+
+Nunca afirmar una confirmación sin evidencia correspondiente. La máquina de estados canónica está en backend/bookingStateMachine.ts y la idempotencia en backend/idempotencyService.ts.
+
+## 20.7 Proveedores
+
+Flujo esperado: cliente solicita → agente normaliza → se genera orden operacional → se envía al proveedor → proveedor responde → providerInboxAgent identifica remitente y orden → IA clasifica → transición con evidencia → actualización al cliente → evento auditado.
+
+El correo del proveedor no es automáticamente confiable: debe existir proveedor conocido, identificador de orden y evidencia suficiente. Las respuestas ambiguas pasan a revisión.
+
+## 20.8 Agente de correo
+
+backend/providerInboxAgent.ts está preparado para Gmail OAuth. Variables esperadas: GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN y GMAIL_INBOX_USER opcional.
+
+El cron nativo revisa la bandeja cada minuto. Si las credenciales no existen, el agente permanece inactivo sin romper el resto del sistema.
+
+## 20.9 Clima y adaptación
+
+backend/weatherPulseService.ts proporciona contexto meteorológico vivo. El clima puede provocar aviso, cambio de horario, cambio de actividad, alternativa, escalamiento o adaptación del itinerario.
+
+La IA no debe convertir una alerta meteorológica en cancelación automática salvo que exista una regla operativa explícita y una fuente autorizada.
+
+## 20.10 Itinerario adaptativo
+
+Un itinerario no es un documento estático. Debe poder cambiar cuando cambian disponibilidad, clima, vuelos, preferencias, viajeros, duración, actividad o restricciones operativas.
+
+El viaje guardado en traveler_journeys representa el estado actual y debe conservar trazabilidad de las modificaciones relevantes.
+
+## 20.11 Humanismo operacional
+
+Detrás de cada reserva existe una persona. En retrasos, cancelaciones, pérdidas de conexión, frustración, cambios familiares, limitaciones de movilidad, problemas de equipaje, cambios de vuelo o errores del proveedor, la respuesta debe ser clara, empática y accionable.
+
+El sistema no debe diagnosticar ni prometer resultados que no puede garantizar.
+
+## 20.12 Centro de control administrativo
+
+backend/adminControlCenterService.ts y src/pages/AdminControlCenterPage.tsx proporcionan la visión ejecutiva.
+
+Debe permitir observar reservas, ventas, conversión, pendientes, cancelaciones/fallos, próximas 72 horas, alertas, proveedores, agentes, automatizaciones, bandeja de proveedores, memoria y viajes, evaluaciones de IA, skills, evolución y documentos operativos.
+
+La información administrativa sensible requiere autenticación.
+
+## 20.13 Automatización
+
+La automatización comercial es nativa. Motor principal: backend/cronEngine.ts, backend/nativeAutomationEngine.ts y backend/nativeWorkflows.ts.
+
+No introducir una dependencia externa de automatización cuando el proceso ya puede ejecutarse de forma segura dentro del backend.
+
+Los procesos deben ser observables, idempotentes, auditables, recuperables, tolerantes a fallos y limitados por permisos.
+
+## 20.14 Agentes y herramientas
+
+Arquitectura esperada:
+
+INTENT → CONTEXT / MEMORY → TOOL SELECTION → TOOL EXECUTION → OBSERVATION → REASONING → POLICY / SAFETY → CUSTOMER RESPONSE → OPERATIONAL EVENT → LEARNING
+
+Las herramientas nuevas deben registrarse en backend/agentTools.ts y conectarse al ciclo real de function calling cuando corresponda.
+
+## 20.15 Desarrollo seguro
+
+Antes de modificar: revisar imports, tipos, rutas, Firestore, permisos, estados, efectos secundarios, tests/build y diff contra la rama base.
+
+Después: ejecutar npm run lint, npm run build, revisar diff, logs, rutas nuevas, autenticación y confirmar que no se eliminaron líneas funcionales accidentalmente.
+
+## 20.16 Qué significa no romper nada
+
+Una mejora correcta conserva interfaces existentes cuando sea posible, mantiene rutas antiguas, no elimina agentes/workflows/colecciones, no cambia silenciosamente estados, no sustituye fuentes de verdad, añade capacidades incrementalmente, registra eventos y deja una ruta clara de rollback.
+
+## 20.17 Fuentes de verdad
+
+Prioridad: 1) estado transaccional de Firestore; 2) respuesta viva de proveedor o fuente autorizada; 3) catálogo oficial interno; 4) memoria del viajero; 5) conocimiento turístico estable; 6) inferencia de IA.
+
+La inferencia nunca debe sobreescribir evidencia operacional.
+
+## 20.18 Objetivo final del producto
+
+Costa Rica Tours debe evolucionar hacia un mostrador digital autónomo de turismo: entiende al viajero, conserva contexto, diseña viajes, consulta datos vivos, busca experiencias, verifica disponibilidad, prepara proformas, coordina proveedores, procesa respuestas, informa al cliente, adapta el viaje, detecta problemas, escala cuando corresponde, registra cada paso, mide resultados y mejora sus agentes.
+
+La autonomía siempre está subordinada a seguridad, trazabilidad, permisos y evidencia.
