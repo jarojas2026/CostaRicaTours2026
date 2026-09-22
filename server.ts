@@ -191,6 +191,56 @@ app.get('/api/health', (req, res) => {
 // ==========================================
 // 🧠 AI TRAVEL INTELLIGENCE — READ ONLY
 // ==========================================
+// ==========================================
+/* 🧭 FULL TRAVEL JOURNEY — MEMORY + CATALOG + LIVE DATA + SALES */
+app.post('/api/ai/journey', async (req, res) => {
+  try {
+    const result = await buildTripJourney(req.body || {});
+    res.json({ success: true, journey: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'No se pudo construir el viaje.' });
+  }
+});
+
+app.get('/api/ai/journey/:journeyId', async (req, res) => {
+  try {
+    const result = await getTravelerJourney(String(req.params.journeyId || ''));
+    if (!result) return res.status(404).json({ success: false, error: 'Viaje no encontrado.' });
+    res.json({ success: true, journey: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'No se pudo recuperar el viaje.' });
+  }
+});
+
+app.patch('/api/ai/journey/:journeyId', async (req, res) => {
+  try {
+    const result = await adaptTravelerJourney(String(req.params.journeyId || ''), req.body || {});
+    res.json({ success: true, journey: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'No se pudo adaptar el viaje.' });
+  }
+});
+
+// ==========================================
+// 📬 PROVIDER INBOX — lectura operativa del correo cada minuto
+app.post('/api/ops/provider-inbox/check', requireAdmin, async (_req, res) => {
+  try {
+    res.json({ success: true, result: await processProviderInboxOnce() });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'No se pudo revisar la bandeja.' });
+  }
+});
+
+// ==========================================
+// 📊 ADMIN CONTROL CENTER
+app.get('/api/admin/control-center', requireAdmin, async (_req, res) => {
+  try {
+    res.json(await getAdminControlCenterSnapshot());
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'No se pudo cargar el centro de control.' });
+  }
+});
+
 app.post('/api/ai/intelligence', (req, res) => {
   try {
     const action = String(req.body?.action || '').trim();
