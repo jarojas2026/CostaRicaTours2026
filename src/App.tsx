@@ -45,6 +45,7 @@ const PhotoTourFinder = lazy(() => import('./components/PhotoTourFinder').then(m
 const GoogleWorkspaceHub = lazy(() => import('./components/GoogleWorkspaceHub').then(m => ({ default: m.GoogleWorkspaceHub })));
 const CounterDeskPage = lazy(() => import('./pages/CounterDeskPage').then(m => ({ default: m.CounterDeskPage })));
 const AutonomousOperationsPage = lazy(() => import('./pages/AutonomousOperationsPage'));
+const AdminControlCenterPage = lazy(() => import('./pages/AdminControlCenterPage').then(m => ({ default: m.AdminControlCenterPage })));
 
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -205,6 +206,7 @@ export default function App() {
       case 'tools': return `🚐 ${language === 'es' ? 'Transporte & Guía' : 'Transport & Guide'}`;
       case 'workspace': return `✉️ 📅 Google Workspace`;
       case 'counter': return `🛎️ ${language === 'es' ? 'Mostrador Digital Full Stack' : 'Full-Stack Digital Counter'}`;
+      case 'admin': return `🛡️ ${language === 'es' ? 'Centro de Control Administrativo' : 'Executive Control Center'}`;
       default: return '';
     }
   };
@@ -410,6 +412,12 @@ export default function App() {
             <Route path="/counter" element={
               <Suspense fallback={<div className="py-24 text-center text-emerald-400">Cargando Mostrador Digital...</div>}>
                 <CounterDeskPage language={language} />
+              </Suspense>
+            } />
+
+            <Route path="/admin" element={
+              <Suspense fallback={<div className="py-24 text-center text-amber-300">Cargando Centro de Control...</div>}>
+                <AdminControlCenterPage language={language} />
               </Suspense>
             } />
 
