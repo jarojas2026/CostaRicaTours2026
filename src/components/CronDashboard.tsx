@@ -78,9 +78,9 @@ export function CronDashboard({ language = 'es' }: { language?: 'es' | 'en' }) {
           adults: 2,
           children: 1,
           customerName: 'Juan Carlos Rojas',
-          customerEmail: 'jarojas800@gmail.com',
+          customerEmail: 'demo@invalid.local',
           pickupHotel: 'Tabacón Thermal Resort, La Fortuna',
-          specialRequests: 'Operación 100% automatizada con confirmación instantánea'
+          specialRequests: 'Simulación administrativa: no enviar notificaciones ni confirmar reserva'
         })
       });
       const data = await res.json();
@@ -95,9 +95,7 @@ export function CronDashboard({ language = 'es' }: { language?: 'es' | 'en' }) {
   const handleForceRun = async (jobId: string, endpoint: string) => {
     setRunningJob(jobId);
     try {
-      const isWebhook = endpoint.startsWith('/webhook/');
-      const payload = isWebhook ? { trigger: jobId, manual_dispatch: true, timestamp: new Date().toISOString() } : {};
-      
+      const payload = {};
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -147,13 +145,13 @@ export function CronDashboard({ language = 'es' }: { language?: 'es' | 'en' }) {
           <div>
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold uppercase tracking-wider mb-2 border border-emerald-400/30">
               <Zap className="w-3.5 h-3.5 text-emerald-400" />
-              Modo Autónomo Activo • 0% Intervención Manual
+              Modo Simulación Gobernada
             </div>
             <h3 className="text-lg font-bold text-white">
-              Pipeline Autónomo Extremo a Extremo
+              Simulador del Pipeline de Reserva
             </h3>
             <p className="text-sm text-emerald-200/90 mt-1 max-w-2xl">
-              Cuando un turista consulta o reserva, el sistema: (1) Valida disponibilidad, (2) Crea la reserva en Firestore, (3) Notifica y coordina con el proveedor verificado, (4) Genera el Voucher QR digital y (5) Confirma al cliente por email en milisegundos.
+              Simula el recorrido de disponibilidad → reserva pendiente → pago verificado → confirmación. La prueba no crea reservas reales, no cobra y no notifica proveedores.
             </p>
           </div>
           <button
@@ -166,7 +164,7 @@ export function CronDashboard({ language = 'es' }: { language?: 'es' | 'en' }) {
             ) : (
               <Zap className="w-5 h-5 fill-current" />
             )}
-            <span>{runningAutonomous ? 'Ejecutando Flujo...' : 'Probar Flujo 100% Autónomo'}</span>
+            <span>{runningAutonomous ? 'Ejecutando Flujo...' : 'Simular Flujo Seguro'}</span>
           </button>
         </div>
 
@@ -176,7 +174,7 @@ export function CronDashboard({ language = 'es' }: { language?: 'es' | 'en' }) {
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-emerald-300 font-bold text-sm">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                  <span>¡Flujo ejecutado en {autonomousResult.duracionMs} ms con Cero Intervención Manual!</span>
+                  <span>Simulación ejecutada en {autonomousResult.duracionMs} ms sin efectos persistentes</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                   <div className="bg-white/10 rounded p-2.5 border border-white/10">
@@ -184,19 +182,19 @@ export function CronDashboard({ language = 'es' }: { language?: 'es' | 'en' }) {
                     <span className="font-mono text-white text-sm font-bold">{autonomousResult.reserva?.codigo}</span>
                   </div>
                   <div className="bg-white/10 rounded p-2.5 border border-white/10">
-                    <span className="text-emerald-300 block font-semibold mb-0.5">Operador Local</span>
-                    <span className="text-white font-medium truncate block">{autonomousResult.operadorAsignado?.nombre}</span>
-                    <span className="text-emerald-300/80 text-[10px]">✓ Notificado automáticamente</span>
+                    <span className="text-emerald-300 block font-semibold mb-0.5">Estado Operativo</span>
+                    <span className="text-white font-medium truncate block">{autonomousResult.message || 'No se notificó ningún proveedor'}</span>
+                    <span className="text-emerald-300/80 text-[10px]">✓ Sin notificación en simulación</span>
                   </div>
                   <div className="bg-white/10 rounded p-2.5 border border-white/10">
-                    <span className="text-emerald-300 block font-semibold mb-0.5">Voucher Cliente</span>
-                    <span className="text-white font-medium truncate block">{autonomousResult.clienteNotificado?.email}</span>
-                    <span className="text-emerald-300/80 text-[10px]">✓ Voucher QR despachado</span>
+                    <span className="text-emerald-300 block font-semibold mb-0.5">Pago</span>
+                    <span className="text-white font-medium truncate block">{autonomousResult.paymentRequired ? 'Pago real requerido' : 'No requerido en simulación'}</span>
+                    <span className="text-emerald-300/80 text-[10px]">✓ Sin voucher en simulación</span>
                   </div>
                   <div className="bg-white/10 rounded p-2.5 border border-white/10">
-                    <span className="text-emerald-300 block font-semibold mb-0.5">Acciones Programadas</span>
-                    <span className="text-white font-medium block">4 Automatizaciones activas</span>
-                    <span className="text-emerald-300/80 text-[10px]">24h, 2h, 6am y 5pm</span>
+                    <span className="text-emerald-300 block font-semibold mb-0.5">Efectos</span>
+                    <span className="text-white font-medium block">Sin efectos externos</span>
+                    <span className="text-emerald-300/80 text-[10px]">Solo lectura</span>
                   </div>
                 </div>
               </div>
