@@ -282,7 +282,7 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
         note: { type: 'STRING', description: 'Context note' }
       }
     }
-  }
+  },
   {
     name: 'trip_fit',
     description: 'Match traveler profile, interests, trip length and airport constraints to destination options. This is planning guidance, not a live availability promise.',
