@@ -117,7 +117,8 @@ export async function processProviderInboxOnce() {
       }
       const result = await handleProviderAction({ orderId, action: classification.action, notes: classification.notes, operatorContact: from });
       if (!result.success) throw new Error(result.message);
-      await notifyCustomer(result.order, classification.action, classification.notes);
+      const customerAction = classification.action === 'reject' && result.order.status === 'reassigned' ? 'delay' : classification.action;
+      await notifyCustomer(result.order, customerAction, classification.notes);
       await emitOperationalEvent({ type: 'provider.response.processed', source: 'provider_inbox_agent', conversationId: result.order.bookingId, payload: { orderId, action: classification.action, confidence: classification.confidence, from } }).catch(() => undefined);
       if (db) await db.collection('provider_inbox_events').doc(item.id).set({ messageId: item.id, from, subject, orderId, status: 'processed', classification, result: { success: result.success, message: result.message }, processedAt: new Date().toISOString() });
       processed++;
