@@ -3,6 +3,7 @@
  * These tools call the application's existing domain services instead of duplicating logic.
  */
 import { TOURS } from '../src/data/toursData';
+import { assessTripFit, buildPackingList, buildRouteStrategy, getDestinationIntelligence, screenActivitySuitability } from './tourismIntelligenceEngine';
 import { checkTourAvailability, findBookingByCodeOrEmail } from './bookingService';
 import { getOperationalMemory, retrieveRelevantMemory } from './memoryService';
 import {
@@ -54,6 +55,26 @@ export const AGENT_TOOL_REGISTRY = {
   },
   season_advice: {
     description: 'General seasonal guidance for a month (dry/green season, typical whale-watching windows).',
+    sideEffect: false
+  },
+  trip_fit: {
+    description: 'Match traveler profile, interests, trip length and airport constraints to destination options.',
+    sideEffect: false
+  },
+  packing_list: {
+    description: 'Build a practical Costa Rica packing list from activities, regions and traveler profile.',
+    sideEffect: false
+  },
+  activity_safety_check: {
+    description: 'Screen activity suitability and identify facts that must be verified before booking.',
+    sideEffect: false
+  },
+  route_strategy: {
+    description: 'Evaluate geographic transfer burden and create a route strategy without inventing live travel times.',
+    sideEffect: false
+  },
+  destination_intelligence: {
+    description: 'Return stable expert knowledge for a Costa Rica destination with explicit live-verification requirements.',
     sideEffect: false
   }
 } as const;
@@ -133,6 +154,39 @@ export async function executeAgentTool(
       return getCancellationPolicy(args.tourId ? String(args.tourId) : undefined);
     case 'season_advice':
       return seasonAdvice(Number(args.month));
+    case 'trip_fit':
+      return assessTripFit({
+        query: args.query ? String(args.query) : '',
+        days: Number(args.days),
+        airport: args.airport ? String(args.airport) : undefined,
+        profile: args.profile,
+        intensity: args.intensity,
+        regions: Array.isArray(args.regions) ? args.regions.map((x: unknown) => String(x)) : undefined
+      });
+    case 'packing_list':
+      return buildPackingList({
+        activities: Array.isArray(args.activities) ? args.activities.map((x: unknown) => String(x)) : [],
+        regions: Array.isArray(args.regions) ? args.regions.map((x: unknown) => String(x)) : [],
+        profile: args.profile
+      });
+    case 'activity_safety_check':
+      return screenActivitySuitability({
+        activity: String(args.activity || ''),
+        age: args.age !== undefined ? Number(args.age) : undefined,
+        canSwim: args.canSwim === undefined ? undefined : Boolean(args.canSwim),
+        mobility: args.mobility ? String(args.mobility) : undefined,
+        fearOfHeights: args.fearOfHeights === undefined ? undefined : Boolean(args.fearOfHeights),
+        medicalConstraint: args.medicalConstraint ? String(args.medicalConstraint) : undefined
+      });
+    case 'route_strategy':
+      return buildRouteStrategy({
+        regions: Array.isArray(args.regions) ? args.regions.map((x: unknown) => String(x)) : [],
+        days: Number(args.days),
+        arrivalAirport: args.arrivalAirport ? String(args.arrivalAirport) : undefined,
+        departureAirport: args.departureAirport ? String(args.departureAirport) : undefined
+      });
+    case 'destination_intelligence':
+      return getDestinationIntelligence(String(args.regionId || ''));
   }
 }
 
@@ -227,6 +281,72 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
         language: { type: 'STRING', description: 'es or en' },
         note: { type: 'STRING', description: 'Context note' }
       }
+    }
+  }
+  {
+    name: 'trip_fit',
+    description: 'Match traveler profile, interests, trip length and airport constraints to destination options. This is planning guidance, not a live availability promise.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        query: { type: 'STRING', description: 'Traveler goals and preferences' },
+        days: { type: 'NUMBER', description: 'Trip length in days' },
+        airport: { type: 'STRING', description: 'Arrival airport such as SJO or LIR' },
+        profile: { type: 'STRING', description: 'family, couple, honeymoon, adventure, wildlife, senior, relaxed, photography, accessibility' },
+        intensity: { type: 'STRING', description: 'easy, moderate, active or high' },
+        regions: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Optional preferred regions' }
+      }
+    }
+  },
+  {
+    name: 'packing_list',
+    description: 'Build a practical packing list for activities and Costa Rica regions.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        activities: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Activities such as beach, rafting, canopy, wildlife or hiking' },
+        regions: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Regions such as Monteverde, Arenal, Caribbean or Osa' },
+        profile: { type: 'STRING', description: 'Optional traveler profile' }
+      }
+    }
+  },
+  {
+    name: 'activity_safety_check',
+    description: 'Screen activity suitability. Never auto-confirms safety; identifies what must be verified with the operator.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        activity: { type: 'STRING', description: 'Activity name' },
+        age: { type: 'NUMBER', description: 'Participant age when relevant' },
+        canSwim: { type: 'BOOLEAN', description: 'Whether participant can swim' },
+        mobility: { type: 'STRING', description: 'Voluntarily disclosed mobility/access need' },
+        fearOfHeights: { type: 'BOOLEAN', description: 'Voluntarily disclosed fear of heights' },
+        medicalConstraint: { type: 'STRING', description: 'Voluntarily disclosed medical constraint; do not diagnose' }
+      },
+      required: ['activity']
+    }
+  },
+  {
+    name: 'route_strategy',
+    description: 'Evaluate geographic transfer burden and create a route strategy without inventing live travel times.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        regions: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Requested destination regions' },
+        days: { type: 'NUMBER', description: 'Trip length' },
+        arrivalAirport: { type: 'STRING', description: 'Arrival airport' },
+        departureAirport: { type: 'STRING', description: 'Departure airport' }
+      },
+      required: ['regions', 'days']
+    }
+  },
+  {
+    name: 'destination_intelligence',
+    description: 'Return stable expert knowledge for a destination and list the live facts that require verification.',
+    parameters: {
+      type: 'OBJECT',
+      properties: { regionId: { type: 'STRING', description: 'Destination region id such as arenal, monteverde, guanacaste, manuel_antonio, caribe_sur or osa' } },
+      required: ['regionId']
     }
   }
 ];
