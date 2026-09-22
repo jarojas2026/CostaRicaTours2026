@@ -52,6 +52,8 @@ export async function getAdminControlCenterSnapshot() {
     recentEvaluations = (evaluations.docs || []).map((d: any) => ({ id: d.id, ...d.data() }));
   }
 
+  const recentBookings = bookings.slice().sort((a: any, b: any) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).slice(0, 25).map((b: any) => ({ id: b.bookingId || b.id, customer: b.customer?.fullName || b.customerName || '—', email: b.customer?.email || b.email || '—', tour: b.tourName || b.tourId || '—', date: b.date || '—', status: b.status || '—', totalUSD: money(b.totalUSD) }));
+
   const skills = listSkillVersions().map((s: any) => ({
     id: s.id, version: s.version, lifecycle: s.lifecycle, exposure: s.exposure, routingScore: s.routingScore
   }));
@@ -89,6 +91,7 @@ export async function getAdminControlCenterSnapshot() {
         configured: Boolean(process.env.GMAIL_CLIENT_ID && process.env.GMAIL_CLIENT_SECRET && process.env.GMAIL_REFRESH_TOKEN)
       }
     },
+    recentBookings,
     providers: providerList.slice(0, 30).map(p => ({
       id: p.id, name: p.name, region: p.region, status: p.status,
       slaTargetMinutes: p.slaTargetMinutes, averageResponseMinutes: p.averageResponseMinutes,
