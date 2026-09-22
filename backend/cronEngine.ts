@@ -177,9 +177,9 @@ export function initializeAutomationEngine() {
   cron.schedule('* * * * *', async () => {
     try {
       const res = await processProviderInboxOnce();
-      if (res.enabled && (res.processed || res.errors)) {
-        logAutomationExecution('CRON_PROVIDER_INBOX_1M', 0, res.errors ? 'warning' : 'success',
-          'Bandeja de proveedores: ' + res.processed + ' procesadas, ' + res.errors + ' errores, ' + res.ignored + ' ignoradas.');
+      if (res.success && res.processedEmails) {
+        logAutomationExecution('CRON_PROVIDER_INBOX_1M', 0, 'success',
+          'Bandeja de proveedores: ' + res.processedEmails + ' procesadas, ' + res.confirmedBookings + ' reservas confirmadas.');
       }
     } catch (error: any) {
       console.error('❌ Error ejecutando CRON_PROVIDER_INBOX_1M:', error);
