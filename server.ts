@@ -112,12 +112,18 @@ import { buildTripJourney, adaptTravelerJourney, getTravelerJourney } from './ba
 import { processProviderInboxOnce } from './backend/providerInboxAgent';
 import { getAdminControlCenterSnapshot } from './backend/adminControlCenterService';
 import { getPlatformControls, updatePlatformControls } from './backend/platformControlService';
+import { runAdminAICommand, listAdminAICommands, approveAdminAICommand, rejectAdminAICommand } from './backend/adminAICommandService';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
 // Admin gate is defined before any route registration that uses it.
 const requireAdmin = requireOperator;
+
+function adminAccessPayload(req: express.Request) {
+  const access = (req as any).adminAccess || {};
+  return { role: access.role || (req as any).user?.role || null, email: access.email || (req as any).user?.email || null, scope: access.scope || 'operations' };
+}
 
 async function runAdminAICommand(prompt: string, mode: string) {
   const { getAdminControlCenterSnapshot } = await import('./backend/adminControlCenterService');
@@ -250,6 +256,49 @@ app.post('/api/ops/provider-inbox/check', requireAdmin, async (_req, res) => {
 
 // ==========================================
 // 📊 ADMIN CONTROL CENTER
+app.get('/api/admin/access-policy', requireAdmin, async (req, res) => {
+  res.json({
+    allowed: true,
+    adminOnly: true,
+    access: adminAccessPayload(req),
+    mutationsRequireExplicitAction: true,
+    codeChangesRequireReviewedPullRequest: true
+  });
+});
+
+app.get('/api/admin/ai-command/history', requireAdmin, async (_req, res) => {
+  try { return res.json({ commands: await listAdminAICommands(40) }); }
+  catch (error: any) { return res.status(500).json({ error: error?.message || 'No se pudo cargar el historial de IA.' }); }
+});
+
+app.post('/api/admin/ai-command', requireAdmin, async (req, res) => {
+  try {
+    const prompt = typeof req.body?.prompt === 'string' ? req.body.prompt : '';
+    const mode = typeof req.body?.mode === 'string' ? req.body.mode : 'analyze';
+    return res.json(await runAdminAICommand({ prompt, mode, actor: adminAccessPayload(req) }));
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || 'No se pudo ejecutar el comando de IA.' });
+  }
+});
+
+app.post('/api/admin/ai-command/:commandId/approve', requireAdmin, async (req, res) => {
+  try {
+    if (adminAccessPayload(req).role !== 'admin') return res.status(403).json({ error: 'Solo un administrador puede aprobar cambios.' });
+    return res.json(await approveAdminAICommand(String(req.params.commandId || ''), adminAccessPayload(req)));
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || 'No se pudo aprobar la propuesta.' });
+  }
+});
+
+app.post('/api/admin/ai-command/:commandId/reject', requireAdmin, async (req, res) => {
+  try {
+    if (adminAccessPayload(req).role !== 'admin') return res.status(403).json({ error: 'Solo un administrador puede rechazar cambios.' });
+    return res.json(await rejectAdminAICommand(String(req.params.commandId || ''), adminAccessPayload(req), String(req.body?.reason || '')));
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || 'No se pudo rechazar la propuesta.' });
+  }
+});
+
 app.get('/api/admin/platform-controls', requireAdmin, async (_req, res) => {
   try { return res.json(await getPlatformControls()); }
   catch (error: any) { return res.status(500).json({ error: error?.message || 'No se pudieron cargar los parámetros.' }); }
