@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { Compass, Luggage, ShieldCheck, Sparkles, Route, Loader2 } from 'lucide-react';
+import { Compass, Luggage, ShieldCheck, Sparkles, Route, Loader2, MapPinned, CalendarDays, ShoppingCart } from 'lucide-react';
 import { Language } from '../types';
 
-type Action = 'trip_fit' | 'packing_list' | 'activity_safety_check' | 'route_strategy';
+type Action = 'trip_fit' | 'packing_list' | 'activity_safety_check' | 'route_strategy' | 'full_journey';
 
 interface Props { language: Language; }
 
@@ -19,7 +19,8 @@ export const SmartTripAdvisor: React.FC<Props> = ({ language }) => {
     trip_fit: es ? 'Diseñar viaje' : 'Design trip',
     packing_list: es ? 'Equipaje inteligente' : 'Smart packing',
     activity_safety_check: es ? 'Revisión de actividad' : 'Activity check',
-    route_strategy: es ? 'Ruta geográfica' : 'Route strategy'
+    route_strategy: es ? 'Ruta geográfica' : 'Route strategy',
+    full_journey: es ? 'Construir viaje completo' : 'Build full journey'
   }), [es]);
 
   async function run() {
@@ -33,7 +34,7 @@ export const SmartTripAdvisor: React.FC<Props> = ({ language }) => {
             : action === 'activity_safety_check'
               ? { activity: query || (es ? 'actividad de aventura' : 'adventure activity') }
               : { regions: query.split(',').map(x => x.trim()).filter(Boolean), days };
-      const response = await fetch('/api/ai/intelligence', {
+      const response = await fetch(action === 'full_journey' ? '/api/journey/build' : '/api/ai/intelligence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, ...payload })
@@ -71,7 +72,7 @@ export const SmartTripAdvisor: React.FC<Props> = ({ language }) => {
 
         <div className="mt-6 grid gap-2 sm:grid-cols-4">
           {(Object.keys(labels) as Action[]).map(key => {
-            const Icon = key === 'trip_fit' ? Compass : key === 'packing_list' ? Luggage : key === 'activity_safety_check' ? ShieldCheck : Route;
+            const Icon = key === 'trip_fit' ? Compass : key === 'packing_list' ? Luggage : key === 'activity_safety_check' ? ShieldCheck : key === 'route_strategy' ? Route : Sparkles;
             return (
               <button key={key} type="button" onClick={() => { setAction(key); setResult(null); }}
                 className={'rounded-2xl border px-3 py-3 text-left transition ' + (action === key ? 'border-sky-400 bg-sky-50' : 'border-slate-200 bg-white hover:border-sky-300')}>
@@ -122,10 +123,43 @@ export const SmartTripAdvisor: React.FC<Props> = ({ language }) => {
           <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
             {result.error ? (
               <p className="text-sm text-red-600">{result.error}</p>
+            ) : action === 'full_journey' ? (
+              <div className="space-y-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Journey {result.journeyId}</div>
+                    <h3 className="mt-1 text-xl font-black text-slate-950">{result.itinerary?.title || (es ? 'Tu viaje en construcción' : 'Your trip in progress')}</h3>
+                    <p className="mt-1 text-sm text-slate-600">{result.itinerary?.summary}</p>
+                  </div>
+                  <div className="rounded-2xl bg-amber-100 px-3 py-2 text-xs font-black text-amber-900">
+                    {result.sales?.stage || 'DISCOVERY'}
+                  </div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl bg-white p-3 border border-slate-200"><MapPinned className="h-4 w-4 text-emerald-700"/><div className="mt-2 text-xs font-black text-slate-900">{es ? 'Regiones' : 'Regions'}</div><div className="mt-1 text-xs text-slate-600">{(result.planning?.regions || []).join(' • ')}</div></div>
+                  <div className="rounded-2xl bg-white p-3 border border-slate-200"><CalendarDays className="h-4 w-4 text-sky-700"/><div className="mt-2 text-xs font-black text-slate-900">{es ? 'Días' : 'Days'}</div><div className="mt-1 text-xs text-slate-600">{result.planning?.days || days}</div></div>
+                  <div className="rounded-2xl bg-white p-3 border border-slate-200"><ShoppingCart className="h-4 w-4 text-amber-700"/><div className="mt-2 text-xs font-black text-slate-900">{es ? 'Siguiente paso' : 'Next step'}</div><div className="mt-1 text-xs text-slate-600">{result.sales?.nextAction}</div></div>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {(result.itinerary?.days || []).slice(0, 6).map((day: any) => (
+                    <div key={day.day} className="rounded-2xl bg-white border border-slate-200 p-4">
+                      <div className="text-[10px] font-black uppercase text-emerald-700">{es ? 'Día' : 'Day'} {day.day}</div>
+                      <div className="mt-1 text-sm font-black text-slate-950">{day.title}</div>
+                      <div className="mt-2 text-xs leading-5 text-slate-600">{day.morningActivity}</div>
+                      <div className="mt-1 text-xs leading-5 text-slate-600">{day.afternoonActivity}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                  <div className="text-xs font-black text-emerald-900">{es ? 'Disponibilidad real' : 'Live availability'}</div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {(result.live?.availability || []).map((x: any) => <span key={x.tourId} className="rounded-full bg-white border border-emerald-200 px-3 py-1 text-[10px] font-bold text-slate-700">{x.tourId}: {x.status || (x.available ? 'available' : 'verify')}</span>)}
+                  </div>
+                </div>
+                <button type="button" onClick={() => window.location.assign('/tours')} className="rounded-xl bg-slate-950 px-5 py-3 text-xs font-black text-white">{es ? 'Continuar a catálogo y reserva' : 'Continue to catalog & booking'}</button>
+              </div>
             ) : (
-              <pre className="max-h-72 overflow-auto whitespace-pre-wrap text-xs leading-5 text-slate-700">
-                {JSON.stringify(result, null, 2)}
-              </pre>
+              <pre className="max-h-72 overflow-auto whitespace-pre-wrap text-xs leading-5 text-slate-700">{JSON.stringify(result, null, 2)}</pre>
             )}
           </div>
         )}
