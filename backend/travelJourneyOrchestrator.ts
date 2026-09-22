@@ -111,7 +111,7 @@ export async function buildTripJourney(input: JourneyInput) {
   const itinerary = generateDeterministicItinerary({
     days, travelers, style: fit.profiles?.[0] || 'relaxed', regions, language, specialRequests: query
   });
-  const packing = buildPackingList({ activities: input.activities?.length ? input.activities : fit.interests, regions, profile: fit.profiles?.[0] });
+  const packing = buildPackingList({ activities: input.activities?.length ? input.activities : fit.interests, regions, profile: input.profile });
 
   const journeyId = clean(input.journeyId, 160) || 'journey_' + randomUUID();
   const stage = salesStage(input, availability);
