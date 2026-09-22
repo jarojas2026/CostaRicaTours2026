@@ -76,7 +76,7 @@ export function assessTripFit(input: { query?: string; days?: number; airport?: 
     const score = Math.min(100, 40 + hits * 12 + (days >= 5 ? 8 : 0) + (profiles.includes('wildlife') && /wildlife/.test(text) ? 10 : 0));
     return { regionId: pair[0], region: pair[1].label, fitScore: score, matchingStrengths: pair[1].strengths.filter(function(s) { return interests.some(function(i) { return s.toLowerCase().includes(i.replace('_', ' ')); }); }) };
   }).sort(function(a,b) { return b.fitScore - a.fitScore; }).slice(0, 5);
-  return { sourceClass: 'STABLE_KNOWLEDGE' as const, days, airport: input.airport || 'not specified', profiles, interests, intensity, priorities: [...new Set(profileRules)].slice(0,10), avoid: [...new Set(avoid)].slice(0,8), candidateRegions: candidates, liveChecksRequired: ['availability','weather','road conditions','park/operator access','current prices'] };
+  return { sourceClass: 'STABLE_KNOWLEDGE' as const, days, airport: input.airport || 'not specified', profiles: safeProfiles.length ? safeProfiles : ['relaxed'], interests, intensity, priorities: [...new Set(profileRules)].slice(0,10), avoid: [...new Set(avoid)].slice(0,8), candidateRegions: candidates, liveChecksRequired: ['availability','weather','road conditions','park/operator access','current prices'] };
 }
 
 export function buildPackingList(input: { activities?: string[]; regions?: string[]; profile?: TravelerProfile }) {
