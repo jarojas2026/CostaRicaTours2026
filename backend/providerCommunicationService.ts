@@ -465,6 +465,22 @@ async function triggerAutoFailoverReassignment(rejectedOrder: ServiceOrder): Pro
   rejectedOrder.slaDeadline = new Date(Date.now() + alternateProvider.slaTargetMinutes * 60000).toISOString();
 
   serviceOrdersStore.set(rejectedOrder.id, rejectedOrder);
+  await persistServiceOrder(rejectedOrder).catch(() => {});
+  await updateBookingStatus(rejectedOrder.bookingId, {
+    serviceOrderStatus: 'reassigned',
+    providerId: alternateProvider.id,
+    providerName: alternateProvider.name,
+    providerFailoverAt: new Date().toISOString()
+  }).catch(() => {});
+
+  const alternateEmail = alternateProvider.officialEmail || alternateProvider.email;
+  if (alternateEmail) {
+    await sendEmail({
+      to: alternateEmail,
+      subject: `📋 [REASIGNACIÓN DE SERVICIO] ${rejectedOrder.id} - ${rejectedOrder.tourName}`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:24px"><h2>Solicitud de servicio reasignada</h2><p>Orden: <strong>${rejectedOrder.id}</strong></p><p>Tour: <strong>${rejectedOrder.tourName}</strong></p><p>Fecha: <strong>${rejectedOrder.date}</strong> ${rejectedOrder.time || ''}</p><p>Pasajeros: ${rejectedOrder.adults} adultos, ${rejectedOrder.children} niños</p><p>Punto de recogida: ${rejectedOrder.pickupLocation}</p><p>Por favor responda a este correo indicando si puede atender la solicitud.</p></div>`
+    }).catch(() => {});
+  }
 
   await createAlert({
     source: 'Motor Autónomo de Reasignación de Operadores',
