@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Language } from '../types';
 import { Calendar, User, ArrowRight } from 'lucide-react';
@@ -53,6 +53,7 @@ const POSTS = [
 ];
 
 export const BlogSection: React.FC<BlogSectionProps> = ({ language }) => {
+  const [selected,setSelected]=useState<(typeof POSTS)[number]|null>(null);
   return (
     <section className="py-20 px-4 max-w-7xl mx-auto">
       <div className="text-center mb-16">
@@ -109,7 +110,7 @@ export const BlogSection: React.FC<BlogSectionProps> = ({ language }) => {
               </p>
 
               <div className="mt-auto pt-6 border-t border-white/5">
-                <button className="flex items-center gap-2 text-emerald-400 text-sm font-black hover:gap-3 transition-all">
+                <button type="button" onClick={()=>setSelected(post)} className="flex items-center gap-2 text-emerald-400 text-sm font-black hover:gap-3 transition-all">
                   {language === 'es' ? 'Leer artículo' : 'Read more'}
                   <ArrowRight className="w-4 h-4" />
                 </button>
@@ -118,6 +119,7 @@ export const BlogSection: React.FC<BlogSectionProps> = ({ language }) => {
           </motion.article>
         ))}
       </div>
+      {selected && <div className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm p-4 flex items-center justify-center" onClick={()=>setSelected(null)}><article className="max-w-3xl w-full max-h-[85vh] overflow-y-auto rounded-3xl bg-[#07140f] border border-emerald-400/20 p-7 shadow-2xl" onClick={e=>e.stopPropagation()}><div className="text-[10px] uppercase tracking-widest text-emerald-300 font-black">{selected.date} · {selected.author}</div><h3 className="mt-3 text-3xl font-black text-white">{(selected.title as any)[language] || selected.title.en}</h3><p className="mt-4 text-stone-300 leading-7">{(selected.excerpt as any)[language] || selected.excerpt.en}</p><div className="mt-6 rounded-2xl bg-black/20 p-5 text-sm leading-7 text-stone-300">{language === "es" ? "Contenido editorial de muestra. Esta vista está preparada para ampliar cada artículo con contenido completo, fuentes y recomendaciones de reserva." : "Editorial preview. This view is ready to be expanded with full article content, sources and booking recommendations."}</div><button type="button" onClick={()=>setSelected(null)} className="mt-6 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-black text-stone-950">{language === "es" ? "Cerrar" : "Close"}</button></article></div>}
     </section>
   );
 };
