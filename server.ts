@@ -1224,12 +1224,16 @@ app.post('/api/native/workflows/loyalty', requireAdmin, async (req, res) => {
 // Procesa la consulta -> Bloquea cupo -> Crea reserva -> Notifica al proveedor -> Envía voucher digital QR al cliente
 app.post(['/api/native/autonomous-booking-flow', '/api/native/flujo-autonomo'], requireAdmin, async (req, res) => {
   try {
-    const result = await executeAutonomousFullBookingLifecycle(req.body);
+    const execute = req.body?.executeConfirmed === true;
+    if (execute && (req as any).adminAccess?.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Solo un administrador puede autorizar la ejecución con efectos persistentes.' });
+    }
+    const result = await executeAutonomousFullBookingLifecycle({ ...req.body, executeConfirmed: execute });
     res.json(result);
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: err.message });
   }
-});
+})
 
 // 1. Asistente Inteligente & Chat Oficial (Gemini 2.5 Flash + Base Oficial)
 app.post(['/api/chat', '/api/chat-consulta', async (req, res) => {
