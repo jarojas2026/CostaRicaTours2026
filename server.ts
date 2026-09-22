@@ -252,7 +252,8 @@ app.post('/api/ops/provider-inbox/check', requireAdmin, async (_req, res) => {
 // 📊 ADMIN CONTROL CENTER
 app.get('/api/admin/access-policy', requireAdmin, async (req, res) => {
   const user:any=(req as any).user||{};
-  res.json({allowed:true,role:user.role||user.adminRole||'operator',email:user.email||null,scope:user.role==='admin'?'full':'operator'});
+  const role=user.role||user.adminRole||'operator';
+  res.json({allowed:role==='admin'||role==='operator',role,email:user.email||null,scope:role==='admin'?'full':'operator'});
 });
 
 app.get('/api/admin/command-center', requireAdmin, async (_req, res) => {
