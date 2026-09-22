@@ -867,8 +867,23 @@ export async function getWeeklyConversionMetrics(): Promise<{
     (b) => b.status === 'cancelada' || b.status === 'cancelled'
   );
 
-  const totalInquiries = Math.max(totalBookings * 2.8, 38);
-  const conversionRate = totalInquiries > 0 
+  // Métrica comercial real: contamos conversaciones registradas por el Agent Mesh.
+  // Si Firestore no está disponible, no inventamos inquiries; devolvemos 0.
+  let totalInquiries = 0;
+  const metricsDb = getFirestoreDb();
+  if (metricsDb) {
+    try {
+      const eventSnapshot = await metricsDb.collection('agent_events').limit(500).get();
+      totalInquiries = eventSnapshot.docs.filter(doc => {
+        const data = doc.data() as any;
+        const created = new Date(String(data.createdAt || '')).getTime();
+        return data.type === 'conversation.turn.completed' && Number.isFinite(created) && created >= sevenDaysAgo.getTime();
+      }).length;
+    } catch (error) {
+      console.warn('No se pudieron calcular inquiries reales desde agent_events:', error);
+    }
+  }
+  const conversionRate = totalInquiries > 0
     ? Number(((confirmed.length / totalInquiries) * 100).toFixed(1))
     : 0;
 
