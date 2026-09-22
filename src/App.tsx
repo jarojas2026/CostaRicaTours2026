@@ -46,6 +46,7 @@ const GoogleWorkspaceHub = lazy(() => import('./components/GoogleWorkspaceHub').
 const CounterDeskPage = lazy(() => import('./pages/CounterDeskPage').then(m => ({ default: m.CounterDeskPage })));
 const AutonomousOperationsPage = lazy(() => import('./pages/AutonomousOperationsPage'));
 const AdminControlCenterPage = lazy(() => import('./pages/AdminControlCenterPage').then(m => ({ default: m.AdminControlCenterPage })));
+const AdminAICommandPage = lazy(() => import('./pages/AdminAICommandPage').then(m => ({ default: m.AdminAICommandPage })));
 const AdminFinancialLegalPage = lazy(() => import('./pages/AdminFinancialLegalPage').then(m => ({ default: m.AdminFinancialLegalPage })));
 
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
@@ -415,6 +416,8 @@ export default function App() {
                 <CounterDeskPage language={language} />
               </Suspense>
             } />
+
+            <Route path="/admin/ai-command" element={<Suspense fallback={<div className="py-24 text-center text-violet-300">Cargando sala de mando IA...</div>}><AdminAICommandPage language={language} /></Suspense>} />
 
             <Route path="/admin" element={
               <Suspense fallback={<div className="py-24 text-center text-amber-300">Cargando Centro de Control...</div>}>
