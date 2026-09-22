@@ -13,6 +13,20 @@ import { sendEmail } from './notificationService';
 
 export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || '';
 
+function resolveConfiguredProviderEmail(provider: TourProvider): string {
+  const raw = process.env.PROVIDER_EMAILS_JSON;
+  if (raw) {
+    try {
+      const mapping = JSON.parse(raw) as Record<string, string>;
+      const configured = mapping[provider.id];
+      if (configured && /@/.test(configured)) return configured.trim();
+    } catch {
+      console.warn('⚠️ PROVIDER_EMAILS_JSON no es JSON válido.');
+    }
+  }
+  return provider.email && /@/.test(provider.email) ? provider.email.trim() : '';
+}
+
 export interface TourProvider {
   id: string;
   name: string;
@@ -296,7 +310,7 @@ export async function dispatchServiceOrder(params: {
   serviceOrdersStore.set(orderId, order);
   await persistServiceOrder(order).catch(err => console.warn('⚠️ No se pudo persistir la orden de servicio:', err));
 
-  const providerEmail = provider.officialEmail || provider.email;
+  const providerEmail = resolveConfiguredProviderEmail(provider);
   console.log(`📡 [PROVEEDORES] Orden de servicio ${orderId} despachada a ${provider.name} (Email: ${providerEmail || 'no configurado'} | WhatsApp: ${provider.whatsapp}). SLA: ${provider.slaTargetMinutes}m.`);
 
   // Enviar correo únicamente a la dirección oficial/configurada del proveedor.
@@ -327,6 +341,17 @@ export async function dispatchServiceOrder(params: {
         </div>
       `
     }).catch(err => console.warn(`⚠️ Error enviando correo de orden de servicio a ${provider.email}:`, err));
+  }
+
+  if (!providerEmail) {
+    await createAlert({
+      source: 'Comunicación con Proveedores',
+      severity: 'warning',
+      title: 'Proveedor sin email configurado',
+      message: 'La orden ' + orderId + ' fue creada pero no se envió correo porque el proveedor no tiene un email operativo configurado en PROVIDER_EMAILS_JSON/PROVIDER_DEV_EMAIL.',
+      bookingId: params.bookingId,
+      providerId: provider.id
+    }).catch(() => {});
   }
 
   // Actualizar estado en reserva
