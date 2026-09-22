@@ -10,7 +10,7 @@
 `itinerary_planner`, `conversion_advisor`, `multilingual_support`, `sustainability_guide`, `safety_health`, `payments_support`.
 
 ## Reglas que se respetaron
-- No se tocó `server.ts` ni `backend/bookingService.ts` (ni `verifyN8NRequest()`, ni el bloqueo de pagos, ni `PORT`).
+- No se tocó `server.ts` ni `backend/bookingService.ts` (ni la autenticación interna del backend, ni el bloqueo de pagos, ni `PORT`).
 - Ninguna habilidad escribe en Firestore, cobra ni confirma reservas.
 - La comisión (20%) NO aparece en nada que vean los agentes.
 - El tipo de cambio a colones solo se muestra si `USD_TO_CRC_RATE` está configurada.
