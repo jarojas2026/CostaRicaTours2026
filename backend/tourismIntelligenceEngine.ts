@@ -1,4 +1,3 @@
-import { REGIONS } from '../src/data/toursData';
 
 export type TravelerProfile = 'family' | 'couple' | 'honeymoon' | 'adventure' | 'wildlife' | 'senior' | 'relaxed' | 'photography' | 'accessibility';
 export type ActivityIntensity = 'easy' | 'moderate' | 'active' | 'high';
@@ -68,7 +67,8 @@ export function getDestinationIntelligence(regionId: string) {
 export function assessTripFit(input: { query?: string; days?: number; airport?: string; profile?: TravelerProfile; intensity?: ActivityIntensity; regions?: string[] }) {
   const query = norm(input.query); const profiles = input.profile ? [input.profile] : inferProfile(query); const interests = inferInterests(query);
   const days = clamp(Number(input.days), 1, 21, 5); const intensity = input.intensity || (/extrem|adventure|rafting|canopy/i.test(query) ? 'active' : 'moderate');
-  const profileRules = profiles.flatMap(function(p) { return PROFILE_RULES[p].priorities; }); const avoid = profiles.flatMap(function(p) { return PROFILE_RULES[p].avoid; });
+  const safeProfiles = profiles.filter(function(p) { return !!PROFILE_RULES[p]; });
+  const profileRules = safeProfiles.flatMap(function(p) { return PROFILE_RULES[p].priorities; }); const avoid = safeProfiles.flatMap(function(p) { return PROFILE_RULES[p].avoid; });
   const requested = (input.regions || []).map(norm).filter(Boolean);
   const candidates = Object.entries(REGION_KNOWLEDGE).filter(function(pair) { return !requested.length || requested.includes(pair[0]) || requested.includes(norm(pair[1].label)); }).map(function(pair) {
     const text = (pair[1].label + ' ' + pair[1].strengths.join(' ')).toLowerCase();
