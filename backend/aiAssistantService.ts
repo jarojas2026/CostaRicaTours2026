@@ -334,63 +334,71 @@ Reply ONLY with "YES" or "NO".`;
 
     const config: any = {
       systemInstruction: SYSTEM_INSTRUCTION,
-      temperature: 0.7
+      temperature: 0.7,
+      tools: [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }]
     };
 
+    // El asistente puede combinar búsqueda web cuando la consulta lo exige con
+    // herramientas internas que leen la fuente de verdad del negocio.
     if (needsGrounding) {
-      config.tools = [{ googleSearch: {} }];
-    } else {
-      config.tools = [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }];
+      config.tools = [{ googleSearch: {} }, { functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }];
     }
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config
-    });
+    let currentContents: any[] = [{ role: 'user', parts: [{ text: prompt }] }];
+    let reply = '';
+    let toolRounds = 0;
 
-    let reply = response.text?.trim() || '';
+    // Bucle agentic: intención -> herramienta -> observación -> nuevo razonamiento.
+    // Se limita a tres rondas para evitar ciclos y mantener latencia controlada.
+    while (toolRounds < 3) {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: currentContents,
+        config
+      });
 
-    // Manejo de llamadas a herramientas estructuradas (Function Calling)
-    if (response.functionCalls && response.functionCalls.length > 0) {
-      const toolResponses: Array<{ name: string; response: any }> = [];
-      for (const call of response.functionCalls) {
+      const calls = response.functionCalls || [];
+      if (!calls.length) {
+        reply = response.text?.trim() || reply;
+        break;
+      }
+
+      currentContents.push(response.candidates?.[0]?.content || { role: 'model', parts: [] });
+      const functionParts: any[] = [];
+
+      for (const call of calls.slice(0, 6)) {
         const toolName = call.name || 'unknown_tool';
         try {
           const result = await executeAgentTool(toolName as any, call.args || {});
-          toolResponses.push({ name: toolName, response: result });
+          functionParts.push({
+            functionResponse: {
+              id: call.id,
+              name: toolName,
+              response: { result }
+            }
+          });
         } catch (callErr: any) {
-          toolResponses.push({ name: toolName, response: { error: callErr.message } });
+          functionParts.push({
+            functionResponse: {
+              id: call.id,
+              name: toolName,
+              response: { error: callErr.message || 'Tool execution failed' }
+            }
+          });
         }
       }
 
-      try {
-        const followUp = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: [
-            { role: 'user', parts: [{ text: prompt }] },
-            response.candidates?.[0]?.content || { role: 'model', parts: [{ text: '' }] },
-            {
-              role: 'tool',
-              parts: toolResponses.map((tr) => ({
-                functionResponse: {
-                  name: tr.name,
-                  response: { result: tr.response }
-                }
-              }))
-            }
-          ],
-          config: {
-            systemInstruction: SYSTEM_INSTRUCTION,
-            temperature: 0.4
-          }
-        });
-        if (followUp.text?.trim()) {
-          reply = followUp.text.trim();
-        }
-      } catch (followUpErr) {
-        console.warn('Fallback en síntesis de function-calling:', followUpErr);
-        if (!reply) {
+      currentContents.push({ role: 'user', parts: functionParts });
+      toolRounds++;
+    }
+
+    if (!reply && currentContents.length > 1) {
+      const last = currentContents[currentContents.length - 1];
+      const fallbackParts = Array.isArray(last?.parts) ? last.parts : [];
+      reply = fallbackParts.map((p: any) => p?.functionResponse?.response?.result || p?.functionResponse?.response?.error || '').filter(Boolean).join('\n');
+    }
+
+    if (!reply) {
           reply = toolResponses
             .map((t) => (t.response?.error ? `Error: ${t.response.error}` : JSON.stringify(t.response)))
             .join('\n');
