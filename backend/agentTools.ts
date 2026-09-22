@@ -15,6 +15,7 @@ import {
   planItineraryOutline,
   quotePrice,
   seasonAdvice,
+  suggestComplementaryTours,
   whatsappHandoffLink
 } from './agentSkillPack';
 
@@ -41,6 +42,10 @@ export const AGENT_TOOL_REGISTRY = {
   },
   quote_price: {
     description: 'Estimate the total for a tour and party size from the catalog. The server calculates the final total at booking.',
+    sideEffect: false
+  },
+  suggest_complementary_tours: {
+    description: 'Suggest up to 3 real catalog tours that complement one already booked (different category, same region when possible, within 150% of its price). Never invents tours.',
     sideEffect: false
   },
   plan_itinerary: {
@@ -146,6 +151,11 @@ export async function executeAgentTool(
       const tourId = String(args.tourId || '').trim();
       if (!tourId) throw new Error('tourId requerido');
       return quotePrice({ tourId, adults: Number(args.adults), children: Number(args.children) });
+    }
+    case 'suggest_complementary_tours': {
+      const tourId = String(args.tourId || '').trim();
+      if (!tourId) throw new Error('tourId requerido');
+      return suggestComplementaryTours(tourId, Number(args.limit) || 3);
     }
     case 'plan_itinerary':
       return planItineraryOutline({
@@ -318,6 +328,18 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
         children: { type: 'NUMBER', description: 'Number of children' }
       },
       required: ['tourId', 'adults']
+    }
+  },
+  {
+    name: 'suggest_complementary_tours',
+    description: 'Suggest up to 3 real catalog tours that pair well with one already booked, for cross-sell. Never invents tours.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        tourId: { type: 'STRING', description: 'ID of the already-booked tour' },
+        limit: { type: 'NUMBER', description: 'Max suggestions (1-5, default 3)' }
+      },
+      required: ['tourId']
     }
   },
   {

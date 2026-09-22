@@ -402,3 +402,40 @@ export const EXTENSION_AGENT_IDENTITIES: AgentIdentityExtension[] = [
     ]
   }
 ];
+
+// ---------------------------------------------------------------------------
+// Habilidad nueva: venta cruzada inteligente (bundle) basada en datos reales
+// ---------------------------------------------------------------------------
+/**
+ * Sugiere hasta 3 tours reales del catálogo que combinan bien con uno ya
+ * reservado: distinta categoría (para no repetir experiencia), misma región
+ * o región adyacente (para minimizar traslados), y que quepan en el
+ * presupuesto relativo del viajero (no más del 150% del precio del tour base).
+ * Nunca inventa tours ni disponibilidad — solo reordena el catálogo real.
+ */
+export function suggestComplementaryTours(bookedTourId: string, limit = 3) {
+  const base = findTour(bookedTourId);
+  if (!base) return { suggestions: [], note: 'Tour base no encontrado en el catálogo.' };
+
+  const priceCeiling = base.priceUSD * 1.5;
+  const candidates = TOURS
+    .filter((t) => t.id !== base.id)
+    .filter((t) => t.priceUSD <= priceCeiling)
+    .map((t) => {
+      let score = 0;
+      if (t.category !== base.category) score += 2; // diversidad de experiencia
+      if (t.region === base.region) score += 3; // cero traslado extra
+      else score += 1; // aún válido, solo menor puntaje
+      if (t.rating >= 4.5) score += 1;
+      return { tour: t, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, Math.max(1, Math.min(limit, 5)))
+    .map(({ tour }) => summarizeTour(tour));
+
+  return {
+    baseTour: summarizeTour(base),
+    suggestions: candidates,
+    note: 'Sugerencias basadas en catálogo real (categoría distinta, misma región cuando es posible, rating alto). Verificar disponibilidad real antes de ofrecer.'
+  };
+}
