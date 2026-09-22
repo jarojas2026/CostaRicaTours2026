@@ -15,6 +15,7 @@ import { AI_AGENTS, getAIAgentById } from '../data/aiAgentsData';
 import { NativeAutomationStudio } from './NativeAutomationStudio';
 import { ClaudeItineraryModal } from './ClaudeItineraryModal';
 import { getUsdToCrcRate, formatCrc } from '../utils/currencies';
+import { useChatAnalytics } from '../hooks/useChatAnalytics';
 
 interface AIAssistantProps {
   language: Language;
@@ -60,6 +61,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 }) => {
   const { tours: TOURS } = useTours();
   const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
+  const { trackChatEvent } = useChatAnalytics();
 
   const [activeAgentId, setActiveAgentId] = useState<AgentId>('counter_agent');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'booking' | 'nature_adventure' | 'logistics_food' | 'specialized'>('all');
@@ -74,6 +76,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     }
     return sid;
   });
+
+  useEffect(() => {
+    trackChatEvent({ action: 'chat_opened', label: activeAgentId, metadata: { sessionId: chatSessionId } });
+  }, [activeAgentId, chatSessionId, trackChatEvent]);
 
   // Isolated chat histories per agent to prevent cross-contamination
   const [messagesByAgent, setMessagesByAgent] = useState<Record<string, Message[]>>(() => {
@@ -387,6 +393,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   };
 
   const handleQuickActionClick = (qa: { label: string; action: string; data?: any }) => {
+    trackChatEvent({ action: 'quick_reply_clicked', label: qa.action });
     if (qa.action === 'open_itinerary_planner') {
       if (onNavigateTab) onNavigateTab('itinerary');
     } else if (qa.action === 'express_book' && qa.data?.tourId) {
@@ -410,6 +417,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const handleSendMessage = async (textToSend?: string) => {
     const query = textToSend || inputMessage;
     if ((!query.trim() && !selectedImage) || isLoading) return;
+
+    trackChatEvent({ action: 'message_sent', label: activeAgentId, metadata: { queryLength: query.length } });
 
     const userMsg: Message = {
       id: `user-${Date.now()}`,
@@ -453,6 +462,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           text: data.analysis || '...',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         };
+        trackChatEvent({ action: 'message_received', label: activeAgentId });
         setMessages((prev) => [...prev, assistantMsg]);
         return;
       }
@@ -545,6 +555,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         voucher: data.voucher || data.voucherPreview || undefined,
       };
 
+      trackChatEvent({ action: 'message_received', label: activeAgentId });
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (error) {
       console.error(error);
