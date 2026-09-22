@@ -1409,126 +1409,103 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
   customerPhone?: string;
   pickupHotel?: string;
   specialRequests?: string;
+  executeConfirmed?: boolean;
 }) {
   const start = Date.now();
-
-  // 1. Identificar o asignar tour
-  let resolvedTour = TOURS.find((t) => t.id === payload.tourId);
-  if (!resolvedTour && payload.tourName) {
-    resolvedTour = TOURS.find((t) => t.title.es.toLowerCase().includes(payload.tourName!.toLowerCase()) || (t.title.en && t.title.en.toLowerCase().includes(payload.tourName!.toLowerCase())));
+  const resolvedTour = TOURS.find((t) => t.id === String(payload.tourId || '').trim()) ||
+    (payload.tourName ? TOURS.find((t) => t.title.es.toLowerCase().includes(payload.tourName!.toLowerCase())) : undefined);
+  const adults = Number(payload.adults);
+  const children = Number(payload.children ?? 0);
+  const targetDate = String(payload.date || '').trim();
+  const targetTime = String(payload.time || '').trim();
+  const customerName = String(payload.customerName || '').trim();
+  const customerEmail = String(payload.customerEmail || '').trim();
+  if (!resolvedTour || !targetDate || !targetTime || !customerName || !customerEmail) {
+    throw new Error('tourId, date, time, customerName y customerEmail son obligatorios y deben corresponder a datos reales.');
   }
-  if (!resolvedTour) {
-    resolvedTour = TOURS[0]; // Arenal Volcano por defecto
+  if (!Number.isInteger(adults) || adults < 1 || !Number.isInteger(children) || children < 0 || adults + children > 50) {
+    throw new Error('Cantidad de pasajeros inválida.');
   }
 
-  // 2. Extraer o normalizar datos de pasajeros y fechas
-  const adults = Number(payload.adults) || 2;
-  const children = Number(payload.children) || 0;
-  const targetDate = payload.date || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  const targetTime = payload.time || '08:00 AM';
-  const customerName = payload.customerName || 'Viajero Costa Rica Tours';
-  const customerEmail = payload.customerEmail || process.env.ADMIN_EMAIL || 'reservas@costaricatours.cr';
-  const customerPhone = payload.customerPhone || process.env.SINPE_SUPPORT_PHONE || '';
-  const pickupHotel = payload.pickupHotel || (resolvedTour.pickupHotels ? resolvedTour.pickupHotels[0] : 'Recepción de Hotel en La Fortuna');
-  const specialRequests = payload.specialRequests || 'Solicitud de confirmación y coordinación 100% autónoma sin intervención humana';
+  const unitPrice = Number(resolvedTour.priceUSD);
+  const totalUSD = adults * unitPrice + children * unitPrice;
+  const availability = await checkTourAvailability(resolvedTour.id, targetDate, targetTime, adults + children);
+  const duration = Date.now() - start;
 
-  const unitPrice = resolvedTour.priceUSD || 145;
-  const totalUSD = (adults * unitPrice) + (children * ((resolvedTour as any).childrenPriceUSD || Math.round(unitPrice * 0.65)));
-  const rate = Number(process.env.USD_TO_CRC_RATE) || 0;
-  const totalCRC = rate > 0 ? Math.round(totalUSD * rate) : 0;
+  if (!availability.available) {
+    return {
+      success: false,
+      modo: 'simulation_or_pending',
+      status: 'unavailable',
+      duracionMs: duration,
+      disponibilidad: availability,
+      message: availability.reason || 'No hay disponibilidad suficiente.'
+    };
+  }
 
-  // 3. Ejecutar creación oficial de reserva en Firestore
-  // Esto desencadena internamente en tiempo real:
-  // - Bloqueo de cupos en Firestore
-  // - Evaluación de riesgo antifraude
-  // - executeCustomerBookingConfirmation (Voucher digital con QR y email al cliente)
-  // - executeProviderRealtimeCoordination (Notificación y asignación inmediata al operador)
+  // Safe default: simulation only. No booking, payment, provider notification or voucher is created.
+  if (payload.executeConfirmed !== true) {
+    return {
+      success: true,
+      modo: 'simulation',
+      sideEffects: false,
+      duracionMs: duration,
+      reserva: {
+        tourId: resolvedTour.id,
+        tour: resolvedTour.title.es,
+        fecha: `${targetDate} ${targetTime}`,
+        pasajeros: `${adults} adultos, ${children} niños`,
+        totalUSD: `$${totalUSD} USD`,
+        estado: 'pendiente_pago'
+      },
+      message: 'Simulación completada. No se creó reserva, no se procesó pago y no se notificó a ningún proveedor.'
+    };
+  }
+
+  // Even with explicit execution approval, this endpoint can only create a pending-payment
+  // reservation. Confirmation/voucher requires verified Stripe/PayPal payment elsewhere.
   const bookingResult = await createBooking({
     tourId: resolvedTour.id,
     tourName: resolvedTour.title.es,
-    providerId: (resolvedTour as any).operatorId || 'alsama-tours-cr',
+    providerId: (resolvedTour as any).operatorId,
     date: targetDate,
     time: targetTime,
     adults,
     children,
-    pickupHotel,
-    specialRequests,
+    pickupHotel: payload.pickupHotel || '',
+    specialRequests: payload.specialRequests || '',
     totalUSD,
-    totalCRC,
+    totalCRC: undefined,
     currency: 'USD',
     paymentMethod: 'credit_card',
-    paymentStatus: 'confirmed',
-    customer: {
-      name: customerName,
-      email: customerEmail,
-      phone: customerPhone
-    }
+    paymentStatus: 'pending',
+    customer: { name: customerName, email: customerEmail, phone: payload.customerPhone || '' }
   });
 
   if (bookingResult.conflict || !bookingResult.booking) {
-    const duration = Date.now() - start;
-    logAutomationExecution(
-      'FLUJO_AUTONOMO_COMPLETO',
-      duration,
-      'error',
-      `Fallo en creación autónoma: ${bookingResult.error || 'conflicto de cupos'}`
-    );
-    throw new Error(bookingResult.message || 'No se pudo completar el flujo autónomo.');
+    logAutomationExecution('FLUJO_AUTONOMO', duration, 'error', `Fallo en creación: ${bookingResult.error || 'conflicto'}`);
+    throw new Error(bookingResult.message || 'No se pudo crear la reserva pendiente.');
   }
 
   const booking = bookingResult.booking as any;
   const bookingId = booking.bookingId || booking.id;
-  const duration = Date.now() - start;
-
-  // 4. Registrar evento en log de auditoría nativo
-  logAutomationExecution(
-    'FLUJO_AUTONOMO_COMPLETO',
-    duration,
-    'success',
-    `¡Reserva ${bookingId} completada 100% autónoma! Cliente (${customerEmail}) y Proveedor (${booking.providerInfo?.name || 'Alsama Tours'}) notificados.`,
-    {
-      bookingId,
-      totalUSD,
-      customerEmail,
-      providerId: booking.providerId,
-      status: booking.status
-    }
-  );
+  logAutomationExecution('FLUJO_AUTONOMO', Date.now() - start, 'success', `Reserva pendiente ${bookingId} creada; pago requerido antes de confirmar.`, { bookingId, totalUSD });
 
   return {
     success: true,
-    modo: '100% Autónomo (Zero Human Intervention)',
-    duracionMs: duration,
+    modo: 'execution_with_payment_gate',
+    sideEffects: true,
+    duracionMs: Date.now() - start,
     reserva: {
       codigo: bookingId,
       tour: resolvedTour.title.es,
       fecha: `${targetDate} ${targetTime}`,
       pasajeros: `${adults} adultos, ${children} niños`,
       totalUSD: `$${totalUSD} USD`,
-      estado: 'confirmada',
-      voucherUrl: `/?voucher=${bookingId}`,
-      qrToken: `PASS-${bookingId.replace(/[^A-Z0-9]/gi, '')}`
+      estado: 'pendiente_pago'
     },
-    operadorAsignado: {
-      id: booking.providerInfo?.id || 'alsama-tours-cr',
-      nombre: booking.providerInfo?.name || 'Costa Rica Tours - Operaciones Directas',
-      email: process.env.PROVIDER_DEV_EMAIL || '',
-      telefono: booking.providerInfo?.phone || process.env.PROVIDER_DEV_PHONE || '',
-      notificacionDespachada: true,
-      canal: 'Email Seguro + Native Operations Center'
-    },
-    clienteNotificado: {
-      nombre: customerName,
-      email: customerEmail,
-      voucherEnviado: true,
-      canal: 'Email con Voucher QR interactivo'
-    },
-    automatizacionesProgramadas: [
-      { trigger: 'CRON_RECORDATORIO_24H', tiempo: '24 horas antes del tour a las 7:00 AM CR' },
-      { trigger: 'CRON_VIGILANCIA_2H', tiempo: 'Monitoreo continuo de contingencias' },
-      { trigger: 'CRON_PAGOS_PROVEEDORES_6AM', tiempo: 'Liquidación al operador el día del tour' },
-      { trigger: 'CRON_RESENAS_POST_TOUR_5PM', tiempo: 'Encuesta NPS y fidelización post-tour' }
-    ],
-    timestamp: new Date().toISOString()
+    paymentRequired: true,
+    confirmationRequiresVerifiedPayment: true,
+    message: 'Reserva pendiente creada. Ningún voucher ni confirmación se emite hasta verificar el pago en servidor.'
   };
 }
