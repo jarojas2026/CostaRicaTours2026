@@ -418,15 +418,15 @@ export default function App() {
               </Suspense>
             } />
 
-            <Route path="/admin/ai-command" element={<AdminRouteGuard language={language}><Suspense fallback={<div className="py-24 text-center text-violet-300">Cargando sala de mando IA...</div>}><AdminAICommandPage language={language} /></Suspense></AdminRouteGuard>} />
+            <Route path="/admin/ai-command" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}><Suspense fallback={<div className="py-24 text-center text-violet-300">Cargando sala de mando IA...</div>}><AdminAICommandPage language={language} /></Suspense></AdminRouteGuard>} />
 
-            <Route path="/admin" element={<AdminRouteGuard language={language}>
+            <Route path="/admin" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
               <Suspense fallback={<div className="py-24 text-center text-amber-300">Cargando Centro de Control...</div>}>
                 <AdminControlCenterPage language={language} />
               </Suspense>
             </AdminRouteGuard>} />
 
-            <Route path="/admin/financial-legal" element={<AdminRouteGuard language={language}>
+            <Route path="/admin/financial-legal" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
               <Suspense fallback={<div className="py-24 text-center text-amber-300">Cargando Gobierno Financiero...</div>}>
                 <AdminFinancialLegalPage language={language} />
               </Suspense>
