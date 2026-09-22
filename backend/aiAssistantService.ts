@@ -15,6 +15,7 @@ import {
   getDailyOpsLogs
 } from './bookingService';
 import { GEMINI_FUNCTION_DECLARATIONS, executeAgentTool } from './agentTools';
+import { getPlatformControls } from './platformControlService';
 
 let aiClient: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI | null {
@@ -349,8 +350,10 @@ Reply ONLY with "YES" or "NO".`;
     let toolRounds = 0;
 
     // Bucle agentic: intención -> herramienta -> observación -> nuevo razonamiento.
-    // Se limita a tres rondas para evitar ciclos y mantener latencia controlada.
-    while (toolRounds < 3) {
+    // El límite es gobernable desde el Centro de Control, con 3 como valor seguro por defecto.
+    const platformControls = await getPlatformControls().catch(() => ({ values: { max_agent_tool_rounds: 3 } } as any));
+    const maxToolRounds = Math.max(1, Math.min(10, Number(platformControls.values.max_agent_tool_rounds) || 3));
+    while (toolRounds < maxToolRounds) {
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: currentContents,
