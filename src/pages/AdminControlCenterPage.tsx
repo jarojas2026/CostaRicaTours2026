@@ -79,7 +79,7 @@ export const AdminControlCenterPage: React.FC<Props> = ({ language }) => {
         <div className="xl:col-span-2 rounded-3xl border border-violet-400/20 bg-gradient-to-br from-[#110b24] to-[#070412] p-5">
           <div className="flex items-center gap-2"><Bot className="text-violet-300" size={19}/><h2 className="font-black text-white">{es?'Copiloto ejecutivo con IA':'AI executive copilot'}</h2></div>
           <p className="mt-2 text-xs text-stone-400">{es?'Analiza ventas, operaciones, finanzas y riesgos y prepara acciones para aprobación humana.':'Analyze sales, operations, finance and risk, then prepare actions for human approval.'}</p>
-          <button onClick={()=>window.location.assign('/admin/ai-command')} className="mt-4 rounded-xl bg-violet-500 px-4 py-2 text-xs font-black text-white">{es?'Abrir sala de mando IA':'Open AI command room'}</button>
+          <div className="mt-4 flex flex-wrap gap-2"><button onClick={()=>window.location.assign('/admin/ai-command')} className="rounded-xl bg-violet-500 px-4 py-2 text-xs font-black text-white">{es?'Abrir sala de mando IA':'Open AI command room'}</button><button onClick={()=>window.location.assign('/admin/ai-architecture')} className="rounded-xl border border-violet-400/30 bg-violet-400/10 px-4 py-2 text-xs font-black text-violet-200">{es?'Ver arquitectura ejecutiva':'View executive architecture'}</button></div>
         </div>
         <div className="rounded-3xl border border-emerald-400/20 bg-[#071510] p-5">
           <div className="text-[10px] uppercase tracking-widest text-emerald-300 font-black">{es?'Gobierno de acceso':'Access governance'}</div>
