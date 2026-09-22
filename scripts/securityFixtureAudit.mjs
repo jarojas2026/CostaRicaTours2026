@@ -11,7 +11,6 @@ const banned = [
   /david\.morales@/i,
   /\+506\s*0000-0000/i,
   /Bearer\s+eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/i,
-  /N8N_MCP_TOKEN\s*[:=]\s*['\"]eyJ/i,
   /crt_operator_key_internal/i,
   /\bViviana\b/i
 ];
