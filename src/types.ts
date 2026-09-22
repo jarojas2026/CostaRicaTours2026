@@ -371,8 +371,6 @@ export interface AIAgent {
   specialtyTags: Localized<string[]>;
   workflowSteps?: Localized<string[]>;
   workflowStatus?: 'active' | 'beta' | 'maintenance';
-  webhookEndpoint?: string;
-  n8nTemplateId?: string;
 }
 
 export interface BusRoute {
