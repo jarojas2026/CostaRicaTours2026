@@ -29,6 +29,7 @@ import {
 } from './backend/bookingService';
 import { generateBookingPDFBuffer, generateBookingPrintableHTML } from './backend/pdfService';
 import { massiveEngine } from './backend/massiveProcessingEngine';
+import { registerFcmToken, sendPushNotificationToUser } from './backend/fcmService';
 import {
   createAlert,
   getAlerts,
@@ -2458,6 +2459,35 @@ app.get('/api/agent/tools/manifest', (req, res) => {
       }
     ]
   });
+});
+
+// ==========================================
+// 📱 FIREBASE CLOUD MESSAGING (FCM) ENDPOINTS
+// ==========================================
+app.post('/api/fcm/register', async (req, res) => {
+  try {
+    const { userId, token, deviceInfo } = req.body;
+    if (!userId || !token) {
+      return res.status(400).json({ success: false, error: 'userId y token requeridos' });
+    }
+    const result = await registerFcmToken(userId, token, deviceInfo);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/fcm/send', async (req, res) => {
+  try {
+    const { userId, title, body, data } = req.body;
+    if (!userId || !title || !body) {
+      return res.status(400).json({ success: false, error: 'userId, title y body requeridos' });
+    }
+    const result = await sendPushNotificationToUser(userId, title, body, data);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // ==========================================
