@@ -45,11 +45,7 @@ const LiveTouristIntelligence = lazy(() => import('./components/LiveTouristIntel
 const PhotoTourFinder = lazy(() => import('./components/PhotoTourFinder').then(m => ({ default: m.PhotoTourFinder })));
 const GoogleWorkspaceHub = lazy(() => import('./components/GoogleWorkspaceHub').then(m => ({ default: m.GoogleWorkspaceHub })));
 const CounterDeskPage = lazy(() => import('./pages/CounterDeskPage').then(m => ({ default: m.CounterDeskPage })));
-const AutonomousOperationsPage = lazy(() => import('./pages/AutonomousOperationsPage'));
-const AdminControlCenterPage = lazy(() => import('./pages/AdminControlCenterPage').then(m => ({ default: m.AdminControlCenterPage })));
-const AdminAICommandPage = lazy(() => import('./pages/AdminAICommandPage').then(m => ({ default: m.AdminAICommandPage })));
-const AdminFinancialLegalPage = lazy(() => import('./pages/AdminFinancialLegalPage').then(m => ({ default: m.AdminFinancialLegalPage })));
-const AIExecutiveArchitecturePage = lazy(() => import('./pages/AIExecutiveArchitecturePage').then(m => ({ default: m.AIExecutiveArchitecturePage })));
+const AutonomousOperationsPage = lazy(() => import('./pages/AutonomousOperationsPage').then(m => ({ default: m.default })));
 
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -419,19 +415,19 @@ export default function App() {
               </Suspense>
             } />
 
-            <Route path="/admin/ai-command" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}><Suspense fallback={<div className="py-24 text-center text-violet-300">Cargando sala de mando IA...</div>}><AdminAICommandPage language={language} /></Suspense></AdminRouteGuard>} />
+            <Route path="/admin/ai-command" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}><Suspense fallback={<div className="py-24 text-center text-violet-300">Cargando sala de mando IA...</div>}><AutonomousOperationsPage language={language} /></Suspense></AdminRouteGuard>} />
 
-            <Route path="/admin/ai-architecture" element={<AdminRouteGuard language={language === "es" ? "es" : "en"}><Suspense fallback={<div className="py-24 text-center text-violet-300">Cargando arquitectura IA...</div>}><AIExecutiveArchitecturePage language={language} /></Suspense></AdminRouteGuard>} />
+            <Route path="/admin/ai-architecture" element={<AdminRouteGuard language={language === "es" ? "es" : "en"}><Suspense fallback={<div className="py-24 text-center text-violet-300">Cargando arquitectura IA...</div>}><AutonomousOperationsPage language={language} /></Suspense></AdminRouteGuard>} />
 
             <Route path="/admin" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
               <Suspense fallback={<div className="py-24 text-center text-amber-300">Cargando Centro de Control...</div>}>
-                <AdminControlCenterPage language={language} />
+                <AutonomousOperationsPage language={language} />
               </Suspense>
             </AdminRouteGuard>} />
 
             <Route path="/admin/financial-legal" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
               <Suspense fallback={<div className="py-24 text-center text-amber-300">Cargando Gobierno Financiero...</div>}>
-                <AdminFinancialLegalPage language={language} />
+                <AutonomousOperationsPage language={language} />
               </Suspense>
             </AdminRouteGuard>} />
 

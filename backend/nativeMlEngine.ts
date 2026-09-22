@@ -25,9 +25,9 @@ export async function mlRecommendTours(profile: TravelerProfile) {
     }
 
     // Coincidencia de presupuesto
-    if (profile.budgetLevel === 'budget' && tour.price < 90) score += 20;
-    if (profile.budgetLevel === 'moderate' && tour.price >= 80 && tour.price <= 180) score += 25;
-    if (profile.budgetLevel === 'luxury' && tour.price > 170) score += 25;
+    if (profile.budgetLevel === 'budget' && tour.priceUSD < 90) score += 20;
+    if (profile.budgetLevel === 'moderate' && tour.priceUSD >= 80 && tour.priceUSD <= 180) score += 25;
+    if (profile.budgetLevel === 'luxury' && tour.priceUSD > 170) score += 25;
 
     // Ajuste por popularidad / reseñas
     score += Math.min(tour.reviewsCount * 0.1, 15);

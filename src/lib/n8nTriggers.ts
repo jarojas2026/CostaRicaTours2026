@@ -5,7 +5,7 @@
  */
 
 export const n8nTriggers = {
-  async triggerConsultaChatIA(idUsuarioOUsuario, mensaje, agenteSeleccionado = 'asistente_pura_vida_ia', idioma = 'es', contexto = {}) {
+  async triggerConsultaChatIA(idUsuarioOUsuario: any, mensaje?: any, agenteSeleccionado: string = 'asistente_pura_vida_ia', idioma: string = 'es', contexto: any = {}) {
     const opts = typeof idUsuarioOUsuario === 'object' && idUsuarioOUsuario !== null ? idUsuarioOUsuario : {};
     const message = opts.mensaje || opts.message || mensaje || '';
     const lang = opts.idioma || opts.language || idioma || 'es';
@@ -28,7 +28,7 @@ export const n8nTriggers = {
     }
   },
 
-  async triggerInicioReserva(datosReserva) {
+  async triggerInicioReserva(datosReserva: any) {
     try {
       const res = await fetch('/api/bookings/init', {
         method: 'POST',
@@ -42,15 +42,15 @@ export const n8nTriggers = {
     }
   },
 
-  async triggerSolicitudPago(datosPago) {
+  async triggerSolicitudPago(datosPago: any) {
     return { exito: true, datos: { gateway: 'Sinpe / Stripe / PayPal Native Secure Engine', status: 'ready' }, timestamp: new Date().toISOString() };
   },
 
-  async triggerConfirmacionReserva(idReserva) {
+  async triggerConfirmacionReserva(idReserva: any) {
     return { exito: true, datos: { bookingId: idReserva, confirmed: true, qr: 'CR-TOUR-CONFIRMED-QR' }, timestamp: new Date().toISOString() };
   },
 
-  async triggerSolicitudItinerario(preferencias) {
+  async triggerSolicitudItinerario(preferencias: any) {
     try {
       const res = await fetch('/api/ml/itinerary', {
         method: 'POST',
@@ -64,11 +64,11 @@ export const n8nTriggers = {
     }
   },
 
-  async triggerEventoAnalitica(evento) {
+  async triggerEventoAnalitica(evento: any) {
     return { exito: true, eventLogged: evento?.type || 'generic' };
   },
 
-  async triggerSolicitudSoporte(ticket) {
+  async triggerSolicitudSoporte(ticket: any) {
     return { exito: true, ticketId: 'TICKET-NATIVE-' + Math.floor(Math.random() * 900000 + 100000) };
   }
 };
