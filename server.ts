@@ -1232,7 +1232,7 @@ app.post(['/api/native/autonomous-booking-flow', '/api/native/flujo-autonomo'], 
 });
 
 // 1. Asistente Inteligente & Chat Oficial (Gemini 2.5 Flash + Base Oficial)
-app.post(['/webhook/chat-consulta', '/api/chat', '/api/chat-consulta'], async (req, res) => {
+app.post(['/api/chat', '/api/chat-consulta', async (req, res) => {
   try {
     const result = await executeChatInquiry(req.body);
     res.json(result);
@@ -1285,12 +1285,12 @@ app.post('/api/itinerario', async (req, res) => {
 });
 
 // 6. Analítica en Tiempo Real
-app.post('/webhook/evento-analitica', async (req, res) => {
+app.post('/api/analytics/event', async (req, res) => {
   res.json({ exito: true, timestamp: new Date().toISOString() });
 });
 
 // 7. Soporte al Cliente, Escalación Multicanal & Concierge Urgente
-app.post(['/webhook/solicitud-soporte', '/api/soporte/crear-ticket'], async (req, res) => {
+app.post('/api/soporte/crear-ticket', async (req, res) => {
   try {
     const result = await executeSolicitudSoporte(req.body);
     res.json(result);
@@ -1300,7 +1300,7 @@ app.post(['/webhook/solicitud-soporte', '/api/soporte/crear-ticket'], async (req
 });
 
 // 8. Coordinación y Notificación en Tiempo Real a Proveedores y Operadores Locales
-app.post(['/webhook/notificar-proveedor', '/api/operadores/notificar'], async (req, res) => {
+app.post('/api/operadores/notificar', async (req, res) => {
   try {
     const result = await executeNotificarProveedor(req.body);
     res.json(result);
@@ -1310,7 +1310,7 @@ app.post(['/webhook/notificar-proveedor', '/api/operadores/notificar'], async (r
 });
 
 // 9. Motor Antifraude y Matriz de Riesgo Criptográfica
-app.post(['/webhook/evaluar-antifraude', '/webhook/antifraude-evaluacion', '/api/seguridad/antifraude'], async (req, res) => {
+app.post('/api/seguridad/antifraude', async (req, res) => {
   try {
     const result = await executeEvaluarAntifraude(req.body);
     res.json(result);
@@ -1320,7 +1320,7 @@ app.post(['/webhook/evaluar-antifraude', '/webhook/antifraude-evaluacion', '/api
 });
 
 // 10. Operaciones de Terreno y Despacho a Guías (100% nativo)
-app.post(['/webhook/panel-control-ops', '/api/ops/action'], async (req, res) => {
+app.post('/api/ops/action', async (req, res) => {
   try {
     const result = await executeAIOpsAction(req.body);
     res.json(result);
@@ -1330,7 +1330,7 @@ app.post(['/webhook/panel-control-ops', '/api/ops/action'], async (req, res) => 
 });
 
 // 12. Sincronización Automática con Google Calendar
-app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], async (req, res) => {
+app.post('/api/calendario/sincronizar', async (req, res) => {
   try {
     const result = await executeSyncCalendar(req.body);
     res.json(result);
@@ -1340,7 +1340,7 @@ app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], async (req, 
 });
 
 // 13. Encuesta de Satisfacción Post-Tour & Recolección NPS WhatsApp
-app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], async (req, res) => {
+app.post('/api/nps/despachar', async (req, res) => {
   try {
     const result = await executePostTourNPS(req.body);
     res.json(result);
@@ -1350,7 +1350,7 @@ app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], async (req, res) => {
 });
 
 // 14. Reporte Semanal de Rendimiento, Conversión y Volumen
-app.post(['/webhook/reporte-semanal-conversion', '/api/reportes/semanal'], async (req, res) => {
+app.post('/api/reportes/semanal', async (req, res) => {
   try {
     const result = await executeReporteSemanalConversion();
     res.json(result);
@@ -1364,7 +1364,7 @@ app.post(['/webhook/reporte-semanal-conversion', '/api/reportes/semanal'], async
 // ==========================================
 
 // WF-COMPLEX-01: Orquestador Autónomo de Itinerarios Multidía (SINAC/IMN/Alsama)
-app.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-planner'], async (req, res) => {
+app.post('/api/automations/multi-day-planner', async (req, res) => {
   try {
     const result = await executeAutonomousMultiDayPlanner(req.body);
     res.json(result);
@@ -1374,7 +1374,7 @@ app.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-p
 });
 
 // WF-COMPLEX-02: Motor Predictivo de Dynamic Pricing & Yield Management
-app.post(['/webhook/predictive-dynamic-pricing', '/api/automations/dynamic-pricing'], async (req, res) => {
+app.post('/api/automations/dynamic-pricing', async (req, res) => {
   try {
     const result = await executeDynamicPricingYieldOptimizer(req.body);
     res.json(result);
@@ -1384,7 +1384,7 @@ app.post(['/webhook/predictive-dynamic-pricing', '/api/automations/dynamic-prici
 });
 
 // WF-COMPLEX-03: Matriz Predictiva de Contingencias Climáticas & Re-enrutamiento
-app.post(['/webhook/weather-contingency-rerouting', '/api/automations/weather-contingency'], async (req, res) => {
+app.post('/api/automations/weather-contingency', async (req, res) => {
   try {
     const result = await executeEmergencyContingencyRerouting(req.body);
     res.json(result);
@@ -1394,7 +1394,7 @@ app.post(['/webhook/weather-contingency-rerouting', '/api/automations/weather-co
 });
 
 // WF-COMPLEX-04: Facturación Electrónica DGT Hacienda v4.3 & Liquidación Operadores
-app.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-invoicing'], async (req, res) => {
+app.post('/api/automations/dgt-invoicing', async (req, res) => {
   try {
     const result = await executeDGTElectronicInvoicingSettlement(req.body);
     res.json(result);
@@ -1404,7 +1404,7 @@ app.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-
 });
 
 // WF-COMPLEX-05: Flight Guard Predictivo en Tiempo Real & Despacho Alsama
-app.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-guard'], async (req, res) => {
+app.post('/api/automations/flight-guard', async (req, res) => {
   try {
     const result = await executeAutonomousFlightGuardDispatch(req.body);
     res.json(result);
@@ -1414,7 +1414,7 @@ app.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-
 });
 
 // WF-COMPLEX-06: Asistente Autónomo con Análisis de Sentimiento & Escalamiento
-app.post(['/webhook/crisis-sentiment-escalation', '/api/automations/crisis-sentiment'], async (req, res) => {
+app.post('/api/automations/crisis-sentiment', async (req, res) => {
   try {
     const result = await executeAutonomousCrisisSentimentEscalation(req.body);
     res.json(result);
@@ -1426,26 +1426,26 @@ app.post(['/webhook/crisis-sentiment-escalation', '/api/automations/crisis-senti
 // ==========================================
 // 🚀 RUTAS ADICIONALES (WF-14 a WF-24 EJECUTADAS EN CÓDIGO NATIVO)
 // ==========================================
-const additionalWebhooks = [
-  '/webhook/reserva-parques-sinac',
-  '/webhook/alerta-vuelo-retrasado',
-  '/webhook/reporte-objeto-olvidado',
-  '/webhook/whatsapp-traductor-soporte',
-  '/webhook/recepcion-vip-aeropuerto',
-  '/webhook/alerta-requerimientos-especiales',
-  '/webhook/cancelacion-reembolso-inteligente',
-  '/webhook/entrega-fotos-recuerdos',
-  '/webhook/sincronizacion-operadores-locales',
-  '/webhook/alerta-emergencia-sos',
-  '/webhook/booster-reseñas-incentivos',
-  '/webhook/contingency',
-  '/webhook/supervisor'
+const additionalNativeWorkflows = [
+  '/api/native/workflows/reserva-parques-sinac',
+  '/api/native/workflows/alerta-vuelo-retrasado',
+  '/api/native/workflows/reporte-objeto-olvidado',
+  '/api/native/workflows/whatsapp-traductor-soporte',
+  '/api/native/workflows/recepcion-vip-aeropuerto',
+  '/api/native/workflows/alerta-requerimientos-especiales',
+  '/api/native/workflows/cancelacion-reembolso-inteligente',
+  '/api/native/workflows/entrega-fotos-recuerdos',
+  '/api/native/workflows/sincronizacion-operadores-locales',
+  '/api/native/workflows/alerta-emergencia-sos',
+  '/api/native/workflows/booster-reseñas-incentivos',
+  '/api/native/workflows/contingency',
+  '/api/native/workflows/supervisor'
 ];
 
-app.post(additionalWebhooks, async (req, res) => {
+app.post(additionalNativeWorkflows, async (req, res) => {
   try {
     const endpoint = req.path;
-    const triggerName = endpoint.replace('/webhook/', '').toUpperCase().replace(/-/g, '_');
+    const triggerName = endpoint.replace('/api/native/workflows/', '').toUpperCase().replace(/-/g, '_');
     const result = await executeGenericAutomation(triggerName, req.body);
     res.json(result);
   } catch (error: any) {
@@ -1458,7 +1458,7 @@ app.post(additionalWebhooks, async (req, res) => {
 // ==========================================
 
 // 1. Coordinación en Tiempo Real con Proveedores (Webhook & API Nativa)
-app.post(['/webhook/proveedores-coordinacion', '/webhook/coordinacion-proveedores', '/api/webhooks/provider-coordination', '/api/native/workflows/coordinacion-proveedor', '/api/native/workflows/notificar-proveedor'], async (req, res) => {
+app.post(['/api/webhooks/provider-coordination', '/api/native/workflows/coordinacion-proveedor', '/api/native/workflows/notificar-proveedor'], async (req, res) => {
   try {
     const authHeader = req.headers['x-webhook-secret'] as string;
     const result = await executeProviderRealtimeCoordination(req.body, authHeader);
@@ -1470,7 +1470,7 @@ app.post(['/webhook/proveedores-coordinacion', '/webhook/coordinacion-proveedore
 });
 
 // 1.1 Endpoint Bidireccional de Respuesta del Proveedor (GET para enlaces de correo/WhatsApp y POST para APIs)
-app.all(['/api/provider/respond', '/webhook/provider-response', '/api/webhooks/provider-response'], async (req, res) => {
+app.all(['/api/provider/respond', '/api/webhooks/provider-response'], async (req, res) => {
   try {
     const action = String(req.query.action || req.body?.action || 'confirm');
     const bookingId = String(req.query.bookingId || req.body?.bookingId || req.body?.id || '');
@@ -1591,7 +1591,7 @@ app.get(['/api/provider/status/:bookingId', '/api/operators/status/:bookingId'],
 });
 
 // 2. Confirmación de Reserva al Cliente (Webhook)
-app.post(['/webhook/cliente-confirmacion', '/webhook/confirmacion-cliente', '/api/webhooks/customer-confirmation'], async (req, res) => {
+app.post('/api/webhooks/customer-confirmation', async (req, res) => {
   try {
     const authHeader = req.headers['x-webhook-secret'] as string;
     const result = await executeCustomerBookingConfirmation(req.body, authHeader);
@@ -1603,7 +1603,7 @@ app.post(['/webhook/cliente-confirmacion', '/webhook/confirmacion-cliente', '/ap
 });
 
 // 3. Pagos Automáticos a Proveedores (Batch / Cron Trigger)
-app.post(['/api/payouts/run-batch', '/webhook/pagos-proveedores-batch'], async (req, res) => {
+app.post('/api/payouts/run-batch', async (req, res) => {
   try {
     const result = await executeAutomatedProviderPayouts();
     res.json(result);
@@ -1613,7 +1613,7 @@ app.post(['/api/payouts/run-batch', '/webhook/pagos-proveedores-batch'], async (
 });
 
 // 4. Vigilancia y Escalamiento de Reservas Pendientes (Cron Trigger)
-app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], async (req, res) => {
+app.post('/api/surveillance/run-check', async (req, res) => {
   try {
     const result = await executeSurveillanceAndEscalation();
     res.json(result);
@@ -1623,7 +1623,7 @@ app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], async 
 });
 
 // 5. Reporte Diario de Operación (Cron Trigger)
-app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], async (req, res) => {
+app.post('/api/reports/run-daily-ops', async (req, res) => {
   try {
     const result = await executeDailyOperationReport();
     res.json(result);
@@ -1633,7 +1633,7 @@ app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], as
 });
 
 // 6. Solicitud de Reseña Post-Tour (Cron Trigger)
-app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], async (req, res) => {
+app.post('/api/reviews/run-request-batch', async (req, res) => {
   try {
     const result = await executePostTourReviewRequests();
     res.json(result);
@@ -1643,7 +1643,7 @@ app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], async
 });
 
 // 7. Recordatorio 24h Antes del Tour (Cron Trigger)
-app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], async (req, res) => {
+app.post('/api/reminders/run-24h', async (req, res) => {
   try {
     const result = await executeTour24hReminders();
     res.json(result);
@@ -1653,7 +1653,7 @@ app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], async (req, re
 });
 
 // 8. Verificación y Conciliación Autónoma de Pagos SINPE Móvil (Webhook & API)
-app.post(['/webhook/cr-tours-sinpe-verify', '/webhook/sinpe-verify', '/api/payments/sinpe-verify', '/api/sinpe/verify'], async (req, res) => {
+app.post(['/api/payments/sinpe-verify', '/api/sinpe/verify'], async (req, res) => {
   try {
     const authHeader = req.headers['x-webhook-secret'] as string;
     const result = await executeSinpeVerification(req.body, authHeader);
@@ -1702,7 +1702,7 @@ app.post(['/api/massive/batch-inquiries', '/api/massive/process-batch'], async (
 });
 
 // Health check para compatibilidad
-app.all('/webhook/health-check', (req, res) => {
+app.all('/api/health-check', (req, res) => {
   res.json({ status: 'ok', service: 'costa-rica-tours-native-engine', timestamp: new Date().toISOString() });
 });
 
