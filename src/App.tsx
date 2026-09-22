@@ -46,6 +46,7 @@ const GoogleWorkspaceHub = lazy(() => import('./components/GoogleWorkspaceHub').
 const CounterDeskPage = lazy(() => import('./pages/CounterDeskPage').then(m => ({ default: m.CounterDeskPage })));
 const AutonomousOperationsPage = lazy(() => import('./pages/AutonomousOperationsPage'));
 const AdminControlCenterPage = lazy(() => import('./pages/AdminControlCenterPage').then(m => ({ default: m.AdminControlCenterPage })));
+const AdminFinancialLegalPage = lazy(() => import('./pages/AdminFinancialLegalPage').then(m => ({ default: m.AdminFinancialLegalPage })));
 
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -418,6 +419,12 @@ export default function App() {
             <Route path="/admin" element={
               <Suspense fallback={<div className="py-24 text-center text-amber-300">Cargando Centro de Control...</div>}>
                 <AdminControlCenterPage language={language} />
+              </Suspense>
+            } />
+
+            <Route path="/admin/financial-legal" element={
+              <Suspense fallback={<div className="py-24 text-center text-amber-300">Cargando Gobierno Financiero...</div>}>
+                <AdminFinancialLegalPage language={language} />
               </Suspense>
             } />
 
