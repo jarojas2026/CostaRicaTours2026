@@ -175,14 +175,16 @@ export async function executeChatInquiry(payload: {
 // =========================================================================
 export async function executeInicioReserva(body: any) {
   const start = Date.now();
-  const selectedTourId = body.idTour || body.tourId || 'arenal-volcano-hot-springs';
-  const selectedTourName = body.nombreTour || body.tourName || 'Volcán Arenal & Aguas Termales Tabacón';
-  const selectedDate = body.fechaSeleccionada || body.date || new Date().toISOString().split('T')[0];
-  const selectedTime = body.hora || body.time || '08:00 AM';
-
-  const adults = Number(body.cantidadPersonas?.adultos ?? body.adults ?? 2);
+  const selectedTourId = String(body.idTour || body.tourId || '').trim();
+  const selectedDate = String(body.fechaSeleccionada || body.date || '').trim();
+  const selectedTime = String(body.hora || body.time || '').trim();
+  const tour = TOURS.find((item:any) => item.id === selectedTourId || item.slug === selectedTourId);
+  if (!tour || !selectedDate || !selectedTime) throw new Error('tourId, date y time son obligatorios y deben corresponder a un tour del catálogo.');
+  const selectedTourName = tour.title.es;
+  const adults = Number(body.cantidadPersonas?.adultos ?? body.adults ?? 0);
   const children = Number(body.cantidadPersonas?.ninos ?? body.children ?? 0);
   const totalSeats = adults + children;
+  if (!Number.isInteger(adults) || adults < 1 || !Number.isInteger(children) || children < 0 || totalSeats > 50) throw new Error('Cantidad de pasajeros inválida.');
 
   // Verificación de disponibilidad real contra Firestore
   const availability = await checkTourAvailability(selectedTourId, selectedDate, selectedTime, totalSeats);
@@ -198,17 +200,18 @@ export async function executeInicioReserva(body: any) {
     };
   }
 
-  const unitPrice = Number(body.precio || body.priceUSD || 145);
-  const totalUSD = adults * unitPrice + children * Math.round(unitPrice * 0.7);
+  const unitPrice = Number(tour.priceUSD);
+  const totalUSD = adults * unitPrice + children * unitPrice;
   const holdExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
   const idReserva = `CRT-HLD-${Math.floor(100000 + Math.random() * 900000)}`;
 
   const bookingCustomer = body.cliente || body.customer || {
-    nombre: 'Carlos Montero',
-    email: process.env.TEST_CUSTOMER_EMAIL || 'test@example.com',
-    telefono: process.env.SINPE_SUPPORT_PHONE || '',
-    hotelRecogida: 'Hotel Los Lagos, La Fortuna'
+    nombre: body.customerName,
+    email: body.customerEmail,
+    telefono: body.customerPhone,
+    hotelRecogida: body.pickupHotel
   };
+  if (!bookingCustomer.nombre || !bookingCustomer.email) throw new Error('Datos del cliente incompletos: nombre y email son obligatorios.');
 
   // Registrar soft-hold nativo en base de datos
   await createBooking({
@@ -261,14 +264,16 @@ export async function executeInicioReserva(body: any) {
 // =========================================================================
 export async function executeSolicitudPago(body: any) {
   const start = Date.now();
-  const reservationId = body.idReserva || body.bookingId || `CRT-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-  const totalAmount = Number(body.montoUSD || body.amount || 290);
+  const reservationId = String(body.idReserva || body.bookingId || '').trim();
+  const totalAmount = Number(body.montoUSD || body.amount);
+  if (!reservationId || !Number.isFinite(totalAmount) || totalAmount <= 0) throw new Error('bookingId y montoUSD válido son obligatorios.');
   const method = (body.metodoPago || body.paymentMethod || 'credit_card').toLowerCase();
   const tour = body.nombreTour || body.tourName || 'Tour Oficial Costa Rica';
   const email = body.correoCliente || body.customerEmail || process.env.SUPPORT_EMAIL || '';
 
   // Firma criptográfica HMAC SHA-256 generada en código seguro del servidor
-  const hmacSecret = process.env.PAYMENT_HMAC_SECRET || 'crt_internal_payment_hmac_2026';
+  const hmacSecret = process.env.PAYMENT_HMAC_SECRET;
+  if (!hmacSecret) throw new Error('PAYMENT_HMAC_SECRET no está configurado en el servidor.');
   const signaturePayload = `${reservationId}:${totalAmount}:${method}:${email}`;
   const hmacSignature = crypto.createHmac('sha256', hmacSecret).update(signaturePayload).digest('hex');
 
@@ -306,24 +311,36 @@ export async function executeSolicitudPago(body: any) {
 // =========================================================================
 export async function executeConfirmacionReserva(body: any) {
   const start = Date.now();
-  const reservationId = body.idReserva || body.bookingId || `CRT-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-  const tour = body.tourName || body.nombreTour || 'Rafting Río Pacuare Clase III-IV';
-  const tourDate = body.date || body.fecha || '2026-11-20';
-  const tourTime = body.time || body.hora || '06:30 AM';
-  const hotel = body.pickupHotel || body.hotelRecogida || 'Hotel Grano de Oro, San José';
-  const total = Number(body.totalUSD || body.montoUSD || 290);
-
-  const clientData = body.customer || body.cliente || {
-    name: 'Carlos Montero',
-    email: process.env.TEST_CUSTOMER_EMAIL || 'test@example.com',
-    phone: process.env.SINPE_SUPPORT_PHONE || ''
+  const reservationId = String(body.idReserva || body.bookingId || '').trim();
+  if (!reservationId) throw new Error('bookingId es obligatorio.');
+  const db = (await import('./bookingService')).getFirestoreDb();
+  const booking = await (await import('./bookingService')).getBookingById(reservationId);
+  if (!booking) throw new Error('Reserva no encontrada.');
+  const paymentMethod = String(body.paymentMethod || booking.paymentMethod || '').toLowerCase();
+  const paymentDetails = {
+    paypalOrderId: body.paypalOrderId || booking.paypalOrderId || booking.paymentDetails?.paypalOrderId,
+    stripeSessionId: body.stripeSessionId || booking.stripeSessionId || booking.paymentDetails?.stripeSessionId
   };
-
-  // Actualizar estado en Firestore nativamente
-  await updateBookingStatus(reservationId, {
+  const verification = await verifyPaymentServerSide(paymentMethod, paymentDetails);
+  if (!verification.verified) {
+    return {
+      exito: false,
+      estado: 'pendiente_pago',
+      idReserva: reservationId,
+      mensaje: 'La reserva no puede confirmarse: el pago no ha sido verificado por el servidor.'
+    };
+  }
+  const tour = booking.tourName || body.tourName || body.nombreTour;
+  const tourDate = booking.date || body.date || body.fecha;
+  const tourTime = booking.time || body.time || body.hora;
+  const hotel = booking.pickupHotel || body.pickupHotel || body.hotelRecogida || '';
+  const clientData = booking.customer || { name: booking.customerName, email: booking.customerEmail, phone: booking.customerPhone };
+  const total = Number(booking.totalUSD || body.totalUSD || body.montoUSD);
+  if (!tour || !tourDate || !tourTime || !clientData?.email || !Number.isFinite(total)) throw new Error('Datos de reserva incompletos.');
+  if (db) await updateBookingStatus(reservationId, {
     status: 'confirmada',
     paymentStatus: 'completed'
-  }).catch(() => {});
+  });
 
   const qrValidationCode = `CRT-QR-${reservationId}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
   const voucherUrl = `https://costaricatours.cr/vouchers/${reservationId}.pdf`;

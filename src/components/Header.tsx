@@ -201,11 +201,11 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden lg:inline text-emerald-500/30">•</span>
 
               <a
-                href="mailto:info@costaricatours.es"
+                href="mailto:jarojas800@gmail.com"
                 className="hidden lg:inline-flex items-center gap-1.5 text-stone-300 hover:text-emerald-300 transition-colors text-xs"
               >
                 <Mail className="w-3.5 h-3.5 text-emerald-400" />
-                <span>info@costaricatours.es</span>
+                <span>jarojas800@gmail.com</span>
               </a>
             </div>
 
@@ -327,24 +327,6 @@ export const Header: React.FC<HeaderProps> = ({
               <span>{language === 'es' ? 'Asistente IA' : 'AI Concierge'}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             </Link>
-            {user && <Link
-              to="/admin"
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                currentTab === 'admin' ? 'bg-amber-400 text-stone-950 font-extrabold shadow-sm' : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
-              }`}
-            >
-              <ShieldCheck className="w-4 h-4 text-amber-300" />
-              <span>{language === 'es' ? 'Control' : 'Control'}</span>
-            </Link>}
-
-            <Link
-              to="/ops"
-              className="px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer text-stone-300 hover:text-white hover:bg-emerald-950/60"
-            >
-              <Activity className="w-4 h-4 text-emerald-300" />
-              <span>{language === 'es' ? 'Ops IA' : 'AI Ops'}</span>
-            </Link>
-
           </nav>
 
           {/* Right Action Tools & Controls */}

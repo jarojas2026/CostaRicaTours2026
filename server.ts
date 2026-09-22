@@ -113,6 +113,7 @@ import { processProviderInboxOnce } from './backend/providerInboxAgent';
 import { getAdminControlCenterSnapshot } from './backend/adminControlCenterService';
 import { getPlatformControls, updatePlatformControls } from './backend/platformControlService';
 import { runAdminAICommand, listAdminAICommands, approveAdminAICommand, rejectAdminAICommand } from './backend/adminAICommandService';
+import { getExecutiveAIArchitecture } from './backend/executiveAIArchitecture';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -242,6 +243,8 @@ app.post('/api/ops/provider-inbox/check', requireAdmin, async (_req, res) => {
 
 // ==========================================
 // 📊 ADMIN CONTROL CENTER
+app.get('/api/admin/ai-architecture', requireAdmin, async (_req, res) => res.json(getExecutiveAIArchitecture()));
+
 app.get('/api/admin/access-policy', requireAdmin, async (req, res) => {
   res.json({
     allowed: true,
@@ -1239,7 +1242,7 @@ app.post(['/webhook/chat-consulta', '/api/chat', '/api/chat-consulta'], async (r
 });
 
 // 2. Inicio de Reserva & Soft-Hold en Firestore (15 minutos)
-app.post(['/webhook/inicio-reserva', '/api/reservas/inicio'], async (req, res) => {
+app.post('/api/reservas/inicio', async (req, res) => {
   try {
     const result = await executeInicioReserva(req.body);
     if (!result.exito && !result.disponible) {
@@ -1252,7 +1255,7 @@ app.post(['/webhook/inicio-reserva', '/api/reservas/inicio'], async (req, res) =
 });
 
 // 3. Solicitud de Pago & Conciliación Criptográfica HMAC
-app.post(['/webhook/solicitud-pago', '/api/pagos/solicitud'], async (req, res) => {
+app.post('/api/pagos/solicitud', async (req, res) => {
   try {
     const result = await executeSolicitudPago(req.body);
     res.json(result);
@@ -1262,7 +1265,7 @@ app.post(['/webhook/solicitud-pago', '/api/pagos/solicitud'], async (req, res) =
 });
 
 // 4. Confirmación de Reserva, Voucher Digital QR & Notificaciones Multicanal
-app.post(['/webhook/confirmacion-reserva', '/webhook/reserva-confirmada', '/api/reservas/confirmar'], async (req, res) => {
+app.post('/api/reservas/confirmar', async (req, res) => {
   try {
     const result = await executeConfirmacionReserva(req.body);
     res.json(result);
@@ -1272,7 +1275,7 @@ app.post(['/webhook/confirmacion-reserva', '/webhook/reserva-confirmada', '/api/
 });
 
 // 5. Planificador de Rutas & Itinerarios IA Personalizados
-app.post(['/webhook/solicitud-itinerario', '/api/itinerario'], async (req, res) => {
+app.post('/api/itinerario', async (req, res) => {
   try {
     const result = await executeSolicitudItinerario(req.body);
     res.json(result);
@@ -2267,32 +2270,22 @@ app.post(['/api/agent/tools/create_booking_and_notify', '/api/agent/create-booki
       customerPhone: customer_phone || ''
     });
 
-    const bookingId = initialHold.idReserva || initialHold.bookingId || `CR-${Date.now().toString().slice(-6)}`;
-
-    // Confirmar y sincronizar con Google Calendar
-    const confirmResult: any = await executeConfirmacionReserva({
-      bookingId,
-      customerName: customer_name,
-      customerEmail: customer_email,
-      tourName: service_type || 'Experiencia Oficial Costa Rica Tours',
-      date: bookingDate,
-      totalUSD: calculatedUSD,
-      paymentMethod: 'agent_verified_guarantee'
-    });
-
+    if (!initialHold.exito) {
+      return res.status(409).json({ success: false, error: initialHold.motivo || 'No fue posible bloquear el cupo.' });
+    }
+    const bookingId = initialHold.idReserva || initialHold.bookingId;
     res.json({
       success: true,
       booking_id: bookingId,
       customer_name,
       tour_name: service_type || 'Experiencia Oficial Costa Rica Tours',
       appointment_datetime,
-      status: 'confirmed',
+      status: 'pending_payment',
       party_size: Number(party_size),
       total_usd: calculatedUSD,
-      calendar_synced: true,
-      qr_voucher_url: `${req.protocol}://${req.get('host')}/voucher/${bookingId}`,
-      confirmation_summary: confirmResult.mensaje || 'Reserva confirmada con éxito.',
-      message: `¡Reserva ${bookingId} creada exitosamente! Se despachó el voucher QR digital a ${customer_email}.`
+      calendar_synced: false,
+      payment_required: true,
+      message: 'Reserva creada y cupo retenido temporalmente. La confirmación y el voucher requieren verificación real del pago.'
     });
   } catch (err: any) {
     console.error('Error en tool create_booking_and_notify:', err);
