@@ -49,6 +49,7 @@ const AutonomousOperationsPage = lazy(() => import('./pages/AutonomousOperations
 const AdminControlCenterPage = lazy(() => import('./pages/AdminControlCenterPage').then(m => ({ default: m.AdminControlCenterPage })));
 const AdminAICommandPage = lazy(() => import('./pages/AdminAICommandPage').then(m => ({ default: m.AdminAICommandPage })));
 const AdminFinancialLegalPage = lazy(() => import('./pages/AdminFinancialLegalPage').then(m => ({ default: m.AdminFinancialLegalPage })));
+const AIExecutiveArchitecturePage = lazy(() => import('./pages/AIExecutiveArchitecturePage').then(m => ({ default: m.AIExecutiveArchitecturePage })));
 
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -419,6 +420,8 @@ export default function App() {
             } />
 
             <Route path="/admin/ai-command" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}><Suspense fallback={<div className="py-24 text-center text-violet-300">Cargando sala de mando IA...</div>}><AdminAICommandPage language={language} /></Suspense></AdminRouteGuard>} />
+
+            <Route path="/admin/ai-architecture" element={<AdminRouteGuard language={language === "es" ? "es" : "en"}><Suspense fallback={<div className="py-24 text-center text-violet-300">Cargando arquitectura IA...</div>}><AIExecutiveArchitecturePage language={language} /></Suspense></AdminRouteGuard>} />
 
             <Route path="/admin" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
               <Suspense fallback={<div className="py-24 text-center text-amber-300">Cargando Centro de Control...</div>}>
