@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, AlertTriangle, BarChart3, Bot, CheckCircle2, Clock3, Database, MailCheck, RefreshCw, ShieldCheck, TrendingUp, Users } from 'lucide-react';
+import { Activity, AlertTriangle, BarChart3, Bot, CheckCircle2, Clock3, Database, MailCheck, RefreshCw, ShieldCheck, TrendingUp, Settings2, Save, Table2 } from 'lucide-react';
 import { Language } from '../types';
 import { auth } from '../firebase';
 
@@ -10,20 +10,39 @@ export const AdminControlCenterPage: React.FC<Props> = ({ language }) => {
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [controls, setControls] = useState<any>({});
+  const [savingControls, setSavingControls] = useState(false);
+  const [controlMessage, setControlMessage] = useState('');
+
+  const getToken = async () => { const user = auth.currentUser; if (!user) throw new Error(es ? 'Inicia sesión con una cuenta administrativa.' : 'Sign in with an administrator account.'); return user.getIdToken(); };
 
   const load = async () => {
     setLoading(true); setError('');
     try {
-      const user = auth.currentUser;
-      if (!user) throw new Error(es ? 'Inicia sesión con una cuenta administrativa.' : 'Sign in with an administrator account.');
-      const token = await user.getIdToken();
+      const token = await getToken();
       const response = await fetch('/api/admin/control-center', { headers: { Authorization: 'Bearer ' + token } });
       const json = await response.json();
       if (!response.ok) throw new Error(json.error || 'No autorizado');
       setData(json);
+      const controlsResponse = await fetch('/api/admin/platform-controls', { headers: { Authorization: 'Bearer ' + token } });
+      const controlsJson = await controlsResponse.json();
+      if (controlsResponse.ok) setControls(controlsJson.values || {});
     } catch (e: any) {
       setError(e?.message || 'Error');
     } finally { setLoading(false); }
+  };
+
+  const saveControls = async () => {
+    setSavingControls(true); setControlMessage('');
+    try {
+      const token = await getToken();
+      const response = await fetch('/api/admin/platform-controls', { method: 'PATCH', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(controls) });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || 'No se pudieron guardar los parámetros.');
+      setControls(json.values || controls);
+      setControlMessage(es ? 'Parámetros guardados.' : 'Parameters saved.');
+    } catch (e: any) { setControlMessage(e?.message || 'Error'); }
+    finally { setSavingControls(false); }
   };
 
   useEffect(() => {
@@ -50,10 +69,33 @@ export const AdminControlCenterPage: React.FC<Props> = ({ language }) => {
           <div>
             <div className="flex items-center gap-2 text-amber-300 text-[10px] font-black uppercase tracking-[0.22em]"><ShieldCheck size={15}/> {es ? 'Nivel administrativo' : 'Administrative level'}</div>
             <h1 className="mt-2 text-3xl md:text-5xl font-black text-white tracking-tight">{es ? 'Centro de Control Costa Rica Tours' : 'Costa Rica Tours Control Center'}</h1>
-            <p className="mt-3 max-w-4xl text-sm leading-6 text-stone-300">{es ? 'Una vista unificada de ventas, clientes, proveedores, agentes, automatizaciones, fallos y documentos operativos. Solo lectura para supervisión.' : 'Unified visibility across sales, customers, providers, agents, automation, failures and operational documents. Read-only for supervision.'}</p>
+            <p className="mt-3 max-w-4xl text-sm leading-6 text-stone-300">{es ? 'Una vista unificada de ventas, clientes, proveedores, agentes, automatizaciones, fallos y documentos operativos. Incluye supervisión, parámetros maestros y tablas operativas para control humano.' : 'Unified visibility across sales, customers, providers, agents, automation, failures and operational documents. Includes supervision, master parameters and operational tables for human control.'}</p>
           </div>
           <button onClick={load} disabled={loading} className="inline-flex items-center gap-2 rounded-2xl bg-amber-400 px-4 py-3 font-black text-stone-950 hover:bg-amber-300 disabled:opacity-60"><RefreshCw size={17} className={loading ? 'animate-spin' : ''}/>{es ? 'Actualizar' : 'Refresh'}</button>
         </div>
+      </section>
+
+      <section className="rounded-3xl border border-amber-400/20 bg-[#111006] p-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div><div className="flex items-center gap-2"><Settings2 className="text-amber-300" size={18}/><h2 className="font-black text-white">{es ? 'Parámetros maestros de la plataforma' : 'Master platform parameters'}</h2></div><p className="mt-1 text-xs text-stone-500">{es ? 'Controles humanos persistentes para gobernar el comportamiento operativo de los agentes.' : 'Persistent human controls for governing agent operational behavior.'}</p></div>
+          <button onClick={saveControls} disabled={savingControls} className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 text-sm font-black text-stone-950 disabled:opacity-60"><Save size={15}/>{savingControls ? (es ? 'Guardando…' : 'Saving…') : (es ? 'Guardar parámetros' : 'Save parameters')}</button>
+        </div>
+        <div className="mt-5 grid md:grid-cols-2 xl:grid-cols-3 gap-3">
+          <label className="rounded-2xl border border-white/5 bg-black/20 p-3 block"><div className="text-xs font-bold text-white">{es ? 'Nivel de autonomía' : 'Autonomy level'}</div><select value={controls.ai_autonomy_level || 'supervised'} onChange={e=>setControls((x:any)=>({...x,ai_autonomy_level:e.target.value}))} className="mt-2 w-full rounded-xl bg-stone-950 border border-white/10 px-3 py-2 text-xs text-white"><option>supervised</option><option>assisted</option><option>high</option></select></label>
+          <label className="rounded-2xl border border-white/5 bg-black/20 p-3 block"><div className="text-xs font-bold text-white">{es ? 'Rondas máximas de herramientas' : 'Max tool rounds'}</div><input type="number" min="1" max="10" value={controls.max_agent_tool_rounds ?? 3} onChange={e=>setControls((x:any)=>({...x,max_agent_tool_rounds:Number(e.target.value)}))} className="mt-2 w-full rounded-xl bg-stone-950 border border-white/10 px-3 py-2 text-xs text-white"/></label>
+          <label key="journey_adaptation_enabled" className="rounded-2xl border border-white/5 bg-black/20 p-3 block"><div className="text-xs font-bold text-white">{es ? 'Adaptación automática de viajes' : 'Automatic journey adaptation'}</div><button type="button" onClick={() => setControls((x:any)=>({...x,journey_adaptation_enabled:!x.journey_adaptation_enabled}))} className={`mt-2 w-full rounded-xl px-3 py-2 text-left text-xs font-black ${controls.journey_adaptation_enabled ? "bg-emerald-500/20 text-emerald-300" : "bg-rose-500/15 text-rose-300"}`}>{controls.journey_adaptation_enabled ? "ON" : "OFF"}</button></label><label key="live_availability_required" className="rounded-2xl border border-white/5 bg-black/20 p-3 block"><div className="text-xs font-bold text-white">{es ? 'Exigir disponibilidad real' : 'Require live availability'}</div><button type="button" onClick={() => setControls((x:any)=>({...x,live_availability_required:!x.live_availability_required}))} className={`mt-2 w-full rounded-xl px-3 py-2 text-left text-xs font-black ${controls.live_availability_required ? "bg-emerald-500/20 text-emerald-300" : "bg-rose-500/15 text-rose-300"}`}>{controls.live_availability_required ? "ON" : "OFF"}</button></label><label key="weather_context_enabled" className="rounded-2xl border border-white/5 bg-black/20 p-3 block"><div className="text-xs font-bold text-white">{es ? 'Contexto meteorológico' : 'Weather context'}</div><button type="button" onClick={() => setControls((x:any)=>({...x,weather_context_enabled:!x.weather_context_enabled}))} className={`mt-2 w-full rounded-xl px-3 py-2 text-left text-xs font-black ${controls.weather_context_enabled ? "bg-emerald-500/20 text-emerald-300" : "bg-rose-500/15 text-rose-300"}`}>{controls.weather_context_enabled ? "ON" : "OFF"}</button></label><label key="human_handoff_enabled" className="rounded-2xl border border-white/5 bg-black/20 p-3 block"><div className="text-xs font-bold text-white">{es ? 'Escalamiento humano' : 'Human handoff'}</div><button type="button" onClick={() => setControls((x:any)=>({...x,human_handoff_enabled:!x.human_handoff_enabled}))} className={`mt-2 w-full rounded-xl px-3 py-2 text-left text-xs font-black ${controls.human_handoff_enabled ? "bg-emerald-500/20 text-emerald-300" : "bg-rose-500/15 text-rose-300"}`}>{controls.human_handoff_enabled ? "ON" : "OFF"}</button></label><label key="provider_auto_coordination" className="rounded-2xl border border-white/5 bg-black/20 p-3 block"><div className="text-xs font-bold text-white">{es ? 'Coordinación con proveedores' : 'Provider coordination'}</div><button type="button" onClick={() => setControls((x:any)=>({...x,provider_auto_coordination:!x.provider_auto_coordination}))} className={`mt-2 w-full rounded-xl px-3 py-2 text-left text-xs font-black ${controls.provider_auto_coordination ? "bg-emerald-500/20 text-emerald-300" : "bg-rose-500/15 text-rose-300"}`}>{controls.provider_auto_coordination ? "ON" : "OFF"}</button></label><label key="sales_followup_enabled" className="rounded-2xl border border-white/5 bg-black/20 p-3 block"><div className="text-xs font-bold text-white">{es ? 'Seguimiento comercial' : 'Sales follow-up'}</div><button type="button" onClick={() => setControls((x:any)=>({...x,sales_followup_enabled:!x.sales_followup_enabled}))} className={`mt-2 w-full rounded-xl px-3 py-2 text-left text-xs font-black ${controls.sales_followup_enabled ? "bg-emerald-500/20 text-emerald-300" : "bg-rose-500/15 text-rose-300"}`}>{controls.sales_followup_enabled ? "ON" : "OFF"}</button></label><label key="risk_escalation_enabled" className="rounded-2xl border border-white/5 bg-black/20 p-3 block"><div className="text-xs font-bold text-white">{es ? 'Escalamiento de riesgo' : 'Risk escalation'}</div><button type="button" onClick={() => setControls((x:any)=>({...x,risk_escalation_enabled:!x.risk_escalation_enabled}))} className={`mt-2 w-full rounded-xl px-3 py-2 text-left text-xs font-black ${controls.risk_escalation_enabled ? "bg-emerald-500/20 text-emerald-300" : "bg-rose-500/15 text-rose-300"}`}>{controls.risk_escalation_enabled ? "ON" : "OFF"}</button></label><label key="learning_reflection_enabled" className="rounded-2xl border border-white/5 bg-black/20 p-3 block"><div className="text-xs font-bold text-white">{es ? 'Reflexión y aprendizaje' : 'Learning reflection'}</div><button type="button" onClick={() => setControls((x:any)=>({...x,learning_reflection_enabled:!x.learning_reflection_enabled}))} className={`mt-2 w-full rounded-xl px-3 py-2 text-left text-xs font-black ${controls.learning_reflection_enabled ? "bg-emerald-500/20 text-emerald-300" : "bg-rose-500/15 text-rose-300"}`}>{controls.learning_reflection_enabled ? "ON" : "OFF"}</button></label>
+        </div>
+        {controlMessage && <div className="mt-3 text-xs font-bold text-emerald-300">{controlMessage}</div>}
+      </section>
+
+      <section className="rounded-3xl border border-sky-400/15 bg-[#06121b] p-5">
+        <div className="flex items-center gap-2"><Table2 className="text-sky-300" size={18}/><h2 className="font-black text-white">{es ? 'Tabla de reservas recientes' : 'Recent bookings table'}</h2></div>
+        <div className="mt-4 overflow-x-auto"><table className="w-full text-left text-xs"><thead className="text-[9px] uppercase tracking-wider text-stone-500"><tr><th className="p-2">ID</th><th className="p-2">{es?'Cliente':'Customer'}</th><th className="p-2">Tour</th><th className="p-2">{es?'Fecha':'Date'}</th><th className="p-2">{es?'Estado':'Status'}</th><th className="p-2">USD</th></tr></thead><tbody>{(data?.recentBookings || []).map((b:any)=><tr key={b.id} className="border-t border-white/5"><td className="p-2 font-bold text-emerald-300">{b.id}</td><td className="p-2 text-white">{b.customer}</td><td className="p-2 text-stone-300">{b.tour}</td><td className="p-2 text-stone-400">{b.date}</td><td className="p-2 text-amber-300">{b.status}</td><td className="p-2 text-white">{b.totalUSD}</td></tr>)}</tbody></table></div>
+      </section>
+
+      <section className="rounded-3xl border border-emerald-500/15 bg-[#061d14] p-5">
+        <div className="flex items-center gap-2"><Table2 className="text-emerald-300" size={18}/><h2 className="font-black text-white">{es ? 'Tabla de proveedores y SLA' : 'Providers & SLA table'}</h2></div>
+        <div className="mt-4 overflow-x-auto"><table className="w-full text-left text-xs"><thead className="text-[9px] uppercase tracking-wider text-stone-500"><tr><th className="p-2">Proveedor</th><th className="p-2">Región</th><th className="p-2">Estado</th><th className="p-2">SLA</th><th className="p-2">{es?'Respuesta media':'Avg response'}</th><th className="p-2">{es?'Aceptación':'Acceptance'}</th></tr></thead><tbody>{(data?.providers || []).map((p:any)=><tr key={p.id} className="border-t border-white/5"><td className="p-2 font-bold text-white">{p.name}</td><td className="p-2 text-stone-300">{p.region || '—'}</td><td className="p-2 text-emerald-300">{p.status || '—'}</td><td className="p-2 text-stone-300">{p.slaTargetMinutes ?? '—'}m</td><td className="p-2 text-stone-300">{p.averageResponseMinutes ?? '—'}m</td><td className="p-2 text-stone-300">{p.acceptanceRate ?? '—'}%</td></tr>)}</tbody></table></div>
       </section>
 
       <section className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
