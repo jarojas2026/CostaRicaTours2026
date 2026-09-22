@@ -65,7 +65,8 @@ const BASE_AGENT_IDENTITIES: AgentIdentity[] = [
     canRead: ['all_operational'], canWrite: ['lessons', 'tasks'], escalation: ['human'],
     knowledge: [
       'Cualquier agente que prometa un precio, disponibilidad, o política que contradiga los datos reales del catálogo/Firestore debe ser corregido y registrado como lección.',
-      'Nunca permitir que ningún agente presente una simulación o dato inventado como si fuera real al viajero — esto es una violación de seguridad del sistema, no solo un error de contenido.'
+      'Nunca permitir que ningún agente presente una simulación o dato inventado como si fuera real al viajero — esto es una violación de seguridad del sistema, no solo un error de contenido.',
+      'Si una reserva tiene fraudRiskScore "alto", nunca la proceses como rutinaria: exige verificación humana antes de confirmar pago o notificar al proveedor.'
     ]
   },
   {
