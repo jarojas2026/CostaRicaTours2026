@@ -108,6 +108,9 @@ import { listSkillVersions, selectSkills, hydrateSkillGenome, registerSkillVersi
 import { emitOperationalEvent } from './backend/operationalEventBus';
 import { buildSkillEvolutionReport, selectEvolvedSkill, recordSkillOutcome, proposeSkillUpgrade } from './backend/skillEvolutionEngine';
 import { assessTripFit, buildPackingList, buildRouteStrategy, getDestinationIntelligence, screenActivitySuitability } from './backend/tourismIntelligenceEngine';
+import { buildTripJourney, adaptTravelerJourney, getTravelerJourney } from './backend/travelJourneyOrchestrator';
+import { processProviderInboxOnce } from './backend/providerInboxAgent';
+import { getAdminControlCenterSnapshot } from './backend/adminControlCenterService';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -207,6 +210,83 @@ app.post('/api/ai/intelligence', (req, res) => {
     }
   } catch (error: any) {
     return res.status(400).json({ error: error?.message || 'No se pudo procesar la consulta de inteligencia.' });
+  }
+});
+
+// ==========================================
+ // 🧭 VIAJE COMPLETO: MEMORIA + CATÁLOGO + CLIMA + DISPONIBILIDAD + ITINERARIO + VENTAS
+ // ==========================================
+app.post('/api/journey/build', async (req, res) => {
+  try {
+    const journey = await buildTripJourney({
+      sessionId: typeof req.body?.sessionId === 'string' ? req.body.sessionId : undefined,
+      query: typeof req.body?.query === 'string' ? req.body.query : '',
+      days: req.body?.days, travelers: req.body?.travelers, profile: req.body?.profile,
+      regions: Array.isArray(req.body?.regions) ? req.body.regions.map(String).slice(0, 6) : undefined,
+      arrivalAirport: typeof req.body?.arrivalAirport === 'string' ? req.body.arrivalAirport : undefined,
+      departureAirport: typeof req.body?.departureAirport === 'string' ? req.body.departureAirport : undefined,
+      date: typeof req.body?.date === 'string' ? req.body.date : undefined,
+      time: typeof req.body?.time === 'string' ? req.body.time : undefined,
+      selectedTourIds: Array.isArray(req.body?.selectedTourIds) ? req.body.selectedTourIds.map(String).slice(0, 8) : undefined,
+      activities: Array.isArray(req.body?.activities) ? req.body.activities.map(String).slice(0, 12) : undefined,
+      language: req.body?.language === 'en' ? 'en' : 'es'
+    });
+    return res.json(journey);
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || 'No se pudo construir el viaje.' });
+  }
+});
+
+app.get('/api/journey/:journeyId', async (req, res) => {
+  try {
+    const journey = await getTravelerJourney(String(req.params.journeyId || ''));
+    if (!journey) return res.status(404).json({ error: 'Viaje no encontrado.' });
+    return res.json(journey);
+  } catch (error: any) {
+    return res.status(500).json({ error: error?.message || 'No se pudo leer el viaje.' });
+  }
+});
+
+app.post('/api/journey/:journeyId/adapt', async (req, res) => {
+  try {
+    const journey = await adaptTravelerJourney(String(req.params.journeyId || ''), {
+      sessionId: typeof req.body?.sessionId === 'string' ? req.body.sessionId : undefined,
+      query: typeof req.body?.query === 'string' ? req.body.query : undefined,
+      days: req.body?.days, travelers: req.body?.travelers, profile: req.body?.profile,
+      regions: Array.isArray(req.body?.regions) ? req.body.regions.map(String).slice(0, 6) : undefined,
+      arrivalAirport: typeof req.body?.arrivalAirport === 'string' ? req.body.arrivalAirport : undefined,
+      departureAirport: typeof req.body?.departureAirport === 'string' ? req.body.departureAirport : undefined,
+      date: typeof req.body?.date === 'string' ? req.body.date : undefined,
+      time: typeof req.body?.time === 'string' ? req.body.time : undefined,
+      selectedTourIds: Array.isArray(req.body?.selectedTourIds) ? req.body.selectedTourIds.map(String).slice(0, 8) : undefined,
+      activities: Array.isArray(req.body?.activities) ? req.body.activities.map(String).slice(0, 12) : undefined,
+      language: req.body?.language === 'en' ? 'en' : undefined
+    });
+    return res.json(journey);
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || 'No se pudo adaptar el viaje.' });
+  }
+});
+
+// ==========================================
+// 🛎️ CENTRO EJECUTIVO ADMINISTRATIVO
+// ==========================================
+app.get('/api/admin/control-center', requireAdmin, async (_req, res) => {
+  try {
+    return res.json(await getAdminControlCenterSnapshot());
+  } catch (error: any) {
+    return res.status(500).json({ error: error?.message || 'No se pudo generar el centro de control.' });
+  }
+});
+
+// ==========================================
+// 📬 AGENTE INTERNO DE CORREO DE PROVEEDORES
+// ==========================================
+app.post('/api/internal/provider-inbox/sweep', requireAgentTool, async (_req, res) => {
+  try {
+    return res.json(await processProviderInboxOnce());
+  } catch (error: any) {
+    return res.status(500).json({ error: error?.message || 'No se pudo procesar la bandeja de proveedores.' });
   }
 });
 
