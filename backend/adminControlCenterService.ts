@@ -26,7 +26,7 @@ export async function getAdminControlCenterSnapshot(){
   const pending=bookings.filter((b:any)=>['pending','pendiente','pendiente_pago','hold'].includes(String(b.status||b.paymentStatus||'').toLowerCase()));
   const failures=bookings.filter((b:any)=>['rechazada','rejected','cancelada','cancelled','error'].includes(String(b.status||'').toLowerCase()));
   const revenue=confirmed.reduce((sum:number,b:any)=>sum+money(b.totalUSD),0);
-  const providerList:any[]=Array.isArray((providers as any)?.providers)?(providers as any).providers:(Array.isArray(providers)?providers as any[]);
+  const providerList:any[]=Array.isArray((providers as any)?.providers)?(providers as any).providers:(Array.isArray(providers)?providers as any[]:[]);
   const db=getFirestoreDb();
   let documents={journeys:0,inboxEvents:0,evaluations:0,memories:0};let recentInbox:any[]=[];let recentEvaluations:any[]=[];
   if(db){
