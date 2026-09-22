@@ -113,6 +113,7 @@ import { processProviderInboxOnce } from './backend/providerInboxAgent';
 import { getAdminControlCenterSnapshot } from './backend/adminControlCenterService';
 import { getPlatformControls, updatePlatformControls } from './backend/platformControlService';
 import { runAdminAICommand, listAdminAICommands, approveAdminAICommand, rejectAdminAICommand } from './backend/adminAICommandService';
+import { getExecutiveAIArchitecture } from './backend/executiveAIArchitecture';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -242,6 +243,8 @@ app.post('/api/ops/provider-inbox/check', requireAdmin, async (_req, res) => {
 
 // ==========================================
 // 📊 ADMIN CONTROL CENTER
+app.get('/api/admin/ai-architecture', requireAdmin, async (_req, res) => res.json(getExecutiveAIArchitecture()));
+
 app.get('/api/admin/access-policy', requireAdmin, async (req, res) => {
   res.json({
     allowed: true,
