@@ -57,6 +57,27 @@ export const AdminControlCenterPage: React.FC<Props> = ({ language }) => {
   const agents = data?.agents || [];
   const documents = data?.documents || {};
   const maxLog = useMemo(() => Math.max(1, ...(automation.recentLogs || []).slice(0, 12).map((x: any) => Number(x.durationMs) || 1)), [automation]);
+  const financial = data?.financial || {};
+  const kpis = financial.kpis || {};
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiResult, setAiResult] = useState<any>(null);
+  const [aiBusy, setAiBusy] = useState(false);
+  const runAiAnalysis = async () => {
+    if (!aiPrompt.trim()) return;
+    setAiBusy(true); setAiResult(null);
+    try {
+      const token = await getToken();
+      const response = await fetch('/api/admin/ai-command', {
+        method:'POST',
+        headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+        body:JSON.stringify({prompt:aiPrompt,mode:'analysis_proposal'})
+      });
+      const json=await response.json();
+      if(!response.ok) throw new Error(json.error||'AI command failed');
+      setAiResult(json);
+    } catch(e:any) { setAiResult({error:e?.message||'Error'}); }
+    finally { setAiBusy(false); }
+  };
 
   if (error && !data) {
     return <div className="max-w-7xl mx-auto px-4 py-12"><div className="rounded-3xl border border-rose-400/30 bg-rose-950/30 p-8 text-rose-100"><h1 className="text-2xl font-black">{es ? 'Centro de control administrativo' : 'Executive control center'}</h1><p className="mt-3 text-sm">{error}</p><button onClick={load} className="mt-5 rounded-xl bg-amber-400 px-4 py-2 text-sm font-black text-stone-950">{es ? 'Reintentar' : 'Retry'}</button></div></div>;
