@@ -3,6 +3,7 @@ import { retrieveRelevantMemory } from './memoryService';
 import { getWeatherForRegion } from './weatherPulseService';
 import { selectEvolvedSkill } from './skillEvolutionEngine';
 import { EXTRA_AGENT_KNOWLEDGE, EXTENSION_AGENT_IDENTITIES, buildSkillInsights } from './agentSkillPack';
+import { TOURISM_INTELLIGENCE_RULES, buildIntelligenceInsights } from './tourismIntelligenceEngine';
 
 export type AgentIdentity = {
   id: string;
@@ -107,6 +108,8 @@ export async function buildAgentKnowledgeContext(input: {
 
   return [
     'FUENTE DE VERDAD OPERATIVA: usa los servicios de dominio; no inventes disponibilidad, precios, reservas ni políticas.',
+    'REGLAS DE INTELIGENCIA TURÍSTICA V2:\n- ' + TOURISM_INTELLIGENCE_RULES.join('\n- '),
+    ...buildIntelligenceInsights(input.query),
     'AGENTES: comparte contexto mediante memoria/eventos; no dupliques preguntas que ya fueron respondidas.',
     identity?.knowledge?.length ? `CONOCIMIENTO ESPECIALIZADO (${identity.id}):\n- ${identity.knowledge.join('\n- ')}` : '',
     ...buildSkillInsights(input.query),
