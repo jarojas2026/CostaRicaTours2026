@@ -8,6 +8,7 @@
 import cron from 'node-cron';
 import { getAllBookings, updateBookingStatus } from './bookingService';
 import { logAutomationExecution } from './nativeAutomationEngine';
+import { processProviderInboxOnce } from './providerInboxAgent';
 import {
   executeAutomatedProviderPayouts,
   executeSurveillanceAndEscalation,
@@ -168,6 +169,21 @@ export function initializeAutomationEngine() {
     } catch (error: any) {
       console.error('❌ Error ejecutando CRON_FIDELIZACION_VIP_10AM:', error);
       logAutomationExecution('CRON_FIDELIZACION_VIP_10AM', 0, 'error', `Fallo: ${error.message}`);
+    }
+  }, CR_TIMEZONE);
+
+  // 10. CRON: AGENTE DE BANDEJA DE PROVEEDORES (Cada minuto)
+  // Gmail OAuth es opcional: si no está configurado, el agente queda inactivo sin romper el resto del sistema.
+  cron.schedule('* * * * *', async () => {
+    try {
+      const res = await processProviderInboxOnce();
+      if (res.enabled && (res.processed || res.errors)) {
+        logAutomationExecution('CRON_PROVIDER_INBOX_1M', 0, res.errors ? 'warning' : 'success',
+          'Bandeja de proveedores: ' + res.processed + ' procesadas, ' + res.errors + ' errores, ' + res.ignored + ' ignoradas.');
+      }
+    } catch (error: any) {
+      console.error('❌ Error ejecutando CRON_PROVIDER_INBOX_1M:', error);
+      logAutomationExecution('CRON_PROVIDER_INBOX_1M', 0, 'error', 'Fallo: ' + error.message);
     }
   }, CR_TIMEZONE);
 
