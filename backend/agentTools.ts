@@ -4,6 +4,8 @@
  */
 import { TOURS } from '../src/data/toursData';
 import { assessTripFit, buildPackingList, buildRouteStrategy, getDestinationIntelligence, screenActivitySuitability } from './tourismIntelligenceEngine';
+import { buildTripJourney, adaptTravelerJourney } from './travelJourneyOrchestrator';
+import { getDestinationWeather } from './weatherPulseService';
 import { checkTourAvailability, findBookingByCodeOrEmail } from './bookingService';
 import { getOperationalMemory, retrieveRelevantMemory } from './memoryService';
 import {
@@ -75,6 +77,18 @@ export const AGENT_TOOL_REGISTRY = {
   },
   destination_intelligence: {
     description: 'Return stable expert knowledge for a Costa Rica destination with explicit live-verification requirements.',
+    sideEffect: false
+  },
+  build_trip_journey: {
+    description: 'Build or rebuild a complete traveler journey using memory, catalog, live availability, weather, route strategy, itinerary and sales next steps.',
+    sideEffect: false
+  },
+  adapt_trip_journey: {
+    description: 'Adapt an existing traveler journey when dates, weather, preferences or operational conditions change.',
+    sideEffect: false
+  },
+  live_destination_weather: {
+    description: 'Return current cached/live weather for Costa Rica destination regions with source classification.',
     sideEffect: false
   }
 } as const;
@@ -187,6 +201,34 @@ export async function executeAgentTool(
       });
     case 'destination_intelligence':
       return getDestinationIntelligence(String(args.regionId || ''));
+    case 'build_trip_journey':
+      return buildTripJourney({
+        sessionId: args.sessionId ? String(args.sessionId) : undefined,
+        query: args.query ? String(args.query) : '', days: Number(args.days), travelers: Number(args.travelers),
+        profile: args.profile, regions: Array.isArray(args.regions) ? args.regions.map((x: unknown) => String(x)) : undefined,
+        arrivalAirport: args.arrivalAirport ? String(args.arrivalAirport) : undefined,
+        departureAirport: args.departureAirport ? String(args.departureAirport) : undefined,
+        date: args.date ? String(args.date) : undefined, time: args.time ? String(args.time) : undefined,
+        selectedTourIds: Array.isArray(args.selectedTourIds) ? args.selectedTourIds.map((x: unknown) => String(x)) : undefined,
+        activities: Array.isArray(args.activities) ? args.activities.map((x: unknown) => String(x)) : undefined,
+        language: args.language === 'en' ? 'en' : 'es'
+      });
+    case 'adapt_trip_journey':
+      if (!args.journeyId) throw new Error('journeyId requerido');
+      return adaptTravelerJourney(String(args.journeyId), {
+        sessionId: args.sessionId ? String(args.sessionId) : undefined,
+        query: args.query ? String(args.query) : undefined, days: args.days === undefined ? undefined : Number(args.days),
+        travelers: args.travelers === undefined ? undefined : Number(args.travelers), profile: args.profile,
+        regions: Array.isArray(args.regions) ? args.regions.map((x: unknown) => String(x)) : undefined,
+        arrivalAirport: args.arrivalAirport ? String(args.arrivalAirport) : undefined,
+        departureAirport: args.departureAirport ? String(args.departureAirport) : undefined,
+        date: args.date ? String(args.date) : undefined, time: args.time ? String(args.time) : undefined,
+        selectedTourIds: Array.isArray(args.selectedTourIds) ? args.selectedTourIds.map((x: unknown) => String(x)) : undefined,
+        activities: Array.isArray(args.activities) ? args.activities.map((x: unknown) => String(x)) : undefined,
+        language: args.language === 'en' ? 'en' : undefined
+      });
+    case 'live_destination_weather':
+      return getDestinationWeather();
   }
 }
 
@@ -194,6 +236,40 @@ export async function executeAgentTool(
  * Declaraciones oficiales de herramientas estructuradas para Function Calling de Gemini SDK
  */
 export const GEMINI_FUNCTION_DECLARATIONS = [
+  {
+    name: 'build_trip_journey',
+    description: 'Build a complete Costa Rica trip from traveler memory, expert intelligence, authoritative catalog, live weather, live availability, itinerary and sales next step.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        sessionId: { type: 'STRING' }, query: { type: 'STRING' }, days: { type: 'NUMBER' }, travelers: { type: 'NUMBER' },
+        profile: { type: 'STRING' }, regions: { type: 'ARRAY', items: { type: 'STRING' } },
+        arrivalAirport: { type: 'STRING' }, departureAirport: { type: 'STRING' }, date: { type: 'STRING' }, time: { type: 'STRING' },
+        selectedTourIds: { type: 'ARRAY', items: { type: 'STRING' } }, activities: { type: 'ARRAY', items: { type: 'STRING' } },
+        language: { type: 'STRING' }
+      }
+    }
+  },
+  {
+    name: 'adapt_trip_journey',
+    description: 'Adapt an existing journey when the traveler changes dates, preferences or operational conditions.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        journeyId: { type: 'STRING' }, sessionId: { type: 'STRING' }, query: { type: 'STRING' }, days: { type: 'NUMBER' }, travelers: { type: 'NUMBER' },
+        profile: { type: 'STRING' }, regions: { type: 'ARRAY', items: { type: 'STRING' } }, arrivalAirport: { type: 'STRING' },
+        departureAirport: { type: 'STRING' }, date: { type: 'STRING' }, time: { type: 'STRING' },
+        selectedTourIds: { type: 'ARRAY', items: { type: 'STRING' } }, activities: { type: 'ARRAY', items: { type: 'STRING' } },
+        language: { type: 'STRING' }
+      },
+      required: ['journeyId']
+    }
+  },
+  {
+    name: 'live_destination_weather',
+    description: 'Return current weather for supported Costa Rica destination regions.',
+    parameters: { type: 'OBJECT', properties: {} }
+  },
   {
     name: 'search_tours',
     description: 'Search the authoritative catalog of Costa Rica tours and activities by text, region, or category.',
