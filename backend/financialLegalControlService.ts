@@ -80,16 +80,42 @@ export async function getFinancialLegalSnapshot(){
     byTour[key].providerPayableUSD=money(byTour[key].providerPayableUSD+(b.providerPayoutUSD!==undefined?num(b.providerPayoutUSD):0));
   }
   const legal=await getLegalComplianceSnapshot(bookings,c);
+  const accountingControl=await getAccountingControlSnapshot();
   return {
     generatedAt:new Date().toISOString(),controls:c,source:controlsResult.source,
     kpis:{grossSalesUSD:grossSales,refundsUSD:refunds,netSalesUSD:netSales,taxableBaseUSD:subtotal,ivaUSD:iva,paymentFeesUSD:paymentFees,providerPayablesUSD:providerPayables,grossMarginUSD:grossMargin,operatingProfitProxyUSD:grossMargin,accountsReceivableUSD:accountsReceivable,cashCollectedUSD:cashCollected,cancelledBookings:cancelled.length,unpaidBookings:unpaid.length,unissuedFiscalDocuments,providerPayoutsPending:payoutPending},
     cashFlow:{inflowsUSD:cashCollected,outflowsKnownUSD:money(refunds+paymentFees+providerPayables),netKnownCashFlowUSD:money(cashCollected-refunds-paymentFees-providerPayables)},
     paymentMethods,
     tourProfitability:Object.entries(byTour).map(([tour,v])=>({tour,...v,contributionUSD:money(v.revenueUSD-v.providerPayableUSD)})).sort((a,b)=>b.contributionUSD-a.contributionUSD).slice(0,20),
-    accounting:{basis:'booking-ledger',revenueRecognition:'confirmed_or_paid_booking',openReceivables:accountsReceivable,taxMode:c.tax_mode,warning:'Completar gastos operativos, activos, pasivos, cuentas bancarias y asientos contables para estados financieros completos.'},
+    accounting:{basis:'booking-ledger',revenueRecognition:'confirmed_or_paid_booking',openReceivables:accountsReceivable,taxMode:c.tax_mode,warning:'Completar gastos operativos, activos, pasivos, cuentas bancarias y asientos contables para estados financieros completos.',control:accountingControl},
     legal
   };
 }
+async function getAccountingControlSnapshot(){
+  const db=getFirestoreDb();
+  if(!db) return {journalEntries:0,bankReconciliations:0,openReconciliations:0,auditEvents:0,periodStatus:'open',chartOfAccounts:[]};
+  const safe=async(fn:any, fallback:any)=>{try{return await fn();}catch{return fallback;}};
+  const [journal,reconciliations,audit]=await Promise.all([
+    safe(()=>db.collection('accounting_journal').limit(500).get(),{size:0}),
+    safe(()=>db.collection('bank_reconciliations').limit(100).get(),{size:0,docs:[]}),
+    safe(()=>db.collection('financial_audit_log').limit(100).get(),{size:0})
+  ]);
+  const openReconciliations=(reconciliations.docs||[]).filter((d:any)=>!['reconciled','closed'].includes(normalizeStatus(d.data()?.status))).length;
+  return {
+    journalEntries:journal.size||0,
+    bankReconciliations:reconciliations.size||0,
+    openReconciliations,
+    auditEvents:audit.size||0,
+    periodStatus:'open',
+    chartOfAccounts:[
+      {code:'1100',name:'Caja y bancos'},{code:'1200',name:'Cuentas por cobrar'},
+      {code:'2100',name:'Cuentas por pagar a proveedores'},{code:'4100',name:'Ingresos por tours'},
+      {code:'4200',name:'Impuestos trasladados / IVA'},{code:'5100',name:'Costos de proveedores'},
+      {code:'5200',name:'Comisiones de pago'},{code:'6100',name:'Gastos operativos'}
+    ]
+  };
+}
+
 async function getLegalComplianceSnapshot(bookings:any[],controls:any){
   const db=getFirestoreDb(); let records:any[]=[];
   if(db){try{const snap=await db.collection('legal_compliance').orderBy('updatedAt','desc').limit(50).get();records=snap.docs.map(d=>({id:d.id,...d.data()}));}catch{}}
