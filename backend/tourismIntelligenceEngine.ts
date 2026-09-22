@@ -1,3 +1,16 @@
+export const TOURISM_INTELLIGENCE_RULES = [
+  'Priorizar la conectividad lógica entre regiones (ej. SJO -> La Fortuna -> Monteverde -> Manuel Antonio).',
+  'Verificar restricciones de edad y condición física para actividades de aventura.',
+  'Informar sobre microclimas y temporada verde (mayo a noviembre) vs estación seca.'
+];
+
+export function buildIntelligenceInsights(query: string): string[] {
+  return [
+    `Insights turísticos generados para consulta: "${query}"`,
+    'Recomendación: Validar disponibilidad en tiempo real antes de confirmar.'
+  ];
+}
+
 export function assessTripFit(params: { query?: string; days?: number; airport?: string; profile?: any; intensity?: string; regions?: string[] }) {
   return {
     fitScore: 92,
