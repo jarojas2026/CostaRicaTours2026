@@ -1168,7 +1168,7 @@ app.post('/api/native/workflows/cleanup-holds', requireAdmin, async (req, res) =
 app.post('/api/native/workflows/conversion-report', requireAdmin, async (req, res) => {
   try {
     const metrics = await getWeeklyConversionMetrics();
-    logAutomationExecution('CRON_SEMANAL_CONVERSION', 5, 'success', `Manual: Tasa conv: ${metrics.conversionRate}%, Ventas: $${metrics.totalRevenueUSD}.`);
+    logAutomationExecution('CRON_SEMANAL_CONVERSION', 5, 'success', `Manual: Tasa conv: ${metrics.conversionRate == null ? 'N/D' : metrics.conversionRate + '%'}, Ventas: $${metrics.totalRevenueUSD}.`);
     res.json({ success: true, metrics });
   } catch (err: any) {
     logAutomationExecution('CRON_SEMANAL_CONVERSION', 5, 'error', `Fallo: ${err.message}`);
@@ -1929,6 +1929,41 @@ app.get('/api/agent/tools/functions', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+// Endpoints de Machine Learning y Recomendación Inteligente (Sin N8N)
+app.post('/api/ml/recommend', async (req, res) => {
+  try {
+    const { mlRecommendTours } = await import('./backend/nativeMlEngine');
+    const profile = req.body || {};
+    const recommendations = await mlRecommendTours(profile);
+    res.json({ success: true, engine: 'native-ml-collab-v3', recommendations });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/ml/predict-price', async (req, res) => {
+  try {
+    const { mlPredictDynamicPrice } = await import('./backend/nativeMlEngine');
+    const { basePrice, dateString, seats } = req.body;
+    const prediction = mlPredictDynamicPrice(Number(basePrice) || 100, dateString, Number(seats) || 2);
+    res.json({ success: true, prediction });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/ml/itinerary', async (req, res) => {
+  try {
+    const { mlGenerateItinerary } = await import('./backend/nativeMlEngine');
+    const { days, style, region } = req.body;
+    const itinerary = mlGenerateItinerary(Number(days) || 5, style || 'Aventura y Naturaleza', region || 'Costa Rica');
+    res.json({ success: true, itinerary });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 
 app.post('/api/gemini/booking/urgent', async (req, res) => {
   try {

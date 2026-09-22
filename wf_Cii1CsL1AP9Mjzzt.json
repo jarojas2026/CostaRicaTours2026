@@ -1,0 +1,207 @@
+{
+  "id": "Cii1CsL1AP9Mjzzt",
+  "name": "Formulario de Reseña Propio",
+  "active": false,
+  "isArchived": false,
+  "versionId": "9997a91d-df2f-43c5-8532-75f3f03a819c",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "nodeCount": 4,
+  "createdAt": "2026-09-12T03:06:01.809Z",
+  "updatedAt": "2026-09-12T03:19:24.784Z",
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "tags": [],
+  "parentFolderId": null,
+  "description": "Formulario propio de rese\\u00f1as post-tour, alojado en n8n, con almacenamiento en Firestore y alerta de fallo por Telegram.",
+  "scopes": [
+    "execution:reveal",
+    "workflow:create",
+    "workflow:delete",
+    "workflow:disableRedaction",
+    "workflow:enableRedaction",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:export",
+    "workflow:import",
+    "workflow:list",
+    "workflow:move",
+    "workflow:publish",
+    "workflow:read",
+    "workflow:share",
+    "workflow:unpublish",
+    "workflow:unshare",
+    "workflow:update"
+  ],
+  "canExecute": true,
+  "connections": {
+    "Formulario de Reseña": {
+      "main": [
+        [
+          {
+            "node": "Preparar Reseña",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Reseña": {
+      "main": [
+        [
+          {
+            "node": "Guardar Reseña en Firestore",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar Reseña en Firestore": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Avisar Fallo al Guardar Reseña",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "¿Cómo estuvo tu tour? — Costa Rica Tours",
+        "formDescription": "¡Pura Vida! Tu opinión nos ayuda a mejorar y le da confianza a otros viajeros. Te toma menos de un minuto.",
+        "formFields": {
+          "values": [
+            {
+              "fieldType": "hiddenField",
+              "fieldName": "bookingId"
+            },
+            {
+              "fieldLabel": "¿Cómo calificarías tu experiencia?",
+              "fieldType": "dropdown",
+              "fieldName": "rating",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "5 - Excelente"
+                  },
+                  {
+                    "option": "4 - Muy bueno"
+                  },
+                  {
+                    "option": "3 - Bueno"
+                  },
+                  {
+                    "option": "2 - Regular"
+                  },
+                  {
+                    "option": "1 - Malo"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Cuéntanos más (opcional)",
+              "fieldType": "textarea",
+              "fieldName": "comment",
+              "placeholder": "¿Qué fue lo que más te gustó? ¿Algo que podamos mejorar?"
+            },
+            {
+              "fieldLabel": "Tu nombre (opcional)",
+              "fieldName": "customerName"
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false,
+          "buttonLabel": "Enviar reseña",
+          "path": "resena-tour",
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "¡Gracias por compartir tu experiencia! 🌴 — Costa Rica Tours"
+            }
+          }
+        }
+      },
+      "id": "ff02bcf5-9aa0-4a29-bb2e-0707aa4d0bf8",
+      "name": "Formulario de Reseña",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "4f0a8425-49cf-403f-a053-6e3f46c8c5ff"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json || {};\nconst ratingRaw = String(body.rating || '');\nconst ratingNum = parseInt(ratingRaw.split(' - ')[0], 10) || null;\nreturn [{\n  json: {\n    bookingId: body.bookingId || 'sin_reserva_asociada',\n    rating: ratingNum,\n    comment: body.comment || '',\n    customerName: body.customerName || 'Anónimo',\n    createdAt: new Date().toISOString(),\n    source: 'formulario_propio',\n  }\n}];"
+      },
+      "id": "15d36b6b-efa2-47ee-b5ed-48e49bb1a617",
+      "name": "Preparar Reseña",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "create",
+        "projectId": "=gen-lang-client-0782739149",
+        "collection": "reviews",
+        "columns": "bookingId,rating,comment,customerName,createdAt,source"
+      },
+      "id": "e92dc8c7-8a4c-4a30-96b2-7bb04c4140f1",
+      "name": "Guardar Reseña en Firestore",
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        0
+      ],
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "googleApi": {
+          "id": "nBgDubpe1cIYtcc1",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "-1002489148001",
+        "text": "=⚠️ No se pudo guardar en Firestore una reseña recibida del formulario.\nReserva: {{ $json.bookingId }}\nCalificación: {{ $json.rating }}\nComentario: {{ $json.comment }}\nCliente: {{ $json.customerName }}\nRevisar y guardar manualmente para no perder el dato.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "28d2fd18-15b0-40e3-b97d-fdfec5becb5e",
+      "name": "Avisar Fallo al Guardar Reseña",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        0
+      ],
+      "webhookId": "1c6b722f-389e-4365-9c34-5d551fa259b7"
+    }
+  ],
+  "nodeGroups": [],
+  "activeVersion": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  }
+}

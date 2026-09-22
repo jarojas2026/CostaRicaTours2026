@@ -1,0 +1,158 @@
+{
+  "id": "WF-037",
+  "name": "Monitor de SLA de Aceptación de Reserva por Operador",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "path": "api/webhooks/n8n/check-operator-ack",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "[TRIGGER] Monitor de SLA de Aceptación de Reserva por Operador",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'sla_tracking';\nreturn [{ json: item }];"
+      },
+      "name": "[EXTRACT] Formatear y Validar Datos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        350,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "collection": "sla_tracking",
+        "documentId": "={{ $json.id || $json.bookingId || $json.code || $now }}",
+        "dataToSend": "defineBelow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "updatedAt",
+              "fieldValue": "={{ $now }}"
+            },
+            {
+              "fieldId": "workflowSource",
+              "fieldValue": "WF-037"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "processed"
+            }
+          ]
+        }
+      },
+      "name": "[FIRESTORE] Operación Colección sla_tracking",
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        650,
+        300
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Costa Rica Tours - Firebase"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": true,\n  \"workflowCode\": \"WF-037\",\n  \"collection\": \"sla_tracking\",\n  \"timestamp\": \"={{ $now }}\",\n  \"message\": \"Operación completada exitosamente en sla_tracking\"\n}",
+        "options": {}
+      },
+      "name": "[RESPUESTA] Finalizar con Éxito",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        950,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.APP_URL || \"http://localhost:3000\" }}/api/alerts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"source\": \"Monitor de SLA de Aceptación de Reserva por Operador\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-037: Monitor de SLA de Aceptación de Reserva por Operador\",\n  \"message\": \"=Error al ejecutar en colección sla_tracking: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-037\",\n    \"collection\": \"sla_tracking\",\n    \"endpoint\": \"/api/webhooks/n8n/check-operator-ack\"\n  }\n}",
+        "options": {}
+      },
+      "name": "[ALERTA NATIVA] Enviar a /api/alerts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        950,
+        450
+      ]
+    }
+  ],
+  "connections": {
+    "[TRIGGER] Monitor de SLA de Aceptación de Reserva por Operador": {
+      "main": [
+        [
+          {
+            "node": "[EXTRACT] Formatear y Validar Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[EXTRACT] Formatear y Validar Datos": {
+      "main": [
+        [
+          {
+            "node": "[FIRESTORE] Operación Colección sla_tracking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[FIRESTORE] Operación Colección sla_tracking": {
+      "main": [
+        [
+          {
+            "node": "[RESPUESTA] Finalizar con Éxito",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[ALERTA NATIVA] Enviar a /api/alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

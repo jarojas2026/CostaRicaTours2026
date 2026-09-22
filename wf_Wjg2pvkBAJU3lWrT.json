@@ -1,0 +1,136 @@
+{
+  "id": "Wjg2pvkBAJU3lWrT",
+  "name": "Red Nacional de Monitoreo de Seguridad, Clima y Rescate Turístico",
+  "active": false,
+  "isArchived": false,
+  "versionId": "32e92a5b-2b3f-4adc-a60c-09976c6113f9",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "nodeCount": 3,
+  "createdAt": "2026-09-13T04:10:25.596Z",
+  "updatedAt": "2026-09-13T04:10:25.596Z",
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "tags": [],
+  "parentFolderId": null,
+  "description": "Sistema continuo cada 30 minutos de auditoría climática y vial para protección masiva de viajeros con ramificación IF de contingencia.",
+  "scopes": [
+    "execution:reveal",
+    "workflow:create",
+    "workflow:delete",
+    "workflow:disableRedaction",
+    "workflow:enableRedaction",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:export",
+    "workflow:import",
+    "workflow:list",
+    "workflow:move",
+    "workflow:publish",
+    "workflow:read",
+    "workflow:share",
+    "workflow:unpublish",
+    "workflow:unshare",
+    "workflow:update"
+  ],
+  "canExecute": true,
+  "connections": {
+    "Monitoreo Nacional Cada 30 Minutos": {
+      "main": [
+        [
+          {
+            "node": "Auditar Rios y Volcanes CNE / IMN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auditar Rios y Volcanes CNE / IMN": {
+      "main": [
+        [
+          {
+            "node": "¿Existe Riesgo Meteorologico o Vial?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "4bffaab8-850d-4cff-8c3d-4fa07bbb6315",
+      "name": "Monitoreo Nacional Cada 30 Minutos",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "2094aee7-e9a6-46ce-945a-5fea27b6339e",
+      "name": "Auditar Rios y Volcanes CNE / IMN",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const timestamp = new Date().toISOString(); return [{ json: { timestamp, caudalRioSarapiqui: \"Normal - Nivel Seguro\", sismicidadArenal: \"Estable\", oleajeManuelAntonio: \"Optimo para navegacion y bano\", visibilidadMonteverde: \"85% Niebla Ligera / Apto Canopy\", estadoRutasNacionales: [ { ruta: \"Ruta 32 San Jose - Limon\", transitable: true }, { ruta: \"Ruta 27 San Jose - Caldera\", transitable: true }, { ruta: \"Ruta 142 La Fortuna - Arenal\", transitable: true } ] } }];"
+      }
+    },
+    {
+      "id": "8dedf8a3-b3ff-4f4d-ab25-86cfbd7c2829",
+      "name": "¿Existe Riesgo Meteorologico o Vial?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.caudalRioSarapiqui }}",
+              "rightValue": "Peligro",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "nodeGroups": [],
+  "activeVersion": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  }
+}

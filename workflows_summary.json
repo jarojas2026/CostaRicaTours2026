@@ -1,0 +1,210 @@
+[
+  {
+    "id": "GzO5M36UoySc1j8Y",
+    "name": "Control de Disponibilidad y Prevención de Sobreventa Nacional",
+    "active": false,
+    "nodeCount": 3,
+    "triggers": [
+      "Monitoreo de Cupos Cada Hora (n8n-nodes-base.scheduleTrigger)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "none"
+  },
+  {
+    "id": "6gnDcs9Ss7QIpMRw",
+    "name": "Confirmación de Reserva al Cliente",
+    "active": false,
+    "nodeCount": 9,
+    "triggers": [
+      "Webhook: Reserva Confirmada (n8n-nodes-base.webhook)",
+      "Responder OK (n8n-nodes-base.respondToWebhook)",
+      "Responder OK (fallo email) (n8n-nodes-base.respondToWebhook)",
+      "Responder OK (sin email) (n8n-nodes-base.respondToWebhook)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "none"
+  },
+  {
+    "id": "1wf8ZQ1XuVTpbHnw",
+    "name": "Coordinación en Tiempo Real con Proveedores",
+    "active": false,
+    "nodeCount": 10,
+    "triggers": [
+      "Webhook: Notificar Proveedor (n8n-nodes-base.webhook)",
+      "Responder OK (n8n-nodes-base.respondToWebhook)",
+      "Responder OK (email falló) (n8n-nodes-base.respondToWebhook)",
+      "Responder OK (escalado) (n8n-nodes-base.respondToWebhook)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "none"
+  },
+  {
+    "id": "6gTYTamaaddBWCfq",
+    "name": "Motor Nacional de Ruteo y Despacho Masivo de Viajeros",
+    "active": false,
+    "nodeCount": 5,
+    "triggers": [
+      "Webhook Consulta Masiva MultiCanal (n8n-nodes-base.webhook)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "none"
+  },
+  {
+    "id": "eNiIV4i6zw7jKW0d",
+    "name": "Motor Nacional de Ruteo y Despacho Masivo de Viajeros (Optimizado)",
+    "active": false,
+    "nodeCount": 5,
+    "triggers": [
+      "Webhook Consulta Masiva MultiCanal (n8n-nodes-base.webhook)",
+      "Respuesta Instantanea al Viajero (n8n-nodes-base.respondToWebhook)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "none"
+  },
+  {
+    "id": "Xd0dD7urM8i3wXam",
+    "name": "Facturación Electrónica e Incentivos Turísticos de Costa Rica",
+    "active": false,
+    "nodeCount": 4,
+    "triggers": [
+      "Webhook Liquidaciones y Facturacion Masiva (n8n-nodes-base.webhook)",
+      "Emitir Comprobante Autorizado (n8n-nodes-base.respondToWebhook)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "none"
+  },
+  {
+    "id": "Wjg2pvkBAJU3lWrT",
+    "name": "Red Nacional de Monitoreo de Seguridad, Clima y Rescate Turístico",
+    "active": false,
+    "nodeCount": 3,
+    "triggers": [
+      "Monitoreo Nacional Cada 30 Minutos (n8n-nodes-base.scheduleTrigger)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "none"
+  },
+  {
+    "id": "1ZPxh70XFWdSLJOE",
+    "name": "Protocolo de Contingencias, Cierres Viales y Reubicación",
+    "active": false,
+    "nodeCount": 3,
+    "triggers": [
+      "Webhook Eventos e Imprevistos (n8n-nodes-base.webhook)",
+      "Confirmar Plan de Contingencia (n8n-nodes-base.respondToWebhook)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "none"
+  },
+  {
+    "id": "TxdNEBjlezm9P8Ha",
+    "name": "Triaje Inteligente y Guía Turística Nacional de Alto Volumen",
+    "active": false,
+    "nodeCount": 3,
+    "triggers": [
+      "Webhook Consultas Masivas (n8n-nodes-base.webhook)",
+      "Respuesta Instantanea Viajero (n8n-nodes-base.respondToWebhook)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "none"
+  },
+  {
+    "id": "rKfO0OE2luRB6d4J",
+    "name": "Fidelización Post-Venta y Cupones Club VIP",
+    "active": false,
+    "nodeCount": 3,
+    "triggers": [
+      "Disparador Diario 11:00 AM (n8n-nodes-base.scheduleTrigger)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "none"
+  },
+  {
+    "id": "oHr24K6pPlTo6TKA",
+    "name": "Reporte Diario de Operación",
+    "active": false,
+    "nodeCount": 5,
+    "triggers": [
+      "Disparador Diario 8pm (Costa Rica) (n8n-nodes-base.scheduleTrigger)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "America/Costa_Rica"
+  },
+  {
+    "id": "wkaptRNkwUYR85W3",
+    "name": "Concierge Matutino y Guía de Seguridad",
+    "active": false,
+    "nodeCount": 3,
+    "triggers": [
+      "Disparador Matutino 06:00 AM (n8n-nodes-base.scheduleTrigger)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "none"
+  },
+  {
+    "id": "PIMU1UdrixcZ5h0D",
+    "name": "Recuperación Inteligente de Prospectos Pre-Venta",
+    "active": false,
+    "nodeCount": 3,
+    "triggers": [
+      "Revision Cada 2 Horas (n8n-nodes-base.scheduleTrigger)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "none"
+  },
+  {
+    "id": "huXoN3c9SHwYx1SQ",
+    "name": "Alerta Meteorológica y Seguridad de Rutas",
+    "active": false,
+    "nodeCount": 3,
+    "triggers": [
+      "Monitoreo Climático Cada 4 Horas (n8n-nodes-base.scheduleTrigger)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "none"
+  },
+  {
+    "id": "Cii1CsL1AP9Mjzzt",
+    "name": "Formulario de Reseña Propio",
+    "active": false,
+    "nodeCount": 4,
+    "triggers": [
+      "Formulario de Reseña (n8n-nodes-base.formTrigger)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "none"
+  },
+  {
+    "id": "Er8taaV6RsA539xp",
+    "name": "Solicitud de Reseña Post-Tour",
+    "active": false,
+    "nodeCount": 9,
+    "triggers": [
+      "Disparador Diario 5pm (Costa Rica) (n8n-nodes-base.scheduleTrigger)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "America/Costa_Rica"
+  },
+  {
+    "id": "LwgnVnKikhxucZ6U",
+    "name": "Recordatorio 24h Antes del Tour",
+    "active": false,
+    "nodeCount": 10,
+    "triggers": [
+      "Disparador Diario 7am (Costa Rica) (n8n-nodes-base.scheduleTrigger)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "America/Costa_Rica"
+  },
+  {
+    "id": "tQVF8tpNkqVUVi4k",
+    "name": "Vigilancia y Escalamiento",
+    "active": false,
+    "nodeCount": 9,
+    "triggers": [
+      "Disparador Cada 2 Horas (n8n-nodes-base.scheduleTrigger)"
+    ],
+    "errorWorkflow": null,
+    "timezone": "America/Costa_Rica"
+  }
+]

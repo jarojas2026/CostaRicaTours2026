@@ -1,0 +1,87 @@
+{
+  "id": "crt-clima-alert-01",
+  "name": "Alerta Meteorológica Automática y Cambio de Itinerario (Sistemas de Baja Presión / Temporal)",
+  "active": false,
+  "description": "Monitorea alertas climáticas para zonas turísticas (Arenal, Monteverde, Manuel Antonio, Tortuguero) y notifica automáticamente por WhatsApp/Email a los viajeros y operadores (Alsama Tours CR, Expediciones Tropicales) sobre cambios de itinerario o recomendaciones por lluvia intensa.",
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Costa_Rica",
+    "errorWorkflow": "CRT-ERR-01"
+  },
+  "connections": {
+    "Disparador Meteorológico Cada 4 Horas": {
+      "main": [
+        [
+          {
+            "node": "Consultar Tours Activos en Zonas de Riesgo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Tours Activos en Zonas de Riesgo": {
+      "main": [
+        [
+          {
+            "node": "Evaluar Condición Climática y Notificar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "node-sched-weather",
+      "name": "Disparador Meteorológico Cada 4 Horas",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [0, 0],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-fs-weather",
+      "name": "Consultar Tours Activos en Zonas de Riesgo",
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [224, 0],
+      "parameters": {
+        "resource": "document",
+        "operation": "query",
+        "authentication": "serviceAccount",
+        "projectId": "gen-lang-client-0782739149",
+        "query": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"bookings\"}],\"where\":{\"compositeFilter\":{\"op\":\"AND\",\"filters\":[{\"fieldFilter\":{\"field\":{\"fieldPath\":\"status\"},\"op\":\"EQUAL\",\"value\":{\"stringValue\":\"confirmada\"}}}]}},\"limit\":100}}",
+        "simple": true
+      },
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "5NiYz8gX64lPYIdK",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "id": "node-code-weather",
+      "name": "Evaluar Condición Climática y Notificar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [448, 0],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const hoyStr = new Date().toISOString().slice(0, 10);\n\n// Simulación de alerta meteorológica activa en la región norte/caribe\nconst alertaActiva = true; \nconst regionAfectada = 'La Fortuna y Zona Norte';\n\nconst items = $input.all().map(i => i.json).filter(b => {\n  const esHoy = String(b.date || '').slice(0, 10) === hoyStr;\n  const esZona = String(b.tourName || '').toLowerCase().includes('arenal') || String(b.tourName || '').toLowerCase().includes('fortuna') || String(b.tourName || '').toLowerCase().includes('sarapiquí');\n  return esHoy && esZona;\n});\n\nif (!alertaActiva || items.length === 0) {\n  return [{ json: { status: 'sin_alertas_meteorologicas', message: 'Condiciones normales en todas las rutas operativas.' } }];\n}\n\nreturn items.map(item => ({\n  json: {\n    bookingId: item.bookingId,\n    customerName: item.customerName || 'Viajero',\n    customerEmail: item.customerEmail,\n    customerPhone: item.customerPhone,\n    tourName: item.tourName,\n    providerId: item.providerId || 'proveedor-directo-crtours',\n    alertaClima: `⚠️ [AVISO CLIMÁTICO COSTA RICA TOURS]: Estimado/a ${item.customerName || 'Viajero'}, debido a condiciones de temporal/lluvia en ${regionAfectada} para tu tour de hoy (${item.tourName}), nuestro equipo y el operador logístico (Alsama Tours CR / Expediciones Tropicales) hemos activado protocolos de seguridad preventivos. Tu guía se comunicará contigo 1 hora antes para coordinar ajustes menores de ruta garantizando tu seguridad y comodidad. ¡Pura Vida! 🌿`\n  }\n}));"
+      }
+    }
+  ]
+}

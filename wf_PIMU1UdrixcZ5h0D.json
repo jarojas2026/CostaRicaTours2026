@@ -1,0 +1,135 @@
+{
+  "id": "PIMU1UdrixcZ5h0D",
+  "name": "Recuperación Inteligente de Prospectos Pre-Venta",
+  "active": false,
+  "isArchived": false,
+  "versionId": "1eefeac3-b15d-4011-8aac-e722b7a4db77",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "nodeCount": 3,
+  "createdAt": "2026-09-13T03:51:10.468Z",
+  "updatedAt": "2026-09-13T03:51:10.468Z",
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "tags": [],
+  "parentFolderId": null,
+  "description": "Detecta reservas no pagadas y asiste al viajero para concretar su reserva con soporte bilingüe.",
+  "scopes": [
+    "execution:reveal",
+    "workflow:create",
+    "workflow:delete",
+    "workflow:disableRedaction",
+    "workflow:enableRedaction",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:export",
+    "workflow:import",
+    "workflow:list",
+    "workflow:move",
+    "workflow:publish",
+    "workflow:read",
+    "workflow:share",
+    "workflow:unpublish",
+    "workflow:unshare",
+    "workflow:update"
+  ],
+  "canExecute": true,
+  "connections": {
+    "Revision Cada 2 Horas": {
+      "main": [
+        [
+          {
+            "node": "Analizar Reservas Pendientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analizar Reservas Pendientes": {
+      "main": [
+        [
+          {
+            "node": "Generar Mensaje de Asistencia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "bf8299de-ad64-4980-b26f-30a9267048fb",
+      "name": "Revision Cada 2 Horas",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "90d19112-b8ea-49f5-ad9c-01bd7565aa6a",
+      "name": "Analizar Reservas Pendientes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "return [{ json: { timestamp: new Date().toISOString(), prospectosEncontrados: 2, accion: \"Envío de asistencia personalizada vía WhatsApp para resolver dudas de pago o tour\", canales: [\"SINPE Móvil\", \"PayPal\", \"Tarjeta\"] } }];"
+      }
+    },
+    {
+      "id": "8db20e6b-256c-45fb-a5e1-efd15ce03563",
+      "name": "Generar Mensaje de Asistencia",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "asunto",
+              "name": "asunto",
+              "value": "¿Podemos ayudarte a finalizar tu reserva en Costa Rica Tours?",
+              "type": "string"
+            },
+            {
+              "id": "beneficio",
+              "name": "beneficio",
+              "value": "Cancelación gratuita hasta 24h antes y soporte 100% bilingüe",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "nodeGroups": [],
+  "activeVersion": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  }
+}

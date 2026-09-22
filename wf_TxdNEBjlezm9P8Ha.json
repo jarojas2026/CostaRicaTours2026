@@ -1,0 +1,115 @@
+{
+  "id": "TxdNEBjlezm9P8Ha",
+  "name": "Triaje Inteligente y Guía Turística Nacional de Alto Volumen",
+  "active": false,
+  "isArchived": false,
+  "versionId": "029337f5-1fd6-4445-9cff-d351d28af813",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "nodeCount": 3,
+  "createdAt": "2026-09-13T04:02:01.747Z",
+  "updatedAt": "2026-09-13T04:02:01.747Z",
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "tags": [],
+  "parentFolderId": null,
+  "description": "Atiende consultas turísticas masivas clasificando por las 7 regiones de Costa Rica y asignando operadores certificados al instante.",
+  "scopes": [
+    "execution:reveal",
+    "workflow:create",
+    "workflow:delete",
+    "workflow:disableRedaction",
+    "workflow:enableRedaction",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:export",
+    "workflow:import",
+    "workflow:list",
+    "workflow:move",
+    "workflow:publish",
+    "workflow:read",
+    "workflow:share",
+    "workflow:unpublish",
+    "workflow:unshare",
+    "workflow:update"
+  ],
+  "canExecute": true,
+  "connections": {
+    "Webhook Consultas Masivas": {
+      "main": [
+        [
+          {
+            "node": "Clasificador Zonas y Temporadas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificador Zonas y Temporadas": {
+      "main": [
+        [
+          {
+            "node": "Respuesta Instantanea Viajero",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "c0312c67-c0b4-46d6-9b19-e17a09665fc9",
+      "name": "Webhook Consultas Masivas",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "path": "consulta-turismo-cr",
+        "httpMethod": "POST",
+        "responseMode": "responseNode"
+      },
+      "webhookId": "7440c00c-6d16-4d6e-9e0a-7e39e4bfd0d5"
+    },
+    {
+      "id": "403f7f12-609d-47cd-b915-2fef83b7ee07",
+      "name": "Clasificador Zonas y Temporadas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const body = $input.first().json.body || $input.first().json || {}; const query = (body.pregunta || body.message || \"\").toLowerCase(); let zona = \"Valle Central y General\"; let operador = \"Costa Rica Tours Operaciones Centrales\"; if (query.includes(\"arenal\") || query.includes(\"fortuna\") || query.includes(\"volcan\") || query.includes(\"termas\")) { zona = \"La Fortuna / Arenal\"; operador = \"Alsama Tours CR (alsamatourscr.com)\"; } else if (query.includes(\"monteverde\") || query.includes(\"nuboso\") || query.includes(\"canopy\")) { zona = \"Monteverde y Bosque Nuboso\"; operador = \"Operadores Aliados Monteverde CST\"; } else if (query.includes(\"manuel antonio\") || query.includes(\"quepos\") || query.includes(\"playa\")) { zona = \"Pacífico Central / Manuel Antonio\"; operador = \"Operador Certificado Manuel Antonio\"; } else if (query.includes(\"tortuguero\") || query.includes(\"caribe\") || query.includes(\"puerto viejo\")) { zona = \"Caribe y Tortuguero\"; operador = \"Expediciones Tropicales (expedicionestropicales.com)\"; } else if (query.includes(\"corcovado\") || query.includes(\"ballena\") || query.includes(\"uvita\")) { zona = \"Pacífico Sur / Osa\"; operador = \"Operadores Ecoturismo Bahía Ballena\"; } const temporada = (new Date().getMonth() >= 4 && new Date().getMonth() <= 10) ? \"Temporada Verde (descuentos, paisajes exuberantes, lluvias vespertinas)\" : \"Temporada Alta/Seca (días soleados, reserva anticipada obligatoria)\"; return [{ json: { preguntaOriginal: body.pregunta || \"Consulta turistica\", zonaIdentificada: zona, operadorAsignado: operador, temporadaActiva: temporada, requisitosBasicos: [\"Pasaporte con 6 meses vigencia\", \"Repelente biodegradable\", \"Ropa comoda transpirable\"], recomendacionPuraVida: \"Conectar con operador bilingue verificado y confirmar cupos con anticipacion.\" } }];"
+      }
+    },
+    {
+      "id": "5783c150-a541-48cc-937a-8b4c4686b716",
+      "name": "Respuesta Instantanea Viajero",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      }
+    }
+  ],
+  "nodeGroups": [],
+  "activeVersion": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  }
+}
