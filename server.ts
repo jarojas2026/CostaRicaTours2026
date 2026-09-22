@@ -1745,7 +1745,7 @@ app.post('/api/gemini/concierge', async (req, res) => {
     }
 
     // El flujo de IA es 100% nativo: Claude/Vertex o Gemini, con fallback interno.
-    const assistantResult = await processChatInquiry(userMsg, lang, history || [], engine || 'auto');
+    const assistantResult = await processChatInquiry(userMsg, lang, history || [], engine || 'auto', memorySessionId || undefined);
     if (memorySessionId) {
       const { rememberTurn } = await import('./backend/memoryService');
       await rememberTurn(memorySessionId, { role: 'user', text: userMsg }, { agentId: assistantResult.agentId || agentId });
