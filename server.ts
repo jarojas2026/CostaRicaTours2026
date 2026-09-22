@@ -119,6 +119,22 @@ const PORT = Number(process.env.PORT) || 3000;
 // Admin gate is defined before any route registration that uses it.
 const requireAdmin = requireOperator;
 
+async function runAdminAICommand(prompt: string, mode: string) {
+  const { getAdminControlCenterSnapshot } = await import('./backend/adminControlCenterService');
+  const snapshot = await getAdminControlCenterSnapshot();
+  const summary = JSON.stringify({
+    business:snapshot.business, financial:snapshot.financial?.kpis, alerts:snapshot.alerts,
+    providers:snapshot.providers, evolution:snapshot.evolution, documents:snapshot.documents
+  });
+  const apiKey=process.env.GEMINI_API_KEY||process.env.GOOGLE_API_KEY;
+  if(!apiKey) return {mode,prompt,analysis:'No hay proveedor de IA configurado en el servidor. El contexto administrativo fue preparado para ejecución cuando la clave esté disponible.',context:JSON.parse(summary)};
+  const { GoogleGenAI } = await import('@google/genai');
+  const ai=new GoogleGenAI({apiKey});
+  const response=await ai.models.generateContent({model:process.env.ADMIN_AI_MODEL||'gemini-2.5-flash',contents:[{role:'user',parts:[{text:`Eres el copiloto ejecutivo privado de Costa Rica Tours. Modo: ${mode}. Analiza únicamente el contexto entregado. Distingue HECHOS, INFERENCIAS y PROPUESTAS. No ejecutes cambios. Si el modo es code, entrega un plan y código propuesto, nunca lo despliegues. Contexto: ${summary}. Solicitud: ${prompt}` }]}]});
+  return {mode,prompt,analysis:response.text||'',generatedAt:new Date().toISOString()};
+}
+
+
 /**
  * Autenticación para herramientas internas de agentes. Estas rutas pueden crear
  * efectos persistentes, por lo que nunca deben quedar expuestas sin una credencial.
@@ -2438,3 +2454,12 @@ startServer();function calculateAuthoritativeCheckoutTotal(body: any): number | 
 }
 
 
+
+app.post('/api/admin/ai-command', requireAdmin, async (req, res) => {
+  try {
+    const prompt=String(req.body?.prompt||'').trim(); const mode=String(req.body?.mode||'analyze');
+    if(!prompt) return res.status(400).json({error:'prompt requerido'});
+    if(!['analyze','propose','code'].includes(mode)) return res.status(400).json({error:'modo inválido'});
+    const result=await runAdminAICommand(prompt,mode); res.json(result);
+  } catch (error:any) { res.status(500).json({error:error?.message||'Error en copiloto administrativo'}); }
+});
