@@ -525,6 +525,49 @@ async function triggerAutoFailoverReassignment(rejectedOrder: ServiceOrder): Pro
 /**
  * Retorna la lista de proveedores con métricas de SLA y órdenes activas
  */
+export async function observeProviderSla() {
+  const now = Date.now();
+  const orders = Array.from(serviceOrdersStore.values());
+  const overdue = orders
+    .filter(order => order.status === 'dispatched')
+    .filter(order => new Date(order.slaDeadline).getTime() <= now)
+    .map(order => ({
+      orderId: order.id,
+      bookingId: order.bookingId,
+      providerId: order.providerId,
+      providerName: order.providerName,
+      tourId: order.tourId,
+      date: order.date,
+      time: order.time,
+      slaDeadline: order.slaDeadline,
+      status: order.status,
+      severity: 'warning' as const
+    }));
+
+  for (const order of overdue) {
+    await createAlert({
+      source: 'Observador SLA de Proveedores',
+      severity: 'warning',
+      title: `SLA vencido - Orden ${order.id}`,
+      message: `La orden ${order.id} sigue despachada después del SLA del proveedor ${order.providerName}. Requiere seguimiento antes de alterar el itinerario.`,
+      bookingId: order.bookingId,
+      providerId: order.providerId
+    }).catch(() => {});
+  }
+
+  return {
+    observedAt: new Date().toISOString(),
+    overdue,
+    affectedBookingIds: [...new Set(overdue.map(item => item.bookingId))],
+    policy: {
+      autoMutation: false,
+      recommendation: overdue.length
+        ? 'Escalar seguimiento al proveedor y evaluar adaptación únicamente si la confirmación no llega.'
+        : 'No se detectaron órdenes despachadas fuera de SLA.'
+    }
+  };
+}
+
 export function getProvidersOverview() {
   const orders = Array.from(serviceOrdersStore.values());
   const activeOrders = orders.filter(o => o.status === 'dispatched' || o.status === 'confirmed');
