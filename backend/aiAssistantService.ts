@@ -214,12 +214,18 @@ function getKnowledgeBaseReply(message: string, isEn: boolean) {
   }
 
   if (lower.includes('precio') || lower.includes('tarifa') || lower.includes('rate') || lower.includes('cost')) {
+    const priceTours = TOURS.slice(0, 8);
+    const priceLines = priceTours.map((tour) => {
+      const title = isEn ? (tour.title.en || tour.title.es) : tour.title.es;
+      const duration = tour.durationLabel?.[isEn ? 'en' : 'es'] || (tour.durationHours ? `${tour.durationHours} h` : '');
+      return `• **${title}**: ${tour.priceUSD} USD${duration ? ` · ${duration}` : ''}`;
+    }).join('\\n');
     return {
       reply: isEn
-        ? `💵 **Official Guaranteed Rates - Costa Rica Tours**\n\n• **Arenal Volcano & Hot Springs**: $145 USD\n• **Manuel Antonio National Park**: $95 USD\n• **Monteverde Canopy & Hanging Bridges**: $110 USD\n• **Tortuguero Canal Safari**: $130 USD\n• **Catamaran Sunset & Snorkel**: $90 USD\n\nAll prices include official park permits, certified guides, and taxes. ¿Which tour would you like to book?`
-        : `💵 **Tarifas Oficiales Garantizadas - Costa Rica Tours**\n\n• **Volcán Arenal y Termales**: $145 USD\n• **Parque Nacional Manuel Antonio**: $95 USD\n• **Canopy y Puentes en Monteverde**: $110 USD\n• **Safari en Canales de Tortuguero**: $130 USD\n• **Catamarán Snorkel y Atardecer**: $90 USD\n\nTodas las tarifas incluyen entradas a parques nacionales, guías certificados e impuestos. ¿Cuál de estas excursiones te interesa reservar?`,
+        ? `💵 **Current catalog prices**\\n\\n${priceLines}\\n\\nThese are catalog reference prices; final totals and availability are confirmed during the reservation flow.`
+        : `💵 **Precios actuales del catálogo**\\n\\n${priceLines}\\n\\nSon precios de referencia del catálogo; el total final y la disponibilidad se confirman durante la reserva.`,
       quickActions: [
-        { label: isEn ? '📅 Reserve Spots' : '📅 Reservar Cupo', action: 'book' },
+        { label: isEn ? '📅 Check availability' : '📅 Consultar disponibilidad', action: 'availability' },
         { label: isEn ? '💬 Speak with Advisor' : '💬 Hablar con Asesor', action: 'direct_whatsapp' }
       ]
     };
