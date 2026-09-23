@@ -160,3 +160,56 @@ export async function observeJourneyState(params: {
     }
   };
 }
+
+
+export async function guardianReplanJourney(params: {
+  catalog?: Array<{ id: string; selected?: boolean; [key: string]: any }>;
+  date?: string;
+  time?: string;
+  travelers?: number;
+  previousAvailability?: Array<{ tourId?: string; status?: string; remainingSeats?: number }>;
+  days?: number;
+  regions?: string[];
+  itinerary?: Array<{ day?: number; region?: string; tourId?: string; [key: string]: any }>;
+}) {
+  const observation = await observeJourneyState({
+    catalog: params.catalog,
+    date: params.date,
+    time: params.time,
+    travelers: params.travelers,
+    previousAvailability: params.previousAvailability
+  });
+
+  const affected = new Set(observation.affectedTourIds);
+  const preservedItinerary = (params.itinerary || []).map(item => ({
+    ...item,
+    guardianStatus: item.tourId && affected.has(String(item.tourId))
+      ? 'affected_requires_adaptation'
+      : 'preserved'
+  }));
+
+  const affectedDays = [...new Set(
+    preservedItinerary
+      .filter(item => item.guardianStatus === 'affected_requires_adaptation')
+      .map(item => item.day)
+      .filter((day): day is number => typeof day === 'number')
+  )];
+
+  return {
+    observedAt: observation.observedAt,
+    status: observation.status,
+    changes: observation.changes,
+    affectedTourIds: observation.affectedTourIds,
+    affectedDays,
+    itinerary: preservedItinerary,
+    requiresAdaptation: affectedDays.length > 0 || observation.replanningRequired,
+    adaptationPolicy: {
+      scope: affectedDays.length ? 'affected_days_only' : 'no_change',
+      preserve: ['traveler_preferences', 'budget', 'pace', 'regions', 'trip_dates', 'confirmed_choices'],
+      neverAutoChange: ['traveler_preferences', 'confirmed_choices', 'payment_state'],
+      nextAction: affectedDays.length
+        ? 'Adaptar únicamente los días afectados usando el catálogo y disponibilidad nuevamente verificados.'
+        : 'Mantener el itinerario y continuar con la siguiente verificación operativa.'
+    }
+  };
+}

@@ -5,7 +5,7 @@
 import { TOURS } from '../src/data/toursData';
 import { assessTripFit, buildPackingList, buildRouteStrategy, getDestinationIntelligence, screenActivitySuitability, validateTripPlan, buildTravelerReasoning } from './tourismIntelligenceEngine';
 import { buildTripJourney, adaptTravelerJourney } from './travelJourneyOrchestrator';
-import { verifyJourneyAvailability, observeJourneyState } from './journeyVerificationService';
+import { verifyJourneyAvailability, observeJourneyState, guardianReplanJourney } from './journeyVerificationService';
 import { getDestinationWeather } from './weatherPulseService';
 import { checkTourAvailability, findBookingByCodeOrEmail } from './bookingService';
 import { getOperationalMemory, retrieveRelevantMemory } from './memoryService';
@@ -111,6 +111,10 @@ export const AGENT_TOOL_REGISTRY = {
   },
   observe_journey_state: {
     description: 'Revalidate a journey against current operational availability and identify only the itinerary elements affected by changes.',
+    sideEffect: false
+  },
+  guardian_replan_journey: {
+    description: 'Observe operational changes and identify only affected itinerary days for controlled adaptive replanning. Never mutates confirmed traveler choices or payment state.',
     sideEffect: false
   }
 } as const;
@@ -524,6 +528,24 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
         previousAvailability: { type: 'ARRAY', items: { type: 'OBJECT' }, description: 'Previous availability snapshot stored with the journey' }
       },
       required: ['catalog', 'date', 'travelers']
+    }
+  },
+  {
+    name: 'guardian_replan_journey',
+    description: 'Observe a journey and scope adaptive replanning to only affected itinerary days while preserving traveler preferences and confirmed choices.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        catalog: { type: 'ARRAY', items: { type: 'OBJECT' } },
+        date: { type: 'STRING' },
+        time: { type: 'STRING' },
+        travelers: { type: 'NUMBER' },
+        previousAvailability: { type: 'ARRAY', items: { type: 'OBJECT' } },
+        days: { type: 'NUMBER' },
+        regions: { type: 'ARRAY', items: { type: 'STRING' } },
+        itinerary: { type: 'ARRAY', items: { type: 'OBJECT' } }
+      },
+      required: ['catalog', 'date', 'travelers', 'itinerary']
     }
   },
   {

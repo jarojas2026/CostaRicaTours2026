@@ -110,7 +110,7 @@ import { emitOperationalEvent } from './backend/operationalEventBus';
 import { buildSkillEvolutionReport, selectEvolvedSkill, recordSkillOutcome, proposeSkillUpgrade } from './backend/skillEvolutionEngine';
 import { assessTripFit, buildPackingList, buildRouteStrategy, getDestinationIntelligence, screenActivitySuitability } from './backend/tourismIntelligenceEngine';
 import { buildTripJourney, adaptTravelerJourney, getTravelerJourney } from './backend/travelJourneyOrchestrator';
-import { observeJourneyState } from './backend/journeyVerificationService';
+import { observeJourneyState, guardianReplanJourney } from './backend/journeyVerificationService';
 import { processProviderInboxOnce } from './backend/providerInboxAgent';
 import { getAdminControlCenterSnapshot } from './backend/adminControlCenterService';
 import { getPlatformControls, updatePlatformControls } from './backend/platformControlService';
@@ -211,6 +211,26 @@ app.post('/api/ai/journey', async (req, res) => {
     res.json({ success: true, journey: result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message || 'No se pudo construir el viaje.' });
+  }
+});
+
+app.post('/api/ai/journey/:journeyId/guardian', async (req, res) => {
+  try {
+    const journey = await getTravelerJourney(String(req.params.journeyId || ''));
+    if (!journey) return res.status(404).json({ success: false, error: 'Viaje no encontrado.' });
+    const result = await guardianReplanJourney({
+      catalog: Array.isArray(journey.catalog) ? journey.catalog : [],
+      date: journey.traveler?.date,
+      time: journey.traveler?.time,
+      travelers: Number(journey.traveler?.travelers) || 1,
+      previousAvailability: Array.isArray(journey.live?.availability) ? journey.live.availability : [],
+      days: Number(journey.traveler?.days) || undefined,
+      regions: Array.isArray(journey.traveler?.regions) ? journey.traveler.regions : undefined,
+      itinerary: Array.isArray(journey.itinerary) ? journey.itinerary : []
+    });
+    res.json({ success: true, journeyId: journey.journeyId, guardian: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'No se pudo ejecutar el Guardian.' });
   }
 });
 
