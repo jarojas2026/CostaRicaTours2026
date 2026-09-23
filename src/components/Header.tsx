@@ -746,21 +746,6 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
               </div>
 
-              {user && (
-                <div className="pt-2 border-t border-emerald-500/20">
-                  <button
-                    onClick={() => handleTabChange('admin')}
-                    className={`w-full flex items-center justify-between p-3 rounded-2xl transition-colors text-left border ${currentTab === 'admin' ? 'bg-amber-400 text-stone-950 font-black border-amber-300' : 'bg-[#041910] text-emerald-100 hover:bg-[#07261b] border-amber-400/20'}`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4 text-amber-300" />
-                      <span className="text-xs font-bold">{language === 'es' ? 'Centro de Control' : 'Control Center'}</span>
-                    </span>
-                    <span className="text-[9px] uppercase text-amber-300">Admin</span>
-                  </button>
-                </div>
-              )}
-
               {/* WhatsApp Support in Drawer */}
               <div className="pt-3 border-t border-emerald-500/20 space-y-2">
                 <a

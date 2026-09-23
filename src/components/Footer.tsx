@@ -69,11 +69,11 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
                 +506 8795-9148
               </a>
               <a
-                href="mailto:info@costaricatours.es"
+                href="mailto:jarojas800@gmail.com"
                 className="font-extrabold text-xs flex items-center gap-2 text-white hover:text-teal-300 transition-colors"
               >
                 <Mail className="w-4 h-4 text-teal-400" />
-                info@costaricatours.es
+                jarojas800@gmail.com
               </a>
             </div>
           </div>
