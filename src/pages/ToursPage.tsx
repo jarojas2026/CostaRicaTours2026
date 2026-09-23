@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { ToursGrid } from '../components/ToursGrid';
 import { Tour, Language, Currency, TourCategory, TourRegion } from '../types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTours } from '../contexts/ToursContext';
 
 interface ToursPageProps {
@@ -41,6 +41,7 @@ export const ToursPage: React.FC<ToursPageProps> = ({
   setViewMode: propSetViewMode
 }) => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { tours, favorites: ctxFavorites, toggleFavorite: ctxToggleFavorite } = useTours();
 
   const [selectedDifficulty, setSelectedDifficulty] = React.useState<'all' | 'fácil' | 'moderado' | 'exigente'>('all');
@@ -48,6 +49,28 @@ export const ToursPage: React.FC<ToursPageProps> = ({
 
   const [localComparedTours, setLocalComparedTours] = React.useState<Tour[]>([]);
   const [localViewMode, setLocalViewMode] = React.useState<'grid' | 'list'>('grid');
+
+  React.useEffect(() => {
+    const difficulty = searchParams.get('difficulty') as 'fácil' | 'moderado' | 'exigente' | null;
+    const price = Number(searchParams.get('maxPrice'));
+    if (difficulty && ['fácil', 'moderado', 'exigente'].includes(difficulty)) setSelectedDifficulty(difficulty);
+    if (Number.isFinite(price) && price > 0) setMaxPrice(price);
+  }, [searchParams]);
+
+  const updateCatalogUrl = React.useCallback((key: string, value: string | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (!value || value === 'all') next.delete(key);
+    else next.set(key, value);
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  React.useEffect(() => {
+    updateCatalogUrl('difficulty', selectedDifficulty === 'all' ? null : selectedDifficulty);
+  }, [selectedDifficulty]);
+
+  React.useEffect(() => {
+    updateCatalogUrl('maxPrice', maxPrice >= 500 ? null : String(maxPrice));
+  }, [maxPrice]);
 
   const favorites = propFavorites || ctxFavorites;
   const toggleFavorite = propToggleFavorite || ctxToggleFavorite;
