@@ -87,3 +87,76 @@ export function validateJourneyState(params: {
 }) {
   return validateTripPlan(params);
 }
+
+
+export async function observeJourneyState(params: {
+  catalog?: Array<{ id: string; selected?: boolean; [key: string]: any }>;
+  date?: string;
+  time?: string;
+  travelers?: number;
+  previousAvailability?: Array<{ tourId?: string; status?: string; remainingSeats?: number }>;
+}) {
+  const availability = await verifyJourneyAvailability({
+    catalog: params.catalog,
+    date: params.date,
+    time: params.time,
+    travelers: params.travelers
+  });
+
+  const previous = new Map(
+    (params.previousAvailability || []).map(item => [String(item.tourId || ''), item])
+  );
+
+  const changes = availability.items.map((item: any) => {
+    const before = previous.get(String(item.tourId));
+    if (!before) {
+      return {
+        tourId: item.tourId,
+        type: 'new_verification',
+        severity: 'info',
+        from: null,
+        to: item.status,
+        reason: 'No existía una verificación previa para comparar.'
+      };
+    }
+    const statusChanged = before.status !== item.status;
+    const capacityChanged = typeof before.remainingSeats === 'number'
+      && typeof item.remainingSeats === 'number'
+      && before.remainingSeats !== item.remainingSeats;
+    return {
+      tourId: item.tourId,
+      type: statusChanged ? 'availability_status_changed' : capacityChanged ? 'capacity_changed' : 'unchanged',
+      severity: statusChanged && item.status === 'unavailable' ? 'blocking'
+        : statusChanged && item.status === 'requires_confirmation' ? 'warning'
+        : capacityChanged ? 'info'
+        : 'none',
+      from: { status: before.status, remainingSeats: before.remainingSeats },
+      to: { status: item.status, remainingSeats: item.remainingSeats },
+      reason: statusChanged
+        ? `El estado operativo cambió de ${before.status || 'desconocido'} a ${item.status}.`
+        : capacityChanged
+          ? 'La capacidad disponible cambió desde la última verificación.'
+          : 'No se detectó un cambio operativo en esta verificación.'
+    };
+  });
+
+  const affectedTourIds = changes
+    .filter(change => change.severity === 'blocking' || change.severity === 'warning')
+    .map(change => change.tourId);
+
+  return {
+    observedAt: availability.verifiedAt,
+    status: availability.status,
+    summary: availability.summary,
+    availability,
+    changes,
+    affectedTourIds,
+    replanningRequired: affectedTourIds.length > 0,
+    policy: {
+      autoMutation: false,
+      recommendation: affectedTourIds.length
+        ? 'Revisar y adaptar solo los elementos afectados; conservar las preferencias del viajero.'
+        : 'Conservar el itinerario actual y continuar con el siguiente paso de verificación.'
+    }
+  };
+}
