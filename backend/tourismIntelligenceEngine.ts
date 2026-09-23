@@ -116,3 +116,89 @@ export function getDestinationIntelligence(regionId: string) {
     liveVerificationRequired: true
   };
 }
+
+
+export function validateTripPlan(params: {
+  days?: number;
+  regions?: string[];
+  itinerary?: Array<{ day?: number; region?: string; tourId?: string }>;
+  weatherRisk?: boolean;
+  availability?: Array<{ tourId?: string; status?: string }>;
+}) {
+  const days = Math.max(1, Math.min(Number(params.days) || 7, 21));
+  const regions = (params.regions || []).filter(Boolean);
+  const itinerary = params.itinerary || [];
+  const warnings: string[] = [];
+  const blocking: string[] = [];
+
+  if (regions.length > Math.ceil(days / 2)) {
+    warnings.push('Hay demasiadas regiones para la duración indicada; revisar traslados y ritmo.');
+  }
+  const seenDays = new Set<number>();
+  for (const item of itinerary) {
+    if (item.day !== undefined) {
+      if (seenDays.has(Number(item.day))) warnings.push(`El día ${item.day} contiene más de una actividad principal; validar conflictos horarios.`);
+      seenDays.add(Number(item.day));
+    }
+  }
+  if (params.weatherRisk) warnings.push('El contexto meteorológico puede afectar actividades al aire libre; verificar condiciones antes de confirmar.');
+  for (const item of params.availability || []) {
+    if (item.status === 'unavailable') blocking.push(`El tour ${item.tourId || 'seleccionado'} no está disponible.`);
+    if (item.status === 'requires_confirmation') warnings.push(`El tour ${item.tourId || 'seleccionado'} requiere confirmación del operador.`);
+  }
+  return {
+    valid: blocking.length === 0,
+    blockingIssues: blocking,
+    warnings,
+    verificationRequired: true,
+    recommendation: blocking.length ? 'Resolver los bloqueos antes de reservar.' : warnings.length ? 'El plan es viable como borrador, pero requiere verificación operativa.' : 'El plan es coherente como borrador; verificar disponibilidad, clima y requisitos antes de reservar.'
+  };
+}
+
+export function buildTravelerReasoning(params: {
+  query?: string;
+  profile?: string;
+  days?: number;
+  travelers?: number;
+  budgetUSD?: number;
+  regions?: string[];
+  priorities?: string[];
+}) {
+  const query = String(params.query || '').trim();
+  const profile = String(params.profile || 'not specified').trim();
+  const days = Math.max(1, Math.min(Number(params.days) || 7, 21));
+  const travelers = Math.max(1, Math.min(Number(params.travelers) || 2, 50));
+  const regions = (params.regions || []).filter(Boolean);
+  const priorities = (params.priorities || []).filter(Boolean);
+  const constraints: string[] = [];
+  const signals: string[] = [];
+
+  if (params.budgetUSD !== undefined && Number.isFinite(Number(params.budgetUSD))) {
+    constraints.push(`Presupuesto declarado: $${Number(params.budgetUSD).toFixed(2)} USD.`);
+  }
+  if (regions.length > 2 && days < regions.length * 2) constraints.push('Duración corta frente al número de regiones.');
+  if (priorities.length) signals.push(`Prioridades: ${priorities.slice(0, 6).join(', ')}.`);
+  if (query) signals.push(`Intención explícita: ${query.slice(0, 240)}.`);
+
+  const missing = [
+    !query && 'objetivo del viaje',
+    !params.regions?.length && 'regiones o intereses',
+    !params.budgetUSD && 'presupuesto aproximado',
+    !params.days && 'duración',
+  ].filter(Boolean) as string[];
+
+  return {
+    travelerProfile: profile,
+    tripShape: { days, travelers, regions },
+    constraints,
+    signals,
+    missingInformation: missing,
+    nextBestQuestions: missing.slice(0, 3).map(item => `¿Cuál es tu ${item}?`),
+    reasoningPolicy: [
+      'Priorizar restricciones declaradas antes que preferencias inferidas.',
+      'Separar hechos verificados, estimaciones y datos pendientes.',
+      'No afirmar disponibilidad, seguridad, clima o precio final sin verificación.',
+      'Cuando haya conflicto, explicar el trade-off y ofrecer alternativas.'
+    ]
+  };
+}

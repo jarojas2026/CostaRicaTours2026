@@ -3,7 +3,7 @@
  * These tools call the application's existing domain services instead of duplicating logic.
  */
 import { TOURS } from '../src/data/toursData';
-import { assessTripFit, buildPackingList, buildRouteStrategy, getDestinationIntelligence, screenActivitySuitability } from './tourismIntelligenceEngine';
+import { assessTripFit, buildPackingList, buildRouteStrategy, getDestinationIntelligence, screenActivitySuitability, validateTripPlan, buildTravelerReasoning } from './tourismIntelligenceEngine';
 import { buildTripJourney, adaptTravelerJourney } from './travelJourneyOrchestrator';
 import { getDestinationWeather } from './weatherPulseService';
 import { checkTourAvailability, findBookingByCodeOrEmail } from './bookingService';
@@ -82,6 +82,14 @@ export const AGENT_TOOL_REGISTRY = {
   },
   destination_intelligence: {
     description: 'Return stable expert knowledge for a Costa Rica destination with explicit live-verification requirements.',
+    sideEffect: false
+  },
+  validate_trip_plan: {
+    description: 'Validate an itinerary for region overload, day conflicts, weather risk and live availability blockers.',
+    sideEffect: false
+  },
+  traveler_reasoning: {
+    description: 'Build an explainable traveler reasoning context: constraints, signals, missing information and next questions.',
     sideEffect: false
   },
   build_trip_journey: {
@@ -236,6 +244,24 @@ export async function executeAgentTool(
         selectedTourIds: Array.isArray(args.selectedTourIds) ? args.selectedTourIds.map((x: unknown) => String(x)) : undefined,
         activities: Array.isArray(args.activities) ? args.activities.map((x: unknown) => String(x)) : undefined,
         language: args.language === 'en' ? 'en' : undefined
+      });
+    case 'validate_trip_plan':
+      return validateTripPlan({
+        days: Number(args.days),
+        regions: Array.isArray(args.regions) ? args.regions.map((x: unknown) => String(x)) : [],
+        itinerary: Array.isArray(args.itinerary) ? args.itinerary : [],
+        weatherRisk: Boolean(args.weatherRisk),
+        availability: Array.isArray(args.availability) ? args.availability : []
+      });
+    case 'traveler_reasoning':
+      return buildTravelerReasoning({
+        query: args.query ? String(args.query) : undefined,
+        profile: args.profile ? String(args.profile) : undefined,
+        days: args.days === undefined ? undefined : Number(args.days),
+        travelers: args.travelers === undefined ? undefined : Number(args.travelers),
+        budgetUSD: args.budgetUSD === undefined ? undefined : Number(args.budgetUSD),
+        regions: Array.isArray(args.regions) ? args.regions.map((x: unknown) => String(x)) : undefined,
+        priorities: Array.isArray(args.priorities) ? args.priorities.map((x: unknown) => String(x)) : undefined
       });
     case 'live_destination_weather':
       return getDestinationWeather();
@@ -437,6 +463,23 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
       },
       required: ['regions', 'days']
     }
+  },
+  {
+    name: 'validate_trip_plan',
+    description: 'Validate a Costa Rica itinerary without silently changing it. Identifies blocking availability issues, pacing conflicts and verification requirements.',
+    parameters: { type: 'OBJECT', properties: {
+      days: { type: 'NUMBER' }, regions: { type: 'ARRAY', items: { type: 'STRING' } },
+      itinerary: { type: 'ARRAY', items: { type: 'OBJECT' } }, weatherRisk: { type: 'BOOLEAN' },
+      availability: { type: 'ARRAY', items: { type: 'OBJECT' } }
+    }}
+  },
+  {
+    name: 'traveler_reasoning',
+    description: 'Create an explainable reasoning context from traveler intent, constraints, preferences and missing information.',
+    parameters: { type: 'OBJECT', properties: {
+      query: { type: 'STRING' }, profile: { type: 'STRING' }, days: { type: 'NUMBER' }, travelers: { type: 'NUMBER' },
+      budgetUSD: { type: 'NUMBER' }, regions: { type: 'ARRAY', items: { type: 'STRING' } }, priorities: { type: 'ARRAY', items: { type: 'STRING' } }
+    }}
   },
   {
     name: 'destination_intelligence',
