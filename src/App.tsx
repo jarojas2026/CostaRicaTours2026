@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { REGIONS } from './data/toursData';
 import { useTours } from './contexts/ToursContext';
@@ -54,6 +54,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { tours: TOURS, loading: toursLoading } = useTours();
   const [language, setLanguage] = useState<Language>(detectBrowserLanguage);
   const [currency, setCurrency] = useState<Currency>('USD');
@@ -67,6 +68,39 @@ export default function App() {
   const [selectedRegion, setSelectedRegion] = useState<TourRegion | 'all'>('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<'all' | 'fácil' | 'moderado' | 'exigente'>('all');
   const [maxPrice, setMaxPrice] = useState<number>(500);
+
+  // Shareable catalog state: filters/search survive refresh, back/forward and copied links.
+  useEffect(() => {
+    const q = searchParams.get('q');
+    const category = searchParams.get('category') as TourCategory | null;
+    const region = searchParams.get('region') as TourRegion | null;
+    const difficulty = searchParams.get('difficulty') as 'fácil' | 'moderado' | 'exigente' | null;
+    const price = Number(searchParams.get('maxPrice'));
+    if (location.pathname === '/tours') {
+      if (q !== null) setSearchQuery(q);
+      if (category && category !== 'all') setSelectedCategory(category);
+      if (region && region !== 'all') setSelectedRegion(region);
+      if (difficulty && ['fácil', 'moderado', 'exigente'].includes(difficulty)) setSelectedDifficulty(difficulty);
+      if (Number.isFinite(price) && price > 0) setMaxPrice(price);
+    }
+  }, [location.pathname, searchParams]);
+
+  useEffect(() => {
+    if (location.pathname !== '/tours') return;
+    const next = new URLSearchParams();
+    if (searchQuery.trim()) next.set('q', searchQuery.trim());
+    if (selectedCategory !== 'all') next.set('category', selectedCategory);
+    if (selectedRegion !== 'all') next.set('region', selectedRegion);
+    if (selectedDifficulty !== 'all') next.set('difficulty', selectedDifficulty);
+    if (maxPrice < 500) next.set('maxPrice', String(maxPrice));
+    const current = searchParams.toString();
+    if (next.toString() !== current) setSearchParams(next, { replace: true });
+  }, [location.pathname, searchQuery, selectedCategory, selectedRegion, selectedDifficulty, maxPrice, searchParams, setSearchParams]);
+
+  // Keep SPA navigation feeling native: every route starts at the top.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [location.pathname, location.search]);
 
   // Modals state
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
@@ -445,7 +479,20 @@ export default function App() {
               </div>
             } />
 
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={
+              <div className="min-h-[60vh] flex items-center justify-center px-4 py-20">
+                <div className="max-w-xl text-center rounded-3xl border border-emerald-500/20 bg-[#061d15]/80 backdrop-blur-xl p-8 sm:p-12 shadow-2xl">
+                  <div className="mx-auto mb-5 w-16 h-16 rounded-2xl bg-amber-400/15 border border-amber-400/30 flex items-center justify-center text-amber-300 text-3xl">404</div>
+                  <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">{language === 'es' ? 'Esta ruta se perdió en la selva.' : 'This route got lost in the jungle.'}</h2>
+                  <p className="mt-3 text-stone-300">{language === 'es' ? 'Puedes explorar nuestros tours, pedir ayuda a la IA o volver al inicio.' : 'Explore our tours, ask the AI concierge, or return home.'}</p>
+                  <div className="mt-7 flex flex-wrap justify-center gap-3">
+                    <button onClick={() => navigate('/tours')} className="px-5 py-3 rounded-xl bg-emerald-400 text-stone-950 font-black hover:bg-emerald-300 transition">{language === 'es' ? 'Explorar tours' : 'Explore tours'}</button>
+                    <button onClick={() => navigate('/ai')} className="px-5 py-3 rounded-xl border border-emerald-400/30 bg-emerald-950/50 text-emerald-100 font-bold hover:bg-emerald-900/60 transition">{language === 'es' ? 'Hablar con IA' : 'Ask AI'}</button>
+                    <button onClick={() => navigate('/')} className="px-5 py-3 rounded-xl border border-white/10 bg-white/5 text-stone-200 font-bold hover:bg-white/10 transition">{language === 'es' ? 'Inicio' : 'Home'}</button>
+                  </div>
+                </div>
+              </div>
+            } />
           </Routes>
         </AnimatePresence>
       </main>
