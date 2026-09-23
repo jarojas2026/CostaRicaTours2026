@@ -217,6 +217,7 @@ export async function guardianReplanJourney(params: {
     observedAt: observation.observedAt,
     status: observation.status,
     changes: observation.changes,
+    weatherContext: observation.weatherContext,
     affectedTourIds: observation.affectedTourIds,
     affectedDays,
     itinerary: preservedItinerary,
