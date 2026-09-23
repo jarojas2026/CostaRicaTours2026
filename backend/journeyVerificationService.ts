@@ -1,5 +1,6 @@
 import { checkTourAvailability } from './bookingService';
 import { validateTripPlan } from './tourismIntelligenceEngine';
+import { getDestinationWeather, getWeatherRisk } from './weatherPulseService';
 
 export type JourneyAvailabilityStatus = 'available' | 'limited' | 'unavailable' | 'requires_confirmation';
 
@@ -103,6 +104,18 @@ export async function observeJourneyState(params: {
     travelers: params.travelers
   });
 
+  // El clima observado es contexto operativo, no una predicción de la fecha del viaje.
+  // Se usa para alertar al agente y nunca para afirmar que una actividad estará segura.
+  const weather = await getDestinationWeather(true);
+  const weatherRisk = weather.map(item => ({
+    regionId: item.regionId,
+    name: item.name,
+    level: getWeatherRisk(item).level,
+    reasons: getWeatherRisk(item).reasons,
+    source: item.source,
+    observedAt: item.observedAt
+  }));
+
   const previous = new Map(
     (params.previousAvailability || []).map(item => [String(item.tourId || ''), item])
   );
@@ -152,6 +165,11 @@ export async function observeJourneyState(params: {
     changes,
     affectedTourIds,
     replanningRequired: affectedTourIds.length > 0,
+    weatherContext: {
+      observedAt: new Date().toISOString(),
+      regions: weatherRisk,
+      policy: 'observed_weather_only'
+    },
     policy: {
       autoMutation: false,
       recommendation: affectedTourIds.length
@@ -199,6 +217,7 @@ export async function guardianReplanJourney(params: {
     observedAt: observation.observedAt,
     status: observation.status,
     changes: observation.changes,
+    weatherContext: observation.weatherContext,
     affectedTourIds: observation.affectedTourIds,
     affectedDays,
     itinerary: preservedItinerary,
