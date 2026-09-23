@@ -5,6 +5,7 @@
 import { TOURS } from '../src/data/toursData';
 import { assessTripFit, buildPackingList, buildRouteStrategy, getDestinationIntelligence, screenActivitySuitability, validateTripPlan, buildTravelerReasoning } from './tourismIntelligenceEngine';
 import { buildTripJourney, adaptTravelerJourney } from './travelJourneyOrchestrator';
+import { verifyJourneyAvailability } from './journeyVerificationService';
 import { getDestinationWeather } from './weatherPulseService';
 import { checkTourAvailability, findBookingByCodeOrEmail } from './bookingService';
 import { getOperationalMemory, retrieveRelevantMemory } from './memoryService';
@@ -102,6 +103,10 @@ export const AGENT_TOOL_REGISTRY = {
   },
   live_destination_weather: {
     description: 'Return current cached/live weather for Costa Rica destination regions with source classification.',
+    sideEffect: false
+  },
+  verify_journey_availability: {
+    description: 'Verify live capacity for the selected experiences in a traveler journey for a specific date and party size.',
     sideEffect: false
   }
 } as const;
@@ -219,6 +224,13 @@ export async function executeAgentTool(
       });
     case 'destination_intelligence':
       return getDestinationIntelligence(String(args.regionId || ''));
+    case 'verify_journey_availability':
+      return verifyJourneyAvailability({
+        catalog: Array.isArray(args.catalog) ? args.catalog : [],
+        date: args.date ? String(args.date) : undefined,
+        time: args.time ? String(args.time) : undefined,
+        travelers: Number(args.travelers) || 1
+      });
     case 'build_trip_journey':
       return buildTripJourney({
         sessionId: args.sessionId ? String(args.sessionId) : undefined,
@@ -480,6 +492,20 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
       query: { type: 'STRING' }, profile: { type: 'STRING' }, days: { type: 'NUMBER' }, travelers: { type: 'NUMBER' },
       budgetUSD: { type: 'NUMBER' }, regions: { type: 'ARRAY', items: { type: 'STRING' } }, priorities: { type: 'ARRAY', items: { type: 'STRING' } }
     }}
+  },
+  {
+    name: 'verify_journey_availability',
+    description: 'Verify real availability for the selected journey experiences before reservation.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        catalog: { type: 'ARRAY', items: { type: 'OBJECT' } },
+        date: { type: 'STRING', description: 'Target date in YYYY-MM-DD format' },
+        time: { type: 'STRING', description: 'Optional time slot' },
+        travelers: { type: 'NUMBER', description: 'Number of travelers' }
+      },
+      required: ['catalog', 'date', 'travelers']
+    }
   },
   {
     name: 'destination_intelligence',
