@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CalendarDays, Compass, Loader2, MapPinned, MessageCircle, PackageCheck, Route, Sparkles, Sun, Users } from 'lucide-react';
+import { CalendarDays, Compass, Loader2, MapPinned, MessageCircle, PackageCheck, Route, Sparkles, Sun, Users, RefreshCw, Save } from 'lucide-react';
 import { Language } from '../types';
 
 export const FullTripJourneyBuilder: React.FC<{ language: Language }> = ({ language }) => {
@@ -8,6 +8,17 @@ export const FullTripJourneyBuilder: React.FC<{ language: Language }> = ({ langu
   const [journey, setJourney] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [saved, setSaved] = useState(false);
+  const journeyStorageKey = 'crt_journey_id';
+
+  React.useEffect(() => {
+    const id = localStorage.getItem(journeyStorageKey);
+    if (!id) return;
+    fetch(`/api/journey/${encodeURIComponent(id)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.journey?.status !== 'not_found') setJourney(data.journey); })
+      .catch(() => undefined);
+  }, []);
   async function build() {
     setLoading(true); setError('');
     try {
@@ -17,8 +28,24 @@ export const FullTripJourneyBuilder: React.FC<{ language: Language }> = ({ langu
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'No se pudo construir el viaje');
       setJourney(data.journey);
+      if (data.journey?.journeyId) localStorage.setItem(journeyStorageKey, data.journey.journeyId);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1800);
     } catch(e:any){ setError(e?.message || 'Error'); } finally { setLoading(false); }
   }
+  async function adapt() {
+    if (!journey?.journeyId || loading) return;
+    setLoading(true); setError('');
+    try {
+      const response = await fetch(`/api/journey/${encodeURIComponent(journey.journeyId)}/adapt`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...form, language}) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'No se pudo adaptar el viaje');
+      setJourney(data.journey);
+      localStorage.setItem(journeyStorageKey, data.journey.journeyId);
+      setSaved(true); setTimeout(() => setSaved(false), 1800);
+    } catch(e:any){ setError(e?.message || 'Error'); } finally { setLoading(false); }
+  }
+
   return <section className="rounded-[32px] border border-amber-400/20 bg-gradient-to-br from-[#071e14] via-[#061711] to-[#020a07] p-5 md:p-8 shadow-2xl">
     <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
       <div><div className="flex items-center gap-2 text-amber-300 text-[10px] font-black uppercase tracking-[0.2em]"><Sparkles size={15}/>{es?'Asistente de viaje completo':'Full-trip AI advisor'}</div>
@@ -36,6 +63,10 @@ export const FullTripJourneyBuilder: React.FC<{ language: Language }> = ({ langu
     </div>
     {error && <div className="mt-4 rounded-2xl border border-rose-400/20 bg-rose-950/20 p-4 text-sm text-rose-200">{error}</div>}
     {journey && <div className="mt-6 grid xl:grid-cols-12 gap-4">
+      <div className="xl:col-span-12 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-400/15 bg-emerald-400/5 px-4 py-3">
+        <div className="flex items-center gap-3 text-xs"><span className="rounded-full bg-emerald-400/15 px-2 py-1 font-black text-emerald-300">v{journey.version || 1}</span><span className="text-stone-300">{es ? `Viaje ${journey.status === 'adapted' ? 'adaptado' : 'guardado'}` : `Journey ${journey.status === 'adapted' ? 'adapted' : 'saved'}`}</span>{saved && <span className="flex items-center gap-1 text-emerald-300"><Save size={13}/> {es ? 'Guardado' : 'Saved'}</span>}</div>
+        <button onClick={adapt} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs font-black text-amber-200 hover:bg-amber-400/20 disabled:opacity-50"><RefreshCw size={14} className={loading ? 'animate-spin' : ''}/>{es ? 'Adaptar este viaje' : 'Adapt this trip'}</button>
+      </div>
       <div className="xl:col-span-8 space-y-4">
         <div className="grid md:grid-cols-3 gap-3">
           <div className="rounded-2xl bg-black/20 p-4"><Route className="text-emerald-300" size={18}/><div className="mt-2 text-xs text-stone-400">{es?'Ruta':'Route'}</div><b className="text-white text-sm">{(journey.planning?.regions || []).join(' → ')}</b></div>
