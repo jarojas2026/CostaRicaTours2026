@@ -241,6 +241,46 @@ app.get('/api/admin/control-center', requireAdmin, async (_req, res) => {
   }
 });
 
+
+// Full-trip Journey API: keeps the public planning flow connected to memory,
+// authoritative catalog, live weather, availability, itinerary and sales next step.
+app.post('/api/journey/build', async (req, res) => {
+  try {
+    const result = await buildTripJourney(req.body || {});
+    res.json({ success: true, journey: result });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message || 'No se pudo construir el viaje' });
+  }
+});
+
+app.get('/api/journey/:journeyId', async (req, res) => {
+  try {
+    const journey = await getTravelerJourney(String(req.params.journeyId || ''));
+    if (!journey) return res.status(404).json({ success: false, error: 'Viaje no encontrado' });
+    res.json({ success: true, journey });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'No se pudo recuperar el viaje' });
+  }
+});
+
+app.post('/api/journey/:journeyId/adapt', async (req, res) => {
+  try {
+    const journey = await adaptTravelerJourney(String(req.params.journeyId || ''), req.body || {});
+    res.json({ success: true, journey });
+  } catch (err: any) {
+    const status = /no encontrado/i.test(err.message || '') ? 404 : 400;
+    res.status(status).json({ success: false, error: err.message || 'No se pudo adaptar el viaje' });
+  }
+});
+
+app.post('/api/internal/provider-inbox/sweep', requireAgentTool, async (_req, res) => {
+  try {
+    res.json({ success: true, result: await processProviderInboxOnce() });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Provider inbox error' });
+  }
+});
+
 app.post('/api/ai/intelligence', (req, res) => {
   try {
     const action = String(req.body?.action || '').trim();
