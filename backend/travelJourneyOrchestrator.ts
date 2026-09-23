@@ -91,7 +91,7 @@ async function persistJourney(journey: any) {
   await db.collection('traveler_journeys').doc(journey.journeyId).set(firestoreSafe, { merge: true });
 }
 
-async function loadJourney(journeyId: string) {
+async function loadJourney(journeyId: string): Promise<any> {
   const db = getFirestoreDb();
   if (!db) return null;
   const doc = await db.collection('traveler_journeys').doc(journeyId).get();
