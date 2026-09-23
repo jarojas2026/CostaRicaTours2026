@@ -1071,3 +1071,258 @@ La inferencia nunca debe sobreescribir evidencia operacional.
 Costa Rica Tours debe evolucionar hacia un mostrador digital autónomo de turismo: entiende al viajero, conserva contexto, diseña viajes, consulta datos vivos, busca experiencias, verifica disponibilidad, prepara proformas, coordina proveedores, procesa respuestas, informa al cliente, adapta el viaje, detecta problemas, escala cuando corresponde, registra cada paso, mide resultados y mejora sus agentes.
 
 La autonomía siempre está subordinada a seguridad, trazabilidad, permisos y evidencia.
+
+---
+
+# AI Handoff Contract — Costa Rica Tours 2026
+
+> **Purpose:** this section is the operational handoff document for any future human developer or AI agent working on the repository.
+
+## A. Product truth
+
+Costa Rica Tours 2026 is a **commercial tourism reservation platform**, not a generic chatbot. The success path is:
+
+`visitor → conversation → traveler profile → trip design → catalog → live verification → quote/proforma → reservation request → provider coordination → confirmation → payment → voucher → operation → post-sale`.
+
+The AI layer exists to reduce friction along this path while preserving human control and factual integrity.
+
+## B. Source-of-truth hierarchy
+
+Use the strongest available source and label the provenance:
+
+1. **AUTHORITATIVE_CATALOG** — `src/data/toursData.ts`
+2. **LIVE_VERIFIED** — live availability, weather, provider response or other verified operational source
+3. **CUSTOMER_PROVIDED** — explicit traveler information
+4. **PROVIDER_PROVIDED** — information received from an authorized provider
+5. **STABLE_KNOWLEDGE** — expert tourism guidance that is not a live operational fact
+6. **UNVERIFIED** — information that must not be presented as confirmed
+
+Never turn an inference into a confirmation.
+
+## C. Full journey orchestration
+
+### `backend/travelJourneyOrchestrator.ts`
+
+This is the integration layer for the complete trip lifecycle. It combines:
+
+- traveler memory;
+- tourism intelligence;
+- catalog matching;
+- real availability;
+- live destination weather;
+- route strategy;
+- deterministic itinerary fallback;
+- packing guidance;
+- commercial stage;
+- WhatsApp/email/web conversion paths.
+
+Persistent journeys use Firestore collection `traveler_journeys`.
+
+Public APIs:
+
+- `POST /api/journey/build`
+- `GET /api/journey/:journeyId`
+- `POST /api/journey/:journeyId/adapt`
+
+The commercial stage is one of:
+
+- `DISCOVERY`
+- `VERIFICATION`
+- `READY_TO_QUOTE`
+- `RECOVERY`
+
+## D. Traveler memory
+
+Memory is for continuity, not invention.
+
+When a session identifier exists, retrieve relevant context before asking questions already answered. Store only information useful for the service. Do not expose internal memory or sensitive operational data to the traveler.
+
+Primary services/collections:
+
+- `backend/memoryService.ts`
+- `backend/semanticMemoryService.ts`
+- `agent_memory`
+- `agent_memory_vectors`
+- `traveler_journeys`
+
+## E. Provider communication
+
+### `backend/providerInboxAgent.ts`
+
+Provider replies are processed through a controlled pipeline:
+
+`provider email → authenticated/known sender → service-order ID → AI/deterministic classification → confidence gate → service-order transition → customer notification → audit event`.
+
+Recognized outcomes:
+
+- `confirm`
+- `reject`
+- `delay`
+- `no_show`
+- `complete`
+
+Ambiguous responses remain for human review.
+
+Required Gmail server credentials:
+
+- `GMAIL_CLIENT_ID`
+- `GMAIL_CLIENT_SECRET`
+- `GMAIL_REFRESH_TOKEN`
+- `GMAIL_INBOX_USER`
+
+The native cron checks the inbox every minute. Missing Gmail credentials must disable this worker without breaking the rest of the application.
+
+Internal manual sweep:
+
+- `POST /api/internal/provider-inbox/sweep`
+- protected by `AGENT_INTERNAL_TOKEN`
+
+## F. Native automation
+
+The project uses code-based automation:
+
+- `backend/cronEngine.ts`
+- `backend/nativeAutomationEngine.ts`
+- `backend/nativeWorkflows.ts`
+
+Do not introduce a second orchestration platform for workflows that already belong in the native engine.
+
+Current automation includes booking lifecycle, holds, weather monitoring, concierge, pre-sale recovery, post-sale loyalty, provider operations and provider inbox polling.
+
+## G. AI workforce
+
+Core agents:
+
+- Concierge
+- Triage
+- Booking
+- Provider Liaison
+- Operations
+- Supervisor
+- Learning
+
+Extended capabilities include:
+
+- itinerary planning;
+- conversion advisory;
+- multilingual support;
+- sustainability;
+- safety screening;
+- payments;
+- trip fit;
+- packing;
+- route strategy;
+- destination intelligence;
+- full journey construction/adaptation;
+- live weather.
+
+The agent architecture should remain **plurivalent but governed**: agents can understand multiple real-life scenarios, but they must delegate to the service that owns the authoritative fact.
+
+## H. Human-centered sales behavior
+
+The assistant should behave like a strong tourism advisor:
+
+- listen before selling;
+- remember decisions;
+- reduce repetitive questions;
+- recognize uncertainty;
+- explain what is and is not confirmed;
+- preserve traveler preferences after a rejection;
+- offer alternatives;
+- keep a human handoff available;
+- use the appropriate channel: web form, proforma, WhatsApp or email.
+
+A rejected supplier request is a recovery event, not the end of the customer relationship.
+
+## I. Administrative command center
+
+The owner-facing control center is:
+
+- frontend: `src/pages/AdminControlCenterPage.tsx`
+- backend: `backend/adminControlCenterService.ts`
+- route: `/admin`
+- API: `GET /api/admin/control-center`
+
+It aggregates:
+
+- bookings;
+- confirmed/pending/failed operations;
+- revenue;
+- upcoming operations;
+- alerts;
+- agent identities;
+- automation health;
+- provider status;
+- provider inbox events;
+- journeys;
+- memory/evaluation counts;
+- skill evolution;
+- AI evaluations.
+
+Keep this dashboard based on real persisted/observed events. Do not manufacture business metrics to make the system appear healthier.
+
+## J. Rules for future changes
+
+Before modifying code:
+
+1. Read this README.
+2. Read the target service completely enough to understand its ownership.
+3. Search for existing implementations before creating new ones.
+4. Reuse domain services instead of duplicating business logic.
+5. Preserve working behavior unless a change is explicitly required.
+6. Do not remove existing functionality merely to simplify the code.
+7. Do not add synthetic data that can be mistaken for real data.
+8. Protect state-changing/internal endpoints.
+9. Keep pricing server-authoritative.
+10. Keep availability server-authoritative.
+11. Preserve idempotency.
+12. Preserve auditability and operational events.
+13. Keep traveler memory minimal and purposeful.
+14. Mark live versus stable versus unverified information.
+15. Add tests/build verification for structural changes.
+16. Compare the branch with its base before creating a PR.
+17. Document every new architectural capability here.
+
+## K. What “intelligent” means in this project
+
+Intelligence is not merely a larger prompt or more model calls.
+
+A capable tourism agent should be able to:
+
+- understand incomplete requests;
+- ask the smallest useful number of questions;
+- remember answers;
+- reason geographically;
+- compare experiences;
+- verify live constraints;
+- adapt to weather;
+- detect provider rejection;
+- recover the itinerary;
+- preserve budget/time preferences;
+- create a commercial next step;
+- explain uncertainty;
+- escalate when authority or evidence is insufficient;
+- record the outcome so the ecosystem can learn.
+
+The system should continuously move from **answering questions** toward **managing the traveler journey**.
+
+## L. Safety and governance
+
+No agent may:
+
+- claim a booking is confirmed without evidence;
+- claim a payment is completed without server verification;
+- guarantee wildlife sightings;
+- override protected-area or operator safety rules;
+- diagnose medical conditions;
+- invent provider availability;
+- expose secrets or private operational records;
+- auto-modify production source code without a controlled human-approved development process.
+
+Learning may propose improvements; production code changes remain controlled changes.
+
+## M. Development invariant
+
+**Connect before replacing. Reuse before duplicating. Verify before promising. Record before forgetting. Recover before abandoning.**
+
+This invariant applies to every future AI, agent, workflow, feature and pull request in this repository.
