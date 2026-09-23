@@ -78,8 +78,8 @@ export default function App() {
     const price = Number(searchParams.get('maxPrice'));
     if (location.pathname === '/tours') {
       if (q !== null) setSearchQuery(q);
-      if (category && category !== 'all') setSelectedCategory(category);
-      if (region && region !== 'all') setSelectedRegion(region);
+      if (category) setSelectedCategory(category);
+      if (region) setSelectedRegion(region);
       if (difficulty && ['fácil', 'moderado', 'exigente'].includes(difficulty)) setSelectedDifficulty(difficulty);
       if (Number.isFinite(price) && price > 0) setMaxPrice(price);
     }
