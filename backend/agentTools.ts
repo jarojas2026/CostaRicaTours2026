@@ -8,6 +8,7 @@ import { buildTripJourney, adaptTravelerJourney } from './travelJourneyOrchestra
 import { verifyJourneyAvailability, observeJourneyState, guardianReplanJourney } from './journeyVerificationService';
 import { getDestinationWeather } from './weatherPulseService';
 import { checkTourAvailability, findBookingByCodeOrEmail } from './bookingService';
+import { observeProviderSla } from './providerCommunicationService';
 import { getOperationalMemory, retrieveRelevantMemory } from './memoryService';
 import {
   COMPANY_FACTS,
@@ -115,6 +116,10 @@ export const AGENT_TOOL_REGISTRY = {
   },
   guardian_replan_journey: {
     description: 'Observe operational changes and identify only affected itinerary days for controlled adaptive replanning. Never mutates confirmed traveler choices or payment state.',
+    sideEffect: false
+  },
+  observe_provider_sla: {
+    description: 'Detect provider service orders that exceeded SLA without mutating bookings or itineraries.',
     sideEffect: false
   }
 } as const;
@@ -232,6 +237,8 @@ export async function executeAgentTool(
       });
     case 'destination_intelligence':
       return getDestinationIntelligence(String(args.regionId || ''));
+    case 'observe_provider_sla':
+      return observeProviderSla();
     case 'verify_journey_availability':
       return verifyJourneyAvailability({
         catalog: Array.isArray(args.catalog) ? args.catalog : [],
@@ -547,6 +554,11 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
       },
       required: ['catalog', 'date', 'travelers', 'itinerary']
     }
+  },
+  {
+    name: 'observe_provider_sla',
+    description: 'Detect provider service orders that exceeded SLA and return follow-up context without changing bookings or itineraries.',
+    parameters: { type: 'OBJECT', properties: {} }
   },
   {
     name: 'destination_intelligence',
