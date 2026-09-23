@@ -37,6 +37,11 @@ function gather(action: string, language: 'es' | 'en') {
   return `<Gather input="speech dtmf" language="${lang}" speechTimeout="auto" timeout="5" action="${esc(action)}" method="POST" actionOnEmptyResult="true" numDigits="1"></Gather>`;
 }
 
+function humanNumbers() {
+  return (process.env.VOICE_HUMAN_NUMBERS || process.env.VOICE_HUMAN_NUMBER || '')
+    .split(',').map(value => value.trim()).filter(Boolean).slice(0, 8);
+}
+
 export function voiceAgentDeskConfig() {
   return {
     enabled: Boolean(process.env.VOICE_AGENT_DESK_ENABLED === 'true'),
@@ -45,7 +50,7 @@ export function voiceAgentDeskConfig() {
     inboundPath: '/api/voice/incoming',
     responsePath: '/api/voice/respond',
     statusPath: '/api/voice/status',
-    humanTransferConfigured: Boolean(process.env.VOICE_HUMAN_NUMBER),
+    humanTransferConfigured: humanNumbers().length > 0,
     humanTransferLabel: process.env.VOICE_HUMAN_LABEL || 'Agent Desk humano',
     hotelIntegrationMode: 'DID/SIP/PBX-forwarding',
     contextFields: ['hotelId', 'hotelName', 'room', 'language'],
@@ -119,7 +124,7 @@ export async function handleVoiceTurn(input: {
   const textInput = String(input.speech || '').trim();
   const digits = String(input.digits || '').trim();
 
-  if (digits === '0' && input.humanTransferUrl) {
+  if (digits === '0' && input.humanTransferUrl && humanNumbers().length > 0) {
     return xml([
       say(language === 'en' ? 'Connecting you with our Agent Desk team.' : 'Le conecto con nuestro equipo del Agent Desk.', language),
       `<Dial action="${esc(input.humanTransferUrl)}" method="POST"><Number>${esc(process.env.VOICE_HUMAN_NUMBER)}</Number></Dial>`
