@@ -556,6 +556,11 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
     }
   },
   {
+    name: 'observe_provider_sla',
+    description: 'Detect provider service orders that exceeded SLA and return follow-up context without changing bookings or itineraries.',
+    parameters: { type: 'OBJECT', properties: {} }
+  },
+  {
     name: 'destination_intelligence',
     description: 'Return stable expert knowledge for a destination and list the live facts that require verification.',
     parameters: {
