@@ -188,6 +188,8 @@ export async function buildTripJourney(params: JourneyParams) {
 }
 
 function cryptoSafeId() {
+  const globalCrypto = globalThis.crypto as Crypto | undefined;
+  if (globalCrypto?.randomUUID) return globalCrypto.randomUUID().replace(/-/g, '').slice(0, 20);
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 }
 
