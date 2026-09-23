@@ -2,6 +2,7 @@ import { TOURS } from '../src/data/toursData';
 import { getFirestoreDb } from './bookingService';
 import { getDestinationWeather } from './weatherPulseService';
 import { assessTripFit, buildPackingList, buildRouteStrategy } from './tourismIntelligenceEngine';
+import { verifyJourneyAvailability, validateJourneyState } from './journeyVerificationService';
 import { getOperationalMemory } from './memoryService';
 
 type JourneyParams = {
@@ -122,6 +123,20 @@ export async function buildTripJourney(params: JourneyParams) {
     regions
   });
   const packing = buildPackingList({ activities: params.activities, regions, profile: params.profile });
+  const availability = await verifyJourneyAvailability({
+    catalog,
+    date: clean(params.date),
+    time: clean(params.time),
+    travelers
+  });
+  const itineraryDays = buildDays(days, catalog, clean(params.profile) || 'relaxed');
+  const validation = validateJourneyState({
+    days,
+    regions,
+    itinerary: itineraryDays,
+    weatherRisk: relevantWeather.some((item: any) => /rain|storm|risk|lluvia|tormenta/i.test(JSON.stringify(item))),
+    availability: availability.items
+  });
   const estimatedTourCostUSD = catalog.reduce((sum, tour) => sum + tour.priceUSD, 0) * travelers;
   const journeyId = 'jrn_' + cryptoSafeId();
   const journey = {
@@ -149,17 +164,19 @@ export async function buildTripJourney(params: JourneyParams) {
     live: {
       weather: relevantWeather,
       weatherVerifiedAt: new Date().toISOString(),
-      availability: [],
-      availabilityStatus: params.date ? 'pending_verification' : 'date_required'
+      availability: availability.items,
+      availabilityStatus: availability.status,
+      availabilityVerifiedAt: availability.verifiedAt
     },
     itinerary: {
       title: `Costa Rica · ${days} días`,
-      summary: 'Borrador dinámico basado en catálogo y preferencias; puede adaptarse antes de reservar.',
-      days: buildDays(days, catalog, clean(params.profile) || 'relaxed')
+      summary: 'Borrador dinámico basado en catálogo, preferencias y verificaciones operativas disponibles.',
+      days: itineraryDays,
+      validation
     },
     sales: {
-      stage: 'planning',
-      nextAction: params.date ? 'Verificar disponibilidad y preparar cotización' : 'Definir fecha para verificar disponibilidad',
+      stage: params.date && availability.status === 'available' ? 'verification_complete' : 'planning',
+      nextAction: !params.date ? 'Definir fecha para verificar disponibilidad' : availability.status === 'available' ? 'Preparar cotización y revisar requisitos antes de reservar' : 'Resolver disponibilidad y verificación operativa antes de reservar',
       estimatedTourCostUSD,
       disclaimer: 'La cotización final se calcula en el flujo de reserva.'
     },
