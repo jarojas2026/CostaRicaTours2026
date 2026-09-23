@@ -12,6 +12,7 @@ import { BlogSection } from '../components/BlogSection';
 import { ContactSection } from '../components/ContactSection';
 import { DestinationPulse } from '../components/DestinationPulse';
 import { SmartTripAdvisor } from '../components/SmartTripAdvisor';
+import { FullTripJourneyBuilder } from '../components/FullTripJourneyBuilder';
 import { Tour, Language, Currency, TourCategory, TourRegion } from '../types';
 
 interface HomeProps {
@@ -82,6 +83,11 @@ export const Home: React.FC<HomeProps> = ({
       {/* AI Travel Intelligence — destination fit, packing, safety and route strategy */}
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
         <SmartTripAdvisor language={language} />
+      </div>
+
+      {/* Full journey: memory + catalog + weather + availability + itinerary + sales */}
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <FullTripJourneyBuilder language={language} />
       </div>
 
       {/* Categories Visual Section */}
