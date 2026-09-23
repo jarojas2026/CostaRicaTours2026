@@ -61,6 +61,7 @@ export const ToursPage: React.FC<ToursPageProps> = ({
     const next = new URLSearchParams(searchParams);
     if (!value || value === 'all') next.delete(key);
     else next.set(key, value);
+    if (next.toString() === searchParams.toString()) return;
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
 
