@@ -153,12 +153,20 @@ export async function rememberTurn(
     ? Array.from(new Set([...memory.decisions, cleanText(options.decision, 300)])).slice(-MAX_LIST)
     : memory.decisions;
 
+  const contradictionKeys = Object.keys(facts).filter((key) => facts[key] !== memory.facts[key] && memory.facts[key] !== undefined);
+  const decisionsWithContext = contradictionKeys.length
+    ? Array.from(new Set([
+        ...decisions,
+        ...contradictionKeys.map((key) => `Actualización de ${key}: reemplazar el dato anterior solo porque el viajero proporcionó un valor más reciente.`)
+      ])).slice(-MAX_LIST)
+    : decisions;
+
   const updated: OperationalMemory = {
     ...memory,
     facts: Object.fromEntries(Object.entries(facts).slice(-MAX_FACTS)),
     preferences,
     activeGoals,
-    decisions,
+    decisions: decisionsWithContext,
     lastAgent: options.agentId || turn.agentId || memory.lastAgent,
     lastUpdatedAt: new Date().toISOString(),
     turns: [...memory.turns, { ...turn, text, timestamp: new Date().toISOString() }].slice(-MAX_TURNS)
