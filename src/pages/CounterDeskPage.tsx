@@ -21,6 +21,7 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
   const [autopilot, setAutopilot] = useState<any>(null);
   const [aiPlan, setAiPlan] = useState<any>(null);
   const [error, setError] = useState('');
+  const [voiceConfig, setVoiceConfig] = useState<any>(null);
 
   const loadAutopilot = async () => {
     try {
@@ -50,6 +51,15 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
   };
 
   useEffect(() => {
+    const loadVoiceConfig = async () => {
+      try {
+        const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+        if (!token) return;
+        const r = await fetch('/api/voice/config', { headers: { Authorization: 'Bearer ' + token } });
+        if (r.ok) { const data = await r.json(); setVoiceConfig(data.config); }
+      } catch {}
+    };
+    loadVoiceConfig();
     loadAutopilot();
     const id = window.setInterval(loadAutopilot, 60000);
     return () => window.clearInterval(id);
@@ -114,6 +124,40 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
           <button onClick={refresh} disabled={loading} className="inline-flex items-center gap-2 rounded-2xl bg-amber-400 px-4 py-3 font-black text-stone-950 hover:bg-amber-300 disabled:opacity-50">
             <RefreshCw className={loading ? 'animate-spin' : ''} size={17} /> {es ? 'Actualizar centro' : 'Refresh center'}
           </button>
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-sky-400/20 bg-[#07131c] p-5">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.2em] font-black text-sky-300">☎ Agent Desk de Voz</div>
+            <h2 className="text-xl font-black text-white mt-1">
+              {es ? 'Recepción de llamadas para hoteles y operadores' : 'Inbound calling for hotels and tour operators'}
+            </h2>
+            <p className="text-xs text-stone-400 mt-2 max-w-3xl">
+              {es
+                ? 'Un hotel puede enrutar el teléfono de sus habitaciones, PBX o SIP hacia una línea del Agent Desk. La llamada entra al mismo ecosistema de IA, memoria y operaciones, y puede pasar a una persona cuando sea necesario.'
+                : 'A hotel can route room phones, PBX or SIP to an Agent Desk line. The call enters the same AI, memory and operations ecosystem and can be handed to a person when needed.'}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 text-[10px] font-black uppercase">
+            <span className={`rounded-full border px-3 py-1.5 ${voiceConfig?.enabled ? 'border-emerald-400/30 text-emerald-300 bg-emerald-400/5' : 'border-amber-400/30 text-amber-300 bg-amber-400/5'}`}>
+              {voiceConfig?.enabled ? 'VOICE ONLINE' : 'VOICE CONFIG PENDING'}
+            </span>
+            {voiceConfig?.humanTransferConfigured && <span className="rounded-full border border-sky-400/30 text-sky-300 bg-sky-400/5 px-3 py-1.5">HUMAN HANDOFF</span>}
+          </div>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-3 mt-4">
+          {[
+            [es ? 'Hoteles' : 'Hotels', es ? 'DID / PBX / SIP' : 'DID / PBX / SIP'],
+            [es ? 'Contexto' : 'Context', es ? 'Hotel · habitación · idioma' : 'Hotel · room · language'],
+            [es ? 'Escalamiento' : 'Escalation', voiceConfig?.humanTransferConfigured ? (es ? 'Agente humano' : 'Human agent') : (es ? 'Por configurar' : 'To configure')]
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-2xl border border-white/5 bg-black/20 p-3">
+              <div className="text-[9px] uppercase font-black text-stone-500">{label}</div>
+              <div className="text-sm font-bold text-white mt-1">{value}</div>
+            </div>
+          ))}
         </div>
       </section>
 

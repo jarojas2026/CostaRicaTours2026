@@ -100,6 +100,7 @@ import {
 } from './backend/nativeWorkflows';
 import { executeSinpeVerification } from './backend/sinpeService';
 import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
+import { createInboundVoiceResponse, handleVoiceTurn, voiceAgentDeskConfig, verifyVoiceSignature, rememberVoiceCallStart, rememberVoiceCallEnd } from './backend/voiceAgentDeskService';
 import { getSelfDevelopmentOverview, runSelfHealingCycle } from './backend/selfDevelopmentEngine';
 import { askCounterDesk, getCounterOperationsSnapshot, organizeCounterDesk } from './backend/counterDeskService';
 import { runEvaluationSuite } from './backend/agentEvaluationService';
@@ -152,6 +153,7 @@ function requireAgentTool(req: express.Request, res: express.Response, next: exp
 
 app.set('trust proxy', 1);
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // ==========================================
 // 🛡️ RATE LIMITING MIDDLEWARES
@@ -1009,6 +1011,88 @@ app.post('/api/counter/organize', requireAdmin, async (_req, res) => {
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message || 'Error del organizador IA' });
   }
+});
+
+// ==========================================
+// ☎️ PORTABLE VOICE AGENT DESK
+// Compatible with Twilio-style Voice webhooks and PBX/SIP forwarding.
+// Hotels can forward a room phone to one DID and keep the integration provider-neutral.
+// No credentials are stored in the repository.
+// ==========================================
+app.get('/api/voice/config', requireAdmin, async (_req, res) => {
+  res.json({ success: true, config: voiceAgentDeskConfig() });
+});
+
+app.post('/api/voice/incoming', async (req, res) => {
+  try {
+    const params = Object.fromEntries(Object.entries(req.body || {}).map(([k, v]) => [k, String(v ?? '')]));
+    const signature = req.headers['x-twilio-signature'];
+    const baseUrl = process.env.PUBLIC_BASE_URL || process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+    if (!verifyVoiceSignature(`${baseUrl}${req.originalUrl}`, params, typeof signature === 'string' ? signature : undefined)) {
+      return res.status(403).type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response><Say>Unauthorized</Say></Response>');
+    }
+    const callId = String(req.body?.CallSid || req.body?.callId || `call_${Date.now()}`);
+    const hotelId = String(req.query?.hotelId || req.body?.hotelId || '').trim() || undefined;
+    const hotelName = String(req.query?.hotelName || req.body?.hotelName || '').trim() || undefined;
+    const room = String(req.query?.room || req.body?.room || '').trim() || undefined;
+    const language = String(req.query?.language || req.body?.language || '').toLowerCase().startsWith('en') ? 'en' : 'es';
+    const responseUrl = `${baseUrl}/api/voice/respond?hotelId=${encodeURIComponent(hotelId || '')}&hotelName=${encodeURIComponent(hotelName || '')}&room=${encodeURIComponent(room || '')}&language=${language}`;
+    await rememberVoiceCallStart({ callId, from: req.body?.From, to: req.body?.To, hotelId, hotelName, room, language, startedAt: new Date().toISOString() });
+    const twiml = createInboundVoiceResponse({
+      callId, language, hotelName, room, responseUrl,
+      humanTransferAvailable: Boolean(process.env.VOICE_HUMAN_NUMBER)
+    });
+    res.type('text/xml').send(twiml);
+  } catch (err: any) {
+    res.status(500).type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response><Say>El Agent Desk no está disponible temporalmente.</Say></Response>');
+  }
+});
+
+app.post('/api/voice/respond', async (req, res) => {
+  try {
+    const params = Object.fromEntries(Object.entries(req.body || {}).map(([k, v]) => [k, String(v ?? '')]));
+    const signature = req.headers['x-twilio-signature'];
+    const baseUrl = process.env.PUBLIC_BASE_URL || process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+    if (!verifyVoiceSignature(`${baseUrl}${req.originalUrl}`, params, typeof signature === 'string' ? signature : undefined)) {
+      return res.status(403).type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response><Say>Unauthorized</Say></Response>');
+    }
+    const callId = String(req.body?.CallSid || req.body?.callId || `call_${Date.now()}`);
+    const language = String(req.query?.language || req.body?.language || '').toLowerCase().startsWith('en') ? 'en' : 'es';
+    const hotelId = String(req.query?.hotelId || req.body?.hotelId || '').trim() || undefined;
+    const hotelName = String(req.query?.hotelName || req.body?.hotelName || '').trim() || undefined;
+    const room = String(req.query?.room || req.body?.room || '').trim() || undefined;
+    const responseUrl = `${baseUrl}/api/voice/respond?hotelId=${encodeURIComponent(hotelId || '')}&hotelName=${encodeURIComponent(hotelName || '')}&room=${encodeURIComponent(room || '')}&language=${language}`;
+    const humanTransferUrl = `${baseUrl}/api/voice/human-transfer?callId=${encodeURIComponent(callId)}`;
+    const twiml = await handleVoiceTurn({
+      callId,
+      speech: req.body?.SpeechResult,
+      digits: req.body?.Digits,
+      language,
+      hotelId,
+      hotelName,
+      room,
+      responseUrl,
+      humanTransferUrl
+    });
+    res.type('text/xml').send(twiml);
+  } catch (err: any) {
+    res.status(500).type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response><Say>No pude procesar la solicitud. Puede volver a intentarlo o marcar 0 para un agente.</Say></Response>');
+  }
+});
+
+app.post('/api/voice/human-transfer', async (req, res) => {
+  const status = String(req.body?.DialCallStatus || req.query?.status || 'completed');
+  const callId = String(req.body?.CallSid || req.query?.callId || '');
+  if (callId) await rememberVoiceCallEnd(callId, status);
+  res.type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+});
+
+app.post('/api/voice/status', async (req, res) => {
+  try {
+    const callId = String(req.body?.CallSid || req.body?.callId || '');
+    if (callId) await rememberVoiceCallEnd(callId, String(req.body?.CallStatus || 'unknown'));
+  } catch {}
+  res.status(204).send();
 });
 
 app.get('/api/weather/destinations', async (_req, res) => {
