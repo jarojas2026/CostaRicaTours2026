@@ -87,7 +87,8 @@ function buildDays(days: number, catalog: any[], profile: string) {
 async function persistJourney(journey: any) {
   const db = getFirestoreDb();
   if (!db) return;
-  await db.collection('traveler_journeys').doc(journey.journeyId).set(journey, { merge: true });
+  const firestoreSafe = JSON.parse(JSON.stringify(journey));
+  await db.collection('traveler_journeys').doc(journey.journeyId).set(firestoreSafe, { merge: true });
 }
 
 async function loadJourney(journeyId: string) {
@@ -130,6 +131,7 @@ export async function buildTripJourney(params: JourneyParams) {
     sessionId,
     traveler: {
       travelers,
+      days,
       profile: clean(params.profile) || 'relaxed',
       query: effectiveQuery,
       date: clean(params.date) || undefined,
