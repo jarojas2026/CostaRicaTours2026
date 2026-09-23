@@ -5,7 +5,7 @@
 import { TOURS } from '../src/data/toursData';
 import { assessTripFit, buildPackingList, buildRouteStrategy, getDestinationIntelligence, screenActivitySuitability, validateTripPlan, buildTravelerReasoning } from './tourismIntelligenceEngine';
 import { buildTripJourney, adaptTravelerJourney } from './travelJourneyOrchestrator';
-import { verifyJourneyAvailability } from './journeyVerificationService';
+import { verifyJourneyAvailability, observeJourneyState } from './journeyVerificationService';
 import { getDestinationWeather } from './weatherPulseService';
 import { checkTourAvailability, findBookingByCodeOrEmail } from './bookingService';
 import { getOperationalMemory, retrieveRelevantMemory } from './memoryService';
@@ -107,6 +107,10 @@ export const AGENT_TOOL_REGISTRY = {
   },
   verify_journey_availability: {
     description: 'Verify live capacity for the selected experiences in a traveler journey for a specific date and party size.',
+    sideEffect: false
+  },
+  observe_journey_state: {
+    description: 'Revalidate a journey against current operational availability and identify only the itinerary elements affected by changes.',
     sideEffect: false
   }
 } as const;
@@ -503,6 +507,21 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
         date: { type: 'STRING', description: 'Target date in YYYY-MM-DD format' },
         time: { type: 'STRING', description: 'Optional time slot' },
         travelers: { type: 'NUMBER', description: 'Number of travelers' }
+      },
+      required: ['catalog', 'date', 'travelers']
+    }
+  },
+  {
+    name: 'observe_journey_state',
+    description: 'Revalidate a saved journey against current operational availability. Reports changes and affected tour IDs without mutating the itinerary.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        catalog: { type: 'ARRAY', items: { type: 'OBJECT' } },
+        date: { type: 'STRING', description: 'Target date in YYYY-MM-DD format' },
+        time: { type: 'STRING', description: 'Optional time slot' },
+        travelers: { type: 'NUMBER', description: 'Number of travelers' },
+        previousAvailability: { type: 'ARRAY', items: { type: 'OBJECT' }, description: 'Previous availability snapshot stored with the journey' }
       },
       required: ['catalog', 'date', 'travelers']
     }
