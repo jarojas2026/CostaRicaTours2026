@@ -82,6 +82,12 @@ if (!/runReservationLifecycleSweep\(100\)/.test(read('backend/cronEngine.ts'))) 
 if (!/claim\(/.test(reservationLifecycle) || !/reservation_lifecycle_events/.test(reservationLifecycle)) {
   add('HIGH', 'BOOKING-003', 'Reservation lifecycle orchestration lacks durable idempotent event tracking.');
 }
+if (!/withDistributedAutomationLock/.test(read('backend/cronEngine.ts')) || !/automation_locks/.test(read('backend/cronEngine.ts'))) {
+  add('HIGH', 'AUTOMATION-LOCK-001', 'Recurring automation jobs lack the distributed Firestore lock guard.');
+}
+if (!/getPendingReservationLifecycleBookings/.test(read('backend/bookingService.ts')) || !/getPendingReservationLifecycleBookings/.test(reservationLifecycle)) {
+  add('HIGH', 'BOOKING-SCALE-001', 'Reservation lifecycle sweep is not using the indexed pending-state query path.');
+}
 const emailOperations = read('backend/emailOperationsAgent.ts');
 if (!/processEmailOperationsOnce/.test(server) || !/\/api\/internal\/email-operations\/sweep/.test(server)) {
   add('CRITICAL', 'EMAIL-001', 'Autonomous email agent is not connected to a protected server endpoint.');
