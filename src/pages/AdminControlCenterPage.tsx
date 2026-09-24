@@ -37,6 +37,7 @@ export const AdminControlCenterPage: React.FC<Props> = ({ language }) => {
   const automation = data?.automation || {};
   const agents = data?.agents || [];
   const documents = data?.documents || {};
+  const journeyPipeline = data?.journeyPipeline || {};
   const maxLog = useMemo(() => Math.max(1, ...(automation.recentLogs || []).slice(0, 12).map((x: any) => Number(x.durationMs) || 1)), [automation]);
 
   if (error && !data) {
@@ -99,6 +100,31 @@ export const AdminControlCenterPage: React.FC<Props> = ({ language }) => {
       </section>
 
       <section className="grid xl:grid-cols-2 gap-5">
+        <div className="rounded-3xl border border-cyan-400/15 bg-[#06141b] p-5">
+          <div className="flex items-center gap-2"><TrendingUp className="text-cyan-300" size={18}/><h2 className="font-black text-white">{es ? 'Embudo real de viajeros' : 'Real traveler funnel'}</h2><span className="ml-auto text-[10px] text-stone-500">{journeyPipeline.total || 0} {es ? 'viajes' : 'journeys'}</span></div>
+          <div className="mt-5 space-y-3">
+            {[
+              ['DISCOVERY', journeyPipeline.discovery || 0, es ? 'Descubrimiento' : 'Discovery'],
+              ['VERIFICATION', journeyPipeline.verification || 0, es ? 'Verificación' : 'Verification'],
+              ['READY_TO_QUOTE', journeyPipeline.readyToQuote || 0, es ? 'Listos para cotizar' : 'Ready to quote'],
+              ['RECOVERY', journeyPipeline.recovery || 0, es ? 'Recuperación' : 'Recovery']
+            ].map(([key,value,label]: any) => {
+              const pct = journeyPipeline.total ? Math.round((Number(value) / Number(journeyPipeline.total)) * 100) : 0;
+              return <div key={key}>
+                <div className="flex justify-between text-[10px]"><span className="text-stone-300">{label}</span><b className="text-white">{value}</b></div>
+                <div className="mt-1.5 h-2 rounded-full bg-black/40 overflow-hidden"><div className="h-full rounded-full bg-cyan-300" style={{width: pct + '%'}} /></div>
+              </div>;
+            })}
+          </div>
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            {(data?.journeyRecent || []).slice(0, 6).map((j: any) => <div key={j.id} className="rounded-xl border border-white/5 bg-black/20 p-3">
+              <div className="text-[9px] font-black text-cyan-300">{j.stage}</div>
+              <div className="mt-1 text-xs font-bold text-white">{j.profile || 'traveler'} · {j.travelers || 0}</div>
+              <div className="mt-1 text-[10px] text-stone-500">{(j.regions || []).join(' → ')}</div>
+            </div>)}
+          </div>
+        </div>
+
         <div className="rounded-3xl border border-violet-400/15 bg-[#0b0a18] p-5">
           <div className="flex items-center gap-2"><Bot className="text-violet-300" size={18}/><h2 className="font-black text-white">{es ? 'Mapa de inteligencias' : 'AI workforce map'}</h2><span className="ml-auto text-[10px] text-violet-300">{agents.length} activos definidos</span></div>
           <div className="mt-4 grid sm:grid-cols-2 gap-2 max-h-[460px] overflow-auto">{agents.map((a: any) => <div key={a.id} className="rounded-2xl border border-white/5 bg-white/[0.03] p-3"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400"/><span className="text-sm font-black text-white">{a.id}</span></div><p className="mt-1 text-[10px] leading-4 text-stone-400">{a.mission}</p><div className="mt-2 text-[9px] text-violet-300">{(a.capabilities || []).join(' • ')}</div></div>)}</div>
