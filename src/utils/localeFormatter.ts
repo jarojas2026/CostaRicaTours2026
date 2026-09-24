@@ -1,3 +1,4 @@
+import { getUsdToCrcRate } from './currencies';
 import { Language, Currency } from '../types';
 
 export function formatDate(dateString: string, language: Language = 'es'): string {
@@ -21,7 +22,9 @@ export function formatDate(dateString: string, language: Language = 'es'): strin
 export function formatCurrencyAmount(amountUSD: number, currency: Currency = 'USD'): string {
   if (isNaN(amountUSD)) return '$0';
   if (currency === 'CRC') {
-    const crcAmount = Math.round(amountUSD * 520); // standard exchange rate reference
+    const rate = getUsdToCrcRate();
+    if (rate <= 0) return `${amountUSD.toLocaleString('en-US')}`;
+    const crcAmount = Math.round(amountUSD * rate);
     return `₡${crcAmount.toLocaleString('es-CR')}`;
   }
   return `$${amountUSD.toLocaleString('en-US')}`;

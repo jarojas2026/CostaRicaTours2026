@@ -20,7 +20,8 @@ import {
   updateBookingStatus, 
   getWeeklyConversionMetrics, 
   getAllBookings,
-  verifyPaymentServerSide 
+  verifyPaymentServerSide,
+  getUsdToCrcRate
 } from './bookingService';
 import { 
   processChatInquiry, 
@@ -1020,7 +1021,7 @@ export async function executeAutonomousMultiDayPlanner(body: any) {
       descuentoPaqueteUSD: bundleDiscountUSD,
       porcentajeDescuento: '10%',
       totalFinalUSD: totalUSD,
-      equivalenteCRC: Math.round(totalUSD * 520),
+      equivalenteCRC: Math.round(totalUSD * getUsdToCrcRate()),
       beneficioAlsamaTransportBundle: 'Ahorro de $75 USD al combinar traslados con tours'
     },
     enlaceCredencialDigital: `https://costaricatours.es/pass/${qrPassToken}`,
