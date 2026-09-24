@@ -37,6 +37,9 @@ export async function getAdminControlCenterSnapshot() {
   const providerList: any[] = Array.isArray((providers as any)?.providers) ? (providers as any).providers : (Array.isArray(providers) ? providers as any[] : []);
   const db = getFirestoreDb();
 
+  let journeyPipeline = { discovery: 0, verification: 0, readyToQuote: 0, recovery: 0, total: 0 };
+  let journeyRecent: any[] = [];
+
   let documents = { journeys: 0, inboxEvents: 0, evaluations: 0, memories: 0 };
   let recentInbox: any[] = [];
   let recentEvaluations: any[] = [];
@@ -48,6 +51,15 @@ export async function getAdminControlCenterSnapshot() {
       db.collection('agent_memory').limit(200).get().catch(() => ({ size: 0 } as any))
     ]);
     documents = { journeys: journeys.size || 0, inboxEvents: inbox.size || 0, evaluations: evaluations.size || 0, memories: memories.size || 0 };
+    journeyPipeline = { discovery: 0, verification: 0, readyToQuote: 0, recovery: 0, total: journeys.size || 0 };
+    journeyRecent = (journeys.docs || []).slice(0, 20).map((d: any) => ({ id: d.id, ...(d.data ? d.data() : {}) }));
+    for (const d of journeyRecent) {
+      const stage = String(d?.sales?.stage || '').toUpperCase();
+      if (stage === 'DISCOVERY') journeyPipeline.discovery++;
+      else if (stage === 'VERIFICATION') journeyPipeline.verification++;
+      else if (stage === 'READY_TO_QUOTE') journeyPipeline.readyToQuote++;
+      else if (stage === 'RECOVERY') journeyPipeline.recovery++;
+    }
     recentInbox = (inbox.docs || []).map((d: any) => ({ id: d.id, ...d.data() }));
     recentEvaluations = (evaluations.docs || []).map((d: any) => ({ id: d.id, ...d.data() }));
   }
@@ -103,6 +115,16 @@ export async function getAdminControlCenterSnapshot() {
       }))
     },
     documents,
+    journeyPipeline,
+    journeyRecent: journeyRecent.map(j => ({
+      id: j.id || j.journeyId,
+      updatedAt: j.updatedAt,
+      stage: j.sales?.stage || 'UNKNOWN',
+      nextAction: j.sales?.nextAction || '',
+      travelers: j.traveler?.travelers || 0,
+      profile: j.traveler?.profile || '',
+      regions: j.planning?.regions || []
+    })),
     providerInbox: recentInbox
   };
 }
