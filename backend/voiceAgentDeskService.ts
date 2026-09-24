@@ -124,10 +124,12 @@ export async function handleVoiceTurn(input: {
   const textInput = String(input.speech || '').trim();
   const digits = String(input.digits || '').trim();
 
-  if (digits === '0' && input.humanTransferUrl && humanNumbers().length > 0) {
+  const operators = humanNumbers();
+  if (digits === '0' && input.humanTransferUrl && operators.length > 0) {
+    const targets = operators.map(number => `<Number>${esc(number)}</Number>`).join('');
     return xml([
       say(language === 'en' ? 'Connecting you with our Agent Desk team.' : 'Le conecto con nuestro equipo del Agent Desk.', language),
-      `<Dial action="${esc(input.humanTransferUrl)}" method="POST"><Number>${esc(process.env.VOICE_HUMAN_NUMBER)}</Number></Dial>`
+      `<Dial action="${esc(input.humanTransferUrl)}" method="POST">${targets}</Dial>`
     ]);
   }
 
