@@ -117,7 +117,7 @@ import { getAdminControlCenterSnapshot } from './backend/adminControlCenterServi
 import { getPlatformControls, updatePlatformControls } from './backend/platformControlService';
 import { runAdminAICommand, listAdminAICommands, approveAdminAICommand, rejectAdminAICommand } from './backend/adminAICommandService';
 import { getExecutiveAIArchitecture } from './backend/executiveAIArchitecture';
-import { processCustomerIntake } from './backend/customerIntakeGateway';
+import { processCustomerIntake, enqueueCustomerIntakeJob, processPendingCustomerIntakeJobs } from './backend/customerIntakeGateway';
 import { sendWhatsAppMessage } from './backend/notificationService';
 import { getFirestoreDb } from './backend/bookingService';
 
@@ -256,13 +256,13 @@ app.get('/api/webhooks/whatsapp', (req, res) => {
   return res.status(403).send('Forbidden');
 });
 
-app.post('/api/webhooks/whatsapp', chatLimiter, async (req, res) => {
+app.post('/api/webhooks/whatsapp', async (req, res) => {
   if (!verifyWhatsAppSignature(req)) {
     return res.status(401).json({ success: false, error: 'Firma de WhatsApp no válida.' });
   }
 
   const entries = Array.isArray(req.body?.entry) ? req.body.entry : [];
-  const processed: string[] = [];
+  const queued: string[] = [];
 
   for (const entry of entries) {
     const changes = Array.isArray(entry?.changes) ? entry.changes : [];
@@ -279,28 +279,51 @@ app.post('/api/webhooks/whatsapp', chatLimiter, async (req, res) => {
         if (!(await claimWhatsAppInboundMessage(messageId))) continue;
 
         const profileName = String(contacts.find((c: any) => String(c?.wa_id || '') === from)?.profile?.name || '').trim();
-        const result = await processCustomerIntake({
+        const job = await enqueueCustomerIntakeJob({
           message: textBody,
           language: /\b(the|please|hello|hi|book|tour|availability)\b/i.test(textBody) && !/[¿¡áéíóúñ]/i.test(textBody) ? 'en' : 'es',
           sessionId: `wa_${from}`,
           source: 'whatsapp:inbound',
           context: { channel: 'whatsapp', messageId, waId: from },
           customer: { name: profileName, phone: from }
-        });
-
-        await sendWhatsAppMessage({
-          toPhone: from,
-          customerName: profileName || 'Viajero',
-          message: result.customer.reply
-        }).catch((error) => console.warn('No se pudo responder por WhatsApp:', error));
-
-        processed.push(messageId);
+        }, { replyToWhatsApp: from, messageId });
+        queued.push(job.jobId);
       }
     }
   }
 
-  return res.status(200).json({ success: true, processed });
+  // Meta gets a fast acknowledgement; durable Firestore jobs are processed separately.
+  return res.status(200).json({ success: true, queued });
 });
+
+app.post('/api/internal/customer-intake/process', async (req, res) => {
+  const configured = process.env.CUSTOMER_INTAKE_JOB_TOKEN;
+  const authorization = String(req.headers.authorization || '');
+  const provided = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
+  if (!configured || !provided || provided.length !== configured.length ||
+      !crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(configured))) {
+    return res.status(401).json({ success: false, error: 'No autorizado.' });
+  }
+  try {
+    const result = await processPendingCustomerIntakeJobs(Number(req.body?.limit || 10));
+    return res.json({ success: true, ...result });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error?.message || 'No se pudo procesar la cola.' });
+  }
+});
+
+let customerIntakeQueueRunning = false;
+setInterval(async () => {
+  if (customerIntakeQueueRunning) return;
+  customerIntakeQueueRunning = true;
+  try {
+    await processPendingCustomerIntakeJobs(10);
+  } catch (error) {
+    console.warn('Customer Intake queue sweep failed:', error);
+  } finally {
+    customerIntakeQueueRunning = false;
+  }
+}, 5000);
 
 app.get('/api/health', (req, res) => {
   res.json({
