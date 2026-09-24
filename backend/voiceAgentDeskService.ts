@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { askCounterDesk } from './counterDeskService';
 import { rememberTurn } from './memoryService';
+import { getFirestoreDb } from './bookingService';
 
 export type VoiceCallContext = {
   callId: string;
@@ -127,7 +128,7 @@ export async function handleVoiceTurn(input: {
   if (digits === '0' && input.humanTransferUrl && humanNumbers().length > 0) {
     return xml([
       say(language === 'en' ? 'Connecting you with our Agent Desk team.' : 'Le conecto con nuestro equipo del Agent Desk.', language),
-      `<Dial action="${esc(input.humanTransferUrl)}" method="POST"><Number>${esc(process.env.VOICE_HUMAN_NUMBER)}</Number></Dial>`
+      `<Dial timeout="30" answerOnBridge="true" action="${esc(input.humanTransferUrl)}" method="POST">${humanNumbers().map(number => `<Number>${esc(number)}</Number>`).join('')}</Dial>`
     ]);
   }
 
@@ -170,6 +171,15 @@ export async function handleVoiceTurn(input: {
 }
 
 export async function rememberVoiceCallStart(context: VoiceCallContext) {
+  const db = getFirestoreDb();
+  if (db) {
+    await db.collection('voice_call_sessions').doc(context.callId).set({
+      ...context,
+      channel: 'voice',
+      status: 'in_progress',
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  }
   await rememberTurn(`voice_${context.callId}`, {
     role: 'system',
     text: [
@@ -182,8 +192,24 @@ export async function rememberVoiceCallStart(context: VoiceCallContext) {
 }
 
 export async function rememberVoiceCallEnd(callId: string, status: string) {
+  const db = getFirestoreDb();
+  if (db) {
+    await db.collection('voice_call_sessions').doc(callId).set({
+      status,
+      endedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  }
   await rememberTurn(`voice_${callId}`, {
     role: 'system',
     text: `Fin de llamada Agent Desk. Estado: ${status}`
   }, { agentId: 'voice_agent_desk' });
+}
+
+
+export async function getVoiceCallSession(callId: string) {
+  const db = getFirestoreDb();
+  if (!db) return null;
+  const doc = await db.collection('voice_call_sessions').doc(callId).get();
+  return doc.exists ? { callId: doc.id, ...doc.data() } : null;
 }
