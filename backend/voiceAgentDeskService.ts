@@ -201,7 +201,7 @@ export async function rememberVoiceCallEnd(callId: string, status: string) {
     }, { merge: true });
   }
   await rememberTurn(`voice_${callId}`, {
-    role: 'system',
+    role: 'assistant',
     text: `Fin de llamada Agent Desk. Estado: ${status}`
   }, { agentId: 'voice_agent_desk' });
 }
