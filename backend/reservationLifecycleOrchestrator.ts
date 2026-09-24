@@ -12,12 +12,14 @@ type LifecycleResult = {
   message: string;
 };
 
+const CLAIM_STALE_MS = 15 * 60 * 1000;
+
 async function alreadyProcessed(key: string): Promise<boolean> {
   const db = getFirestoreDb();
   if (!db) return false;
   const ref = db.collection('reservation_lifecycle_events').doc(key.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 180));
   const snap = await ref.get();
-  return snap.exists && ['completed', 'processing'].includes(String(snap.data()?.status));
+  return snap.exists && String(snap.data()?.status) === 'completed';
 }
 
 async function claim(key: string, payload: any): Promise<boolean> {
@@ -27,8 +29,17 @@ async function claim(key: string, payload: any): Promise<boolean> {
   try {
     await db.runTransaction(async tx => {
       const snap = await tx.get(ref);
-      if (snap.exists && ['completed', 'processing'].includes(String(snap.data()?.status))) throw new Error('already_claimed');
-      tx.set(ref, { id: ref.id, status: 'processing', claimedAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...payload }, { merge: true });
+      if (snap.exists) {
+        const data = snap.data() || {};
+        const state = String(data.status || '');
+        if (state === 'completed') throw new Error('already_claimed');
+        if (state === 'processing') {
+          const claimedAt = Date.parse(String(data.claimedAt || ''));
+          if (Number.isFinite(claimedAt) && Date.now() - claimedAt < CLAIM_STALE_MS) throw new Error('already_claimed');
+        }
+      }
+      const now = new Date().toISOString();
+      tx.set(ref, { id: ref.id, status: 'processing', claimedAt: now, updatedAt: now, ...payload }, { merge: true });
     });
     return true;
   } catch (e: any) {
@@ -83,7 +94,7 @@ export async function advanceReservationLifecycle(booking: any): Promise<Lifecyc
   }
 
   // 2. Reserva pagada sin orden: crear y despachar orden al proveedor verificado.
-  if (['paid', 'confirmada', 'confirmed'].includes(status) && !booking.serviceOrderId) {
+  if (status === 'paid' && !booking.serviceOrderId) {
     const key = `${bookingId}:provider-dispatch`;
     if (await alreadyProcessed(key)) return { bookingId, from, action: 'provider_dispatch_already_processed', status: 'skipped', message: 'Despacho ya procesado.' };
     if (!await claim(key, { bookingId, transition: 'provider_dispatch' })) return { bookingId, from, action: 'provider_dispatch_claimed', status: 'skipped', message: 'Otro proceso está despachando al proveedor.' };
