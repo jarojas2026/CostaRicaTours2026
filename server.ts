@@ -287,18 +287,21 @@ app.post('/api/webhooks/whatsapp', async (req, res) => {
       for (const message of messages) {
         const messageId = String(message?.id || '').trim();
         const from = String(message?.from || '').replace(/[^0-9]/g, '');
+        const messageType = String(message?.type || 'unknown').trim().toLowerCase();
         const textBody = String(message?.text?.body || '').trim();
-        if (!messageId || !from || !textBody) continue;
+        const mediaOnly = !textBody && ['audio', 'image', 'video', 'document', 'sticker'].includes(messageType);
+        if (!messageId || !from || (!textBody && !mediaOnly)) continue;
+        const intakeMessage = textBody || `El viajero envió un mensaje multimedia de tipo ${messageType}. Se requiere revisión humana del contenido.`,
         if (!(await claimWhatsAppInboundMessage(messageId))) continue;
 
         const profileName = String(contacts.find((c: any) => String(c?.wa_id || '') === from)?.profile?.name || '').trim();
         try {
           const job = await enqueueCustomerIntakeJob({
-            message: textBody,
+            message: intakeMessage,
             language: /\b(the|please|hello|hi|book|tour|availability)\b/i.test(textBody) && !/[¿¡áéíóúñ]/i.test(textBody) ? 'en' : 'es',
             sessionId: `wa_${from}`,
             source: 'whatsapp:inbound',
-            context: { channel: 'whatsapp', messageId, waId: from },
+            context: { channel: 'whatsapp', messageId, waId: from, mediaType: mediaOnly ? messageType : undefined, requiresHumanMediaReview: mediaOnly },
             customer: { name: profileName, phone: from }
           }, { replyToWhatsApp: from, messageId });
           queued.push(job.jobId);
