@@ -53,6 +53,7 @@ export const MASTER_OPERATORS_REGISTRY: Record<string, {
   name: string;
   email: string;
   officialEmail?: string;
+  verified?: boolean;
   phone: string;
   whatsapp: string;
   paypalEmail: string;
@@ -761,7 +762,7 @@ export async function executeAutonomousProviderFallback(
   const fallbackProvider = MASTER_OPERATORS_REGISTRY['alsama-tours-cr'];
 
   const fallbackEmail = getEffectiveProviderEmail(fallbackProvider.officialEmail);
-  if (!fallbackProvider.active || !fallbackProvider.officialEmail || !fallbackEmail) {
+  if (fallbackProvider.verified !== true || !fallbackProvider.active || !fallbackProvider.officialEmail || !fallbackEmail) {
     await sendAdministrativeAlert({
       title: 'Failover de proveedor requiere intervención humana',
       reason: `No existe un canal oficial verificable para reasignar ${bookingId}.`,
@@ -775,7 +776,7 @@ export async function executeAutonomousProviderFallback(
       bookingId,
       newStatus: 'requiere_intervencion',
       providerStatus: 'fallback_unverified',
-      message: 'No se reasignó automáticamente: el proveedor directo no tiene un canal oficial verificable configurado.',
+      message: 'No se reasignó automáticamente: el proveedor directo no está marcado como verificado y no existe un canal operativo aprobado.',
       reassigned: false
     };
   }
