@@ -139,7 +139,7 @@ async function claimEvent(id: string, provider: MailProvider, from: string, subj
       const updatedAt = Date.parse(String(data.updatedAt || data.claimedAt || ''));
       const stale = status === 'processing' && (!Number.isFinite(updatedAt) || Date.now() - updatedAt > 10 * 60 * 1000);
       const retryable = status === 'error' || status === 'needs_retry' || stale;
-      if (!retryable || status === 'completed' || status === 'ignored' || status === 'needs_human_review') return false;
+      if (!retryable) return false;
       tx.set(ref, { status: 'processing', attempts: Number(data.attempts || 0) + 1, claimedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, { merge: true });
       return true;
     }
@@ -295,7 +295,8 @@ async function processProviderResponseEmail(mail: MailMessage) {
     await sendEmail({
       to: String(customerEmail),
       subject: action === 'confirm' ? 'Reserva confirmada • Costa Rica Tours' : 'Actualización de tu reserva • Costa Rica Tours',
-      text: result.message
+      text: result.message,
+      html: `<p>${result.message.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</p>`
     }).catch(() => undefined);
   }
   await markRead(mail);
