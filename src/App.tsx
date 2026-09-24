@@ -200,11 +200,11 @@ export default function App() {
       const anchor = target?.closest('a') as HTMLAnchorElement | null;
       if (!anchor) return;
       const href = anchor.getAttribute('href') || '';
-      if (!/wa\\.me\\/50687959148/i.test(href)) return;
+      if (!/wa\.me\/50687959148/i.test(href)) return;
       if (anchor.dataset.humanHandoff === 'true') return;
       event.preventDefault();
       event.stopPropagation();
-      const message = decodeURIComponent((href.split('?text=')[1] || '').replace(/\\+/g, ' ')) ||
+      const message = decodeURIComponent((href.split('?text=')[1] || '').replace(/\+/g, ' ')) ||
         (language === 'es' ? 'Quiero información sobre Costa Rica Tours.' : 'I would like information about Costa Rica Tours.');
       requestCustomerIntake({
         message,
