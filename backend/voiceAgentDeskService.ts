@@ -76,8 +76,7 @@ function configuredOrThrow() {
 
 export function verifyVoiceSignature(url: string, params: Record<string, string>, signature?: string) {
   const authToken = process.env.VOICE_PROVIDER_AUTH_TOKEN;
-  if (!authToken) return true;
-  if (!signature) return false;
+  if (!authToken || !signature) return false;
   const sorted = Object.keys(params).sort();
   const payload = url + sorted.map(key => key + params[key]).join('');
   const expected = crypto.createHmac('sha1', authToken).update(payload).digest('base64');
@@ -120,6 +119,7 @@ export async function handleVoiceTurn(input: {
   room?: string;
   responseUrl: string;
   humanTransferUrl?: string;
+  from?: string;
 }) {
   configuredOrThrow();
   const language = input.language === 'en' ? 'en' : 'es';
@@ -147,6 +147,24 @@ export async function handleVoiceTurn(input: {
     name: input.hotelName ? `Viajero en ${input.hotelName}` : undefined
   });
   const sessionId = identity.sessionId;
+
+  // Conflicting traveler identities are never auto-merged during a voice interaction.
+  if (identity.identityConflict) {
+    const transferAvailable = Boolean(input.humanTransferUrl && humanNumbers().length > 0);
+    const message = language === 'en'
+      ? 'For your security, I need a human agent to verify your traveler information before continuing.'
+      : 'Por seguridad, necesito que un agente humano verifique sus datos de viajero antes de continuar.';
+    return xml([
+      say(message, language),
+      ...(transferAvailable
+        ? [
+            say(language === 'en' ? 'Please hold while I connect you.' : 'Espere un momento mientras le conecto.', language),
+            `<Dial timeout="30" answerOnBridge="true" action="${esc(input.humanTransferUrl!)}" method="POST">${humanNumbers().map(number => `<Number>${esc(number)}</Number>`).join('')}</Dial>`
+          ]
+        : [gather(input.responseUrl, language)])
+    ]);
+  }
+
   const contextualMessage = [
     textInput || `DTMF request: ${digits}`,
     input.hotelName ? `Hotel: ${input.hotelName}` : '',
@@ -159,6 +177,7 @@ export async function handleVoiceTurn(input: {
     language,
     context: {
       channel: 'voice',
+      travelerIdentityId: identity.canonicalId,
       callId: input.callId,
       hotelId: input.hotelId,
       hotelName: input.hotelName,
@@ -169,6 +188,9 @@ export async function handleVoiceTurn(input: {
   const spoken = result.reply || (language === 'en'
     ? 'I can continue helping you. Please tell me what you would like to arrange.'
     : 'Puedo seguir ayudándole. Dígame qué desea organizar.');
+
+  await rememberTurn(sessionId, { role: 'user', text: contextualMessage }, { agentId: 'voice_agent_desk' });
+  await rememberTurn(sessionId, { role: 'assistant', text: spoken }, { agentId: 'voice_agent_desk' });
 
   return xml([
     say(spoken.slice(0, 4000), language),
