@@ -398,7 +398,11 @@ Reply ONLY with "YES" or "NO".`;
       currentContents.push(response.candidates?.[0]?.content || { role: 'model', parts: [] });
       const functionParts: any[] = [];
 
-      const mutationTools = new Set(['create_reservation', 'build_trip_journey', 'adapt_trip_journey']);
+      const mutationTools = new Set(
+        Object.entries((await import('./agentTools')).AGENT_TOOL_REGISTRY)
+          .filter(([, tool]) => tool.sideEffect)
+          .map(([name]) => name)
+      );
       for (const call of calls.slice(0, 6)) {
         const toolName = call.name || 'unknown_tool';
         try {
