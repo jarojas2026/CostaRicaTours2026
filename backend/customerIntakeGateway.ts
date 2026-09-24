@@ -200,7 +200,29 @@ export async function processCustomerIntakeJob(jobId: string): Promise<any> {
   if (!claim) return { success: true, skipped: true, jobId };
 
   try {
-    const result = await processCustomerIntake(claim.payload || {});
+    let result: any;
+    if (claim.result?.customerReply) {
+      result = {
+        success: true,
+        intakeId: claim.result.intakeId,
+        sessionId: claim.result.sessionId,
+        decision: claim.result.decision,
+        customer: { reply: claim.result.customerReply },
+        operatorNotification: claim.result.operatorNotification
+      };
+    } else {
+      result = await processCustomerIntake(claim.payload || {});
+      await ref.set({
+        result: {
+          intakeId: result.intakeId,
+          sessionId: result.sessionId,
+          decision: result.decision,
+          operatorNotification: result.operatorNotification,
+          customerReply: result.customer.reply
+        },
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
     if (claim.replyToWhatsApp) {
       await sendWhatsAppMessage({
         toPhone: claim.replyToWhatsApp,
@@ -210,12 +232,6 @@ export async function processCustomerIntakeJob(jobId: string): Promise<any> {
     }
     await ref.set({
       status: 'completed',
-      result: {
-        intakeId: result.intakeId,
-        sessionId: result.sessionId,
-        decision: result.decision,
-        operatorNotification: result.operatorNotification
-      },
       completedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }, { merge: true });
