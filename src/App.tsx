@@ -33,8 +33,9 @@ import { BottomNav } from './components/BottomNav';
 import { SEOHead } from './components/SEOHead';
 import { OfflineBanner } from './components/OfflineBanner';
 import { DigitalCounterWidget } from './components/DigitalCounterWidget';
-import { Home, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Home, ChevronRight, ArrowLeft, Bot, MessageCircle, X, Loader2 } from 'lucide-react';
 import { AdminRouteGuard } from './components/AdminRouteGuard';
+import { requestCustomerIntake } from './utils/customerIntake';
 
 // Code-splitting via React.lazy to reduce initial JS bundle size
 const ItineraryPlanner = lazy(() => import('./components/ItineraryPlanner').then(m => ({ default: m.ItineraryPlanner })));
@@ -112,6 +113,13 @@ export default function App() {
   const [isFormsManagerModalOpen, setIsFormsManagerModalOpen] = useState(false);
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
+  const [intakeOpen, setIntakeOpen] = useState(false);
+  const [intakeLoading, setIntakeLoading] = useState(false);
+  const [intakeReply, setIntakeReply] = useState('');
+  const [intakeHandoffUrl, setIntakeHandoffUrl] = useState<string | undefined>();
+  const [intakeEscalated, setIntakeEscalated] = useState(false);
+  const [intakeId, setIntakeId] = useState('');
+  const [intakeMessage, setIntakeMessage] = useState('');
 
   // Check URL parameters for successful payment redirect (Stripe/PayPal)
   useEffect(() => {
@@ -148,6 +156,68 @@ export default function App() {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [language]);
+
+  useEffect(() => {
+    const handleCustomerIntake = async (event: Event) => {
+      const detail = (event as CustomEvent).detail || {};
+      const message = String(detail.message || '').trim();
+      if (!message) return;
+      setIntakeOpen(true);
+      setIntakeLoading(true);
+      setIntakeReply('');
+      setIntakeHandoffUrl(undefined);
+      setIntakeEscalated(false);
+      try {
+        const sessionId = detail.sessionId || localStorage.getItem('crt_customer_session') || `web_${Math.random().toString(36).slice(2)}`;
+        localStorage.setItem('crt_customer_session', sessionId);
+        const response = await fetch('/api/customer-intake', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...detail,
+            message,
+            language,
+            sessionId,
+            source: detail.source || `web:${location.pathname}`
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data?.error || 'No se pudo procesar la solicitud.');
+        setIntakeReply(data.customer?.reply || 'La IA recibió tu solicitud y está procesando la información.');
+        setIntakeEscalated(Boolean(data.decision?.escalated));
+        setIntakeHandoffUrl(data.customer?.handoffUrl);
+        setIntakeId(data.intakeId || '');
+      } catch (error: any) {
+        setIntakeReply(error?.message || (language === 'es' ? 'No pudimos procesar tu solicitud. Intenta nuevamente.' : 'We could not process your request. Please try again.'));
+        setIntakeEscalated(true);
+      } finally {
+        setIntakeLoading(false);
+      }
+    };
+    const handleBusinessWhatsAppClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const anchor = target?.closest('a') as HTMLAnchorElement | null;
+      if (!anchor) return;
+      const href = anchor.getAttribute('href') || '';
+      if (!/wa\\.me\\/50687959148/i.test(href)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const message = decodeURIComponent((href.split('?text=')[1] || '').replace(/\\+/g, ' ')) ||
+        (language === 'es' ? 'Quiero información sobre Costa Rica Tours.' : 'I would like information about Costa Rica Tours.');
+      requestCustomerIntake({
+        message,
+        language,
+        source: `whatsapp-click:${location.pathname}`,
+        context: { originalHref: href, page: location.pathname }
+      });
+    };
+    window.addEventListener('customer-intake-request', handleCustomerIntake as EventListener);
+    document.addEventListener('click', handleBusinessWhatsAppClick, true);
+    return () => {
+      window.removeEventListener('customer-intake-request', handleCustomerIntake as EventListener);
+      document.removeEventListener('click', handleBusinessWhatsAppClick, true);
+    };
+  }, [language, location.pathname]);
 
   useEffect(() => {
     const handleOpenAdmin = () => setIsAdminDashboardOpen(true);
@@ -247,6 +317,30 @@ export default function App() {
 
   return (
     <div className="min-h-screen max-h-screen overflow-y-auto bg-[#041711] text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950 relative pb-16 lg:pb-0">
+      {intakeOpen && (
+        <div className="fixed inset-0 z-[10050] bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-label={language === 'es' ? 'Atención inteligente' : 'AI customer care'}>
+          <div className="w-full max-w-xl rounded-3xl border border-emerald-400/25 bg-[#041711] shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-emerald-500/15">
+              <div className="flex items-center gap-3"><span className="w-10 h-10 rounded-2xl bg-emerald-400/15 flex items-center justify-center"><Bot className="text-emerald-300" size={21}/></span><div><div className="text-[10px] uppercase tracking-widest font-black text-emerald-300">Costa Rica Tours AI</div><div className="font-black text-white">{language === 'es' ? 'Tu solicitud está siendo atendida' : 'Your request is being handled'}</div></div></div>
+              <button type="button" onClick={() => setIntakeOpen(false)} className="w-9 h-9 rounded-full bg-white/5 text-stone-300 hover:bg-white/10 flex items-center justify-center"><X size={18}/></button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="rounded-2xl bg-black/20 border border-white/5 p-4 text-xs text-stone-400"><span className="font-bold text-stone-200">{language === 'es' ? 'Solicitud:' : 'Request:'}</span> {intakeMessage || (language === 'es' ? 'Solicitud recibida' : 'Request received')}</div>
+              <div className="rounded-2xl bg-emerald-400/5 border border-emerald-400/15 p-5 min-h-[100px]">
+                {intakeLoading ? <div className="flex items-center gap-3 text-emerald-200 text-sm"><Loader2 className="animate-spin" size={18}/>{language === 'es' ? 'Los agentes están analizando tu solicitud, disponibilidad y contexto...' : 'Our agents are analyzing your request, availability and context...'}</div> : <p className="text-sm leading-relaxed text-stone-100 whitespace-pre-wrap">{intakeReply}</p>}
+              </div>
+              {!intakeLoading && intakeEscalated && (
+                <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-xs text-amber-100">{language === 'es' ? 'La IA determinó que esta solicitud necesita revisión humana. Ya se registró y notificó al equipo.' : 'AI determined that this request needs human review. It has been logged and the team notified.'}</div>
+              )}
+              {!intakeLoading && intakeHandoffUrl && (
+                <a href={intakeHandoffUrl} target="_blank" rel="noreferrer" className="w-full rounded-2xl bg-emerald-400 text-stone-950 font-black py-3 flex items-center justify-center gap-2"><MessageCircle size={17}/>{language === 'es' ? 'Continuar con un asesor por WhatsApp' : 'Continue with a human advisor on WhatsApp'}</a>
+              )}
+              {!intakeLoading && intakeId && <div className="text-[10px] text-stone-500 text-center">ID {intakeId}</div>}
+            </div>
+          </div>
+        </div>
+      )}
+
       <SEOHead language={language} />
       <OfflineBanner language={language} />
       <AmbientBackground />
