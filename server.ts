@@ -239,10 +239,23 @@ async function claimWhatsAppInboundMessage(messageId: string): Promise<boolean> 
   const ref = db.collection('whatsapp_inbound_events').doc(id.replace(/[^A-Za-z0-9_-]/g, '_'));
   return db.runTransaction(async (tx: any) => {
     const snapshot = await tx.get(ref);
-    if (snapshot.exists) return false;
-    tx.set(ref, { messageId: id, receivedAt: new Date().toISOString(), status: 'claimed' });
+    if (snapshot.exists) {
+      const data = snapshot.data() || {};
+      const claimedAt = Date.parse(String(data.claimedAt || data.receivedAt || ''));
+      const stale = Number.isFinite(claimedAt) && Date.now() - claimedAt > 10 * 60 * 1000;
+      if (!stale) return false;
+    }
+    tx.set(ref, { messageId: id, receivedAt: new Date().toISOString(), claimedAt: new Date().toISOString(), status: 'claimed' }, { merge: true });
     return true;
   });
+}
+
+async function releaseWhatsAppInboundMessage(messageId: string): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  const id = String(messageId || '').trim().slice(0, 180);
+  if (!id) return;
+  await db.collection('whatsapp_inbound_events').doc(id.replace(/[^A-Za-z0-9_-]/g, '_')).delete().catch(() => {});
 }
 
 app.get('/api/webhooks/whatsapp', (req, res) => {
