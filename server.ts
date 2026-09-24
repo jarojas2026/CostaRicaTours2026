@@ -292,15 +292,20 @@ app.post('/api/webhooks/whatsapp', async (req, res) => {
         if (!(await claimWhatsAppInboundMessage(messageId))) continue;
 
         const profileName = String(contacts.find((c: any) => String(c?.wa_id || '') === from)?.profile?.name || '').trim();
-        const job = await enqueueCustomerIntakeJob({
-          message: textBody,
-          language: /\b(the|please|hello|hi|book|tour|availability)\b/i.test(textBody) && !/[¿¡áéíóúñ]/i.test(textBody) ? 'en' : 'es',
-          sessionId: `wa_${from}`,
-          source: 'whatsapp:inbound',
-          context: { channel: 'whatsapp', messageId, waId: from },
-          customer: { name: profileName, phone: from }
-        }, { replyToWhatsApp: from, messageId });
-        queued.push(job.jobId);
+        try {
+          const job = await enqueueCustomerIntakeJob({
+            message: textBody,
+            language: /\b(the|please|hello|hi|book|tour|availability)\b/i.test(textBody) && !/[¿¡áéíóúñ]/i.test(textBody) ? 'en' : 'es',
+            sessionId: `wa_${from}`,
+            source: 'whatsapp:inbound',
+            context: { channel: 'whatsapp', messageId, waId: from },
+            customer: { name: profileName, phone: from }
+          }, { replyToWhatsApp: from, messageId });
+          queued.push(job.jobId);
+        } catch (error) {
+          await releaseWhatsAppInboundMessage(messageId);
+          throw error;
+        }
       }
     }
   }
