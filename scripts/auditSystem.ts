@@ -71,7 +71,7 @@ if (/setInterval\(async \(\) =>[\\s\\S]*processPendingCustomerIntakeJobs/.test(s
 }
 
 const envExample = read('.env.example');
-for (const key of ['AGENT_INTERNAL_TOKEN', 'CUSTOMER_INTAKE_JOB_TOKEN', 'WHATSAPP_APP_SECRET', 'WHATSAPP_WEBHOOK_VERIFY_TOKEN']) {
+for (const key of ['AGENT_INTERNAL_TOKEN', 'CUSTOMER_INTAKE_JOB_TOKEN', 'WHATSAPP_APP_SECRET', 'WHATSAPP_WEBHOOK_VERIFY_TOKEN', 'VOICE_PROVIDER_AUTH_TOKEN']) {
   if (!envExample.includes(key)) add('HIGH', 'ENV-001', `${key} is not documented in .env.example.`);
 }
 
