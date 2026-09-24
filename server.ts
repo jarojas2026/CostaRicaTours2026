@@ -291,7 +291,7 @@ app.post('/api/webhooks/whatsapp', async (req, res) => {
         const textBody = String(message?.text?.body || '').trim();
         const mediaOnly = !textBody && ['audio', 'image', 'video', 'document', 'sticker'].includes(messageType);
         if (!messageId || !from || (!textBody && !mediaOnly)) continue;
-        const intakeMessage = textBody || `El viajero envió un mensaje multimedia de tipo ${messageType}. Se requiere revisión humana del contenido.`,
+        const intakeMessage = textBody || `El viajero envió un mensaje multimedia de tipo ${messageType}. Se requiere revisión humana del contenido.`;
         if (!(await claimWhatsAppInboundMessage(messageId))) continue;
 
         const profileName = String(contacts.find((c: any) => String(c?.wa_id || '') === from)?.profile?.name || '').trim();
