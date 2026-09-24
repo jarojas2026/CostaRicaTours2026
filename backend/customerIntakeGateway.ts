@@ -1,5 +1,6 @@
 import { runTriage, processChatInquiry } from './aiAssistantService';
 import { sendEmail, sendWhatsAppMessage } from './notificationService';
+import { rememberTurn } from './memoryService';
 
 export interface CustomerIntakePayload {
   message?: string;
@@ -52,6 +53,20 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
   const assistant = await processChatInquiry(message, language, [], 'auto', sessionId);
   const intakeId = `INT-${new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
   const reply = clean(assistant?.reply || 'Recibimos tu solicitud y estamos procesándola.', 8000);
+
+  // Persistencia omnicanal: web, WhatsApp y voz pueden continuar el mismo contexto.
+  try {
+    await rememberTurn(sessionId, { role: 'user', text: message, agentId: 'customer_intake_gateway' }, {
+      agentId: 'customer_intake_gateway',
+      activeGoal: intent
+    });
+    await rememberTurn(sessionId, { role: 'assistant', text: reply, agentId: assistant?.agentId || 'concierge' }, {
+      agentId: assistant?.agentId || 'concierge',
+      decision: escalation.escalated ? `Escalación humana: ${escalation.reason}` : 'Solicitud procesada por IA'
+    });
+  } catch (memoryError) {
+    console.warn('No se pudo persistir la memoria de Customer Intake:', memoryError);
+  }
 
   const ownerSummary = [
     '🧠 NUEVA SOLICITUD PROCESADA POR IA — Costa Rica Tours',
