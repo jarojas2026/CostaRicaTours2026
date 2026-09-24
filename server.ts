@@ -1646,7 +1646,7 @@ app.post(['/webhook/evaluar-antifraude', '/webhook/antifraude-evaluacion', '/api
 });
 
 // 10. Operaciones de Terreno y Despacho a Guías (100% nativo)
-app.post(['/webhook/panel-control-ops', '/api/ops/action'], async (req, res) => {
+app.post(['/webhook/panel-control-ops', '/api/ops/action'], requireAdmin, async (req, res) => {
   try {
     const result = await executeAIOpsAction(req.body);
     res.json(result);
@@ -2256,7 +2256,7 @@ app.get('/api/agent/tools/functions', async (req, res) => {
   }
 });
 
-// Endpoints de Machine Learning y Recomendación Inteligente (Sin N8N)
+// Endpoints de Machine Learning y Recomendación Inteligente (motor nativo)
 app.post('/api/ml/recommend', async (req, res) => {
   try {
     const { mlRecommendTours } = await import('./backend/nativeMlEngine');
@@ -2687,7 +2687,7 @@ app.post('/api/agent/tools/generate_custom_itinerary', async (req, res) => {
 });
 
 // Tool 4: Coordinación Autodependiente de Proveedores (ReAct Tool)
-app.post(['/api/agent/tools/coordinate_provider_status', '/api/agent/coordinate-provider'], async (req, res) => {
+app.post(['/api/agent/tools/coordinate_provider_status', '/api/agent/coordinate-provider'], requireAgentTool, async (req, res) => {
   try {
     const { booking_id, bookingId, action, guide_name, guideName, vehicle_plate, vehiclePlate, proposed_time, proposedTime, notes, provider_id, providerId } = req.body || {};
     const bId = booking_id || bookingId;
@@ -2720,7 +2720,7 @@ app.post(['/api/agent/tools/coordinate_provider_status', '/api/agent/coordinate-
 });
 
 // Tool 5: Verificación Autónoma de Comprobante SINPE Móvil
-app.post(['/api/agent/tools/verify_sinpe_payment', '/api/agent/verify-sinpe'], async (req, res) => {
+app.post(['/api/agent/tools/verify_sinpe_payment', '/api/agent/verify-sinpe'], requireAgentTool, async (req, res) => {
   try {
     const { booking_id, bookingId, reference_number, numeroComprobante, amount_crc, montoCRC, raw_sms_text, rawSmsText, bank } = req.body || {};
     const bId = booking_id || bookingId;
@@ -2745,7 +2745,7 @@ app.post(['/api/agent/tools/verify_sinpe_payment', '/api/agent/verify-sinpe'], a
 });
 
 // Tool Manifest: Registrador de capacidades para agentes y frameworks 2026
-app.get('/api/agent/tools/manifest', (req, res) => {
+app.get('/api/agent/tools/manifest', requireAgentTool, (req, res) => {
   res.json({
     agent_name: 'Lumina - Costa Rica Tours Autonomous Booking Agent',
     version: '2026.1.0',
