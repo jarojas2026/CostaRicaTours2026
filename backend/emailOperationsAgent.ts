@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import { GoogleGenAI } from '@google/genai';
-import { getFirestoreDb } from './bookingService';
+import { getFirestoreDb, findBookingByCodeOrEmail } from './bookingService';
+import { handleProviderAction, REGISTERED_PROVIDERS } from './providerCommunicationService';
 import { processChatInquiry, runTriage } from './aiAssistantService';
 import { resolveTravelerIdentity } from './travelerIdentityService';
 import { rememberTurn } from './memoryService';
@@ -184,7 +185,7 @@ async function sendGmailReply(client: any, mail: MailMessage, text: string) {
 }
 
 async function sendOutlookReply(token: string, mail: MailMessage, text: string) {
-  const mailbox = encodeURIComponent(process.env.OUTLOOK_MAILBOX_USER || 'me');
+  const mailbox = encodeURIComponent(process.env.OUTLOOK_MAILBOX_USER || '');
   const id = encodeURIComponent(mail.id);
   const response = await fetch(`https://graph.microsoft.com/v1.0/users/${mailbox}/messages/${id}/reply`, {
     method: 'POST',
@@ -220,7 +221,7 @@ async function listGmailMessages(): Promise<MailMessage[]> {
 
 async function listOutlookMessages(): Promise<MailMessage[]> {
   const token = await outlookAccessToken();
-  if (!token) return [];
+  if (!token || !process.env.OUTLOOK_MAILBOX_USER) return [];
   const mailbox = encodeURIComponent(process.env.OUTLOOK_MAILBOX_USER || 'me');
   const url = `https://graph.microsoft.com/v1.0/users/${mailbox}/mailFolders/inbox/messages?$filter=isRead%20eq%20false&$top=50&$orderby=receivedDateTime%20desc&$select=id,conversationId,subject,body,from,toRecipients,receivedDateTime,hasAttachments`;
   const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
@@ -253,6 +254,58 @@ async function markRead(mail: MailMessage) {
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ isRead: true })
   });
+}
+
+async function processProviderResponseEmail(mail: MailMessage) {
+  const providers = new Set(REGISTERED_PROVIDERS.flatMap((p: any) => [p.officialEmail, p.email]).filter(Boolean).map((x: any) => String(x).toLowerCase()));
+  if (!providers.has(mail.from.toLowerCase())) {
+    await recordEvent(mail, { status: 'needs_human_review', reason: 'Remitente no coincide con un proveedor operativo conocido.' });
+    return { status: 'needs_human_review' };
+  }
+  const source = `${mail.subject}\n${mail.text}`;
+  const orderId = source.match(/OS-CR-[A-Z0-9-]+/i)?.[0]?.toUpperCase();
+  if (!orderId) {
+    await recordEvent(mail, { status: 'needs_human_review', reason: 'No se encontró una orden operacional verificable.' });
+    return { status: 'needs_human_review' };
+  }
+  let action: 'confirm' | 'reject' | 'delay' | 'no_show' | 'complete' | null = null;
+  if (/no hay cupo|sin disponibilidad|no podemos|rechaz|declin|not available|unavailable/i.test(source)) action = 'reject';
+  else if (/no show|no-show|no se presentó/i.test(source)) action = 'no_show';
+  else if (/servicio completado|completed|completado/i.test(source)) action = 'complete';
+  else if (/demora|delay|más tiempo|more time|pending|en revisión/i.test(source)) action = 'delay';
+  else if (/confirmad|confirm|aceptad|cupo garant|we can accommodate|available/i.test(source)) action = 'confirm';
+  if (!action) {
+    await recordEvent(mail, { status: 'needs_human_review', orderId, reason: 'Respuesta de proveedor ambigua.' });
+    return { status: 'needs_human_review', orderId };
+  }
+  const result = await handleProviderAction({ orderId, action, notes: clean(mail.text, 1500), operatorContact: mail.from });
+  if (!result.success) throw new Error(result.message);
+  const booking = await findBookingByCodeOrEmail(result.order.bookingId).catch(() => null);
+  const customerEmail = booking?.customerEmail || booking?.customer?.email;
+  if (customerEmail && isEmail(String(customerEmail))) {
+    await sendEmail({
+      to: String(customerEmail),
+      subject: action === 'confirm' ? 'Reserva confirmada • Costa Rica Tours' : 'Actualización de tu reserva • Costa Rica Tours',
+      text: result.message
+    }).catch(() => undefined);
+  }
+  await markRead(mail);
+  await recordEvent(mail, {
+    status: 'completed',
+    orderId,
+    providerAction: action,
+    confidence: .9,
+    autonomous: true,
+    resultMessage: result.message,
+    completedAt: new Date().toISOString()
+  });
+  await emitOperationalEvent({
+    type: 'provider.response.email.autonomous_completed',
+    source: 'email_operations_agent',
+    conversationId: result.order.bookingId,
+    payload: { provider: mail.provider, messageId: mail.id, from: mail.from, orderId, action }
+  }).catch(() => undefined);
+  return { status: 'completed', orderId, action };
 }
 
 async function processCustomerEmail(mail: MailMessage, classification: Classification) {
@@ -345,8 +398,8 @@ export async function processEmailOperationsOnce() {
       }
 
       if (classification.kind === 'provider_response') {
-        await recordEvent(mail, { status: 'routed_to_provider_inbox', classification });
-        results.push({ provider: mail.provider, id: mail.id, status: 'routed_to_provider_inbox' });
+        const result = await processProviderResponseEmail(mail);
+        results.push({ provider: mail.provider, id: mail.id, ...result });
         continue;
       }
 
