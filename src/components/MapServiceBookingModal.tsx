@@ -586,7 +586,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                       {formatCurrency(calculatedTotalUSD, currency)}
                     </span>
                     <span className="text-xs font-mono text-emerald-400/80">
-                      (₡{calculatedTotalCRC.toLocaleString()})
+                      (₡{(calculatedTotalCRC ?? 0).toLocaleString()})
                     </span>
                   </div>
                 </div>
