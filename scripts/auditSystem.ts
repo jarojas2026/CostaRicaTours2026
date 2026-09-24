@@ -30,6 +30,7 @@ if (missingExecutors.length) add('CRITICAL', 'AI-TOOLS-003', `Tools in registry 
 if (unique(declarationNames).length !== declarationNames.length) add('HIGH', 'AI-TOOLS-004', 'Duplicate Gemini function declaration names detected.');
 
 const unsafeContact = ['8888', '7777'].join('-');
+const unsafeContactCompact = '88887777';
 
 const providerService = read('backend/providerCommunicationService.ts');
 const nativeWorkflows = read('backend/nativeWorkflows.ts');
@@ -50,10 +51,18 @@ for (const relative of ['backend', 'src', 'scripts', 'public', 'docs']) {
     if (!entry.isFile() || !/\.(ts|tsx|js|jsx|md)$/.test(entry.name)) continue;
     const file = path.join(dir, entry.name);
     const source = fs.readFileSync(file, 'utf8');
-    if (/n8n/i.test(source)) add('HIGH', 'AUTOMATION-001', `n8n reference remains in ${path.relative(root, file)}.`);
+    if (path.relative(root, file) !== 'scripts/auditSystem.ts' && /n8n/i.test(source)) add('HIGH', 'AUTOMATION-001', `n8n reference remains in ${path.relative(root, file)}.`);
     if (/react-example/i.test(source)) add('MEDIUM', 'META-001', `Legacy project name react-example remains in ${path.relative(root, file)}.`);
-    if (/(?:8888)[-](?:7777)/.test(source)) add('HIGH', 'CONTACT-001', `Hardcoded private/emergency contact ${unsafeContact} remains in ${path.relative(root, file)}.`);
+    if (/(?:8888)[-](?:7777)|88887777/.test(source)) add('HIGH', 'CONTACT-001', `Hardcoded private/emergency contact ${unsafeContact} remains in ${path.relative(root, file)}.`);
   }
+}
+
+const voiceService = read('backend/voiceAgentDeskService.ts');
+if (/if \(!authToken\) return true/.test(voiceService) || /if \(!authToken\)\\s*\\{\\s*return true/.test(voiceService)) {
+  add('CRITICAL', 'VOICE-SEC-001', 'Voice webhook signature verification fails open when the provider token is missing.');
+}
+if (/verifyVoiceSignature\(/.test(server) && !/VOICE_PROVIDER_AUTH_TOKEN/.test(voiceService)) {
+  add('HIGH', 'VOICE-SEC-002', 'Voice webhook route exists but its signature configuration is not visible in the voice service.');
 }
 
 const server = read('server.ts');
