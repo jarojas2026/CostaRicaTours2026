@@ -163,6 +163,7 @@ export default function App() {
       const message = String(detail.message || '').trim();
       if (!message) return;
       setIntakeOpen(true);
+      setIntakeMessage(message);
       setIntakeLoading(true);
       setIntakeReply('');
       setIntakeHandoffUrl(undefined);
@@ -200,6 +201,7 @@ export default function App() {
       if (!anchor) return;
       const href = anchor.getAttribute('href') || '';
       if (!/wa\\.me\\/50687959148/i.test(href)) return;
+      if (anchor.dataset.humanHandoff === 'true') return;
       event.preventDefault();
       event.stopPropagation();
       const message = decodeURIComponent((href.split('?text=')[1] || '').replace(/\\+/g, ' ')) ||
@@ -333,7 +335,7 @@ export default function App() {
                 <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-xs text-amber-100">{language === 'es' ? 'La IA determinó que esta solicitud necesita revisión humana. Ya se registró y notificó al equipo.' : 'AI determined that this request needs human review. It has been logged and the team notified.'}</div>
               )}
               {!intakeLoading && intakeHandoffUrl && (
-                <a href={intakeHandoffUrl} target="_blank" rel="noreferrer" className="w-full rounded-2xl bg-emerald-400 text-stone-950 font-black py-3 flex items-center justify-center gap-2"><MessageCircle size={17}/>{language === 'es' ? 'Continuar con un asesor por WhatsApp' : 'Continue with a human advisor on WhatsApp'}</a>
+                <a data-human-handoff="true" href={intakeHandoffUrl} target="_blank" rel="noreferrer" className="w-full rounded-2xl bg-emerald-400 text-stone-950 font-black py-3 flex items-center justify-center gap-2"><MessageCircle size={17}/>{language === 'es' ? 'Continuar con un asesor por WhatsApp' : 'Continue with a human advisor on WhatsApp'}</a>
               )}
               {!intakeLoading && intakeId && <div className="text-[10px] text-stone-500 text-center">ID {intakeId}</div>}
             </div>
