@@ -29,6 +29,8 @@ if (undeclared.length) add('HIGH', 'AI-TOOLS-002', `Gemini declarations not pres
 if (missingExecutors.length) add('CRITICAL', 'AI-TOOLS-003', `Tools in registry without executor case: ${missingExecutors.join(', ')}`);
 if (unique(declarationNames).length !== declarationNames.length) add('HIGH', 'AI-TOOLS-004', 'Duplicate Gemini function declaration names detected.');
 
+const unsafeContact = ['8888', '7777'].join('-');
+
 const providerService = read('backend/providerCommunicationService.ts');
 const nativeWorkflows = read('backend/nativeWorkflows.ts');
 if (/return match \|\| REGISTERED_PROVIDERS\[0\]/.test(providerService)) {
@@ -49,8 +51,6 @@ for (const [relative, label] of [
   const source = read(relative);
   if (source.includes('8888-7777')) add('HIGH', 'CONTACT-001', `Unconfigured private/emergency contact ${unsafeContact} remains in ${label}.`);
 }
-
-const unsafeContact = ['8888', '7777'].join('-');
 
 for (const relative of ['backend', 'src', 'scripts', 'public', 'docs']) {
   const dir = path.join(root, relative);
