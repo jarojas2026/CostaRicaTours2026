@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Language, Tour } from '../types';
 import { getLangText } from '../utils/i18n';
 import { useTours } from '../contexts/ToursContext';
+import { requestCustomerIntake } from '../utils/customerIntake';
 
 export interface QuickAction {
   label: string;
@@ -353,8 +354,12 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
       : (language === 'es'
           ? 'Hola, quiero información y consultar disponibilidad sobre un tour en Costa Rica.'
           : 'Hello, I would like information and availability for a tour in Costa Rica.'));
-    const text = encodeURIComponent(contextualMessage);
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${text}`, '_blank', 'noopener,noreferrer');
+    requestCustomerIntake({
+      message: contextualMessage,
+      language,
+      source: 'floating-whatsapp',
+      context: { tourId: mentionedTour?.id, page: window.location.pathname }
+    });
   };
 
   const handleAction = (action: string, data?: unknown) => {

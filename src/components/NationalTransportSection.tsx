@@ -1,3 +1,4 @@
+import { requestCustomerIntake } from '../utils/customerIntake';
 import React, { useState } from 'react';
 import { 
   Bus, Navigation, ArrowRight, ExternalLink, MessageCircle, Info, 
@@ -461,7 +462,14 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                                     ? `Hola Costa Rica Tours, deseo reservar traslado con Alsama Tours CR: ${route.origin.es} ➔ ${route.destination.es} ($${route.price1to5USD} USD 1-5 pax / $${route.price6to10USD} USD 6-10 pax).`
                                     : `Hello Costa Rica Tours, I want to book transfer with Alsama Tours CR: ${route.origin.en} ➔ ${route.destination.en} ($${route.price1to5USD} USD 1-5 pax / $${route.price6to10USD} USD 6-10 pax).`
                                 )}`;
-                                window.open(targetUrl, '_blank');
+                                requestCustomerIntake({
+                                  message: language === 'es'
+                                    ? `Hola Costa Rica Tours, deseo reservar traslado con Alsama Tours CR: ${route.origin.es} ➔ ${route.destination.es}.`
+                                    : `Hello Costa Rica Tours, I want to book transfer with Alsama Tours CR: ${route.origin.en} ➔ ${route.destination.en}.`,
+                                  language,
+                                  source: `national-transport:${route.id}`,
+                                  context: { routeId: route.id, page: window.location.pathname, originalHref: targetUrl }
+                                });
                               }}
                               className="bg-teal-600 hover:bg-teal-500 text-stone-900 font-bold text-[10px] uppercase px-3 py-1.5 rounded-lg transition-all"
                             >

@@ -1,3 +1,4 @@
+import { requestCustomerIntake } from '../utils/customerIntake';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Check, ChevronRight, ChevronLeft, Sparkles, Send, Plane, Bus, 
@@ -272,18 +273,12 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
       navigator.clipboard.writeText(message).catch(() => {});
     }
 
-    // Safely trigger external link navigation without about:blank sandboxing issues
-    try {
-      const link = document.createElement('a');
-      link.href = url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch {
-      window.location.href = url;
-    }
+    requestCustomerIntake({
+      message,
+      language,
+      source: 'custom-trip-funnel',
+      context: { page: window.location.pathname, originalHref: url }
+    });
   };
 
   const handleCopyQuote = () => {

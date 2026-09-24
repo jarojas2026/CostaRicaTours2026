@@ -1,3 +1,4 @@
+import { requestCustomerIntake } from '../utils/customerIntake';
 import React, { useState, useRef, useEffect } from 'react';
 import { Language, Tour, BookingRequest, AgentId, AIAgent } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -408,7 +409,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     } else if (qa.action === 'book_itinerary') {
       if (onNavigateTab) onNavigateTab('itinerary');
     } else if (qa.action === 'direct_whatsapp') {
-      window.open('https://wa.me/50687959148?text=Hola%20Costa%20Rica%20Tours,%20quisiera%20consultar%20sobre%20un%20tour', '_blank');
+      requestCustomerIntake({ message: 'Hola Costa Rica Tours, quisiera consultar sobre un tour.', language, source: 'ai-assistant-whatsapp' });
     } else if (qa.action === 'send_message' && qa.data?.message) {
       handleSendMessage(qa.data.message);
     }

@@ -1188,7 +1188,11 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
   const cliente = body.cliente || {};
   const venta = body.detalleVenta || {};
   const totalUSD = Number(venta.montoTotalUSD || 235);
-  const tipoCambio = Number(venta.tipoCambioCRC || 520);
+  const configuredRate = Number(venta.tipoCambioCRC ?? process.env.USD_TO_CRC_RATE);
+  if (!Number.isFinite(configuredRate) || configuredRate <= 0) {
+    throw new Error('USD_TO_CRC_RATE debe estar configurado para generar importes CRC.');
+  }
+  const tipoCambio = configuredRate;
   const totalCRC = Math.round(totalUSD * tipoCambio);
 
   // 4% IVA turístico según Ley 9635

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Language } from '../types';
 import { MessageSquare, Mail, Phone, MapPin, Send, Instagram, Facebook, Twitter } from 'lucide-react';
+import { requestCustomerIntake } from '../utils/customerIntake';
 
 interface ContactSectionProps {
   language: Language;
@@ -13,7 +14,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ language }) => {
   const [subject,setSubject]=useState('Consulta de disponibilidad');
   const [message,setMessage]=useState('');
   const [status,setStatus]=useState('');
-  const submit=(e:React.FormEvent)=>{e.preventDefault(); const text=[`Hola Costa Rica Tours, soy ${name||'un viajero'}.`,`Email: ${email||'no indicado'}.`,`Asunto: ${subject}.`,`Mensaje: ${message||'Quisiera más información.'}`].join('\n'); window.open('https://wa.me/50687959148?text='+encodeURIComponent(text),'_blank','noopener,noreferrer'); setStatus(language==='es'?'Se abrió WhatsApp para enviar tu consulta.':'WhatsApp opened so you can send your inquiry.');};
+  const submit=(e:React.FormEvent)=>{e.preventDefault(); const text=[`Hola Costa Rica Tours, soy ${name||'un viajero'}.`,`Email: ${email||'no indicado'}.`,`Asunto: ${subject}.`,`Mensaje: ${message||'Quisiera más información.'}`].join('\\n'); requestCustomerIntake({message:text,language,source:'contact-form',customer:{name,email}}); setStatus(language==='es'?'Tu solicitud fue enviada al asistente de IA para análisis.':'Your request was sent to the AI assistant for analysis.');};
   return (
     <section className="py-24 px-4 max-w-7xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">

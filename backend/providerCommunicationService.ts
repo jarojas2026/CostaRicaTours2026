@@ -548,8 +548,8 @@ export async function observeProviderSla() {
     await createAlert({
       source: 'Observador SLA de Proveedores',
       severity: 'warning',
-      title: `SLA vencido - Orden ${order.id}`,
-      message: `La orden ${order.id} sigue despachada después del SLA del proveedor ${order.providerName}. Requiere seguimiento antes de alterar el itinerario.`,
+      title: `SLA vencido - Orden ${order.orderId}`,
+      message: `La orden ${order.orderId} sigue despachada después del SLA del proveedor ${order.providerName}. Requiere seguimiento antes de alterar el itinerario.`,
       bookingId: order.bookingId,
       providerId: order.providerId
     }).catch(() => {});

@@ -196,7 +196,7 @@ export async function executeAgentTool(
       return {
         success: true,
         stage: 'pending_payment',
-        bookingId: booking?.booking?.bookingId || booking?.bookingId,
+        bookingId: booking?.booking?.bookingId,
         booking,
         paymentRequired: true,
         message: 'Reserva creada como pendiente de pago. No se considera confirmada hasta verificar el pago.'
@@ -408,6 +408,7 @@ export async function executeAgentTool(
 /**
  * Declaraciones oficiales de herramientas estructuradas para Function Calling de Gemini SDK
  */
+export const GEMINI_FUNCTION_DECLARATIONS = [
   {
     name: 'create_reservation',
     description: 'Create a reservation after explicit customer confirmation. The server rechecks live availability and creates only a pending-payment booking; never claims payment confirmation.',
@@ -423,7 +424,6 @@ export async function executeAgentTool(
       required: ['confirmed','tourId','date','adults','children','customerName','customerEmail','customerPhone']
     }
   },
-export const GEMINI_FUNCTION_DECLARATIONS = [
   {
     name: 'build_trip_journey',
     description: 'Build a complete Costa Rica trip from traveler memory, expert intelligence, authoritative catalog, live weather, live availability, itinerary and sales next step.',

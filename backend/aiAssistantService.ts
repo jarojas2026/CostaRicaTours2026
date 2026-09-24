@@ -294,7 +294,8 @@ export async function processChatInquiry(
   language: 'es' | 'en' = 'es',
   history: Array<{ role: 'user' | 'assistant' | 'bot'; text: string }> = [],
   engine: 'auto' | 'claude' | 'gemini' | 'counter_agent' = 'auto',
-  sessionId?: string
+  sessionId?: string,
+  options: { allowMutations?: boolean } = {}
 ): Promise<{ reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string; agentId?: string }> {
   const isEn = language === 'en';
   const requestedAgentId = engine === 'counter_agent' ? 'counter_agent' : 'concierge';
@@ -397,9 +398,13 @@ Reply ONLY with "YES" or "NO".`;
       currentContents.push(response.candidates?.[0]?.content || { role: 'model', parts: [] });
       const functionParts: any[] = [];
 
+      const mutationTools = new Set(['create_reservation', 'build_trip_journey', 'adapt_trip_journey']);
       for (const call of calls.slice(0, 6)) {
         const toolName = call.name || 'unknown_tool';
         try {
+          if (options.allowMutations === false && mutationTools.has(toolName)) {
+            throw new Error('Esta herramienta cambia el estado operativo y requiere una solicitud no escalada con autorización explícita.');
+          }
           const result = await executeAgentTool(toolName as any, call.args || {});
           functionParts.push({
             functionResponse: {
