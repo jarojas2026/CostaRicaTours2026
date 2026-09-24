@@ -118,6 +118,8 @@ import { getPlatformControls, updatePlatformControls } from './backend/platformC
 import { runAdminAICommand, listAdminAICommands, approveAdminAICommand, rejectAdminAICommand } from './backend/adminAICommandService';
 import { getExecutiveAIArchitecture } from './backend/executiveAIArchitecture';
 import { processCustomerIntake } from './backend/customerIntakeGateway';
+import { sendWhatsAppMessage } from './backend/notificationService';
+import { getFirestoreDb } from './backend/bookingService';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -153,7 +155,7 @@ function requireAgentTool(req: express.Request, res: express.Response, next: exp
 }
 
 app.set('trust proxy', 1);
-app.use(express.json());
+app.use(express.json({ verify: (req, _res, buf) => { (req as any).rawBody = Buffer.from(buf); } }));
 app.use(express.urlencoded({ extended: true }));
 
 // ==========================================
@@ -208,6 +210,96 @@ app.post('/api/customer-intake', chatLimiter, async (req, res) => {
   } catch (error: any) {
     res.status(400).json({ success: false, error: error?.message || 'No se pudo procesar la solicitud.' });
   }
+});
+
+/**
+ * WhatsApp Business inbound gateway.
+ * Webhook verification/signature happens before the message enters the same AI
+ * intake, memory and agent loop used by the website. No WhatsApp credential is
+ * required at build time; production delivery requires the Meta secrets.
+ */
+function verifyWhatsAppSignature(req: express.Request): boolean {
+  const appSecret = process.env.WHATSAPP_APP_SECRET || process.env.META_APP_SECRET;
+  if (!appSecret) return false;
+  const signature = String(req.headers['x-hub-signature-256'] || '');
+  if (!signature.startsWith('sha256=')) return false;
+  const rawBody = (req as any).rawBody as Buffer | undefined;
+  if (!rawBody) return false;
+  const expected = `sha256=${crypto.createHmac('sha256', appSecret).update(rawBody).digest('hex')}`;
+  const a = Buffer.from(expected);
+  const b = Buffer.from(signature);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+async function claimWhatsAppInboundMessage(messageId: string): Promise<boolean> {
+  const id = String(messageId || '').trim().slice(0, 180);
+  if (!id) return false;
+  const db = getFirestoreDb();
+  if (!db) return true;
+  const ref = db.collection('whatsapp_inbound_events').doc(id.replace(/[^A-Za-z0-9_-]/g, '_'));
+  return db.runTransaction(async (tx: any) => {
+    const snapshot = await tx.get(ref);
+    if (snapshot.exists) return false;
+    tx.set(ref, { messageId: id, receivedAt: new Date().toISOString(), status: 'claimed' });
+    return true;
+  });
+}
+
+app.get('/api/webhooks/whatsapp', (req, res) => {
+  const mode = String(req.query['hub.mode'] || '');
+  const token = String(req.query['hub.verify_token'] || '');
+  const challenge = String(req.query['hub.challenge'] || '');
+  const configuredToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || process.env.WHATSAPP_VERIFY_TOKEN || '';
+  if (mode === 'subscribe' && configuredToken && token === configuredToken) {
+    return res.status(200).send(challenge);
+  }
+  return res.status(403).send('Forbidden');
+});
+
+app.post('/api/webhooks/whatsapp', chatLimiter, async (req, res) => {
+  if (!verifyWhatsAppSignature(req)) {
+    return res.status(401).json({ success: false, error: 'Firma de WhatsApp no válida.' });
+  }
+
+  const entries = Array.isArray(req.body?.entry) ? req.body.entry : [];
+  const processed: string[] = [];
+
+  for (const entry of entries) {
+    const changes = Array.isArray(entry?.changes) ? entry.changes : [];
+    for (const change of changes) {
+      const value = change?.value || {};
+      const messages = Array.isArray(value.messages) ? value.messages : [];
+      const contacts = Array.isArray(value.contacts) ? value.contacts : [];
+
+      for (const message of messages) {
+        const messageId = String(message?.id || '').trim();
+        const from = String(message?.from || '').replace(/[^0-9]/g, '');
+        const textBody = String(message?.text?.body || '').trim();
+        if (!messageId || !from || !textBody) continue;
+        if (!(await claimWhatsAppInboundMessage(messageId))) continue;
+
+        const profileName = String(contacts.find((c: any) => String(c?.wa_id || '') === from)?.profile?.name || '').trim();
+        const result = await processCustomerIntake({
+          message: textBody,
+          language: /\b(the|please|hello|hi|book|tour|availability)\b/i.test(textBody) && !/[¿¡áéíóúñ]/i.test(textBody) ? 'en' : 'es',
+          sessionId: `wa_${from}`,
+          source: 'whatsapp:inbound',
+          context: { channel: 'whatsapp', messageId, waId: from },
+          customer: { name: profileName, phone: from }
+        });
+
+        await sendWhatsAppMessage({
+          toPhone: from,
+          customerName: profileName || 'Viajero',
+          message: result.customer.reply
+        }).catch((error) => console.warn('No se pudo responder por WhatsApp:', error));
+
+        processed.push(messageId);
+      }
+    }
+  }
+
+  return res.status(200).json({ success: true, processed });
 });
 
 app.get('/api/health', (req, res) => {
