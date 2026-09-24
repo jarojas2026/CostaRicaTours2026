@@ -100,11 +100,11 @@ export const AGENT_TOOL_REGISTRY = {
   },
   build_trip_journey: {
     description: 'Build or rebuild a complete traveler journey using memory, catalog, live availability, weather, route strategy, itinerary and sales next steps.',
-    sideEffect: false
+    sideEffect: true
   },
   adapt_trip_journey: {
     description: 'Adapt an existing traveler journey when dates, weather, preferences or operational conditions change.',
-    sideEffect: false
+    sideEffect: true
   },
   live_destination_weather: {
     description: 'Return current cached/live weather for Costa Rica destination regions with source classification.',
@@ -684,6 +684,24 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
     name: 'observe_provider_sla',
     description: 'Detect provider service orders that exceeded SLA and return follow-up context without changing bookings or itineraries.',
     parameters: { type: 'OBJECT', properties: {} }
+  },
+  {
+    name: 'trip_health_snapshot',
+    description: 'Build a read-only unified traveler journey health snapshot from memory, itinerary, weather, availability and provider SLA.',
+    parameters: {
+      type: 'OBJECT',
+      properties: { journeyId: { type: 'STRING' }, sessionId: { type: 'STRING' } }
+    }
+  },
+  {
+    name: 'next_best_action',
+    description: 'Recommend the next operational or sales step from verified journey state without executing it.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        health: { type: 'OBJECT' }, hasDate: { type: 'BOOLEAN' }, hasSelection: { type: 'BOOLEAN' }
+      }
+    }
   },
   {
     name: 'destination_intelligence',
