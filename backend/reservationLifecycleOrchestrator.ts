@@ -1,4 +1,4 @@
-import { getAllBookings, updateBookingStatus } from './bookingService';
+import { getPendingReservationLifecycleBookings, updateBookingStatus } from './bookingService';
 import { dispatchServiceOrder, handleProviderAction } from './providerCommunicationService';
 import { executeCustomerBookingConfirmation } from './nativeWorkflows';
 import { getFirestoreDb } from './bookingService';
@@ -153,7 +153,7 @@ export async function advanceReservationLifecycle(booking: any): Promise<Lifecyc
 
 export async function runReservationLifecycleSweep(limit = 100) {
   const started = Date.now();
-  const bookings = (await getAllBookings()).slice(0, Math.max(1, Math.min(250, limit)));
+  const bookings = await getPendingReservationLifecycleBookings(limit);
   const results: LifecycleResult[] = [];
   for (const booking of bookings) {
     try {
