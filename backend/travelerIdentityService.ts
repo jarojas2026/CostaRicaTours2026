@@ -13,6 +13,8 @@ export interface TravelerIdentity {
   canonicalId: string;
   sessionId: string;
   matchedBy: 'phone' | 'email' | 'session' | 'new';
+  identityConflict?: boolean;
+  conflictingCanonicalIds?: string[];
 }
 
 function normalizePhone(value?: string): string {
@@ -58,15 +60,20 @@ export async function resolveTravelerIdentity(input: TravelerIdentityInput): Pro
 
   let matchedBy: TravelerIdentity['matchedBy'] = 'new';
   let canonicalId = '';
+  let identityConflict = false;
+  let conflictingCanonicalIds: string[] = [];
 
   await db.runTransaction(async (tx: any) => {
     const snapshots = await Promise.all(aliasRefs.map(alias => tx.get(alias.ref)));
-    for (let i = 0; i < snapshots.length; i++) {
-      if (snapshots[i].exists && snapshots[i].data()?.canonicalId) {
-        canonicalId = String(snapshots[i].data().canonicalId);
-        matchedBy = aliasRefs[i].kind;
-        break;
-      }
+    const matchedIds = snapshots
+      .filter((snapshot: any) => snapshot.exists && snapshot.data()?.canonicalId)
+      .map((snapshot: any) => String(snapshot.data().canonicalId));
+    conflictingCanonicalIds = [...new Set(matchedIds)];
+    identityConflict = conflictingCanonicalIds.length > 1;
+    if (!identityConflict && conflictingCanonicalIds.length === 1) {
+      canonicalId = conflictingCanonicalIds[0];
+      const matchedIndex = snapshots.findIndex((snapshot: any) => snapshot.exists && snapshot.data()?.canonicalId);
+      matchedBy = matchedIndex >= 0 ? aliasRefs[matchedIndex].kind : 'new';
     }
 
     if (!canonicalId && fallbackSession) {
@@ -79,7 +86,18 @@ export async function resolveTravelerIdentity(input: TravelerIdentityInput): Pro
       }
     }
 
-    if (!canonicalId) canonicalId = newCanonicalId();
+    if (identityConflict) {
+      canonicalId = newCanonicalId();
+      matchedBy = 'new';
+      const conflictRef = db.collection('traveler_identity_conflicts').doc(crypto.randomBytes(12).toString('hex'));
+      tx.set(conflictRef, {
+        conflictingCanonicalIds,
+        requestedAliases: aliases.map(alias => ({ kind: alias.kind, valueHash: aliasKey(alias.kind, alias.value) })),
+        sessionId: fallbackSession || null,
+        status: 'needs_verification',
+        createdAt: new Date().toISOString()
+      });
+    } else if (!canonicalId) canonicalId = newCanonicalId();
 
     const now = new Date().toISOString();
     const canonicalRef = db.collection('traveler_identities').doc(canonicalId);
@@ -93,6 +111,8 @@ export async function resolveTravelerIdentity(input: TravelerIdentityInput): Pro
       updatedAt: now
     }, { merge: true });
 
+    if (identityConflict) return;
+
     for (const alias of aliasRefs) {
       tx.set(alias.ref, {
         canonicalId,
@@ -105,6 +125,7 @@ export async function resolveTravelerIdentity(input: TravelerIdentityInput): Pro
   return {
     canonicalId,
     sessionId: canonicalId,
-    matchedBy
+    matchedBy,
+    ...(identityConflict ? { identityConflict: true, conflictingCanonicalIds } : {})
   };
 }
