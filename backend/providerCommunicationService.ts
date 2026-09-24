@@ -532,7 +532,7 @@ export async function observeProviderSla() {
     .filter(order => order.status === 'dispatched')
     .filter(order => new Date(order.slaDeadline).getTime() <= now)
     .map(order => ({
-      orderId: order.id,
+      orderId: order.orderId,
       bookingId: order.bookingId,
       providerId: order.providerId,
       providerName: order.providerName,
