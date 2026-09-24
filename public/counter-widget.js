@@ -435,7 +435,7 @@
     } catch (err) {
       const typingEl = document.getElementById('crt-typing');
       if (typingEl) typingEl.remove();
-      appendMessage('Disculpa, tuvimos un breve desfase de conexión con la central. Puedes escribirnos directo a WhatsApp (+506 8888-7777).', 'agent');
+      appendMessage('Disculpa, tuvimos un breve desfase de conexión con la central. Puedes escribirnos directo a WhatsApp (+506 8795-9148).', 'agent');
     }
   }
 })();
