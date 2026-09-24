@@ -7,7 +7,7 @@ import { assessTripFit, buildPackingList, buildRouteStrategy, getDestinationInte
 import { buildTripJourney, adaptTravelerJourney } from './travelJourneyOrchestrator';
 import { verifyJourneyAvailability, observeJourneyState, guardianReplanJourney } from './journeyVerificationService';
 import { getDestinationWeather } from './weatherPulseService';
-import { checkTourAvailability, findBookingByCodeOrEmail } from './bookingService';
+import { checkTourAvailability, findBookingByCodeOrEmail, createBooking } from './bookingService';
 import { observeProviderSla } from './providerCommunicationService';
 import { getOperationalMemory, retrieveRelevantMemory } from './memoryService';
 import {
@@ -29,6 +29,10 @@ export const AGENT_TOOL_REGISTRY = {
   check_availability: {
     description: 'Check live Firestore-backed capacity for a tour/date/time.',
     sideEffect: false
+  },
+  create_reservation: {
+    description: 'Create a pending-payment reservation only after the caller/customer explicitly confirms the complete reservation details. Uses the existing booking transaction and idempotency controls.',
+    sideEffect: true
   },
   lookup_booking: {
     description: 'Retrieve an existing booking by confirmation code or customer email.',
@@ -156,6 +160,40 @@ export async function executeAgentTool(
         args.time ? String(args.time) : undefined,
         Math.max(1, Number(args.seats || 1))
       );
+    case 'create_reservation': {
+      if (args.confirmed !== true) throw new Error('La reserva requiere confirmación explícita del cliente.');
+      const tourId = String(args.tourId || '').trim();
+      const date = String(args.date || '').trim();
+      const customerName = String(args.customerName || '').trim();
+      const customerEmail = String(args.customerEmail || '').trim();
+      const customerPhone = String(args.customerPhone || '').trim();
+      const adults = Math.max(1, Number(args.adults || 0));
+      const children = Math.max(0, Number(args.children || 0));
+      if (!tourId || !date || !customerName || !customerEmail || !customerPhone) {
+        throw new Error('Faltan datos obligatorios: tourId, date, customerName, customerEmail y customerPhone.');
+      }
+      if (!/^\S+@\S+\.\S+$/.test(customerEmail)) throw new Error('El correo del cliente no es válido.');
+      if (adults + children < 1 || adults + children > 50) throw new Error('La cantidad de pasajeros debe estar entre 1 y 50.');
+      const availability = await checkTourAvailability(tourId, date, args.time ? String(args.time) : undefined, adults + children);
+      if (!availability.available) return { success: false, stage: 'availability', availability, requiresAlternative: true };
+      const booking = await createBooking({
+        tourId, date, time: args.time ? String(args.time) : undefined,
+        adults, children, customerName, customerEmail, customerPhone,
+        customerCountry: args.customerCountry ? String(args.customerCountry) : undefined,
+        pickupHotel: args.pickupHotel ? String(args.pickupHotel) : undefined,
+        specialRequests: args.specialRequests ? String(args.specialRequests) : undefined,
+        paymentMethod: 'credit_card',
+        idempotencyKey: args.idempotencyKey ? String(args.idempotencyKey) : `voice-${String(args.sessionId || '')}-${tourId}-${date}-${customerEmail}`
+      });
+      return {
+        success: true,
+        stage: 'pending_payment',
+        bookingId: booking?.booking?.bookingId || booking?.bookingId,
+        booking,
+        paymentRequired: true,
+        message: 'Reserva creada como pendiente de pago. No se considera confirmada hasta verificar el pago.'
+      };
+    }
     case 'lookup_booking': {
       const identifier = String(args.bookingId || args.email || '').trim();
       if (!identifier) throw new Error('bookingId o email requerido');
@@ -298,6 +336,21 @@ export async function executeAgentTool(
 /**
  * Declaraciones oficiales de herramientas estructuradas para Function Calling de Gemini SDK
  */
+  {
+    name: 'create_reservation',
+    description: 'Create a reservation after explicit customer confirmation. The server rechecks live availability and creates only a pending-payment booking; never claims payment confirmation.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        confirmed: { type: 'BOOLEAN' }, sessionId: { type: 'STRING' }, tourId: { type: 'STRING' },
+        date: { type: 'STRING' }, time: { type: 'STRING' }, adults: { type: 'NUMBER' }, children: { type: 'NUMBER' },
+        customerName: { type: 'STRING' }, customerEmail: { type: 'STRING' }, customerPhone: { type: 'STRING' },
+        customerCountry: { type: 'STRING' }, pickupHotel: { type: 'STRING' }, specialRequests: { type: 'STRING' },
+        idempotencyKey: { type: 'STRING' }
+      },
+      required: ['confirmed','tourId','date','adults','children','customerName','customerEmail','customerPhone']
+    }
+  },
 export const GEMINI_FUNCTION_DECLARATIONS = [
   {
     name: 'build_trip_journey',

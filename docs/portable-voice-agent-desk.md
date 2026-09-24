@@ -62,3 +62,24 @@ The human team can be distributed: each operator can answer from a mobile phone,
 - Voice context is labeled as `channel=voice` and remains connected to the existing operational memory.
 - Human handoff is explicit.
 - No telephony secret belongs in the repository.
+
+
+## Full-stack reservation flow
+
+The voice channel now participates in the same reservation brain as the web Counter Desk.
+
+1. Caller asks for a tour or information.
+2. Voice session is stored in `voice_call_sessions` and conversational memory uses `voice_<callId>`.
+3. The existing AI agent can search the real catalog, consult memory and check live availability.
+4. For a reservation, the AI collects the missing fields and presents a spoken summary.
+5. Only explicit customer confirmation can invoke `create_reservation`.
+6. The server rechecks availability and uses the existing transactional/idempotent booking service.
+7. The resulting booking remains `pendiente_pago` until payment is verified server-side.
+8. Payment confirmation, provider coordination and the existing booking state machine remain authoritative.
+9. Human Agent Desk handoff is available for exceptions or decisions requiring human authority.
+
+This makes the phone channel another interface to the same operational brain rather than a separate chatbot.
+
+### AI voice
+
+The current voice gateway uses neural provider text-to-speech through the provider's Voice `<Say>` capability. The application layer keeps telephony/TTS credentials outside Git and can later swap the synthesis provider without changing the tourism, memory or booking services.
