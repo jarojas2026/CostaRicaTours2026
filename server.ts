@@ -117,6 +117,7 @@ import { getAdminControlCenterSnapshot } from './backend/adminControlCenterServi
 import { getPlatformControls, updatePlatformControls } from './backend/platformControlService';
 import { runAdminAICommand, listAdminAICommands, approveAdminAICommand, rejectAdminAICommand } from './backend/adminAICommandService';
 import { getExecutiveAIArchitecture } from './backend/executiveAIArchitecture';
+import { processCustomerIntake } from './backend/customerIntakeGateway';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -193,6 +194,22 @@ const generalApiLimiter = rateLimit({
 app.use('/api/', generalApiLimiter);
 
 // Health check endpoint
+app.post('/api/customer-intake', chatLimiter, async (req, res) => {
+  try {
+    const result = await processCustomerIntake({
+      message: req.body?.message || req.body?.mensaje,
+      language: req.body?.language || req.body?.idioma,
+      sessionId: req.body?.sessionId,
+      source: req.body?.source || 'web',
+      context: req.body?.context,
+      customer: req.body?.customer
+    });
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error?.message || 'No se pudo procesar la solicitud.' });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
