@@ -72,6 +72,16 @@ if (/setInterval\(async \(\) =>[\\s\\S]*processPendingCustomerIntakeJobs/.test(s
   add('MEDIUM', 'QUEUE-001', 'Customer Intake has an in-process sweep; production serverless deployments also need an external scheduler calling the protected queue endpoint.');
 }
 
+const reservationLifecycle = read('backend/reservationLifecycleOrchestrator.ts');
+if (!/runReservationLifecycleSweep/.test(reservationLifecycle) || !/\/api\/internal\/reservation-lifecycle\/sweep/.test(server)) {
+  add('CRITICAL', 'BOOKING-001', 'Reservation lifecycle orchestrator is not connected to the protected server endpoint.');
+}
+if (!/runReservationLifecycleSweep\(100\)/.test(read('backend/cronEngine.ts'))) {
+  add('HIGH', 'BOOKING-002', 'Reservation lifecycle orchestrator is not scheduled by the native cron engine.');
+}
+if (!/claim\(/.test(reservationLifecycle) || !/reservation_lifecycle_events/.test(reservationLifecycle)) {
+  add('HIGH', 'BOOKING-003', 'Reservation lifecycle orchestration lacks durable idempotent event tracking.');
+}
 const emailOperations = read('backend/emailOperationsAgent.ts');
 if (!/processEmailOperationsOnce/.test(server) || !/\/api\/internal\/email-operations\/sweep/.test(server)) {
   add('CRITICAL', 'EMAIL-001', 'Autonomous email agent is not connected to a protected server endpoint.');
