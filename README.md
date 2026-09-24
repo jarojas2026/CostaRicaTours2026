@@ -1326,3 +1326,35 @@ Learning may propose improvements; production code changes remain controlled cha
 **Connect before replacing. Reuse before duplicating. Verify before promising. Record before forgetting. Recover before abandoning.**
 
 This invariant applies to every future AI, agent, workflow, feature and pull request in this repository.
+
+---
+
+# Evolución operativa 2026-09-24
+
+Esta sección documenta la integración operativa realizada sobre la base existente. No reemplaza las secciones anteriores: las complementa.
+
+## Viaje completo conectado
+
+El flujo de Journey conserva la arquitectura existente de memoria, catálogo, clima, verificación de disponibilidad e itinerario. Una recomendación no equivale a disponibilidad, una disponibilidad verificada no equivale a una reserva y una reserva no equivale a un pago confirmado.
+
+## Agente de bandeja de proveedores
+
+`backend/providerInboxAgent.ts` procesa respuestas de proveedores mediante Gmail OAuth cuando las credenciales están configuradas. Cada mensaje debe corresponder a un remitente registrado y a una orden `OS-CR-*`. Las respuestas ambiguas pasan a revisión humana; no se inventan confirmaciones.
+
+Acciones reconocidas con evidencia suficiente: confirmación, rechazo, demora, no-show y servicio completado. Los resultados se registran en `provider_inbox_events`, se conectan con `handleProviderAction()` y pueden notificar al viajero por email/WhatsApp según los canales configurados.
+
+El cron nativo ejecuta este agente cada minuto. Si Gmail no está configurado, el agente permanece inactivo de forma segura.
+
+## Centro de Control Ejecutivo
+
+`backend/adminControlCenterService.ts` agrega únicamente datos operativos existentes: reservas, ventas confirmadas, pendientes, cancelaciones/rechazos, próximas 72 horas, alertas, proveedores, viajes, memoria, evaluaciones IA, skills, logs y estado del agente de correo.
+
+`src/pages/AdminControlCenterPage.tsx` presenta esta información en `/admin` detrás de `AdminRouteGuard`. No deben utilizarse contadores demo ni ingresos sintéticos.
+
+## Humanismo y ventas asistidas
+
+La IA comercial debe escuchar el contexto, recordar decisiones útiles, reconocer incertidumbre, explicar el siguiente paso y conservar alternativas cuando un proveedor rechaza una solicitud. El sistema debe reducir fricción hacia formulario, proforma, WhatsApp, email o atención humana sin fabricar urgencia, cupos, precios o confirmaciones.
+
+## Regla para futuras IAs
+
+Antes de implementar una nueva capacidad, buscar primero si existe un servicio equivalente en el repositorio. Integrar sobre la fuente de verdad existente, mantener trazabilidad y estados, añadir pruebas/verificación y actualizar este README. Los cambios destructivos requieren autorización explícita.
