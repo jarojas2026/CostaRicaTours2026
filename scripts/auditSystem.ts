@@ -72,8 +72,19 @@ if (/setInterval\(async \(\) =>[\\s\\S]*processPendingCustomerIntakeJobs/.test(s
   add('MEDIUM', 'QUEUE-001', 'Customer Intake has an in-process sweep; production serverless deployments also need an external scheduler calling the protected queue endpoint.');
 }
 
+const emailOperations = read('backend/emailOperationsAgent.ts');
+if (!/processEmailOperationsOnce/.test(server) || !/\/api\/internal\/email-operations\/sweep/.test(server)) {
+  add('CRITICAL', 'EMAIL-001', 'Autonomous email agent is not connected to a protected server endpoint.');
+}
+if (!/processEmailOperationsOnce\(\)/.test(read('backend/cronEngine.ts'))) {
+  add('HIGH', 'EMAIL-002', 'Autonomous email agent is not scheduled by the native cron engine.');
+}
+if (!/claimEvent/.test(emailOperations) || !/status === 'error'/.test(emailOperations)) {
+  add('HIGH', 'EMAIL-003', 'Email operation queue lacks visible idempotent/recoverable claim handling.');
+}
+
 const envExample = read('.env.example');
-for (const key of ['AGENT_INTERNAL_TOKEN', 'CUSTOMER_INTAKE_JOB_TOKEN', 'WHATSAPP_APP_SECRET', 'WHATSAPP_WEBHOOK_VERIFY_TOKEN', 'VOICE_PROVIDER_AUTH_TOKEN']) {
+for (const key of ['AGENT_INTERNAL_TOKEN', 'CUSTOMER_INTAKE_JOB_TOKEN', 'WHATSAPP_APP_SECRET', 'WHATSAPP_WEBHOOK_VERIFY_TOKEN', 'VOICE_PROVIDER_AUTH_TOKEN', 'GMAIL_CLIENT_ID', 'GMAIL_CLIENT_SECRET', 'GMAIL_REFRESH_TOKEN', 'OUTLOOK_CLIENT_ID', 'OUTLOOK_CLIENT_SECRET', 'OUTLOOK_REFRESH_TOKEN', 'OUTLOOK_MAILBOX_USER']) {
   if (!envExample.includes(key)) add('HIGH', 'ENV-001', `${key} is not documented in .env.example.`);
 }
 
