@@ -100,7 +100,7 @@ import {
 } from './backend/nativeWorkflows';
 import { executeSinpeVerification } from './backend/sinpeService';
 import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
-import { createInboundVoiceResponse, handleVoiceTurn, voiceAgentDeskConfig, verifyVoiceSignature, rememberVoiceCallStart, rememberVoiceCallEnd } from './backend/voiceAgentDeskService';
+import { createInboundVoiceResponse, handleVoiceTurn, voiceAgentDeskConfig, verifyVoiceSignature, rememberVoiceCallStart, rememberVoiceCallEnd, getVoiceCallSession } from './backend/voiceAgentDeskService';
 import { getSelfDevelopmentOverview, runSelfHealingCycle } from './backend/selfDevelopmentEngine';
 import { askCounterDesk, getCounterOperationsSnapshot, organizeCounterDesk } from './backend/counterDeskService';
 import { runEvaluationSuite } from './backend/agentEvaluationService';
@@ -1085,6 +1085,18 @@ app.post('/api/voice/human-transfer', async (req, res) => {
   const callId = String(req.body?.CallSid || req.query?.callId || '');
   if (callId) await rememberVoiceCallEnd(callId, status);
   res.type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+});
+
+app.get('/api/voice/calls/:callId', requireAdmin, async (req, res) => {
+  try {
+    const callId = String(req.params.callId || '').trim();
+    if (!callId) return res.status(400).json({ success: false, error: 'callId requerido' });
+    const session = await getVoiceCallSession(callId);
+    if (!session) return res.status(404).json({ success: false, error: 'Llamada no encontrada' });
+    res.json({ success: true, session });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'No se pudo recuperar la llamada' });
+  }
 });
 
 app.post('/api/voice/status', async (req, res) => {
