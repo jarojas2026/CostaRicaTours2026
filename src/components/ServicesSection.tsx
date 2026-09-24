@@ -1,3 +1,4 @@
+import { requestCustomerIntake } from '../utils/customerIntake';
 import React from 'react';
 import { motion } from 'motion/react';
 import { Bus, Map, Tent, Calendar, Navigation, Ticket, MessageCircle } from 'lucide-react';
@@ -65,9 +66,12 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ language }) =>
       ? `Hola Costa Rica Tours (costaricatours.es), quisiera más información sobre sus servicios de: ${serviceName}`
       : `Hello Costa Rica Tours (costaricatours.es), I would like more information about your services for: ${serviceName}`;
     
-    const text = encodeURIComponent(defaultMessage);
-    const whatsappUrl = `https://wa.me/50687959148?text=${text}`;
-    window.open(whatsappUrl, '_blank');
+    requestCustomerIntake({
+      message: defaultMessage,
+      language,
+      source: `service-inquiry:${serviceId}`,
+      context: { serviceId, serviceName, page: window.location.pathname }
+    });
   };
 
   return (
