@@ -18,7 +18,8 @@ import crypto from 'crypto';
 import { 
   findBookingByCodeOrEmail, 
   updateBookingStatus, 
-  getAllBookings 
+  getAllBookings,
+  getUsdToCrcRate
 } from './bookingService';
 import { executeProviderRealtimeCoordination, executeCustomerBookingConfirmation } from './nativeWorkflows';
 import { logAutomationExecution } from './nativeAutomationEngine';
@@ -61,9 +62,6 @@ export interface SinpeVerificationResult {
 
 // Registro en memoria de comprobantes ya procesados para prevenir doble uso
 const verifiedComprobantesSet = new Set<string>();
-
-// Tipo de cambio oficial de referencia BCCR (USD/CRC) con fallback determinista
-const USD_CRC_EXCHANGE_RATE = 520.0;
 
 /**
  * Normaliza y extrae datos clave de un mensaje SMS o texto plano de SINPE Móvil
@@ -159,7 +157,8 @@ export async function executeSinpeVerification(
 
   const bookingId = booking.bookingId || booking.id;
   const expectedUSD = Number(booking.totalUSD || 0);
-  const expectedCRC = Math.round(expectedUSD * USD_CRC_EXCHANGE_RATE);
+  const usdToCrcRate = getUsdToCrcRate();
+  const expectedCRC = Math.round(expectedUSD * usdToCrcRate);
 
   // 3. Verificación de Antifraude y No-Duplicidad de Comprobante
   if (verifiedComprobantesSet.has(comprobante)) {
@@ -178,7 +177,7 @@ export async function executeSinpeVerification(
       comprobante,
       montoVerificadoCRC: amountCRC,
       montoEsperadoUSD: expectedUSD,
-      tipoCambioAplicado: USD_CRC_EXCHANGE_RATE,
+      tipoCambioAplicado: usdToCrcRate,
       bancoDetectado: bank,
       providerDispatched: false,
       customerNotified: false,
@@ -207,7 +206,7 @@ export async function executeSinpeVerification(
       comprobante,
       montoVerificadoCRC: amountCRC,
       montoEsperadoUSD: expectedUSD,
-      tipoCambioAplicado: USD_CRC_EXCHANGE_RATE,
+      tipoCambioAplicado: usdToCrcRate,
       bancoDetectado: bank,
       providerDispatched: false,
       customerNotified: false,
@@ -300,7 +299,7 @@ export async function executeSinpeVerification(
     comprobante,
     montoVerificadoCRC: amountCRC || expectedCRC,
     montoEsperadoUSD: expectedUSD,
-    tipoCambioAplicado: USD_CRC_EXCHANGE_RATE,
+    tipoCambioAplicado: usdToCrcRate,
     bancoDetectado: bank,
     providerDispatched,
     customerNotified,
