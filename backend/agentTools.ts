@@ -214,6 +214,25 @@ export async function executeAgentTool(
       const relevant = await retrieveRelevantMemory(sessionId, String(args.query || ''), 8);
       return { summary: relevant.summary || memory.summary, facts: relevant.facts, relevantTurns: relevant.relevantTurns };
     }
+    case 'observe_journey_state':
+      return observeJourneyState({
+        catalog: Array.isArray(args.catalog) ? args.catalog : [],
+        date: args.date ? String(args.date) : undefined,
+        time: args.time ? String(args.time) : undefined,
+        travelers: Number(args.travelers) || 1,
+        previousAvailability: Array.isArray(args.previousAvailability) ? args.previousAvailability : []
+      });
+    case 'guardian_replan_journey':
+      return guardianReplanJourney({
+        catalog: Array.isArray(args.catalog) ? args.catalog : [],
+        date: args.date ? String(args.date) : undefined,
+        time: args.time ? String(args.time) : undefined,
+        travelers: Number(args.travelers) || 1,
+        previousAvailability: Array.isArray(args.previousAvailability) ? args.previousAvailability : [],
+        days: args.days === undefined ? undefined : Number(args.days),
+        regions: Array.isArray(args.regions) ? args.regions.map((x: unknown) => String(x)) : undefined,
+        itinerary: Array.isArray(args.itinerary) ? args.itinerary : []
+      });
     case 'compare_tours': {
       const ids = Array.isArray(args.tourIds) ? args.tourIds.map((x: unknown) => String(x)) : [];
       if (ids.length < 2) throw new Error('tourIds requiere al menos 2 tours');
@@ -518,6 +537,18 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
         limit: { type: 'NUMBER', description: 'Max suggestions (1-5, default 3)' }
       },
       required: ['tourId']
+    }
+  },
+  {
+    name: 'recall_memory',
+    description: 'Retrieve persistent operational memory and relevant prior turns for the current traveler session.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        sessionId: { type: 'STRING' },
+        query: { type: 'STRING' }
+      },
+      required: ['sessionId']
     }
   },
   {
