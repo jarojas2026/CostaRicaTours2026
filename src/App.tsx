@@ -36,6 +36,7 @@ import { DigitalCounterWidget } from './components/DigitalCounterWidget';
 import { Home, ChevronRight, ArrowLeft, Bot, MessageCircle, X, Loader2 } from 'lucide-react';
 import { AdminRouteGuard } from './components/AdminRouteGuard';
 import { requestCustomerIntake } from './utils/customerIntake';
+import { AdminControlCenterPage } from './pages/AdminControlCenterPage';
 
 // Code-splitting via React.lazy to reduce initial JS bundle size
 const ItineraryPlanner = lazy(() => import('./components/ItineraryPlanner').then(m => ({ default: m.ItineraryPlanner })));
@@ -550,9 +551,7 @@ export default function App() {
             <Route path="/admin/ai-architecture" element={<AdminRouteGuard language={language === "es" ? "es" : "en"}><Suspense fallback={<div className="py-24 text-center text-violet-300">Cargando arquitectura IA...</div>}><AutonomousOperationsPage language={language} /></Suspense></AdminRouteGuard>} />
 
             <Route path="/admin" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
-              <Suspense fallback={<div className="py-24 text-center text-amber-300">Cargando Centro de Control...</div>}>
-                <AutonomousOperationsPage language={language} />
-              </Suspense>
+              <AdminControlCenterPage language={language} />
             </AdminRouteGuard>} />
 
             <Route path="/admin/financial-legal" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
