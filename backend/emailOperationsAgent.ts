@@ -133,7 +133,16 @@ async function claimEvent(id: string, provider: MailProvider, from: string, subj
   const ref = db.collection('email_operation_events').doc(`${provider}_${id}`.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 180));
   return db.runTransaction(async (tx: any) => {
     const snap = await tx.get(ref);
-    if (snap.exists) return false;
+    if (snap.exists) {
+      const data = snap.data() || {};
+      const status = String(data.status || '');
+      const updatedAt = Date.parse(String(data.updatedAt || data.claimedAt || ''));
+      const stale = status === 'processing' && (!Number.isFinite(updatedAt) || Date.now() - updatedAt > 10 * 60 * 1000);
+      const retryable = status === 'error' || status === 'needs_retry' || stale;
+      if (!retryable || status === 'completed' || status === 'ignored' || status === 'needs_human_review') return false;
+      tx.set(ref, { status: 'processing', attempts: Number(data.attempts || 0) + 1, claimedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, { merge: true });
+      return true;
+    }
     tx.create(ref, {
       id: ref.id,
       provider,
