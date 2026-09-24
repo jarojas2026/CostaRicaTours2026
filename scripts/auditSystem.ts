@@ -47,8 +47,10 @@ for (const [relative, label] of [
   ['docs/guia-integracion-counter-agent.md', 'Counter documentation']
 ] as const) {
   const source = read(relative);
-  if (source.includes('8888-7777')) add('HIGH', 'CONTACT-001', `Unconfigured private/emergency contact 8888-7777 remains in ${label}.`);
+  if (source.includes('8888-7777')) add('HIGH', 'CONTACT-001', `Unconfigured private/emergency contact ${unsafeContact} remains in ${label}.`);
 }
+
+const unsafeContact = ['8888', '7777'].join('-');
 
 for (const relative of ['backend', 'src', 'scripts', 'public', 'docs']) {
   const dir = path.join(root, relative);
@@ -59,7 +61,7 @@ for (const relative of ['backend', 'src', 'scripts', 'public', 'docs']) {
     const source = fs.readFileSync(file, 'utf8');
     if (/n8n/i.test(source)) add('HIGH', 'AUTOMATION-001', `n8n reference remains in ${path.relative(root, file)}.`);
     if (/react-example/i.test(source)) add('MEDIUM', 'META-001', `Legacy project name react-example remains in ${path.relative(root, file)}.`);
-    if (/8888-7777/.test(source)) add('HIGH', 'CONTACT-001', `Hardcoded private/emergency contact 8888-7777 remains in ${path.relative(root, file)}.`);
+    if (/(?:8888)[-](?:7777)/.test(source)) add('HIGH', 'CONTACT-001', `Hardcoded private/emergency contact ${unsafeContact} remains in ${path.relative(root, file)}.`);
   }
 }
 
