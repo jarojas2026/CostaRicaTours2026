@@ -5,11 +5,12 @@ import { getNativeEngineStatus } from './nativeAutomationEngine';
 import { processChatInquiry } from './aiAssistantService';
 import { getOperationalMemory, rememberTurn } from './memoryService';
 import { buildAgentKnowledgeContext } from './agentKnowledgeFabric';
+import type { Language } from '../src/types';
 
 export type CounterDeskAskInput = {
   message: string;
   sessionId?: string;
-  language?: 'es' | 'en';
+  language?: Language;
   context?: Record<string, any>;
 };
 
@@ -17,14 +18,15 @@ export async function askCounterDesk(input: CounterDeskAskInput) {
   const message = String(input.message || '').trim().slice(0, 5000);
   if (!message) throw new Error('message es requerido');
 
-  const language = input.language === 'en' ? 'en' : 'es';
+  const language: Language = input.language || 'es';
+  const modelLanguage: 'es' | 'en' = language === 'es' ? 'es' : 'en';
   const sessionId = String(input.sessionId || '').trim();
   const history = sessionId ? (await getOperationalMemory(sessionId)).turns : [];
   const knowledgeContext = await buildAgentKnowledgeContext({ query: message, sessionId: sessionId || undefined });
 
   const result = await processChatInquiry(
     message,
-    language,
+    modelLanguage,
     history.map(t => ({ role: t.role, text: t.text })),
     'counter_agent',
     sessionId || undefined
@@ -40,6 +42,7 @@ export async function askCounterDesk(input: CounterDeskAskInput) {
     agentId: result.agentId || 'counter_agent',
     reply: result.reply,
     quickActions: result.quickActions || [],
+    language,
     modelUsed: result.modelUsed,
     knowledgeContext: knowledgeContext.slice(0, 12000),
     timestamp: new Date().toISOString()
