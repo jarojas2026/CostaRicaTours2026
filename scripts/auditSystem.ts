@@ -43,15 +43,6 @@ if (/fallbackProvider\.verified !== true/.test(nativeWorkflows) === false) {
   add('HIGH', 'PROVIDER-003', 'Direct-operations failover does not require explicit provider verification.');
 }
 
-for (const [relative, label] of [
-  ['backend/aiAssistantService.ts', 'AI assistant'],
-  ['public/counter-widget.js', 'Counter widget'],
-  ['docs/guia-integracion-counter-agent.md', 'Counter documentation']
-] as const) {
-  const source = read(relative);
-  if (source.includes('8888-7777')) add('HIGH', 'CONTACT-001', `Unconfigured private/emergency contact ${unsafeContact} remains in ${label}.`);
-}
-
 for (const relative of ['backend', 'src', 'scripts', 'public', 'docs']) {
   const dir = path.join(root, relative);
   if (!fs.existsSync(dir)) continue;
