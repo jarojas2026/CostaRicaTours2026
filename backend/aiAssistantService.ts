@@ -4,6 +4,9 @@
  */
 import { COSTA_RICA_REGION_PLAYBOOK, buildCostaRicaTourismKnowledgePrompt } from './costaRicaTourismKnowledge';
 
+const emergencyContact = process.env.EMERGENCY_CONTACT_PHONE || '911';
+const emergencyContactLabel = process.env.EMERGENCY_CONTACT_PHONE ? `${emergencyContact} / 911` : '911';
+
 import { GoogleGenAI } from '@google/genai';
 import { TOURS } from '../src/data/toursData';
 import { generateClaudeChatResponse, getClaudeClient } from './claudeService';
@@ -732,12 +735,12 @@ export async function runCounterAgent(
         ? `🚨 **URGENT FRONT-DESK SAFETY PROTOCOL: EMERGENCY ESCALATION**\n\n` +
           `1. **Immediate Attention**: We have detected a critical safety or medical emergency from the counter desk.\n` +
           `2. **Protocol Engaged**: National Emergency Services (9-1-1) and our Senior Field Operations Unit have been alerted.\n` +
-          `3. **Immediate Action**: Please call **9-1-1** or our 24/7 Direct Emergency Line at **+506 8888-7777** immediately.\n` +
+          `3. **Immediate Action**: Please call **9-1-1** or our 24/7 Direct Emergency Line at **${emergencyContact}** immediately.\n` +
           `4. A Costa Rica Tours supervisor is tracking this in real time.`
         : `🚨 **PROTOCOLO DE SEGURIDAD EN MOSTRADOR: ESCALACIÓN INMEDIATA DE EMERGENCIA**\n\n` +
           `1. **Atención prioritaria**: Hemos detectado un incidente médico o reporte de seguridad crítica en el mostrador.\n` +
           `2. **Protocolo activado**: La Central de Incidentes 24/7 y los Servicios Nacionales de Emergencia (9-1-1) han sido notificados.\n` +
-          `3. **Acción inmediata**: Comunícate de inmediato al **9-1-1** o a nuestra Línea Directa 24/7 al **+506 8888-7777**.\n` +
+          `3. **Acción inmediata**: Comunícate de inmediato al **9-1-1** o a nuestra Línea Directa 24/7 al **${emergencyContact}**.\n` +
           `4. Un supervisor oficial de Costa Rica Tours está dando seguimiento inmediato a este caso.`,
       agentId: 'counter_agent',
       agentName: 'Sofía • Counter Agent & Mostrador',
@@ -746,7 +749,7 @@ export async function runCounterAgent(
         escalated: true,
         level: 'emergency',
         reason: 'Reporte de emergencia o incidente físico en mostrador',
-        emergencyContact: '+506 8888-7777 / 911'
+        emergencyContact: '${emergencyContact} / 911'
       },
       quickActions: [
         { label: isEn ? '🚨 Emergency 24/7' : '🚨 Llamar Emergencia', action: 'call_emergency', data: { phone: '+50688887777' } },
@@ -1040,13 +1043,13 @@ DATOS ESPECÍFICOS DE NUESTRA EMPRESA:
 - Nombre de la empresa: Tours Costa Rica
 - Servicios que ofrecemos: Hoteles, traslados privados terrestres (operados por Alsama Tours CR), tours de aventura y ecoturismo, paquetes y combos multiactividad.
 - Zonas donde operamos: Todo el país (Arenal/La Fortuna, Manuel Antonio/Quepos, Monteverde, Tortuguero, Guanacaste, San José, Caribe Sur, etc.).
-- Formas de pago aceptadas: Tarjetas de crédito/débito (Visa, Mastercard procesadas vía Stripe), transferencias por SINPE Móvil (+506 8888-7777 / comprobante con hash), PayPal y liquidación en mostrador.
+- Formas de pago aceptadas: Tarjetas de crédito/débito (Visa, Mastercard procesadas vía Stripe), transferencias por SINPE Móvil (${emergencyContact} / comprobante con hash), PayPal y liquidación en mostrador.
 - Políticas de cancelación propias:
   * Pago antes del servicio: El servicio debe estar 100% pagado al menos 24 horas antes de la salida.
   * Reembolsos: Más de 72 horas antes: 100% de reembolso garantizado.
   * Entre 48 y 72 horas antes: 50% de reembolso.
   * Menos de 48 horas: No reembolsable (según políticas de los operadores locales).
-- Contacto de soporte: Correo info@costaricatours.es, Teléfono / WhatsApp oficial (+506 8888-7777).
+- Contacto de soporte: Correo info@costaricatours.es, Teléfono / WhatsApp oficial (${emergencyContact}).
 - Horario de atención: 24/7 en vivo.
 
 CONOCIMIENTO OPERATIVO Y TRASLADOS ALSAMA TOURS CR:
@@ -1143,7 +1146,7 @@ export async function runCustomerServiceAgent(
       type: 'emergency',
       severity: 'emergencia',
       details: `[SERVICIO AL CLIENTE] Alerta de seguridad o incidente reportado en chat: "${message}"`,
-      actionTaken: 'Escalada inmediata a Central de Emergencias (+506 8888-7777 / 911) y despacho a logística',
+      actionTaken: 'Escalada inmediata a Central de Emergencias (${emergencyContact} / 911) y despacho a logística',
       resolved: false
     });
 
@@ -1153,12 +1156,12 @@ export async function runCustomerServiceAgent(
           `1. **Situation Acknowledged**: We have detected a medical or safety report concerning your experience in Costa Rica.\n` +
           `2. **Concrete Action**: Your case has been escalated immediately to our Emergency Operations Dispatch team and field logistics coordinators.\n` +
           `3. **Resolution Time**: Immediate. Our senior response unit is active 24/7.\n` +
-          `4. **Next Clear Step**: Please contact our **24/7 Emergency Line directly at +506 8888-7777** or dial **9-1-1** if you require immediate ambulance or police intervention. A Costa Rica Tours field supervisor is monitoring this right now.`
+          `4. **Next Clear Step**: Please contact our **24/7 Emergency Line directly at ${emergencyContact}** or dial **9-1-1** if you require immediate ambulance or police intervention. A Costa Rica Tours field supervisor is monitoring this right now.`
         : `🚨 **PROTOCOLO DE SEGURIDAD ACTIVADO: ESCALACIÓN INMEDIATA A LOGÍSTICA**\n\n` +
           `1. **Reconocimiento del problema**: Hemos identificado un reporte de seguridad o incidente físico relacionado con tu experiencia en Costa Rica.\n` +
           `2. **Acción concreta**: Tu caso ha sido escalado de manera inmediata al equipo de Despacho de Operaciones de Emergencia y supervisores de terreno.\n` +
           `3. **Tiempo de resolución**: Inmediato. Nuestra unidad de contingencia opera 24/7.\n` +
-          `4. **Siguiente paso claro**: Por favor comunícate de inmediato a nuestra **Línea de Emergencia 24/7 al +506 8888-7777** o marca al **9-1-1** si requieres auxilio médico o paramédico urgente. Un supervisor oficial de Costa Rica Tours está atendiendo este caso en este instante.`,
+          `4. **Siguiente paso claro**: Por favor comunícate de inmediato a nuestra **Línea de Emergencia 24/7 al ${emergencyContact}** o marca al **9-1-1** si requieres auxilio médico o paramédico urgente. Un supervisor oficial de Costa Rica Tours está atendiendo este caso en este instante.`,
       agentId: 'customer_service',
       agentName: 'Martín • Servicio al Cliente',
       agentCategory: 'SERVICIO',
@@ -1166,7 +1169,7 @@ export async function runCustomerServiceAgent(
         escalated: true,
         level: 'emergency',
         reason: 'Reporte de accidente o riesgo a la integridad física del viajero',
-        emergencyContact: '+506 8888-7777 / 911'
+        emergencyContact: '${emergencyContact} / 911'
       },
       quickActions: [
         { label: isEn ? '🚨 Call Emergency 24/7' : '🚨 Llamar Emergencia 24/7', action: 'call_emergency', data: { phone: '+50688887777' } },
@@ -1221,7 +1224,7 @@ export async function runCustomerServiceAgent(
             escalated: true,
             level: 'human_support',
             reason: 'Cliente solicitó atención humana o verificación de cobro',
-            emergencyContact: '+506 8888-7777'
+            emergencyContact: '${emergencyContact}'
           }
         : { escalated: false, level: 'none' },
       quickActions: [
@@ -1281,7 +1284,7 @@ export async function runCustomerServiceAgent(
           escalated: true,
           level: 'human_support',
           reason: 'Viajero solicitó atención de soporte humano',
-          emergencyContact: '+506 8888-7777'
+          emergencyContact: '${emergencyContact}'
         }
       : { escalated: false, level: 'none' },
     quickActions: [
@@ -1323,12 +1326,12 @@ export async function runBookingAgent(
           `1. **Confirmed Criteria**: ${reasonText}.\n` +
           `2. **Concrete Action**: For safety, dedicated private vehicles, and volume group discounts, our VIP Group Coordinator handles this personally.\n` +
           `3. **Estimated Time**: Within 15 minutes.\n` +
-          `4. **Next Clear Step**: Our concierge manager is ready on WhatsApp at **+506 8888-7777** to quote your customized group package.`
+          `4. **Next Clear Step**: Our concierge manager is ready on WhatsApp at **${emergencyContact}** to quote your customized group package.`
         : `🎟️ **Agente de Reservas • Atención Especializada Humana**\n\n` +
           `1. **Criterio identificado**: ${reasonText}.\n` +
           `2. **Acción concreta**: Para garantizar la seguridad, unidades de transporte privado exclusivas y descuentos por volumen, nuestro Coordinador de Grupos atiende este requerimiento de forma directa.\n` +
           `3. **Tiempo de respuesta**: Menos de 15 minutos.\n` +
-          `4. **Siguiente paso claro**: Te conectamos de inmediato con nuestro Gerente de Reservas por WhatsApp al **+506 8888-7777** para diseñar la cotización personalizada.`,
+          `4. **Siguiente paso claro**: Te conectamos de inmediato con nuestro Gerente de Reservas por WhatsApp al **${emergencyContact}** para diseñar la cotización personalizada.`,
       agentId: 'booking_specialist',
       agentName: 'Andrés • Agente de Reservas',
       agentCategory: 'RESERVAS',
@@ -1336,7 +1339,7 @@ export async function runBookingAgent(
         escalated: true,
         level: 'human_support',
         reason: reasonText,
-        emergencyContact: '+506 8888-7777'
+        emergencyContact: '${emergencyContact}'
       },
       quickActions: [
         { label: isEn ? '💬 WhatsApp Group Desk' : '💬 WhatsApp Cotización Grupal', action: 'direct_whatsapp' }
@@ -1597,12 +1600,12 @@ export async function runLogisticsAgent(
         ? `🚨 **OPERATIONAL PROTOCOL 01: IMMEDIATE EMERGENCY ESCALATION**\n\n` +
           `1. **Severity Assessment**: **CRITICAL EMERGENCY** (Log ID: \`${opsItem.id}\`).\n` +
           `2. **Escalation Protocol**: Operational safety protocol is engaged. National Emergency Services (9-1-1) and our 24/7 Field Incident Response team have been alerted.\n` +
-          `3. **Immediate Action**: If someone is injured or in physical danger, immediately call **9-1-1** or our Direct Operations Hotline at **+506 8888-7777**.\n` +
+          `3. **Immediate Action**: If someone is injured or in physical danger, immediately call **9-1-1** or our Direct Operations Hotline at **${emergencyContact}**.\n` +
           `4. **Daily Operations Log**: Incident has been permanently recorded in today's active operational manifest.`
         : `🚨 **PROTOCOLO OPERATIVO 01: ESCALACIÓN INMEDIATA DE EMERGENCIA**\n\n` +
           `1. **Evaluación de severidad**: **EMERGENCIA CRÍTICA** (Registro Operativo: \`${opsItem.id}\`).\n` +
           `2. **Protocolo de escalamiento**: La seguridad de los viajeros es la prioridad absoluta. Se ha activado la cadena de comando con la Central de Despacho 24/7 y el 9-1-1.\n` +
-          `3. **Acción inmediata requerida**: Comunícate de inmediato a la Línea de Emergencia de Costa Rica Tours al **+506 8888-7777** o marca **9-1-1** si hay personas lesionadas o riesgo inminente.\n` +
+          `3. **Acción inmediata requerida**: Comunícate de inmediato a la Línea de Emergencia de Costa Rica Tours al **${emergencyContact}** o marca **9-1-1** si hay personas lesionadas o riesgo inminente.\n` +
           `4. **Registro de operaciones**: Incidente asentado de forma obligatoria en la bitácora diaria de terreno.`,
       agentId: 'logistics',
       agentName: 'Martín • Agente de Logística',
@@ -1611,7 +1614,7 @@ export async function runLogisticsAgent(
         escalated: true,
         level: 'emergency',
         reason: 'Incidente de emergencia o seguridad en operación de terreno',
-        emergencyContact: '+506 8888-7777 / 911'
+        emergencyContact: '${emergencyContact} / 911'
       },
       quickActions: [
         { label: isEn ? '🚨 Emergency Hotline' : '🚨 Teléfono de Emergencia', action: 'call_emergency', data: { phone: '+50688887777' } },
@@ -1834,8 +1837,8 @@ export async function runContingency(context: any) {
 
   const draftEmail = {
     subject: `⚠️ Actualización Preventiva de Seguridad: Tu Excursión en Costa Rica (${date})`,
-    bodyEs: `Estimado(a) viajero(a),\n\nEn Costa Rica Tours tu seguridad es nuestra máxima prioridad. El Instituto Meteorológico Nacional (IMN) ha emitido una alerta preventiva para la región de ${region} (${reason}).\n\nPor protocolo de seguridad oficial del ICT, la actividad ha sido pausada temporalmente. Tienes a tu disposición las siguientes opciones SIN NINGÚN COSTO ADICIONAL:\n\n1. Re-agendar tu tour para los siguientes días con un solo clic: ${rescheduleUrl}\n2. Cambiar tu actividad a cualquiera de nuestras alternativas seguras (Termales Tabacón o Tour de Café y Cacao).\n3. Solicitar el 100% de reembolso inmediato si tus planes no permiten re-agendar.\n\nUn asesor de nuestro equipo está a tu disposición en WhatsApp al +506 8888-7777.\n\n¡Pura Vida y gracias por tu comprensión!\nCosta Rica Tours - Operaciones`,
-    bodyEn: `Dear traveler,\n\nAt Costa Rica Tours your safety is our utmost priority. The National Meteorological Institute (IMN) has issued a precautionary advisory for the ${region} area (${reason}).\n\nFollowing official tourism guidelines, this activity has been temporarily paused. We offer the following options at NO EXTRA COST:\n\n1. Reschedule with 1-click: ${rescheduleUrl}\n2. Switch to equal alternatives: Tabacón Hot Springs or Coffee & Chocolate Tour.\n3. Request a 100% immediate refund.\n\nOur concierge team is available 24/7 on WhatsApp at +506 8888-7777.\n\nPura Vida!\nCosta Rica Tours - Operations Team`
+    bodyEs: `Estimado(a) viajero(a),\n\nEn Costa Rica Tours tu seguridad es nuestra máxima prioridad. El Instituto Meteorológico Nacional (IMN) ha emitido una alerta preventiva para la región de ${region} (${reason}).\n\nPor protocolo de seguridad oficial del ICT, la actividad ha sido pausada temporalmente. Tienes a tu disposición las siguientes opciones SIN NINGÚN COSTO ADICIONAL:\n\n1. Re-agendar tu tour para los siguientes días con un solo clic: ${rescheduleUrl}\n2. Cambiar tu actividad a cualquiera de nuestras alternativas seguras (Termales Tabacón o Tour de Café y Cacao).\n3. Solicitar el 100% de reembolso inmediato si tus planes no permiten re-agendar.\n\nUn asesor de nuestro equipo está a tu disposición en WhatsApp al ${emergencyContact}.\n\n¡Pura Vida y gracias por tu comprensión!\nCosta Rica Tours - Operaciones`,
+    bodyEn: `Dear traveler,\n\nAt Costa Rica Tours your safety is our utmost priority. The National Meteorological Institute (IMN) has issued a precautionary advisory for the ${region} area (${reason}).\n\nFollowing official tourism guidelines, this activity has been temporarily paused. We offer the following options at NO EXTRA COST:\n\n1. Reschedule with 1-click: ${rescheduleUrl}\n2. Switch to equal alternatives: Tabacón Hot Springs or Coffee & Chocolate Tour.\n3. Request a 100% immediate refund.\n\nOur concierge team is available 24/7 on WhatsApp at ${emergencyContact}.\n\nPura Vida!\nCosta Rica Tours - Operations Team`
   };
 
   return {
