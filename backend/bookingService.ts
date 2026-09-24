@@ -667,6 +667,40 @@ export async function getBookingById(bookingId: string): Promise<any | null> {
   }
 }
 
+/**
+ * Recupera únicamente reservas que pueden requerir una transición autónoma.
+ * Mantiene getAllBookings() para compatibilidad, pero evita escanear todo el
+ * historial en cada ciclo del orquestador.
+ */
+export async function getPendingReservationLifecycleBookings(limit = 100): Promise<any[]> {
+  const col = getBookingsCollection();
+  const safeLimit = Math.max(1, Math.min(250, limit));
+  if (!col) return [];
+
+  const queries = [
+    col.where('status', 'in', ['pendiente_pago', 'payment_pending', 'pending', 'paid', 'provider_pending']),
+    col.where('serviceOrderStatus', 'in', ['confirmed', 'confirmada'])
+  ];
+  const snapshots = await Promise.all(queries.map(query => query.orderBy('updatedAt', 'desc').limit(safeLimit).get().catch(() => query.limit(safeLimit).get())));
+  const byId = new Map<string, any>();
+  for (const snapshot of snapshots) {
+    snapshot.forEach((doc: any) => {
+      const data = doc.data() || {};
+      const booking = {
+        id: doc.id,
+        ...data,
+        createdAt: normalizeTimestampToDate(data.createdAt).toISOString(),
+        updatedAt: normalizeTimestampToDate(data.updatedAt).toISOString(),
+        createdAtTimestamp: data.createdAt
+      };
+      byId.set(booking.bookingId || booking.id, booking);
+    });
+  }
+  return Array.from(byId.values())
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .slice(0, safeLimit);
+}
+
 export async function getAllBookings(): Promise<any[]> {
   const col = getBookingsCollection();
   if (col) {
