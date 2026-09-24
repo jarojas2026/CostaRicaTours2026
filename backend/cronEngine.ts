@@ -9,6 +9,7 @@ import cron from 'node-cron';
 import { getAllBookings, updateBookingStatus } from './bookingService';
 import { logAutomationExecution } from './nativeAutomationEngine';
 import { processProviderInboxOnce } from './providerInboxAgent';
+import { runReservationLifecycleSweep } from './reservationLifecycleOrchestrator';
 import { processEmailOperationsOnce } from './emailOperationsAgent';
 import {
   executeAutomatedProviderPayouts,
@@ -185,6 +186,21 @@ export function initializeAutomationEngine() {
     } catch (error: any) {
       console.error('❌ Error ejecutando CRON_PROVIDER_INBOX_1M:', error);
       logAutomationExecution('CRON_PROVIDER_INBOX_1M', 0, 'error', 'Fallo: ' + error.message);
+    }
+  }, CR_TIMEZONE);
+
+  // 12. CRON: CICLO AUTÓNOMO DE RESERVAS (Cada minuto)
+  // Revisa pagos, despacho a proveedor, confirmaciones y notificación al cliente.
+  cron.schedule('* * * * *', async () => {
+    try {
+      const res = await runReservationLifecycleSweep(100);
+      if (res.scanned || res.errors) {
+        logAutomationExecution('CRON_RESERVATION_LIFECYCLE_1M', res.durationMs, res.errors ? 'warning' : 'success',
+          'Ciclo de reservas: ' + res.scanned + ' revisadas, ' + res.results.filter((x: any) => x.status === 'completed').length + ' acciones, ' + res.errors + ' errores.');
+      }
+    } catch (error: any) {
+      console.error('❌ Error ejecutando CRON_RESERVATION_LIFECYCLE_1M:', error);
+      logAutomationExecution('CRON_RESERVATION_LIFECYCLE_1M', 0, 'error', 'Fallo: ' + error.message);
     }
   }, CR_TIMEZONE);
 
