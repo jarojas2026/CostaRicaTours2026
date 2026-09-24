@@ -217,20 +217,8 @@ export async function getOperatorById(providerId: string): Promise<{
     console.warn(`⚠️ Error consultando operador ${providerId} en Firestore:`, err);
   }
 
-  // Fallback seguro si no existe en base de datos
-  if (providerId === 'alsama-tours-cr' && process.env.PROVIDER_DEV_EMAIL) {
-    return {
-      id: 'alsama-tours-cr',
-      name: process.env.PROVIDER_DEV_NAME || 'Operador configurado',
-      paypalEmail: process.env.PROVIDER_DEV_EMAIL,
-      commissionRate: Number(process.env.PROVIDER_COMMISSION_RATE || 0.15),
-      phone: process.env.PROVIDER_DEV_PHONE || '',
-      website: process.env.PROVIDER_WEBSITE || '',
-      verified: true,
-      certificacion: process.env.PROVIDER_CERTIFICATION || 'Proveedor configurado',
-      active: true
-    };
-  }
+  // No se fabrican proveedores operativos si Firestore no contiene el registro verificado.
+
 
   return defaultFallback;
 }
