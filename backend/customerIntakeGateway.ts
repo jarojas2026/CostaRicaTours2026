@@ -2,6 +2,7 @@ import { runTriage, processChatInquiry } from './aiAssistantService';
 import { sendEmail, sendWhatsAppMessage } from './notificationService';
 import { rememberTurn } from './memoryService';
 import { getFirestoreDb } from './bookingService';
+import { resolveTravelerIdentity } from './travelerIdentityService';
 
 export interface CustomerIntakePayload {
   message?: string;
@@ -42,9 +43,17 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
   const message = clean(payload.message, 4000);
   const language = payload.language === 'en' ? 'en' : 'es';
   const source = clean(payload.source || 'web', 80) || 'web';
-  const sessionId = clean(payload.sessionId, 120) || `web_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const requestedSessionId = clean(payload.sessionId, 120) || `web_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   if (!message) throw new Error('La solicitud del cliente no puede estar vacía.');
 
+  const identity = await resolveTravelerIdentity({
+    phone: payload.customer?.phone,
+    email: payload.customer?.email,
+    sessionId: requestedSessionId,
+    channel: source,
+    name: payload.customer?.name
+  });
+  const sessionId = identity.sessionId;
   const triage = await runTriage(message);
   const intent = clean(triage?.intent || 'general_inquiry', 80);
   const confidence = Number.isFinite(Number(triage?.confidence)) ? Number(triage.confidence) : 0.5;
@@ -122,6 +131,7 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
     intakeId,
     sessionId,
     source,
+    identity: { canonicalId: identity.canonicalId, matchedBy: identity.matchedBy },
     triage: { intent, confidence, extractedData },
     decision: { autonomous: !escalation.escalated, escalated: escalation.escalated, reason: escalation.reason },
     customer: {
