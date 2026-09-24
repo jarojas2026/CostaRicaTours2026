@@ -1,6 +1,8 @@
+import { Language } from '../types';
+
 export interface CustomerIntakeRequest {
   message: string;
-  language?: 'es' | 'en';
+  language?: Language;
   source?: string;
   sessionId?: string;
   customer?: { name?: string; email?: string; phone?: string };
