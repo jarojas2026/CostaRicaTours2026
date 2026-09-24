@@ -196,7 +196,7 @@ export async function executeAgentTool(
       return {
         success: true,
         stage: 'pending_payment',
-        bookingId: booking?.booking?.bookingId || booking?.bookingId,
+        bookingId: booking?.booking?.bookingId,
         booking,
         paymentRequired: true,
         message: 'Reserva creada como pendiente de pago. No se considera confirmada hasta verificar el pago.'
