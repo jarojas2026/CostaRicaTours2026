@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { askCounterDesk } from './counterDeskService';
 import { rememberTurn } from './memoryService';
 import { getFirestoreDb } from './bookingService';
+import { resolveTravelerIdentity } from './travelerIdentityService';
 
 export type VoiceCallContext = {
   callId: string;
@@ -139,7 +140,13 @@ export async function handleVoiceTurn(input: {
     ]);
   }
 
-  const sessionId = `voice_${input.callId}`;
+  const identity = await resolveTravelerIdentity({
+    phone: input.from,
+    sessionId: `voice_${input.callId}`,
+    channel: 'voice',
+    name: input.hotelName ? `Viajero en ${input.hotelName}` : undefined
+  });
+  const sessionId = identity.sessionId;
   const contextualMessage = [
     textInput || `DTMF request: ${digits}`,
     input.hotelName ? `Hotel: ${input.hotelName}` : '',
@@ -180,7 +187,8 @@ export async function rememberVoiceCallStart(context: VoiceCallContext) {
       updatedAt: new Date().toISOString()
     }, { merge: true });
   }
-  await rememberTurn(`voice_${context.callId}`, {
+  const identity = await resolveTravelerIdentity({ phone: context.from, sessionId: `voice_${context.callId}`, channel: 'voice' });
+  await rememberTurn(identity.sessionId, {
     role: 'assistant',
     text: [
       'Inicio de llamada Agent Desk',
@@ -200,7 +208,8 @@ export async function rememberVoiceCallEnd(callId: string, status: string) {
       updatedAt: new Date().toISOString()
     }, { merge: true });
   }
-  await rememberTurn(`voice_${callId}`, {
+  const identity = await resolveTravelerIdentity({ sessionId: `voice_${callId}`, channel: 'voice' });
+  await rememberTurn(identity.sessionId, {
     role: 'assistant',
     text: `Fin de llamada Agent Desk. Estado: ${status}`
   }, { agentId: 'voice_agent_desk' });
