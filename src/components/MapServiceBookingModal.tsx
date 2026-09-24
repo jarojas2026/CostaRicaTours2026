@@ -7,6 +7,7 @@ import {
 import { Language, Currency } from '../types';
 import { MapTourismService } from '../data/mapServicesData';
 import { formatCurrency, getLangText } from '../utils/i18n';
+import { getUsdToCrcRate } from '../utils/currencies';
 import { auth, db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -76,7 +77,8 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
     calculatedTotalUSD = 50;
   }
 
-  const calculatedTotalCRC = Math.round(calculatedTotalUSD * 520);
+  const crcRate = getUsdToCrcRate();
+  const calculatedTotalCRC = crcRate > 0 ? Math.round(calculatedTotalUSD * crcRate) : null;
 
   const getServiceHeaderIcon = () => {
     switch (service.type) {
@@ -266,7 +268,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                 </div>
                 <div className="flex justify-between pt-2 border-t border-emerald-500/20">
                   <span className="text-emerald-300 font-bold">{language === 'es' ? 'Total Liquidado:' : 'Total Amount:'}</span>
-                  <span className="font-black text-amber-300 text-sm">{formatCurrency(calculatedTotalUSD, currency)} (₡{calculatedTotalCRC.toLocaleString()})</span>
+                  <span className="font-black text-amber-300 text-sm">{formatCurrency(calculatedTotalUSD, currency)}{calculatedTotalCRC !== null ? ` (₡${calculatedTotalCRC.toLocaleString()})` : ''}</span>
                 </div>
               </div>
 
