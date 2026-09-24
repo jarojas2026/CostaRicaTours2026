@@ -6,7 +6,7 @@
  */
 
 import cron from 'node-cron';
-import { getAllBookings, updateBookingStatus } from './bookingService';
+import { getAllBookings, updateBookingStatus, getFirestoreDb } from './bookingService';
 import { logAutomationExecution } from './nativeAutomationEngine';
 import { processProviderInboxOnce } from './providerInboxAgent';
 import { runReservationLifecycleSweep } from './reservationLifecycleOrchestrator';
@@ -63,6 +63,35 @@ export async function cleanupExpiredSoftHolds() {
 
 export function initializeAutomationEngine() {
   console.log('⚙️ Inicializando Motor Cron Nativo de Costa Rica Tours (Zona Horaria: America/Costa_Rica)...');
+
+  
+const AUTOMATION_LOCK_STALE_MS = 4 * 60 * 1000;
+
+/** Evita que múltiples instancias ejecuten el mismo job periódico simultáneamente. */
+export async function withDistributedAutomationLock<T>(lockId: string, work: () => Promise<T>): Promise<T | null> {
+  const db = getFirestoreDb();
+  if (!db) return work();
+  const ref = db.collection('automation_locks').doc(lockId);
+  const acquiredAt = new Date().toISOString();
+  try {
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      if (snap.exists) {
+        const data = snap.data() || {};
+        const timestamp = Date.parse(String(data.acquiredAt || data.updatedAt || ''));
+        if (data.status === 'running' && Number.isFinite(timestamp) && Date.now() - timestamp < AUTOMATION_LOCK_STALE_MS) {
+          throw new Error('automation_lock_busy');
+        }
+      }
+      tx.set(ref, { status: 'running', acquiredAt, owner: process.env.VERCEL_REGION || process.env.HOSTNAME || 'node', updatedAt: acquiredAt }, { merge: true });
+    });
+  } catch (error: any) {
+    if (error?.message === 'automation_lock_busy') return null;
+    throw error;
+  }
+  try { return await work(); }
+  finally { await ref.set({ status: 'idle', releasedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, { merge: true }).catch(() => undefined); }
+}
 
   const CR_TIMEZONE = { timezone: 'America/Costa_Rica' };
 
@@ -178,8 +207,8 @@ export function initializeAutomationEngine() {
   // Gmail OAuth es opcional: si no está configurado, el agente queda inactivo sin romper el resto del sistema.
   cron.schedule('* * * * *', async () => {
     try {
-      const res = await processProviderInboxOnce();
-      if (res.enabled && (res.processed || res.errors)) {
+      const res = await withDistributedAutomationLock('provider-inbox-1m', processProviderInboxOnce);
+      if (res?.enabled && (res.processed || res.errors)) {
         logAutomationExecution('CRON_PROVIDER_INBOX_1M', 0, res.errors ? 'warning' : 'success',
           'Bandeja de proveedores: ' + res.processed + ' procesadas, ' + res.errors + ' errores, ' + res.ignored + ' ignoradas.');
       }
@@ -193,8 +222,8 @@ export function initializeAutomationEngine() {
   // Revisa pagos, despacho a proveedor, confirmaciones y notificación al cliente.
   cron.schedule('* * * * *', async () => {
     try {
-      const res = await runReservationLifecycleSweep(100);
-      if (res.scanned || res.errors) {
+      const res = await withDistributedAutomationLock('reservation-lifecycle-1m', () => runReservationLifecycleSweep(100));
+      if (res && (res.scanned || res.errors)) {
         logAutomationExecution('CRON_RESERVATION_LIFECYCLE_1M', res.durationMs, res.errors ? 'warning' : 'success',
           'Ciclo de reservas: ' + res.scanned + ' revisadas, ' + res.results.filter((x: any) => x.status === 'completed').length + ' acciones, ' + res.errors + ' errores.');
       }
@@ -209,7 +238,7 @@ export function initializeAutomationEngine() {
   // y responde automáticamente cuando la política de autonomía y la confianza lo permiten.
   cron.schedule('* * * * *', async () => {
     try {
-      const res = await processEmailOperationsOnce();
+      const res = await withDistributedAutomationLock('email-operations-1m', processEmailOperationsOnce);
       if (res.scanned || res.errors.length) {
         logAutomationExecution('CRON_EMAIL_OPERATIONS_1M', 0, res.errors.length ? 'warning' : 'success',
           'Correo autónomo: ' + res.scanned + ' escaneados, ' + res.results.length + ' procesados, ' + res.errors.length + ' errores.');
