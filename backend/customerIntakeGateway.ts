@@ -19,6 +19,7 @@ function clean(value: unknown, max = 4000): string {
 
 function needsHumanEscalation(intent: string, confidence: number, message: string, extractedData: any) {
   const lower = message.toLowerCase();
+  if (extractedData?.mediaType) return { escalated: true, reason: 'El canal recibió contenido multimedia que requiere revisión humana.' };
   const explicitHuman = /humano|asesor|persona|agente|ll[aá]mame|llamada|quiero hablar|quiero que me llamen|human|agent|call me/i.test(lower);
   const sensitive = ['cancellation', 'modification'].includes(intent);
   const complex = /grupo grande|evento|corporativo|boda|luna de miel|multi.?destino|personalizado|problema|reclamo|queja|emergencia|urgente|refund|reembolso/i.test(lower);
@@ -57,10 +58,14 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
   const triage = await runTriage(message);
   const intent = clean(triage?.intent || 'general_inquiry', 80);
   const confidence = Number.isFinite(Number(triage?.confidence)) ? Number(triage.confidence) : 0.5;
-  const extractedData = { ...(triage?.extractedData || {}), customer: payload.customer || undefined };
-  const escalation = needsHumanEscalation(intent, confidence, message, extractedData);
+  const extractedData = { ...(triage?.extractedData || {}), customer: payload.customer || undefined, mediaType: payload.context?.mediaType || undefined };
+  const escalation = identity.identityConflict
+    ? { escalated: true, reason: 'La identidad del viajero presenta señales conflictivas; requiere verificación antes de acciones sensibles.' }
+    : needsHumanEscalation(intent, confidence, message, extractedData);
 
-  const assistant = await processChatInquiry(message, language, [], 'auto', sessionId, { allowMutations: !escalation.escalated });
+  const assistant = extractedData.mediaType
+    ? { reply: language === 'en' ? 'We received your media message. A human agent has been notified and will review it. You can also send the request as text for immediate AI assistance.' : 'Recibimos tu mensaje multimedia. Un agente humano ha sido notificado y lo revisará. También puedes enviar la solicitud por texto para recibir asistencia inmediata de la IA.', agentId: 'customer_intake_gateway' }
+    : await processChatInquiry(message, language, [], 'auto', sessionId, { allowMutations: !escalation.escalated });
   const intakeId = `INT-${new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
   const reply = clean(assistant?.reply || 'Recibimos tu solicitud y estamos procesándola.', 8000);
 
