@@ -29,6 +29,8 @@ if (undeclared.length) add('HIGH', 'AI-TOOLS-002', `Gemini declarations not pres
 if (missingExecutors.length) add('CRITICAL', 'AI-TOOLS-003', `Tools in registry without executor case: ${missingExecutors.join(', ')}`);
 if (unique(declarationNames).length !== declarationNames.length) add('HIGH', 'AI-TOOLS-004', 'Duplicate Gemini function declaration names detected.');
 
+const unsafeContact = ['8888', '7777'].join('-');
+
 const providerService = read('backend/providerCommunicationService.ts');
 const nativeWorkflows = read('backend/nativeWorkflows.ts');
 if (/return match \|\| REGISTERED_PROVIDERS\[0\]/.test(providerService)) {
@@ -41,16 +43,7 @@ if (/fallbackProvider\.verified !== true/.test(nativeWorkflows) === false) {
   add('HIGH', 'PROVIDER-003', 'Direct-operations failover does not require explicit provider verification.');
 }
 
-for (const [relative, label] of [
-  ['backend/aiAssistantService.ts', 'AI assistant'],
-  ['public/counter-widget.js', 'Counter widget'],
-  ['docs/guia-integracion-counter-agent.md', 'Counter documentation']
-] as const) {
-  const source = read(relative);
-  if (source.includes('8888-7777')) add('HIGH', 'CONTACT-001', `Unconfigured private/emergency contact 8888-7777 remains in ${label}.`);
-}
-
-for (const relative of ['backend', 'src', 'scripts']) {
+for (const relative of ['backend', 'src', 'scripts', 'public', 'docs']) {
   const dir = path.join(root, relative);
   if (!fs.existsSync(dir)) continue;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -59,6 +52,7 @@ for (const relative of ['backend', 'src', 'scripts']) {
     const source = fs.readFileSync(file, 'utf8');
     if (/n8n/i.test(source)) add('HIGH', 'AUTOMATION-001', `n8n reference remains in ${path.relative(root, file)}.`);
     if (/react-example/i.test(source)) add('MEDIUM', 'META-001', `Legacy project name react-example remains in ${path.relative(root, file)}.`);
+    if (/(?:8888)[-](?:7777)/.test(source)) add('HIGH', 'CONTACT-001', `Hardcoded private/emergency contact ${unsafeContact} remains in ${path.relative(root, file)}.`);
   }
 }
 

@@ -191,9 +191,9 @@ export async function getOperatorById(providerId: string): Promise<{
         commissionRate: typeof data.commissionRate === 'number' ? data.commissionRate : 0.15,
         phone: data.phone || data.telefono || defaultFallback.phone,
         website: data.website || defaultFallback.website,
-        verified: data.verified ?? true,
-        certificacion: data.certificacion || 'CST Sostenible',
-        active: data.active !== false && data.status !== 'inactivo'
+        verified: data.verified === true,
+        certificacion: data.certificacion,
+        active: data.verified === true && data.active === true && data.status !== 'inactivo'
       };
     }
 
@@ -208,9 +208,9 @@ export async function getOperatorById(providerId: string): Promise<{
         commissionRate: typeof data.comision === 'number' ? data.comision : (data.commissionRate ?? 0.15),
         phone: data.telefono || data.phone || defaultFallback.phone,
         website: data.website || defaultFallback.website,
-        verified: data.verificado ?? true,
-        certificacion: data.certificacion || 'CST Nivel Avanzado',
-        active: data.activo !== false && data.status !== 'inactivo'
+        verified: data.verificado === true,
+        certificacion: data.certificacion,
+        active: data.verificado === true && data.activo === true && data.status !== 'inactivo'
       };
     }
   } catch (err) {

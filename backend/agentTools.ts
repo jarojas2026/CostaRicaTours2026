@@ -214,6 +214,25 @@ export async function executeAgentTool(
       const relevant = await retrieveRelevantMemory(sessionId, String(args.query || ''), 8);
       return { summary: relevant.summary || memory.summary, facts: relevant.facts, relevantTurns: relevant.relevantTurns };
     }
+    case 'observe_journey_state':
+      return observeJourneyState({
+        catalog: Array.isArray(args.catalog) ? args.catalog : [],
+        date: args.date ? String(args.date) : undefined,
+        time: args.time ? String(args.time) : undefined,
+        travelers: Number(args.travelers) || 1,
+        previousAvailability: Array.isArray(args.previousAvailability) ? args.previousAvailability : []
+      });
+    case 'guardian_replan_journey':
+      return guardianReplanJourney({
+        catalog: Array.isArray(args.catalog) ? args.catalog : [],
+        date: args.date ? String(args.date) : undefined,
+        time: args.time ? String(args.time) : undefined,
+        travelers: Number(args.travelers) || 1,
+        previousAvailability: Array.isArray(args.previousAvailability) ? args.previousAvailability : [],
+        days: args.days === undefined ? undefined : Number(args.days),
+        regions: Array.isArray(args.regions) ? args.regions.map((x: unknown) => String(x)) : undefined,
+        itinerary: Array.isArray(args.itinerary) ? args.itinerary : []
+      });
     case 'compare_tours': {
       const ids = Array.isArray(args.tourIds) ? args.tourIds.map((x: unknown) => String(x)) : [];
       if (ids.length < 2) throw new Error('tourIds requiere al menos 2 tours');
@@ -521,6 +540,18 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
     }
   },
   {
+    name: 'recall_memory',
+    description: 'Retrieve persistent operational memory and relevant prior turns for the current traveler session.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        sessionId: { type: 'STRING' },
+        query: { type: 'STRING' }
+      },
+      required: ['sessionId']
+    }
+  },
+  {
     name: 'compare_tours',
     description: 'Compare 2-4 tours side-by-side on duration, price, rating, difficulty, and location.',
     parameters: {
@@ -701,6 +732,28 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
       properties: {
         health: { type: 'OBJECT' }, hasDate: { type: 'BOOLEAN' }, hasSelection: { type: 'BOOLEAN' }
       }
+    }
+  },
+  {
+    name: 'plan_itinerary',
+    description: 'Draft a day-by-day Costa Rica itinerary outline from the authoritative catalog by interests and regions.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        days: { type: 'NUMBER' },
+        interests: { type: 'ARRAY', items: { type: 'STRING' } },
+        regions: { type: 'ARRAY', items: { type: 'STRING' } }
+      },
+      required: ['days']
+    }
+  },
+  {
+    name: 'season_advice',
+    description: 'Return seasonal Costa Rica guidance for a requested month without presenting it as live weather or availability.',
+    parameters: {
+      type: 'OBJECT',
+      properties: { month: { type: 'NUMBER' } },
+      required: ['month']
     }
   },
   {
