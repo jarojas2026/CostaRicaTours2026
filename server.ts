@@ -120,6 +120,7 @@ import { getExecutiveAIArchitecture } from './backend/executiveAIArchitecture';
 import { processCustomerIntake, enqueueCustomerIntakeJob, processPendingCustomerIntakeJobs } from './backend/customerIntakeGateway';
 import { sendWhatsAppMessage } from './backend/notificationService';
 import { getFirestoreDb } from './backend/bookingService';
+import { processEmailOperationsOnce, getEmailOperationsSnapshot } from './backend/emailOperationsAgent';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -539,6 +540,24 @@ app.post('/api/internal/provider-inbox/sweep', requireAgentTool, async (_req, re
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message || 'Provider inbox error' });
   }
+});
+
+app.post('/api/internal/email-operations/sweep', requireAgentTool, async (_req, res) => {
+  try {
+    res.json({ success: true, result: await processEmailOperationsOnce() });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Email operations error' });
+  }
+});
+
+app.get('/api/admin/email-operations', requireAdmin, async (_req, res) => {
+  try { res.json(await getEmailOperationsSnapshot()); }
+  catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Email operations snapshot error' }); }
+});
+
+app.post('/api/admin/email-operations/sweep', requireAdmin, async (_req, res) => {
+  try { res.json({ success: true, result: await processEmailOperationsOnce() }); }
+  catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Email operations sweep error' }); }
 });
 
 app.post('/api/ai/intelligence', (req, res) => {

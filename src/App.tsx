@@ -48,6 +48,7 @@ const PhotoTourFinder = lazy(() => import('./components/PhotoTourFinder').then(m
 const GoogleWorkspaceHub = lazy(() => import('./components/GoogleWorkspaceHub').then(m => ({ default: m.GoogleWorkspaceHub })));
 const CounterDeskPage = lazy(() => import('./pages/CounterDeskPage').then(m => ({ default: m.CounterDeskPage })));
 const AutonomousOperationsPage = lazy(() => import('./pages/AutonomousOperationsPage').then(m => ({ default: m.default })));
+const EmailOperationsPage = lazy(() => import('./pages/EmailOperationsPage').then(m => ({ default: m.default })));
 
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -552,6 +553,12 @@ export default function App() {
 
             <Route path="/admin" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
               <AdminControlCenterPage language={language} />
+            </AdminRouteGuard>} />
+
+            <Route path="/admin/email-operations" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
+              <Suspense fallback={<div className="py-24 text-center text-sky-300">Cargando centro de correo...</div>}>
+                <EmailOperationsPage language={language} />
+              </Suspense>
             </AdminRouteGuard>} />
 
             <Route path="/admin/financial-legal" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
