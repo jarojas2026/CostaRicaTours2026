@@ -51,9 +51,11 @@ for (const relative of ['backend', 'src', 'scripts', 'public', 'docs']) {
     if (!entry.isFile() || !/\.(ts|tsx|js|jsx|md)$/.test(entry.name)) continue;
     const file = path.join(dir, entry.name);
     const source = fs.readFileSync(file, 'utf8');
-    if (path.relative(root, file) !== 'scripts/auditSystem.ts' && /n8n/i.test(source)) add('HIGH', 'AUTOMATION-001', `n8n reference remains in ${path.relative(root, file)}.`);
-    if (/react-example/i.test(source)) add('MEDIUM', 'META-001', `Legacy project name react-example remains in ${path.relative(root, file)}.`);
-    if (/(?:8888)[-](?:7777)|88887777/.test(source)) add('HIGH', 'CONTACT-001', `Hardcoded private/emergency contact ${unsafeContact} remains in ${path.relative(root, file)}.`);
+    const relativePath = path.relative(root, file);
+    if (relativePath === 'scripts/auditSystem.ts') continue;
+    if (/n8n/i.test(source)) add('HIGH', 'AUTOMATION-001', `n8n reference remains in ${relativePath}.`);
+    if (/react-example/i.test(source)) add('MEDIUM', 'META-001', `Legacy project name react-example remains in ${relativePath}.`);
+    if (/(?:8888)[-](?:7777)|88887777/.test(source)) add('HIGH', 'CONTACT-001', `Hardcoded private/emergency contact ${unsafeContact} remains in ${relativePath}.`);
   }
 }
 

@@ -516,7 +516,8 @@ export async function executeSolicitudSoporte(body: any) {
   const waText = encodeURIComponent(
     `Hola Costa Rica Tours, requiero asistencia para el ticket ${ticketId} (Reserva: ${bookingRef}): ${reasonText}`
   );
-  const whatsappDirectUrl = `https://wa.me/50688887777?text=${waText}`;
+  const emergencyPhone = (process.env.EMERGENCY_CONTACT_PHONE || '').replace(/\D/g, '');
+  const whatsappDirectUrl = emergencyPhone ? `https://wa.me/${emergencyPhone}?text=${waText}` : '';
 
   const duration = Date.now() - start;
   logAutomationExecution(
@@ -1368,7 +1369,7 @@ export async function executeAutonomousCrisisSentimentEscalation(body: any) {
     escalamientoOperativo: {
       ticketId: `INC-${Date.now().toString(36).toUpperCase()}`,
       canalDirectorAlerta: 'DISPARADA_CON_SONIDO_DE_EMERGENCIA',
-      contactoDirectoWhatsAppSupervisor: 'https://wa.me/50687959148?text=Urgencia%20Reserva%20David%20Morales',
+      contactoDirectoWhatsAppSupervisor: process.env.EMERGENCY_CONTACT_PHONE ? `https://wa.me/${String(process.env.EMERGENCY_CONTACT_PHONE).replace(/\D/g, '')}?text=Urgencia%20Reserva` : null,
       guardiaAsignado: 'Director de Operaciones en Turno'
     },
     timestamp: new Date().toISOString()

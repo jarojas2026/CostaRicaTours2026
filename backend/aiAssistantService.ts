@@ -1172,7 +1172,7 @@ export async function runCustomerServiceAgent(
         emergencyContact: '${emergencyContact} / 911'
       },
       quickActions: [
-        { label: isEn ? '🚨 Call Emergency 24/7' : '🚨 Llamar Emergencia 24/7', action: 'call_emergency', data: { phone: '+50688887777' } },
+        { label: isEn ? '🚨 Call Emergency 24/7' : '🚨 Llamar Emergencia 24/7', action: 'call_emergency', data: { phone: process.env.EMERGENCY_CONTACT_PHONE || '911' } },
         { label: isEn ? '💬 WhatsApp Ops Desk' : '💬 WhatsApp Operaciones', action: 'direct_whatsapp' }
       ]
     };
@@ -1617,7 +1617,7 @@ export async function runLogisticsAgent(
         emergencyContact: '${emergencyContact} / 911'
       },
       quickActions: [
-        { label: isEn ? '🚨 Emergency Hotline' : '🚨 Teléfono de Emergencia', action: 'call_emergency', data: { phone: '+50688887777' } },
+        { label: isEn ? '🚨 Emergency Hotline' : '🚨 Teléfono de Emergencia', action: 'call_emergency', data: { phone: process.env.EMERGENCY_CONTACT_PHONE || '911' } },
         { label: isEn ? '💬 WhatsApp Ops Desk' : '💬 WhatsApp Despacho Ops', action: 'direct_whatsapp' }
       ]
     };
