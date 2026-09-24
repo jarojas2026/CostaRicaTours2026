@@ -3,6 +3,7 @@ import path from 'node:path';
 
 const ROOTS = ['src'];
 const BUSINESS_WHATSAPP = 'wa.me/50687959148';
+const WA_PATTERN = /https?:\\/\\/wa\\.me\\/([^?\\s"'`}]+)/gi;
 
 function walk(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
@@ -17,10 +18,13 @@ const violations: string[] = [];
 
 for (const file of files) {
   const source = fs.readFileSync(file, 'utf8');
-  if (!source.includes(BUSINESS_WHATSAPP)) continue;
-  const hasGlobalGatewayMarker = source.includes('data-human-handoff') || source.includes('requestCustomerIntake') || file.endsWith('App.tsx');
-  if (!hasGlobalGatewayMarker && source.includes('href') && source.includes(BUSINESS_WHATSAPP)) {
-    violations.push(file);
+  const matches = [...source.matchAll(WA_PATTERN)];
+  for (const match of matches) {
+    if (match[0].toLowerCase().includes(BUSINESS_WHATSAPP)) continue;
+    violations.push(`${file}: non-business WhatsApp destination ${match[0]}`);
+  }
+  if (/window\\.(open|location)[^\\n]*wa\\.me/i.test(source)) {
+    violations.push(`${file}: direct JavaScript WhatsApp navigation`);
   }
 }
 
