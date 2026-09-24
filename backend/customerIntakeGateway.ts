@@ -59,7 +59,9 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
   const intent = clean(triage?.intent || 'general_inquiry', 80);
   const confidence = Number.isFinite(Number(triage?.confidence)) ? Number(triage.confidence) : 0.5;
   const extractedData = { ...(triage?.extractedData || {}), customer: payload.customer || undefined, mediaType: payload.context?.mediaType || undefined };
-  const escalation = needsHumanEscalation(intent, confidence, message, extractedData);
+  const escalation = identity.identityConflict
+    ? { escalated: true, reason: 'La identidad del viajero presenta señales conflictivas; requiere verificación antes de acciones sensibles.' }
+    : needsHumanEscalation(intent, confidence, message, extractedData);
 
   const assistant = extractedData.mediaType
     ? { reply: language === 'en' ? 'We received your media message. A human agent has been notified and will review it. You can also send the request as text for immediate AI assistance.' : 'Recibimos tu mensaje multimedia. Un agente humano ha sido notificado y lo revisará. También puedes enviar la solicitud por texto para recibir asistencia inmediata de la IA.', agentId: 'customer_intake_gateway' }
