@@ -82,12 +82,16 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
     console.warn('No se pudo persistir la alerta de Customer Intake:', error);
   }
 
-  const emailResult = await sendEmail({
-    to: ownerEmail(),
-    subject: `${escalation.escalated ? '🚨 Escalación' : '🧠 IA atendió'} — ${intent} — ${intakeId}`,
-    text: ownerSummary,
-    html: `<h2>${escalation.escalated ? '🚨 Solicitud escalada' : '🧠 Solicitud procesada por IA'}</h2><pre style="white-space:pre-wrap;font-family:Arial,sans-serif">${ownerSummary.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</pre>`
-  }).catch(error => ({ success: false, error: error?.message || 'email error' }));
+  // createAlert ya despacha correo a ADMIN_ALERT_EMAIL. Solo usamos el
+  // correo configurado de soporte como fallback para evitar duplicados.
+  const emailResult = process.env.ADMIN_ALERT_EMAIL
+    ? { success: true }
+    : await sendEmail({
+        to: ownerEmail(),
+        subject: `${escalation.escalated ? '🚨 Escalación' : '🧠 IA atendió'} — ${intent} — ${intakeId}`,
+        text: ownerSummary,
+        html: `<h2>${escalation.escalated ? '🚨 Solicitud escalada' : '🧠 Solicitud procesada por IA'}</h2><pre style="white-space:pre-wrap;font-family:Arial,sans-serif">${ownerSummary.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</pre>`
+      }).catch(error => ({ success: false, error: error?.message || 'email error' }));
 
   const whatsappResult = await sendWhatsAppMessage({
     toPhone: ownerPhone(),
