@@ -336,7 +336,7 @@ export async function executeAgentTool(
 /**
  * Declaraciones oficiales de herramientas estructuradas para Function Calling de Gemini SDK
  */
-  {
+const CREATE_RESERVATION_DECLARATION = {
     name: 'create_reservation',
     description: 'Create a reservation after explicit customer confirmation. The server rechecks live availability and creates only a pending-payment booking; never claims payment confirmation.',
     parameters: {
@@ -350,8 +350,9 @@ export async function executeAgentTool(
       },
       required: ['confirmed','tourId','date','adults','children','customerName','customerEmail','customerPhone']
     }
-  },
+  };
 export const GEMINI_FUNCTION_DECLARATIONS = [
+  CREATE_RESERVATION_DECLARATION,
   {
     name: 'build_trip_journey',
     description: 'Build a complete Costa Rica trip from traveler memory, expert intelligence, authoritative catalog, live weather, live availability, itinerary and sales next step.',
