@@ -57,6 +57,7 @@ for (const relative of ['backend', 'src', 'scripts', 'public', 'docs']) {
   }
 }
 
+const server = read('server.ts');
 const voiceService = read('backend/voiceAgentDeskService.ts');
 if (/if \(!authToken\) return true/.test(voiceService) || /if \(!authToken\)\\s*\\{\\s*return true/.test(voiceService)) {
   add('CRITICAL', 'VOICE-SEC-001', 'Voice webhook signature verification fails open when the provider token is missing.');
@@ -65,7 +66,6 @@ if (/verifyVoiceSignature\(/.test(server) && !/VOICE_PROVIDER_AUTH_TOKEN/.test(v
   add('HIGH', 'VOICE-SEC-002', 'Voice webhook route exists but its signature configuration is not visible in the voice service.');
 }
 
-const server = read('server.ts');
 if (/setInterval\(async \(\) =>[\\s\\S]*processPendingCustomerIntakeJobs/.test(server)) {
   add('MEDIUM', 'QUEUE-001', 'Customer Intake has an in-process sweep; production serverless deployments also need an external scheduler calling the protected queue endpoint.');
 }
