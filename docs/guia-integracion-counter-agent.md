@@ -102,7 +102,7 @@ El agente comunica y hace cumplir las siguientes condiciones comerciales:
   - Menos de 48 horas: **No reembolsable** según la política estándar de los operadores locales.
 - **Métodos de Pago**:
   - Tarjetas de crédito/débito (Visa, Mastercard mediante Stripe con 3D-Secure).
-  - Transferencia bancaria nacional mediante **SINPE Móvil** (+506 8888-7777 con verificación de comprobante).
+  - Transferencia bancaria nacional mediante **SINPE Móvil** (número SINPE configurado mediante la variable de entorno `SINPE_MOBILE_NUMBER` con verificación de comprobante).
   - PayPal para viajeros internacionales.
   - Liquidación en mostrador físico para pasajeros autorizados.
 
