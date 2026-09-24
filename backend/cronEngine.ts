@@ -9,6 +9,7 @@ import cron from 'node-cron';
 import { getAllBookings, updateBookingStatus } from './bookingService';
 import { logAutomationExecution } from './nativeAutomationEngine';
 import { processProviderInboxOnce } from './providerInboxAgent';
+import { processEmailOperationsOnce } from './emailOperationsAgent';
 import {
   executeAutomatedProviderPayouts,
   executeSurveillanceAndEscalation,
@@ -184,6 +185,22 @@ export function initializeAutomationEngine() {
     } catch (error: any) {
       console.error('❌ Error ejecutando CRON_PROVIDER_INBOX_1M:', error);
       logAutomationExecution('CRON_PROVIDER_INBOX_1M', 0, 'error', 'Fallo: ' + error.message);
+    }
+  }, CR_TIMEZONE);
+
+  // 11. CRON: AGENTE OMNICANAL DE CORREO (Cada minuto)
+  // Revisa Gmail y Outlook, clasifica solicitudes, continúa reservas existentes
+  // y responde automáticamente cuando la política de autonomía y la confianza lo permiten.
+  cron.schedule('* * * * *', async () => {
+    try {
+      const res = await processEmailOperationsOnce();
+      if (res.scanned || res.errors.length) {
+        logAutomationExecution('CRON_EMAIL_OPERATIONS_1M', 0, res.errors.length ? 'warning' : 'success',
+          'Correo autónomo: ' + res.scanned + ' escaneados, ' + res.results.length + ' procesados, ' + res.errors.length + ' errores.');
+      }
+    } catch (error: any) {
+      console.error('❌ Error ejecutando CRON_EMAIL_OPERATIONS_1M:', error);
+      logAutomationExecution('CRON_EMAIL_OPERATIONS_1M', 0, 'error', 'Fallo: ' + error.message);
     }
   }, CR_TIMEZONE);
 
