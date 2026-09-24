@@ -50,7 +50,7 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
   const extractedData = { ...(triage?.extractedData || {}), customer: payload.customer || undefined };
   const escalation = needsHumanEscalation(intent, confidence, message, extractedData);
 
-  const assistant = await processChatInquiry(message, language, [], 'auto', sessionId);
+  const assistant = await processChatInquiry(message, language, [], 'auto', sessionId, { allowMutations: !escalation.escalated });
   const intakeId = `INT-${new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
   const reply = clean(assistant?.reply || 'Recibimos tu solicitud y estamos procesándola.', 8000);
 
