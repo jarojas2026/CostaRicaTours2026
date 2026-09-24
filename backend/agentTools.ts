@@ -125,6 +125,14 @@ export const AGENT_TOOL_REGISTRY = {
   observe_provider_sla: {
     description: 'Detect provider service orders that exceeded SLA without mutating bookings or itineraries.',
     sideEffect: false
+  },
+  trip_health_snapshot: {
+    description: 'Build a unified traveler-journey health snapshot from availability, weather, provider SLA, memory and itinerary state.',
+    sideEffect: false
+  },
+  next_best_action: {
+    description: 'Recommend the next operational or sales step from verified journey state without executing it.',
+    sideEffect: false
   }
 } as const;
 
@@ -277,6 +285,70 @@ export async function executeAgentTool(
       return getDestinationIntelligence(String(args.regionId || ''));
     case 'observe_provider_sla':
       return observeProviderSla();
+    case 'trip_health_snapshot': {
+      const journeyId = String(args.journeyId || '').trim();
+      const sessionId = String(args.sessionId || '').trim();
+      if (!journeyId && !sessionId) throw new Error('journeyId o sessionId requerido');
+
+      let journey: any = null;
+      if (journeyId) {
+        const { getTravelerJourney } = await import('./travelJourneyOrchestrator');
+        journey = await getTravelerJourney(journeyId);
+      }
+
+      const memory = sessionId ? await getOperationalMemory(sessionId) : null;
+      const provider = await observeProviderSla();
+      const availability = journey?.live?.availability || [];
+      const affected = availability.filter((item: any) => item.status === 'unavailable' || item.status === 'requires_confirmation');
+
+      return {
+        journeyId: journey?.journeyId || journeyId || null,
+        generatedAt: new Date().toISOString(),
+        state: journey?.status || 'session_only',
+        traveler: journey?.traveler || null,
+        memory: memory ? {
+          summary: memory.summary,
+          preferences: memory.preferences,
+          activeGoals: memory.activeGoals,
+          decisions: memory.decisions
+        } : null,
+        live: {
+          weather: journey?.live?.weather || [],
+          availability,
+          availabilityBlockers: affected,
+          providerSla: provider,
+          verifiedAt: journey?.live?.availabilityVerifiedAt || null
+        },
+        itinerary: journey?.itinerary || null,
+        sales: journey?.sales || null,
+        health: {
+          bookingBlockers: affected.length,
+          providerOverdue: provider.overdue.length,
+          replanningRequired: affected.length > 0 || provider.overdue.length > 0
+        }
+      };
+    }
+    case 'next_best_action': {
+      const health = args.health || {};
+      const blockers = Number(health.bookingBlockers || 0);
+      const overdue = Number(health.providerOverdue || 0);
+      const hasDate = Boolean(args.hasDate);
+      const hasSelection = Boolean(args.hasSelection);
+
+      if (blockers > 0) {
+        return { priority: 'high', action: 'resolve_operational_blockers', reason: 'Hay experiencias sin disponibilidad o que requieren confirmación.' };
+      }
+      if (overdue > 0) {
+        return { priority: 'high', action: 'follow_up_provider', reason: 'Hay órdenes de proveedor fuera de SLA.' };
+      }
+      if (!hasDate) {
+        return { priority: 'medium', action: 'collect_trip_date', reason: 'La fecha es necesaria para verificar disponibilidad real.' };
+      }
+      if (!hasSelection) {
+        return { priority: 'medium', action: 'refine_and_select_experiences', reason: 'Faltan experiencias concretas para pasar de inspiración a verificación.' };
+      }
+      return { priority: 'low', action: 'prepare_verified_quote', reason: 'El viaje tiene fecha y selección; el siguiente paso es preparar una cotización basada en datos verificados.' };
+    }
     case 'verify_journey_availability':
       return verifyJourneyAvailability({
         catalog: Array.isArray(args.catalog) ? args.catalog : [],

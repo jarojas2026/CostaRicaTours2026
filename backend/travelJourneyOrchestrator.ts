@@ -178,6 +178,11 @@ export async function buildTripJourney(params: JourneyParams) {
       stage: params.date && availability.status === 'available' ? 'verification_complete' : 'planning',
       nextAction: !params.date ? 'Definir fecha para verificar disponibilidad' : availability.status === 'available' ? 'Preparar cotización y revisar requisitos antes de reservar' : 'Resolver disponibilidad y verificación operativa antes de reservar',
       estimatedTourCostUSD,
+      estimatedTourCostCRC: (() => {
+        const rate = Number(process.env.USD_TO_CRC_RATE || 0);
+        return rate > 0 ? Math.round(estimatedTourCostUSD * rate) : null;
+      })(),
+      currencyRateSource: process.env.USD_TO_CRC_RATE ? 'configured_environment' : 'not_configured',
       disclaimer: 'La cotización final se calcula en el flujo de reserva.'
     },
     createdAt: new Date().toISOString(),

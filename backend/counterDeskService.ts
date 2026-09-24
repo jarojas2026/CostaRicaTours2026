@@ -164,3 +164,26 @@ export async function organizeCounterDesk() {
 export async function checkCounterAvailability(tourId: string, date: string, time: string | undefined, seats: number) {
   return checkTourAvailability(tourId, date, time, Math.max(1, Math.min(50, Number(seats) || 1)));
 }
+
+export async function getUnifiedTravelerOperationsContext(input: {
+  journeyId?: string;
+  sessionId?: string;
+}) {
+  const { executeAgentTool } = await import('./agentTools');
+  const health = await executeAgentTool('trip_health_snapshot', {
+    journeyId: input.journeyId,
+    sessionId: input.sessionId
+  });
+  const nextAction = await executeAgentTool('next_best_action', {
+    health: health.health,
+    hasDate: Boolean(health.traveler?.date),
+    hasSelection: Array.isArray(health.itinerary?.days) && health.itinerary.days.some((day: any) => day.tourId)
+  });
+  return {
+    generatedAt: new Date().toISOString(),
+    health,
+    nextAction,
+    handoffReady: Boolean(health.journeyId || input.sessionId),
+    channels: ['web', 'Counter Desk', 'voice Agent Desk', 'WhatsApp', 'provider operations']
+  };
+}
