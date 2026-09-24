@@ -37,6 +37,7 @@ export interface TourProvider {
   whatsapp: string;
   email: string;
   officialEmail?: string;
+  verified?: boolean;
   cstLevel: number; // Certificación para la Sostenibilidad Turística (1 a 5)
   insPolicyNumber: string;
   ictLicense: string;
@@ -84,7 +85,7 @@ export interface ServiceOrder {
   failoverAttempts: number;
 }
 
-// Directorio Oficial de Operadores Verificados de Costa Rica
+// Directorio histórico de referencia. NO es fuente de verdad operativa: los proveedores deben existir y estar verificados explícitamente en Firestore.
 export const REGISTERED_PROVIDERS: TourProvider[] = [
   {
     id: 'prov_sarapiqui_rafting',
@@ -238,9 +239,21 @@ async function loadServiceOrder(orderId: string): Promise<ServiceOrder | null> {
 /**
  * Obtiene o asigna el proveedor ideal para un tour
  */
+function isOperationallyVerifiedProvider(provider: TourProvider): boolean {
+  return provider.verified === true || (
+    process.env.NODE_ENV !== 'production' &&
+    process.env.ALLOW_LEGACY_PROVIDER_DIRECTORY === 'true'
+  );
+}
+
 export function getBestProviderForTour(tourId: string): TourProvider {
-  const match = REGISTERED_PROVIDERS.find(p => p.activeTours.includes(tourId) && p.status === 'active');
-  return match || REGISTERED_PROVIDERS[0];
+  const match = REGISTERED_PROVIDERS.find(
+    p => p.activeTours.includes(tourId) && p.status === 'active' && isOperationallyVerifiedProvider(p)
+  );
+  if (!match) {
+    throw new Error(`No hay un proveedor verificado y activo para el tour ${tourId}.`);
+  }
+  return match;
 }
 
 /**
@@ -479,8 +492,19 @@ async function triggerAutoFailoverReassignment(rejectedOrder: ServiceOrder): Pro
   newProvider: TourProvider;
 }> {
   const alternateProvider = REGISTERED_PROVIDERS.find(
-    p => p.id !== rejectedOrder.providerId && p.status === 'active'
-  ) || REGISTERED_PROVIDERS[1];
+    p => p.id !== rejectedOrder.providerId && p.status === 'active' && isOperationallyVerifiedProvider(p)
+  );
+  if (!alternateProvider) {
+    await createAlert({
+      source: 'Motor Autónomo de Reasignación de Operadores',
+      severity: 'critical',
+      title: `Reasignación requiere intervención humana #${rejectedOrder.bookingId}`,
+      message: `No existe un proveedor alternativo verificado y activo para la orden ${rejectedOrder.id}. No se inventará ni asignará un operador sintético.`,
+      bookingId: rejectedOrder.bookingId,
+      providerId: rejectedOrder.providerId
+    }).catch(() => {});
+    throw new Error(`No hay proveedor alternativo verificado para la orden ${rejectedOrder.id}.`);
+  }
 
   rejectedOrder.status = 'reassigned';
   rejectedOrder.providerId = alternateProvider.id;
