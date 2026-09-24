@@ -171,7 +171,7 @@ export async function handleVoiceTurn(input: {
 
 export async function rememberVoiceCallStart(context: VoiceCallContext) {
   await rememberTurn(`voice_${context.callId}`, {
-    role: 'system',
+    role: 'assistant',
     text: [
       'Inicio de llamada Agent Desk',
       context.hotelName ? `Hotel: ${context.hotelName}` : '',
