@@ -704,6 +704,28 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
     }
   },
   {
+    name: 'plan_itinerary',
+    description: 'Draft a day-by-day Costa Rica itinerary outline from the authoritative catalog by interests and regions.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        days: { type: 'NUMBER' },
+        interests: { type: 'ARRAY', items: { type: 'STRING' } },
+        regions: { type: 'ARRAY', items: { type: 'STRING' } }
+      },
+      required: ['days']
+    }
+  },
+  {
+    name: 'season_advice',
+    description: 'Return seasonal Costa Rica guidance for a requested month without presenting it as live weather or availability.',
+    parameters: {
+      type: 'OBJECT',
+      properties: { month: { type: 'NUMBER' } },
+      required: ['month']
+    }
+  },
+  {
     name: 'destination_intelligence',
     description: 'Return stable expert knowledge for a destination and list the live facts that require verification.',
     parameters: {
