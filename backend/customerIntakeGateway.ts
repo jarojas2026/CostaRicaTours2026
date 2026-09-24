@@ -1,6 +1,7 @@
 import { runTriage, processChatInquiry } from './aiAssistantService';
 import { sendEmail, sendWhatsAppMessage } from './notificationService';
 import { rememberTurn } from './memoryService';
+import { getFirestoreDb } from './bookingService';
 
 export interface CustomerIntakePayload {
   message?: string;
@@ -137,4 +138,106 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
     latencyMs: Date.now() - startedAt,
     timestamp: new Date().toISOString()
   };
+}
+
+
+export async function enqueueCustomerIntakeJob(
+  payload: CustomerIntakePayload,
+  options: { replyToWhatsApp?: string; messageId?: string } = {}
+): Promise<{ jobId: string }> {
+  const db = getFirestoreDb();
+  if (!db) throw new Error('Firestore no está disponible para persistir la cola de Customer Intake.');
+  const jobId = `CIJ-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  await db.collection('customer_intake_jobs').doc(jobId).set({
+    jobId,
+    payload,
+    replyToWhatsApp: clean(options.replyToWhatsApp, 40).replace(/[^0-9]/g, '') || null,
+    messageId: clean(options.messageId, 180) || null,
+    status: 'queued',
+    attempts: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+  return { jobId };
+}
+
+export async function processCustomerIntakeJob(jobId: string): Promise<any> {
+  const db = getFirestoreDb();
+  if (!db) throw new Error('Firestore no está disponible para procesar Customer Intake.');
+  const ref = db.collection('customer_intake_jobs').doc(String(jobId || '').trim());
+  const claim = await db.runTransaction(async (tx: any) => {
+    const snapshot = await tx.get(ref);
+    if (!snapshot.exists) return null;
+    const job = snapshot.data() || {};
+    const now = Date.now();
+    const processingAt = job.processingAt ? Date.parse(String(job.processingAt)) : 0;
+    const stale = job.status === 'processing' && processingAt > 0 && now - processingAt > 5 * 60 * 1000;
+    if (job.status === 'completed' || job.status === 'failed' || (job.status === 'processing' && !stale)) return null;
+    const attempts = Number(job.attempts || 0) + 1;
+    if (attempts > 3) {
+      tx.update(ref, { status: 'failed', attempts, error: 'Máximo de reintentos alcanzado.', updatedAt: new Date().toISOString() });
+      return null;
+    }
+    tx.update(ref, {
+      status: 'processing',
+      attempts,
+      processingAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+    return { ...job, attempts };
+  });
+
+  if (!claim) return { success: true, skipped: true, jobId };
+
+  try {
+    const result = await processCustomerIntake(claim.payload || {});
+    if (claim.replyToWhatsApp) {
+      await sendWhatsAppMessage({
+        toPhone: claim.replyToWhatsApp,
+        customerName: claim.payload?.customer?.name || 'Viajero',
+        message: result.customer.reply
+      });
+    }
+    await ref.set({
+      status: 'completed',
+      result: {
+        intakeId: result.intakeId,
+        sessionId: result.sessionId,
+        decision: result.decision,
+        operatorNotification: result.operatorNotification
+      },
+      completedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+    return result;
+  } catch (error: any) {
+    const message = error?.message || 'Error procesando Customer Intake.';
+    await ref.set({
+      status: Number(claim.attempts || 1) >= 3 ? 'failed' : 'queued',
+      error: message,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+    throw error;
+  }
+}
+
+export async function processPendingCustomerIntakeJobs(limit = 10): Promise<{ processed: number; failed: number }> {
+  const db = getFirestoreDb();
+  if (!db) return { processed: 0, failed: 0 };
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 10, 25));
+  const queued = await db.collection('customer_intake_jobs')
+    .where('status', '==', 'queued')
+    .limit(safeLimit)
+    .get();
+  let processed = 0;
+  let failed = 0;
+  for (const doc of queued.docs) {
+    try {
+      const result = await processCustomerIntakeJob(doc.id);
+      if (!result?.skipped) processed++;
+    } catch {
+      failed++;
+    }
+  }
+  return { processed, failed };
 }
