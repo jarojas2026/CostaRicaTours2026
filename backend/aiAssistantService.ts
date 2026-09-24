@@ -749,10 +749,10 @@ export async function runCounterAgent(
         escalated: true,
         level: 'emergency',
         reason: 'Reporte de emergencia o incidente físico en mostrador',
-        emergencyContact: '${emergencyContact} / 911'
+        emergencyContact: emergencyContactLabel
       },
       quickActions: [
-        { label: isEn ? '🚨 Emergency 24/7' : '🚨 Llamar Emergencia', action: 'call_emergency', data: { phone: '+50688887777' } },
+        { label: isEn ? '🚨 Emergency 24/7' : '🚨 Llamar Emergencia', action: 'call_emergency', data: { phone: emergencyContact } },
         { label: isEn ? '💬 WhatsApp Ops Desk' : '💬 WhatsApp Operaciones', action: 'direct_whatsapp' }
       ]
     };
