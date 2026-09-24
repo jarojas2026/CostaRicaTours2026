@@ -119,7 +119,7 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     region: 'Monteverde (Puntarenas)',
     contactName: 'Elena Brenes Chacón',
     phone: '+506 2645-5020',
-    whatsapp: '+506 8888-7777',
+    whatsapp: '',
     email: PROVIDER_DEV_EMAIL,
     officialEmail: 'reservas@monteverdeadventures.com',
     cstLevel: 4,
