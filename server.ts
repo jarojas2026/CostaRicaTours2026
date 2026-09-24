@@ -121,6 +121,7 @@ import { processCustomerIntake, enqueueCustomerIntakeJob, processPendingCustomer
 import { sendWhatsAppMessage } from './backend/notificationService';
 import { getFirestoreDb } from './backend/bookingService';
 import { processEmailOperationsOnce, getEmailOperationsSnapshot } from './backend/emailOperationsAgent';
+import { runReservationLifecycleSweep } from './backend/reservationLifecycleOrchestrator';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -548,6 +549,11 @@ app.post('/api/internal/email-operations/sweep', requireAgentTool, async (_req, 
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message || 'Email operations error' });
   }
+});
+
+app.post('/api/internal/reservation-lifecycle/sweep', requireAgentTool, async (_req, res) => {
+  try { res.json({ success: true, result: await runReservationLifecycleSweep(100) }); }
+  catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Reservation lifecycle error' }); }
 });
 
 app.get('/api/admin/email-operations', requireAdmin, async (_req, res) => {
