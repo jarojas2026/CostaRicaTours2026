@@ -10,7 +10,16 @@ const decode=(v='')=>Buffer.from(v.replace(/-/g,'+').replace(/_/g,'/'),'base64')
 function parts(part:any,out:string[]=[]){if(!part)return out;if(part.mimeType==='text/plain'&&part.body?.data)out.push(decode(part.body.data));for(const child of part.parts||[])parts(child,out);return out;}
 function header(message:any,name:string){return clean((message.payload?.headers||[]).find((h:any)=>String(h.name).toLowerCase()===name.toLowerCase())?.value,600);}
 function emailOf(v:string){return (v.match(/<([^>]+)>/)?.[1]||v).trim().toLowerCase();}
-function providerEmails(){return new Set(REGISTERED_PROVIDERS.flatMap(p=>[p.officialEmail,p.email]).filter(Boolean).map(x=>String(x).toLowerCase()));}
+function providerEmails(){
+ const configured=new Set<string>();
+ const raw=process.env.PROVIDER_EMAILS_JSON;
+ if(raw){try{
+   const mapping=JSON.parse(raw) as Record<string,string>;
+   Object.values(mapping).forEach(value=>{if(value&&/@/.test(value))configured.add(String(value).trim().toLowerCase());});
+ }catch{console.warn('⚠️ PROVIDER_EMAILS_JSON no es JSON válido.');}}
+ REGISTERED_PROVIDERS.forEach(provider=>{if(provider.email&&/@/.test(provider.email))configured.add(provider.email.trim().toLowerCase());});
+ return configured;
+}
 async function gmail(){const {GMAIL_CLIENT_ID:id,GMAIL_CLIENT_SECRET:secret,GMAIL_REFRESH_TOKEN:refresh}=process.env;if(!id||!secret||!refresh)return null;const auth=new google.auth.OAuth2(id,secret);auth.setCredentials({refresh_token:refresh});return google.gmail({version:'v1',auth});}
 async function classify(subject:string,body:string){
  const input=(subject+'\n'+body).slice(0,12000);
