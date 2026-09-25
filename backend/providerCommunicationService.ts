@@ -77,7 +77,7 @@ async function resolveOperationalProvider(providerId: string, tourId: string): P
       contactName: String(data.contactName || data.contacto || legacy?.contactName || ''),
       phone: String(data.phone || data.telefono || legacy?.phone || ''),
       whatsapp: String(data.whatsapp || legacy?.whatsapp || ''),
-      email: String(data.email || legacy?.email || ''),
+      email: String(data.email || data.officialEmail || legacy?.email || legacy?.officialEmail || ''),
       officialEmail: String(data.officialEmail || data.emailOperativo || legacy?.officialEmail || ''),
       verified: true,
       cstLevel: Number(data.cstLevel || legacy?.cstLevel || 0),
@@ -319,7 +319,8 @@ export async function dispatchServiceOrder(params: {
   providerId?: string;
 }): Promise<ServiceOrder> {
   const requestedProviderId = params.providerId || getBestProviderForTour(params.tourId).id;
-  const existingSnapshot = getFirestoreDb() ? await getFirestoreDb()!.collection('service_orders').where('bookingId', '==', params.bookingId).limit(10).get().catch(() => null) : null;
+  const db = getFirestoreDb();
+  const existingSnapshot = db ? await db.collection('service_orders').where('bookingId', '==', params.bookingId).limit(10).get().catch(() => null) : null;
   const existingOrder = existingSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceOrder)).find(order => !['rejected', 'no_show'].includes(String(order.status)));
   if (existingOrder) return existingOrder;
   const provider = await resolveOperationalProvider(requestedProviderId, params.tourId);
