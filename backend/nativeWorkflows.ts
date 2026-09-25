@@ -465,7 +465,7 @@ export async function executeProviderRealtimeCoordination(
             <p style="font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 12px;">Respuesta requerida (abra el formulario seguro para aceptar, rechazar o reportar un ajuste):</p>
             <div style="display: inline-block; width: 100%;">
               <a href="${confirmUrl}" style="display: block; background-color: #059669; color: #ffffff; text-decoration: none; padding: 14px 20px; border-radius: 10px; font-weight: 700; font-size: 15px; margin-bottom: 10px; text-align: center; box-shadow: 0 2px 4px rgba(5,150,105,0.2);">
-                ✅ CONFIRMAR Y ASIGNAR GUÍA / VEHÍCULO
+                📝 ABRIR FORMULARIO Y ACEPTAR / ASIGNAR
               </a>
               <div style="display: flex; gap: 8px; justify-content: center;">
                 <a href="${modifyTimeUrl}" style="flex: 1; display: inline-block; background-color: #f1f5f9; color: #334155; text-decoration: none; padding: 10px 14px; border-radius: 8px; font-weight: 600; font-size: 12px; border: 1px solid #cbd5e1; text-align: center;">
