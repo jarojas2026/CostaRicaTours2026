@@ -82,6 +82,20 @@ for (const relative of ['backend', 'src', 'scripts', 'public', 'agent']) {
 
 const server = read('server.ts');
 const reservationLifecycle = read('backend/reservationLifecycleOrchestrator.ts');
+const journeyBuildRoutes = (server.match(/app\\.post\\('\/api\/journey\/build'/g) || []).length;
+const journeyReadRoutes = (server.match(/app\\.get\\('\/api\/journey\/:journeyId'/g) || []).length;
+const journeyAdaptRoutes = (server.match(/app\\.post\\('\/api\/journey\/:journeyId\\/adapt'/g) || []).length;
+if (journeyBuildRoutes !== 1 || journeyReadRoutes !== 1 || journeyAdaptRoutes !== 1) {
+  add('HIGH', 'ROUTE-001', `Duplicate or missing Journey route registrations detected (build=${journeyBuildRoutes}, read=${journeyReadRoutes}, adapt=${journeyAdaptRoutes}).`);
+}
+const bookingService = read('backend/bookingService.ts');
+const nativeWorkflowsSource = read('backend/nativeWorkflows.ts');
+if (/providerId.*\\|\\|.*alsama-tours-cr/.test(bookingService)) {
+  add('CRITICAL', 'PROVIDER-005', 'Booking creation still contains an implicit Alsama provider fallback.');
+}
+if (/SUCCESS_SIMULATED|payoutStatus:\s*['\"]paid['\"]/.test(nativeWorkflowsSource) && /paypalAccessToken/.test(nativeWorkflowsSource)) {
+  add('CRITICAL', 'PAYOUT-001', 'Provider payout code contains a simulated success path; payouts must never be marked paid without provider API confirmation.');
+}
 if (!/createInFlightLimiter/.test(server) || !/apiAdmission/.test(server) || !/aiAdmission/.test(server)) {
   add('HIGH', 'ADMISSION-001', 'API admission control is missing from server.ts.');
 }
