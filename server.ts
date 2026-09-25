@@ -122,6 +122,8 @@ import { sendWhatsAppMessage } from './backend/notificationService';
 import { getFirestoreDb } from './backend/bookingService';
 import { processEmailOperationsOnce, getEmailOperationsSnapshot } from './backend/emailOperationsAgent';
 import { runReservationLifecycleSweep } from './backend/reservationLifecycleOrchestrator';
+import { withDistributedAutomationLock } from './backend/cronEngine';
+import { createInFlightLimiter } from './backend/admissionControl';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -157,8 +159,8 @@ function requireAgentTool(req: express.Request, res: express.Response, next: exp
 }
 
 app.set('trust proxy', 1);
-app.use(express.json({ verify: (req, _res, buf) => { (req as any).rawBody = Buffer.from(buf); } }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '256kb', verify: (req, _res, buf) => { (req as any).rawBody = Buffer.from(buf); } }));
+app.use(express.urlencoded({ extended: true, limit: '32kb', parameterLimit: 100 }));
 
 // ==========================================
 // 🛡️ RATE LIMITING MIDDLEWARES
@@ -195,10 +197,10 @@ const generalApiLimiter = rateLimit({
   message: { error: 'Demasiadas solicitudes. Por favor intente más tarde.' }
 });
 
-app.use('/api/', generalApiLimiter);
+app.use('/api/', generalApiLimiter, apiAdmission.middleware);
 
 // Health check endpoint
-app.post('/api/customer-intake', chatLimiter, async (req, res) => {
+app.post('/api/customer-intake', chatLimiter, intakeAdmission.middleware, async (req, res) => {
   try {
     const result = await processCustomerIntake({
       message: req.body?.message || req.body?.mensaje,
@@ -340,7 +342,7 @@ setInterval(async () => {
   if (customerIntakeQueueRunning) return;
   customerIntakeQueueRunning = true;
   try {
-    await processPendingCustomerIntakeJobs(10);
+    await withDistributedAutomationLock('customer-intake-worker-5s', () => processPendingCustomerIntakeJobs(10));
   } catch (error) {
     console.warn('Customer Intake queue sweep failed:', error);
   } finally {
@@ -362,7 +364,7 @@ app.get('/api/health', (req, res) => {
 // ==========================================
 // ==========================================
 /* 🧭 FULL TRAVEL JOURNEY — MEMORY + CATALOG + LIVE DATA + SALES */
-app.post('/api/ai/journey', async (req, res) => {
+app.post('/api/ai/journey', aiAdmission.middleware, async (req, res) => {
   try {
     const result = await buildTripJourney(req.body || {});
     res.json({ success: true, journey: result });
@@ -371,7 +373,7 @@ app.post('/api/ai/journey', async (req, res) => {
   }
 });
 
-app.post('/api/ai/journey/:journeyId/guardian', async (req, res) => {
+app.post('/api/ai/journey/:journeyId/guardian', aiAdmission.middleware, async (req, res) => {
   try {
     const journey = await getTravelerJourney(String(req.params.journeyId || ''));
     if (!journey) return res.status(404).json({ success: false, error: 'Viaje no encontrado.' });
@@ -391,7 +393,7 @@ app.post('/api/ai/journey/:journeyId/guardian', async (req, res) => {
   }
 });
 
-app.post('/api/ai/journey/:journeyId/observe', async (req, res) => {
+app.post('/api/ai/journey/:journeyId/observe', aiAdmission.middleware, async (req, res) => {
   try {
     const journey = await getTravelerJourney(String(req.params.journeyId || ''));
     if (!journey || journey.status === 'not_found') {
@@ -420,7 +422,7 @@ app.get('/api/ai/journey/:journeyId', async (req, res) => {
   }
 });
 
-app.patch('/api/ai/journey/:journeyId', async (req, res) => {
+app.patch('/api/ai/journey/:journeyId', aiAdmission.middleware, async (req, res) => {
   try {
     const result = await adaptTravelerJourney(String(req.params.journeyId || ''), req.body || {});
     res.json({ success: true, journey: result });
@@ -936,7 +938,7 @@ app.post('/api/sinpe/verify', requireOperator, async (req, res) => {
 });
 
 // Crear reserva (con verificación server-side de pago, cupos en Firestore y automatización nativa)
-app.post('/api/bookings', async (req, res) => {
+app.post('/api/bookings', bookingAdmission.middleware, async (req, res) => {
   try {
     const idempotencyKey = req.headers['idempotency-key'];
     const result = await createBooking({ ...req.body, idempotencyKey });

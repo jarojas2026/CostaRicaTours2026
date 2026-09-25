@@ -6,7 +6,7 @@
  */
 
 import cron from 'node-cron';
-import { getAllBookings, updateBookingStatus } from './bookingService';
+import { getAllBookings, updateBookingStatus, getFirestoreDb } from './bookingService';
 import { logAutomationExecution } from './nativeAutomationEngine';
 import { processProviderInboxOnce } from './providerInboxAgent';
 import { runReservationLifecycleSweep } from './reservationLifecycleOrchestrator';
@@ -58,6 +58,40 @@ export async function cleanupExpiredSoftHolds() {
   } catch (error: any) {
     console.error('❌ Error ejecutando Auditoría de Soft Holds:', error);
     throw error;
+  }
+}
+
+const AUTOMATION_LOCK_STALE_MS = 10 * 60 * 1000;
+
+/**
+ * Lock distribuido por job. Impide que varias instancias del runtime ejecuten
+ * el mismo sweep a la vez durante escalamiento horizontal.
+ */
+export async function withDistributedAutomationLock<T>(lockId: string, work: () => Promise<T>): Promise<T | null> {
+  const db = getFirestoreDb();
+  if (!db) return work();
+  const ref = db.collection('automation_locks').doc(lockId);
+  try {
+    await db.runTransaction(async (tx: any) => {
+      const snap = await tx.get(ref);
+      if (snap.exists) {
+        const data = snap.data() || {};
+        const acquiredAt = Date.parse(String(data.acquiredAt || data.updatedAt || ''));
+        if (data.status === 'running' && Number.isFinite(acquiredAt) && Date.now() - acquiredAt < AUTOMATION_LOCK_STALE_MS) {
+          throw new Error('automation_lock_busy');
+        }
+      }
+      const now = new Date().toISOString();
+      tx.set(ref, { status: 'running', acquiredAt: now, updatedAt: now, owner: process.env.VERCEL_REGION || process.env.HOSTNAME || 'node' }, { merge: true });
+    });
+  } catch (error: any) {
+    if (error?.message === 'automation_lock_busy') return null;
+    throw error;
+  }
+  try {
+    return await work();
+  } finally {
+    await ref.set({ status: 'idle', releasedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, { merge: true }).catch(() => undefined);
   }
 }
 
@@ -178,8 +212,8 @@ export function initializeAutomationEngine() {
   // Gmail OAuth es opcional: si no está configurado, el agente queda inactivo sin romper el resto del sistema.
   cron.schedule('* * * * *', async () => {
     try {
-      const res = await processProviderInboxOnce();
-      if (res.enabled && (res.processed || res.errors)) {
+      const res = await withDistributedAutomationLock('provider-inbox-1m', processProviderInboxOnce);
+      if (res?.enabled && (res.processed || res.errors)) {
         logAutomationExecution('CRON_PROVIDER_INBOX_1M', 0, res.errors ? 'warning' : 'success',
           'Bandeja de proveedores: ' + res.processed + ' procesadas, ' + res.errors + ' errores, ' + res.ignored + ' ignoradas.');
       }
@@ -193,8 +227,8 @@ export function initializeAutomationEngine() {
   // Revisa pagos, despacho a proveedor, confirmaciones y notificación al cliente.
   cron.schedule('* * * * *', async () => {
     try {
-      const res = await runReservationLifecycleSweep(100);
-      if (res.scanned || res.errors) {
+      const res = await withDistributedAutomationLock('reservation-lifecycle-1m', () => runReservationLifecycleSweep(100));
+      if (res && (res.scanned || res.errors)) {
         logAutomationExecution('CRON_RESERVATION_LIFECYCLE_1M', res.durationMs, res.errors ? 'warning' : 'success',
           'Ciclo de reservas: ' + res.scanned + ' revisadas, ' + res.results.filter((x: any) => x.status === 'completed').length + ' acciones, ' + res.errors + ' errores.');
       }
@@ -209,8 +243,8 @@ export function initializeAutomationEngine() {
   // y responde automáticamente cuando la política de autonomía y la confianza lo permiten.
   cron.schedule('* * * * *', async () => {
     try {
-      const res = await processEmailOperationsOnce();
-      if (res.scanned || res.errors.length) {
+      const res = await withDistributedAutomationLock('email-operations-1m', processEmailOperationsOnce);
+      if (res && (res.scanned || res.errors.length)) {
         logAutomationExecution('CRON_EMAIL_OPERATIONS_1M', 0, res.errors.length ? 'warning' : 'success',
           'Correo autónomo: ' + res.scanned + ' escaneados, ' + res.results.length + ' procesados, ' + res.errors.length + ' errores.');
       }
@@ -222,7 +256,7 @@ export function initializeAutomationEngine() {
 
   // 10. CRON: Liberación Automática de Soft Holds Expirados (Cada 5 minutos)
   cron.schedule('*/5 * * * *', async () => {
-    await cleanupExpiredSoftHolds();
+    await withDistributedAutomationLock('soft-hold-cleanup-5m', cleanupExpiredSoftHolds);
   });
 
   console.log('✅ Motor de Automatizaciones Nativo (Node.js/Express) activo y programado.');
