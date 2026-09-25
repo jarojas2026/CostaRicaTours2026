@@ -85,16 +85,6 @@ export default function App() {
     try { localStorage.setItem('crt:currency', currency); } catch { /* storage unavailable */ }
   }, [currency]);
 
-  // Escape closes transient customer-care UI instead of trapping the visitor.
-  useEffect(() => {
-    if (!intakeOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !intakeLoading) setIntakeOpen(false);
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [intakeOpen, intakeLoading]);
-
   // Active path for UI state
   const activeTab = location.pathname.split('/')[1] || 'home';
 
@@ -155,6 +145,18 @@ export default function App() {
   const [intakeEscalated, setIntakeEscalated] = useState(false);
   const [intakeId, setIntakeId] = useState('');
   const [intakeMessage, setIntakeMessage] = useState('');
+
+  // Escape closes transient customer-care UI instead of trapping the visitor.
+  useEffect(() => {
+    if (!intakeOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !intakeLoading) setIntakeOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [intakeOpen, intakeLoading]);
+
+
 
   // Check URL parameters for successful payment redirect (Stripe/PayPal)
   useEffect(() => {
