@@ -278,9 +278,13 @@ export async function dispatchServiceOrder(params: {
   totalUSD: number;
   providerId?: string;
 }): Promise<ServiceOrder> {
-  const provider = params.providerId 
-    ? REGISTERED_PROVIDERS.find(p => p.id === params.providerId) || getBestProviderForTour(params.tourId)
+  const provider = params.providerId
+    ? REGISTERED_PROVIDERS.find(p => p.id === params.providerId) || null
     : getBestProviderForTour(params.tourId);
+
+  if (!provider) {
+    throw new Error(`No hay un proveedor activo y verificado para el tour ${params.tourId}. La solicitud no se despacha hasta contar con un proveedor real.`);
+  }
 
   const orderId = `OS-CR-${params.bookingId}-${Date.now().toString().slice(-4)}`;
   const now = new Date();
@@ -428,7 +432,7 @@ export async function handleProviderAction(params: {
     return {
       success: true,
       order: failoverResult.reassignedOrder,
-      message: `Rechazo procesado. Sistema auto-reasignó la reserva a ${failoverResult.newProvider.name}.`
+      message: failoverResult.newProvider ? `Rechazo procesado. Sistema auto-reasignó la reserva a ${failoverResult.newProvider.name}.` : `Rechazo procesado. No existe proveedor alternativo verificado; la reserva requiere intervención humana.`
     };
   }
 
@@ -522,7 +526,7 @@ async function triggerAutoFailoverReassignment(rejectedOrder: ServiceOrder): Pro
     providerFailoverAt: new Date().toISOString()
   }).catch(() => {});
 
-  const alternateEmail = alternateProvider.officialEmail || alternateProvider.email;
+  const alternateEmail = resolveConfiguredProviderEmail(alternateProvider);
   if (alternateEmail) {
     await sendEmail({
       to: alternateEmail,
