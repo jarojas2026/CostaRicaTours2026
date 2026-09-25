@@ -61,6 +61,14 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
     }
   }, [id, TOURS, loading, navigate]);
 
+  useEffect(() => {
+    try {
+      setIsFavorite(localStorage.getItem(`crt:favourite:tour:\${tour.id}`) === '1');
+    } catch {
+      setIsFavorite(false);
+    }
+  }, [tour.id]);
+
   if (loading || !tour) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-950">
@@ -148,18 +156,11 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
     ? mediaAssets.map(asset => asset.url)
     : (Array.isArray(tour.gallery) && tour.gallery.length > 0 ? tour.gallery : [tour.image]);
 
-  useEffect(() => {
-    try {
-      setIsFavorite(localStorage.getItem(\`crt:favourite:tour:\${tour.id}\`) === '1');
-    } catch {
-      setIsFavorite(false);
-    }
-  }, [tour.id]);
 
   const toggleFavorite = () => {
     const next = !isFavorite;
     setIsFavorite(next);
-    try { localStorage.setItem(\`crt:favourite:tour:\${tour.id}\`, next ? '1' : '0'); } catch { /* storage unavailable */ }
+    try { localStorage.setItem(`crt:favourite:tour:\${tour.id}`, next ? '1' : '0'); } catch { /* storage unavailable */ }
     setActionMessage(language === 'es'
       ? (next ? 'Guardado en tus favoritos.' : 'Eliminado de tus favoritos.')
       : (next ? 'Saved to your favourites.' : 'Removed from your favourites.'));
