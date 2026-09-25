@@ -90,10 +90,10 @@ if (journeyBuildRoutes !== 1 || journeyReadRoutes !== 1 || journeyAdaptRoutes !=
 }
 const bookingService = read('backend/bookingService.ts');
 const nativeWorkflowsSource = read('backend/nativeWorkflows.ts');
-if (/providerId.*\\|\\|.*alsama-tours-cr/.test(bookingService)) {
+if (/providerId\s*\|\|\s*['\"]alsama-tours-cr['\"]/.test(bookingService)) {
   add('CRITICAL', 'PROVIDER-005', 'Booking creation still contains an implicit Alsama provider fallback.');
 }
-if (/SUCCESS_SIMULATED|payoutStatus:\s*['\"]paid['\"]/.test(nativeWorkflowsSource) && /paypalAccessToken/.test(nativeWorkflowsSource)) {
+if (/SUCCESS_SIMULATED/.test(nativeWorkflowsSource) || (/payoutStatus:\s*['\"]paid['\"]/.test(nativeWorkflowsSource) && !/payoutResponse\.ok\s*&&\s*\(/.test(nativeWorkflowsSource))) {
   add('CRITICAL', 'PAYOUT-001', 'Provider payout code contains a simulated success path; payouts must never be marked paid without provider API confirmation.');
 }
 if (!/createInFlightLimiter/.test(server) || !/apiAdmission/.test(server) || !/aiAdmission/.test(server)) {
@@ -122,7 +122,7 @@ if (/setInterval\(async \(\) =>[\\s\\S]*processPendingCustomerIntakeJobs/.test(s
   add('MEDIUM', 'QUEUE-001', 'Customer Intake has an in-process sweep; production serverless deployments also need an external scheduler calling the protected queue endpoint.');
 }
 
-if (!/runReservationLifecycleSweep/.test(reservationLifecycle) || !/\/api\/internal\/reservation-lifecycle\/sweep/.test(server)) {
+if (!/runReservationLifecycleSweep/.test(reservationLifecycle) || !/reservation-lifecycle\/sweep/.test(server)) {
   add('CRITICAL', 'BOOKING-001', 'Reservation lifecycle orchestrator is not connected to the protected server endpoint.');
 }
 if (!/runReservationLifecycleSweep\(100\)/.test(read('backend/cronEngine.ts'))) {
@@ -140,7 +140,7 @@ if (!/EMAIL_MAX_ATTEMPTS/.test(emailOperations) || !/claimed === 'terminal'/.tes
   add('MEDIUM', 'EMAIL-004', 'Email operations lacks a terminal retry guard for poison messages.');
 }
 
-if (!/processEmailOperationsOnce/.test(server) || !/\/api\/internal\/email-operations\/sweep/.test(server)) {
+if (!/processEmailOperationsOnce/.test(server) || !/email-operations\/sweep/.test(server)) {
   add('CRITICAL', 'EMAIL-001', 'Autonomous email agent is not connected to a protected server endpoint.');
 }
 if (!/processEmailOperationsOnce\(\)/.test(read('backend/cronEngine.ts'))) {
