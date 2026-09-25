@@ -496,7 +496,7 @@ export async function executeSolicitudItinerario(body: any) {
 // =========================================================================
 export async function executeSolicitudSoporte(body: any) {
   const start = Date.now();
-  const ticketId = `TCK-CR-${Math.floor(100000 + Math.random() * 900000)}`;
+  const ticketId = `TCK-CR-${crypto.randomUUID()}`;
   const reasonText = body.motivo || body.mensaje || 'Consulta operativa sobre recogida o itinerario';
   const lowerReason = reasonText.toLowerCase();
 
@@ -690,7 +690,7 @@ export async function executeSyncCalendar(body: any) {
   const hotel = body.pickupHotel || body.hotelRecogida || 'Lobby Hotel Los Lagos, La Fortuna';
   const client = body.clientName || 'Carlos Montero';
 
-  const eventId = `cal_cr_${Math.random().toString(36).substring(2, 12)}`;
+  const eventId = `cal_cr_${crypto.randomUUID()}`;
   const eventLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
     `🇨🇷 Tour: ${tour} (${client})`
   )}&dates=${tourDate.replace(/-/g, '')}T073000Z/${tourDate.replace(/-/g, '')}T160000Z&details=${encodeURIComponent(
@@ -722,7 +722,7 @@ export async function executePostTourNPS(body: any) {
   const tour = body.tourName || 'Arenal Volcano & Hot Springs';
   const name = body.customerName || 'Carlos Montero';
   const phone = body.customerPhone || process.env.SINPE_SUPPORT_PHONE || '';
-  const promoCode = `PURAVIDA15-${Math.floor(1000 + Math.random() * 9000)}`;
+  const promoCode = `PURAVIDA15-${crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
 
   const duration = Date.now() - start;
   logAutomationExecution('POST_TOUR_NPS', duration, 'success', `Encuesta NPS y cupón ${promoCode} generado para ${name}`);
@@ -798,7 +798,7 @@ export async function executeParquesSinac(body: any) {
   const date = body.fecha || new Date().toISOString().split('T')[0];
   const visitors = Number(body.visitantes || 2);
 
-  const sinacReservationRef = `SINAC-CRT-${Math.floor(100000 + Math.random() * 900000)}`;
+  const sinacReservationRef = `SINAC-CRT-${crypto.randomUUID()}`;
 
   const duration = Date.now() - start;
   logAutomationExecution('RESERVA_PARQUES_SINAC', duration, 'success', `Cupos SINAC bloqueados para ${park} (${visitors} pax)`);
@@ -980,7 +980,7 @@ export async function executeAutonomousMultiDayPlanner(body: any) {
   const totalUSD = subtotalUSD - bundleDiscountUSD;
 
   const itinerarioId = `ITIN-AUTO-${Date.now().toString(36).toUpperCase()}`;
-  const qrPassToken = `CRT-PASS-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+  const qrPassToken = `CRT-PASS-${crypto.randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`;
 
   const duration = Date.now() - start;
   logAutomationExecution(
@@ -1205,7 +1205,7 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
   // Clave de 50 dígitos DGT
   const hoy = new Date();
   const fechaStr = `${String(hoy.getDate()).padStart(2, '0')}${String(hoy.getMonth() + 1).padStart(2, '0')}${String(hoy.getFullYear()).slice(-2)}`;
-  const consecutivo = String(Math.floor(Math.random() * 90000000) + 10000000);
+  const consecutivo = `CRT-${crypto.randomUUID().replace(/-/g, '').slice(0, 16).toUpperCase()}`;
   const clave50 = `506${fechaStr}0031019998880010000101000000${consecutivo}199887766`;
 
   // Liquidación del operador
@@ -1251,7 +1251,7 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
         totalFacturadoCRC: totalCRC
       },
       estadoHacienda: 'ACEPTADO_POR_DGT',
-      acuseHaciendaHash: `SHA256-${Math.random().toString(36).substring(2, 14)}`
+      acuseHaciendaHash: crypto.createHash('sha256').update(JSON.stringify({ ventaId: venta.id, timestamp: Date.now() })).digest('hex')
     },
     liquidacionBancariaOperador: {
       proveedorId: venta.proveedorId || 'alsama-tours-cr',
