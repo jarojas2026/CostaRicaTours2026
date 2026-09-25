@@ -1358,3 +1358,30 @@ La IA comercial debe escuchar el contexto, recordar decisiones útiles, reconoce
 ## Regla para futuras IAs
 
 Antes de implementar una nueva capacidad, buscar primero si existe un servicio equivalente en el repositorio. Integrar sobre la fuente de verdad existente, mantener trazabilidad y estados, añadir pruebas/verificación y actualizar este README. Los cambios destructivos requieren autorización explícita.
+
+---
+
+## 32. Provider trust and autonomous recovery invariant
+
+This checkpoint documents the current production-oriented invariant for the autonomous sales and provider workflow.
+
+### Traveler journey
+The customer-facing journey is coordinated by `backend/travelJourneyOrchestrator.ts` and exposed through the existing journey API. It reuses the authoritative tour catalog, traveler memory, live weather, journey availability verification, itinerary logic and commercial next-step state. The frontend entry point `src/components/SmartTripAdvisor.tsx` now delegates to the shared `FullTripJourneyBuilder` instead of maintaining a second planning implementation.
+
+### Provider dispatch
+`backend/providerCommunicationService.ts` must never silently select an unrelated provider when the requested tour has no matching active provider. Provider failover is valid only when the alternate provider explicitly advertises the same `tourId`. If no compatible provider exists, the service order remains rejected and an operational alert is created for human intervention.
+
+### Provider email trust
+Operational provider email destinations are configuration-driven. Use `PROVIDER_EMAILS_JSON` and/or explicitly configured provider email values. Do not treat an unverified hard-coded `officialEmail` value as sufficient evidence that a mailbox is operational. The provider inbox agent applies the same trust rule when accepting inbound messages.
+
+### Provider inbox
+`backend/providerInboxAgent.ts` checks the Gmail inbox every minute through the native cron engine. A message must come from a configured provider address and contain a recognizable `OS-CR-...` service-order identifier before it can affect an order. AI classification is confidence-gated; ambiguous messages remain in human review.
+
+### Commercial humanism
+The platform is designed to recover a customer's objective after operational failures. Rejection, delay, weather disruption or unavailable inventory should preserve traveler preferences and produce a concrete next step rather than a dead-end error.
+
+### Administrative truth
+The administrative control center must report persisted/observed events, not synthetic activity. Journey stages, provider inbox events, automation logs, alerts and AI evaluations should remain traceable to their source records.
+
+### Future AI handoff
+Any future agent must first search the repository for an existing capability, then connect to the existing source of truth. Do not create parallel reservation, catalog, memory, provider or automation systems when the corresponding service already exists.
