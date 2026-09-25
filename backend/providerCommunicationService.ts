@@ -123,6 +123,8 @@ export interface ServiceOrder {
   confirmedAt?: string;
   slaDeadline: string;
   notes?: string;
+  assignedGuide?: string;
+  assignedVehicle?: string;
   failoverAttempts: number;
   providerPortalUrl?: string;
 }
@@ -441,6 +443,8 @@ export async function handleProviderAction(params: {
   notes?: string;
   operatorContact?: string;
   estimatedDelayMinutes?: number;
+  assignedGuide?: string;
+  assignedVehicle?: string;
 }): Promise<{ success: boolean; order: ServiceOrder; message: string }> {
   let order = await loadServiceOrder(params.orderId);
 
@@ -459,6 +463,8 @@ export async function handleProviderAction(params: {
     order.status = 'confirmed';
     order.confirmedAt = now;
     order.notes = params.notes || 'Confirmado por operador local con cupo garantizado';
+    order.assignedGuide = params.assignedGuide || order.assignedGuide;
+    order.assignedVehicle = params.assignedVehicle || order.assignedVehicle;
     
     await updateBookingStatus(order.bookingId, {
       serviceOrderStatus: 'confirmed',
@@ -487,7 +493,8 @@ export async function handleProviderAction(params: {
   }
 
   if (params.action === 'delay') {
-    order.notes = `Demora reportada de ${params.estimatedDelayMinutes || 15} minutos por tráfico/clima.`;
+    order.notes = `${params.notes || 'Demora reportada'}${params.estimatedDelayMinutes ? ` (${params.estimatedDelayMinutes} min)` : ''}`;
+    await persistServiceOrder(order).catch(() => {});
     
     // Crear alerta operativa preventiva
     await createAlert({
@@ -509,6 +516,7 @@ export async function handleProviderAction(params: {
   if (params.action === 'no_show') {
     order.status = 'no_show';
     order.notes = params.notes || 'Pasajero no se presentó en lobby tras 15 min de cortesía.';
+    await persistServiceOrder(order).catch(() => {});
     
     await createAlert({
       source: 'Operaciones en Ruta (Guías & Choferes)',
@@ -528,6 +536,7 @@ export async function handleProviderAction(params: {
 
   if (params.action === 'complete') {
     order.status = 'completed';
+    await persistServiceOrder(order).catch(() => {});
     return {
       success: true,
       order,
