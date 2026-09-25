@@ -3159,8 +3159,8 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1400&q=85'
   ],
   'arenal-hot-springs': [
-    'https://images.unsplash.com/photo-1711798111672-bfbaf16160ff?auto=format&fit=crop&w=1400&q=85',
-    'https://images.unsplash.com/photo-1771223832335-c5c116e41bfd?auto=format&fit=crop&w=1400&q=85'
+    'https://images.unsplash.com/photo-1771223832335-c5c116e41bfd?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1711798111672-bfbaf16160ff?auto=format&fit=crop&w=1400&q=85'
   ],
   'monteverde-canopy': [
     'https://images.unsplash.com/photo-1648172846433-ca73f0ee522c?auto=format&fit=crop&w=1400&q=85',
@@ -3172,7 +3172,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
   ],
   'pacuare-rafting': [
     'https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1400&q=85',
-    'https://images.unsplash.com/photo-1774166488273-bc77b3906e1a?auto=format&fit=crop&w=1400&q=85'
+    'https://images.unsplash.com/photo-1769530260287-c11f7fc559ef?auto=format&fit=crop&w=1400&q=85'
   ],
   'tortuguero-canals': [
     'https://images.unsplash.com/photo-1679674954348-f6f0028c5d14?auto=format&fit=crop&w=1400&q=85',
@@ -3243,12 +3243,12 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1400&q=85'
   ],
   'san-jose-city-gold-museum': [
-    'https://images.unsplash.com/photo-1742909618652-5544a151a16c?auto=format&fit=crop&w=1400&q=85',
-    'https://images.unsplash.com/photo-1643400811908-ed46db6c8066?auto=format&fit=crop&w=1400&q=85'
+    'https://images.unsplash.com/photo-1720728504799-1ded3e8602f7?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1720728504799-1ded3e8602f7?auto=format&fit=crop&w=1200&q=80'
   ],
   'bribri-indigenous-cultural': [
-    'https://images.unsplash.com/photo-1774166488273-bc77b3906e1a?auto=format&fit=crop&w=1400&q=85',
-    'https://images.unsplash.com/photo-1728847267854-7c7c9f95a281?auto=format&fit=crop&w=1400&q=85'
+    'https://images.unsplash.com/photo-1743252878695-367d69dc87a8?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1769530260287-c11f7fc559ef?auto=format&fit=crop&w=1400&q=85'
   ],
   'sjo-irazu-orosi-lankester': [
     'https://images.unsplash.com/photo-1711798111672-bfbaf16160ff?auto=format&fit=crop&w=1400&q=85',
@@ -3268,7 +3268,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
   ],
   'guanacaste-guachipelin-combo': [
     'https://images.unsplash.com/photo-1771223832335-c5c116e41bfd?auto=format&fit=crop&w=1400&q=85',
-    'https://images.unsplash.com/photo-1774166488273-bc77b3906e1a?auto=format&fit=crop&w=1400&q=85'
+    'https://images.unsplash.com/photo-1769530260287-c11f7fc559ef?auto=format&fit=crop&w=1400&q=85'
   ],
   'guanacaste-diamante-adventure': [
     'https://images.unsplash.com/photo-1770848891767-5c4f707c9365?auto=format&fit=crop&w=1400&q=85',
@@ -3328,11 +3328,11 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
   ],
   'doka-grecia-sarchi-tour': [
     'https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1400&q=85',
-    'https://images.unsplash.com/photo-1742909618652-5544a151a16c?auto=format&fit=crop&w=1400&q=85'
+    'https://images.unsplash.com/photo-1587646589462-4728f63df161?auto=format&fit=crop&w=1400&q=85'
   ],
   'sarapiqui-boat-rainforest-sjo': [
-    'https://images.unsplash.com/photo-1679674954348-f6f0028c5d14?auto=format&fit=crop&w=1400&q=85',
-    'https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1400&q=85'
+    'https://images.unsplash.com/photo-1769530260287-c11f7fc559ef?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1679674954348-f6f0028c5d14?auto=format&fit=crop&w=1400&q=85'
   ]
 };
 
