@@ -3199,7 +3199,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1400&q=85'
   ],
   'mistico-hanging-bridges': [
-    'https://images.unsplash.com/photo-1680003613913-26c857dde377?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1675695201386-79adf942dc84?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1648172846433-ca73f0ee522c?auto=format&fit=crop&w=1400&q=85'
   ],
   'cano-island-snorkeling': [
@@ -3235,11 +3235,11 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1742909618652-5544a151a16c?auto=format&fit=crop&w=1400&q=85'
   ],
   'monteverde-night-walk': [
-    'https://images.unsplash.com/photo-1680003613913-26c857dde377?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1771223568780-bdfd81ae816a?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1400&q=85'
   ],
   'irazu-volcano-orosi-valley': [
-    'https://images.unsplash.com/photo-1711798111672-bfbaf16160ff?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1562559094-0739564bbc71?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1400&q=85'
   ],
   'san-jose-city-gold-museum': [
@@ -3295,11 +3295,11 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1742909618652-5544a151a16c?auto=format&fit=crop&w=1400&q=85'
   ],
   'uvita-whale-watching-combo': [
-    'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1684182127593-c669850b325c?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1742909618652-5544a151a16c?auto=format&fit=crop&w=1400&q=85'
   ],
   'uvita-cano-island-snorkel': [
-    'https://images.unsplash.com/photo-1714328003874-e730ff96fdd5?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1545757162-f36c4f66f217?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85'
   ],
   'osa-corcovado-sirena-day': [
