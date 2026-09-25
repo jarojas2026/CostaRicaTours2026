@@ -20,7 +20,7 @@ interface SEOHeadProps {
 export const SEOHead: React.FC<SEOHeadProps> = ({
   title = 'Costa Rica Tours | Official Sustainable Ecotourism & Travel Platform',
   description = 'Explore and book verified sustainable tours, volcanoes, rainforests, and wildlife adventures in Costa Rica with instant confirmation.',
-  image = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
+  image = 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
   url = window.location.href,
   tourData,
   language = 'es'
