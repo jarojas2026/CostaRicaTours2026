@@ -1125,16 +1125,7 @@ export async function executeEmergencyContingencyRerouting(body: any) {
     motivo: 'Crecida repentina en cuenca de Río Sarapiquí'
   };
 
-  const viajerosAfectados = body.viajerosAfectadosSimulados || [
-    {
-      reservaId: 'RES-SARAP-9982',
-      nombre: 'Elena Rostova',
-      idioma: 'en',
-      actividadOriginal: 'Rafting Río Sarapiquí Nivel III',
-      hotel: 'Arenal Kioro Suites',
-      proveedorTransporte: 'alsama-tours-cr'
-    }
-  ];
+  const viajerosAfectados = Array.isArray(body.viajerosAfectadosSimulados) ? body.viajerosAfectadosSimulados : [];
 
   const reasignaciones = viajerosAfectados.map((viajero: any) => ({
     reservaId: viajero.reservaId,
@@ -1254,8 +1245,8 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
       acuseHaciendaHash: crypto.createHash('sha256').update(JSON.stringify({ ventaId: venta.id, timestamp: Date.now() })).digest('hex')
     },
     liquidacionBancariaOperador: {
-      proveedorId: venta.proveedorId || 'alsama-tours-cr',
-      nombreProveedor: 'Alsama Tours CR (Transporte & Tours)',
+      proveedorId: venta.proveedorId || null,
+      nombreProveedor: venta.proveedorNombre || null,
       montoBrutoUSD: totalUSD,
       comisionPlataforma15USD: comisionPlataformaUSD,
       montoNetoLiquidadoUSD: liquidacionOperadorUSD,
@@ -1517,8 +1508,8 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
       qrToken: `PASS-${bookingId.replace(/[^A-Z0-9]/gi, '')}`
     },
     operadorAsignado: {
-      id: booking.providerInfo?.id || 'alsama-tours-cr',
-      nombre: booking.providerInfo?.name || 'Costa Rica Tours - Operaciones Directas',
+      id: booking.providerInfo?.id || null,
+      nombre: booking.providerInfo?.name || null,
       email: process.env.PROVIDER_DEV_EMAIL || '',
       telefono: booking.providerInfo?.phone || process.env.PROVIDER_DEV_PHONE || '',
       notificacionDespachada: true,
