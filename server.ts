@@ -2600,7 +2600,7 @@ app.post('/api/itinerary/book', async (req, res) => {
     }
 
     const bookingDate = startDate || new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0];
-    const generatedId = `CR-ITIN-${Math.floor(100000 + Math.random() * 900000)}`;
+    const generatedId = `CR-ITIN-${crypto.randomUUID()}`;
     const normalizedDays = Math.max(1, Math.min(30, Number(daysCount) || 5));
     const normalizedTravelers = Math.max(1, Math.min(30, Number(travelers) || 2));
     // Precio base autoritativo para itinerarios personalizados. El total generado por IA
@@ -2625,7 +2625,7 @@ app.post('/api/itinerary/book', async (req, res) => {
       currency: currency || 'USD',
       paymentMethod: 'itinerary_deposit',
       paymentStatus: 'pending',
-      status: 'confirmada',
+      status: 'pendiente_pago',
       notes: specialRequests || 'Itinerario Multi-Día personalizado'
     } as any);
 
@@ -2716,23 +2716,32 @@ app.post(['/api/agent/tools/check_calendar_availability', '/api/agent/check-avai
       Number(party_size)
     );
 
-    // Formatear respuesta estructurada para el ciclo ReAct del agente
-    const availableSlots = availabilityResult.available ? ['07:00', '08:30', '13:30'] : ['14:00'];
-    const blockedSlots = availabilityResult.available ? ['10:30'] : ['07:00', '08:30', '10:30'];
+    // Nunca inventar horarios: usamos únicamente salidas declaradas por el tour
+    // y verificamos cada slot contra el contador atómico de disponibilidad.
+    const catalogTour = TOURS.find((tour) => tour.id === targetTourId);
+    const departureTimes = Array.isArray((catalogTour as any)?.departureTimes)
+      ? (catalogTour as any).departureTimes.map((time: unknown) => String(time)).filter(Boolean)
+      : [];
+    const slotChecks = await Promise.all(departureTimes.map(async (time: string) => ({
+      time,
+      result: await checkTourAvailability(targetTourId, String(target_date), time, Number(party_size))
+    })));
+    const availableSlots = slotChecks.filter((slot) => slot.result.available).map((slot) => slot.time);
+    const blockedSlots = slotChecks.filter((slot) => !slot.result.available).map((slot) => slot.time);
 
     res.json({
       success: true,
-      available: availabilityResult.available,
+      available: availableSlots.length > 0,
       target_date,
       service_duration_minutes: service_duration_minutes || 180,
-      total_seats_remaining: availabilityResult.remainingSeats || 12,
-      max_capacity: availabilityResult.maxCapacity || 20,
+      total_seats_remaining: availabilityResult.remainingSeats,
+      max_capacity: availabilityResult.maxCapacity,
       available_slots: availableSlots,
       blocked_slots: blockedSlots,
       closest_alternatives: availableSlots.slice(0, 2),
-      message: availabilityResult.available
-        ? `Horarios disponibles encontrados para el ${target_date} con ${availabilityResult.remainingSeats} cupos libres.`
-        : `Sin cupos exactos para ese horario (${availabilityResult.reason || 'capacidad agotada'}), se sugieren fechas alternativas.`
+      message: availableSlots.length > 0
+        ? `Horarios reales disponibles encontrados para el ${target_date}: ${availableSlots.join(', ')}.`
+        : `No hay salidas del catálogo con cupo suficiente para el ${target_date}.`
     });
   } catch (err: any) {
     console.error('Error en tool check_calendar_availability:', err);
