@@ -3328,7 +3328,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
   ],
   'doka-grecia-sarchi-tour': [
     'https://images.unsplash.com/photo-1587646589462-4728f63df161?auto=format&fit=crop&w=1400&q=85',
-    'https://images.unsplash.com/photo-1587646589462-4728f63df161?auto=format&fit=crop&w=1400&q=85'
+    'https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1400&q=85'
   ],
   'sarapiqui-boat-rainforest-sjo': [
     'https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1400&q=85',
