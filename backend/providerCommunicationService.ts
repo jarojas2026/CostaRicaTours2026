@@ -10,6 +10,7 @@
 import { getAllBookings, getFirestoreDb, updateBookingStatus } from './bookingService';
 import { createAlert } from './alertService';
 import { sendEmail } from './notificationService';
+import { createProviderPortalToken } from './providerPortalService';
 
 export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || '';
 
@@ -123,6 +124,7 @@ export interface ServiceOrder {
   slaDeadline: string;
   notes?: string;
   failoverAttempts: number;
+  providerPortalUrl?: string;
 }
 
 // Directorio histórico de referencia. NO es fuente de verdad operativa: los proveedores deben existir y estar verificados explícitamente en Firestore.
@@ -343,6 +345,9 @@ export async function dispatchServiceOrder(params: {
 
   const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(params.pickupLocation || 'San Jose Costa Rica')}`;
 
+  const providerPortalToken = createProviderPortalToken({ orderId, providerId: provider.id, ttlMinutes: 1440 });
+  const providerPortalUrl = `${process.env.APP_URL || ''}/provider/portal?token=${encodeURIComponent(providerPortalToken)}`;
+
   const order: ServiceOrder = {
     id: orderId,
     bookingId: params.bookingId,
@@ -363,7 +368,8 @@ export async function dispatchServiceOrder(params: {
     status: 'dispatched',
     dispatchedAt: now.toISOString(),
     slaDeadline,
-    failoverAttempts: 0
+    failoverAttempts: 0,
+    providerPortalUrl
   };
 
   serviceOrdersStore.set(orderId, order);
@@ -396,6 +402,8 @@ export async function dispatchServiceOrder(params: {
             <p><strong>Cliente:</strong> ${params.customer.name} (${params.customer.phone})</p>
             <p><strong>Liquidación Operador:</strong> $${payoutAmountUSD} USD (₡${payoutAmountCRC.toLocaleString('es-CR')} CRC)</p>
             <p><strong>SLA de Aceptación:</strong> ${provider.slaTargetMinutes} minutos</p>
+            <p style="margin-top:18px"><a href="${providerPortalUrl}" style="display:inline-block;background:#059669;color:#fff;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:800">Abrir formulario del proveedor</a></p>
+            <p style="font-size:12px;color:#64748b">El enlace es personal, está firmado y caduca automáticamente.</p>
           </div>
         </div>
       `
