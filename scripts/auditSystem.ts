@@ -82,7 +82,6 @@ for (const relative of ['backend', 'src', 'scripts', 'public', 'agent']) {
 
 const server = read('server.ts');
 const reservationLifecycle = read('backend/reservationLifecycleOrchestrator.ts');
-const journeyBuildRoutes = (server.match(/app\\.post\\('\/api\/journey\/build'/g) || []).length;
 const journeyBuildRoutes = (server.match(/app\.post\('\/api\/journey\/build'/g) || []).length;
 const journeyReadRoutes = (server.match(/app\.get\('\/api\/journey\/:journeyId'/g) || []).length;
 const journeyAdaptRoutes = (server.match(/app\.post\('\/api\/journey\/:journeyId\/adapt'/g) || []).length;
