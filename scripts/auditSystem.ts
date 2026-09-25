@@ -60,6 +60,7 @@ for (const relative of ['backend', 'src', 'scripts', 'public', 'docs']) {
 }
 
 const server = read('server.ts');
+const reservationLifecycle = read('backend/reservationLifecycleOrchestrator.ts');
 if (!/createInFlightLimiter/.test(server) || !/apiAdmission/.test(server) || !/aiAdmission/.test(server)) {
   add('HIGH', 'ADMISSION-001', 'API admission control is missing from server.ts.');
 }
@@ -86,7 +87,6 @@ if (/setInterval\(async \(\) =>[\\s\\S]*processPendingCustomerIntakeJobs/.test(s
   add('MEDIUM', 'QUEUE-001', 'Customer Intake has an in-process sweep; production serverless deployments also need an external scheduler calling the protected queue endpoint.');
 }
 
-const reservationLifecycle = read('backend/reservationLifecycleOrchestrator.ts');
 if (!/runReservationLifecycleSweep/.test(reservationLifecycle) || !/\/api\/internal\/reservation-lifecycle\/sweep/.test(server)) {
   add('CRITICAL', 'BOOKING-001', 'Reservation lifecycle orchestrator is not connected to the protected server endpoint.');
 }
