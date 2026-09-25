@@ -123,7 +123,8 @@ class IndividualProviderLifecycleManager {
       let evaluatedCount = 0;
       for (const booking of pending) {
         const bookingId = booking.id || booking.bookingId;
-        const providerId = booking.providerId || 'alsama-tours-cr';
+        const providerId = String(booking.providerId || '').trim();
+        if (!providerId) throw new Error(`PROVIDER_REQUIRED: reserva ${bookingId} no tiene proveedor operativo asignado.`);
         const dispatchedAt = Number(booking.dispatchedAt || 0);
         if (bookingId && booking.providerStatus === 'pending' && booking.escalated !== true && dispatchedAt > 0 && now - dispatchedAt > SLA_THRESHOLD_MS) {
           await executeAutonomousProviderFallback(bookingId, providerId, 'SLA Expirado sin confirmación del proveedor ' + providerId);
@@ -201,7 +202,7 @@ export class MassiveProcessingEngine extends EventEmitter {
         return;
       }
       const task: MassiveTask<T> = {
-        id: `task_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        id: `task_${crypto.randomUUID()}`,
         type,
         priority,
         data,
