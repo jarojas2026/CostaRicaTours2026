@@ -390,7 +390,7 @@ export async function executeProviderRealtimeCoordination(
   message: string;
 }> {
   // Verificación de autenticación de Webhook si aplica
-  if (process.env.NODE_ENV === 'production' && (!WEBHOOK_SECRET || authHeader !== WEBHOOK_SECRET)) {
+  if (process.env.NODE_ENV === 'production' && authHeader !== undefined && (!WEBHOOK_SECRET || authHeader !== WEBHOOK_SECRET)) {
     throw new Error('No autorizado: X-Webhook-Secret inválido o ausente.');
   }
 
@@ -640,20 +640,20 @@ export async function handleProviderActionResponse(
 
   const tourName = bookingData?.tourName || 'Excursión Oficial Costa Rica';
   const tourDate = bookingData?.date || 'Fecha confirmada';
-  const customerEmail = bookingData?.customerEmail || bookingData?.customer?.email || 'viajero@costaricatours.es';
+  const customerEmail = bookingData?.customerEmail || bookingData?.customer?.email || '';
   const customerName = bookingData?.customerName || bookingData?.customer?.name || 'Estimado Viajero';
 
   // 1. CASO: CONFIRMAR RESERVA Y ASIGNAR LOGÍSTICA
   if (action === 'confirm') {
-    const guide = options?.guideName || 'Guía Naturalista Certificado ICT';
-    const vehicle = options?.vehiclePlate || 'Unidad Turística Oficial Alsama';
+    const guide = String(options?.guideName || '').trim();
+    const vehicle = String(options?.vehiclePlate || '').trim();
     const confirmedAt = new Date().toISOString();
 
     await updateBookingStatus(bookingId, {
       status: 'confirmada',
       providerStatus: 'confirmed',
-      assignedGuide: guide,
-      assignedVehicle: vehicle,
+      ...(guide ? { assignedGuide: guide } : {}),
+      ...(vehicle ? { assignedVehicle: vehicle } : {}),
       providerConfirmedAt: confirmedAt,
       providerNotes: options?.providerNotes || 'Confirmado por operador local.'
     }).catch(() => {});
@@ -908,7 +908,7 @@ export async function executeCustomerBookingConfirmation(
   payload: any,
   authHeader?: string
 ): Promise<{ success: boolean; customerNotified: boolean; escalated: boolean; message: string }> {
-  if (process.env.NODE_ENV === 'production' && authHeader !== WEBHOOK_SECRET) {
+  if (process.env.NODE_ENV === 'production' && authHeader !== undefined && (!WEBHOOK_SECRET || authHeader !== WEBHOOK_SECRET)) {
     throw new Error('No autorizado: X-Webhook-Secret inválido o ausente.');
   }
 
@@ -1135,8 +1135,9 @@ export async function executeAutomatedProviderPayouts(): Promise<{
 
     snapshot.forEach((doc) => {
       const b = doc.data();
-      const isConfirmed = b.status === 'confirmada' || b.paymentStatus === 'completed';
-      const isNotPaid = b.payoutStatus !== 'paid';
+      const operationalStatus = String(b.status || '').toLowerCase();
+      const isConfirmed = ['confirmada', 'confirmed', 'completada', 'completed'].includes(operationalStatus) && String(b.paymentStatus || '').toLowerCase() === 'completed';
+      const isNotPaid = b.payoutStatus !== 'paid' && !['cancelada', 'cancelled'].includes(operationalStatus);
       if (isConfirmed && isNotPaid) {
         eligibleBookings.push({ id: doc.id, ...b });
       }
@@ -1172,8 +1173,22 @@ export async function executeAutomatedProviderPayouts(): Promise<{
     for (const booking of eligibleBookings) {
       results.totalProcessed += 1;
       const bookingId = booking.bookingId || booking.id;
-      const providerId = booking.providerId || booking.providerInfo?.id || 'alsama-tours-cr';
-      const totalUSD = Number(booking.totalUSD || booking.totalAmount || 100);
+      const providerId = String(booking.providerId || booking.providerInfo?.id || '').trim();
+      const totalUSD = Number(booking.totalUSD);
+      if (!providerId) {
+        const reason = 'La reserva no tiene providerId operativo persistido; no se ejecuta ningún payout automático.';
+        await recordEscalation({ type: 'PAYOUT_PROVIDER_ID_MISSING', bookingId, reason, details: { totalUSD: booking.totalUSD } });
+        results.escalationsCount += 1;
+        results.payouts.push({ bookingId, providerId: 'missing', amountUSD: 0, status: 'FAILED_PROVIDER_ID_MISSING' });
+        continue;
+      }
+      if (!Number.isFinite(totalUSD) || totalUSD <= 0) {
+        const reason = 'La reserva no contiene un totalUSD positivo verificable; no se ejecuta ningún payout automático.';
+        await recordEscalation({ type: 'PAYOUT_AMOUNT_MISSING', bookingId, providerId, reason, details: { totalUSD: booking.totalUSD } });
+        results.escalationsCount += 1;
+        results.payouts.push({ bookingId, providerId, amountUSD: 0, status: 'FAILED_AMOUNT_INVALID' });
+        continue;
+      }
 
       // Buscar datos y correo PayPal del proveedor
       const provider = await resolveOperationalProvider(providerId);
@@ -1187,7 +1202,14 @@ export async function executeAutomatedProviderPayouts(): Promise<{
       const rawPaypal = provider.paypalEmail || booking.providerInfo?.paypalEmail || null;
       const paypalEmail = getEffectiveProviderEmail(rawPaypal);
       const commissionRate = provider?.commissionRate ?? 0.15; // 15% comisión plataforma
-      const payoutAmountUSD = Math.max(1, Number((totalUSD * (1 - commissionRate)).toFixed(2)));
+      const payoutAmountUSD = Number((totalUSD * (1 - commissionRate)).toFixed(2));
+      if (!Number.isFinite(payoutAmountUSD) || payoutAmountUSD <= 0) {
+        const reason = `Monto de liquidación no positivo para la reserva ${bookingId}.`;
+        await recordEscalation({ type: 'PAYOUT_AMOUNT_INVALID', bookingId, providerId, reason, details: { totalUSD, commissionRate } });
+        results.escalationsCount += 1;
+        results.payouts.push({ bookingId, providerId, amountUSD: 0, status: 'FAILED_PAYOUT_AMOUNT' });
+        continue;
+      }
 
       // CRÍTICO - IDEMPOTENCIA: El senderBatchId DEBE ser determinístico por reserva (ej. payout-{bookingId})
       // NUNCA incluir Date.now() ni timestamps variables para que PayPal deduplique si hay reintentos.
