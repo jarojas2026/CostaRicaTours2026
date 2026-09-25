@@ -62,12 +62,13 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
   }, [id, TOURS, loading, navigate]);
 
   useEffect(() => {
+    if (!tour) return;
     try {
-      setIsFavorite(localStorage.getItem(`crt:favourite:tour:\${tour.id}`) === '1');
+      setIsFavorite(localStorage.getItem(`crt:favourite:tour:${tour.id}`) === '1');
     } catch {
       setIsFavorite(false);
     }
-  }, [tour.id]);
+  }, [tour]);
 
   if (loading || !tour) {
     return (
