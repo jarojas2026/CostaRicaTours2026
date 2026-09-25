@@ -63,8 +63,12 @@ export const TourCard: React.FC<TourCardProps> = ({
   return (
     <>
       <div 
+        role="button"
+        tabIndex={0}
+        aria-label={language === 'es' ? `Ver ${getLangText(tour.title, language)}` : `View ${getLangText(tour.title, language)}`}
         onClick={() => onSelectTour(tour)}
-        className={`relative modern-card flex overflow-hidden ${
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectTour(tour); } }}
+        className={`relative modern-card flex overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
           viewMode === 'list' ? 'flex-col lg:flex-row' : 'flex-col h-full'
         } group cursor-pointer`}
       >
@@ -100,6 +104,7 @@ export const TourCard: React.FC<TourCardProps> = ({
               {onToggleFavorite && (
                 <button
                   type="button"
+                  aria-label={isFavorite ? (language === 'es' ? 'Quitar de favoritos' : 'Remove from favourites') : (language === 'es' ? 'Guardar en favoritos' : 'Save to favourites')}
                   onClick={(e) => {
                     e.stopPropagation();
                     onToggleFavorite(tour.id);
@@ -118,6 +123,7 @@ export const TourCard: React.FC<TourCardProps> = ({
               {onToggleCompare && (
                 <button
                   type="button"
+                  aria-label={language === 'es' ? 'Comparar tour' : 'Compare tour'}
                   onClick={(e) => {
                     e.stopPropagation();
                     onToggleCompare(tour);
