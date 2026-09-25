@@ -68,7 +68,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'Uno de los ríos más bellos del mundo para el rafting de aguas blancas.',
       en: 'One of the most beautiful rivers in the world for white water rafting.'
     },
-    image: 'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 62, y: 52 }
   },
   {
@@ -110,7 +110,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'El lugar biológicamente más intenso del mundo según National Geographic.',
       en: 'The most biologically intense place on Earth according to National Geographic.'
     },
-    image: 'https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 72, y: 88 }
   }
 ];
