@@ -60,7 +60,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
   const galleryImages: string[] = Array.isArray(tour.gallery) && tour.gallery.length > 0 
     ? tour.gallery 
-    : [tour.image || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80'];
+    : [tour.image || 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85'];
 
   const operator = tour.operatorId ? OPERATORS.find(op => op.id === tour.operatorId) : null;
   const modalTitle = getLangText(tour.title, language, 'Tour de Costa Rica');
