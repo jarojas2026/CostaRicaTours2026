@@ -163,7 +163,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'La Fortuna / Volcán Arenal', en: 'La Fortuna / Arenal Volcano' },
     tagline: { es: 'La Capital de la Aventura y Termales', en: 'The Adventure & Hot Springs Capital' },
     description: { es: 'Famoso por su volcán cónico casi perfecto y sus relajantes aguas termales.', en: 'Famous for its nearly perfect conical volcano and relaxing hot springs.' },
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 42, y: 38 }
   },
   {
@@ -171,7 +171,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Monteverde', en: 'Monteverde' },
     tagline: { es: 'Mágico Bosque Nuboso y Biodiversidad', en: 'Magical Cloud Forest & Biodiversity' },
     description: { es: 'Un paraíso de neblina, puentes colgantes y el místico quetzal resplandeciente.', en: 'A paradise of mist, hanging bridges, and the mystical resplendent quetzal.' },
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 33, y: 44 }
   },
   {
@@ -179,7 +179,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Manuel Antonio', en: 'Manuel Antonio' },
     tagline: { es: 'Donde el Bosque Encuentra el Mar', en: 'Where Rainforest Meets Ocean' },
     description: { es: 'Playas de arena blanca y exuberante selva llena de perezosos y monos.', en: 'White sand beaches and lush rainforest full of sloths and monkeys.' },
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 50, y: 68 }
   },
   {
@@ -187,7 +187,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Río Pacuare / Turrialba', en: 'Pacuare River / Turrialba' },
     tagline: { es: 'Los Mejores Rápidos de Costa Rica', en: 'World-Class Whitewater Rafting' },
     description: { es: 'Uno de los ríos más bellos del mundo para el rafting de aguas bravas.', en: 'One of the most beautiful rivers in the world for whitewater rafting.' },
-    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 62, y: 52 }
   },
   {
@@ -195,7 +195,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Guanacaste / Tamarindo', en: 'Guanacaste / Tamarindo' },
     tagline: { es: 'Sol, Surf y Playas Doradas', en: 'Sunshine, Surf & Golden Beaches' },
     description: { es: 'Famoso por su clima seco, surf de clase mundial y atardeceres espectaculares.', en: 'Famous for its dry weather, world-class surf, and spectacular sunsets.' },
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 18, y: 32 }
   },
   {
@@ -203,7 +203,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Tortuguero', en: 'Tortuguero' },
     tagline: { es: 'El Amazonas Costarricense y Tortugas Verdes', en: 'Costa Rican Amazon & Sea Turtles' },
     description: { es: 'Navega por canales remotos y observa el desove de las tortugas marinas.', en: 'Navigate remote canals and witness the nesting of sea turtles.' },
-    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 70, y: 30 }
   },
   {
@@ -211,7 +211,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Uvita / Marino Ballena / Osa', en: 'Uvita / Marino Ballena / Osa' },
     tagline: { es: 'El Hogar de las Ballenas y Corcovado', en: 'Home of Whales & Corcovado' },
     description: { es: 'Famoso por el tómbolo en cola de ballena y el Parque Nacional Corcovado, el más biodiverso del mundo.', en: 'Famous for the Whale Tail sandbar and Corcovado National Park, the most biodiverse on Earth.' },
-    image: 'https://images.unsplash.com/photo-1568430462989-441609751427?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 58, y: 82 }
   },
   {
@@ -219,7 +219,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Puerto Viejo / Cahuita', en: 'Puerto Viejo / Cahuita' },
     tagline: { es: 'Ritmos Afrocaribeños y Playas de Ensueño', en: 'Afro-Caribbean Rhythms & Dreamy Beaches' },
     description: { es: 'Cultura vibrante, gastronomía caribeña y arrecifes de coral protegidos.', en: 'Vibrant culture, Caribbean gastronomy, and protected coral reefs.' },
-    image: 'https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1643400811908-ed46db6c8066?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 85, y: 55 }
   },
   {
@@ -227,7 +227,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'San José / Valle Central', en: 'San Jose / Central Valley' },
     tagline: { es: 'Cultura, Volcanes y Café Premium', en: 'Culture, Volcanoes & Heritage Coffee' },
     description: { es: 'El corazón cultural de Costa Rica y punto de partida hacia volcanes activos.', en: 'The cultural heart of Costa Rica and starting point to active volcanoes.' },
-    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1643400811908-ed46db6c8066?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 52, y: 50 }
   },
   {
@@ -546,9 +546,9 @@ export const TOURS: Tour[] = [
     },
     category: 'rafting',
     region: 'pacuare',
-    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1530866495561-507c9faab2ed?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 110,
@@ -621,9 +621,9 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'tortuguero',
-    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 95,
@@ -691,9 +691,9 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'guanacaste',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 90,
@@ -766,9 +766,9 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'osa',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 165,
@@ -838,9 +838,9 @@ export const TOURS: Tour[] = [
     },
     category: 'culture',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 45,
@@ -906,9 +906,9 @@ export const TOURS: Tour[] = [
     },
     category: 'volcanoes',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 98,
@@ -978,9 +978,9 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 52,
@@ -1048,9 +1048,9 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 72,
@@ -1115,9 +1115,9 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'osa',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 145,
@@ -1184,9 +1184,9 @@ export const TOURS: Tour[] = [
     },
     category: 'volcanoes',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 115,
@@ -1259,9 +1259,9 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'osa',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 175,
@@ -1332,9 +1332,9 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'guanacaste',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 135,
@@ -1408,9 +1408,9 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 49,
@@ -1479,9 +1479,9 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'caribe',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 79,
@@ -1621,9 +1621,9 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 95,
@@ -1693,9 +1693,9 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'monteverde',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 45,
@@ -1764,9 +1764,9 @@ export const TOURS: Tour[] = [
     },
     category: 'volcanoes',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 89,
@@ -1833,9 +1833,9 @@ export const TOURS: Tour[] = [
     },
     category: 'culture',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1643400811908-ed46db6c8066?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1643400811908-ed46db6c8066?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 55,
@@ -1971,9 +1971,9 @@ export const TOURS: Tour[] = [
     },
     category: 'volcanoes',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 127,
@@ -2026,9 +2026,9 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 119,
@@ -2082,9 +2082,9 @@ export const TOURS: Tour[] = [
     },
     category: 'rafting',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 75,
@@ -2137,9 +2137,9 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'arenal',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 145,
@@ -2192,9 +2192,9 @@ export const TOURS: Tour[] = [
     },
     category: 'combos',
     region: 'guanacaste',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 129,
@@ -2248,9 +2248,9 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'guanacaste',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 118,
@@ -2302,9 +2302,9 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'guanacaste',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 95,
@@ -2358,9 +2358,9 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'monteverde',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 120,
@@ -2414,9 +2414,9 @@ export const TOURS: Tour[] = [
     },
     category: 'canopy',
     region: 'monteverde',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 65,
@@ -2468,9 +2468,9 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 75,
@@ -2522,9 +2522,9 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 90,
@@ -2578,9 +2578,9 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 88,
@@ -2633,9 +2633,9 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'manuel_antonio',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 145,
@@ -2688,9 +2688,9 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'osa',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 145,
@@ -2744,9 +2744,9 @@ export const TOURS: Tour[] = [
     },
     category: 'multiday',
     region: 'tortuguero',
-    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 390,
@@ -2799,9 +2799,9 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'caribe',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 65,
@@ -2853,9 +2853,9 @@ export const TOURS: Tour[] = [
     },
     category: 'multiday',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 780,
@@ -2910,9 +2910,9 @@ export const TOURS: Tour[] = [
     },
     category: 'volcanoes',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 115,
@@ -3036,9 +3036,9 @@ export const TOURS: Tour[] = [
     },
     category: 'culture',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 75,
@@ -3098,9 +3098,9 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
     gallery: [
-      'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 130,
@@ -3149,6 +3149,64 @@ export const TOURS: Tour[] = [
     bestPriceGuaranteed: true
   }
 ];
+
+
+// Visual content layer: destination-specific real photography.
+// The catalog data remains unchanged; only the user-facing imagery is normalized here.
+const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
+  'sjo-3-in-1-combo': ["https://images.unsplash.com/photo-1620658927695-c33df6fb8130?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1620658927695-c33df6fb8130?auto=format&fit=crop&w=1200&q=85"],
+  'arenal-hot-springs': ["https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85"],
+  'monteverde-canopy': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
+  'manuel-antonio-park': ["https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85"],
+  'pacuare-rafting': ["https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85"],
+  'tortuguero-canals': ["https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85"],
+  'tamarindo-catamaran': ["https://images.unsplash.com/photo-1519793043130-c584f53c3277?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1519793043130-c584f53c3277?auto=format&fit=crop&w=1200&q=85"],
+  'corcovado-expedition': ["https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85"],
+  'coffee-chocolate-tour': ["https://images.unsplash.com/photo-1620658927695-c33df6fb8130?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1200&q=85"],
+  'rio-celeste-waterfall': ["https://images.unsplash.com/photo-1711882569452-967be6941ddd?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1711882569452-967be6941ddd?auto=format&fit=crop&w=1200&q=85"],
+  'night-jungle-walk': ["https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85"],
+  'mistico-hanging-bridges': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
+  'cano-island-snorkeling': ["https://images.unsplash.com/photo-1714328003874-e730ff96fdd5?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85"],
+  'poas-volcano-doka-waterfall': ["https://images.unsplash.com/photo-1620658927695-c33df6fb8130?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1620658927695-c33df6fb8130?auto=format&fit=crop&w=1200&q=85"],
+  'corcovado-sirena-expedition': ["https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85"],
+  'rincon-de-la-vieja-canopy-mud': ["https://images.unsplash.com/photo-1523295973995-bd4218f07a32?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1523295973995-bd4218f07a32?auto=format&fit=crop&w=1200&q=85"],
+  'sloth-territory-la-fortuna': ["https://images.unsplash.com/photo-1742857235280-8633fa7b5992?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1742857235280-8633fa7b5992?auto=format&fit=crop&w=1200&q=85"],
+  'cahuita-snorkel-sloth-hike': ["https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1742857235280-8633fa7b5992?auto=format&fit=crop&w=1200&q=85"],
+  'nauyaca-waterfalls-4x4': ["https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85"],
+  'marino-ballena-whale-dolphin': ["https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85"],
+  'monteverde-night-walk': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
+  'irazu-volcano-orosi-valley': ["https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-155?"],
+  'san-jose-city-gold-museum': ["https://images.unsplash.com/photo-1643400811908-ed46db6c8066?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1643400811908-ed46db6c8066?auto=format&fit=crop&w=1200&q=85"],
+  'bribri-indigenous-cultural': ["https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85"],
+  'sjo-irazu-orosi-lankester': ["https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-155?"],
+  'arenal-pure-trek-canyoning': ["https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85"],
+  'arenal-wave-balsa-rafting': ["https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85"],
+  'arenal-sky-trek-tram-combo': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
+  'guanacaste-guachipelin-combo': ["https://images.unsplash.com/photo-1523295973995-bd4218f07a32?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1523295973995-bd4218f07a32?auto=format&fit=crop&w=1200&q=85"],
+  'guanacaste-diamante-adventure': ["https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85"],
+  'guanacaste-marlin-del-rey-sunset': ["https://images.unsplash.com/photo-1519793043130-c584f53c3277?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1519793043130-c584f53c3277?auto=format&fit=crop&w=1200&q=85"],
+  'monteverde-selvatura-all-in-one': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
+  'monteverde-100-aventura-extreme': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
+  'manuel-antonio-damas-mangrove': ["https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85"],
+  'manuel-antonio-ocean-king-catamaran': ["https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1519793043130-c584f53c3277?auto=format&fit=crop&w=1200&q=85"],
+  'uvita-whale-watching-combo': ["https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1714328003874-e730ff96fdd5?auto=format&fit=crop&w=1200&q=85"],
+  'uvita-cano-island-snorkel': ["https://images.unsplash.com/photo-1714328003874-e730ff96fdd5?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85"],
+  'osa-corcovado-sirena-day': ["https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85"],
+  'tortuguero-mawamba-3d2n': ["https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85"],
+  'caribe-cahuita-snorkeling-hike': ["https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85"],
+  'circuit-classic-costa-rica-5d': ["https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85"],
+  'irazu-cartago-orosi-tour': ["https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-155?"],
+  'bay-island-sunset-cruise': ["https://images.unsplash.com/photo-1519793043130-c584f53c3277?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1519793043130-c584f53c3277?auto=format&fit=crop&w=1200&q=85"],
+  'doka-grecia-sarchi-tour': ["https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1200&q=85"],
+  'sarapiqui-boat-rainforest-sjo': ["https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85"],
+};
+
+for (const tour of TOURS) {
+  const override = TOUR_IMAGE_OVERRIDES[tour.id];
+  if (!override) continue;
+  tour.image = override[0];
+  tour.gallery = [override[0], override[1]];
+}
 
 export const TOURS_DATA = TOURS;
 
