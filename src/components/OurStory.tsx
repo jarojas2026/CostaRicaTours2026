@@ -74,7 +74,7 @@ export const OurStory: React.FC<OurStoryProps> = ({ language }) => {
           >
             <div className="aspect-[4/5] sm:aspect-square rounded-[3rem] overflow-hidden relative shadow-2xl">
               <img 
-                src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80" 
+                src="https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85" 
                 alt="Costa Rica Tours Aggregator" 
                 className="w-full h-full object-cover"
               />
