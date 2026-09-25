@@ -3154,51 +3154,186 @@ export const TOURS: Tour[] = [
 // Visual content layer: destination-specific real photography.
 // The catalog data remains unchanged; only the user-facing imagery is normalized here.
 const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
-  'sjo-3-in-1-combo': ["https://images.unsplash.com/photo-1712010596464-9f2a4e0d6489?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1200&q=85"],
-  'arenal-hot-springs': ["https://images.unsplash.com/photo-1771223832335-c5c116e41bfd?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85"],
-  'monteverde-canopy': ["https://images.unsplash.com/photo-1648172846433-ca73f0ee522c?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
-  'manuel-antonio-park': ["https://images.unsplash.com/photo-1580676875879-f20086f1e729?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1592501171458-4e131613f542?auto=format&fit=crop&w=1200&q=85"],
-  'pacuare-rafting': ["https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85"],
-  'tortuguero-canals': ["https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85"],
-  'tamarindo-catamaran': ["https://images.unsplash.com/photo-1636657795425-0db7a2b0528a?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1519793043130-c584f53c3277?auto=format&fit=crop&w=1200&q=85"],
-  'corcovado-expedition': ["https://images.unsplash.com/photo-1723144455080-6ba5b5f6b527?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85"],
-  'coffee-chocolate-tour': ["https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712251769863-9b64ed58b5b9?auto=format&fit=crop&w=1200&q=85"],
-  'rio-celeste-waterfall': ["https://images.unsplash.com/photo-1711882569452-967be6941ddd?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1711882569452-967be6941ddd?auto=format&fit=crop&w=1200&q=85"],
-  'night-jungle-walk': ["https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85"],
-  'mistico-hanging-bridges': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
-  'cano-island-snorkeling': ["https://images.unsplash.com/photo-1714328003874-e730ff96fdd5?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85"],
-  'poas-volcano-doka-waterfall': ["https://images.unsplash.com/photo-1620658927695-c33df6fb8130?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1200&q=85"],
-  'corcovado-sirena-expedition': ["https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85"],
-  'rincon-de-la-vieja-canopy-mud': ["https://images.unsplash.com/photo-1523295973995-bd4218f07a32?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1523295973995-bd4218f07a32?auto=format&fit=crop&w=1200&q=85"],
-  'sloth-territory-la-fortuna': ["https://images.unsplash.com/photo-1742857235280-8633fa7b5992?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1742909622958-751052a5cce1?auto=format&fit=crop&w=1200&q=85"],
-  'cahuita-snorkel-sloth-hike': ["https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1742857235280-8633fa7b5992?auto=format&fit=crop&w=1200&q=85"],
-  'nauyaca-waterfalls-4x4': ["https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85"],
-  'marino-ballena-whale-dolphin': ["https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85"],
-  'monteverde-night-walk': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
-  'irazu-volcano-orosi-valley': ["https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85"],
-  'san-jose-city-gold-museum': ["https://images.unsplash.com/photo-1643400811908-ed46db6c8066?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1643400811908-ed46db6c8066?auto=format&fit=crop&w=1200&q=85"],
-  'bribri-indigenous-cultural': ["https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85"],
-  'sjo-irazu-orosi-lankester': ["https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85"],
-  'arenal-pure-trek-canyoning': ["https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85"],
-  'arenal-wave-balsa-rafting': ["https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85"],
-  'arenal-sky-trek-tram-combo': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
-  'guanacaste-guachipelin-combo': ["https://images.unsplash.com/photo-1523295973995-bd4218f07a32?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1523295973995-bd4218f07a32?auto=format&fit=crop&w=1200&q=85"],
-  'guanacaste-diamante-adventure': ["https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85"],
-  'guanacaste-marlin-del-rey-sunset': ["https://images.unsplash.com/photo-1636657795425-0db7a2b0528a?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1636657795425-0db7a2b0528a?auto=format&fit=crop&w=1200&q=85"],
-  'monteverde-selvatura-all-in-one': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
-  'monteverde-100-aventura-extreme': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
-  'manuel-antonio-damas-mangrove': ["https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85"],
-  'manuel-antonio-ocean-king-catamaran': ["https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1519793043130-c584f53c3277?auto=format&fit=crop&w=1200&q=85"],
-  'uvita-whale-watching-combo': ["https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1714328003874-e730ff96fdd5?auto=format&fit=crop&w=1200&q=85"],
-  'uvita-cano-island-snorkel': ["https://images.unsplash.com/photo-1714328003874-e730ff96fdd5?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85"],
-  'osa-corcovado-sirena-day': ["https://images.unsplash.com/photo-1723144455080-6ba5b5f6b527?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85"],
-  'tortuguero-mawamba-3d2n': ["https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85"],
-  'caribe-cahuita-snorkeling-hike': ["https://images.unsplash.com/photo-1774166488273-bc77b3906e1a?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85"],
-  'circuit-classic-costa-rica-5d': ["https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85"],
-  'irazu-cartago-orosi-tour': ["https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85"],
-  'bay-island-sunset-cruise': ["https://images.unsplash.com/photo-1519793043130-c584f53c3277?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1519793043130-c584f53c3277?auto=format&fit=crop&w=1200&q=85"],
-  'doka-grecia-sarchi-tour': ["https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1200&q=85"],
-  'sarapiqui-boat-rainforest-sjo': ["https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85"],
+  'sjo-3-in-1-combo': [
+    'https://images.unsplash.com/photo-1711798111672-bfbaf16160ff?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'arenal-hot-springs': [
+    'https://images.unsplash.com/photo-1711798111672-bfbaf16160ff?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1771223832335-c5c116e41bfd?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'monteverde-canopy': [
+    'https://images.unsplash.com/photo-1648172846433-ca73f0ee522c?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1680003613913-26c857dde377?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'manuel-antonio-park': [
+    'https://images.unsplash.com/photo-1638514738739-61c13d5f7026?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1742909618652-5544a151a16c?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'pacuare-rafting': [
+    'https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1774166488273-bc77b3906e1a?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'tortuguero-canals': [
+    'https://images.unsplash.com/photo-1679674954348-f6f0028c5d14?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1580182019360-c95a6b16b0a2?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'tamarindo-catamaran': [
+    'https://images.unsplash.com/photo-1770848891767-5c4f707c9365?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'corcovado-expedition': [
+    'https://images.unsplash.com/photo-1723144455080-6ba5b5f6b527?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1776192030922-f0d342487045?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'coffee-chocolate-tour': [
+    'https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1712251769863-9b64ed58b5b9?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'rio-celeste-waterfall': [
+    'https://images.unsplash.com/photo-1602948577571-896d79713b8c?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1711882569452-967be6941ddd?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'night-jungle-walk': [
+    'https://images.unsplash.com/photo-1776192030922-f0d342487045?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'mistico-hanging-bridges': [
+    'https://images.unsplash.com/photo-1680003613913-26c857dde377?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1648172846433-ca73f0ee522c?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'cano-island-snorkeling': [
+    'https://images.unsplash.com/photo-1714328003874-e730ff96fdd5?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'poas-volcano-doka-waterfall': [
+    'https://images.unsplash.com/photo-1711798111672-bfbaf16160ff?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'corcovado-sirena-expedition': [
+    'https://images.unsplash.com/photo-1723144455080-6ba5b5f6b527?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'rincon-de-la-vieja-canopy-mud': [
+    'https://images.unsplash.com/photo-1648172846433-ca73f0ee522c?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1771223832335-c5c116e41bfd?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'sloth-territory-la-fortuna': [
+    'https://images.unsplash.com/photo-1728847267854-7c7c9f95a281?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1711798111672-bfbaf16160ff?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'cahuita-snorkel-sloth-hike': [
+    'https://images.unsplash.com/photo-1774166488273-bc77b3906e1a?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1728847267854-7c7c9f95a281?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'nauyaca-waterfalls-4x4': [
+    'https://images.unsplash.com/photo-1710384342026-cd34a67d922a?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1771223832335-c5c116e41bfd?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'marino-ballena-whale-dolphin': [
+    'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1742909618652-5544a151a16c?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'monteverde-night-walk': [
+    'https://images.unsplash.com/photo-1680003613913-26c857dde377?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'irazu-volcano-orosi-valley': [
+    'https://images.unsplash.com/photo-1711798111672-bfbaf16160ff?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'san-jose-city-gold-museum': [
+    'https://images.unsplash.com/photo-1742909618652-5544a151a16c?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1643400811908-ed46db6c8066?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'bribri-indigenous-cultural': [
+    'https://images.unsplash.com/photo-1774166488273-bc77b3906e1a?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1728847267854-7c7c9f95a281?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'sjo-irazu-orosi-lankester': [
+    'https://images.unsplash.com/photo-1711798111672-bfbaf16160ff?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'arenal-pure-trek-canyoning': [
+    'https://images.unsplash.com/photo-1771223832335-c5c116e41bfd?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1710384342026-cd34a67d922a?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'arenal-wave-balsa-rafting': [
+    'https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1711798111672-bfbaf16160ff?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'arenal-sky-trek-tram-combo': [
+    'https://images.unsplash.com/photo-1648172846433-ca73f0ee522c?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1680003613913-26c857dde377?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'guanacaste-guachipelin-combo': [
+    'https://images.unsplash.com/photo-1771223832335-c5c116e41bfd?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1774166488273-bc77b3906e1a?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'guanacaste-diamante-adventure': [
+    'https://images.unsplash.com/photo-1770848891767-5c4f707c9365?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'guanacaste-marlin-del-rey-sunset': [
+    'https://images.unsplash.com/photo-1770848891767-5c4f707c9365?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1636657795425-0db7a2b0528a?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'monteverde-selvatura-all-in-one': [
+    'https://images.unsplash.com/photo-1648172846433-ca73f0ee522c?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1680003613913-26c857dde377?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'monteverde-100-aventura-extreme': [
+    'https://images.unsplash.com/photo-1648172846433-ca73f0ee522c?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1680003613913-26c857dde377?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'manuel-antonio-damas-mangrove': [
+    'https://images.unsplash.com/photo-1638514738739-61c13d5f7026?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1679674954348-f6f0028c5d14?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'manuel-antonio-ocean-king-catamaran': [
+    'https://images.unsplash.com/photo-1770848891767-5c4f707c9365?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1742909618652-5544a151a16c?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'uvita-whale-watching-combo': [
+    'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1742909618652-5544a151a16c?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'uvita-cano-island-snorkel': [
+    'https://images.unsplash.com/photo-1714328003874-e730ff96fdd5?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'osa-corcovado-sirena-day': [
+    'https://images.unsplash.com/photo-1723144455080-6ba5b5f6b527?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'tortuguero-mawamba-3d2n': [
+    'https://images.unsplash.com/photo-1679674954348-f6f0028c5d14?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1580182019360-c95a6b16b0a2?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'caribe-cahuita-snorkeling-hike': [
+    'https://images.unsplash.com/photo-1774166488273-bc77b3906e1a?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1638514738739-61c13d5f7026?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'circuit-classic-costa-rica-5d': [
+    'https://images.unsplash.com/photo-1711798111672-bfbaf16160ff?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1742909618652-5544a151a16c?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'irazu-cartago-orosi-tour': [
+    'https://images.unsplash.com/photo-1711798111672-bfbaf16160ff?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'bay-island-sunset-cruise': [
+    'https://images.unsplash.com/photo-1770848891767-5c4f707c9365?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'doka-grecia-sarchi-tour': [
+    'https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1742909618652-5544a151a16c?auto=format&fit=crop&w=1400&q=85"
+  ],
+  'sarapiqui-boat-rainforest-sjo': [
+    'https://images.unsplash.com/photo-1679674954348-f6f0028c5d14?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1400&q=85"
+  ]
 };
 
 for (const tour of TOURS) {
