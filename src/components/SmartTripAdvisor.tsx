@@ -14,6 +14,7 @@ export const SmartTripAdvisor: React.FC<Props> = ({ language }) => {
   const [action, setAction] = useState<Action>('trip_fit');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [sessionId] = useState(() => 'traveler_' + Math.random().toString(36).slice(2, 12));
 
   const labels = useMemo(() => ({
     trip_fit: es ? 'Diseñar viaje' : 'Design trip',
@@ -33,7 +34,9 @@ export const SmartTripAdvisor: React.FC<Props> = ({ language }) => {
             ? { activities: query.split(',').map(x => x.trim()).filter(Boolean), profile }
             : action === 'activity_safety_check'
               ? { activity: query || (es ? 'actividad de aventura' : 'adventure activity') }
-              : { regions: query.split(',').map(x => x.trim()).filter(Boolean), days };
+              : action === 'full_journey'
+          ? { query, days, travelers: 2, profile, language: es ? 'es' : 'en', sessionId }
+          : { regions: query.split(',').map(x => x.trim()).filter(Boolean), days };
       const response = await fetch(action === 'full_journey' ? '/api/journey/build' : '/api/ai/intelligence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -41,7 +44,7 @@ export const SmartTripAdvisor: React.FC<Props> = ({ language }) => {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Request failed');
-      setResult(data);
+      setResult(action === 'full_journey' ? (data.journey || data) : data);
     } catch (error) {
       setResult({ error: error instanceof Error ? error.message : 'Request failed' });
     } finally {
@@ -70,7 +73,7 @@ export const SmartTripAdvisor: React.FC<Props> = ({ language }) => {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-2 sm:grid-cols-4">
+        <div className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
           {(Object.keys(labels) as Action[]).map(key => {
             const Icon = key === 'trip_fit' ? Compass : key === 'packing_list' ? Luggage : key === 'activity_safety_check' ? ShieldCheck : key === 'route_strategy' ? Route : Sparkles;
             return (
