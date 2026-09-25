@@ -12,7 +12,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'El destino más popular de Costa Rica, hogar del majestuoso Volcán Arenal.',
       en: 'Costa Rica\'s most popular destination, home to the majestic Arenal Volcano.'
     },
-    image: 'https://images.unsplash.com/photo-1579294800821-694d95e86143?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 42, y: 35 } // percentage on map
   },
   {
@@ -40,7 +40,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'El parque nacional más visitado, famoso por sus playas blancas y vida silvestre.',
       en: 'The most visited national park, famous for its white beaches and wildlife.'
     },
-    image: 'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 48, y: 68 }
   },
   {
@@ -68,7 +68,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'Uno de los ríos más bellos del mundo para el rafting de aguas blancas.',
       en: 'One of the most beautiful rivers in the world for white water rafting.'
     },
-    image: 'https://images.unsplash.com/photo-1530866495561-507c9faab2ed?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 62, y: 52 }
   },
   {
@@ -82,7 +82,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'Accesible solo por bote o avión, es el lugar principal de anidación de tortugas.',
       en: 'Accessible only by boat or plane, it is the main nesting site for turtles.'
     },
-    image: 'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 68, y: 28 }
   },
   {
@@ -96,7 +96,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'La capital vibrante rodeada de montañas y plantaciones de café.',
       en: 'The vibrant capital surrounded by mountains and coffee plantations.'
     },
-    image: 'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1666606654560-3de1e3c59d32?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 48, y: 48 }
   },
   {
