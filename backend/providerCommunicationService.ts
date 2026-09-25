@@ -420,7 +420,9 @@ export async function handleProviderAction(params: {
     return {
       success: true,
       order: failoverResult.reassignedOrder,
-      message: `Rechazo procesado. Sistema auto-reasignó la reserva a ${failoverResult.newProvider.name}.`
+      message: failoverResult.newProvider
+        ? `Rechazo procesado. Sistema auto-reasignó la reserva a ${failoverResult.newProvider.name}.`
+        : `Rechazo procesado. No existe proveedor alternativo verificado; la reserva requiere intervención humana.`
     };
   }
 
