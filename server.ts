@@ -130,8 +130,39 @@ import { createInFlightLimiter } from './backend/admissionControl';
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-// Admin gate is defined before any route registration that uses it.
-const requireAdmin = requireOperator;
+// Admin gate is stricter than the generic operator gate: operator credentials may
+// operate only routes explicitly intended for operators; admin routes require an
+// authenticated admin identity/role.
+function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
+  return requireOperator(req, res, () => {
+    const role = (req as any).adminAccess?.role || (req as any).user?.role || null;
+    if (role !== 'admin') {
+      return res.status(403).json({ error: 'Permisos de administrador requeridos.' });
+    }
+    next();
+  });
+}
+
+function verifyConfiguredSecret(provided: unknown, expected: unknown): boolean {
+  const p = String(provided || '');
+  const e = String(expected || '');
+  if (!p || !e) return false;
+  const a = Buffer.from(p);
+  const b = Buffer.from(e);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+function requireAutomationTrigger(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const agentToken = req.headers.authorization?.startsWith('Bearer ')
+    ? req.headers.authorization.slice(7).trim()
+    : '';
+  const webhookSecret = String(req.headers['x-webhook-secret'] || '').trim();
+  if (verifyConfiguredSecret(agentToken, process.env.AGENT_INTERNAL_TOKEN) ||
+      verifyConfiguredSecret(webhookSecret, process.env.WEBHOOK_SECRET)) {
+    return next();
+  }
+  return res.status(401).json({ error: 'Credencial de automatización requerida.' });
+}
 
 function adminAccessPayload(req: express.Request) {
   const access = (req as any).adminAccess || {};
@@ -448,6 +479,27 @@ app.patch('/api/ai/journey/:journeyId', aiAdmission.middleware, async (req, res)
     res.json({ success: true, journey: result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message || 'No se pudo adaptar el viaje.' });
+  }
+});
+
+// Protected scheduler entrypoints for serverless/container environments.
+// They share the same native workers used by in-process cron, but can be invoked
+// by Cloud Scheduler or another trusted scheduler without exposing mutations publicly.
+app.post('/api/internal/reservation-lifecycle/sweep', requireAutomationTrigger, async (req, res) => {
+  try {
+    const result = await withDistributedAutomationLock('reservation-lifecycle-external', () => runReservationLifecycleSweep(Math.min(100, Math.max(1, Number(req.body?.limit) || 100))));
+    return res.json({ success: true, result });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error?.message || 'No se pudo ejecutar el lifecycle.' });
+  }
+});
+
+app.post('/api/internal/email-operations/sweep', requireAutomationTrigger, async (req, res) => {
+  try {
+    const result = await withDistributedAutomationLock('email-operations-external', processEmailOperationsOnce);
+    return res.json({ success: true, result });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error?.message || 'No se pudo ejecutar el agente de correo.' });
   }
 });
 
@@ -1771,23 +1823,48 @@ app.post(additionalWebhooks, async (req, res) => {
 // ==========================================
 
 // 1. Coordinación en Tiempo Real con Proveedores (Webhook & API Nativa)
-app.post(['/webhook/proveedores-coordinacion', '/webhook/coordinacion-proveedores', '/api/webhooks/provider-coordination', '/api/native/workflows/coordinacion-proveedor', '/api/native/workflows/notificar-proveedor'], async (req, res) => {
+app.post(['/webhook/proveedores-coordinacion', '/webhook/coordinacion-proveedores', '/api/webhooks/provider-coordination'], requireAutomationTrigger, async (req, res) => {
   try {
-    const authHeader = req.headers['x-webhook-secret'] as string;
+    const authHeader = String(req.headers['x-webhook-secret'] || req.headers.authorization?.toString().replace(/^Bearer\\s+/, '') || '');
     const result = await executeProviderRealtimeCoordination(req.body, authHeader);
     res.json(result);
   } catch (error: any) {
-    const status = error.message.includes('No autorizado') ? 401 : 500;
+    const status = /No autorizado/.test(error?.message || '') ? 401 : 500;
     res.status(status).json({ success: false, error: error.message });
+  }
+});
+
+app.post(['/api/native/workflows/coordinacion-proveedor', '/api/native/workflows/notificar-proveedor'], requireAdmin, async (req, res) => {
+  try {
+    const result = await executeProviderRealtimeCoordination(req.body);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
 // 1.1 Endpoint Bidireccional de Respuesta del Proveedor (GET para enlaces de correo/WhatsApp y POST para APIs)
 app.all(['/api/provider/respond', '/webhook/provider-response', '/api/webhooks/provider-response'], async (req, res) => {
   try {
+    const capabilityToken = String(req.query.token || req.body?.token || '').trim();
+    const capability = verifyProviderPortalToken(capabilityToken);
+    const legacyAllowed = process.env.NODE_ENV !== 'production' && process.env.ALLOW_LEGACY_PROVIDER_ACTIONS === 'true';
+    if (!capability && !legacyAllowed) {
+      return res.status(401).json({ success: false, error: 'Token de capacidad del proveedor requerido.' });
+    }
+
+  try {
     const action = String(req.query.action || req.body?.action || 'confirm');
-    const bookingId = String(req.query.bookingId || req.body?.bookingId || req.body?.id || '');
-    const providerId = String(req.query.providerId || req.body?.providerId || '');
+    const requestedBookingId = String(req.query.bookingId || req.body?.bookingId || req.body?.id || '');
+    const bookingId = capability?.orderId || requestedBookingId;
+    const requestedProviderId = String(req.query.providerId || req.body?.providerId || '');
+    const providerId = capability?.providerId || requestedProviderId;
+    if (capability && requestedBookingId && requestedBookingId !== capability.orderId) {
+      return res.status(403).json({ success: false, error: 'El enlace no corresponde a esta reserva.' });
+    }
+    if (capability && requestedProviderId && requestedProviderId !== capability.providerId) {
+      return res.status(403).json({ success: false, error: 'El enlace no corresponde a este proveedor.' });
+    }
     const guideName = String(req.query.guideName || req.body?.guideName || 'Guía Naturalista Certificado ICT');
     const vehiclePlate = String(req.query.vehiclePlate || req.body?.vehiclePlate || 'Unidad Oficial Alsama Tours');
     const proposedTime = String(req.query.proposedTime || req.body?.proposedTime || '');
@@ -1969,7 +2046,7 @@ app.post('/api/provider/portal/action', async (req, res) => {
 });
 
 // 1.2 Catálogo de Operadores Turísticos Oficiales CST
-app.get(['/api/provider/catalog', '/api/operators/catalog'], (req, res) => {
+app.get(['/api/provider/catalog', '/api/operators/catalog'], requireAdmin, (req, res) => {
   res.json({
     success: true,
     total: Object.keys(MASTER_OPERATORS_REGISTRY).length,
@@ -1981,7 +2058,7 @@ app.get(['/api/provider/catalog', '/api/operators/catalog'], (req, res) => {
 });
 
 // 1.3 Consulta de Estado de Despacho del Proveedor para una Reserva
-app.get(['/api/provider/status/:bookingId', '/api/operators/status/:bookingId'], async (req, res) => {
+app.get(['/api/provider/status/:bookingId', '/api/operators/status/:bookingId'], requireOperator, async (req, res) => {
   try {
     const bookingId = req.params.bookingId;
     const allBookings = await getAllBookings();
@@ -2012,7 +2089,7 @@ app.get(['/api/provider/status/:bookingId', '/api/operators/status/:bookingId'],
 });
 
 // 2. Confirmación de Reserva al Cliente (Webhook)
-app.post(['/webhook/cliente-confirmacion', '/webhook/confirmacion-cliente', '/api/webhooks/customer-confirmation'], async (req, res) => {
+app.post(['/webhook/cliente-confirmacion', '/webhook/confirmacion-cliente', '/api/webhooks/customer-confirmation'], requireAutomationTrigger, async (req, res) => {
   try {
     const authHeader = req.headers['x-webhook-secret'] as string;
     const result = await executeCustomerBookingConfirmation(req.body, authHeader);
@@ -2024,7 +2101,7 @@ app.post(['/webhook/cliente-confirmacion', '/webhook/confirmacion-cliente', '/ap
 });
 
 // 3. Pagos Automáticos a Proveedores (Batch / Cron Trigger)
-app.post(['/api/payouts/run-batch', '/webhook/pagos-proveedores-batch'], async (req, res) => {
+app.post(['/api/payouts/run-batch', '/webhook/pagos-proveedores-batch'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeAutomatedProviderPayouts();
     res.json(result);
@@ -2034,7 +2111,7 @@ app.post(['/api/payouts/run-batch', '/webhook/pagos-proveedores-batch'], async (
 });
 
 // 4. Vigilancia y Escalamiento de Reservas Pendientes (Cron Trigger)
-app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], async (req, res) => {
+app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeSurveillanceAndEscalation();
     res.json(result);
@@ -2044,7 +2121,7 @@ app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], async 
 });
 
 // 5. Reporte Diario de Operación (Cron Trigger)
-app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], async (req, res) => {
+app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeDailyOperationReport();
     res.json(result);
@@ -2054,7 +2131,7 @@ app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], as
 });
 
 // 6. Solicitud de Reseña Post-Tour (Cron Trigger)
-app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], async (req, res) => {
+app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executePostTourReviewRequests();
     res.json(result);
@@ -2064,7 +2141,7 @@ app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], async
 });
 
 // 7. Recordatorio 24h Antes del Tour (Cron Trigger)
-app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], async (req, res) => {
+app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeTour24hReminders();
     res.json(result);
@@ -2165,28 +2242,28 @@ app.post('/api/ops/booking-action', requireOperator, async (req, res) => {
 // 🤖 AGENTES DEL ENJAMBRE (TRIAGE, PROCESADOR, SUPERVISOR)
 // ==========================================
 
-app.post('/api/agents/triage', async (req, res) => {
+app.post('/api/agents/triage', requireAgentTool, async (req, res) => {
   const result = await runTriage(req.body.rawMessage || '');
   res.json(result);
 });
 
-app.post('/api/agents/processor', async (req, res) => {
+app.post('/api/agents/processor', requireAgentTool, async (req, res) => {
   const { rawMessage, intent, extractedData } = req.body;
   const result = await runProcessor(rawMessage || '', intent || '', extractedData || {});
   res.json(result);
 });
 
-app.post('/api/agents/contingency', async (req, res) => {
+app.post('/api/agents/contingency', requireAgentTool, async (req, res) => {
   const result = await runContingency(req.body);
   res.json(result);
 });
 
-app.post('/api/agents/supervisor', async (req, res) => {
+app.post('/api/agents/supervisor', requireAgentTool, async (req, res) => {
   const result = await runSupervisor();
   res.json(result);
 });
 
-app.post('/api/agents/log_exception', (req, res) => {
+app.post('/api/agents/log_exception', requireAgentTool, (req, res) => {
   const { agentName, errorContext, rawData } = req.body;
   logException(agentName || 'UnknownAgent', errorContext || 'Error', rawData);
   res.json({ success: true });
@@ -2906,7 +2983,7 @@ app.post('/api/fcm/register', async (req, res) => {
   }
 });
 
-app.post('/api/fcm/send', async (req, res) => {
+app.post('/api/fcm/send', requireAdmin, async (req, res) => {
   try {
     const { userId, title, body, data } = req.body;
     if (!userId || !title || !body) {
