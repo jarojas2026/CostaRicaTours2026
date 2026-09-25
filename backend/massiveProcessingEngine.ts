@@ -99,8 +99,6 @@ class IndividualProviderLifecycleManager {
    * Evalúa periódicamente los SLAs pendientes directamente consultando Firestore (Sobrevive a reinicios y escalado a cero).
    */
   async sweepPendingSlas(): Promise<number> {
-    if (this.slaSweepRunning) return 0;
-    this.slaSweepRunning = true;
     const db = getFirestoreDb();
     const lockRef = db ? db.collection('automation_locks').doc('massive-provider-sla-1m') : null;
     let lockAcquired = false;
@@ -137,7 +135,6 @@ class IndividualProviderLifecycleManager {
       if (err?.message !== 'automation_lock_busy') console.error('Error en barredor periódico de SLAs:', err);
       return 0;
     } finally {
-      this.slaSweepRunning = false;
       if (lockAcquired && lockRef) await lockRef.set({ status: 'idle', releasedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, { merge: true }).catch(() => undefined);
     }
   }
