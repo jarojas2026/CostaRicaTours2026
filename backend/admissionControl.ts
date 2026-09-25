@@ -1,17 +1,15 @@
 /**
  * Admission control ligero por instancia.
  *
- * Protege la memoria/CPU de cada runtime ante picos masivos. No sustituye el
- * rate limiting de borde: actúa como segunda barrera para trabajo costoso (IA,
- * reservas, integraciones y consultas operativas) y devuelve 503 cuando la
- * instancia alcanza su capacidad segura.
+ * Protege CPU/memoria durante picos masivos. No sustituye el rate limiting
+ * perimetral; es una segunda barrera para trabajo costoso.
  */
 import type { NextFunction, Request, Response } from 'express';
 
 export function createInFlightLimiter(maxConcurrent: number, retryAfterSeconds = 2) {
   let inFlight = 0;
 
-  return function inFlightLimiter(_req: Request, res: Response, next: NextFunction) {
+  const middleware = function inFlightLimiter(_req: Request, res: Response, next: NextFunction) {
     if (inFlight >= maxConcurrent) {
       res.setHeader('Retry-After', String(retryAfterSeconds));
       return res.status(503).json({
@@ -33,13 +31,10 @@ export function createInFlightLimiter(maxConcurrent: number, retryAfterSeconds =
     res.once('close', release);
     next();
   };
-}
 
-export function getInFlightCount(): number {
-  return inFlightRegistry.reduce((total, counter) => total + counter(), 0);
-}
-
-const inFlightRegistry: Array<() => number> = [];
-export function registerInFlightCounter(counter: () => number): void {
-  inFlightRegistry.push(counter);
+  return {
+    middleware,
+    getInFlightCount: () => inFlight,
+    maxConcurrent
+  };
 }
