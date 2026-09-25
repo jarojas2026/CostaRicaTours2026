@@ -45,6 +45,14 @@ if (/providerId\s*=\s*[^;]*\|\|\s*['\"][^'\"]+['\"]/.test(massiveEngineSource)) 
 if (/Math\.random\(/.test(massiveEngineSource)) {
   add('HIGH', 'ID-001', 'Massive Processing Engine uses Math.random for task identity.');
 }
+
+const nativeAutomationSource = read('backend/nativeAutomationEngine.ts');
+if (/checkout\.stripe\.com\/c\/pay|paypal\.com\/checkoutnow\?token/.test(nativeAutomationSource)) {
+  add('CRITICAL', 'PAYMENT-001', 'Native automation still fabricates payment gateway URLs instead of using configured gateway endpoints.');
+}
+if (/Math\.random\(/.test(nativeAutomationSource)) {
+  add('HIGH', 'ID-002', 'Native automation uses Math.random for an operational identifier.');
+}
 if (/return match \|\| REGISTERED_PROVIDERS\[0\]/.test(providerService)) {
   add('CRITICAL', 'PROVIDER-001', 'Provider selection still falls back to a synthetic/static first provider.');
 }
