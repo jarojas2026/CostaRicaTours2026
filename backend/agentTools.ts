@@ -26,6 +26,10 @@ export const AGENT_TOOL_REGISTRY = {
     description: 'Search the authoritative tour catalog by text, region or category.',
     sideEffect: false
   },
+  get_tour_media: {
+    description: 'Return the authoritative visual media profile for a tour: hero image, gallery, tourism tags and image policy.',
+    sideEffect: false
+  },
   check_availability: {
     description: 'Check live Firestore-backed capacity for a tour/date/time.',
     sideEffect: false
@@ -160,6 +164,14 @@ export async function executeAgentTool(
         duration: t.durationLabel?.es || t.durationHours,
         maxGroupSize: t.maxGroupSize
       }));
+    }
+    case 'get_tour_media': {
+      const tourId = String(args.tourId || '').trim();
+      if (!tourId) throw new Error('tourId requerido');
+      const tour = TOURS.find(item => item.id === tourId);
+      if (!tour) return { success: false, error: 'Tour no encontrado' };
+      const { getTourMediaProfile } = await import('./tourMediaService');
+      return { success: true, media: getTourMediaProfile(tour) };
     }
     case 'check_availability':
       return checkTourAvailability(
@@ -487,6 +499,17 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
         region: { type: 'STRING', description: 'Costa Rica region (e.g., Guanacaste, Arenal, Monteverde, Manuel Antonio, Osa)' },
         category: { type: 'STRING', description: 'Activity category (e.g., wildlife, adventure, beaches, volcanoes, water)' }
       }
+    }
+  },
+  {
+    name: 'get_tour_media',
+    description: 'Return the curated visual media for a real tour, prioritizing photos that represent the actual activity and destination.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        tourId: { type: 'STRING', description: 'Tour ID from the authoritative catalog' }
+      },
+      required: ['tourId']
     }
   },
   {
