@@ -1554,7 +1554,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=85'
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 85,
     durationHours: 6,
@@ -1905,7 +1905,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=85'
+      'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 75,
     durationHours: 6,
