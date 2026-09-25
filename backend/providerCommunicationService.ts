@@ -238,9 +238,10 @@ async function loadServiceOrder(orderId: string): Promise<ServiceOrder | null> {
 /**
  * Obtiene o asigna el proveedor ideal para un tour
  */
-export function getBestProviderForTour(tourId: string): TourProvider {
+export function getBestProviderForTour(tourId: string): TourProvider | null {
   const match = REGISTERED_PROVIDERS.find(p => p.activeTours.includes(tourId) && p.status === 'active');
-  return match || REGISTERED_PROVIDERS[0];
+  // Never invent or silently substitute a provider for an unrelated service.
+  return match || null;
 }
 
 /**
@@ -265,9 +266,13 @@ export async function dispatchServiceOrder(params: {
   totalUSD: number;
   providerId?: string;
 }): Promise<ServiceOrder> {
-  const provider = params.providerId 
-    ? REGISTERED_PROVIDERS.find(p => p.id === params.providerId) || getBestProviderForTour(params.tourId)
+  const provider = params.providerId
+    ? REGISTERED_PROVIDERS.find(p => p.id === params.providerId) || null
     : getBestProviderForTour(params.tourId);
+
+  if (!provider) {
+    throw new Error(`No hay un proveedor activo y verificado para el tour ${params.tourId}. La solicitud queda sin despacho hasta contar con un proveedor real.`);
+  }
 
   const orderId = `OS-CR-${params.bookingId}-${Date.now().toString().slice(-4)}`;
   const now = new Date();
@@ -479,8 +484,31 @@ async function triggerAutoFailoverReassignment(rejectedOrder: ServiceOrder): Pro
   newProvider: TourProvider;
 }> {
   const alternateProvider = REGISTERED_PROVIDERS.find(
-    p => p.id !== rejectedOrder.providerId && p.status === 'active'
-  ) || REGISTERED_PROVIDERS[1];
+    p => p.id !== rejectedOrder.providerId &&
+      p.status === 'active' &&
+      p.activeTours.includes(rejectedOrder.tourId)
+  );
+
+  if (!alternateProvider) {
+    rejectedOrder.status = 'rejected';
+    rejectedOrder.notes = (rejectedOrder.notes ? rejectedOrder.notes + ' ' : '') +
+      'No existe proveedor alternativo verificado para este servicio.';
+    serviceOrdersStore.set(rejectedOrder.id, rejectedOrder);
+    await persistServiceOrder(rejectedOrder).catch(() => {});
+    await updateBookingStatus(rejectedOrder.bookingId, {
+      serviceOrderStatus: 'rejected',
+      providerFailoverAt: new Date().toISOString()
+    }).catch(() => {});
+    await createAlert({
+      source: 'Comunicación con Proveedores',
+      severity: 'critical',
+      title: 'Reserva requiere intervención humana',
+      message: `El proveedor rechazó ${rejectedOrder.id} y no existe un proveedor alternativo verificado para ${rejectedOrder.tourId}.`,
+      bookingId: rejectedOrder.bookingId,
+      providerId: rejectedOrder.providerId
+    }).catch(() => {});
+    return { reassignedOrder: rejectedOrder, newProvider: null as any };
+  }
 
   rejectedOrder.status = 'reassigned';
   rejectedOrder.providerId = alternateProvider.id;
