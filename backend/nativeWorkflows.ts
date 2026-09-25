@@ -7,6 +7,7 @@ import { createProviderPortalToken, providerPortalConfigured } from './providerP
 
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || '';
 const APP_URL = process.env.APP_URL || '';
+const DIRECT_OPERATIONS_PROVIDER_ID = String(process.env.DIRECT_OPERATIONS_PROVIDER_ID || '').trim();
 
 export function normalizeDate(dateVal: any): Date {
   if (!dateVal) return new Date(0);
@@ -808,16 +809,34 @@ export async function executeAutonomousProviderFallback(
 }> {
   console.warn(`🔄 [FAILOVER AUTÓNOMO] Proveedor ${failedProviderId} declinó reserva #${bookingId}. Reasignando a Alsama Tours CR Operaciones Directas...`);
   
-  const fallbackProvider = MASTER_OPERATORS_REGISTRY['alsama-tours-cr'];
+  if (!DIRECT_OPERATIONS_PROVIDER_ID) {
+    await sendAdministrativeAlert({
+      title: 'Failover de proveedor requiere intervención humana',
+      reason: 'DIRECT_OPERATIONS_PROVIDER_ID no está configurado; no existe un proveedor directo autorizado para reasignación automática.',
+      bookingId,
+      providerId: failedProviderId,
+      details: { failedProviderId, reason }
+    });
+    return {
+      success: false,
+      action: 'decline_escalate',
+      bookingId,
+      newStatus: 'requiere_intervencion',
+      providerStatus: 'fallback_unconfigured',
+      message: 'No se reasignó automáticamente: el proveedor directo de contingencia no está configurado.',
+      reassigned: false
+    };
+  }
 
-  const fallbackEmail = getEffectiveProviderEmail(fallbackProvider.officialEmail);
-  if (fallbackProvider.verified !== true || !fallbackProvider.active || !fallbackProvider.officialEmail || !fallbackEmail) {
+  const fallbackProvider = await resolveOperationalProvider(DIRECT_OPERATIONS_PROVIDER_ID);
+  const fallbackEmail = fallbackProvider?.email || '';
+  if (!fallbackProvider || !fallbackEmail) {
     await sendAdministrativeAlert({
       title: 'Failover de proveedor requiere intervención humana',
       reason: `No existe un canal oficial verificable para reasignar ${bookingId}.`,
       bookingId,
       providerId: failedProviderId,
-      details: { failedProviderId, reason, fallbackCandidate: fallbackProvider.id }
+      details: { failedProviderId, reason, fallbackCandidate: fallbackProvider?.id || DIRECT_OPERATIONS_PROVIDER_ID }
     });
     return {
       success: false,
@@ -850,7 +869,7 @@ export async function executeAutonomousProviderFallback(
         <p>El operador externo con ID <code>${failedProviderId}</code> declinó la reserva <strong>#${bookingId}</strong> (Motivo: <em>${reason}</em>).</p>
         <p>El motor autónomo ha transferido la reserva al equipo de operaciones directas para garantizar servicio sin interrupciones.</p>
         <div style="background-color: #ecfdf5; padding: 12px; border-radius: 8px; margin: 16px 0;">
-          <a href="${APP_URL}/api/provider/respond?action=confirm&bookingId=${bookingId}&providerId=alsama-tours-cr" style="background-color: #059669; color: white; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">
+          <a href="${APP_URL}/api/provider/respond?action=confirm&bookingId=${bookingId}&providerId=${fallbackProvider.id}" style="background-color: #059669; color: white; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">
             Confirmar Despacho Alsama
           </a>
         </div>
