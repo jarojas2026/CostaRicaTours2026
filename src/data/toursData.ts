@@ -3231,7 +3231,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1771223832335-c5c116e41bfd?auto=format&fit=crop&w=1400&q=85'
   ],
   'marino-ballena-whale-dolphin': [
-    'https://images.unsplash.com/photo-1684182127593-c669850b325c?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1742909618652-5544a151a16c?auto=format&fit=crop&w=1400&q=85'
   ],
   'monteverde-night-walk': [
@@ -3255,7 +3255,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1400&q=85'
   ],
   'arenal-pure-trek-canyoning': [
-    'https://images.unsplash.com/photo-1776192030922-f0d342487045?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1710384342026-cd34a67d922a?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1710384342026-cd34a67d922a?auto=format&fit=crop&w=1400&q=85'
   ],
   'arenal-wave-balsa-rafting': [
@@ -3267,7 +3267,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1680003613913-26c857dde377?auto=format&fit=crop&w=1400&q=85'
   ],
   'guanacaste-guachipelin-combo': [
-    'https://images.unsplash.com/photo-1771223832335-c5c116e41bfd?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1711882569452-967be6941ddd?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1769530260287-c11f7fc559ef?auto=format&fit=crop&w=1400&q=85'
   ],
   'guanacaste-diamante-adventure': [
@@ -3279,11 +3279,11 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1636657795425-0db7a2b0528a?auto=format&fit=crop&w=1400&q=85'
   ],
   'monteverde-selvatura-all-in-one': [
-    'https://images.unsplash.com/photo-1675695201386-79adf942dc84?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1680003613913-26c857dde377?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1680003613913-26c857dde377?auto=format&fit=crop&w=1400&q=85'
   ],
   'monteverde-100-aventura-extreme': [
-    'https://images.unsplash.com/photo-1648172846433-ca73f0ee522c?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1680003613913-26c857dde377?auto=format&fit=crop&w=1400&q=85'
   ],
   'manuel-antonio-damas-mangrove': [
@@ -3291,7 +3291,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1679674954348-f6f0028c5d14?auto=format&fit=crop&w=1400&q=85'
   ],
   'manuel-antonio-ocean-king-catamaran': [
-    'https://images.unsplash.com/photo-1770848891767-5c4f707c9365?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1742909618652-5544a151a16c?auto=format&fit=crop&w=1400&q=85'
   ],
   'uvita-whale-watching-combo': [
@@ -3303,7 +3303,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85'
   ],
   'osa-corcovado-sirena-day': [
-    'https://images.unsplash.com/photo-1723144455080-6ba5b5f6b527?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85'
   ],
   'tortuguero-mawamba-3d2n': [
@@ -3311,11 +3311,11 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1580182019360-c95a6b16b0a2?auto=format&fit=crop&w=1400&q=85'
   ],
   'caribe-cahuita-snorkeling-hike': [
-    'https://images.unsplash.com/photo-1774166488273-bc77b3906e1a?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1638514738739-61c13d5f7026?auto=format&fit=crop&w=1400&q=85'
   ],
   'circuit-classic-costa-rica-5d': [
-    'https://images.unsplash.com/photo-1711798111672-bfbaf16160ff?auto=format&fit=crop&w=1400&q=85',
+    '/src/assets/images/costa_rica_hero_1789327541732.jpg',
     'https://images.unsplash.com/photo-1742909618652-5544a151a16c?auto=format&fit=crop&w=1400&q=85'
   ],
   'irazu-cartago-orosi-tour': [
@@ -3327,11 +3327,11 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85'
   ],
   'doka-grecia-sarchi-tour': [
-    'https://images.unsplash.com/photo-1773603261894-6afd4f0858de?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1712251769863-9b64ed58b5b9?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1587646589462-4728f63df161?auto=format&fit=crop&w=1400&q=85'
   ],
   'sarapiqui-boat-rainforest-sjo': [
-    'https://images.unsplash.com/photo-1769530260287-c11f7fc559ef?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1679674954348-f6f0028c5d14?auto=format&fit=crop&w=1400&q=85'
   ]
 };
