@@ -766,7 +766,7 @@ export async function executeAutonomousProviderFallback(
   message: string;
   reassigned: boolean;
 }> {
-  console.warn(`🔄 [FAILOVER AUTÓNOMO] Proveedor ${failedProviderId} declinó reserva #${bookingId}. Reasignando a Alsama Tours CR Operaciones Directas...`);
+  console.warn(`🔄 [FAILOVER AUTÓNOMO] Proveedor ${failedProviderId} declinó reserva #${bookingId}. Reasignando al proveedor de respaldo configurado...`);
   
   const fallbackProviderId = String(process.env.PROVIDER_FALLBACK_ID || '').trim();
   const fallbackProvider = fallbackProviderId ? await getProviderFromDb(fallbackProviderId) : null;
@@ -800,19 +800,19 @@ export async function executeAutonomousProviderFallback(
     fallbackTriggeredAt: new Date().toISOString()
   }).catch(() => {});
 
-  // Despachar inmediatamente notificación prioritaria a Alsama Tours CR
+  // Despachar inmediatamente notificación prioritaria al proveedor de respaldo
   await sendEmail({
     to: fallbackEmail,
-    subject: `🚨 [DESPACHO PRIORITARIO POR REASIGNACIÓN] Reserva #${bookingId} Asignada a Operaciones Directas`,
+    subject: `🚨 [DESPACHO PRIORITARIO POR REASIGNACIÓN] Reserva #${bookingId} Asignada a ${fallbackProvider.name}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917; border: 2px solid #059669; border-radius: 12px; padding: 24px;">
         <h2 style="color: #064e3b; margin-top: 0;">⚡ Reasignación Automática de Emergencia</h2>
-        <p>Equipo de <strong>Alsama Tours CR</strong>,</p>
+        <p>Equipo de <strong>${fallbackProvider.name}</strong>,</p>
         <p>El operador externo con ID <code>${failedProviderId}</code> declinó la reserva <strong>#${bookingId}</strong> (Motivo: <em>${reason}</em>).</p>
-        <p>El motor autónomo ha transferido la reserva al equipo de operaciones directas para garantizar servicio sin interrupciones.</p>
+        <p>El motor autónomo ha transferido la reserva al proveedor de respaldo configurado para garantizar continuidad operativa.</p>
         <div style="background-color: #ecfdf5; padding: 12px; border-radius: 8px; margin: 16px 0;">
-          <a href="${APP_URL}/api/provider/respond?action=confirm&bookingId=${bookingId}&providerId=alsama-tours-cr" style="background-color: #059669; color: white; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">
-            Confirmar Despacho Alsama
+          <a href="${APP_URL}/api/provider/respond?action=confirm&bookingId=${bookingId}&providerId=${encodeURIComponent(fallbackProvider.id)}" style="background-color: #059669; color: white; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">
+            Confirmar Despacho ${fallbackProvider.name}
           </a>
         </div>
       </div>
