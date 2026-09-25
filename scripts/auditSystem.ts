@@ -48,20 +48,37 @@ if (/fallbackProvider\.verified !== true/.test(nativeWorkflows) === false) {
   add('HIGH', 'PROVIDER-003', 'Direct-operations failover does not require explicit provider verification.');
 }
 
-for (const relative of ['backend', 'src', 'scripts', 'public', 'docs']) {
+function collectSourceFiles(startDir: string): string[] {
+  const files: string[] = [];
+  const stack = [startDir];
+  while (stack.length) {
+    const current = stack.pop()!;
+    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+      if (['node_modules', '.git', 'dist', 'coverage'].includes(entry.name)) continue;
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(full);
+      } else if (entry.isFile() && /\.(ts|tsx|js|jsx|md)$/.test(entry.name)) {
+        files.push(full);
+      }
+    }
+  }
+  return files;
+}
+
+for (const relative of ['backend', 'src', 'scripts', 'public', 'docs', 'agent']) {
   const dir = path.join(root, relative);
   if (!fs.existsSync(dir)) continue;
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (!entry.isFile() || !/\.(ts|tsx|js|jsx|md)$/.test(entry.name)) continue;
-    const file = path.join(dir, entry.name);
-    const source = fs.readFileSync(file, 'utf8');
+  for (const file of collectSourceFiles(dir)) {
     const relativePath = path.relative(root, file);
     if (relativePath === 'scripts/auditSystem.ts') continue;
+    const source = fs.readFileSync(file, 'utf8');
     if (/n8n/i.test(source)) add('HIGH', 'AUTOMATION-001', `n8n reference remains in ${relativePath}.`);
     if (/react-example/i.test(source)) add('MEDIUM', 'META-001', `Legacy project name react-example remains in ${relativePath}.`);
     if (/(?:8888)[-](?:7777)|88887777/.test(source)) add('HIGH', 'CONTACT-001', `Hardcoded private/emergency contact ${unsafeContact} remains in ${relativePath}.`);
   }
 }
+
 
 const server = read('server.ts');
 const reservationLifecycle = read('backend/reservationLifecycleOrchestrator.ts');
@@ -100,6 +117,10 @@ if (!/runReservationLifecycleSweep\(100\)/.test(read('backend/cronEngine.ts'))) 
 if (!/claim\(/.test(reservationLifecycle) || !/reservation_lifecycle_events/.test(reservationLifecycle)) {
   add('HIGH', 'BOOKING-003', 'Reservation lifecycle orchestration lacks durable idempotent event tracking.');
 }
+const massiveEngine = read('backend/massiveProcessingEngine.ts');
+if (!/QUEUE_BACKPRESSURE/.test(massiveEngine) || !/maxQueueDepth/.test(massiveEngine)) add('HIGH', 'QUEUE-004', 'Massive Processing Engine lacks an explicit queue ceiling/backpressure guard.');
+if (/sweepPendingSlas[\\s\\S]*getAllBookings\(\)/.test(massiveEngine)) add('HIGH', 'QUEUE-005', 'Provider SLA sweep still scans all bookings.');
+
 const emailOperations = read('backend/emailOperationsAgent.ts');
 if (!/EMAIL_MAX_ATTEMPTS/.test(emailOperations) || !/claimed === 'terminal'/.test(emailOperations)) {
   add('MEDIUM', 'EMAIL-004', 'Email operations lacks a terminal retry guard for poison messages.');
