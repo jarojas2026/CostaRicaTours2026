@@ -66,7 +66,7 @@ function collectSourceFiles(startDir: string): string[] {
   return files;
 }
 
-for (const relative of ['backend', 'src', 'scripts', 'public', 'docs', 'agent']) {
+for (const relative of ['backend', 'src', 'scripts', 'public', 'agent']) {
   const dir = path.join(root, relative);
   if (!fs.existsSync(dir)) continue;
   for (const file of collectSourceFiles(dir)) {
