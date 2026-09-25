@@ -219,7 +219,7 @@ export const MASTER_OPERATORS_REGISTRY: Record<string, {
 
 /**
  * Obtiene los datos del proveedor desde Firestore (colecciones 'operators' o 'proveedores')
- * con fallback determinista al registro maestro.
+ * sin fabricar un proveedor operativo cuando no existe un registro verificable.
  */
 export async function getProviderFromDb(providerId: string): Promise<any | null> {
   const db = getFirestoreDb();
@@ -325,8 +325,9 @@ export async function getProviderFromDb(providerId: string): Promise<any | null>
     return MASTER_OPERATORS_REGISTRY['tarcoles-crocodile-safari'];
   }
 
-  // Fallback seguro: Operaciones Directas Alsama Tours CR
-  return MASTER_OPERATORS_REGISTRY['alsama-tours-cr'];
+  // No inventar ni asumir un proveedor operativo. La reasignación requiere
+  // un registro verificable en Firestore.
+  return null;
 }
 
 /**
@@ -355,7 +356,8 @@ export async function executeProviderRealtimeCoordination(
 
   const booking = payload.booking || payload;
   const bookingId = booking.bookingId || booking.id || `CRT-${Date.now().toString().slice(-6)}`;
-  const providerId = booking.providerId || booking.providerInfo?.id || 'alsama-tours-cr';
+  const providerId = String(booking.providerId || booking.providerInfo?.id || '').trim();
+  if (!providerId) throw new Error('PROVIDER_REQUIRED: la reserva no tiene proveedor operativo asignado.');
   const tourName = booking.tourName || 'Tour Oficial Costa Rica';
   const tourDate = booking.date || 'Fecha por confirmar';
   const tourTime = booking.time || '08:00 AM';
@@ -369,7 +371,10 @@ export async function executeProviderRealtimeCoordination(
   const customerEmail = booking.customerEmail || booking.customer?.email || '';
 
   // Obtener datos del proveedor
-  const provider = await getProviderFromDb(providerId) || MASTER_OPERATORS_REGISTRY['alsama-tours-cr'];
+  const provider = await getProviderFromDb(providerId);
+  if (!provider || provider.active !== true || provider.verified !== true) {
+    throw new Error(`PROVIDER_NOT_FOUND: no existe un proveedor operativo verificado para ${providerId}.`);
+  }
   const providerEmail = provider.email;
   const providerPhone = provider.phone || '+506 8795-9148';
   const whatsappNumber = provider.whatsapp || '50687959148';
@@ -763,16 +768,17 @@ export async function executeAutonomousProviderFallback(
 }> {
   console.warn(`🔄 [FAILOVER AUTÓNOMO] Proveedor ${failedProviderId} declinó reserva #${bookingId}. Reasignando a Alsama Tours CR Operaciones Directas...`);
   
-  const fallbackProvider = MASTER_OPERATORS_REGISTRY['alsama-tours-cr'];
+  const fallbackProviderId = String(process.env.PROVIDER_FALLBACK_ID || '').trim();
+  const fallbackProvider = fallbackProviderId ? await getProviderFromDb(fallbackProviderId) : null;
 
-  const fallbackEmail = getEffectiveProviderEmail(fallbackProvider.officialEmail);
-  if (fallbackProvider.verified !== true || !fallbackProvider.active || !fallbackProvider.officialEmail || !fallbackEmail) {
+  const fallbackEmail = getEffectiveProviderEmail(fallbackProvider?.officialEmail);
+  if (!fallbackProvider || fallbackProvider.verified !== true || !fallbackProvider.active || !fallbackProvider.officialEmail || !fallbackEmail) {
     await sendAdministrativeAlert({
       title: 'Failover de proveedor requiere intervención humana',
       reason: `No existe un canal oficial verificable para reasignar ${bookingId}.`,
       bookingId,
       providerId: failedProviderId,
-      details: { failedProviderId, reason, fallbackCandidate: fallbackProvider.id }
+      details: { failedProviderId, reason, fallbackCandidate: fallbackProviderId || null }
     });
     return {
       success: false,
