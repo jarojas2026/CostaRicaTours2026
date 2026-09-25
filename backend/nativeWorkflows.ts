@@ -223,120 +223,48 @@ export const MASTER_OPERATORS_REGISTRY: Record<string, {
  */
 export async function getProviderFromDb(providerId: string): Promise<any | null> {
   const db = getFirestoreDb();
-  const normalizedId = (providerId || '').toLowerCase().trim();
+  const normalizedId = String(providerId || '').trim();
+  if (!db || !normalizedId) return null;
 
-  // 1. Si hay base de datos Firestore activa, consultar
-  if (db) {
-    try {
-      let doc = await db.collection('operators').doc(providerId).get();
-      if (doc.exists) {
+  try {
+    for (const collectionName of ['operators', 'proveedores']) {
+      const direct = await db.collection(collectionName).doc(normalizedId).get();
+      if (direct.exists) {
+        const data = direct.data() || {};
+        return {
+          id: direct.id,
+          ...data,
+          officialEmail: data.officialEmail || data.email || '',
+          email: getEffectiveProviderEmail(data.email || data.officialEmail),
+          officialPaypalEmail: data.officialPaypalEmail || data.paypalEmail || '',
+          paypalEmail: getEffectiveProviderEmail(data.paypalEmail || data.officialPaypalEmail)
+        };
+      }
+
+      const byCode = await db.collection(collectionName)
+        .where('code', '==', normalizedId)
+        .limit(1)
+        .get();
+      if (!byCode.empty) {
+        const doc = byCode.docs[0];
         const data = doc.data() || {};
         return {
           id: doc.id,
           ...data,
-          officialEmail: data.email,
-          email: getEffectiveProviderEmail(data.email),
-          officialPaypalEmail: data.paypalEmail,
-          paypalEmail: getEffectiveProviderEmail(data.paypalEmail)
+          officialEmail: data.officialEmail || data.email || '',
+          email: getEffectiveProviderEmail(data.email || data.officialEmail),
+          officialPaypalEmail: data.officialPaypalEmail || data.paypalEmail || '',
+          paypalEmail: getEffectiveProviderEmail(data.paypalEmail || data.officialPaypalEmail)
         };
       }
-
-      doc = await db.collection('proveedores').doc(providerId).get();
-      if (doc.exists) {
-        const data = doc.data() || {};
-        return {
-          id: doc.id,
-          ...data,
-          officialEmail: data.email,
-          email: getEffectiveProviderEmail(data.email),
-          officialPaypalEmail: data.paypalEmail,
-          paypalEmail: getEffectiveProviderEmail(data.paypalEmail)
-        };
-      }
-
-      const opSnap = await db.collection('operators').where('code', '==', providerId).limit(1).get();
-      if (!opSnap.empty) {
-        const data = opSnap.docs[0].data() || {};
-        return {
-          id: opSnap.docs[0].id,
-          ...data,
-          officialEmail: data.email,
-          email: getEffectiveProviderEmail(data.email),
-          officialPaypalEmail: data.paypalEmail,
-          paypalEmail: getEffectiveProviderEmail(data.paypalEmail)
-        };
-      }
-
-      const provSnap = await db.collection('proveedores').where('code', '==', providerId).limit(1).get();
-      if (!provSnap.empty) {
-        const data = provSnap.docs[0].data() || {};
-        return {
-          id: provSnap.docs[0].id,
-          ...data,
-          officialEmail: data.email,
-          email: getEffectiveProviderEmail(data.email),
-          officialPaypalEmail: data.paypalEmail,
-          paypalEmail: getEffectiveProviderEmail(data.paypalEmail)
-        };
-      }
-    } catch (err) {
-      console.warn(`Error buscando proveedor ${providerId} en Firestore:`, err);
     }
+  } catch (error) {
+    console.error(`Error consultando proveedor operativo ${normalizedId}:`, error);
   }
 
-  // 2. Búsqueda exacta en catálogo maestro
-  if (MASTER_OPERATORS_REGISTRY[normalizedId]) {
-    return MASTER_OPERATORS_REGISTRY[normalizedId];
-  }
-
-  // 3. Búsqueda por sub-coincidencia de clave
-  for (const [key, val] of Object.entries(MASTER_OPERATORS_REGISTRY)) {
-    if (normalizedId.includes(key) || key.includes(normalizedId)) {
-      return val;
-    }
-  }
-
-  // 4. Mapeos de palabras clave de tours a proveedores
-  if (normalizedId.includes('arenal') || normalizedId.includes('volcan') || normalizedId.includes('termales') || normalizedId.includes('fortuna')) {
-    return MASTER_OPERATORS_REGISTRY['arenal-volcano-ops'];
-  }
-  if (normalizedId.includes('monteverde') || normalizedId.includes('canopy') || normalizedId.includes('tirolesa') || normalizedId.includes('puentes')) {
-    return MASTER_OPERATORS_REGISTRY['monteverde-canopy-ops'];
-  }
-  if (normalizedId.includes('manuel-antonio') || normalizedId.includes('quepos') || normalizedId.includes('parque')) {
-    return MASTER_OPERATORS_REGISTRY['manuel-antonio-ops'];
-  }
-  if (normalizedId.includes('tortuga') || normalizedId.includes('catamaran') || normalizedId.includes('bay-island') || normalizedId.includes('isla')) {
-    return MASTER_OPERATORS_REGISTRY['bay-island-cruises'];
-  }
-  if (normalizedId.includes('pacuare') || normalizedId.includes('rafting') || normalizedId.includes('sarapiqui')) {
-    return MASTER_OPERATORS_REGISTRY['pacuare-rafting-ops'];
-  }
-  if (normalizedId.includes('tortuguero') || normalizedId.includes('canales')) {
-    return MASTER_OPERATORS_REGISTRY['tortuguero-ops'];
-  }
-  if (normalizedId.includes('cafe') || normalizedId.includes('coffee') || normalizedId.includes('doka') || normalizedId.includes('cacao')) {
-    return MASTER_OPERATORS_REGISTRY['doka-estate-coffee'];
-  }
-  if (normalizedId.includes('guanacaste') || normalizedId.includes('tamarindo') || normalizedId.includes('papagayo') || normalizedId.includes('playa')) {
-    return MASTER_OPERATORS_REGISTRY['guanacaste-blue-ocean'];
-  }
-  if (normalizedId.includes('tarcoles') || normalizedId.includes('cocodrilo') || normalizedId.includes('crocodile')) {
-    return MASTER_OPERATORS_REGISTRY['tarcoles-crocodile-safari'];
-  }
-
-  // No inventar ni asumir un proveedor operativo. La reasignación requiere
-  // un registro verificable en Firestore.
   return null;
 }
 
-/**
- * =========================================================================
- * 1. COORDINACIÓN EN TIEMPO REAL CON PROVEEDORES (AUTODEPENDIENTE & BIDIRECCIONAL)
- * =========================================================================
- * Notifica al operador asignado con un despacho estructurado, enlaces
- * de respuesta con 1 clic y fallback automático en caso de falta de respuesta.
- */
 export async function executeProviderRealtimeCoordination(
   payload: any,
   authHeader?: string
