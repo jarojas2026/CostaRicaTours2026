@@ -5,6 +5,7 @@
  */
 
 import fs from 'fs';
+import crypto from 'crypto';
 import path from 'path';
 import admin from 'firebase-admin';
 import {
@@ -417,7 +418,7 @@ export async function createBooking(data: any) {
     }
   }
 
-  const bookingId = data.bookingId || `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+  const bookingId = data.bookingId || `CR-PV-${crypto.randomUUID()}`;
   const bookingTime = data.time || '08:00 AM';
   const numAdults = Number(data.adults) || 1;
   const numChildren = Number(data.children) || 0;
