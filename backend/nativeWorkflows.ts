@@ -2,6 +2,7 @@ import { getFirestoreDb, getBookingsCollection, updateBookingStatus } from './bo
 import { sendEmail, sendAdministrativeAlert, sendOperationalNotification, sendWhatsAppMessage } from './notificationService';
 import { logAutomationExecution } from './nativeAutomationEngine';
 import { generateBookingPDFBuffer } from './pdfService';
+import { createProviderPortalToken, providerPortalConfigured } from './providerPortalService';
 
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || '';
 const APP_URL = process.env.APP_URL || '';
@@ -374,9 +375,12 @@ export async function executeProviderRealtimeCoordination(
   const whatsappNumber = provider.whatsapp || '50687959148';
 
   // Generar URLs de acción de 1 clic para el proveedor
-  const confirmUrl = `${APP_URL}/api/provider/respond?action=confirm&bookingId=${encodeURIComponent(bookingId)}&providerId=${encodeURIComponent(provider.id)}`;
-  const modifyTimeUrl = `${APP_URL}/api/provider/respond?action=modify_time&bookingId=${encodeURIComponent(bookingId)}&providerId=${encodeURIComponent(provider.id)}`;
-  const declineUrl = `${APP_URL}/api/provider/respond?action=decline&bookingId=${encodeURIComponent(bookingId)}&providerId=${encodeURIComponent(provider.id)}`;
+  const providerPortalUrl = providerPortalConfigured()
+    ? `${APP_URL}/provider/portal?token=${encodeURIComponent(createProviderPortalToken({ orderId: bookingId, providerId: provider.id, ttlMinutes: 1440 }))}`
+    : '';
+  const confirmUrl = providerPortalUrl ? `${providerPortalUrl}&action=confirm` : `${APP_URL}/api/provider/respond?action=confirm&bookingId=${encodeURIComponent(bookingId)}&providerId=${encodeURIComponent(provider.id)}`;
+  const modifyTimeUrl = providerPortalUrl ? `${providerPortalUrl}&action=modify_time` : `${APP_URL}/api/provider/respond?action=modify_time&bookingId=${encodeURIComponent(bookingId)}&providerId=${encodeURIComponent(provider.id)}`;
+  const declineUrl = providerPortalUrl ? `${providerPortalUrl}&action=decline` : `${APP_URL}/api/provider/respond?action=decline&bookingId=${encodeURIComponent(bookingId)}&providerId=${encodeURIComponent(provider.id)}`;
 
   // Enlace interactivo a WhatsApp para despacho móvil directo
   const waText = encodeURIComponent(
