@@ -554,9 +554,17 @@ async function triggerAutoFailoverReassignment(rejectedOrder: ServiceOrder): Pro
   reassignedOrder: ServiceOrder;
   newProvider: TourProvider;
 }> {
-  const alternateProvider = REGISTERED_PROVIDERS.find(
-    p => p.id !== rejectedOrder.providerId && p.status === 'active' && isOperationallyVerifiedProvider(p)
-  );
+  let alternateProvider: TourProvider | null = null;
+  // Failover only to a verified, active operator that explicitly advertises
+  // the same tour. Never assign an unrelated provider.
+  for (const candidate of REGISTERED_PROVIDERS) {
+    if (candidate.id === rejectedOrder.providerId || candidate.status !== 'active' || !candidate.activeTours.includes(rejectedOrder.tourId)) continue;
+    const operational = await resolveOperationalProvider(candidate.id, rejectedOrder.tourId);
+    if (operational && operational.status === 'active' && operational.activeTours.includes(rejectedOrder.tourId)) {
+      alternateProvider = operational;
+      break;
+    }
+  }
   if (!alternateProvider) {
     await createAlert({
       source: 'Motor Autónomo de Reasignación de Operadores',
