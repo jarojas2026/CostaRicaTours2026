@@ -1326,3 +1326,90 @@ Learning may propose improvements; production code changes remain controlled cha
 **Connect before replacing. Reuse before duplicating. Verify before promising. Record before forgetting. Recover before abandoning.**
 
 This invariant applies to every future AI, agent, workflow, feature and pull request in this repository.
+
+
+---
+
+# 32. Evolution checkpoint — full-trip autonomy and provider operations
+
+**Checkpoint:** 2026-09-24
+
+This repository now treats the traveler journey as a connected commercial workflow rather than a collection of independent AI answers.
+
+### Current integration map
+
+| Layer | Authority / implementation | Role |
+|---|---|---|
+| Traveler continuity | `backend/memoryService.ts`, `backend/semanticMemoryService.ts` | Session context, facts, preferences and semantic retrieval |
+| Tourism reasoning | `backend/tourismIntelligenceEngine.ts` | Stable destination/profile/routing/safety guidance |
+| Full journey | `backend/travelJourneyOrchestrator.ts` | Memory + catalog + live data + itinerary + sales stage |
+| Catalog | `src/data/toursData.ts` | Authoritative commercial tour data |
+| Availability | `backend/bookingService.ts` | Real Firestore availability / reservation authority |
+| Weather | `backend/weatherPulseService.ts` | Live/fallback weather with provenance |
+| Itinerary | `backend/itineraryService.ts` | Existing itinerary engine and deterministic fallback |
+| Provider operations | `backend/providerCommunicationService.ts` | Service orders, provider dispatch and lifecycle |
+| Provider email agent | `backend/providerInboxAgent.ts` | Gmail polling, classification, transitions and customer notification |
+| Automation | `backend/cronEngine.ts`, `backend/nativeAutomationEngine.ts`, `backend/nativeWorkflows.ts` | Scheduled/native business workflows |
+| Administration | `backend/adminControlCenterService.ts`, `src/pages/AdminControlCenterPage.tsx` | Owner control center and operational observability |
+| Commercial advisor | `src/components/SmartTripAdvisor.tsx` | Customer-facing journey entry point |
+
+### Provider trust invariant
+
+Provider selection is now service-specific. A rejected provider is not replaced by an unrelated provider merely to keep the workflow moving. Failover only considers another active provider that explicitly supports the same tour. If none exists, the order remains rejected and an operational alert is created for human intervention.
+
+Provider email trust is configuration-driven. The system must not treat an unverified hard-coded address as an operational destination.
+
+### Journey trust invariant
+
+The journey response distinguishes:
+
+- stable tourism guidance;
+- authoritative catalog information;
+- live weather;
+- live availability;
+- information still requiring verification.
+
+A journey is a **proposal plus evidence**, not an automatic promise.
+
+### Provider inbox invariant
+
+The one-minute inbox worker:
+
+1. reads unread provider messages;
+2. checks the sender against configured provider addresses;
+3. requires an `OS-CR-...` service-order identifier;
+4. classifies the response;
+5. applies a confidence gate;
+6. updates the real service order;
+7. notifies the traveler;
+8. records an audit event;
+9. leaves ambiguous cases for human review.
+
+Gmail OAuth credentials remain server-side.
+
+### Commercial humanism invariant
+
+When something goes wrong, the system should preserve the traveler's objective and recover the journey instead of simply returning an error. A rejection should lead to another date, another provider when genuinely compatible, another experience, or a human handoff.
+
+### Administrative observability invariant
+
+The owner-facing control center is intended to answer, at minimum:
+
+- what is selling;
+- what is pending;
+- what failed;
+- what is happening in the next 72 hours;
+- which providers are responding;
+- whether the provider inbox agent is configured;
+- what journeys are in each commercial stage;
+- which agents and skills exist;
+- what automation actually executed;
+- which AI evaluations were recorded;
+- how much operational data is persisted.
+
+Metrics must remain grounded in persisted or observed events. No synthetic activity should be introduced to inflate dashboards.
+
+### Safe evolution invariant
+
+Future AI agents should **connect before replacing, reuse before duplicating, verify before promising, record before forgetting, and recover before abandoning**.
+
