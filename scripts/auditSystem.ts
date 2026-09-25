@@ -33,6 +33,10 @@ const unsafeContact = ['8888', '7777'].join('-');
 const unsafeContactCompact = '88887777';
 
 const providerService = read('backend/providerCommunicationService.ts');
+if (!/resolveOperationalProvider/.test(providerService) || !/await resolveOperationalProvider/.test(providerService)) {
+  add('HIGH', 'PROVIDER-004', 'Provider dispatch does not enforce an operational Firestore provider record before sending orders.');
+}
+
 const nativeWorkflows = read('backend/nativeWorkflows.ts');
 if (/return match \|\| REGISTERED_PROVIDERS\[0\]/.test(providerService)) {
   add('CRITICAL', 'PROVIDER-001', 'Provider selection still falls back to a synthetic/static first provider.');
@@ -97,6 +101,10 @@ if (!/claim\(/.test(reservationLifecycle) || !/reservation_lifecycle_events/.tes
   add('HIGH', 'BOOKING-003', 'Reservation lifecycle orchestration lacks durable idempotent event tracking.');
 }
 const emailOperations = read('backend/emailOperationsAgent.ts');
+if (!/EMAIL_MAX_ATTEMPTS/.test(emailOperations) || !/claimed === 'terminal'/.test(emailOperations)) {
+  add('MEDIUM', 'EMAIL-004', 'Email operations lacks a terminal retry guard for poison messages.');
+}
+
 if (!/processEmailOperationsOnce/.test(server) || !/\/api\/internal\/email-operations\/sweep/.test(server)) {
   add('CRITICAL', 'EMAIL-001', 'Autonomous email agent is not connected to a protected server endpoint.');
 }
