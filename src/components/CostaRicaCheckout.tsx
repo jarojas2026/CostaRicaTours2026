@@ -67,7 +67,7 @@ export const CostaRicaCheckout: React.FC<CostaRicaCheckoutProps> = ({
     setLoading(true);
 
     try {
-      const generatedId = `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+      const generatedId = `CR-PV-${crypto.randomUUID()}`;
       const payload = {
         bookingId: generatedId,
         tourId,
