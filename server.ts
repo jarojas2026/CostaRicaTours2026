@@ -2268,7 +2268,7 @@ app.post('/api/agents/log_exception', (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/api/gemini/concierge', async (req, res) => {
+app.post('/api/gemini/concierge', aiAdmission.middleware, async (req, res) => {
   try {
     const { message, language, history, agentId, context, engine, sessionId } = req.body;
     const userMsg = message || '';
@@ -2329,7 +2329,7 @@ app.post('/api/gemini/concierge', async (req, res) => {
 });
 
 // Endpoint exclusivo del Counter Agent (Agente de Mostrador y Reservas)
-app.post('/api/agent/counter', async (req, res) => {
+app.post('/api/agent/counter', aiAdmission.middleware, async (req, res) => {
   try {
     const { message, language, history, context } = req.body;
     const userMsg = message || '';
