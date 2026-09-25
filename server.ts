@@ -211,6 +211,9 @@ const aiAdmission = createInFlightLimiter(
 const intakeAdmission = createInFlightLimiter(
   Math.max(5, Math.min(50, Number(process.env.INTAKE_MAX_IN_FLIGHT || 20))),
   5
+);\nconst bookingAdmission = createInFlightLimiter(
+  Math.max(5, Math.min(50, Number(process.env.BOOKING_MAX_IN_FLIGHT || 20))),
+  5
 );
 
 app.use('/api/', generalApiLimiter, apiAdmission.middleware);
