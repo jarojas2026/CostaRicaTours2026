@@ -123,7 +123,7 @@ class IndividualProviderLifecycleManager {
         const bookingId = booking.id || booking.bookingId;
         const providerId = String(booking.providerId || '').trim();
         if (!providerId) throw new Error(`PROVIDER_REQUIRED: reserva ${bookingId} no tiene proveedor operativo asignado.`);
-        const dispatchedAt/ = Number(booking.dispatchedAt || 0);
+        const dispatchedAt = Number(booking.dispatchedAt || 0);
         if (bookingId && booking.providerStatus === 'pending' && booking.escalated !== true && dispatchedAt > 0 && now - dispatchedAt > SLA_THRESHOLD_MS) {
           await executeAutonomousProviderFallback(bookingId, providerId, 'SLA Expirado sin confirmación del proveedor ' + providerId);
           await updateBookingStatus(bookingId, { escalated: true, providerStatus: 'escalated_fallback' });
