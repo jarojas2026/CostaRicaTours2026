@@ -345,6 +345,42 @@ No duplicar precios de tours dentro de prompts o agentes.
 
 ---
 
+## 11.1 Infraestructura visual de tours
+
+La presentación fotográfica es parte del catálogo y de la infraestructura de producto, no un elemento decorativo aislado.
+
+Servicios:
+
+- `backend/tourMediaService.ts`
+- `GET /api/tours/:id/media`
+- herramienta IA `get_tour_media`
+
+Cada tour puede exponer:
+
+- imagen hero;
+- galería;
+- texto alternativo;
+- etiquetas visuales de actividad y destino;
+- posición/focal point cuando se incorpore;
+- procedencia del asset (`curated`, `provider`, `customer`);
+- reglas para evitar imágenes genéricas o repetidas.
+
+Principio visual:
+
+```
+TOUR
+ ↓
+ACTIVIDAD REAL
+ ↓
+DESTINO / CONTEXTO
+ ↓
+GALERÍA DE EXPERIENCIA
+```
+
+La referencia visual de operadores turísticos como Alsama Tours y Expediciones Tropicales sirve para estudiar cómo una experiencia se presenta mediante fotografías específicas, actividades y destino; no se deben copiar sus imágenes ni contenido propietario. La plataforma mantiene sus propios assets y metadatos.
+
+Esta capa permite posteriormente incorporar fotografías verificadas por proveedores, moderación de imágenes, almacenamiento CDN, focal points, versiones responsive y selección automática de fotografías por el agente de ventas sin cambiar el modelo comercial de tours.
+
 ## 12. Function Calling y razonamiento operativo
 
 ### \`backend/agentTools.ts\`
