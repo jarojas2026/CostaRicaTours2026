@@ -23,7 +23,7 @@ interface HeroSectionProps {
 const HERO_SLIDES = [
   {
     id: 1,
-    image: "https://images.unsplash.com/photo-1568430462989-441609751427?auto=format&fit=crop&w=1920&q=80",
+    image: "https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1920&q=85",
     badge: "🐋 Temporada de Ballenas",
     badgeEn: "🐋 Whale Season",
     title: "Avistamiento en Marino Ballena",
@@ -34,7 +34,7 @@ const HERO_SLIDES = [
   },
   {
     id: 2,
-    image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80",
+    image: "https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1920&q=85",
     badge: "🔥 Experiencia VIP",
     badgeEn: "🔥 VIP Experience",
     title: "Volcán Arenal & Aguas Termales",
@@ -86,7 +86,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-emerald-950/40 to-transparent pointer-events-none" />
       <div
         className="absolute inset-0 opacity-10 bg-cover bg-center pointer-events-none mix-blend-overlay"
-        style={{ backgroundImage: `url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80')` }}
+        style={{ backgroundImage: `url('https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1920&q=85')` }}
       />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
