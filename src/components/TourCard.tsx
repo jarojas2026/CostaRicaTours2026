@@ -115,7 +115,6 @@ export const TourCard: React.FC<TourCardProps> = ({
                       : 'bg-black/60 hover:bg-black/80 text-white backdrop-blur-md border border-white/20'
                   }`}
                   title={isFavorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}
-                  aria-label="Favorito"
                 >
                   <Heart className={`w-4 h-4 ${isFavorite ? 'fill-white' : ''}`} />
                 </button>
@@ -134,7 +133,6 @@ export const TourCard: React.FC<TourCardProps> = ({
                       : 'bg-black/60 hover:bg-black/80 text-white backdrop-blur-md border border-white/20'
                   }`}
                   title={t('compareTour')}
-                  aria-label="Comparar"
                 >
                   {isCompared ? <Check className="w-4 h-4" /> : <Scale className="w-4 h-4" />}
                 </button>
