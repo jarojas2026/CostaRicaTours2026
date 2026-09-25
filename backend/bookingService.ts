@@ -667,6 +667,40 @@ export async function getBookingById(bookingId: string): Promise<any | null> {
   }
 }
 
+/**
+ * Recupera sólo reservas que todavía pueden requerir una transición autónoma.
+ * Conserva getAllBookings() para backoffice y compatibilidad histórica.
+ */
+export async function getPendingReservationLifecycleBookings(limit = 100): Promise<any[]> {
+  const col = getBookingsCollection();
+  const safeLimit = Math.max(1, Math.min(250, limit));
+  if (!col) return [];
+
+  try {
+    const snapshot = await col
+      .where('status', 'in', ['pendiente_pago', 'payment_pending', 'pending', 'paid', 'provider_pending'])
+      .orderBy('updatedAt', 'desc')
+      .limit(safeLimit)
+      .get();
+    const results: any[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      results.push({
+        id: doc.id,
+        ...data,
+        createdAt: normalizeTimestampToDate(data.createdAt).toISOString(),
+        updatedAt: normalizeTimestampToDate(data.updatedAt).toISOString(),
+        createdAtTimestamp: data.createdAt
+      });
+    });
+    results.forEach((booking) => inMemoryBookings.set(booking.bookingId || booking.id, booking));
+    return results;
+  } catch (error) {
+    console.warn('Error consultando reservas pendientes del lifecycle:', error);
+    return [];
+  }
+}
+
 export async function getAllBookings(): Promise<any[]> {
   const col = getBookingsCollection();
   if (col) {
