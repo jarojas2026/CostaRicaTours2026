@@ -428,7 +428,7 @@ export async function executeProviderRealtimeCoordination(
           </div>
 
           <p style="font-size: 14px; line-height: 1.5; color: #44403c; margin: 0 0 16px 0;">
-            Estimado equipo de operaciones de <strong>${provider.name}</strong>, se ha recibido una nueva reserva confirmada a través de la plataforma oficial:
+            Estimado equipo de operaciones de <strong>${provider.name}</strong>, se ha recibido una nueva solicitud de reserva a través de la plataforma oficial. Por favor revise los datos y acepte o rechace la solicitud:
           </p>
 
           <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 24px;">
@@ -462,7 +462,7 @@ export async function executeProviderRealtimeCoordination(
 
           <!-- BOTONES DE ACCIÓN AUTODEPENDIENTES -->
           <div style="text-align: center; margin: 24px 0 16px 0;">
-            <p style="font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 12px;">Acción Inmediata Requerida (Haz clic para confirmar de forma automática):</p>
+            <p style="font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 12px;">Respuesta requerida (abra el formulario seguro para aceptar, rechazar o reportar un ajuste):</p>
             <div style="display: inline-block; width: 100%;">
               <a href="${confirmUrl}" style="display: block; background-color: #059669; color: #ffffff; text-decoration: none; padding: 14px 20px; border-radius: 10px; font-weight: 700; font-size: 15px; margin-bottom: 10px; text-align: center; box-shadow: 0 2px 4px rgba(5,150,105,0.2);">
                 ✅ CONFIRMAR Y ASIGNAR GUÍA / VEHÍCULO
