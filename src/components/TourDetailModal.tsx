@@ -84,7 +84,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     }
     setIsSubmitting(true);
 
-    const generatedBookingId = `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+    const generatedBookingId = `CR-PV-${crypto.randomUUID()}`;
     const departureTime = (tour.departureTimes && tour.departureTimes.length > 0) ? tour.departureTimes[0] : '08:00 AM';
 
     const bookingPayload: BookingRequest = {

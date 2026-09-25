@@ -64,7 +64,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
   const crcRate = getUsdToCrcRate();
   const totalCRC = crcRate > 0 ? Math.round(totalUSD * crcRate) : 0;
 
-  const pnrPreview = `CR-AIR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  const pnrPreview = `CR-AIR-${crypto.randomUUID().replace(/-/g, '').slice(0, 6).toUpperCase()}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -72,7 +72,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const [chatSessionId] = useState(() => {
     let sid = localStorage.getItem('chatSessionId');
     if (!sid) {
-      sid = 'session_' + Math.random().toString(36).substring(2, 15);
+      sid = 'session_' + crypto.randomUUID().replace(/-/g, '').slice(0, 12);
       localStorage.setItem('chatSessionId', sid);
     }
     return sid;
@@ -338,7 +338,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     e.preventDefault();
     if (!inChatBookingTour || !inChatDate || !inChatName || !inChatEmail) return;
     setIsSubmittingInChatBooking(true);
-    const genId = `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+    const genId = `CR-PV-${crypto.randomUUID()}`;
     const totalUSD = inChatBookingTour.priceUSD * inChatAdults;
     const rate = getUsdToCrcRate();
     const totalCRC = rate > 0 ? Math.round(totalUSD * rate) : 0;

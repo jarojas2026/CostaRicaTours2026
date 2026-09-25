@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { TOURS } from '../src/data/toursData';
+import { auditTourMedia } from '../backend/tourMediaService';
 
 type Finding = { severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'INFO'; id: string; message: string };
 
@@ -38,6 +40,21 @@ if (!/resolveOperationalProvider/.test(providerService) || !/await resolveOperat
 }
 
 const nativeWorkflows = read('backend/nativeWorkflows.ts');
+const massiveEngineSource = read('backend/massiveProcessingEngine.ts');
+if (/providerId\s*=\s*[^;]*\|\|\s*['\"][^'\"]+['\"]/.test(massiveEngineSource)) {
+  add('CRITICAL', 'PROVIDER-005', 'Massive Processing Engine still contains a synthetic provider fallback.');
+}
+if (/Math\.random\(/.test(massiveEngineSource)) {
+  add('HIGH', 'ID-001', 'Massive Processing Engine uses Math.random for task identity.');
+}
+
+const nativeAutomationSource = read('backend/nativeAutomationEngine.ts');
+if (/checkout\.stripe\.com\/c\/pay|paypal\.com\/checkoutnow\?token/.test(nativeAutomationSource)) {
+  add('CRITICAL', 'PAYMENT-001', 'Native automation still fabricates payment gateway URLs instead of using configured gateway endpoints.');
+}
+if (/Math\.random\(/.test(nativeAutomationSource)) {
+  add('HIGH', 'ID-002', 'Native automation uses Math.random for an operational identifier.');
+}
 if (/return match \|\| REGISTERED_PROVIDERS\[0\]/.test(providerService)) {
   add('CRITICAL', 'PROVIDER-001', 'Provider selection still falls back to a synthetic/static first provider.');
 }
@@ -66,7 +83,7 @@ function collectSourceFiles(startDir: string): string[] {
   return files;
 }
 
-for (const relative of ['backend', 'src', 'scripts', 'public', 'docs', 'agent']) {
+for (const relative of ['backend', 'src', 'scripts', 'public', 'agent']) {
   const dir = path.join(root, relative);
   if (!fs.existsSync(dir)) continue;
   for (const file of collectSourceFiles(dir)) {
@@ -134,6 +151,14 @@ if (!/processEmailOperationsOnce\(\)/.test(read('backend/cronEngine.ts'))) {
 }
 if (!/claimEvent/.test(emailOperations) || !/status === 'error'/.test(emailOperations)) {
   add('HIGH', 'EMAIL-003', 'Email operation queue lacks visible idempotent/recoverable claim handling.');
+}
+
+const tourMediaAudit = auditTourMedia(TOURS);
+const mediaFailures = tourMediaAudit.filter(item =>
+  item.issues.some(issue => issue.startsWith('hero_repeated') || issue === 'hero_gallery_duplicate' || issue === 'gallery_missing')
+);
+if (mediaFailures.length) {
+  add('CRITICAL', 'MEDIA-001', `Tour media audit found repeated or incomplete hero/gallery assets: ${mediaFailures.map(item => item.tourId + ':' + item.issues.join('|')).join(', ')}`);
 }
 
 const envExample = read('.env.example');

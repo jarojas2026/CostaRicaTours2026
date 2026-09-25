@@ -54,7 +54,7 @@ export function logAutomationExecution(
   details?: any
 ) {
   const entry: NativeAutomationLog = {
-    id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: `log_${crypto.randomUUID()}`,
     trigger,
     timestamp: new Date().toISOString(),
     durationMs,
@@ -204,7 +204,7 @@ export async function executeInicioReserva(body: any) {
   const unitPrice = Number(tour.priceUSD);
   const totalUSD = adults * unitPrice + children * unitPrice;
   const holdExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-  const idReserva = `CRT-HLD-${Math.floor(100000 + Math.random() * 900000)}`;
+  const idReserva = `CRT-HLD-${crypto.randomUUID()}`;
 
   const bookingCustomer = body.cliente || body.customer || {
     nombre: body.customerName,
@@ -278,10 +278,10 @@ export async function executeSolicitudPago(body: any) {
   const signaturePayload = `${reservationId}:${totalAmount}:${method}:${email}`;
   const hmacSignature = crypto.createHmac('sha256', hmacSecret).update(signaturePayload).digest('hex');
 
-  const sessionId = `cs_${method}_${Math.random().toString(36).substring(2, 14)}`;
-  const checkoutUrl = method === 'paypal'
-    ? `https://www.paypal.com/checkoutnow?token=EC-${Math.random().toString(36).substring(2, 12).toUpperCase()}`
-    : `https://checkout.stripe.com/c/pay/${sessionId}#fidkdWxOYHwnPyd1blpxYHZxWjA0TjU8TG5%2FQ2x0X1A1dGFJ`;
+  const sessionId = `pending_${crypto.randomUUID()}`;
+  // Este motor no fabrica URLs de pasarela. El checkout real se crea únicamente
+  // mediante los endpoints Stripe/PayPal que validan credenciales en backend.
+  const checkoutUrl = `/checkout?reserva=${encodeURIComponent(reservationId)}`;
 
   const duration = Date.now() - start;
   logAutomationExecution(
@@ -303,7 +303,7 @@ export async function executeSolicitudPago(body: any) {
     estado: 'esperando_pago',
     tourName: tour,
     motor: 'código_nativo_node',
-    mensaje: 'Sesión de pasarela generada y conciliación criptográfica activa en backend.'
+    mensaje: 'Reserva preparada para checkout. La URL de pasarela se genera exclusivamente por el backend de la pasarela configurada.'
   };
 }
 
@@ -343,7 +343,7 @@ export async function executeConfirmacionReserva(body: any) {
     paymentStatus: 'completed'
   });
 
-  const qrValidationCode = `CRT-QR-${reservationId}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  const qrValidationCode = `CRT-QR-${reservationId}-${crypto.randomUUID().replace(/-/g, '').slice(0, 10).toUpperCase()}`;
   const voucherUrl = `https://costaricatours.cr/vouchers/${reservationId}.pdf`;
 
   const whatsAppPreview = `¡Pura Vida ${clientData.name || 'Viajero'}! 🇨🇷🌿\nTu reserva para *${tour}* el *${tourDate}* a las *${tourTime}* está *100% CONFIRMADA*.\n\n📍 *Punto de recogida:* ${hotel}\n📄 *Voucher Oficial:* ${voucherUrl}\n🔐 *Código QR:* \`${qrValidationCode}\`\n\n¿Deseas alguna recomendación sobre qué llevar? ¡Estamos a tu servicio!`;
@@ -496,7 +496,7 @@ export async function executeSolicitudItinerario(body: any) {
 // =========================================================================
 export async function executeSolicitudSoporte(body: any) {
   const start = Date.now();
-  const ticketId = `TCK-CR-${Math.floor(100000 + Math.random() * 900000)}`;
+  const ticketId = `TCK-CR-${crypto.randomUUID()}`;
   const reasonText = body.motivo || body.mensaje || 'Consulta operativa sobre recogida o itinerario';
   const lowerReason = reasonText.toLowerCase();
 
@@ -546,7 +546,8 @@ export async function executeNotificarProveedor(body: any) {
   const start = Date.now();
   const bookingId = body.bookingId || body.idReserva || 'CRT-PROV';
   const tourName = body.tourName || 'Tour Oficial';
-  const provider = body.providerInfo || { name: 'Alsama Tours CR / Operaciones Directas' };
+  const provider = body.providerInfo || null;
+  if (!provider) throw new Error('PROVIDER_REQUIRED: no existe información operativa del proveedor.');
 
   console.log(`🚐 [AUTOMATIZACIÓN NATIVA] Despachando logística a proveedor local: ${provider.name} para reserva ${bookingId}`);
 
@@ -689,7 +690,7 @@ export async function executeSyncCalendar(body: any) {
   const hotel = body.pickupHotel || body.hotelRecogida || 'Lobby Hotel Los Lagos, La Fortuna';
   const client = body.clientName || 'Carlos Montero';
 
-  const eventId = `cal_cr_${Math.random().toString(36).substring(2, 12)}`;
+  const eventId = `cal_cr_${crypto.randomUUID()}`;
   const eventLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
     `🇨🇷 Tour: ${tour} (${client})`
   )}&dates=${tourDate.replace(/-/g, '')}T073000Z/${tourDate.replace(/-/g, '')}T160000Z&details=${encodeURIComponent(
@@ -721,7 +722,7 @@ export async function executePostTourNPS(body: any) {
   const tour = body.tourName || 'Arenal Volcano & Hot Springs';
   const name = body.customerName || 'Carlos Montero';
   const phone = body.customerPhone || process.env.SINPE_SUPPORT_PHONE || '';
-  const promoCode = `PURAVIDA15-${Math.floor(1000 + Math.random() * 9000)}`;
+  const promoCode = `PURAVIDA15-${crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
 
   const duration = Date.now() - start;
   logAutomationExecution('POST_TOUR_NPS', duration, 'success', `Encuesta NPS y cupón ${promoCode} generado para ${name}`);
@@ -797,7 +798,7 @@ export async function executeParquesSinac(body: any) {
   const date = body.fecha || new Date().toISOString().split('T')[0];
   const visitors = Number(body.visitantes || 2);
 
-  const sinacReservationRef = `SINAC-CRT-${Math.floor(100000 + Math.random() * 900000)}`;
+  const sinacReservationRef = `SINAC-CRT-${crypto.randomUUID()}`;
 
   const duration = Date.now() - start;
   logAutomationExecution('RESERVA_PARQUES_SINAC', duration, 'success', `Cupos SINAC bloqueados para ${park} (${visitors} pax)`);
@@ -979,7 +980,7 @@ export async function executeAutonomousMultiDayPlanner(body: any) {
   const totalUSD = subtotalUSD - bundleDiscountUSD;
 
   const itinerarioId = `ITIN-AUTO-${Date.now().toString(36).toUpperCase()}`;
-  const qrPassToken = `CRT-PASS-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+  const qrPassToken = `CRT-PASS-${crypto.randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`;
 
   const duration = Date.now() - start;
   logAutomationExecution(
@@ -1124,16 +1125,7 @@ export async function executeEmergencyContingencyRerouting(body: any) {
     motivo: 'Crecida repentina en cuenca de Río Sarapiquí'
   };
 
-  const viajerosAfectados = body.viajerosAfectadosSimulados || [
-    {
-      reservaId: 'RES-SARAP-9982',
-      nombre: 'Elena Rostova',
-      idioma: 'en',
-      actividadOriginal: 'Rafting Río Sarapiquí Nivel III',
-      hotel: 'Arenal Kioro Suites',
-      proveedorTransporte: 'alsama-tours-cr'
-    }
-  ];
+  const viajerosAfectados = Array.isArray(body.viajerosAfectadosSimulados) ? body.viajerosAfectadosSimulados : [];
 
   const reasignaciones = viajerosAfectados.map((viajero: any) => ({
     reservaId: viajero.reservaId,
@@ -1204,7 +1196,7 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
   // Clave de 50 dígitos DGT
   const hoy = new Date();
   const fechaStr = `${String(hoy.getDate()).padStart(2, '0')}${String(hoy.getMonth() + 1).padStart(2, '0')}${String(hoy.getFullYear()).slice(-2)}`;
-  const consecutivo = String(Math.floor(Math.random() * 90000000) + 10000000);
+  const consecutivo = `CRT-${crypto.randomUUID().replace(/-/g, '').slice(0, 16).toUpperCase()}`;
   const clave50 = `506${fechaStr}0031019998880010000101000000${consecutivo}199887766`;
 
   // Liquidación del operador
@@ -1250,11 +1242,11 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
         totalFacturadoCRC: totalCRC
       },
       estadoHacienda: 'ACEPTADO_POR_DGT',
-      acuseHaciendaHash: `SHA256-${Math.random().toString(36).substring(2, 14)}`
+      acuseHaciendaHash: crypto.createHash('sha256').update(JSON.stringify({ ventaId: venta.id, timestamp: Date.now() })).digest('hex')
     },
     liquidacionBancariaOperador: {
-      proveedorId: venta.proveedorId || 'alsama-tours-cr',
-      nombreProveedor: 'Alsama Tours CR (Transporte & Tours)',
+      proveedorId: venta.proveedorId || null,
+      nombreProveedor: venta.proveedorNombre || null,
       montoBrutoUSD: totalUSD,
       comisionPlataforma15USD: comisionPlataformaUSD,
       montoNetoLiquidadoUSD: liquidacionOperadorUSD,
@@ -1452,7 +1444,7 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
   const bookingResult = await createBooking({
     tourId: resolvedTour.id,
     tourName: resolvedTour.title.es,
-    providerId: (resolvedTour as any).operatorId || 'alsama-tours-cr',
+    providerId: String((resolvedTour as any).operatorId || '').trim(),
     date: targetDate,
     time: targetTime,
     adults,
@@ -1516,8 +1508,8 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
       qrToken: `PASS-${bookingId.replace(/[^A-Z0-9]/gi, '')}`
     },
     operadorAsignado: {
-      id: booking.providerInfo?.id || 'alsama-tours-cr',
-      nombre: booking.providerInfo?.name || 'Costa Rica Tours - Operaciones Directas',
+      id: booking.providerInfo?.id || null,
+      nombre: booking.providerInfo?.name || null,
       email: process.env.PROVIDER_DEV_EMAIL || '',
       telefono: booking.providerInfo?.phone || process.env.PROVIDER_DEV_PHONE || '',
       notificacionDespachada: true,

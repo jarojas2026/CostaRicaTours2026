@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 export async function listAdminAICommands(limit = 40) {
   return [];
 }
@@ -5,7 +6,7 @@ export async function listAdminAICommands(limit = 40) {
 export async function runAdminAICommand(params: { prompt: string; mode: string; actor: any }) {
   return {
     success: true,
-    commandId: 'cmd_' + Math.random().toString(36).substring(2, 9),
+    commandId: `cmd_${randomUUID()}`,
     response: 'Comando procesado correctamente por el asistente IA administrativo.',
     timestamp: new Date().toISOString()
   };

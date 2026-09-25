@@ -7,6 +7,7 @@ import { COSTA_RICA_REGION_PLAYBOOK, buildCostaRicaTourismKnowledgePrompt } from
 const emergencyContact = process.env.EMERGENCY_CONTACT_PHONE || '911';
 const emergencyContactLabel = process.env.EMERGENCY_CONTACT_PHONE ? `${emergencyContact} / 911` : '911';
 
+import { randomUUID } from 'node:crypto';
 import { GoogleGenAI } from '@google/genai';
 import { TOURS } from '../src/data/toursData';
 import { generateClaudeChatResponse, getClaudeClient } from './claudeService';
@@ -891,7 +892,7 @@ export async function runCounterAgent(
       const totalUSD = matchedTour.priceUSD * numPax;
       const rate = Number(process.env.USD_TO_CRC_RATE) || 0;
       const totalCRC = rate > 0 ? Math.round(totalUSD * rate) : 0;
-      const generatedBookingId = `CRT-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+      const generatedBookingId = `CRT-PV-${randomUUID()}`;
       const customerName = extractedCustomerName || 'Viajero Distinguido';
       const customerEmail = extractedCustomerEmail || 'cliente@costaricatours.cr';
 
@@ -1832,7 +1833,7 @@ export async function runContingency(context: any) {
     }
   ];
 
-  const rescheduleToken = `CRT-RESCHED-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+  const rescheduleToken = `CRT-RESCHED-${randomUUID().replace(/-/g, '').slice(0, 20).toUpperCase()}`;
   const rescheduleUrl = `https://costaricatours.cr/reagendar?token=${rescheduleToken}&tour=${tourId}&date=${date}`;
 
   const draftEmail = {

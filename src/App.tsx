@@ -60,8 +60,30 @@ export default function App() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { tours: TOURS, loading: toursLoading } = useTours();
-  const [language, setLanguage] = useState<Language>(detectBrowserLanguage);
-  const [currency, setCurrency] = useState<Currency>('USD');
+  const [language, setLanguage] = useState<Language>(() => {
+    try {
+      const saved = localStorage.getItem('crt:language') as Language | null;
+      return saved || detectBrowserLanguage();
+    } catch {
+      return detectBrowserLanguage();
+    }
+  });
+  const [currency, setCurrency] = useState<Currency>(() => {
+    try {
+      return (localStorage.getItem('crt:currency') as Currency | null) || 'USD';
+    } catch {
+      return 'USD';
+    }
+  });
+
+  // Persist lightweight presentation preferences so the interface feels continuous across visits.
+  useEffect(() => {
+    try { localStorage.setItem('crt:language', language); } catch { /* storage unavailable */ }
+  }, [language]);
+
+  useEffect(() => {
+    try { localStorage.setItem('crt:currency', currency); } catch { /* storage unavailable */ }
+  }, [currency]);
 
   // Active path for UI state
   const activeTab = location.pathname.split('/')[1] || 'home';
@@ -124,6 +146,18 @@ export default function App() {
   const [intakeId, setIntakeId] = useState('');
   const [intakeMessage, setIntakeMessage] = useState('');
 
+  // Escape closes transient customer-care UI instead of trapping the visitor.
+  useEffect(() => {
+    if (!intakeOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !intakeLoading) setIntakeOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [intakeOpen, intakeLoading]);
+
+
+
   // Check URL parameters for successful payment redirect (Stripe/PayPal)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -172,7 +206,7 @@ export default function App() {
       setIntakeHandoffUrl(undefined);
       setIntakeEscalated(false);
       try {
-        const sessionId = detail.sessionId || localStorage.getItem('crt_customer_session') || `web_${Math.random().toString(36).slice(2)}`;
+        const sessionId = detail.sessionId || localStorage.getItem('crt_customer_session') || `web_${crypto.randomUUID()}`;
         localStorage.setItem('crt_customer_session', sessionId);
         const response = await fetch('/api/customer-intake', {
           method: 'POST',
@@ -327,7 +361,7 @@ export default function App() {
           <div className="w-full max-w-xl rounded-3xl border border-emerald-400/25 bg-[#041711] shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-emerald-500/15">
               <div className="flex items-center gap-3"><span className="w-10 h-10 rounded-2xl bg-emerald-400/15 flex items-center justify-center"><Bot className="text-emerald-300" size={21}/></span><div><div className="text-[10px] uppercase tracking-widest font-black text-emerald-300">Costa Rica Tours AI</div><div className="font-black text-white">{language === 'es' ? 'Tu solicitud está siendo atendida' : 'Your request is being handled'}</div></div></div>
-              <button type="button" onClick={() => setIntakeOpen(false)} className="w-9 h-9 rounded-full bg-white/5 text-stone-300 hover:bg-white/10 flex items-center justify-center"><X size={18}/></button>
+              <button type="button" aria-label={language === 'es' ? 'Cerrar atención inteligente' : 'Close AI customer care'} onClick={() => setIntakeOpen(false)} className="w-9 h-9 rounded-full bg-white/5 text-stone-300 hover:bg-white/10 flex items-center justify-center"><X size={18}/></button>
             </div>
             <div className="p-5 space-y-4">
               <div className="rounded-2xl bg-black/20 border border-white/5 p-4 text-xs text-stone-400"><span className="font-bold text-stone-200">{language === 'es' ? 'Solicitud:' : 'Request:'}</span> {intakeMessage || (language === 'es' ? 'Solicitud recibida' : 'Request received')}</div>
@@ -370,6 +404,8 @@ export default function App() {
             <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2 text-stone-300 min-w-0">
                 <button
+                  type="button"
+                  aria-label={language === 'es' ? 'Ir al inicio' : 'Go home'}
                   onClick={() => navigate('/')}
                   className="flex items-center gap-1 text-emerald-200/80 hover:text-amber-400 font-bold transition-colors cursor-pointer shrink-0"
                 >
@@ -383,6 +419,8 @@ export default function App() {
               </div>
 
               <button
+                type="button"
+                aria-label={language === 'es' ? 'Volver al inicio' : 'Back to home'}
                 onClick={() => navigate('/')}
                 className="flex items-center gap-1.5 text-[11px] font-bold bg-[#041910] hover:bg-[#07261b] text-emerald-200 hover:text-white px-3 py-1 rounded-full border border-emerald-500/30 transition-all cursor-pointer shrink-0 shadow-sm"
               >
@@ -591,9 +629,9 @@ export default function App() {
                   <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">{language === 'es' ? 'Esta ruta se perdió en la selva.' : 'This route got lost in the jungle.'}</h2>
                   <p className="mt-3 text-stone-300">{language === 'es' ? 'Puedes explorar nuestros tours, pedir ayuda a la IA o volver al inicio.' : 'Explore our tours, ask the AI concierge, or return home.'}</p>
                   <div className="mt-7 flex flex-wrap justify-center gap-3">
-                    <button onClick={() => navigate('/tours')} className="px-5 py-3 rounded-xl bg-emerald-400 text-stone-950 font-black hover:bg-emerald-300 transition">{language === 'es' ? 'Explorar tours' : 'Explore tours'}</button>
-                    <button onClick={() => navigate('/ai')} className="px-5 py-3 rounded-xl border border-emerald-400/30 bg-emerald-950/50 text-emerald-100 font-bold hover:bg-emerald-900/60 transition">{language === 'es' ? 'Hablar con IA' : 'Ask AI'}</button>
-                    <button onClick={() => navigate('/')} className="px-5 py-3 rounded-xl border border-white/10 bg-white/5 text-stone-200 font-bold hover:bg-white/10 transition">{language === 'es' ? 'Inicio' : 'Home'}</button>
+                    <button type="button" onClick={() => navigate('/tours')} className="px-5 py-3 rounded-xl bg-emerald-400 text-stone-950 font-black hover:bg-emerald-300 transition">{language === 'es' ? 'Explorar tours' : 'Explore tours'}</button>
+                    <button type="button" onClick={() => navigate('/ai')} className="px-5 py-3 rounded-xl border border-emerald-400/30 bg-emerald-950/50 text-emerald-100 font-bold hover:bg-emerald-900/60 transition">{language === 'es' ? 'Hablar con IA' : 'Ask AI'}</button>
+                    <button type="button" onClick={() => navigate('/')} className="px-5 py-3 rounded-xl border border-white/10 bg-white/5 text-stone-200 font-bold hover:bg-white/10 transition">{language === 'es' ? 'Inicio' : 'Home'}</button>
                   </div>
                 </div>
               </div>

@@ -7,6 +7,7 @@
  * - Historial y gestión de estado (leído / resuelto) para el Admin Dashboard
  */
 
+import { randomUUID } from 'node:crypto';
 import nodemailer, { type Transporter } from 'nodemailer';
 import type { Query } from 'firebase-admin/firestore';
 import { getFirestoreDb } from './bookingService';
@@ -183,7 +184,7 @@ async function dispatchAlertEmail(alert: AdminAlert): Promise<void> {
  * Crea una nueva alerta en Firestore (admin_alerts) y dispara la notificación por correo
  */
 export async function createAlert(alert: AlertInput): Promise<{ alertId: string; alert: AdminAlert }> {
-  const alertId = `alt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const alertId = `alt_${randomUUID()}`;
   const createdAt = new Date().toISOString();
 
   const newAlert: AdminAlert = {

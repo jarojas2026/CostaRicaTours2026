@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { runTriage, processChatInquiry } from './aiAssistantService';
 import { sendEmail, sendWhatsAppMessage } from './notificationService';
 import { rememberTurn } from './memoryService';
@@ -44,7 +45,7 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
   const message = clean(payload.message, 4000);
   const language = payload.language === 'en' ? 'en' : 'es';
   const source = clean(payload.source || 'web', 80) || 'web';
-  const requestedSessionId = clean(payload.sessionId, 120) || `web_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const requestedSessionId = clean(payload.sessionId, 120) || `web_${crypto.randomUUID()}`;
   if (!message) throw new Error('La solicitud del cliente no puede estar vacía.');
 
   const identity = await resolveTravelerIdentity({
@@ -66,7 +67,7 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
   const assistant = extractedData.mediaType
     ? { reply: language === 'en' ? 'We received your media message. A human agent has been notified and will review it. You can also send the request as text for immediate AI assistance.' : 'Recibimos tu mensaje multimedia. Un agente humano ha sido notificado y lo revisará. También puedes enviar la solicitud por texto para recibir asistencia inmediata de la IA.', agentId: 'customer_intake_gateway' }
     : await processChatInquiry(message, language, [], 'auto', sessionId, { allowMutations: !escalation.escalated });
-  const intakeId = `INT-${new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+  const intakeId = `INT-${new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}-${crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
   const reply = clean(assistant?.reply || 'Recibimos tu solicitud y estamos procesándola.', 8000);
 
   // Persistencia omnicanal: web, WhatsApp y voz pueden continuar el mismo contexto.
@@ -162,7 +163,7 @@ export async function enqueueCustomerIntakeJob(
 ): Promise<{ jobId: string }> {
   const db = getFirestoreDb();
   if (!db) throw new Error('Firestore no está disponible para persistir la cola de Customer Intake.');
-  const jobId = `CIJ-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  const jobId = `CIJ-${crypto.randomUUID()}`;
   await db.collection('customer_intake_jobs').doc(jobId).set({
     jobId,
     payload,

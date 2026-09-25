@@ -5,6 +5,7 @@
  */
 
 import fs from 'fs';
+import crypto from 'crypto';
 import path from 'path';
 import admin from 'firebase-admin';
 import {
@@ -417,7 +418,7 @@ export async function createBooking(data: any) {
     }
   }
 
-  const bookingId = data.bookingId || `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+  const bookingId = data.bookingId || `CR-PV-${crypto.randomUUID()}`;
   const bookingTime = data.time || '08:00 AM';
   const numAdults = Number(data.adults) || 1;
   const numChildren = Number(data.children) || 0;
@@ -430,7 +431,7 @@ export async function createBooking(data: any) {
   const slotKey = getSlotKey(tourId, tourDate, bookingTime);
 
   // 1. Obtener información dinámica del operador desde Firestore
-  const providerId = tourInfo?.providerId || 'alsama-tours-cr';
+  const providerId = String(tourInfo?.providerId || '').trim();
   const providerInfo = await getOperatorById(providerId);
 
   // 2. Validar pago del lado del servidor de forma estricta (NUNCA adoptar estado del cliente)
@@ -1030,7 +1031,7 @@ const dailyOpsLogs: DailyOpsLogItem[] = [];
  */
 export function recordDailyOpsLog(item: Omit<DailyOpsLogItem, 'id' | 'timestamp'>): DailyOpsLogItem {
   const logItem: DailyOpsLogItem = {
-    id: `OPS-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
+    id: `OPS-${crypto.randomUUID()}`,
     timestamp: new Date().toISOString(),
     ...item
   };
