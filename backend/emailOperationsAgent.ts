@@ -33,6 +33,7 @@ const clean = (v: unknown, max = 12000) => String(v ?? '').replace(/\s+/g, ' ').
 const emailOf = (v: string) => (v.match(/<([^>]+)>/)?.[1] || v).trim().toLowerCase();
 const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 const base64url = (v: string) => Buffer.from(v).toString('base64url');
+const EMAIL_MAX_ATTEMPTS = Math.max(2, Math.min(10, Number(process.env.EMAIL_MAX_ATTEMPTS || 5)));
 
 function decodeGmail(v = '') {
   return Buffer.from(v.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
@@ -127,33 +128,28 @@ function riskyCustomerRequest(message: string) {
   return /refund|reembolso|chargeback|fraud|estafa|demanda|lawyer|legal|emergency|emergencia|medical|médic|password|contraseña|credit card|tarjeta/i.test(message);
 }
 
-async function claimEvent(id: string, provider: MailProvider, from: string, subject: string) {
+async function claimEvent(id: string, provider: MailProvider, from: string, subject: string): Promise<boolean | 'terminal'> {
   const db = getFirestoreDb();
   if (!db) return true;
-  const ref = db.collection('email_operation_events').doc(`${provider}_${id}`.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 180));
+  const ref = db.collection('email_operation_events').doc((provider + '_' + id).replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 180));
   return db.runTransaction(async (tx: any) => {
     const snap = await tx.get(ref);
     if (snap.exists) {
       const data = snap.data() || {};
       const status = String(data.status || '');
+      const attempts = Number(data.attempts || 0);
       const updatedAt = Date.parse(String(data.updatedAt || data.claimedAt || ''));
       const stale = status === 'processing' && (!Number.isFinite(updatedAt) || Date.now() - updatedAt > 10 * 60 * 1000);
       const retryable = status === 'error' || status === 'needs_retry' || stale;
       if (!retryable) return false;
-      tx.set(ref, { status: 'processing', attempts: Number(data.attempts || 0) + 1, claimedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, { merge: true });
+      if (attempts >= EMAIL_MAX_ATTEMPTS) {
+        tx.set(ref, { status: 'needs_human_review', retryable: false, reason: 'Máximo de reintentos alcanzado.', updatedAt: new Date().toISOString() }, { merge: true });
+        return 'terminal';
+      }
+      tx.set(ref, { status: 'processing', attempts: attempts + 1, claimedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, { merge: true });
       return true;
     }
-    tx.create(ref, {
-      id: ref.id,
-      provider,
-      messageId: id,
-      from,
-      subject,
-      status: 'processing',
-      attempts: 1,
-      claimedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
+    tx.create(ref, { id: ref.id, provider, messageId: id, from, subject, status: 'processing', attempts: 1, claimedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
     return true;
   });
 }
@@ -208,22 +204,16 @@ async function listGmailMessages(): Promise<MailMessage[]> {
   const client = await gmailClient();
   if (!client) return [];
   const userId = process.env.GMAIL_INBOX_USER || 'me';
+  const concurrency = Math.max(1, Math.min(20, Number(process.env.EMAIL_FETCH_CONCURRENCY || 6)));
   const list = await client.users.messages.list({ userId, q: 'in:inbox is:unread newer_than:14d', maxResults: 50 });
+  const ids = (list.data.messages || []).filter((item: any) => item?.id).map((item: any) => String(item.id));
   const out: MailMessage[] = [];
-  for (const item of list.data.messages || []) {
-    if (!item.id) continue;
-    const full = await client.users.messages.get({ userId, id: item.id, format: 'full' });
-    out.push({
-      id: item.id,
-      threadId: full.data.threadId || undefined,
-      provider: 'gmail',
-      from: emailOf(gmailHeader(full.data, 'From')),
-      to: gmailHeader(full.data, 'To'),
-      subject: gmailHeader(full.data, 'Subject'),
-      text: clean(gmailParts(full.data.payload).join('\n') || full.data.snippet, 12000),
-      receivedAt: gmailHeader(full.data, 'Date'),
-      raw: full.data
-    });
+  for (let i = 0; i < ids.length; i += concurrency) {
+    const batch = await Promise.all(ids.slice(i, i + concurrency).map(async (id) => {
+      const full = await client.users.messages.get({ userId, id, format: 'full' });
+      return { id, threadId: full.data.threadId || undefined, provider: 'gmail' as const, from: emailOf(gmailHeader(full.data, 'From')), to: gmailHeader(full.data, 'To'), subject: gmailHeader(full.data, 'Subject'), text: clean(gmailParts(full.data.payload).join('\n') || full.data.snippet, 12000), receivedAt: gmailHeader(full.data, 'Date'), raw: full.data };
+    }));
+    out.push(...batch);
   }
   return out;
 }
@@ -397,6 +387,12 @@ export async function processEmailOperationsOnce() {
     try {
       if (!mail.id || !isEmail(mail.from)) continue;
       const claimed = await claimEvent(mail.id, mail.provider, mail.from, mail.subject);
+      if (claimed === 'terminal') {
+        await recordEvent(mail, { status: 'needs_human_review', retryable: false, reason: 'Máximo de reintentos alcanzado.' });
+        await markRead(mail).catch(() => undefined);
+        results.push({ provider: mail.provider, id: mail.id, status: 'needs_human_review', reason: 'max_attempts' });
+        continue;
+      }
       if (!claimed) continue;
 
       const classification = await classifyMail(mail.subject, mail.text, mail.from);
