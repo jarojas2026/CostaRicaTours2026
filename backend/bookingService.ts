@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 /**
  * 📦 Servicio de Reservas y Disponibilidad en Firestore para Costa Rica Tours
  * Gestiona persistencia, control de cupos atómico (evitando race conditions),
@@ -403,6 +404,30 @@ export async function generateOperationalInsights(booking: any) {
  * Ejecuta una transacción atómica `db.runTransaction()` en Firestore Admin,
  * actualizando el contador en `availability_slots` y guardando la reserva en `bookings`.
  */
+async function getConfiguredTourProviderId(tourId: string, requestedProviderId?: unknown): Promise<string | null> {
+  const explicit = String(requestedProviderId || '').trim();
+  if (explicit) return explicit;
+
+  const tour = TOURS.find((item) => item.id === tourId);
+  const catalogProviderId = String((tour as any)?.providerId || '').trim();
+  if (catalogProviderId) return catalogProviderId;
+
+  const db = getFirestoreDb();
+  if (!db) return null;
+
+  try {
+    const assignment = await db.collection('tour_provider_assignments').doc(tourId).get();
+    if (!assignment.exists) return null;
+    const data = assignment.data() || {};
+    if (data.active === false) return null;
+    const providerId = String(data.providerId || '').trim();
+    return providerId || null;
+  } catch (error) {
+    console.warn(`No se pudo resolver el proveedor configurado para el tour ${tourId}:`, error);
+    return null;
+  }
+}
+
 export async function createBooking(data: any) {
   const idempotencyKey = normalizeIdempotencyKey(data.idempotencyKey);
   const fingerprint = idempotencyKey ? requestFingerprint(data) : null;
@@ -417,7 +442,7 @@ export async function createBooking(data: any) {
     }
   }
 
-  const bookingId = data.bookingId || `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+  const bookingId = String(data.bookingId || `CR-PV-${crypto.randomUUID()}`).trim();
   const bookingTime = data.time || '08:00 AM';
   const numAdults = Number(data.adults) || 1;
   const numChildren = Number(data.children) || 0;
@@ -429,9 +454,15 @@ export async function createBooking(data: any) {
   const maxCapacity = tourInfo?.maxGroupSize || 15;
   const slotKey = getSlotKey(tourId, tourDate, bookingTime);
 
-  // 1. Obtener información dinámica del operador desde Firestore
-  const providerId = tourInfo?.providerId || 'alsama-tours-cr';
+  // 1. Resolver el proveedor operativo desde solicitud, catálogo o asignación persistida.
+  const providerId = await getConfiguredTourProviderId(tourId, data.providerId);
+  if (!providerId) {
+    throw new Error(`PROVIDER_REQUIRED: el tour ${tourId} no tiene un proveedor operativo configurado.`);
+  }
   const providerInfo = await getOperatorById(providerId);
+  if (!providerInfo.active || providerInfo.verified !== true) {
+    throw new Error(`PROVIDER_NOT_OPERATIONAL: el proveedor ${providerId} no está activo y verificado en la fuente operativa.`);
+  }
 
   // 2. Validar pago del lado del servidor de forma estricta (NUNCA adoptar estado del cliente)
   let paymentResult: {
