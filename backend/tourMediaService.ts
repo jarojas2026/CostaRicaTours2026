@@ -13,6 +13,13 @@ export interface TourImageAsset {
   focalPoint?: { x: number; y: number };
 }
 
+export interface TourMediaAuditItem {
+  tourId: string;
+  score: number;
+  issues: string[];
+  primaryUrl: string;
+}
+
 export interface TourMediaProfile {
   tourId: string;
   primary: TourImageAsset;
@@ -79,6 +86,25 @@ function buildTags(tour: Tour): string[] {
   ])];
 }
 
+function getActivityFocus(tour: Tour): string[] {
+  const text = (tour.title.es + ' ' + tour.description.es + ' ' + tour.category).toLowerCase();
+  const rules: Array<[string, string[]]> = [
+    ['whale_watching', ['ballena', 'delfín', 'whale', 'dolphin']],
+    ['snorkeling', ['snorkel', 'buceo', 'isla del caño', 'cano island']],
+    ['rafting', ['rafting', 'río', 'river', 'rápidos']],
+    ['canopy', ['canopy', 'zipline', 'tirolesa', 'puentes']],
+    ['surf', ['surf', 'ola', 'playa']],
+    ['volcanoes', ['volcán', 'volcano', 'lava', 'termal']],
+    ['waterfalls', ['catarata', 'cascada', 'waterfall']],
+    ['wildlife', ['perezoso', 'mono', 'fauna', 'wildlife', 'animal']],
+    ['culture', ['café', 'coffee', 'cacao', 'chocolate', 'cultura', 'indígena']],
+    ['hiking', ['senderismo', 'hiking', 'caminata', 'trail']],
+    ['beaches', ['playa', 'beach', 'catamarán', 'sunset']],
+  ];
+  const matched = rules.filter(([, keywords]) => keywords.some(keyword => text.includes(keyword))).map(([name]) => name);
+  return matched.length ? matched : [tour.category];
+}
+
 function buildAlt(tour: Tour, role: TourImageRole): string {
   const activity = tour.category === 'whale_watching'
     ? 'avistamiento de ballenas'
@@ -100,15 +126,17 @@ export function getTourMediaProfile(tour: Tour): TourMediaProfile {
     .map(normalizeRemoteImage);
 
   const primaryUrl = urls[0] || tour.image;
+  const activityFocus = getActivityFocus(tour);
   const galleryUrls = urls.slice(1);
 
   const primary: TourImageAsset = {
     url: primaryUrl,
     role: 'hero',
     alt: buildAlt(tour, 'hero'),
-    tags: buildTags(tour),
+    tags: [...buildTags(tour), ...activityFocus],
     position: 0,
     sourceKind: 'curated',
+    sourceReference: primaryUrl.includes('images.unsplash.com') ? 'Unsplash' : 'project-curated',
   };
 
   const gallery = galleryUrls.map((url, index): TourImageAsset => ({
@@ -125,6 +153,7 @@ export function getTourMediaProfile(tour: Tour): TourMediaProfile {
     primary,
     gallery,
     visualIntent: [
+      'activity focus: ' + activityFocus.join(', '),
       'show the actual activity whenever possible',
       'show the destination context second',
       'avoid generic Costa Rica stock imagery',
@@ -141,4 +170,28 @@ export function getTourMediaProfile(tour: Tour): TourMediaProfile {
 export function getTourMediaById(tourId: string, tours: Tour[]): TourMediaProfile | null {
   const tour = tours.find(item => item.id === tourId);
   return tour ? getTourMediaProfile(tour) : null;
+}
+
+
+/**
+ * Audita todo el catálogo para detectar imágenes repetidas, galerías insuficientes
+ * y falta de enfoque visual en la actividad que realmente se vende.
+ */
+export function auditTourMedia(tours: Tour[]): TourMediaAuditItem[] {
+  const profiles = tours.map(tour => getTourMediaProfile(tour));
+  const heroUsage = new Map<string, string[]>();
+  for (const profile of profiles) {
+    const ids = heroUsage.get(profile.primary.url) || [];
+    ids.push(profile.tourId);
+    heroUsage.set(profile.primary.url, ids);
+  }
+  return profiles.map(profile => {
+    const issues: string[] = [];
+    const duplicateCount = heroUsage.get(profile.primary.url)?.length || 0;
+    if (duplicateCount > 1) issues.push(`hero_repeated_across_${duplicateCount}_tours`);
+    if (profile.gallery.length < 1) issues.push('gallery_missing');
+    if (profile.primary.url === profile.gallery[0]?.url) issues.push('hero_gallery_duplicate');
+    const score = Math.max(0, 100 - issues.length * 30 - (duplicateCount > 1 ? 15 : 0));
+    return { tourId: profile.tourId, score, issues, primaryUrl: profile.primary.url };
+  });
 }
