@@ -1043,12 +1043,18 @@ export async function executeAutomatedProviderPayouts(): Promise<{
     for (const booking of eligibleBookings) {
       results.totalProcessed += 1;
       const bookingId = booking.bookingId || booking.id;
-      const providerId = booking.providerId || booking.providerInfo?.id || 'alsama-tours-cr';
+      const providerId = String(booking.providerId || booking.providerInfo?.id || '').trim();
+      if (!providerId) {
+        results.escalationsCount += 1;
+        results.payouts.push({ bookingId, providerId: '', amountUSD: 0, status: 'FAILED_NO_PROVIDER' });
+        await recordEscalation({ type: 'PAYOUT_NO_PROVIDER', bookingId, providerId: '', reason: 'La reserva no tiene un proveedor operativo explícito.', details: {} });
+        continue;
+      }
       const totalUSD = Number(booking.totalUSD || booking.totalAmount || 100);
 
       // Buscar datos y correo PayPal del proveedor
       const provider = await getProviderFromDb(providerId);
-      const rawPaypal = provider?.paypalEmail || booking.providerInfo?.paypalEmail || (providerId === 'alsama-tours-cr' ? 'operaciones@alsamatourscr.com' : null);
+      const rawPaypal = provider?.paypalEmail || booking.providerInfo?.paypalEmail || null;
       const paypalEmail = getEffectiveProviderEmail(rawPaypal);
       const commissionRate = provider?.commissionRate ?? 0.15; // 15% comisión plataforma
       const payoutAmountUSD = Math.max(1, Number((totalUSD * (1 - commissionRate)).toFixed(2)));
