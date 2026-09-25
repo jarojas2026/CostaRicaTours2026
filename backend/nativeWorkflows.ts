@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { getFirestoreDb, getBookingsCollection, updateBookingStatus } from './bookingService';
 import { sendEmail, sendAdministrativeAlert, sendOperationalNotification, sendWhatsAppMessage } from './notificationService';
 import { logAutomationExecution } from './nativeAutomationEngine';
@@ -27,7 +28,7 @@ export async function recordEscalation(data: {
   customerPhone?: string;
 }): Promise<string> {
   const db = getFirestoreDb();
-  const escalationId = `esc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const escalationId = `esc_${crypto.randomUUID()}`;
   if (db) {
     await db.collection('escalations').doc(escalationId).set({
       id: escalationId,
@@ -329,6 +330,45 @@ export async function getProviderFromDb(providerId: string): Promise<any | null>
   return MASTER_OPERATORS_REGISTRY['alsama-tours-cr'];
 }
 
+async function resolveOperationalProvider(providerId: string): Promise<any | null> {
+  const normalizedId = String(providerId || '').trim();
+  if (!normalizedId) return null;
+  const db = getFirestoreDb();
+  if (!db) return null;
+
+  const readCandidate = async (collection: string) => {
+    const direct = await db.collection(collection).doc(normalizedId).get();
+    if (direct.exists) return { id: direct.id, ...(direct.data() || {}) };
+    const byCode = await db.collection(collection).where('code', '==', normalizedId).limit(1).get();
+    return byCode.empty ? null : { id: byCode.docs[0].id, ...(byCode.docs[0].data() || {}) };
+  };
+
+  try {
+    const candidate = (await readCandidate('operators')) || (await readCandidate('proveedores'));
+    if (!candidate) return null;
+    const verified = candidate.verified === true || candidate.verificado === true;
+    const active = candidate.active === true || candidate.activo === true;
+    if (!verified || !active || candidate.status === 'inactivo') return null;
+    return {
+      ...candidate,
+      id: candidate.id || normalizedId,
+      name: candidate.name || candidate.nombre || 'Proveedor operativo',
+      email: getEffectiveProviderEmail(candidate.email),
+      phone: candidate.phone || candidate.telefono || '',
+      whatsapp: candidate.whatsapp || candidate.whatsApp || candidate.whatsappNumber || '',
+      officialEmail: candidate.email || candidate.correo,
+      paypalEmail: getEffectiveProviderEmail(candidate.paypalEmail),
+      officialPaypalEmail: candidate.paypalEmail || candidate.correoPayPal,
+      commissionRate: typeof candidate.commissionRate === 'number' ? candidate.commissionRate : (typeof candidate.comision === 'number' ? candidate.comision : 0.15),
+      verified: true,
+      active: true
+    };
+  } catch (error) {
+    console.warn(`Error resolviendo proveedor operativo ${normalizedId}:`, error);
+    return null;
+  }
+}
+
 /**
  * =========================================================================
  * 1. COORDINACIÓN EN TIEMPO REAL CON PROVEEDORES (AUTODEPENDIENTE & BIDIRECCIONAL)
@@ -354,8 +394,10 @@ export async function executeProviderRealtimeCoordination(
   }
 
   const booking = payload.booking || payload;
-  const bookingId = booking.bookingId || booking.id || `CRT-${Date.now().toString().slice(-6)}`;
-  const providerId = booking.providerId || booking.providerInfo?.id || 'alsama-tours-cr';
+  const bookingId = booking.bookingId || booking.id || '';
+  const providerId = String(booking.providerId || booking.providerInfo?.id || '').trim();
+  if (!bookingId) throw new Error('BOOKING_REQUIRED: falta bookingId para despachar al proveedor.');
+  if (!providerId) throw new Error(`PROVIDER_REQUIRED: la reserva ${bookingId} no tiene proveedor operativo asignado.`);
   const tourName = booking.tourName || 'Tour Oficial Costa Rica';
   const tourDate = booking.date || 'Fecha por confirmar';
   const tourTime = booking.time || '08:00 AM';
@@ -368,11 +410,14 @@ export async function executeProviderRealtimeCoordination(
   const customerPhone = booking.customerPhone || booking.customer?.phone || '';
   const customerEmail = booking.customerEmail || booking.customer?.email || '';
 
-  // Obtener datos del proveedor
-  const provider = await getProviderFromDb(providerId) || MASTER_OPERATORS_REGISTRY['alsama-tours-cr'];
-  const providerEmail = provider.email;
-  const providerPhone = provider.phone || '+506 8795-9148';
-  const whatsappNumber = provider.whatsapp || '50687959148';
+  // Obtener únicamente el proveedor operativo verificado desde Firestore.
+  const provider = await resolveOperationalProvider(providerId);
+  if (!provider) {
+    throw new Error(`PROVIDER_NOT_OPERATIONAL: no existe un proveedor activo y verificado para ${providerId}.`);
+  }
+  const providerEmail = provider.email || '';
+  const providerPhone = provider.phone || '';
+  const whatsappNumber = provider.whatsapp || '';
 
   // Generar URLs de acción de 1 clic para el proveedor
   const providerPortalUrl = providerPortalConfigured()
@@ -1112,8 +1157,15 @@ export async function executeAutomatedProviderPayouts(): Promise<{
       const totalUSD = Number(booking.totalUSD || booking.totalAmount || 100);
 
       // Buscar datos y correo PayPal del proveedor
-      const provider = await getProviderFromDb(providerId);
-      const rawPaypal = provider?.paypalEmail || booking.providerInfo?.paypalEmail || (providerId === 'alsama-tours-cr' ? 'operaciones@alsamatourscr.com' : null);
+      const provider = await resolveOperationalProvider(providerId);
+      if (!provider) {
+        const reason = `Proveedor "${providerId}" no está activo y verificado en Firestore.`;
+        await recordEscalation({ type: 'PAYOUT_PROVIDER_NOT_OPERATIONAL', bookingId, providerId, reason, details: { totalUSD } });
+        results.escalationsCount += 1;
+        results.payouts.push({ bookingId, providerId, amountUSD: 0, status: 'FAILED_PROVIDER_NOT_OPERATIONAL' });
+        continue;
+      }
+      const rawPaypal = provider.paypalEmail || booking.providerInfo?.paypalEmail || null;
       const paypalEmail = getEffectiveProviderEmail(rawPaypal);
       const commissionRate = provider?.commissionRate ?? 0.15; // 15% comisión plataforma
       const payoutAmountUSD = Math.max(1, Number((totalUSD * (1 - commissionRate)).toFixed(2)));
@@ -1137,17 +1189,17 @@ export async function executeAutomatedProviderPayouts(): Promise<{
       }
 
       if (!paypalAccessToken) {
-        // En entorno de desarrollo o sin credenciales, registramos simulación idempotente
-        console.log(`💳 [PAYPAL PAYOUT SIMULADO] BatchId: ${deterministicSenderBatchId} -> $${payoutAmountUSD} USD a ${paypalEmail}`);
-        await updateBookingStatus(bookingId, {
-          payoutStatus: 'paid',
-          payoutBatchId: deterministicSenderBatchId,
-          payoutAmountUSD,
-          payoutRecipient: paypalEmail,
-          payoutPaidAt: new Date().toISOString()
+        // Nunca marcar un pago como realizado sin una respuesta de PayPal.
+        const reason = 'PAYPAL_SECRET_NOT_CONFIGURED: pago a proveedor no ejecutado.';
+        await recordEscalation({
+          type: 'PAYOUT_PAYPAL_NOT_CONFIGURED',
+          bookingId,
+          providerId,
+          reason,
+          details: { totalUSD, payoutAmountUSD, senderBatchId: deterministicSenderBatchId }
         });
-        results.totalPaidUSD += payoutAmountUSD;
-        results.payouts.push({ bookingId, providerId, amountUSD: payoutAmountUSD, status: 'SUCCESS_SIMULATED', batchId: deterministicSenderBatchId });
+        results.escalationsCount += 1;
+        results.payouts.push({ bookingId, providerId, amountUSD: payoutAmountUSD, status: 'PENDING_PAYPAL_CONFIGURATION', batchId: deterministicSenderBatchId });
         continue;
       }
 
