@@ -431,7 +431,6 @@ export async function createBooking(data: any) {
 
   // 1. Obtener información dinámica del operador desde Firestore
   const providerId = String(tourInfo?.providerId || '').trim();
-  if (!providerId) throw new Error('PROVIDER_REQUIRED: el tour no tiene un proveedor operativo asignado.');
   const providerInfo = await getOperatorById(providerId);
 
   // 2. Validar pago del lado del servidor de forma estricta (NUNCA adoptar estado del cliente)
