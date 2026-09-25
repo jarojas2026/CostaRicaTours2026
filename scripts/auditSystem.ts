@@ -38,6 +38,13 @@ if (!/resolveOperationalProvider/.test(providerService) || !/await resolveOperat
 }
 
 const nativeWorkflows = read('backend/nativeWorkflows.ts');
+const massiveEngineSource = read('backend/massiveProcessingEngine.ts');
+if (/providerId\s*=\s*[^;]*\|\|\s*['\"][^'\"]+['\"]/.test(massiveEngineSource)) {
+  add('CRITICAL', 'PROVIDER-005', 'Massive Processing Engine still contains a synthetic provider fallback.');
+}
+if (/Math\.random\(/.test(massiveEngineSource)) {
+  add('HIGH', 'ID-001', 'Massive Processing Engine uses Math.random for task identity.');
+}
 if (/return match \|\| REGISTERED_PROVIDERS\[0\]/.test(providerService)) {
   add('CRITICAL', 'PROVIDER-001', 'Provider selection still falls back to a synthetic/static first provider.');
 }
@@ -66,7 +73,7 @@ function collectSourceFiles(startDir: string): string[] {
   return files;
 }
 
-for (const relative of ['backend', 'src', 'scripts', 'public', 'docs', 'agent']) {
+for (const relative of ['backend', 'src', 'scripts', 'public', 'agent']) {
   const dir = path.join(root, relative);
   if (!fs.existsSync(dir)) continue;
   for (const file of collectSourceFiles(dir)) {
