@@ -337,7 +337,7 @@ async function resolveOperationalProvider(providerId: string): Promise<any | nul
   const db = getFirestoreDb();
   if (!db) return null;
 
-  const readCandidate = async (collection: string) => {
+  const readCandidate = async (collection: string): Promise<Record<string, any> | null> => {
     const direct = await db.collection(collection).doc(normalizedId).get();
     if (direct.exists) return { id: direct.id, ...(direct.data() || {}) };
     const byCode = await db.collection(collection).where('code', '==', normalizedId).limit(1).get();
