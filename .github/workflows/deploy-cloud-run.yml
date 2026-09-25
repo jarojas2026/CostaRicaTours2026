@@ -42,12 +42,21 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
 
+      - name: Preflight de acceso a Cloud Run
+        run: |
+          set -euo pipefail
+          echo "Validando acceso de la identidad de despliegue al servicio $SERVICE_NAME..."
+          if ! gcloud run services describe "$SERVICE_NAME" \
+            --region "$REGION" \
+            --project "$PROJECT_ID" \
+            --format='value(metadata.name)' >/dev/null 2>&1; then
+            echo "::error::La identidad de GitHub no puede leer el servicio Cloud Run '$SERVICE_NAME'. Falta al menos run.services.get y/o acceso de despliegue. Corrija IAM y vuelva a ejecutar el workflow."
+            echo "::error::Para despliegue desde source, Google Cloud documenta Cloud Run Source Developer + Service Usage Consumer + Service Account User; además el servicio de Cloud Build necesita Cloud Run Builder."
+            exit 1
+          fi
+
       - name: Desplegar directamente desde el código en Cloud Run
         run: |
-          # Asegurar que los servicios requeridos de Google Cloud estén activos
-          echo "Habilitando APIs requeridas en Google Cloud..."
-          gcloud services enable cloudbuild.googleapis.com run.googleapis.com artifactregistry.googleapis.com --project "$PROJECT_ID" --quiet || true
-
           echo "Iniciando despliegue en Google Cloud Run..."
           gcloud run deploy "$SERVICE_NAME" \
             --source . \
