@@ -3155,7 +3155,7 @@ export const TOURS: Tour[] = [
 // The catalog data remains unchanged; only the user-facing imagery is normalized here.
 const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
   'sjo-3-in-1-combo': [
-    'https://images.unsplash.com/photo-1711798111672-bfbaf16160ff?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1400&q=85'
   ],
   'arenal-hot-springs': [
@@ -3227,7 +3227,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1728847267854-7c7c9f95a281?auto=format&fit=crop&w=1400&q=85'
   ],
   'nauyaca-waterfalls-4x4': [
-    'https://images.unsplash.com/photo-1710384342026-cd34a67d922a?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1776192030922-f0d342487045?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1771223832335-c5c116e41bfd?auto=format&fit=crop&w=1400&q=85'
   ],
   'marino-ballena-whale-dolphin': [
@@ -3256,14 +3256,14 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
   ],
   'arenal-pure-trek-canyoning': [
     'https://images.unsplash.com/photo-1669694841884-95d35a6bc287?auto=format&fit=crop&w=1400&q=85',
-    'https://images.unsplash.com/photo-1710384342026-cd34a67d922a?auto=format&fit=crop&w=1400&q=85'
+    'https://images.unsplash.com/photo-1771223832335-c5c116e41bfd?auto=format&fit=crop&w=1400&q=85'
   ],
   'arenal-wave-balsa-rafting': [
     'https://images.unsplash.com/photo-1769530260287-c11f7fc559ef?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1711798111672-bfbaf16160ff?auto=format&fit=crop&w=1400&q=85'
   ],
   'arenal-sky-trek-tram-combo': [
-    'https://images.unsplash.com/photo-1680003613913-26c857dde377?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1711798111672-bfbaf16160ff?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1680003613913-26c857dde377?auto=format&fit=crop&w=1400&q=85'
   ],
   'guanacaste-guachipelin-combo': [
@@ -3280,7 +3280,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
   ],
   'monteverde-selvatura-all-in-one': [
     'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1400&q=85',
-    'https://images.unsplash.com/photo-1680003613913-26c857dde377?auto=format&fit=crop&w=1400&q=85'
+    'https://images.unsplash.com/photo-1648172846433-ca73f0ee522c?auto=format&fit=crop&w=1400&q=85'
   ],
   'monteverde-100-aventura-extreme': [
     'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1400&q=85',
