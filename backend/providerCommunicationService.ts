@@ -10,7 +10,7 @@
 import { getAllBookings, getFirestoreDb, updateBookingStatus } from './bookingService';
 import { createAlert } from './alertService';
 import { sendEmail } from './notificationService';
-import { createProviderPortalToken } from './providerPortalService';
+import { createProviderPortalToken, providerPortalConfigured } from './providerPortalService';
 
 export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || '';
 
@@ -345,8 +345,9 @@ export async function dispatchServiceOrder(params: {
 
   const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(params.pickupLocation || 'San Jose Costa Rica')}`;
 
-  const providerPortalToken = createProviderPortalToken({ orderId, providerId: provider.id, ttlMinutes: 1440 });
-  const providerPortalUrl = `${process.env.APP_URL || ''}/provider/portal?token=${encodeURIComponent(providerPortalToken)}`;
+  const providerPortalUrl = providerPortalConfigured()
+    ? `${process.env.APP_URL || ''}/provider/portal?token=${encodeURIComponent(createProviderPortalToken({ orderId, providerId: provider.id, ttlMinutes: 1440 }))}`
+    : '';
 
   const order: ServiceOrder = {
     id: orderId,
@@ -402,8 +403,7 @@ export async function dispatchServiceOrder(params: {
             <p><strong>Cliente:</strong> ${params.customer.name} (${params.customer.phone})</p>
             <p><strong>Liquidación Operador:</strong> $${payoutAmountUSD} USD (₡${payoutAmountCRC.toLocaleString('es-CR')} CRC)</p>
             <p><strong>SLA de Aceptación:</strong> ${provider.slaTargetMinutes} minutos</p>
-            <p style="margin-top:18px"><a href="${providerPortalUrl}" style="display:inline-block;background:#059669;color:#fff;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:800">Abrir formulario del proveedor</a></p>
-            <p style="font-size:12px;color:#64748b">El enlace es personal, está firmado y caduca automáticamente.</p>
+            ${providerPortalUrl ? `<p style="margin-top:18px"><a href="${providerPortalUrl}" style="display:inline-block;background:#059669;color:#fff;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:800">Abrir formulario del proveedor</a></p><p style="font-size:12px;color:#64748b">El enlace es personal, está firmado y caduca automáticamente.</p>` : '<p style="font-size:12px;color:#b45309">El portal seguro aún no está habilitado en este entorno.</p>'}
           </div>
         </div>
       `
