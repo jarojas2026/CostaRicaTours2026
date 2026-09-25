@@ -199,6 +199,20 @@ const generalApiLimiter = rateLimit({
   message: { error: 'Demasiadas solicitudes. Por favor intente más tarde.' }
 });
 
+// Control de concurrencia para evitar que picos de tráfico saturen Node/Firestore/IA.
+const apiAdmission = createInFlightLimiter(
+  Math.max(50, Math.min(500, Number(process.env.API_MAX_IN_FLIGHT || 250))),
+  2
+);
+const aiAdmission = createInFlightLimiter(
+  Math.max(10, Math.min(100, Number(process.env.AI_MAX_IN_FLIGHT || 40))),
+  3
+);
+const intakeAdmission = createInFlightLimiter(
+  Math.max(5, Math.min(50, Number(process.env.INTAKE_MAX_IN_FLIGHT || 20))),
+  5
+);
+
 app.use('/api/', generalApiLimiter, apiAdmission.middleware);
 
 // Health check endpoint
