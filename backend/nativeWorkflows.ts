@@ -224,113 +224,37 @@ export const MASTER_OPERATORS_REGISTRY: Record<string, {
  * con fallback determinista al registro maestro.
  */
 export async function getProviderFromDb(providerId: string): Promise<any | null> {
+  const normalizedId = String(providerId || '').trim();
+  if (!normalizedId) return null;
   const db = getFirestoreDb();
-  const normalizedId = (providerId || '').toLowerCase().trim();
+  if (!db) return null;
 
-  // 1. Si hay base de datos Firestore activa, consultar
-  if (db) {
-    try {
-      let doc = await db.collection('operators').doc(providerId).get();
-      if (doc.exists) {
-        const data = doc.data() || {};
-        return {
-          id: doc.id,
-          ...data,
-          officialEmail: data.email,
-          email: getEffectiveProviderEmail(data.email),
-          officialPaypalEmail: data.paypalEmail,
-          paypalEmail: getEffectiveProviderEmail(data.paypalEmail)
-        };
-      }
-
-      doc = await db.collection('proveedores').doc(providerId).get();
-      if (doc.exists) {
-        const data = doc.data() || {};
-        return {
-          id: doc.id,
-          ...data,
-          officialEmail: data.email,
-          email: getEffectiveProviderEmail(data.email),
-          officialPaypalEmail: data.paypalEmail,
-          paypalEmail: getEffectiveProviderEmail(data.paypalEmail)
-        };
-      }
-
-      const opSnap = await db.collection('operators').where('code', '==', providerId).limit(1).get();
-      if (!opSnap.empty) {
-        const data = opSnap.docs[0].data() || {};
-        return {
-          id: opSnap.docs[0].id,
-          ...data,
-          officialEmail: data.email,
-          email: getEffectiveProviderEmail(data.email),
-          officialPaypalEmail: data.paypalEmail,
-          paypalEmail: getEffectiveProviderEmail(data.paypalEmail)
-        };
-      }
-
-      const provSnap = await db.collection('proveedores').where('code', '==', providerId).limit(1).get();
-      if (!provSnap.empty) {
-        const data = provSnap.docs[0].data() || {};
-        return {
-          id: provSnap.docs[0].id,
-          ...data,
-          officialEmail: data.email,
-          email: getEffectiveProviderEmail(data.email),
-          officialPaypalEmail: data.paypalEmail,
-          paypalEmail: getEffectiveProviderEmail(data.paypalEmail)
-        };
-      }
-    } catch (err) {
-      console.warn(`Error buscando proveedor ${providerId} en Firestore:`, err);
+  try {
+    for (const collection of ['operators', 'proveedores']) {
+      const direct = await db.collection(collection).doc(normalizedId).get();
+      const byCode = direct.exists ? null : await db.collection(collection).where('code', '==', normalizedId).limit(1).get();
+      const doc: any = direct.exists ? direct : byCode?.docs?.[0];
+      if (!doc?.exists) continue;
+      const data = doc.data() || {};
+      const verified = data.verified === true || data.verificado === true;
+      const active = (data.active === true || data.activo === true) && data.status !== 'inactivo';
+      if (!verified || !active) return null;
+      return {
+        id: doc.id,
+        ...data,
+        officialEmail: data.email,
+        email: getEffectiveProviderEmail(data.email),
+        officialPaypalEmail: data.paypalEmail,
+        paypalEmail: getEffectiveProviderEmail(data.paypalEmail),
+        verified: true,
+        active: true
+      };
     }
+  } catch (error) {
+    console.warn(`Error buscando proveedor operativo ${normalizedId}:`, error);
   }
-
-  // 2. Búsqueda exacta en catálogo maestro
-  if (MASTER_OPERATORS_REGISTRY[normalizedId]) {
-    return MASTER_OPERATORS_REGISTRY[normalizedId];
-  }
-
-  // 3. Búsqueda por sub-coincidencia de clave
-  for (const [key, val] of Object.entries(MASTER_OPERATORS_REGISTRY)) {
-    if (normalizedId.includes(key) || key.includes(normalizedId)) {
-      return val;
-    }
-  }
-
-  // 4. Mapeos de palabras clave de tours a proveedores
-  if (normalizedId.includes('arenal') || normalizedId.includes('volcan') || normalizedId.includes('termales') || normalizedId.includes('fortuna')) {
-    return MASTER_OPERATORS_REGISTRY['arenal-volcano-ops'];
-  }
-  if (normalizedId.includes('monteverde') || normalizedId.includes('canopy') || normalizedId.includes('tirolesa') || normalizedId.includes('puentes')) {
-    return MASTER_OPERATORS_REGISTRY['monteverde-canopy-ops'];
-  }
-  if (normalizedId.includes('manuel-antonio') || normalizedId.includes('quepos') || normalizedId.includes('parque')) {
-    return MASTER_OPERATORS_REGISTRY['manuel-antonio-ops'];
-  }
-  if (normalizedId.includes('tortuga') || normalizedId.includes('catamaran') || normalizedId.includes('bay-island') || normalizedId.includes('isla')) {
-    return MASTER_OPERATORS_REGISTRY['bay-island-cruises'];
-  }
-  if (normalizedId.includes('pacuare') || normalizedId.includes('rafting') || normalizedId.includes('sarapiqui')) {
-    return MASTER_OPERATORS_REGISTRY['pacuare-rafting-ops'];
-  }
-  if (normalizedId.includes('tortuguero') || normalizedId.includes('canales')) {
-    return MASTER_OPERATORS_REGISTRY['tortuguero-ops'];
-  }
-  if (normalizedId.includes('cafe') || normalizedId.includes('coffee') || normalizedId.includes('doka') || normalizedId.includes('cacao')) {
-    return MASTER_OPERATORS_REGISTRY['doka-estate-coffee'];
-  }
-  if (normalizedId.includes('guanacaste') || normalizedId.includes('tamarindo') || normalizedId.includes('papagayo') || normalizedId.includes('playa')) {
-    return MASTER_OPERATORS_REGISTRY['guanacaste-blue-ocean'];
-  }
-  if (normalizedId.includes('tarcoles') || normalizedId.includes('cocodrilo') || normalizedId.includes('crocodile')) {
-    return MASTER_OPERATORS_REGISTRY['tarcoles-crocodile-safari'];
-  }
-
-  // Fallback seguro: Operaciones Directas Alsama Tours CR
-  return MASTER_OPERATORS_REGISTRY['alsama-tours-cr'];
+  return null;
 }
-
 async function resolveOperationalProvider(providerId: string): Promise<any | null> {
   const normalizedId = String(providerId || '').trim();
   if (!normalizedId) return null;
