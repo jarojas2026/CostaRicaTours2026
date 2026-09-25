@@ -82,7 +82,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ language }) => {
         >
           <div className="aspect-square rounded-[3rem] overflow-hidden border-8 border-stone-900 shadow-2xl relative z-10">
             <img 
-              src="https://images.unsplash.com/photo-1518132715369-0f866418858f?auto=format&fit=crop&q=80" 
+              src="https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85" 
               alt="Costa Rica Jungle" 
               className="w-full h-full object-cover"
             />
