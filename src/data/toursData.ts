@@ -3215,7 +3215,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85'
   ],
   'rincon-de-la-vieja-canopy-mud': [
-    'https://images.unsplash.com/photo-1669694841884-95d35a6bc287?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1711882569452-967be6941ddd?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1771223832335-c5c116e41bfd?auto=format&fit=crop&w=1400&q=85'
   ],
   'sloth-territory-la-fortuna': [
@@ -3279,7 +3279,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1636657795425-0db7a2b0528a?auto=format&fit=crop&w=1400&q=85'
   ],
   'monteverde-selvatura-all-in-one': [
-    'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1648172846433-ca73f0ee522c?auto=format&fit=crop&w=1400&q=85'
   ],
   'monteverde-100-aventura-extreme': [
@@ -3319,7 +3319,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1742909618652-5544a151a16c?auto=format&fit=crop&w=1400&q=85'
   ],
   'irazu-cartago-orosi-tour': [
-    'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1647075031259-3354af2b91ec?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1400&q=85'
   ],
   'bay-island-sunset-cruise': [
