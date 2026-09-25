@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { TOURS } from '../src/data/toursData';
+import { auditTourMedia } from '../backend/tourMediaService';
 
 type Finding = { severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'INFO'; id: string; message: string };
 
@@ -149,6 +151,14 @@ if (!/processEmailOperationsOnce\(\)/.test(read('backend/cronEngine.ts'))) {
 }
 if (!/claimEvent/.test(emailOperations) || !/status === 'error'/.test(emailOperations)) {
   add('HIGH', 'EMAIL-003', 'Email operation queue lacks visible idempotent/recoverable claim handling.');
+}
+
+const tourMediaAudit = auditTourMedia(TOURS);
+const mediaFailures = tourMediaAudit.filter(item =>
+  item.issues.some(issue => issue.startsWith('hero_repeated') || issue === 'hero_gallery_duplicate' || issue === 'gallery_missing')
+);
+if (mediaFailures.length) {
+  add('CRITICAL', 'MEDIA-001', `Tour media audit found repeated or incomplete hero/gallery assets: ${mediaFailures.map(item => item.tourId + ':' + item.issues.join('|')).join(', ')}`);
 }
 
 const envExample = read('.env.example');
