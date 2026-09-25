@@ -268,7 +268,10 @@ export class MassiveProcessingEngine extends EventEmitter {
       case 'INDIVIDUAL_BOOKING_AUTONOMOUS_DISPATCH': {
         const { booking } = task.data;
         const bookingId = booking.bookingId || booking.id;
-        const providerId = booking.providerId || 'alsama-tours-cr';
+        const providerId = String(booking.providerId || '').trim();
+        if (!providerId) {
+          throw new Error(`PROVIDER_REQUIRED: reserva ${booking.id || booking.bookingId || 'unknown'} no tiene proveedor operativo asignado.`);
+        }
 
         // 1. Despacho en tiempo real al proveedor
         const coordRes = await executeProviderRealtimeCoordination({
