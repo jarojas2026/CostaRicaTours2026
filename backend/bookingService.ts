@@ -1031,7 +1031,7 @@ const dailyOpsLogs: DailyOpsLogItem[] = [];
  */
 export function recordDailyOpsLog(item: Omit<DailyOpsLogItem, 'id' | 'timestamp'>): DailyOpsLogItem {
   const logItem: DailyOpsLogItem = {
-    id: `OPS-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
+    id: `OPS-${crypto.randomUUID()}`,
     timestamp: new Date().toISOString(),
     ...item
   };
