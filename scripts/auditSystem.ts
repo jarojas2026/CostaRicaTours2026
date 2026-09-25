@@ -83,9 +83,9 @@ for (const relative of ['backend', 'src', 'scripts', 'public', 'agent']) {
 const server = read('server.ts');
 const reservationLifecycle = read('backend/reservationLifecycleOrchestrator.ts');
 const journeyBuildRoutes = (server.match(/app\\.post\\('\/api\/journey\/build'/g) || []).length;
-const journeyReadRoutes = (server.match(/app\\.get\\('\/api\/journey\/:journeyId'/g) || []).length;
-const journeyAdaptRoutes = (server.match(/app\\.post\\('\/api\/journey\/:journeyId\\/adapt'/g) || []).length;
-if (journeyBuildRoutes !== 1 || journeyReadRoutes !== 1 || journeyAdaptRoutes !== 1) {
+const journeyBuildRoutes = (server.match(/app\.post\('\/api\/journey\/build'/g) || []).length;
+const journeyReadRoutes = (server.match(/app\.get\('\/api\/journey\/:journeyId'/g) || []).length;
+const journeyAdaptRoutes = (server.match(/app\.post\('\/api\/journey\/:journeyId\/adapt'/g) || []).length;
   add('HIGH', 'ROUTE-001', `Duplicate or missing Journey route registrations detected (build=${journeyBuildRoutes}, read=${journeyReadRoutes}, adapt=${journeyAdaptRoutes}).`);
 }
 const bookingService = read('backend/bookingService.ts');
