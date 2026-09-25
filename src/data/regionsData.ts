@@ -26,7 +26,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'Un santuario de biodiversidad envuelto en niebla y aventura.',
       en: 'A biodiversity sanctuary wrapped in mist and adventure.'
     },
-    image: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=80',
     coordinates: { x: 32, y: 42 }
   },
   {
@@ -54,7 +54,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'Famoso por su clima soleado, playas hermosas y cultura sabanera.',
       en: 'Famous for its sunny weather, beautiful beaches, and sabanero culture.'
     },
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=80',
     coordinates: { x: 18, y: 28 }
   },
   {
@@ -110,7 +110,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'El lugar biológicamente más intenso del mundo según National Geographic.',
       en: 'The most biologically intense place on Earth according to National Geographic.'
     },
-    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=80',
     coordinates: { x: 72, y: 88 }
   }
 ];
