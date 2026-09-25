@@ -37,6 +37,7 @@ import { Home, ChevronRight, ArrowLeft, Bot, MessageCircle, X, Loader2 } from 'l
 import { AdminRouteGuard } from './components/AdminRouteGuard';
 import { requestCustomerIntake } from './utils/customerIntake';
 import { AdminControlCenterPage } from './pages/AdminControlCenterPage';
+import { ProviderPortalPage } from './pages/ProviderPortalPage';
 
 // Code-splitting via React.lazy to reduce initial JS bundle size
 const ItineraryPlanner = lazy(() => import('./components/ItineraryPlanner').then(m => ({ default: m.ItineraryPlanner })));
@@ -395,6 +396,8 @@ export default function App() {
 
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
+            <Route path="/provider/portal" element={<ProviderPortalPage />} />
+
             <Route path="/" element={
               <HomePage
                 language={language}
