@@ -60,6 +60,20 @@ for (const relative of ['backend', 'src', 'scripts', 'public', 'docs']) {
 }
 
 const server = read('server.ts');
+if (!/createInFlightLimiter/.test(server) || !/apiAdmission/.test(server) || !/aiAdmission/.test(server)) {
+  add('HIGH', 'ADMISSION-001', 'API admission control is missing from server.ts.');
+}
+if (!/256kb/.test(server) || !/parameterLimit: 100/.test(server)) {
+  add('MEDIUM', 'PAYLOAD-001', 'HTTP body size limits are not explicitly hardened.');
+}
+const cronSource = read('backend/cronEngine.ts');
+if (!/withDistributedAutomationLock/.test(cronSource) || !/automation_locks/.test(cronSource)) {
+  add('HIGH', 'CRON-001', 'Distributed automation locking is not wired.');
+}
+if (!/getPendingReservationLifecycleBookings/.test(reservationLifecycle) || !/getPendingReservationLifecycleBookings/.test(read('backend/bookingService.ts'))) {
+  add('HIGH', 'LIFECYCLE-001', 'Reservation lifecycle still scans the full booking history.');
+}
+
 const voiceService = read('backend/voiceAgentDeskService.ts');
 if (/if \(!authToken\) return true/.test(voiceService) || /if \(!authToken\)\\s*\\{\\s*return true/.test(voiceService)) {
   add('CRITICAL', 'VOICE-SEC-001', 'Voice webhook signature verification fails open when the provider token is missing.');
