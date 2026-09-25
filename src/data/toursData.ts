@@ -3207,7 +3207,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85'
   ],
   'poas-volcano-doka-waterfall': [
-    'https://images.unsplash.com/photo-1773603261894-6afd4f0858de?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1712251769863-9b64ed58b5b9?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1400&q=85'
   ],
   'corcovado-sirena-expedition': [
@@ -3267,7 +3267,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1680003613913-26c857dde377?auto=format&fit=crop&w=1400&q=85'
   ],
   'guanacaste-guachipelin-combo': [
-    'https://images.unsplash.com/photo-1687360433232-53f5aa51f83a?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1679497584104-5d7f8a3b942f?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1769530260287-c11f7fc559ef?auto=format&fit=crop&w=1400&q=85'
   ],
   'guanacaste-diamante-adventure': [
@@ -3303,7 +3303,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85'
   ],
   'osa-corcovado-sirena-day': [
-    'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1580182019360-c95a6b16b0a2?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85'
   ],
   'tortuguero-mawamba-3d2n': [
@@ -3327,7 +3327,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1400&q=85'
   ],
   'doka-grecia-sarchi-tour': [
-    'https://images.unsplash.com/photo-1712251769863-9b64ed58b5b9?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1587646589462-4728f63df161?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1587646589462-4728f63df161?auto=format&fit=crop&w=1400&q=85'
   ],
   'sarapiqui-boat-rainforest-sjo': [
