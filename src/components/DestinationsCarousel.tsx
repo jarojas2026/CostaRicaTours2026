@@ -15,14 +15,14 @@ const destinations = [
     id: 'arenal' as TourRegion,
     name: { es: 'La Fortuna & Arenal', en: 'La Fortuna & Arenal' },
     desc: { es: 'Volcán majestuoso, aguas termales y la capital de la aventura.', en: 'Majestic volcano, hot springs, and the adventure capital.' },
-    img: '/src/assets/images/costa_rica_hero_1789327541732.jpg',
+    img: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     color: 'from-amber-600/80 to-amber-900/90'
   },
   {
     id: 'manuel_antonio' as TourRegion,
     name: { es: 'Manuel Antonio', en: 'Manuel Antonio' },
     desc: { es: 'Playas de arena blanca y avistamiento de perezosos garantizado.', en: 'White sand beaches and guaranteed sloth sightings.' },
-    img: '/src/assets/images/manuel_antonio_beach_1789327578996.jpg',
+    img: 'https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85',
     color: 'from-teal-600/80 to-stone-900/90'
   },
   {
