@@ -701,6 +701,31 @@ export async function getPendingReservationLifecycleBookings(limit = 100): Promi
   }
 }
 
+/** Recupera sólo reservas con seguimiento de proveedor pendiente. */
+export async function getPendingProviderSlaBookings(limit = 250): Promise<any[]> {
+  const col = getBookingsCollection();
+  const safeLimit = Math.max(1, Math.min(500, limit));
+  if (!col) return [];
+  try {
+    const snapshot = await col.where('providerStatus', '==', 'pending').limit(safeLimit).get();
+    const results: any[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      results.push({
+        id: doc.id,
+        ...data,
+        createdAt: normalizeTimestampToDate(data.createdAt).toISOString(),
+        updatedAt: normalizeTimestampToDate(data.updatedAt).toISOString(),
+        dispatchedAt: Number(data.dispatchedAt || 0)
+      });
+    });
+    return results.sort((a, b) => Number(a.dispatchedAt || 0) - Number(b.dispatchedAt || 0));
+  } catch (error) {
+    console.warn('Error consultando reservas con SLA de proveedor pendiente:', error);
+    return [];
+  }
+}
+
 export async function getAllBookings(): Promise<any[]> {
   const col = getBookingsCollection();
   if (col) {
@@ -777,78 +802,70 @@ export async function updateBookingStatus(
   const isCancelling = (newStatus === 'cancelada' || newStatus === 'cancelled') &&
                        (previousStatus !== 'cancelada' && previousStatus !== 'cancelled');
 
-  const updatedBooking = {
-    ...existing,
-    ...updates,
-    updatedAt: new Date().toISOString()
-  };
+  const updatedBooking = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  let availabilityReleasedByTransaction = false;
 
-  inMemoryBookings.set(bookingId, updatedBooking);
-
-  // Liberar cupo en memoria si corresponde
-  if (isCancelling) {
-    const tourId = existing.tourId;
-    const tourDate = existing.date;
-    const bookingTime = existing.time || '08:00 AM';
-    const passengersToRelease = (Number(existing.adults) || 1) + (Number(existing.children) || 0);
-
-    if (tourId && tourDate) {
-      const slotKey = getSlotKey(tourId, tourDate, bookingTime);
-      const currentMemory = inMemorySlots.get(slotKey) || 0;
-      inMemorySlots.set(slotKey, Math.max(0, currentMemory - passengersToRelease));
-      console.log(`🔄 [MEMORIA] Cupo liberado (${passengersToRelease} asientos) para slot ${slotKey}`);
-    }
-  }
-
-  // Actualización transaccional en Firestore
+  // Persistir primero. La liberación de cupos ocurre dentro de la misma transacción
+  // que cambia el estado para que una cancelación duplicada sea inocua.
   if (db && col) {
     try {
       if (isCancelling) {
-        const tourId = existing.tourId;
-        const tourDate = existing.date;
-        const bookingTime = existing.time || '08:00 AM';
-        const passengersToRelease = (Number(existing.adults) || 1) + (Number(existing.children) || 0);
-        const slotKey = getSlotKey(tourId, tourDate, bookingTime);
-        const slotRef = db.collection('availability_slots').doc(slotKey);
         const bookingRef = col.doc(bookingId);
-
-        await db.runTransaction(async (transaction) => {
-          const slotDoc = await transaction.get(slotRef);
-          if (slotDoc.exists) {
-            const currentBooked = Number(slotDoc.data()?.bookedSeats) || 0;
-            const newBooked = Math.max(0, currentBooked - passengersToRelease);
-            transaction.update(slotRef, {
-              bookedSeats: newBooked,
-              updatedAt: FieldValue.serverTimestamp()
-            });
+        availabilityReleasedByTransaction = await db.runTransaction(async (transaction) => {
+          const bookingSnap = await transaction.get(bookingRef);
+          if (!bookingSnap.exists) throw new Error('Reserva no encontrada durante la cancelación.');
+          const current = bookingSnap.data() || {};
+          const currentStatus = String(current.status || '').toLowerCase();
+          const alreadyCancelled = currentStatus === 'cancelada' || currentStatus === 'cancelled';
+          const alreadyReleased = current.availabilityReleased === true;
+          if (!alreadyCancelled && !alreadyReleased) {
+            const tourId = String(current.tourId || existing.tourId || '');
+            const tourDate = String(current.date || existing.date || '');
+            const bookingTime = String(current.time || existing.time || '08:00 AM');
+            const passengers = (Number(current.adults) || Number(existing.adults) || 1) + (Number(current.children) || Number(existing.children) || 0);
+            if (tourId && tourDate) {
+              const slotRef = db.collection('availability_slots').doc(getSlotKey(tourId, tourDate, bookingTime));
+              const slotDoc = await transaction.get(slotRef);
+              if (slotDoc.exists) {
+                const booked = Number(slotDoc.data()?.bookedSeats) || 0;
+                transaction.update(slotRef, { bookedSeats: Math.max(0, booked - passengers), updatedAt: FieldValue.serverTimestamp() });
+              }
+              transaction.set(bookingRef, { ...updates, availabilityReleased: true, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+              return true;
+            }
           }
-
-          transaction.set(
-            bookingRef,
-            {
-              ...updates,
-              updatedAt: FieldValue.serverTimestamp()
-            },
-            { merge: true }
-          );
+          transaction.set(bookingRef, { ...updates, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+          return false;
         });
-
-        console.log(`✅ [TRANSACCIÓN ATÓMICA CANCELACIÓN] Reserva ${bookingId} cancelada. Liberados ${passengersToRelease} cupos en slot ${slotKey}.`);
       } else {
-        await col.doc(bookingId).set(
-          {
-            ...updates,
-            updatedAt: FieldValue.serverTimestamp()
-          },
-          { merge: true }
-        );
+        await col.doc(bookingId).set({ ...updates, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
       }
     } catch (err: any) {
       console.error('Error actualizando en Firestore:', err);
       return { success: false, error: err.message };
     }
+  } else if (isCancelling && existing.availabilityReleased !== true) {
+    const tourId = existing.tourId;
+    const tourDate = existing.date;
+    const bookingTime = existing.time || '08:00 AM';
+    const passengers = (Number(existing.adults) || 1) + (Number(existing.children) || 0);
+    if (tourId && tourDate) {
+      const slotKey = getSlotKey(tourId, tourDate, bookingTime);
+      const currentMemory = inMemorySlots.get(slotKey) || 0;
+      inMemorySlots.set(slotKey, Math.max(0, currentMemory - passengers));
+    }
+    updatedBooking.availabilityReleased = true;
   }
 
+  if (availabilityReleasedByTransaction) {
+    const slotKey = getSlotKey(String(existing.tourId || ''), String(existing.date || ''), String(existing.time || '08:00 AM'));
+    const passengers = (Number(existing.adults) || 1) + (Number(existing.children) || 0);
+    const currentMemory = inMemorySlots.get(slotKey) || 0;
+    inMemorySlots.set(slotKey, Math.max(0, currentMemory - passengers));
+    updatedBooking.availabilityReleased = true;
+  }
+
+  inMemoryBookings.set(bookingId, updatedBooking);
   return { success: true, booking: updatedBooking };
 }
 
@@ -964,22 +981,35 @@ export async function getWeeklyConversionMetrics(): Promise<{
  * Busca una reserva en tiempo real por código de confirmación, ID o email
  */
 export async function findBookingByCodeOrEmail(identifier: string): Promise<any | null> {
-  if (!identifier) return null;
-  const clean = identifier.trim().toLowerCase();
-  const all = await getAllBookings();
-  const found = all.find((b: any) => {
-    const bId = (b.bookingId || b.id || '').toLowerCase();
-    const cEmail = (b.customer?.email || b.customerEmail || '').toLowerCase();
-    const cName = (b.customer?.name || b.customer?.fullName || '').toLowerCase();
-    const pnr = (b.flightDetails?.pnrLocator || '').toLowerCase();
-    return (
-      (bId && (bId === clean || bId.includes(clean) || clean.includes(bId))) ||
-      (cEmail && cEmail === clean) ||
-      (pnr && pnr === clean) ||
-      (clean.length > 5 && cName && cName.includes(clean))
-    );
-  });
-  return found || null;
+  const clean = String(identifier || '').trim().toLowerCase();
+  if (!clean) return null;
+  const col = getBookingsCollection();
+  if (!col) {
+    return Array.from(inMemoryBookings.values()).find((b: any) => String(b.bookingId || b.id || '').toLowerCase() === clean || String(b.customer?.email || b.customerEmail || '').toLowerCase() === clean || String(b.flightDetails?.pnrLocator || '').toLowerCase() === clean) || null;
+  }
+  try {
+    const exactId = await col.doc(identifier.trim()).get();
+    if (exactId.exists) return { id: exactId.id, ...exactId.data() };
+    const [byId, byEmail, byNestedEmail, byPnr] = await Promise.all([
+      col.where('bookingId', '==', identifier.trim()).limit(1).get(),
+      col.where('customerEmail', '==', identifier.trim()).limit(5).get(),
+      col.where('customer.email', '==', identifier.trim()).limit(5).get(),
+      col.where('flightDetails.pnrLocator', '==', identifier.trim()).limit(5).get()
+    ]);
+    const docs = [...byId.docs, ...byEmail.docs, ...byNestedEmail.docs, ...byPnr.docs];
+    if (docs.length) {
+      const doc = docs[0];
+      return { id: doc.id, ...doc.data() };
+    }
+    if (/\s/.test(clean)) {
+      const recent = await col.orderBy('createdAt', 'desc').limit(100).get();
+      const found = recent.docs.find((doc) => String(doc.data()?.customer?.name || doc.data()?.customer?.fullName || doc.data()?.customerName || '').toLowerCase().includes(clean));
+      if (found) return { id: found.id, ...found.data() };
+    }
+  } catch (error) {
+    console.warn('Error ejecutando búsqueda indexada de reserva:', error);
+  }
+  return null;
 }
 
 export interface DailyOpsLogItem {

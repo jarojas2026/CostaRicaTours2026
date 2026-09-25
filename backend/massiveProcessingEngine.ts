@@ -10,7 +10,8 @@
 import crypto from 'crypto';
 import { EventEmitter } from 'events';
 import { 
-  getAllBookings, 
+  getAllBookings,
+  getPendingProviderSlaBookings,
   updateBookingStatus, 
   getSlotKey,
   getFirestoreDb,
@@ -98,37 +99,46 @@ class IndividualProviderLifecycleManager {
    * Evalúa periódicamente los SLAs pendientes directamente consultando Firestore (Sobrevive a reinicios y escalado a cero).
    */
   async sweepPendingSlas(): Promise<number> {
-    let evaluatedCount = 0;
+    if (this.slaSweepRunning) return 0;
+    this.slaSweepRunning = true;
+    const db = getFirestoreDb();
+    const lockRef = db ? db.collection('automation_locks').doc('massive-provider-sla-1m') : null;
+    let lockAcquired = false;
     try {
-      const all = await getAllBookings();
-      const now = Date.now();
-      const SLA_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutos
+      if (db && lockRef) {
+        await db.runTransaction(async (tx: any) => {
+          const snap = await tx.get(lockRef);
+          const data = snap.exists ? (snap.data() || {}) : {};
+          const acquiredAt = Date.parse(String(data.acquiredAt || data.updatedAt || ''));
+          if (data.status === 'running' && Number.isFinite(acquiredAt) && Date.now() - acquiredAt < 10 * 60 * 1000) throw new Error('automation_lock_busy');
+          const now = new Date().toISOString();
+          tx.set(lockRef, { status: 'running', acquiredAt: now, updatedAt: now, owner: process.env.VERCEL_REGION || process.env.HOSTNAME || 'node' }, { merge: true });
+          lockAcquired = true;
+        });
+      } else lockAcquired = true;
 
-      for (const booking of all) {
+      const pending = db ? await getPendingProviderSlaBookings(250) : [];
+      const now = Date.now();
+      const SLA_THRESHOLD_MS = 15 * 60 * 1000;
+      let evaluatedCount = 0;
+      for (const booking of pending) {
         const bookingId = booking.id || booking.bookingId;
         const providerId = booking.providerId || 'alsama-tours-cr';
-        const dispatchedAt = booking.dispatchedAt ? Number(booking.dispatchedAt) : 0;
-        const providerStatus = booking.providerStatus || 'pending';
-        const escalated = booking.escalated === true;
-
-        if (
-          bookingId &&
-          providerStatus === 'pending' &&
-          !escalated &&
-          dispatchedAt > 0 &&
-          now - dispatchedAt > SLA_THRESHOLD_MS
-        ) {
-          console.warn(`⚡ [AUTONOMOUS-SLA] Operador ${providerId} no respondió en 15m para #${bookingId}. Iniciando Failover Autónomo duradero.`);
-          await executeAutonomousProviderFallback(bookingId, providerId, `SLA Expirado sin confirmación del proveedor ${providerId}`);
-          
+        const dispatchedAt = Number(booking.dispatchedAt || 0);
+        if (bookingId && booking.providerStatus === 'pending' && booking.escalated !== true && dispatchedAt > 0 && now - dispatchedAt > SLA_THRESHOLD_MS) {
+          await executeAutonomousProviderFallback(bookingId, providerId, 'SLA Expirado sin confirmación del proveedor ' + providerId);
           await updateBookingStatus(bookingId, { escalated: true, providerStatus: 'escalated_fallback' });
           evaluatedCount++;
         }
       }
-    } catch (err) {
-      console.error('Error en barredor periódico de SLAs:', err);
+      return evaluatedCount;
+    } catch (err: any) {
+      if (err?.message !== 'automation_lock_busy') console.error('Error en barredor periódico de SLAs:', err);
+      return 0;
+    } finally {
+      this.slaSweepRunning = false;
+      if (lockAcquired && lockRef) await lockRef.set({ status: 'idle', releasedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, { merge: true }).catch(() => undefined);
     }
-    return evaluatedCount;
   }
 
   stopTracking(bookingId: string) {
@@ -145,8 +155,10 @@ class IndividualProviderLifecycleManager {
  */
 export class MassiveProcessingEngine extends EventEmitter {
   private queue: MassiveTask[] = [];
-  private concurrencyLimit = 50;
+  private concurrencyLimit = Math.max(10, Math.min(100, Number(process.env.MASSIVE_ENGINE_CONCURRENCY || 50)));
+  private maxQueueDepth = Math.max(200, Math.min(10000, Number(process.env.MASSIVE_ENGINE_MAX_QUEUE || 2000)));
   private activeWorkers = 0;
+  private slaSweepRunning = false;
   private totalProcessed = 0;
   private latencies: number[] = [];
   private lastSecondRequests = 0;
@@ -167,6 +179,16 @@ export class MassiveProcessingEngine extends EventEmitter {
   /**
    * Encola una tarea con prioridad para procesamiento masivo no bloqueante
    */
+  private insertByPriority(task: MassiveTask): void {
+    const priorityWeights: Record<QueuePriority, number> = {
+      EMERGENCY: 100, PAYMENT_VERIFICATION: 80, PROVIDER_DISPATCH: 70,
+      BOOKING_LIFECYCLE: 50, INQUIRY_CACHE: 30, BACKGROUND_AUDIT: 10
+    };
+    const weight = priorityWeights[task.priority] || 50;
+    const index = this.queue.findIndex(item => weight > (priorityWeights[item.priority] || 50));
+    if (index >= 0) this.queue.splice(index, 0, task); else this.queue.push(task);
+  }
+
   async enqueue<T = any>(
     type: string, 
     data: T, 
@@ -174,6 +196,10 @@ export class MassiveProcessingEngine extends EventEmitter {
     maxAttempts = 3
   ): Promise<any> {
     return new Promise((resolve, reject) => {
+      if (this.queue.length >= this.maxQueueDepth) {
+        reject(new Error(`QUEUE_BACKPRESSURE: cola masiva saturada (${this.maxQueueDepth}).`));
+        return;
+      }
       const task: MassiveTask<T> = {
         id: `task_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         type,
@@ -186,30 +212,7 @@ export class MassiveProcessingEngine extends EventEmitter {
         reject
       };
 
-      const priorityWeights: Record<QueuePriority, number> = {
-        EMERGENCY: 100,
-        PAYMENT_VERIFICATION: 80,
-        PROVIDER_DISPATCH: 70,
-        BOOKING_LIFECYCLE: 50,
-        INQUIRY_CACHE: 30,
-        BACKGROUND_AUDIT: 10
-      };
-
-      const taskWeight = priorityWeights[priority] || 50;
-      let inserted = false;
-
-      for (let i = 0; i < this.queue.length; i++) {
-        const itemWeight = priorityWeights[this.queue[i].priority] || 50;
-        if (taskWeight > itemWeight) {
-          this.queue.splice(i, 0, task);
-          inserted = true;
-          break;
-        }
-      }
-
-      if (!inserted) {
-        this.queue.push(task);
-      }
+      this.insertByPriority(task);
 
       this.lastSecondRequests++;
       this.processNext();
@@ -243,7 +246,7 @@ export class MassiveProcessingEngine extends EventEmitter {
       if (task.attempts < task.maxAttempts) {
         console.warn(`[MASSIVE-ENGINE] Reintentando tarea ${task.id} (${task.attempts}/${task.maxAttempts}):`, error.message);
         setTimeout(() => {
-          this.queue.push(task);
+          this.insertByPriority(task);
           this.processNext();
         }, 100 * Math.pow(2, task.attempts));
       } else {
