@@ -278,10 +278,10 @@ export async function executeSolicitudPago(body: any) {
   const signaturePayload = `${reservationId}:${totalAmount}:${method}:${email}`;
   const hmacSignature = crypto.createHmac('sha256', hmacSecret).update(signaturePayload).digest('hex');
 
-  const sessionId = `cs_${method}_${Math.random().toString(36).substring(2, 14)}`;
-  const checkoutUrl = method === 'paypal'
-    ? `https://www.paypal.com/checkoutnow?token=EC-${Math.random().toString(36).substring(2, 12).toUpperCase()}`
-    : `https://checkout.stripe.com/c/pay/${sessionId}#fidkdWxOYHwnPyd1blpxYHZxWjA0TjU8TG5%2FQ2x0X1A1dGFJ`;
+  const sessionId = `pending_${crypto.randomUUID()}`;
+  // Este motor no fabrica URLs de pasarela. El checkout real se crea únicamente
+  // mediante los endpoints Stripe/PayPal que validan credenciales en backend.
+  const checkoutUrl = `/checkout?reserva=${encodeURIComponent(reservationId)}`;
 
   const duration = Date.now() - start;
   logAutomationExecution(
@@ -303,7 +303,7 @@ export async function executeSolicitudPago(body: any) {
     estado: 'esperando_pago',
     tourName: tour,
     motor: 'código_nativo_node',
-    mensaje: 'Sesión de pasarela generada y conciliación criptográfica activa en backend.'
+    mensaje: 'Reserva preparada para checkout. La URL de pasarela se genera exclusivamente por el backend de la pasarela configurada.'
   };
 }
 
@@ -343,7 +343,7 @@ export async function executeConfirmacionReserva(body: any) {
     paymentStatus: 'completed'
   });
 
-  const qrValidationCode = `CRT-QR-${reservationId}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  const qrValidationCode = `CRT-QR-${reservationId}-${crypto.randomUUID().replace(/-/g, '').slice(0, 10).toUpperCase()}`;
   const voucherUrl = `https://costaricatours.cr/vouchers/${reservationId}.pdf`;
 
   const whatsAppPreview = `¡Pura Vida ${clientData.name || 'Viajero'}! 🇨🇷🌿\nTu reserva para *${tour}* el *${tourDate}* a las *${tourTime}* está *100% CONFIRMADA*.\n\n📍 *Punto de recogida:* ${hotel}\n📄 *Voucher Oficial:* ${voucherUrl}\n🔐 *Código QR:* \`${qrValidationCode}\`\n\n¿Deseas alguna recomendación sobre qué llevar? ¡Estamos a tu servicio!`;
