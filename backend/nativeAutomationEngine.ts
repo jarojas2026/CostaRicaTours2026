@@ -54,7 +54,7 @@ export function logAutomationExecution(
   details?: any
 ) {
   const entry: NativeAutomationLog = {
-    id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: `log_${crypto.randomUUID()}`,
     trigger,
     timestamp: new Date().toISOString(),
     durationMs,
@@ -204,7 +204,7 @@ export async function executeInicioReserva(body: any) {
   const unitPrice = Number(tour.priceUSD);
   const totalUSD = adults * unitPrice + children * unitPrice;
   const holdExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-  const idReserva = `CRT-HLD-${Math.floor(100000 + Math.random() * 900000)}`;
+  const idReserva = `CRT-HLD-${crypto.randomUUID()}`;
 
   const bookingCustomer = body.cliente || body.customer || {
     nombre: body.customerName,
@@ -546,7 +546,8 @@ export async function executeNotificarProveedor(body: any) {
   const start = Date.now();
   const bookingId = body.bookingId || body.idReserva || 'CRT-PROV';
   const tourName = body.tourName || 'Tour Oficial';
-  const provider = body.providerInfo || { name: 'Alsama Tours CR / Operaciones Directas' };
+  const provider = body.providerInfo || null;
+  if (!provider) throw new Error('PROVIDER_REQUIRED: no existe información operativa del proveedor.');
 
   console.log(`🚐 [AUTOMATIZACIÓN NATIVA] Despachando logística a proveedor local: ${provider.name} para reserva ${bookingId}`);
 
@@ -1452,7 +1453,7 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
   const bookingResult = await createBooking({
     tourId: resolvedTour.id,
     tourName: resolvedTour.title.es,
-    providerId: (resolvedTour as any).operatorId || 'alsama-tours-cr',
+    providerId: String((resolvedTour as any).operatorId || '').trim(),
     date: targetDate,
     time: targetTime,
     adults,
