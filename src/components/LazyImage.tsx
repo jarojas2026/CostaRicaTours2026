@@ -5,7 +5,7 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   fallbackSrc?: string;
 }
 
-const DEFAULT_CR_FALLBACK = 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80';
+const DEFAULT_CR_FALLBACK = 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85';
 
 export const LazyImage: React.FC<LazyImageProps> = ({ 
   src, 
