@@ -3155,7 +3155,7 @@ export const TOURS: Tour[] = [
 // The catalog data remains unchanged; only the user-facing imagery is normalized here.
 const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
   'sjo-3-in-1-combo': [
-    'https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1400&q=85'
   ],
   'arenal-hot-springs': [
@@ -3187,7 +3187,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1776192030922-f0d342487045?auto=format&fit=crop&w=1400&q=85'
   ],
   'coffee-chocolate-tour': [
-    'https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1773603261894-6afd4f0858de?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1712251769863-9b64ed58b5b9?auto=format&fit=crop&w=1400&q=85'
   ],
   'rio-celeste-waterfall': [
@@ -3227,7 +3227,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1728847267854-7c7c9f95a281?auto=format&fit=crop&w=1400&q=85'
   ],
   'nauyaca-waterfalls-4x4': [
-    'https://images.unsplash.com/photo-1776192030922-f0d342487045?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1710384342026-cd34a67d922a?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1771223832335-c5c116e41bfd?auto=format&fit=crop&w=1400&q=85'
   ],
   'marino-ballena-whale-dolphin': [
@@ -3267,7 +3267,7 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
     'https://images.unsplash.com/photo-1680003613913-26c857dde377?auto=format&fit=crop&w=1400&q=85'
   ],
   'guanacaste-guachipelin-combo': [
-    'https://images.unsplash.com/photo-1711882569452-967be6941ddd?auto=format&fit=crop&w=1400&q=85',
+    'https://images.unsplash.com/photo-1687360433232-53f5aa51f83a?auto=format&fit=crop&w=1400&q=85',
     'https://images.unsplash.com/photo-1769530260287-c11f7fc559ef?auto=format&fit=crop&w=1400&q=85'
   ],
   'guanacaste-diamante-adventure': [
