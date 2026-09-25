@@ -206,7 +206,7 @@ export default function App() {
       setIntakeHandoffUrl(undefined);
       setIntakeEscalated(false);
       try {
-        const sessionId = detail.sessionId || localStorage.getItem('crt_customer_session') || `web_${Math.random().toString(36).slice(2)}`;
+        const sessionId = detail.sessionId || localStorage.getItem('crt_customer_session') || `web_${crypto.randomUUID()}`;
         localStorage.setItem('crt_customer_session', sessionId);
         const response = await fetch('/api/customer-intake', {
           method: 'POST',
