@@ -1917,7 +1917,11 @@ app.get('/api/provider/portal', async (req, res) => {
     const db = getFirestoreDb();
     if (!db) return res.status(503).json({ success: false, error: 'Portal operativo no disponible sin Firestore.' });
 
-    const snap = await db.collection('service_orders').doc(capability.orderId).get();
+    let snap = await db.collection('service_orders').doc(capability.orderId).get();
+    if (!snap.exists) {
+      const byBooking = await db.collection('service_orders').where('bookingId', '==', capability.orderId).limit(1).get();
+      if (!byBooking.empty) snap = byBooking.docs[0] as any;
+    }
     if (!snap.exists) return res.status(404).json({ success: false, error: 'Solicitud de reserva no encontrada.' });
 
     const order: any = { id: snap.id, ...snap.data() };
@@ -1966,7 +1970,11 @@ app.post('/api/provider/portal/action', async (req, res) => {
 
     const db = getFirestoreDb();
     if (!db) return res.status(503).json({ success: false, error: 'Portal operativo no disponible sin Firestore.' });
-    const snap = await db.collection('service_orders').doc(capability.orderId).get();
+    let snap = await db.collection('service_orders').doc(capability.orderId).get();
+    if (!snap.exists) {
+      const byBooking = await db.collection('service_orders').where('bookingId', '==', capability.orderId).limit(1).get();
+      if (!byBooking.empty) snap = byBooking.docs[0] as any;
+    }
     if (!snap.exists) return res.status(404).json({ success: false, error: 'Solicitud de reserva no encontrada.' });
 
     const order: any = snap.data() || {};
@@ -1978,7 +1986,7 @@ app.post('/api/provider/portal/action', async (req, res) => {
     }
 
     const result = await handleProviderAction({
-      orderId: capability.orderId,
+      orderId: snap.id,
       action: action as any,
       notes: String(req.body?.notes || '').trim().slice(0, 1200) || undefined,
       operatorContact: String(req.body?.operatorContact || '').trim().slice(0, 180) || undefined,
