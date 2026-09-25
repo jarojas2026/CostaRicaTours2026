@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { getFirestoreDb, getBookingsCollection, updateBookingStatus } from './bookingService';
 import { sendEmail, sendAdministrativeAlert, sendOperationalNotification, sendWhatsAppMessage } from './notificationService';
 import { logAutomationExecution } from './nativeAutomationEngine';
@@ -27,7 +28,7 @@ export async function recordEscalation(data: {
   customerPhone?: string;
 }): Promise<string> {
   const db = getFirestoreDb();
-  const escalationId = `esc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const escalationId = `esc_${crypto.randomUUID()}`;
   if (db) {
     await db.collection('escalations').doc(escalationId).set({
       id: escalationId,
