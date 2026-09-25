@@ -163,7 +163,7 @@ export async function enqueueCustomerIntakeJob(
 ): Promise<{ jobId: string }> {
   const db = getFirestoreDb();
   if (!db) throw new Error('Firestore no está disponible para persistir la cola de Customer Intake.');
-  const jobId = `CIJ-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  const jobId = `CIJ-${crypto.randomUUID()}`;
   await db.collection('customer_intake_jobs').doc(jobId).set({
     jobId,
     payload,
