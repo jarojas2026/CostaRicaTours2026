@@ -90,7 +90,7 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
     }
     setIsSubmitting(true);
 
-    const generatedBookingId = `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+    const generatedBookingId = `CR-PV-${crypto.randomUUID()}`;
     const tourTitle = getLangText(tour.title, language, 'Tour de Costa Rica');
     
     const bookingPayload: BookingRequest = {
