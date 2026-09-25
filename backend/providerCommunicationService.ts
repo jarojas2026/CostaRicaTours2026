@@ -528,7 +528,7 @@ async function triggerAutoFailoverReassignment(rejectedOrder: ServiceOrder): Pro
     providerFailoverAt: new Date().toISOString()
   }).catch(() => {});
 
-  const alternateEmail = alternateProvider.officialEmail || alternateProvider.email;
+  const alternateEmail = resolveConfiguredProviderEmail(alternateProvider);
   if (alternateEmail) {
     await sendEmail({
       to: alternateEmail,
