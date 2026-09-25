@@ -100,6 +100,7 @@ import {
 } from './backend/nativeWorkflows';
 import { executeSinpeVerification } from './backend/sinpeService';
 import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
+import { verifyProviderPortalToken } from './backend/providerPortalService';
 import { createInboundVoiceResponse, handleVoiceTurn, voiceAgentDeskConfig, verifyVoiceSignature, rememberVoiceCallStart, rememberVoiceCallEnd, getVoiceCallSession } from './backend/voiceAgentDeskService';
 import { getSelfDevelopmentOverview, runSelfHealingCycle } from './backend/selfDevelopmentEngine';
 import { askCounterDesk, getCounterOperationsSnapshot, organizeCounterDesk } from './backend/counterDeskService';
@@ -1901,6 +1902,106 @@ app.all(['/api/provider/respond', '/webhook/provider-response', '/api/webhooks/p
   } catch (err: any) {
     console.error('Error en /api/provider/respond:', err);
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * 1.15 Portal operativo seguro del proveedor.
+ * El token firmado identifica exactamente una orden + proveedor y caduca.
+ */
+app.get('/api/provider/portal', async (req, res) => {
+  try {
+    const capability = verifyProviderPortalToken(String(req.query.token || ''));
+    if (!capability) return res.status(401).json({ success: false, error: 'Enlace de proveedor inválido o vencido.' });
+
+    const db = getFirestoreDb();
+    if (!db) return res.status(503).json({ success: false, error: 'Portal operativo no disponible sin Firestore.' });
+
+    const snap = await db.collection('service_orders').doc(capability.orderId).get();
+    if (!snap.exists) return res.status(404).json({ success: false, error: 'Solicitud de reserva no encontrada.' });
+
+    const order: any = { id: snap.id, ...snap.data() };
+    if (String(order.providerId) !== capability.providerId) {
+      return res.status(403).json({ success: false, error: 'Este enlace no corresponde al proveedor asignado.' });
+    }
+
+    return res.json({
+      success: true,
+      expiresAt: capability.exp,
+      order: {
+        id: order.id,
+        bookingId: order.bookingId,
+        tourId: order.tourId,
+        tourName: order.tourName,
+        providerId: order.providerId,
+        providerName: order.providerName,
+        date: order.date,
+        time: order.time,
+        adults: order.adults,
+        children: order.children,
+        pickupLocation: order.pickupLocation,
+        wazeUrl: order.wazeUrl,
+        customer: order.customer,
+        status: order.status,
+        notes: order.notes || '',
+        assignedGuide: order.assignedGuide || '',
+        assignedVehicle: order.assignedVehicle || '',
+        slaDeadline: order.slaDeadline
+      }
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error?.message || 'No se pudo cargar la solicitud.' });
+  }
+});
+
+app.post('/api/provider/portal/action', async (req, res) => {
+  try {
+    const capability = verifyProviderPortalToken(String(req.body?.token || ''));
+    if (!capability) return res.status(401).json({ success: false, error: 'Enlace de proveedor inválido o vencido.' });
+
+    const action = String(req.body?.action || '').trim();
+    if (!['confirm', 'reject', 'delay', 'no_show', 'complete'].includes(action)) {
+      return res.status(400).json({ success: false, error: 'Acción de proveedor no válida.' });
+    }
+
+    const db = getFirestoreDb();
+    if (!db) return res.status(503).json({ success: false, error: 'Portal operativo no disponible sin Firestore.' });
+    const snap = await db.collection('service_orders').doc(capability.orderId).get();
+    if (!snap.exists) return res.status(404).json({ success: false, error: 'Solicitud de reserva no encontrada.' });
+
+    const order: any = snap.data() || {};
+    if (String(order.providerId) !== capability.providerId) {
+      return res.status(403).json({ success: false, error: 'Este enlace no corresponde al proveedor asignado.' });
+    }
+    if (!['dispatched', 'reassigned'].includes(String(order.status)) && action !== 'complete') {
+      return res.status(409).json({ success: false, error: 'Esta solicitud ya no está pendiente de respuesta.', status: order.status });
+    }
+
+    const result = await handleProviderAction({
+      orderId: capability.orderId,
+      action: action as any,
+      notes: String(req.body?.notes || '').trim().slice(0, 1200) || undefined,
+      operatorContact: String(req.body?.operatorContact || '').trim().slice(0, 180) || undefined,
+      estimatedDelayMinutes: Number(req.body?.estimatedDelayMinutes) || undefined,
+      assignedGuide: String(req.body?.assignedGuide || '').trim().slice(0, 180) || undefined,
+      assignedVehicle: String(req.body?.assignedVehicle || '').trim().slice(0, 120) || undefined
+    });
+
+    if (!result.success) return res.status(409).json(result);
+    return res.json({
+      success: true,
+      message: result.message,
+      action,
+      order: {
+        id: result.order.id,
+        status: result.order.status,
+        notes: result.order.notes || '',
+        assignedGuide: result.order.assignedGuide || '',
+        assignedVehicle: result.order.assignedVehicle || ''
+      }
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error?.message || 'No se pudo registrar la respuesta.' });
   }
 });
 
