@@ -430,7 +430,8 @@ export async function createBooking(data: any) {
   const slotKey = getSlotKey(tourId, tourDate, bookingTime);
 
   // 1. Obtener información dinámica del operador desde Firestore
-  const providerId = tourInfo?.providerId || 'alsama-tours-cr';
+  const providerId = String(tourInfo?.providerId || '').trim();
+  if (!providerId) throw new Error('PROVIDER_REQUIRED: el tour no tiene un proveedor operativo asignado.');
   const providerInfo = await getOperatorById(providerId);
 
   // 2. Validar pago del lado del servidor de forma estricta (NUNCA adoptar estado del cliente)
