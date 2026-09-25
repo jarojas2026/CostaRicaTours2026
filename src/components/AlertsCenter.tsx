@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   AlertTriangle, 
   CheckCircle2, 
@@ -57,44 +57,55 @@ export const AlertsCenter: React.FC<AlertsCenterProps> = ({
   const [expandedAlerts, setExpandedAlerts] = useState<Record<string, boolean>>({});
   const [simulating, setSimulating] = useState(false);
   const [notificationBanner, setNotificationBanner] = useState<string | null>(null);
+  const fetchAbortRef = useRef<AbortController | null>(null);
 
   const fetchAlerts = async (isManual = false) => {
     if (isManual) setRefreshing(true);
+    fetchAbortRef.current?.abort();
+    const controller = new AbortController();
+    fetchAbortRef.current = controller;
     try {
       const queryParams = new URLSearchParams();
       if (onlyUnresolved) queryParams.append('resolved', 'false');
       if (severityFilter !== 'all') queryParams.append('severity', severityFilter);
-
-      const res = await fetch(`/api/alerts?${queryParams.toString()}`);
+      const res = await fetch('/api/alerts?' + queryParams.toString(), { signal: controller.signal });
       if (res.ok) {
         const data = await res.json();
         const alertList: AdminAlert[] = data.alerts || data.data || [];
         setAlerts(alertList);
-
-        // Calculate unresolved counts
         const unresolved = alertList.filter(a => !a.resolved);
         const criticalUnresolved = unresolved.filter(a => a.severity === 'critical');
-        if (onUnresolvedCountChange) {
-          onUnresolvedCountChange(unresolved.length, criticalUnresolved.length);
-        }
+        onUnresolvedCountChange?.(unresolved.length, criticalUnresolved.length);
       }
-    } catch (err) {
-      console.error('Error al obtener alertas:', err);
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') console.error('Error al obtener alertas:', err);
     } finally {
+      if (fetchAbortRef.current === controller) fetchAbortRef.current = null;
       setLoading(false);
       if (isManual) setRefreshing(false);
     }
   };
 
-  // Initial load and 60-second polling
-  useEffect(() => {
-    fetchAlerts();
-    const interval = setInterval(() => {
-      fetchAlerts();
-    }, 60000);
 
-    return () => clearInterval(interval);
+  // Polling consciente del estado de la pestaña: evita lecturas innecesarias y llamadas superpuestas.
+  useEffect(() => {
+    const run = () => {
+      if (document.visibilityState === 'visible') fetchAlerts();
+    };
+    run();
+    const interval = window.setInterval(run, 90000);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') fetchAlerts();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      fetchAbortRef.current?.abort();
+    };
   }, [onlyUnresolved, severityFilter]);
+
+
 
   const handleToggleRead = async (alert: AdminAlert, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -148,16 +159,17 @@ export const AlertsCenter: React.FC<AlertsCenterProps> = ({
     setSimulating(true);
     try {
       const sampleTitles = {
-        critical: 'Fallo en Pago Automático a Operador Rafting Sarapiquí',
-        warning: 'Reintento de Envío de Voucher #CR-98432 por Tiempo de Espera',
-        info: 'Confirmación y Notificación Multicanal Enviada con Éxito'
+        critical: 'Prueba controlada · alerta crítica',
+        warning: 'Prueba controlada · advertencia',
+        info: 'Prueba controlada · información'
       };
 
       const sampleMessages = {
-        critical: 'El webhook hacia la cuenta bancaria del operador respondió HTTP 504 Gateway Timeout tras 3 intentos. La reserva #CR-2026-789 requiere verificación manual inmediata.',
-        warning: 'El servidor de correo demoró 4.8s en entregar el comprobante PDF. Se programó reintento automático en 5 minutos.',
-        info: 'Cliente Robert Miller confirmó tour Arenal Volcano & Hot Springs. Todos los asientos asignados y sincronizados con Firestore.'
+        critical: 'Evento sintético de QA para validar el canal operativo de alertas. No representa una incidencia real.',
+        warning: 'Evento sintético de QA para validar el flujo de advertencias. No representa una incidencia real.',
+        info: 'Evento sintético de QA para validar el registro informativo. No representa una incidencia real.'
       };
+
 
       const res = await fetch('/api/alerts', {
         method: 'POST',
@@ -170,12 +182,11 @@ export const AlertsCenter: React.FC<AlertsCenterProps> = ({
           severity,
           title: sampleTitles[severity],
           message: sampleMessages[severity],
-          bookingId: severity === 'critical' ? 'CR-2026-789' : 'CR-2026-442',
-          providerId: 'prov_sarapiqui_rafting_01',
           metadata: {
+            syntheticTest: true,
             retryCount: severity === 'critical' ? 3 : 1,
-            httpStatus: severity === 'critical' ? 504 : 200,
-            executionId: `native-automation_exec_${Date.now()}`
+            simulatedHttpStatus: severity === 'critical' ? 504 : 200,
+            executionId: 'synthetic_alert_' + Date.now()
           }
         })
       });
