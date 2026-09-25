@@ -18,6 +18,7 @@ import { initializeAutomationEngine, cleanupExpiredSoftHolds } from './backend/c
 import { google } from 'googleapis';
 import { requireOperator } from './backend/authMiddleware';
 import { TOURS } from './src/data/toursData';
+import { getTourMediaById } from './backend/tourMediaService';
 import { FLIGHT_ROUTES } from './src/data/flightsData';
 import {
   getStripe,
@@ -862,6 +863,22 @@ app.post('/api/calendar/sync', async (req, res) => {
 // ==========================================
 // 📦 SISTEMA DE RESERVAS Y DISPONIBILIDAD (FIRESTORE)
 // ==========================================
+
+// Catálogo visual por tour: una sola capa de infraestructura para hero, galería y metadatos de imagen.
+app.get('/api/tours/:id/media', (req, res) => {
+  try {
+    const media = getTourMediaById(String(req.params.id), TOURS);
+    if (!media) {
+      return res.status(404).json({ error: 'Tour no encontrado' });
+    }
+
+    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=900, stale-while-revalidate=86400');
+    return res.json(media);
+  } catch (error: any) {
+    console.error('Tour media error:', error);
+    return res.status(500).json({ error: 'No se pudo cargar el contenido visual del tour' });
+  }
+});
 
 // Consulta de disponibilidad de cupos por tour
 app.get('/api/tours/:id/availability', async (req, res) => {
