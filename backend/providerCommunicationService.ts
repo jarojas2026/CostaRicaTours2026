@@ -7,7 +7,7 @@
  * =========================================================================
  */
 
-import { getAllBookings, updateBookingStatus } from './bookingService';
+import { getAllBookings, getFirestoreDb, updateBookingStatus } from './bookingService';
 import { createAlert } from './alertService';
 import { sendEmail } from './notificationService';
 
@@ -52,6 +52,46 @@ export interface TourProvider {
     bank: string;
     holderName: string;
   };
+}
+
+/** La autorización operativa se obtiene de Firestore; el registro histórico sólo aporta metadata. */
+async function resolveOperationalProvider(providerId: string, tourId: string): Promise<TourProvider | null> {
+  const legacy = REGISTERED_PROVIDERS.find(provider => provider.id === providerId) || null;
+  const db = getFirestoreDb();
+  if (!db) {
+    return process.env.NODE_ENV !== 'production' && process.env.ALLOW_LEGACY_PROVIDER_DIRECTORY === 'true' && legacy ? legacy : null;
+  }
+  for (const collectionName of ['operators', 'proveedores']) {
+    const snap = await db.collection(collectionName).doc(providerId).get().catch(() => null);
+    if (!snap?.exists) continue;
+    const data = snap.data() || {};
+    const verified = data.verified === true || data.verificado === true;
+    const active = (data.active === true || data.activo === true) && data.status !== 'inactivo';
+    const activeTours = Array.isArray(data.activeTours) ? data.activeTours.map(String) : (Array.isArray(data.tours) ? data.tours.map(String) : (legacy?.activeTours || []));
+    if (!verified || !active || (activeTours.length > 0 && !activeTours.includes(tourId))) return null;
+    return {
+      ...(legacy || {} as TourProvider), id: providerId,
+      name: String(data.name || data.nombre || legacy?.name || providerId),
+      category: (data.category || legacy?.category || 'adventure') as TourProvider['category'],
+      region: String(data.region || legacy?.region || 'Costa Rica'),
+      contactName: String(data.contactName || data.contacto || legacy?.contactName || ''),
+      phone: String(data.phone || data.telefono || legacy?.phone || ''),
+      whatsapp: String(data.whatsapp || legacy?.whatsapp || ''),
+      email: String(data.email || legacy?.email || ''),
+      officialEmail: String(data.officialEmail || data.emailOperativo || legacy?.officialEmail || ''),
+      verified: true,
+      cstLevel: Number(data.cstLevel || legacy?.cstLevel || 0),
+      insPolicyNumber: String(data.insPolicyNumber || legacy?.insPolicyNumber || ''),
+      ictLicense: String(data.ictLicense || legacy?.ictLicense || ''),
+      activeTours,
+      slaTargetMinutes: Number(data.slaTargetMinutes || legacy?.slaTargetMinutes || 30),
+      averageResponseMinutes: Number(data.averageResponseMinutes || legacy?.averageResponseMinutes || 0),
+      acceptanceRate: Number(data.acceptanceRate || legacy?.acceptanceRate || 0),
+      status: (data.status === 'busy' ? 'busy' : data.status === 'offline' ? 'offline' : 'active') as TourProvider['status'],
+      payoutAccount: data.payoutAccount || legacy?.payoutAccount || { type: 'iban_dolares', number: '', bank: '', holderName: '' }
+    };
+  }
+  return null;
 }
 
 export interface ServiceOrder {
@@ -278,10 +318,11 @@ export async function dispatchServiceOrder(params: {
   totalUSD: number;
   providerId?: string;
 }): Promise<ServiceOrder> {
-  const provider = params.providerId
-    ? REGISTERED_PROVIDERS.find(p => p.id === params.providerId) || null
-    : getBestProviderForTour(params.tourId);
-
+  const requestedProviderId = params.providerId || getBestProviderForTour(params.tourId).id;
+  const existingSnapshot = getFirestoreDb() ? await getFirestoreDb()!.collection('service_orders').where('bookingId', '==', params.bookingId).limit(10).get().catch(() => null) : null;
+  const existingOrder = existingSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceOrder)).find(order => !['rejected', 'no_show'].includes(String(order.status)));
+  if (existingOrder) return existingOrder;
+  const provider = await resolveOperationalProvider(requestedProviderId, params.tourId);
   if (!provider) {
     throw new Error(`No hay un proveedor activo y verificado para el tour ${params.tourId}. La solicitud no se despacha hasta contar con un proveedor real.`);
   }
