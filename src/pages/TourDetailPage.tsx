@@ -12,6 +12,8 @@ import { getLangText, formatCurrency } from '../utils/i18n';
 import { OPERATORS } from '../data/toursData';
 import { useTours } from '../contexts/ToursContext';
 import { getUsdToCrcRate } from '../utils/currencies';
+import { LazyImage } from '../components/LazyImage';
+import { useTourMedia } from '../hooks/useTourMedia';
 
 interface TourDetailPageProps {
   language: Language;
@@ -39,6 +41,14 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
   const [sinpeRef, setSinpeRef] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [shareMessage, setShareMessage] = useState<string | null>(null);
+  const { assets: mediaAssets, loading: mediaLoading, error: mediaError } = useTourMedia(tour?.id, tour ? {
+    image: tour.image,
+    gallery: tour.gallery,
+    title: getLangText(tour.title, language)
+  } : undefined);
 
   useEffect(() => {
     if (TOURS.length > 0) {
@@ -134,7 +144,38 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
   };
 
   const operator = tour.operatorId ? OPERATORS.find(op => op.id === tour.operatorId) : null;
-  const gallery = Array.isArray(tour.gallery) && tour.gallery.length > 0 ? tour.gallery : [tour.image];
+  const gallery = mediaAssets.length > 0
+    ? mediaAssets.map(asset => asset.url)
+    : (Array.isArray(tour.gallery) && tour.gallery.length > 0 ? tour.gallery : [tour.image]);
+
+  useEffect(() => {
+    try {
+      setIsFavorite(localStorage.getItem(\`crt:favourite:tour:\${tour.id}\`) === '1');
+    } catch {
+      setIsFavorite(false);
+    }
+  }, [tour.id]);
+
+  const toggleFavorite = () => {
+    const next = !isFavorite;
+    setIsFavorite(next);
+    try { localStorage.setItem(\`crt:favourite:tour:\${tour.id}\`, next ? '1' : '0'); } catch { /* storage unavailable */ }
+    setActionMessage(language === 'es'
+      ? (next ? 'Guardado en tus favoritos.' : 'Eliminado de tus favoritos.')
+      : (next ? 'Saved to your favourites.' : 'Removed from your favourites.'));
+    window.setTimeout(() => setActionMessage(null), 2200);
+  };
+
+  const shareTour = async () => {
+    const url = window.location.href;
+    const title = getLangText(tour.title, language);
+    try {
+      if (navigator.share) await navigator.share({ title, text: title, url });
+      else await navigator.clipboard.writeText(url);
+      setShareMessage(language === 'es' ? 'Enlace copiado para compartir.' : 'Share link copied.');
+    } catch { /* user cancelled native share */ }
+    window.setTimeout(() => setShareMessage(null), 2200);
+  };
 
   return (
     <div className="bg-stone-950 pt-20">
@@ -160,13 +201,45 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-12">
             {/* Gallery Section */}
-            <div className="relative aspect-[16/9] rounded-[2.5rem] overflow-hidden group">
-              <img 
-                src={gallery[activeImageIndex]} 
-                alt={getLangText(tour.title, language)}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-stone-950/60 via-transparent to-transparent" />
+            <div className="relative aspect-[16/9] rounded-[2.5rem] overflow-hidden group bg-stone-900">
+              {gallery.length > 0 && (
+                <LazyImage 
+                  src={gallery[Math.min(activeImageIndex, gallery.length - 1)]}
+                  alt={mediaAssets[Math.min(activeImageIndex, mediaAssets.length - 1)]?.alt || getLangText(tour.title, language)}
+                  className="transition-transform duration-700 group-hover:scale-105"
+                  fetchPriority="high"
+                />
+              )}
+              {mediaLoading && (
+                <div className="absolute top-4 left-4 px-3 py-2 rounded-full bg-stone-950/75 text-[10px] font-black uppercase tracking-widest text-stone-200 backdrop-blur-sm">
+                  {language === 'es' ? 'Cargando imágenes' : 'Loading images'}
+                </div>
+              )}
+              {mediaError && (
+                <div className="absolute top-4 left-4 px-3 py-2 rounded-full bg-amber-950/75 text-[10px] font-bold text-amber-200 backdrop-blur-sm">
+                  {language === 'es' ? 'Galería local disponible' : 'Local gallery available'}
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-stone-950/60 via-transparent to-transparent pointer-events-none" />
+              {gallery.length > 1 && (
+                <>
+                  <button type="button" aria-label={language === 'es' ? 'Imagen anterior' : 'Previous image'} onClick={() => setActiveImageIndex(i => (i - 1 + gallery.length) % gallery.length)} className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-stone-950/70 text-white flex items-center justify-center hover:bg-stone-950 transition-colors">
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button type="button" aria-label={language === 'es' ? 'Imagen siguiente' : 'Next image'} onClick={() => setActiveImageIndex(i => (i + 1) % gallery.length)} className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-stone-950/70 text-white flex items-center justify-center hover:bg-stone-950 transition-colors">
+                    <ChevronRight size={20} />
+                  </button>
+                </>
+              )}
+              <div className="absolute top-4 right-4 flex gap-2">
+                <button type="button" onClick={toggleFavorite} aria-label={isFavorite ? (language === 'es' ? 'Quitar de favoritos' : 'Remove from favourites') : (language === 'es' ? 'Guardar en favoritos' : 'Save to favourites')} className="w-11 h-11 rounded-full bg-stone-950/75 backdrop-blur-sm text-white flex items-center justify-center hover:bg-stone-950 transition-colors">
+                  <Heart size={19} fill={isFavorite ? 'currentColor' : 'none'} />
+                </button>
+                <button type="button" onClick={shareTour} aria-label={language === 'es' ? 'Compartir tour' : 'Share tour'} className="w-11 h-11 rounded-full bg-stone-950/75 backdrop-blur-sm text-white flex items-center justify-center hover:bg-stone-950 transition-colors">
+                  <Share2 size={19} />
+                </button>
+              </div>
+              {(actionMessage || shareMessage) && <div className="absolute bottom-28 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-emerald-500 text-stone-950 text-xs font-black shadow-xl whitespace-nowrap">{actionMessage || shareMessage}</div>}
               
               {/* Thumbnails */}
               <div className="absolute bottom-6 left-6 right-6 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -178,7 +251,7 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                       activeImageIndex === idx ? 'border-emerald-500 scale-110 shadow-lg shadow-emerald-500/20' : 'border-white/20'
                     }`}
                   >
-                    <img src={img} className="w-full h-full object-cover" alt="" />
+                    <LazyImage src={img} className="w-full h-full object-cover" alt={mediaAssets[idx]?.alt || getLangText(tour.title, language)} />
                   </button>
                 ))}
               </div>
@@ -318,6 +391,22 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2 space-y-2">
+                        <label className="text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] ml-4">{language === 'es' ? 'Nombre completo' : 'Full name'}</label>
+                        <input required value={fullName} onChange={e => setFullName(e.target.value)} autoComplete="name" className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder={language === 'es' ? 'Tu nombre' : 'Your name'} />
+                      </div>
+                      <div className="col-span-2 space-y-2">
+                        <label className="text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] ml-4">{language === 'es' ? 'Correo electrónico' : 'Email'}</label>
+                        <input required type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="tu@email.com" />
+                      </div>
+                      <div className="col-span-2 space-y-2">
+                        <label className="text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] ml-4">{language === 'es' ? 'WhatsApp / teléfono' : 'WhatsApp / phone'}</label>
+                        <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} autoComplete="tel" className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="+506 ..." />
+                      </div>
+                      <div className="col-span-2 space-y-2">
+                        <label className="text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] ml-4">{language === 'es' ? 'Hotel / punto de recogida' : 'Hotel / pickup point'}</label>
+                        <input value={pickupHotel} onChange={e => setPickupHotel(e.target.value)} className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder={language === 'es' ? 'Hotel o punto de encuentro' : 'Hotel or meeting point'} />
+                      </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] ml-4">{language === 'es' ? 'Adultos' : 'Adults'}</label>
                         <select 
@@ -341,6 +430,7 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                     </div>
                   </div>
 
+                  {errorMessage && <div role="alert" className="p-4 rounded-2xl bg-red-950/50 border border-red-500/30 text-red-200 text-sm">{errorMessage}</div>}
                   <button 
                     disabled={isSubmitting}
                     type="submit" 
