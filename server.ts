@@ -199,6 +199,24 @@ const generalApiLimiter = rateLimit({
   message: { error: 'Demasiadas solicitudes. Por favor intente más tarde.' }
 });
 
+// Control de concurrencia por instancia para proteger CPU/memoria/Firestore/IA ante picos.
+const apiAdmission = createInFlightLimiter(
+  Math.max(50, Math.min(500, Number(process.env.API_MAX_IN_FLIGHT || 250))),
+  2
+);
+const aiAdmission = createInFlightLimiter(
+  Math.max(10, Math.min(100, Number(process.env.AI_MAX_IN_FLIGHT || 40))),
+  3
+);
+const intakeAdmission = createInFlightLimiter(
+  Math.max(5, Math.min(50, Number(process.env.INTAKE_MAX_IN_FLIGHT || 20))),
+  5
+);
+const bookingAdmission = createInFlightLimiter(
+  Math.max(5, Math.min(50, Number(process.env.BOOKING_MAX_IN_FLIGHT || 20))),
+  5
+);
+
 app.use('/api/', generalApiLimiter, apiAdmission.middleware);
 
 // Health check endpoint
@@ -2057,8 +2075,8 @@ app.get(['/api/provider/status/:bookingId', '/api/operators/status/:bookingId'],
       success: true,
       bookingId,
       status: found.status,
-      providerId: found.providerId || 'alsama-tours-cr',
-      providerName: found.providerName || found.providerInfo?.name || 'Alsama Tours CR',
+      providerId: found.providerId || null,
+      providerName: found.providerName || found.providerInfo?.name || null,
       providerStatus: found.providerStatus || 'pending',
       assignedGuide: found.assignedGuide || 'Por asignar',
       assignedVehicle: found.assignedVehicle || 'Por asignar',
@@ -2254,7 +2272,7 @@ app.post('/api/agents/log_exception', (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/api/gemini/concierge', async (req, res) => {
+app.post('/api/gemini/concierge', aiAdmission.middleware, async (req, res) => {
   try {
     const { message, language, history, agentId, context, engine, sessionId } = req.body;
     const userMsg = message || '';
@@ -2315,7 +2333,7 @@ app.post('/api/gemini/concierge', async (req, res) => {
 });
 
 // Endpoint exclusivo del Counter Agent (Agente de Mostrador y Reservas)
-app.post('/api/agent/counter', async (req, res) => {
+app.post('/api/agent/counter', aiAdmission.middleware, async (req, res) => {
   try {
     const { message, language, history, context } = req.body;
     const userMsg = message || '';
@@ -2600,7 +2618,7 @@ app.post('/api/itinerary/book', async (req, res) => {
     }
 
     const bookingDate = startDate || new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0];
-    const generatedId = `CR-ITIN-${Math.floor(100000 + Math.random() * 900000)}`;
+    const generatedId = `CR-ITIN-${crypto.randomUUID()}`;
     const normalizedDays = Math.max(1, Math.min(30, Number(daysCount) || 5));
     const normalizedTravelers = Math.max(1, Math.min(30, Number(travelers) || 2));
     // Precio base autoritativo para itinerarios personalizados. El total generado por IA
@@ -2625,7 +2643,7 @@ app.post('/api/itinerary/book', async (req, res) => {
       currency: currency || 'USD',
       paymentMethod: 'itinerary_deposit',
       paymentStatus: 'pending',
-      status: 'confirmada',
+      status: 'pendiente_pago',
       notes: specialRequests || 'Itinerario Multi-Día personalizado'
     } as any);
 
@@ -2716,23 +2734,32 @@ app.post(['/api/agent/tools/check_calendar_availability', '/api/agent/check-avai
       Number(party_size)
     );
 
-    // Formatear respuesta estructurada para el ciclo ReAct del agente
-    const availableSlots = availabilityResult.available ? ['07:00', '08:30', '13:30'] : ['14:00'];
-    const blockedSlots = availabilityResult.available ? ['10:30'] : ['07:00', '08:30', '10:30'];
+    // Nunca inventar horarios: usar únicamente salidas declaradas por el catálogo
+    // y verificar cada horario contra el contador atómico de disponibilidad.
+    const catalogTour = TOURS.find((tour) => tour.id === targetTourId);
+    const departureTimes = Array.isArray((catalogTour as any)?.departureTimes)
+      ? (catalogTour as any).departureTimes.map((time: unknown) => String(time)).filter(Boolean)
+      : [];
+    const slotChecks = await Promise.all(departureTimes.map(async (time: string) => ({
+      time,
+      result: await checkTourAvailability(targetTourId, String(target_date), time, Number(party_size))
+    })));
+    const availableSlots = slotChecks.filter((slot) => slot.result.available).map((slot) => slot.time);
+    const blockedSlots = slotChecks.filter((slot) => !slot.result.available).map((slot) => slot.time);
 
     res.json({
       success: true,
       available: availabilityResult.available,
       target_date,
       service_duration_minutes: service_duration_minutes || 180,
-      total_seats_remaining: availabilityResult.remainingSeats || 12,
-      max_capacity: availabilityResult.maxCapacity || 20,
+      total_seats_remaining: availabilityResult.remainingSeats,
+      max_capacity: availabilityResult.maxCapacity,
       available_slots: availableSlots,
       blocked_slots: blockedSlots,
       closest_alternatives: availableSlots.slice(0, 2),
-      message: availabilityResult.available
-        ? `Horarios disponibles encontrados para el ${target_date} con ${availabilityResult.remainingSeats} cupos libres.`
-        : `Sin cupos exactos para ese horario (${availabilityResult.reason || 'capacidad agotada'}), se sugieren fechas alternativas.`
+      message: availableSlots.length > 0
+        ? `Horarios reales disponibles encontrados para el ${target_date}: ${availableSlots.join(', ')}.`
+        : `No hay salidas del catálogo con cupo suficiente para el ${target_date}.`
     });
   } catch (err: any) {
     console.error('Error en tool check_calendar_availability:', err);
