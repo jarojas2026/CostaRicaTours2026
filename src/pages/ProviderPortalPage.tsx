@@ -126,10 +126,26 @@ export const ProviderPortalPage: React.FC = () => {
 };
 
 function Info({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return <div className="rounded-2xl bg-slate-950/50 border border-slate-800 p-4"><div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase">{React.cloneElement(icon as React.ReactElement, { className: 'w-4 h-4' })}{label}</div><div className="font-semibold mt-1 text-sm">{value}</div></div>;
+  return (
+    <div className="rounded-2xl bg-slate-950/50 border border-slate-800 p-4">
+      <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase">
+        <span className="w-4 h-4 inline-flex items-center justify-center [&>svg]:w-4 [&>svg]:h-4">{icon}</span>
+        {label}
+      </div>
+      <div className="font-semibold mt-1 text-sm">{value}</div>
+    </div>
+  );
 }
 function Field({ label, value, onChange, icon, placeholder }: any) {
-  return <div><label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">{label}</label><div className="relative"><span className="absolute left-3 top-3 text-slate-500">{React.cloneElement(icon, { className: 'w-4 h-4' })}</span><input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} maxLength={180} className="w-full rounded-2xl bg-slate-950 border border-slate-700 p-3 pl-10 text-sm outline-none focus:border-emerald-500" /></div></div>;
+  return (
+    <div>
+      <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">{label}</label>
+      <div className="relative">
+        <span className="absolute left-3 top-3 text-slate-500 w-4 h-4 inline-flex items-center justify-center [&>svg]:w-4 [&>svg]:h-4">{icon}</span>
+        <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} maxLength={180} className="w-full rounded-2xl bg-slate-950 border border-slate-700 p-3 pl-10 text-sm outline-none focus:border-emerald-500" />
+      </div>
+    </div>
+  );
 }
 function ActionButton({ onClick, tone, icon, text }: any) {
   const cls = tone === 'green' ? 'bg-emerald-600 hover:bg-emerald-500' : tone === 'amber' ? 'bg-amber-600 hover:bg-amber-500 text-stone-950' : 'bg-rose-700 hover:bg-rose-600';
