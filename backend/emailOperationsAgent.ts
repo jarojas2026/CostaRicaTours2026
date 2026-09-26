@@ -326,7 +326,7 @@ async function processCustomerEmail(mail: MailMessage, classification: Classific
     [],
     'auto',
     identity.sessionId,
-    { allowMutations: autonomous }
+    { allowMutations: autonomous, allowSensitiveLookups: true }
   );
 
   await rememberTurn(identity.sessionId, { role: 'user', text: `${mail.subject}\n${mail.text}`, agentId: 'email_operations_agent' }, { agentId: 'email_operations_agent', activeGoal: intent });
