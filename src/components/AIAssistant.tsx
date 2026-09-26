@@ -72,7 +72,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const [chatSessionId] = useState(() => {
     let sid = localStorage.getItem('chatSessionId');
     if (!sid) {
-      sid = 'session_' + Math.random().toString(36).substring(2, 15);
+      sid = 'session_' + crypto.randomUUID();
       localStorage.setItem('chatSessionId', sid);
     }
     return sid;
@@ -338,7 +338,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     e.preventDefault();
     if (!inChatBookingTour || !inChatDate || !inChatName || !inChatEmail) return;
     setIsSubmittingInChatBooking(true);
-    const genId = `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+    const genId = `CR-PV-${crypto.randomUUID().replace(/-/g, '').slice(0, 20).toUpperCase()}`;
     const totalUSD = inChatBookingTour.priceUSD * inChatAdults;
     const rate = getUsdToCrcRate();
     const totalCRC = rate > 0 ? Math.round(totalUSD * rate) : 0;
@@ -356,14 +356,17 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       totalCRC,
       paymentMethod: inChatPaymentMethod,
       customer: { fullName: inChatName, email: inChatEmail, phone: inChatPhone || '+506', country: 'CR' },
-      status: inChatPaymentMethod === 'sinpe_movil' ? 'pendiente_pago' : 'confirmada',
+      status: 'pendiente_pago',
       createdAt: new Date().toISOString()
     };
 
     try {
       const res = await fetch('/api/bookings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': genId
+        },
         body: JSON.stringify({
           ...payload,
           customerName: inChatName,
@@ -372,18 +375,22 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         })
       });
       const data = await res.json();
-      const confirmed = data.booking || payload;
+      if (!res.ok || !data?.success || !data?.booking) {
+        throw new Error(data?.message || data?.error || 'No se pudo registrar la solicitud de reserva.');
+      }
+      const created = data.booking;
       setInChatBookingTour(null);
 
+      const isConfirmed = ['confirmada', 'confirmed', 'completada', 'completed'].includes(String(created.status || '').toLowerCase());
       const successMsg: Message = {
         id: `booking-${Date.now()}`,
         sender: 'assistant',
         agentId: activeAgentId,
         text: language === 'es'
-          ? `🎉 ¡Reserva Confirmada y Despachada!\n\nTu número de reserva oficial es: **${confirmed.bookingId}** para el tour **${confirmed.tourName}** el día **${confirmed.date}** (${confirmed.adults} adultos).\n\nHemos generado tu comprobante oficial y notificado al operador local.`
-          : `🎉 Booking Confirmed & Dispatched!\n\nYour official booking ID is: **${confirmed.bookingId}** for **${confirmed.tourName}** on **${confirmed.date}** (${confirmed.adults} adults).\n\nYour voucher is registered and the local operator has been notified.`,
+          ? `✅ ${isConfirmed ? 'Reserva confirmada' : 'Solicitud registrada'}\n\nNúmero de reserva: **${created.bookingId}**.\nTour: **${created.tourName}**\nFecha: **${created.date}**\nEstado: **${created.status || 'pendiente_pago'}**\n\n${isConfirmed ? 'El pago fue verificado y el flujo operativo puede continuar.' : 'La reserva queda pendiente de pago/disponibilidad según el método seleccionado.'}`
+          : `✅ ${isConfirmed ? 'Booking confirmed' : 'Booking request registered'}\n\nBooking ID: **${created.bookingId}**.\nTour: **${created.tourName}**\nDate: **${created.date}**\nStatus: **${created.status || 'pendiente_pago'}**\n\n${isConfirmed ? 'Payment was verified and operations can continue.' : 'The booking remains pending payment/availability according to the selected method.'}`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        voucher: confirmed
+        voucher: created
       };
       setMessages((prev) => [...prev, successMsg]);
     } catch (err) {
