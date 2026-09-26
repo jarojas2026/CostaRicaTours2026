@@ -299,7 +299,7 @@ export async function processChatInquiry(
   history: Array<{ role: 'user' | 'assistant' | 'bot'; text: string }> = [],
   engine: 'auto' | 'claude' | 'gemini' | 'counter_agent' = 'auto',
   sessionId?: string,
-  options: { allowMutations?: boolean } = {}
+  options: { allowMutations?: boolean; allowPrivateBookingLookup?: boolean } = {}
 ): Promise<{ reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string; agentId?: string }> {
   const isEn = language === 'en';
   const requestedAgentId = engine === 'counter_agent' ? 'counter_agent' : 'concierge';
