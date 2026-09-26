@@ -2873,7 +2873,7 @@ app.post(['/api/agent/tools/create_booking_and_notify', '/api/agent/create-booki
 });
 
 // Tool 3: Generador Autónomo de Itinerarios Multidía y Logística
-app.post('/api/agent/tools/generate_custom_itinerary', async (req, res) => {
+app.post('/api/agent/tools/generate_custom_itinerary', journeyLimiter, requireAgentTool, async (req, res) => {
   try {
     const { days, travelers, style, budget, group, language, special_requests } = req.body;
     const itinerary = await generateGeminiItinerary({
