@@ -15,10 +15,11 @@
  */
 
 import crypto from 'crypto';
-import { 
-  findBookingByCodeOrEmail, 
-  updateBookingStatus, 
+import {
+  findBookingByCodeOrEmail,
+  updateBookingStatus,
   getAllBookings,
+  getFirestoreDb,
   getUsdToCrcRate
 } from './bookingService';
 import { executeProviderRealtimeCoordination, executeCustomerBookingConfirmation } from './nativeWorkflows';
