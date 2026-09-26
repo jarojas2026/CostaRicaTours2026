@@ -83,7 +83,7 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
       const parsed = JSON.parse(raw) as { trip?: SavedTrip; tasks?: Task[]; spentUSD?: number; expenses?: Array<{ id: string; label: string; amount: number }> };
       if (parsed.trip) setTrip({ ...initialTrip, ...parsed.trip });
       if (Array.isArray(parsed.tasks)) setTasks(parsed.tasks);
-      if (Number.isFinite(parsed.spentUSD) && parsed.spentUSD >= 0) setSpentUSD(parsed.spentUSD);
+      if (typeof parsed.spentUSD === 'number' && Number.isFinite(parsed.spentUSD) && parsed.spentUSD >= 0) setSpentUSD(parsed.spentUSD);
       if (Array.isArray(parsed.expenses)) setExpenses(parsed.expenses);
     } catch {
       // Local storage is an enhancement; the page remains usable without it.
