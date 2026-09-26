@@ -42,6 +42,7 @@ export async function askCounterDesk(input: CounterDeskAskInput) {
     agentId: result.agentId || 'counter_agent',
     reply: result.reply,
     quickActions: result.quickActions || [],
+    sources: result.sources || [],
     language,
     modelUsed: result.modelUsed,
     knowledgeContext: knowledgeContext.slice(0, 12000),

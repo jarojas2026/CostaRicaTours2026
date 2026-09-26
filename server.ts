@@ -126,6 +126,7 @@ import { processEmailOperationsOnce, getEmailOperationsSnapshot } from './backen
 import { runReservationLifecycleSweep } from './backend/reservationLifecycleOrchestrator';
 import { withDistributedAutomationLock } from './backend/cronEngine';
 import { createInFlightLimiter } from './backend/admissionControl';
+import { performGroundedSearch } from './backend/groundedSearchService';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -198,6 +199,11 @@ const generalApiLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Demasiadas solicitudes. Por favor intente más tarde.' }
 });
+
+const apiAdmission = createInFlightLimiter(150, 2);
+const intakeAdmission = createInFlightLimiter(40, 2);
+const aiAdmission = createInFlightLimiter(20, 3);
+const bookingAdmission = createInFlightLimiter(30, 2);
 
 app.use('/api/', generalApiLimiter, apiAdmission.middleware);
 
@@ -2303,7 +2309,9 @@ app.post('/api/gemini/concierge', async (req, res) => {
       reply: assistantResult.reply,
       quickActions: assistantResult.quickActions,
       success: true,
-      source: assistantResult.modelUsed || 'gemini_fallback'
+      source: assistantResult.modelUsed || 'gemini_fallback',
+      modelUsed: assistantResult.modelUsed,
+      sources: assistantResult.sources || []
     });
   } catch (err: any) {
     res.json({
@@ -2650,6 +2658,22 @@ app.post('/api/claude/audit-booking', async (req, res) => {
   } catch (err: any) {
     console.error('Error auditando reserva con Claude:', err);
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Búsqueda e Inteligencia Turística en Vivo con Google Search Grounding (gemini-3.5-flash)
+app.post('/api/gemini/grounded-search', async (req, res) => {
+  try {
+    const { query, language } = req.body || {};
+    const result = await performGroundedSearch(query, language === 'en' ? 'en' : 'es');
+    res.json(result);
+  } catch (error: any) {
+    console.error('Error en /api/gemini/grounded-search:', error);
+    res.status(500).json({
+      success: false,
+      error: error?.message || 'Error ejecutando búsqueda en vivo.',
+      sources: []
+    });
   }
 });
 

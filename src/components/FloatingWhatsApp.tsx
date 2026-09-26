@@ -382,6 +382,18 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
       void sendMessage(prompt);
       return;
     }
+    if (action === 'whale_season') {
+      void sendMessage(language === 'es' 
+        ? '¿Cuándo es la temporada de avistamiento de ballenas en Uvita y qué operador lo realiza?' 
+        : 'When is whale watching season in Uvita and which operator runs it?');
+      return;
+    }
+    if (action === 'transfers') {
+      void sendMessage(language === 'es' 
+        ? '¿Tienen traslados desde el Aeropuerto SJO hacia los principales destinos?' 
+        : 'Do you offer airport transfers from SJO to the main destinations?');
+      return;
+    }
     if (action === 'policies') {
       const prompt = language === 'es'
         ? '¿Cuáles son las políticas de cancelación 24h y formas de pago aceptadas?'
@@ -675,13 +687,14 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
       <motion.button
         type="button"
         onClick={() => setIsOpen((value) => !value)}
-        whileHover={{ scale: 1.04 }}
-        whileTap={{ scale: 0.96 }}
-        className="pointer-events-auto w-14 h-14 rounded-full bg-[#25D366] text-white shadow-xl flex items-center justify-center border-2 border-white/80"
-        aria-label="WhatsApp Concierge"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="pointer-events-auto w-14 h-14 rounded-full bg-gradient-to-tr from-[#20ba59] via-[#25D366] to-[#20ba59] hover:brightness-110 text-white shadow-[0_10px_25px_rgba(37,211,102,0.4)] flex items-center justify-center border-2 border-white/90 transition-all cursor-pointer"
+        aria-label={language === 'es' ? 'Abrir WhatsApp Concierge Oficial (+506 8795 9148)' : 'Open Official WhatsApp Concierge (+506 8795 9148)'}
+        title={language === 'es' ? 'WhatsApp Concierge Oficial (+506 8795 9148)' : 'Official WhatsApp Concierge (+506 8795 9148)'}
       >
         {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-7 h-7" />}
-        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-300 border-2 border-white" />
+        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-300 border-2 border-white animate-pulse" />
       </motion.button>
     </div>
   );

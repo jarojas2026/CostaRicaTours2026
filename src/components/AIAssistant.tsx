@@ -7,7 +7,7 @@ import { ArrowLeft,
   Compass, ArrowRight, Trash2, HelpCircle, CheckCircle2, Ticket, 
   Image as ImageIcon, BrainCircuit, XCircle, Leaf, Trees, ShieldCheck, 
   Info, Clock, ChevronRight, Zap, Coffee, Compass as CompassIcon, Waves, Mountain,
-  Volume2, VolumeX, Phone, Calendar, Code, Copy, Check
+  Volume2, VolumeX, Phone, Calendar, Code, Copy, Check, Globe, ExternalLink
 } from 'lucide-react';
 import { useTours } from '../contexts/ToursContext';
 import { getLangText, UI_TRANSLATIONS, formatCurrency } from '../utils/i18n';
@@ -37,6 +37,7 @@ interface Message {
   recommendedTours?: Tour[];
   quickActions?: Array<{ label: string; action: string; data?: any }>;
   voucher?: any;
+  sources?: Array<{ uri: string; title: string }>;
   ecoFactData?: {
     region: string;
     regionName: string;
@@ -550,10 +551,11 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         agentId: activeAgentId,
         text: finalReply,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        modelUsed: data.modelUsed || (aiEngine === 'claude' ? 'Claude 3.5 Sonnet' : 'Gemini 2.5 Flash'),
+        modelUsed: data.modelUsed || (aiEngine === 'claude' ? 'Claude 3.5 Sonnet' : 'Gemini 3.5 Flash'),
         recommendedTours: matchedTours.length > 0 ? matchedTours : undefined,
         quickActions: data.quickActions || undefined,
         voucher: data.voucher || data.voucherPreview || undefined,
+        sources: data.sources || undefined,
       };
 
       trackChatEvent({ action: 'message_received', label: activeAgentId });
@@ -835,9 +837,9 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                       ? 'bg-emerald-500 text-stone-950 shadow-sm font-black'
                       : 'text-stone-400 hover:text-white'
                   }`}
-                  title="Google Gemini 2.5 Flash"
+                  title="Google Gemini 3.5 Flash con Google Search Grounding en tiempo real"
                 >
-                  <span>⚡ Gemini 2.5</span>
+                  <span>⚡ Gemini 3.5 Grounding</span>
                 </button>
               </div>
 
@@ -1015,6 +1017,30 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   }
   return <span key={i} className="whitespace-pre-line">{part}</span>;
 })}
+
+                      {/* Google Search Grounding Sources Display */}
+                      {msg.sources && msg.sources.length > 0 && (
+                        <div className="mt-3 pt-2.5 border-t border-emerald-500/20 space-y-1.5">
+                          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-400">
+                            <Globe className="w-3 h-3 text-amber-400" />
+                            <span>{language === 'es' ? 'Fuentes Verificadas con Google Search:' : 'Verified Google Search Sources:'}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {msg.sources.map((src, sIdx) => (
+                              <a
+                                key={sIdx}
+                                href={src.uri}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[9px] bg-[#020e08] hover:bg-emerald-900/60 text-emerald-200 hover:text-white px-2.5 py-1 rounded-md border border-emerald-500/30 flex items-center gap-1 transition-all shadow-sm"
+                              >
+                                <span className="line-clamp-1 max-w-[200px]">{src.title || 'Fuente Web'}</span>
+                                <ExternalLink className="w-2.5 h-2.5 shrink-0 text-amber-400" />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Specialized Eco-Fact Interactive Details */}
                       {msg.ecoFactData && (

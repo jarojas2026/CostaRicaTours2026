@@ -487,7 +487,15 @@ export default function App() {
 
             <Route path="/ai" element={
               <div className="space-y-8 pb-12 py-8">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+                  <Suspense fallback={<div className="h-48 animate-pulse bg-emerald-950/20 rounded-2xl" />}>
+                    <LiveTouristIntelligence
+                      language={language}
+                      onAskAgent={(topic) => {
+                        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                      }}
+                    />
+                  </Suspense>
                   <Suspense fallback={<div className="h-40 animate-pulse bg-emerald-950/20 rounded-2xl" />}>
                     <PhotoTourFinder />
                   </Suspense>
@@ -683,8 +691,18 @@ export default function App() {
       )}
 
       <BottomNav language={language} activeTab={activeTab} />
-      <DigitalCounterWidget language={language} currency={currency} onSelectTour={(t) => navigate(`/tour/${t.id}`)} />
-      <FloatingWhatsApp language={language} initialMessage={whatsappMessage} onOpenAIAssistant={() => navigate('/ai')} />
+      <DigitalCounterWidget 
+        language={language} 
+        currency={currency} 
+        selectedTour={selectedTour}
+        onSelectTour={(t) => navigate(`/tour/${t.id}`)} 
+      />
+      <FloatingWhatsApp 
+        language={language} 
+        initialMessage={whatsappMessage} 
+        onOpenAIAssistant={() => navigate('/ai')} 
+        onSelectTour={(t) => navigate(`/tour/${t.id}`)}
+      />
       <Footer language={language} onOpenLegal={() => setIsLegalModalOpen(true)} />
       <CookiesBanner language={language} />
     </div>

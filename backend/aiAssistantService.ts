@@ -22,8 +22,21 @@ import { getPlatformControls } from './platformControlService';
 
 let aiClient: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI | null {
-  if (!aiClient && process.env.GEMINI_API_KEY) {
-    aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const key = process.env.GEMINI_API_KEY?.trim();
+  // Claves válidas de Google Cloud / AI Studio comienzan con AIza... y tienen >= 25 caracteres.
+  // Tokens de sesión como AQ. no son claves API válidas para generativelanguage.googleapis.com.
+  if (!key || key.startsWith('AQ.') || key.length < 20) {
+    return null;
+  }
+  if (!aiClient) {
+    aiClient = new GoogleGenAI({
+      apiKey: key,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build'
+        }
+      }
+    });
   }
   return aiClient;
 }
@@ -299,7 +312,7 @@ export async function processChatInquiry(
   engine: 'auto' | 'claude' | 'gemini' | 'counter_agent' = 'auto',
   sessionId?: string,
   options: { allowMutations?: boolean } = {}
-): Promise<{ reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string; agentId?: string }> {
+): Promise<{ reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string; agentId?: string; sources?: Array<{ uri: string; title: string }> }> {
   const isEn = language === 'en';
   const requestedAgentId = engine === 'counter_agent' ? 'counter_agent' : 'concierge';
   let liveToolContext = '';
@@ -352,17 +365,20 @@ export async function processChatInquiry(
 
     let needsGrounding = false;
     try {
-      const classifierPrompt = `Does the following user query require up-to-date, real-time information from the internet (e.g. current weather, today's events, road closures, current exchange rates)? 
+      const classifierPrompt = `Does the following user query require up-to-date, real-time information from the internet (e.g. current weather, today's events, road closures, current exchange rates, park status, ferry timetables)? 
 User query: "${message}"
 Reply ONLY with "YES" or "NO".`;
       const classRes = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.5-flash',
         contents: classifierPrompt,
         config: { temperature: 0 }
       });
       needsGrounding = classRes.text?.trim().toUpperCase().includes('YES') || false;
-    } catch(e) {
-      console.warn('Classifier error:', e);
+    } catch(e: any) {
+      if (e?.message?.includes('API key not valid') || e?.message?.includes('API_KEY_INVALID')) {
+        return getKnowledgeBaseReply(message, isEn);
+      }
+      needsGrounding = false;
     }
 
     const config: any = {
@@ -371,26 +387,32 @@ Reply ONLY with "YES" or "NO".`;
       tools: [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }]
     };
 
-    // El asistente puede combinar búsqueda web cuando la consulta lo exige con
-    // herramientas internas que leen la fuente de verdad del negocio.
+    // El asistente combina búsqueda web en vivo (Search Grounding) con
+    // herramientas internas del negocio utilizando gemini-3.5-flash.
     if (needsGrounding) {
       config.tools = [{ googleSearch: {} }, { functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }];
+      config.toolConfig = { includeServerSideToolInvocations: true };
     }
 
     let currentContents: any[] = [{ role: 'user', parts: [{ text: prompt }] }];
     let reply = '';
     let toolRounds = 0;
+    let lastResponse: any = null;
 
     // Bucle agentic: intención -> herramienta -> observación -> nuevo razonamiento.
     // El límite es gobernable desde el Centro de Control, con 3 como valor seguro por defecto.
-    const platformControls = await getPlatformControls().catch(() => ({ values: { max_agent_tool_rounds: 3 } } as any));
-    const maxToolRounds = Math.max(1, Math.min(10, Number(platformControls.values.max_agent_tool_rounds) || 3));
+    const platformControls: any = await getPlatformControls().catch(() => ({ values: { max_agent_tool_rounds: 3 } }));
+    const maxToolRounds = Math.max(
+      1,
+      Math.min(10, Number(platformControls?.values?.max_agent_tool_rounds || platformControls?.max_agent_tool_rounds) || 3)
+    );
     while (toolRounds < maxToolRounds) {
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.5-flash',
         contents: currentContents,
         config
       });
+      lastResponse = response;
 
       const calls = response.functionCalls || [];
       if (!calls.length) {
@@ -461,9 +483,32 @@ Reply ONLY with "YES" or "NO".`;
       action: 'direct_whatsapp'
     });
 
-    return { reply, quickActions, agentId: requestedAgentId, modelUsed: 'gemini-2.5-flash' };
-  } catch (error) {
-    console.warn('Fallback a base de conocimiento oficial:', error);
+    // Extraer fuentes de Search Grounding si hubo consulta a la web
+    const rawChunks = lastResponse?.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+    const sources: Array<{ uri: string; title: string }> = [];
+    const seenUris = new Set<string>();
+    for (const chunk of rawChunks) {
+      const uri = chunk.web?.uri;
+      const title = chunk.web?.title || uri || 'Fuente Web';
+      if (uri && !seenUris.has(uri)) {
+        seenUris.add(uri);
+        sources.push({ uri, title });
+      }
+    }
+
+    return {
+      reply,
+      quickActions,
+      agentId: requestedAgentId,
+      modelUsed: 'gemini-3.5-flash',
+      sources: sources.length > 0 ? sources : undefined
+    };
+  } catch (error: any) {
+    if (error?.message?.includes('API key not valid') || error?.message?.includes('API_KEY_INVALID')) {
+      console.warn('⚠️ Gemini API key no válida o inactiva en este entorno; activando base de conocimiento oficial de Costa Rica Tours.');
+    } else {
+      console.warn('Fallback a base de conocimiento oficial:', error?.message || error);
+    }
     return getKnowledgeBaseReply(message, isEn);
   }
 }

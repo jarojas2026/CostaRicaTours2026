@@ -4,6 +4,10 @@ export async function getPlatformControls() {
     allowBookings: true,
     defaultCommissionRate: 0.20,
     supportedCurrencies: ['USD', 'CRC', 'EUR', 'GBP', 'CAD'],
+    max_agent_tool_rounds: 3,
+    values: {
+      max_agent_tool_rounds: 3
+    },
     updatedAt: new Date().toISOString()
   };
 }

@@ -67,6 +67,8 @@ export interface MassiveThroughputMetrics {
  * Gestiona el seguimiento de SLA de cada reserva de forma duradera y resistente a reinicios de Cloud Run.
  */
 class IndividualProviderLifecycleManager {
+  private slaSweepRunning = false;
+
   /**
    * Inicia el ciclo autónomo persistiendo el estado directamente en Firestore
    */
