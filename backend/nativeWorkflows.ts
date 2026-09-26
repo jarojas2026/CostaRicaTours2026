@@ -855,7 +855,7 @@ export async function executeCustomerBookingConfirmation(
   const pdfToken = createCustomerActionToken({ bookingId, action: 'view_pdf' });
   const downloadPdfUrl = `${APP_URL}/api/bookings/${encodeURIComponent(bookingId)}/download-pdf?token=${encodeURIComponent(pdfToken)}`;
   const viewVoucherUrl = `${APP_URL}/api/bookings/${encodeURIComponent(bookingId)}/pdf?token=${encodeURIComponent(pdfToken)}`;
-  const confirmationToken = createCustomerActionToken({ bookingId, action: 'approve' });
+  const confirmationToken = createCustomerActionToken({ bookingId, action: 'decide' });
   const confirmationUrl = `${APP_URL}/api/bookings/${encodeURIComponent(bookingId)}/customer-confirm?action=approve&token=${encodeURIComponent(confirmationToken)}`;
 
   let pdfBuffer: Buffer | null = null;
@@ -972,7 +972,7 @@ export async function executeCustomerProformaConfirmation(payload: {
   const pdfToken = createCustomerActionToken({ bookingId, action: 'view_pdf' });
   const downloadPdfUrl = `${APP_URL}/api/bookings/${encodeURIComponent(bookingId)}/download-pdf?token=${encodeURIComponent(pdfToken)}`;
   const viewVoucherUrl = `${APP_URL}/api/bookings/${encodeURIComponent(bookingId)}/pdf?token=${encodeURIComponent(pdfToken)}`;
-  const approvalToken = createCustomerActionToken({ bookingId, action: 'approve' });
+  const approvalToken = createCustomerActionToken({ bookingId, action: 'decide' });
   const approvalUrl = `${APP_URL}/api/bookings/${encodeURIComponent(bookingId)}/customer-confirm?action=approve&token=${encodeURIComponent(approvalToken)}`;
   const whatsappMessageText = `🌿 Costa Rica Tours — Reserva #${bookingId}\\n\\nTour: ${tourName}\\nFecha: ${startDate} ${time}\\nPasajeros: ${adults + children}\\n\\nComprobante: ${downloadPdfUrl}`;
 
