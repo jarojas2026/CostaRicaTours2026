@@ -23,7 +23,8 @@ import {
   getWeeklyConversionMetrics, 
   getAllBookings,
   verifyPaymentServerSide,
-  getUsdToCrcRate
+  getUsdToCrcRate,
+  getOperatorById
 } from './bookingService';
 import { 
   processChatInquiry, 
@@ -1171,6 +1172,55 @@ export async function executeAutonomousCrisisSentimentEscalation(body: any) {
   const duration = Date.now() - start;
   logAutomationExecution('WF_COMPLEX_06_CRISIS_SENTIMENT', duration, 'warning', `Incidente ${priority} preparado para revisión; no se emitió compensación automática.`, { priority, urgencyScore, frustrationScore });
   return { exito: true, prioridad: priority, analisisSentimiento: { puntajeUrgencia: urgencyScore, puntajeFrustracion: frustrationScore, evidencia: mensaje.slice(0, 1200) }, escalamiento: { requiereSupervisor: priority !== 'P3_REVIEW', ejecutado: false }, compensacion: { solicitada: compensationRequested, emitida: false, requiereAprobacion: compensationRequested }, turista: { nombre: name, email: String(turista.email || '').trim() || null, telefono: String(turista.telefono || turista.phone || '').trim() || null }, motor: 'código_nativo_node' };
+}
+/**
+ * WF-COMPLEX-04: Facturación Electrónica DGT Hacienda v4.3 & Liquidación
+ * Preparación únicamente: no declara aceptación por Hacienda ni transferencia bancaria
+ * hasta que existan credenciales/confirmaciones externas verificables.
+ */
+export async function executeDGTElectronicInvoicingSettlement(body: any) {
+  const start = Date.now();
+  const cliente = body.cliente || {};
+  const venta = body.detalleVenta || {};
+  const totalUSD = Number(venta.montoTotalUSD);
+  const providerId = String(venta.proveedorId || '').trim();
+  const configuredRate = Number(venta.tipoCambioCRC ?? process.env.USD_TO_CRC_RATE);
+  if (!Number.isFinite(totalUSD) || totalUSD <= 0) throw new Error('MONTO_FACTURA_REQUERIDO: montoTotalUSD debe ser positivo.');
+  if (!providerId) throw new Error('PROVEEDOR_REQUERIDO: proveedorId es obligatorio.');
+  if (!Number.isFinite(configuredRate) || configuredRate <= 0) throw new Error('USD_TO_CRC_RATE debe estar configurado.');
+  const db = getFirestoreDb();
+  if (!db) throw new Error('PERSISTENCE_REQUIRED: Firestore requerido para operación fiscal.');
+  const provider = await getOperatorById(providerId);
+  if (!provider.active || provider.verified !== true) throw new Error('PROVIDER_NOT_OPERATIONAL: proveedor no verificado.');
+  const totalCRC = Math.round(totalUSD * configuredRate);
+  const tasaIVA = Number(venta.tasaIVA ?? process.env.VAT_RATE_DEFAULT ?? 0.04);
+  if (!Number.isFinite(tasaIVA) || tasaIVA < 0 || tasaIVA > 1) throw new Error('TASA_IVA_INVALIDA.');
+  const subtotalUSD = Number((totalUSD / (1 + tasaIVA)).toFixed(2));
+  const ivaUSD = Number((totalUSD - subtotalUSD).toFixed(2));
+  const draftId = `DGT-DRAFT-${crypto.randomUUID()}`;
+  const legalEntityName = String(process.env.LEGAL_ENTITY_NAME || '').trim();
+  const legalEntityId = String(process.env.LEGAL_ENTITY_ID || '').trim();
+  const cabysCode = String(venta.codigoCABYS || process.env.HACIENDA_CABYS_CODE || '').trim();
+  const readyForSubmission = Boolean(legalEntityName && legalEntityId && cabysCode);
+  const duration = Date.now() - start;
+  logAutomationExecution('WF_COMPLEX_04_DGT_FACTURACION_LIQUIDACION', duration, 'warning', `Borrador fiscal preparado ${draftId}; requiere envío y acuse real de Hacienda.`, { draftId, providerId, readyForSubmission });
+  return {
+    exito: true,
+    estadoOperacion: 'PENDIENTE_ENVIO_DGT',
+    requiereConfirmacionExterna: true,
+    draftId,
+    datosFiscales: {
+      receptor: { nombre: String(cliente.nombre || '').trim(), tipoIdentificacion: String(cliente.tipoIdentificacion || '').trim(), numero: String(cliente.numeroIdentificacion || '').trim() },
+      emisorConfigurado: readyForSubmission,
+      codigoCABYSConfigurado: Boolean(cabysCode)
+    },
+    desgloseMonetarioUSD: { subtotalUSD, tarifaIVA: tasaIVA, impuestoIVAUSD: ivaUSD, totalFacturadoUSD: totalUSD },
+    desgloseMonetarioCRC: { subtotalCRC: Math.round(subtotalUSD * configuredRate), impuestoIVACRC: Math.round(ivaUSD * configuredRate), totalFacturadoCRC: totalCRC },
+    hacienda: { estado: 'PENDIENTE_ENVIO_Y_ACUSE', claveNumerica50Digitos: null, acuseHaciendaHash: null },
+    liquidacionBancariaOperador: { proveedorId, nombreProveedor: provider.name, montoBrutoUSD: totalUSD, comisionPlataforma15USD: Number((totalUSD * provider.commissionRate).toFixed(2)), montoNetoLiquidadoUSD: Number((totalUSD * (1 - provider.commissionRate)).toFixed(2)), estadoLiquidacion: 'NO_EJECUTADA_HASTA_ACUSE_FISCAL_Y_PAGO_REAL' },
+    archivosGenerados: { xmlFirmadoUrl: null, pdfLegalUrl: null },
+    timestamp: new Date().toISOString()
+  };
 }
 export async function executeGenericAutomation(triggerName: string, body: any = {}) {
   const start = Date.now();
