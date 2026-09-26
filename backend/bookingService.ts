@@ -693,6 +693,62 @@ export async function createBooking(data: any) {
 }
 
 /**
+ * Persiste reservas de servicios especiales (vuelos/hospitality/transportes)
+ * que no forman parte del catálogo de tours. El cálculo del precio y la
+ * validación del servicio viven en server.ts; esta función centraliza la
+ * escritura y mantiene el mismo modelo de bookings.
+ */
+export async function createSpecialServiceBooking(data: any) {
+  const bookingId = String(data.bookingId || `CRT-SVC-${crypto.randomUUID()}`).trim();
+  const totalUSD = Number(data.totalUSD);
+  const adults = Math.max(1, Number(data.adults) || 1);
+  const children = Math.max(0, Number(data.children) || 0);
+  const date = String(data.date || '').trim();
+  const customer = data.customer || {};
+  if (!bookingId || !date || !Number.isFinite(totalUSD) || totalUSD <= 0) throw new Error('SPECIAL_BOOKING_INVALID: faltan datos o totalUSD válido.');
+  if (!String(customer.email || '').includes('@')) throw new Error('CUSTOMER_EMAIL_REQUIRED: correo válido obligatorio.');
+  const db = getFirestoreDb();
+  if (!db && process.env.NODE_ENV === 'production') throw new Error('PERSISTENCE_REQUIRED: Firestore no disponible.');
+  const payload = {
+    bookingId,
+    bookingDomain: 'service',
+    serviceType: String(data.serviceType || 'special'),
+    serviceId: String(data.serviceId || '').trim(),
+    tourId: String(data.tourId || data.serviceId || bookingId),
+    tourName: String(data.tourName || 'Servicio Costa Rica Tours'),
+    date,
+    checkOutDate: data.checkOutDate || undefined,
+    time: String(data.time || '08:00 AM'),
+    adults,
+    children,
+    pickupHotel: String(data.pickupHotel || ''),
+    specialRequests: String(data.specialRequests || '').slice(0, 4000),
+    totalUSD,
+    totalCRC: Math.round(totalUSD * getUsdToCrcRate()),
+    totalAmount: totalUSD,
+    currency: 'USD',
+    paymentMethod: String(data.paymentMethod || 'credit_card'),
+    paymentStatus: 'pending',
+    status: 'pendiente_pago',
+    customerName: String(customer.fullName || customer.name || '').trim(),
+    customerEmail: String(customer.email || '').trim().toLowerCase(),
+    customerPhone: String(customer.phone || '').trim(),
+    customer,
+    flightDetails: data.flightDetails || undefined,
+    serviceDetails: data.serviceDetails || undefined,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  if (db) {
+    const ref = db.collection('bookings').doc(bookingId);
+    const existing = await ref.get();
+    if (existing.exists) return { conflict: false, idempotent: true, booking: { id: ref.id, ...existing.data() } };
+    await ref.create({ ...payload, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+  }
+  inMemoryBookings.set(bookingId, payload);
+  return { conflict: false, booking: payload };
+}
+/**
  * Lee todas las reservas desde Firestore (o caché en memoria)
  * Normalizando Timestamps de Firestore a formato serializable.
  */
