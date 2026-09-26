@@ -677,7 +677,7 @@ app.post('/api/journey/:journeyId/adapt', journeyLimiter, async (req, res) => {
 // 💳 PASARELAS DE PAGO (STRIPE & PAYPAL)
 // ==========================================
 
-app.post('/api/stripe/create-checkout-session', async (req, res) => {
+app.post('/api/stripe/create-checkout-session', paymentLimiter, bookingAdmission.middleware, async (req, res) => {
   try {
     const { tourName, totalUSD, customerEmail } = req.body;
     const authoritativeTotal = calculateAuthoritativeCheckoutTotal(req.body);
@@ -715,7 +715,7 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
   }
 });
 
-app.post('/api/paypal/create-order', async (req, res) => {
+app.post('/api/paypal/create-order', paymentLimiter, bookingAdmission.middleware, async (req, res) => {
   try {
     const { totalUSD, tourName } = req.body;
     const authoritativeTotal = calculateAuthoritativeCheckoutTotal(req.body);
