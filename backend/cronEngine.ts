@@ -6,7 +6,7 @@
  */
 
 import cron from 'node-cron';
-import { getAllBookings, updateBookingStatus, getFirestoreDb } from './bookingService';
+import { updateBookingStatus, getFirestoreDb } from './bookingService';
 import { logAutomationExecution } from './nativeAutomationEngine';
 import { processProviderInboxOnce } from './providerInboxAgent';
 import { runReservationLifecycleSweep } from './reservationLifecycleOrchestrator';
@@ -28,33 +28,46 @@ import {
 // =========================================================================
 export async function cleanupExpiredSoftHolds() {
   try {
-    const allBookings = await getAllBookings();
+    const db = getFirestoreDb();
     const now = new Date().toISOString();
+    if (!db) return { success: true, releasedCount: 0, totalChecked: 0 };
 
-    const expiredHolds = allBookings.filter(b =>
-      (b.status === 'hold' || b.status === 'pendiente_pago' || b.holdActive) &&
-      b.holdExpiresAt &&
-      b.holdExpiresAt < now
-    );
+    // Consultamos únicamente holds ya vencidos. El índice de holdExpiresAt
+    // evita escanear el histórico completo de reservas en cada ciclo.
+    const snapshot = await db.collection('bookings')
+      .where('holdExpiresAt', '<', now)
+      .limit(500)
+      .get();
 
     let releasedCount = 0;
-    if (expiredHolds.length > 0) {
-      for (const booking of expiredHolds) {
-        await updateBookingStatus(booking.id || booking.bookingId, {
-          status: 'expirada',
-          holdActive: false,
-          liberadaAt: new Date().toISOString()
-        });
+    for (const doc of snapshot.docs) {
+      const booking = doc.data() || {};
+      const status = String(booking.status || '').toLowerCase();
+      const isHold = status === 'hold' || status === 'pendiente_pago' || booking.holdActive === true;
+      if (!isHold || !booking.holdExpiresAt) continue;
+
+      const result = await updateBookingStatus(doc.id, {
+        status: 'expirada',
+        holdActive: false,
+        liberadaAt: new Date().toISOString()
+      });
+      if (result.success) {
         releasedCount++;
         logAutomationExecution(
           'AUTO_RELEASE_HOLD',
           5,
           'success',
-          `Cupo liberado automáticamente para reserva expirada: ${booking.bookingId || booking.id}`
+          `Cupo liberado automáticamente para reserva expirada: ${booking.bookingId || doc.id}`
         );
       }
     }
-    return { success: true, releasedCount, totalChecked: allBookings.length };
+
+    return {
+      success: true,
+      releasedCount,
+      totalChecked: snapshot.size,
+      truncated: snapshot.size === 500
+    };
   } catch (error: any) {
     console.error('❌ Error ejecutando Auditoría de Soft Holds:', error);
     throw error;
