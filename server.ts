@@ -140,6 +140,13 @@ const apiAdmission = createInFlightLimiter(250);
 const intakeAdmission = createInFlightLimiter(40);
 const aiAdmission = createInFlightLimiter(80);
 const bookingAdmission = createInFlightLimiter(60);
+const sinpeSubmitLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Límite de comprobantes SINPE excedido. Intente nuevamente más tarde.' }
+});
 
 function adminAccessPayload(req: express.Request) {
   const access = (req as any).adminAccess || {};
@@ -906,7 +913,7 @@ app.get('/api/currency/exchange-rate', (_req, res) => {
 });
 
 // Verificación y conciliación de comprobantes SINPE Móvil
-app.post('/api/sinpe/verify', requireOperator, async (req, res) => {
+app.post('/api/sinpe/submit', sinpeSubmitLimiter, bookingAdmission.middleware, async (req, res) => {
   try {
     const { bookingId, sinpeReference, customerPhone, amount } = req.body;
     if (!bookingId || !sinpeReference) {
@@ -2181,7 +2188,7 @@ app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], requireAutomat
 });
 
 // 8. Verificación y Conciliación Autónoma de Pagos SINPE Móvil (Webhook & API)
-app.post(['/webhook/cr-tours-sinpe-verify', '/webhook/sinpe-verify', '/api/payments/sinpe-verify', '/api/sinpe/verify'], async (req, res) => {
+app.post(['/webhook/cr-tours-sinpe-verify', '/webhook/sinpe-verify', '/api/payments/sinpe-verify', '/api/sinpe/verify'], requireAutomationCredential, async (req, res) => {
   try {
     const authHeader = req.headers['x-webhook-secret'] as string;
     const result = await executeSinpeVerification(req.body, authHeader);
