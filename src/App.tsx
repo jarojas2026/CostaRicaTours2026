@@ -517,7 +517,11 @@ export default function App() {
 
             <Route path="/trip" element={
               <Suspense fallback={<div className="py-24 text-center text-emerald-300">Cargando tu centro de viaje...</div>}>
-                <TravelerOSPage language={language} onOpenTripBuilder={() => setIsCustomFunnelOpen(true)} />
+                <TravelerOSPage
+                  language={language}
+                  onOpenTripBuilder={() => setIsCustomFunnelOpen(true)}
+                  onOpenBookings={() => setIsBookingsModalOpen(true)}
+                />
               </Suspense>
             } />
 
