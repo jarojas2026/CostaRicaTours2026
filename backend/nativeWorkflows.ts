@@ -325,8 +325,9 @@ export async function getProviderFromDb(providerId: string): Promise<any | null>
     return MASTER_OPERATORS_REGISTRY['tarcoles-crocodile-safari'];
   }
 
-  // Fallback seguro: Operaciones Directas Alsama Tours CR
-  return MASTER_OPERATORS_REGISTRY['alsama-tours-cr'];
+  // No inventamos un proveedor para un ID desconocido. El caller debe
+  // escalar/solicitar asignación explícita en lugar de despachar a otro operador.
+  return null;
 }
 
 /**
