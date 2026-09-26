@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { TOURS } from '../src/data/toursData';
+import type { Language } from '../src/types';
 
 export interface ItineraryParams {
   days: number;
@@ -8,7 +9,7 @@ export interface ItineraryParams {
   regions?: string[];
   budget?: string;
   group?: string;
-  language?: 'es' | 'en';
+  language?: Language;
   specialRequests?: string;
   pace?: string;
 }
@@ -71,6 +72,7 @@ const getCatalogTourSnippets = () => {
  * Generador algorítmico robusto cuando la IA no responde o está offline
  */
 export function generateDeterministicItinerary(params: ItineraryParams): GeneratedItinerary {
+  const languageLabels: Record<Language, string> = { es: 'español', en: 'inglés', de: 'alemán', fr: 'francés', zh: 'chino', ja: 'japonés' };
   const isEn = params.language === 'en';
   const totalDays = Math.max(3, Math.min(14, Number(params.days) || 5));
   const pax = Math.max(1, Number(params.travelers) || 2);

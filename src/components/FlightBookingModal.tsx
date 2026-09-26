@@ -7,8 +7,6 @@ import {
 import { FlightRoute, Language, Currency, BookingRequest } from '../types';
 import { formatCurrency, getLangText } from '../utils/i18n';
 import { getUsdToCrcRate } from '../utils/currencies';
-import { auth, db } from '../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 interface FlightBookingModalProps {
   flight: FlightRoute;
@@ -52,6 +50,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessTicket, setShowSuccessTicket] = useState(false);
   const [confirmedBookingData, setConfirmedBookingData] = useState<BookingRequest | null>(null);
+  const [submissionError, setSubmissionError] = useState('');
 
   if (!isOpen) return null;
 
@@ -64,106 +63,44 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
   const crcRate = getUsdToCrcRate();
   const totalCRC = crcRate > 0 ? Math.round(totalUSD * crcRate) : 0;
 
-  const pnrPreview = `CR-AIR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  const pnrPreview = `CR-AIR-${crypto.randomUUID().replace(/-/g, '').slice(0, 10).toUpperCase()}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || !email.trim()) return;
-
-    setIsSubmitting(true);
-    const pnrCode = pnrPreview;
-
-    const newBooking: BookingRequest = {
-      bookingId: pnrCode,
-      tourId: `flight-${flight.airlineCode.toLowerCase()}-${flight.originAirportCode.toLowerCase()}-${flight.destinationAirportCode.toLowerCase()}`,
-      tourName: `${flight.airline} (${flight.flightNumber}) • ${flight.originAirportCode} ➔ ${flight.destinationAirportCode}`,
-      date: departureDate,
-      time: flight.departureTime,
-      adults: passengersCount,
-      children: 0,
-      pickupHotel: includeAirportTransfer 
-        ? `Recepción VIP en Aeropuerto ${flight.destinationAirportCode} (Vuelo ${flight.flightNumber})` 
-        : `Llegada Aeropuerto ${flight.destinationAirportCode}`,
-      specialRequests: `${specialRequests ? specialRequests + ' | ' : ''}Pasaporte: ${passportNumber || 'N/A'} | Asiento: ${seatPreference.toUpperCase()}${includeWelcomeSimKit ? ' | Chip SIM 4G/5G' : ''}${includeTravelInsurance ? ' | Seguro Médico Assist-CR' : ''}`,
-      totalUSD,
-      totalCRC,
-      customer: {
-        fullName,
-        email,
-        phone: phone || '+506 8795-9148',
-        country: flight.originCountry,
-      },
-      paymentMethod,
-      paymentStatus: paymentMethod === 'pay_at_pickup' ? 'on_arrival' : 'completed',
-      flightDetails: {
-        flightNumber: flight.flightNumber,
-        airline: flight.airline,
-        originCode: flight.originAirportCode,
-        originCity: getLangText(flight.originCity, language),
-        destinationCode: flight.destinationAirportCode,
-        departureTime: flight.departureTime,
-        arrivalTime: flight.arrivalTime,
-        cabinClass: selectedCabin,
-        includesBaggage: true,
-        includesAirportTransfer: includeAirportTransfer,
-        passengerCount: passengersCount,
-        pnrLocator: pnrCode,
-      },
-      status: 'confirmada',
-      createdAt: new Date().toISOString(),
-    };
-
-    try {
-      if (paymentMethod === 'credit_card') {
-        const stripeRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || ""}/api/stripe/create-checkout-session`, {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({
-             tourId: 'flight-' + flight.flightNumber,
-             tourName: 'Vuelo Privado ' + flight.flightNumber + ' - ' + flight.airline,
-             totalUSD: totalUSD,
-             customerEmail: email,
-             date: departureDate,
-             passengers: passengersCount,
-             flightNumber: flight.flightNumber,
-             cabinClass: selectedCabin,
-             includeAirportTransfer,
-             includeWelcomeSimKit,
-             includeTravelInsurance
-           })
-        });
-        const stripeData = await stripeRes.json();
-        if (stripeData.url) {
-           window.location.href = stripeData.url;
-           return;
-        }
-      }
-
-      await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newBooking),
-      });
-
-      const currentUser = auth.currentUser;
-      await addDoc(collection(db, 'bookings'), { 
-        ...newBooking, 
-        userId: currentUser ? currentUser.uid : 'anonymous', 
-        createdAt: serverTimestamp() 
-      });
-
-      setConfirmedBookingData(newBooking);
-      setShowSuccessTicket(true);
-      onBookingSuccess(newBooking);
-    } catch (err) {
-      console.error('Error booking flight:', err);
-      setConfirmedBookingData(newBooking);
-      setShowSuccessTicket(true);
-      onBookingSuccess(newBooking);
-    } finally {
-      setIsSubmitting(false);
+    setSubmissionError('');
+    if (!fullName.trim() || !email.trim()) {
+      setSubmissionError(language === 'es' ? 'Nombre y correo son obligatorios.' : 'Name and email are required.');
+      return;
     }
-  };
+    setIsSubmitting(true);
+    const bookingId = pnrPreview;
+    const customer = { fullName: fullName.trim(), email: email.trim().toLowerCase(), phone: phone.trim(), country: flight.originCountry };
+    try {
+      const createRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/service-bookings`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': bookingId },
+        body: JSON.stringify({ bookingId, serviceType: 'flight', flightNumber: flight.flightNumber, date: departureDate, passengers: passengersCount, cabinClass: selectedCabin, includeAirportTransfer, includeWelcomeSimKit, includeTravelInsurance, time: flight.departureTime, paymentMethod, customer, specialRequests: `${specialRequests ? specialRequests + ' | ' : ''}Pasaporte: ${passportNumber || 'N/A'} | Asiento: ${seatPreference.toUpperCase()}` })
+      });
+      const createData = await createRes.json().catch(() => ({}));
+      if (!createRes.ok || !createData.booking) throw new Error(createData.message || createData.error || 'No se pudo crear la reserva.');
+      const booking = createData.booking as BookingRequest;
+      setConfirmedBookingData(booking);
+      if (paymentMethod === 'credit_card') {
+        const paymentRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/pagos/solicitud`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': bookingId },
+          body: JSON.stringify({ idReserva: booking.bookingId, metodoPago: 'credit_card' })
+        });
+        const paymentData = await paymentRes.json().catch(() => ({}));
+        if (!paymentRes.ok || !paymentData.checkoutUrl) throw new Error(paymentData.message || paymentData.error || 'No se pudo iniciar el pago.');
+        window.location.href = paymentData.checkoutUrl;
+        return;
+      }
+      setShowSuccessTicket(true);
+      onBookingSuccess(booking);
+    } catch (err: any) {
+      console.error('Error booking flight:', err);
+      setSubmissionError(err?.message || (language === 'es' ? 'No se pudo registrar la solicitud.' : 'Could not register the request.'));
+    } finally { setIsSubmitting(false); }
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-stone-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
@@ -209,19 +146,19 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
 
             <div>
               <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest block">
-                {language === 'es' ? '¡Reserva Confirmada!' : 'Booking Confirmed!'}
+                {language === 'es' ? '¡Solicitud registrada!' : 'Request registered!'}
               </span>
               <h4 className="text-2xl font-black text-slate-900 mt-1">
                 PNR: <span className="text-emerald-600 font-mono">{confirmedBookingData.bookingId}</span>
               </h4>
               <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
                 {language === 'es' 
-                  ? 'Hemos enviado el voucher oficial y la confirmación a tu correo electrónico. Chofer oficial te esperará en la sala de llegadas.'
-                  : 'Official voucher & PNR locator sent to your email. Official driver will meet you in the arrival hall.'}
+                  ? 'Tu solicitud quedó registrada. La confirmación final y el voucher se emitirán después de verificar el pago y la disponibilidad operativa.'
+                  : 'Your request was registered. Final confirmation and the voucher will be issued after payment and operational availability is verified.'}
               </p>
             </div>
 
-            {/* Simulated Digital Ticket */}
+            {/* Digital ticket preview — final voucher is issued after server-side verification */}
             <div className="bg-slate-900 text-white p-5 rounded-2xl border border-slate-800 text-left shadow-xl relative overflow-hidden">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
                 <div>
@@ -310,6 +247,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
 
             {/* Booking Form */}
             <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5 max-h-[62vh] overflow-y-auto">
+              {submissionError && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{submissionError}</div>}
               
               {/* Flight Date, Passengers & Cabin */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

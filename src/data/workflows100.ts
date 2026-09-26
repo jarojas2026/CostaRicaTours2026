@@ -1,11 +1,11 @@
 /**
- * ⚡ Matriz Maestra de 100 Workflows n8n — Costa Rica Tours (2026)
+ * ⚡ Matriz Maestra de 100 Workflows native-automation — Costa Rica Tours (2026)
  * Generado para cubrir el ciclo de vida completo de reservas, bases de datos Firestore,
  * pasarelas de pago, operadores, flota, seguridad, IA y analítica con enrutamiento de errores
  * directo hacia el endpoint nativo '/api/alerts' (reemplazo de Telegram).
  */
 
-export interface N8NWorkflowDef100 {
+export interface NativeWorkflowDef100 {
   id: string;
   code: string;
   name: { es: string; en: string };
@@ -29,7 +29,7 @@ export interface N8NWorkflowDef100 {
   blueprintJson: Record<string, any>;
 }
 
-export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
+export const WORKFLOWS_100_LIST: NativeWorkflowDef100[] = [
   {
     id: "wf-001-soft-hold-lock",
     code: "WF-001",
@@ -45,7 +45,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Lock",
     color: "#059669",
-    endpoint: "/api/webhooks/n8n/soft-hold",
+    endpoint: "/api/native/workflows/soft-hold",
     method: "POST",
     triggerEvent: "Webhook al iniciar checkout en frontend",
     nodesCount: 5,
@@ -54,31 +54,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Bloqueo Temporal de Cupos (Soft Hold 15 min)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Webhook al iniciar checkout en frontend"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación bookings",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /bookings"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -97,13 +97,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/soft-hold",
+                        "path": "api/native/workflows/soft-hold",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Bloqueo Temporal de Cupos (Soft Hold 15 min)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -115,7 +115,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'bookings';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -146,7 +146,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección bookings",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -167,7 +167,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -183,7 +183,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -193,11 +193,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Bloqueo Temporal de Cupos (Soft Hold 15 min)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-001: Bloqueo Temporal de Cupos (Soft Hold 15 min)\",\n  \"message\": \"=Error al ejecutar en colección bookings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-001\",\n    \"collection\": \"bookings\",\n    \"endpoint\": \"/api/webhooks/n8n/soft-hold\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Bloqueo Temporal de Cupos (Soft Hold 15 min)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-001: Bloqueo Temporal de Cupos (Soft Hold 15 min)\",\n  \"message\": \"=Error al ejecutar en colección bookings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-001\",\n    \"collection\": \"bookings\",\n    \"endpoint\": \"/api/native/workflows/soft-hold\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -264,7 +264,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "QrCode",
     color: "#10b981",
-    endpoint: "/api/webhooks/n8n/confirm-booking",
+    endpoint: "/api/native/workflows/confirm-booking",
     method: "POST",
     triggerEvent: "Webhook de pago exitoso (Stripe/PayPal/SINPE)",
     nodesCount: 5,
@@ -273,31 +273,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Emisión de Voucher Oficial y Código QR Criptográfico",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Webhook de pago exitoso (Stripe/PayPal/SINPE)"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación bookings",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /bookings"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -315,13 +315,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/confirm-booking",
+                        "path": "api/native/workflows/confirm-booking",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Emisión de Voucher Oficial y Código QR Criptográfico",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -333,7 +333,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'bookings';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -364,7 +364,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección bookings",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -385,7 +385,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -401,7 +401,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -411,11 +411,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Emisión de Voucher Oficial y Código QR Criptográfico\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-002: Emisión de Voucher Oficial y Código QR Criptográfico\",\n  \"message\": \"=Error al ejecutar en colección bookings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-002\",\n    \"collection\": \"bookings\",\n    \"endpoint\": \"/api/webhooks/n8n/confirm-booking\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Emisión de Voucher Oficial y Código QR Criptográfico\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-002: Emisión de Voucher Oficial y Código QR Criptográfico\",\n  \"message\": \"=Error al ejecutar en colección bookings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-002\",\n    \"collection\": \"bookings\",\n    \"endpoint\": \"/api/native/workflows/confirm-booking\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -482,7 +482,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Clock",
     color: "#f59e0b",
-    endpoint: "/api/webhooks/n8n/cleanup-holds",
+    endpoint: "/api/native/workflows/cleanup-holds",
     method: "POST",
     triggerEvent: "Cron programado cada 5 minutos",
     nodesCount: 5,
@@ -491,31 +491,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Liberador de Cupos Expirados (Cleanup Worker)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron programado cada 5 minutos"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación bookings",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /bookings"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -531,13 +531,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/cleanup-holds",
+                        "path": "api/native/workflows/cleanup-holds",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Liberador de Cupos Expirados (Cleanup Worker)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -549,7 +549,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'bookings';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -580,7 +580,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección bookings",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -601,7 +601,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -617,7 +617,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -627,11 +627,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Liberador de Cupos Expirados (Cleanup Worker)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-003: Liberador de Cupos Expirados (Cleanup Worker)\",\n  \"message\": \"=Error al ejecutar en colección bookings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-003\",\n    \"collection\": \"bookings\",\n    \"endpoint\": \"/api/webhooks/n8n/cleanup-holds\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Liberador de Cupos Expirados (Cleanup Worker)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-003: Liberador de Cupos Expirados (Cleanup Worker)\",\n  \"message\": \"=Error al ejecutar en colección bookings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-003\",\n    \"collection\": \"bookings\",\n    \"endpoint\": \"/api/native/workflows/cleanup-holds\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -698,7 +698,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "CalendarSync",
     color: "#3b82f6",
-    endpoint: "/api/webhooks/n8n/reschedule-booking",
+    endpoint: "/api/native/workflows/reschedule-booking",
     method: "POST",
     triggerEvent: "Solicitud de cambio de fecha desde panel de cliente o agente",
     nodesCount: 5,
@@ -707,31 +707,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Gestión Automatizada de Reprogramaciones",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Solicitud de cambio de fecha desde panel de cliente o agente"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación bookings",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /bookings"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -748,13 +748,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/reschedule-booking",
+                        "path": "api/native/workflows/reschedule-booking",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Gestión Automatizada de Reprogramaciones",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -766,7 +766,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'bookings';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -797,7 +797,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección bookings",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -818,7 +818,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -834,7 +834,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -844,11 +844,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Gestión Automatizada de Reprogramaciones\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-004: Gestión Automatizada de Reprogramaciones\",\n  \"message\": \"=Error al ejecutar en colección bookings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-004\",\n    \"collection\": \"bookings\",\n    \"endpoint\": \"/api/webhooks/n8n/reschedule-booking\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Gestión Automatizada de Reprogramaciones\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-004: Gestión Automatizada de Reprogramaciones\",\n  \"message\": \"=Error al ejecutar en colección bookings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-004\",\n    \"collection\": \"bookings\",\n    \"endpoint\": \"/api/native/workflows/reschedule-booking\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -915,7 +915,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "CalendarX",
     color: "#ef4444",
-    endpoint: "/api/webhooks/n8n/cancel-booking",
+    endpoint: "/api/native/workflows/cancel-booking",
     method: "POST",
     triggerEvent: "Webhook de cancelación de usuario u operador",
     nodesCount: 5,
@@ -924,31 +924,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Procesador de Cancelaciones y Política 72h/48h",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Webhook de cancelación de usuario u operador"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación cancellations",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /cancellations"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -965,13 +965,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/cancel-booking",
+                        "path": "api/native/workflows/cancel-booking",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Procesador de Cancelaciones y Política 72h/48h",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -983,7 +983,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'cancellations';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -1014,7 +1014,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección cancellations",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -1035,7 +1035,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -1051,7 +1051,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -1061,11 +1061,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Procesador de Cancelaciones y Política 72h/48h\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-005: Procesador de Cancelaciones y Política 72h/48h\",\n  \"message\": \"=Error al ejecutar en colección cancellations: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-005\",\n    \"collection\": \"cancellations\",\n    \"endpoint\": \"/api/webhooks/n8n/cancel-booking\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Procesador de Cancelaciones y Política 72h/48h\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-005: Procesador de Cancelaciones y Política 72h/48h\",\n  \"message\": \"=Error al ejecutar en colección cancellations: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-005\",\n    \"collection\": \"cancellations\",\n    \"endpoint\": \"/api/native/workflows/cancel-booking\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -1132,7 +1132,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "UserPlus",
     color: "#8b5cf6",
-    endpoint: "/api/webhooks/n8n/waitlist-promote",
+    endpoint: "/api/native/workflows/waitlist-promote",
     method: "POST",
     triggerEvent: "Evento de cancelación con lista de espera activa",
     nodesCount: 5,
@@ -1141,31 +1141,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Lista de Espera y Promoción Automática de Cupos",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Evento de cancelación con lista de espera activa"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación waitlists",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /waitlists"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -1182,13 +1182,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/waitlist-promote",
+                        "path": "api/native/workflows/waitlist-promote",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Lista de Espera y Promoción Automática de Cupos",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -1200,7 +1200,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'waitlists';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -1231,7 +1231,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección waitlists",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -1252,7 +1252,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -1268,7 +1268,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -1278,11 +1278,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Lista de Espera y Promoción Automática de Cupos\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-006: Lista de Espera y Promoción Automática de Cupos\",\n  \"message\": \"=Error al ejecutar en colección waitlists: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-006\",\n    \"collection\": \"waitlists\",\n    \"endpoint\": \"/api/webhooks/n8n/waitlist-promote\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Lista de Espera y Promoción Automática de Cupos\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-006: Lista de Espera y Promoción Automática de Cupos\",\n  \"message\": \"=Error al ejecutar en colección waitlists: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-006\",\n    \"collection\": \"waitlists\",\n    \"endpoint\": \"/api/native/workflows/waitlist-promote\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -1349,7 +1349,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Sparkles",
     color: "#f59e0b",
-    endpoint: "/api/webhooks/n8n/upsell-addons",
+    endpoint: "/api/native/workflows/upsell-addons",
     method: "POST",
     triggerEvent: "Cron 48 horas previas al tour",
     nodesCount: 5,
@@ -1358,31 +1358,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Motor de Upgrades y Extras de Aventura",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron 48 horas previas al tour"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación booking_addons",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /booking_addons"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -1398,13 +1398,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/upsell-addons",
+                        "path": "api/native/workflows/upsell-addons",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Motor de Upgrades y Extras de Aventura",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -1416,7 +1416,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'booking_addons';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -1447,7 +1447,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección booking_addons",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -1468,7 +1468,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -1484,7 +1484,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -1494,11 +1494,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Motor de Upgrades y Extras de Aventura\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-007: Motor de Upgrades y Extras de Aventura\",\n  \"message\": \"=Error al ejecutar en colección booking_addons: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-007\",\n    \"collection\": \"booking_addons\",\n    \"endpoint\": \"/api/webhooks/n8n/upsell-addons\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Motor de Upgrades y Extras de Aventura\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-007: Motor de Upgrades y Extras de Aventura\",\n  \"message\": \"=Error al ejecutar en colección booking_addons: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-007\",\n    \"collection\": \"booking_addons\",\n    \"endpoint\": \"/api/native/workflows/upsell-addons\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -1565,7 +1565,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Users",
     color: "#06b6d4",
-    endpoint: "/api/webhooks/n8n/group-split",
+    endpoint: "/api/native/workflows/group-split",
     method: "POST",
     triggerEvent: "Webhook de reserva grupal (>8 personas)",
     nodesCount: 5,
@@ -1574,31 +1574,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Reservas Grupales y División de Pasajeros",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Webhook de reserva grupal (>8 personas)"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación group_bookings",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /group_bookings"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -1615,13 +1615,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/group-split",
+                        "path": "api/native/workflows/group-split",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Reservas Grupales y División de Pasajeros",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -1633,7 +1633,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'group_bookings';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -1664,7 +1664,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección group_bookings",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -1685,7 +1685,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -1701,7 +1701,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -1711,11 +1711,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Reservas Grupales y División de Pasajeros\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-008: Reservas Grupales y División de Pasajeros\",\n  \"message\": \"=Error al ejecutar en colección group_bookings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-008\",\n    \"collection\": \"group_bookings\",\n    \"endpoint\": \"/api/webhooks/n8n/group-split\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Reservas Grupales y División de Pasajeros\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-008: Reservas Grupales y División de Pasajeros\",\n  \"message\": \"=Error al ejecutar en colección group_bookings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-008\",\n    \"collection\": \"group_bookings\",\n    \"endpoint\": \"/api/native/workflows/group-split\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -1782,7 +1782,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "MapPin",
     color: "#10b981",
-    endpoint: "/api/webhooks/n8n/validate-pickup",
+    endpoint: "/api/native/workflows/validate-pickup",
     method: "POST",
     triggerEvent: "Ingreso o modificación de hotel de recogida",
     nodesCount: 5,
@@ -1791,31 +1791,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Validador Geográfico de Puntos de Recogida (Geofencing)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Ingreso o modificación de hotel de recogida"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación routes",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /routes"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -1834,13 +1834,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/validate-pickup",
+                        "path": "api/native/workflows/validate-pickup",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Validador Geográfico de Puntos de Recogida (Geofencing)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -1852,7 +1852,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'routes';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -1883,7 +1883,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección routes",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -1904,7 +1904,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -1920,7 +1920,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -1930,11 +1930,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Validador Geográfico de Puntos de Recogida (Geofencing)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-009: Validador Geográfico de Puntos de Recogida (Geofencing)\",\n  \"message\": \"=Error al ejecutar en colección routes: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-009\",\n    \"collection\": \"routes\",\n    \"endpoint\": \"/api/webhooks/n8n/validate-pickup\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Validador Geográfico de Puntos de Recogida (Geofencing)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-009: Validador Geográfico de Puntos de Recogida (Geofencing)\",\n  \"message\": \"=Error al ejecutar en colección routes: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-009\",\n    \"collection\": \"routes\",\n    \"endpoint\": \"/api/native/workflows/validate-pickup\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -2001,7 +2001,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Utensils",
     color: "#ec4899",
-    endpoint: "/api/webhooks/n8n/catering-alert",
+    endpoint: "/api/native/workflows/catering-alert",
     method: "POST",
     triggerEvent: "Reserva confirmada con campos de dieta/alergias",
     nodesCount: 5,
@@ -2010,31 +2010,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Disparador de Alergias y Dietas a Cocinas Locales",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Reserva confirmada con campos de dieta/alergias"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación catering_alerts",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /catering_alerts"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -2050,13 +2050,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/catering-alert",
+                        "path": "api/native/workflows/catering-alert",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Disparador de Alergias y Dietas a Cocinas Locales",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -2068,7 +2068,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'catering_alerts';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -2099,7 +2099,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección catering_alerts",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -2120,7 +2120,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -2136,7 +2136,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -2146,11 +2146,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Disparador de Alergias y Dietas a Cocinas Locales\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-010: Disparador de Alergias y Dietas a Cocinas Locales\",\n  \"message\": \"=Error al ejecutar en colección catering_alerts: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-010\",\n    \"collection\": \"catering_alerts\",\n    \"endpoint\": \"/api/webhooks/n8n/catering-alert\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Disparador de Alergias y Dietas a Cocinas Locales\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-010: Disparador de Alergias y Dietas a Cocinas Locales\",\n  \"message\": \"=Error al ejecutar en colección catering_alerts: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-010\",\n    \"collection\": \"catering_alerts\",\n    \"endpoint\": \"/api/native/workflows/catering-alert\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -2217,7 +2217,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "FileCheck",
     color: "#6366f1",
-    endpoint: "/api/webhooks/n8n/verify-waiver",
+    endpoint: "/api/native/workflows/verify-waiver",
     method: "POST",
     triggerEvent: "Reserva de tour de alta dificultad con menores de edad",
     nodesCount: 5,
@@ -2226,31 +2226,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Verificación Digital de Consentimiento para Menores",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Reserva de tour de alta dificultad con menores de edad"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación waivers",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /waivers"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -2266,13 +2266,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/verify-waiver",
+                        "path": "api/native/workflows/verify-waiver",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Verificación Digital de Consentimiento para Menores",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -2284,7 +2284,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'waivers';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -2315,7 +2315,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección waivers",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -2336,7 +2336,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -2352,7 +2352,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -2362,11 +2362,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Verificación Digital de Consentimiento para Menores\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-011: Verificación Digital de Consentimiento para Menores\",\n  \"message\": \"=Error al ejecutar en colección waivers: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-011\",\n    \"collection\": \"waivers\",\n    \"endpoint\": \"/api/webhooks/n8n/verify-waiver\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Verificación Digital de Consentimiento para Menores\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-011: Verificación Digital de Consentimiento para Menores\",\n  \"message\": \"=Error al ejecutar en colección waivers: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-011\",\n    \"collection\": \"waivers\",\n    \"endpoint\": \"/api/native/workflows/verify-waiver\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -2433,7 +2433,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Ship",
     color: "#0284c7",
-    endpoint: "/api/webhooks/n8n/cruise-sync",
+    endpoint: "/api/native/workflows/cruise-sync",
     method: "POST",
     triggerEvent: "Webhook de API portuaria o cambio de itinerario de naviera",
     nodesCount: 5,
@@ -2442,31 +2442,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Sincronizador de Cruceros en Puerto Caldera y Limón",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Webhook de API portuaria o cambio de itinerario de naviera"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación cruise_schedules",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /cruise_schedules"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -2483,13 +2483,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/cruise-sync",
+                        "path": "api/native/workflows/cruise-sync",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Sincronizador de Cruceros en Puerto Caldera y Limón",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -2501,7 +2501,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'cruise_schedules';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -2532,7 +2532,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección cruise_schedules",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -2553,7 +2553,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -2569,7 +2569,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -2579,11 +2579,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Sincronizador de Cruceros en Puerto Caldera y Limón\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-012: Sincronizador de Cruceros en Puerto Caldera y Limón\",\n  \"message\": \"=Error al ejecutar en colección cruise_schedules: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-012\",\n    \"collection\": \"cruise_schedules\",\n    \"endpoint\": \"/api/webhooks/n8n/cruise-sync\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Sincronizador de Cruceros en Puerto Caldera y Limón\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-012: Sincronizador de Cruceros en Puerto Caldera y Limón\",\n  \"message\": \"=Error al ejecutar en colección cruise_schedules: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-012\",\n    \"collection\": \"cruise_schedules\",\n    \"endpoint\": \"/api/native/workflows/cruise-sync\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -2650,7 +2650,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Zap",
     color: "#eab308",
-    endpoint: "/api/webhooks/n8n/flash-booking",
+    endpoint: "/api/native/workflows/flash-booking",
     method: "POST",
     triggerEvent: "Reserva con fecha de hoy y salida en < 3 horas",
     nodesCount: 5,
@@ -2659,31 +2659,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Motor de Reservas Flash de Último Minuto (Mismo Día)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Reserva con fecha de hoy y salida en < 3 horas"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación bookings",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /bookings"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -2699,13 +2699,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/flash-booking",
+                        "path": "api/native/workflows/flash-booking",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Motor de Reservas Flash de Último Minuto (Mismo Día)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -2717,7 +2717,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'bookings';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -2748,7 +2748,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección bookings",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -2769,7 +2769,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -2785,7 +2785,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -2795,11 +2795,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Motor de Reservas Flash de Último Minuto (Mismo Día)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-013: Motor de Reservas Flash de Último Minuto (Mismo Día)\",\n  \"message\": \"=Error al ejecutar en colección bookings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-013\",\n    \"collection\": \"bookings\",\n    \"endpoint\": \"/api/webhooks/n8n/flash-booking\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Motor de Reservas Flash de Último Minuto (Mismo Día)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-013: Motor de Reservas Flash de Último Minuto (Mismo Día)\",\n  \"message\": \"=Error al ejecutar en colección bookings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-013\",\n    \"collection\": \"bookings\",\n    \"endpoint\": \"/api/native/workflows/flash-booking\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -2866,7 +2866,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Award",
     color: "#d97706",
-    endpoint: "/api/webhooks/n8n/customer-loyalty-tag",
+    endpoint: "/api/native/workflows/customer-loyalty-tag",
     method: "POST",
     triggerEvent: "Creación de reserva o consulta de usuario",
     nodesCount: 5,
@@ -2875,31 +2875,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Identificador y Etiquetado de Clientes Frecuentes",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Creación de reserva o consulta de usuario"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación customers",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /customers"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -2915,13 +2915,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/customer-loyalty-tag",
+                        "path": "api/native/workflows/customer-loyalty-tag",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Identificador y Etiquetado de Clientes Frecuentes",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -2933,7 +2933,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'customers';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -2964,7 +2964,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección customers",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -2985,7 +2985,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -3001,7 +3001,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -3011,11 +3011,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Identificador y Etiquetado de Clientes Frecuentes\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-014: Identificador y Etiquetado de Clientes Frecuentes\",\n  \"message\": \"=Error al ejecutar en colección customers: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-014\",\n    \"collection\": \"customers\",\n    \"endpoint\": \"/api/webhooks/n8n/customer-loyalty-tag\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Identificador y Etiquetado de Clientes Frecuentes\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-014: Identificador y Etiquetado de Clientes Frecuentes\",\n  \"message\": \"=Error al ejecutar en colección customers: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-014\",\n    \"collection\": \"customers\",\n    \"endpoint\": \"/api/native/workflows/customer-loyalty-tag\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -3082,7 +3082,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "ShieldCheck",
     color: "#047857",
-    endpoint: "/api/webhooks/n8n/audit-log",
+    endpoint: "/api/native/workflows/audit-log",
     method: "POST",
     triggerEvent: "Cualquier mutación en documento de reserva",
     nodesCount: 5,
@@ -3091,31 +3091,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Registro Inmutable de Auditoría de Reservas",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cualquier mutación en documento de reserva"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación audit_logs",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /audit_logs"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -3133,13 +3133,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/audit-log",
+                        "path": "api/native/workflows/audit-log",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Registro Inmutable de Auditoría de Reservas",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -3151,7 +3151,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'audit_logs';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -3182,7 +3182,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección audit_logs",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -3203,7 +3203,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -3219,7 +3219,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -3229,11 +3229,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Registro Inmutable de Auditoría de Reservas\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-015: Registro Inmutable de Auditoría de Reservas\",\n  \"message\": \"=Error al ejecutar en colección audit_logs: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-015\",\n    \"collection\": \"audit_logs\",\n    \"endpoint\": \"/api/webhooks/n8n/audit-log\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Registro Inmutable de Auditoría de Reservas\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-015: Registro Inmutable de Auditoría de Reservas\",\n  \"message\": \"=Error al ejecutar en colección audit_logs: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-015\",\n    \"collection\": \"audit_logs\",\n    \"endpoint\": \"/api/native/workflows/audit-log\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -3300,7 +3300,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Smartphone",
     color: "#059669",
-    endpoint: "/api/webhooks/n8n/sinpe-verify",
+    endpoint: "/api/native/workflows/sinpe-verify",
     method: "POST",
     triggerEvent: "Carga de comprobante SINPE por el usuario",
     nodesCount: 5,
@@ -3309,31 +3309,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Validador Inteligente de Comprobantes SINPE Móvil",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Carga de comprobante SINPE por el usuario"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación sinpe_transactions",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /sinpe_transactions"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -3350,13 +3350,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/sinpe-verify",
+                        "path": "api/native/workflows/sinpe-verify",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Validador Inteligente de Comprobantes SINPE Móvil",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -3368,7 +3368,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'sinpe_transactions';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -3399,7 +3399,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección sinpe_transactions",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -3420,7 +3420,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -3436,7 +3436,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -3446,11 +3446,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Validador Inteligente de Comprobantes SINPE Móvil\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-016: Validador Inteligente de Comprobantes SINPE Móvil\",\n  \"message\": \"=Error al ejecutar en colección sinpe_transactions: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-016\",\n    \"collection\": \"sinpe_transactions\",\n    \"endpoint\": \"/api/webhooks/n8n/sinpe-verify\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Validador Inteligente de Comprobantes SINPE Móvil\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-016: Validador Inteligente de Comprobantes SINPE Móvil\",\n  \"message\": \"=Error al ejecutar en colección sinpe_transactions: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-016\",\n    \"collection\": \"sinpe_transactions\",\n    \"endpoint\": \"/api/native/workflows/sinpe-verify\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -3517,7 +3517,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "CreditCard",
     color: "#6366f1",
-    endpoint: "/api/webhooks/n8n/stripe-event",
+    endpoint: "/api/native/workflows/stripe-event",
     method: "POST",
     triggerEvent: "Webhook de Stripe API",
     nodesCount: 5,
@@ -3526,31 +3526,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Receptor Oficial de Eventos Stripe Webhook",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Webhook de Stripe API"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación payments",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /payments"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -3567,13 +3567,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/stripe-event",
+                        "path": "api/native/workflows/stripe-event",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Receptor Oficial de Eventos Stripe Webhook",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -3585,7 +3585,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'payments';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -3616,7 +3616,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección payments",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -3637,7 +3637,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -3653,7 +3653,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -3663,11 +3663,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Receptor Oficial de Eventos Stripe Webhook\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-017: Receptor Oficial de Eventos Stripe Webhook\",\n  \"message\": \"=Error al ejecutar en colección payments: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-017\",\n    \"collection\": \"payments\",\n    \"endpoint\": \"/api/webhooks/n8n/stripe-event\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Receptor Oficial de Eventos Stripe Webhook\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-017: Receptor Oficial de Eventos Stripe Webhook\",\n  \"message\": \"=Error al ejecutar en colección payments: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-017\",\n    \"collection\": \"payments\",\n    \"endpoint\": \"/api/native/workflows/stripe-event\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -3734,7 +3734,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Wallet",
     color: "#0284c7",
-    endpoint: "/api/webhooks/n8n/paypal-ipn",
+    endpoint: "/api/native/workflows/paypal-ipn",
     method: "POST",
     triggerEvent: "Webhook de PayPal Orders v2",
     nodesCount: 5,
@@ -3743,31 +3743,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Conciliador de Pagos PayPal IPN / Orders API",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Webhook de PayPal Orders v2"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación payments",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /payments"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -3783,13 +3783,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/paypal-ipn",
+                        "path": "api/native/workflows/paypal-ipn",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Conciliador de Pagos PayPal IPN / Orders API",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -3801,7 +3801,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'payments';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -3832,7 +3832,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección payments",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -3853,7 +3853,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -3869,7 +3869,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -3879,11 +3879,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Conciliador de Pagos PayPal IPN / Orders API\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-018: Conciliador de Pagos PayPal IPN / Orders API\",\n  \"message\": \"=Error al ejecutar en colección payments: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-018\",\n    \"collection\": \"payments\",\n    \"endpoint\": \"/api/webhooks/n8n/paypal-ipn\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Conciliador de Pagos PayPal IPN / Orders API\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-018: Conciliador de Pagos PayPal IPN / Orders API\",\n  \"message\": \"=Error al ejecutar en colección payments: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-018\",\n    \"collection\": \"payments\",\n    \"endpoint\": \"/api/native/workflows/paypal-ipn\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -3950,7 +3950,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Receipt",
     color: "#0f766e",
-    endpoint: "/api/webhooks/n8n/dgt-invoice",
+    endpoint: "/api/native/workflows/dgt-invoice",
     method: "POST",
     triggerEvent: "Confirmación de pago de cliente nacional o internacional",
     nodesCount: 5,
@@ -3959,31 +3959,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Generador de Factura Electrónica DGT Costa Rica (XML v4.3)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Confirmación de pago de cliente nacional o internacional"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación invoices",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /invoices"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -4000,13 +4000,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/dgt-invoice",
+                        "path": "api/native/workflows/dgt-invoice",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Generador de Factura Electrónica DGT Costa Rica (XML v4.3)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -4018,7 +4018,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'invoices';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -4049,7 +4049,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección invoices",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -4070,7 +4070,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -4086,7 +4086,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -4096,11 +4096,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Generador de Factura Electrónica DGT Costa Rica (XML v4.3)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-019: Generador de Factura Electrónica DGT Costa Rica (XML v4.3)\",\n  \"message\": \"=Error al ejecutar en colección invoices: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-019\",\n    \"collection\": \"invoices\",\n    \"endpoint\": \"/api/webhooks/n8n/dgt-invoice\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Generador de Factura Electrónica DGT Costa Rica (XML v4.3)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-019: Generador de Factura Electrónica DGT Costa Rica (XML v4.3)\",\n  \"message\": \"=Error al ejecutar en colección invoices: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-019\",\n    \"collection\": \"invoices\",\n    \"endpoint\": \"/api/native/workflows/dgt-invoice\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -4167,7 +4167,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "PieChart",
     color: "#8b5cf6",
-    endpoint: "/api/webhooks/n8n/split-deposit",
+    endpoint: "/api/native/workflows/split-deposit",
     method: "POST",
     triggerEvent: "Reserva seleccionada con modalidad depósito",
     nodesCount: 5,
@@ -4176,31 +4176,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Gestor de Pago en Dos Partes (Depósito 30% + Saldo 70%)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Reserva seleccionada con modalidad depósito"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación payments",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /payments"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -4217,13 +4217,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/split-deposit",
+                        "path": "api/native/workflows/split-deposit",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Gestor de Pago en Dos Partes (Depósito 30% + Saldo 70%)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -4235,7 +4235,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'payments';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -4266,7 +4266,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección payments",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -4287,7 +4287,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -4303,7 +4303,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -4313,11 +4313,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Gestor de Pago en Dos Partes (Depósito 30% + Saldo 70%)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-020: Gestor de Pago en Dos Partes (Depósito 30% + Saldo 70%)\",\n  \"message\": \"=Error al ejecutar en colección payments: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-020\",\n    \"collection\": \"payments\",\n    \"endpoint\": \"/api/webhooks/n8n/split-deposit\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Gestor de Pago en Dos Partes (Depósito 30% + Saldo 70%)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-020: Gestor de Pago en Dos Partes (Depósito 30% + Saldo 70%)\",\n  \"message\": \"=Error al ejecutar en colección payments: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-020\",\n    \"collection\": \"payments\",\n    \"endpoint\": \"/api/native/workflows/split-deposit\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -4384,7 +4384,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "RotateCcw",
     color: "#ef4444",
-    endpoint: "/api/webhooks/n8n/process-refund",
+    endpoint: "/api/native/workflows/process-refund",
     method: "POST",
     triggerEvent: "Aprobación de cancelación con reembolso",
     nodesCount: 5,
@@ -4393,31 +4393,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Emisor Automático de Reembolsos a Tarjeta",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Aprobación de cancelación con reembolso"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación refunds",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /refunds"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -4434,13 +4434,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/process-refund",
+                        "path": "api/native/workflows/process-refund",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Emisor Automático de Reembolsos a Tarjeta",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -4452,7 +4452,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'refunds';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -4483,7 +4483,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección refunds",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -4504,7 +4504,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -4520,7 +4520,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -4530,11 +4530,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Emisor Automático de Reembolsos a Tarjeta\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-021: Emisor Automático de Reembolsos a Tarjeta\",\n  \"message\": \"=Error al ejecutar en colección refunds: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-021\",\n    \"collection\": \"refunds\",\n    \"endpoint\": \"/api/webhooks/n8n/process-refund\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Emisor Automático de Reembolsos a Tarjeta\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-021: Emisor Automático de Reembolsos a Tarjeta\",\n  \"message\": \"=Error al ejecutar en colección refunds: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-021\",\n    \"collection\": \"refunds\",\n    \"endpoint\": \"/api/native/workflows/process-refund\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -4601,7 +4601,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "CheckCircle2",
     color: "#10b981",
-    endpoint: "/api/webhooks/n8n/daily-reconcile",
+    endpoint: "/api/native/workflows/daily-reconcile",
     method: "POST",
     triggerEvent: "Cron diario 11:59 PM",
     nodesCount: 5,
@@ -4610,31 +4610,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Conciliación Bancaria Diaria y Detección de Discrepancias",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron diario 11:59 PM"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación reconciliations",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /reconciliations"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -4652,13 +4652,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/daily-reconcile",
+                        "path": "api/native/workflows/daily-reconcile",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Conciliación Bancaria Diaria y Detección de Discrepancias",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -4670,7 +4670,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'reconciliations';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -4701,7 +4701,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección reconciliations",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -4722,7 +4722,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -4738,7 +4738,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -4748,11 +4748,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Conciliación Bancaria Diaria y Detección de Discrepancias\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-022: Conciliación Bancaria Diaria y Detección de Discrepancias\",\n  \"message\": \"=Error al ejecutar en colección reconciliations: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-022\",\n    \"collection\": \"reconciliations\",\n    \"endpoint\": \"/api/webhooks/n8n/daily-reconcile\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Conciliación Bancaria Diaria y Detección de Discrepancias\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-022: Conciliación Bancaria Diaria y Detección de Discrepancias\",\n  \"message\": \"=Error al ejecutar en colección reconciliations: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-022\",\n    \"collection\": \"reconciliations\",\n    \"endpoint\": \"/api/native/workflows/daily-reconcile\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -4819,7 +4819,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "TrendingUp",
     color: "#14b8a6",
-    endpoint: "/api/webhooks/n8n/sync-exchange-rate",
+    endpoint: "/api/native/workflows/sync-exchange-rate",
     method: "POST",
     triggerEvent: "Cron diario 6:00 AM",
     nodesCount: 5,
@@ -4828,31 +4828,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Actualizador de Tipo de Cambio Oficial BCCR (USD/CRC)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron diario 6:00 AM"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación exchange_rates",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /exchange_rates"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -4869,13 +4869,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/sync-exchange-rate",
+                        "path": "api/native/workflows/sync-exchange-rate",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Actualizador de Tipo de Cambio Oficial BCCR (USD/CRC)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -4887,7 +4887,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'exchange_rates';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -4918,7 +4918,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección exchange_rates",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -4939,7 +4939,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -4955,7 +4955,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -4965,11 +4965,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Actualizador de Tipo de Cambio Oficial BCCR (USD/CRC)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-023: Actualizador de Tipo de Cambio Oficial BCCR (USD/CRC)\",\n  \"message\": \"=Error al ejecutar en colección exchange_rates: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-023\",\n    \"collection\": \"exchange_rates\",\n    \"endpoint\": \"/api/webhooks/n8n/sync-exchange-rate\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Actualizador de Tipo de Cambio Oficial BCCR (USD/CRC)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-023: Actualizador de Tipo de Cambio Oficial BCCR (USD/CRC)\",\n  \"message\": \"=Error al ejecutar en colección exchange_rates: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-023\",\n    \"collection\": \"exchange_rates\",\n    \"endpoint\": \"/api/native/workflows/sync-exchange-rate\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -5036,7 +5036,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "AlertCircle",
     color: "#f97316",
-    endpoint: "/api/webhooks/n8n/payment-declined",
+    endpoint: "/api/native/workflows/payment-declined",
     method: "POST",
     triggerEvent: "Evento de pago declinado en Stripe/PayPal",
     nodesCount: 5,
@@ -5045,31 +5045,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Recuperador de Pagos Rechazados con Enlace Alternativo",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Evento de pago declinado en Stripe/PayPal"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación payment_retries",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /payment_retries"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -5085,13 +5085,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/payment-declined",
+                        "path": "api/native/workflows/payment-declined",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Recuperador de Pagos Rechazados con Enlace Alternativo",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -5103,7 +5103,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'payment_retries';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -5134,7 +5134,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección payment_retries",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -5155,7 +5155,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -5171,7 +5171,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -5181,11 +5181,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Recuperador de Pagos Rechazados con Enlace Alternativo\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-024: Recuperador de Pagos Rechazados con Enlace Alternativo\",\n  \"message\": \"=Error al ejecutar en colección payment_retries: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-024\",\n    \"collection\": \"payment_retries\",\n    \"endpoint\": \"/api/webhooks/n8n/payment-declined\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Recuperador de Pagos Rechazados con Enlace Alternativo\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-024: Recuperador de Pagos Rechazados con Enlace Alternativo\",\n  \"message\": \"=Error al ejecutar en colección payment_retries: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-024\",\n    \"collection\": \"payment_retries\",\n    \"endpoint\": \"/api/native/workflows/payment-declined\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -5252,7 +5252,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Coins",
     color: "#8b5cf6",
-    endpoint: "/api/webhooks/n8n/crypto-webhook",
+    endpoint: "/api/native/workflows/crypto-webhook",
     method: "POST",
     triggerEvent: "Webhook de Alchemy / QuickNode",
     nodesCount: 5,
@@ -5261,31 +5261,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Pasarela de Cobro en Criptoactivos Estables (USDC / USDT)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Webhook de Alchemy / QuickNode"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación crypto_payments",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /crypto_payments"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -5302,13 +5302,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/crypto-webhook",
+                        "path": "api/native/workflows/crypto-webhook",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Pasarela de Cobro en Criptoactivos Estables (USDC / USDT)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -5320,7 +5320,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'crypto_payments';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -5351,7 +5351,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección crypto_payments",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -5372,7 +5372,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -5388,7 +5388,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -5398,11 +5398,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Pasarela de Cobro en Criptoactivos Estables (USDC / USDT)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-025: Pasarela de Cobro en Criptoactivos Estables (USDC / USDT)\",\n  \"message\": \"=Error al ejecutar en colección crypto_payments: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-025\",\n    \"collection\": \"crypto_payments\",\n    \"endpoint\": \"/api/webhooks/n8n/crypto-webhook\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Pasarela de Cobro en Criptoactivos Estables (USDC / USDT)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-025: Pasarela de Cobro en Criptoactivos Estables (USDC / USDT)\",\n  \"message\": \"=Error al ejecutar en colección crypto_payments: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-025\",\n    \"collection\": \"crypto_payments\",\n    \"endpoint\": \"/api/native/workflows/crypto-webhook\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -5469,7 +5469,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "LockKeyhole",
     color: "#dc2626",
-    endpoint: "/api/webhooks/n8n/validate-hmac",
+    endpoint: "/api/native/workflows/validate-hmac",
     method: "POST",
     triggerEvent: "Pre-flight al procesar pago",
     nodesCount: 5,
@@ -5478,31 +5478,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Escudo Criptográfico Antimanipulación de Montos (HMAC Guard)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Pre-flight al procesar pago"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación security_events",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /security_events"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -5518,13 +5518,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/validate-hmac",
+                        "path": "api/native/workflows/validate-hmac",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Escudo Criptográfico Antimanipulación de Montos (HMAC Guard)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -5536,7 +5536,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'security_events';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -5567,7 +5567,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección security_events",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -5588,7 +5588,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -5604,7 +5604,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -5614,11 +5614,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Escudo Criptográfico Antimanipulación de Montos (HMAC Guard)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-026: Escudo Criptográfico Antimanipulación de Montos (HMAC Guard)\",\n  \"message\": \"=Error al ejecutar en colección security_events: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-026\",\n    \"collection\": \"security_events\",\n    \"endpoint\": \"/api/webhooks/n8n/validate-hmac\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Escudo Criptográfico Antimanipulación de Montos (HMAC Guard)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-026: Escudo Criptográfico Antimanipulación de Montos (HMAC Guard)\",\n  \"message\": \"=Error al ejecutar en colección security_events: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-026\",\n    \"collection\": \"security_events\",\n    \"endpoint\": \"/api/native/workflows/validate-hmac\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -5685,7 +5685,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "FileSpreadsheet",
     color: "#059669",
-    endpoint: "/api/webhooks/n8n/vat-audit",
+    endpoint: "/api/native/workflows/vat-audit",
     method: "POST",
     triggerEvent: "Facturación de tours con certificación comunitaria",
     nodesCount: 5,
@@ -5694,31 +5694,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Auditor de Exención de IVA para Paquetes Turísticos Especiales",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Facturación de tours con certificación comunitaria"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación tax_audits",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /tax_audits"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -5734,13 +5734,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/vat-audit",
+                        "path": "api/native/workflows/vat-audit",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Auditor de Exención de IVA para Paquetes Turísticos Especiales",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -5752,7 +5752,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'tax_audits';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -5783,7 +5783,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección tax_audits",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -5804,7 +5804,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -5820,7 +5820,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -5830,11 +5830,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Auditor de Exención de IVA para Paquetes Turísticos Especiales\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-027: Auditor de Exención de IVA para Paquetes Turísticos Especiales\",\n  \"message\": \"=Error al ejecutar en colección tax_audits: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-027\",\n    \"collection\": \"tax_audits\",\n    \"endpoint\": \"/api/webhooks/n8n/vat-audit\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Auditor de Exención de IVA para Paquetes Turísticos Especiales\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-027: Auditor de Exención de IVA para Paquetes Turísticos Especiales\",\n  \"message\": \"=Error al ejecutar en colección tax_audits: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-027\",\n    \"collection\": \"tax_audits\",\n    \"endpoint\": \"/api/native/workflows/vat-audit\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -5901,7 +5901,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Globe",
     color: "#0284c7",
-    endpoint: "/api/webhooks/n8n/multicurrency-rates",
+    endpoint: "/api/native/workflows/multicurrency-rates",
     method: "GET",
     triggerEvent: "Petición GET de catálogo o cron cada 4 horas",
     nodesCount: 5,
@@ -5910,31 +5910,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Conversor Multidivisa de Precios (EUR, GBP, CAD a USD)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Petición GET de catálogo o cron cada 4 horas"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación fx_rates",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /fx_rates"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -5951,13 +5951,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/multicurrency-rates",
+                        "path": "api/native/workflows/multicurrency-rates",
                         "httpMethod": "GET",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Conversor Multidivisa de Precios (EUR, GBP, CAD a USD)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -5969,7 +5969,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'fx_rates';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -6000,7 +6000,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección fx_rates",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -6021,7 +6021,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -6037,7 +6037,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -6047,11 +6047,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Conversor Multidivisa de Precios (EUR, GBP, CAD a USD)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-028: Conversor Multidivisa de Precios (EUR, GBP, CAD a USD)\",\n  \"message\": \"=Error al ejecutar en colección fx_rates: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-028\",\n    \"collection\": \"fx_rates\",\n    \"endpoint\": \"/api/webhooks/n8n/multicurrency-rates\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Conversor Multidivisa de Precios (EUR, GBP, CAD a USD)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-028: Conversor Multidivisa de Precios (EUR, GBP, CAD a USD)\",\n  \"message\": \"=Error al ejecutar en colección fx_rates: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-028\",\n    \"collection\": \"fx_rates\",\n    \"endpoint\": \"/api/native/workflows/multicurrency-rates\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -6118,7 +6118,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Send",
     color: "#059669",
-    endpoint: "/api/webhooks/n8n/provider-payout",
+    endpoint: "/api/native/workflows/provider-payout",
     method: "POST",
     triggerEvent: "Cron quincenal (días 15 y 30 a las 6:00 AM)",
     nodesCount: 5,
@@ -6127,31 +6127,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Liquidación Quincenal a Operadores Locales de Tours",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron quincenal (días 15 y 30 a las 6:00 AM)"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación payouts",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /payouts"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -6169,13 +6169,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/provider-payout",
+                        "path": "api/native/workflows/provider-payout",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Liquidación Quincenal a Operadores Locales de Tours",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -6187,7 +6187,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'payouts';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -6218,7 +6218,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección payouts",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -6239,7 +6239,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -6255,7 +6255,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -6265,11 +6265,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Liquidación Quincenal a Operadores Locales de Tours\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-029: Liquidación Quincenal a Operadores Locales de Tours\",\n  \"message\": \"=Error al ejecutar en colección payouts: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-029\",\n    \"collection\": \"payouts\",\n    \"endpoint\": \"/api/webhooks/n8n/provider-payout\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Liquidación Quincenal a Operadores Locales de Tours\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-029: Liquidación Quincenal a Operadores Locales de Tours\",\n  \"message\": \"=Error al ejecutar en colección payouts: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-029\",\n    \"collection\": \"payouts\",\n    \"endpoint\": \"/api/native/workflows/provider-payout\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -6336,7 +6336,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "MessageSquare",
     color: "#10b981",
-    endpoint: "/api/webhooks/n8n/dispatch-provider-whatsapp",
+    endpoint: "/api/native/workflows/dispatch-provider-whatsapp",
     method: "POST",
     triggerEvent: "Confirmación exitosa de reserva",
     nodesCount: 5,
@@ -6345,31 +6345,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Despacho Instantáneo de Reserva al Proveedor vía WhatsApp",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Confirmación exitosa de reserva"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación provider_notifications",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /provider_notifications"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -6386,13 +6386,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/dispatch-provider-whatsapp",
+                        "path": "api/native/workflows/dispatch-provider-whatsapp",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Despacho Instantáneo de Reserva al Proveedor vía WhatsApp",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -6404,7 +6404,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'provider_notifications';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -6435,7 +6435,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección provider_notifications",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -6456,7 +6456,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -6472,7 +6472,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -6482,11 +6482,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Despacho Instantáneo de Reserva al Proveedor vía WhatsApp\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-030: Despacho Instantáneo de Reserva al Proveedor vía WhatsApp\",\n  \"message\": \"=Error al ejecutar en colección provider_notifications: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-030\",\n    \"collection\": \"provider_notifications\",\n    \"endpoint\": \"/api/webhooks/n8n/dispatch-provider-whatsapp\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Despacho Instantáneo de Reserva al Proveedor vía WhatsApp\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-030: Despacho Instantáneo de Reserva al Proveedor vía WhatsApp\",\n  \"message\": \"=Error al ejecutar en colección provider_notifications: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-030\",\n    \"collection\": \"provider_notifications\",\n    \"endpoint\": \"/api/native/workflows/dispatch-provider-whatsapp\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -6553,7 +6553,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "UserCheck",
     color: "#6366f1",
-    endpoint: "/api/webhooks/n8n/onboard-provider",
+    endpoint: "/api/native/workflows/onboard-provider",
     method: "POST",
     triggerEvent: "Registro de nuevo operador en el portal",
     nodesCount: 5,
@@ -6562,31 +6562,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Evaluador y Onboarding de Nuevos Operadores Turísticos",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Registro de nuevo operador en el portal"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación providers",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /providers"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -6602,13 +6602,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/onboard-provider",
+                        "path": "api/native/workflows/onboard-provider",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Evaluador y Onboarding de Nuevos Operadores Turísticos",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -6620,7 +6620,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'providers';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -6651,7 +6651,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección providers",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -6672,7 +6672,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -6688,7 +6688,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -6698,11 +6698,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Evaluador y Onboarding de Nuevos Operadores Turísticos\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-031: Evaluador y Onboarding de Nuevos Operadores Turísticos\",\n  \"message\": \"=Error al ejecutar en colección providers: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-031\",\n    \"collection\": \"providers\",\n    \"endpoint\": \"/api/webhooks/n8n/onboard-provider\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Evaluador y Onboarding de Nuevos Operadores Turísticos\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-031: Evaluador y Onboarding de Nuevos Operadores Turísticos\",\n  \"message\": \"=Error al ejecutar en colección providers: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-031\",\n    \"collection\": \"providers\",\n    \"endpoint\": \"/api/native/workflows/onboard-provider\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -6769,7 +6769,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Leaf",
     color: "#15803d",
-    endpoint: "/api/webhooks/n8n/cst-audit",
+    endpoint: "/api/native/workflows/cst-audit",
     method: "POST",
     triggerEvent: "Cron mensual de auditoría ambiental",
     nodesCount: 5,
@@ -6778,31 +6778,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Auditor de Certificación CST (Sostenibilidad Turística)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron mensual de auditoría ambiental"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación cst_certifications",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /cst_certifications"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -6818,13 +6818,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/cst-audit",
+                        "path": "api/native/workflows/cst-audit",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Auditor de Certificación CST (Sostenibilidad Turística)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -6836,7 +6836,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'cst_certifications';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -6867,7 +6867,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección cst_certifications",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -6888,7 +6888,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -6904,7 +6904,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -6914,11 +6914,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Auditor de Certificación CST (Sostenibilidad Turística)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-032: Auditor de Certificación CST (Sostenibilidad Turística)\",\n  \"message\": \"=Error al ejecutar en colección cst_certifications: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-032\",\n    \"collection\": \"cst_certifications\",\n    \"endpoint\": \"/api/webhooks/n8n/cst-audit\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Auditor de Certificación CST (Sostenibilidad Turística)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-032: Auditor de Certificación CST (Sostenibilidad Turística)\",\n  \"message\": \"=Error al ejecutar en colección cst_certifications: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-032\",\n    \"collection\": \"cst_certifications\",\n    \"endpoint\": \"/api/native/workflows/cst-audit\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -6985,7 +6985,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Compass",
     color: "#0284c7",
-    endpoint: "/api/webhooks/n8n/sync-guide-badge",
+    endpoint: "/api/native/workflows/sync-guide-badge",
     method: "POST",
     triggerEvent: "Asignación de guía a tour",
     nodesCount: 5,
@@ -6994,31 +6994,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Sincronizador de Credenciales de Guías Naturalistas",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Asignación de guía a tour"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación guides",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /guides"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -7038,13 +7038,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/sync-guide-badge",
+                        "path": "api/native/workflows/sync-guide-badge",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Sincronizador de Credenciales de Guías Naturalistas",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -7056,7 +7056,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'guides';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -7087,7 +7087,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección guides",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -7108,7 +7108,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -7124,7 +7124,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -7134,11 +7134,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Sincronizador de Credenciales de Guías Naturalistas\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-033: Sincronizador de Credenciales de Guías Naturalistas\",\n  \"message\": \"=Error al ejecutar en colección guides: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-033\",\n    \"collection\": \"guides\",\n    \"endpoint\": \"/api/webhooks/n8n/sync-guide-badge\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Sincronizador de Credenciales de Guías Naturalistas\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-033: Sincronizador de Credenciales de Guías Naturalistas\",\n  \"message\": \"=Error al ejecutar en colección guides: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-033\",\n    \"collection\": \"guides\",\n    \"endpoint\": \"/api/native/workflows/sync-guide-badge\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -7205,7 +7205,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Wrench",
     color: "#ea580c",
-    endpoint: "/api/webhooks/n8n/blackout-dates",
+    endpoint: "/api/native/workflows/blackout-dates",
     method: "POST",
     triggerEvent: "Aviso de mantenimiento del operador",
     nodesCount: 5,
@@ -7214,31 +7214,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Bloqueador Automático de Cupos por Mantenimiento",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Aviso de mantenimiento del operador"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación blackouts",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /blackouts"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -7255,13 +7255,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/blackout-dates",
+                        "path": "api/native/workflows/blackout-dates",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Bloqueador Automático de Cupos por Mantenimiento",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -7273,7 +7273,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'blackouts';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -7304,7 +7304,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección blackouts",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -7325,7 +7325,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -7341,7 +7341,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -7351,11 +7351,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Bloqueador Automático de Cupos por Mantenimiento\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-034: Bloqueador Automático de Cupos por Mantenimiento\",\n  \"message\": \"=Error al ejecutar en colección blackouts: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-034\",\n    \"collection\": \"blackouts\",\n    \"endpoint\": \"/api/webhooks/n8n/blackout-dates\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Bloqueador Automático de Cupos por Mantenimiento\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-034: Bloqueador Automático de Cupos por Mantenimiento\",\n  \"message\": \"=Error al ejecutar en colección blackouts: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-034\",\n    \"collection\": \"blackouts\",\n    \"endpoint\": \"/api/native/workflows/blackout-dates\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -7422,7 +7422,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Trophy",
     color: "#eab308",
-    endpoint: "/api/webhooks/n8n/rank-providers",
+    endpoint: "/api/native/workflows/rank-providers",
     method: "POST",
     triggerEvent: "Cron mensual el día 1 de cada mes",
     nodesCount: 5,
@@ -7431,31 +7431,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Calculador de Calidad y Ranking de Proveedores",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron mensual el día 1 de cada mes"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación provider_metrics",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /provider_metrics"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -7472,13 +7472,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/rank-providers",
+                        "path": "api/native/workflows/rank-providers",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Calculador de Calidad y Ranking de Proveedores",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -7490,7 +7490,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'provider_metrics';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -7521,7 +7521,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección provider_metrics",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -7542,7 +7542,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -7558,7 +7558,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -7568,11 +7568,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Calculador de Calidad y Ranking de Proveedores\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-035: Calculador de Calidad y Ranking de Proveedores\",\n  \"message\": \"=Error al ejecutar en colección provider_metrics: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-035\",\n    \"collection\": \"provider_metrics\",\n    \"endpoint\": \"/api/webhooks/n8n/rank-providers\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Calculador de Calidad y Ranking de Proveedores\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-035: Calculador de Calidad y Ranking de Proveedores\",\n  \"message\": \"=Error al ejecutar en colección provider_metrics: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-035\",\n    \"collection\": \"provider_metrics\",\n    \"endpoint\": \"/api/native/workflows/rank-providers\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -7639,7 +7639,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "ShieldAlert",
     color: "#dc2626",
-    endpoint: "/api/webhooks/n8n/insurance-watchdog",
+    endpoint: "/api/native/workflows/insurance-watchdog",
     method: "POST",
     triggerEvent: "Cron diario 08:00 AM",
     nodesCount: 5,
@@ -7648,31 +7648,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Vigilante de Vencimiento de Pólizas de Seguro INS",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron diario 08:00 AM"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación insurance_policies",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /insurance_policies"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -7688,13 +7688,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/insurance-watchdog",
+                        "path": "api/native/workflows/insurance-watchdog",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Vigilante de Vencimiento de Pólizas de Seguro INS",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -7706,7 +7706,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'insurance_policies';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -7737,7 +7737,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección insurance_policies",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -7758,7 +7758,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -7774,7 +7774,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -7784,11 +7784,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Vigilante de Vencimiento de Pólizas de Seguro INS\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-036: Vigilante de Vencimiento de Pólizas de Seguro INS\",\n  \"message\": \"=Error al ejecutar en colección insurance_policies: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-036\",\n    \"collection\": \"insurance_policies\",\n    \"endpoint\": \"/api/webhooks/n8n/insurance-watchdog\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Vigilante de Vencimiento de Pólizas de Seguro INS\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-036: Vigilante de Vencimiento de Pólizas de Seguro INS\",\n  \"message\": \"=Error al ejecutar en colección insurance_policies: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-036\",\n    \"collection\": \"insurance_policies\",\n    \"endpoint\": \"/api/native/workflows/insurance-watchdog\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -7855,7 +7855,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Timer",
     color: "#f59e0b",
-    endpoint: "/api/webhooks/n8n/check-operator-ack",
+    endpoint: "/api/native/workflows/check-operator-ack",
     method: "POST",
     triggerEvent: "Evento diferido 30 min post-reserva",
     nodesCount: 5,
@@ -7864,31 +7864,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Monitor de SLA de Aceptación de Reserva por Operador",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Evento diferido 30 min post-reserva"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación sla_tracking",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /sla_tracking"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -7905,13 +7905,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/check-operator-ack",
+                        "path": "api/native/workflows/check-operator-ack",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Monitor de SLA de Aceptación de Reserva por Operador",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -7923,7 +7923,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'sla_tracking';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -7954,7 +7954,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección sla_tracking",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -7975,7 +7975,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -7991,7 +7991,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -8001,11 +8001,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Monitor de SLA de Aceptación de Reserva por Operador\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-037: Monitor de SLA de Aceptación de Reserva por Operador\",\n  \"message\": \"=Error al ejecutar en colección sla_tracking: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-037\",\n    \"collection\": \"sla_tracking\",\n    \"endpoint\": \"/api/webhooks/n8n/check-operator-ack\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Monitor de SLA de Aceptación de Reserva por Operador\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-037: Monitor de SLA de Aceptación de Reserva por Operador\",\n  \"message\": \"=Error al ejecutar en colección sla_tracking: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-037\",\n    \"collection\": \"sla_tracking\",\n    \"endpoint\": \"/api/native/workflows/check-operator-ack\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -8072,7 +8072,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "PhoneCall",
     color: "#ef4444",
-    endpoint: "/api/webhooks/n8n/emergency-hotline",
+    endpoint: "/api/native/workflows/emergency-hotline",
     method: "POST",
     triggerEvent: "Llamada o mensaje de emergencia desde el concierge",
     nodesCount: 5,
@@ -8081,31 +8081,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Enlace de Emergencia con Línea Directa de Operadores",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Llamada o mensaje de emergencia desde el concierge"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación emergency_dispatches",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /emergency_dispatches"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -8121,13 +8121,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/emergency-hotline",
+                        "path": "api/native/workflows/emergency-hotline",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Enlace de Emergencia con Línea Directa de Operadores",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -8139,7 +8139,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'emergency_dispatches';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -8170,7 +8170,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección emergency_dispatches",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -8191,7 +8191,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -8207,7 +8207,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -8217,11 +8217,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Enlace de Emergencia con Línea Directa de Operadores\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-038: Enlace de Emergencia con Línea Directa de Operadores\",\n  \"message\": \"=Error al ejecutar en colección emergency_dispatches: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-038\",\n    \"collection\": \"emergency_dispatches\",\n    \"endpoint\": \"/api/webhooks/n8n/emergency-hotline\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Enlace de Emergencia con Línea Directa de Operadores\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-038: Enlace de Emergencia con Línea Directa de Operadores\",\n  \"message\": \"=Error al ejecutar en colección emergency_dispatches: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-038\",\n    \"collection\": \"emergency_dispatches\",\n    \"endpoint\": \"/api/native/workflows/emergency-hotline\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -8288,7 +8288,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Languages",
     color: "#8b5cf6",
-    endpoint: "/api/webhooks/n8n/match-guide-language",
+    endpoint: "/api/native/workflows/match-guide-language",
     method: "POST",
     triggerEvent: "Creación de reserva con idioma no estándar",
     nodesCount: 5,
@@ -8297,31 +8297,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Asignador de Guías por Idioma Específico (DE, FR, EN, ES)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Creación de reserva con idioma no estándar"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación guide_assignments",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /guide_assignments"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -8337,13 +8337,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/match-guide-language",
+                        "path": "api/native/workflows/match-guide-language",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Asignador de Guías por Idioma Específico (DE, FR, EN, ES)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -8355,7 +8355,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'guide_assignments';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -8386,7 +8386,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección guide_assignments",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -8407,7 +8407,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -8423,7 +8423,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -8433,11 +8433,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Asignador de Guías por Idioma Específico (DE, FR, EN, ES)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-039: Asignador de Guías por Idioma Específico (DE, FR, EN, ES)\",\n  \"message\": \"=Error al ejecutar en colección guide_assignments: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-039\",\n    \"collection\": \"guide_assignments\",\n    \"endpoint\": \"/api/webhooks/n8n/match-guide-language\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Asignador de Guías por Idioma Específico (DE, FR, EN, ES)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-039: Asignador de Guías por Idioma Específico (DE, FR, EN, ES)\",\n  \"message\": \"=Error al ejecutar en colección guide_assignments: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-039\",\n    \"collection\": \"guide_assignments\",\n    \"endpoint\": \"/api/native/workflows/match-guide-language\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -8504,7 +8504,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "TrendingDown",
     color: "#059669",
-    endpoint: "/api/webhooks/n8n/upgrade-commission-tier",
+    endpoint: "/api/native/workflows/upgrade-commission-tier",
     method: "POST",
     triggerEvent: "Cierre mensual de volumen",
     nodesCount: 5,
@@ -8513,31 +8513,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Optimizador de Tramos de Comisión por Volumen de Ventas",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cierre mensual de volumen"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación commission_tiers",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /commission_tiers"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -8553,13 +8553,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/upgrade-commission-tier",
+                        "path": "api/native/workflows/upgrade-commission-tier",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Optimizador de Tramos de Comisión por Volumen de Ventas",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -8571,7 +8571,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'commission_tiers';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -8602,7 +8602,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección commission_tiers",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -8623,7 +8623,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -8639,7 +8639,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -8649,11 +8649,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Optimizador de Tramos de Comisión por Volumen de Ventas\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-040: Optimizador de Tramos de Comisión por Volumen de Ventas\",\n  \"message\": \"=Error al ejecutar en colección commission_tiers: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-040\",\n    \"collection\": \"commission_tiers\",\n    \"endpoint\": \"/api/webhooks/n8n/upgrade-commission-tier\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Optimizador de Tramos de Comisión por Volumen de Ventas\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-040: Optimizador de Tramos de Comisión por Volumen de Ventas\",\n  \"message\": \"=Error al ejecutar en colección commission_tiers: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-040\",\n    \"collection\": \"commission_tiers\",\n    \"endpoint\": \"/api/native/workflows/upgrade-commission-tier\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -8720,7 +8720,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Truck",
     color: "#0284c7",
-    endpoint: "/api/webhooks/n8n/alsama-dispatch",
+    endpoint: "/api/native/workflows/alsama-dispatch",
     method: "POST",
     triggerEvent: "Reserva confirmada con transporte incluido",
     nodesCount: 5,
@@ -8729,31 +8729,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Despacho Automático de Vans Ejecutivas Alsama Transport",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Reserva confirmada con transporte incluido"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación fleet_dispatch",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /fleet_dispatch"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -8770,13 +8770,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/alsama-dispatch",
+                        "path": "api/native/workflows/alsama-dispatch",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Despacho Automático de Vans Ejecutivas Alsama Transport",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -8788,7 +8788,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'fleet_dispatch';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -8819,7 +8819,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección fleet_dispatch",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -8840,7 +8840,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -8856,7 +8856,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -8866,11 +8866,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Despacho Automático de Vans Ejecutivas Alsama Transport\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-041: Despacho Automático de Vans Ejecutivas Alsama Transport\",\n  \"message\": \"=Error al ejecutar en colección fleet_dispatch: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-041\",\n    \"collection\": \"fleet_dispatch\",\n    \"endpoint\": \"/api/webhooks/n8n/alsama-dispatch\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Despacho Automático de Vans Ejecutivas Alsama Transport\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-041: Despacho Automático de Vans Ejecutivas Alsama Transport\",\n  \"message\": \"=Error al ejecutar en colección fleet_dispatch: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-041\",\n    \"collection\": \"fleet_dispatch\",\n    \"endpoint\": \"/api/native/workflows/alsama-dispatch\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -8937,7 +8937,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Plane",
     color: "#0ea5e9",
-    endpoint: "/api/webhooks/n8n/flight-guard",
+    endpoint: "/api/native/workflows/flight-guard",
     method: "POST",
     triggerEvent: "Cron de rastreo de vuelos cada 15 min",
     nodesCount: 5,
@@ -8946,31 +8946,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Monitoreo de Vuelos en Tiempo Real (SJO Juan Santamaría / LIR Guanacaste)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron de rastreo de vuelos cada 15 min"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación flight_tracking",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /flight_tracking"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -8987,13 +8987,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/flight-guard",
+                        "path": "api/native/workflows/flight-guard",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Monitoreo de Vuelos en Tiempo Real (SJO Juan Santamaría / LIR Guanacaste)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -9005,7 +9005,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'flight_tracking';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -9036,7 +9036,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección flight_tracking",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -9057,7 +9057,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -9073,7 +9073,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -9083,11 +9083,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Monitoreo de Vuelos en Tiempo Real (SJO Juan Santamaría / LIR Guanacaste)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-042: Monitoreo de Vuelos en Tiempo Real (SJO Juan Santamaría / LIR Guanacaste)\",\n  \"message\": \"=Error al ejecutar en colección flight_tracking: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-042\",\n    \"collection\": \"flight_tracking\",\n    \"endpoint\": \"/api/webhooks/n8n/flight-guard\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Monitoreo de Vuelos en Tiempo Real (SJO Juan Santamaría / LIR Guanacaste)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-042: Monitoreo de Vuelos en Tiempo Real (SJO Juan Santamaría / LIR Guanacaste)\",\n  \"message\": \"=Error al ejecutar en colección flight_tracking: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-042\",\n    \"collection\": \"flight_tracking\",\n    \"endpoint\": \"/api/native/workflows/flight-guard\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -9154,7 +9154,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Navigation",
     color: "#f97316",
-    endpoint: "/api/webhooks/n8n/highway-reroute",
+    endpoint: "/api/native/workflows/highway-reroute",
     method: "POST",
     triggerEvent: "Alerta de Tránsito MOPT/Waze o CNE",
     nodesCount: 5,
@@ -9163,31 +9163,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Re-enrutador Vial Inteligente (Ruta 32 / Ruta 27 / Cerro de la Muerte)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Alerta de Tránsito MOPT/Waze o CNE"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación traffic_alerts",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /traffic_alerts"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -9203,13 +9203,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/highway-reroute",
+                        "path": "api/native/workflows/highway-reroute",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Re-enrutador Vial Inteligente (Ruta 32 / Ruta 27 / Cerro de la Muerte)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -9221,7 +9221,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'traffic_alerts';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -9252,7 +9252,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección traffic_alerts",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -9273,7 +9273,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -9289,7 +9289,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -9299,11 +9299,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Re-enrutador Vial Inteligente (Ruta 32 / Ruta 27 / Cerro de la Muerte)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-043: Re-enrutador Vial Inteligente (Ruta 32 / Ruta 27 / Cerro de la Muerte)\",\n  \"message\": \"=Error al ejecutar en colección traffic_alerts: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-043\",\n    \"collection\": \"traffic_alerts\",\n    \"endpoint\": \"/api/webhooks/n8n/highway-reroute\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Re-enrutador Vial Inteligente (Ruta 32 / Ruta 27 / Cerro de la Muerte)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-043: Re-enrutador Vial Inteligente (Ruta 32 / Ruta 27 / Cerro de la Muerte)\",\n  \"message\": \"=Error al ejecutar en colección traffic_alerts: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-043\",\n    \"collection\": \"traffic_alerts\",\n    \"endpoint\": \"/api/native/workflows/highway-reroute\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -9370,7 +9370,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "ClipboardCheck",
     color: "#10b981",
-    endpoint: "/api/webhooks/n8n/driver-safety-check",
+    endpoint: "/api/native/workflows/driver-safety-check",
     method: "POST",
     triggerEvent: "Envío de formulario matutino de chofer (05:30 AM)",
     nodesCount: 5,
@@ -9379,31 +9379,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Auditor Digital de Checklist de Seguridad del Chofer",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Envío de formulario matutino de chofer (05:30 AM)"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación driver_inspections",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /driver_inspections"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -9419,13 +9419,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/driver-safety-check",
+                        "path": "api/native/workflows/driver-safety-check",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Auditor Digital de Checklist de Seguridad del Chofer",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -9437,7 +9437,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'driver_inspections';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -9468,7 +9468,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección driver_inspections",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -9489,7 +9489,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -9505,7 +9505,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -9515,11 +9515,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Auditor Digital de Checklist de Seguridad del Chofer\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-044: Auditor Digital de Checklist de Seguridad del Chofer\",\n  \"message\": \"=Error al ejecutar en colección driver_inspections: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-044\",\n    \"collection\": \"driver_inspections\",\n    \"endpoint\": \"/api/webhooks/n8n/driver-safety-check\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Auditor Digital de Checklist de Seguridad del Chofer\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-044: Auditor Digital de Checklist de Seguridad del Chofer\",\n  \"message\": \"=Error al ejecutar en colección driver_inspections: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-044\",\n    \"collection\": \"driver_inspections\",\n    \"endpoint\": \"/api/native/workflows/driver-safety-check\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -9586,7 +9586,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Briefcase",
     color: "#a855f7",
-    endpoint: "/api/webhooks/n8n/lost-item-finder",
+    endpoint: "/api/native/workflows/lost-item-finder",
     method: "POST",
     triggerEvent: "Reporte de objeto olvidado desde concierge",
     nodesCount: 5,
@@ -9595,31 +9595,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Localizador y Custodia de Equipaje Extraviado en Vans",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Reporte de objeto olvidado desde concierge"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación lost_items",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /lost_items"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -9635,13 +9635,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/lost-item-finder",
+                        "path": "api/native/workflows/lost-item-finder",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Localizador y Custodia de Equipaje Extraviado en Vans",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -9653,7 +9653,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'lost_items';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -9684,7 +9684,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección lost_items",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -9705,7 +9705,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -9721,7 +9721,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -9731,11 +9731,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Localizador y Custodia de Equipaje Extraviado en Vans\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-045: Localizador y Custodia de Equipaje Extraviado en Vans\",\n  \"message\": \"=Error al ejecutar en colección lost_items: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-045\",\n    \"collection\": \"lost_items\",\n    \"endpoint\": \"/api/webhooks/n8n/lost-item-finder\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Localizador y Custodia de Equipaje Extraviado en Vans\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-045: Localizador y Custodia de Equipaje Extraviado en Vans\",\n  \"message\": \"=Error al ejecutar en colección lost_items: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-045\",\n    \"collection\": \"lost_items\",\n    \"endpoint\": \"/api/native/workflows/lost-item-finder\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -9802,7 +9802,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "TreePine",
     color: "#15803d",
-    endpoint: "/api/webhooks/n8n/carbon-offset",
+    endpoint: "/api/native/workflows/carbon-offset",
     method: "POST",
     triggerEvent: "Finalización de servicio de transporte",
     nodesCount: 5,
@@ -9811,31 +9811,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Calculador de Huella de Carbono y Compensación Fonafifo",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Finalización de servicio de transporte"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación carbon_offsets",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /carbon_offsets"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -9852,13 +9852,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/carbon-offset",
+                        "path": "api/native/workflows/carbon-offset",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Calculador de Huella de Carbono y Compensación Fonafifo",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -9870,7 +9870,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'carbon_offsets';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -9901,7 +9901,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección carbon_offsets",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -9922,7 +9922,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -9938,7 +9938,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -9948,11 +9948,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Calculador de Huella de Carbono y Compensación Fonafifo\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-046: Calculador de Huella de Carbono y Compensación Fonafifo\",\n  \"message\": \"=Error al ejecutar en colección carbon_offsets: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-046\",\n    \"collection\": \"carbon_offsets\",\n    \"endpoint\": \"/api/webhooks/n8n/carbon-offset\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Calculador de Huella de Carbono y Compensación Fonafifo\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-046: Calculador de Huella de Carbono y Compensación Fonafifo\",\n  \"message\": \"=Error al ejecutar en colección carbon_offsets: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-046\",\n    \"collection\": \"carbon_offsets\",\n    \"endpoint\": \"/api/native/workflows/carbon-offset\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -10019,7 +10019,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "BatteryCharging",
     color: "#06b6d4",
-    endpoint: "/api/webhooks/n8n/ev-charging-plan",
+    endpoint: "/api/native/workflows/ev-charging-plan",
     method: "POST",
     triggerEvent: "Asignación de vehículo 100% eléctrico",
     nodesCount: 5,
@@ -10028,31 +10028,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Planificador de Paradas en Electrolineras para Vans Eléctricas",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Asignación de vehículo 100% eléctrico"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación ev_stops",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /ev_stops"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -10069,13 +10069,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/ev-charging-plan",
+                        "path": "api/native/workflows/ev-charging-plan",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Planificador de Paradas en Electrolineras para Vans Eléctricas",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -10087,7 +10087,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'ev_stops';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -10118,7 +10118,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección ev_stops",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -10139,7 +10139,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -10155,7 +10155,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -10165,11 +10165,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Planificador de Paradas en Electrolineras para Vans Eléctricas\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-047: Planificador de Paradas en Electrolineras para Vans Eléctricas\",\n  \"message\": \"=Error al ejecutar en colección ev_stops: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-047\",\n    \"collection\": \"ev_stops\",\n    \"endpoint\": \"/api/webhooks/n8n/ev-charging-plan\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Planificador de Paradas en Electrolineras para Vans Eléctricas\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-047: Planificador de Paradas en Electrolineras para Vans Eléctricas\",\n  \"message\": \"=Error al ejecutar en colección ev_stops: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-047\",\n    \"collection\": \"ev_stops\",\n    \"endpoint\": \"/api/native/workflows/ev-charging-plan\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -10236,7 +10236,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Baby",
     color: "#f43f5e",
-    endpoint: "/api/webhooks/n8n/child-seat-assign",
+    endpoint: "/api/native/workflows/child-seat-assign",
     method: "POST",
     triggerEvent: "Reserva con infantes/niños pequeños",
     nodesCount: 5,
@@ -10245,31 +10245,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Gestor y Asignador de Sillas de Bebé y Boosters de Seguridad",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Reserva con infantes/niños pequeños"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación fleet_equipment",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /fleet_equipment"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -10293,13 +10293,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/child-seat-assign",
+                        "path": "api/native/workflows/child-seat-assign",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Gestor y Asignador de Sillas de Bebé y Boosters de Seguridad",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -10311,7 +10311,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'fleet_equipment';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -10342,7 +10342,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección fleet_equipment",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -10363,7 +10363,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -10379,7 +10379,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -10389,11 +10389,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Gestor y Asignador de Sillas de Bebé y Boosters de Seguridad\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-048: Gestor y Asignador de Sillas de Bebé y Boosters de Seguridad\",\n  \"message\": \"=Error al ejecutar en colección fleet_equipment: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-048\",\n    \"collection\": \"fleet_equipment\",\n    \"endpoint\": \"/api/webhooks/n8n/child-seat-assign\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Gestor y Asignador de Sillas de Bebé y Boosters de Seguridad\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-048: Gestor y Asignador de Sillas de Bebé y Boosters de Seguridad\",\n  \"message\": \"=Error al ejecutar en colección fleet_equipment: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-048\",\n    \"collection\": \"fleet_equipment\",\n    \"endpoint\": \"/api/native/workflows/child-seat-assign\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -10460,7 +10460,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Wind",
     color: "#6366f1",
-    endpoint: "/api/webhooks/n8n/heli-dispatch",
+    endpoint: "/api/native/workflows/heli-dispatch",
     method: "POST",
     triggerEvent: "Reserva de paquete VIP con vuelo escénico",
     nodesCount: 5,
@@ -10469,31 +10469,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Despachador de Traslados VIP en Helicóptero a Helipuertos",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Reserva de paquete VIP con vuelo escénico"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación heli_transfers",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /heli_transfers"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -10510,13 +10510,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/heli-dispatch",
+                        "path": "api/native/workflows/heli-dispatch",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Despachador de Traslados VIP en Helicóptero a Helipuertos",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -10528,7 +10528,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'heli_transfers';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -10559,7 +10559,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección heli_transfers",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -10580,7 +10580,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -10596,7 +10596,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -10606,11 +10606,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Despachador de Traslados VIP en Helicóptero a Helipuertos\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-049: Despachador de Traslados VIP en Helicóptero a Helipuertos\",\n  \"message\": \"=Error al ejecutar en colección heli_transfers: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-049\",\n    \"collection\": \"heli_transfers\",\n    \"endpoint\": \"/api/webhooks/n8n/heli-dispatch\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Despachador de Traslados VIP en Helicóptero a Helipuertos\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-049: Despachador de Traslados VIP en Helicóptero a Helipuertos\",\n  \"message\": \"=Error al ejecutar en colección heli_transfers: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-049\",\n    \"collection\": \"heli_transfers\",\n    \"endpoint\": \"/api/native/workflows/heli-dispatch\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -10677,7 +10677,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "FileText",
     color: "#0f766e",
-    endpoint: "/api/webhooks/n8n/cross-border-sync",
+    endpoint: "/api/native/workflows/cross-border-sync",
     method: "POST",
     triggerEvent: "Reserva de tour binacional (ej. Tortuguero + Bocas)",
     nodesCount: 5,
@@ -10686,31 +10686,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Gestor de Cruces Fronterizos (Bocas del Toro / San Juan)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Reserva de tour binacional (ej. Tortuguero + Bocas)"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación cross_border_manifests",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /cross_border_manifests"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -10726,13 +10726,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/cross-border-sync",
+                        "path": "api/native/workflows/cross-border-sync",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Gestor de Cruces Fronterizos (Bocas del Toro / San Juan)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -10744,7 +10744,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'cross_border_manifests';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -10775,7 +10775,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección cross_border_manifests",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -10796,7 +10796,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -10812,7 +10812,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -10822,11 +10822,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Gestor de Cruces Fronterizos (Bocas del Toro / San Juan)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-050: Gestor de Cruces Fronterizos (Bocas del Toro / San Juan)\",\n  \"message\": \"=Error al ejecutar en colección cross_border_manifests: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-050\",\n    \"collection\": \"cross_border_manifests\",\n    \"endpoint\": \"/api/webhooks/n8n/cross-border-sync\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Gestor de Cruces Fronterizos (Bocas del Toro / San Juan)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-050: Gestor de Cruces Fronterizos (Bocas del Toro / San Juan)\",\n  \"message\": \"=Error al ejecutar en colección cross_border_manifests: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-050\",\n    \"collection\": \"cross_border_manifests\",\n    \"endpoint\": \"/api/native/workflows/cross-border-sync\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -10893,7 +10893,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Bot",
     color: "#10b981",
-    endpoint: "/api/webhooks/n8n/chat-inquiry",
+    endpoint: "/api/native/workflows/chat-inquiry",
     method: "POST",
     triggerEvent: "Mensaje entrante de chat web o WhatsApp",
     nodesCount: 5,
@@ -10902,31 +10902,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Asistente Turístico IA Bilingüe 24/7 (Gemini 2.5 Flash)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Mensaje entrante de chat web o WhatsApp"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación chat_sessions",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /chat_sessions"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -10942,13 +10942,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/chat-inquiry",
+                        "path": "api/native/workflows/chat-inquiry",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Asistente Turístico IA Bilingüe 24/7 (Gemini 2.5 Flash)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -10960,7 +10960,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'chat_sessions';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -10991,7 +10991,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección chat_sessions",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -11012,7 +11012,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -11028,7 +11028,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -11038,11 +11038,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Asistente Turístico IA Bilingüe 24/7 (Gemini 2.5 Flash)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-051: Asistente Turístico IA Bilingüe 24/7 (Gemini 2.5 Flash)\",\n  \"message\": \"=Error al ejecutar en colección chat_sessions: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-051\",\n    \"collection\": \"chat_sessions\",\n    \"endpoint\": \"/api/webhooks/n8n/chat-inquiry\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Asistente Turístico IA Bilingüe 24/7 (Gemini 2.5 Flash)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-051: Asistente Turístico IA Bilingüe 24/7 (Gemini 2.5 Flash)\",\n  \"message\": \"=Error al ejecutar en colección chat_sessions: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-051\",\n    \"collection\": \"chat_sessions\",\n    \"endpoint\": \"/api/native/workflows/chat-inquiry\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -11109,7 +11109,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Layers",
     color: "#3b82f6",
-    endpoint: "/api/webhooks/n8n/multi-day-planner",
+    endpoint: "/api/native/workflows/multi-day-planner",
     method: "POST",
     triggerEvent: "Solicitud de itinerario a la medida",
     nodesCount: 5,
@@ -11118,31 +11118,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Constructor Autónomo de Itinerarios Multi-Día Personalizados",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Solicitud de itinerario a la medida"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación itineraries",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /itineraries"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -11163,13 +11163,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/multi-day-planner",
+                        "path": "api/native/workflows/multi-day-planner",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Constructor Autónomo de Itinerarios Multi-Día Personalizados",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -11181,7 +11181,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'itineraries';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -11212,7 +11212,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección itineraries",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -11233,7 +11233,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -11249,7 +11249,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -11259,11 +11259,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Constructor Autónomo de Itinerarios Multi-Día Personalizados\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-052: Constructor Autónomo de Itinerarios Multi-Día Personalizados\",\n  \"message\": \"=Error al ejecutar en colección itineraries: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-052\",\n    \"collection\": \"itineraries\",\n    \"endpoint\": \"/api/webhooks/n8n/multi-day-planner\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Constructor Autónomo de Itinerarios Multi-Día Personalizados\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-052: Constructor Autónomo de Itinerarios Multi-Día Personalizados\",\n  \"message\": \"=Error al ejecutar en colección itineraries: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-052\",\n    \"collection\": \"itineraries\",\n    \"endpoint\": \"/api/native/workflows/multi-day-planner\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -11330,7 +11330,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Luggage",
     color: "#8b5cf6",
-    endpoint: "/api/webhooks/n8n/packing-list",
+    endpoint: "/api/native/workflows/packing-list",
     method: "POST",
     triggerEvent: "Evento a 5 días del inicio del viaje",
     nodesCount: 5,
@@ -11339,31 +11339,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Generador Inteligente de Lista de Equipaje por Microclima",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Evento a 5 días del inicio del viaje"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación packing_guides",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /packing_guides"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -11381,13 +11381,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/packing-list",
+                        "path": "api/native/workflows/packing-list",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Generador Inteligente de Lista de Equipaje por Microclima",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -11399,7 +11399,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'packing_guides';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -11430,7 +11430,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección packing_guides",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -11451,7 +11451,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -11467,7 +11467,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -11477,11 +11477,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Generador Inteligente de Lista de Equipaje por Microclima\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-053: Generador Inteligente de Lista de Equipaje por Microclima\",\n  \"message\": \"=Error al ejecutar en colección packing_guides: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-053\",\n    \"collection\": \"packing_guides\",\n    \"endpoint\": \"/api/webhooks/n8n/packing-list\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Generador Inteligente de Lista de Equipaje por Microclima\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-053: Generador Inteligente de Lista de Equipaje por Microclima\",\n  \"message\": \"=Error al ejecutar en colección packing_guides: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-053\",\n    \"collection\": \"packing_guides\",\n    \"endpoint\": \"/api/native/workflows/packing-list\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -11548,7 +11548,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Eye",
     color: "#059669",
-    endpoint: "/api/webhooks/n8n/wildlife-spot",
+    endpoint: "/api/native/workflows/wildlife-spot",
     method: "POST",
     triggerEvent: "Reporte de guía en app móvil",
     nodesCount: 5,
@@ -11557,31 +11557,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Radar de Avistamiento de Fauna en Tiempo Real (Quetzales, Ballenas, Perezosos)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Reporte de guía en app móvil"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación wildlife_sightings",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /wildlife_sightings"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -11597,13 +11597,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/wildlife-spot",
+                        "path": "api/native/workflows/wildlife-spot",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Radar de Avistamiento de Fauna en Tiempo Real (Quetzales, Ballenas, Perezosos)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -11615,7 +11615,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'wildlife_sightings';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -11646,7 +11646,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección wildlife_sightings",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -11667,7 +11667,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -11683,7 +11683,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -11693,11 +11693,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Radar de Avistamiento de Fauna en Tiempo Real (Quetzales, Ballenas, Perezosos)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-054: Radar de Avistamiento de Fauna en Tiempo Real (Quetzales, Ballenas, Perezosos)\",\n  \"message\": \"=Error al ejecutar en colección wildlife_sightings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-054\",\n    \"collection\": \"wildlife_sightings\",\n    \"endpoint\": \"/api/webhooks/n8n/wildlife-spot\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Radar de Avistamiento de Fauna en Tiempo Real (Quetzales, Ballenas, Perezosos)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-054: Radar de Avistamiento de Fauna en Tiempo Real (Quetzales, Ballenas, Perezosos)\",\n  \"message\": \"=Error al ejecutar en colección wildlife_sightings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-054\",\n    \"collection\": \"wildlife_sightings\",\n    \"endpoint\": \"/api/native/workflows/wildlife-spot\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -11764,7 +11764,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Volume2",
     color: "#d97706",
-    endpoint: "/api/webhooks/n8n/audio-concierge",
+    endpoint: "/api/native/workflows/audio-concierge",
     method: "POST",
     triggerEvent: "Petición en chat o app móvil",
     nodesCount: 5,
@@ -11773,31 +11773,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Asistente de Audio y Traducción Fonética de Expresiones Ticas",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Petición en chat o app móvil"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación audio_guides",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /audio_guides"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -11813,13 +11813,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/audio-concierge",
+                        "path": "api/native/workflows/audio-concierge",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Asistente de Audio y Traducción Fonética de Expresiones Ticas",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -11831,7 +11831,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'audio_guides';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -11862,7 +11862,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección audio_guides",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -11883,7 +11883,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -11899,7 +11899,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -11909,11 +11909,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Asistente de Audio y Traducción Fonética de Expresiones Ticas\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-055: Asistente de Audio y Traducción Fonética de Expresiones Ticas\",\n  \"message\": \"=Error al ejecutar en colección audio_guides: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-055\",\n    \"collection\": \"audio_guides\",\n    \"endpoint\": \"/api/webhooks/n8n/audio-concierge\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Asistente de Audio y Traducción Fonética de Expresiones Ticas\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-055: Asistente de Audio y Traducción Fonética de Expresiones Ticas\",\n  \"message\": \"=Error al ejecutar en colección audio_guides: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-055\",\n    \"collection\": \"audio_guides\",\n    \"endpoint\": \"/api/native/workflows/audio-concierge\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -11980,7 +11980,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "HeartPulse",
     color: "#dc2626",
-    endpoint: "/api/webhooks/n8n/medical-assist",
+    endpoint: "/api/native/workflows/medical-assist",
     method: "POST",
     triggerEvent: "Alerta médica disparada por cliente o guía",
     nodesCount: 5,
@@ -11989,31 +11989,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Protocolo de Asistencia Médica y Farmacia de Turno",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Alerta médica disparada por cliente o guía"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación medical_emergencies",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /medical_emergencies"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -12030,13 +12030,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/medical-assist",
+                        "path": "api/native/workflows/medical-assist",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Protocolo de Asistencia Médica y Farmacia de Turno",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -12048,7 +12048,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'medical_emergencies';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -12079,7 +12079,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección medical_emergencies",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -12100,7 +12100,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -12116,7 +12116,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -12126,11 +12126,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Protocolo de Asistencia Médica y Farmacia de Turno\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-056: Protocolo de Asistencia Médica y Farmacia de Turno\",\n  \"message\": \"=Error al ejecutar en colección medical_emergencies: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-056\",\n    \"collection\": \"medical_emergencies\",\n    \"endpoint\": \"/api/webhooks/n8n/medical-assist\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Protocolo de Asistencia Médica y Farmacia de Turno\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-056: Protocolo de Asistencia Médica y Farmacia de Turno\",\n  \"message\": \"=Error al ejecutar en colección medical_emergencies: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-056\",\n    \"collection\": \"medical_emergencies\",\n    \"endpoint\": \"/api/native/workflows/medical-assist\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -12197,7 +12197,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Gift",
     color: "#ec4899",
-    endpoint: "/api/webhooks/n8n/special-celebration",
+    endpoint: "/api/native/workflows/special-celebration",
     method: "POST",
     triggerEvent: "Reserva confirmada con flag de ocasión especial",
     nodesCount: 5,
@@ -12206,31 +12206,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Detector de Lunas de Miel y Cumpleaños con Obsequio Sorpresa",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Reserva confirmada con flag de ocasión especial"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación special_occasions",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /special_occasions"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -12246,13 +12246,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/special-celebration",
+                        "path": "api/native/workflows/special-celebration",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Detector de Lunas de Miel y Cumpleaños con Obsequio Sorpresa",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -12264,7 +12264,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'special_occasions';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -12295,7 +12295,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección special_occasions",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -12316,7 +12316,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -12332,7 +12332,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -12342,11 +12342,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Detector de Lunas de Miel y Cumpleaños con Obsequio Sorpresa\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-057: Detector de Lunas de Miel y Cumpleaños con Obsequio Sorpresa\",\n  \"message\": \"=Error al ejecutar en colección special_occasions: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-057\",\n    \"collection\": \"special_occasions\",\n    \"endpoint\": \"/api/webhooks/n8n/special-celebration\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Detector de Lunas de Miel y Cumpleaños con Obsequio Sorpresa\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-057: Detector de Lunas de Miel y Cumpleaños con Obsequio Sorpresa\",\n  \"message\": \"=Error al ejecutar en colección special_occasions: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-057\",\n    \"collection\": \"special_occasions\",\n    \"endpoint\": \"/api/native/workflows/special-celebration\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -12413,7 +12413,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Camera",
     color: "#0284c7",
-    endpoint: "/api/webhooks/n8n/photo-vault",
+    endpoint: "/api/native/workflows/photo-vault",
     method: "POST",
     triggerEvent: "Carga de lote fotográfico por el guía al terminar el tour",
     nodesCount: 5,
@@ -12422,31 +12422,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Entrega Digital de Fotografías Profesionales del Tour",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Carga de lote fotográfico por el guía al terminar el tour"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación photo_vaults",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /photo_vaults"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -12463,13 +12463,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/photo-vault",
+                        "path": "api/native/workflows/photo-vault",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Entrega Digital de Fotografías Profesionales del Tour",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -12481,7 +12481,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'photo_vaults';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -12512,7 +12512,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección photo_vaults",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -12533,7 +12533,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -12549,7 +12549,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -12559,11 +12559,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Entrega Digital de Fotografías Profesionales del Tour\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-058: Entrega Digital de Fotografías Profesionales del Tour\",\n  \"message\": \"=Error al ejecutar en colección photo_vaults: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-058\",\n    \"collection\": \"photo_vaults\",\n    \"endpoint\": \"/api/webhooks/n8n/photo-vault\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Entrega Digital de Fotografías Profesionales del Tour\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-058: Entrega Digital de Fotografías Profesionales del Tour\",\n  \"message\": \"=Error al ejecutar en colección photo_vaults: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-058\",\n    \"collection\": \"photo_vaults\",\n    \"endpoint\": \"/api/native/workflows/photo-vault\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -12630,7 +12630,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "WifiOff",
     color: "#64748b",
-    endpoint: "/api/webhooks/n8n/offline-sync",
+    endpoint: "/api/native/workflows/offline-sync",
     method: "POST",
     triggerEvent: "Reconexión a internet del dispositivo del guía",
     nodesCount: 5,
@@ -12639,31 +12639,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Sincronizador de Datos Offline para Zonas sin Cobertura",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Reconexión a internet del dispositivo del guía"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación offline_sync",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /offline_sync"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -12679,13 +12679,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/offline-sync",
+                        "path": "api/native/workflows/offline-sync",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Sincronizador de Datos Offline para Zonas sin Cobertura",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -12697,7 +12697,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'offline_sync';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -12728,7 +12728,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección offline_sync",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -12749,7 +12749,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -12765,7 +12765,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -12775,11 +12775,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Sincronizador de Datos Offline para Zonas sin Cobertura\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-059: Sincronizador de Datos Offline para Zonas sin Cobertura\",\n  \"message\": \"=Error al ejecutar en colección offline_sync: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-059\",\n    \"collection\": \"offline_sync\",\n    \"endpoint\": \"/api/webhooks/n8n/offline-sync\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Sincronizador de Datos Offline para Zonas sin Cobertura\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-059: Sincronizador de Datos Offline para Zonas sin Cobertura\",\n  \"message\": \"=Error al ejecutar en colección offline_sync: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-059\",\n    \"collection\": \"offline_sync\",\n    \"endpoint\": \"/api/native/workflows/offline-sync\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -12846,7 +12846,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Accessibility",
     color: "#059669",
-    endpoint: "/api/webhooks/n8n/accessibility-coord",
+    endpoint: "/api/native/workflows/accessibility-coord",
     method: "POST",
     triggerEvent: "Reserva con requerimientos de movilidad reducida",
     nodesCount: 5,
@@ -12855,31 +12855,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Coordinador de Accesibilidad y Necesidades Especiales (Ley 7600)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Reserva con requerimientos de movilidad reducida"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación accessibility_requests",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /accessibility_requests"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -12894,13 +12894,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/accessibility-coord",
+                        "path": "api/native/workflows/accessibility-coord",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Coordinador de Accesibilidad y Necesidades Especiales (Ley 7600)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -12912,7 +12912,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'accessibility_requests';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -12943,7 +12943,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección accessibility_requests",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -12964,7 +12964,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -12980,7 +12980,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -12990,11 +12990,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Coordinador de Accesibilidad y Necesidades Especiales (Ley 7600)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-060: Coordinador de Accesibilidad y Necesidades Especiales (Ley 7600)\",\n  \"message\": \"=Error al ejecutar en colección accessibility_requests: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-060\",\n    \"collection\": \"accessibility_requests\",\n    \"endpoint\": \"/api/webhooks/n8n/accessibility-coord\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Coordinador de Accesibilidad y Necesidades Especiales (Ley 7600)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-060: Coordinador de Accesibilidad y Necesidades Especiales (Ley 7600)\",\n  \"message\": \"=Error al ejecutar en colección accessibility_requests: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-060\",\n    \"collection\": \"accessibility_requests\",\n    \"endpoint\": \"/api/native/workflows/accessibility-coord\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -13061,7 +13061,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Feather",
     color: "#16a34a",
-    endpoint: "/api/webhooks/n8n/ebird-sync",
+    endpoint: "/api/native/workflows/ebird-sync",
     method: "POST",
     triggerEvent: "Finalización de tour de avistamiento de aves",
     nodesCount: 5,
@@ -13070,31 +13070,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Registro Automático de Lista de Aves Observadas (eBird Sync)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Finalización de tour de avistamiento de aves"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación bird_sightings",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /bird_sightings"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -13113,13 +13113,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/ebird-sync",
+                        "path": "api/native/workflows/ebird-sync",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Registro Automático de Lista de Aves Observadas (eBird Sync)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -13131,7 +13131,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'bird_sightings';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -13162,7 +13162,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección bird_sightings",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -13183,7 +13183,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -13199,7 +13199,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -13209,11 +13209,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Registro Automático de Lista de Aves Observadas (eBird Sync)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-061: Registro Automático de Lista de Aves Observadas (eBird Sync)\",\n  \"message\": \"=Error al ejecutar en colección bird_sightings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-061\",\n    \"collection\": \"bird_sightings\",\n    \"endpoint\": \"/api/webhooks/n8n/ebird-sync\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Registro Automático de Lista de Aves Observadas (eBird Sync)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-061: Registro Automático de Lista de Aves Observadas (eBird Sync)\",\n  \"message\": \"=Error al ejecutar en colección bird_sightings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-061\",\n    \"collection\": \"bird_sightings\",\n    \"endpoint\": \"/api/native/workflows/ebird-sync\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -13280,7 +13280,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Building2",
     color: "#0284c7",
-    endpoint: "/api/webhooks/n8n/hotel-partner-booking",
+    endpoint: "/api/native/workflows/hotel-partner-booking",
     method: "POST",
     triggerEvent: "Reserva emitida por recepción de hotel aliado",
     nodesCount: 5,
@@ -13289,31 +13289,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Portal de Reservas para Front-Desk de Hoteles Aliados",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Reserva emitida por recepción de hotel aliado"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación hotel_affiliate_bookings",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /hotel_affiliate_bookings"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -13329,13 +13329,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/hotel-partner-booking",
+                        "path": "api/native/workflows/hotel-partner-booking",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Portal de Reservas para Front-Desk de Hoteles Aliados",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -13347,7 +13347,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'hotel_affiliate_bookings';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -13378,7 +13378,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección hotel_affiliate_bookings",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -13399,7 +13399,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -13415,7 +13415,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -13425,11 +13425,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Portal de Reservas para Front-Desk de Hoteles Aliados\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-062: Portal de Reservas para Front-Desk de Hoteles Aliados\",\n  \"message\": \"=Error al ejecutar en colección hotel_affiliate_bookings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-062\",\n    \"collection\": \"hotel_affiliate_bookings\",\n    \"endpoint\": \"/api/webhooks/n8n/hotel-partner-booking\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Portal de Reservas para Front-Desk de Hoteles Aliados\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-062: Portal de Reservas para Front-Desk de Hoteles Aliados\",\n  \"message\": \"=Error al ejecutar en colección hotel_affiliate_bookings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-062\",\n    \"collection\": \"hotel_affiliate_bookings\",\n    \"endpoint\": \"/api/native/workflows/hotel-partner-booking\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -13496,7 +13496,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "MessagesSquare",
     color: "#10b981",
-    endpoint: "/api/webhooks/n8n/post-tour-chat",
+    endpoint: "/api/native/workflows/post-tour-chat",
     method: "POST",
     triggerEvent: "Mensaje de viajero post-tour",
     nodesCount: 5,
@@ -13505,31 +13505,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Chat de Asistencia Post-Tour para Dudas y Recomendaciones",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Mensaje de viajero post-tour"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación chat_sessions",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /chat_sessions"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -13544,13 +13544,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/post-tour-chat",
+                        "path": "api/native/workflows/post-tour-chat",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Chat de Asistencia Post-Tour para Dudas y Recomendaciones",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -13562,7 +13562,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'chat_sessions';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -13593,7 +13593,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección chat_sessions",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -13614,7 +13614,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -13630,7 +13630,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -13640,11 +13640,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Chat de Asistencia Post-Tour para Dudas y Recomendaciones\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-063: Chat de Asistencia Post-Tour para Dudas y Recomendaciones\",\n  \"message\": \"=Error al ejecutar en colección chat_sessions: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-063\",\n    \"collection\": \"chat_sessions\",\n    \"endpoint\": \"/api/webhooks/n8n/post-tour-chat\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Chat de Asistencia Post-Tour para Dudas y Recomendaciones\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-063: Chat de Asistencia Post-Tour para Dudas y Recomendaciones\",\n  \"message\": \"=Error al ejecutar en colección chat_sessions: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-063\",\n    \"collection\": \"chat_sessions\",\n    \"endpoint\": \"/api/native/workflows/post-tour-chat\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -13711,7 +13711,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Palette",
     color: "#b45309",
-    endpoint: "/api/webhooks/n8n/indigenous-crafts",
+    endpoint: "/api/native/workflows/indigenous-crafts",
     method: "GET",
     triggerEvent: "Consulta cultural en catálogo",
     nodesCount: 5,
@@ -13720,31 +13720,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Directorio y Conector con Artesanos Indígenas (Maleku / Bribri)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Consulta cultural en catálogo"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación artisan_partners",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /artisan_partners"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -13759,13 +13759,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/indigenous-crafts",
+                        "path": "api/native/workflows/indigenous-crafts",
                         "httpMethod": "GET",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Directorio y Conector con Artesanos Indígenas (Maleku / Bribri)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -13777,7 +13777,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'artisan_partners';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -13808,7 +13808,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección artisan_partners",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -13829,7 +13829,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -13845,7 +13845,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -13855,11 +13855,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Directorio y Conector con Artesanos Indígenas (Maleku / Bribri)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-064: Directorio y Conector con Artesanos Indígenas (Maleku / Bribri)\",\n  \"message\": \"=Error al ejecutar en colección artisan_partners: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-064\",\n    \"collection\": \"artisan_partners\",\n    \"endpoint\": \"/api/webhooks/n8n/indigenous-crafts\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Directorio y Conector con Artesanos Indígenas (Maleku / Bribri)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-064: Directorio y Conector con Artesanos Indígenas (Maleku / Bribri)\",\n  \"message\": \"=Error al ejecutar en colección artisan_partners: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-064\",\n    \"collection\": \"artisan_partners\",\n    \"endpoint\": \"/api/native/workflows/indigenous-crafts\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -13926,7 +13926,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "ShieldAlert",
     color: "#dc2626",
-    endpoint: "/api/webhooks/n8n/evaluar-antifraude",
+    endpoint: "/api/native/workflows/evaluar-antifraude",
     method: "POST",
     triggerEvent: "Pre-autorización de cada reserva",
     nodesCount: 5,
@@ -13935,31 +13935,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Motor de Evaluación de Riesgo y Antifraude (IP / Tarjeta)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Pre-autorización de cada reserva"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación fraud_evaluations",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /fraud_evaluations"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -13977,13 +13977,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/evaluar-antifraude",
+                        "path": "api/native/workflows/evaluar-antifraude",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Motor de Evaluación de Riesgo y Antifraude (IP / Tarjeta)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -13995,7 +13995,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'fraud_evaluations';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -14026,7 +14026,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección fraud_evaluations",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -14047,7 +14047,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -14063,7 +14063,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -14073,11 +14073,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Motor de Evaluación de Riesgo y Antifraude (IP / Tarjeta)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-065: Motor de Evaluación de Riesgo y Antifraude (IP / Tarjeta)\",\n  \"message\": \"=Error al ejecutar en colección fraud_evaluations: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-065\",\n    \"collection\": \"fraud_evaluations\",\n    \"endpoint\": \"/api/webhooks/n8n/evaluar-antifraude\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Motor de Evaluación de Riesgo y Antifraude (IP / Tarjeta)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-065: Motor de Evaluación de Riesgo y Antifraude (IP / Tarjeta)\",\n  \"message\": \"=Error al ejecutar en colección fraud_evaluations: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-065\",\n    \"collection\": \"fraud_evaluations\",\n    \"endpoint\": \"/api/native/workflows/evaluar-antifraude\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -14144,7 +14144,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "CloudRain",
     color: "#0284c7",
-    endpoint: "/api/webhooks/n8n/weather-alert",
+    endpoint: "/api/native/workflows/weather-alert",
     method: "POST",
     triggerEvent: "Boletín hidrometeorológico IMN o cron cada 30 min",
     nodesCount: 5,
@@ -14153,31 +14153,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Radar Meteorológico IMN / CNE para Alerta de Lluvias Torrenciales",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Boletín hidrometeorológico IMN o cron cada 30 min"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación weather_alerts",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /weather_alerts"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -14194,13 +14194,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/weather-alert",
+                        "path": "api/native/workflows/weather-alert",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Radar Meteorológico IMN / CNE para Alerta de Lluvias Torrenciales",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -14212,7 +14212,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'weather_alerts';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -14243,7 +14243,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección weather_alerts",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -14264,7 +14264,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -14280,7 +14280,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -14290,11 +14290,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Radar Meteorológico IMN / CNE para Alerta de Lluvias Torrenciales\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-066: Radar Meteorológico IMN / CNE para Alerta de Lluvias Torrenciales\",\n  \"message\": \"=Error al ejecutar en colección weather_alerts: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-066\",\n    \"collection\": \"weather_alerts\",\n    \"endpoint\": \"/api/webhooks/n8n/weather-alert\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Radar Meteorológico IMN / CNE para Alerta de Lluvias Torrenciales\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-066: Radar Meteorológico IMN / CNE para Alerta de Lluvias Torrenciales\",\n  \"message\": \"=Error al ejecutar en colección weather_alerts: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-066\",\n    \"collection\": \"weather_alerts\",\n    \"endpoint\": \"/api/native/workflows/weather-alert\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -14361,7 +14361,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Flame",
     color: "#ea580c",
-    endpoint: "/api/webhooks/n8n/volcano-guard",
+    endpoint: "/api/native/workflows/volcano-guard",
     method: "POST",
     triggerEvent: "Webhook de alertas sísmicas OVSICORI-UNA",
     nodesCount: 5,
@@ -14370,31 +14370,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Vigilante Sísmico y Volcánico OVSICORI (Poás / Arenal / Rincón)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Webhook de alertas sísmicas OVSICORI-UNA"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación volcanic_monitoring",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /volcanic_monitoring"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -14410,13 +14410,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/volcano-guard",
+                        "path": "api/native/workflows/volcano-guard",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Vigilante Sísmico y Volcánico OVSICORI (Poás / Arenal / Rincón)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -14428,7 +14428,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'volcanic_monitoring';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -14459,7 +14459,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección volcanic_monitoring",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -14480,7 +14480,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -14496,7 +14496,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -14506,11 +14506,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Vigilante Sísmico y Volcánico OVSICORI (Poás / Arenal / Rincón)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-067: Vigilante Sísmico y Volcánico OVSICORI (Poás / Arenal / Rincón)\",\n  \"message\": \"=Error al ejecutar en colección volcanic_monitoring: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-067\",\n    \"collection\": \"volcanic_monitoring\",\n    \"endpoint\": \"/api/webhooks/n8n/volcano-guard\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Vigilante Sísmico y Volcánico OVSICORI (Poás / Arenal / Rincón)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-067: Vigilante Sísmico y Volcánico OVSICORI (Poás / Arenal / Rincón)\",\n  \"message\": \"=Error al ejecutar en colección volcanic_monitoring: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-067\",\n    \"collection\": \"volcanic_monitoring\",\n    \"endpoint\": \"/api/native/workflows/volcano-guard\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -14577,7 +14577,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Trees",
     color: "#059669",
-    endpoint: "/api/webhooks/n8n/sinac-quota-check",
+    endpoint: "/api/native/workflows/sinac-quota-check",
     method: "POST",
     triggerEvent: "Cron cada hora o al validar disponibilidad",
     nodesCount: 5,
@@ -14586,31 +14586,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Monitoreo de Capacidad Diaria en Parques Nacionales SINAC",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron cada hora o al validar disponibilidad"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación sinac_quotas",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /sinac_quotas"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -14626,13 +14626,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/sinac-quota-check",
+                        "path": "api/native/workflows/sinac-quota-check",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Monitoreo de Capacidad Diaria en Parques Nacionales SINAC",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -14644,7 +14644,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'sinac_quotas';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -14675,7 +14675,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección sinac_quotas",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -14696,7 +14696,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -14712,7 +14712,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -14722,11 +14722,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Monitoreo de Capacidad Diaria en Parques Nacionales SINAC\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-068: Monitoreo de Capacidad Diaria en Parques Nacionales SINAC\",\n  \"message\": \"=Error al ejecutar en colección sinac_quotas: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-068\",\n    \"collection\": \"sinac_quotas\",\n    \"endpoint\": \"/api/webhooks/n8n/sinac-quota-check\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Monitoreo de Capacidad Diaria en Parques Nacionales SINAC\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-068: Monitoreo de Capacidad Diaria en Parques Nacionales SINAC\",\n  \"message\": \"=Error al ejecutar en colección sinac_quotas: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-068\",\n    \"collection\": \"sinac_quotas\",\n    \"endpoint\": \"/api/native/workflows/sinac-quota-check\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -14793,7 +14793,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Radio",
     color: "#dc2626",
-    endpoint: "/api/webhooks/n8n/sos-beacon",
+    endpoint: "/api/native/workflows/sos-beacon",
     method: "POST",
     triggerEvent: "Activación de botón SOS en app móvil",
     nodesCount: 5,
@@ -14802,31 +14802,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Baliza de Emergencia SOS para Turistas en Senderos Silvestres",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Activación de botón SOS en app móvil"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación sos_beacons",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /sos_beacons"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -14844,13 +14844,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/sos-beacon",
+                        "path": "api/native/workflows/sos-beacon",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Baliza de Emergencia SOS para Turistas en Senderos Silvestres",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -14862,7 +14862,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'sos_beacons';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -14893,7 +14893,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección sos_beacons",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -14914,7 +14914,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -14930,7 +14930,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -14940,11 +14940,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Baliza de Emergencia SOS para Turistas en Senderos Silvestres\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-069: Baliza de Emergencia SOS para Turistas en Senderos Silvestres\",\n  \"message\": \"=Error al ejecutar en colección sos_beacons: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-069\",\n    \"collection\": \"sos_beacons\",\n    \"endpoint\": \"/api/webhooks/n8n/sos-beacon\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Baliza de Emergencia SOS para Turistas en Senderos Silvestres\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-069: Baliza de Emergencia SOS para Turistas en Senderos Silvestres\",\n  \"message\": \"=Error al ejecutar en colección sos_beacons: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-069\",\n    \"collection\": \"sos_beacons\",\n    \"endpoint\": \"/api/native/workflows/sos-beacon\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -15011,7 +15011,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Shield",
     color: "#7f1d1d",
-    endpoint: "/api/webhooks/n8n/block-bot-ip",
+    endpoint: "/api/native/workflows/block-bot-ip",
     method: "POST",
     triggerEvent: "Detección de ráfaga de peticiones por middleware",
     nodesCount: 5,
@@ -15020,31 +15020,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Escudo Antibots y Mitigador de Scraping Masivo de Precios",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Detección de ráfaga de peticiones por middleware"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación blocked_ips",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /blocked_ips"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -15060,13 +15060,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/block-bot-ip",
+                        "path": "api/native/workflows/block-bot-ip",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Escudo Antibots y Mitigador de Scraping Masivo de Precios",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -15078,7 +15078,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'blocked_ips';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -15109,7 +15109,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección blocked_ips",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -15130,7 +15130,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -15146,7 +15146,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -15156,11 +15156,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Escudo Antibots y Mitigador de Scraping Masivo de Precios\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-070: Escudo Antibots y Mitigador de Scraping Masivo de Precios\",\n  \"message\": \"=Error al ejecutar en colección blocked_ips: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-070\",\n    \"collection\": \"blocked_ips\",\n    \"endpoint\": \"/api/webhooks/n8n/block-bot-ip\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Escudo Antibots y Mitigador de Scraping Masivo de Precios\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-070: Escudo Antibots y Mitigador de Scraping Masivo de Precios\",\n  \"message\": \"=Error al ejecutar en colección blocked_ips: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-070\",\n    \"collection\": \"blocked_ips\",\n    \"endpoint\": \"/api/native/workflows/block-bot-ip\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -15227,7 +15227,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "CopyCheck",
     color: "#f59e0b",
-    endpoint: "/api/webhooks/n8n/catch-duplicate-booking",
+    endpoint: "/api/native/workflows/catch-duplicate-booking",
     method: "POST",
     triggerEvent: "Pre-creación de reserva",
     nodesCount: 5,
@@ -15236,31 +15236,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Detector e Interceptor de Reservas Duplicadas por Doble Clic",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Pre-creación de reserva"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación duplicate_catches",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /duplicate_catches"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -15276,13 +15276,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/catch-duplicate-booking",
+                        "path": "api/native/workflows/catch-duplicate-booking",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Detector e Interceptor de Reservas Duplicadas por Doble Clic",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -15294,7 +15294,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'duplicate_catches';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -15325,7 +15325,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección duplicate_catches",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -15346,7 +15346,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -15362,7 +15362,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -15372,11 +15372,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Detector e Interceptor de Reservas Duplicadas por Doble Clic\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-071: Detector e Interceptor de Reservas Duplicadas por Doble Clic\",\n  \"message\": \"=Error al ejecutar en colección duplicate_catches: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-071\",\n    \"collection\": \"duplicate_catches\",\n    \"endpoint\": \"/api/webhooks/n8n/catch-duplicate-booking\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Detector e Interceptor de Reservas Duplicadas por Doble Clic\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-071: Detector e Interceptor de Reservas Duplicadas por Doble Clic\",\n  \"message\": \"=Error al ejecutar en colección duplicate_catches: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-071\",\n    \"collection\": \"duplicate_catches\",\n    \"endpoint\": \"/api/native/workflows/catch-duplicate-booking\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -15443,7 +15443,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Cross",
     color: "#ef4444",
-    endpoint: "/api/webhooks/n8n/red-cross-dispatch",
+    endpoint: "/api/native/workflows/red-cross-dispatch",
     method: "POST",
     triggerEvent: "Solicitud médica de nivel urgente",
     nodesCount: 5,
@@ -15452,31 +15452,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Enlace Directo con Cruz Roja Costarricense (Comité Local)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Solicitud médica de nivel urgente"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación red_cross_dispatches",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /red_cross_dispatches"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -15492,13 +15492,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/red-cross-dispatch",
+                        "path": "api/native/workflows/red-cross-dispatch",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Enlace Directo con Cruz Roja Costarricense (Comité Local)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -15510,7 +15510,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'red_cross_dispatches';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -15541,7 +15541,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección red_cross_dispatches",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -15562,7 +15562,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -15578,7 +15578,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -15588,11 +15588,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Enlace Directo con Cruz Roja Costarricense (Comité Local)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-072: Enlace Directo con Cruz Roja Costarricense (Comité Local)\",\n  \"message\": \"=Error al ejecutar en colección red_cross_dispatches: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-072\",\n    \"collection\": \"red_cross_dispatches\",\n    \"endpoint\": \"/api/webhooks/n8n/red-cross-dispatch\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Enlace Directo con Cruz Roja Costarricense (Comité Local)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-072: Enlace Directo con Cruz Roja Costarricense (Comité Local)\",\n  \"message\": \"=Error al ejecutar en colección red_cross_dispatches: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-072\",\n    \"collection\": \"red_cross_dispatches\",\n    \"endpoint\": \"/api/native/workflows/red-cross-dispatch\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -15659,7 +15659,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Waves",
     color: "#0891b2",
-    endpoint: "/api/webhooks/n8n/ocean-tide-warning",
+    endpoint: "/api/native/workflows/ocean-tide-warning",
     method: "POST",
     triggerEvent: "Boletín oceanográfico diario 05:00 AM",
     nodesCount: 5,
@@ -15668,31 +15668,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Avisador de Mareas Altas y Corrientes de Resaca en Playas",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Boletín oceanográfico diario 05:00 AM"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación ocean_tides",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /ocean_tides"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -15708,13 +15708,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/ocean-tide-warning",
+                        "path": "api/native/workflows/ocean-tide-warning",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Avisador de Mareas Altas y Corrientes de Resaca en Playas",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -15726,7 +15726,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'ocean_tides';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -15757,7 +15757,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección ocean_tides",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -15778,7 +15778,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -15794,7 +15794,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -15804,11 +15804,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Avisador de Mareas Altas y Corrientes de Resaca en Playas\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-073: Avisador de Mareas Altas y Corrientes de Resaca en Playas\",\n  \"message\": \"=Error al ejecutar en colección ocean_tides: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-073\",\n    \"collection\": \"ocean_tides\",\n    \"endpoint\": \"/api/webhooks/n8n/ocean-tide-warning\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Avisador de Mareas Altas y Corrientes de Resaca en Playas\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-073: Avisador de Mareas Altas y Corrientes de Resaca en Playas\",\n  \"message\": \"=Error al ejecutar en colección ocean_tides: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-073\",\n    \"collection\": \"ocean_tides\",\n    \"endpoint\": \"/api/native/workflows/ocean-tide-warning\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -15875,7 +15875,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "FileDigit",
     color: "#6366f1",
-    endpoint: "/api/webhooks/n8n/verify-passport-mrz",
+    endpoint: "/api/native/workflows/verify-passport-mrz",
     method: "POST",
     triggerEvent: "Reserva VIP de más de $2,000 USD",
     nodesCount: 5,
@@ -15884,31 +15884,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Validador de Autenticidad de Documentos de Identidad / Pasaportes",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Reserva VIP de más de $2,000 USD"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación id_screenings",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /id_screenings"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -15924,13 +15924,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/verify-passport-mrz",
+                        "path": "api/native/workflows/verify-passport-mrz",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Validador de Autenticidad de Documentos de Identidad / Pasaportes",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -15942,7 +15942,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'id_screenings';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -15973,7 +15973,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección id_screenings",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -15994,7 +15994,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -16010,7 +16010,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -16020,11 +16020,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Validador de Autenticidad de Documentos de Identidad / Pasaportes\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-074: Validador de Autenticidad de Documentos de Identidad / Pasaportes\",\n  \"message\": \"=Error al ejecutar en colección id_screenings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-074\",\n    \"collection\": \"id_screenings\",\n    \"endpoint\": \"/api/webhooks/n8n/verify-passport-mrz\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Validador de Autenticidad de Documentos de Identidad / Pasaportes\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-074: Validador de Autenticidad de Documentos de Identidad / Pasaportes\",\n  \"message\": \"=Error al ejecutar en colección id_screenings: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-074\",\n    \"collection\": \"id_screenings\",\n    \"endpoint\": \"/api/native/workflows/verify-passport-mrz\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -16091,7 +16091,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Lock",
     color: "#991b1b",
-    endpoint: "/api/webhooks/n8n/security-anomaly",
+    endpoint: "/api/native/workflows/security-anomaly",
     method: "POST",
     triggerEvent: "Middleware de seguridad en fallo grave",
     nodesCount: 5,
@@ -16100,31 +16100,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Centinela de Anomalías y Alertas de Ciberseguridad",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Middleware de seguridad en fallo grave"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación security_anomalies",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /security_anomalies"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -16140,13 +16140,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/security-anomaly",
+                        "path": "api/native/workflows/security-anomaly",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Centinela de Anomalías y Alertas de Ciberseguridad",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -16158,7 +16158,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'security_anomalies';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -16189,7 +16189,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección security_anomalies",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -16210,7 +16210,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -16226,7 +16226,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -16236,11 +16236,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Centinela de Anomalías y Alertas de Ciberseguridad\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-075: Centinela de Anomalías y Alertas de Ciberseguridad\",\n  \"message\": \"=Error al ejecutar en colección security_anomalies: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-075\",\n    \"collection\": \"security_anomalies\",\n    \"endpoint\": \"/api/webhooks/n8n/security-anomaly\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Centinela de Anomalías y Alertas de Ciberseguridad\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-075: Centinela de Anomalías y Alertas de Ciberseguridad\",\n  \"message\": \"=Error al ejecutar en colección security_anomalies: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-075\",\n    \"collection\": \"security_anomalies\",\n    \"endpoint\": \"/api/native/workflows/security-anomaly\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -16307,7 +16307,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Flame",
     color: "#ea580c",
-    endpoint: "/api/webhooks/n8n/wildfire-watch",
+    endpoint: "/api/native/workflows/wildfire-watch",
     method: "POST",
     triggerEvent: "Alerta satelital de foco de calor",
     nodesCount: 5,
@@ -16316,31 +16316,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Detector de Alertas por Incendios Forestales en Guanacaste",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Alerta satelital de foco de calor"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación wildfire_alerts",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /wildfire_alerts"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -16356,13 +16356,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/wildfire-watch",
+                        "path": "api/native/workflows/wildfire-watch",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Detector de Alertas por Incendios Forestales en Guanacaste",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -16374,7 +16374,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'wildfire_alerts';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -16405,7 +16405,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección wildfire_alerts",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -16426,7 +16426,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -16442,7 +16442,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -16452,11 +16452,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Detector de Alertas por Incendios Forestales en Guanacaste\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-076: Detector de Alertas por Incendios Forestales en Guanacaste\",\n  \"message\": \"=Error al ejecutar en colección wildfire_alerts: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-076\",\n    \"collection\": \"wildfire_alerts\",\n    \"endpoint\": \"/api/webhooks/n8n/wildfire-watch\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Detector de Alertas por Incendios Forestales en Guanacaste\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-076: Detector de Alertas por Incendios Forestales en Guanacaste\",\n  \"message\": \"=Error al ejecutar en colección wildfire_alerts: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-076\",\n    \"collection\": \"wildfire_alerts\",\n    \"endpoint\": \"/api/native/workflows/wildfire-watch\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -16523,7 +16523,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "HeartHandshake",
     color: "#059669",
-    endpoint: "/api/webhooks/n8n/nps-promoter",
+    endpoint: "/api/native/workflows/nps-promoter",
     method: "POST",
     triggerEvent: "Encuesta NPS completada con puntaje 9 o 10",
     nodesCount: 5,
@@ -16532,31 +16532,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Generador de Cupones de Fidelidad para Promotores (NPS 9-10)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Encuesta NPS completada con puntaje 9 o 10"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación promotions",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /promotions"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -16573,13 +16573,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/nps-promoter",
+                        "path": "api/native/workflows/nps-promoter",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Generador de Cupones de Fidelidad para Promotores (NPS 9-10)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -16591,7 +16591,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'promotions';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -16622,7 +16622,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección promotions",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -16643,7 +16643,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -16659,7 +16659,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -16669,11 +16669,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Generador de Cupones de Fidelidad para Promotores (NPS 9-10)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-077: Generador de Cupones de Fidelidad para Promotores (NPS 9-10)\",\n  \"message\": \"=Error al ejecutar en colección promotions: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-077\",\n    \"collection\": \"promotions\",\n    \"endpoint\": \"/api/webhooks/n8n/nps-promoter\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Generador de Cupones de Fidelidad para Promotores (NPS 9-10)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-077: Generador de Cupones de Fidelidad para Promotores (NPS 9-10)\",\n  \"message\": \"=Error al ejecutar en colección promotions: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-077\",\n    \"collection\": \"promotions\",\n    \"endpoint\": \"/api/native/workflows/nps-promoter\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -16740,7 +16740,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Star",
     color: "#eab308",
-    endpoint: "/api/webhooks/n8n/review-booster",
+    endpoint: "/api/native/workflows/review-booster",
     method: "POST",
     triggerEvent: "Cron diario 5:00 PM (tours finalizados)",
     nodesCount: 5,
@@ -16749,31 +16749,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Sincronizador de Reseñas en TripAdvisor y Google Maps",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron diario 5:00 PM (tours finalizados)"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación review_invites",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /review_invites"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -16789,13 +16789,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/review-booster",
+                        "path": "api/native/workflows/review-booster",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Sincronizador de Reseñas en TripAdvisor y Google Maps",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -16807,7 +16807,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'review_invites';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -16838,7 +16838,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección review_invites",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -16859,7 +16859,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -16875,7 +16875,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -16885,11 +16885,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Sincronizador de Reseñas en TripAdvisor y Google Maps\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-078: Sincronizador de Reseñas en TripAdvisor y Google Maps\",\n  \"message\": \"=Error al ejecutar en colección review_invites: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-078\",\n    \"collection\": \"review_invites\",\n    \"endpoint\": \"/api/webhooks/n8n/review-booster\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Sincronizador de Reseñas en TripAdvisor y Google Maps\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-078: Sincronizador de Reseñas en TripAdvisor y Google Maps\",\n  \"message\": \"=Error al ejecutar en colección review_invites: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-078\",\n    \"collection\": \"review_invites\",\n    \"endpoint\": \"/api/native/workflows/review-booster\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -16956,7 +16956,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "ShoppingCart",
     color: "#3b82f6",
-    endpoint: "/api/webhooks/n8n/abandoned-cart-recovery",
+    endpoint: "/api/native/workflows/abandoned-cart-recovery",
     method: "POST",
     triggerEvent: "Soft hold expirado sin pago",
     nodesCount: 5,
@@ -16965,31 +16965,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Recuperador de Carritos Abandonados con Asistente WhatsApp",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Soft hold expirado sin pago"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación abandoned_carts",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /abandoned_carts"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -17005,13 +17005,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/abandoned-cart-recovery",
+                        "path": "api/native/workflows/abandoned-cart-recovery",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Recuperador de Carritos Abandonados con Asistente WhatsApp",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -17023,7 +17023,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'abandoned_carts';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -17054,7 +17054,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección abandoned_carts",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -17075,7 +17075,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -17091,7 +17091,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -17101,11 +17101,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Recuperador de Carritos Abandonados con Asistente WhatsApp\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-079: Recuperador de Carritos Abandonados con Asistente WhatsApp\",\n  \"message\": \"=Error al ejecutar en colección abandoned_carts: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-079\",\n    \"collection\": \"abandoned_carts\",\n    \"endpoint\": \"/api/webhooks/n8n/abandoned-cart-recovery\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Recuperador de Carritos Abandonados con Asistente WhatsApp\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-079: Recuperador de Carritos Abandonados con Asistente WhatsApp\",\n  \"message\": \"=Error al ejecutar en colección abandoned_carts: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-079\",\n    \"collection\": \"abandoned_carts\",\n    \"endpoint\": \"/api/native/workflows/abandoned-cart-recovery\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -17172,7 +17172,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "BadgePercent",
     color: "#10b981",
-    endpoint: "/api/webhooks/n8n/green-season-discounts",
+    endpoint: "/api/native/workflows/green-season-discounts",
     method: "POST",
     triggerEvent: "Cron diario de cálculo de ocupación",
     nodesCount: 5,
@@ -17181,31 +17181,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Optimizador Dinámico de Tarifas en Temporada Verde (Mayo - Noviembre)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron diario de cálculo de ocupación"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación dynamic_pricing",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /dynamic_pricing"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -17221,13 +17221,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/green-season-discounts",
+                        "path": "api/native/workflows/green-season-discounts",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Optimizador Dinámico de Tarifas en Temporada Verde (Mayo - Noviembre)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -17239,7 +17239,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'dynamic_pricing';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -17270,7 +17270,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección dynamic_pricing",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -17291,7 +17291,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -17307,7 +17307,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -17317,11 +17317,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Optimizador Dinámico de Tarifas en Temporada Verde (Mayo - Noviembre)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-080: Optimizador Dinámico de Tarifas en Temporada Verde (Mayo - Noviembre)\",\n  \"message\": \"=Error al ejecutar en colección dynamic_pricing: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-080\",\n    \"collection\": \"dynamic_pricing\",\n    \"endpoint\": \"/api/webhooks/n8n/green-season-discounts\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Optimizador Dinámico de Tarifas en Temporada Verde (Mayo - Noviembre)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-080: Optimizador Dinámico de Tarifas en Temporada Verde (Mayo - Noviembre)\",\n  \"message\": \"=Error al ejecutar en colección dynamic_pricing: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-080\",\n    \"collection\": \"dynamic_pricing\",\n    \"endpoint\": \"/api/native/workflows/green-season-discounts\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -17388,7 +17388,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Share2",
     color: "#8b5cf6",
-    endpoint: "/api/webhooks/n8n/affiliate-track",
+    endpoint: "/api/native/workflows/affiliate-track",
     method: "POST",
     triggerEvent: "Reserva con código de afiliado",
     nodesCount: 5,
@@ -17397,31 +17397,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Rastreador de Afiliados y Creadores de Contenido de Viajes",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Reserva con código de afiliado"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación affiliate_commissions",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /affiliate_commissions"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -17437,13 +17437,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/affiliate-track",
+                        "path": "api/native/workflows/affiliate-track",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Rastreador de Afiliados y Creadores de Contenido de Viajes",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -17455,7 +17455,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'affiliate_commissions';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -17486,7 +17486,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección affiliate_commissions",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -17507,7 +17507,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -17523,7 +17523,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -17533,11 +17533,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Rastreador de Afiliados y Creadores de Contenido de Viajes\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-081: Rastreador de Afiliados y Creadores de Contenido de Viajes\",\n  \"message\": \"=Error al ejecutar en colección affiliate_commissions: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-081\",\n    \"collection\": \"affiliate_commissions\",\n    \"endpoint\": \"/api/webhooks/n8n/affiliate-track\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Rastreador de Afiliados y Creadores de Contenido de Viajes\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-081: Rastreador de Afiliados y Creadores de Contenido de Viajes\",\n  \"message\": \"=Error al ejecutar en colección affiliate_commissions: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-081\",\n    \"collection\": \"affiliate_commissions\",\n    \"endpoint\": \"/api/native/workflows/affiliate-track\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -17604,7 +17604,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Briefcase",
     color: "#0284c7",
-    endpoint: "/api/webhooks/n8n/corporate-quote",
+    endpoint: "/api/native/workflows/corporate-quote",
     method: "POST",
     triggerEvent: "Envío de formulario corporativo B2B",
     nodesCount: 5,
@@ -17613,31 +17613,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Generador de Cotizaciones B2B para Retiros Corporativos",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Envío de formulario corporativo B2B"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación corporate_quotes",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /corporate_quotes"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -17653,13 +17653,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/corporate-quote",
+                        "path": "api/native/workflows/corporate-quote",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Generador de Cotizaciones B2B para Retiros Corporativos",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -17671,7 +17671,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'corporate_quotes';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -17702,7 +17702,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección corporate_quotes",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -17723,7 +17723,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -17739,7 +17739,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -17749,11 +17749,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Generador de Cotizaciones B2B para Retiros Corporativos\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-082: Generador de Cotizaciones B2B para Retiros Corporativos\",\n  \"message\": \"=Error al ejecutar en colección corporate_quotes: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-082\",\n    \"collection\": \"corporate_quotes\",\n    \"endpoint\": \"/api/webhooks/n8n/corporate-quote\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Generador de Cotizaciones B2B para Retiros Corporativos\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-082: Generador de Cotizaciones B2B para Retiros Corporativos\",\n  \"message\": \"=Error al ejecutar en colección corporate_quotes: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-082\",\n    \"collection\": \"corporate_quotes\",\n    \"endpoint\": \"/api/native/workflows/corporate-quote\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -17820,7 +17820,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "AlertTriangle",
     color: "#dc2626",
-    endpoint: "/api/webhooks/n8n/nps-detractor-rescue",
+    endpoint: "/api/native/workflows/nps-detractor-rescue",
     method: "POST",
     triggerEvent: "Encuesta NPS con puntaje <= 6",
     nodesCount: 5,
@@ -17829,31 +17829,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Protocolo de Rescate y Solución para Clientes Detractores (NPS 1-6)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Encuesta NPS con puntaje <= 6"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación customer_escalations",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /customer_escalations"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -17870,13 +17870,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/nps-detractor-rescue",
+                        "path": "api/native/workflows/nps-detractor-rescue",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Protocolo de Rescate y Solución para Clientes Detractores (NPS 1-6)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -17888,7 +17888,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'customer_escalations';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -17919,7 +17919,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección customer_escalations",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -17940,7 +17940,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -17956,7 +17956,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -17966,11 +17966,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Protocolo de Rescate y Solución para Clientes Detractores (NPS 1-6)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-083: Protocolo de Rescate y Solución para Clientes Detractores (NPS 1-6)\",\n  \"message\": \"=Error al ejecutar en colección customer_escalations: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-083\",\n    \"collection\": \"customer_escalations\",\n    \"endpoint\": \"/api/webhooks/n8n/nps-detractor-rescue\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Protocolo de Rescate y Solución para Clientes Detractores (NPS 1-6)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-083: Protocolo de Rescate y Solución para Clientes Detractores (NPS 1-6)\",\n  \"message\": \"=Error al ejecutar en colección customer_escalations: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-083\",\n    \"collection\": \"customer_escalations\",\n    \"endpoint\": \"/api/native/workflows/nps-detractor-rescue\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -18037,7 +18037,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Medal",
     color: "#15803d",
-    endpoint: "/api/webhooks/n8n/eco-ambassador",
+    endpoint: "/api/native/workflows/eco-ambassador",
     method: "POST",
     triggerEvent: "Culminación de tour con aporte ecológico certificado",
     nodesCount: 5,
@@ -18046,31 +18046,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Asignador de Insignias y Certificado de Embajador Sostenible",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Culminación de tour con aporte ecológico certificado"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación eco_certificates",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /eco_certificates"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -18086,13 +18086,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/eco-ambassador",
+                        "path": "api/native/workflows/eco-ambassador",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Asignador de Insignias y Certificado de Embajador Sostenible",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -18104,7 +18104,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'eco_certificates';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -18135,7 +18135,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección eco_certificates",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -18156,7 +18156,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -18172,7 +18172,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -18182,11 +18182,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Asignador de Insignias y Certificado de Embajador Sostenible\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-084: Asignador de Insignias y Certificado de Embajador Sostenible\",\n  \"message\": \"=Error al ejecutar en colección eco_certificates: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-084\",\n    \"collection\": \"eco_certificates\",\n    \"endpoint\": \"/api/webhooks/n8n/eco-ambassador\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Asignador de Insignias y Certificado de Embajador Sostenible\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-084: Asignador de Insignias y Certificado de Embajador Sostenible\",\n  \"message\": \"=Error al ejecutar en colección eco_certificates: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-084\",\n    \"collection\": \"eco_certificates\",\n    \"endpoint\": \"/api/native/workflows/eco-ambassador\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -18253,7 +18253,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "BellRing",
     color: "#8b5cf6",
-    endpoint: "/api/webhooks/n8n/geo-push",
+    endpoint: "/api/native/workflows/geo-push",
     method: "POST",
     triggerEvent: "Evento de geolocalización o check-in",
     nodesCount: 5,
@@ -18262,31 +18262,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Notificaciones Push Geolocalizadas con Ofertas Cercanas",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Evento de geolocalización o check-in"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación push_campaigns",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /push_campaigns"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -18302,13 +18302,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/geo-push",
+                        "path": "api/native/workflows/geo-push",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Notificaciones Push Geolocalizadas con Ofertas Cercanas",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -18320,7 +18320,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'push_campaigns';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -18351,7 +18351,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección push_campaigns",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -18372,7 +18372,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -18388,7 +18388,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -18398,11 +18398,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Notificaciones Push Geolocalizadas con Ofertas Cercanas\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-085: Notificaciones Push Geolocalizadas con Ofertas Cercanas\",\n  \"message\": \"=Error al ejecutar en colección push_campaigns: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-085\",\n    \"collection\": \"push_campaigns\",\n    \"endpoint\": \"/api/webhooks/n8n/geo-push\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Notificaciones Push Geolocalizadas con Ofertas Cercanas\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-085: Notificaciones Push Geolocalizadas con Ofertas Cercanas\",\n  \"message\": \"=Error al ejecutar en colección push_campaigns: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-085\",\n    \"collection\": \"push_campaigns\",\n    \"endpoint\": \"/api/native/workflows/geo-push\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -18469,7 +18469,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Network",
     color: "#0284c7",
-    endpoint: "/api/webhooks/n8n/b2b-agency-sync",
+    endpoint: "/api/native/workflows/b2b-agency-sync",
     method: "GET",
     triggerEvent: "Petición de disponibilidad B2B",
     nodesCount: 5,
@@ -18478,31 +18478,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Conector de Disponibilidad para Agencias de Viajes Mayoristas",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Petición de disponibilidad B2B"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación agency_manifests",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /agency_manifests"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -18518,13 +18518,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/b2b-agency-sync",
+                        "path": "api/native/workflows/b2b-agency-sync",
                         "httpMethod": "GET",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Conector de Disponibilidad para Agencias de Viajes Mayoristas",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -18536,7 +18536,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'agency_manifests';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -18567,7 +18567,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección agency_manifests",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -18588,7 +18588,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -18604,7 +18604,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -18614,11 +18614,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Conector de Disponibilidad para Agencias de Viajes Mayoristas\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-086: Conector de Disponibilidad para Agencias de Viajes Mayoristas\",\n  \"message\": \"=Error al ejecutar en colección agency_manifests: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-086\",\n    \"collection\": \"agency_manifests\",\n    \"endpoint\": \"/api/webhooks/n8n/b2b-agency-sync\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Conector de Disponibilidad para Agencias de Viajes Mayoristas\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-086: Conector de Disponibilidad para Agencias de Viajes Mayoristas\",\n  \"message\": \"=Error al ejecutar en colección agency_manifests: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-086\",\n    \"collection\": \"agency_manifests\",\n    \"endpoint\": \"/api/native/workflows/b2b-agency-sync\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -18685,7 +18685,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "CalendarHeart",
     color: "#ec4899",
-    endpoint: "/api/webhooks/n8n/anniversary-reengage",
+    endpoint: "/api/native/workflows/anniversary-reengage",
     method: "POST",
     triggerEvent: "Cron diario comparando fechas de hace 365 días",
     nodesCount: 5,
@@ -18694,31 +18694,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Campaña Anual de Reactivación de Viajeros Pasados",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron diario comparando fechas de hace 365 días"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación reengagement_campaigns",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /reengagement_campaigns"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -18734,13 +18734,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/anniversary-reengage",
+                        "path": "api/native/workflows/anniversary-reengage",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Campaña Anual de Reactivación de Viajeros Pasados",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -18752,7 +18752,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'reengagement_campaigns';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -18783,7 +18783,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección reengagement_campaigns",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -18804,7 +18804,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -18820,7 +18820,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -18830,11 +18830,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Campaña Anual de Reactivación de Viajeros Pasados\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-087: Campaña Anual de Reactivación de Viajeros Pasados\",\n  \"message\": \"=Error al ejecutar en colección reengagement_campaigns: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-087\",\n    \"collection\": \"reengagement_campaigns\",\n    \"endpoint\": \"/api/webhooks/n8n/anniversary-reengage\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Campaña Anual de Reactivación de Viajeros Pasados\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-087: Campaña Anual de Reactivación de Viajeros Pasados\",\n  \"message\": \"=Error al ejecutar en colección reengagement_campaigns: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-087\",\n    \"collection\": \"reengagement_campaigns\",\n    \"endpoint\": \"/api/native/workflows/anniversary-reengage\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -18901,7 +18901,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Instagram",
     color: "#e1306c",
-    endpoint: "/api/webhooks/n8n/ugc-curator",
+    endpoint: "/api/native/workflows/ugc-curator",
     method: "POST",
     triggerEvent: "Webhook de Instagram Graph API",
     nodesCount: 5,
@@ -18910,31 +18910,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Curador y Reposteador de Contenido Generado por Turistas (UGC)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Webhook de Instagram Graph API"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación ugc_posts",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /ugc_posts"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -18950,13 +18950,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/ugc-curator",
+                        "path": "api/native/workflows/ugc-curator",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Curador y Reposteador de Contenido Generado por Turistas (UGC)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -18968,7 +18968,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'ugc_posts';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -18999,7 +18999,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección ugc_posts",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -19020,7 +19020,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -19036,7 +19036,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -19046,11 +19046,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Curador y Reposteador de Contenido Generado por Turistas (UGC)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-088: Curador y Reposteador de Contenido Generado por Turistas (UGC)\",\n  \"message\": \"=Error al ejecutar en colección ugc_posts: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-088\",\n    \"collection\": \"ugc_posts\",\n    \"endpoint\": \"/api/webhooks/n8n/ugc-curator\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Curador y Reposteador de Contenido Generado por Turistas (UGC)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-088: Curador y Reposteador de Contenido Generado por Turistas (UGC)\",\n  \"message\": \"=Error al ejecutar en colección ugc_posts: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-088\",\n    \"collection\": \"ugc_posts\",\n    \"endpoint\": \"/api/native/workflows/ugc-curator\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -19117,7 +19117,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Calendar",
     color: "#0284c7",
-    endpoint: "/api/webhooks/n8n/sync-calendar",
+    endpoint: "/api/native/workflows/sync-calendar",
     method: "POST",
     triggerEvent: "Reserva confirmada o reprogramada",
     nodesCount: 5,
@@ -19126,31 +19126,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Sincronizador Bidireccional de Google Calendar para Guías",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Reserva confirmada o reprogramada"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación calendar_events",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /calendar_events"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -19166,13 +19166,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/sync-calendar",
+                        "path": "api/native/workflows/sync-calendar",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Sincronizador Bidireccional de Google Calendar para Guías",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -19184,7 +19184,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'calendar_events';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -19215,7 +19215,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección calendar_events",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -19236,7 +19236,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -19252,7 +19252,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -19262,11 +19262,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Sincronizador Bidireccional de Google Calendar para Guías\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-089: Sincronizador Bidireccional de Google Calendar para Guías\",\n  \"message\": \"=Error al ejecutar en colección calendar_events: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-089\",\n    \"collection\": \"calendar_events\",\n    \"endpoint\": \"/api/webhooks/n8n/sync-calendar\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Sincronizador Bidireccional de Google Calendar para Guías\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-089: Sincronizador Bidireccional de Google Calendar para Guías\",\n  \"message\": \"=Error al ejecutar en colección calendar_events: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-089\",\n    \"collection\": \"calendar_events\",\n    \"endpoint\": \"/api/native/workflows/sync-calendar\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -19333,7 +19333,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "BarChart3",
     color: "#059669",
-    endpoint: "/api/webhooks/n8n/daily-report",
+    endpoint: "/api/native/workflows/daily-report",
     method: "POST",
     triggerEvent: "Cron diario 8:00 PM",
     nodesCount: 5,
@@ -19342,31 +19342,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Reporte Financiero Ejecutivo Diario (Ingresos, Ocupación, IVA)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron diario 8:00 PM"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación daily_reports",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /daily_reports"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -19384,13 +19384,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/daily-report",
+                        "path": "api/native/workflows/daily-report",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Reporte Financiero Ejecutivo Diario (Ingresos, Ocupación, IVA)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -19402,7 +19402,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'daily_reports';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -19433,7 +19433,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección daily_reports",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -19454,7 +19454,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -19470,7 +19470,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -19480,11 +19480,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Reporte Financiero Ejecutivo Diario (Ingresos, Ocupación, IVA)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-090: Reporte Financiero Ejecutivo Diario (Ingresos, Ocupación, IVA)\",\n  \"message\": \"=Error al ejecutar en colección daily_reports: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-090\",\n    \"collection\": \"daily_reports\",\n    \"endpoint\": \"/api/webhooks/n8n/daily-report\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Reporte Financiero Ejecutivo Diario (Ingresos, Ocupación, IVA)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-090: Reporte Financiero Ejecutivo Diario (Ingresos, Ocupación, IVA)\",\n  \"message\": \"=Error al ejecutar en colección daily_reports: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-090\",\n    \"collection\": \"daily_reports\",\n    \"endpoint\": \"/api/native/workflows/daily-report\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -19551,7 +19551,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Database",
     color: "#4285f4",
-    endpoint: "/api/webhooks/n8n/bigquery-export",
+    endpoint: "/api/native/workflows/bigquery-export",
     method: "POST",
     triggerEvent: "Cron diario medianoche o micro-batch",
     nodesCount: 5,
@@ -19560,31 +19560,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Exportador Continuo de Reservas a Data Warehouse (BigQuery / Sheets)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron diario medianoche o micro-batch"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación data_warehouse_syncs",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /data_warehouse_syncs"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -19600,13 +19600,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/bigquery-export",
+                        "path": "api/native/workflows/bigquery-export",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Exportador Continuo de Reservas a Data Warehouse (BigQuery / Sheets)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -19618,7 +19618,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'data_warehouse_syncs';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -19649,7 +19649,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección data_warehouse_syncs",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -19670,7 +19670,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -19686,7 +19686,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -19696,11 +19696,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Exportador Continuo de Reservas a Data Warehouse (BigQuery / Sheets)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-091: Exportador Continuo de Reservas a Data Warehouse (BigQuery / Sheets)\",\n  \"message\": \"=Error al ejecutar en colección data_warehouse_syncs: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-091\",\n    \"collection\": \"data_warehouse_syncs\",\n    \"endpoint\": \"/api/webhooks/n8n/bigquery-export\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Exportador Continuo de Reservas a Data Warehouse (BigQuery / Sheets)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-091: Exportador Continuo de Reservas a Data Warehouse (BigQuery / Sheets)\",\n  \"message\": \"=Error al ejecutar en colección data_warehouse_syncs: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-091\",\n    \"collection\": \"data_warehouse_syncs\",\n    \"endpoint\": \"/api/native/workflows/bigquery-export\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -19767,7 +19767,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Activity",
     color: "#10b981",
-    endpoint: "/api/webhooks/n8n/health-heartbeat",
+    endpoint: "/api/native/workflows/health-heartbeat",
     method: "POST",
     triggerEvent: "Cron cada 1 minuto",
     nodesCount: 5,
@@ -19776,31 +19776,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Centinela de Uptime y Salud de Endpoints de Producción",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron cada 1 minuto"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación uptime_logs",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /uptime_logs"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -19816,13 +19816,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/health-heartbeat",
+                        "path": "api/native/workflows/health-heartbeat",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Centinela de Uptime y Salud de Endpoints de Producción",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -19834,7 +19834,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'uptime_logs';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -19865,7 +19865,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección uptime_logs",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -19886,7 +19886,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -19902,7 +19902,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -19912,11 +19912,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Centinela de Uptime y Salud de Endpoints de Producción\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-092: Centinela de Uptime y Salud de Endpoints de Producción\",\n  \"message\": \"=Error al ejecutar en colección uptime_logs: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-092\",\n    \"collection\": \"uptime_logs\",\n    \"endpoint\": \"/api/webhooks/n8n/health-heartbeat\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Centinela de Uptime y Salud de Endpoints de Producción\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-092: Centinela de Uptime y Salud de Endpoints de Producción\",\n  \"message\": \"=Error al ejecutar en colección uptime_logs: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-092\",\n    \"collection\": \"uptime_logs\",\n    \"endpoint\": \"/api/native/workflows/health-heartbeat\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -19983,7 +19983,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "PieChart",
     color: "#0f766e",
-    endpoint: "/api/webhooks/n8n/ict-stats",
+    endpoint: "/api/native/workflows/ict-stats",
     method: "POST",
     triggerEvent: "Cron mensual el día 1",
     nodesCount: 5,
@@ -19992,31 +19992,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Generador de Estadísticas Oficiales para el ICT (Encuesta Nacional)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron mensual el día 1"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación ict_statistics",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /ict_statistics"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -20036,13 +20036,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/ict-stats",
+                        "path": "api/native/workflows/ict-stats",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Generador de Estadísticas Oficiales para el ICT (Encuesta Nacional)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -20054,7 +20054,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'ict_statistics';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -20085,7 +20085,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección ict_statistics",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -20106,7 +20106,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -20122,7 +20122,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -20132,11 +20132,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Generador de Estadísticas Oficiales para el ICT (Encuesta Nacional)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-093: Generador de Estadísticas Oficiales para el ICT (Encuesta Nacional)\",\n  \"message\": \"=Error al ejecutar en colección ict_statistics: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-093\",\n    \"collection\": \"ict_statistics\",\n    \"endpoint\": \"/api/webhooks/n8n/ict-stats\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Generador de Estadísticas Oficiales para el ICT (Encuesta Nacional)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-093: Generador de Estadísticas Oficiales para el ICT (Encuesta Nacional)\",\n  \"message\": \"=Error al ejecutar en colección ict_statistics: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-093\",\n    \"collection\": \"ict_statistics\",\n    \"endpoint\": \"/api/native/workflows/ict-stats\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -20203,7 +20203,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Search",
     color: "#6366f1",
-    endpoint: "/api/webhooks/n8n/search-trends",
+    endpoint: "/api/native/workflows/search-trends",
     method: "POST",
     triggerEvent: "Batch cada 6 horas agregando logs de búsqueda",
     nodesCount: 5,
@@ -20212,31 +20212,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Analizador de Tendencias y Búsquedas sin Disponibilidad",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Batch cada 6 horas agregando logs de búsqueda"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación search_trends",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /search_trends"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -20255,13 +20255,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/search-trends",
+                        "path": "api/native/workflows/search-trends",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Analizador de Tendencias y Búsquedas sin Disponibilidad",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -20273,7 +20273,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'search_trends';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -20304,7 +20304,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección search_trends",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -20325,7 +20325,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -20341,7 +20341,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -20351,11 +20351,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Analizador de Tendencias y Búsquedas sin Disponibilidad\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-094: Analizador de Tendencias y Búsquedas sin Disponibilidad\",\n  \"message\": \"=Error al ejecutar en colección search_trends: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-094\",\n    \"collection\": \"search_trends\",\n    \"endpoint\": \"/api/webhooks/n8n/search-trends\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Analizador de Tendencias y Búsquedas sin Disponibilidad\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-094: Analizador de Tendencias y Búsquedas sin Disponibilidad\",\n  \"message\": \"=Error al ejecutar en colección search_trends: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-094\",\n    \"collection\": \"search_trends\",\n    \"endpoint\": \"/api/native/workflows/search-trends\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -20422,7 +20422,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "HardDrive",
     color: "#475569",
-    endpoint: "/api/webhooks/n8n/verify-backups",
+    endpoint: "/api/native/workflows/verify-backups",
     method: "POST",
     triggerEvent: "Cron diario 03:00 AM",
     nodesCount: 5,
@@ -20431,31 +20431,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Vigilante de Snapshots y Respaldo Periódico de Firestore",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron diario 03:00 AM"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación backup_audits",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /backup_audits"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -20471,13 +20471,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/verify-backups",
+                        "path": "api/native/workflows/verify-backups",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Vigilante de Snapshots y Respaldo Periódico de Firestore",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -20489,7 +20489,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'backup_audits';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -20520,7 +20520,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección backup_audits",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -20541,7 +20541,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -20557,7 +20557,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -20567,11 +20567,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Vigilante de Snapshots y Respaldo Periódico de Firestore\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-095: Vigilante de Snapshots y Respaldo Periódico de Firestore\",\n  \"message\": \"=Error al ejecutar en colección backup_audits: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-095\",\n    \"collection\": \"backup_audits\",\n    \"endpoint\": \"/api/webhooks/n8n/verify-backups\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Vigilante de Snapshots y Respaldo Periódico de Firestore\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-095: Vigilante de Snapshots y Respaldo Periódico de Firestore\",\n  \"message\": \"=Error al ejecutar en colección backup_audits: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-095\",\n    \"collection\": \"backup_audits\",\n    \"endpoint\": \"/api/native/workflows/verify-backups\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -20638,7 +20638,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "UserX",
     color: "#64748b",
-    endpoint: "/api/webhooks/n8n/gdpr-anonymize",
+    endpoint: "/api/native/workflows/gdpr-anonymize",
     method: "POST",
     triggerEvent: "Solicitud formal de privacidad de usuario",
     nodesCount: 5,
@@ -20647,31 +20647,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Procesador de Derechos de Privacidad y Anonimización (GDPR)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Solicitud formal de privacidad de usuario"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación privacy_requests",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /privacy_requests"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -20687,13 +20687,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/gdpr-anonymize",
+                        "path": "api/native/workflows/gdpr-anonymize",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Procesador de Derechos de Privacidad y Anonimización (GDPR)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -20705,7 +20705,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'privacy_requests';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -20736,7 +20736,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección privacy_requests",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -20757,7 +20757,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -20773,7 +20773,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -20783,11 +20783,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Procesador de Derechos de Privacidad y Anonimización (GDPR)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-096: Procesador de Derechos de Privacidad y Anonimización (GDPR)\",\n  \"message\": \"=Error al ejecutar en colección privacy_requests: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-096\",\n    \"collection\": \"privacy_requests\",\n    \"endpoint\": \"/api/webhooks/n8n/gdpr-anonymize\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Procesador de Derechos de Privacidad y Anonimización (GDPR)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-096: Procesador de Derechos de Privacidad y Anonimización (GDPR)\",\n  \"message\": \"=Error al ejecutar en colección privacy_requests: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-096\",\n    \"collection\": \"privacy_requests\",\n    \"endpoint\": \"/api/native/workflows/gdpr-anonymize\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -20854,7 +20854,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "PhoneCheck",
     color: "#10b981",
-    endpoint: "/api/webhooks/n8n/auth-operator-phone",
+    endpoint: "/api/native/workflows/auth-operator-phone",
     method: "POST",
     triggerEvent: "Petición entrante desde WhatsApp o terminal de operador",
     nodesCount: 5,
@@ -20863,31 +20863,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Autenticador de Números de Teléfono de Operadores Autorizados",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Petición entrante desde WhatsApp o terminal de operador"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación operator_sessions",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /operator_sessions"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -20904,13 +20904,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/auth-operator-phone",
+                        "path": "api/native/workflows/auth-operator-phone",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Autenticador de Números de Teléfono de Operadores Autorizados",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -20922,7 +20922,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'operator_sessions';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -20953,7 +20953,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección operator_sessions",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -20974,7 +20974,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -20990,7 +20990,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -21000,11 +21000,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Autenticador de Números de Teléfono de Operadores Autorizados\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-097: Autenticador de Números de Teléfono de Operadores Autorizados\",\n  \"message\": \"=Error al ejecutar en colección operator_sessions: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-097\",\n    \"collection\": \"operator_sessions\",\n    \"endpoint\": \"/api/webhooks/n8n/auth-operator-phone\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Autenticador de Números de Teléfono de Operadores Autorizados\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-097: Autenticador de Números de Teléfono de Operadores Autorizados\",\n  \"message\": \"=Error al ejecutar en colección operator_sessions: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-097\",\n    \"collection\": \"operator_sessions\",\n    \"endpoint\": \"/api/native/workflows/auth-operator-phone\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -21071,7 +21071,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Scale",
     color: "#0284c7",
-    endpoint: "/api/webhooks/n8n/price-parity-check",
+    endpoint: "/api/native/workflows/price-parity-check",
     method: "POST",
     triggerEvent: "Cron semanal de comparación de precios",
     nodesCount: 5,
@@ -21080,31 +21080,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Monitor de Paridad de Precios frente a OTAs (Viator, GetYourGuide)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron semanal de comparación de precios"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación price_parities",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /price_parities"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -21121,13 +21121,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/price-parity-check",
+                        "path": "api/native/workflows/price-parity-check",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Monitor de Paridad de Precios frente a OTAs (Viator, GetYourGuide)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -21139,7 +21139,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'price_parities';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -21170,7 +21170,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección price_parities",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -21191,7 +21191,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -21207,7 +21207,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -21217,11 +21217,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Monitor de Paridad de Precios frente a OTAs (Viator, GetYourGuide)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-098: Monitor de Paridad de Precios frente a OTAs (Viator, GetYourGuide)\",\n  \"message\": \"=Error al ejecutar en colección price_parities: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-098\",\n    \"collection\": \"price_parities\",\n    \"endpoint\": \"/api/webhooks/n8n/price-parity-check\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Monitor de Paridad de Precios frente a OTAs (Viator, GetYourGuide)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-098: Monitor de Paridad de Precios frente a OTAs (Viator, GetYourGuide)\",\n  \"message\": \"=Error al ejecutar en colección price_parities: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-098\",\n    \"collection\": \"price_parities\",\n    \"endpoint\": \"/api/native/workflows/price-parity-check\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -21288,7 +21288,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "RefreshCw",
     color: "#f59e0b",
-    endpoint: "/api/webhooks/n8n/dlq-retry",
+    endpoint: "/api/native/workflows/dlq-retry",
     method: "POST",
     triggerEvent: "Cron cada 10 minutos procesando cola DLQ",
     nodesCount: 5,
@@ -21297,31 +21297,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Recuperador de Webhooks Fallidos (Dead Letter Queue & Backoff)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Cron cada 10 minutos procesando cola DLQ"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación dlq_retries",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /dlq_retries"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -21338,13 +21338,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/dlq-retry",
+                        "path": "api/native/workflows/dlq-retry",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Recuperador de Webhooks Fallidos (Dead Letter Queue & Backoff)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -21356,7 +21356,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'dlq_retries';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -21387,7 +21387,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección dlq_retries",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -21408,7 +21408,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -21424,7 +21424,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -21434,11 +21434,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Recuperador de Webhooks Fallidos (Dead Letter Queue & Backoff)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-099: Recuperador de Webhooks Fallidos (Dead Letter Queue & Backoff)\",\n  \"message\": \"=Error al ejecutar en colección dlq_retries: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-099\",\n    \"collection\": \"dlq_retries\",\n    \"endpoint\": \"/api/webhooks/n8n/dlq-retry\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Recuperador de Webhooks Fallidos (Dead Letter Queue & Backoff)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-099: Recuperador de Webhooks Fallidos (Dead Letter Queue & Backoff)\",\n  \"message\": \"=Error al ejecutar en colección dlq_retries: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-099\",\n    \"collection\": \"dlq_retries\",\n    \"endpoint\": \"/api/native/workflows/dlq-retry\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,
@@ -21505,7 +21505,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
     },
     icon: "Cpu",
     color: "#047857",
-    endpoint: "/api/webhooks/n8n/circuit-breaker",
+    endpoint: "/api/native/workflows/circuit-breaker",
     method: "POST",
     triggerEvent: "Evaluación continua de salud del sistema",
     nodesCount: 5,
@@ -21514,31 +21514,31 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       {
             "id": "node-trigger",
             "name": "[TRIGGER] Interruptor Maestro de Orquestación y Conmutación por Falla (Circuit Breaker)",
-            "type": "n8n-nodes-base.webhook",
+            "type": "native-automation-node.webhook",
             "description": "Evaluación continua de salud del sistema"
       },
       {
             "id": "node-extract",
             "name": "[EXTRACT] Formatear y Validar Datos",
-            "type": "n8n-nodes-base.code",
+            "type": "native-automation-node.code",
             "description": "Transformación y validación de esquema"
       },
       {
             "id": "node-firestore",
             "name": "[FIRESTORE] Operación system_health",
-            "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+            "type": "native-automation-node.googleFirebaseCloudFirestore",
             "description": "Lectura/Escritura en Firestore /system_health"
       },
       {
             "id": "node-response",
             "name": "[RESPUESTA] Finalizar con Éxito",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "native-automation-node.respondToWebhook",
             "description": "Respuesta HTTP 200 con payload estructurado"
       },
       {
             "id": "node-alert",
             "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-            "type": "n8n-nodes-base.httpRequest",
+            "type": "native-automation-node.httpRequest",
             "description": "Enrutamiento de error a /api/alerts (reemplazo Telegram)"
       }
 ],
@@ -21554,13 +21554,13 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
       "nodes": [
             {
                   "parameters": {
-                        "path": "api/webhooks/n8n/circuit-breaker",
+                        "path": "api/native/workflows/circuit-breaker",
                         "httpMethod": "POST",
                         "responseMode": "responseNode",
                         "options": {}
                   },
                   "name": "[TRIGGER] Interruptor Maestro de Orquestación y Conmutación por Falla (Circuit Breaker)",
-                  "type": "n8n-nodes-base.webhook",
+                  "type": "native-automation-node.webhook",
                   "typeVersion": 2,
                   "position": [
                         100,
@@ -21572,7 +21572,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "jsCode": "// Validar campos obligatorios y normalizar timestamp\nconst item = $input.first().json || {};\nitem.processedAt = new Date().toISOString();\nitem.environment = 'production';\nitem.targetCollection = 'system_health';\nreturn [{ json: item }];"
                   },
                   "name": "[EXTRACT] Formatear y Validar Datos",
-                  "type": "n8n-nodes-base.code",
+                  "type": "native-automation-node.code",
                   "typeVersion": 2,
                   "position": [
                         350,
@@ -21603,7 +21603,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         }
                   },
                   "name": "[FIRESTORE] Operación Colección system_health",
-                  "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+                  "type": "native-automation-node.googleFirebaseCloudFirestore",
                   "typeVersion": 1.1,
                   "position": [
                         650,
@@ -21624,7 +21624,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         "options": {}
                   },
                   "name": "[RESPUESTA] Finalizar con Éxito",
-                  "type": "n8n-nodes-base.respondToWebhook",
+                  "type": "native-automation-node.respondToWebhook",
                   "typeVersion": 1.5,
                   "position": [
                         950,
@@ -21640,7 +21640,7 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                               "parameters": [
                                     {
                                           "name": "X-Webhook-Secret",
-                                          "value": "={{ $env.N8N_WEBHOOK_SECRET || \"dev-secret\" }}"
+                                          "value": "={{ $env.WEBHOOK_SECRET || \"dev-secret\" }}"
                                     },
                                     {
                                           "name": "Content-Type",
@@ -21650,11 +21650,11 @@ export const WORKFLOWS_100_LIST: N8NWorkflowDef100[] = [
                         },
                         "sendBody": true,
                         "specifyBody": "json",
-                        "jsonBody": "{\n  \"source\": \"Interruptor Maestro de Orquestación y Conmutación por Falla (Circuit Breaker)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-100: Interruptor Maestro de Orquestación y Conmutación por Falla (Circuit Breaker)\",\n  \"message\": \"=Error al ejecutar en colección system_health: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-100\",\n    \"collection\": \"system_health\",\n    \"endpoint\": \"/api/webhooks/n8n/circuit-breaker\"\n  }\n}",
+                        "jsonBody": "{\n  \"source\": \"Interruptor Maestro de Orquestación y Conmutación por Falla (Circuit Breaker)\",\n  \"severity\": \"critical\",\n  \"title\": \"Fallo en workflow WF-100: Interruptor Maestro de Orquestación y Conmutación por Falla (Circuit Breaker)\",\n  \"message\": \"=Error al ejecutar en colección system_health: {{ $json.error?.message || \\\"Error no especificado\\\" }}\",\n  \"bookingId\": \"={{ $json.bookingId }}\",\n  \"metadata\": {\n    \"workflowCode\": \"WF-100\",\n    \"collection\": \"system_health\",\n    \"endpoint\": \"/api/native/workflows/circuit-breaker\"\n  }\n}",
                         "options": {}
                   },
                   "name": "[ALERTA NATIVA] Enviar a /api/alerts",
-                  "type": "n8n-nodes-base.httpRequest",
+                  "type": "native-automation-node.httpRequest",
                   "typeVersion": 4.2,
                   "position": [
                         950,

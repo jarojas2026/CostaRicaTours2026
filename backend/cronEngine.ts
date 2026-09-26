@@ -6,7 +6,7 @@
  */
 
 import cron from 'node-cron';
-import { getAllBookings, updateBookingStatus, getFirestoreDb } from './bookingService';
+import { getAllBookings, updateBookingStatus, getFirestoreDb, getExpiredSoftHolds } from './bookingService';
 import { logAutomationExecution } from './nativeAutomationEngine';
 import { processProviderInboxOnce } from './providerInboxAgent';
 import { runReservationLifecycleSweep } from './reservationLifecycleOrchestrator';
@@ -28,14 +28,7 @@ import {
 // =========================================================================
 export async function cleanupExpiredSoftHolds() {
   try {
-    const allBookings = await getAllBookings();
-    const now = new Date().toISOString();
-
-    const expiredHolds = allBookings.filter(b =>
-      (b.status === 'hold' || b.status === 'pendiente_pago' || b.holdActive) &&
-      b.holdExpiresAt &&
-      b.holdExpiresAt < now
-    );
+    const expiredHolds = await getExpiredSoftHolds(250);
 
     let releasedCount = 0;
     if (expiredHolds.length > 0) {
@@ -54,7 +47,7 @@ export async function cleanupExpiredSoftHolds() {
         );
       }
     }
-    return { success: true, releasedCount, totalChecked: allBookings.length };
+    return { success: true, releasedCount, totalChecked: expiredHolds.length };
   } catch (error: any) {
     console.error('❌ Error ejecutando Auditoría de Soft Holds:', error);
     throw error;
@@ -69,7 +62,10 @@ const AUTOMATION_LOCK_STALE_MS = 10 * 60 * 1000;
  */
 export async function withDistributedAutomationLock<T>(lockId: string, work: () => Promise<T>): Promise<T | null> {
   const db = getFirestoreDb();
-  if (!db) return work();
+  if (!db) {
+    if (process.env.NODE_ENV === 'production') return null;
+    return work();
+  }
   const ref = db.collection('automation_locks').doc(lockId);
   try {
     await db.runTransaction(async (tx: any) => {

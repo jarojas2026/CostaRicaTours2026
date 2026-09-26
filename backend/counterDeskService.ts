@@ -19,7 +19,7 @@ export async function askCounterDesk(input: CounterDeskAskInput) {
   if (!message) throw new Error('message es requerido');
 
   const language: Language = input.language || 'es';
-  const modelLanguage: 'es' | 'en' = language === 'es' ? 'es' : 'en';
+  const modelLanguage = language;
   const sessionId = String(input.sessionId || '').trim();
   const history = sessionId ? (await getOperationalMemory(sessionId)).turns : [];
   const knowledgeContext = await buildAgentKnowledgeContext({ query: message, sessionId: sessionId || undefined });

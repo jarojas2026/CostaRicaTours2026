@@ -5,6 +5,7 @@
 
 import { AnthropicVertex } from '@anthropic-ai/vertex-sdk';
 import { TOURS } from '../src/data/toursData';
+import type { Language } from '../src/types';
 
 let claudeClient: AnthropicVertex | null = null;
 let clientInitializationError: string | null = null;
@@ -20,7 +21,9 @@ export function getClaudeClient(): AnthropicVertex | null {
       process.env.ANTHROPIC_VERTEX_PROJECT_ID ||
       process.env.GCP_PROJECT ||
       process.env.GOOGLE_CLOUD_PROJECT ||
-      'gen-lang-client-0782739149';
+      '';
+
+    if (!projectId) throw new Error('GOOGLE_CLOUD_PROJECT/ANTHROPIC_VERTEX_PROJECT_ID no configurado.');
 
     const region =
       process.env.ANTHROPIC_VERTEX_REGION ||
@@ -49,12 +52,13 @@ export function getClaudeStatus(): { available: boolean; model: string; region: 
   const projectId =
     process.env.ANTHROPIC_VERTEX_PROJECT_ID ||
     process.env.GCP_PROJECT ||
-    'gen-lang-client-0782739149';
+    '';
   const region =
     process.env.ANTHROPIC_VERTEX_REGION ||
     process.env.CLOUD_ML_REGION ||
     'us-east5';
   const model = process.env.ANTHROPIC_VERTEX_MODEL || 'claude-3-5-sonnet-v2@20241022';
+  if (!projectId) return { available: false, model, region: '', projectId: '', error: 'Proyecto de Vertex AI no configurado.' };
 
   return {
     available: !clientInitializationError,
@@ -84,7 +88,8 @@ const CLAUDE_SYSTEM_PROMPT = `Eres el Asistente Inteligente Oficial de "Costa Ri
 Tu identidad refleja la auténtica esencia del "Pura Vida": calidez, profesionalismo, hospitalidad y profundo conocimiento de la biodiversidad, microclimas, geografía y leyes turísticas de Costa Rica.
 
 REGLAS ESENCIALES:
-1. IDIOMA: Responde SIEMPRE en el mismo idioma en que te escribe el viajero (español o inglés).
+1. IDIOMA: Responde SIEMPRE en el idioma solicitado por el viajero: español, inglés, alemán, francés, chino o japonés. No mezcles idiomas salvo nombres propios, códigos y URLs.
+
 2. VERACIDAD: Solo recomienda tours, tarifas y políticas vigentes en nuestra base oficial. Nunca inventes precios ni operadores.
 3. SOSTENIBILIDAD (CST): Promueve el turismo regenerativo, el respeto a la fauna silvestre (no tocar ni alimentar animales) y el apoyo a las comunidades rurales.
 4. ESTRUCTURA DE RESPUESTA:
@@ -121,11 +126,12 @@ Todas las tarifas son en USD por vehículo privado completo. Incluye A/C, Wi-Fi 
  */
 export async function generateClaudeChatResponse(
   message: string,
-  language: 'es' | 'en' = 'es',
+  language: Language = 'es',
   history: Array<{ role: 'user' | 'assistant' | 'bot'; text: string }> = [],
   options?: { temperature?: number; maxTokens?: number }
 ): Promise<{ reply: string; modelUsed: string; success: boolean; quickActions?: Array<{ label: string; action: string; data?: any }> }> {
   const client = getClaudeClient();
+  const languageLabels: Record<Language, string> = { es: 'español', en: 'inglés', de: 'alemán', fr: 'francés', zh: 'chino', ja: 'japonés' };
   const isEn = language === 'en';
   const modelName = process.env.ANTHROPIC_VERTEX_MODEL || 'claude-3-5-sonnet-v2@20241022';
 
@@ -202,7 +208,7 @@ export async function generateClaudeItinerary(params: {
   style: 'eco_relax' | 'adventure_extreme' | 'family_comfort' | 'wildlife_photography' | 'cultural_discovery';
   regions: string[];
   budget: 'standard' | 'premium' | 'luxury';
-  language: 'es' | 'en';
+  language: Language;
   specialRequests?: string;
 }): Promise<{
   title: string;

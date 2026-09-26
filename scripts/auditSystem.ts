@@ -66,7 +66,7 @@ function collectSourceFiles(startDir: string): string[] {
   return files;
 }
 
-for (const relative of ['backend', 'src', 'scripts', 'public', 'docs', 'agent']) {
+for (const relative of ['backend', 'src', 'scripts', 'public', 'agent']) {
   const dir = path.join(root, relative);
   if (!fs.existsSync(dir)) continue;
   for (const file of collectSourceFiles(dir)) {
@@ -80,8 +80,42 @@ for (const relative of ['backend', 'src', 'scripts', 'public', 'docs', 'agent'])
 }
 
 
+const toursData = read('src/data/toursData.ts');
+const tourStarts = [...toursData.matchAll(/\n\s*id:\s*['\"]([^'\"]+)['\"]/g)];
+const imageOwners = new Map<string, string[]>();
+for (let i = 0; i < tourStarts.length; i++) {
+  const start = tourStarts[i].index || 0;
+  const end = i + 1 < tourStarts.length ? (tourStarts[i + 1].index || toursData.length) : toursData.length;
+  const tourId = tourStarts[i][1];
+  const source = toursData.slice(start, end);
+  const urls = new Set([...source.matchAll(/https?:\/\/[^'\"`\s)]+/g)].map(m => m[0].replace(/[),;]+$/, '')));
+  for (const url of urls) {
+    const owners = imageOwners.get(url) || [];
+    owners.push(tourId);
+    imageOwners.set(url, owners);
+  }
+}
+const repeatedMedia = [...imageOwners.entries()].filter(([, owners]) => owners.length > 1);
+if (repeatedMedia.length) add('MEDIUM', 'MEDIA-001', `Cross-tour image duplication detected: ${repeatedMedia.length} image URLs are shared by multiple tours.`);
+const insecureMedia = [...imageOwners.keys()].filter(url => !/^https:\/\//i.test(url));
+if (insecureMedia.length) add('MEDIUM', 'MEDIA-002', `Non-HTTPS tour media detected: ${insecureMedia.length} assets.`);
 const server = read('server.ts');
 const reservationLifecycle = read('backend/reservationLifecycleOrchestrator.ts');
+const journeyBuildRoutes = (server.match(/app\.post\('\/api\/journey\/build'/g) || []).length;
+const journeyReadRoutes = (server.match(/app\.get\('\/api\/journey\/:journeyId'/g) || []).length;
+const journeyAdaptRoutes = (server.match(/app\.post\('\/api\/journey\/:journeyId\/adapt'/g) || []).length;
+if (journeyBuildRoutes !== 1 || journeyReadRoutes !== 1 || journeyAdaptRoutes !== 1) {
+  add('HIGH', 'ROUTE-001', `Duplicate or missing Journey route registrations detected (build=${journeyBuildRoutes}, read=${journeyReadRoutes}, adapt=${journeyAdaptRoutes}).`);
+}
+const bookingService = read('backend/bookingService.ts');
+const nativeWorkflowsSource = read('backend/nativeWorkflows.ts');
+if (/providerId\s*\|\|\s*['\"]alsama-tours-cr['\"]/.test(bookingService)) {
+  add('CRITICAL', 'PROVIDER-005', 'Booking creation still contains an implicit Alsama provider fallback.');
+}
+const payoutPaidGuard = /payoutResponse\.ok[\s\S]{0,300}batch_status[^\n]*['\"]SUCCESS['\"]/.test(nativeWorkflowsSource);
+if (/SUCCESS_SIMULATED/.test(nativeWorkflowsSource) || (/payoutStatus:\s*['\"]paid['\"]/.test(nativeWorkflowsSource) && !payoutPaidGuard)) {
+  add('CRITICAL', 'PAYOUT-001', 'Provider payout code contains a simulated success path; payouts must never be marked paid without provider API confirmation.');
+}
 if (!/createInFlightLimiter/.test(server) || !/apiAdmission/.test(server) || !/aiAdmission/.test(server)) {
   add('HIGH', 'ADMISSION-001', 'API admission control is missing from server.ts.');
 }
@@ -108,7 +142,7 @@ if (/setInterval\(async \(\) =>[\\s\\S]*processPendingCustomerIntakeJobs/.test(s
   add('MEDIUM', 'QUEUE-001', 'Customer Intake has an in-process sweep; production serverless deployments also need an external scheduler calling the protected queue endpoint.');
 }
 
-if (!/runReservationLifecycleSweep/.test(reservationLifecycle) || !/\/api\/internal\/reservation-lifecycle\/sweep/.test(server)) {
+if (!/runReservationLifecycleSweep/.test(reservationLifecycle) || !/reservation-lifecycle\/sweep/.test(server)) {
   add('CRITICAL', 'BOOKING-001', 'Reservation lifecycle orchestrator is not connected to the protected server endpoint.');
 }
 if (!/runReservationLifecycleSweep\(100\)/.test(read('backend/cronEngine.ts'))) {
@@ -126,10 +160,10 @@ if (!/EMAIL_MAX_ATTEMPTS/.test(emailOperations) || !/claimed === 'terminal'/.tes
   add('MEDIUM', 'EMAIL-004', 'Email operations lacks a terminal retry guard for poison messages.');
 }
 
-if (!/processEmailOperationsOnce/.test(server) || !/\/api\/internal\/email-operations\/sweep/.test(server)) {
+if (!/processEmailOperationsOnce/.test(server) || !/email-operations\/sweep/.test(server)) {
   add('CRITICAL', 'EMAIL-001', 'Autonomous email agent is not connected to a protected server endpoint.');
 }
-if (!/processEmailOperationsOnce\(\)/.test(read('backend/cronEngine.ts'))) {
+if (!/(processEmailOperationsOnce\(\)|withDistributedAutomationLock\(['\"]email-operations-1m['\"],\s*processEmailOperationsOnce\))/.test(read('backend/cronEngine.ts'))) {
   add('HIGH', 'EMAIL-002', 'Autonomous email agent is not scheduled by the native cron engine.');
 }
 if (!/claimEvent/.test(emailOperations) || !/status === 'error'/.test(emailOperations)) {

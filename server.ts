@@ -13,17 +13,22 @@ import express from 'express';
 import path from 'path';
 import crypto from 'crypto';
 import rateLimit from 'express-rate-limit';
+import Stripe from 'stripe';
 import { createServer as createViteServer } from 'vite';
 import { initializeAutomationEngine, cleanupExpiredSoftHolds } from './backend/cronEngine';
 import { google } from 'googleapis';
-import { requireOperator } from './backend/authMiddleware';
+import { requireOperator, requireAuthenticatedUser } from './backend/authMiddleware';
 import { TOURS } from './src/data/toursData';
+import type { Language } from './src/types';
 import { getTourMediaById } from './backend/tourMediaService';
 import { FLIGHT_ROUTES } from './src/data/flightsData';
+import { MAP_TOURISM_SERVICES } from './src/data/mapServicesData';
 import {
   getStripe,
   createBooking,
   getAllBookings,
+  getBookingById,
+  createSpecialServiceBooking,
   updateBookingStatus,
   checkTourAvailability,
   getWeeklyConversionMetrics
@@ -97,7 +102,10 @@ import {
   executeWeatherMonitoringAlerts,
   executeMorningConciergeTips,
   executePreSaleProspectRecovery,
-  executePostSaleVipLoyalty
+  executePostSaleVipLoyalty,
+  verifyCustomerActionToken,
+  createBookingDocumentToken,
+  verifyBookingDocumentToken
 } from './backend/nativeWorkflows';
 import { executeSinpeVerification } from './backend/sinpeService';
 import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
@@ -123,15 +131,53 @@ import { processCustomerIntake, enqueueCustomerIntakeJob, processPendingCustomer
 import { sendWhatsAppMessage } from './backend/notificationService';
 import { getFirestoreDb } from './backend/bookingService';
 import { processEmailOperationsOnce, getEmailOperationsSnapshot } from './backend/emailOperationsAgent';
-import { runReservationLifecycleSweep } from './backend/reservationLifecycleOrchestrator';
+import { runReservationLifecycleSweep, advanceReservationLifecycle } from './backend/reservationLifecycleOrchestrator';
 import { withDistributedAutomationLock } from './backend/cronEngine';
 import { createInFlightLimiter } from './backend/admissionControl';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-// Admin gate is defined before any route registration that uses it.
-const requireAdmin = requireOperator;
+// Admin gate is stricter than the generic operator gate: operator credentials may
+// operate only routes explicitly intended for operators; admin routes require an
+// authenticated admin identity/role.
+function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
+  return requireOperator(req, res, () => {
+    const role = (req as any).adminAccess?.role || (req as any).user?.role || null;
+    if (role !== 'admin') {
+      return res.status(403).json({ error: 'Permisos de administrador requeridos.' });
+    }
+    next();
+  });
+}
+
+function verifyConfiguredSecret(provided: unknown, expected: unknown): boolean {
+  const p = String(provided || '');
+  const e = String(expected || '');
+  if (!p || !e) return false;
+  const a = Buffer.from(p);
+  const b = Buffer.from(e);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+function requireBookingDocumentAccess(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const bookingId = String(req.params.id || '').trim();
+  const token = String(req.query.token || req.headers['x-booking-token'] || '').trim();
+  if (bookingId && verifyBookingDocumentToken(token, bookingId)) return next();
+  return requireOperator(req, res, next);
+}
+
+function requireAutomationTrigger(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const agentToken = req.headers.authorization?.startsWith('Bearer ')
+    ? req.headers.authorization.slice(7).trim()
+    : '';
+  const webhookSecret = String(req.headers['x-webhook-secret'] || '').trim();
+  if (verifyConfiguredSecret(agentToken, process.env.AGENT_INTERNAL_TOKEN) ||
+      verifyConfiguredSecret(webhookSecret, process.env.WEBHOOK_SECRET)) {
+    return next();
+  }
+  return res.status(401).json({ error: 'Credencial de automatización requerida.' });
+}
 
 function adminAccessPayload(req: express.Request) {
   const access = (req as any).adminAccess || {};
@@ -198,6 +244,24 @@ const generalApiLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Demasiadas solicitudes. Por favor intente más tarde.' }
 });
+
+// Control de concurrencia por instancia para proteger CPU/memoria/Firestore/IA ante picos.
+const apiAdmission = createInFlightLimiter(
+  Math.max(50, Math.min(500, Number(process.env.API_MAX_IN_FLIGHT || 250))),
+  2
+);
+const aiAdmission = createInFlightLimiter(
+  Math.max(10, Math.min(100, Number(process.env.AI_MAX_IN_FLIGHT || 40))),
+  3
+);
+const intakeAdmission = createInFlightLimiter(
+  Math.max(5, Math.min(50, Number(process.env.INTAKE_MAX_IN_FLIGHT || 20))),
+  5
+);
+const bookingAdmission = createInFlightLimiter(
+  Math.max(5, Math.min(50, Number(process.env.BOOKING_MAX_IN_FLIGHT || 20))),
+  5
+);
 
 app.use('/api/', generalApiLimiter, apiAdmission.middleware);
 
@@ -433,6 +497,27 @@ app.patch('/api/ai/journey/:journeyId', aiAdmission.middleware, async (req, res)
   }
 });
 
+// Protected scheduler entrypoints for serverless/container environments.
+// They share the same native workers used by in-process cron, but can be invoked
+// by Cloud Scheduler or another trusted scheduler without exposing mutations publicly.
+app.post('/api/internal/reservation-lifecycle/sweep', requireAutomationTrigger, async (req, res) => {
+  try {
+    const result = await withDistributedAutomationLock('reservation-lifecycle-external', () => runReservationLifecycleSweep(Math.min(100, Math.max(1, Number(req.body?.limit) || 100))));
+    return res.json({ success: true, result });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error?.message || 'No se pudo ejecutar el lifecycle.' });
+  }
+});
+
+app.post('/api/internal/email-operations/sweep', requireAutomationTrigger, async (req, res) => {
+  try {
+    const result = await withDistributedAutomationLock('email-operations-external', processEmailOperationsOnce);
+    return res.json({ success: true, result });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error?.message || 'No se pudo ejecutar el agente de correo.' });
+  }
+});
+
 // ==========================================
 // 📬 PROVIDER INBOX — lectura operativa del correo cada minuto
 app.post('/api/ops/provider-inbox/check', requireAdmin, async (_req, res) => {
@@ -510,97 +595,14 @@ app.get('/api/admin/control-center', requireAdmin, async (_req, res) => {
 
 // Full-trip Journey API: keeps the public planning flow connected to memory,
 // authoritative catalog, live weather, availability, itinerary and sales next step.
-app.post('/api/journey/build', async (req, res) => {
-  try {
-    const result = await buildTripJourney(req.body || {});
-    res.json({ success: true, journey: result });
-  } catch (err: any) {
-    res.status(400).json({ success: false, error: err.message || 'No se pudo construir el viaje' });
-  }
-});
-
-app.get('/api/journey/:journeyId', async (req, res) => {
-  try {
-    const journey = await getTravelerJourney(String(req.params.journeyId || ''));
-    if (!journey) return res.status(404).json({ success: false, error: 'Viaje no encontrado' });
-    res.json({ success: true, journey });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message || 'No se pudo recuperar el viaje' });
-  }
-});
-
-app.post('/api/journey/:journeyId/adapt', async (req, res) => {
-  try {
-    const journey = await adaptTravelerJourney(String(req.params.journeyId || ''), req.body || {});
-    res.json({ success: true, journey });
-  } catch (err: any) {
-    const status = /no encontrado/i.test(err.message || '') ? 404 : 400;
-    res.status(status).json({ success: false, error: err.message || 'No se pudo adaptar el viaje' });
-  }
-});
-
-app.post('/api/internal/provider-inbox/sweep', requireAgentTool, async (_req, res) => {
-  try {
-    res.json({ success: true, result: await processProviderInboxOnce() });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message || 'Provider inbox error' });
-  }
-});
-
-app.post('/api/internal/email-operations/sweep', requireAgentTool, async (_req, res) => {
-  try {
-    res.json({ success: true, result: await processEmailOperationsOnce() });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message || 'Email operations error' });
-  }
-});
-
-app.post('/api/internal/reservation-lifecycle/sweep', requireAgentTool, async (_req, res) => {
-  try { res.json({ success: true, result: await runReservationLifecycleSweep(100) }); }
-  catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Reservation lifecycle error' }); }
-});
-
-app.get('/api/admin/email-operations', requireAdmin, async (_req, res) => {
-  try { res.json(await getEmailOperationsSnapshot()); }
-  catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Email operations snapshot error' }); }
-});
-
-app.post('/api/admin/email-operations/sweep', requireAdmin, async (_req, res) => {
-  try { res.json({ success: true, result: await processEmailOperationsOnce() }); }
-  catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Email operations sweep error' }); }
-});
-
-app.post('/api/ai/intelligence', (req, res) => {
-  try {
-    const action = String(req.body?.action || '').trim();
-    switch (action) {
-      case 'trip_fit':
-        return res.json(assessTripFit({ query: typeof req.body.query === 'string' ? req.body.query.slice(0, 2000) : '', days: Number(req.body.days), airport: typeof req.body.airport === 'string' ? req.body.airport.slice(0, 20) : undefined, profile: req.body.profile, intensity: req.body.intensity, regions: Array.isArray(req.body.regions) ? req.body.regions.slice(0, 8).map(String) : undefined }));
-      case 'packing_list':
-        return res.json(buildPackingList({ activities: Array.isArray(req.body.activities) ? req.body.activities.slice(0, 12).map(String) : [], regions: Array.isArray(req.body.regions) ? req.body.regions.slice(0, 8).map(String) : [], profile: req.body.profile }));
-      case 'activity_safety_check':
-        return res.json(screenActivitySuitability({ activity: String(req.body.activity || '').slice(0, 200), age: req.body.age === undefined ? undefined : Number(req.body.age), canSwim: req.body.canSwim === undefined ? undefined : Boolean(req.body.canSwim), mobility: typeof req.body.mobility === 'string' ? req.body.mobility.slice(0, 300) : undefined, fearOfHeights: req.body.fearOfHeights === undefined ? undefined : Boolean(req.body.fearOfHeights), medicalConstraint: typeof req.body.medicalConstraint === 'string' ? req.body.medicalConstraint.slice(0, 300) : undefined }));
-      case 'route_strategy':
-        return res.json(buildRouteStrategy({ regions: Array.isArray(req.body.regions) ? req.body.regions.slice(0, 8).map(String) : [], days: Number(req.body.days), arrivalAirport: typeof req.body.arrivalAirport === 'string' ? req.body.arrivalAirport.slice(0, 20) : undefined, departureAirport: typeof req.body.departureAirport === 'string' ? req.body.departureAirport.slice(0, 20) : undefined }));
-      case 'destination_intelligence':
-        return res.json(getDestinationIntelligence(String(req.body.regionId || '').slice(0, 60)));
-      default:
-        return res.status(400).json({ error: 'Acción de inteligencia no soportada.' });
-    }
-  } catch (error: any) {
-    return res.status(400).json({ error: error?.message || 'No se pudo procesar la consulta de inteligencia.' });
-  }
-});
-
-// ==========================================
- // 🧭 VIAJE COMPLETO: MEMORIA + CATÁLOGO + CLIMA + DISPONIBILIDAD + ITINERARIO + VENTAS
- // ==========================================
-app.post('/api/journey/build', async (req, res) => {
+app.post('/api/journey/build', aiAdmission.middleware, async (req, res) => {
   try {
     const journey = await buildTripJourney({
       sessionId: typeof req.body?.sessionId === 'string' ? req.body.sessionId : undefined,
       query: typeof req.body?.query === 'string' ? req.body.query : '',
-      days: req.body?.days, travelers: req.body?.travelers, profile: req.body?.profile,
+      days: req.body?.days,
+      travelers: req.body?.travelers,
+      profile: req.body?.profile,
       regions: Array.isArray(req.body?.regions) ? req.body.regions.map(String).slice(0, 6) : undefined,
       arrivalAirport: typeof req.body?.arrivalAirport === 'string' ? req.body.arrivalAirport : undefined,
       departureAirport: typeof req.body?.departureAirport === 'string' ? req.body.departureAirport : undefined,
@@ -626,12 +628,14 @@ app.get('/api/journey/:journeyId', async (req, res) => {
   }
 });
 
-app.post('/api/journey/:journeyId/adapt', async (req, res) => {
+app.post('/api/journey/:journeyId/adapt', aiAdmission.middleware, async (req, res) => {
   try {
     const journey = await adaptTravelerJourney(String(req.params.journeyId || ''), {
       sessionId: typeof req.body?.sessionId === 'string' ? req.body.sessionId : undefined,
       query: typeof req.body?.query === 'string' ? req.body.query : undefined,
-      days: req.body?.days, travelers: req.body?.travelers, profile: req.body?.profile,
+      days: req.body?.days,
+      travelers: req.body?.travelers,
+      profile: req.body?.profile,
       regions: Array.isArray(req.body?.regions) ? req.body.regions.map(String).slice(0, 6) : undefined,
       arrivalAirport: typeof req.body?.arrivalAirport === 'string' ? req.body.arrivalAirport : undefined,
       departureAirport: typeof req.body?.departureAirport === 'string' ? req.body.departureAirport : undefined,
@@ -643,11 +647,12 @@ app.post('/api/journey/:journeyId/adapt', async (req, res) => {
     });
     return res.json(journey);
   } catch (error: any) {
-    return res.status(400).json({ error: error?.message || 'No se pudo adaptar el viaje.' });
+    const status = /no encontrado/i.test(error?.message || '') ? 404 : 400;
+    return res.status(status).json({ error: error?.message || 'No se pudo adaptar el viaje.' });
   }
 });
 
-// ==========================================
+// ==========================================// ==========================================
 // 🛎️ CENTRO EJECUTIVO ADMINISTRATIVO
 // ==========================================
 app.get('/api/admin/control-center', requireAdmin, async (_req, res) => {
@@ -699,11 +704,19 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
           quantity: 1
         }
       ],
+      ...(String(req.body?.bookingId || '').trim() ? { metadata: { bookingId: String(req.body?.bookingId || '').trim() } } : {}),
       mode: 'payment',
       success_url: `${req.protocol}://${req.get('host')}?booking=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.protocol}://${req.get('host')}?booking=canceled`,
       customer_email: customerEmail
     });
+    const bookingId = String(req.body?.bookingId || '').trim();
+    if (bookingId) {
+      const booking = await getBookingById(bookingId);
+      if (booking && Math.abs(Number(booking.totalUSD) - Number(totalUSD)) <= 0.01) {
+        await updateBookingStatus(bookingId, { stripeSessionId: session.id, paymentMethod: 'credit_card', paymentStatus: 'pending' });
+      }
+    }
     res.json({ url: session.url, id: session.id });
   } catch (err: any) {
     console.error('Error en Stripe:', err);
@@ -753,27 +766,104 @@ app.post('/api/paypal/create-order', async (req, res) => {
           purchase_units: [
             {
               amount: { currency_code: 'USD', value: (totalUSD || 0).toString() },
-              description: tourName || 'Tour Costa Rica Tours'
+              description: tourName || 'Tour Costa Rica Tours',
+              custom_id: String(req.body?.bookingId || '').trim() || undefined,
+              invoice_id: String(req.body?.bookingId || '').trim() || undefined,
             }
           ],
           application_context: {
-            return_url: `${req.protocol}://${req.get('host')}?booking=success`,
-            cancel_url: `${req.protocol}://${req.get('host')}?booking=canceled`
+            return_url: `${req.protocol}://${req.get('host')}?booking=success&paypal=1&bookingId=${encodeURIComponent(String(req.body?.bookingId || ''))}`,
+            cancel_url: `${req.protocol}://${req.get('host')}?booking=canceled&bookingId=${encodeURIComponent(String(req.body?.bookingId || ''))}`
           }
         })
       });
       const orderData = await orderRes.json();
       const approveLink = orderData.links?.find((link: any) => link.rel === 'approve')?.href;
-      res.json({
-        url: approveLink || `${req.protocol}://${req.get('host')}?booking=success`,
-        id: orderData.id
-      });
+      const bookingId = String(req.body?.bookingId || '').trim();
+      if (bookingId && orderData.id) {
+        const booking = await getBookingById(bookingId);
+        if (booking && Math.abs(Number(booking.totalUSD) - Number(totalUSD)) <= 0.01) {
+          await updateBookingStatus(bookingId, { paypalOrderId: orderData.id, paymentMethod: 'paypal', paymentStatus: 'pending' });
+        }
+      }
+      if (!approveLink || !orderData.id) return res.status(502).json({ error: 'PayPal no devolvió una URL de aprobación válida.' });
+      res.json({ url: approveLink, id: orderData.id });
     } else {
       res.status(401).json({ error: 'Fallo al autenticar con PayPal' });
     }
   } catch (err: any) {
     console.error('Error en PayPal:', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// PayPal CAPTURE — la captura sólo se permite contra una orden ya vinculada a una reserva.
+app.post('/api/paypal/capture-order', paymentLimiter, async (req, res) => {
+  try {
+    const orderId = String(req.body?.orderId || '').trim();
+    const bookingId = String(req.body?.bookingId || '').trim();
+    if (!orderId || !bookingId) return res.status(400).json({ success: false, error: 'orderId y bookingId son requeridos.' });
+    const booking = await getBookingById(bookingId);
+    if (!booking) return res.status(404).json({ success: false, error: 'Reserva no encontrada.' });
+    if (String(booking.paypalOrderId || '') !== orderId) return res.status(409).json({ success: false, error: 'La orden PayPal no está vinculada a esta reserva.' });
+    const clientId = process.env.PAYPAL_CLIENT_ID;
+    const secret = process.env.PAYPAL_SECRET;
+    const mode = process.env.PAYPAL_MODE || 'sandbox';
+    const baseUrl = mode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+    if (!clientId || !secret) return res.status(503).json({ success: false, error: 'PayPal no está configurado.' });
+    const authStr = Buffer.from(`${clientId}:${secret}`).toString('base64');
+    const authRes = await fetch(`${baseUrl}/v1/oauth2/token`, { method: 'POST', body: 'grant_type=client_credentials', headers: { Authorization: `Basic ${authStr}`, 'Content-Type': 'application/x-www-form-urlencoded' } });
+    const authData = await authRes.json() as any;
+    if (!authRes.ok || !authData.access_token) return res.status(502).json({ success: false, error: 'No se pudo autenticar con PayPal.' });
+    const captureRes = await fetch(`${baseUrl}/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`, { method: 'POST', headers: { Authorization: `Bearer ${authData.access_token}`, 'Content-Type': 'application/json' } });
+    const captureData = await captureRes.json() as any;
+    if (!captureRes.ok) return res.status(409).json({ success: false, error: captureData?.message || 'PayPal no confirmó la captura.' });
+    const purchase = captureData?.purchase_units?.[0];
+    const capturedAmount = Number(purchase?.payments?.captures?.[0]?.amount?.value || 0);
+    if (!Number.isFinite(capturedAmount) || Math.abs(capturedAmount - Number(booking.totalUSD)) > 0.01) {
+      await createAlert({ source: 'paypal_capture', severity: 'critical', title: 'Importe PayPal no coincide', message: `Captura ${orderId} no coincide con la reserva ${bookingId}.`, bookingId, metadata: { capturedAmount, bookingTotalUSD: booking.totalUSD } });
+      return res.status(409).json({ success: false, error: 'PAYMENT_AMOUNT_MISMATCH' });
+    }
+    const updated = await updateBookingStatus(bookingId, { status: 'paid', paymentStatus: 'completed', paypalOrderId: orderId, paymentVerifiedAt: new Date().toISOString(), paymentProvider: 'paypal' });
+    if (!updated.success) return res.status(409).json({ success: false, error: updated.error || 'No se pudo actualizar la reserva.' });
+    const lifecycle = await advanceReservationLifecycle({ ...booking, ...(updated.booking || {}), bookingId, status: 'paid', paymentStatus: 'completed' });
+    return res.json({ success: true, captured: true, bookingId, lifecycle });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error?.message || 'No se pudo capturar PayPal.' });
+  }
+});
+// ==========================================
+ // 🔐 STRIPE WEBHOOK — PAYMENT -> BOOKING LIFECYCLE
+ // ==========================================
+app.post('/api/webhooks/stripe', async (req, res) => {
+  const stripe = getStripe();
+  const signature = String(req.headers['stripe-signature'] || '');
+  const webhookSecret = String(process.env.STRIPE_WEBHOOK_SECRET || '');
+  if (!stripe || !signature || !webhookSecret) return res.status(503).json({ received: false, error: 'Stripe webhook no configurado.' });
+  try {
+    const rawBody = (req as any).rawBody;
+    if (!rawBody) return res.status(400).json({ received: false, error: 'Cuerpo raw de Stripe no disponible.' });
+    const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+    if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const bookingId = String(session.metadata?.bookingId || '').trim();
+      if (!bookingId) return res.json({ received: true, ignored: true, reason: 'bookingId ausente' });
+      const booking = await getBookingById(bookingId);
+      if (!booking) return res.json({ received: true, ignored: true, reason: 'booking_not_found' });
+      const paidUSD = Number(session.amount_total || 0) / 100;
+      if (!Number.isFinite(paidUSD) || Math.abs(paidUSD - Number(booking.totalUSD)) > 0.01) {
+        await createAlert({ source: 'stripe_webhook', severity: 'critical', title: 'Importe Stripe no coincide', message: `Webhook ${session.id} no coincide con la reserva ${bookingId}.`, bookingId, metadata: { paidUSD, bookingTotalUSD: booking.totalUSD } });
+        return res.status(409).json({ received: false, error: 'PAYMENT_AMOUNT_MISMATCH' });
+      }
+      const updated = await updateBookingStatus(bookingId, { status: 'paid', paymentStatus: 'completed', stripeSessionId: session.id, paymentVerifiedAt: new Date().toISOString(), paymentProvider: 'stripe' });
+      if (!updated.success) return res.status(409).json({ received: false, error: updated.error || 'No se pudo actualizar la reserva.' });
+      const lifecycle = await advanceReservationLifecycle({ ...booking, ...(updated.booking || {}), bookingId, status: 'paid', paymentStatus: 'completed' });
+      return res.json({ received: true, bookingId, lifecycle });
+    }
+    return res.json({ received: true, ignored: true, type: event.type });
+  } catch (error: any) {
+    console.error('Stripe webhook error:', error);
+    return res.status(400).json({ received: false, error: error?.message || 'Webhook inválido.' });
   }
 });
 
@@ -956,6 +1046,37 @@ app.post('/api/sinpe/verify', requireOperator, async (req, res) => {
 });
 
 // Crear reserva (con verificación server-side de pago, cupos en Firestore y automatización nativa)
+app.post('/api/service-bookings', bookingAdmission.middleware, async (req, res) => {
+  try {
+    const normalizedType = String(req.body?.serviceType || '').trim().toLowerCase();
+    const pricing = calculateAuthoritativeServiceBookingTotal({ ...req.body, serviceType: normalizedType });
+    if (!pricing) return res.status(400).json({ success: false, error: 'SERVICE_CONFIGURATION_INVALID', message: 'El servicio solicitado no tiene precio/configuración autorizada para reserva.' });
+    const customer = req.body?.customer || {};
+    const bookingId = String(req.body?.bookingId || `CRT-SVC-${crypto.randomUUID()}`).trim();
+    const booking = await createSpecialServiceBooking({
+      bookingId,
+      serviceType: normalizedType,
+      serviceId: req.body?.serviceId || req.body?.flightNumber || '',
+      tourId: req.body?.tourId || req.body?.serviceId || `service-${bookingId}`,
+      tourName: pricing.tourName,
+      date: req.body?.date,
+      checkOutDate: req.body?.checkOutDate,
+      time: req.body?.time || req.body?.departureTime || '08:00 AM',
+      adults: req.body?.adults || req.body?.passengers || 1,
+      children: req.body?.children || 0,
+      pickupHotel: req.body?.pickupHotel || '',
+      specialRequests: req.body?.specialRequests || '',
+      customer,
+      totalUSD: pricing.totalUSD,
+      paymentMethod: req.body?.paymentMethod || 'credit_card',
+      flightDetails: normalizedType === 'flight' ? { ...pricing.details, pnrLocator: bookingId } : undefined,
+      serviceDetails: { ...pricing.details, transferType: req.body?.transferType || undefined, selectedRoute: req.body?.selectedRoute || undefined, flightDirection: req.body?.flightDirection || undefined }
+    });
+    return res.status(201).json({ success: true, booking: booking.booking, pricingVerified: true });
+  } catch (err: any) {
+    return res.status(400).json({ success: false, error: err?.message || 'No se pudo crear la reserva de servicio.' });
+  }
+});
 app.post('/api/bookings', bookingAdmission.middleware, async (req, res) => {
   try {
     const idempotencyKey = req.headers['idempotency-key'];
@@ -1010,11 +1131,11 @@ app.patch('/api/bookings/:id', requireOperator, async (req, res) => {
 });
 
 // Generar e imprimir Vale Oficial / Itinerario Web de Reserva
-app.get('/api/bookings/:id/pdf', async (req, res) => {
+app.get('/api/bookings/:id/pdf', requireBookingDocumentAccess, async (req, res) => {
   try {
     const bookingId = req.params.id;
-    const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
+    const booking = await getBookingById(bookingId);
+    if (!booking) return res.status(404).json({ error: 'Reserva no encontrada' });
 
     const html = generateBookingPrintableHTML(booking as any);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -1025,11 +1146,10 @@ app.get('/api/bookings/:id/pdf', async (req, res) => {
 });
 
 // Descarga directa binaria del Vale Oficial e Itinerario en PDF
-app.get('/api/bookings/:id/download-pdf', async (req, res) => {
+app.get('/api/bookings/:id/download-pdf', requireBookingDocumentAccess, async (req, res) => {
   try {
     const bookingId = req.params.id;
-    const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
+    const booking = await getBookingById(bookingId);
     if (!booking) return res.status(404).json({ error: 'Reserva no encontrada' });
 
     const pdfBuffer = await generateBookingPDFBuffer(booking as any);
@@ -1043,7 +1163,7 @@ app.get('/api/bookings/:id/download-pdf', async (req, res) => {
 });
 
 // Despacho de Proforma e Itinerario con Notificación Email (PDF Adjunto) y WhatsApp
-app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confirmation'], async (req, res) => {
+app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confirmation'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeCustomerProformaConfirmation(req.body);
     res.json(result);
@@ -1056,50 +1176,71 @@ app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confi
 // Aprobación de Itinerario por parte del Cliente (Confirmación de Proforma) -> Despacho a Proveedores
 app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
   try {
-    const bookingId = String(req.params.id);
-    const action = req.query.action === 'reject' ? 'rechazado' : 'aprobado';
-    const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
+    const bookingId = String(req.params.id || '').trim();
+    const requestedAction = req.query.action === 'reject' ? 'reject' : 'approve';
+    const token = String(req.query.token || '').trim();
+    if (!bookingId || !verifyCustomerActionToken(token, bookingId, requestedAction)) {
+      return res.status(401).send('Enlace de confirmación inválido o vencido.');
+    }
 
+    const booking = await getBookingById(bookingId);
     if (!booking) return res.status(404).send('Reserva no encontrada.');
 
-    const updateResult = await updateBookingStatus(bookingId, {
-      status: action === 'aprobado' ? 'confirmada' : 'cancelada',
-      customerConfirmedAt: new Date().toISOString()
-    });
-    if (!updateResult.success) return res.status(409).send(updateResult.error || 'No se pudo actualizar la reserva.');
+    if (requestedAction === 'reject') {
+      const updateResult = await updateBookingStatus(bookingId, {
+        customerDecision: 'rejected',
+        customerConfirmedAt: new Date().toISOString(),
+        status: 'cancelada'
+      });
+      if (!updateResult.success) return res.status(409).send(updateResult.error || 'No se pudo actualizar la reserva.');
+    } else {
+      const paymentVerified = ['paid', 'completed'].includes(String(booking.paymentStatus || '').toLowerCase());
+      const updatePayload: Record<string, any> = {
+        customerDecision: 'approved',
+        customerConfirmedAt: new Date().toISOString()
+      };
+      if (paymentVerified) {
+        updatePayload.status = 'confirmada';
+        updatePayload.paymentStatus = 'completed';
+      }
+      const updateResult = await updateBookingStatus(bookingId, updatePayload);
+      if (!updateResult.success) return res.status(409).send(updateResult.error || 'No se pudo actualizar la reserva.');
 
-    let providerCoordinationResult: any = null;
-    if (action === 'aprobado') {
-      try {
-        providerCoordinationResult = await executeProviderRealtimeCoordination({
-          bookingId,
-          customerName: booking.customerName,
-          customerEmail: booking.customerEmail,
-          customerPhone: booking.customerPhone,
-          tourName: booking.tourName,
-          date: booking.date,
-          tourDate: booking.date,
-          totalUSD: booking.totalUSD,
-          pax: (Number(booking.adults) || 0) + (Number(booking.children) || 0),
-          specialRequests: booking.specialRequests
-        });
-      } catch (provErr) {
-        console.warn('⚠️ [FALLO EN COORDINACIÓN DE PROVEEDORES]:', provErr);
+      if (paymentVerified) {
+        try {
+          await executeProviderRealtimeCoordination({
+            bookingId,
+            providerId: booking.providerId,
+            customerName: booking.customerName,
+            customerEmail: booking.customerEmail,
+            customerPhone: booking.customerPhone,
+            tourName: booking.tourName,
+            date: booking.date,
+            tourDate: booking.date,
+            time: booking.time,
+            totalUSD: booking.totalUSD,
+            pax: (Number(booking.adults) || 0) + (Number(booking.children) || 0),
+            specialRequests: booking.specialRequests
+          });
+        } catch (provErr) {
+          console.warn('Coordinación con proveedor pendiente tras aprobación pagada:', provErr);
+        }
       }
     }
 
-    const downloadPdfUrl = `/api/bookings/${bookingId}/download-pdf`;
     const customerName = String(booking.customerName || 'Cliente').replace(/[<>]/g, '');
-    const providerMessage = providerCoordinationResult
-      ? 'La coordinación con el proveedor fue iniciada.'
-      : 'La coordinación con el proveedor quedó pendiente de seguimiento.';
-
+    const documentToken = createBookingDocumentToken(bookingId);
+    const paymentVerified = ['paid', 'completed'].includes(String(booking.paymentStatus || '').toLowerCase());
+    const stateText = requestedAction === 'reject'
+      ? 'cancelada por decisión del cliente'
+      : paymentVerified
+        ? 'confirmada después de verificar el pago'
+        : 'aprobada por el cliente y pendiente de pago';
     res.send(`
       <!DOCTYPE html>
       <html lang="es"><head>
         <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Confirmación • Costa Rica Tours</title>
+        <title>Solicitud procesada • Costa Rica Tours</title>
         <style>
           body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#041711;color:#f8fafc;margin:0;padding:24px 16px;display:flex;justify-content:center;align-items:center;min-height:100vh}
           .card{background:#fff;color:#1e293b;max-width:580px;width:100%;border-radius:20px;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,.5)}
@@ -1113,17 +1254,14 @@ app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
         <div class="content"><div style="text-align:center"><span class="badge">Expediente #${bookingId}</span></div>
           <div class="box"><strong>Tour:</strong> ${String(booking.tourName || 'Experiencia Costa Rica')}<br/>
           <strong>Fecha:</strong> ${String(booking.date || 'No especificada')}<br/>
-          <strong>Estado:</strong> ${String(action)}<br/><br/>${providerMessage}</div>
-          <a href="${downloadPdfUrl}" class="btn">Descargar comprobante</a>
+          <strong>Estado:</strong> ${stateText}</div>
+          <a href="/api/bookings/${encodeURIComponent(bookingId)}/download-pdf?token=${encodeURIComponent(documentToken)}" class="btn">Ver comprobante</a>
         </div>
       </div></body></html>`);
   } catch (err: any) {
-    res.status(500).send(`Error al procesar confirmación: ${err.message}`);
+    res.status(500).send(err?.message || 'No se pudo procesar la solicitud.');
   }
 });
-
-// 🚨 SISTEMA PROPIO DE ALERTAS ADMINISTRATIVAS
-// ==========================================
 
 app.post('/api/alerts', requireAdmin, async (req, res) => {
   const { source, severity, title, message, bookingId, providerId, metadata } = req.body || {};
@@ -1150,7 +1288,7 @@ app.get(['/api/native-engine/status', '/api/native/status'], (req, res) => {
 });
 
 // API para Provider Hub & Self-Development Hub
-app.get('/api/providers', (req, res) => {
+app.get('/api/providers', requireAdmin, (req, res) => {
   res.json(getProvidersOverview());
 });
 
@@ -1607,7 +1745,7 @@ app.post(['/api/native/autonomous-booking-flow', '/api/native/flujo-autonomo'], 
 });
 
 // 1. Asistente Inteligente & Chat Oficial (Gemini 2.5 Flash + Base Oficial)
-app.post(['/webhook/chat-consulta', '/api/chat', '/api/chat-consulta'], async (req, res) => {
+app.post(['/webhook/chat-consulta', '/api/chat', '/api/chat-consulta'], chatLimiter, async (req, res) => {
   try {
     const result = await executeChatInquiry(req.body);
     res.json(result);
@@ -1640,7 +1778,7 @@ app.post('/api/pagos/solicitud', async (req, res) => {
 });
 
 // 4. Confirmación de Reserva, Voucher Digital QR & Notificaciones Multicanal
-app.post('/api/reservas/confirmar', async (req, res) => {
+app.post('/api/reservas/confirmar', requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeConfirmacionReserva(req.body);
     res.json(result);
@@ -1665,7 +1803,7 @@ app.post('/webhook/evento-analitica', async (req, res) => {
 });
 
 // 7. Soporte al Cliente, Escalación Multicanal & Concierge Urgente
-app.post(['/webhook/solicitud-soporte', '/api/soporte/crear-ticket'], async (req, res) => {
+app.post(['/webhook/solicitud-soporte', '/api/soporte/crear-ticket'], chatLimiter, async (req, res) => {
   try {
     const result = await executeSolicitudSoporte(req.body);
     res.json(result);
@@ -1675,7 +1813,7 @@ app.post(['/webhook/solicitud-soporte', '/api/soporte/crear-ticket'], async (req
 });
 
 // 8. Coordinación y Notificación en Tiempo Real a Proveedores y Operadores Locales
-app.post(['/webhook/notificar-proveedor', '/api/operadores/notificar'], async (req, res) => {
+app.post(['/webhook/notificar-proveedor', '/api/operadores/notificar'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeNotificarProveedor(req.body);
     res.json(result);
@@ -1685,7 +1823,7 @@ app.post(['/webhook/notificar-proveedor', '/api/operadores/notificar'], async (r
 });
 
 // 9. Motor Antifraude y Matriz de Riesgo Criptográfica
-app.post(['/webhook/evaluar-antifraude', '/webhook/antifraude-evaluacion', '/api/seguridad/antifraude'], async (req, res) => {
+app.post(['/webhook/evaluar-antifraude', '/webhook/antifraude-evaluacion', '/api/seguridad/antifraude'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeEvaluarAntifraude(req.body);
     res.json(result);
@@ -1705,7 +1843,7 @@ app.post(['/webhook/panel-control-ops', '/api/ops/action'], requireAdmin, async 
 });
 
 // 12. Sincronización Automática con Google Calendar
-app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], async (req, res) => {
+app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeSyncCalendar(req.body);
     res.json(result);
@@ -1715,7 +1853,7 @@ app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], async (req, 
 });
 
 // 13. Encuesta de Satisfacción Post-Tour & Recolección NPS WhatsApp
-app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], async (req, res) => {
+app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executePostTourNPS(req.body);
     res.json(result);
@@ -1725,7 +1863,7 @@ app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], async (req, res) => {
 });
 
 // 14. Reporte Semanal de Rendimiento, Conversión y Volumen
-app.post(['/webhook/reporte-semanal-conversion', '/api/reportes/semanal'], async (req, res) => {
+app.post(['/webhook/reporte-semanal-conversion', '/api/reportes/semanal'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeReporteSemanalConversion();
     res.json(result);
@@ -1739,7 +1877,7 @@ app.post(['/webhook/reporte-semanal-conversion', '/api/reportes/semanal'], async
 // ==========================================
 
 // WF-COMPLEX-01: Orquestador Autónomo de Itinerarios Multidía (SINAC/IMN/Alsama)
-app.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-planner'], async (req, res) => {
+app.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-planner'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeAutonomousMultiDayPlanner(req.body);
     res.json(result);
@@ -1749,7 +1887,7 @@ app.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-p
 });
 
 // WF-COMPLEX-02: Motor Predictivo de Dynamic Pricing & Yield Management
-app.post(['/webhook/predictive-dynamic-pricing', '/api/automations/dynamic-pricing'], async (req, res) => {
+app.post(['/webhook/predictive-dynamic-pricing', '/api/automations/dynamic-pricing'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeDynamicPricingYieldOptimizer(req.body);
     res.json(result);
@@ -1759,7 +1897,7 @@ app.post(['/webhook/predictive-dynamic-pricing', '/api/automations/dynamic-prici
 });
 
 // WF-COMPLEX-03: Matriz Predictiva de Contingencias Climáticas & Re-enrutamiento
-app.post(['/webhook/weather-contingency-rerouting', '/api/automations/weather-contingency'], async (req, res) => {
+app.post(['/webhook/weather-contingency-rerouting', '/api/automations/weather-contingency'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeEmergencyContingencyRerouting(req.body);
     res.json(result);
@@ -1769,7 +1907,7 @@ app.post(['/webhook/weather-contingency-rerouting', '/api/automations/weather-co
 });
 
 // WF-COMPLEX-04: Facturación Electrónica DGT Hacienda v4.3 & Liquidación Operadores
-app.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-invoicing'], async (req, res) => {
+app.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-invoicing'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeDGTElectronicInvoicingSettlement(req.body);
     res.json(result);
@@ -1779,7 +1917,7 @@ app.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-
 });
 
 // WF-COMPLEX-05: Flight Guard Predictivo en Tiempo Real & Despacho Alsama
-app.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-guard'], async (req, res) => {
+app.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-guard'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeAutonomousFlightGuardDispatch(req.body);
     res.json(result);
@@ -1789,7 +1927,7 @@ app.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-
 });
 
 // WF-COMPLEX-06: Asistente Autónomo con Análisis de Sentimiento & Escalamiento
-app.post(['/webhook/crisis-sentiment-escalation', '/api/automations/crisis-sentiment'], async (req, res) => {
+app.post(['/webhook/crisis-sentiment-escalation', '/api/automations/crisis-sentiment'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeAutonomousCrisisSentimentEscalation(req.body);
     res.json(result);
@@ -1817,7 +1955,7 @@ const additionalWebhooks = [
   '/webhook/supervisor'
 ];
 
-app.post(additionalWebhooks, async (req, res) => {
+app.post(additionalWebhooks, requireAutomationTrigger, async (req, res) => {
   try {
     const endpoint = req.path;
     const triggerName = endpoint.replace('/webhook/', '').toUpperCase().replace(/-/g, '_');
@@ -1833,25 +1971,49 @@ app.post(additionalWebhooks, async (req, res) => {
 // ==========================================
 
 // 1. Coordinación en Tiempo Real con Proveedores (Webhook & API Nativa)
-app.post(['/webhook/proveedores-coordinacion', '/webhook/coordinacion-proveedores', '/api/webhooks/provider-coordination', '/api/native/workflows/coordinacion-proveedor', '/api/native/workflows/notificar-proveedor'], async (req, res) => {
+app.post(['/webhook/proveedores-coordinacion', '/webhook/coordinacion-proveedores', '/api/webhooks/provider-coordination'], requireAutomationTrigger, async (req, res) => {
   try {
-    const authHeader = req.headers['x-webhook-secret'] as string;
+    const authHeader = String(req.headers['x-webhook-secret'] || '');
     const result = await executeProviderRealtimeCoordination(req.body, authHeader);
     res.json(result);
   } catch (error: any) {
-    const status = error.message.includes('No autorizado') ? 401 : 500;
+    const status = /No autorizado/.test(error?.message || '') ? 401 : 500;
     res.status(status).json({ success: false, error: error.message });
+  }
+});
+
+app.post(['/api/native/workflows/coordinacion-proveedor', '/api/native/workflows/notificar-proveedor'], requireAdmin, async (req, res) => {
+  try {
+    const result = await executeProviderRealtimeCoordination(req.body);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
 // 1.1 Endpoint Bidireccional de Respuesta del Proveedor (GET para enlaces de correo/WhatsApp y POST para APIs)
 app.all(['/api/provider/respond', '/webhook/provider-response', '/api/webhooks/provider-response'], async (req, res) => {
   try {
+    const capabilityToken = String(req.query.token || req.body?.token || '').trim();
+    const capability = verifyProviderPortalToken(capabilityToken);
+    const legacyAllowed = process.env.NODE_ENV !== 'production' && process.env.ALLOW_LEGACY_PROVIDER_ACTIONS === 'true';
+    if (!capability && !legacyAllowed) {
+      return res.status(401).json({ success: false, error: 'Token de capacidad del proveedor requerido.' });
+    }
+
     const action = String(req.query.action || req.body?.action || 'confirm');
-    const bookingId = String(req.query.bookingId || req.body?.bookingId || req.body?.id || '');
-    const providerId = String(req.query.providerId || req.body?.providerId || '');
-    const guideName = String(req.query.guideName || req.body?.guideName || 'Guía Naturalista Certificado ICT');
-    const vehiclePlate = String(req.query.vehiclePlate || req.body?.vehiclePlate || 'Unidad Oficial Alsama Tours');
+    const requestedBookingId = String(req.query.bookingId || req.body?.bookingId || req.body?.id || '');
+    const bookingId = capability?.orderId || requestedBookingId;
+    const requestedProviderId = String(req.query.providerId || req.body?.providerId || '');
+    const providerId = capability?.providerId || requestedProviderId;
+    if (capability && requestedBookingId && requestedBookingId !== capability.orderId) {
+      return res.status(403).json({ success: false, error: 'El enlace no corresponde a esta reserva.' });
+    }
+    if (capability && requestedProviderId && requestedProviderId !== capability.providerId) {
+      return res.status(403).json({ success: false, error: 'El enlace no corresponde a este proveedor.' });
+    }
+    const guideName = String(req.query.guideName || req.body?.guideName || '').trim();
+    const vehiclePlate = String(req.query.vehiclePlate || req.body?.vehiclePlate || '').trim();
     const proposedTime = String(req.query.proposedTime || req.body?.proposedTime || '');
     const providerNotes = String(req.query.notes || req.body?.notes || req.body?.providerNotes || '');
 
@@ -2031,7 +2193,7 @@ app.post('/api/provider/portal/action', async (req, res) => {
 });
 
 // 1.2 Catálogo de Operadores Turísticos Oficiales CST
-app.get(['/api/provider/catalog', '/api/operators/catalog'], (req, res) => {
+app.get(['/api/provider/catalog', '/api/operators/catalog'], requireAdmin, (req, res) => {
   res.json({
     success: true,
     total: Object.keys(MASTER_OPERATORS_REGISTRY).length,
@@ -2043,7 +2205,7 @@ app.get(['/api/provider/catalog', '/api/operators/catalog'], (req, res) => {
 });
 
 // 1.3 Consulta de Estado de Despacho del Proveedor para una Reserva
-app.get(['/api/provider/status/:bookingId', '/api/operators/status/:bookingId'], async (req, res) => {
+app.get(['/api/provider/status/:bookingId', '/api/operators/status/:bookingId'], requireOperator, async (req, res) => {
   try {
     const bookingId = req.params.bookingId;
     const allBookings = await getAllBookings();
@@ -2057,8 +2219,8 @@ app.get(['/api/provider/status/:bookingId', '/api/operators/status/:bookingId'],
       success: true,
       bookingId,
       status: found.status,
-      providerId: found.providerId || 'alsama-tours-cr',
-      providerName: found.providerName || found.providerInfo?.name || 'Alsama Tours CR',
+      providerId: found.providerId || null,
+      providerName: found.providerName || found.providerInfo?.name || null,
       providerStatus: found.providerStatus || 'pending',
       assignedGuide: found.assignedGuide || 'Por asignar',
       assignedVehicle: found.assignedVehicle || 'Por asignar',
@@ -2074,7 +2236,7 @@ app.get(['/api/provider/status/:bookingId', '/api/operators/status/:bookingId'],
 });
 
 // 2. Confirmación de Reserva al Cliente (Webhook)
-app.post(['/webhook/cliente-confirmacion', '/webhook/confirmacion-cliente', '/api/webhooks/customer-confirmation'], async (req, res) => {
+app.post(['/webhook/cliente-confirmacion', '/webhook/confirmacion-cliente', '/api/webhooks/customer-confirmation'], requireAutomationTrigger, async (req, res) => {
   try {
     const authHeader = req.headers['x-webhook-secret'] as string;
     const result = await executeCustomerBookingConfirmation(req.body, authHeader);
@@ -2086,7 +2248,7 @@ app.post(['/webhook/cliente-confirmacion', '/webhook/confirmacion-cliente', '/ap
 });
 
 // 3. Pagos Automáticos a Proveedores (Batch / Cron Trigger)
-app.post(['/api/payouts/run-batch', '/webhook/pagos-proveedores-batch'], async (req, res) => {
+app.post(['/api/payouts/run-batch', '/webhook/pagos-proveedores-batch'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeAutomatedProviderPayouts();
     res.json(result);
@@ -2096,7 +2258,7 @@ app.post(['/api/payouts/run-batch', '/webhook/pagos-proveedores-batch'], async (
 });
 
 // 4. Vigilancia y Escalamiento de Reservas Pendientes (Cron Trigger)
-app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], async (req, res) => {
+app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeSurveillanceAndEscalation();
     res.json(result);
@@ -2106,7 +2268,7 @@ app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], async 
 });
 
 // 5. Reporte Diario de Operación (Cron Trigger)
-app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], async (req, res) => {
+app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeDailyOperationReport();
     res.json(result);
@@ -2116,7 +2278,7 @@ app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], as
 });
 
 // 6. Solicitud de Reseña Post-Tour (Cron Trigger)
-app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], async (req, res) => {
+app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executePostTourReviewRequests();
     res.json(result);
@@ -2126,7 +2288,7 @@ app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], async
 });
 
 // 7. Recordatorio 24h Antes del Tour (Cron Trigger)
-app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], async (req, res) => {
+app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeTour24hReminders();
     res.json(result);
@@ -2148,7 +2310,7 @@ app.post(['/webhook/cr-tours-sinpe-verify', '/webhook/sinpe-verify', '/api/payme
 });
 
 // 9. Telemetría y Métricas en Tiempo Real de Procesamiento Masivo (RPS, Latencia, Concurrencia)
-app.get(['/api/metrics/throughput', '/api/massive/status'], (req, res) => {
+app.get(['/api/metrics/throughput', '/api/massive/status'], requireAdmin, (req, res) => {
   const metrics = massiveEngine.getMetrics();
   res.json({
     success: true,
@@ -2159,7 +2321,7 @@ app.get(['/api/metrics/throughput', '/api/massive/status'], (req, res) => {
 });
 
 // 10. Procesamiento Masivo Concurrente de Consultas en Lote (Batch Inquiries)
-app.post(['/api/massive/batch-inquiries', '/api/massive/process-batch'], async (req, res) => {
+app.post(['/api/massive/batch-inquiries', '/api/massive/process-batch'], requireAutomationTrigger, async (req, res) => {
   try {
     const inquiries = Array.isArray(req.body?.inquiries) ? req.body.inquiries : [req.body];
     const results = await Promise.allSettled(
@@ -2192,7 +2354,7 @@ app.all('/webhook/health-check', (req, res) => {
 // ==========================================
 // 📊 ANALÍTICA NATIVA Y ACCIONES DE RESERVA
 // ==========================================
-app.get('/api/analytics/conversion-report', async (req, res) => {
+app.get('/api/analytics/conversion-report', requireAdmin, async (req, res) => {
   try {
     const metrics = await getWeeklyConversionMetrics();
     res.json({ success: true, data: metrics, source: 'firestore-native' });
@@ -2227,39 +2389,39 @@ app.post('/api/ops/booking-action', requireOperator, async (req, res) => {
 // 🤖 AGENTES DEL ENJAMBRE (TRIAGE, PROCESADOR, SUPERVISOR)
 // ==========================================
 
-app.post('/api/agents/triage', async (req, res) => {
+app.post('/api/agents/triage', requireAgentTool, async (req, res) => {
   const result = await runTriage(req.body.rawMessage || '');
   res.json(result);
 });
 
-app.post('/api/agents/processor', async (req, res) => {
+app.post('/api/agents/processor', requireAgentTool, async (req, res) => {
   const { rawMessage, intent, extractedData } = req.body;
   const result = await runProcessor(rawMessage || '', intent || '', extractedData || {});
   res.json(result);
 });
 
-app.post('/api/agents/contingency', async (req, res) => {
+app.post('/api/agents/contingency', requireAgentTool, async (req, res) => {
   const result = await runContingency(req.body);
   res.json(result);
 });
 
-app.post('/api/agents/supervisor', async (req, res) => {
+app.post('/api/agents/supervisor', requireAgentTool, async (req, res) => {
   const result = await runSupervisor();
   res.json(result);
 });
 
-app.post('/api/agents/log_exception', (req, res) => {
+app.post('/api/agents/log_exception', requireAgentTool, (req, res) => {
   const { agentName, errorContext, rawData } = req.body;
   logException(agentName || 'UnknownAgent', errorContext || 'Error', rawData);
   res.json({ success: true });
 });
 
-app.post('/api/gemini/concierge', async (req, res) => {
+app.post('/api/gemini/concierge', aiAdmission.middleware, async (req, res) => {
   try {
     const { message, language, history, agentId, context, engine, sessionId } = req.body;
     const userMsg = message || '';
     const memorySessionId = String(sessionId || context?.sessionId || '');
-    const lang = (language || 'es') as 'es' | 'en';
+    const lang = (language || 'es') as Language;
     
     // Si se especifica o prefiere motor Claude 3.5 Sonnet
     if (engine === 'claude') {
@@ -2315,11 +2477,11 @@ app.post('/api/gemini/concierge', async (req, res) => {
 });
 
 // Endpoint exclusivo del Counter Agent (Agente de Mostrador y Reservas)
-app.post('/api/agent/counter', async (req, res) => {
+app.post('/api/agent/counter', aiAdmission.middleware, async (req, res) => {
   try {
     const { message, language, history, context } = req.body;
     const userMsg = message || '';
-    const lang = (language || 'es') as 'es' | 'en';
+    const lang = (language || 'es') as Language;
     const result = await runCounterAgent(userMsg, {}, context || {}, lang, history || []);
     res.json({
       success: true,
@@ -2414,7 +2576,7 @@ app.get('/api/agent/tools/functions', async (req, res) => {
 });
 
 // Endpoints de Machine Learning y Recomendación Inteligente (motor nativo)
-app.post('/api/ml/recommend', async (req, res) => {
+app.post('/api/ml/recommend', aiAdmission.middleware, async (req, res) => {
   try {
     const { mlRecommendTours } = await import('./backend/nativeMlEngine');
     const profile = req.body || {};
@@ -2425,7 +2587,7 @@ app.post('/api/ml/recommend', async (req, res) => {
   }
 });
 
-app.post('/api/ml/predict-price', async (req, res) => {
+app.post('/api/ml/predict-price', aiAdmission.middleware, async (req, res) => {
   try {
     const { mlPredictDynamicPrice } = await import('./backend/nativeMlEngine');
     const { basePrice, dateString, seats } = req.body;
@@ -2436,7 +2598,7 @@ app.post('/api/ml/predict-price', async (req, res) => {
   }
 });
 
-app.post('/api/ml/itinerary', async (req, res) => {
+app.post('/api/ml/itinerary', aiAdmission.middleware, async (req, res) => {
   try {
     const { mlGenerateItinerary } = await import('./backend/nativeMlEngine');
     const { days, style, region } = req.body;
@@ -2448,10 +2610,10 @@ app.post('/api/ml/itinerary', async (req, res) => {
 });
 
 
-app.post('/api/gemini/booking/urgent', async (req, res) => {
+app.post('/api/gemini/booking/urgent', chatLimiter, async (req, res) => {
   try {
     const { message, language, history, agentId } = req.body;
-    const lang = (language || 'es') as 'es' | 'en';
+    const lang = (language || 'es') as Language;
     const assistantResult = await processChatInquiry(message || '', lang, history || []);
     
     // Escalación y seguimiento se registran en el motor nativo de alertas.
@@ -2489,14 +2651,14 @@ app.get('/api/claude/status', (req, res) => {
 });
 
 // 2. Chat conversacional con Claude 3.5 Sonnet
-app.post('/api/claude/chat', async (req, res) => {
+app.post('/api/claude/chat', chatLimiter, aiAdmission.middleware, async (req, res) => {
   try {
     const { message, language, history, temperature } = req.body;
     if (!message || !message.trim()) {
       return res.status(400).json({ error: 'El parámetro "message" es requerido' });
     }
 
-    const lang = (language || 'es') as 'es' | 'en';
+    const lang = (language || 'es') as Language;
     const result = await generateClaudeChatResponse(message, lang, history || [], { temperature });
 
     res.json(result);
@@ -2519,7 +2681,7 @@ app.post('/api/claude/chat', async (req, res) => {
 });
 
 // 3. Generador experto de itinerarios personalizados con Claude y Gemini (Resilience Fallback)
-app.post('/api/claude/itinerary', async (req, res) => {
+app.post('/api/claude/itinerary', aiAdmission.middleware, async (req, res) => {
   try {
     const { days, travelers, style, regions, budget, language, specialRequests } = req.body;
     const itinerary = await generateClaudeItinerary({
@@ -2528,7 +2690,7 @@ app.post('/api/claude/itinerary', async (req, res) => {
       style: style || 'eco_relax',
       regions: regions || ['Arenal', 'Monteverde', 'Manuel Antonio'],
       budget: budget || 'premium',
-      language: (language || 'es') as 'es' | 'en',
+      language: (language || 'es') as Language,
       specialRequests
     });
 
@@ -2562,7 +2724,7 @@ app.post('/api/claude/itinerary', async (req, res) => {
 });
 
 // Endpoint dedicado para generador de itinerarios Gemini
-app.post('/api/gemini/itinerary', async (req, res) => {
+app.post('/api/gemini/itinerary', aiAdmission.middleware, async (req, res) => {
   try {
     const itinerary = await generateGeminiItinerary({
       days: Number(req.body.days) || 5,
@@ -2581,7 +2743,7 @@ app.post('/api/gemini/itinerary', async (req, res) => {
 });
 
 // Endpoint para reservar un itinerario completo personalizado
-app.post('/api/itinerary/book', async (req, res) => {
+app.post('/api/itinerary/book', bookingAdmission.middleware, async (req, res) => {
   try {
     const {
       itineraryTitle,
@@ -2600,7 +2762,7 @@ app.post('/api/itinerary/book', async (req, res) => {
     }
 
     const bookingDate = startDate || new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0];
-    const generatedId = `CR-ITIN-${Math.floor(100000 + Math.random() * 900000)}`;
+    const generatedId = `CR-ITIN-${crypto.randomUUID()}`;
     const normalizedDays = Math.max(1, Math.min(30, Number(daysCount) || 5));
     const normalizedTravelers = Math.max(1, Math.min(30, Number(travelers) || 2));
     // Precio base autoritativo para itinerarios personalizados. El total generado por IA
@@ -2625,7 +2787,7 @@ app.post('/api/itinerary/book', async (req, res) => {
       currency: currency || 'USD',
       paymentMethod: 'itinerary_deposit',
       paymentStatus: 'pending',
-      status: 'confirmada',
+      status: 'pendiente_pago',
       notes: specialRequests || 'Itinerario Multi-Día personalizado'
     } as any);
 
@@ -2642,7 +2804,7 @@ app.post('/api/itinerary/book', async (req, res) => {
 });
 
 // 4. Auditoría operativa y antifraude de reserva con Claude
-app.post('/api/claude/audit-booking', async (req, res) => {
+app.post('/api/claude/audit-booking', requireAgentTool, async (req, res) => {
   try {
     const booking = req.body.booking || req.body;
     const auditResult = await analyzeOperationalRiskWithClaude(booking);
@@ -2654,42 +2816,61 @@ app.post('/api/claude/audit-booking', async (req, res) => {
 });
 
 // Compatibilidad de rutas generales
-app.post('/api/workflows/:action', (req, res) => {
-  res.json({ success: true, message: `Workflow ${req.params.action} procesado con éxito` });
+app.post('/api/workflows/:action', requireAutomationTrigger, (req, res) => {
+  res.status(410).json({
+    success: false,
+    error: 'LEGACY_WORKFLOW_ROUTE',
+    action: req.params.action,
+    message: 'Esta ruta de compatibilidad no ejecuta workflows. Use el endpoint nativo específico y verificado.'
+  });
 });
 
-app.post('/api/gemini/:action', (req, res) => {
-  res.json({ success: true, text: `Respuesta de Gemini para ${req.params.action}` });
+app.post('/api/gemini/:action', requireAutomationTrigger, (req, res) => {
+  res.status(410).json({
+    success: false,
+    error: 'LEGACY_GEMINI_ROUTE',
+    action: req.params.action,
+    message: 'Esta ruta de compatibilidad no ejecuta Gemini. Use el endpoint de IA explícito y autenticado correspondiente.'
+  });
 });
 
-app.get('/api/chat/history', async (req, res) => {
+app.get('/api/chat/history', requireAuthenticatedUser, async (req, res) => {
   try {
-    const { getOperationalMemory } = await import('./backend/memoryService');
+    const { getOwnedOperationalMemory } = await import('./backend/memoryService');
     const sessionId = String(req.query.sessionId || '');
+    const userId = String((req as any).user?.uid || '');
     if (!sessionId) return res.status(400).json({ error: 'sessionId es requerido' });
-    const memory = await getOperationalMemory(sessionId);
+    const memory = await getOwnedOperationalMemory(sessionId, userId);
     res.json({ history: memory.turns, memory: { summary: memory.summary, facts: memory.facts, preferences: memory.preferences, activeGoals: memory.activeGoals, decisions: memory.decisions, lastAgent: memory.lastAgent, lastUpdatedAt: memory.lastUpdatedAt }});
-  } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo cargar la memoria' }); }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'No se pudo cargar la memoria';
+    res.status(message.startsWith('MEMORY_FORBIDDEN') ? 403 : 400).json({ error: message });
+  }
 });
 
-app.post('/api/chat/history', async (req, res) => {
+app.post('/api/chat/history', requireAuthenticatedUser, async (req, res) => {
   try {
     const { saveChatHistory } = await import('./backend/memoryService');
     const sessionId = String(req.body?.sessionId || '');
+    const userId = String((req as any).user?.uid || '');
     if (!sessionId || !Array.isArray(req.body?.history)) return res.status(400).json({ error: 'sessionId e history son requeridos' });
-    const memory = await saveChatHistory(sessionId, req.body.history);
+    const memory = await saveChatHistory(sessionId, req.body.history, userId);
     res.json({ success: true, memory: { summary: memory.summary, facts: memory.facts, preferences: memory.preferences, activeGoals: memory.activeGoals, decisions: memory.decisions, lastAgent: memory.lastAgent, lastUpdatedAt: memory.lastUpdatedAt }});
   } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo guardar la memoria' }); }
 });
 
-app.delete('/api/chat/history', async (req, res) => {
+app.delete('/api/chat/history', requireAuthenticatedUser, async (req, res) => {
   try {
-    const { clearOperationalMemory } = await import('./backend/memoryService');
+    const { clearOwnedOperationalMemory } = await import('./backend/memoryService');
     const sessionId = String(req.query.sessionId || req.body?.sessionId || '');
+    const userId = String((req as any).user?.uid || '');
     if (!sessionId) return res.status(400).json({ error: 'sessionId es requerido' });
-    await clearOperationalMemory(sessionId);
+    await clearOwnedOperationalMemory(sessionId, userId);
     res.json({ success: true });
-  } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo borrar la memoria' }); }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'No se pudo borrar la memoria';
+    res.status(message.startsWith('MEMORY_FORBIDDEN') ? 403 : 400).json({ error: message });
+  }
 });
 
 // ==========================================
@@ -2716,23 +2897,32 @@ app.post(['/api/agent/tools/check_calendar_availability', '/api/agent/check-avai
       Number(party_size)
     );
 
-    // Formatear respuesta estructurada para el ciclo ReAct del agente
-    const availableSlots = availabilityResult.available ? ['07:00', '08:30', '13:30'] : ['14:00'];
-    const blockedSlots = availabilityResult.available ? ['10:30'] : ['07:00', '08:30', '10:30'];
+    // Nunca inventar horarios: usar únicamente salidas declaradas por el catálogo
+    // y verificar cada horario contra el contador atómico de disponibilidad.
+    const catalogTour = TOURS.find((tour) => tour.id === targetTourId);
+    const departureTimes = Array.isArray((catalogTour as any)?.departureTimes)
+      ? (catalogTour as any).departureTimes.map((time: unknown) => String(time)).filter(Boolean)
+      : [];
+    const slotChecks = await Promise.all(departureTimes.map(async (time: string) => ({
+      time,
+      result: await checkTourAvailability(targetTourId, String(target_date), time, Number(party_size))
+    })));
+    const availableSlots = slotChecks.filter((slot) => slot.result.available).map((slot) => slot.time);
+    const blockedSlots = slotChecks.filter((slot) => !slot.result.available).map((slot) => slot.time);
 
     res.json({
       success: true,
       available: availabilityResult.available,
       target_date,
       service_duration_minutes: service_duration_minutes || 180,
-      total_seats_remaining: availabilityResult.remainingSeats || 12,
-      max_capacity: availabilityResult.maxCapacity || 20,
+      total_seats_remaining: availabilityResult.remainingSeats,
+      max_capacity: availabilityResult.maxCapacity,
       available_slots: availableSlots,
       blocked_slots: blockedSlots,
       closest_alternatives: availableSlots.slice(0, 2),
-      message: availabilityResult.available
-        ? `Horarios disponibles encontrados para el ${target_date} con ${availabilityResult.remainingSeats} cupos libres.`
-        : `Sin cupos exactos para ese horario (${availabilityResult.reason || 'capacidad agotada'}), se sugieren fechas alternativas.`
+      message: availableSlots.length > 0
+        ? `Horarios reales disponibles encontrados para el ${target_date}: ${availableSlots.join(', ')}.`
+        : `No hay salidas del catálogo con cupo suficiente para el ${target_date}.`
     });
   } catch (err: any) {
     console.error('Error en tool check_calendar_availability:', err);
@@ -2812,7 +3002,7 @@ app.post(['/api/agent/tools/create_booking_and_notify', '/api/agent/create-booki
 });
 
 // Tool 3: Generador Autónomo de Itinerarios Multidía y Logística
-app.post('/api/agent/tools/generate_custom_itinerary', async (req, res) => {
+app.post('/api/agent/tools/generate_custom_itinerary', aiAdmission.middleware, async (req, res) => {
   try {
     const { days, travelers, style, budget, group, language, special_requests } = req.body;
     const itinerary = await generateGeminiItinerary({
@@ -2821,7 +3011,7 @@ app.post('/api/agent/tools/generate_custom_itinerary', async (req, res) => {
       style: style || 'Aventura y Naturaleza',
       budget: budget || 'Medio',
       group: group || 'Pareja',
-      language: (language || 'es') as 'es' | 'en',
+      language: (language || 'es') as Language,
       specialRequests: special_requests
     });
 
@@ -2959,7 +3149,7 @@ app.post('/api/fcm/register', async (req, res) => {
   }
 });
 
-app.post('/api/fcm/send', async (req, res) => {
+app.post('/api/fcm/send', requireAdmin, async (req, res) => {
   try {
     const { userId, title, body, data } = req.body;
     if (!userId || !title || !body) {
@@ -3003,7 +3193,56 @@ async function startServer() {
   });
 }
 
-startServer();function calculateAuthoritativeCheckoutTotal(body: any): number | null {
+startServer();function calculateAuthoritativeServiceBookingTotal(body: any): { totalUSD: number; tourName: string; details: Record<string, any> } | null {
+  const serviceType = String(body?.serviceType || '').trim().toLowerCase();
+  if (serviceType === 'flight') {
+    const flightNumber = String(body?.flightNumber || '').trim();
+    const flight = FLIGHT_ROUTES.find(route => route.flightNumber === flightNumber);
+    if (!flight) return null;
+    const passengers = Math.max(1, Math.min(50, Number(body?.passengers) || Number(body?.adults) || 1));
+    const cabin = body?.cabinClass === 'Business' ? 'Business' : 'Economy';
+    const base = flight.basePriceUSD * (cabin === 'Business' ? 2.2 : 1);
+    const addOns = (body?.includeAirportTransfer ? 45 : 0) + (body?.includeWelcomeSimKit ? 15 : 0) + (body?.includeTravelInsurance ? 29 : 0);
+    return {
+      totalUSD: Number(((base + addOns) * passengers).toFixed(2)),
+      tourName: `${flight.airline} (${flight.flightNumber}) • ${flight.originAirportCode} ➔ ${flight.destinationAirportCode}`,
+      details: { flightNumber: flight.flightNumber, airline: flight.airline, originCode: flight.originAirportCode, destinationCode: flight.destinationAirportCode, departureTime: flight.departureTime, arrivalTime: flight.arrivalTime, cabinClass: cabin, passengerCount: passengers }
+    };
+  }
+  if (serviceType !== 'map') return null;
+  const serviceId = String(body?.serviceId || '').trim();
+  const service = MAP_TOURISM_SERVICES.find(item => item.id === serviceId);
+  if (!service || !service.canBeBooked) return null;
+  const adults = Math.max(1, Math.min(50, Number(body?.adults) || 1));
+  const children = Math.max(0, Math.min(50 - adults, Number(body?.children) || 0));
+  const people = adults + children;
+  let totalUSD = 0;
+  if (service.type === 'hotel') {
+    const start = new Date(String(body?.date || '')).getTime();
+    const end = new Date(String(body?.checkOutDate || '')).getTime();
+    const pricePerNightUSD = Number(service.pricePerNightUSD);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || !Number.isFinite(pricePerNightUSD) || pricePerNightUSD <= 0) return null;
+    const nights = Math.max(1, Math.round((end - start) / 86400000));
+    totalUSD = pricePerNightUSD * nights;
+  } else if (service.type === 'national_park') {
+    const officialPriceUSD = Number(service.officialPriceUSD);
+    if (!Number.isFinite(officialPriceUSD) || officialPriceUSD <= 0) return null;
+    totalUSD = officialPriceUSD * adults + officialPriceUSD * 0.5 * children;
+  } else if (['airport', 'airstrip', 'bus_station', 'train_station'].includes(service.type)) {
+    const averageTicketUSD = Number(service.averageTicketUSD);
+    if (!Number.isFinite(averageTicketUSD) || averageTicketUSD <= 0) return null;
+    totalUSD = averageTicketUSD * people;
+  } else if (service.type === 'taxi_stand') {
+    const transferType = String(body?.transferType || 'shared_shuttle');
+    const averageTicketUSD = Number(service.averageTicketUSD);
+    if (transferType !== 'shared_shuttle') return null;
+    if (!Number.isFinite(averageTicketUSD) || averageTicketUSD <= 0) return null;
+    totalUSD = averageTicketUSD * people;
+  } else return null;
+  return { totalUSD: Number(totalUSD.toFixed(2)), tourName: typeof service.name?.es === 'string' ? service.name.es : service.id, details: { serviceId, serviceType: service.type, adults, children } };
+}
+
+function calculateAuthoritativeCheckoutTotal(body: any): number | null {
   const passengers = Math.max(1, Number(body?.passengers) || (Number(body?.adults) || 0) + (Number(body?.children) || 0));
   const tourId = String(body?.tourId || '');
 

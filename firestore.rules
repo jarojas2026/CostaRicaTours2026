@@ -79,9 +79,11 @@ service cloud.firestore {
     }
     
     match /bookings/{bookingId} {
+      // All booking writes must pass through the backend's authoritative pricing,
+      // availability, payment and idempotency controls. The browser may only read
+      // its own booking documents (or an admin may read operationally).
       allow read: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
-      allow create: if isSignedIn() && isValidBooking(incoming()) && incoming().userId == request.auth.uid;
-      allow update: if isAdmin() || (isSignedIn() && isValidBooking(incoming()) && existing().userId == request.auth.uid && incoming().userId == request.auth.uid);
+      allow create, update: if false;
       allow delete: if isAdmin();
     }
 
@@ -105,8 +107,10 @@ service cloud.firestore {
     }
 
     match /chat_sessions/{sessionId} {
-      allow read, write: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && incoming().userId == resource.data.userId;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
     match /agent_memory/{sessionId} {

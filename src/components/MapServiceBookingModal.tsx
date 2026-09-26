@@ -8,8 +8,6 @@ import { Language, Currency } from '../types';
 import { MapTourismService } from '../data/mapServicesData';
 import { formatCurrency, getLangText } from '../utils/i18n';
 import { getUsdToCrcRate } from '../utils/currencies';
-import { auth, db } from '../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 interface MapServiceBookingModalProps {
   service: MapTourismService | null;
@@ -57,6 +55,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [confirmedBookingData, setConfirmedBookingData] = useState<any>(null);
+  const [submissionError, setSubmissionError] = useState('');
 
   // Price calculations
   let calculatedTotalUSD = 0;
@@ -64,17 +63,17 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
     const d1 = new Date(date).getTime();
     const d2 = new Date(checkOutDate).getTime();
     const nights = Math.max(1, Math.round((d2 - d1) / (1000 * 60 * 60 * 24)));
-    calculatedTotalUSD = (service.pricePerNightUSD || 150) * nights;
+    calculatedTotalUSD = (service.pricePerNightUSD ?? 0) * nights;
   } else if (service.type === 'national_park') {
-    calculatedTotalUSD = (service.officialPriceUSD || 18) * adults + (service.officialPriceUSD ? service.officialPriceUSD * 0.5 : 9) * children;
+    calculatedTotalUSD = (service.officialPriceUSD ?? 0) * adults + (service.officialPriceUSD ?? 0) * 0.5 * children;
   } else if (service.type === 'airstrip' || service.type === 'airport') {
-    calculatedTotalUSD = (service.averageTicketUSD || 110) * (adults + children);
+    calculatedTotalUSD = (service.averageTicketUSD ?? 0) * (adults + children);
   } else if (service.type === 'bus_station') {
-    calculatedTotalUSD = (service.averageTicketUSD || 8) * (adults + children);
+    calculatedTotalUSD = (service.averageTicketUSD ?? 0) * (adults + children);
   } else if (service.type === 'taxi_stand') {
-    calculatedTotalUSD = transferType === 'private_van' ? 175 : (transferType === 'shared_shuttle' ? 49 * (adults + children) : 35);
+    calculatedTotalUSD = transferType === 'shared_shuttle' && service.averageTicketUSD ? service.averageTicketUSD * (adults + children) : 0;
   } else {
-    calculatedTotalUSD = 50;
+    calculatedTotalUSD = 0;
   }
 
   const crcRate = getUsdToCrcRate();
@@ -121,71 +120,39 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
-    const bookingId = `CR-MAP-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    const newBooking = {
-      bookingId,
-      tourId: service.id,
-      tourName: getLangText(service.name, language),
-      serviceType: service.type,
-      date,
-      checkOutDate: service.type === 'hotel' ? checkOutDate : undefined,
-      time: timeSlot,
-      adults,
-      children,
-      pickupHotel: service.address[language === 'es' ? 'es' : 'en'],
-      specialRequests: `${specialRequests ? specialRequests + ' | ' : ''}Detalles: ${
-        service.type === 'national_park' ? `Pasaporte: ${passportId}` : 
-        service.type === 'taxi_stand' ? `Tipo de transfer: ${transferType}` : 
-        service.type === 'airstrip' ? `Ruta aérea: ${flightDirection}` : ''
-      }`,
-      totalUSD: calculatedTotalUSD,
-      totalCRC: calculatedTotalCRC,
-      customer: {
-        fullName: customerName,
-        email: customerEmail,
-        phone: customerPhone,
-        country: 'Costa Rica'
-      },
-      status: 'confirmada',
-      createdAt: new Date().toISOString()
-    };
-
-    try {
-      // 1. Send to server backend
-      await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newBooking)
-      }).catch((err) => console.warn('Backend webhook ping:', err));
-
-      // 2. Persist in Firestore if available
-      try {
-        const currentUser = auth.currentUser;
-        await addDoc(collection(db, 'bookings'), {
-          ...newBooking,
-          userId: currentUser ? currentUser.uid : 'anonymous_map_user',
-          createdAt: serverTimestamp()
-        });
-      } catch (err) {
-        console.warn('Firestore fallback to local state:', err);
-      }
-
-      setConfirmedBookingData(newBooking);
-      setIsConfirmed(true);
-      if (onBookingSuccess) {
-        onBookingSuccess(newBooking);
-      }
-    } catch (error) {
-      console.error('Error creating map service booking:', error);
-      setConfirmedBookingData(newBooking);
-      setIsConfirmed(true);
-    } finally {
-      setIsSubmitting(false);
+    setSubmissionError('');
+    if (!customerName.trim() || !customerEmail.trim() || !customerPhone.trim()) {
+      setSubmissionError(language === 'es' ? 'Nombre, correo y teléfono son obligatorios.' : 'Name, email and phone are required.');
+      return;
     }
-  };
+    if (!Number.isFinite(calculatedTotalUSD) || calculatedTotalUSD <= 0) {
+      setSubmissionError(language === 'es' ? 'Este servicio no tiene un precio de reserva configurado para esta modalidad.' : 'This service has no configured booking price for this option.');
+      return;
+    }
+    setIsSubmitting(true);
+    const bookingId = `CR-MAP-${crypto.randomUUID().replace(/-/g, '').slice(0, 10).toUpperCase()}`;
+    try {
+      const response = await fetch('/api/service-bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': bookingId },
+        body: JSON.stringify({
+          bookingId, serviceType: 'map', serviceId: service.id, date, checkOutDate: service.type === 'hotel' ? checkOutDate : undefined,
+          time: timeSlot, adults, children, pickupHotel: service.address[language === 'es' ? 'es' : 'en'],
+          paymentMethod: 'credit_card', transferType, selectedRoute, flightDirection,
+          specialRequests: `${specialRequests ? specialRequests + ' | ' : ''}${service.type === 'national_park' ? `Pasaporte: ${passportId}` : ''}`,
+          customer: { fullName: customerName.trim(), email: customerEmail.trim().toLowerCase(), phone: customerPhone.trim(), country: 'Costa Rica' }
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.booking) throw new Error(data.message || data.error || 'No se pudo registrar la reserva.');
+      setConfirmedBookingData(data.booking);
+      setIsConfirmed(true);
+      if (onBookingSuccess) onBookingSuccess(data.booking);
+    } catch (error: any) {
+      console.error('Error creating map service booking:', error);
+      setSubmissionError(error?.message || (language === 'es' ? 'No se pudo registrar la solicitud.' : 'Could not register the request.'));
+    } finally { setIsSubmitting(false); }
+  }
 
   return (
     <div 
@@ -239,7 +206,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
 
               <div>
                 <h4 className="text-xl sm:text-2xl font-black text-white">
-                  {language === 'es' ? '¡Reserva Registrada Exitosamente!' : 'Booking Confirmed Successfully!'}
+                  {language === 'es' ? '¡Solicitud registrada!' : 'Request registered!'}
                 </h4>
                 <p className="text-xs sm:text-sm text-emerald-200/80 mt-1 max-w-md mx-auto">
                   {language === 'es' 
@@ -284,6 +251,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
           ) : (
             /* Booking Form */
             <form onSubmit={handleBookingSubmit} className="space-y-5">
+            {submissionError && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{submissionError}</div>}
               {/* Quick Service Highlights */}
               <div className="bg-emerald-950/50 border border-emerald-500/20 p-3.5 rounded-2xl flex items-start gap-3">
                 <img

@@ -99,8 +99,6 @@ class IndividualProviderLifecycleManager {
    * Evalúa periódicamente los SLAs pendientes directamente consultando Firestore (Sobrevive a reinicios y escalado a cero).
    */
   async sweepPendingSlas(): Promise<number> {
-    if (this.slaSweepRunning) return 0;
-    this.slaSweepRunning = true;
     const db = getFirestoreDb();
     const lockRef = db ? db.collection('automation_locks').doc('massive-provider-sla-1m') : null;
     let lockAcquired = false;
@@ -123,7 +121,8 @@ class IndividualProviderLifecycleManager {
       let evaluatedCount = 0;
       for (const booking of pending) {
         const bookingId = booking.id || booking.bookingId;
-        const providerId = booking.providerId || 'alsama-tours-cr';
+        const providerId = String(booking.providerId || '').trim();
+        if (!providerId) throw new Error(`PROVIDER_REQUIRED: reserva ${bookingId} no tiene proveedor operativo asignado.`);
         const dispatchedAt = Number(booking.dispatchedAt || 0);
         if (bookingId && booking.providerStatus === 'pending' && booking.escalated !== true && dispatchedAt > 0 && now - dispatchedAt > SLA_THRESHOLD_MS) {
           await executeAutonomousProviderFallback(bookingId, providerId, 'SLA Expirado sin confirmación del proveedor ' + providerId);
@@ -136,7 +135,6 @@ class IndividualProviderLifecycleManager {
       if (err?.message !== 'automation_lock_busy') console.error('Error en barredor periódico de SLAs:', err);
       return 0;
     } finally {
-      this.slaSweepRunning = false;
       if (lockAcquired && lockRef) await lockRef.set({ status: 'idle', releasedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, { merge: true }).catch(() => undefined);
     }
   }
@@ -201,7 +199,7 @@ export class MassiveProcessingEngine extends EventEmitter {
         return;
       }
       const task: MassiveTask<T> = {
-        id: `task_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        id: `task_${crypto.randomUUID()}`,
         type,
         priority,
         data,
@@ -267,7 +265,23 @@ export class MassiveProcessingEngine extends EventEmitter {
       case 'INDIVIDUAL_BOOKING_AUTONOMOUS_DISPATCH': {
         const { booking } = task.data;
         const bookingId = booking.bookingId || booking.id;
-        const providerId = booking.providerId || 'alsama-tours-cr';
+        const providerId = String(booking.providerId || '').trim();
+        if (!providerId) {
+          throw new Error(`PROVIDER_REQUIRED: reserva ${booking.id || booking.bookingId || 'unknown'} no tiene proveedor operativo asignado.`);
+        }
+
+        const paymentVerified = ['paid', 'completed'].includes(String(booking.paymentStatus || '').toLowerCase())
+          && ['paid', 'confirmada', 'confirmed'].includes(String(booking.status || '').toLowerCase());
+        if (!paymentVerified) {
+          return {
+            success: true,
+            bookingId,
+            providerDispatched: false,
+            deferred: true,
+            reason: 'payment_not_verified',
+            message: 'El despacho al proveedor queda diferido hasta la verificación server-side del pago.'
+          };
+        }
 
         // 1. Despacho en tiempo real al proveedor
         const coordRes = await executeProviderRealtimeCoordination({
@@ -285,27 +299,14 @@ export class MassiveProcessingEngine extends EventEmitter {
           providerId
         });
 
-        // 2. Notificación y Voucher al Cliente
-        await executeCustomerBookingConfirmation({
-          bookingId,
-          idReserva: bookingId,
-          tourName: booking.tourName,
-          tourDate: booking.date,
-          tourTime: booking.time,
-          adults: booking.adults,
-          children: booking.children,
-          totalUSD: booking.totalUSD,
-          customerName: booking.customerName,
-          customerEmail: booking.customerEmail,
-          customerPhone: booking.customerPhone,
-          pickupHotel: booking.pickupHotel
-        });
-
+        // 2. El despacho al proveedor NO confirma la reserva frente al cliente.
+        // La confirmación sólo ocurre después de que el proveedor responda y el
+        // lifecycle transaccional valide ese estado.
         // 3. Iniciar monitor autónomo de SLA individual persistido en Firestore
         await this.providerLifecycle.startAutonomousTracking(bookingId, providerId, booking);
         this.successfulDispatches++;
 
-        return { success: true, bookingId, providerDispatched: coordRes.success };
+        return { success: true, bookingId, providerDispatched: coordRes.success, customerConfirmationDeferred: true };
       }
 
       default:

@@ -84,7 +84,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     }
     setIsSubmitting(true);
 
-    const generatedBookingId = `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+    const generatedBookingId = `CR-PV-${crypto.randomUUID()}`;
     const departureTime = (tour.departureTimes && tour.departureTimes.length > 0) ? tour.departureTimes[0] : '08:00 AM';
 
     const bookingPayload: BookingRequest = {
@@ -101,7 +101,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
       totalCRC,
       paymentMethod,
       customer: { fullName, email, phone: phone || '+506', country: 'CR' },
-      status: paymentMethod === 'sinpe_movil' ? 'pendiente_pago' : 'confirmada',
+      status: 'pendiente_pago',
+      paymentStatus: 'pending',
       createdAt: new Date().toISOString()
     };
 
@@ -148,7 +149,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
             date: selectedDate,
             passengers: adults + children,
             adults,
-            children
+            children,
+            bookingId: generatedBookingId
           })
         });
         const stripeData = await stripeRes.json();
@@ -160,7 +162,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
         const paypalRes = await fetch('/api/paypal/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ totalUSD, tourName: modalTitle, tourId: tour.id, passengers: adults + children, adults, children })
+          body: JSON.stringify({ totalUSD, tourName: modalTitle, tourId: tour.id, passengers: adults + children, adults, children, bookingId: generatedBookingId })
         });
         const paypalData = await paypalRes.json();
         if (paypalData.url) {

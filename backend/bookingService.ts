@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 /**
  * 📦 Servicio de Reservas y Disponibilidad en Firestore para Costa Rica Tours
  * Gestiona persistencia, control de cupos atómico (evitando race conditions),
@@ -267,6 +268,14 @@ export async function checkTourAvailability(
       alreadyBooked = inMemorySlots.get(slotKey) || 0;
     }
   } else {
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        available: false,
+        remainingSeats: 0,
+        maxCapacity,
+        reason: 'availability_store_unavailable: no se puede prometer disponibilidad sin la fuente transaccional de verdad.'
+      };
+    }
     alreadyBooked = inMemorySlots.get(slotKey) || 0;
   }
 
@@ -403,6 +412,30 @@ export async function generateOperationalInsights(booking: any) {
  * Ejecuta una transacción atómica `db.runTransaction()` en Firestore Admin,
  * actualizando el contador en `availability_slots` y guardando la reserva en `bookings`.
  */
+async function getConfiguredTourProviderId(tourId: string, requestedProviderId?: unknown): Promise<string | null> {
+  const explicit = String(requestedProviderId || '').trim();
+  if (explicit) return explicit;
+
+  const tour = TOURS.find((item) => item.id === tourId);
+  const catalogProviderId = String((tour as any)?.providerId || '').trim();
+  if (catalogProviderId) return catalogProviderId;
+
+  const db = getFirestoreDb();
+  if (!db) return null;
+
+  try {
+    const assignment = await db.collection('tour_provider_assignments').doc(tourId).get();
+    if (!assignment.exists) return null;
+    const data = assignment.data() || {};
+    if (data.active === false) return null;
+    const providerId = String(data.providerId || '').trim();
+    return providerId || null;
+  } catch (error) {
+    console.warn(`No se pudo resolver el proveedor configurado para el tour ${tourId}:`, error);
+    return null;
+  }
+}
+
 export async function createBooking(data: any) {
   const idempotencyKey = normalizeIdempotencyKey(data.idempotencyKey);
   const fingerprint = idempotencyKey ? requestFingerprint(data) : null;
@@ -417,7 +450,7 @@ export async function createBooking(data: any) {
     }
   }
 
-  const bookingId = data.bookingId || `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+  const bookingId = String(data.bookingId || `CR-PV-${crypto.randomUUID()}`).trim();
   const bookingTime = data.time || '08:00 AM';
   const numAdults = Number(data.adults) || 1;
   const numChildren = Number(data.children) || 0;
@@ -429,9 +462,15 @@ export async function createBooking(data: any) {
   const maxCapacity = tourInfo?.maxGroupSize || 15;
   const slotKey = getSlotKey(tourId, tourDate, bookingTime);
 
-  // 1. Obtener información dinámica del operador desde Firestore
-  const providerId = tourInfo?.providerId || 'alsama-tours-cr';
+  // 1. Resolver el proveedor operativo desde solicitud, catálogo o asignación persistida.
+  const providerId = await getConfiguredTourProviderId(tourId, data.providerId);
+  if (!providerId) {
+    throw new Error(`PROVIDER_REQUIRED: el tour ${tourId} no tiene un proveedor operativo configurado.`);
+  }
   const providerInfo = await getOperatorById(providerId);
+  if (!providerInfo.active || providerInfo.verified !== true) {
+    throw new Error(`PROVIDER_NOT_OPERATIONAL: el proveedor ${providerId} no está activo y verificado en la fuente operativa.`);
+  }
 
   // 2. Validar pago del lado del servidor de forma estricta (NUNCA adoptar estado del cliente)
   let paymentResult: {
@@ -469,11 +508,15 @@ export async function createBooking(data: any) {
     children: numChildren
   });
 
-  const calculatedUSD = Number(
-    data.totalUSD ||
-    (data.currency === 'CRC' ? Number(data.totalAmount || 0) / getUsdToCrcRate() : data.totalAmount) ||
-    0
-  );
+  const catalogTotalUSD = tourInfo && typeof tourInfo.priceUSD === 'number'
+    ? Number((tourInfo.priceUSD * numAdults + tourInfo.priceUSD * 0.7 * numChildren).toFixed(2))
+    : null;
+  const calculatedUSD = catalogTotalUSD !== null
+    ? catalogTotalUSD
+    : Number(data.totalUSD || (data.currency === 'CRC' ? Number(data.totalAmount || 0) / getUsdToCrcRate() : data.totalAmount) || 0);
+  if (!Number.isFinite(calculatedUSD) || calculatedUSD <= 0) {
+    throw new Error('PRICE_REQUIRED: no existe un total autoritativo válido para esta reserva.');
+  }
 
   const customerObj = data.customer || {
     name: data.customerName || 'Cliente',
@@ -596,7 +639,16 @@ export async function createBooking(data: any) {
       };
     }
   } else {
-    // Modo de reserva en memoria segura (desarrollo/sin Firebase Admin credentials)
+    // En producción, una reserva no puede confirmarse/persistirse sólo en memoria:
+    // Firestore es la fuente transaccional de verdad para cupos y reservas.
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        conflict: true,
+        error: 'persistence_unavailable',
+        message: 'El sistema de reservas no tiene acceso a Firestore; no se aceptó la reserva para evitar pérdida o sobreventa.'
+      };
+    }
+    // Modo de reserva en memoria sólo para desarrollo/sin credenciales de Firebase Admin.
     const currentMemoryBooked = inMemorySlots.get(slotKey) || 0;
     if (currentMemoryBooked + totalPassengers > maxCapacity) {
       return {
@@ -641,6 +693,62 @@ export async function createBooking(data: any) {
 }
 
 /**
+ * Persiste reservas de servicios especiales (vuelos/hospitality/transportes)
+ * que no forman parte del catálogo de tours. El cálculo del precio y la
+ * validación del servicio viven en server.ts; esta función centraliza la
+ * escritura y mantiene el mismo modelo de bookings.
+ */
+export async function createSpecialServiceBooking(data: any) {
+  const bookingId = String(data.bookingId || `CRT-SVC-${crypto.randomUUID()}`).trim();
+  const totalUSD = Number(data.totalUSD);
+  const adults = Math.max(1, Number(data.adults) || 1);
+  const children = Math.max(0, Number(data.children) || 0);
+  const date = String(data.date || '').trim();
+  const customer = data.customer || {};
+  if (!bookingId || !date || !Number.isFinite(totalUSD) || totalUSD <= 0) throw new Error('SPECIAL_BOOKING_INVALID: faltan datos o totalUSD válido.');
+  if (!String(customer.email || '').includes('@')) throw new Error('CUSTOMER_EMAIL_REQUIRED: correo válido obligatorio.');
+  const db = getFirestoreDb();
+  if (!db && process.env.NODE_ENV === 'production') throw new Error('PERSISTENCE_REQUIRED: Firestore no disponible.');
+  const payload = {
+    bookingId,
+    bookingDomain: 'service',
+    serviceType: String(data.serviceType || 'special'),
+    serviceId: String(data.serviceId || '').trim(),
+    tourId: String(data.tourId || data.serviceId || bookingId),
+    tourName: String(data.tourName || 'Servicio Costa Rica Tours'),
+    date,
+    checkOutDate: data.checkOutDate || undefined,
+    time: String(data.time || '08:00 AM'),
+    adults,
+    children,
+    pickupHotel: String(data.pickupHotel || ''),
+    specialRequests: String(data.specialRequests || '').slice(0, 4000),
+    totalUSD,
+    totalCRC: Math.round(totalUSD * getUsdToCrcRate()),
+    totalAmount: totalUSD,
+    currency: 'USD',
+    paymentMethod: String(data.paymentMethod || 'credit_card'),
+    paymentStatus: 'pending',
+    status: 'pendiente_pago',
+    customerName: String(customer.fullName || customer.name || '').trim(),
+    customerEmail: String(customer.email || '').trim().toLowerCase(),
+    customerPhone: String(customer.phone || '').trim(),
+    customer,
+    flightDetails: data.flightDetails || undefined,
+    serviceDetails: data.serviceDetails || undefined,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  if (db) {
+    const ref = db.collection('bookings').doc(bookingId);
+    const existing = await ref.get();
+    if (existing.exists) return { conflict: false, idempotent: true, booking: { id: ref.id, ...existing.data() } };
+    await ref.create({ ...payload, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+  }
+  inMemoryBookings.set(bookingId, payload);
+  return { conflict: false, booking: payload };
+}
+/**
  * Lee todas las reservas desde Firestore (o caché en memoria)
  * Normalizando Timestamps de Firestore a formato serializable.
  */
@@ -671,16 +779,37 @@ export async function getBookingById(bookingId: string): Promise<any | null> {
  * Recupera sólo reservas que todavía pueden requerir una transición autónoma.
  * Conserva getAllBookings() para backoffice y compatibilidad histórica.
  */
+export async function getExpiredSoftHolds(limit = 250): Promise<any[]> {
+  const col = getBookingsCollection();
+  const safeLimit = Math.max(1, Math.min(500, limit));
+  if (!col) return [];
+  const now = new Date().toISOString();
+  try {
+    const snapshot = await col
+      .where('holdExpiresAt', '<=', now)
+      .orderBy('holdExpiresAt', 'asc')
+      .limit(safeLimit)
+      .get();
+    return snapshot.docs
+      .map((doc: any) => ({ id: doc.id, ...doc.data(), createdAt: normalizeTimestampToDate(doc.data()?.createdAt).toISOString(), updatedAt: normalizeTimestampToDate(doc.data()?.updatedAt).toISOString() }))
+      .filter((b: any) => (b.status === 'hold' || b.status === 'pendiente_pago' || b.holdActive === true) && b.holdActive !== false);
+  } catch (error) {
+    console.warn('Error consultando soft holds expirados:', error);
+    return [];
+  }
+}
+
 export async function getPendingReservationLifecycleBookings(limit = 100): Promise<any[]> {
   const col = getBookingsCollection();
   const safeLimit = Math.max(1, Math.min(250, limit));
   if (!col) return [];
 
   try {
+    // Query by recency only to avoid a composite-index dependency. The bounded
+    // result is filtered locally by lifecycle state and booking domain.
     const snapshot = await col
-      .where('status', 'in', ['pendiente_pago', 'payment_pending', 'pending', 'paid', 'provider_pending'])
       .orderBy('updatedAt', 'desc')
-      .limit(safeLimit)
+      .limit(Math.min(500, safeLimit * 3))
       .get();
     const results: any[] = [];
     snapshot.forEach((doc) => {
@@ -693,8 +822,13 @@ export async function getPendingReservationLifecycleBookings(limit = 100): Promi
         createdAtTimestamp: data.createdAt
       });
     });
-    results.forEach((booking) => inMemoryBookings.set(booking.bookingId || booking.id, booking));
-    return results;
+    const lifecycleStates = new Set(['pendiente_pago', 'payment_pending', 'pending', 'paid', 'provider_pending']);
+    const lifecycleResults = results
+      .filter((booking) => booking.bookingDomain !== 'service')
+      .filter((booking) => lifecycleStates.has(String(booking.status || '').toLowerCase()))
+      .slice(0, safeLimit);
+    lifecycleResults.forEach((booking) => inMemoryBookings.set(booking.bookingId || booking.id, booking));
+    return lifecycleResults;
   } catch (error) {
     console.warn('Error consultando reservas pendientes del lifecycle:', error);
     return [];
@@ -799,8 +933,8 @@ export async function updateBookingStatus(
     return { success: false, error: transitionErr.message };
   }
 
-  const isCancelling = (newStatus === 'cancelada' || newStatus === 'cancelled') &&
-                       (previousStatus !== 'cancelada' && previousStatus !== 'cancelled');
+  const isReleasingAvailability = ['cancelada', 'cancelled', 'expirada'].includes(String(newStatus || '').toLowerCase()) &&
+    !['cancelada', 'cancelled', 'expirada'].includes(String(previousStatus || '').toLowerCase());
 
   const updatedBooking = { ...existing, ...updates, updatedAt: new Date().toISOString() };
   let availabilityReleasedByTransaction = false;
@@ -809,7 +943,7 @@ export async function updateBookingStatus(
   // que cambia el estado para que una cancelación duplicada sea inocua.
   if (db && col) {
     try {
-      if (isCancelling) {
+      if (isReleasingAvailability) {
         const bookingRef = col.doc(bookingId);
         availabilityReleasedByTransaction = await db.runTransaction(async (transaction) => {
           const bookingSnap = await transaction.get(bookingRef);
@@ -844,7 +978,7 @@ export async function updateBookingStatus(
       console.error('Error actualizando en Firestore:', err);
       return { success: false, error: err.message };
     }
-  } else if (isCancelling && existing.availabilityReleased !== true) {
+  } else if (isReleasingAvailability && existing.availabilityReleased !== true) {
     const tourId = existing.tourId;
     const tourDate = existing.date;
     const bookingTime = existing.time || '08:00 AM';
@@ -885,15 +1019,22 @@ export async function getWeeklyConversionMetrics(): Promise<{
   topTours: Array<{ name: string; count: number; revenueUSD: number }>;
   paymentBreakdown: Record<string, number>;
 }> {
-  const allBookings = await getAllBookings();
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-  const recentBookings = allBookings.filter((b) => {
-    if (!b.createdAt) return true;
-    const created = new Date(b.createdAt);
-    return created >= sevenDaysAgo || allBookings.length < 15;
-  });
+  const col = getBookingsCollection();
+  let recentBookings: any[] = [];
+  if (col) {
+    try {
+      const snapshot = await col.orderBy('createdAt', 'desc').limit(1000).get();
+      recentBookings = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data(), createdAt: normalizeTimestampToDate(doc.data()?.createdAt).toISOString() }))
+        .filter((b: any) => new Date(b.createdAt).getTime() >= sevenDaysAgo.getTime());
+    } catch (error) {
+      console.warn('No se pudo leer el índice reciente de reservas para métricas:', error);
+      recentBookings = [];
+    }
+  } else if (process.env.NODE_ENV !== 'production') {
+    recentBookings = Array.from(inMemoryBookings.values()).filter((b: any) => new Date(String(b.createdAt || '')).getTime() >= sevenDaysAgo.getTime());
+  }
 
   const totalBookings = recentBookings.length;
   const confirmed = recentBookings.filter(
@@ -912,7 +1053,7 @@ export async function getWeeklyConversionMetrics(): Promise<{
   const metricsDb = getFirestoreDb();
   if (metricsDb) {
     try {
-      const eventSnapshot = await metricsDb.collection('agent_events').limit(500).get();
+      const eventSnapshot = await metricsDb.collection('agent_events').orderBy('createdAt', 'desc').limit(1000).get();
       totalInquiries = eventSnapshot.docs.filter(doc => {
         const data = doc.data() as any;
         const created = new Date(String(data.createdAt || '')).getTime();
@@ -1030,7 +1171,7 @@ const dailyOpsLogs: DailyOpsLogItem[] = [];
  */
 export function recordDailyOpsLog(item: Omit<DailyOpsLogItem, 'id' | 'timestamp'>): DailyOpsLogItem {
   const logItem: DailyOpsLogItem = {
-    id: `OPS-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
+    id: `OPS-${crypto.randomUUID()}`,
     timestamp: new Date().toISOString(),
     ...item
   };

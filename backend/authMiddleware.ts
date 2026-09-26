@@ -63,3 +63,25 @@ export async function requireOperator(req: Request, res: Response, next: NextFun
     return res.status(401).json({ error: 'No autorizado' });
   }
 }
+
+
+/**
+ * Authenticated customer/user access. Unlike requireOperator, this accepts any
+ * valid Firebase ID token and does not require an elevated role.
+ */
+export async function requireAuthenticatedUser(req: Request, res: Response, next: NextFunction) {
+  const authorization = req.headers.authorization;
+  if (!authorization?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token Bearer requerido.' });
+  }
+  try {
+    const adminAny = admin as any;
+    if (!adminAny.apps || adminAny.apps.length === 0) adminAny.initializeApp();
+    const token = authorization.slice('Bearer '.length).trim();
+    const decoded = await adminAny.auth().verifyIdToken(token);
+    (req as any).user = decoded;
+    return next();
+  } catch {
+    return res.status(401).json({ error: 'Token de usuario inválido o expirado.' });
+  }
+}

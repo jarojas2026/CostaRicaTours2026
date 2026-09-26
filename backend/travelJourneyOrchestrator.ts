@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { TOURS } from '../src/data/toursData';
 import { getFirestoreDb } from './bookingService';
 import { getDestinationWeather } from './weatherPulseService';
@@ -130,6 +131,9 @@ export async function buildTripJourney(params: JourneyParams) {
     travelers
   });
   const itineraryDays = buildDays(days, catalog, clean(params.profile) || 'relaxed');
+  const plannedTourIds = itineraryDays.map((day: any) => day.tourId).filter(Boolean);
+  const plannedTours = plannedTourIds.map((id: string) => catalog.find((tour: any) => tour.id === id)).filter(Boolean) as any[];
+  const estimatedTourCostUSD = Number((plannedTours.reduce((sum, tour) => sum + Number(tour.priceUSD || 0), 0) * travelers).toFixed(2));
   const validation = validateJourneyState({
     days,
     regions,
@@ -137,7 +141,6 @@ export async function buildTripJourney(params: JourneyParams) {
     weatherRisk: relevantWeather.some((item: any) => /rain|storm|risk|lluvia|tormenta/i.test(JSON.stringify(item))),
     availability: availability.items
   });
-  const estimatedTourCostUSD = catalog.reduce((sum, tour) => sum + tour.priceUSD, 0) * travelers;
   const journeyId = 'jrn_' + cryptoSafeId();
   const journey = {
     journeyId,
@@ -193,9 +196,7 @@ export async function buildTripJourney(params: JourneyParams) {
 }
 
 function cryptoSafeId() {
-  const globalCrypto = globalThis.crypto as Crypto | undefined;
-  if (globalCrypto?.randomUUID) return globalCrypto.randomUUID().replace(/-/g, '').slice(0, 20);
-  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+  return crypto.randomUUID().replace(/-/g, '').slice(0, 20);
 }
 
 export async function getTravelerJourney(journeyId: string) {

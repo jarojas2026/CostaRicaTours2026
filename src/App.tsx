@@ -129,6 +129,41 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('booking') === 'success') {
       const sessionId = params.get('session_id');
+      const paypalOrderId = params.get('token');
+      const bookingId = params.get('bookingId');
+
+      if (params.get('paypal') === '1' && paypalOrderId && bookingId) {
+        fetch('/api/paypal/capture-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: paypalOrderId, bookingId })
+        })
+          .then(async response => ({ ok: response.ok, data: await response.json().catch(() => ({})) }))
+          .then(({ ok, data }) => {
+            if (!ok) throw new Error(data?.error || 'No se pudo verificar el pago de PayPal.');
+            setRecentBooking({
+              bookingId,
+              tourId: 'procesando',
+              tourName: 'Tu experiencia en Costa Rica',
+              customer: { fullName: 'Pago verificado', email: '', phone: '', country: '' },
+              date: 'Confirmando fecha...',
+              time: 'Confirmando hora...',
+              adults: 1,
+              children: 0,
+              pickupHotel: '',
+              specialRequests: '',
+              totalUSD: 0,
+              totalCRC: 0,
+              paymentMethod: 'paypal',
+              status: 'paid',
+              paymentStatus: 'completed',
+              createdAt: new Date().toISOString()
+            });
+          })
+          .catch(error => {
+            alert(error?.message || 'No se pudo verificar el pago de PayPal.');
+          });
+      }
       setRecentBooking({
         bookingId: "VERIFICANDO...",
         tourId: "procesando",
@@ -147,8 +182,9 @@ export default function App() {
         specialRequests: "",
         totalUSD: 0,
         totalCRC: 0,
-        paymentMethod: "credit_card",
-        status: "pendiente_pago",
+        paymentMethod: params.get('paypal') === '1' ? "paypal" : "credit_card",
+        status: params.get('paypal') === '1' ? "paid" : "pendiente_pago",
+        paymentStatus: params.get('paypal') === '1' ? "completed" : "pending",
         createdAt: new Date().toISOString()
       });
 
@@ -172,7 +208,7 @@ export default function App() {
       setIntakeHandoffUrl(undefined);
       setIntakeEscalated(false);
       try {
-        const sessionId = detail.sessionId || localStorage.getItem('crt_customer_session') || `web_${Math.random().toString(36).slice(2)}`;
+        const sessionId = detail.sessionId || localStorage.getItem('crt_customer_session') || `web_${crypto.randomUUID()}`;
         localStorage.setItem('crt_customer_session', sessionId);
         const response = await fetch('/api/customer-intake', {
           method: 'POST',
