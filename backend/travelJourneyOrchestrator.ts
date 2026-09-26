@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { TOURS } from '../src/data/toursData';
 import { getFirestoreDb } from './bookingService';
 import { getDestinationWeather } from './weatherPulseService';
@@ -202,24 +203,40 @@ export async function buildTripJourney(params: JourneyParams) {
 }
 
 function cryptoSafeId() {
-  const globalCrypto = globalThis.crypto as Crypto | undefined;
-  if (globalCrypto?.randomUUID) return globalCrypto.randomUUID().replace(/-/g, '').slice(0, 20);
-  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+  return randomUUID().replace(/-/g, '').slice(0, 20);
 }
 
-export async function getTravelerJourney(journeyId: string) {
+export async function getTravelerJourney(journeyId: string, sessionId?: string) {
   const existing = await loadJourney(clean(journeyId, 120));
-  return existing || {
-    journeyId,
-    status: 'not_found',
-    error: 'No existe un viaje persistido con ese identificador.'
-  };
+  if (!existing) {
+    return {
+      journeyId,
+      status: 'not_found',
+      error: 'No existe un viaje persistido con ese identificador.'
+    };
+  }
+
+  const requestedSession = clean(sessionId, 160);
+  if (!requestedSession || !existing.sessionId || existing.sessionId !== requestedSession) {
+    return {
+      journeyId,
+      status: 'forbidden',
+      error: 'Se requiere la sesión propietaria del viaje para acceder a este contenido.'
+    };
+  }
+
+  return existing;
 }
 
 export async function adaptTravelerJourney(journeyId: string, params: JourneyParams) {
   const existing = await loadJourney(clean(journeyId, 120));
   if (!existing || existing.status === 'not_found') {
     return { journeyId, status: 'not_found', error: 'No existe el viaje solicitado.' };
+  }
+
+  const requestedSession = clean(params.sessionId, 160);
+  if (!requestedSession || !existing.sessionId || existing.sessionId !== requestedSession) {
+    return { journeyId, status: 'forbidden', error: 'La sesión no coincide con la propietaria del viaje.' };
   }
 
   const merged: JourneyParams = {
