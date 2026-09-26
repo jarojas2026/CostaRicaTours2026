@@ -112,7 +112,7 @@ const nativeWorkflowsSource = read('backend/nativeWorkflows.ts');
 if (/providerId\s*\|\|\s*['\"]alsama-tours-cr['\"]/.test(bookingService)) {
   add('CRITICAL', 'PROVIDER-005', 'Booking creation still contains an implicit Alsama provider fallback.');
 }
-const payoutPaidGuard = /payoutResponse\.ok[\\s\\S]{0,300}batch_status[^\\n]*['\"]SUCCESS['\"]/.test(nativeWorkflowsSource);
+const payoutPaidGuard = /payoutResponse\.ok[\s\S]{0,300}batch_status[^\n]*['\"]SUCCESS['\"]/.test(nativeWorkflowsSource);
 if (/SUCCESS_SIMULATED/.test(nativeWorkflowsSource) || (/payoutStatus:\s*['\"]paid['\"]/.test(nativeWorkflowsSource) && !payoutPaidGuard)) {
   add('CRITICAL', 'PAYOUT-001', 'Provider payout code contains a simulated success path; payouts must never be marked paid without provider API confirmation.');
 }
