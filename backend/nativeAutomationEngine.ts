@@ -36,6 +36,7 @@ import {
   logException 
 } from './aiAssistantService';
 import { TOURS } from '../src/data/toursData';
+import { executeCustomerBookingConfirmation, executeProviderRealtimeCoordination } from './nativeWorkflows';
 
 // Registro de eventos y auditoría en memoria para monitoreo en vivo
 export interface NativeAutomationLog {
@@ -985,22 +986,20 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
   };
 }
 export async function executeGenericAutomation(triggerName: string, body: any = {}) {
-  const start = Date.now();
-  const duration = Date.now() - start;
+  const duration = 0;
   logAutomationExecution(
     triggerName,
     duration,
-    'success',
-    `Evento ${triggerName} procesado en código nativo`,
+    'warning',
+    `Evento ${triggerName} recibido por compatibilidad; no se ejecuta una acción de negocio genérica.`,
     body
   );
   return {
-    exito: true,
-    mensaje: `Automatización ${triggerName} procesada exitosamente con código nativo en servidor Node.js/Express.`,
+    success: false,
+    executed: false,
+    status: 'UNSUPPORTED_GENERIC_ACTION',
     trigger: triggerName,
-    motor: 'código_nativo_node',
-    datos: body,
-    timestamp: new Date().toISOString()
+    message: 'No se ejecuta una operación genérica porque no existe una acción de negocio explícita y verificada.'
   };
 }
 
