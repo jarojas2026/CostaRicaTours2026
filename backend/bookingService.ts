@@ -163,7 +163,7 @@ export async function getOperatorById(providerId: string): Promise<{
   verified: boolean;
   certificacion?: string;
   active: boolean;
-}> {
+} | null> {
   const db = getFirestoreDb();
   const defaultFallback = {
     id: providerId || 'provider-unconfigured',
@@ -220,7 +220,7 @@ export async function getOperatorById(providerId: string): Promise<{
   // No se fabrican proveedores operativos si Firestore no contiene el registro verificado.
 
 
-  return defaultFallback;
+  return db ? null : defaultFallback;
 }
 
 /**
