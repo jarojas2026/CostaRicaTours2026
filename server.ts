@@ -1428,7 +1428,7 @@ app.get('/api/ai/mesh/inbox/:agentId', requireAdmin, async (req, res) => {
   }
 });
 
-app.get('/api/self-dev/status', async (req, res) => {
+app.get('/api/self-dev/status', requireAdmin, async (_req, res) => {
   res.json(await getSelfDevelopmentOverview());
 });
 
@@ -2202,7 +2202,7 @@ app.all('/webhook/health-check', (req, res) => {
 // ==========================================
 // 📊 ANALÍTICA NATIVA Y ACCIONES DE RESERVA
 // ==========================================
-app.get('/api/analytics/conversion-report', async (req, res) => {
+app.get('/api/analytics/conversion-report', requireAdmin, async (_req, res) => {
   try {
     const metrics = await getWeeklyConversionMetrics();
     res.json({ success: true, data: metrics, source: 'firestore-native' });
@@ -2978,7 +2978,7 @@ app.post('/api/fcm/register', async (req, res) => {
   }
 });
 
-app.post('/api/fcm/send', async (req, res) => {
+app.post('/api/fcm/send', requireAdmin, async (req, res) => {
   try {
     const { userId, title, body, data } = req.body;
     if (!userId || !title || !body) {
