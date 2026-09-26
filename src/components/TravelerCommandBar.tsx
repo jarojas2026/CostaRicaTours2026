@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import {
   Sparkles, Compass, Map, CalendarDays, ArrowRight,
-  Plane, ShieldCheck, WandSparkles
+  Plane, ShieldCheck, WandSparkles, BriefcaseBusiness
 } from 'lucide-react';
 import type { Language } from '../types';
 
@@ -46,6 +46,14 @@ export const TravelerCommandBar: React.FC<TravelerCommandBarProps> = ({
       accent: 'amber'
     },
     {
+      id: 'trip',
+      icon: BriefcaseBusiness,
+      title: es ? 'Mi viaje' : 'My trip',
+      text: es ? 'Checklist, presupuesto y notas' : 'Checklist, budget and notes',
+      action: () => onNavigate('/trip'),
+      accent: 'teal'
+    },
+    {
       id: 'ai',
       icon: Sparkles,
       title: es ? 'Preguntar a la IA' : 'Ask the AI',
@@ -82,7 +90,7 @@ export const TravelerCommandBar: React.FC<TravelerCommandBarProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-px bg-white/5">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-px bg-white/5">
           {actions.map((item, index) => {
             const Icon = item.icon;
             const active = (item.id === 'explore' && activeTab === 'tours') ||
