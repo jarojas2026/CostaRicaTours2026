@@ -328,9 +328,14 @@ export const UI_TRANSLATIONS: Record<string, Record<Language, string>> = {
 };
 
 
+import { getUsdToCrcRate } from './currencies';
+
 export let EXCHANGE_RATES: Record<string, number> = {
   USD: 1,
-  CRC: 510,
+  // CRC se obtiene exclusivamente del endpoint operativo/configurado.
+  CRC: 0,
+  // Estas monedas mantienen un fallback de presentación hasta que se carguen
+  // las cotizaciones del proveedor externo.
   EUR: 0.92,
   GBP: 0.78,
   CAD: 1.36,
@@ -338,19 +343,33 @@ export let EXCHANGE_RATES: Record<string, number> = {
 
 export async function fetchExchangeRates() {
   try {
-    const response = await fetch('https://open.er-api.com/v6/latest/USD');
-    const data = await response.json();
-    if (data && data.rates) {
-      EXCHANGE_RATES = { ...EXCHANGE_RATES, ...data.rates };
-      window.dispatchEvent(new Event('exchangeRatesUpdated'));
+    const [crcResponse, globalResponse] = await Promise.all([
+      fetch('/api/currency/exchange-rate'),
+      fetch('https://open.er-api.com/v6/latest/USD')
+    ]);
+
+    if (crcResponse.ok) {
+      const crcData = await crcResponse.json();
+      const crc = Number(crcData?.usdToCrc);
+      if (Number.isFinite(crc) && crc > 0) EXCHANGE_RATES = { ...EXCHANGE_RATES, CRC: crc };
     }
+
+    if (globalResponse.ok) {
+      const data = await globalResponse.json();
+      if (data?.rates) {
+        EXCHANGE_RATES = { ...EXCHANGE_RATES, ...data.rates };
+      }
+    }
+
+    window.dispatchEvent(new Event('exchangeRatesUpdated'));
   } catch (error) {
     console.error('Failed to fetch exchange rates', error);
   }
 }
 
 export function formatCurrency(amountUSD: number, currency: Currency = 'USD'): string {
-  const rate = EXCHANGE_RATES[currency] || 1;
+  const rate = currency === 'CRC' ? getUsdToCrcRate() : (EXCHANGE_RATES[currency] || 1);
+  if (currency === 'CRC' && (!Number.isFinite(rate) || rate <= 0)) return '₡—';
   const amount = amountUSD * rate;
   
   try {
