@@ -32,7 +32,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ language }) => {
     {
       icon: Globe,
       title: { es: 'Plataforma Internacional', en: 'Global Platform' },
-      desc: { es: 'Diseñada para conectar viajeros con experiencias, servicios y operadores de todo Costa Rica.', en: 'Designed for travelers from around the world to discover the best of CR.' }
+      desc: { es: 'Diseñada para conectar viajeros con experiencias, servicios y operadores de todo Costa Rica.', en: 'Designed to connect travelers with experiences, services and operators across Costa Rica.' }
     },
     {
       icon: Award,
