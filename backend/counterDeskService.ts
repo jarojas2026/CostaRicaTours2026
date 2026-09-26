@@ -7,6 +7,9 @@ import { getOperationalMemory, rememberTurn } from './memoryService';
 import { buildAgentKnowledgeContext } from './agentKnowledgeFabric';
 import type { Language } from '../src/types';
 
+let counterSnapshotCache: { expiresAt: number; value: any } | null = null;
+const COUNTER_SNAPSHOT_TTL_MS = 10_000;
+
 export type CounterDeskAskInput = {
   message: string;
   sessionId?: string;
@@ -50,6 +53,7 @@ export async function askCounterDesk(input: CounterDeskAskInput) {
 }
 
 export async function getCounterOperationsSnapshot() {
+  if (counterSnapshotCache && counterSnapshotCache.expiresAt > Date.now()) return counterSnapshotCache.value;
   const [bookings, alerts, providers] = await Promise.all([
     getAllBookings(),
     getAlerts({ resolved: false }),
@@ -69,7 +73,7 @@ export async function getCounterOperationsSnapshot() {
     ? (providers as any).providers
     : Array.isArray(providers) ? providers : [];
 
-  return {
+  const snapshot = {
     generatedAt: new Date().toISOString(),
     engine: getNativeEngineStatus(),
     counters: {
@@ -99,6 +103,8 @@ export async function getCounterOperationsSnapshot() {
       acceptanceRate: p.acceptanceRate
     }))
   };
+  counterSnapshotCache = { expiresAt: Date.now() + COUNTER_SNAPSHOT_TTL_MS, value: snapshot };
+  return snapshot;
 }
 
 export async function runCounterSafeAutopilot() {
