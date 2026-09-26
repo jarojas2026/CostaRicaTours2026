@@ -663,21 +663,54 @@ export async function observeProviderSla() {
   };
 }
 
-export function getPublicProvidersOverview() {
-  const verifiedProviders = REGISTERED_PROVIDERS.filter(
-    provider => provider.verified === true && provider.status === 'active'
-  );
+export async function getPublicProvidersOverview() {
+  const db = getFirestoreDb();
+  if (!db) {
+    return { totalProviders: 0, activeProviders: 0, providers: [] };
+  }
+
+  const providers = new Map<string, {
+    id: string;
+    name: string;
+    category: TourProvider['category'];
+    region: string;
+    verified: true;
+    cstLevel: number;
+  }>();
+
+  for (const collectionName of ['operators', 'proveedores']) {
+    try {
+      const snapshots = collectionName === 'operators'
+        ? await db.collection(collectionName).where('verified', '==', true).limit(100).get()
+        : await db.collection(collectionName).where('verificado', '==', true).limit(100).get();
+
+      snapshots.docs.forEach(doc => {
+        const data = doc.data() || {};
+        const active = collectionName === 'operators'
+          ? data.active === true && data.status !== 'inactivo'
+          : data.activo === true && data.status !== 'inactivo';
+        if (!active) return;
+
+        const id = doc.id;
+        providers.set(id, {
+          id,
+          name: String(data.name || data.nombre || id).slice(0, 180),
+          category: (data.category || 'adventure') as TourProvider['category'],
+          region: String(data.region || 'Costa Rica').slice(0, 120),
+          verified: true,
+          cstLevel: Math.max(0, Math.min(5, Number(data.cstLevel || 0)))
+        });
+      });
+    } catch (error) {
+      console.warn('No se pudo consultar el directorio público de proveedores:', error);
+    }
+  }
+
+  const safeProviders = [...providers.values()];
   return {
-    totalProviders: verifiedProviders.length,
-    activeProviders: verifiedProviders.length,
-    providers: verifiedProviders.map(provider => ({
-      id: provider.id,
-      name: provider.name,
-      category: provider.category,
-      region: provider.region,
-      verified: true,
-      cstLevel: provider.cstLevel
-    }))
+    totalProviders: safeProviders.length,
+    activeProviders: safeProviders.length,
+    providers: safeProviders
   };
 }
 
