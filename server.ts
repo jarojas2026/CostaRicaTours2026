@@ -24,6 +24,7 @@ import {
   getStripe,
   createBooking,
   getAllBookings,
+  getBookingById,
   updateBookingStatus,
   checkTourAvailability,
   getWeeklyConversionMetrics
@@ -97,7 +98,9 @@ import {
   executeWeatherMonitoringAlerts,
   executeMorningConciergeTips,
   executePreSaleProspectRecovery,
-  executePostSaleVipLoyalty
+  executePostSaleVipLoyalty,
+  verifyCustomerActionToken,
+  verifyBookingDocumentToken
 } from './backend/nativeWorkflows';
 import { executeSinpeVerification } from './backend/sinpeService';
 import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
@@ -150,6 +153,13 @@ function verifyConfiguredSecret(provided: unknown, expected: unknown): boolean {
   const a = Buffer.from(p);
   const b = Buffer.from(e);
   return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+function requireBookingDocumentAccess(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const bookingId = String(req.params.id || '').trim();
+  const token = String(req.query.token || req.headers['x-booking-token'] || '').trim();
+  if (bookingId && verifyBookingDocumentToken(token, bookingId)) return next();
+  return requireOperator(req, res, next);
 }
 
 function requireAutomationTrigger(req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -1000,11 +1010,11 @@ app.patch('/api/bookings/:id', requireOperator, async (req, res) => {
 });
 
 // Generar e imprimir Vale Oficial / Itinerario Web de Reserva
-app.get('/api/bookings/:id/pdf', async (req, res) => {
+app.get('/api/bookings/:id/pdf', requireBookingDocumentAccess, async (req, res) => {
   try {
     const bookingId = req.params.id;
-    const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
+    const booking = await getBookingById(bookingId);
+    if (!booking) return res.status(404).json({ error: 'Reserva no encontrada' });
 
     const html = generateBookingPrintableHTML(booking as any);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -1015,11 +1025,10 @@ app.get('/api/bookings/:id/pdf', async (req, res) => {
 });
 
 // Descarga directa binaria del Vale Oficial e Itinerario en PDF
-app.get('/api/bookings/:id/download-pdf', async (req, res) => {
+app.get('/api/bookings/:id/download-pdf', requireBookingDocumentAccess, async (req, res) => {
   try {
     const bookingId = req.params.id;
-    const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
+    const booking = await getBookingById(bookingId);
     if (!booking) return res.status(404).json({ error: 'Reserva no encontrada' });
 
     const pdfBuffer = await generateBookingPDFBuffer(booking as any);
@@ -1046,50 +1055,70 @@ app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confi
 // Aprobación de Itinerario por parte del Cliente (Confirmación de Proforma) -> Despacho a Proveedores
 app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
   try {
-    const bookingId = String(req.params.id);
-    const action = req.query.action === 'reject' ? 'rechazado' : 'aprobado';
-    const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
+    const bookingId = String(req.params.id || '').trim();
+    const requestedAction = req.query.action === 'reject' ? 'reject' : 'approve';
+    const token = String(req.query.token || '').trim();
+    if (!bookingId || !verifyCustomerActionToken(token, bookingId, requestedAction)) {
+      return res.status(401).send('Enlace de confirmación inválido o vencido.');
+    }
 
+    const booking = await getBookingById(bookingId);
     if (!booking) return res.status(404).send('Reserva no encontrada.');
 
-    const updateResult = await updateBookingStatus(bookingId, {
-      status: action === 'aprobado' ? 'confirmada' : 'cancelada',
-      customerConfirmedAt: new Date().toISOString()
-    });
-    if (!updateResult.success) return res.status(409).send(updateResult.error || 'No se pudo actualizar la reserva.');
+    if (requestedAction === 'reject') {
+      const updateResult = await updateBookingStatus(bookingId, {
+        customerDecision: 'rejected',
+        customerConfirmedAt: new Date().toISOString(),
+        status: 'cancelada'
+      });
+      if (!updateResult.success) return res.status(409).send(updateResult.error || 'No se pudo actualizar la reserva.');
+    } else {
+      const paymentVerified = ['paid', 'completed'].includes(String(booking.paymentStatus || '').toLowerCase());
+      const updatePayload: Record<string, any> = {
+        customerDecision: 'approved',
+        customerConfirmedAt: new Date().toISOString()
+      };
+      if (paymentVerified) {
+        updatePayload.status = 'confirmada';
+        updatePayload.paymentStatus = 'completed';
+      }
+      const updateResult = await updateBookingStatus(bookingId, updatePayload);
+      if (!updateResult.success) return res.status(409).send(updateResult.error || 'No se pudo actualizar la reserva.');
 
-    let providerCoordinationResult: any = null;
-    if (action === 'aprobado') {
-      try {
-        providerCoordinationResult = await executeProviderRealtimeCoordination({
-          bookingId,
-          customerName: booking.customerName,
-          customerEmail: booking.customerEmail,
-          customerPhone: booking.customerPhone,
-          tourName: booking.tourName,
-          date: booking.date,
-          tourDate: booking.date,
-          totalUSD: booking.totalUSD,
-          pax: (Number(booking.adults) || 0) + (Number(booking.children) || 0),
-          specialRequests: booking.specialRequests
-        });
-      } catch (provErr) {
-        console.warn('⚠️ [FALLO EN COORDINACIÓN DE PROVEEDORES]:', provErr);
+      if (paymentVerified) {
+        try {
+          await executeProviderRealtimeCoordination({
+            bookingId,
+            providerId: booking.providerId,
+            customerName: booking.customerName,
+            customerEmail: booking.customerEmail,
+            customerPhone: booking.customerPhone,
+            tourName: booking.tourName,
+            date: booking.date,
+            tourDate: booking.date,
+            time: booking.time,
+            totalUSD: booking.totalUSD,
+            pax: (Number(booking.adults) || 0) + (Number(booking.children) || 0),
+            specialRequests: booking.specialRequests
+          });
+        } catch (provErr) {
+          console.warn('Coordinación con proveedor pendiente tras aprobación pagada:', provErr);
+        }
       }
     }
 
-    const downloadPdfUrl = `/api/bookings/${bookingId}/download-pdf`;
     const customerName = String(booking.customerName || 'Cliente').replace(/[<>]/g, '');
-    const providerMessage = providerCoordinationResult
-      ? 'La coordinación con el proveedor fue iniciada.'
-      : 'La coordinación con el proveedor quedó pendiente de seguimiento.';
-
+    const paymentVerified = ['paid', 'completed'].includes(String(booking.paymentStatus || '').toLowerCase());
+    const stateText = requestedAction === 'reject'
+      ? 'cancelada por decisión del cliente'
+      : paymentVerified
+        ? 'confirmada después de verificar el pago'
+        : 'aprobada por el cliente y pendiente de pago';
     res.send(`
       <!DOCTYPE html>
       <html lang="es"><head>
         <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Confirmación • Costa Rica Tours</title>
+        <title>Solicitud procesada • Costa Rica Tours</title>
         <style>
           body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#041711;color:#f8fafc;margin:0;padding:24px 16px;display:flex;justify-content:center;align-items:center;min-height:100vh}
           .card{background:#fff;color:#1e293b;max-width:580px;width:100%;border-radius:20px;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,.5)}
@@ -1103,17 +1132,14 @@ app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
         <div class="content"><div style="text-align:center"><span class="badge">Expediente #${bookingId}</span></div>
           <div class="box"><strong>Tour:</strong> ${String(booking.tourName || 'Experiencia Costa Rica')}<br/>
           <strong>Fecha:</strong> ${String(booking.date || 'No especificada')}<br/>
-          <strong>Estado:</strong> ${String(action)}<br/><br/>${providerMessage}</div>
-          <a href="${downloadPdfUrl}" class="btn">Descargar comprobante</a>
+          <strong>Estado:</strong> ${stateText}</div>
+          <a href="/api/bookings/${encodeURIComponent(bookingId)}/download-pdf?token=${encodeURIComponent(String(req.query.documentToken || ''))}" class="btn">Ver comprobante</a>
         </div>
       </div></body></html>`);
   } catch (err: any) {
-    res.status(500).send(`Error al procesar confirmación: ${err.message}`);
+    res.status(500).send(err?.message || 'No se pudo procesar la solicitud.');
   }
 });
-
-// 🚨 SISTEMA PROPIO DE ALERTAS ADMINISTRATIVAS
-// ==========================================
 
 app.post('/api/alerts', requireAdmin, async (req, res) => {
   const { source, severity, title, message, bookingId, providerId, metadata } = req.body || {};
