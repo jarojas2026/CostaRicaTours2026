@@ -780,7 +780,7 @@ export async function executeAutonomousProviderFallback(
 
   const fallbackProvider = await resolveOperationalProvider(DIRECT_OPERATIONS_PROVIDER_ID);
   const fallbackEmail = fallbackProvider?.email || '';
-  if (!fallbackProvider || !fallbackEmail) {
+  if (!fallbackProvider || fallbackProvider.verified !== true || fallbackProvider.active !== true || !fallbackEmail) {
     await sendAdministrativeAlert({
       title: 'Failover de proveedor requiere intervención humana',
       reason: `No existe un canal oficial verificable para reasignar ${bookingId}.`,
