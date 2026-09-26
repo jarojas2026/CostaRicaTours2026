@@ -208,7 +208,7 @@ export async function generateClaudeItinerary(params: {
   style: 'eco_relax' | 'adventure_extreme' | 'family_comfort' | 'wildlife_photography' | 'cultural_discovery';
   regions: string[];
   budget: 'standard' | 'premium' | 'luxury';
-  language: 'es' | 'en';
+  language: Language;
   specialRequests?: string;
 }): Promise<{
   title: string;
