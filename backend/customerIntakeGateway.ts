@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { runTriage, processChatInquiry } from './aiAssistantService';
 import { sendEmail, sendWhatsAppMessage } from './notificationService';
 import { rememberTurn } from './memoryService';
@@ -44,7 +45,7 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
   const message = clean(payload.message, 4000);
   const language = payload.language === 'en' ? 'en' : 'es';
   const source = clean(payload.source || 'web', 80) || 'web';
-  const requestedSessionId = clean(payload.sessionId, 120) || `web_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const requestedSessionId = clean(payload.sessionId, 120) || `web_${crypto.randomUUID()}`;
   if (!message) throw new Error('La solicitud del cliente no puede estar vacía.');
 
   const identity = await resolveTravelerIdentity({
