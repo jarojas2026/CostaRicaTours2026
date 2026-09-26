@@ -163,7 +163,7 @@ export async function getOperatorById(providerId: string): Promise<{
   verified: boolean;
   certificacion?: string;
   active: boolean;
-}> | null {
+}> {
   const db = getFirestoreDb();
   const defaultFallback = {
     id: providerId || 'provider-unconfigured',
