@@ -106,7 +106,6 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
 
   const completed = tasks.filter(task => task.done).length;
   const progress = tasks.length ? Math.round((completed / tasks.length) * 100) : 0;
-  const today = new Date();
   const countdown = useMemo(() => {
     if (!trip.startDate) return null;
     const start = new Date(`${trip.startDate}T12:00:00`);
