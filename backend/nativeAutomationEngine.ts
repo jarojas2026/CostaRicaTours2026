@@ -32,6 +32,7 @@ import {
   logException 
 } from './aiAssistantService';
 import { TOURS } from '../src/data/toursData';
+import { sendAdministrativeAlert } from './notificationService';
 
 // Registro de eventos y auditoría en memoria para monitoreo en vivo
 export interface NativeAutomationLog {
