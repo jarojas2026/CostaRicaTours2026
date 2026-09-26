@@ -290,14 +290,65 @@ function isOperationallyVerifiedProvider(provider: TourProvider): boolean {
   );
 }
 
-export function getBestProviderForTour(tourId: string): TourProvider {
-  const match = REGISTERED_PROVIDERS.find(
-    p => p.activeTours.includes(tourId) && p.status === 'active' && isOperationallyVerifiedProvider(p)
-  );
-  if (!match) {
-    throw new Error(`No hay un proveedor verificado y activo para el tour ${tourId}.`);
+export async function getBestProviderForTour(tourId: string): Promise<TourProvider> {
+  const normalizedTourId = String(tourId || '').trim();
+  if (!normalizedTourId) throw new Error('tourId es obligatorio.');
+
+  const db = getFirestoreDb();
+  if (db) {
+    for (const collectionName of ['operators', 'proveedores']) {
+      try {
+        const field = collectionName === 'operators' ? 'activeTours' : 'tours';
+        const snap = await db.collection(collectionName)
+          .where(field, 'array-contains', normalizedTourId)
+          .limit(25)
+          .get();
+
+        for (const doc of snap.docs) {
+          const data = doc.data() || {};
+          const verified = data.verified === true || data.verificado === true;
+          const active = (data.active === true || data.activo === true)
+            && data.status !== 'inactivo'
+            && data.status !== 'offline';
+          if (!verified || !active) continue;
+
+          return {
+            ...(REGISTERED_PROVIDERS.find(provider => provider.id === doc.id) || {} as TourProvider),
+            id: doc.id,
+            name: String(data.name || data.nombre || doc.id),
+            category: (data.category || 'adventure') as TourProvider['category'],
+            region: String(data.region || 'Costa Rica'),
+            contactName: String(data.contactName || data.contacto || ''),
+            phone: String(data.phone || data.telefono || ''),
+            whatsapp: String(data.whatsapp || ''),
+            email: String(data.email || data.officialEmail || ''),
+            officialEmail: String(data.officialEmail || data.emailOperativo || ''),
+            verified: true,
+            cstLevel: Number(data.cstLevel || 0),
+            insPolicyNumber: String(data.insPolicyNumber || ''),
+            ictLicense: String(data.ictLicense || ''),
+            activeTours: Array.isArray(data.activeTours) ? data.activeTours.map(String) : (Array.isArray(data.tours) ? data.tours.map(String) : []),
+            slaTargetMinutes: Math.max(1, Number(data.slaTargetMinutes || 30)),
+            averageResponseMinutes: Math.max(0, Number(data.averageResponseMinutes || 0)),
+            acceptanceRate: Math.max(0, Math.min(100, Number(data.acceptanceRate || 0))),
+            status: data.status === 'busy' ? 'busy' : 'active',
+            payoutAccount: data.payoutAccount
+          } as TourProvider;
+        }
+      } catch (error) {
+        console.warn(`No se pudo consultar el directorio operativo ${collectionName} para ${normalizedTourId}:`, error);
+      }
+    }
   }
-  return match;
+
+  if (!db && process.env.NODE_ENV !== 'production' && process.env.ALLOW_LEGACY_PROVIDER_DIRECTORY === 'true') {
+    const legacy = REGISTERED_PROVIDERS.find(
+      provider => provider.activeTours.includes(normalizedTourId) && provider.status === 'active' && isOperationallyVerifiedProvider(provider)
+    );
+    if (legacy) return legacy;
+  }
+
+  throw new Error(`No hay un proveedor verificado y activo para el tour ${normalizedTourId}.`);
 }
 
 /**
@@ -322,7 +373,7 @@ export async function dispatchServiceOrder(params: {
   totalUSD: number;
   providerId?: string;
 }): Promise<ServiceOrder> {
-  const requestedProviderId = params.providerId || getBestProviderForTour(params.tourId).id;
+  const requestedProviderId = params.providerId || (await getBestProviderForTour(params.tourId)).id;
   const db = getFirestoreDb();
   const existingSnapshot = db ? await db.collection('service_orders').where('bookingId', '==', params.bookingId).limit(10).get().catch(() => null) : null;
   const existingOrder = existingSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceOrder)).find(order => !['rejected', 'no_show'].includes(String(order.status)));
