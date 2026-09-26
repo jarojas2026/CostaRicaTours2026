@@ -320,8 +320,12 @@ export async function processChatInquiry(
     if (Array.isArray(hits) && hits.length) liveToolContext += '\nCATÁLOGO AUTORITATIVO RELEVANTE:\n' + JSON.stringify(hits.slice(0, 5));
     const bookingCode = message.match(/\b(?:CRT-[A-Z0-9-]+|CR-PV-\d+|CR-HLD-\d+)\b/i)?.[0];
     const email = message.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0];
-    if (bookingCode) { const booking = await executeAgentTool('lookup_booking', { bookingId: bookingCode }); if (booking) liveToolContext += '\nRESERVA VERIFICADA:\n' + JSON.stringify(booking); }
-    else if (email) { const booking = await executeAgentTool('lookup_booking', { email }); if (booking) liveToolContext += '\nRESERVA VERIFICADA:\n' + JSON.stringify(booking); }
+    if (bookingCode) {
+      const booking = await executeAgentTool('lookup_booking', { bookingId: bookingCode });
+      if (booking) liveToolContext += '\nRESERVA VERIFICADA:\n' + JSON.stringify(booking);
+    } else if (email) {
+      liveToolContext += '\nIDENTIFICADOR DE CORREO DETECTADO: no se consulta ni expone una reserva por correo solamente. Se requiere código de reserva o contexto autenticado.';
+    }
   } catch (toolErr) { console.warn('Agent tool context unavailable:', toolErr); }
 
   // Si se solicita o prefiere Claude en Vertex AI
@@ -407,9 +411,13 @@ Reply ONLY with "YES" or "NO".`;
           .filter(([, tool]) => tool.sideEffect)
           .map(([name]) => name)
       );
+      const allowPrivateBookingLookup = Boolean(sessionId && options.allowPrivateBookingLookup === true);
       for (const call of calls.slice(0, 6)) {
         const toolName = call.name || 'unknown_tool';
         try {
+          if (toolName === 'lookup_booking' && !allowPrivateBookingLookup) {
+            throw new Error('lookup_booking requiere contexto autenticado/autorizado; no se permite buscar reservas desde datos públicos del mensaje.');
+          }
           if (options.allowMutations === false && mutationTools.has(toolName)) {
             throw new Error('Esta herramienta cambia el estado operativo y requiere una solicitud no escalada con autorización explícita.');
           }
