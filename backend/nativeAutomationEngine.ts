@@ -433,107 +433,55 @@ export async function executeConfirmacionReserva(body: any) {
 // =========================================================================
 export async function executeSolicitudItinerario(body: any) {
   const start = Date.now();
-  const totalDays = Number(body.dias || body.days || 7);
-  const traveler = body.tipoViajero || body.travelerType || 'pareja';
-  const travelerPace = body.ritmo || body.pace || 'moderado';
-  const budget = Number(body.presupuestoUSD || body.budgetUSD || 1800);
-  const lang = (body.idioma || body.language || 'es') as 'es' | 'en';
-
-  const fullItinerary = [
-    {
-      dia: 1,
-      region: 'San José a La Fortuna / Volcán Arenal',
-      trasladoHoras: 3.5,
-      actividad: 'Llegada y check-in. Atardecer en Termales Naturales Tabacón con cena buffet',
-      tourId: 'arenal-volcano-hot-springs',
-      costoEstimadoUSD: 145,
-      cstCertificado: true
-    },
-    {
-      dia: 2,
-      region: 'La Fortuna / Arenal',
-      trasladoHoras: 0.5,
-      actividad: 'Caminata Mirador Parque Nacional Volcán Arenal y Safari Fluvial Río Peñas Blancas',
-      tourId: 'safari-penas-blancas',
-      costoEstimadoUSD: 75,
-      cstCertificado: true
-    },
-    {
-      dia: 3,
-      region: 'La Fortuna a Monteverde (Bosque Nuboso)',
-      trasladoHoras: 3.0,
-      actividad: 'Traslado lacustre Taxi-Boat-Taxi por el Lago Arenal y llegada a Santa Elena',
-      tourId: 'lake-crossing-boat',
-      costoEstimadoUSD: 45,
-      cstCertificado: true
-    },
-    {
-      dia: 4,
-      region: 'Monteverde',
-      trasladoHoras: 0.3,
-      actividad: 'Canopy Tirolesa Extrema, Vuelo Superman y Puentes Colgantes en Bosque Nuboso',
-      tourId: 'monteverde-canopy-extreme',
-      costoEstimadoUSD: 110,
-      cstCertificado: true
-    },
-    {
-      dia: 5,
-      region: 'Monteverde a Manuel Antonio (Pacífico Central)',
-      trasladoHoras: 4.0,
-      actividad: 'Descenso hacia la Costa Pacífica, cruce del puente de Tárcoles y tarde en Playa Espadilla',
-      tourId: 'tarcoles-crocodile-stop',
-      costoEstimadoUSD: 35,
-      cstCertificado: true
-    },
-    {
-      dia: 6,
-      region: 'Parque Nacional Manuel Antonio',
-      trasladoHoras: 0.2,
-      actividad: 'Excursión guiada con naturalista y telescopio óptico (avistamiento perezosos y monos) + playa',
-      tourId: 'manuel-antonio-national-park',
-      costoEstimadoUSD: 95,
-      cstCertificado: true
-    },
-    {
-      dia: 7,
-      region: 'Manuel Antonio a San José (Aeropuerto SJO)',
-      trasladoHoras: 3.0,
-      actividad: 'Tour de café y compras de artesanías locales en Valle Central antes del vuelo de regreso',
-      tourId: 'doka-coffee-experience',
-      costoEstimadoUSD: 40,
-      cstCertificado: true
-    }
-  ];
-
-  const planPorDia = fullItinerary.slice(0, Math.min(totalDays, 7));
-
+  const totalDays = Math.max(1, Math.min(14, Number(body.dias || body.days) || 7));
+  const traveler = String(body.tipoViajero || body.travelerType || 'viaje personalizado').trim();
+  const travelerPace = String(body.ritmo || body.pace || 'moderado').trim();
+  const budget = Math.max(0, Number(body.presupuestoUSD || body.budgetUSD) || 0);
+  const lang = String(body.idioma || body.language || 'es');
+  const requestedRegions = Array.isArray(body.regiones || body.regions) ? (body.regiones || body.regions).map(String).slice(0, 8) : [];
+  const query = String(body.intereses || body.interests || '').trim().toLowerCase();
+  const candidates = TOURS.filter((tour: any) => {
+    const text = [tour.title?.es, tour.title?.en, tour.region, tour.category, ...(tour.highlights?.es || [])].filter(Boolean).join(' ').toLowerCase();
+    const regionMatch = requestedRegions.length === 0 || requestedRegions.some((region: string) => String(tour.region || '').toLowerCase().includes(region.toLowerCase()));
+    return regionMatch && (!query || text.includes(query));
+  }).sort((a: any, b: any) => Number(a.priceUSD || 0) - Number(b.priceUSD || 0));
+  const chosen = (candidates.length ? candidates : TOURS).slice(0, Math.min(totalDays, 14));
+  if (!chosen.length) throw new Error('CATALOG_EMPTY: no hay experiencias disponibles en el catálogo autoritativo.');
+  const budgetPerPerson = budget > 0 ? budget / Math.max(1, Number(body.viajeros || body.travelers || 2)) : null;
+  const planPorDia = chosen.map((tour: any, index: number) => ({
+    dia: index + 1,
+    region: tour.region,
+    actividad: lang === 'en' ? (tour.title?.en || tour.title?.es) : (tour.title?.es || tour.title?.en),
+    tourId: tour.id,
+    costoEstimadoUSD: Number(tour.priceUSD || 0),
+    duracion: tour.durationLabel?.[lang] || tour.durationLabel?.es || tour.durationHours ? `${tour.durationHours}h` : null,
+    categoria: tour.category || null,
+    evidencia: 'CATALOG_AUTHORITY'
+  }));
+  const totalPerPerson = Number(planPorDia.reduce((sum: number, day: any) => sum + day.costoEstimadoUSD, 0).toFixed(2));
   const duration = Date.now() - start;
-  logAutomationExecution(
-    'SOLICITUD_ITINERARIO',
-    duration,
-    'success',
-    `Itinerario generado de ${totalDays} días para ${traveler} (Presupuesto: $${budget} USD)`
-  );
-
+  logAutomationExecution('SOLICITUD_ITINERARIO', duration, 'success', `Itinerario generado desde catálogo: ${planPorDia.length} experiencias.`);
   return {
     exito: true,
-    dias: totalDays,
+    dias: planPorDia.length,
+    diasSolicitados: totalDays,
     tipoViajero: traveler,
     ritmo: travelerPace,
-    presupuestoTotalUSD: budget,
+    presupuestoTotalUSD: budget || null,
+    presupuestoPorPersonaUSD: budgetPerPerson,
+    costoExperienciasSeleccionadasPorPersonaUSD: totalPerPerson,
+    dentroPresupuestoEstimado: budgetPerPerson === null ? null : totalPerPerson <= budgetPerPerson,
     planPorDia,
-    toursSugeridos: ['arenal-volcano-hot-springs', 'monteverde-canopy-extreme', 'manuel-antonio-national-park'],
+    toursSugeridos: planPorDia.map((day: any) => day.tourId),
     recomendacionesSostenibles: [
-      'Utilizar protector solar y repelente biodegradables',
-      'Evitar plásticos de un solo uso en Parques Nacionales (SINAC)',
-      'Respetar la fauna silvestre: cero contacto ni alimentación',
-      'Priorizar operadores certificados con CST (Sostenibilidad Turística)'
+      'Respetar la fauna silvestre y no tocar ni alimentar animales.',
+      'Reducir plásticos de un solo uso y seguir las reglas del área visitada.',
+      'Priorizar proveedores con certificaciones verificadas cuando estén disponibles.'
     ],
     motor: 'código_nativo_node',
-    mensaje: 'Itinerario personalizado generado con tiempos de traslado y excursiones verificadas.'
+    mensaje: 'Itinerario generado usando únicamente experiencias presentes en el catálogo autoritativo; disponibilidad y políticas deben verificarse antes de prometer una reserva.'
   };
 }
-
 // =========================================================================
 // 6. GESTOR DE SOPORTE & CONCIERGE URGENTE (process.env.SINPE_SUPPORT_PHONE || 'configured by operator')
 // =========================================================================
