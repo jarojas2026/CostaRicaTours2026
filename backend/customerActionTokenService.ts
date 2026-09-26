@@ -13,7 +13,7 @@ const SECRET = () =>
   process.env.OPERATOR_API_KEY ||
   '';
 
-type CustomerCapabilityAction = 'view_pdf' | 'approve' | 'reject';
+type CustomerCapabilityAction = 'view_pdf' | 'decide';
 
 type CustomerCapability = {
   v: 1;
