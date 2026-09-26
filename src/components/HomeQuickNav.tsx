@@ -25,7 +25,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
   const tico = language === 'es';
 
   // 3 Curated Must-Do Tours for fast discovery without clutter
-  const curatedTours = TOURS.filter(t => ['arenal-hot-springs', 'manuel-antonio-park', 'pacuare-rafting'].includes(t.id));
+  const curatedTours = TOURS.slice(0, 3);
 
   const navCards = [
     {
