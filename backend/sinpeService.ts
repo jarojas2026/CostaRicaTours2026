@@ -139,8 +139,14 @@ export async function executeSinpeVerification(
     throw new Error('ID de reserva es requerido para conciliar el pago SINPE Móvil.');
   }
 
+  // Un comprobante real y un monto verificable son requisitos mínimos.
+  // Nunca generamos referencias sintéticas para convertir una solicitud en un
+  // pago confirmado.
   if (!comprobante) {
-    comprobante = `SINPE-${Date.now().toString().slice(-6)}`;
+    throw new Error('Número de comprobante SINPE requerido. No se genera una referencia sintética.');
+  }
+  if (!Number.isFinite(amountCRC) || amountCRC <= 0) {
+    throw new Error('Monto SINPE en CRC requerido y debe ser mayor que cero para conciliar el pago.');
   }
 
   // 2. Buscar la reserva mediante consultas indexadas. Evitamos cargar
@@ -183,7 +189,7 @@ export async function executeSinpeVerification(
   }
 
   // 4. Verificación de monto (permite hasta 2% de margen por tipo de cambio bancario)
-  const isAmountValid = amountCRC === 0 || amountCRC >= expectedCRC * 0.98;
+  const isAmountValid = amountCRC > 0 && amountCRC >= expectedCRC * 0.98;
 
   if (!isAmountValid && amountCRC > 0) {
     logAutomationExecution(
