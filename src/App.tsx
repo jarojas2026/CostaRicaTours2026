@@ -521,6 +521,7 @@ export default function App() {
                   language={language}
                   onOpenTripBuilder={() => setIsCustomFunnelOpen(true)}
                   onOpenBookings={() => setIsBookingsModalOpen(true)}
+                  bookings={myBookings}
                 />
               </Suspense>
             } />
