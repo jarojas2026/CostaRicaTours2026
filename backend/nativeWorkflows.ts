@@ -9,6 +9,52 @@ const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || '';
 const APP_URL = process.env.APP_URL || '';
 const DIRECT_OPERATIONS_PROVIDER_ID = String(process.env.DIRECT_OPERATIONS_PROVIDER_ID || '').trim();
 
+const CUSTOMER_ACTION_SECRET = process.env.CUSTOMER_ACTION_SECRET || WEBHOOK_SECRET;
+const BOOKING_DOCUMENT_SECRET = process.env.BOOKING_DOCUMENT_SECRET || CUSTOMER_ACTION_SECRET;
+
+function createSignedCapability(payload: Record<string, string>, secret: string, ttlSeconds: number): string {
+  if (!secret) throw new Error('Secreto de capacidad no configurado en el servidor.');
+  const exp = Math.floor(Date.now() / 1000) + ttlSeconds;
+  const body = Buffer.from(JSON.stringify({ ...payload, exp }), 'utf8').toString('base64url');
+  const signature = crypto.createHmac('sha256', secret).update(body).digest('base64url');
+  return `${body}.${signature}`;
+}
+
+function verifySignedCapability(token: string, secret: string, expected: Record<string, string>): boolean {
+  if (!token || !secret) return false;
+  const [body, signature] = String(token).split('.');
+  if (!body || !signature) return false;
+  try {
+    const decoded = JSON.parse(Buffer.from(body, 'base64url').toString('utf8')) as Record<string, any>;
+    if (!Number.isFinite(Number(decoded.exp)) || Number(decoded.exp) < Math.floor(Date.now() / 1000)) return false;
+    for (const [key, value] of Object.entries(expected)) {
+      if (String(decoded[key] || '') !== String(value)) return false;
+    }
+    const expectedSignature = crypto.createHmac('sha256', secret).update(body).digest('base64url');
+    const a = Buffer.from(signature);
+    const b = Buffer.from(expectedSignature);
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
+
+export function createCustomerActionToken(bookingId: string, action: 'approve' | 'reject', ttlSeconds = 7 * 24 * 60 * 60): string {
+  return createSignedCapability({ bookingId, action }, CUSTOMER_ACTION_SECRET, ttlSeconds);
+}
+
+export function verifyCustomerActionToken(token: string, bookingId: string, action: 'approve' | 'reject'): boolean {
+  return verifySignedCapability(token, CUSTOMER_ACTION_SECRET, { bookingId, action });
+}
+
+export function createBookingDocumentToken(bookingId: string, ttlSeconds = 7 * 24 * 60 * 60): string {
+  return createSignedCapability({ bookingId, purpose: 'booking_document' }, BOOKING_DOCUMENT_SECRET, ttlSeconds);
+}
+
+export function verifyBookingDocumentToken(token: string, bookingId: string): boolean {
+  return verifySignedCapability(token, BOOKING_DOCUMENT_SECRET, { bookingId, purpose: 'booking_document' });
+}
+
 export function normalizeDate(dateVal: any): Date {
   if (!dateVal) return new Date(0);
   if (typeof dateVal.toDate === 'function') return dateVal.toDate();
@@ -872,9 +918,11 @@ export async function executeCustomerBookingConfirmation(
   const tourTime = String(booking.time || '08:00 AM');
   const pickupHotel = String(booking.pickupHotel || 'No especificado');
   const totalUSD = Number(booking.totalUSD || booking.totalAmount || 0);
-  const downloadPdfUrl = `${APP_URL}/api/bookings/${bookingId}/download-pdf`;
-  const viewVoucherUrl = `${APP_URL}/api/bookings/${bookingId}/pdf`;
-  const confirmationUrl = `${APP_URL}/api/bookings/${bookingId}/customer-confirm?action=approve`;
+  const documentToken = createBookingDocumentToken(bookingId);
+  const customerApproveToken = createCustomerActionToken(bookingId, 'approve');
+  const downloadPdfUrl = `${APP_URL}/api/bookings/${bookingId}/download-pdf?token=${encodeURIComponent(documentToken)}`;
+  const viewVoucherUrl = `${APP_URL}/api/bookings/${bookingId}/pdf?token=${encodeURIComponent(documentToken)}`;
+  const confirmationUrl = `${APP_URL}/api/bookings/${bookingId}/customer-confirm?action=approve&token=${encodeURIComponent(customerApproveToken)}`;
 
   let pdfBuffer: Buffer | null = null;
   try {
@@ -987,9 +1035,11 @@ export async function executeCustomerProformaConfirmation(payload: {
   const totalUSD = Number(payload.totalUSD) || 0;
   const specialRequests = payload.specialRequests || 'Ninguna registrada';
 
-  const downloadPdfUrl = `${APP_URL}/api/bookings/${bookingId}/download-pdf`;
-  const viewVoucherUrl = `${APP_URL}/api/bookings/${bookingId}/pdf`;
-  const approvalUrl = `${APP_URL}/api/bookings/${bookingId}/customer-confirm?action=approve`;
+  const documentToken = createBookingDocumentToken(bookingId);
+  const customerApproveToken = createCustomerActionToken(bookingId, 'approve');
+  const downloadPdfUrl = `${APP_URL}/api/bookings/${bookingId}/download-pdf?token=${encodeURIComponent(documentToken)}`;
+  const viewVoucherUrl = `${APP_URL}/api/bookings/${bookingId}/pdf?token=${encodeURIComponent(documentToken)}`;
+  const approvalUrl = `${APP_URL}/api/bookings/${bookingId}/customer-confirm?action=approve&token=${encodeURIComponent(customerApproveToken)}`;
   const whatsappMessageText = `🌿 Costa Rica Tours — Reserva #${bookingId}\\n\\nTour: ${tourName}\\nFecha: ${startDate} ${time}\\nPasajeros: ${adults + children}\\n\\nComprobante: ${downloadPdfUrl}`;
 
   let pdfBuffer: Buffer | null = null;
