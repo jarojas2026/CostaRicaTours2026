@@ -58,6 +58,17 @@ export function getUsdToCrcRateOptional(): number {
 let dbInstance: Firestore | null = null;
 const inMemoryBookings: Map<string, any> = new Map();
 const inMemorySlots: Map<string, number> = new Map();
+const MAX_IN_MEMORY_BOOKINGS = 2000;
+const MAX_IN_MEMORY_SLOTS = 2000;
+
+function setBoundedMemoryMap<T>(map: Map<string, T>, key: string, value: T, maxSize: number) {
+  map.set(key, value);
+  while (map.size > maxSize) {
+    const oldestKey = map.keys().next().value as string | undefined;
+    if (!oldestKey) break;
+    map.delete(oldestKey);
+  }
+}
 
 /**
  * Inicializa y devuelve la instancia de Firestore Admin
@@ -625,7 +636,7 @@ export async function createBooking(data: any) {
         capacidadMaxima: maxCapacity
       };
     }
-    inMemorySlots.set(slotKey, currentMemoryBooked + totalPassengers);
+    setBoundedMemoryMap(inMemorySlots, slotKey, currentMemoryBooked + totalPassengers, MAX_IN_MEMORY_SLOTS);
   }
 
   // Guardar copia normalizada en memoria para respuestas JSON del cliente
@@ -634,7 +645,7 @@ export async function createBooking(data: any) {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
-  inMemoryBookings.set(bookingId, responseBooking);
+  setBoundedMemoryMap(inMemoryBookings, bookingId, responseBooking, MAX_IN_MEMORY_BOOKINGS);
 
   // 4. Automatización de antifraude inmediata
   const isSuspicious = (responseBooking.totalUSD > 1500) || (responseBooking.customerEmail && /@(tempmail|mailinator|throwaway)\./i.test(responseBooking.customerEmail));
