@@ -79,9 +79,10 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
-      const parsed = JSON.parse(raw) as { trip?: SavedTrip; tasks?: Task[] };
+      const parsed = JSON.parse(raw) as { trip?: SavedTrip; tasks?: Task[]; spentUSD?: number };
       if (parsed.trip) setTrip({ ...initialTrip, ...parsed.trip });
       if (Array.isArray(parsed.tasks)) setTasks(parsed.tasks);
+      if (Number.isFinite(parsed.spentUSD) && parsed.spentUSD >= 0) setSpentUSD(parsed.spentUSD);
     } catch {
       // Local storage is an enhancement; the page remains usable without it.
     }
@@ -101,7 +102,7 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ trip, tasks }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ trip, tasks, spentUSD }));
       } catch {
         // Ignore storage quota/privacy restrictions.
       }
@@ -302,6 +303,18 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
               <div className="flex items-center gap-2 text-amber-300 text-xs font-black uppercase tracking-[0.18em]"><BellRing size={15}/>{es ? 'Atajos útiles' : 'Useful shortcuts'}</div>
               <div className="mt-4 space-y-2">
                 {quickActions.map(action => { const Icon = action.icon; return <button key={action.path} type="button" onClick={()=> action.path === '#bookings' ? onOpenBookings?.() : navigate(action.path)} className="w-full text-left flex items-center gap-3 p-3 rounded-2xl bg-black/10 hover:bg-white/[0.04] border border-white/5 transition-colors"><span className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center"><Icon size={17} className="text-amber-200"/></span><span className="flex-1 min-w-0"><span className="block text-sm font-black text-white">{action.title}</span><span className="block text-[11px] text-stone-500">{action.text}</span></span><ArrowRight size={14} className="text-stone-600"/></button>; })}
+              </div>
+            </section>
+
+            <section className="rounded-[2rem] border border-white/10 bg-[#071c14] p-5 sm:p-6">
+              <div className="flex items-center gap-2 text-cyan-300 text-xs font-black uppercase tracking-[0.18em]"><WalletCards size={15}/>{es ? 'Presupuesto' : 'Budget'}</div>
+              <div className="mt-2 text-2xl font-black text-white">{trip.budgetUSD > 0 ? `${spentUSD.toFixed(2)} / ${trip.budgetUSD.toFixed(2)}` : (es ? 'Añade un presupuesto en tu plan' : 'Add a budget to your plan')}</div>
+              {trip.budgetUSD > 0 && <div className="mt-4 h-2 rounded-full bg-black/30 overflow-hidden"><motion.div initial={{width:0}} animate={{width:`${budgetProgress}%`}} className="h-full bg-cyan-300 rounded-full"/></div>}
+              {trip.budgetUSD > 0 && <div className="mt-2 text-[11px] text-stone-500">{es ? `Disponible: ${remainingBudget.toFixed(2)} · ${budgetProgress}% usado` : `Remaining: ${remainingBudget.toFixed(2)} · ${budgetProgress}% used`}</div>}
+              <div className="mt-4 grid grid-cols-[1fr_90px_auto] gap-2">
+                <input value={expenseDraft} onChange={e=>setExpenseDraft(e.target.value)} className="min-w-0 rounded-xl bg-black/20 border border-white/10 px-3 py-2 text-xs text-white outline-none focus:border-cyan-300" placeholder={es ? 'Gasto' : 'Expense'} />
+                <input inputMode="decimal" value={expenseAmountDraft} onChange={e=>setExpenseAmountDraft(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addExpense()} className="w-full rounded-xl bg-black/20 border border-white/10 px-3 py-2 text-xs text-white outline-none focus:border-cyan-300" placeholder="USD" />
+                <button type="button" onClick={addExpense} className="rounded-xl bg-cyan-300 text-stone-950 px-3 font-black text-xs">+</button>
               </div>
             </section>
 
