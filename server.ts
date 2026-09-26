@@ -126,6 +126,7 @@ import { processEmailOperationsOnce, getEmailOperationsSnapshot } from './backen
 import { runReservationLifecycleSweep } from './backend/reservationLifecycleOrchestrator';
 import { withDistributedAutomationLock } from './backend/cronEngine';
 import { createInFlightLimiter } from './backend/admissionControl';
+import { verifyCustomerActionToken } from './backend/customerActionTokenService';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -972,7 +973,11 @@ app.patch('/api/bookings/:id', requireOperator, async (req, res) => {
 // Generar e imprimir Vale Oficial / Itinerario Web de Reserva
 app.get('/api/bookings/:id/pdf', async (req, res) => {
   try {
-    const bookingId = req.params.id;
+    const bookingId = String(req.params.id || '');
+    const token = String(req.query.token || '');
+    if (!verifyCustomerActionToken(token, bookingId, 'view_pdf')) {
+      return res.status(401).json({ error: 'Enlace del comprobante inválido o expirado.' });
+    }
     const allBookings = await getAllBookings();
     const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
 
@@ -987,7 +992,11 @@ app.get('/api/bookings/:id/pdf', async (req, res) => {
 // Descarga directa binaria del Vale Oficial e Itinerario en PDF
 app.get('/api/bookings/:id/download-pdf', async (req, res) => {
   try {
-    const bookingId = req.params.id;
+    const bookingId = String(req.params.id || '');
+    const token = String(req.query.token || '');
+    if (!verifyCustomerActionToken(token, bookingId, 'view_pdf')) {
+      return res.status(401).json({ error: 'Enlace del comprobante inválido o expirado.' });
+    }
     const allBookings = await getAllBookings();
     const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
     if (!booking) return res.status(404).json({ error: 'Reserva no encontrada' });
@@ -1003,7 +1012,7 @@ app.get('/api/bookings/:id/download-pdf', async (req, res) => {
 });
 
 // Despacho de Proforma e Itinerario con Notificación Email (PDF Adjunto) y WhatsApp
-app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confirmation'], async (req, res) => {
+app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confirmation'], requireOperator, async (req, res) => {
   try {
     const result = await executeCustomerProformaConfirmation(req.body);
     res.json(result);
@@ -1016,8 +1025,13 @@ app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confi
 // Aprobación de Itinerario por parte del Cliente (Confirmación de Proforma) -> Despacho a Proveedores
 app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
   try {
-    const bookingId = String(req.params.id);
-    const action = req.query.action === 'reject' ? 'rechazado' : 'aprobado';
+    const bookingId = String(req.params.id || '');
+    const rawAction = req.query.action === 'reject' ? 'reject' : 'approve';
+    const token = String(req.query.token || '');
+    if (!verifyCustomerActionToken(token, bookingId, 'decide')) {
+      return res.status(401).send('Enlace de confirmación inválido o expirado.');
+    }
+    const action = rawAction === 'reject' ? 'rechazado' : 'aprobado';
     const allBookings = await getAllBookings();
     const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
 
