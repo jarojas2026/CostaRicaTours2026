@@ -980,7 +980,7 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
     desgloseMonetarioUSD: { subtotalUSD, tarifaIVA: tasaIVA, impuestoIVAUSD: ivaUSD, totalFacturadoUSD: totalUSD },
     desgloseMonetarioCRC: { subtotalCRC: Math.round(subtotalUSD * configuredRate), impuestoIVACRC: Math.round(ivaUSD * configuredRate), totalFacturadoCRC: totalCRC },
     hacienda: { estado: 'PENDIENTE_ENVIO_Y_ACUSE', claveNumerica50Digitos: null, acuseHaciendaHash: null },
-    liquidacionBancariaOperador: { proveedorId, nombreProveedor: provider.name, montoBrutoUSD: totalUSD, comisionPlataformaUSD: Number((totalUSD * provider.commissionRate).toFixed(2)), montoNetoLiquidadoUSD: Number((totalUSD * (1 - provider.commissionRate)).toFixed(2)), estadoLiquidacion: 'NO_EJECUTADA_HASTA_ACUSE_FISCAL_Y_PAGO_REAL' },
+    liquidacionBancariaOperador: { proveedorId: providerId, nombreProveedor: provider.name, montoBrutoUSD: totalUSD, comisionPlataformaUSD: Number((totalUSD * provider.commissionRate).toFixed(2)), montoNetoLiquidadoUSD: Number((totalUSD * (1 - provider.commissionRate)).toFixed(2)), estadoLiquidacion: 'NO_EJECUTADA_HASTA_ACUSE_FISCAL_Y_PAGO_REAL' },
     archivosGenerados: { xmlFirmadoUrl: null, pdfLegalUrl: null },
     timestamp: new Date().toISOString()
   };
