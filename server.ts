@@ -1134,6 +1134,31 @@ app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
 // 🚨 SISTEMA PROPIO DE ALERTAS ADMINISTRATIVAS
 // ==========================================
 
+app.get('/api/alerts', requireAdmin, async (req, res) => {
+  try {
+    const resolvedParam = typeof req.query.resolved === 'string' ? req.query.resolved : undefined;
+    const severity = typeof req.query.severity === 'string' ? req.query.severity : undefined;
+    const resolved = resolvedParam === undefined ? undefined : resolvedParam === 'true';
+    const alerts = await getAlerts({ resolved, severity });
+    res.json({ success: true, alerts });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'No se pudieron cargar las alertas.' });
+  }
+});
+
+app.patch('/api/alerts/:id', requireAdmin, async (req, res) => {
+  try {
+    const result = await updateAlert(String(req.params.id || ''), {
+      read: req.body?.read,
+      resolved: req.body?.resolved
+    });
+    if (!result.success) return res.status(400).json(result);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'No se pudo actualizar la alerta.' });
+  }
+});
+
 app.post('/api/alerts', requireAdmin, async (req, res) => {
   const { source, severity, title, message, bookingId, providerId, metadata } = req.body || {};
   if (!source || !severity || !title || !message) {
