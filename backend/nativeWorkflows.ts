@@ -1077,9 +1077,10 @@ export async function executeAutomatedProviderPayouts(): Promise<{
         await recordEscalation({
           type: 'PAYOUT_MISSING_PROVIDER',
           bookingId,
+          reason: 'La reserva no tiene providerId operativo.',
           details: { reason: 'La reserva no tiene providerId operativo.' }
         }).catch(() => {});
-        results.totalSkipped = (results.totalSkipped || 0) + 1;
+        results.escalationsCount += 1;
         continue;
       }
 
@@ -1089,6 +1090,7 @@ export async function executeAutomatedProviderPayouts(): Promise<{
           type: 'PAYOUT_PROVIDER_NOT_READY',
           bookingId,
           providerId,
+          reason: 'Proveedor ausente, inactivo o no verificado.',
           details: { reason: 'Proveedor ausente, inactivo o no verificado.' }
         }).catch(() => {});
         results.totalSkipped = (results.totalSkipped || 0) + 1;
