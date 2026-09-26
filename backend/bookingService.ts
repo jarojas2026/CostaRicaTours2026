@@ -500,11 +500,15 @@ export async function createBooking(data: any) {
     children: numChildren
   });
 
-  const calculatedUSD = Number(
-    data.totalUSD ||
-    (data.currency === 'CRC' ? Number(data.totalAmount || 0) / getUsdToCrcRate() : data.totalAmount) ||
-    0
-  );
+  const catalogTotalUSD = tourInfo && typeof tourInfo.priceUSD === 'number'
+    ? Number((tourInfo.priceUSD * numAdults + tourInfo.priceUSD * 0.7 * numChildren).toFixed(2))
+    : null;
+  const calculatedUSD = catalogTotalUSD !== null
+    ? catalogTotalUSD
+    : Number(data.totalUSD || (data.currency === 'CRC' ? Number(data.totalAmount || 0) / getUsdToCrcRate() : data.totalAmount) || 0);
+  if (!Number.isFinite(calculatedUSD) || calculatedUSD <= 0) {
+    throw new Error('PRICE_REQUIRED: no existe un total autoritativo válido para esta reserva.');
+  }
 
   const customerObj = data.customer || {
     name: data.customerName || 'Cliente',
@@ -627,7 +631,16 @@ export async function createBooking(data: any) {
       };
     }
   } else {
-    // Modo de reserva en memoria segura (desarrollo/sin Firebase Admin credentials)
+    // En producción, una reserva no puede confirmarse/persistirse sólo en memoria:
+    // Firestore es la fuente transaccional de verdad para cupos y reservas.
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        conflict: true,
+        error: 'persistence_unavailable',
+        message: 'El sistema de reservas no tiene acceso a Firestore; no se aceptó la reserva para evitar pérdida o sobreventa.'
+      };
+    }
+    // Modo de reserva en memoria sólo para desarrollo/sin credenciales de Firebase Admin.
     const currentMemoryBooked = inMemorySlots.get(slotKey) || 0;
     if (currentMemoryBooked + totalPassengers > maxCapacity) {
       return {
