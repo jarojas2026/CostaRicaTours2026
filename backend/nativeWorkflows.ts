@@ -1093,7 +1093,7 @@ export async function executeAutomatedProviderPayouts(): Promise<{
           reason: 'Proveedor ausente, inactivo o no verificado.',
           details: { reason: 'Proveedor ausente, inactivo o no verificado.' }
         }).catch(() => {});
-        results.totalSkipped = (results.totalSkipped || 0) + 1;
+        results.escalationsCount += 1;
         continue;
       }
 
