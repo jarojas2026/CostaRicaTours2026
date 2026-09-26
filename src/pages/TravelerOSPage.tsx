@@ -110,7 +110,7 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
       }
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [trip, tasks, spentUSD]);
+  }, [trip, tasks, spentUSD, expenses]);
 
   const completed = tasks.filter(task => task.done).length;
   const upcomingBookings = useMemo(() => bookings
@@ -186,7 +186,7 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
 
   const saveNow = () => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ trip, tasks, spentUSD }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ trip, tasks, spentUSD, expenses }));
       setSaved(true);
       window.setTimeout(() => setSaved(false), 1800);
     } catch {
