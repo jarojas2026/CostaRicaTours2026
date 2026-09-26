@@ -544,6 +544,11 @@ export async function createBooking(data: any) {
             throw new Error('IDEMPOTENT_REPLAY');
           }
         }
+        const bookingDoc = await transaction.get(bookingRef);
+        if (bookingDoc.exists) {
+          throw new Error('BOOKING_ID_IN_USE');
+        }
+
         const slotDoc = await transaction.get(slotRef);
         const currentBooked = slotDoc.exists ? (Number(slotDoc.data()?.bookedSeats) || 0) : 0;
 
@@ -590,6 +595,9 @@ export async function createBooking(data: any) {
       }
       if (err.message === 'IDEMPOTENCY_CONFLICT') {
         return { conflict: true, error: 'idempotency_conflict', message: 'La misma Idempotency-Key fue usada con datos diferentes.' };
+      }
+      if (err.message === 'BOOKING_ID_IN_USE') {
+        return { conflict: true, error: 'booking_id_in_use', message: 'El identificador de reserva ya existe. Genere una nueva solicitud.' };
       }
       if (err.message && err.message.startsWith('NO_AVAILABILITY:')) {
         return {
