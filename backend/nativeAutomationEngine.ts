@@ -5,11 +5,11 @@
  * ejecutando el 100% de la lógica de negocio, webhooks, orquestación de agentes,
  * confirmación de reservas y conciliación directamente en Node.js y Firestore.
  * 
- * Ventajas:
- * - 0ms de latencia de red externa hacia servidores de terceros.
- * - Cero costo de suscripción mensual ($0).
- * - Cero caídas por falta de disponibilidad de plataformas no-code.
- * - Respuesta instantánea para el turista desde el primer clic.
+ * Principios:
+ * - La lógica propia se ejecuta dentro del servidor y Firestore.
+ * - No depende de una plataforma no-code para orquestación.
+ * - Las integraciones externas siguen siendo verificadas antes de cambiar estados reales.
+ * - El sistema falla de forma explícita cuando una fuente externa crítica no está disponible.
  * =========================================================================
  */
 
@@ -24,7 +24,8 @@ import {
   getAllBookings,
   verifyPaymentServerSide,
   getUsdToCrcRate,
-  getOperatorById
+  getOperatorById,
+  getFirestoreDb
 } from './bookingService';
 import { 
   processChatInquiry, 
@@ -1141,7 +1142,7 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
   const provider = await getOperatorById(providerId);
   if (!provider.active || provider.verified !== true) throw new Error('PROVIDER_NOT_OPERATIONAL: proveedor no verificado.');
   const totalCRC = Math.round(totalUSD * configuredRate);
-  const tasaIVA = Number(venta.tasaIVA ?? process.env.VAT_RATE_DEFAULT ?? 0.04);
+  const tasaIVA = Number(venta.tasaIVA ?? process.env.VAT_RATE_DEFAULT);
   if (!Number.isFinite(tasaIVA) || tasaIVA < 0 || tasaIVA > 1) throw new Error('TASA_IVA_INVALIDA.');
   const subtotalUSD = Number((totalUSD / (1 + tasaIVA)).toFixed(2));
   const ivaUSD = Number((totalUSD - subtotalUSD).toFixed(2));
@@ -1165,7 +1166,7 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
     desgloseMonetarioUSD: { subtotalUSD, tarifaIVA: tasaIVA, impuestoIVAUSD: ivaUSD, totalFacturadoUSD: totalUSD },
     desgloseMonetarioCRC: { subtotalCRC: Math.round(subtotalUSD * configuredRate), impuestoIVACRC: Math.round(ivaUSD * configuredRate), totalFacturadoCRC: totalCRC },
     hacienda: { estado: 'PENDIENTE_ENVIO_Y_ACUSE', claveNumerica50Digitos: null, acuseHaciendaHash: null },
-    liquidacionBancariaOperador: { proveedorId, nombreProveedor: provider.name, montoBrutoUSD: totalUSD, comisionPlataforma15USD: Number((totalUSD * provider.commissionRate).toFixed(2)), montoNetoLiquidadoUSD: Number((totalUSD * (1 - provider.commissionRate)).toFixed(2)), estadoLiquidacion: 'NO_EJECUTADA_HASTA_ACUSE_FISCAL_Y_PAGO_REAL' },
+    liquidacionBancariaOperador: { proveedorId, nombreProveedor: provider.name, montoBrutoUSD: totalUSD, comisionPlataformaUSD: Number((totalUSD * provider.commissionRate).toFixed(2)), montoNetoLiquidadoUSD: Number((totalUSD * (1 - provider.commissionRate)).toFixed(2)), estadoLiquidacion: 'NO_EJECUTADA_HASTA_ACUSE_FISCAL_Y_PAGO_REAL' },
     archivosGenerados: { xmlFirmadoUrl: null, pdfLegalUrl: null },
     timestamp: new Date().toISOString()
   };
