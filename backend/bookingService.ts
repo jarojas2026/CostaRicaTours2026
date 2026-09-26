@@ -805,10 +805,11 @@ export async function getPendingReservationLifecycleBookings(limit = 100): Promi
   if (!col) return [];
 
   try {
+    // Query by recency only to avoid a composite-index dependency. The bounded
+    // result is filtered locally by lifecycle state and booking domain.
     const snapshot = await col
-      .where('status', 'in', ['pendiente_pago', 'payment_pending', 'pending', 'paid', 'provider_pending'])
       .orderBy('updatedAt', 'desc')
-      .limit(safeLimit)
+      .limit(Math.min(500, safeLimit * 3))
       .get();
     const results: any[] = [];
     snapshot.forEach((doc) => {
@@ -821,7 +822,11 @@ export async function getPendingReservationLifecycleBookings(limit = 100): Promi
         createdAtTimestamp: data.createdAt
       });
     });
-    const lifecycleResults = results.filter((booking) => booking.bookingDomain !== 'service');
+    const lifecycleStates = new Set(['pendiente_pago', 'payment_pending', 'pending', 'paid', 'provider_pending']);
+    const lifecycleResults = results
+      .filter((booking) => booking.bookingDomain !== 'service')
+      .filter((booking) => lifecycleStates.has(String(booking.status || '').toLowerCase()))
+      .slice(0, safeLimit);
     lifecycleResults.forEach((booking) => inMemoryBookings.set(booking.bookingId || booking.id, booking));
     return lifecycleResults;
   } catch (error) {
