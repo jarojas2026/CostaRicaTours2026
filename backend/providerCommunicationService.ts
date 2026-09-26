@@ -89,7 +89,14 @@ async function resolveOperationalProvider(providerId: string, tourId: string): P
       averageResponseMinutes: Number(data.averageResponseMinutes || legacy?.averageResponseMinutes || 0),
       acceptanceRate: Number(data.acceptanceRate || legacy?.acceptanceRate || 0),
       status: (data.status === 'busy' ? 'busy' : data.status === 'offline' ? 'offline' : 'active') as TourProvider['status'],
-      payoutAccount: data.payoutAccount || legacy?.payoutAccount || { type: 'iban_dolares', number: '', bank: '', holderName: '' }
+      payoutAccount: data.payoutAccount && typeof data.payoutAccount === 'object'
+        ? {
+            type: data.payoutAccount.type,
+            number: String(data.payoutAccount.number || ''),
+            bank: String(data.payoutAccount.bank || ''),
+            holderName: String(data.payoutAccount.holderName || '')
+          }
+        : { type: 'iban_dolares', number: '', bank: '', holderName: '' }
     };
   }
   return null;
@@ -151,7 +158,7 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     status: 'active',
     payoutAccount: {
       type: 'sinpe_movil',
-      number: '87959148',
+      number: '',
       bank: '',
       holderName: ''
     }
@@ -176,7 +183,7 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     status: 'active',
     payoutAccount: {
       type: 'iban_dolares',
-      number: 'CR05015100010026455020',
+      number: '',
       bank: '',
       holderName: ''
     }
@@ -201,7 +208,7 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     status: 'active',
     payoutAccount: {
       type: 'sinpe_movil',
-      number: '84129900',
+      number: '',
       bank: '',
       holderName: ''
     }
@@ -226,7 +233,7 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     status: 'active',
     payoutAccount: {
       type: 'sinpe_movil',
-      number: '83014455',
+      number: '',
       bank: '',
       holderName: ''
     }
@@ -251,7 +258,7 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     status: 'active',
     payoutAccount: {
       type: 'iban_colones',
-      number: 'CR12015202001027098012',
+      number: '',
       bank: '',
       holderName: ''
     }
