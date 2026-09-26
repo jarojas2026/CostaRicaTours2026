@@ -645,76 +645,42 @@ export async function executeEvaluarAntifraude(body: any) {
 // =========================================================================
 export async function executeAIOpsAction(body: any) {
   const start = Date.now();
-  const opAction = body.action || body.accion || 'confirmar_recogida';
-  const reservationId = body.idReserva || body.bookingId || 'CRT-2026-8819';
-  const guideName = body.operador || body.operatorName || 'Guía Juan Carlos Rodríguez';
-  const pickupTime = body.horaEstimada || body.estimatedTime || '07:30 AM';
-
-  await updateBookingStatus(reservationId, {
-    estadoOperativo: opAction,
-    operadorAsignado: guideName,
-    horaRecogidaEstimada: pickupTime,
-    notasOperador: body.notas || body.notes || 'Confirmado sin novedades'
-  }).catch(() => {});
-
-  const aiNotification = `✅ *RECOGIDA CONFIRMADA EN SISTEMA*\n━━━━━━━━━━━━━━━━━━━━━━━━\n📍 *Reserva:* \`${reservationId}\`\n👤 *Guía Asignado:* ${guideName}\n⏰ *Hora Estimada:* ${pickupTime}\n🚐 *Unidad Móvil:* Toyota HiAce 2024 (Placa: SJ-8924)\n🌱 *Estatus:* Pasajeros contactados y listos en lobby.`;
-
+  const opAction = String(body.action || body.accion || '').trim();
+  const reservationId = String(body.idReserva || body.bookingId || '').trim();
+  if (!opAction || !reservationId) throw new Error('OPERATION_INPUT_REQUIRED: bookingId y action son obligatorios.');
+  const guideName = String(body.operador || body.operatorName || '').trim();
+  const pickupTime = String(body.horaEstimada || body.estimatedTime || '').trim();
+  const notes = String(body.notas || body.notes || '').trim().slice(0, 2000);
+  const updatePayload: Record<string, any> = { estadoOperativo: opAction, updatedAt: new Date().toISOString() };
+  if (guideName) updatePayload.operadorAsignado = guideName;
+  if (pickupTime) updatePayload.horaRecogidaEstimada = pickupTime;
+  if (notes) updatePayload.notasOperador = notes;
+  const updated = await updateBookingStatus(reservationId, updatePayload);
+  if (!updated.success) throw new Error(updated.error || 'No se pudo actualizar la reserva.');
   const duration = Date.now() - start;
-  logAutomationExecution(
-    'ACCION_PANEL_AI',
-    duration,
-    'success',
-    `Acción operativa '${opAction}' ejecutada por ${guideName} para ${reservationId}`
-  );
-
-  return {
-    exito: true,
-    bookingId: reservationId,
-    accionEjecutada: opAction,
-    operador: guideName,
-    nuevoEstado: 'recogida_confirmada_por_guia',
-    aiNotification,
-    timestamp: new Date().toISOString(),
-    motor: 'código_nativo_node',
-    mensaje: 'Acción operativa ejecutada y estado actualizado en Firestore nativamente.'
-  };
+  logAutomationExecution('ACCION_PANEL_AI', duration, 'success', `Acción operativa '${opAction}' ejecutada para ${reservationId}`);
+  return { exito: true, bookingId: reservationId, accionEjecutada: opAction, operador: guideName || null, horaRecogidaEstimada: pickupTime || null, nuevoEstado: opAction, logOnly: true, motor: 'código_nativo_node', mensaje: 'Acción aplicada con los datos proporcionados; no se inventó guía, vehículo ni contacto con pasajeros.' };
 }
-
 // =========================================================================
 // 10. SINCRONIZACIÓN CON GOOGLE CALENDAR
 // =========================================================================
 export async function executeSyncCalendar(body: any) {
   const start = Date.now();
-  const reservationId = body.bookingId || body.idReserva || 'CRT-2026-8819';
-  const tour = body.tourName || body.nombreTour || 'Volcán Arenal & Termales Tabacón';
-  const tourDate = body.date || body.fecha || '2026-11-20';
-  const tourTime = body.time || body.hora || '07:30 AM';
-  const hotel = body.pickupHotel || body.hotelRecogida || 'Lobby Hotel Los Lagos, La Fortuna';
-  const client = body.clientName || 'Carlos Montero';
-
+  const reservationId = String(body.bookingId || body.idReserva || '').trim();
+  const tour = String(body.tourName || body.nombreTour || '').trim();
+  const tourDate = String(body.date || body.fecha || '').trim();
+  const tourTime = String(body.time || body.hora || '').trim();
+  const hotel = String(body.pickupHotel || body.hotelRecogida || '').trim();
+  const client = String(body.clientName || '').trim();
+  if (!reservationId || !tour || !tourDate) throw new Error('CALENDAR_INPUT_REQUIRED: bookingId, tourName y date son obligatorios.');
   const eventId = `cal_cr_${crypto.randomUUID()}`;
-  const eventLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-    `🇨🇷 Tour: ${tour} (${client})`
-  )}&dates=${tourDate.replace(/-/g, '')}T073000Z/${tourDate.replace(/-/g, '')}T160000Z&details=${encodeURIComponent(
-    `Reserva ${reservationId} - Recogida en: ${hotel}`
-  )}&location=${encodeURIComponent(hotel)}`;
-
+  const startDate = tourDate.replace(/-/g, '');
+  const safeTime = (tourTime.match(/\d{1,2}:\d{2}/)?.[0] || '08:00').replace(':', '');
+  const eventLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`🇨🇷 Tour: ${tour}${client ? ` (${client})` : ''}`)}&dates=${startDate}T${safeTime}00Z&details=${encodeURIComponent(`Reserva ${reservationId}`)}&location=${encodeURIComponent(hotel)}`;
   const duration = Date.now() - start;
-  logAutomationExecution('SYNC_CALENDAR', duration, 'success', `Evento de calendario generado para reserva ${reservationId}`);
-
-  return {
-    exito: true,
-    calendarEventId: eventId,
-    titulo: `🇨🇷 Tour: ${tour} (${client})`,
-    fechaInicio: `${tourDate}T${tourTime.includes('AM') ? '07:30:00' : '13:30:00'}-06:00`,
-    ubicacion: hotel,
-    htmlLink: eventLink,
-    notificacionesProgramadas: ['24h_antes_alerta_guia', '2h_antes_notificacion_chofer_waze'],
-    motor: 'código_nativo_node',
-    mensaje: 'Evento sincronizado exitosamente en Google Calendar de guías y operadores locales.'
-  };
+  logAutomationExecution('SYNC_CALENDAR', duration, 'warning', `Plantilla de calendario preparada para ${reservationId}; no se afirmó sincronización real.`);
+  return { exito: true, calendarEventId: eventId, sincronizacionReal: false, titulo: `🇨🇷 Tour: ${tour}${client ? ` (${client})` : ''}`, fechaInicio: tourDate, ubicacion: hotel || null, htmlLink: eventLink, notificacionesProgramadas: [], motor: 'código_nativo_node', mensaje: 'Se generó una plantilla de evento; la sincronización real requiere una cuenta/API de Google Calendar configurada.' };
 }
-
 // =========================================================================
 // 11. ENCUESTA POST-TOUR NPS & REPUTATION BOOSTER
 // =========================================================================
