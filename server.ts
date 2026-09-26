@@ -2289,7 +2289,7 @@ app.post('/api/agents/log_exception', requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/api/gemini/concierge', async (req, res) => {
+app.post('/api/gemini/concierge', chatLimiter, async (req, res) => {
   try {
     const { message, language, history, agentId, context, engine, sessionId } = req.body;
     const userMsg = message || '';
@@ -2350,7 +2350,7 @@ app.post('/api/gemini/concierge', async (req, res) => {
 });
 
 // Endpoint exclusivo del Counter Agent (Agente de Mostrador y Reservas)
-app.post('/api/agent/counter', async (req, res) => {
+app.post('/api/agent/counter', counterLimiter, async (req, res) => {
   try {
     const { message, language, history, context } = req.body;
     const userMsg = message || '';
@@ -2449,7 +2449,7 @@ app.get('/api/agent/tools/functions', async (req, res) => {
 });
 
 // Endpoints de Machine Learning y Recomendación Inteligente (motor nativo)
-app.post('/api/ml/recommend', async (req, res) => {
+app.post('/api/ml/recommend', aiAdmission.middleware, async (req, res) => {
   try {
     const { mlRecommendTours } = await import('./backend/nativeMlEngine');
     const profile = req.body || {};
@@ -2460,7 +2460,7 @@ app.post('/api/ml/recommend', async (req, res) => {
   }
 });
 
-app.post('/api/ml/predict-price', async (req, res) => {
+app.post('/api/ml/predict-price', aiAdmission.middleware, async (req, res) => {
   try {
     const { mlPredictDynamicPrice } = await import('./backend/nativeMlEngine');
     const { basePrice, dateString, seats } = req.body;
@@ -2471,7 +2471,7 @@ app.post('/api/ml/predict-price', async (req, res) => {
   }
 });
 
-app.post('/api/ml/itinerary', async (req, res) => {
+app.post('/api/ml/itinerary', journeyLimiter, async (req, res) => {
   try {
     const { mlGenerateItinerary } = await import('./backend/nativeMlEngine');
     const { days, style, region } = req.body;
@@ -2483,7 +2483,7 @@ app.post('/api/ml/itinerary', async (req, res) => {
 });
 
 
-app.post('/api/gemini/booking/urgent', requireAutomationCredential, async (req, res) => {
+app.post('/api/gemini/booking/urgent', chatLimiter, requireAutomationCredential, async (req, res) => {
   try {
     const { message, language, history, agentId } = req.body;
     const lang = (language || 'es') as 'es' | 'en';
@@ -2524,7 +2524,7 @@ app.get('/api/claude/status', (req, res) => {
 });
 
 // 2. Chat conversacional con Claude 3.5 Sonnet
-app.post('/api/claude/chat', async (req, res) => {
+app.post('/api/claude/chat', chatLimiter, async (req, res) => {
   try {
     const { message, language, history, temperature } = req.body;
     if (!message || !message.trim()) {
@@ -2554,7 +2554,7 @@ app.post('/api/claude/chat', async (req, res) => {
 });
 
 // 3. Generador experto de itinerarios personalizados con Claude y Gemini (Resilience Fallback)
-app.post('/api/claude/itinerary', async (req, res) => {
+app.post('/api/claude/itinerary', journeyLimiter, async (req, res) => {
   try {
     const { days, travelers, style, regions, budget, language, specialRequests } = req.body;
     const itinerary = await generateClaudeItinerary({
@@ -2597,7 +2597,7 @@ app.post('/api/claude/itinerary', async (req, res) => {
 });
 
 // Endpoint dedicado para generador de itinerarios Gemini
-app.post('/api/gemini/itinerary', async (req, res) => {
+app.post('/api/gemini/itinerary', journeyLimiter, async (req, res) => {
   try {
     const itinerary = await generateGeminiItinerary({
       days: Number(req.body.days) || 5,
@@ -2616,7 +2616,7 @@ app.post('/api/gemini/itinerary', async (req, res) => {
 });
 
 // Endpoint para reservar un itinerario completo personalizado
-app.post('/api/itinerary/book', async (req, res) => {
+app.post('/api/itinerary/book', bookingAdmission.middleware, async (req, res) => {
   try {
     const {
       itineraryTitle,
