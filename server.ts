@@ -795,7 +795,7 @@ app.post('/api/paypal/create-order', paymentLimiter, bookingAdmission.middleware
  * 3. Método: POST
  * 4. Auth: Headers: { "X-Operator-Key": "[TuClaveSecreta]" }
  */
-app.post('/api/internal/sweep-sla', async (req, res) => {
+app.post('/api/internal/sweep-sla', requireAutomationCredential, async (req, res) => {
   const operatorKey = req.headers['x-operator-key'];
   const secret = process.env.OPERATOR_API_KEY;
 
@@ -817,7 +817,7 @@ app.post('/api/internal/sweep-sla', async (req, res) => {
 // 📅 INTEGRACIÓN GOOGLE CALENDAR
 // ==========================================
 
-app.post('/api/calendar/sync', async (req, res) => {
+app.post('/api/calendar/sync', requireSignedInUser, async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
