@@ -341,7 +341,7 @@ export async function executeProviderRealtimeCoordination(
 
   const booking = payload.booking || payload;
   const bookingId = booking.bookingId || booking.id || `CRT-${Date.now().toString().slice(-6)}`;
-  const providerId = booking.providerId || booking.providerInfo?.id || 'alsama-tours-cr';
+  const providerId = String(booking.providerId || booking.providerInfo?.id || '').trim();
   const tourName = booking.tourName || 'Tour Oficial Costa Rica';
   const tourDate = booking.date || 'Fecha por confirmar';
   const tourTime = booking.time || '08:00 AM';
@@ -1069,12 +1069,33 @@ export async function executeAutomatedProviderPayouts(): Promise<{
     for (const booking of eligibleBookings) {
       results.totalProcessed += 1;
       const bookingId = booking.bookingId || booking.id;
-      const providerId = booking.providerId || booking.providerInfo?.id || 'alsama-tours-cr';
+      const providerId = String(booking.providerId || booking.providerInfo?.id || '').trim();
       const totalUSD = Number(booking.totalUSD || booking.totalAmount || 100);
 
-      // Buscar datos y correo PayPal del proveedor
+      // Solo se liquida a un proveedor real, activo y verificado.
+      if (!providerId) {
+        await recordEscalation({
+          type: 'PAYOUT_MISSING_PROVIDER',
+          bookingId,
+          details: { reason: 'La reserva no tiene providerId operativo.' }
+        }).catch(() => {});
+        results.totalSkipped = (results.totalSkipped || 0) + 1;
+        continue;
+      }
+
       const provider = await getProviderFromDb(providerId);
-      const rawPaypal = provider?.paypalEmail || booking.providerInfo?.paypalEmail || (providerId === 'alsama-tours-cr' ? 'operaciones@alsamatourscr.com' : null);
+      if (!provider || provider.verified !== true || provider.active !== true) {
+        await recordEscalation({
+          type: 'PAYOUT_PROVIDER_NOT_READY',
+          bookingId,
+          providerId,
+          details: { reason: 'Proveedor ausente, inactivo o no verificado.' }
+        }).catch(() => {});
+        results.totalSkipped = (results.totalSkipped || 0) + 1;
+        continue;
+      }
+
+      const rawPaypal = provider?.paypalEmail || booking.providerInfo?.paypalEmail || null;
       const paypalEmail = getEffectiveProviderEmail(rawPaypal);
       const commissionRate = provider?.commissionRate ?? 0.15; // 15% comisión plataforma
       const payoutAmountUSD = Math.max(1, Number((totalUSD * (1 - commissionRate)).toFixed(2)));
