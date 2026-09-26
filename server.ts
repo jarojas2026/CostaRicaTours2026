@@ -1625,7 +1625,7 @@ app.post(['/api/native/autonomous-booking-flow', '/api/native/flujo-autonomo'], 
 });
 
 // 1. Asistente Inteligente & Chat Oficial (Gemini 2.5 Flash + Base Oficial)
-app.post(['/webhook/chat-consulta', '/api/chat', '/api/chat-consulta'], async (req, res) => {
+app.post(['/webhook/chat-consulta', '/api/chat', '/api/chat-consulta'], chatLimiter, async (req, res) => {
   try {
     const result = await executeChatInquiry(req.body);
     res.json(result);
@@ -1658,7 +1658,7 @@ app.post('/api/pagos/solicitud', async (req, res) => {
 });
 
 // 4. Confirmación de Reserva, Voucher Digital QR & Notificaciones Multicanal
-app.post('/api/reservas/confirmar', async (req, res) => {
+app.post('/api/reservas/confirmar', requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeConfirmacionReserva(req.body);
     res.json(result);
@@ -1683,7 +1683,7 @@ app.post('/webhook/evento-analitica', async (req, res) => {
 });
 
 // 7. Soporte al Cliente, Escalación Multicanal & Concierge Urgente
-app.post(['/webhook/solicitud-soporte', '/api/soporte/crear-ticket'], async (req, res) => {
+app.post(['/webhook/solicitud-soporte', '/api/soporte/crear-ticket'], chatLimiter, async (req, res) => {
   try {
     const result = await executeSolicitudSoporte(req.body);
     res.json(result);
@@ -1703,7 +1703,7 @@ app.post(['/webhook/notificar-proveedor', '/api/operadores/notificar'], requireA
 });
 
 // 9. Motor Antifraude y Matriz de Riesgo Criptográfica
-app.post(['/webhook/evaluar-antifraude', '/webhook/antifraude-evaluacion', '/api/seguridad/antifraude'], async (req, res) => {
+app.post(['/webhook/evaluar-antifraude', '/webhook/antifraude-evaluacion', '/api/seguridad/antifraude'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeEvaluarAntifraude(req.body);
     res.json(result);
@@ -1723,7 +1723,7 @@ app.post(['/webhook/panel-control-ops', '/api/ops/action'], requireAdmin, async 
 });
 
 // 12. Sincronización Automática con Google Calendar
-app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], async (req, res) => {
+app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeSyncCalendar(req.body);
     res.json(result);
@@ -1733,7 +1733,7 @@ app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], async (req, 
 });
 
 // 13. Encuesta de Satisfacción Post-Tour & Recolección NPS WhatsApp
-app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], async (req, res) => {
+app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executePostTourNPS(req.body);
     res.json(result);
@@ -1743,7 +1743,7 @@ app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], async (req, res) => {
 });
 
 // 14. Reporte Semanal de Rendimiento, Conversión y Volumen
-app.post(['/webhook/reporte-semanal-conversion', '/api/reportes/semanal'], async (req, res) => {
+app.post(['/webhook/reporte-semanal-conversion', '/api/reportes/semanal'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeReporteSemanalConversion();
     res.json(result);
@@ -1757,7 +1757,7 @@ app.post(['/webhook/reporte-semanal-conversion', '/api/reportes/semanal'], async
 // ==========================================
 
 // WF-COMPLEX-01: Orquestador Autónomo de Itinerarios Multidía (SINAC/IMN/Alsama)
-app.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-planner'], async (req, res) => {
+app.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-planner'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeAutonomousMultiDayPlanner(req.body);
     res.json(result);
@@ -1767,7 +1767,7 @@ app.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-p
 });
 
 // WF-COMPLEX-02: Motor Predictivo de Dynamic Pricing & Yield Management
-app.post(['/webhook/predictive-dynamic-pricing', '/api/automations/dynamic-pricing'], async (req, res) => {
+app.post(['/webhook/predictive-dynamic-pricing', '/api/automations/dynamic-pricing'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeDynamicPricingYieldOptimizer(req.body);
     res.json(result);
