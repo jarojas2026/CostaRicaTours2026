@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import {
-  Sparkles, Compass, Map, CalendarDays, MessageCircle, ArrowRight,
+  Sparkles, Compass, Map, CalendarDays, ArrowRight,
   Plane, ShieldCheck, WandSparkles
 } from 'lucide-react';
 import type { Language } from '../types';
