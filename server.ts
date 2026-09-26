@@ -127,7 +127,7 @@ import { processEmailOperationsOnce, getEmailOperationsSnapshot } from './backen
 import { runReservationLifecycleSweep } from './backend/reservationLifecycleOrchestrator';
 import { withDistributedAutomationLock } from './backend/cronEngine';
 import { createInFlightLimiter } from './backend/admissionControl';
-import { verifyCustomerActionToken } from './backend/customerActionTokenService';
+import { createCustomerActionToken, verifyCustomerActionToken } from './backend/customerActionTokenService';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
