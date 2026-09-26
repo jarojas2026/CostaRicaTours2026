@@ -6,7 +6,7 @@ import {
   ClipboardCheck, Cloud, Compass, FileText, HeartPulse, Luggage,
   MapPinned, Navigation, Plus, RefreshCw, Save,
   ShieldCheck, Sparkles, StickyNote, WalletCards, Wifi,
-  WifiOff, Clock3, Plane, Users
+  WifiOff, Clock3, Plane, Users, Trash2
 } from 'lucide-react';
 import type { Language, BookingRequest } from '../types';
 import { fetchLiveExchangeRate, getUsdToCrcRate } from '../utils/currencies';
