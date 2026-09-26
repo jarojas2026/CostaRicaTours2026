@@ -13,6 +13,7 @@ import express from 'express';
 import path from 'path';
 import crypto from 'crypto';
 import rateLimit from 'express-rate-limit';
+import Stripe from 'stripe';
 import { createServer as createViteServer } from 'vite';
 import { initializeAutomationEngine, cleanupExpiredSoftHolds } from './backend/cronEngine';
 import { google } from 'googleapis';
@@ -129,7 +130,7 @@ import { processCustomerIntake, enqueueCustomerIntakeJob, processPendingCustomer
 import { sendWhatsAppMessage } from './backend/notificationService';
 import { getFirestoreDb } from './backend/bookingService';
 import { processEmailOperationsOnce, getEmailOperationsSnapshot } from './backend/emailOperationsAgent';
-import { runReservationLifecycleSweep } from './backend/reservationLifecycleOrchestrator';
+import { runReservationLifecycleSweep, advanceReservationLifecycle } from './backend/reservationLifecycleOrchestrator';
 import { withDistributedAutomationLock } from './backend/cronEngine';
 import { createInFlightLimiter } from './backend/admissionControl';
 
@@ -702,11 +703,19 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
           quantity: 1
         }
       ],
+      metadata: { bookingId: String(req.body?.bookingId || '').trim() || undefined },
       mode: 'payment',
       success_url: `${req.protocol}://${req.get('host')}?booking=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.protocol}://${req.get('host')}?booking=canceled`,
       customer_email: customerEmail
     });
+    const bookingId = String(req.body?.bookingId || '').trim();
+    if (bookingId) {
+      const booking = await getBookingById(bookingId);
+      if (booking && Math.abs(Number(booking.totalUSD) - Number(totalUSD)) <= 0.01) {
+        await updateBookingStatus(bookingId, { stripeSessionId: session.id, paymentMethod: 'credit_card', paymentStatus: 'pending' });
+      }
+    }
     res.json({ url: session.url, id: session.id });
   } catch (err: any) {
     console.error('Error en Stripe:', err);
@@ -756,7 +765,9 @@ app.post('/api/paypal/create-order', async (req, res) => {
           purchase_units: [
             {
               amount: { currency_code: 'USD', value: (totalUSD || 0).toString() },
-              description: tourName || 'Tour Costa Rica Tours'
+              description: tourName || 'Tour Costa Rica Tours',
+              custom_id: String(req.body?.bookingId || '').trim() || undefined,
+              invoice_id: String(req.body?.bookingId || '').trim() || undefined,
             }
           ],
           application_context: {
@@ -767,6 +778,13 @@ app.post('/api/paypal/create-order', async (req, res) => {
       });
       const orderData = await orderRes.json();
       const approveLink = orderData.links?.find((link: any) => link.rel === 'approve')?.href;
+      const bookingId = String(req.body?.bookingId || '').trim();
+      if (bookingId && orderData.id) {
+        const booking = await getBookingById(bookingId);
+        if (booking && Math.abs(Number(booking.totalUSD) - Number(totalUSD)) <= 0.01) {
+          await updateBookingStatus(bookingId, { paypalOrderId: orderData.id, paymentMethod: 'paypal', paymentStatus: 'pending' });
+        }
+      }
       res.json({
         url: approveLink || `${req.protocol}://${req.get('host')}?booking=success`,
         id: orderData.id
@@ -777,6 +795,41 @@ app.post('/api/paypal/create-order', async (req, res) => {
   } catch (err: any) {
     console.error('Error en PayPal:', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ==========================================
+ // 🔐 STRIPE WEBHOOK — PAYMENT -> BOOKING LIFECYCLE
+ // ==========================================
+app.post('/api/webhooks/stripe', async (req, res) => {
+  const stripe = getStripe();
+  const signature = String(req.headers['stripe-signature'] || '');
+  const webhookSecret = String(process.env.STRIPE_WEBHOOK_SECRET || '');
+  if (!stripe || !signature || !webhookSecret) return res.status(503).json({ received: false, error: 'Stripe webhook no configurado.' });
+  try {
+    const rawBody = (req as any).rawBody;
+    if (!rawBody) return res.status(400).json({ received: false, error: 'Cuerpo raw de Stripe no disponible.' });
+    const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+    if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const bookingId = String(session.metadata?.bookingId || '').trim();
+      if (!bookingId) return res.json({ received: true, ignored: true, reason: 'bookingId ausente' });
+      const booking = await getBookingById(bookingId);
+      if (!booking) return res.json({ received: true, ignored: true, reason: 'booking_not_found' });
+      const paidUSD = Number(session.amount_total || 0) / 100;
+      if (!Number.isFinite(paidUSD) || Math.abs(paidUSD - Number(booking.totalUSD)) > 0.01) {
+        await createAlert({ source: 'stripe_webhook', severity: 'critical', title: 'Importe Stripe no coincide', message: `Webhook ${session.id} no coincide con la reserva ${bookingId}.`, bookingId, metadata: { paidUSD, bookingTotalUSD: booking.totalUSD } });
+        return res.status(409).json({ received: false, error: 'PAYMENT_AMOUNT_MISMATCH' });
+      }
+      const updated = await updateBookingStatus(bookingId, { status: 'paid', paymentStatus: 'completed', stripeSessionId: session.id, paymentVerifiedAt: new Date().toISOString(), paymentProvider: 'stripe' });
+      if (!updated.success) return res.status(409).json({ received: false, error: updated.error || 'No se pudo actualizar la reserva.' });
+      const lifecycle = await advanceReservationLifecycle({ ...booking, ...(updated.booking || {}), bookingId, status: 'paid', paymentStatus: 'completed' });
+      return res.json({ received: true, bookingId, lifecycle });
+    }
+    return res.json({ received: true, ignored: true, type: event.type });
+  } catch (error: any) {
+    console.error('Stripe webhook error:', error);
+    return res.status(400).json({ received: false, error: error?.message || 'Webhook inválido.' });
   }
 });
 
