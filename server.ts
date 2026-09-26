@@ -1140,7 +1140,7 @@ app.get(['/api/native-engine/status', '/api/native/status'], (req, res) => {
 });
 
 // API para Provider Hub & Self-Development Hub
-app.get('/api/providers', (req, res) => {
+app.get('/api/providers', requireAdmin, (req, res) => {
   res.json(getProvidersOverview());
 });
 
@@ -1665,7 +1665,7 @@ app.post(['/webhook/solicitud-soporte', '/api/soporte/crear-ticket'], async (req
 });
 
 // 8. Coordinación y Notificación en Tiempo Real a Proveedores y Operadores Locales
-app.post(['/webhook/notificar-proveedor', '/api/operadores/notificar'], async (req, res) => {
+app.post(['/webhook/notificar-proveedor', '/api/operadores/notificar'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeNotificarProveedor(req.body);
     res.json(result);
@@ -1749,7 +1749,7 @@ app.post(['/webhook/predictive-dynamic-pricing', '/api/automations/dynamic-prici
 });
 
 // WF-COMPLEX-03: Matriz Predictiva de Contingencias Climáticas & Re-enrutamiento
-app.post(['/webhook/weather-contingency-rerouting', '/api/automations/weather-contingency'], async (req, res) => {
+app.post(['/webhook/weather-contingency-rerouting', '/api/automations/weather-contingency'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeEmergencyContingencyRerouting(req.body);
     res.json(result);
@@ -1759,7 +1759,7 @@ app.post(['/webhook/weather-contingency-rerouting', '/api/automations/weather-co
 });
 
 // WF-COMPLEX-04: Facturación Electrónica DGT Hacienda v4.3 & Liquidación Operadores
-app.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-invoicing'], async (req, res) => {
+app.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-invoicing'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeDGTElectronicInvoicingSettlement(req.body);
     res.json(result);
@@ -1769,7 +1769,7 @@ app.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-
 });
 
 // WF-COMPLEX-05: Flight Guard Predictivo en Tiempo Real & Despacho Alsama
-app.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-guard'], async (req, res) => {
+app.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-guard'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeAutonomousFlightGuardDispatch(req.body);
     res.json(result);
@@ -1779,7 +1779,7 @@ app.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-
 });
 
 // WF-COMPLEX-06: Asistente Autónomo con Análisis de Sentimiento & Escalamiento
-app.post(['/webhook/crisis-sentiment-escalation', '/api/automations/crisis-sentiment'], async (req, res) => {
+app.post(['/webhook/crisis-sentiment-escalation', '/api/automations/crisis-sentiment'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeAutonomousCrisisSentimentEscalation(req.body);
     res.json(result);
@@ -1807,7 +1807,7 @@ const additionalWebhooks = [
   '/webhook/supervisor'
 ];
 
-app.post(additionalWebhooks, async (req, res) => {
+app.post(additionalWebhooks, requireAutomationTrigger, async (req, res) => {
   try {
     const endpoint = req.path;
     const triggerName = endpoint.replace('/webhook/', '').toUpperCase().replace(/-/g, '_');
@@ -2162,7 +2162,7 @@ app.post(['/webhook/cr-tours-sinpe-verify', '/webhook/sinpe-verify', '/api/payme
 });
 
 // 9. Telemetría y Métricas en Tiempo Real de Procesamiento Masivo (RPS, Latencia, Concurrencia)
-app.get(['/api/metrics/throughput', '/api/massive/status'], (req, res) => {
+app.get(['/api/metrics/throughput', '/api/massive/status'], requireAdmin, (req, res) => {
   const metrics = massiveEngine.getMetrics();
   res.json({
     success: true,
@@ -2206,7 +2206,7 @@ app.all('/webhook/health-check', (req, res) => {
 // ==========================================
 // 📊 ANALÍTICA NATIVA Y ACCIONES DE RESERVA
 // ==========================================
-app.get('/api/analytics/conversion-report', async (req, res) => {
+app.get('/api/analytics/conversion-report', requireAdmin, async (req, res) => {
   try {
     const metrics = await getWeeklyConversionMetrics();
     res.json({ success: true, data: metrics, source: 'firestore-native' });
