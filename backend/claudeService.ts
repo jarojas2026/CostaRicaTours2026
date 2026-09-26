@@ -56,8 +56,8 @@ export function getClaudeStatus(): { available: boolean; model: string; region: 
     process.env.ANTHROPIC_VERTEX_REGION ||
     process.env.CLOUD_ML_REGION ||
     'us-east5';
-  if (!projectId) return { available: false, model, region: '', projectId: '', error: 'Proyecto de Vertex AI no configurado.' };
   const model = process.env.ANTHROPIC_VERTEX_MODEL || 'claude-3-5-sonnet-v2@20241022';
+  if (!projectId) return { available: false, model, region: '', projectId: '', error: 'Proyecto de Vertex AI no configurado.' };
 
   return {
     available: !clientInitializationError,
