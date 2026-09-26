@@ -35,9 +35,9 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
       icon: Compass,
       title: isEs ? '1. Explorá y Personalizá' : '1. Explore & Customize',
       desc: isEs 
-        ? 'Elegí entre más de 25 tours oficiales con guías certificados o dejá que nuestros Asistentes IA diseñen tu itinerario a la medida.'
-        : 'Choose from 25+ official certified tours or let our AI assistants craft your tailored day-by-day itinerary.',
-      badge: isEs ? 'Catálogo 100% Verificado' : '100% Verified Catalog'
+        ? 'Explorá experiencias del catálogo nacional o dejá que nuestros asistentes IA diseñen tu itinerario a la medida.'
+        : 'Explore the nationwide catalog or let our AI assistants craft a tailored day-by-day itinerary.',
+      badge: isEs ? 'Información operativa con verificación' : 'Operational information with verification'
     },
     {
       num: '02',
@@ -189,7 +189,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase tracking-wider mb-2">
                 <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                {isEs ? '4.98 / 5 Estrellas en +1,200 Reseñas' : '4.98 / 5 Stars from +1,200 Reviews'}
+                {isEs ? 'Experiencias y servicios de Costa Rica en un catálogo nacional' : 'Costa Rica experiences and services in a nationwide catalog'}
               </div>
               <h2 className="text-3xl sm:text-4xl font-black text-white">
                 {isEs ? 'Viajeros felices viviendo el Pura Vida' : 'Happy Travelers Living Pura Vida'}
