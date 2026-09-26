@@ -958,8 +958,8 @@ export async function runCounterAgent(
           `• **Availability Check**: ✅ ${availCheck.remainingSeats} seats remained available at the last check\n` +
           `• **Payment Status**: Pending — confirmation and QR voucher will be issued after server-side payment verification.\n\n` +
           `🎒 **What to bring**: ${matchedTour.whatToBring?.en?.slice(0, 3).join(', ') || 'Comfortable clothing, closed shoes, rain poncho'}.\n` +
-          `📜 **Cancellation Guarantee**: 100% full refund up to 72 hours prior to service.\n\n` +
-          `¿Would you like me to coordinate your private pickup with Alsama Tours CR or provide travel tips for the area?`
+          `📜 **Cancellation policy**: final terms depend on the selected experience and must be verified before promising a refund.\n\n` +
+          `¿Would you like me to coordinate your private pickup with the assigned verified provider or provide travel tips for the area?`
         : `✅ **¡RESERVA CREADA — PAGO PENDIENTE!**\n\n` +
           `¡Pura Vida, ${customerName}! He creado tu reserva en nuestro sistema central de mostrador. La confirmación final queda pendiente de verificar el pago:\n\n` +
           `• **Código Oficial de Reserva**: \`${generatedBookingId}\`\n` +
@@ -970,8 +970,8 @@ export async function runCounterAgent(
           `• **Disponibilidad Verificada**: ✅ En la última comprobación había ${availCheck.remainingSeats} cupos disponibles\n` +
           `• **Estado del pago**: Pendiente — la confirmación y el voucher QR se emitirán después de verificar el pago en el servidor.\n\n` +
           `🎒 **Qué llevar**: ${matchedTour.whatToBring?.es?.slice(0, 3).join(', ') || 'Ropa cómoda, calzado cerrado para senderos, repelente y capa liviana'}.\n` +
-          `📜 **Garantía Oficial**: 100% de reembolso hasta 72 horas antes del tour.\n\n` +
-          `¿Deseas que coordinemos tu traslado privado de recogida con Alsama Tours CR o tienes alguna consulta de vestimenta o itinerario?`;
+          `📜 **Política de cancelación**: los términos dependen de la experiencia seleccionada y deben verificarse antes de prometer un reembolso.\n\n` +
+          `¿Deseas que coordinemos tu traslado privado de recogida con el proveedor verificado asignado o tienes alguna consulta de vestimenta o itinerario?`;
 
       return {
         reply: replySuccess,
