@@ -96,7 +96,8 @@ export const TravelerCommandBar: React.FC<TravelerCommandBarProps> = ({
             const active = (item.id === 'explore' && activeTab === 'tours') ||
               (item.id === 'map' && activeTab === 'map') ||
               (item.id === 'ai' && activeTab === 'ai') ||
-              (item.id === 'tools' && activeTab === 'tools');
+              (item.id === 'tools' && activeTab === 'tools') ||
+              (item.id === 'trip' && activeTab === 'trip');
             return (
               <motion.button
                 key={item.id}
