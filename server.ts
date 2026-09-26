@@ -100,7 +100,7 @@ import {
   executePostSaleVipLoyalty
 } from './backend/nativeWorkflows';
 import { executeSinpeVerification } from './backend/sinpeService';
-import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
+import { getProvidersOverview, getPublicProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
 import { verifyProviderPortalToken } from './backend/providerPortalService';
 import { createInboundVoiceResponse, handleVoiceTurn, voiceAgentDeskConfig, verifyVoiceSignature, rememberVoiceCallStart, rememberVoiceCallEnd, getVoiceCallSession } from './backend/voiceAgentDeskService';
 import { getSelfDevelopmentOverview, runSelfHealingCycle } from './backend/selfDevelopmentEngine';
@@ -1148,8 +1148,9 @@ app.get(['/api/native-engine/status', '/api/native/status'], (req, res) => {
 });
 
 // API para Provider Hub & Self-Development Hub
-app.get('/api/providers', (req, res) => {
-  res.json(getProvidersOverview());
+app.get('/api/providers', (_req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=3600');
+  res.json(getPublicProvidersOverview());
 });
 
 app.post('/api/providers/action', requireAdmin, async (req, res) => {
