@@ -205,7 +205,7 @@ export async function executeInicioReserva(body: any) {
   const unitPrice = Number(tour.priceUSD);
   const totalUSD = adults * unitPrice + children * unitPrice;
   const holdExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-  const idReserva = `CRT-HLD-${Math.floor(100000 + Math.random() * 900000)}`;
+  const idReserva = `CRT-HLD-${crypto.randomUUID().replace(/-/g, '').slice(0, 20).toUpperCase()}`;
 
   const bookingCustomer = body.cliente || body.customer || {
     nombre: body.customerName,
@@ -215,8 +215,9 @@ export async function executeInicioReserva(body: any) {
   };
   if (!bookingCustomer.nombre || !bookingCustomer.email) throw new Error('Datos del cliente incompletos: nombre y email son obligatorios.');
 
-  // Registrar soft-hold nativo en base de datos
-  await createBooking({
+  // Registrar soft-hold nativo y no declarar éxito hasta que la reserva
+  // haya sido creada realmente en el almacén transaccional.
+  const holdResult: any = await createBooking({
     id: idReserva,
     bookingId: idReserva,
     tourId: selectedTourId,
@@ -234,7 +235,23 @@ export async function executeInicioReserva(body: any) {
     pickupHotel: bookingCustomer.hotelRecogida || bookingCustomer.pickupHotel,
     holdExpiresAt,
     holdActive: true
-  }).catch((err) => console.warn('Aviso guardando soft-hold nativo:', err.message));
+  });
+
+  if (holdResult?.conflict || !holdResult?.booking) {
+    const duration = Date.now() - start;
+    logAutomationExecution(
+      'INICIO_RESERVA',
+      duration,
+      'warning',
+      `No se pudo crear el soft-hold para ${selectedTourId}: ${holdResult?.message || 'reserva rechazada'}`
+    );
+    return {
+      exito: false,
+      disponible: false,
+      motivo: holdResult?.message || 'No se pudo bloquear el cupo. Intente nuevamente.',
+      cuposRestantes: availability.remainingSeats
+    };
+  }
 
   const duration = Date.now() - start;
   logAutomationExecution(
