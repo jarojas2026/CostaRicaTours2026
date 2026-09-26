@@ -42,6 +42,7 @@ import { TravelerCommandBar } from './components/TravelerCommandBar';
 
 // Code-splitting via React.lazy to reduce initial JS bundle size
 const ItineraryPlanner = lazy(() => import('./components/ItineraryPlanner').then(m => ({ default: m.ItineraryPlanner })));
+const TravelerOSPage = lazy(() => import('./pages/TravelerOSPage').then(m => ({ default: m.TravelerOSPage })));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const AIAssistant = lazy(() => import('./components/AIAssistant').then(m => ({ default: m.AIAssistant })));
 const FlightTrackerGadget = lazy(() => import('./components/FlightTrackerGadget').then(m => ({ default: m.FlightTrackerGadget })));
@@ -512,6 +513,12 @@ export default function App() {
                   />
                 </Suspense>
               </div>
+            } />
+
+            <Route path="/trip" element={
+              <Suspense fallback={<div className="py-24 text-center text-emerald-300">Cargando tu centro de viaje...</div>}>
+                <TravelerOSPage language={language} onOpenTripBuilder={() => setIsCustomFunnelOpen(true)} />
+              </Suspense>
             } />
 
             <Route path="/itinerary" element={
