@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Language, Currency } from '../types';
 import { formatCurrency } from '../utils/i18n';
+import { fetchLiveExchangeRate, getUsdToCrcRate } from '../utils/currencies';
 
 interface TravelerToolkitProps {
   language: Language;
@@ -132,8 +133,16 @@ export const TravelerToolkit: React.FC<TravelerToolkitProps> = ({
     }));
   };
 
-  const exchangeRate = 510; // 1 USD = 510 CRC
-  const calcCrc = calcUsd * exchangeRate;
+  const [exchangeRate, setExchangeRate] = useState(() => getUsdToCrcRate());
+  const calcCrc = exchangeRate > 0 ? calcUsd * exchangeRate : 0;
+
+  React.useEffect(() => {
+    let mounted = true;
+    fetchLiveExchangeRate().then(rate => {
+      if (mounted && rate > 0) setExchangeRate(rate);
+    });
+    return () => { mounted = false; };
+  }, []);
   const isEs = language === 'es';
 
   return (
