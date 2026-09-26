@@ -1191,87 +1191,58 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
   const start = Date.now();
   const cliente = body.cliente || {};
   const venta = body.detalleVenta || {};
-  const totalUSD = Number(venta.montoTotalUSD || 235);
+  const totalUSD = Number(venta.montoTotalUSD);
+  const providerId = String(venta.proveedorId || '').trim();
   const configuredRate = Number(venta.tipoCambioCRC ?? process.env.USD_TO_CRC_RATE);
-  if (!Number.isFinite(configuredRate) || configuredRate <= 0) {
-    throw new Error('USD_TO_CRC_RATE debe estar configurado para generar importes CRC.');
-  }
-  const tipoCambio = configuredRate;
-  const totalCRC = Math.round(totalUSD * tipoCambio);
-
-  // 4% IVA turístico según Ley 9635
-  const tasaIVA = 0.04;
+  if (!Number.isFinite(totalUSD) || totalUSD <= 0) throw new Error('MONTO_FACTURA_REQUERIDO: montoTotalUSD debe ser un importe positivo verificable.');
+  if (!providerId) throw new Error('PROVEEDOR_REQUERIDO: proveedorId es obligatorio para la liquidación.');
+  if (!Number.isFinite(configuredRate) || configuredRate <= 0) throw new Error('USD_TO_CRC_RATE debe estar configurado para generar importes CRC.');
+  const db = getFirestoreDb();
+  if (!db) throw new Error('PERSISTENCE_REQUIRED: no se puede preparar una operación fiscal sin acceso a Firestore.');
+  const { getOperatorById } = await import('./bookingService');
+  const provider = await getOperatorById(providerId);
+  if (!provider.active || provider.verified !== true) throw new Error('PROVIDER_NOT_OPERATIONAL: el proveedor no está activo y verificado.');
+  const totalCRC = Math.round(totalUSD * configuredRate);
+  const tasaIVA = Number(venta.tasaIVA ?? process.env.VAT_RATE_DEFAULT ?? 0.04);
+  if (!Number.isFinite(tasaIVA) || tasaIVA < 0 || tasaIVA > 1) throw new Error('TASA_IVA_INVALIDA: tasaIVA fuera de rango.');
   const subtotalUSD = Number((totalUSD / (1 + tasaIVA)).toFixed(2));
   const ivaUSD = Number((totalUSD - subtotalUSD).toFixed(2));
-
-  // Clave de 50 dígitos DGT
-  const hoy = new Date();
-  const fechaStr = `${String(hoy.getDate()).padStart(2, '0')}${String(hoy.getMonth() + 1).padStart(2, '0')}${String(hoy.getFullYear()).slice(-2)}`;
-  const consecutivo = `DRAFT-${crypto.randomUUID()}`;
-  const clave50 = `506${fechaStr}0031019998880010000101000000${consecutivo}199887766`;
-
-  // Liquidación del operador
-  const comisionPlataformaUSD = Number((totalUSD * 0.15).toFixed(2));
-  const liquidacionOperadorUSD = Number((totalUSD * 0.85).toFixed(2));
-
+  const draftId = `DGT-DRAFT-${crypto.randomUUID()}`;
+  const legalEntityName = String(process.env.LEGAL_ENTITY_NAME || '').trim();
+  const legalEntityId = String(process.env.LEGAL_ENTITY_ID || '').trim();
+  const cabysCode = String(venta.codigoCABYS || process.env.HACIENDA_CABYS_CODE || '').trim();
+  const readyForSubmission = Boolean(legalEntityName && legalEntityId && cabysCode);
   const duration = Date.now() - start;
-  logAutomationExecution(
-    'WF_COMPLEX_04_DGT_FACTURACION_LIQUIDACION',
-    duration,
-    'success',
-    `Factura DGT generada por $${totalUSD} USD. Liquidado $${liquidacionOperadorUSD} USD a ${venta.proveedorId || 'operador'}`,
-    { clave50, subtotalUSD, ivaUSD, comisionPlataformaUSD }
-  );
-
+  logAutomationExecution('WF_COMPLEX_04_DGT_FACTURACION_LIQUIDACION', duration, readyForSubmission ? 'warning' : 'warning', `Borrador fiscal preparado ${draftId}; requiere envío y acuse real de Hacienda.`, { draftId, providerId, readyForSubmission });
   return {
     exito: true,
-    documentoFiscal: {
-      tipoDocumento: '01 - Factura Electrónica v4.3 DGT Hacienda',
-      claveNumerica50Digitos: clave50,
-      consecutivoFiscal: `0010000101000000${consecutivo}`,
-      codigoCABYS: '8552300000000',
-      descripcionCABYS: 'Servicios de transporte turístico y excursiones de ecoturismo',
-      emisor: {
-        nombre: 'Costa Rica Tours S.A.',
-        cedulaJuridica: '3-101-999888',
-        regimen: 'Régimen Tradicional Simplificado Turístico'
-      },
+    estadoOperacion: 'PENDIENTE_ENVIO_DGT',
+    requiereConfirmacionExterna: true,
+    draftId,
+    datosFiscales: {
       receptor: {
-        nombre: cliente.nombre || 'Turista Internacional',
-        tipoIdentificacion: cliente.tipoIdentificacion || '03 (Pasaporte)',
-        numero: cliente.numeroIdentificacion || 'PASSPORT-VALID'
+        nombre: String(cliente.nombre || '').trim(),
+        tipoIdentificacion: String(cliente.tipoIdentificacion || '').trim(),
+        numero: String(cliente.numeroIdentificacion || '').trim()
       },
-      desgloseMonetarioUSD: {
-        subtotalUSD,
-        tarifaIVA: '4% (IVA Turístico Ley 9635)',
-        impuestoIVAUSD: ivaUSD,
-        totalFacturadoUSD: totalUSD
-      },
-      desgloseMonetarioCRC: {
-        subtotalCRC: Math.round(subtotalUSD * tipoCambio),
-        impuestoIVACRC: Math.round(ivaUSD * tipoCambio),
-        totalFacturadoCRC: totalCRC
-      },
-      estadoHacienda: 'ACEPTADO_POR_DGT',
-      acuseHaciendaHash: `SHA256-${crypto.randomUUID()}`
+      emisorConfigurado: readyForSubmission,
+      codigoCABYSConfigurado: Boolean(cabysCode)
     },
+    desgloseMonetarioUSD: { subtotalUSD, tarifaIVA: tasaIVA, impuestoIVAUSD: ivaUSD, totalFacturadoUSD: totalUSD },
+    desgloseMonetarioCRC: { subtotalCRC: Math.round(subtotalUSD * configuredRate), impuestoIVACRC: Math.round(ivaUSD * configuredRate), totalFacturadoCRC: totalCRC },
+    hacienda: { estado: 'PENDIENTE_ENVIO_Y_ACUSE', claveNumerica50Digitos: null, acuseHaciendaHash: null },
     liquidacionBancariaOperador: {
-      proveedorId: venta.proveedorId || 'alsama-tours-cr',
-      nombreProveedor: 'Alsama Tours CR (Transporte & Tours)',
+      proveedorId,
+      nombreProveedor: provider.name,
       montoBrutoUSD: totalUSD,
-      comisionPlataforma15USD: comisionPlataformaUSD,
-      montoNetoLiquidadoUSD: liquidacionOperadorUSD,
-      metodoLiquidacion: 'Transferencia IBAN Automática (Banco Nacional de CR)',
-      estadoLiquidacion: 'PROGRAMADA_DISPERSION_24H'
+      comisionPlataforma15USD: Number((totalUSD * (1 - provider.commissionRate)).toFixed(2)),
+      montoNetoLiquidadoUSD: Number((totalUSD * (1 - provider.commissionRate)).toFixed(2)),
+      estadoLiquidacion: 'NO_EJECUTADA_HASTA_ACUSE_FISCAL_Y_PAGO_REAL'
     },
-    archivosGenerados: {
-      xmlFirmadoUrl: `https://costaricatours.es/facturas/xml/${clave50}.xml`,
-      pdfLegalUrl: `https://costaricatours.es/facturas/pdf/${clave50}.pdf`
-    },
+    archivosGenerados: { xmlFirmadoUrl: null, pdfLegalUrl: null },
     timestamp: new Date().toISOString()
   };
 }
-
 /**
  * WF-COMPLEX-05: Flight Guard Predictivo en Tiempo Real & Despacho Alsama
  */
