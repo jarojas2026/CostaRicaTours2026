@@ -422,10 +422,12 @@ app.post('/api/ai/journey', aiAdmission.middleware, async (req, res) => {
   }
 });
 
-app.post('/api/ai/journey/:journeyId/guardian', aiAdmission.middleware, async (req, res) => {
+app.post('/api/ai/journey/:journeyId/guardian', aiAdmission.middleware, journeyLimiter, async (req, res) => {
   try {
-    const journey = await getTravelerJourney(String(req.params.journeyId || ''));
-    if (!journey) return res.status(404).json({ success: false, error: 'Viaje no encontrado.' });
+    const sessionId = typeof req.body?.sessionId === 'string' ? req.body.sessionId : '';
+    const journey = await getTravelerJourney(String(req.params.journeyId || ''), sessionId);
+    if (!journey || journey.status === 'not_found') return res.status(404).json({ success: false, error: 'Viaje no encontrado.' });
+    if (journey.status === 'forbidden') return res.status(403).json({ success: false, error: journey.error });
     const result = await guardianReplanJourney({
       catalog: Array.isArray(journey.catalog) ? journey.catalog : [],
       date: journey.traveler?.date,
@@ -442,11 +444,15 @@ app.post('/api/ai/journey/:journeyId/guardian', aiAdmission.middleware, async (r
   }
 });
 
-app.post('/api/ai/journey/:journeyId/observe', aiAdmission.middleware, async (req, res) => {
+app.post('/api/ai/journey/:journeyId/observe', aiAdmission.middleware, journeyLimiter, async (req, res) => {
   try {
-    const journey = await getTravelerJourney(String(req.params.journeyId || ''));
+    const sessionId = typeof req.body?.sessionId === 'string' ? req.body.sessionId : '';
+    const journey = await getTravelerJourney(String(req.params.journeyId || ''), sessionId);
     if (!journey || journey.status === 'not_found') {
       return res.status(404).json({ success: false, error: 'Viaje no encontrado.' });
+    }
+    if (journey.status === 'forbidden') {
+      return res.status(403).json({ success: false, error: journey.error });
     }
     const observation = await observeJourneyState({
       catalog: Array.isArray(journey.catalog) ? journey.catalog : [],
@@ -463,17 +469,20 @@ app.post('/api/ai/journey/:journeyId/observe', aiAdmission.middleware, async (re
 
 app.get('/api/ai/journey/:journeyId', async (req, res) => {
   try {
-    const result = await getTravelerJourney(String(req.params.journeyId || ''));
-    if (!result) return res.status(404).json({ success: false, error: 'Viaje no encontrado.' });
+    const sessionId = typeof req.query.sessionId === 'string' ? req.query.sessionId : '';
+    const result = await getTravelerJourney(String(req.params.journeyId || ''), sessionId);
+    if (!result || result.status === 'not_found') return res.status(404).json({ success: false, error: 'Viaje no encontrado.' });
+    if (result.status === 'forbidden') return res.status(403).json({ success: false, error: result.error });
     res.json({ success: true, journey: result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message || 'No se pudo recuperar el viaje.' });
   }
 });
 
-app.patch('/api/ai/journey/:journeyId', aiAdmission.middleware, async (req, res) => {
+app.patch('/api/ai/journey/:journeyId', aiAdmission.middleware, journeyLimiter, async (req, res) => {
   try {
     const result = await adaptTravelerJourney(String(req.params.journeyId || ''), req.body || {});
+    if (result?.status === 'forbidden') return res.status(403).json({ success: false, error: result.error });
     res.json({ success: true, journey: result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message || 'No se pudo adaptar el viaje.' });
