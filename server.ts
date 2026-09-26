@@ -100,6 +100,7 @@ import {
   executePreSaleProspectRecovery,
   executePostSaleVipLoyalty,
   verifyCustomerActionToken,
+  createBookingDocumentToken,
   verifyBookingDocumentToken
 } from './backend/nativeWorkflows';
 import { executeSinpeVerification } from './backend/sinpeService';
@@ -1108,6 +1109,7 @@ app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
     }
 
     const customerName = String(booking.customerName || 'Cliente').replace(/[<>]/g, '');
+    const documentToken = createBookingDocumentToken(bookingId);
     const paymentVerified = ['paid', 'completed'].includes(String(booking.paymentStatus || '').toLowerCase());
     const stateText = requestedAction === 'reject'
       ? 'cancelada por decisión del cliente'
@@ -1133,7 +1135,7 @@ app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
           <div class="box"><strong>Tour:</strong> ${String(booking.tourName || 'Experiencia Costa Rica')}<br/>
           <strong>Fecha:</strong> ${String(booking.date || 'No especificada')}<br/>
           <strong>Estado:</strong> ${stateText}</div>
-          <a href="/api/bookings/${encodeURIComponent(bookingId)}/download-pdf?token=${encodeURIComponent(String(req.query.documentToken || ''))}" class="btn">Ver comprobante</a>
+          <a href="/api/bookings/${encodeURIComponent(bookingId)}/download-pdf?token=${encodeURIComponent(documentToken)}" class="btn">Ver comprobante</a>
         </div>
       </div></body></html>`);
   } catch (err: any) {
