@@ -715,7 +715,7 @@ export async function runCounterAgent(
   message: string,
   extractedData: any = {},
   context: any = {},
-  language: 'es' | 'en' = 'es',
+  language: Language = 'es',
   history: Array<{ role: 'user' | 'bot' | 'assistant'; text: string }> = []
 ): Promise<MultiAgentResponse> {
   const isEn = language === 'en';
@@ -1141,7 +1141,7 @@ export async function runCustomerServiceAgent(
   message: string,
   extractedData: any = {},
   context: any = {},
-  language: 'es' | 'en' = 'es'
+  language: Language = 'es'
 ): Promise<MultiAgentResponse> {
   const isEn = language === 'en';
   const lower = message.toLowerCase();
@@ -1320,7 +1320,7 @@ export async function runBookingAgent(
   message: string,
   extractedData: any = {},
   context: any = {},
-  language: 'es' | 'en' = 'es'
+  language: Language = 'es'
 ): Promise<MultiAgentResponse> {
   const isEn = language === 'en';
   const lower = message.toLowerCase();
@@ -1471,7 +1471,7 @@ export async function runInformationAgent(
   message: string,
   extractedData: any = {},
   context: any = {},
-  language: 'es' | 'en' = 'es'
+  language: Language = 'es'
 ): Promise<MultiAgentResponse> {
   const isEn = language === 'en';
   const lower = message.toLowerCase();
@@ -1583,7 +1583,7 @@ export async function runLogisticsAgent(
   message: string,
   extractedData: any = {},
   context: any = {},
-  language: 'es' | 'en' = 'es'
+  language: Language = 'es'
 ): Promise<MultiAgentResponse> {
   const isEn = language === 'en';
   const lower = message.toLowerCase();
