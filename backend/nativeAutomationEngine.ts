@@ -320,6 +320,13 @@ export async function executeSolicitudPago(body: any) {
       checkoutUrl = Array.isArray(orderData.links) ? String(orderData.links.find((l: any) => l.rel === 'approve')?.href || '') || null : null;
     }
   }
+  if (checkoutUrl && providerSessionId) {
+    const paymentLinkPatch: Record<string, any> = { paymentMethod: method, paymentStatus: 'pending', paymentSessionCreatedAt: new Date().toISOString() };
+    if (method === 'stripe' || method === 'credit_card') paymentLinkPatch.stripeSessionId = providerSessionId;
+    if (method === 'paypal') paymentLinkPatch.paypalOrderId = providerSessionId;
+    await updateBookingStatus(reservationId, paymentLinkPatch);
+  }
+
   const duration = Date.now() - start;
   const ready = Boolean(checkoutUrl && providerSessionId);
   logAutomationExecution('SOLICITUD_PAGO', duration, ready ? 'success' : 'warning', ready ? `Checkout real generado para ${reservationId}.` : `Pasarela ${method} no disponible/configurada para ${reservationId}; no se generó URL ficticia.`);
@@ -349,9 +356,13 @@ export async function executeConfirmacionReserva(body: any) {
   const booking = await (await import('./bookingService')).getBookingById(reservationId);
   if (!booking) throw new Error('Reserva no encontrada.');
   const paymentMethod = String(body.paymentMethod || booking.paymentMethod || '').toLowerCase();
+  const storedPaypalOrderId = booking.paypalOrderId || booking.paymentDetails?.paypalOrderId || '';
+  const storedStripeSessionId = booking.stripeSessionId || booking.paymentDetails?.stripeSessionId || '';
+  if (body.paypalOrderId && storedPaypalOrderId && String(body.paypalOrderId) !== String(storedPaypalOrderId)) throw new Error('PAYMENT_REFERENCE_MISMATCH: orden PayPal no coincide con la reserva.');
+  if (body.stripeSessionId && storedStripeSessionId && String(body.stripeSessionId) !== String(storedStripeSessionId)) throw new Error('PAYMENT_REFERENCE_MISMATCH: sesión Stripe no coincide con la reserva.');
   const paymentDetails = {
-    paypalOrderId: body.paypalOrderId || booking.paypalOrderId || booking.paymentDetails?.paypalOrderId,
-    stripeSessionId: body.stripeSessionId || booking.stripeSessionId || booking.paymentDetails?.stripeSessionId
+    paypalOrderId: storedPaypalOrderId || String(body.paypalOrderId || ''),
+    stripeSessionId: storedStripeSessionId || String(body.stripeSessionId || '')
   };
   const verification = await verifyPaymentServerSide(paymentMethod, paymentDetails);
   if (!verification.verified) {
