@@ -755,83 +755,46 @@ export async function executeAutonomousProviderFallback(
   message: string;
   reassigned: boolean;
 }> {
-  console.warn(`🔄 [FAILOVER AUTÓNOMO] Proveedor ${failedProviderId} declinó reserva #${bookingId}. Reasignando a Alsama Tours CR Operaciones Directas...`);
-  
-  const fallbackProvider = MASTER_OPERATORS_REGISTRY['alsama-tours-cr'];
-
-  const fallbackEmail = getEffectiveProviderEmail(fallbackProvider.officialEmail);
-  if (fallbackProvider.verified !== true || !fallbackProvider.active || !fallbackProvider.officialEmail || !fallbackEmail) {
-    await sendAdministrativeAlert({
-      title: 'Failover de proveedor requiere intervención humana',
-      reason: `No existe un canal oficial verificable para reasignar ${bookingId}.`,
-      bookingId,
-      providerId: failedProviderId,
-      details: { failedProviderId, reason, fallbackCandidate: fallbackProvider.id }
-    });
-    return {
-      success: false,
-      action: 'decline_escalate',
-      bookingId,
-      newStatus: 'requiere_intervencion',
-      providerStatus: 'fallback_unverified',
-      message: 'No se reasignó automáticamente: el proveedor directo no está marcado como verificado y no existe un canal operativo aprobado.',
-      reassigned: false
-    };
-  }
-
   await updateBookingStatus(bookingId, {
-    providerId: fallbackProvider.id,
-    providerName: fallbackProvider.name,
-    providerEmail: fallbackEmail,
-    providerStatus: 'reassigned_to_direct_ops',
+    escalated: true,
+    providerStatus: 'escalated_no_verified_fallback',
     fallbackReason: reason,
-    fallbackTriggeredAt: new Date().toISOString()
-  }).catch(() => {});
-
-  // Despachar inmediatamente notificación prioritaria a Alsama Tours CR
-  await sendEmail({
-    to: fallbackEmail,
-    subject: `🚨 [DESPACHO PRIORITARIO POR REASIGNACIÓN] Reserva #${bookingId} Asignada a Operaciones Directas`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917; border: 2px solid #059669; border-radius: 12px; padding: 24px;">
-        <h2 style="color: #064e3b; margin-top: 0;">⚡ Reasignación Automática de Emergencia</h2>
-        <p>Equipo de <strong>Alsama Tours CR</strong>,</p>
-        <p>El operador externo con ID <code>${failedProviderId}</code> declinó la reserva <strong>#${bookingId}</strong> (Motivo: <em>${reason}</em>).</p>
-        <p>El motor autónomo ha transferido la reserva al equipo de operaciones directas para garantizar servicio sin interrupciones.</p>
-        <div style="background-color: #ecfdf5; padding: 12px; border-radius: 8px; margin: 16px 0;">
-          <a href="${APP_URL}/api/provider/respond?action=confirm&bookingId=${bookingId}&providerId=alsama-tours-cr" style="background-color: #059669; color: white; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">
-            Confirmar Despacho Alsama
-          </a>
-        </div>
-      </div>
-    `
+    fallbackTriggeredAt: new Date().toISOString(),
+    failedProviderId
   }).catch(() => {});
 
   await sendAdministrativeAlert({
-    title: 'Failover Autónomo de Proveedor Ejecutado',
-    reason: `Operador ${failedProviderId} declinó por: ${reason}`,
+    title: 'Failover requiere proveedor alternativo verificado',
+    reason: `La reserva #${bookingId} quedó sin confirmación del proveedor ${failedProviderId}.`,
     bookingId,
-    providerId: fallbackProvider.id,
+    providerId: failedProviderId,
     details: {
-      Accion: 'Reasignado automáticamente a Alsama Tours CR Direct Ops',
-      Estado: 'Reserva protegida, sin impacto al cliente'
+      failedProviderId,
+      reason,
+      policy: 'No reasignar a un operador no verificado ni a un proveedor no asociado explícitamente al mismo tour.'
     }
-  });
+  }).catch(() => {});
 
-  logAutomationExecution('WF_COORDINACION_PROVEEDOR', 0, 'success', `Reserva #${bookingId} reasignada automáticamente a Alsama Tours CR`);
+  logAutomationExecution(
+    'WF_COORDINACION_PROVEEDOR',
+    0,
+    'warning',
+    `Reserva #${bookingId} escalada: no hay fallback automático seguro para el proveedor ${failedProviderId}.`
+  );
 
   return {
-    success: true,
-    action: 'decline_and_reassign',
+    success: false,
+    action: 'decline_escalate',
     bookingId,
-    newStatus: 'pendiente_confirmacion_proveedor',
-    providerStatus: 'reassigned_to_direct_ops',
-    message: `Reserva #${bookingId} reasignada a Operaciones Directas Alsama Tours CR para confirmación del despacho; no se considera confirmada todavía.`,
-    reassigned: true
+    newStatus: 'requiere_intervencion',
+    providerStatus: 'escalated_no_verified_fallback',
+    message: 'La reserva fue escalada. Ningún proveedor alternativo se asignó sin verificación operativa y compatibilidad explícita con el servicio.',
+    reassigned: false
   };
 }
 
 // =========================================================================
+
 // 2. CONFIRMACIÓN DE RESERVA AL CLIENTE (Trigger: Webhook)
 // =========================================================================
 export async function executeCustomerBookingConfirmation(
