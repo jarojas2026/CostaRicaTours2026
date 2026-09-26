@@ -3,6 +3,7 @@
  * Proporciona el motor conversacional oficial y los agentes del Enjambre Operativo (Triage, Procesador, Contingencia, Supervisor).
  */
 import crypto from 'crypto';
+import type { Language } from '../src/types';
 import { COSTA_RICA_REGION_PLAYBOOK, buildCostaRicaTourismKnowledgePrompt } from './costaRicaTourismKnowledge';
 
 const emergencyContact = process.env.EMERGENCY_CONTACT_PHONE || '911';
@@ -295,13 +296,14 @@ function getKnowledgeBaseReply(message: string, isEn: boolean) {
 
 export async function processChatInquiry(
   message: string,
-  language: 'es' | 'en' = 'es',
+  language: Language = 'es',
   history: Array<{ role: 'user' | 'assistant' | 'bot'; text: string }> = [],
   engine: 'auto' | 'claude' | 'gemini' | 'counter_agent' = 'auto',
   sessionId?: string,
   options: { allowMutations?: boolean; allowPrivateBookingLookup?: boolean } = {}
 ): Promise<{ reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string; agentId?: string }> {
   const isEn = language === 'en';
+  const requestedLanguageLabel: Record<Language, string> = { es: 'español', en: 'inglés', de: 'alemán', fr: 'francés', zh: 'chino', ja: 'japonés' };
   const requestedAgentId = engine === 'counter_agent' ? 'counter_agent' : 'concierge';
   let liveToolContext = '';
   try {
@@ -371,7 +373,7 @@ Reply ONLY with "YES" or "NO".`;
     }
 
     const config: any = {
-      systemInstruction: SYSTEM_INSTRUCTION,
+      systemInstruction: `${SYSTEM_INSTRUCTION}\nIDIOMA DE SALIDA OBLIGATORIO: responde en ${requestedLanguageLabel[language]}. Conserva nombres propios, códigos y URLs sin traducir.`,
       temperature: 0.7,
       tools: [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }]
     };
