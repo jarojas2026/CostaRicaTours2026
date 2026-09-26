@@ -1400,21 +1400,45 @@ export async function executeAutonomousCrisisSentimentEscalation(body: any) {
 // =========================================================================
 // 19. AUTOMATIZACIÓN GENÉRICA NATIVA
 // =========================================================================
+const SUPPORTED_GENERIC_AUTOMATIONS = new Set([
+  'PING',
+  'HEALTH_CHECK'
+]);
+
 export async function executeGenericAutomation(triggerName: string, body: any = {}) {
   const start = Date.now();
+  const normalizedTrigger = String(triggerName || '').trim().toUpperCase();
+  if (!SUPPORTED_GENERIC_AUTOMATIONS.has(normalizedTrigger)) {
+    const duration = Date.now() - start;
+    logAutomationExecution(
+      normalizedTrigger || 'UNKNOWN_AUTOMATION',
+      duration,
+      'warning',
+      `Automatización genérica no registrada: ${normalizedTrigger || 'UNKNOWN'}`,
+      { rejected: true }
+    );
+    return {
+      exito: false,
+      mensaje: 'Automatización no registrada. Use un workflow nativo específico.',
+      trigger: normalizedTrigger,
+      motor: 'native_registry_guard',
+      timestamp: new Date().toISOString()
+    };
+  }
+
   const duration = Date.now() - start;
   logAutomationExecution(
-    triggerName,
+    normalizedTrigger,
     duration,
     'success',
-    `Evento ${triggerName} procesado en código nativo`,
+    `Evento ${normalizedTrigger} procesado por el registro nativo`,
     body
   );
   return {
     exito: true,
-    mensaje: `Automatización ${triggerName} procesada exitosamente con código nativo en servidor Node.js/Express.`,
-    trigger: triggerName,
-    motor: 'código_nativo_node',
+    mensaje: `Automatización ${normalizedTrigger} procesada con el registro nativo.`,
+    trigger: normalizedTrigger,
+    motor: 'native_registry_guard',
     datos: body,
     timestamp: new Date().toISOString()
   };
