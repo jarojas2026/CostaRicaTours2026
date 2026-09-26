@@ -103,7 +103,7 @@ export const CostaRicaCheckout: React.FC<CostaRicaCheckoutProps> = ({
 
       // Si es SINPE Móvil y el usuario ya ingresó el comprobante, notificar validación
       if (method === 'sinpe' && sinpeRef.trim()) {
-        fetch('/api/sinpe/verify', {
+        fetch('/api/sinpe/submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
