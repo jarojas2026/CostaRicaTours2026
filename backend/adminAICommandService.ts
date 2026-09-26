@@ -117,41 +117,44 @@ async function updateCommandStatus(commandId: string, status: CommandStatus, act
   if (!db) throw new Error('El historial administrativo requiere Firestore.');
 
   const commandRef = db.collection('admin_ai_commands').doc(cleanId);
-  const snap = await commandRef.get();
-  if (!snap.exists) throw new Error('Comando administrativo no encontrado.');
-
-  const current = toPlainCommand(snap.id, snap.data());
-  if (current.status !== 'proposed') {
-    return {
-      success: false,
-      status: current.status,
-      commandId: cleanId,
-      message: 'El comando ya fue resuelto y no puede cambiarse nuevamente.'
-    };
-  }
-
   const actorData = actorSnapshot(actor);
   if (status === 'approved' && actorData.role !== 'admin') {
     throw new Error('Solo un administrador puede aprobar una propuesta.');
   }
 
   const now = new Date().toISOString();
-  const patch: any = {
-    status,
-    updatedAt: now
-  };
+  const outcome = await db.runTransaction(async transaction => {
+    const snap = await transaction.get(commandRef);
+    if (!snap.exists) throw new Error('Comando administrativo no encontrado.');
 
-  if (status === 'approved') {
-    patch.approvedAt = now;
-    patch.approvedBy = actorData;
-  } else {
-    patch.rejectedAt = now;
-    patch.rejectedBy = actorData;
-    patch.rejectionReason = cleanText(reason, 1200) || 'Sin motivo indicado.';
-  }
+    const current = toPlainCommand(snap.id, snap.data());
+    if (current.status !== 'proposed') {
+      return {
+        success: false,
+        status: current.status,
+        commandId: cleanId,
+        message: 'El comando ya fue resuelto y no puede cambiarse nuevamente.'
+      };
+    }
 
-  await commandRef.set(patch, { merge: true });
+    const patch: any = {
+      status,
+      updatedAt: now
+    };
+    if (status === 'approved') {
+      patch.approvedAt = now;
+      patch.approvedBy = actorData;
+    } else {
+      patch.rejectedAt = now;
+      patch.rejectedBy = actorData;
+      patch.rejectionReason = cleanText(reason, 1200) || 'Sin motivo indicado.';
+    }
 
+    transaction.set(commandRef, patch, { merge: true });
+    return null;
+  });
+
+  if (outcome) return outcome;
   return {
     success: true,
     status,
