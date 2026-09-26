@@ -80,6 +80,25 @@ for (const relative of ['backend', 'src', 'scripts', 'public', 'agent']) {
 }
 
 
+const toursData = read('src/data/toursData.ts');
+const tourStarts = [...toursData.matchAll(/\n\s*id:\s*['\"]([^'\"]+)['\"]/g)];
+const imageOwners = new Map<string, string[]>();
+for (let i = 0; i < tourStarts.length; i++) {
+  const start = tourStarts[i].index || 0;
+  const end = i + 1 < tourStarts.length ? (tourStarts[i + 1].index || toursData.length) : toursData.length;
+  const tourId = tourStarts[i][1];
+  const source = toursData.slice(start, end);
+  const urls = new Set([...source.matchAll(/https?:\/\/[^'\"`\s)]+/g)].map(m => m[0].replace(/[),;]+$/, '')));
+  for (const url of urls) {
+    const owners = imageOwners.get(url) || [];
+    owners.push(tourId);
+    imageOwners.set(url, owners);
+  }
+}
+const repeatedMedia = [...imageOwners.entries()].filter(([, owners]) => owners.length > 1);
+if (repeatedMedia.length) add('MEDIUM', 'MEDIA-001', `Cross-tour image duplication detected: ${repeatedMedia.length} image URLs are shared by multiple tours.`);
+const insecureMedia = [...imageOwners.keys()].filter(url => !/^https:\/\//i.test(url));
+if (insecureMedia.length) add('MEDIUM', 'MEDIA-002', `Non-HTTPS tour media detected: ${insecureMedia.length} assets.`);
 const server = read('server.ts');
 const reservationLifecycle = read('backend/reservationLifecycleOrchestrator.ts');
 const journeyBuildRoutes = (server.match(/app\.post\('\/api\/journey\/build'/g) || []).length;
