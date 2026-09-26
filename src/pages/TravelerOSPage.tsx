@@ -74,15 +74,17 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
   const [spentUSD, setSpentUSD] = useState(0);
   const [expenseDraft, setExpenseDraft] = useState('');
   const [expenseAmountDraft, setExpenseAmountDraft] = useState('');
+  const [expenses, setExpenses] = useState<Array<{ id: string; label: string; amount: number }>>([]);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
-      const parsed = JSON.parse(raw) as { trip?: SavedTrip; tasks?: Task[]; spentUSD?: number };
+      const parsed = JSON.parse(raw) as { trip?: SavedTrip; tasks?: Task[]; spentUSD?: number; expenses?: Array<{ id: string; label: string; amount: number }> };
       if (parsed.trip) setTrip({ ...initialTrip, ...parsed.trip });
       if (Array.isArray(parsed.tasks)) setTasks(parsed.tasks);
       if (Number.isFinite(parsed.spentUSD) && parsed.spentUSD >= 0) setSpentUSD(parsed.spentUSD);
+      if (Array.isArray(parsed.expenses)) setExpenses(parsed.expenses);
     } catch {
       // Local storage is an enhancement; the page remains usable without it.
     }
@@ -102,7 +104,7 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ trip, tasks, spentUSD }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ trip, tasks, spentUSD, expenses }));
       } catch {
         // Ignore storage quota/privacy restrictions.
       }
@@ -151,9 +153,18 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
   const addExpense = () => {
     const amount = Number(expenseAmountDraft);
     if (!Number.isFinite(amount) || amount <= 0) return;
+    const expense = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, label: expenseDraft.trim() || (es ? 'Gasto de viaje' : 'Travel expense'), amount: Math.round(amount * 100) / 100 };
+    setExpenses(prev => [expense, ...prev].slice(0, 30));
     setSpentUSD(prev => Math.round((prev + amount) * 100) / 100);
     setExpenseAmountDraft('');
     setExpenseDraft('');
+  };
+
+  const removeExpense = (id: string) => {
+    const expense = expenses.find(item => item.id === id);
+    if (!expense) return;
+    setExpenses(prev => prev.filter(item => item.id !== id));
+    setSpentUSD(prev => Math.max(0, Math.round((prev - expense.amount) * 100) / 100));
   };
 
   const remainingBudget = Math.max(0, trip.budgetUSD - spentUSD);
@@ -316,6 +327,7 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
                 <input inputMode="decimal" value={expenseAmountDraft} onChange={e=>setExpenseAmountDraft(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addExpense()} className="w-full rounded-xl bg-black/20 border border-white/10 px-3 py-2 text-xs text-white outline-none focus:border-cyan-300" placeholder="USD" />
                 <button type="button" onClick={addExpense} className="rounded-xl bg-cyan-300 text-stone-950 px-3 font-black text-xs">+</button>
               </div>
+              {expenses.length > 0 && <div className="mt-4 space-y-2 max-h-44 overflow-auto pr-1">{expenses.slice(0, 8).map(expense => <div key={expense.id} className="flex items-center gap-2 rounded-xl bg-black/15 border border-white/5 px-3 py-2"><span className="flex-1 min-w-0 truncate text-xs text-stone-300">{expense.label}</span><span className="text-xs font-black text-cyan-200">${expense.amount.toFixed(2)}</span><button type="button" onClick={() => removeExpense(expense.id)} aria-label={es ? 'Eliminar gasto' : 'Remove expense'} className="text-stone-600 hover:text-white"><Trash2 size={13}/></button></div>)}</div>}
             </section>
 
             <section className="rounded-[2rem] border border-white/10 bg-[#071c14] p-5 sm:p-6">
