@@ -928,8 +928,8 @@ export async function updateBookingStatus(
     return { success: false, error: transitionErr.message };
   }
 
-  const isCancelling = (newStatus === 'cancelada' || newStatus === 'cancelled') &&
-                       (previousStatus !== 'cancelada' && previousStatus !== 'cancelled');
+  const isReleasingAvailability = ['cancelada', 'cancelled', 'expirada'].includes(String(newStatus || '').toLowerCase()) &&
+    !['cancelada', 'cancelled', 'expirada'].includes(String(previousStatus || '').toLowerCase());
 
   const updatedBooking = { ...existing, ...updates, updatedAt: new Date().toISOString() };
   let availabilityReleasedByTransaction = false;
@@ -938,7 +938,7 @@ export async function updateBookingStatus(
   // que cambia el estado para que una cancelación duplicada sea inocua.
   if (db && col) {
     try {
-      if (isCancelling) {
+      if (isReleasingAvailability) {
         const bookingRef = col.doc(bookingId);
         availabilityReleasedByTransaction = await db.runTransaction(async (transaction) => {
           const bookingSnap = await transaction.get(bookingRef);
@@ -973,7 +973,7 @@ export async function updateBookingStatus(
       console.error('Error actualizando en Firestore:', err);
       return { success: false, error: err.message };
     }
-  } else if (isCancelling && existing.availabilityReleased !== true) {
+  } else if (isReleasingAvailability && existing.availabilityReleased !== true) {
     const tourId = existing.tourId;
     const tourDate = existing.date;
     const bookingTime = existing.time || '08:00 AM';
