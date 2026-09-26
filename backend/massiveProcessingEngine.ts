@@ -270,6 +270,19 @@ export class MassiveProcessingEngine extends EventEmitter {
           throw new Error(`PROVIDER_REQUIRED: reserva ${booking.id || booking.bookingId || 'unknown'} no tiene proveedor operativo asignado.`);
         }
 
+        const paymentVerified = ['paid', 'completed'].includes(String(booking.paymentStatus || '').toLowerCase())
+          && ['paid', 'confirmada', 'confirmed'].includes(String(booking.status || '').toLowerCase());
+        if (!paymentVerified) {
+          return {
+            success: true,
+            bookingId,
+            providerDispatched: false,
+            deferred: true,
+            reason: 'payment_not_verified',
+            message: 'El despacho al proveedor queda diferido hasta la verificación server-side del pago.'
+          };
+        }
+
         // 1. Despacho en tiempo real al proveedor
         const coordRes = await executeProviderRealtimeCoordination({
           bookingId,
