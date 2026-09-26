@@ -23,6 +23,7 @@ import { FLIGHT_ROUTES } from './src/data/flightsData';
 import {
   getStripe,
   createBooking,
+  getBookingById,
   getAllBookings,
   updateBookingStatus,
   checkTourAvailability,
@@ -1002,8 +1003,9 @@ app.get('/api/bookings/:id/pdf', async (req, res) => {
     if (!verifyCustomerActionToken(token, bookingId, 'view_pdf')) {
       return res.status(401).json({ error: 'Enlace del comprobante inválido o expirado.' });
     }
-    const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
+
+    const booking = await getBookingById(bookingId);
+    if (!booking) return res.status(404).json({ error: 'Reserva no encontrada' });
 
     const html = generateBookingPrintableHTML(booking as any);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -1021,8 +1023,8 @@ app.get('/api/bookings/:id/download-pdf', async (req, res) => {
     if (!verifyCustomerActionToken(token, bookingId, 'view_pdf')) {
       return res.status(401).json({ error: 'Enlace del comprobante inválido o expirado.' });
     }
-    const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
+
+    const booking = await getBookingById(bookingId);
     if (!booking) return res.status(404).json({ error: 'Reserva no encontrada' });
 
     const pdfBuffer = await generateBookingPDFBuffer(booking as any);
@@ -1056,10 +1058,19 @@ app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
       return res.status(401).send('Enlace de confirmación inválido o expirado.');
     }
     const action = rawAction === 'reject' ? 'rechazado' : 'aprobado';
-    const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
+    const booking = await getBookingById(bookingId);
 
     if (!booking) return res.status(404).send('Reserva no encontrada.');
+    const currentStatus = String(booking.status || '').toLowerCase();
+    if (action === 'aprobado' && ['cancelada', 'cancelled'].includes(currentStatus)) {
+      return res.status(409).send('Esta reserva ya fue cancelada y no puede ser aprobada.');
+    }
+    if (action === 'rechazado' && ['cancelada', 'cancelled'].includes(currentStatus)) {
+      return res.status(200).send('Esta reserva ya estaba cancelada; no se realizaron cambios adicionales.');
+    }
+    if (action === 'aprobado' && ['confirmada', 'confirmed', 'completada', 'completed'].includes(currentStatus)) {
+      return res.status(200).send('Esta reserva ya estaba confirmada; no se realizaron cambios adicionales.');
+    }
 
     const updateResult = await updateBookingStatus(bookingId, {
       status: action === 'aprobado' ? 'confirmada' : 'cancelada',
