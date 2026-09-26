@@ -27,7 +27,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ language }) => {
     {
       icon: Users,
       title: { es: 'Impacto Local', en: 'Local Impact' },
-      desc: { es: 'El 100% de nuestros operadores son empresas 100% costarricenses.', en: '100% of our operators are 100% Costa Rican businesses.' }
+      desc: { es: 'Trabajamos para conectar viajeros con proveedores y experiencias de Costa Rica.', en: 'We connect travelers with Costa Rica experiences and local providers.' }
     },
     {
       icon: Globe,
