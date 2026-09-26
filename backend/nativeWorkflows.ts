@@ -581,8 +581,20 @@ export async function handleProviderActionResponse(
   const customerEmail = bookingData?.customerEmail || bookingData?.customer?.email || '';
   const customerName = bookingData?.customerName || bookingData?.customer?.name || 'Estimado Viajero';
 
+  if (!bookingData) {
+    return { success: false, action, bookingId, newStatus: 'not_found', providerStatus: 'unknown', message: 'Reserva no encontrada.' };
+  }
+
+  if (options?.providerId && bookingData.providerId && String(options.providerId) !== String(bookingData.providerId)) {
+    return { success: false, action, bookingId, newStatus: String(bookingData.status || 'unknown'), providerStatus: String(bookingData.providerStatus || 'unknown'), message: 'El proveedor autenticado no coincide con el proveedor asignado.' };
+  }
+
   // 1. CASO: CONFIRMAR RESERVA Y ASIGNAR LOGÍSTICA
   if (action === 'confirm') {
+    const verifiedPayment = ['paid', 'completed'].includes(String(bookingData.paymentStatus || '').toLowerCase());
+    if (!verifiedPayment) {
+      return { success: false, action, bookingId, newStatus: String(bookingData.status || 'pendiente_pago'), providerStatus: String(bookingData.providerStatus || 'pending'), message: 'No se puede confirmar la reserva hasta que el pago haya sido verificado por el servidor.' };
+    }
     const guide = String(options?.guideName || '').trim();
     const vehicle = String(options?.vehiclePlate || '').trim();
     const confirmedAt = new Date().toISOString();
@@ -608,9 +620,9 @@ export async function handleProviderActionResponse(
             <p>Tu operador local ha confirmado la logística de tu experiencia <strong>${tourName}</strong>:</p>
             <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 16px; border-radius: 6px; margin: 16px 0;">
               <p style="margin: 4px 0;"><strong>📅 Fecha:</strong> ${tourDate}</p>
-              <p style="margin: 4px 0;"><strong>👤 Guía Asignado:</strong> ${guide}</p>
-              <p style="margin: 4px 0;"><strong>🚐 Vehículo:</strong> ${vehicle}</p>
-              <p style="margin: 4px 0;"><strong>📍 Estado:</strong> 100% Confirmado con logística lista</p>
+              ${guide ? `<p style="margin: 4px 0;"><strong>👤 Guía asignado:</strong> ${guide}</p>` : ''}
+              ${vehicle ? `<p style="margin: 4px 0;"><strong>🚐 Vehículo asignado:</strong> ${vehicle}</p>` : ''}
+              <p style="margin: 4px 0;"><strong>📍 Estado:</strong> Confirmado por el operador tras verificación del pago.</p>
             </div>
             <p style="font-size: 13px; color: #57534e;">¡Nos vemos en el punto de encuentro acordado! ¡Pura Vida! 🇨🇷</p>
           </div>
@@ -649,7 +661,7 @@ export async function handleProviderActionResponse(
       bookingId,
       newStatus: 'confirmada',
       providerStatus: 'confirmed',
-      message: `¡Reserva #${bookingId} confirmada con éxito! Guía: ${guide}. Cliente notificado.`
+      message: `¡Reserva #${bookingId} confirmada por el operador!${guide ? ` Guía: ${guide}.` : ''}${vehicle ? ` Vehículo: ${vehicle}.` : ''}${customerEmail ? ' Cliente notificado.' : ' No se envió correo porque no hay email registrado.'}`
     };
   }
 
