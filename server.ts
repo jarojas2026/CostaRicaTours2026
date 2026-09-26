@@ -634,8 +634,10 @@ app.post('/api/journey/build', journeyLimiter, async (req, res) => {
 
 app.get('/api/journey/:journeyId', async (req, res) => {
   try {
-    const journey = await getTravelerJourney(String(req.params.journeyId || ''));
-    if (!journey) return res.status(404).json({ error: 'Viaje no encontrado.' });
+    const sessionId = typeof req.query.sessionId === 'string' ? req.query.sessionId : '';
+    const journey = await getTravelerJourney(String(req.params.journeyId || ''), sessionId);
+    if (journey?.status === 'forbidden') return res.status(403).json(journey);
+    if (!journey || journey.status === 'not_found') return res.status(404).json({ error: 'Viaje no encontrado.' });
     return res.json(journey);
   } catch (error: any) {
     return res.status(500).json({ error: error?.message || 'No se pudo leer el viaje.' });
