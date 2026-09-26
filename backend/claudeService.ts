@@ -5,6 +5,7 @@
 
 import { AnthropicVertex } from '@anthropic-ai/vertex-sdk';
 import { TOURS } from '../src/data/toursData';
+import type { Language } from '../src/types';
 
 let claudeClient: AnthropicVertex | null = null;
 let clientInitializationError: string | null = null;
@@ -87,7 +88,8 @@ const CLAUDE_SYSTEM_PROMPT = `Eres el Asistente Inteligente Oficial de "Costa Ri
 Tu identidad refleja la auténtica esencia del "Pura Vida": calidez, profesionalismo, hospitalidad y profundo conocimiento de la biodiversidad, microclimas, geografía y leyes turísticas de Costa Rica.
 
 REGLAS ESENCIALES:
-1. IDIOMA: Responde SIEMPRE en el mismo idioma en que te escribe el viajero (español o inglés).
+1. IDIOMA: Responde SIEMPRE en el idioma solicitado por el viajero: español, inglés, alemán, francés, chino o japonés. No mezcles idiomas salvo nombres propios, códigos y URLs.
+
 2. VERACIDAD: Solo recomienda tours, tarifas y políticas vigentes en nuestra base oficial. Nunca inventes precios ni operadores.
 3. SOSTENIBILIDAD (CST): Promueve el turismo regenerativo, el respeto a la fauna silvestre (no tocar ni alimentar animales) y el apoyo a las comunidades rurales.
 4. ESTRUCTURA DE RESPUESTA:
@@ -124,11 +126,12 @@ Todas las tarifas son en USD por vehículo privado completo. Incluye A/C, Wi-Fi 
  */
 export async function generateClaudeChatResponse(
   message: string,
-  language: 'es' | 'en' = 'es',
+  language: Language = 'es',
   history: Array<{ role: 'user' | 'assistant' | 'bot'; text: string }> = [],
   options?: { temperature?: number; maxTokens?: number }
 ): Promise<{ reply: string; modelUsed: string; success: boolean; quickActions?: Array<{ label: string; action: string; data?: any }> }> {
   const client = getClaudeClient();
+  const languageLabels: Record<Language, string> = { es: 'español', en: 'inglés', de: 'alemán', fr: 'francés', zh: 'chino', ja: 'japonés' };
   const isEn = language === 'en';
   const modelName = process.env.ANTHROPIC_VERTEX_MODEL || 'claude-3-5-sonnet-v2@20241022';
 
