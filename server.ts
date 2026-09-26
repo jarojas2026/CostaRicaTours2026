@@ -704,7 +704,7 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
           quantity: 1
         }
       ],
-      metadata: { bookingId: String(req.body?.bookingId || '').trim() || undefined },
+      ...(String(req.body?.bookingId || '').trim() ? { metadata: { bookingId: String(req.body?.bookingId || '').trim() } } : {}),
       mode: 'payment',
       success_url: `${req.protocol}://${req.get('host')}?booking=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.protocol}://${req.get('host')}?booking=canceled`,
@@ -3222,13 +3222,13 @@ startServer();function calculateAuthoritativeServiceBookingTotal(body: any): { t
     const end = new Date(String(body?.checkOutDate || '')).getTime();
     if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || !Number.isFinite(service.pricePerNightUSD) || service.pricePerNightUSD <= 0) return null;
     const nights = Math.max(1, Math.round((end - start) / 86400000));
-    totalUSD = service.pricePerNightUSD * nights;
+    totalUSD = Number(service.pricePerNightUSD) * nights;
   } else if (service.type === 'national_park') {
     if (!Number.isFinite(service.officialPriceUSD) || service.officialPriceUSD <= 0) return null;
-    totalUSD = service.officialPriceUSD * adults + service.officialPriceUSD * 0.5 * children;
+    totalUSD = Number(service.officialPriceUSD) * adults + Number(service.officialPriceUSD) * 0.5 * children;
   } else if (['airport', 'airstrip', 'bus_station', 'train_station'].includes(service.type)) {
     if (!Number.isFinite(service.averageTicketUSD) || service.averageTicketUSD <= 0) return null;
-    totalUSD = service.averageTicketUSD * people;
+    totalUSD = Number(service.averageTicketUSD) * people;
   } else if (service.type === 'taxi_stand') {
     const transferType = String(body?.transferType || 'shared_shuttle');
     if (transferType !== 'shared_shuttle') return null;
