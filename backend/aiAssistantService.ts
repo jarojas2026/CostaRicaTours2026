@@ -2,6 +2,7 @@
  * 🤖 Servicio de Asistente Inteligente y Agentes de IA para Costa Rica Tours
  * Proporciona el motor conversacional oficial y los agentes del Enjambre Operativo (Triage, Procesador, Contingencia, Supervisor).
  */
+import crypto from 'crypto';
 import { COSTA_RICA_REGION_PLAYBOOK, buildCostaRicaTourismKnowledgePrompt } from './costaRicaTourismKnowledge';
 
 const emergencyContact = process.env.EMERGENCY_CONTACT_PHONE || '911';
@@ -761,7 +762,9 @@ export async function runCounterAgent(
   // 2. SERVICIO AL CLIENTE: BÚSQUEDA Y GESTIÓN DE RESERVA EXISTENTE
   const codeMatch = message.match(/\b(CRT-[A-Z0-9-]+|CR-PV-[0-9]+|[0-9a-f]{8}-[0-9a-f]{4})\b/i);
   const emailMatch = message.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-  const bookingIdentifier = codeMatch ? codeMatch[0] : emailMatch ? emailMatch[0] : context?.bookingId || context?.userEmail;
+  // Public chat must not disclose reservation data from an email address alone.
+  // A booking code (or an authenticated context-provided bookingId) is required.
+  const bookingIdentifier = codeMatch ? codeMatch[0] : context?.bookingId;
 
   const isCustomerServiceIntent =
     lower.includes('mi reserva') ||
@@ -891,9 +894,10 @@ export async function runCounterAgent(
       const totalUSD = matchedTour.priceUSD * numPax;
       const rate = Number(process.env.USD_TO_CRC_RATE) || 0;
       const totalCRC = rate > 0 ? Math.round(totalUSD * rate) : 0;
-      const generatedBookingId = `CRT-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+      const generatedBookingId = `CRT-PV-${crypto.randomUUID()}`;
       const customerName = extractedCustomerName || 'Viajero Distinguido';
-      const customerEmail = extractedCustomerEmail || 'cliente@costaricatours.cr';
+      const customerEmail = extractedCustomerEmail || '';
+      if (!customerEmail) throw new Error('Se requiere un correo electrónico para crear la reserva pendiente de pago.');
 
       // Persistencia real en base de datos Firestore
       await createBooking({
@@ -906,13 +910,15 @@ export async function runCounterAgent(
         children: 0,
         customerName,
         customerEmail,
-        customerPhone: '+506 Mostrador Virtual',
+        customerPhone: context?.customerPhone || '',
         totalUSD,
         totalCRC,
         paymentMethod: 'agent_counter_booking',
-        status: 'confirmada',
+        status: 'pendiente_pago',
         paymentStatus: 'pending',
-        notes: 'Reserva ejecutada directamente por Sofía (Counter Agent)'
+        providerId: (matchedTour as any).providerId || undefined,
+        idempotencyKey: `counter-${String(context?.sessionId || 'public')}-${matchedTour.id}-${extractedDate}-${customerEmail.toLowerCase()}`,
+        notes: 'Reserva creada por Counter Agent; pendiente de verificación del pago.'
       });
 
       const confirmedVoucher = {
@@ -926,32 +932,33 @@ export async function runCounterAgent(
         totalCRC,
         customerName,
         customerEmail,
-        status: 'confirmada',
+        status: 'pendiente_pago',
+        paymentStatus: 'pending',
         inclusions: matchedTour.inclusions?.es?.slice(0, 3) || ['Guía naturalista certificado', 'Transporte y entradas']
       };
 
       const replySuccess = isEn
-        ? `🎉 **RESERVATION EXECUTED & CONFIRMED AT FRONT DESK!**\n\n` +
-          `¡Pura Vida, ${customerName}! I have processed and secured your official booking in our central system:\n\n` +
+        ? `✅ **RESERVATION CREATED — PAYMENT PENDING**\n\n` +
+          `¡Pura Vida, ${customerName}! He creado tu reserva en nuestro sistema central. La confirmación final queda pendiente de verificar el pago:\n\n` +
           `• **Official Booking Code**: \`${generatedBookingId}\`\n` +
           `• **Experience**: **${matchedTour.title.en || matchedTour.title.es}**\n` +
           `• **Date**: ${extractedDate} at ${matchedTour.departureTimes?.[0] || '08:00 AM'}\n` +
           `• **Travelers**: ${numPax} passenger(s)\n` +
           `• **Total Guaranteed Price**: **$${totalUSD} USD** (approx. ₡${totalCRC.toLocaleString('es-CR')} CRC, taxes included)\n` +
-          `• **Live Availability Status**: ✅ ${availCheck.remainingSeats} seats locked in our active manifest\n` +
-          `• **Digital QR Voucher**: Dispatched to \`${customerEmail}\` and displayed on your screen right now.\n\n` +
+          `• **Availability Check**: ✅ ${availCheck.remainingSeats} seats remained available at the last check\n` +
+          `• **Payment Status**: Pending — confirmation and QR voucher will be issued after server-side payment verification.\n\n` +
           `🎒 **What to bring**: ${matchedTour.whatToBring?.en?.slice(0, 3).join(', ') || 'Comfortable clothing, closed shoes, rain poncho'}.\n` +
           `📜 **Cancellation Guarantee**: 100% full refund up to 72 hours prior to service.\n\n` +
           `¿Would you like me to coordinate your private pickup with Alsama Tours CR or provide travel tips for the area?`
-        : `🎉 **¡RESERVA EJECUTADA Y CONFIRMADA EN MOSTRADOR!**\n\n` +
-          `¡Pura Vida, ${customerName}! He formalizado y emitido tu reserva oficial en nuestro sistema central de mostrador:\n\n` +
+        : `✅ **¡RESERVA CREADA — PAGO PENDIENTE!**\n\n` +
+          `¡Pura Vida, ${customerName}! He creado tu reserva en nuestro sistema central de mostrador. La confirmación final queda pendiente de verificar el pago:\n\n` +
           `• **Código Oficial de Reserva**: \`${generatedBookingId}\`\n` +
           `• **Excursión**: **${matchedTour.title.es}**\n` +
           `• **Fecha**: ${extractedDate} a las ${matchedTour.departureTimes?.[0] || '08:00 AM'}\n` +
           `• **Viajeros**: ${numPax} persona(s)\n` +
           `• **Tarifa Total Garantizada**: **$${totalUSD} USD** (aprox. ₡${totalCRC.toLocaleString('es-CR')} CRC con IVA 13% incluido)\n` +
-          `• **Disponibilidad Verificada**: ✅ Cupos asegurados en vivo (${availCheck.remainingSeats} libres en el bus del operador)\n` +
-          `• **Voucher Digital QR**: Generado y despachado a \`${customerEmail}\`.\n\n` +
+          `• **Disponibilidad Verificada**: ✅ En la última comprobación había ${availCheck.remainingSeats} cupos disponibles\n` +
+          `• **Estado del pago**: Pendiente — la confirmación y el voucher QR se emitirán después de verificar el pago en el servidor.\n\n` +
           `🎒 **Qué llevar**: ${matchedTour.whatToBring?.es?.slice(0, 3).join(', ') || 'Ropa cómoda, calzado cerrado para senderos, repelente y capa liviana'}.\n` +
           `📜 **Garantía Oficial**: 100% de reembolso hasta 72 horas antes del tour.\n\n` +
           `¿Deseas que coordinemos tu traslado privado de recogida con Alsama Tours CR o tienes alguna consulta de vestimenta o itinerario?`;
@@ -1832,7 +1839,7 @@ export async function runContingency(context: any) {
     }
   ];
 
-  const rescheduleToken = `CRT-RESCHED-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+  const rescheduleToken = `CRT-RESCHED-${crypto.randomUUID().replace(/-/g, '').slice(0, 10).toUpperCase()}`;
   const rescheduleUrl = `https://costaricatours.cr/reagendar?token=${rescheduleToken}&tour=${tourId}&date=${date}`;
 
   const draftEmail = {
