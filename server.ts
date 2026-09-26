@@ -2618,21 +2618,30 @@ app.post('/api/itinerary/book', async (req, res) => {
       customerEmail,
       customerPhone: customerPhone || '',
       totalUSD: calculatedUSD,
-      totalAmount: currency === 'CRC' 
-        ? (Number(process.env.USD_TO_CRC_RATE) > 0 ? Math.round(calculatedUSD * Number(process.env.USD_TO_CRC_RATE)) : calculatedUSD) 
+      totalAmount: currency === 'CRC'
+        ? (Number(process.env.USD_TO_CRC_RATE) > 0 ? Math.round(calculatedUSD * Number(process.env.USD_TO_CRC_RATE)) : calculatedUSD)
         : calculatedUSD,
       currency: currency || 'USD',
       paymentMethod: 'itinerary_deposit',
       paymentStatus: 'pending',
-      status: 'confirmada',
+      status: 'pendiente_pago',
       notes: specialRequests || 'Itinerario Multi-Día personalizado'
     } as any);
 
-    res.json({
+    if ((bookingRecord as any)?.conflict) {
+      const statusCode = (bookingRecord as any).error === 'provider_not_ready' ? 409 : 400;
+      return res.status(statusCode).json({
+        success: false,
+        error: (bookingRecord as any).error || 'booking_rejected',
+        message: (bookingRecord as any).message || 'No se pudo crear la solicitud de itinerario.'
+      });
+    }
+
+    res.status(201).json({
       success: true,
       bookingId: generatedId,
       booking: bookingRecord,
-      message: `¡Itinerario reservado con éxito! Se ha generado tu reserva #${generatedId}.`
+      message: `Solicitud de itinerario registrada como #${generatedId}. Queda pendiente de disponibilidad, proveedor y pago.`
     });
   } catch (err: any) {
     console.error('Error al reservar itinerario:', err);
