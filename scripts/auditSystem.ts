@@ -162,7 +162,7 @@ if (!/EMAIL_MAX_ATTEMPTS/.test(emailOperations) || !/claimed === 'terminal'/.tes
 if (!/processEmailOperationsOnce/.test(server) || !/email-operations\/sweep/.test(server)) {
   add('CRITICAL', 'EMAIL-001', 'Autonomous email agent is not connected to a protected server endpoint.');
 }
-if (!/processEmailOperationsOnce\(\)/.test(read('backend/cronEngine.ts'))) {
+if (!/(processEmailOperationsOnce\(\)|withDistributedAutomationLock\(['\"]email-operations-1m['\"],\s*processEmailOperationsOnce\))/.test(read('backend/cronEngine.ts'))) {
   add('HIGH', 'EMAIL-002', 'Autonomous email agent is not scheduled by the native cron engine.');
 }
 if (!/claimEvent/.test(emailOperations) || !/status === 'error'/.test(emailOperations)) {
