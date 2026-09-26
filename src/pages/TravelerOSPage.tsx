@@ -8,13 +8,14 @@ import {
   ShieldCheck, Sparkles, StickyNote, WalletCards, Wifi,
   WifiOff, Clock3, Plane, Users
 } from 'lucide-react';
-import type { Language } from '../types';
+import type { Language, BookingRequest } from '../types';
 import { fetchLiveExchangeRate, getUsdToCrcRate } from '../utils/currencies';
 
 interface TravelerOSPageProps {
   language: Language;
   onOpenTripBuilder?: () => void;
   onOpenBookings?: () => void;
+  bookings?: BookingRequest[];
 }
 
 type Task = {
@@ -57,7 +58,8 @@ const initialTrip: SavedTrip = {
 export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
   language,
   onOpenTripBuilder,
-  onOpenBookings
+  onOpenBookings,
+  bookings = []
 }) => {
   const es = language === 'es';
   const navigate = useNavigate();
@@ -69,6 +71,9 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
   const [rateStatus, setRateStatus] = useState<'idle' | 'loading' | 'live' | 'fallback'>('idle');
   const [isOnline, setIsOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine);
   const [saved, setSaved] = useState(false);
+  const [spentUSD, setSpentUSD] = useState(0);
+  const [expenseDraft, setExpenseDraft] = useState('');
+  const [expenseAmountDraft, setExpenseAmountDraft] = useState('');
 
   useEffect(() => {
     try {
@@ -105,7 +110,17 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
   }, [trip, tasks]);
 
   const completed = tasks.filter(task => task.done).length;
+  const upcomingBookings = useMemo(() => bookings
+    .filter(booking => booking?.date)
+    .sort((a, b) => new Date(`${a.date}T12:00:00`).getTime() - new Date(`${b.date}T12:00:00`).getTime()), [bookings]);
+  const nextBooking = upcomingBookings.find(booking => new Date(`${booking.date}T23:59:59`).getTime() >= Date.now()) || upcomingBookings[0];
   const progress = tasks.length ? Math.round((completed / tasks.length) * 100) : 0;
+  const tripDay = useMemo(() => {
+    if (!trip.startDate) return null;
+    const start = new Date(`${trip.startDate}T12:00:00`);
+    const diff = Math.floor((Date.now() - start.getTime()) / 86400000);
+    return diff >= 0 ? diff + 1 : null;
+  }, [trip.startDate]);
   const countdown = useMemo(() => {
     if (!trip.startDate) return null;
     const start = new Date(`${trip.startDate}T12:00:00`);
@@ -131,6 +146,23 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
   };
 
   const resetTasks = () => setTasks(defaultTasks.map(task => ({ ...task, done: false })));
+
+  const addExpense = () => {
+    const amount = Number(expenseAmountDraft);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    setSpentUSD(prev => Math.round((prev + amount) * 100) / 100);
+    setExpenseAmountDraft('');
+    setExpenseDraft('');
+  };
+
+  const remainingBudget = Math.max(0, trip.budgetUSD - spentUSD);
+  const budgetProgress = trip.budgetUSD > 0 ? Math.min(100, Math.round((spentUSD / trip.budgetUSD) * 100)) : 0;
+
+  const contextualMessage = useMemo(() => {
+    if (tripDay !== null) return es ? `Día ${tripDay} del viaje: revisa tu agenda, transporte y reservas de hoy.` : `Trip day ${tripDay}: review today's agenda, transport and bookings.`;
+    if (countdown !== null && countdown <= 7) return es ? 'Faltan pocos días: enfócate en documentos, vuelos, hospedaje y traslados.' : 'Only a few days left: focus on documents, flights, lodging and transfers.';
+    return es ? 'Empieza por definir la fecha y luego deja que el sistema organice tus siguientes pasos.' : 'Start by setting your date and let the system organize your next steps.';
+  }, [tripDay, countdown, es]);
 
   const addNote = () => {
     const value = noteDraft.trim();
@@ -188,6 +220,13 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
                 {saved ? (es ? 'Guardado' : 'Saved') : (es ? 'Guardar ahora' : 'Save now')}
               </button>
             </div>
+          </div>
+        </section>
+
+        <section className="rounded-[2rem] border border-amber-300/15 bg-amber-300/[0.03] p-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-start gap-3"><div className="w-11 h-11 rounded-2xl bg-amber-300/10 border border-amber-300/10 flex items-center justify-center"><BellRing size={18} className="text-amber-200"/></div><div><div className="text-[10px] uppercase tracking-[0.2em] font-black text-amber-200">{es ? 'Briefing inteligente' : 'Smart briefing'}</div><div className="mt-1 text-base sm:text-lg font-black text-white">{contextualMessage}</div></div></div>
+            {nextBooking && <button type="button" onClick={onOpenBookings} className="shrink-0 inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-black text-white hover:bg-white/10">{es ? 'Ver próxima reserva' : 'View next booking'} <ArrowRight size={14}/></button>}
           </div>
         </section>
 
