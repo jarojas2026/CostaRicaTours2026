@@ -199,7 +199,7 @@ export class MassiveProcessingEngine extends EventEmitter {
         return;
       }
       const task: MassiveTask<T> = {
-        id: `task_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        id: `task_${crypto.randomUUID()}`,
         type,
         priority,
         data,
@@ -286,27 +286,14 @@ export class MassiveProcessingEngine extends EventEmitter {
           providerId
         });
 
-        // 2. Notificación y Voucher al Cliente
-        await executeCustomerBookingConfirmation({
-          bookingId,
-          idReserva: bookingId,
-          tourName: booking.tourName,
-          tourDate: booking.date,
-          tourTime: booking.time,
-          adults: booking.adults,
-          children: booking.children,
-          totalUSD: booking.totalUSD,
-          customerName: booking.customerName,
-          customerEmail: booking.customerEmail,
-          customerPhone: booking.customerPhone,
-          pickupHotel: booking.pickupHotel
-        });
-
+        // 2. El despacho al proveedor NO confirma la reserva frente al cliente.
+        // La confirmación sólo ocurre después de que el proveedor responda y el
+        // lifecycle transaccional valide ese estado.
         // 3. Iniciar monitor autónomo de SLA individual persistido en Firestore
         await this.providerLifecycle.startAutonomousTracking(bookingId, providerId, booking);
         this.successfulDispatches++;
 
-        return { success: true, bookingId, providerDispatched: coordRes.success };
+        return { success: true, bookingId, providerDispatched: coordRes.success, customerConfirmationDeferred: true };
       }
 
       default:
