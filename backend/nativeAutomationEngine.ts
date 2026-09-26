@@ -119,7 +119,7 @@ export async function executeChatInquiry(payload: {
   }
 
   try {
-    const assistantResult = await processChatInquiry(userMsg, lang, chatHistory, 'auto', sessionId || undefined);
+    const assistantResult = await processChatInquiry(userMsg, lang, chatHistory, 'auto', sessionId || undefined, { allowSensitiveLookups: true });
     const duration = Date.now() - start;
 
     if (sessionId) {
