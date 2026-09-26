@@ -87,7 +87,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
 
   const fetchAlertsCount = async () => {
     try {
-      const res = await fetch('/api/alerts?resolved=false');
+      const res = await fetch('/api/alerts?resolved=false', { headers: await getAdminAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         const list: any[] = data.alerts || data.data || [];
