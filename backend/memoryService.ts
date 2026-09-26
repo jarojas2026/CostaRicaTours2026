@@ -15,6 +15,7 @@ export type MemoryTurn = {
 
 export type OperationalMemory = {
   sessionId: string;
+  userId?: string;
   summary: string;
   facts: Record<string, string>;
   preferences: string[];
@@ -131,7 +132,7 @@ function deriveSummary(memory: OperationalMemory): string {
 export async function rememberTurn(
   rawSessionId: string,
   turn: Omit<MemoryTurn, 'timestamp'>,
-  options: { agentId?: string; activeGoal?: string; decision?: string } = {}
+  options: { agentId?: string; activeGoal?: string; decision?: string; ownerUserId?: string } = {}
 ): Promise<OperationalMemory> {
   const sessionId = safeSessionId(rawSessionId);
   const db = getFirestoreDb();
@@ -163,6 +164,7 @@ export async function rememberTurn(
 
   const updated: OperationalMemory = {
     ...memory,
+    ...(options.ownerUserId ? { userId: String(options.ownerUserId) } : {}),
     facts: Object.fromEntries(Object.entries(facts).slice(-MAX_FACTS)),
     preferences,
     activeGoals,
@@ -189,7 +191,8 @@ export async function rememberTurn(
 
 export async function saveChatHistory(
   rawSessionId: string,
-  history: Array<{ role?: string; sender?: string; text?: string; agentId?: string }>
+  history: Array<{ role?: string; sender?: string; text?: string; agentId?: string }>,
+  ownerUserId?: string
 ): Promise<OperationalMemory> {
   const sessionId = safeSessionId(rawSessionId);
   const normalized = history
@@ -204,7 +207,7 @@ export async function saveChatHistory(
 
   let memory = emptyMemory(sessionId);
   for (const turn of normalized) {
-    memory = await rememberTurn(sessionId, turn);
+    memory = await rememberTurn(sessionId, turn, ownerUserId ? { ownerUserId } : {});
   }
   return memory;
 }
@@ -243,6 +246,33 @@ export async function retrieveRelevantMemory(
     all.findIndex(x => x.text === turn.text && x.role === turn.role) === index
   ).slice(0, Math.min(12, Math.max(limit, 8)));
   return { summary: memory.summary, facts: memory.facts, relevantTurns: merged };
+}
+
+export async function getOwnedOperationalMemory(rawSessionId: string, ownerUserId: string): Promise<OperationalMemory> {
+  const sessionId = safeSessionId(rawSessionId);
+  const owner = String(ownerUserId || '').trim();
+  if (!owner) throw new Error('ownerUserId inválido');
+  const db = getFirestoreDb();
+  if (!db) throw new Error('PERSISTENCE_REQUIRED: memoria no disponible.');
+  const doc = await db.collection('agent_memory').doc(sessionId).get();
+  if (!doc.exists || String(doc.data()?.userId || '') !== owner) {
+    throw new Error('MEMORY_FORBIDDEN: esta sesión de memoria no pertenece al usuario autenticado.');
+  }
+  return getOperationalMemory(sessionId);
+}
+
+export async function clearOwnedOperationalMemory(rawSessionId: string, ownerUserId: string): Promise<void> {
+  const sessionId = safeSessionId(rawSessionId);
+  const owner = String(ownerUserId || '').trim();
+  if (!owner) throw new Error('ownerUserId inválido');
+  const db = getFirestoreDb();
+  if (!db) throw new Error('PERSISTENCE_REQUIRED: memoria no disponible.');
+  const ref = db.collection('agent_memory').doc(sessionId);
+  const doc = await ref.get();
+  if (!doc.exists || String(doc.data()?.userId || '') !== owner) {
+    throw new Error('MEMORY_FORBIDDEN: esta sesión de memoria no pertenece al usuario autenticado.');
+  }
+  await ref.delete();
 }
 
 export async function clearOperationalMemory(rawSessionId: string): Promise<void> {
