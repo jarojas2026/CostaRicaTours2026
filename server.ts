@@ -1076,7 +1076,7 @@ app.get('/api/bookings/:id/download-pdf', requireBookingDocumentAccess, async (r
 });
 
 // Despacho de Proforma e Itinerario con Notificación Email (PDF Adjunto) y WhatsApp
-app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confirmation'], async (req, res) => {
+app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confirmation'], requireAutomationTrigger, async (req, res) => {
   try {
     const result = await executeCustomerProformaConfirmation(req.body);
     res.json(result);
@@ -2730,11 +2730,21 @@ app.post('/api/claude/audit-booking', requireAgentTool, async (req, res) => {
 
 // Compatibilidad de rutas generales
 app.post('/api/workflows/:action', requireAutomationTrigger, (req, res) => {
-  res.json({ success: true, message: `Workflow ${req.params.action} procesado con éxito` });
+  res.status(410).json({
+    success: false,
+    error: 'LEGACY_WORKFLOW_ROUTE',
+    action: req.params.action,
+    message: 'Esta ruta de compatibilidad no ejecuta workflows. Use el endpoint nativo específico y verificado.'
+  });
 });
 
 app.post('/api/gemini/:action', requireAutomationTrigger, (req, res) => {
-  res.json({ success: true, text: `Respuesta de Gemini para ${req.params.action}` });
+  res.status(410).json({
+    success: false,
+    error: 'LEGACY_GEMINI_ROUTE',
+    action: req.params.action,
+    message: 'Esta ruta de compatibilidad no ejecuta Gemini. Use el endpoint de IA explícito y autenticado correspondiente.'
+  });
 });
 
 app.get('/api/chat/history', requireAuthenticatedUser, async (req, res) => {
