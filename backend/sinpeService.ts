@@ -142,15 +142,9 @@ export async function executeSinpeVerification(
     comprobante = `SINPE-${Date.now().toString().slice(-6)}`;
   }
 
-  // 2. Buscar la reserva en la base de datos
-  const allBookings = await getAllBookings();
-  const booking = allBookings.find(
-    (b: any) =>
-      b.bookingId === rawBookingId ||
-      b.id === rawBookingId ||
-      b.customerEmail?.toLowerCase() === rawBookingId.toLowerCase()
-  );
-
+  // 2. Buscar la reserva mediante consultas indexadas. Evitamos cargar
+  // todo el histórico de reservas para cada conciliación SINPE.
+  const booking = await findBookingByCodeOrEmail(rawBookingId);
   if (!booking) {
     throw new Error(`Reserva no encontrada con el identificador: ${rawBookingId}`);
   }
@@ -216,7 +210,110 @@ export async function executeSinpeVerification(
     };
   }
 
-  // 5. Conciliación Exitosa: Actualizar estado en base de datos
+  // 5. Conciliación durable e idempotente.
+  // Un Set local no protege entre instancias ni después de reinicios; Firestore
+  // actúa como fuente persistente para bloquear el mismo comprobante.
+  const db = getFirestoreDb();
+  const verificationId = crypto.createHash('sha256')
+    .update(comprobante.trim().toUpperCase())
+    .digest('hex')
+    .slice(0, 40);
+
+  let idempotentReplay = false;
+  if (db) {
+    try {
+      await db.runTransaction(async transaction => {
+        const verificationRef = db.collection('sinpe_verifications').doc(verificationId);
+        const verificationSnap = await transaction.get(verificationRef);
+
+        if (verificationSnap.exists) {
+          const previous = verificationSnap.data() || {};
+          if (String(previous.bookingId || '') !== bookingId) {
+            throw new Error('SINPE_DUPLICATE_REUSED');
+          }
+          idempotentReplay = true;
+          return;
+        }
+
+        transaction.set(verificationRef, {
+          bookingId,
+          comprobante,
+          amountCRC: amountCRC || expectedCRC,
+          expectedCRC,
+          bank,
+          verifiedAt: new Date().toISOString(),
+          status: 'verified'
+        });
+      });
+    } catch (error: any) {
+      if (error?.message === 'SINPE_DUPLICATE_REUSED') {
+        logAutomationExecution(
+          'SINPE_DUPLICATE_ALERT',
+          Date.now() - start,
+          'error',
+          `Comprobante SINPE reutilizado detectado en Firestore: ${comprobante} para reserva ${bookingId}`
+        );
+        return {
+          success: false,
+          bookingId,
+          status: 'rechazada_sinpe',
+          paymentStatus: 'failed',
+          comprobante,
+          montoVerificadoCRC: amountCRC,
+          montoEsperadoUSD: expectedUSD,
+          tipoCambioAplicado: usdToCrcRate,
+          bancoDetectado: bank,
+          providerDispatched: false,
+          customerNotified: false,
+          message: 'El comprobante SINPE ya está asociado a otra reserva. Se bloqueó la conciliación y se registró la alerta.',
+          timestamp: new Date().toISOString(),
+          auditHash: crypto.createHash('sha256').update(`${bookingId}:${comprobante}:REUSED_DURABLE`).digest('hex')
+        };
+      }
+      throw error;
+    }
+  } else if (process.env.NODE_ENV === 'production') {
+    throw new Error('No se puede conciliar SINPE de forma segura sin Firestore.');
+  }
+
+  if (verifiedComprobantesSet.has(comprobante) && !idempotentReplay) {
+    return {
+      success: false,
+      bookingId,
+      status: 'rechazada_sinpe',
+      paymentStatus: 'failed',
+      comprobante,
+      montoVerificadoCRC: amountCRC,
+      montoEsperadoUSD: expectedUSD,
+      tipoCambioAplicado: usdToCrcRate,
+      bancoDetectado: bank,
+      providerDispatched: false,
+      customerNotified: false,
+      message: 'El comprobante SINPE ya fue utilizado en esta instancia.',
+      timestamp: new Date().toISOString(),
+      auditHash: crypto.createHash('sha256').update(`${bookingId}:${comprobante}:REUSED_MEMORY`).digest('hex')
+    };
+  }
+
+  if (idempotentReplay) {
+    return {
+      success: true,
+      bookingId,
+      status: 'confirmada',
+      paymentStatus: 'completed',
+      comprobante,
+      montoVerificadoCRC: amountCRC || expectedCRC,
+      montoEsperadoUSD: expectedUSD,
+      tipoCambioAplicado: usdToCrcRate,
+      bancoDetectado: bank,
+      providerDispatched: false,
+      customerNotified: false,
+      message: 'Conciliación SINPE ya registrada para esta reserva; se evitó reprocesar el pago.',
+      timestamp: new Date().toISOString(),
+      auditHash: crypto.createHash('sha256').update(`${bookingId}:${comprobante}:IDEMPOTENT`).digest('hex')
+    };
+  }
+
   verifiedComprobantesSet.add(comprobante);
 
   await updateBookingStatus(bookingId, {
