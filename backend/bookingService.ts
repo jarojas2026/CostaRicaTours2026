@@ -163,7 +163,7 @@ export async function getOperatorById(providerId: string): Promise<{
   verified: boolean;
   certificacion?: string;
   active: boolean;
-}> {
+}> | null {
   const db = getFirestoreDb();
   const defaultFallback = {
     id: providerId || 'provider-unconfigured',
@@ -429,9 +429,17 @@ export async function createBooking(data: any) {
   const maxCapacity = tourInfo?.maxGroupSize || 15;
   const slotKey = getSlotKey(tourId, tourDate, bookingTime);
 
-  // 1. Obtener información dinámica del operador desde Firestore
-  const providerId = tourInfo?.providerId || 'alsama-tours-cr';
+  // 1. Obtener información dinámica del operador desde Firestore.
+  // En producción no se permite una reserva sin un proveedor real, activo y verificado.
+  const providerId = tourInfo?.providerId || '';
   const providerInfo = await getOperatorById(providerId);
+  if (process.env.NODE_ENV === 'production' && (!providerInfo || !providerInfo.verified || !providerInfo.active)) {
+    return {
+      conflict: true,
+      error: 'provider_not_ready',
+      message: 'La reserva no puede confirmarse hasta que exista un proveedor operativo real, activo y verificado para este servicio.'
+    };
+  }
 
   // 2. Validar pago del lado del servidor de forma estricta (NUNCA adoptar estado del cliente)
   let paymentResult: {
