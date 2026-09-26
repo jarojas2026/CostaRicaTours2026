@@ -431,7 +431,9 @@ export async function createBooking(data: any) {
 
   // 1. Obtener información dinámica del operador desde Firestore.
   // En producción no se permite una reserva sin un proveedor real, activo y verificado.
-  const providerId = tourInfo?.providerId || '';
+  // El providerId puede venir del catálogo o de una asignación operativa explícita.
+  // En ambos casos se valida contra el registro operativo antes de reservar.
+  const providerId = String(data.providerId || tourInfo?.providerId || '').trim();
   const providerInfo = await getOperatorById(providerId);
   if (process.env.NODE_ENV === 'production' && (!providerInfo || !providerInfo.verified || !providerInfo.active)) {
     return {
