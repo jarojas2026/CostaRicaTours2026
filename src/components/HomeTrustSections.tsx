@@ -35,9 +35,9 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
       icon: Compass,
       title: isEs ? '1. Explorá y Personalizá' : '1. Explore & Customize',
       desc: isEs 
-        ? 'Elegí entre más de 25 tours oficiales con guías certificados o dejá que nuestros Asistentes IA diseñen tu itinerario a la medida.'
-        : 'Choose from 25+ official certified tours or let our AI assistants craft your tailored day-by-day itinerary.',
-      badge: isEs ? 'Catálogo 100% Verificado' : '100% Verified Catalog'
+        ? 'Explorá experiencias del catálogo nacional o dejá que nuestros asistentes IA diseñen tu itinerario a la medida.'
+        : 'Explore the nationwide catalog or let our AI assistants craft a tailored day-by-day itinerary.',
+      badge: isEs ? 'Información operativa con verificación' : 'Operational information with verification'
     },
     {
       num: '02',
@@ -46,7 +46,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
       desc: isEs 
         ? 'Pagá en segundos con Stripe, PayPal, tarjetas internacionales o SINPE Móvil local con cifrado bancario de 256 bits.'
         : 'Pay in seconds with Stripe, PayPal, international cards, or local SINPE Móvil with 256-bit bank encryption.',
-      badge: isEs ? 'Cancelación Gratuita' : 'Free Cancellation'
+      badge: isEs ? 'Política de cancelación por experiencia' : 'Cancellation policy by experience'
     },
     {
       num: '03',
@@ -55,7 +55,7 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
       desc: isEs 
         ? 'Recibí tu confirmación oficial y código QR directo en tu WhatsApp y correo electrónico, listo para mostrar a tu operador local.'
         : 'Get your official booking confirmation & entry QR code directly on WhatsApp and email, ready to scan with your guide.',
-      badge: isEs ? 'Soporte 24/7 en Destino' : '24/7 On-Ground Support'
+      badge: isEs ? 'Soporte y seguimiento de reserva' : 'Booking support and follow-up'
     }
   ];
 
@@ -111,9 +111,9 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
   ];
 
   const partners = [
-    { name: 'SINAC', subtitle: isEs ? 'Parques Nacionales Oficial' : 'Official National Parks', icon: '🌿' },
-    { name: 'ICT Costa Rica', subtitle: isEs ? 'Instituto Turismo' : 'Tourism Board Partner', icon: '🇨🇷' },
-    { name: 'CANATUR', subtitle: isEs ? 'Cámara Nacional Turismo' : 'National Chamber of Tourism', icon: '🏅' },
+    { name: 'SINAC', subtitle: isEs ? 'Referencia institucional' : 'Institutional reference', icon: '🌿' },
+    { name: 'ICT Costa Rica', subtitle: isEs ? 'Información turística oficial' : 'Official tourism information', icon: '🇨🇷' },
+    { name: 'CANATUR', subtitle: isEs ? 'Referencia sectorial' : 'Industry reference', icon: '🏅' },
     { name: 'Selvatura Park', subtitle: isEs ? 'Monteverde Canopy' : 'Monteverde Canopy', icon: '🌲' },
     { name: 'Baldi Hot Springs', subtitle: isEs ? 'Aguas Termales Arenal' : 'Arenal Thermal Springs', icon: '🌋' },
     { name: 'Pacuare Outdoor', subtitle: isEs ? 'Rafting Certificado' : 'Certified Whitewater', icon: '🚣' },
@@ -182,17 +182,17 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
         </div>
       </section>
 
-      {/* 2. SECCIÓN TESTIMONIOS REALES */}
+      {/* 2. SECCIÓN HISTORIAS DESTACADAS */}
       <section className="bg-[#051c14]/90 py-16 border-y border-emerald-500/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase tracking-wider mb-2">
                 <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                {isEs ? '4.98 / 5 Estrellas en +1,200 Reseñas' : '4.98 / 5 Stars from +1,200 Reviews'}
+                {isEs ? 'Experiencias y servicios de Costa Rica en un catálogo nacional' : 'Costa Rica experiences and services in a nationwide catalog'}
               </div>
               <h2 className="text-3xl sm:text-4xl font-black text-white">
-                {isEs ? 'Viajeros felices viviendo el Pura Vida' : 'Happy Travelers Living Pura Vida'}
+                {isEs ? 'Descubrí lo que hace especial viajar por Costa Rica' : 'Discover what makes Costa Rica travel special'}
               </h2>
             </div>
             <button

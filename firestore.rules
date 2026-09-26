@@ -58,7 +58,8 @@ service cloud.firestore {
     }
 
     function isValidReview(data) {
-      return data.keys().hasAll(['bookingId', 'rating', 'comment', 'createdAt'])
+      return data.keys().hasAll(['bookingId', 'rating', 'comment', 'createdAt', 'userId'])
+        && data.userId is string && data.userId.size() <= 128
         && data.bookingId is string && data.bookingId.size() <= 128
         && data.rating is number && data.rating >= 1 && data.rating <= 5
         && data.comment is string && data.comment.size() <= 2048
@@ -80,8 +81,30 @@ service cloud.firestore {
     
     match /bookings/{bookingId} {
       allow read: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
-      allow create: if isSignedIn() && isValidBooking(incoming()) && incoming().userId == request.auth.uid;
-      allow update: if isAdmin() || (isSignedIn() && isValidBooking(incoming()) && existing().userId == request.auth.uid && incoming().userId == request.auth.uid);
+      // El cliente puede crear una solicitud inicial, pero nunca una reserva
+      // ya pagada/confirmada directamente desde Firestore.
+      allow create: if isSignedIn()
+        && isValidBooking(incoming())
+        && incoming().userId == request.auth.uid
+        && incoming().paymentStatus == 'pending'
+        && (incoming().status == 'pending' || incoming().status == 'pendiente_pago');
+
+      // Los cambios operativos/financieros pasan por el backend Admin SDK.
+      // El viajero solo puede editar sus datos de contacto y solicitudes.
+      allow update: if isAdmin() || (
+        isSignedIn()
+        && isValidBooking(incoming())
+        && existing().userId == request.auth.uid
+        && incoming().userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'customerName',
+          'customerEmail',
+          'customerPhone',
+          'customerCountry',
+          'pickupHotel',
+          'specialRequests'
+        ])
+      );
       allow delete: if isAdmin();
     }
 
@@ -95,7 +118,13 @@ service cloud.firestore {
 
     match /reviews/{reviewId} {
       allow read: if true;
-      allow create: if isSignedIn() && isValidReview(incoming());
+      allow create: if isSignedIn()
+        && isValidReview(incoming())
+        && incoming().userId == request.auth.uid
+        && exists(/databases/$(database)/documents/bookings/$(incoming().bookingId))
+        && get(/databases/$(database)/documents/bookings/$(incoming().bookingId)).data.userId == request.auth.uid
+        && get(/databases/$(database)/documents/bookings/$(incoming().bookingId)).data.paymentStatus == 'completed'
+        && get(/databases/$(database)/documents/bookings/$(incoming().bookingId)).data.status in ['confirmed', 'confirmada', 'completed', 'completada'];
       allow update, delete: if isAdmin();
     }
 

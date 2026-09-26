@@ -67,6 +67,7 @@ export interface MassiveThroughputMetrics {
  * Gestiona el seguimiento de SLA de cada reserva de forma duradera y resistente a reinicios de Cloud Run.
  */
 class IndividualProviderLifecycleManager {
+  private slaSweepRunning = false;
   /**
    * Inicia el ciclo autónomo persistiendo el estado directamente en Firestore
    */
@@ -123,9 +124,9 @@ class IndividualProviderLifecycleManager {
       let evaluatedCount = 0;
       for (const booking of pending) {
         const bookingId = booking.id || booking.bookingId;
-        const providerId = booking.providerId || 'alsama-tours-cr';
+        const providerId = String(booking.providerId || '').trim();
         const dispatchedAt = Number(booking.dispatchedAt || 0);
-        if (bookingId && booking.providerStatus === 'pending' && booking.escalated !== true && dispatchedAt > 0 && now - dispatchedAt > SLA_THRESHOLD_MS) {
+        if (bookingId && providerId && booking.providerStatus === 'pending' && booking.escalated !== true && dispatchedAt > 0 && now - dispatchedAt > SLA_THRESHOLD_MS) {
           await executeAutonomousProviderFallback(bookingId, providerId, 'SLA Expirado sin confirmación del proveedor ' + providerId);
           await updateBookingStatus(bookingId, { escalated: true, providerStatus: 'escalated_fallback' });
           evaluatedCount++;
@@ -267,7 +268,7 @@ export class MassiveProcessingEngine extends EventEmitter {
       case 'INDIVIDUAL_BOOKING_AUTONOMOUS_DISPATCH': {
         const { booking } = task.data;
         const bookingId = booking.bookingId || booking.id;
-        const providerId = booking.providerId || 'alsama-tours-cr';
+        const providerId = String(booking.providerId || '').trim();
 
         // 1. Despacho en tiempo real al proveedor
         const coordRes = await executeProviderRealtimeCoordination({
@@ -309,7 +310,7 @@ export class MassiveProcessingEngine extends EventEmitter {
       }
 
       default:
-        return { success: true, message: `Task ${task.type} ejecutada con éxito` };
+        throw new Error(`MASSIVE_TASK_UNSUPPORTED: tipo de tarea no registrado: ${task.type}`);
     }
   }
 

@@ -15,10 +15,11 @@
  */
 
 import crypto from 'crypto';
-import { 
-  findBookingByCodeOrEmail, 
-  updateBookingStatus, 
-  getAllBookings,
+import {
+  findBookingByCodeOrEmail,
+  updateBookingStatus,
+  getBookingsCollection,
+  getFirestoreDb,
   getUsdToCrcRate
 } from './bookingService';
 import { executeProviderRealtimeCoordination, executeCustomerBookingConfirmation } from './nativeWorkflows';
@@ -138,19 +139,19 @@ export async function executeSinpeVerification(
     throw new Error('ID de reserva es requerido para conciliar el pago SINPE Móvil.');
   }
 
+  // Un comprobante real y un monto verificable son requisitos mínimos.
+  // Nunca generamos referencias sintéticas para convertir una solicitud en un
+  // pago confirmado.
   if (!comprobante) {
-    comprobante = `SINPE-${Date.now().toString().slice(-6)}`;
+    throw new Error('Número de comprobante SINPE requerido. No se genera una referencia sintética.');
+  }
+  if (!Number.isFinite(amountCRC) || amountCRC <= 0) {
+    throw new Error('Monto SINPE en CRC requerido y debe ser mayor que cero para conciliar el pago.');
   }
 
-  // 2. Buscar la reserva en la base de datos
-  const allBookings = await getAllBookings();
-  const booking = allBookings.find(
-    (b: any) =>
-      b.bookingId === rawBookingId ||
-      b.id === rawBookingId ||
-      b.customerEmail?.toLowerCase() === rawBookingId.toLowerCase()
-  );
-
+  // 2. Buscar la reserva mediante consultas indexadas. Evitamos cargar
+  // todo el histórico de reservas para cada conciliación SINPE.
+  const booking = await findBookingByCodeOrEmail(rawBookingId);
   if (!booking) {
     throw new Error(`Reserva no encontrada con el identificador: ${rawBookingId}`);
   }
@@ -188,7 +189,7 @@ export async function executeSinpeVerification(
   }
 
   // 4. Verificación de monto (permite hasta 2% de margen por tipo de cambio bancario)
-  const isAmountValid = amountCRC === 0 || amountCRC >= expectedCRC * 0.98;
+  const isAmountValid = amountCRC > 0 && amountCRC >= expectedCRC * 0.98;
 
   if (!isAmountValid && amountCRC > 0) {
     logAutomationExecution(
@@ -216,18 +217,108 @@ export async function executeSinpeVerification(
     };
   }
 
-  // 5. Conciliación Exitosa: Actualizar estado en base de datos
-  verifiedComprobantesSet.add(comprobante);
+  // 5. Conciliación durable e idempotente.
+  // Un Set local no protege entre instancias ni después de reinicios; Firestore
+  // actúa como fuente persistente para bloquear el mismo comprobante.
+  const db = getFirestoreDb();
+  const verificationId = crypto.createHash('sha256')
+    .update(comprobante.trim().toUpperCase())
+    .digest('hex')
+    .slice(0, 40);
 
-  await updateBookingStatus(bookingId, {
-    status: 'confirmada',
-    paymentStatus: 'completed',
-    paymentMethod: 'sinpe_movil',
-    sinpeComprobante: comprobante,
-    sinpeBank: bank,
-    sinpeAmountCRC: amountCRC || expectedCRC,
-    sinpeVerifiedAt: new Date().toISOString()
-  });
+  let idempotentReplay = false;
+  if (db) {
+    const bookingDocumentId = String(booking.id || '').trim();
+    const bookingsCollection = getBookingsCollection();
+    if (!bookingDocumentId || !bookingsCollection) {
+      throw new Error('No se encontró el documento Firestore de la reserva para una conciliación segura.');
+    }
+
+    try {
+      await db.runTransaction(async transaction => {
+        const verificationRef = db.collection('sinpe_verifications').doc(verificationId);
+        const bookingRef = bookingsCollection.doc(bookingDocumentId);
+        const [verificationSnap, bookingSnap] = await Promise.all([
+          transaction.get(verificationRef),
+          transaction.get(bookingRef)
+        ]);
+
+        if (!bookingSnap.exists) throw new Error('BOOKING_DOCUMENT_NOT_FOUND');
+
+        if (verificationSnap.exists) {
+          const previous = verificationSnap.data() || {};
+          if (String(previous.bookingId || '') !== bookingId) {
+            throw new Error('SINPE_DUPLICATE_REUSED');
+          }
+          idempotentReplay = true;
+          return;
+        }
+
+        const persistedBooking = bookingSnap.data() || {};
+        const existingPaymentStatus = String(persistedBooking.paymentStatus || '').toLowerCase();
+        const existingReceipt = String(persistedBooking.sinpeComprobante || persistedBooking.sinpeReference || '').trim().toUpperCase();
+        if (existingPaymentStatus === 'completed' && existingReceipt && existingReceipt !== comprobante.trim().toUpperCase()) {
+          throw new Error('BOOKING_ALREADY_PAID');
+        }
+
+        const now = new Date().toISOString();
+        transaction.set(verificationRef, {
+          bookingId,
+          comprobante,
+          amountCRC: amountCRC || expectedCRC,
+          expectedCRC,
+          bank,
+          verifiedAt: now,
+          status: 'verified'
+        });
+        transaction.set(bookingRef, {
+          sinpeReference: comprobante,
+          sinpeComprobante: comprobante,
+          paymentStatus: 'completed',
+          paymentMethod: 'sinpe_movil',
+          status: 'confirmada',
+          sinpeBank: bank,
+          sinpeAmountCRC: amountCRC || expectedCRC,
+          sinpeVerifiedAt: now,
+          updatedAt: now
+        }, { merge: true });
+      });
+    } catch (error: any) {
+      if (error?.message === 'SINPE_DUPLICATE_REUSED') {
+        logAutomationExecution(
+          'SINPE_DUPLICATE_ALERT',
+          Date.now() - start,
+          'error',
+          `Comprobante SINPE reutilizado detectado en Firestore: ${comprobante} para reserva ${bookingId}`
+        );
+        return {
+          success: false,
+          bookingId,
+          status: 'rechazada_sinpe',
+          paymentStatus: 'failed',
+          comprobante,
+          montoVerificadoCRC: amountCRC,
+          montoEsperadoUSD: expectedUSD,
+          tipoCambioAplicado: usdToCrcRate,
+          bancoDetectado: bank,
+          providerDispatched: false,
+          customerNotified: false,
+          message: 'El comprobante SINPE ya está asociado a otra reserva. Se bloqueó la conciliación y se registró la alerta.',
+          timestamp: new Date().toISOString(),
+          auditHash: crypto.createHash('sha256').update(`${bookingId}:${comprobante}:REUSED_DURABLE`).digest('hex')
+        };
+      }
+      if (error?.message === 'BOOKING_DOCUMENT_NOT_FOUND') {
+        throw new Error('Documento Firestore de la reserva no encontrado.');
+      }
+      if (error?.message === 'BOOKING_ALREADY_PAID') {
+        throw new Error('La reserva ya tiene un pago completado con un comprobante diferente.');
+      }
+      throw error;
+    }
+  } else if (process.env.NODE_ENV === 'production') {
+    throw new Error('No se puede conciliar SINPE de forma segura sin Firestore.');
+  }
 
   // 6. Generar firma de auditoría
   const auditHash = crypto

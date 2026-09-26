@@ -6,6 +6,7 @@ import {
   Radio, Check, X, ShieldAlert, Sparkles, MapPin, FileText
 } from 'lucide-react';
 import { formatCurrency } from '../utils/i18n';
+import { auth } from '../firebase';
 
 interface ProviderCommunicationHubProps {
   language?: 'es' | 'en';
@@ -20,12 +21,18 @@ export const ProviderCommunicationHub: React.FC<ProviderCommunicationHubProps> =
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<'providers' | 'orders' | 'self_dev' | 'routes'>('providers');
 
+  const getAdminHeaders = async () => {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('Sesión administrativa no disponible');
+    return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+  };
+
   const fetchData = async () => {
     try {
       setLoading(true);
       const [resProv, resSelfDev] = await Promise.all([
         fetch('/api/providers').then(r => r.json()).catch(() => null),
-        fetch('/api/self-dev/status').then(r => r.json()).catch(() => null)
+        (async () => fetch('/api/self-dev/status', { headers: await getAdminHeaders() }).then(r => r.ok ? r.json() : null))()
       ]);
       if (resProv) setProvidersData(resProv);
       if (resSelfDev) setSelfDevData(resSelfDev);
@@ -45,7 +52,7 @@ export const ProviderCommunicationHub: React.FC<ProviderCommunicationHubProps> =
   const handleRunSelfHealing = async () => {
     try {
       setHealingRunning(true);
-      const res = await fetch('/api/self-dev/run-healing', { method: 'POST' });
+      const res = await fetch('/api/self-dev/run-healing', { method: 'POST', headers: await getAdminHeaders() });
       const data = await res.json();
       setActionFeedback(language === 'es' 
         ? `✅ Ciclo de auto-reparación completado: ${data.metrics?.staleLocksFreed || 2} bloqueos liberados y salud del sistema al 99.8%.`
@@ -63,7 +70,7 @@ export const ProviderCommunicationHub: React.FC<ProviderCommunicationHubProps> =
     try {
       const res = await fetch('/api/providers/action', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await getAdminHeaders(),
         body: JSON.stringify({ orderId, action })
       });
       const data = await res.json();

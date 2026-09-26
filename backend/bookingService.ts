@@ -5,6 +5,7 @@
  */
 
 import fs from 'fs';
+import { randomUUID } from 'crypto';
 import path from 'path';
 import admin from 'firebase-admin';
 import {
@@ -57,6 +58,17 @@ export function getUsdToCrcRateOptional(): number {
 let dbInstance: Firestore | null = null;
 const inMemoryBookings: Map<string, any> = new Map();
 const inMemorySlots: Map<string, number> = new Map();
+const MAX_IN_MEMORY_BOOKINGS = 2000;
+const MAX_IN_MEMORY_SLOTS = 2000;
+
+function setBoundedMemoryMap<T>(map: Map<string, T>, key: string, value: T, maxSize: number) {
+  map.set(key, value);
+  while (map.size > maxSize) {
+    const oldestKey = map.keys().next().value as string | undefined;
+    if (!oldestKey) break;
+    map.delete(oldestKey);
+  }
+}
 
 /**
  * Inicializa y devuelve la instancia de Firestore Admin
@@ -163,7 +175,7 @@ export async function getOperatorById(providerId: string): Promise<{
   verified: boolean;
   certificacion?: string;
   active: boolean;
-}> {
+} | null> {
   const db = getFirestoreDb();
   const defaultFallback = {
     id: providerId || 'provider-unconfigured',
@@ -187,10 +199,10 @@ export async function getOperatorById(providerId: string): Promise<{
       return {
         id: opDoc.id,
         name: data.name || data.nombre || 'Operador Verificado',
-        paypalEmail: data.paypalEmail || data.email || defaultFallback.paypalEmail,
-        commissionRate: typeof data.commissionRate === 'number' ? data.commissionRate : 0.15,
-        phone: data.phone || data.telefono || defaultFallback.phone,
-        website: data.website || defaultFallback.website,
+        paypalEmail: data.paypalEmail || data.email || '',
+        commissionRate: typeof data.commissionRate === 'number' ? data.commissionRate : 0,
+        phone: data.phone || data.telefono || '',
+        website: data.website || '',
         verified: data.verified === true,
         certificacion: data.certificacion,
         active: data.verified === true && data.active === true && data.status !== 'inactivo'
@@ -204,10 +216,12 @@ export async function getOperatorById(providerId: string): Promise<{
       return {
         id: provDoc.id,
         name: data.nombre || data.name || 'Proveedor Turístico',
-        paypalEmail: data.paypalEmail || data.email || defaultFallback.paypalEmail,
-        commissionRate: typeof data.comision === 'number' ? data.comision : (data.commissionRate ?? 0.15),
-        phone: data.telefono || data.phone || defaultFallback.phone,
-        website: data.website || defaultFallback.website,
+        paypalEmail: data.paypalEmail || data.email || '',
+        commissionRate: typeof data.comision === 'number'
+          ? data.comision
+          : (typeof data.commissionRate === 'number' ? data.commissionRate : 0),
+        phone: data.telefono || data.phone || '',
+        website: data.website || '',
         verified: data.verificado === true,
         certificacion: data.certificacion,
         active: data.verificado === true && data.activo === true && data.status !== 'inactivo'
@@ -220,7 +234,7 @@ export async function getOperatorById(providerId: string): Promise<{
   // No se fabrican proveedores operativos si Firestore no contiene el registro verificado.
 
 
-  return defaultFallback;
+  return db ? null : defaultFallback;
 }
 
 /**
@@ -417,7 +431,7 @@ export async function createBooking(data: any) {
     }
   }
 
-  const bookingId = data.bookingId || `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
+  const bookingId = data.bookingId || `CR-PV-${randomUUID().replace(/-/g, '').slice(0, 20).toUpperCase()}`;
   const bookingTime = data.time || '08:00 AM';
   const numAdults = Number(data.adults) || 1;
   const numChildren = Number(data.children) || 0;
@@ -429,9 +443,19 @@ export async function createBooking(data: any) {
   const maxCapacity = tourInfo?.maxGroupSize || 15;
   const slotKey = getSlotKey(tourId, tourDate, bookingTime);
 
-  // 1. Obtener información dinámica del operador desde Firestore
-  const providerId = tourInfo?.providerId || 'alsama-tours-cr';
+  // 1. Obtener información dinámica del operador desde Firestore.
+  // En producción no se permite una reserva sin un proveedor real, activo y verificado.
+  // El providerId puede venir del catálogo o de una asignación operativa explícita.
+  // En ambos casos se valida contra el registro operativo antes de reservar.
+  const providerId = String(data.providerId || tourInfo?.providerId || '').trim();
   const providerInfo = await getOperatorById(providerId);
+  if (process.env.NODE_ENV === 'production' && (!providerInfo || !providerInfo.verified || !providerInfo.active)) {
+    return {
+      conflict: true,
+      error: 'provider_not_ready',
+      message: 'La reserva no puede confirmarse hasta que exista un proveedor operativo real, activo y verificado para este servicio.'
+    };
+  }
 
   // 2. Validar pago del lado del servidor de forma estricta (NUNCA adoptar estado del cliente)
   let paymentResult: {
@@ -504,6 +528,8 @@ export async function createBooking(data: any) {
     paymentStatus: paymentResult.paymentStatus,
     status: paymentResult.status,
     sinpeReference: data.sinpeReference || undefined,
+    holdExpiresAt: data.holdExpiresAt || undefined,
+    holdActive: data.holdActive === true,
     customerName: customerObj.name,
     customerEmail: customerObj.email,
     customerPhone: customerObj.phone,
@@ -533,8 +559,32 @@ export async function createBooking(data: any) {
             throw new Error('IDEMPOTENT_REPLAY');
           }
         }
+        const bookingDoc = await transaction.get(bookingRef);
+        if (bookingDoc.exists) {
+          throw new Error('BOOKING_ID_IN_USE');
+        }
+
         const slotDoc = await transaction.get(slotRef);
-        const currentBooked = slotDoc.exists ? (Number(slotDoc.data()?.bookedSeats) || 0) : 0;
+        let currentBooked = slotDoc.exists ? (Number(slotDoc.data()?.bookedSeats) || 0) : 0;
+
+        // Reconciliación para slots históricos que todavía no tienen documento
+        // dedicado: contamos las reservas existentes dentro de la misma
+        // transacción antes de crear el slot canónico.
+        if (!slotDoc.exists) {
+          const existingBookingsQuery = db.collection('bookings')
+            .where('tourId', '==', tourId)
+            .where('date', '==', tourDate)
+            .where('time', '==', bookingTime);
+          const existingBookings = await transaction.get(existingBookingsQuery);
+          currentBooked = existingBookings.docs.reduce((sum, doc) => {
+            const existing = doc.data() || {};
+            const status = String(existing.status || '').toLowerCase();
+            if (status === 'cancelada' || status === 'cancelled' || status === 'expirada' || status === 'expired') {
+              return sum;
+            }
+            return sum + (Number(existing.adults) || 0) + (Number(existing.children) || 0);
+          }, 0);
+        }
 
         if (currentBooked + totalPassengers > maxCapacity) {
           const availableLeft = Math.max(0, maxCapacity - currentBooked);
@@ -580,6 +630,9 @@ export async function createBooking(data: any) {
       if (err.message === 'IDEMPOTENCY_CONFLICT') {
         return { conflict: true, error: 'idempotency_conflict', message: 'La misma Idempotency-Key fue usada con datos diferentes.' };
       }
+      if (err.message === 'BOOKING_ID_IN_USE') {
+        return { conflict: true, error: 'booking_id_in_use', message: 'El identificador de reserva ya existe. Genere una nueva solicitud.' };
+      }
       if (err.message && err.message.startsWith('NO_AVAILABILITY:')) {
         return {
           conflict: true,
@@ -606,7 +659,7 @@ export async function createBooking(data: any) {
         capacidadMaxima: maxCapacity
       };
     }
-    inMemorySlots.set(slotKey, currentMemoryBooked + totalPassengers);
+    setBoundedMemoryMap(inMemorySlots, slotKey, currentMemoryBooked + totalPassengers, MAX_IN_MEMORY_SLOTS);
   }
 
   // Guardar copia normalizada en memoria para respuestas JSON del cliente
@@ -615,7 +668,7 @@ export async function createBooking(data: any) {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
-  inMemoryBookings.set(bookingId, responseBooking);
+  setBoundedMemoryMap(inMemoryBookings, bookingId, responseBooking, MAX_IN_MEMORY_BOOKINGS);
 
   // 4. Automatización de antifraude inmediata
   const isSuspicious = (responseBooking.totalUSD > 1500) || (responseBooking.customerEmail && /@(tempmail|mailinator|throwaway)\./i.test(responseBooking.customerEmail));

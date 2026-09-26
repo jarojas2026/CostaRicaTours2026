@@ -11,6 +11,24 @@ import admin from 'firebase-admin';
  * restricted to that explicit allowlist. This keeps the dashboard private to the
  * owner and a small number of collaborators without changing public auth flows.
  */
+export async function requireSignedInUser(req: Request, res: Response, next: NextFunction) {
+  const authorization = req.headers.authorization;
+  if (!authorization?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Autenticación requerida.' });
+  }
+
+  try {
+    const adminAny = admin as any;
+    if (!adminAny.apps || adminAny.apps.length === 0) adminAny.initializeApp();
+    const token = authorization.slice('Bearer '.length).trim();
+    const decoded = await adminAny.auth().verifyIdToken(token);
+    (req as any).user = decoded;
+    return next();
+  } catch {
+    return res.status(401).json({ error: 'Token de autenticación inválido o expirado' });
+  }
+}
+
 export async function requireOperator(req: Request, res: Response, next: NextFunction) {
   const authorization = req.headers.authorization;
   if (authorization?.startsWith('Bearer ')) {

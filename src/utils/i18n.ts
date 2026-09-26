@@ -309,8 +309,8 @@ export const UI_TRANSLATIONS: Record<string, Record<Language, string>> = {
   licenseText: { es: '🇨🇷 100% Tico • Esencial Costa Rica', en: '🇨🇷 100% Authentic Costa Rica', de: '🇨🇷 100% Authentisches Costa Rica', fr: '🇨🇷 100% Authentique Costa Rica', zh: '🇨🇷 100% 纯正哥斯达黎加', ja: '🇨🇷 100% 本物のコスタリカ' },
   ticoCultureTab: { es: '🇨🇷 Rincón Tico & Cultura', en: '🇨🇷 Tico Culture & Flavors', de: '🇨🇷 Tico-Kultur & Aromen', fr: '🇨🇷 Culture & Saveurs Ticas', zh: '🇨🇷 哥斯达黎加文化与风味', ja: '🇨🇷 ティコ文化と郷土料理' },
   discover: { es: 'DESCUBRE', en: 'DISCOVER', de: 'ENTDECKE', fr: 'DÉCOUVREZ', zh: '发现', ja: '発見する' },
-  happyTravelers: { es: 'Viajeros felices desde 2018', en: 'Happy travelers since 2018', de: 'Glückliche Reisende seit 2018', fr: 'Voyageurs heureux depuis 2018', zh: '2018年以来的快乐旅行者', ja: '2018年からの幸せな旅行者' },
-  verifiedReviews: { es: '1,200+ Reseñas Verificadas', en: '1,200+ Verified Reviews', de: '1.200+ verifizierte Bewertungen', fr: '1 200+ Avis vérifiés', zh: '1,200+ 条真实评价', ja: '1,200件以上の確認済みレビュー' },
+  happyTravelers: { es: 'Experiencias de viaje en Costa Rica', en: 'Costa Rica travel experiences', de: 'Reiseerlebnisse in Costa Rica', fr: 'Expériences de voyage au Costa Rica', zh: '哥斯达黎加旅行体验', ja: 'コスタリカの旅行体験' },
+  verifiedReviews: { es: 'Valoraciones de viajeros', en: 'Traveler ratings', de: 'Bewertungen von Reisenden', fr: 'Avis de voyageurs', zh: '旅客评价', ja: '旅行者の評価' },
   localGuides: { es: 'Guías Locales', en: 'Local Guides', de: 'Lokale Führer', fr: 'Guides Locaux', zh: '当地导游', ja: '地元ガイド' },
   allRegions: { es: '🌴 Todas las Regiones', en: '🌴 All Regions', de: '🌴 Alle Regionen', fr: '🌴 Toutes les régions', zh: '🌴 所有区域', ja: '🌴 すべての地域' },
   allCategories: { es: '🎯 Todas las Categorías', en: '🎯 All Categories', de: '🎯 Alle Kategorien', fr: '🎯 Toutes les catégories', zh: '🎯 所有类别', ja: '🎯 すべてのカテゴリー' },
@@ -328,9 +328,14 @@ export const UI_TRANSLATIONS: Record<string, Record<Language, string>> = {
 };
 
 
+import { getUsdToCrcRate } from './currencies';
+
 export let EXCHANGE_RATES: Record<string, number> = {
   USD: 1,
-  CRC: 510,
+  // CRC se obtiene exclusivamente del endpoint operativo/configurado.
+  CRC: 0,
+  // Estas monedas mantienen un fallback de presentación hasta que se carguen
+  // las cotizaciones del proveedor externo.
   EUR: 0.92,
   GBP: 0.78,
   CAD: 1.36,
@@ -338,19 +343,33 @@ export let EXCHANGE_RATES: Record<string, number> = {
 
 export async function fetchExchangeRates() {
   try {
-    const response = await fetch('https://open.er-api.com/v6/latest/USD');
-    const data = await response.json();
-    if (data && data.rates) {
-      EXCHANGE_RATES = { ...EXCHANGE_RATES, ...data.rates };
-      window.dispatchEvent(new Event('exchangeRatesUpdated'));
+    const [crcResponse, globalResponse] = await Promise.all([
+      fetch('/api/currency/exchange-rate'),
+      fetch('https://open.er-api.com/v6/latest/USD')
+    ]);
+
+    if (crcResponse.ok) {
+      const crcData = await crcResponse.json();
+      const crc = Number(crcData?.usdToCrc);
+      if (Number.isFinite(crc) && crc > 0) EXCHANGE_RATES = { ...EXCHANGE_RATES, CRC: crc };
     }
+
+    if (globalResponse.ok) {
+      const data = await globalResponse.json();
+      if (data?.rates) {
+        EXCHANGE_RATES = { ...EXCHANGE_RATES, ...data.rates };
+      }
+    }
+
+    window.dispatchEvent(new Event('exchangeRatesUpdated'));
   } catch (error) {
     console.error('Failed to fetch exchange rates', error);
   }
 }
 
 export function formatCurrency(amountUSD: number, currency: Currency = 'USD'): string {
-  const rate = EXCHANGE_RATES[currency] || 1;
+  const rate = currency === 'CRC' ? getUsdToCrcRate() : (EXCHANGE_RATES[currency] || 1);
+  if (currency === 'CRC' && (!Number.isFinite(rate) || rate <= 0)) return '₡—';
   const amount = amountUSD * rate;
   
   try {

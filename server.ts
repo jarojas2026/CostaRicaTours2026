@@ -16,13 +16,14 @@ import rateLimit from 'express-rate-limit';
 import { createServer as createViteServer } from 'vite';
 import { initializeAutomationEngine, cleanupExpiredSoftHolds } from './backend/cronEngine';
 import { google } from 'googleapis';
-import { requireOperator } from './backend/authMiddleware';
+import { requireOperator, requireSignedInUser } from './backend/authMiddleware';
 import { TOURS } from './src/data/toursData';
 import { getTourMediaById } from './backend/tourMediaService';
 import { FLIGHT_ROUTES } from './src/data/flightsData';
 import {
   getStripe,
   createBooking,
+  getBookingById,
   getAllBookings,
   updateBookingStatus,
   checkTourAvailability,
@@ -100,7 +101,7 @@ import {
   executePostSaleVipLoyalty
 } from './backend/nativeWorkflows';
 import { executeSinpeVerification } from './backend/sinpeService';
-import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
+import { getProvidersOverview, getPublicProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
 import { verifyProviderPortalToken } from './backend/providerPortalService';
 import { createInboundVoiceResponse, handleVoiceTurn, voiceAgentDeskConfig, verifyVoiceSignature, rememberVoiceCallStart, rememberVoiceCallEnd, getVoiceCallSession } from './backend/voiceAgentDeskService';
 import { getSelfDevelopmentOverview, runSelfHealingCycle } from './backend/selfDevelopmentEngine';
@@ -126,12 +127,26 @@ import { processEmailOperationsOnce, getEmailOperationsSnapshot } from './backen
 import { runReservationLifecycleSweep } from './backend/reservationLifecycleOrchestrator';
 import { withDistributedAutomationLock } from './backend/cronEngine';
 import { createInFlightLimiter } from './backend/admissionControl';
+import { createCustomerActionToken, verifyCustomerActionToken } from './backend/customerActionTokenService';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
 // Admin gate is defined before any route registration that uses it.
 const requireAdmin = requireOperator;
+
+// Per-instance admission guards complement the global rate limiter and protect costly paths during spikes.
+const apiAdmission = createInFlightLimiter(250);
+const intakeAdmission = createInFlightLimiter(40);
+const aiAdmission = createInFlightLimiter(80);
+const bookingAdmission = createInFlightLimiter(60);
+const sinpeSubmitLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Límite de comprobantes SINPE excedido. Intente nuevamente más tarde.' }
+});
 
 function adminAccessPayload(req: express.Request) {
   const access = (req as any).adminAccess || {};
@@ -160,6 +175,30 @@ function requireAgentTool(req: express.Request, res: express.Response, next: exp
   next();
 }
 
+
+/**
+ * Shared gate for legacy/native automation endpoints. In production an
+ * endpoint that can mutate bookings, send messages, run batches or trigger
+ * automation must carry either the dedicated webhook secret or agent token.
+ */
+function requireAutomationCredential(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const webhookSecret = String(process.env.WEBHOOK_SECRET || '');
+  const agentToken = String(process.env.AGENT_INTERNAL_TOKEN || '');
+  if (!webhookSecret && !agentToken) {
+    return res.status(process.env.NODE_ENV === 'production' ? 503 : 401).json({ error: 'Credenciales de automatización no configuradas.' });
+  }
+  const providedWebhook = String(req.headers['x-webhook-secret'] || '');
+  const authorization = String(req.headers.authorization || '');
+  const providedBearer = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
+  const matches = (provided: string, expected: string) => {
+    if (!provided || !expected) return false;
+    const a = Buffer.from(provided);
+    const b = Buffer.from(expected);
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
+  };
+  if (matches(providedWebhook, webhookSecret) || matches(providedBearer, agentToken)) return next();
+  return res.status(401).json({ error: 'No autorizado para automatización.' });
+}
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '256kb', verify: (req, _res, buf) => { (req as any).rawBody = Buffer.from(buf); } }));
 app.use(express.urlencoded({ extended: true, limit: '32kb', parameterLimit: 100 }));
@@ -189,6 +228,14 @@ const chatLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Límite de solicitudes de chat excedido. Por favor espere un momento.' }
+});
+
+const journeyLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 12,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Límite de planificación excedido. Espere un momento antes de crear otro itinerario.' }
 });
 
 const generalApiLimiter = rateLimit({
@@ -375,10 +422,12 @@ app.post('/api/ai/journey', aiAdmission.middleware, async (req, res) => {
   }
 });
 
-app.post('/api/ai/journey/:journeyId/guardian', aiAdmission.middleware, async (req, res) => {
+app.post('/api/ai/journey/:journeyId/guardian', aiAdmission.middleware, journeyLimiter, async (req, res) => {
   try {
-    const journey = await getTravelerJourney(String(req.params.journeyId || ''));
-    if (!journey) return res.status(404).json({ success: false, error: 'Viaje no encontrado.' });
+    const sessionId = typeof req.body?.sessionId === 'string' ? req.body.sessionId : '';
+    const journey = await getTravelerJourney(String(req.params.journeyId || ''), sessionId);
+    if (!journey || journey.status === 'not_found') return res.status(404).json({ success: false, error: 'Viaje no encontrado.' });
+    if (journey.status === 'forbidden') return res.status(403).json({ success: false, error: journey.error });
     const result = await guardianReplanJourney({
       catalog: Array.isArray(journey.catalog) ? journey.catalog : [],
       date: journey.traveler?.date,
@@ -395,11 +444,15 @@ app.post('/api/ai/journey/:journeyId/guardian', aiAdmission.middleware, async (r
   }
 });
 
-app.post('/api/ai/journey/:journeyId/observe', aiAdmission.middleware, async (req, res) => {
+app.post('/api/ai/journey/:journeyId/observe', aiAdmission.middleware, journeyLimiter, async (req, res) => {
   try {
-    const journey = await getTravelerJourney(String(req.params.journeyId || ''));
+    const sessionId = typeof req.body?.sessionId === 'string' ? req.body.sessionId : '';
+    const journey = await getTravelerJourney(String(req.params.journeyId || ''), sessionId);
     if (!journey || journey.status === 'not_found') {
       return res.status(404).json({ success: false, error: 'Viaje no encontrado.' });
+    }
+    if (journey.status === 'forbidden') {
+      return res.status(403).json({ success: false, error: journey.error });
     }
     const observation = await observeJourneyState({
       catalog: Array.isArray(journey.catalog) ? journey.catalog : [],
@@ -416,17 +469,20 @@ app.post('/api/ai/journey/:journeyId/observe', aiAdmission.middleware, async (re
 
 app.get('/api/ai/journey/:journeyId', async (req, res) => {
   try {
-    const result = await getTravelerJourney(String(req.params.journeyId || ''));
-    if (!result) return res.status(404).json({ success: false, error: 'Viaje no encontrado.' });
+    const sessionId = typeof req.query.sessionId === 'string' ? req.query.sessionId : '';
+    const result = await getTravelerJourney(String(req.params.journeyId || ''), sessionId);
+    if (!result || result.status === 'not_found') return res.status(404).json({ success: false, error: 'Viaje no encontrado.' });
+    if (result.status === 'forbidden') return res.status(403).json({ success: false, error: result.error });
     res.json({ success: true, journey: result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message || 'No se pudo recuperar el viaje.' });
   }
 });
 
-app.patch('/api/ai/journey/:journeyId', aiAdmission.middleware, async (req, res) => {
+app.patch('/api/ai/journey/:journeyId', aiAdmission.middleware, journeyLimiter, async (req, res) => {
   try {
     const result = await adaptTravelerJourney(String(req.params.journeyId || ''), req.body || {});
+    if (result?.status === 'forbidden') return res.status(403).json({ success: false, error: result.error });
     res.json({ success: true, journey: result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message || 'No se pudo adaptar el viaje.' });
@@ -508,37 +564,6 @@ app.get('/api/admin/control-center', requireAdmin, async (_req, res) => {
   }
 });
 
-// Full-trip Journey API: keeps the public planning flow connected to memory,
-// authoritative catalog, live weather, availability, itinerary and sales next step.
-app.post('/api/journey/build', async (req, res) => {
-  try {
-    const result = await buildTripJourney(req.body || {});
-    res.json({ success: true, journey: result });
-  } catch (err: any) {
-    res.status(400).json({ success: false, error: err.message || 'No se pudo construir el viaje' });
-  }
-});
-
-app.get('/api/journey/:journeyId', async (req, res) => {
-  try {
-    const journey = await getTravelerJourney(String(req.params.journeyId || ''));
-    if (!journey) return res.status(404).json({ success: false, error: 'Viaje no encontrado' });
-    res.json({ success: true, journey });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message || 'No se pudo recuperar el viaje' });
-  }
-});
-
-app.post('/api/journey/:journeyId/adapt', async (req, res) => {
-  try {
-    const journey = await adaptTravelerJourney(String(req.params.journeyId || ''), req.body || {});
-    res.json({ success: true, journey });
-  } catch (err: any) {
-    const status = /no encontrado/i.test(err.message || '') ? 404 : 400;
-    res.status(status).json({ success: false, error: err.message || 'No se pudo adaptar el viaje' });
-  }
-});
-
 app.post('/api/internal/provider-inbox/sweep', requireAgentTool, async (_req, res) => {
   try {
     res.json({ success: true, result: await processProviderInboxOnce() });
@@ -570,7 +595,7 @@ app.post('/api/admin/email-operations/sweep', requireAdmin, async (_req, res) =>
   catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Email operations sweep error' }); }
 });
 
-app.post('/api/ai/intelligence', (req, res) => {
+app.post('/api/ai/intelligence', journeyLimiter, async (req, res) => {
   try {
     const action = String(req.body?.action || '').trim();
     switch (action) {
@@ -595,7 +620,7 @@ app.post('/api/ai/intelligence', (req, res) => {
 // ==========================================
  // 🧭 VIAJE COMPLETO: MEMORIA + CATÁLOGO + CLIMA + DISPONIBILIDAD + ITINERARIO + VENTAS
  // ==========================================
-app.post('/api/journey/build', async (req, res) => {
+app.post('/api/journey/build', journeyLimiter, async (req, res) => {
   try {
     const journey = await buildTripJourney({
       sessionId: typeof req.body?.sessionId === 'string' ? req.body.sessionId : undefined,
@@ -618,15 +643,17 @@ app.post('/api/journey/build', async (req, res) => {
 
 app.get('/api/journey/:journeyId', async (req, res) => {
   try {
-    const journey = await getTravelerJourney(String(req.params.journeyId || ''));
-    if (!journey) return res.status(404).json({ error: 'Viaje no encontrado.' });
+    const sessionId = typeof req.query.sessionId === 'string' ? req.query.sessionId : '';
+    const journey = await getTravelerJourney(String(req.params.journeyId || ''), sessionId);
+    if (journey?.status === 'forbidden') return res.status(403).json(journey);
+    if (!journey || journey.status === 'not_found') return res.status(404).json({ error: 'Viaje no encontrado.' });
     return res.json(journey);
   } catch (error: any) {
     return res.status(500).json({ error: error?.message || 'No se pudo leer el viaje.' });
   }
 });
 
-app.post('/api/journey/:journeyId/adapt', async (req, res) => {
+app.post('/api/journey/:journeyId/adapt', journeyLimiter, async (req, res) => {
   try {
     const journey = await adaptTravelerJourney(String(req.params.journeyId || ''), {
       sessionId: typeof req.body?.sessionId === 'string' ? req.body.sessionId : undefined,
@@ -647,33 +674,10 @@ app.post('/api/journey/:journeyId/adapt', async (req, res) => {
   }
 });
 
-// ==========================================
-// 🛎️ CENTRO EJECUTIVO ADMINISTRATIVO
-// ==========================================
-app.get('/api/admin/control-center', requireAdmin, async (_req, res) => {
-  try {
-    return res.json(await getAdminControlCenterSnapshot());
-  } catch (error: any) {
-    return res.status(500).json({ error: error?.message || 'No se pudo generar el centro de control.' });
-  }
-});
-
-// ==========================================
-// 📬 AGENTE INTERNO DE CORREO DE PROVEEDORES
-// ==========================================
-app.post('/api/internal/provider-inbox/sweep', requireAgentTool, async (_req, res) => {
-  try {
-    return res.json(await processProviderInboxOnce());
-  } catch (error: any) {
-    return res.status(500).json({ error: error?.message || 'No se pudo procesar la bandeja de proveedores.' });
-  }
-});
-
-// ==========================================
 // 💳 PASARELAS DE PAGO (STRIPE & PAYPAL)
 // ==========================================
 
-app.post('/api/stripe/create-checkout-session', async (req, res) => {
+app.post('/api/stripe/create-checkout-session', paymentLimiter, bookingAdmission.middleware, async (req, res) => {
   try {
     const { tourName, totalUSD, customerEmail } = req.body;
     const authoritativeTotal = calculateAuthoritativeCheckoutTotal(req.body);
@@ -711,7 +715,7 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
   }
 });
 
-app.post('/api/paypal/create-order', async (req, res) => {
+app.post('/api/paypal/create-order', paymentLimiter, bookingAdmission.middleware, async (req, res) => {
   try {
     const { totalUSD, tourName } = req.body;
     const authoritativeTotal = calculateAuthoritativeCheckoutTotal(req.body);
@@ -791,7 +795,7 @@ app.post('/api/paypal/create-order', async (req, res) => {
  * 3. Método: POST
  * 4. Auth: Headers: { "X-Operator-Key": "[TuClaveSecreta]" }
  */
-app.post('/api/internal/sweep-sla', async (req, res) => {
+app.post('/api/internal/sweep-sla', requireAutomationCredential, async (req, res) => {
   const operatorKey = req.headers['x-operator-key'];
   const secret = process.env.OPERATOR_API_KEY;
 
@@ -813,7 +817,7 @@ app.post('/api/internal/sweep-sla', async (req, res) => {
 // 📅 INTEGRACIÓN GOOGLE CALENDAR
 // ==========================================
 
-app.post('/api/calendar/sync', async (req, res) => {
+app.post('/api/calendar/sync', requireSignedInUser, async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -920,7 +924,7 @@ app.get('/api/currency/exchange-rate', (_req, res) => {
 });
 
 // Verificación y conciliación de comprobantes SINPE Móvil
-app.post('/api/sinpe/verify', requireOperator, async (req, res) => {
+app.post('/api/sinpe/submit', sinpeSubmitLimiter, bookingAdmission.middleware, async (req, res) => {
   try {
     const { bookingId, sinpeReference, customerPhone, amount } = req.body;
     if (!bookingId || !sinpeReference) {
@@ -1012,9 +1016,14 @@ app.patch('/api/bookings/:id', requireOperator, async (req, res) => {
 // Generar e imprimir Vale Oficial / Itinerario Web de Reserva
 app.get('/api/bookings/:id/pdf', async (req, res) => {
   try {
-    const bookingId = req.params.id;
-    const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
+    const bookingId = String(req.params.id || '');
+    const token = String(req.query.token || '');
+    if (!verifyCustomerActionToken(token, bookingId, 'view_pdf')) {
+      return res.status(401).json({ error: 'Enlace del comprobante inválido o expirado.' });
+    }
+
+    const booking = await getBookingById(bookingId);
+    if (!booking) return res.status(404).json({ error: 'Reserva no encontrada' });
 
     const html = generateBookingPrintableHTML(booking as any);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -1027,9 +1036,13 @@ app.get('/api/bookings/:id/pdf', async (req, res) => {
 // Descarga directa binaria del Vale Oficial e Itinerario en PDF
 app.get('/api/bookings/:id/download-pdf', async (req, res) => {
   try {
-    const bookingId = req.params.id;
-    const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
+    const bookingId = String(req.params.id || '');
+    const token = String(req.query.token || '');
+    if (!verifyCustomerActionToken(token, bookingId, 'view_pdf')) {
+      return res.status(401).json({ error: 'Enlace del comprobante inválido o expirado.' });
+    }
+
+    const booking = await getBookingById(bookingId);
     if (!booking) return res.status(404).json({ error: 'Reserva no encontrada' });
 
     const pdfBuffer = await generateBookingPDFBuffer(booking as any);
@@ -1043,7 +1056,7 @@ app.get('/api/bookings/:id/download-pdf', async (req, res) => {
 });
 
 // Despacho de Proforma e Itinerario con Notificación Email (PDF Adjunto) y WhatsApp
-app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confirmation'], async (req, res) => {
+app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confirmation'], requireOperator, async (req, res) => {
   try {
     const result = await executeCustomerProformaConfirmation(req.body);
     res.json(result);
@@ -1056,12 +1069,26 @@ app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confi
 // Aprobación de Itinerario por parte del Cliente (Confirmación de Proforma) -> Despacho a Proveedores
 app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
   try {
-    const bookingId = String(req.params.id);
-    const action = req.query.action === 'reject' ? 'rechazado' : 'aprobado';
-    const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
+    const bookingId = String(req.params.id || '');
+    const rawAction = req.query.action === 'reject' ? 'reject' : 'approve';
+    const token = String(req.query.token || '');
+    if (!verifyCustomerActionToken(token, bookingId, 'decide')) {
+      return res.status(401).send('Enlace de confirmación inválido o expirado.');
+    }
+    const action = rawAction === 'reject' ? 'rechazado' : 'aprobado';
+    const booking = await getBookingById(bookingId);
 
     if (!booking) return res.status(404).send('Reserva no encontrada.');
+    const currentStatus = String(booking.status || '').toLowerCase();
+    if (action === 'aprobado' && ['cancelada', 'cancelled'].includes(currentStatus)) {
+      return res.status(409).send('Esta reserva ya fue cancelada y no puede ser aprobada.');
+    }
+    if (action === 'rechazado' && ['cancelada', 'cancelled'].includes(currentStatus)) {
+      return res.status(200).send('Esta reserva ya estaba cancelada; no se realizaron cambios adicionales.');
+    }
+    if (action === 'aprobado' && ['confirmada', 'confirmed', 'completada', 'completed'].includes(currentStatus)) {
+      return res.status(200).send('Esta reserva ya estaba confirmada; no se realizaron cambios adicionales.');
+    }
 
     const updateResult = await updateBookingStatus(bookingId, {
       status: action === 'aprobado' ? 'confirmada' : 'cancelada',
@@ -1077,6 +1104,7 @@ app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
           customerName: booking.customerName,
           customerEmail: booking.customerEmail,
           customerPhone: booking.customerPhone,
+          providerId: booking.providerId || booking.providerInfo?.id || '',
           tourName: booking.tourName,
           date: booking.date,
           tourDate: booking.date,
@@ -1089,7 +1117,16 @@ app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
       }
     }
 
-    const downloadPdfUrl = `/api/bookings/${bookingId}/download-pdf`;
+    const pdfToken = (() => {
+      try {
+        return createCustomerActionToken({ bookingId, action: 'view_pdf' });
+      } catch {
+        return '';
+      }
+    })();
+    const downloadPdfUrl = pdfToken
+      ? `/api/bookings/${encodeURIComponent(bookingId)}/download-pdf?token=${encodeURIComponent(pdfToken)}`
+      : '#';
     const customerName = String(booking.customerName || 'Cliente').replace(/[<>]/g, '');
     const providerMessage = providerCoordinationResult
       ? 'La coordinación con el proveedor fue iniciada.'
@@ -1125,6 +1162,31 @@ app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
 // 🚨 SISTEMA PROPIO DE ALERTAS ADMINISTRATIVAS
 // ==========================================
 
+app.get('/api/alerts', requireAdmin, async (req, res) => {
+  try {
+    const resolvedParam = typeof req.query.resolved === 'string' ? req.query.resolved : undefined;
+    const severity = typeof req.query.severity === 'string' ? req.query.severity : undefined;
+    const resolved = resolvedParam === undefined ? undefined : resolvedParam === 'true';
+    const alerts = await getAlerts({ resolved, severity });
+    res.json({ success: true, alerts });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'No se pudieron cargar las alertas.' });
+  }
+});
+
+app.patch('/api/alerts/:id', requireAdmin, async (req, res) => {
+  try {
+    const result = await updateAlert(String(req.params.id || ''), {
+      read: req.body?.read,
+      resolved: req.body?.resolved
+    });
+    if (!result.success) return res.status(400).json(result);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'No se pudo actualizar la alerta.' });
+  }
+});
+
 app.post('/api/alerts', requireAdmin, async (req, res) => {
   const { source, severity, title, message, bookingId, providerId, metadata } = req.body || {};
   if (!source || !severity || !title || !message) {
@@ -1150,8 +1212,9 @@ app.get(['/api/native-engine/status', '/api/native/status'], (req, res) => {
 });
 
 // API para Provider Hub & Self-Development Hub
-app.get('/api/providers', (req, res) => {
-  res.json(getProvidersOverview());
+app.get('/api/providers', async (_req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=3600');
+  res.json(await getPublicProvidersOverview());
 });
 
 app.post('/api/providers/action', requireAdmin, async (req, res) => {
@@ -1418,7 +1481,7 @@ app.get('/api/ai/mesh/inbox/:agentId', requireAdmin, async (req, res) => {
   }
 });
 
-app.get('/api/self-dev/status', async (req, res) => {
+app.get('/api/self-dev/status', requireAdmin, async (_req, res) => {
   res.json(await getSelfDevelopmentOverview());
 });
 
@@ -1640,7 +1703,7 @@ app.post('/api/pagos/solicitud', async (req, res) => {
 });
 
 // 4. Confirmación de Reserva, Voucher Digital QR & Notificaciones Multicanal
-app.post('/api/reservas/confirmar', async (req, res) => {
+app.post('/api/reservas/confirmar', requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeConfirmacionReserva(req.body);
     res.json(result);
@@ -1675,7 +1738,7 @@ app.post(['/webhook/solicitud-soporte', '/api/soporte/crear-ticket'], async (req
 });
 
 // 8. Coordinación y Notificación en Tiempo Real a Proveedores y Operadores Locales
-app.post(['/webhook/notificar-proveedor', '/api/operadores/notificar'], async (req, res) => {
+app.post(['/webhook/notificar-proveedor', '/api/operadores/notificar'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeNotificarProveedor(req.body);
     res.json(result);
@@ -1685,7 +1748,7 @@ app.post(['/webhook/notificar-proveedor', '/api/operadores/notificar'], async (r
 });
 
 // 9. Motor Antifraude y Matriz de Riesgo Criptográfica
-app.post(['/webhook/evaluar-antifraude', '/webhook/antifraude-evaluacion', '/api/seguridad/antifraude'], async (req, res) => {
+app.post(['/webhook/evaluar-antifraude', '/webhook/antifraude-evaluacion', '/api/seguridad/antifraude'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeEvaluarAntifraude(req.body);
     res.json(result);
@@ -1705,7 +1768,7 @@ app.post(['/webhook/panel-control-ops', '/api/ops/action'], requireAdmin, async 
 });
 
 // 12. Sincronización Automática con Google Calendar
-app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], async (req, res) => {
+app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeSyncCalendar(req.body);
     res.json(result);
@@ -1715,7 +1778,7 @@ app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], async (req, 
 });
 
 // 13. Encuesta de Satisfacción Post-Tour & Recolección NPS WhatsApp
-app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], async (req, res) => {
+app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executePostTourNPS(req.body);
     res.json(result);
@@ -1725,7 +1788,7 @@ app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], async (req, res) => {
 });
 
 // 14. Reporte Semanal de Rendimiento, Conversión y Volumen
-app.post(['/webhook/reporte-semanal-conversion', '/api/reportes/semanal'], async (req, res) => {
+app.post(['/webhook/reporte-semanal-conversion', '/api/reportes/semanal'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeReporteSemanalConversion();
     res.json(result);
@@ -1739,7 +1802,7 @@ app.post(['/webhook/reporte-semanal-conversion', '/api/reportes/semanal'], async
 // ==========================================
 
 // WF-COMPLEX-01: Orquestador Autónomo de Itinerarios Multidía (SINAC/IMN/Alsama)
-app.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-planner'], async (req, res) => {
+app.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-planner'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeAutonomousMultiDayPlanner(req.body);
     res.json(result);
@@ -1749,7 +1812,7 @@ app.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-p
 });
 
 // WF-COMPLEX-02: Motor Predictivo de Dynamic Pricing & Yield Management
-app.post(['/webhook/predictive-dynamic-pricing', '/api/automations/dynamic-pricing'], async (req, res) => {
+app.post(['/webhook/predictive-dynamic-pricing', '/api/automations/dynamic-pricing'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeDynamicPricingYieldOptimizer(req.body);
     res.json(result);
@@ -1759,7 +1822,7 @@ app.post(['/webhook/predictive-dynamic-pricing', '/api/automations/dynamic-prici
 });
 
 // WF-COMPLEX-03: Matriz Predictiva de Contingencias Climáticas & Re-enrutamiento
-app.post(['/webhook/weather-contingency-rerouting', '/api/automations/weather-contingency'], async (req, res) => {
+app.post(['/webhook/weather-contingency-rerouting', '/api/automations/weather-contingency'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeEmergencyContingencyRerouting(req.body);
     res.json(result);
@@ -1769,7 +1832,7 @@ app.post(['/webhook/weather-contingency-rerouting', '/api/automations/weather-co
 });
 
 // WF-COMPLEX-04: Facturación Electrónica DGT Hacienda v4.3 & Liquidación Operadores
-app.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-invoicing'], async (req, res) => {
+app.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-invoicing'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeDGTElectronicInvoicingSettlement(req.body);
     res.json(result);
@@ -1779,7 +1842,7 @@ app.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-
 });
 
 // WF-COMPLEX-05: Flight Guard Predictivo en Tiempo Real & Despacho Alsama
-app.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-guard'], async (req, res) => {
+app.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-guard'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeAutonomousFlightGuardDispatch(req.body);
     res.json(result);
@@ -1789,7 +1852,7 @@ app.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-
 });
 
 // WF-COMPLEX-06: Asistente Autónomo con Análisis de Sentimiento & Escalamiento
-app.post(['/webhook/crisis-sentiment-escalation', '/api/automations/crisis-sentiment'], async (req, res) => {
+app.post(['/webhook/crisis-sentiment-escalation', '/api/automations/crisis-sentiment'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeAutonomousCrisisSentimentEscalation(req.body);
     res.json(result);
@@ -1817,7 +1880,7 @@ const additionalWebhooks = [
   '/webhook/supervisor'
 ];
 
-app.post(additionalWebhooks, async (req, res) => {
+app.post(additionalWebhooks, requireAutomationCredential, async (req, res) => {
   try {
     const endpoint = req.path;
     const triggerName = endpoint.replace('/webhook/', '').toUpperCase().replace(/-/g, '_');
@@ -1833,7 +1896,7 @@ app.post(additionalWebhooks, async (req, res) => {
 // ==========================================
 
 // 1. Coordinación en Tiempo Real con Proveedores (Webhook & API Nativa)
-app.post(['/webhook/proveedores-coordinacion', '/webhook/coordinacion-proveedores', '/api/webhooks/provider-coordination', '/api/native/workflows/coordinacion-proveedor', '/api/native/workflows/notificar-proveedor'], async (req, res) => {
+app.post(['/webhook/proveedores-coordinacion', '/webhook/coordinacion-proveedores', '/api/webhooks/provider-coordination', '/api/native/workflows/coordinacion-proveedor', '/api/native/workflows/notificar-proveedor'], requireAutomationCredential, async (req, res) => {
   try {
     const authHeader = req.headers['x-webhook-secret'] as string;
     const result = await executeProviderRealtimeCoordination(req.body, authHeader);
@@ -2086,7 +2149,7 @@ app.post(['/webhook/cliente-confirmacion', '/webhook/confirmacion-cliente', '/ap
 });
 
 // 3. Pagos Automáticos a Proveedores (Batch / Cron Trigger)
-app.post(['/api/payouts/run-batch', '/webhook/pagos-proveedores-batch'], async (req, res) => {
+app.post(['/api/payouts/run-batch', '/webhook/pagos-proveedores-batch'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeAutomatedProviderPayouts();
     res.json(result);
@@ -2096,7 +2159,7 @@ app.post(['/api/payouts/run-batch', '/webhook/pagos-proveedores-batch'], async (
 });
 
 // 4. Vigilancia y Escalamiento de Reservas Pendientes (Cron Trigger)
-app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], async (req, res) => {
+app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeSurveillanceAndEscalation();
     res.json(result);
@@ -2106,7 +2169,7 @@ app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], async 
 });
 
 // 5. Reporte Diario de Operación (Cron Trigger)
-app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], async (req, res) => {
+app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeDailyOperationReport();
     res.json(result);
@@ -2116,7 +2179,7 @@ app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], as
 });
 
 // 6. Solicitud de Reseña Post-Tour (Cron Trigger)
-app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], async (req, res) => {
+app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executePostTourReviewRequests();
     res.json(result);
@@ -2126,7 +2189,7 @@ app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], async
 });
 
 // 7. Recordatorio 24h Antes del Tour (Cron Trigger)
-app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], async (req, res) => {
+app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeTour24hReminders();
     res.json(result);
@@ -2136,7 +2199,7 @@ app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], async (req, re
 });
 
 // 8. Verificación y Conciliación Autónoma de Pagos SINPE Móvil (Webhook & API)
-app.post(['/webhook/cr-tours-sinpe-verify', '/webhook/sinpe-verify', '/api/payments/sinpe-verify', '/api/sinpe/verify'], async (req, res) => {
+app.post(['/webhook/cr-tours-sinpe-verify', '/webhook/sinpe-verify', '/api/payments/sinpe-verify', '/api/sinpe/verify'], requireAutomationCredential, async (req, res) => {
   try {
     const authHeader = req.headers['x-webhook-secret'] as string;
     const result = await executeSinpeVerification(req.body, authHeader);
@@ -2159,7 +2222,7 @@ app.get(['/api/metrics/throughput', '/api/massive/status'], (req, res) => {
 });
 
 // 10. Procesamiento Masivo Concurrente de Consultas en Lote (Batch Inquiries)
-app.post(['/api/massive/batch-inquiries', '/api/massive/process-batch'], async (req, res) => {
+app.post(['/api/massive/batch-inquiries', '/api/massive/process-batch'], requireAutomationCredential, async (req, res) => {
   try {
     const inquiries = Array.isArray(req.body?.inquiries) ? req.body.inquiries : [req.body];
     const results = await Promise.allSettled(
@@ -2192,7 +2255,7 @@ app.all('/webhook/health-check', (req, res) => {
 // ==========================================
 // 📊 ANALÍTICA NATIVA Y ACCIONES DE RESERVA
 // ==========================================
-app.get('/api/analytics/conversion-report', async (req, res) => {
+app.get('/api/analytics/conversion-report', requireAdmin, async (_req, res) => {
   try {
     const metrics = await getWeeklyConversionMetrics();
     res.json({ success: true, data: metrics, source: 'firestore-native' });
@@ -2227,34 +2290,34 @@ app.post('/api/ops/booking-action', requireOperator, async (req, res) => {
 // 🤖 AGENTES DEL ENJAMBRE (TRIAGE, PROCESADOR, SUPERVISOR)
 // ==========================================
 
-app.post('/api/agents/triage', async (req, res) => {
+app.post('/api/agents/triage', requireAdmin, async (req, res) => {
   const result = await runTriage(req.body.rawMessage || '');
   res.json(result);
 });
 
-app.post('/api/agents/processor', async (req, res) => {
+app.post('/api/agents/processor', requireAdmin, async (req, res) => {
   const { rawMessage, intent, extractedData } = req.body;
   const result = await runProcessor(rawMessage || '', intent || '', extractedData || {});
   res.json(result);
 });
 
-app.post('/api/agents/contingency', async (req, res) => {
+app.post('/api/agents/contingency', requireAdmin, async (req, res) => {
   const result = await runContingency(req.body);
   res.json(result);
 });
 
-app.post('/api/agents/supervisor', async (req, res) => {
+app.post('/api/agents/supervisor', requireAdmin, async (req, res) => {
   const result = await runSupervisor();
   res.json(result);
 });
 
-app.post('/api/agents/log_exception', (req, res) => {
+app.post('/api/agents/log_exception', requireAdmin, (req, res) => {
   const { agentName, errorContext, rawData } = req.body;
   logException(agentName || 'UnknownAgent', errorContext || 'Error', rawData);
   res.json({ success: true });
 });
 
-app.post('/api/gemini/concierge', async (req, res) => {
+app.post('/api/gemini/concierge', chatLimiter, async (req, res) => {
   try {
     const { message, language, history, agentId, context, engine, sessionId } = req.body;
     const userMsg = message || '';
@@ -2315,7 +2378,7 @@ app.post('/api/gemini/concierge', async (req, res) => {
 });
 
 // Endpoint exclusivo del Counter Agent (Agente de Mostrador y Reservas)
-app.post('/api/agent/counter', async (req, res) => {
+app.post('/api/agent/counter', counterLimiter, async (req, res) => {
   try {
     const { message, language, history, context } = req.body;
     const userMsg = message || '';
@@ -2414,7 +2477,7 @@ app.get('/api/agent/tools/functions', async (req, res) => {
 });
 
 // Endpoints de Machine Learning y Recomendación Inteligente (motor nativo)
-app.post('/api/ml/recommend', async (req, res) => {
+app.post('/api/ml/recommend', aiAdmission.middleware, async (req, res) => {
   try {
     const { mlRecommendTours } = await import('./backend/nativeMlEngine');
     const profile = req.body || {};
@@ -2425,7 +2488,7 @@ app.post('/api/ml/recommend', async (req, res) => {
   }
 });
 
-app.post('/api/ml/predict-price', async (req, res) => {
+app.post('/api/ml/predict-price', aiAdmission.middleware, async (req, res) => {
   try {
     const { mlPredictDynamicPrice } = await import('./backend/nativeMlEngine');
     const { basePrice, dateString, seats } = req.body;
@@ -2436,7 +2499,7 @@ app.post('/api/ml/predict-price', async (req, res) => {
   }
 });
 
-app.post('/api/ml/itinerary', async (req, res) => {
+app.post('/api/ml/itinerary', journeyLimiter, async (req, res) => {
   try {
     const { mlGenerateItinerary } = await import('./backend/nativeMlEngine');
     const { days, style, region } = req.body;
@@ -2448,7 +2511,7 @@ app.post('/api/ml/itinerary', async (req, res) => {
 });
 
 
-app.post('/api/gemini/booking/urgent', async (req, res) => {
+app.post('/api/gemini/booking/urgent', chatLimiter, requireAutomationCredential, async (req, res) => {
   try {
     const { message, language, history, agentId } = req.body;
     const lang = (language || 'es') as 'es' | 'en';
@@ -2489,7 +2552,7 @@ app.get('/api/claude/status', (req, res) => {
 });
 
 // 2. Chat conversacional con Claude 3.5 Sonnet
-app.post('/api/claude/chat', async (req, res) => {
+app.post('/api/claude/chat', chatLimiter, async (req, res) => {
   try {
     const { message, language, history, temperature } = req.body;
     if (!message || !message.trim()) {
@@ -2519,7 +2582,7 @@ app.post('/api/claude/chat', async (req, res) => {
 });
 
 // 3. Generador experto de itinerarios personalizados con Claude y Gemini (Resilience Fallback)
-app.post('/api/claude/itinerary', async (req, res) => {
+app.post('/api/claude/itinerary', journeyLimiter, async (req, res) => {
   try {
     const { days, travelers, style, regions, budget, language, specialRequests } = req.body;
     const itinerary = await generateClaudeItinerary({
@@ -2562,7 +2625,7 @@ app.post('/api/claude/itinerary', async (req, res) => {
 });
 
 // Endpoint dedicado para generador de itinerarios Gemini
-app.post('/api/gemini/itinerary', async (req, res) => {
+app.post('/api/gemini/itinerary', journeyLimiter, async (req, res) => {
   try {
     const itinerary = await generateGeminiItinerary({
       days: Number(req.body.days) || 5,
@@ -2581,7 +2644,7 @@ app.post('/api/gemini/itinerary', async (req, res) => {
 });
 
 // Endpoint para reservar un itinerario completo personalizado
-app.post('/api/itinerary/book', async (req, res) => {
+app.post('/api/itinerary/book', bookingAdmission.middleware, async (req, res) => {
   try {
     const {
       itineraryTitle,
@@ -2600,7 +2663,7 @@ app.post('/api/itinerary/book', async (req, res) => {
     }
 
     const bookingDate = startDate || new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0];
-    const generatedId = `CR-ITIN-${Math.floor(100000 + Math.random() * 900000)}`;
+    const generatedId = `CR-ITIN-${crypto.randomUUID().replace(/-/g, '').slice(0, 20).toUpperCase()}`;
     const normalizedDays = Math.max(1, Math.min(30, Number(daysCount) || 5));
     const normalizedTravelers = Math.max(1, Math.min(30, Number(travelers) || 2));
     // Precio base autoritativo para itinerarios personalizados. El total generado por IA
@@ -2619,21 +2682,30 @@ app.post('/api/itinerary/book', async (req, res) => {
       customerEmail,
       customerPhone: customerPhone || '',
       totalUSD: calculatedUSD,
-      totalAmount: currency === 'CRC' 
-        ? (Number(process.env.USD_TO_CRC_RATE) > 0 ? Math.round(calculatedUSD * Number(process.env.USD_TO_CRC_RATE)) : calculatedUSD) 
+      totalAmount: currency === 'CRC'
+        ? (Number(process.env.USD_TO_CRC_RATE) > 0 ? Math.round(calculatedUSD * Number(process.env.USD_TO_CRC_RATE)) : calculatedUSD)
         : calculatedUSD,
       currency: currency || 'USD',
       paymentMethod: 'itinerary_deposit',
       paymentStatus: 'pending',
-      status: 'confirmada',
+      status: 'pendiente_pago',
       notes: specialRequests || 'Itinerario Multi-Día personalizado'
     } as any);
 
-    res.json({
+    if ((bookingRecord as any)?.conflict) {
+      const statusCode = (bookingRecord as any).error === 'provider_not_ready' ? 409 : 400;
+      return res.status(statusCode).json({
+        success: false,
+        error: (bookingRecord as any).error || 'booking_rejected',
+        message: (bookingRecord as any).message || 'No se pudo crear la solicitud de itinerario.'
+      });
+    }
+
+    res.status(201).json({
       success: true,
       bookingId: generatedId,
       booking: bookingRecord,
-      message: `¡Itinerario reservado con éxito! Se ha generado tu reserva #${generatedId}.`
+      message: `Solicitud de itinerario registrada como #${generatedId}. Queda pendiente de disponibilidad, proveedor y pago.`
     });
   } catch (err: any) {
     console.error('Error al reservar itinerario:', err);
@@ -2642,7 +2714,7 @@ app.post('/api/itinerary/book', async (req, res) => {
 });
 
 // 4. Auditoría operativa y antifraude de reserva con Claude
-app.post('/api/claude/audit-booking', async (req, res) => {
+app.post('/api/claude/audit-booking', requireAdmin, async (req, res) => {
   try {
     const booking = req.body.booking || req.body;
     const auditResult = await analyzeOperationalRiskWithClaude(booking);
@@ -2654,12 +2726,12 @@ app.post('/api/claude/audit-booking', async (req, res) => {
 });
 
 // Compatibilidad de rutas generales
-app.post('/api/workflows/:action', (req, res) => {
-  res.json({ success: true, message: `Workflow ${req.params.action} procesado con éxito` });
+app.post('/api/workflows/:action', requireAutomationCredential, (_req, res) => {
+  return res.status(404).json({ success: false, error: 'Workflow de compatibilidad no implementado. Use el endpoint nativo específico.' });
 });
 
-app.post('/api/gemini/:action', (req, res) => {
-  res.json({ success: true, text: `Respuesta de Gemini para ${req.params.action}` });
+app.post('/api/gemini/:action', requireAutomationCredential, (_req, res) => {
+  return res.status(404).json({ success: false, error: 'Acción Gemini no implementada. Use un endpoint de agente soportado.' });
 });
 
 app.get('/api/chat/history', async (req, res) => {
@@ -2716,23 +2788,27 @@ app.post(['/api/agent/tools/check_calendar_availability', '/api/agent/check-avai
       Number(party_size)
     );
 
-    // Formatear respuesta estructurada para el ciclo ReAct del agente
-    const availableSlots = availabilityResult.available ? ['07:00', '08:30', '13:30'] : ['14:00'];
-    const blockedSlots = availabilityResult.available ? ['10:30'] : ['07:00', '08:30', '10:30'];
+    // La capa de disponibilidad solo devuelve slots cuando existe una fuente
+    // operativa real. No inventamos horarios para satisfacer al agente.
+    const catalogTour = TOURS.find(t => t.id === targetTourId) as any;
+    const requestedTime = typeof req.body?.target_time === 'string' ? req.body.target_time.trim() : '';
+    const catalogWindows = Array.isArray(catalogTour?.departureTimes)
+      ? catalogTour.departureTimes.map(String).slice(0, 12)
+      : [];
 
     res.json({
       success: true,
       available: availabilityResult.available,
       target_date,
+      requested_time: requestedTime || undefined,
       service_duration_minutes: service_duration_minutes || 180,
-      total_seats_remaining: availabilityResult.remainingSeats || 12,
-      max_capacity: availabilityResult.maxCapacity || 20,
-      available_slots: availableSlots,
-      blocked_slots: blockedSlots,
-      closest_alternatives: availableSlots.slice(0, 2),
+      total_seats_remaining: Number.isFinite(Number(availabilityResult.remainingSeats)) ? availabilityResult.remainingSeats : 0,
+      max_capacity: Number.isFinite(Number(availabilityResult.maxCapacity)) ? availabilityResult.maxCapacity : 0,
+      catalog_departure_windows: catalogWindows,
+      catalog_windows_are_not_live_availability: true,
       message: availabilityResult.available
-        ? `Horarios disponibles encontrados para el ${target_date} con ${availabilityResult.remainingSeats} cupos libres.`
-        : `Sin cupos exactos para ese horario (${availabilityResult.reason || 'capacidad agotada'}), se sugieren fechas alternativas.`
+        ? `Capacidad disponible en el sistema para el ${target_date}; el horario exacto requiere un slot operativo verificado.`
+        : `Sin capacidad para la consulta (${availabilityResult.reason || 'capacidad agotada'}). No se generaron horarios sintéticos.`
     });
   } catch (err: any) {
     console.error('Error en tool check_calendar_availability:', err);
@@ -2812,7 +2888,7 @@ app.post(['/api/agent/tools/create_booking_and_notify', '/api/agent/create-booki
 });
 
 // Tool 3: Generador Autónomo de Itinerarios Multidía y Logística
-app.post('/api/agent/tools/generate_custom_itinerary', async (req, res) => {
+app.post('/api/agent/tools/generate_custom_itinerary', journeyLimiter, requireAgentTool, async (req, res) => {
   try {
     const { days, travelers, style, budget, group, language, special_requests } = req.body;
     const itinerary = await generateGeminiItinerary({
@@ -2946,9 +3022,11 @@ app.get('/api/agent/tools/manifest', requireAgentTool, (req, res) => {
 // ==========================================
 // 📱 FIREBASE CLOUD MESSAGING (FCM) ENDPOINTS
 // ==========================================
-app.post('/api/fcm/register', async (req, res) => {
+app.post('/api/fcm/register', requireSignedInUser, async (req, res) => {
   try {
-    const { userId, token, deviceInfo } = req.body;
+    const authenticatedUserId = String((req as any).user?.uid || '');
+    const { token, deviceInfo } = req.body;
+    const userId = authenticatedUserId;
     if (!userId || !token) {
       return res.status(400).json({ success: false, error: 'userId y token requeridos' });
     }
@@ -2959,7 +3037,7 @@ app.post('/api/fcm/register', async (req, res) => {
   }
 });
 
-app.post('/api/fcm/send', async (req, res) => {
+app.post('/api/fcm/send', requireAdmin, async (req, res) => {
   try {
     const { userId, title, body, data } = req.body;
     if (!userId || !title || !body) {

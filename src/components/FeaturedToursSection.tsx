@@ -52,7 +52,7 @@ export const FeaturedToursSection: React.FC<FeaturedToursSectionProps> = ({
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs font-black uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>{isEs ? 'Experiencias 100% Verificadas en Costa Rica' : '100% Verified Costa Rica Experiences'}</span>
+            <span>{isEs ? 'Experiencias destacadas de Costa Rica' : 'Featured Costa Rica Experiences'}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
             {isEs ? 'Tours y Actividades Destacadas' : 'Featured Tours & Activities'}

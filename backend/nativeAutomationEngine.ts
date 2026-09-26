@@ -32,6 +32,7 @@ import {
   logException 
 } from './aiAssistantService';
 import { TOURS } from '../src/data/toursData';
+import { sendAdministrativeAlert } from './notificationService';
 
 // Registro de eventos y auditoría en memoria para monitoreo en vivo
 export interface NativeAutomationLog {
@@ -118,7 +119,7 @@ export async function executeChatInquiry(payload: {
   }
 
   try {
-    const assistantResult = await processChatInquiry(userMsg, lang, chatHistory, 'auto', sessionId || undefined);
+    const assistantResult = await processChatInquiry(userMsg, lang, chatHistory, 'auto', sessionId || undefined, { allowSensitiveLookups: true });
     const duration = Date.now() - start;
 
     if (sessionId) {
@@ -204,7 +205,7 @@ export async function executeInicioReserva(body: any) {
   const unitPrice = Number(tour.priceUSD);
   const totalUSD = adults * unitPrice + children * unitPrice;
   const holdExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-  const idReserva = `CRT-HLD-${Math.floor(100000 + Math.random() * 900000)}`;
+  const idReserva = `CRT-HLD-${crypto.randomUUID().replace(/-/g, '').slice(0, 20).toUpperCase()}`;
 
   const bookingCustomer = body.cliente || body.customer || {
     nombre: body.customerName,
@@ -214,8 +215,9 @@ export async function executeInicioReserva(body: any) {
   };
   if (!bookingCustomer.nombre || !bookingCustomer.email) throw new Error('Datos del cliente incompletos: nombre y email son obligatorios.');
 
-  // Registrar soft-hold nativo en base de datos
-  await createBooking({
+  // Registrar soft-hold nativo y no declarar éxito hasta que la reserva
+  // haya sido creada realmente en el almacén transaccional.
+  const holdResult: any = await createBooking({
     id: idReserva,
     bookingId: idReserva,
     tourId: selectedTourId,
@@ -233,7 +235,23 @@ export async function executeInicioReserva(body: any) {
     pickupHotel: bookingCustomer.hotelRecogida || bookingCustomer.pickupHotel,
     holdExpiresAt,
     holdActive: true
-  }).catch((err) => console.warn('Aviso guardando soft-hold nativo:', err.message));
+  });
+
+  if (holdResult?.conflict || !holdResult?.booking) {
+    const duration = Date.now() - start;
+    logAutomationExecution(
+      'INICIO_RESERVA',
+      duration,
+      'warning',
+      `No se pudo crear el soft-hold para ${selectedTourId}: ${holdResult?.message || 'reserva rechazada'}`
+    );
+    return {
+      exito: false,
+      disponible: false,
+      motivo: holdResult?.message || 'No se pudo bloquear el cupo. Intente nuevamente.',
+      cuposRestantes: availability.remainingSeats
+    };
+  }
 
   const duration = Date.now() - start;
   logAutomationExecution(
@@ -546,7 +564,27 @@ export async function executeNotificarProveedor(body: any) {
   const start = Date.now();
   const bookingId = body.bookingId || body.idReserva || 'CRT-PROV';
   const tourName = body.tourName || 'Tour Oficial';
-  const provider = body.providerInfo || { name: 'Alsama Tours CR / Operaciones Directas' };
+  const providerId = String(body.providerId || body.providerInfo?.id || '').trim();
+  const provider = providerId ? await (async () => {
+    const { getOperatorById } = await import('./bookingService');
+    return getOperatorById(providerId);
+  })() : null;
+
+  if (!provider || provider.verified !== true || provider.active !== true) {
+    await sendAdministrativeAlert({
+      title: 'Despacho de proveedor bloqueado',
+      reason: 'No existe un proveedor operativo verificado para el despacho solicitado.',
+      bookingId,
+      providerId: providerId || undefined
+    }).catch(() => {});
+    return {
+      exito: false,
+      bookingId,
+      notificado: false,
+      proveedor: null,
+      message: 'No se realizó el despacho: falta un proveedor operativo, activo y verificado.'
+    };
+  }
 
   console.log(`🚐 [AUTOMATIZACIÓN NATIVA] Despachando logística a proveedor local: ${provider.name} para reserva ${bookingId}`);
 
@@ -1379,21 +1417,45 @@ export async function executeAutonomousCrisisSentimentEscalation(body: any) {
 // =========================================================================
 // 19. AUTOMATIZACIÓN GENÉRICA NATIVA
 // =========================================================================
+const SUPPORTED_GENERIC_AUTOMATIONS = new Set([
+  'PING',
+  'HEALTH_CHECK'
+]);
+
 export async function executeGenericAutomation(triggerName: string, body: any = {}) {
   const start = Date.now();
+  const normalizedTrigger = String(triggerName || '').trim().toUpperCase();
+  if (!SUPPORTED_GENERIC_AUTOMATIONS.has(normalizedTrigger)) {
+    const duration = Date.now() - start;
+    logAutomationExecution(
+      normalizedTrigger || 'UNKNOWN_AUTOMATION',
+      duration,
+      'warning',
+      `Automatización genérica no registrada: ${normalizedTrigger || 'UNKNOWN'}`,
+      { rejected: true }
+    );
+    return {
+      exito: false,
+      mensaje: 'Automatización no registrada. Use un workflow nativo específico.',
+      trigger: normalizedTrigger,
+      motor: 'native_registry_guard',
+      timestamp: new Date().toISOString()
+    };
+  }
+
   const duration = Date.now() - start;
   logAutomationExecution(
-    triggerName,
+    normalizedTrigger,
     duration,
     'success',
-    `Evento ${triggerName} procesado en código nativo`,
+    `Evento ${normalizedTrigger} procesado por el registro nativo`,
     body
   );
   return {
     exito: true,
-    mensaje: `Automatización ${triggerName} procesada exitosamente con código nativo en servidor Node.js/Express.`,
-    trigger: triggerName,
-    motor: 'código_nativo_node',
+    mensaje: `Automatización ${normalizedTrigger} procesada con el registro nativo.`,
+    trigger: normalizedTrigger,
+    motor: 'native_registry_guard',
     datos: body,
     timestamp: new Date().toISOString()
   };
@@ -1424,7 +1486,7 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
     resolvedTour = TOURS.find((t) => t.title.es.toLowerCase().includes(payload.tourName!.toLowerCase()) || (t.title.en && t.title.en.toLowerCase().includes(payload.tourName!.toLowerCase())));
   }
   if (!resolvedTour) {
-    resolvedTour = TOURS[0]; // Arenal Volcano por defecto
+    throw new Error('No se encontró un tour válido en el catálogo nacional. La reserva no se enviará a una experiencia distinta por defecto.');
   }
 
   // 2. Extraer o normalizar datos de pasajeros y fechas
@@ -1433,7 +1495,10 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
   const targetDate = payload.date || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const targetTime = payload.time || '08:00 AM';
   const customerName = payload.customerName || 'Viajero Costa Rica Tours';
-  const customerEmail = payload.customerEmail || process.env.ADMIN_EMAIL || 'reservas@costaricatours.cr';
+  const customerEmail = String(payload.customerEmail || '').trim();
+  if (!customerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+    throw new Error('customerEmail es obligatorio y debe tener un formato válido para crear una reserva.');
+  }
   const customerPhone = payload.customerPhone || process.env.SINPE_SUPPORT_PHONE || '';
   const pickupHotel = payload.pickupHotel || (resolvedTour.pickupHotels ? resolvedTour.pickupHotels[0] : 'Recepción de Hotel en La Fortuna');
   const specialRequests = payload.specialRequests || 'Solicitud de confirmación y coordinación 100% autónoma sin intervención humana';
@@ -1452,7 +1517,7 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
   const bookingResult = await createBooking({
     tourId: resolvedTour.id,
     tourName: resolvedTour.title.es,
-    providerId: (resolvedTour as any).operatorId || 'alsama-tours-cr',
+    providerId: String((resolvedTour as any).providerId || (resolvedTour as any).operatorId || '').trim(),
     date: targetDate,
     time: targetTime,
     adults,
@@ -1491,7 +1556,7 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
     'FLUJO_AUTONOMO_COMPLETO',
     duration,
     'success',
-    `¡Reserva ${bookingId} completada 100% autónoma! Cliente (${customerEmail}) y Proveedor (${booking.providerInfo?.name || 'Alsama Tours'}) notificados.`,
+    `¡Reserva ${bookingId} completada 100% autónoma! Cliente (${customerEmail}) y Proveedor (${booking.providerInfo?.name || booking.providerName || 'proveedor asignado'}) notificados.`,
     {
       bookingId,
       totalUSD,

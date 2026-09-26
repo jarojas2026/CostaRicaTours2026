@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import type { Language } from '../types';
 import { BrainCircuit, Activity, ShieldCheck, RefreshCw, Sparkles, ServerCog } from 'lucide-react';
+import { auth } from '../firebase';
 
 interface Props { language?: Language; }
 
@@ -11,6 +12,12 @@ export const NativeAutomationStudio: React.FC<Props> = ({ language = 'es' }) => 
   const [loading, setLoading] = useState(true);
   const [healing, setHealing] = useState(false);
   const [healingResult, setHealingResult] = useState<any>(null);
+
+  const getAdminHeaders = async () => {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('Sesión administrativa no disponible');
+    return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+  };
 
   const load = async () => {
     setLoading(true);
@@ -31,7 +38,7 @@ export const NativeAutomationStudio: React.FC<Props> = ({ language = 'es' }) => 
   const runHealing = async () => {
     setHealing(true);
     try {
-      const r = await fetch('/api/self-dev/run-healing', { method: 'POST' });
+      const r = await fetch('/api/self-dev/run-healing', { method: 'POST', headers: await getAdminHeaders() });
       setHealingResult(await r.json());
       await load();
     } finally {

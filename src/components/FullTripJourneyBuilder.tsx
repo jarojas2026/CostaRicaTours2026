@@ -14,7 +14,7 @@ export const FullTripJourneyBuilder: React.FC<{ language: Language }> = ({ langu
   React.useEffect(() => {
     const id = localStorage.getItem(journeyStorageKey);
     if (!id) return;
-    fetch(`/api/journey/${encodeURIComponent(id)}`)
+    fetch(`/api/journey/${encodeURIComponent(id)}?sessionId=${encodeURIComponent(localStorage.getItem('crt_journey_session') || '')}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data?.journey?.status !== 'not_found') setJourney(data.journey); })
       .catch(() => undefined);
@@ -22,7 +22,7 @@ export const FullTripJourneyBuilder: React.FC<{ language: Language }> = ({ langu
   async function build() {
     setLoading(true); setError('');
     try {
-      const sessionId = localStorage.getItem('crt_journey_session') || 'traveler_' + Math.random().toString(36).slice(2);
+      const sessionId = localStorage.getItem('crt_journey_session') || 'traveler_' + crypto.randomUUID();
       localStorage.setItem('crt_journey_session', sessionId);
       const response = await fetch('/api/journey/build', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...form,sessionId,language}) });
       const data = await response.json();

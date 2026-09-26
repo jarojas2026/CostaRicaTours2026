@@ -68,28 +68,37 @@ async function resolveOperationalProvider(providerId: string, tourId: string): P
     const data = snap.data() || {};
     const verified = data.verified === true || data.verificado === true;
     const active = (data.active === true || data.activo === true) && data.status !== 'inactivo';
-    const activeTours = Array.isArray(data.activeTours) ? data.activeTours.map(String) : (Array.isArray(data.tours) ? data.tours.map(String) : (legacy?.activeTours || []));
-    if (!verified || !active || (activeTours.length > 0 && !activeTours.includes(tourId))) return null;
+    const activeTours = Array.isArray(data.activeTours)
+      ? data.activeTours.map(String)
+      : (Array.isArray(data.tours) ? data.tours.map(String) : []);
+    if (!verified || !active || !activeTours.includes(tourId)) return null;
     return {
       ...(legacy || {} as TourProvider), id: providerId,
-      name: String(data.name || data.nombre || legacy?.name || providerId),
-      category: (data.category || legacy?.category || 'adventure') as TourProvider['category'],
-      region: String(data.region || legacy?.region || 'Costa Rica'),
-      contactName: String(data.contactName || data.contacto || legacy?.contactName || ''),
-      phone: String(data.phone || data.telefono || legacy?.phone || ''),
-      whatsapp: String(data.whatsapp || legacy?.whatsapp || ''),
-      email: String(data.email || data.officialEmail || legacy?.email || legacy?.officialEmail || ''),
-      officialEmail: String(data.officialEmail || data.emailOperativo || legacy?.officialEmail || ''),
+      name: String(data.name || data.nombre || providerId),
+      category: (data.category || 'adventure') as TourProvider['category'],
+      region: String(data.region || 'Costa Rica'),
+      contactName: String(data.contactName || data.contacto || ''),
+      phone: String(data.phone || data.telefono || ''),
+      whatsapp: String(data.whatsapp || ''),
+      email: String(data.email || data.officialEmail || ''),
+      officialEmail: String(data.officialEmail || data.emailOperativo || data.email || ''),
       verified: true,
-      cstLevel: Number(data.cstLevel || legacy?.cstLevel || 0),
-      insPolicyNumber: String(data.insPolicyNumber || legacy?.insPolicyNumber || ''),
-      ictLicense: String(data.ictLicense || legacy?.ictLicense || ''),
+      cstLevel: Number(data.cstLevel || 0),
+      insPolicyNumber: String(data.insPolicyNumber || ''),
+      ictLicense: String(data.ictLicense || ''),
       activeTours,
-      slaTargetMinutes: Number(data.slaTargetMinutes || legacy?.slaTargetMinutes || 30),
-      averageResponseMinutes: Number(data.averageResponseMinutes || legacy?.averageResponseMinutes || 0),
-      acceptanceRate: Number(data.acceptanceRate || legacy?.acceptanceRate || 0),
+      slaTargetMinutes: Math.max(1, Number(data.slaTargetMinutes || 30)),
+      averageResponseMinutes: Math.max(0, Number(data.averageResponseMinutes || 0)),
+      acceptanceRate: Math.max(0, Math.min(100, Number(data.acceptanceRate || 0))),
       status: (data.status === 'busy' ? 'busy' : data.status === 'offline' ? 'offline' : 'active') as TourProvider['status'],
-      payoutAccount: data.payoutAccount || legacy?.payoutAccount || { type: 'iban_dolares', number: '', bank: '', holderName: '' }
+      payoutAccount: data.payoutAccount && typeof data.payoutAccount === 'object'
+        ? {
+            type: data.payoutAccount.type,
+            number: String(data.payoutAccount.number || ''),
+            bank: String(data.payoutAccount.bank || ''),
+            holderName: String(data.payoutAccount.holderName || '')
+          }
+        : { type: 'iban_dolares', number: '', bank: '', holderName: '' }
     };
   }
   return null;
@@ -151,7 +160,7 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     status: 'active',
     payoutAccount: {
       type: 'sinpe_movil',
-      number: '87959148',
+      number: '',
       bank: '',
       holderName: ''
     }
@@ -176,7 +185,7 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     status: 'active',
     payoutAccount: {
       type: 'iban_dolares',
-      number: 'CR05015100010026455020',
+      number: '',
       bank: '',
       holderName: ''
     }
@@ -201,7 +210,7 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     status: 'active',
     payoutAccount: {
       type: 'sinpe_movil',
-      number: '84129900',
+      number: '',
       bank: '',
       holderName: ''
     }
@@ -226,7 +235,7 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     status: 'active',
     payoutAccount: {
       type: 'sinpe_movil',
-      number: '83014455',
+      number: '',
       bank: '',
       holderName: ''
     }
@@ -251,7 +260,7 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
     status: 'active',
     payoutAccount: {
       type: 'iban_colones',
-      number: 'CR12015202001027098012',
+      number: '',
       bank: '',
       holderName: ''
     }
@@ -260,6 +269,16 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
 
 // Registro en memoria de órdenes de servicio
 const serviceOrdersStore: Map<string, ServiceOrder> = new Map();
+const MAX_SERVICE_ORDER_CACHE = 1000;
+
+function cacheServiceOrder(order: ServiceOrder) {
+  serviceOrdersStore.set(order.id, order);
+  while (serviceOrdersStore.size > MAX_SERVICE_ORDER_CACHE) {
+    const oldestKey = serviceOrdersStore.keys().next().value as string | undefined;
+    if (!oldestKey) break;
+    serviceOrdersStore.delete(oldestKey);
+  }
+}
 
 async function persistServiceOrder(order: ServiceOrder) {
   const db = (await import('./bookingService')).getFirestoreDb();
@@ -276,7 +295,7 @@ async function loadServiceOrder(orderId: string): Promise<ServiceOrder | null> {
   const doc = await db.collection('service_orders').doc(orderId).get();
   if (!doc.exists) return null;
   const order = doc.data() as ServiceOrder;
-  serviceOrdersStore.set(orderId, order);
+  cacheServiceOrder(order);
   return order;
 }
 
@@ -290,14 +309,65 @@ function isOperationallyVerifiedProvider(provider: TourProvider): boolean {
   );
 }
 
-export function getBestProviderForTour(tourId: string): TourProvider {
-  const match = REGISTERED_PROVIDERS.find(
-    p => p.activeTours.includes(tourId) && p.status === 'active' && isOperationallyVerifiedProvider(p)
-  );
-  if (!match) {
-    throw new Error(`No hay un proveedor verificado y activo para el tour ${tourId}.`);
+export async function getBestProviderForTour(tourId: string): Promise<TourProvider> {
+  const normalizedTourId = String(tourId || '').trim();
+  if (!normalizedTourId) throw new Error('tourId es obligatorio.');
+
+  const db = getFirestoreDb();
+  if (db) {
+    for (const collectionName of ['operators', 'proveedores']) {
+      try {
+        const field = collectionName === 'operators' ? 'activeTours' : 'tours';
+        const snap = await db.collection(collectionName)
+          .where(field, 'array-contains', normalizedTourId)
+          .limit(25)
+          .get();
+
+        for (const doc of snap.docs) {
+          const data = doc.data() || {};
+          const verified = data.verified === true || data.verificado === true;
+          const active = (data.active === true || data.activo === true)
+            && data.status !== 'inactivo'
+            && data.status !== 'offline';
+          if (!verified || !active) continue;
+
+          return {
+            ...(REGISTERED_PROVIDERS.find(provider => provider.id === doc.id) || {} as TourProvider),
+            id: doc.id,
+            name: String(data.name || data.nombre || doc.id),
+            category: (data.category || 'adventure') as TourProvider['category'],
+            region: String(data.region || 'Costa Rica'),
+            contactName: String(data.contactName || data.contacto || ''),
+            phone: String(data.phone || data.telefono || ''),
+            whatsapp: String(data.whatsapp || ''),
+            email: String(data.email || data.officialEmail || ''),
+            officialEmail: String(data.officialEmail || data.emailOperativo || ''),
+            verified: true,
+            cstLevel: Number(data.cstLevel || 0),
+            insPolicyNumber: String(data.insPolicyNumber || ''),
+            ictLicense: String(data.ictLicense || ''),
+            activeTours: Array.isArray(data.activeTours) ? data.activeTours.map(String) : (Array.isArray(data.tours) ? data.tours.map(String) : []),
+            slaTargetMinutes: Math.max(1, Number(data.slaTargetMinutes || 30)),
+            averageResponseMinutes: Math.max(0, Number(data.averageResponseMinutes || 0)),
+            acceptanceRate: Math.max(0, Math.min(100, Number(data.acceptanceRate || 0))),
+            status: data.status === 'busy' ? 'busy' : 'active',
+            payoutAccount: data.payoutAccount
+          } as TourProvider;
+        }
+      } catch (error) {
+        console.warn(`No se pudo consultar el directorio operativo ${collectionName} para ${normalizedTourId}:`, error);
+      }
+    }
   }
-  return match;
+
+  if (!db && process.env.NODE_ENV !== 'production' && process.env.ALLOW_LEGACY_PROVIDER_DIRECTORY === 'true') {
+    const legacy = REGISTERED_PROVIDERS.find(
+      provider => provider.activeTours.includes(normalizedTourId) && provider.status === 'active' && isOperationallyVerifiedProvider(provider)
+    );
+    if (legacy) return legacy;
+  }
+
+  throw new Error(`No hay un proveedor verificado y activo para el tour ${normalizedTourId}.`);
 }
 
 /**
@@ -322,7 +392,7 @@ export async function dispatchServiceOrder(params: {
   totalUSD: number;
   providerId?: string;
 }): Promise<ServiceOrder> {
-  const requestedProviderId = params.providerId || getBestProviderForTour(params.tourId).id;
+  const requestedProviderId = params.providerId || (await getBestProviderForTour(params.tourId)).id;
   const db = getFirestoreDb();
   const existingSnapshot = db ? await db.collection('service_orders').where('bookingId', '==', params.bookingId).limit(10).get().catch(() => null) : null;
   const existingOrder = existingSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceOrder)).find(order => !['rejected', 'no_show'].includes(String(order.status)));
@@ -375,7 +445,7 @@ export async function dispatchServiceOrder(params: {
     providerPortalUrl
   };
 
-  serviceOrdersStore.set(orderId, order);
+  cacheServiceOrder(order);
   await persistServiceOrder(order).catch(err => console.warn('⚠️ No se pudo persistir la orden de servicio:', err));
 
   const providerEmail = resolveConfiguredProviderEmail(provider);
@@ -660,6 +730,57 @@ export async function observeProviderSla() {
         ? 'Escalar seguimiento al proveedor y evaluar adaptación únicamente si la confirmación no llega.'
         : 'No se detectaron órdenes despachadas fuera de SLA.'
     }
+  };
+}
+
+export async function getPublicProvidersOverview() {
+  const db = getFirestoreDb();
+  if (!db) {
+    return { totalProviders: 0, activeProviders: 0, providers: [] };
+  }
+
+  const providers = new Map<string, {
+    id: string;
+    name: string;
+    category: TourProvider['category'];
+    region: string;
+    verified: true;
+    cstLevel: number;
+  }>();
+
+  for (const collectionName of ['operators', 'proveedores']) {
+    try {
+      const snapshots = collectionName === 'operators'
+        ? await db.collection(collectionName).where('verified', '==', true).limit(100).get()
+        : await db.collection(collectionName).where('verificado', '==', true).limit(100).get();
+
+      snapshots.docs.forEach(doc => {
+        const data = doc.data() || {};
+        const active = collectionName === 'operators'
+          ? data.active === true && data.status !== 'inactivo'
+          : data.activo === true && data.status !== 'inactivo';
+        if (!active) return;
+
+        const id = doc.id;
+        providers.set(id, {
+          id,
+          name: String(data.name || data.nombre || id).slice(0, 180),
+          category: (data.category || 'adventure') as TourProvider['category'],
+          region: String(data.region || 'Costa Rica').slice(0, 120),
+          verified: true,
+          cstLevel: Math.max(0, Math.min(5, Number(data.cstLevel || 0)))
+        });
+      });
+    } catch (error) {
+      console.warn('No se pudo consultar el directorio público de proveedores:', error);
+    }
+  }
+
+  const safeProviders = [...providers.values()];
+  return {
+    totalProviders: safeProviders.length,
+    activeProviders: safeProviders.length,
+    providers: safeProviders
   };
 }
 

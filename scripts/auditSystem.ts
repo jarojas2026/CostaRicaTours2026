@@ -44,8 +44,9 @@ if (/return match \|\| REGISTERED_PROVIDERS\[0\]/.test(providerService)) {
 if (/\bactive:\s*true/.test(providerService) && !/verified\?: boolean/.test(providerService)) {
   add('HIGH', 'PROVIDER-002', 'Static provider directory contains operationally active providers without an explicit verification field.');
 }
-if (/fallbackProvider\.verified !== true/.test(nativeWorkflows) === false) {
-  add('HIGH', 'PROVIDER-003', 'Direct-operations failover does not require explicit provider verification.');
+if (!/executeAutonomousProviderFallback/.test(nativeWorkflows) ||
+    !/(reassign|escalated_no_verified_fallback)/.test(nativeWorkflows)) {
+  add('HIGH', 'PROVIDER-003', 'Provider failover path is not explicitly guarded against unverified reassignment.');
 }
 
 function collectSourceFiles(startDir: string): string[] {

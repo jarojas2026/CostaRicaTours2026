@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Compass, Map, Bot, Plane } from 'lucide-react';
+import { Home, Compass, Map, Bot, Plane, BriefcaseBusiness } from 'lucide-react';
 import { Language } from '../types';
 
 interface BottomNavProps {
@@ -23,6 +23,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ language, activeTab }) => 
     { id: 'home', label: t('Inicio', 'Home'), icon: <Home className="w-5 h-5" /> },
     { id: 'tours', label: t('Tours', 'Tours'), icon: <Compass className="w-5 h-5" /> },
     { id: 'map', label: t('Mapa', 'Map'), icon: <Map className="w-5 h-5" /> },
+    { id: 'trip', label: t('Mi viaje', 'My trip'), icon: <BriefcaseBusiness className="w-5 h-5" /> },
     { 
       id: 'ai', 
       label: t('Asistente', 'AI Assistant'), 

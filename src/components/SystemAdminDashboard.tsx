@@ -32,6 +32,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
   const [triageResult, setTriageResult] = useState<any>(null);
   const [processorResult, setProcessorResult] = useState<any>(null);
   const [simLoading, setSimLoading] = useState(false);
+
+  const getAdminAuthHeaders = async () => {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('Sesión administrativa no disponible');
+    return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+  };
   const [simStep, setSimStep] = useState<number>(0);
 
   const runSwarmSimulation = async () => {
@@ -44,7 +50,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
       // Step 1: Triage Agent
       const resTriage = await fetch('/api/agents/triage', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await getAdminAuthHeaders(),
         body: JSON.stringify({ rawMessage: simEmail })
       });
       const triageData = await resTriage.json();
@@ -55,7 +61,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
       // Step 2: Processor Agent
       const resProcessor = await fetch('/api/agents/processor', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await getAdminAuthHeaders(),
         body: JSON.stringify({ rawMessage: simEmail, intent: triageData.intent, extractedData: triageData.extractedData })
       });
       const processorData = await resProcessor.json();
@@ -81,7 +87,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
 
   const fetchAlertsCount = async () => {
     try {
-      const res = await fetch('/api/alerts?resolved=false');
+      const res = await fetch('/api/alerts?resolved=false', { headers: await getAdminAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         const list: any[] = data.alerts || data.data || [];
@@ -707,7 +713,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                 </div>
                 
                 <button onClick={async () => {
-                    const res = await fetch('/api/agents/supervisor', { method: 'POST' });
+                    const res = await fetch('/api/agents/supervisor', { method: 'POST', headers: await getAdminAuthHeaders() });
                     const data = await res.json();
                     alert("Análisis del Supervisor:\n\n" + JSON.stringify(data, null, 2));
                   }}

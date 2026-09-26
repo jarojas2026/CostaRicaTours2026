@@ -128,39 +128,47 @@ function deriveSummary(memory: OperationalMemory): string {
   ].filter(Boolean).join(' ');
 }
 
-export async function rememberTurn(
-  rawSessionId: string,
+function mergeTurnIntoMemory(
+  memory: OperationalMemory,
   turn: Omit<MemoryTurn, 'timestamp'>,
-  options: { agentId?: string; activeGoal?: string; decision?: string } = {}
-): Promise<OperationalMemory> {
-  const sessionId = safeSessionId(rawSessionId);
-  const db = getFirestoreDb();
-  const memory = await getOperationalMemory(sessionId);
+  options: { agentId?: string; activeGoal?: string; decision?: string }
+): { updated: OperationalMemory; text: string } {
   const text = cleanText(turn.text);
   const facts = { ...memory.facts };
   extractFacts(text, facts);
 
   const preferences = Array.from(new Set([
     ...memory.preferences,
-    ...extractFacts(text, {}).filter((p) => p)
+    ...extractFacts(text, {}).filter(Boolean)
   ])).slice(-MAX_LIST);
 
   const activeGoals = options.activeGoal
-    ? Array.from(new Set([...memory.activeGoals, cleanText(options.activeGoal, 300)])).slice(-MAX_LIST)
+    ? Array.from(new Set([
+        ...memory.activeGoals,
+        cleanText(options.activeGoal, 300)
+      ])).slice(-MAX_LIST)
     : memory.activeGoals;
 
   const decisions = options.decision
-    ? Array.from(new Set([...memory.decisions, cleanText(options.decision, 300)])).slice(-MAX_LIST)
+    ? Array.from(new Set([
+        ...memory.decisions,
+        cleanText(options.decision, 300)
+      ])).slice(-MAX_LIST)
     : memory.decisions;
 
-  const contradictionKeys = Object.keys(facts).filter((key) => facts[key] !== memory.facts[key] && memory.facts[key] !== undefined);
+  const contradictionKeys = Object.keys(facts).filter(
+    key => facts[key] !== memory.facts[key] && memory.facts[key] !== undefined
+  );
   const decisionsWithContext = contradictionKeys.length
     ? Array.from(new Set([
         ...decisions,
-        ...contradictionKeys.map((key) => `Actualización de ${key}: reemplazar el dato anterior solo porque el viajero proporcionó un valor más reciente.`)
+        ...contradictionKeys.map(
+          key => `Actualización de ${key}: reemplazar el dato anterior solo porque el viajero proporcionó un valor más reciente.`
+        )
       ])).slice(-MAX_LIST)
     : decisions;
 
+  const now = new Date().toISOString();
   const updated: OperationalMemory = {
     ...memory,
     facts: Object.fromEntries(Object.entries(facts).slice(-MAX_FACTS)),
@@ -168,22 +176,69 @@ export async function rememberTurn(
     activeGoals,
     decisions: decisionsWithContext,
     lastAgent: options.agentId || turn.agentId || memory.lastAgent,
-    lastUpdatedAt: new Date().toISOString(),
-    turns: [...memory.turns, { ...turn, text, timestamp: new Date().toISOString() }].slice(-MAX_TURNS)
+    lastUpdatedAt: now,
+    turns: [
+      ...memory.turns,
+      { ...turn, text, timestamp: now }
+    ].slice(-MAX_TURNS)
   };
   updated.summary = deriveSummary(updated);
+  return { updated, text };
+}
+
+export async function rememberTurn(
+  rawSessionId: string,
+  turn: Omit<MemoryTurn, 'timestamp'>,
+  options: { agentId?: string; activeGoal?: string; decision?: string } = {}
+): Promise<OperationalMemory> {
+  const sessionId = safeSessionId(rawSessionId);
+  const db = getFirestoreDb();
+
+  let updated: OperationalMemory;
+  let indexedText: string;
 
   if (db) {
-    await db.collection('agent_memory').doc(sessionId).set(updated, { merge: true });
+    // Transactional read-modify-write prevents concurrent agents from losing
+    // traveler turns when multiple channels update the same session at once.
+    const memoryRef = db.collection('agent_memory').doc(sessionId);
+    const transactionResult = await db.runTransaction(async transaction => {
+      const snapshot = await transaction.get(memoryRef);
+      const data = snapshot.exists ? snapshot.data() || {} : {};
+      const current: OperationalMemory = {
+        ...emptyMemory(sessionId),
+        ...data,
+        sessionId,
+        facts: typeof data.facts === 'object' && data.facts ? data.facts : {},
+        preferences: Array.isArray(data.preferences) ? data.preferences.slice(0, MAX_LIST) : [],
+        activeGoals: Array.isArray(data.activeGoals) ? data.activeGoals.slice(0, MAX_LIST) : [],
+        decisions: Array.isArray(data.decisions) ? data.decisions.slice(0, MAX_LIST) : [],
+        turns: Array.isArray(data.turns) ? data.turns.slice(-MAX_TURNS) : []
+      } as OperationalMemory;
+
+      const merged = mergeTurnIntoMemory(current, turn, options);
+      transaction.set(memoryRef, merged.updated, { merge: true });
+      return merged;
+    });
+
+    updated = transactionResult.updated;
+    indexedText = transactionResult.text;
+  } else {
+    const memory = await getOperationalMemory(sessionId);
+    const merged = mergeTurnIntoMemory(memory, turn, options);
+    updated = merged.updated;
+    indexedText = merged.text;
   }
-  // Embedding is best-effort; the canonical memory above is never blocked by AI availability.
+
+  // Embedding is best-effort; the canonical memory write is never blocked by
+  // AI availability or vector-search latency.
   void indexSemanticMemory({
     sessionId,
-    text,
+    text: indexedText,
     role: turn.role,
     agentId: options.agentId || turn.agentId,
     timestamp: updated.lastUpdatedAt
   });
+
   return updated;
 }
 
@@ -202,11 +257,52 @@ export async function saveChatHistory(
       timestamp: new Date().toISOString()
     }));
 
-  let memory = emptyMemory(sessionId);
-  for (const turn of normalized) {
-    memory = await rememberTurn(sessionId, turn);
+  if (normalized.length === 0) return getOperationalMemory(sessionId);
+
+  const db = getFirestoreDb();
+  if (!db) {
+    let memory = emptyMemory(sessionId);
+    for (const turn of normalized) {
+      memory = mergeTurnIntoMemory(memory, turn, { agentId: turn.agentId }).updated;
+    }
+    return memory;
   }
-  return memory;
+
+  const memoryRef = db.collection('agent_memory').doc(sessionId);
+  const transactionResult = await db.runTransaction(async transaction => {
+    const snapshot = await transaction.get(memoryRef);
+    const data = snapshot.exists ? snapshot.data() || {} : {};
+    let memory: OperationalMemory = {
+      ...emptyMemory(sessionId),
+      ...data,
+      sessionId,
+      facts: typeof data.facts === 'object' && data.facts ? data.facts : {},
+      preferences: Array.isArray(data.preferences) ? data.preferences.slice(0, MAX_LIST) : [],
+      activeGoals: Array.isArray(data.activeGoals) ? data.activeGoals.slice(0, MAX_LIST) : [],
+      decisions: Array.isArray(data.decisions) ? data.decisions.slice(0, MAX_LIST) : [],
+      turns: Array.isArray(data.turns) ? data.turns.slice(-MAX_TURNS) : []
+    } as OperationalMemory;
+
+    for (const turn of normalized) {
+      memory = mergeTurnIntoMemory(memory, turn, { agentId: turn.agentId }).updated;
+    }
+
+    transaction.set(memoryRef, memory, { merge: true });
+    return memory;
+  });
+
+  // Keep vector indexing non-blocking so history persistence stays fast.
+  normalized.forEach(turn => {
+    void indexSemanticMemory({
+      sessionId,
+      text: turn.text,
+      role: turn.role,
+      agentId: turn.agentId,
+      timestamp: turn.timestamp
+    });
+  });
+
+  return transactionResult;
 }
 
 export async function retrieveRelevantMemory(

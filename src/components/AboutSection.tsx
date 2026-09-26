@@ -11,8 +11,8 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ language }) => {
   const features = [
     {
       icon: ShieldCheck,
-      title: { es: 'Operadores Verificados', en: 'Verified Operators' },
-      desc: { es: 'Solo trabajamos con empresas locales con licencias y seguros al día.', en: 'We only partner with local companies with up-to-date licenses and insurance.' }
+      title: { es: 'Información Operativa Verificada', en: 'Verified Operational Information' },
+      desc: { es: 'La plataforma distingue los datos verificados de la información pendiente de validación antes de operar una reserva.', en: 'The platform separates verified data from information still requiring validation before a reservation is operational.' }
     },
     {
       icon: Leaf,
@@ -21,13 +21,13 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ language }) => {
     },
     {
       icon: Heart,
-      title: { es: 'Soporte 24/7', en: '24/7 Support' },
-      desc: { es: 'Atención personalizada por WhatsApp y correo en todo momento.', en: 'Personalized support via WhatsApp and email at all times.' }
+      title: { es: 'Soporte Multicanal', en: 'Multichannel Support' },
+      desc: { es: 'Atención mediante los canales integrados de la plataforma, con escalamiento humano para excepciones operativas.', en: 'Support through the platform’s integrated channels, with human escalation for operational exceptions.' }
     },
     {
       icon: Users,
       title: { es: 'Impacto Local', en: 'Local Impact' },
-      desc: { es: 'El 100% de nuestros operadores son empresas 100% costarricenses.', en: '100% of our operators are 100% Costa Rican businesses.' }
+      desc: { es: 'Trabajamos para conectar viajeros con proveedores y experiencias de Costa Rica.', en: 'We connect travelers with Costa Rica experiences and local providers.' }
     },
     {
       icon: Globe,
@@ -36,8 +36,8 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ language }) => {
     },
     {
       icon: Award,
-      title: { es: 'Garantía de Calidad', en: 'Quality Guarantee' },
-      desc: { es: 'Curamos cada experiencia para asegurar memorias inolvidables.', en: 'We curate every experience to ensure unforgettable memories.' }
+      title: { es: 'Planificación Inteligente', en: 'Intelligent Planning' },
+      desc: { es: 'La IA combina catálogo, memoria del viajero, ruta, clima y disponibilidad cuando esos datos están disponibles.', en: 'AI combines catalog, traveler memory, routing, weather and availability when those data sources are available.' }
     }
   ];
 
@@ -60,16 +60,16 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ language }) => {
           </p>
           <div className="flex flex-wrap gap-8">
             <div>
-              <div className="text-4xl font-black text-emerald-400 mb-1">100+</div>
-              <div className="text-stone-500 text-xs uppercase font-bold tracking-widest">Tours Curados</div>
+              <div className="text-3xl font-black text-emerald-400 mb-1">🇨🇷</div>
+              <div className="text-stone-500 text-xs uppercase font-bold tracking-widest">Catálogo Nacional</div>
             </div>
             <div>
-              <div className="text-4xl font-black text-emerald-400 mb-1">20%</div>
-              <div className="text-stone-500 text-xs uppercase font-bold tracking-widest">Comisión Justa</div>
+              <div className="text-4xl font-black text-emerald-400 mb-1">6</div>
+              <div className="text-stone-500 text-xs uppercase font-bold tracking-widest">Idiomas</div>
             </div>
             <div>
-              <div className="text-4xl font-black text-emerald-400 mb-1">24/7</div>
-              <div className="text-stone-500 text-xs uppercase font-bold tracking-widest">Soporte Humano</div>
+              <div className="text-4xl font-black text-emerald-400 mb-1">7</div>
+              <div className="text-stone-500 text-xs uppercase font-bold tracking-widest">Regiones</div>
             </div>
           </div>
         </motion.div>
