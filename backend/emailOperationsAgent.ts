@@ -256,9 +256,30 @@ async function markRead(mail: MailMessage) {
 }
 
 async function processProviderResponseEmail(mail: MailMessage) {
-  const providers = new Set(REGISTERED_PROVIDERS.flatMap((p: any) => [p.officialEmail, p.email]).filter(Boolean).map((x: any) => String(x).toLowerCase()));
-  if (!providers.has(mail.from.toLowerCase())) {
-    await recordEvent(mail, { status: 'needs_human_review', reason: 'Remitente no coincide con un proveedor operativo conocido.' });
+  const db = getFirestoreDb();
+  if (!db) {
+    await recordEvent(mail, { status: 'needs_human_review', reason: 'No se pudo verificar el remitente contra Firestore.' });
+    return { status: 'needs_human_review' };
+  }
+  const sender = mail.from.toLowerCase();
+  let providerVerified = false;
+  try {
+    for (const collection of ['operators', 'proveedores']) {
+      const snapshot = await db.collection(collection).where('email', '==', sender).limit(5).get();
+      for (const doc of snapshot.docs) {
+        const data = doc.data() || {};
+        const verified = data.verified === true || data.verificado === true;
+        const active = (data.active === true || data.activo === true) && data.status !== 'inactivo';
+        if (verified && active) { providerVerified = true; break; }
+      }
+      if (providerVerified) break;
+    }
+  } catch (error) {
+    await recordEvent(mail, { status: 'needs_human_review', reason: 'Error verificando remitente del proveedor.', error: clean((error as any)?.message, 500) });
+    return { status: 'needs_human_review' };
+  }
+  if (!providerVerified) {
+    await recordEvent(mail, { status: 'needs_human_review', reason: 'Remitente no coincide con un proveedor activo y verificado en Firestore.' });
     return { status: 'needs_human_review' };
   }
   const source = `${mail.subject}\n${mail.text}`;
