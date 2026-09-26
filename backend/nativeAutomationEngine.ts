@@ -353,82 +353,21 @@ export async function executeSolicitudPago(body: any) {
 export async function executeConfirmacionReserva(body: any) {
   const start = Date.now();
   const reservationId = String(body.idReserva || body.bookingId || '').trim();
-  if (!reservationId) throw new Error('bookingId es obligatorio.');
-  const db = (await import('./bookingService')).getFirestoreDb();
-  const booking = await (await import('./bookingService')).getBookingById(reservationId);
-  if (!booking) throw new Error('Reserva no encontrada.');
-  const paymentMethod = String(body.paymentMethod || booking.paymentMethod || '').toLowerCase();
-  const storedPaypalOrderId = booking.paypalOrderId || booking.paymentDetails?.paypalOrderId || '';
-  const storedStripeSessionId = booking.stripeSessionId || booking.paymentDetails?.stripeSessionId || '';
-  if (body.paypalOrderId && storedPaypalOrderId && String(body.paypalOrderId) !== String(storedPaypalOrderId)) throw new Error('PAYMENT_REFERENCE_MISMATCH: orden PayPal no coincide con la reserva.');
-  if (body.stripeSessionId && storedStripeSessionId && String(body.stripeSessionId) !== String(storedStripeSessionId)) throw new Error('PAYMENT_REFERENCE_MISMATCH: sesión Stripe no coincide con la reserva.');
-  const paymentDetails = {
-    paypalOrderId: storedPaypalOrderId || String(body.paypalOrderId || ''),
-    stripeSessionId: storedStripeSessionId || String(body.stripeSessionId || '')
-  };
-  const verification = await verifyPaymentServerSide(paymentMethod, paymentDetails);
-  if (!verification.verified) {
-    return {
-      exito: false,
-      estado: 'pendiente_pago',
-      idReserva: reservationId,
-      mensaje: 'La reserva no puede confirmarse: el pago no ha sido verificado por el servidor.'
-    };
-  }
-  const tour = booking.tourName || body.tourName || body.nombreTour;
-  const tourDate = booking.date || body.date || body.fecha;
-  const tourTime = booking.time || body.time || body.hora;
-  const hotel = booking.pickupHotel || body.pickupHotel || body.hotelRecogida || '';
-  const clientData = booking.customer || { name: booking.customerName, email: booking.customerEmail, phone: booking.customerPhone };
-  const total = Number(booking.totalUSD || body.totalUSD || body.montoUSD);
-  if (!tour || !tourDate || !tourTime || !clientData?.email || !Number.isFinite(total)) throw new Error('Datos de reserva incompletos.');
-  if (db) await updateBookingStatus(reservationId, {
-    status: 'confirmada',
-    paymentStatus: 'completed'
-  });
-
-  const qrValidationCode = `CRT-QR-${reservationId}-${crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
-  const voucherUrl = `https://costaricatours.cr/vouchers/${reservationId}.pdf`;
-
-  const whatsAppPreview = `¡Pura Vida ${clientData.name || 'Viajero'}! 🇨🇷🌿\nTu reserva para *${tour}* el *${tourDate}* a las *${tourTime}* está *100% CONFIRMADA*.\n\n📍 *Punto de recogida:* ${hotel}\n📄 *Voucher Oficial:* ${voucherUrl}\n🔐 *Código QR:* \`${qrValidationCode}\`\n\n¿Deseas alguna recomendación sobre qué llevar? ¡Estamos a tu servicio!`;
-
-  // Disparar despacho al proveedor en código
-  executeNotificarProveedor({
-    bookingId: reservationId,
-    tourName: tour,
-    date: tourDate,
-    time: tourTime,
-    pickupHotel: hotel,
-    customer: clientData
-  }).catch(() => {});
-
+  if (!reservationId) throw new Error('BOOKING_ID_REQUIRED: bookingId es obligatorio.');
+  const booking = await getBookingById(reservationId);
+  if (!booking) throw new Error('BOOKING_NOT_FOUND: reserva no encontrada.');
+  const paymentVerified = ['paid', 'completed'].includes(String(booking.paymentStatus || '').toLowerCase());
+  if (!paymentVerified) return { exito: false, estado: 'PENDIENTE_PAGO', idReserva: reservationId, voucherEmitido: false, proveedorNotificado: false, mensaje: 'No se emite confirmación ni voucher hasta verificar el pago server-side.' };
+  const serviceOrderStatus = String(booking.serviceOrderStatus || booking.providerStatus || '').toLowerCase();
+  if (!['confirmed', 'confirmada'].includes(serviceOrderStatus)) return { exito: false, estado: 'PENDIENTE_PROVEEDOR', idReserva: reservationId, voucherEmitido: false, proveedorNotificado: false, mensaje: 'El pago está verificado, pero el proveedor aún no ha confirmado el servicio.' };
+  const updated = await updateBookingStatus(reservationId, { status: 'confirmada', paymentStatus: 'completed' });
+  if (!updated.success) throw new Error(updated.error || 'No se pudo confirmar la reserva.');
+  const updatedBooking = updated.booking || booking;
+  const customerNotified = await executeCustomerBookingConfirmation({ booking: { ...updatedBooking, bookingId: reservationId } }).then(r => r.customerNotified).catch(() => false);
   const duration = Date.now() - start;
-  logAutomationExecution(
-    'CONFIRMACION_RESERVA',
-    duration,
-    'success',
-    `Voucher QR y confirmación emitida para ${reservationId} (${clientData.name})`
-  );
-
-  return {
-    exito: true,
-    voucherEmitido: true,
-    idReserva: reservationId,
-    voucherUrl,
-    qrValidationCode,
-    notificacionesDespachadas: ['whatsapp_business_api', 'email_voucher_pdf', 'google_calendar_sync'],
-    whatsAppPreview,
-    calendarSync: {
-      eventoCreado: true,
-      titulo: `🇨🇷 Tour: ${tour}`,
-      inicio: `${tourDate}T${tourTime.includes('AM') ? '06:30:00' : '14:00:00'}-06:00`,
-      ubicacion: hotel
-    },
-    motor: 'código_nativo_node',
-    mensaje: 'Voucher digital emitido con código QR y notificaciones multicanal despachadas con éxito.'
-  };
+  logAutomationExecution('CONFIRMACION_RESERVA', duration, customerNotified ? 'success' : 'warning', `Reserva ${reservationId} confirmada por pago+proveedor; notificación=${customerNotified}.`);
+  return { exito: true, estado: 'CONFIRMADA', idReserva: reservationId, voucherEmitido: customerNotified, proveedorNotificado: true, customerNotified, mensaje: customerNotified ? 'Reserva confirmada y cliente notificado.' : 'Reserva confirmada; la notificación al cliente quedó pendiente de reintento.' };
 }
-
 // =========================================================================
 // 5. PLANIFICADOR DE ITINERARIOS IA & RUTAS SOSTENIBLES
 // =========================================================================
@@ -536,30 +475,19 @@ export async function executeSolicitudSoporte(body: any) {
 // =========================================================================
 export async function executeNotificarProveedor(body: any) {
   const start = Date.now();
-  const bookingId = body.bookingId || body.idReserva || 'CRT-PROV';
-  const tourName = body.tourName || 'Tour Oficial';
-  const provider = body.providerInfo || { name: 'Alsama Tours CR / Operaciones Directas' };
-
-  console.log(`🚐 [AUTOMATIZACIÓN NATIVA] Despachando logística a proveedor local: ${provider.name} para reserva ${bookingId}`);
-
+  const bookingId = String(body.bookingId || body.idReserva || '').trim();
+  if (!bookingId) throw new Error('BOOKING_ID_REQUIRED: bookingId es obligatorio.');
+  const booking = await getBookingById(bookingId);
+  if (!booking) throw new Error('BOOKING_NOT_FOUND: reserva no encontrada.');
+  const providerId = String(body.providerId || booking.providerId || '').trim();
+  if (!providerId) return { exito: false, estado: 'PROVEEDOR_NO_CONFIGURADO', bookingId, notificado: false, mensaje: 'La reserva no tiene proveedor operativo configurado.' };
+  const providerInfo = await getOperatorById(providerId);
+  if (!providerInfo.active || providerInfo.verified !== true) return { exito: false, estado: 'PROVEEDOR_NO_VERIFICADO', bookingId, providerId, notificado: false, mensaje: 'El proveedor no está activo y verificado en la fuente operativa.' };
+  const result = await executeProviderRealtimeCoordination({ bookingId, providerId, customer: booking.customer, customerName: booking.customerName, customerEmail: booking.customerEmail, customerPhone: booking.customerPhone, tourName: booking.tourName, date: booking.date, time: booking.time, totalUSD: booking.totalUSD, pax: Number(booking.adults || 0) + Number(booking.children || 0), pickupHotel: booking.pickupHotel, specialRequests: booking.specialRequests });
   const duration = Date.now() - start;
-  logAutomationExecution(
-    'NOTIFICAR_PROVEEDOR',
-    duration,
-    'success',
-    `Proveedor ${provider.name || 'Local'} notificado para reserva ${bookingId} (${tourName})`
-  );
-
-  return {
-    exito: true,
-    bookingId,
-    notificado: true,
-    proveedor: provider.name,
-    timestamp: new Date().toISOString(),
-    mensaje: 'Notificación de proveedor despachada en tiempo real mediante código backend.'
-  };
+  logAutomationExecution('NOTIFICAR_PROVEEDOR', duration, result.success ? 'success' : 'warning', result.message || `Coordinación de proveedor procesada para ${bookingId}.`);
+  return { ...result, bookingId, providerId, notificado: Boolean(result.success), motor: 'código_nativo_node' };
 }
-
 // =========================================================================
 // 8. EVALUAR ANTIFRAUDE NATIVO (Reglas de Riesgo y Seguridad)
 // =========================================================================
@@ -793,36 +721,21 @@ export async function executeAlertaVuelo(body: any) {
 // =========================================================================
 export async function executeCancelacionReembolso(body: any) {
   const start = Date.now();
-  const bookingId = body.bookingId || body.idReserva;
-  const hoursNotice = Number(body.horasAntes || 75);
-
-  let refundPercent = 0;
-  if (hoursNotice >= 72) refundPercent = 100;
-  else if (hoursNotice >= 48) refundPercent = 50;
-  else refundPercent = 0;
-
+  const bookingId = String(body.bookingId || body.idReserva || '').trim();
+  if (!bookingId) throw new Error('BOOKING_ID_REQUIRED: bookingId es obligatorio.');
+  const booking = await getBookingById(bookingId);
+  if (!booking) throw new Error('BOOKING_NOT_FOUND: reserva no encontrada.');
+  const policyPercent = Number(body.porcentajePolitica);
+  if (!Number.isFinite(policyPercent) || policyPercent < 0 || policyPercent > 100) {
+    return { exito: false, estado: 'POLITICA_NO_VERIFICADA', bookingId, reembolsoAutorizado: false, porcentajeReembolso: null, mensaje: 'No se ejecuta un reembolso porque la política de cancelación no fue verificada para este servicio.' };
+  }
+  if (String(booking.paymentStatus || '').toLowerCase() !== 'completed') {
+    return { exito: false, estado: 'PAGO_NO_VERIFICADO', bookingId, reembolsoAutorizado: false, porcentajeReembolso: null, mensaje: 'No se procesa reembolso de un pago no verificado.' };
+  }
   const duration = Date.now() - start;
-  logAutomationExecution(
-    'CANCELACION_REEMBOLSO',
-    duration,
-    'success',
-    `Cancelación evaluada para ${bookingId}: ${refundPercent}% de reembolso (${hoursNotice}h de anticipación)`
-  );
-
-  return {
-    exito: true,
-    bookingId,
-    reembolsoAutorizado: refundPercent > 0,
-    porcentajeReembolso: refundPercent,
-    politicaAplicada: hoursNotice >= 72 
-      ? 'Cancelación anticipada (>72h): 100% Reembolso' 
-      : hoursNotice >= 48 
-      ? 'Cancelación regular (48-72h): 50% Reembolso'
-      : 'Cancelación tardía (<48h): Sin reembolso / Crédito transferible 12 meses',
-    motor: 'código_nativo_node'
-  };
+  logAutomationExecution('CANCELACION_REEMBOLSO', duration, 'warning', `Política de reembolso preparada para ${bookingId}; ejecución financiera externa pendiente.`);
+  return { exito: true, estado: 'PENDIENTE_EJECUCION_PASARELA', bookingId, reembolsoAutorizado: policyPercent > 0, porcentajeReembolso: policyPercent, refundExecuted: false, motor: 'código_nativo_node', mensaje: 'El porcentaje fue recibido como política verificada; la devolución monetaria requiere ejecución y confirmación de la pasarela.' };
 }
-
 // =========================================================================
 // 16. CONTROL DE CONTINGENCIAS CLIMÁTICAS & PROTOCOLOS IMN
 // =========================================================================
@@ -856,134 +769,34 @@ export async function executeAutonomousMultiDayPlanner(body: any) {
   const start = Date.now();
   const traveler = body.viajero || {};
   const params = body.parametrosViaje || {};
-  const dias = params.diasTotales || 7;
-  const destinos = params.destinosDeseados || ['La Fortuna / Arenal', 'Monteverde', 'Manuel Antonio'];
-  const adultos = traveler.adultos || 2;
-  const ninos = traveler.ninos || 0;
-  const totalPax = adultos + ninos;
-
-  // Construcción algorítmica del cronograma día por día
-  const dailySchedule = [
-    {
-      dia: 1,
-      titulo: 'Llegada a Costa Rica & Traslado a La Fortuna',
-      destino: 'La Fortuna / Arenal',
-      transporte: 'Traslado Privado Ejecutivo Alsama Tours CR (SJO ➔ Arenal ~3.5h con Wi-Fi y A/C)',
-      actividadTarde: 'Check-in y atardecer relajante en aguas termales naturales con vista al Volcán Arenal',
-      sinacRequerido: false,
-      comidas: 'Cena típica costarricense incluida'
-    },
-    {
-      dia: 2,
-      titulo: 'Parque Nacional Volcán Arenal & Puentes Colgantes',
-      destino: 'La Fortuna / Arenal',
-      actividadManana: 'Caminata guiada senderos de lava Volcán Arenal (Aforo SINAC confirmado)',
-      actividadTarde: 'Circuito de Puentes Colgantes en Bosque Lluvioso & avistamiento de perezosos',
-      transporte: 'Vehículo privado con chofer bilingüe',
-      sinacRequerido: true,
-      sinacSlot: '08:00 AM - Aprobado'
-    },
-    {
-      dia: 3,
-      titulo: 'Aventura en Aguas Termales o Rafting Río Sarapiquí',
-      destino: 'La Fortuna / Arenal',
-      actividadManana: 'Rafting Nivel II-III o Safari Flotante Río Peñas Blancas (según ritmo familiar)',
-      actividadTarde: 'Tour Cultural de Café y Cacao de altura',
-      transporte: 'Traslados locales incluidos'
-    },
-    {
-      dia: 4,
-      titulo: 'Travesía Panorámica a Monteverde (Bosque Nuboso)',
-      destino: 'Monteverde',
-      transporte: 'Traslado privado interhotel Alsama Tours (bordeando Laguna de Arenal ~3.0h)',
-      actividadTarde: 'Caminata Nocturna de Vida Silvestre (tucanes, ranas de ojos rojos, kinkajous)',
-      sinacRequerido: false
-    },
-    {
-      dia: 5,
-      titulo: 'Canopy Zip-Line & Traslado a la Costa del Pacífico',
-      destino: 'Monteverde ➔ Manuel Antonio',
-      actividadManana: 'Tirolesa / Canopy sobre el dosel del Bosque Nuboso',
-      transporte: 'Traslado Privado Alsama Tours hacia Manuel Antonio con parada escénica en Puente Cocodrilos Río Tárcoles',
-      actividadTarde: 'Llegada a las playas del Pacífico Central y atardecer en Manuel Antonio'
-    },
-    {
-      dia: 6,
-      titulo: 'Parque Nacional Manuel Antonio & Playas Vírgenes',
-      destino: 'Manuel Antonio / Quepos',
-      actividadManana: 'Tour guiado oficial Parque Nacional Manuel Antonio (Monos tití, perezosos, iguanas)',
-      actividadTarde: 'Disfrute de Playa Manuel Antonio y Playa Espadilla Sur',
-      sinacRequerido: true,
-      sinacSlot: '07:00 AM - Boleto Oficial Garantizado'
-    },
-    {
-      dia: 7,
-      titulo: 'Regreso Cómodo al Aeropuerto Internacional SJO',
-      destino: 'Manuel Antonio ➔ Aeropuerto SJO',
-      transporte: 'Traslado Privado Directo Alsama Tours CR (~2.5h) sincronizado con el horario de vuelo de salida',
-      actividadTarde: 'Check-in de vuelo y despedida Pura Vida'
-    }
-  ];
-
-  // Cálculo de precios y bundle discount
-  const basePricePerPerson = 380;
-  const transportFixedUSD = 499; // Paquete completo de traslados ejecutivos Alsama Tours
-  const subtotalUSD = (basePricePerPerson * totalPax) + transportFixedUSD;
-  const bundleDiscountUSD = Math.round(subtotalUSD * 0.10); // 10% ahorro combo
-  const totalUSD = subtotalUSD - bundleDiscountUSD;
-
-  const itinerarioId = `ITIN-AUTO-${Date.now().toString(36).toUpperCase()}`;
-  const qrPassToken = `CRT-PASS-${crypto.randomUUID()}`;
-
+  const days = Math.max(1, Math.min(14, Number(params.diasTotales || params.days) || 7));
+  const adults = Math.max(1, Math.min(50, Number(traveler.adultos || traveler.adults) || 2));
+  const children = Math.max(0, Math.min(50 - adults, Number(traveler.ninos || traveler.children) || 0));
+  const totalPax = adults + children;
+  const requestedRegions = Array.isArray(params.destinosDeseados || params.regions) ? (params.destinosDeseados || params.regions).map(String).slice(0, 8) : [];
+  const query = String(params.intereses || params.interests || '').trim().toLowerCase();
+  const budgetUSD = Number(params.presupuestoUSD || params.budgetUSD || 0);
+  const catalog = TOURS.filter((tour: any) => {
+    const hay = [tour.title?.es, tour.title?.en, tour.region, tour.category, ...(tour.highlights?.es || [])].filter(Boolean).join(' ').toLowerCase();
+    const regionMatch = requestedRegions.length === 0 || requestedRegions.some((region: string) => hay.includes(region.toLowerCase()));
+    return regionMatch && (!query || hay.includes(query));
+  });
+  const selected = (catalog.length ? catalog : TOURS).slice(0, days);
+  if (!selected.length) throw new Error('CATALOG_EMPTY: no hay experiencias autoritativas disponibles.');
+  const schedule = selected.map((tour: any, i: number) => ({ day: i + 1, tourId: tour.id, title: tour.title?.es || tour.title?.en, region: tour.region || null, priceUSD: Number(tour.priceUSD || 0), providerId: String(tour.providerId || '').trim() || null, availabilityStatus: 'REQUIRES_LIVE_VERIFICATION', providerStatus: 'REQUIRES_PROVIDER_CONFIRMATION' }));
+  const experienceSubtotal = Number(schedule.reduce((sum: number, item: any) => sum + item.priceUSD * totalPax, 0).toFixed(2));
+  const itineraryId = `ITIN-AUTO-${crypto.randomUUID()}`;
   const duration = Date.now() - start;
-  logAutomationExecution(
-    'WF_COMPLEX_01_MULTI_DAY_PLANNER',
-    duration,
-    'success',
-    `Itinerario multidía de ${dias} días generado para ${traveler.nombre || 'Viajero'} (${totalPax} pax)`,
-    { itinerarioId, totalUSD, bundleDiscountUSD }
-  );
-
+  logAutomationExecution('WF_COMPLEX_01_MULTI_DAY_PLANNER', duration, 'warning', `Itinerario ${itineraryId} preparado desde catálogo: ${schedule.length} días; sin afirmar hoteles, transporte o cupos.`);
   return {
-    exito: true,
-    itinerarioId,
-    qrPassToken,
-    diasTotales: dias,
-    destinosOptimizados: destinos,
-    resumenViajero: {
-      nombre: traveler.nombre || 'Carlos Robinson',
-      totalPersonas: totalPax,
-      ritmo: params.ritmo || 'moderado_familiar',
-      nivelPresupuesto: params.presupuestoNivel || 'confort_premium'
-    },
-    transporteOficial: {
-      proveedor: 'Alsama Tours CR (Verificado CST)',
-      tipoVehiculo: totalPax <= 5 ? 'Van Ejecutiva A/C con Wi-Fi' : 'Microbús Familiar A/C',
-      incluye: ['Chofer profesional bilingüe', 'Wi-Fi 4G/5G a bordo', 'Botellas de agua fría', 'Parada escénica Río Tárcoles', 'Seguro MOPT/ICT']
-    },
-    aforosSinacVerificados: [
-      { parque: 'Parque Nacional Volcán Arenal', estado: 'CUPO_CONFIRMADO', horario: '08:00 AM' },
-      { parque: 'Parque Nacional Manuel Antonio', estado: 'CUPO_CONFIRMADO', horario: '07:00 AM' }
-    ],
-    matrizClimaticaIMN: {
-      estado: 'OPTIMIZADO',
-      estrategia: 'Actividades al aire libre programadas en mañanas despejadas; tardes con aguas termales o traslados climatizados'
-    },
-    cronogramaPorDia: dailySchedule,
-    cotizacionFinanciera: {
-      moneda: 'USD',
-      subtotalUSD,
-      descuentoPaqueteUSD: bundleDiscountUSD,
-      porcentajeDescuento: '10%',
-      totalFinalUSD: totalUSD,
-      equivalenteCRC: Math.round(totalUSD * getUsdToCrcRate()),
-      beneficioAlsamaTransportBundle: 'Ahorro de $75 USD al combinar traslados con tours'
-    },
-    enlaceCredencialDigital: `https://costaricatours.es/pass/${qrPassToken}`,
-    timestamp: new Date().toISOString()
+    exito: true, itineraryId, diasTotales: schedule.length, totalPax, traveler: { nombre: String(traveler.nombre || traveler.name || '').trim() || null },
+    cronogramaPorDia: schedule,
+    cotizacionFinanciera: { moneda: 'USD', subtotalExperienciasUSD: experienceSubtotal, presupuestoUSD: budgetUSD || null, dentroPresupuesto: budgetUSD > 0 ? experienceSubtotal <= budgetUSD : null, equivalenteCRC: Math.round(experienceSubtotal * getUsdToCrcRate()) },
+    transporteOficial: null, aforosSinacVerificados: [], matrizClimaticaIMN: { estado: 'NO_VERIFICADA', estrategia: null },
+    reservasEjecutadas: false, proveedoresConfirmados: false, voucherEmitido: false, qrPassToken: null,
+    motor: 'código_nativo_node', mensaje: 'Plan multidía preparado con catálogo autoritativo. Disponibilidad, proveedores, transporte, clima y políticas deben verificarse antes de prometer una reserva.'
   };
 }
-
 /**
  * WF-COMPLEX-02: Motor Predictivo de Dynamic Pricing & Yield Management
  */
