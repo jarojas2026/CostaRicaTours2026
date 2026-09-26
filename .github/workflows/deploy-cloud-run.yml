@@ -15,7 +15,9 @@ env:
   # limitadas; es una de las regiones más económicas y estables.
   SERVICE_NAME: costa-rica-tours
   REGION: us-central1
-  PROJECT_ID: gen-lang-client-0782739149
+  PROJECT_ID: ${{ fromJSON(secrets.GCP_SA_KEY).project_id }}
+  MIN_INSTANCES: ${{ vars.CLOUD_RUN_MIN_INSTANCES || '0' }}
+  MAX_INSTANCES: ${{ vars.CLOUD_RUN_MAX_INSTANCES || '20' }}
 
 permissions:
   contents: read
@@ -30,7 +32,7 @@ jobs:
     # el propio paso de autenticación mostrará el error correspondiente.
     steps:
       - name: Descargar el código del repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Autenticar con Google Cloud
         uses: google-github-actions/auth@v2
@@ -41,6 +43,14 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ env.PROJECT_ID }}
+
+      - name: Preflight de configuración
+        run: |
+          set -euo pipefail
+          test -n "$PROJECT_ID" || { echo "::error::No se pudo determinar PROJECT_ID desde GCP_SA_KEY."; exit 1; }
+          case "$MIN_INSTANCES" in (''|*[!0-9]*) echo "::error::CLOUD_RUN_MIN_INSTANCES inválido."; exit 1;; esac
+          case "$MAX_INSTANCES" in (''|*[!0-9]*) echo "::error::CLOUD_RUN_MAX_INSTANCES inválido."; exit 1;; esac
+          test "$MAX_INSTANCES" -ge "$MIN_INSTANCES" || { echo "::error::MAX_INSTANCES debe ser >= MIN_INSTANCES."; exit 1; }
 
       - name: Preflight de acceso a Cloud Run
         run: |
@@ -63,8 +73,8 @@ jobs:
             --region "$REGION" \
             --project "$PROJECT_ID" \
             --allow-unauthenticated \
-            --min-instances=0 \
-            --max-instances=4 \
+            --min-instances="$MIN_INSTANCES" \
+            --max-instances="$MAX_INSTANCES" \
             --quiet
 
       - name: Mostrar la URL del servicio desplegado
