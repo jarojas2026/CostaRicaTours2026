@@ -821,8 +821,9 @@ export async function getPendingReservationLifecycleBookings(limit = 100): Promi
         createdAtTimestamp: data.createdAt
       });
     });
-    results.forEach((booking) => inMemoryBookings.set(booking.bookingId || booking.id, booking));
-    return results;
+    const lifecycleResults = results.filter((booking) => booking.bookingDomain !== 'service');
+    lifecycleResults.forEach((booking) => inMemoryBookings.set(booking.bookingId || booking.id, booking));
+    return lifecycleResults;
   } catch (error) {
     console.warn('Error consultando reservas pendientes del lifecycle:', error);
     return [];
