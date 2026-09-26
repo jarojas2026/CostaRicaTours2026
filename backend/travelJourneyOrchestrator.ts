@@ -52,7 +52,13 @@ function selectCatalog(params: JourneyParams) {
     return !regions.length || regions.some(r => region.includes(r) || r.includes(region));
   });
 
-  const pool = candidates.length ? candidates : fallback.length ? fallback : TOURS;
+  const pool = candidates.length
+    ? candidates
+    : fallback.length
+      ? fallback
+      : regions.length
+        ? []
+        : TOURS;
   return pool.slice(0, 8).map((tour: any) => ({
     id: tour.id,
     title: tour.title?.es || tour.title?.en || tour.id,
@@ -106,6 +112,9 @@ export async function buildTripJourney(params: JourneyParams) {
   const memory = sessionId ? await getOperationalMemory(sessionId) : null;
   const effectiveQuery = clean(params.query) || memory?.summary || '';
   const catalog = selectCatalog({ ...params, query: effectiveQuery });
+  if (params.regions?.length && catalog.length === 0) {
+    throw new Error('No encontramos experiencias del catálogo para la región solicitada. Ajuste la región o amplíe la búsqueda.');
+  }
   const regions = Array.from(new Set(catalog.map(t => t.region).filter(Boolean)));
   const route = buildRouteStrategy({
     regions,
