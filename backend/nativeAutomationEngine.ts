@@ -546,7 +546,27 @@ export async function executeNotificarProveedor(body: any) {
   const start = Date.now();
   const bookingId = body.bookingId || body.idReserva || 'CRT-PROV';
   const tourName = body.tourName || 'Tour Oficial';
-  const provider = body.providerInfo || { name: 'Alsama Tours CR / Operaciones Directas' };
+  const providerId = String(body.providerId || body.providerInfo?.id || '').trim();
+  const provider = providerId ? await (async () => {
+    const { getOperatorById } = await import('./bookingService');
+    return getOperatorById(providerId);
+  })() : null;
+
+  if (!provider || provider.verified !== true || provider.active !== true) {
+    await sendAdministrativeAlert({
+      title: 'Despacho de proveedor bloqueado',
+      reason: 'No existe un proveedor operativo verificado para el despacho solicitado.',
+      bookingId,
+      providerId: providerId || undefined
+    }).catch(() => {});
+    return {
+      exito: false,
+      bookingId,
+      notificado: false,
+      proveedor: null,
+      message: 'No se realizó el despacho: falta un proveedor operativo, activo y verificado.'
+    };
+  }
 
   console.log(`🚐 [AUTOMATIZACIÓN NATIVA] Despachando logística a proveedor local: ${provider.name} para reserva ${bookingId}`);
 
@@ -1491,7 +1511,7 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
     'FLUJO_AUTONOMO_COMPLETO',
     duration,
     'success',
-    `¡Reserva ${bookingId} completada 100% autónoma! Cliente (${customerEmail}) y Proveedor (${booking.providerInfo?.name || 'Alsama Tours'}) notificados.`,
+    `¡Reserva ${bookingId} completada 100% autónoma! Cliente (${customerEmail}) y Proveedor (${booking.providerInfo?.name || booking.providerName || 'proveedor asignado'}) notificados.`,
     {
       bookingId,
       totalUSD,
