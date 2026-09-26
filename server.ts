@@ -20,11 +20,13 @@ import { requireOperator } from './backend/authMiddleware';
 import { TOURS } from './src/data/toursData';
 import { getTourMediaById } from './backend/tourMediaService';
 import { FLIGHT_ROUTES } from './src/data/flightsData';
+import { MAP_TOURISM_SERVICES } from './src/data/mapServicesData';
 import {
   getStripe,
   createBooking,
   getAllBookings,
   getBookingById,
+  createSpecialServiceBooking,
   updateBookingStatus,
   checkTourAvailability,
   getWeeklyConversionMetrics
@@ -957,6 +959,37 @@ app.post('/api/sinpe/verify', requireOperator, async (req, res) => {
 });
 
 // Crear reserva (con verificación server-side de pago, cupos en Firestore y automatización nativa)
+app.post('/api/service-bookings', bookingAdmission.middleware, async (req, res) => {
+  try {
+    const normalizedType = String(req.body?.serviceType || '').trim().toLowerCase();
+    const pricing = calculateAuthoritativeServiceBookingTotal({ ...req.body, serviceType: normalizedType });
+    if (!pricing) return res.status(400).json({ success: false, error: 'SERVICE_CONFIGURATION_INVALID', message: 'El servicio solicitado no tiene precio/configuración autorizada para reserva.' });
+    const customer = req.body?.customer || {};
+    const bookingId = String(req.body?.bookingId || `CRT-SVC-${crypto.randomUUID()}`).trim();
+    const booking = await createSpecialServiceBooking({
+      bookingId,
+      serviceType: normalizedType,
+      serviceId: req.body?.serviceId || req.body?.flightNumber || '',
+      tourId: req.body?.tourId || req.body?.serviceId || `service-${bookingId}`,
+      tourName: pricing.tourName,
+      date: req.body?.date,
+      checkOutDate: req.body?.checkOutDate,
+      time: req.body?.time || req.body?.departureTime || '08:00 AM',
+      adults: req.body?.adults || req.body?.passengers || 1,
+      children: req.body?.children || 0,
+      pickupHotel: req.body?.pickupHotel || '',
+      specialRequests: req.body?.specialRequests || '',
+      customer,
+      totalUSD: pricing.totalUSD,
+      paymentMethod: req.body?.paymentMethod || 'credit_card',
+      flightDetails: normalizedType === 'flight' ? { ...pricing.details, pnrLocator: bookingId } : undefined,
+      serviceDetails: { ...pricing.details, transferType: req.body?.transferType || undefined, selectedRoute: req.body?.selectedRoute || undefined, flightDirection: req.body?.flightDirection || undefined }
+    });
+    return res.status(201).json({ success: true, booking: booking.booking, pricingVerified: true });
+  } catch (err: any) {
+    return res.status(400).json({ success: false, error: err?.message || 'No se pudo crear la reserva de servicio.' });
+  }
+});
 app.post('/api/bookings', bookingAdmission.middleware, async (req, res) => {
   try {
     const idempotencyKey = req.headers['idempotency-key'];
@@ -3054,7 +3087,52 @@ async function startServer() {
   });
 }
 
-startServer();function calculateAuthoritativeCheckoutTotal(body: any): number | null {
+startServer();function calculateAuthoritativeServiceBookingTotal(body: any): { totalUSD: number; tourName: string; details: Record<string, any> } | null {
+  const serviceType = String(body?.serviceType || '').trim().toLowerCase();
+  if (serviceType === 'flight') {
+    const flightNumber = String(body?.flightNumber || '').trim();
+    const flight = FLIGHT_ROUTES.find(route => route.flightNumber === flightNumber);
+    if (!flight) return null;
+    const passengers = Math.max(1, Math.min(50, Number(body?.passengers) || Number(body?.adults) || 1));
+    const cabin = body?.cabinClass === 'Business' ? 'Business' : 'Economy';
+    const base = flight.basePriceUSD * (cabin === 'Business' ? 2.2 : 1);
+    const addOns = (body?.includeAirportTransfer ? 45 : 0) + (body?.includeWelcomeSimKit ? 15 : 0) + (body?.includeTravelInsurance ? 29 : 0);
+    return {
+      totalUSD: Number(((base + addOns) * passengers).toFixed(2)),
+      tourName: `${flight.airline} (${flight.flightNumber}) • ${flight.originAirportCode} ➔ ${flight.destinationAirportCode}`,
+      details: { flightNumber: flight.flightNumber, airline: flight.airline, originCode: flight.originAirportCode, destinationCode: flight.destinationAirportCode, departureTime: flight.departureTime, arrivalTime: flight.arrivalTime, cabinClass: cabin, passengerCount: passengers }
+    };
+  }
+  if (serviceType !== 'map') return null;
+  const serviceId = String(body?.serviceId || '').trim();
+  const service = MAP_TOURISM_SERVICES.find(item => item.id === serviceId);
+  if (!service || !service.canBeBooked) return null;
+  const adults = Math.max(1, Math.min(50, Number(body?.adults) || 1));
+  const children = Math.max(0, Math.min(50 - adults, Number(body?.children) || 0));
+  const people = adults + children;
+  let totalUSD = 0;
+  if (service.type === 'hotel') {
+    const start = new Date(String(body?.date || '')).getTime();
+    const end = new Date(String(body?.checkOutDate || '')).getTime();
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || !Number.isFinite(service.pricePerNightUSD) || service.pricePerNightUSD <= 0) return null;
+    const nights = Math.max(1, Math.round((end - start) / 86400000));
+    totalUSD = service.pricePerNightUSD * nights;
+  } else if (service.type === 'national_park') {
+    if (!Number.isFinite(service.officialPriceUSD) || service.officialPriceUSD <= 0) return null;
+    totalUSD = service.officialPriceUSD * adults + service.officialPriceUSD * 0.5 * children;
+  } else if (['airport', 'airstrip', 'bus_station', 'train_station'].includes(service.type)) {
+    if (!Number.isFinite(service.averageTicketUSD) || service.averageTicketUSD <= 0) return null;
+    totalUSD = service.averageTicketUSD * people;
+  } else if (service.type === 'taxi_stand') {
+    const transferType = String(body?.transferType || 'shared_shuttle');
+    if (transferType !== 'shared_shuttle') return null;
+    if (!Number.isFinite(service.averageTicketUSD) || service.averageTicketUSD <= 0) return null;
+    totalUSD = service.averageTicketUSD * people;
+  } else return null;
+  return { totalUSD: Number(totalUSD.toFixed(2)), tourName: typeof service.name?.es === 'string' ? service.name.es : service.id, details: { serviceId, serviceType: service.type, adults, children } };
+}
+
+function calculateAuthoritativeCheckoutTotal(body: any): number | null {
   const passengers = Math.max(1, Number(body?.passengers) || (Number(body?.adults) || 0) + (Number(body?.children) || 0));
   const tourId = String(body?.tourId || '');
 
