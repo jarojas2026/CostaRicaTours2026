@@ -1444,7 +1444,7 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
     resolvedTour = TOURS.find((t) => t.title.es.toLowerCase().includes(payload.tourName!.toLowerCase()) || (t.title.en && t.title.en.toLowerCase().includes(payload.tourName!.toLowerCase())));
   }
   if (!resolvedTour) {
-    resolvedTour = TOURS[0]; // Arenal Volcano por defecto
+    throw new Error('No se encontró un tour válido en el catálogo nacional. La reserva no se enviará a una experiencia distinta por defecto.');
   }
 
   // 2. Extraer o normalizar datos de pasajeros y fechas
@@ -1453,7 +1453,10 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
   const targetDate = payload.date || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const targetTime = payload.time || '08:00 AM';
   const customerName = payload.customerName || 'Viajero Costa Rica Tours';
-  const customerEmail = payload.customerEmail || process.env.ADMIN_EMAIL || 'reservas@costaricatours.cr';
+  const customerEmail = String(payload.customerEmail || '').trim();
+  if (!customerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+    throw new Error('customerEmail es obligatorio y debe tener un formato válido para crear una reserva.');
+  }
   const customerPhone = payload.customerPhone || process.env.SINPE_SUPPORT_PHONE || '';
   const pickupHotel = payload.pickupHotel || (resolvedTour.pickupHotels ? resolvedTour.pickupHotels[0] : 'Recepción de Hotel en La Fortuna');
   const specialRequests = payload.specialRequests || 'Solicitud de confirmación y coordinación 100% autónoma sin intervención humana';
@@ -1472,7 +1475,7 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
   const bookingResult = await createBooking({
     tourId: resolvedTour.id,
     tourName: resolvedTour.title.es,
-    providerId: (resolvedTour as any).operatorId || 'alsama-tours-cr',
+    providerId: String((resolvedTour as any).providerId || (resolvedTour as any).operatorId || '').trim(),
     date: targetDate,
     time: targetTime,
     adults,
