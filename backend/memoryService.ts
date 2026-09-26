@@ -257,11 +257,52 @@ export async function saveChatHistory(
       timestamp: new Date().toISOString()
     }));
 
-  let memory = emptyMemory(sessionId);
-  for (const turn of normalized) {
-    memory = await rememberTurn(sessionId, turn);
+  if (normalized.length === 0) return getOperationalMemory(sessionId);
+
+  const db = getFirestoreDb();
+  if (!db) {
+    let memory = emptyMemory(sessionId);
+    for (const turn of normalized) {
+      memory = mergeTurnIntoMemory(memory, turn, { agentId: turn.agentId }).updated;
+    }
+    return memory;
   }
-  return memory;
+
+  const memoryRef = db.collection('agent_memory').doc(sessionId);
+  const transactionResult = await db.runTransaction(async transaction => {
+    const snapshot = await transaction.get(memoryRef);
+    const data = snapshot.exists ? snapshot.data() || {} : {};
+    let memory: OperationalMemory = {
+      ...emptyMemory(sessionId),
+      ...data,
+      sessionId,
+      facts: typeof data.facts === 'object' && data.facts ? data.facts : {},
+      preferences: Array.isArray(data.preferences) ? data.preferences.slice(0, MAX_LIST) : [],
+      activeGoals: Array.isArray(data.activeGoals) ? data.activeGoals.slice(0, MAX_LIST) : [],
+      decisions: Array.isArray(data.decisions) ? data.decisions.slice(0, MAX_LIST) : [],
+      turns: Array.isArray(data.turns) ? data.turns.slice(-MAX_TURNS) : []
+    } as OperationalMemory;
+
+    for (const turn of normalized) {
+      memory = mergeTurnIntoMemory(memory, turn, { agentId: turn.agentId }).updated;
+    }
+
+    transaction.set(memoryRef, memory, { merge: true });
+    return memory;
+  });
+
+  // Keep vector indexing non-blocking so history persistence stays fast.
+  normalized.forEach(turn => {
+    void indexSemanticMemory({
+      sessionId,
+      text: turn.text,
+      role: turn.role,
+      agentId: turn.agentId,
+      timestamp: turn.timestamp
+    });
+  });
+
+  return transactionResult;
 }
 
 export async function retrieveRelevantMemory(
