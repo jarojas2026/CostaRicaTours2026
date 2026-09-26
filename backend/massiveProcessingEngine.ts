@@ -310,7 +310,7 @@ export class MassiveProcessingEngine extends EventEmitter {
       }
 
       default:
-        return { success: true, message: `Task ${task.type} ejecutada con éxito` };
+        throw new Error(`MASSIVE_TASK_UNSUPPORTED: tipo de tarea no registrado: ${task.type}`);
     }
   }
 
