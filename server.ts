@@ -3220,8 +3220,8 @@ startServer();function calculateAuthoritativeServiceBookingTotal(body: any): { t
   if (service.type === 'hotel') {
     const start = new Date(String(body?.date || '')).getTime();
     const end = new Date(String(body?.checkOutDate || '')).getTime();
-    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || !Number.isFinite(service.pricePerNightUSD) || service.pricePerNightUSD <= 0) return null;
     const pricePerNightUSD = Number(service.pricePerNightUSD);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || !Number.isFinite(pricePerNightUSD) || pricePerNightUSD <= 0) return null;
     const nights = Math.max(1, Math.round((end - start) / 86400000));
     totalUSD = pricePerNightUSD * nights;
   } else if (service.type === 'national_park') {
