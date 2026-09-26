@@ -526,6 +526,8 @@ export async function createBooking(data: any) {
     paymentStatus: paymentResult.paymentStatus,
     status: paymentResult.status,
     sinpeReference: data.sinpeReference || undefined,
+    holdExpiresAt: data.holdExpiresAt || undefined,
+    holdActive: data.holdActive === true,
     customerName: customerObj.name,
     customerEmail: customerObj.email,
     customerPhone: customerObj.phone,
