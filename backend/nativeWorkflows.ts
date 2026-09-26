@@ -284,49 +284,33 @@ export async function getProviderFromDb(providerId: string): Promise<any | null>
     }
   }
 
-  // 2. Búsqueda exacta en catálogo maestro
-  if (MASTER_OPERATORS_REGISTRY[normalizedId]) {
-    return MASTER_OPERATORS_REGISTRY[normalizedId];
-  }
+  // El registro maestro es metadata histórica y nunca es fuente operativa
+  // en producción. Solo se permite explícitamente en entornos locales de prueba.
+  const allowLegacyRegistry = process.env.NODE_ENV !== 'production'
+    && process.env.ALLOW_LEGACY_PROVIDER_DIRECTORY === 'true';
+  if (allowLegacyRegistry) {
+    if (MASTER_OPERATORS_REGISTRY[normalizedId]) return MASTER_OPERATORS_REGISTRY[normalizedId];
 
-  // 3. Búsqueda por sub-coincidencia de clave
-  for (const [key, val] of Object.entries(MASTER_OPERATORS_REGISTRY)) {
-    if (normalizedId.includes(key) || key.includes(normalizedId)) {
-      return val;
+    for (const [key, val] of Object.entries(MASTER_OPERATORS_REGISTRY)) {
+      if (normalizedId.includes(key) || key.includes(normalizedId)) return val;
     }
+
+    const keywordMappings: Array<[RegExp, string]> = [
+      [/arenal|volcan|termales|fortuna/i, 'arenal-volcano-ops'],
+      [/monteverde|canopy|tirolesa|puentes/i, 'monteverde-canopy-ops'],
+      [/manuel-antonio|quepos|parque/i, 'manuel-antonio-ops'],
+      [/tortuga|catamaran|bay-island|isla/i, 'bay-island-cruises'],
+      [/pacuare|rafting|sarapiqui/i, 'pacuare-rafting-ops'],
+      [/tortuguero|canales/i, 'tortuguero-ops'],
+      [/cafe|coffee|doka|cacao/i, 'doka-estate-coffee'],
+      [/guanacaste|tamarindo|papagayo|playa/i, 'guanacaste-blue-ocean'],
+      [/tarcoles|cocodrilo|crocodile/i, 'tarcoles-crocodile-safari']
+    ];
+    const mapping = keywordMappings.find(([pattern]) => pattern.test(normalizedId));
+    if (mapping) return MASTER_OPERATORS_REGISTRY[mapping[1]];
   }
 
-  // 4. Mapeos de palabras clave de tours a proveedores
-  if (normalizedId.includes('arenal') || normalizedId.includes('volcan') || normalizedId.includes('termales') || normalizedId.includes('fortuna')) {
-    return MASTER_OPERATORS_REGISTRY['arenal-volcano-ops'];
-  }
-  if (normalizedId.includes('monteverde') || normalizedId.includes('canopy') || normalizedId.includes('tirolesa') || normalizedId.includes('puentes')) {
-    return MASTER_OPERATORS_REGISTRY['monteverde-canopy-ops'];
-  }
-  if (normalizedId.includes('manuel-antonio') || normalizedId.includes('quepos') || normalizedId.includes('parque')) {
-    return MASTER_OPERATORS_REGISTRY['manuel-antonio-ops'];
-  }
-  if (normalizedId.includes('tortuga') || normalizedId.includes('catamaran') || normalizedId.includes('bay-island') || normalizedId.includes('isla')) {
-    return MASTER_OPERATORS_REGISTRY['bay-island-cruises'];
-  }
-  if (normalizedId.includes('pacuare') || normalizedId.includes('rafting') || normalizedId.includes('sarapiqui')) {
-    return MASTER_OPERATORS_REGISTRY['pacuare-rafting-ops'];
-  }
-  if (normalizedId.includes('tortuguero') || normalizedId.includes('canales')) {
-    return MASTER_OPERATORS_REGISTRY['tortuguero-ops'];
-  }
-  if (normalizedId.includes('cafe') || normalizedId.includes('coffee') || normalizedId.includes('doka') || normalizedId.includes('cacao')) {
-    return MASTER_OPERATORS_REGISTRY['doka-estate-coffee'];
-  }
-  if (normalizedId.includes('guanacaste') || normalizedId.includes('tamarindo') || normalizedId.includes('papagayo') || normalizedId.includes('playa')) {
-    return MASTER_OPERATORS_REGISTRY['guanacaste-blue-ocean'];
-  }
-  if (normalizedId.includes('tarcoles') || normalizedId.includes('cocodrilo') || normalizedId.includes('crocodile')) {
-    return MASTER_OPERATORS_REGISTRY['tarcoles-crocodile-safari'];
-  }
-
-  // No inventamos un proveedor para un ID desconocido. El caller debe
-  // escalar/solicitar asignación explícita en lugar de despachar a otro operador.
+  // Nunca inventamos un proveedor ni redirigimos una reserva hacia otro ID.
   return null;
 }
 
@@ -369,8 +353,16 @@ export async function executeProviderRealtimeCoordination(
   const customerPhone = booking.customerPhone || booking.customer?.phone || '';
   const customerEmail = booking.customerEmail || booking.customer?.email || '';
 
-  // Obtener datos del proveedor
-  const provider = await getProviderFromDb(providerId) || MASTER_OPERATORS_REGISTRY['alsama-tours-cr'];
+  // Obtener datos del proveedor sin sustituir silenciosamente por otro operador.
+  const provider = await getProviderFromDb(providerId);
+  if (!provider) {
+    await updateBookingStatus(bookingId, {
+      providerStatus: 'pending_provider_verification',
+      providerDispatchBlockedAt: new Date().toISOString(),
+      providerDispatchBlockedReason: 'Proveedor no encontrado o no verificado'
+    }).catch(() => {});
+    throw new Error('No existe un proveedor operativo verificado para la reserva ' + bookingId + '. El despacho queda bloqueado hasta asignar un proveedor real.');
+  }
   const providerEmail = provider.email;
   const providerPhone = provider.phone || '+506 8795-9148';
   const whatsappNumber = provider.whatsapp || '50687959148';
