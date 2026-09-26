@@ -260,6 +260,16 @@ export const REGISTERED_PROVIDERS: TourProvider[] = [
 
 // Registro en memoria de órdenes de servicio
 const serviceOrdersStore: Map<string, ServiceOrder> = new Map();
+const MAX_SERVICE_ORDER_CACHE = 1000;
+
+function cacheServiceOrder(order: ServiceOrder) {
+  serviceOrdersStore.set(order.id, order);
+  while (serviceOrdersStore.size > MAX_SERVICE_ORDER_CACHE) {
+    const oldestKey = serviceOrdersStore.keys().next().value as string | undefined;
+    if (!oldestKey) break;
+    serviceOrdersStore.delete(oldestKey);
+  }
+}
 
 async function persistServiceOrder(order: ServiceOrder) {
   const db = (await import('./bookingService')).getFirestoreDb();
@@ -276,7 +286,7 @@ async function loadServiceOrder(orderId: string): Promise<ServiceOrder | null> {
   const doc = await db.collection('service_orders').doc(orderId).get();
   if (!doc.exists) return null;
   const order = doc.data() as ServiceOrder;
-  serviceOrdersStore.set(orderId, order);
+  cacheServiceOrder(order);
   return order;
 }
 
@@ -426,7 +436,7 @@ export async function dispatchServiceOrder(params: {
     providerPortalUrl
   };
 
-  serviceOrdersStore.set(orderId, order);
+  cacheServiceOrder(order);
   await persistServiceOrder(order).catch(err => console.warn('⚠️ No se pudo persistir la orden de servicio:', err));
 
   const providerEmail = resolveConfiguredProviderEmail(provider);
