@@ -17,6 +17,8 @@ import crypto from 'crypto';
 import { 
   checkTourAvailability, 
   createBooking, 
+  getBookingById,
+  getStripe,
   updateBookingStatus, 
   getWeeklyConversionMetrics, 
   getAllBookings,
@@ -269,44 +271,70 @@ export async function executeInicioReserva(body: any) {
 export async function executeSolicitudPago(body: any) {
   const start = Date.now();
   const reservationId = String(body.idReserva || body.bookingId || '').trim();
-  const totalAmount = Number(body.montoUSD || body.amount);
-  if (!reservationId || !Number.isFinite(totalAmount) || totalAmount <= 0) throw new Error('bookingId y montoUSD válido son obligatorios.');
-  const method = (body.metodoPago || body.paymentMethod || 'credit_card').toLowerCase();
-  const tour = body.nombreTour || body.tourName || 'Tour Oficial Costa Rica';
-  const email = body.correoCliente || body.customerEmail || process.env.SUPPORT_EMAIL || '';
-
-  // Firma criptográfica HMAC SHA-256 generada en código seguro del servidor
+  if (!reservationId) throw new Error('BOOKING_ID_REQUIRED: bookingId es obligatorio.');
+  const booking = await getBookingById(reservationId);
+  if (!booking) throw new Error('BOOKING_NOT_FOUND: la reserva no existe.');
+  const method = String(body.metodoPago || body.paymentMethod || booking.paymentMethod || 'credit_card').toLowerCase();
+  const requestedAmount = Number(body.montoUSD || body.amount);
+  const authoritativeAmount = Number(booking.totalUSD);
+  if (!Number.isFinite(authoritativeAmount) || authoritativeAmount <= 0) throw new Error('BOOKING_PRICE_INVALID: la reserva no tiene totalUSD válido.');
+  if (Number.isFinite(requestedAmount) && Math.abs(requestedAmount - authoritativeAmount) > 0.01) throw new Error('AMOUNT_MISMATCH: el monto enviado no coincide con el total autoritativo de la reserva.');
+  const totalAmount = authoritativeAmount;
+  const email = String(body.correoCliente || body.customerEmail || booking.customerEmail || booking.customer?.email || '').trim();
   const hmacSecret = process.env.PAYMENT_HMAC_SECRET;
   if (!hmacSecret) throw new Error('PAYMENT_HMAC_SECRET no está configurado en el servidor.');
   const signaturePayload = `${reservationId}:${totalAmount}:${method}:${email}`;
   const hmacSignature = crypto.createHmac('sha256', hmacSecret).update(signaturePayload).digest('hex');
-
-  const sessionId = `cs_${method}_${crypto.randomUUID()}`;
-  const checkoutUrl = method === 'paypal'
-    ? `https://www.paypal.com/checkoutnow?token=EC-${crypto.randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`
-    : `https://checkout.stripe.com/c/pay/${sessionId}#fidkdWxOYHwnPyd1blpxYHZxWjA0TjU8TG5%2FQ2x0X1A1dGFJ`;
-
+  let checkoutUrl: string | null = null;
+  let providerSessionId: string | null = null;
+  if (method === 'credit_card' || method === 'stripe') {
+    const stripe = getStripe();
+    if (stripe) {
+      const appUrl = String(process.env.APP_URL || process.env.PUBLIC_BASE_URL || '').replace(/\/$/, '');
+      if (!appUrl) throw new Error('APP_URL_REQUIRED: se necesita APP_URL para generar el checkout seguro.');
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        customer_email: email || undefined,
+        line_items: [{ price_data: { currency: 'usd', product_data: { name: String(booking.tourName || 'Experiencia Costa Rica Tours') }, unit_amount: Math.round(totalAmount * 100) }, quantity: 1 }],
+        metadata: { bookingId: reservationId },
+        success_url: `${appUrl}/booking/success?reservation=${encodeURIComponent(reservationId)}&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${appUrl}/checkout?reserva=${encodeURIComponent(reservationId)}&cancelled=1`
+      });
+      checkoutUrl = session.url || null;
+      providerSessionId = session.id;
+    }
+  } else if (method === 'paypal') {
+    const clientId = process.env.PAYPAL_CLIENT_ID;
+    const secret = process.env.PAYPAL_SECRET;
+    const mode = process.env.PAYPAL_MODE || 'sandbox';
+    const baseUrl = mode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+    if (clientId && secret) {
+      const auth = Buffer.from(`${clientId}:${secret}`).toString('base64');
+      const tokenResponse = await fetch(`${baseUrl}/v1/oauth2/token`, { method: 'POST', headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'grant_type=client_credentials' });
+      if (!tokenResponse.ok) throw new Error(`PAYPAL_OAUTH_FAILED:${tokenResponse.status}`);
+      const tokenData = await tokenResponse.json() as any;
+      const orderResponse = await fetch(`${baseUrl}/v2/checkout/orders`, { method: 'POST', headers: { Authorization: `Bearer ${tokenData.access_token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ intent: 'CAPTURE', purchase_units: [{ reference_id: reservationId, amount: { currency_code: 'USD', value: totalAmount.toFixed(2) }, description: String(booking.tourName || 'Costa Rica Tours') }], application_context: { user_action: 'PAY_NOW' } }) });
+      const orderData = await orderResponse.json() as any;
+      if (!orderResponse.ok) throw new Error(`PAYPAL_ORDER_FAILED:${orderData?.message || orderResponse.status}`);
+      providerSessionId = String(orderData.id || '');
+      checkoutUrl = Array.isArray(orderData.links) ? String(orderData.links.find((l: any) => l.rel === 'approve')?.href || '') || null : null;
+    }
+  }
   const duration = Date.now() - start;
-  logAutomationExecution(
-    'SOLICITUD_PAGO',
-    duration,
-    'success',
-    `Sesión de pago generada (${method}) para reserva ${reservationId}: $${totalAmount} USD`
-  );
-
+  const ready = Boolean(checkoutUrl && providerSessionId);
+  logAutomationExecution('SOLICITUD_PAGO', duration, ready ? 'success' : 'warning', ready ? `Checkout real generado para ${reservationId}.` : `Pasarela ${method} no disponible/configurada para ${reservationId}; no se generó URL ficticia.`);
   return {
-    exito: true,
+    exito: ready,
     idReserva: reservationId,
     checkoutUrl,
-    sessionId,
+    sessionId: providerSessionId,
     firmaHMAC: hmacSignature,
     montoUSD: totalAmount,
     metodo: method,
-    expiraEn: '30 minutos',
-    estado: 'esperando_pago',
-    tourName: tour,
+    estado: ready ? 'checkout_generado' : 'pendiente_configuracion_pasarela',
+    tourName: booking.tourName,
     motor: 'código_nativo_node',
-    mensaje: 'Sesión de pasarela generada y conciliación criptográfica activa en backend.'
+    mensaje: ready ? 'Checkout generado por la pasarela real.' : 'No se afirmó un checkout: la pasarela no está configurada o no devolvió una sesión aprobable.'
   };
 }
 
