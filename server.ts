@@ -2652,7 +2652,7 @@ app.post('/api/itinerary/book', bookingAdmission.middleware, async (req, res) =>
     }
 
     const bookingDate = startDate || new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0];
-    const generatedId = `CR-ITIN-${Math.floor(100000 + Math.random() * 900000)}`;
+    const generatedId = `CR-ITIN-${crypto.randomUUID().replace(/-/g, '').slice(0, 20).toUpperCase()}`;
     const normalizedDays = Math.max(1, Math.min(30, Number(daysCount) || 5));
     const normalizedTravelers = Math.max(1, Math.min(30, Number(travelers) || 2));
     // Precio base autoritativo para itinerarios personalizados. El total generado por IA
