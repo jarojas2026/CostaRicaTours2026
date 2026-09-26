@@ -16,7 +16,7 @@ import rateLimit from 'express-rate-limit';
 import { createServer as createViteServer } from 'vite';
 import { initializeAutomationEngine, cleanupExpiredSoftHolds } from './backend/cronEngine';
 import { google } from 'googleapis';
-import { requireOperator } from './backend/authMiddleware';
+import { requireOperator, requireAuthenticatedUser } from './backend/authMiddleware';
 import { TOURS } from './src/data/toursData';
 import { getTourMediaById } from './backend/tourMediaService';
 import { FLIGHT_ROUTES } from './src/data/flightsData';
@@ -2234,7 +2234,7 @@ app.get(['/api/metrics/throughput', '/api/massive/status'], requireAdmin, (req, 
 });
 
 // 10. Procesamiento Masivo Concurrente de Consultas en Lote (Batch Inquiries)
-app.post(['/api/massive/batch-inquiries', '/api/massive/process-batch'], async (req, res) => {
+app.post(['/api/massive/batch-inquiries', '/api/massive/process-batch'], requireAutomationTrigger, async (req, res) => {
   try {
     const inquiries = Array.isArray(req.body?.inquiries) ? req.body.inquiries : [req.body];
     const results = await Promise.allSettled(
@@ -2489,7 +2489,7 @@ app.get('/api/agent/tools/functions', async (req, res) => {
 });
 
 // Endpoints de Machine Learning y Recomendación Inteligente (motor nativo)
-app.post('/api/ml/recommend', async (req, res) => {
+app.post('/api/ml/recommend', aiAdmission.middleware, async (req, res) => {
   try {
     const { mlRecommendTours } = await import('./backend/nativeMlEngine');
     const profile = req.body || {};
@@ -2500,7 +2500,7 @@ app.post('/api/ml/recommend', async (req, res) => {
   }
 });
 
-app.post('/api/ml/predict-price', async (req, res) => {
+app.post('/api/ml/predict-price', aiAdmission.middleware, async (req, res) => {
   try {
     const { mlPredictDynamicPrice } = await import('./backend/nativeMlEngine');
     const { basePrice, dateString, seats } = req.body;
@@ -2511,7 +2511,7 @@ app.post('/api/ml/predict-price', async (req, res) => {
   }
 });
 
-app.post('/api/ml/itinerary', async (req, res) => {
+app.post('/api/ml/itinerary', aiAdmission.middleware, async (req, res) => {
   try {
     const { mlGenerateItinerary } = await import('./backend/nativeMlEngine');
     const { days, style, region } = req.body;
@@ -2523,7 +2523,7 @@ app.post('/api/ml/itinerary', async (req, res) => {
 });
 
 
-app.post('/api/gemini/booking/urgent', async (req, res) => {
+app.post('/api/gemini/booking/urgent', chatLimiter, async (req, res) => {
   try {
     const { message, language, history, agentId } = req.body;
     const lang = (language || 'es') as 'es' | 'en';
@@ -2564,7 +2564,7 @@ app.get('/api/claude/status', (req, res) => {
 });
 
 // 2. Chat conversacional con Claude 3.5 Sonnet
-app.post('/api/claude/chat', async (req, res) => {
+app.post('/api/claude/chat', chatLimiter, aiAdmission.middleware, async (req, res) => {
   try {
     const { message, language, history, temperature } = req.body;
     if (!message || !message.trim()) {
@@ -2594,7 +2594,7 @@ app.post('/api/claude/chat', async (req, res) => {
 });
 
 // 3. Generador experto de itinerarios personalizados con Claude y Gemini (Resilience Fallback)
-app.post('/api/claude/itinerary', async (req, res) => {
+app.post('/api/claude/itinerary', aiAdmission.middleware, async (req, res) => {
   try {
     const { days, travelers, style, regions, budget, language, specialRequests } = req.body;
     const itinerary = await generateClaudeItinerary({
@@ -2637,7 +2637,7 @@ app.post('/api/claude/itinerary', async (req, res) => {
 });
 
 // Endpoint dedicado para generador de itinerarios Gemini
-app.post('/api/gemini/itinerary', async (req, res) => {
+app.post('/api/gemini/itinerary', aiAdmission.middleware, async (req, res) => {
   try {
     const itinerary = await generateGeminiItinerary({
       days: Number(req.body.days) || 5,
@@ -2656,7 +2656,7 @@ app.post('/api/gemini/itinerary', async (req, res) => {
 });
 
 // Endpoint para reservar un itinerario completo personalizado
-app.post('/api/itinerary/book', async (req, res) => {
+app.post('/api/itinerary/book', bookingAdmission.middleware, async (req, res) => {
   try {
     const {
       itineraryTitle,
@@ -2717,7 +2717,7 @@ app.post('/api/itinerary/book', async (req, res) => {
 });
 
 // 4. Auditoría operativa y antifraude de reserva con Claude
-app.post('/api/claude/audit-booking', async (req, res) => {
+app.post('/api/claude/audit-booking', requireAgentTool, async (req, res) => {
   try {
     const booking = req.body.booking || req.body;
     const auditResult = await analyzeOperationalRiskWithClaude(booking);
@@ -2729,42 +2729,51 @@ app.post('/api/claude/audit-booking', async (req, res) => {
 });
 
 // Compatibilidad de rutas generales
-app.post('/api/workflows/:action', (req, res) => {
+app.post('/api/workflows/:action', requireAutomationTrigger, (req, res) => {
   res.json({ success: true, message: `Workflow ${req.params.action} procesado con éxito` });
 });
 
-app.post('/api/gemini/:action', (req, res) => {
+app.post('/api/gemini/:action', requireAutomationTrigger, (req, res) => {
   res.json({ success: true, text: `Respuesta de Gemini para ${req.params.action}` });
 });
 
-app.get('/api/chat/history', async (req, res) => {
+app.get('/api/chat/history', requireAuthenticatedUser, async (req, res) => {
   try {
-    const { getOperationalMemory } = await import('./backend/memoryService');
+    const { getOwnedOperationalMemory } = await import('./backend/memoryService');
     const sessionId = String(req.query.sessionId || '');
+    const userId = String((req as any).user?.uid || '');
     if (!sessionId) return res.status(400).json({ error: 'sessionId es requerido' });
-    const memory = await getOperationalMemory(sessionId);
+    const memory = await getOwnedOperationalMemory(sessionId, userId);
     res.json({ history: memory.turns, memory: { summary: memory.summary, facts: memory.facts, preferences: memory.preferences, activeGoals: memory.activeGoals, decisions: memory.decisions, lastAgent: memory.lastAgent, lastUpdatedAt: memory.lastUpdatedAt }});
-  } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo cargar la memoria' }); }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'No se pudo cargar la memoria';
+    res.status(message.startsWith('MEMORY_FORBIDDEN') ? 403 : 400).json({ error: message });
+  }
 });
 
-app.post('/api/chat/history', async (req, res) => {
+app.post('/api/chat/history', requireAuthenticatedUser, async (req, res) => {
   try {
     const { saveChatHistory } = await import('./backend/memoryService');
     const sessionId = String(req.body?.sessionId || '');
+    const userId = String((req as any).user?.uid || '');
     if (!sessionId || !Array.isArray(req.body?.history)) return res.status(400).json({ error: 'sessionId e history son requeridos' });
-    const memory = await saveChatHistory(sessionId, req.body.history);
+    const memory = await saveChatHistory(sessionId, req.body.history, userId);
     res.json({ success: true, memory: { summary: memory.summary, facts: memory.facts, preferences: memory.preferences, activeGoals: memory.activeGoals, decisions: memory.decisions, lastAgent: memory.lastAgent, lastUpdatedAt: memory.lastUpdatedAt }});
   } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo guardar la memoria' }); }
 });
 
-app.delete('/api/chat/history', async (req, res) => {
+app.delete('/api/chat/history', requireAuthenticatedUser, async (req, res) => {
   try {
-    const { clearOperationalMemory } = await import('./backend/memoryService');
+    const { clearOwnedOperationalMemory } = await import('./backend/memoryService');
     const sessionId = String(req.query.sessionId || req.body?.sessionId || '');
+    const userId = String((req as any).user?.uid || '');
     if (!sessionId) return res.status(400).json({ error: 'sessionId es requerido' });
-    await clearOperationalMemory(sessionId);
+    await clearOwnedOperationalMemory(sessionId, userId);
     res.json({ success: true });
-  } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo borrar la memoria' }); }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'No se pudo borrar la memoria';
+    res.status(message.startsWith('MEMORY_FORBIDDEN') ? 403 : 400).json({ error: message });
+  }
 });
 
 // ==========================================
@@ -2896,7 +2905,7 @@ app.post(['/api/agent/tools/create_booking_and_notify', '/api/agent/create-booki
 });
 
 // Tool 3: Generador Autónomo de Itinerarios Multidía y Logística
-app.post('/api/agent/tools/generate_custom_itinerary', async (req, res) => {
+app.post('/api/agent/tools/generate_custom_itinerary', aiAdmission.middleware, async (req, res) => {
   try {
     const { days, travelers, style, budget, group, language, special_requests } = req.body;
     const itinerary = await generateGeminiItinerary({
