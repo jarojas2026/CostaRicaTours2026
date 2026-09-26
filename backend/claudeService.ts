@@ -20,7 +20,9 @@ export function getClaudeClient(): AnthropicVertex | null {
       process.env.ANTHROPIC_VERTEX_PROJECT_ID ||
       process.env.GCP_PROJECT ||
       process.env.GOOGLE_CLOUD_PROJECT ||
-      'gen-lang-client-0782739149';
+      '';
+
+    if (!projectId) throw new Error('GOOGLE_CLOUD_PROJECT/ANTHROPIC_VERTEX_PROJECT_ID no configurado.');
 
     const region =
       process.env.ANTHROPIC_VERTEX_REGION ||
@@ -49,11 +51,12 @@ export function getClaudeStatus(): { available: boolean; model: string; region: 
   const projectId =
     process.env.ANTHROPIC_VERTEX_PROJECT_ID ||
     process.env.GCP_PROJECT ||
-    'gen-lang-client-0782739149';
+    '';
   const region =
     process.env.ANTHROPIC_VERTEX_REGION ||
     process.env.CLOUD_ML_REGION ||
     'us-east5';
+  if (!projectId) return { available: false, model, region: '', projectId: '', error: 'Proyecto de Vertex AI no configurado.' };
   const model = process.env.ANTHROPIC_VERTEX_MODEL || 'claude-3-5-sonnet-v2@20241022';
 
   return {
