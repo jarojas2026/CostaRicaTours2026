@@ -19,6 +19,7 @@ import { initializeAutomationEngine, cleanupExpiredSoftHolds } from './backend/c
 import { google } from 'googleapis';
 import { requireOperator, requireAuthenticatedUser } from './backend/authMiddleware';
 import { TOURS } from './src/data/toursData';
+import type { Language } from './src/types';
 import { getTourMediaById } from './backend/tourMediaService';
 import { FLIGHT_ROUTES } from './src/data/flightsData';
 import { MAP_TOURISM_SERVICES } from './src/data/mapServicesData';
@@ -2420,7 +2421,7 @@ app.post('/api/gemini/concierge', aiAdmission.middleware, async (req, res) => {
     const { message, language, history, agentId, context, engine, sessionId } = req.body;
     const userMsg = message || '';
     const memorySessionId = String(sessionId || context?.sessionId || '');
-    const lang = (language || 'es') as 'es' | 'en';
+    const lang = (language || 'es') as Language;
     
     // Si se especifica o prefiere motor Claude 3.5 Sonnet
     if (engine === 'claude') {
@@ -2480,7 +2481,7 @@ app.post('/api/agent/counter', aiAdmission.middleware, async (req, res) => {
   try {
     const { message, language, history, context } = req.body;
     const userMsg = message || '';
-    const lang = (language || 'es') as 'es' | 'en';
+    const lang = (language || 'es') as Language;
     const result = await runCounterAgent(userMsg, {}, context || {}, lang, history || []);
     res.json({
       success: true,
@@ -2612,7 +2613,7 @@ app.post('/api/ml/itinerary', aiAdmission.middleware, async (req, res) => {
 app.post('/api/gemini/booking/urgent', chatLimiter, async (req, res) => {
   try {
     const { message, language, history, agentId } = req.body;
-    const lang = (language || 'es') as 'es' | 'en';
+    const lang = (language || 'es') as Language;
     const assistantResult = await processChatInquiry(message || '', lang, history || []);
     
     // Escalación y seguimiento se registran en el motor nativo de alertas.
@@ -2657,7 +2658,7 @@ app.post('/api/claude/chat', chatLimiter, aiAdmission.middleware, async (req, re
       return res.status(400).json({ error: 'El parámetro "message" es requerido' });
     }
 
-    const lang = (language || 'es') as 'es' | 'en';
+    const lang = (language || 'es') as Language;
     const result = await generateClaudeChatResponse(message, lang, history || [], { temperature });
 
     res.json(result);
@@ -2689,7 +2690,7 @@ app.post('/api/claude/itinerary', aiAdmission.middleware, async (req, res) => {
       style: style || 'eco_relax',
       regions: regions || ['Arenal', 'Monteverde', 'Manuel Antonio'],
       budget: budget || 'premium',
-      language: (language || 'es') as 'es' | 'en',
+      language: (language || 'es') as Language,
       specialRequests
     });
 
@@ -3010,7 +3011,7 @@ app.post('/api/agent/tools/generate_custom_itinerary', aiAdmission.middleware, a
       style: style || 'Aventura y Naturaleza',
       budget: budget || 'Medio',
       group: group || 'Pareja',
-      language: (language || 'es') as 'es' | 'en',
+      language: (language || 'es') as Language,
       specialRequests: special_requests
     });
 
