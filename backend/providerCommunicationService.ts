@@ -663,6 +663,24 @@ export async function observeProviderSla() {
   };
 }
 
+export function getPublicProvidersOverview() {
+  const verifiedProviders = REGISTERED_PROVIDERS.filter(
+    provider => provider.verified === true && provider.status === 'active'
+  );
+  return {
+    totalProviders: verifiedProviders.length,
+    activeProviders: verifiedProviders.length,
+    providers: verifiedProviders.map(provider => ({
+      id: provider.id,
+      name: provider.name,
+      category: provider.category,
+      region: provider.region,
+      verified: true,
+      cstLevel: provider.cstLevel
+    }))
+  };
+}
+
 export function getProvidersOverview() {
   const orders = Array.from(serviceOrdersStore.values());
   const activeOrders = orders.filter(o => o.status === 'dispatched' || o.status === 'confirmed');
