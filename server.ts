@@ -1148,9 +1148,9 @@ app.get(['/api/native-engine/status', '/api/native/status'], (req, res) => {
 });
 
 // API para Provider Hub & Self-Development Hub
-app.get('/api/providers', (_req, res) => {
+app.get('/api/providers', async (_req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=3600');
-  res.json(getPublicProvidersOverview());
+  res.json(await getPublicProvidersOverview());
 });
 
 app.post('/api/providers/action', requireAdmin, async (req, res) => {
