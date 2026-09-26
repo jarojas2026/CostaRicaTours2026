@@ -1825,7 +1825,7 @@ app.post(additionalWebhooks, async (req, res) => {
 // 1. Coordinación en Tiempo Real con Proveedores (Webhook & API Nativa)
 app.post(['/webhook/proveedores-coordinacion', '/webhook/coordinacion-proveedores', '/api/webhooks/provider-coordination'], requireAutomationTrigger, async (req, res) => {
   try {
-    const authHeader = String(req.headers['x-webhook-secret'] || req.headers.authorization?.toString().replace(/^Bearer\\s+/, '') || '');
+    const authHeader = String(req.headers['x-webhook-secret'] || '');
     const result = await executeProviderRealtimeCoordination(req.body, authHeader);
     res.json(result);
   } catch (error: any) {
@@ -1853,7 +1853,6 @@ app.all(['/api/provider/respond', '/webhook/provider-response', '/api/webhooks/p
       return res.status(401).json({ success: false, error: 'Token de capacidad del proveedor requerido.' });
     }
 
-  try {
     const action = String(req.query.action || req.body?.action || 'confirm');
     const requestedBookingId = String(req.query.bookingId || req.body?.bookingId || req.body?.id || '');
     const bookingId = capability?.orderId || requestedBookingId;
@@ -1865,8 +1864,8 @@ app.all(['/api/provider/respond', '/webhook/provider-response', '/api/webhooks/p
     if (capability && requestedProviderId && requestedProviderId !== capability.providerId) {
       return res.status(403).json({ success: false, error: 'El enlace no corresponde a este proveedor.' });
     }
-    const guideName = String(req.query.guideName || req.body?.guideName || 'Guía Naturalista Certificado ICT');
-    const vehiclePlate = String(req.query.vehiclePlate || req.body?.vehiclePlate || 'Unidad Oficial Alsama Tours');
+    const guideName = String(req.query.guideName || req.body?.guideName || '').trim();
+    const vehiclePlate = String(req.query.vehiclePlate || req.body?.vehiclePlate || '').trim();
     const proposedTime = String(req.query.proposedTime || req.body?.proposedTime || '');
     const providerNotes = String(req.query.notes || req.body?.notes || req.body?.providerNotes || '');
 
