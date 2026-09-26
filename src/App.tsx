@@ -38,6 +38,7 @@ import { AdminRouteGuard } from './components/AdminRouteGuard';
 import { requestCustomerIntake } from './utils/customerIntake';
 import { AdminControlCenterPage } from './pages/AdminControlCenterPage';
 import { ProviderPortalPage } from './pages/ProviderPortalPage';
+import { TravelerCommandBar } from './components/TravelerCommandBar';
 
 // Code-splitting via React.lazy to reduce initial JS bundle size
 const ItineraryPlanner = lazy(() => import('./components/ItineraryPlanner').then(m => ({ default: m.ItineraryPlanner })));
@@ -391,6 +392,17 @@ export default function App() {
                 <span className="sm:hidden">{language === 'es' ? 'Inicio' : 'Home'}</span>
               </button>
             </div>
+          </div>
+        )}
+
+        {activeTab !== 'home' && activeTab !== 'counter' && !activeTab.startsWith('admin') && activeTab !== 'provider' && (
+          <div className="pt-4 sm:pt-5">
+            <TravelerCommandBar
+              language={language}
+              activeTab={activeTab}
+              onNavigate={(path) => navigate(path)}
+              onOpenTripBuilder={() => setIsCustomFunnelOpen(true)}
+            />
           </div>
         )}
 
