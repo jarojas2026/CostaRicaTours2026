@@ -16,7 +16,7 @@ import rateLimit from 'express-rate-limit';
 import { createServer as createViteServer } from 'vite';
 import { initializeAutomationEngine, cleanupExpiredSoftHolds } from './backend/cronEngine';
 import { google } from 'googleapis';
-import { requireOperator } from './backend/authMiddleware';
+import { requireOperator, requireSignedInUser } from './backend/authMiddleware';
 import { TOURS } from './src/data/toursData';
 import { getTourMediaById } from './backend/tourMediaService';
 import { FLIGHT_ROUTES } from './src/data/flightsData';
@@ -2990,9 +2990,11 @@ app.get('/api/agent/tools/manifest', requireAgentTool, (req, res) => {
 // ==========================================
 // 📱 FIREBASE CLOUD MESSAGING (FCM) ENDPOINTS
 // ==========================================
-app.post('/api/fcm/register', async (req, res) => {
+app.post('/api/fcm/register', requireSignedInUser, async (req, res) => {
   try {
-    const { userId, token, deviceInfo } = req.body;
+    const authenticatedUserId = String((req as any).user?.uid || '');
+    const { token, deviceInfo } = req.body;
+    const userId = authenticatedUserId;
     if (!userId || !token) {
       return res.status(400).json({ success: false, error: 'userId y token requeridos' });
     }
