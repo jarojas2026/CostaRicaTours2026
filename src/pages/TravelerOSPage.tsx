@@ -14,6 +14,7 @@ import { fetchLiveExchangeRate, getUsdToCrcRate } from '../utils/currencies';
 interface TravelerOSPageProps {
   language: Language;
   onOpenTripBuilder?: () => void;
+  onOpenBookings?: () => void;
 }
 
 type Task = {
@@ -55,7 +56,8 @@ const initialTrip: SavedTrip = {
 
 export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
   language,
-  onOpenTripBuilder
+  onOpenTripBuilder,
+  onOpenBookings
 }) => {
   const es = language === 'es';
   const navigate = useNavigate();
@@ -153,7 +155,8 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
     { icon: Compass, title: es ? 'Explorar experiencias' : 'Explore experiences', text: es ? 'Encuentra qué hacer' : 'Find things to do', path: '/tours' },
     { icon: MapPinned, title: es ? 'Mapa inteligente' : 'Smart map', text: es ? 'Ubica regiones y rutas' : 'Regions and routes', path: '/map' },
     { icon: Plane, title: es ? 'Vuelos' : 'Flights', text: es ? 'Consulta tus conexiones' : 'Check your connections', path: '/flights' },
-    { icon: HeartPulse, title: es ? 'Ayuda y herramientas' : 'Help & tools', text: es ? 'Prepárate para el día' : 'Prepare for the day', path: '/tools' }
+    { icon: HeartPulse, title: es ? 'Ayuda y herramientas' : 'Help & tools', text: es ? 'Prepárate para el día' : 'Prepare for the day', path: '/tools' },
+    { icon: FileText, title: es ? 'Mis reservas' : 'My bookings', text: es ? 'Consulta tus próximas reservas' : 'Review your upcoming bookings', path: '#bookings' }
   ];
 
   return (
@@ -260,7 +263,7 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
             <section className="rounded-[2rem] border border-white/10 bg-[#071c14] p-5 sm:p-6">
               <div className="flex items-center gap-2 text-amber-300 text-xs font-black uppercase tracking-[0.18em]"><BellRing size={15}/>{es ? 'Atajos útiles' : 'Useful shortcuts'}</div>
               <div className="mt-4 space-y-2">
-                {quickActions.map(action => { const Icon = action.icon; return <button key={action.path} type="button" onClick={()=>navigate(action.path)} className="w-full text-left flex items-center gap-3 p-3 rounded-2xl bg-black/10 hover:bg-white/[0.04] border border-white/5 transition-colors"><span className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center"><Icon size={17} className="text-amber-200"/></span><span className="flex-1 min-w-0"><span className="block text-sm font-black text-white">{action.title}</span><span className="block text-[11px] text-stone-500">{action.text}</span></span><ArrowRight size={14} className="text-stone-600"/></button>; })}
+                {quickActions.map(action => { const Icon = action.icon; return <button key={action.path} type="button" onClick={()=> action.path === '#bookings' ? onOpenBookings?.() : navigate(action.path)} className="w-full text-left flex items-center gap-3 p-3 rounded-2xl bg-black/10 hover:bg-white/[0.04] border border-white/5 transition-colors"><span className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center"><Icon size={17} className="text-amber-200"/></span><span className="flex-1 min-w-0"><span className="block text-sm font-black text-white">{action.title}</span><span className="block text-[11px] text-stone-500">{action.text}</span></span><ArrowRight size={14} className="text-stone-600"/></button>; })}
               </div>
             </section>
 
