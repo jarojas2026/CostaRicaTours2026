@@ -720,32 +720,30 @@ export async function executeSyncCalendar(body: any) {
 // =========================================================================
 export async function executePostTourNPS(body: any) {
   const start = Date.now();
-  const reservationId = body.bookingId || body.idReserva || 'CRT-2026-8819';
-  const tour = body.tourName || 'Arenal Volcano & Hot Springs';
-  const name = body.customerName || 'Carlos Montero';
-  const phone = body.customerPhone || process.env.SINPE_SUPPORT_PHONE || '';
+  const reservationId = String(body.bookingId || body.idReserva || '').trim();
+  if (!reservationId) throw new Error('BOOKING_ID_REQUIRED: bookingId obligatorio para NPS post-tour.');
+  const tour = String(body.tourName || '').trim();
+  const name = String(body.customerName || '').trim();
+  const phone = String(body.customerPhone || '').trim();
   const promoCode = `PURAVIDA15-${crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
-
+  const dispatched = body.dispatched === true;
   const duration = Date.now() - start;
-  logAutomationExecution('POST_TOUR_NPS', duration, 'success', `Encuesta NPS y cupón ${promoCode} generado para ${name}`);
-
+  logAutomationExecution('POST_TOUR_NPS', duration, dispatched ? 'success' : 'warning', dispatched ? `NPS enviado para ${reservationId}.` : `NPS preparado para ${reservationId}; falta un canal de mensajería verificado.`);
   return {
     exito: true,
-    encuestaDespachada: true,
+    encuestaDespachada: dispatched,
+    estado: dispatched ? 'ENVIADA' : 'PENDIENTE_DE_ENVIO',
     bookingId: reservationId,
-    cliente: name,
+    cliente: name || null,
+    telefono: phone || null,
+    tour: tour || null,
     promoCode,
-    canal: 'whatsapp_business_api',
-    plantilla: 'cr_post_tour_satisfaction_v2',
-    enlacesResenas: {
-      tripadvisor: 'https://tripadvisor.com/review/costa-rica-tours',
-      googleMaps: 'https://g.page/r/costa-rica-tours/review'
-    },
+    canal: dispatched ? 'whatsapp_business_api' : null,
+    requiereConfirmacionExterna: !dispatched,
     motor: 'código_nativo_node',
-    mensaje: 'Encuesta post-tour NPS programada y cupón de agradecimiento generado.'
+    mensaje: dispatched ? 'Encuesta marcada como enviada por el canal externo.' : 'Encuesta preparada; no se afirmó un envío que el sistema no ejecutó.'
   };
 }
-
 // =========================================================================
 // 12. REPORTE SEMANAL DE CONVERSIÓN
 // =========================================================================
@@ -796,47 +794,45 @@ export async function executeReporteSemanalConversion() {
 // =========================================================================
 export async function executeParquesSinac(body: any) {
   const start = Date.now();
-  const park = body.parque || 'Parque Nacional Manuel Antonio';
-  const date = body.fecha || new Date().toISOString().split('T')[0];
-  const visitors = Number(body.visitantes || 2);
-
-  const sinacReservationRef = `SINAC-CRT-${crypto.randomUUID()}`;
-
+  const park = String(body.parque || '').trim();
+  const date = String(body.fecha || '').trim();
+  const visitors = Number(body.visitantes);
+  if (!park || !date || !Number.isInteger(visitors) || visitors < 1) throw new Error('SINAC_INPUT_REQUIRED: parque, fecha y visitantes válidos son obligatorios.');
+  const externalConfirmed = body.externalConfirmed === true;
+  const sinacReservationRef = externalConfirmed ? String(body.referenciaSinac || '').trim() || null : null;
   const duration = Date.now() - start;
-  logAutomationExecution('RESERVA_PARQUES_SINAC', duration, 'success', `Cupos SINAC bloqueados para ${park} (${visitors} pax)`);
-
+  logAutomationExecution('RESERVA_PARQUES_SINAC', duration, externalConfirmed ? 'success' : 'warning', externalConfirmed ? `Confirmación SINAC recibida para ${park}.` : `Solicitud SINAC preparada para ${park}; requiere verificación externa.`);
   return {
     exito: true,
+    estado: externalConfirmed ? 'CONFIRMADO_POR_SINAC' : 'PENDIENTE_VERIFICACION_SINAC',
     referenciaSinac: sinacReservationRef,
     parque: park,
     fecha: date,
     visitantes: visitors,
-    politicaAmbiental: 'Prohibido plásticos de un solo uso y alimentos procesados según Ley de Biodiversidad',
+    requiereConfirmacionExterna: !externalConfirmed,
     motor: 'código_nativo_node',
-    mensaje: 'Validación de aforo SINAC completada exitosamente.'
+    mensaje: externalConfirmed ? 'La fuente externa confirmó el cupo SINAC.' : 'No se afirmó un cupo SINAC porque no existe confirmación externa.'
   };
 }
-
 // =========================================================================
 // 14. MONITOR DE VUELOS & RECEPCIÓN EN AEROPUERTO (SJO / LIR)
 // =========================================================================
 export async function executeAlertaVuelo(body: any) {
   const start = Date.now();
-  const flightNumber = (body.flightNumber || body.numeroVuelo || 'UA1234').toUpperCase();
-  const status = body.status || 'ON_TIME';
-
+  const flightNumber = String(body.flightNumber || body.numeroVuelo || '').trim().toUpperCase();
+  if (!flightNumber) throw new Error('FLIGHT_NUMBER_REQUIRED: número de vuelo obligatorio.');
+  const status = String(body.status || 'UNKNOWN').trim().toUpperCase();
+  const source = String(body.source || '').trim();
+  const externallyVerified = body.externallyVerified === true;
   const duration = Date.now() - start;
-  logAutomationExecution('ALERTA_VUELO_RETRASADO', duration, 'success', `Monitoreo de vuelo ${flightNumber}: ${status}`);
-
+  logAutomationExecution('ALERTA_VUELO_RETRASADO', duration, externallyVerified ? 'success' : 'warning', `Vuelo ${flightNumber}: ${status}; verificación externa=${externallyVerified}`);
   return {
-    exito: true,
-    vuelo: flightNumber,
-    estado: status,
-    ajusteChofer: 'Horario de recogida en Aeropuerto sincronizado automáticamente con Waze del chofer.',
+    exito: true, vuelo: flightNumber, estado: status, fuente: source || null,
+    requiereVerificacionExterna: !externallyVerified, despachoChoferEjecutado: false,
+    ajusteChofer: externallyVerified ? 'Listo para ser procesado por la capa operativa con datos de asignación reales.' : null,
     motor: 'código_nativo_node'
   };
 }
-
 // =========================================================================
 // 15. GESTIÓN DE REEMBOLSOS INTELIGENTES Y POLÍTICAS DE CANCELACIÓN
 // =========================================================================
