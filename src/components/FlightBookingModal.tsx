@@ -158,7 +158,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
               </p>
             </div>
 
-            {/* Simulated Digital Ticket */}
+            {/* Digital ticket preview — final voucher is issued after server-side verification */}
             <div className="bg-slate-900 text-white p-5 rounded-2xl border border-slate-800 text-left shadow-xl relative overflow-hidden">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
                 <div>
