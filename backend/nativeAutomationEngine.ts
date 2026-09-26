@@ -1121,239 +1121,57 @@ export async function executeDynamicPricingYieldOptimizer(body: any) {
  */
 export async function executeEmergencyContingencyRerouting(body: any) {
   const start = Date.now();
-  const alerta = body.alerta || {
-    fuente: 'IMN_CNE_OFICIAL',
-    nivel: 'ALERTA_NARANJA_LLUVIAS',
-    cantones: ['Sarapiquí', 'San Carlos (Arenal)'],
-    motivo: 'Crecida repentina en cuenca de Río Sarapiquí'
-  };
-
-  const viajerosAfectados = body.viajerosAfectadosSimulados || [
-    {
-      reservaId: 'RES-SARAP-9982',
-      nombre: 'Elena Rostova',
-      idioma: 'en',
-      actividadOriginal: 'Rafting Río Sarapiquí Nivel III',
-      hotel: 'Arenal Kioro Suites',
-      proveedorTransporte: 'alsama-tours-cr'
-    }
-  ];
-
-  const reasignaciones = viajerosAfectados.map((viajero: any) => ({
-    reservaId: viajero.reservaId,
-    nombreViajero: viajero.nombre,
-    actividadOriginal: viajero.actividadOriginal,
-    estadoOriginal: 'CANCELADO_POR_SEGURIDAD_CNE',
-    actividadSustituta: 'Aguas Termales de Lujo Tabacón + Pase de Día con Almuerzo',
-    diferenciaTarifaUSD: 0,
-    transporteAlsamaAjustado: {
-      choferAsignado: (process.env.PROVIDER_DEV_NAME || 'Operador de prueba') + ' (Alsama Tours CR)',
-      nuevaRuta: `${viajero.hotel} ➔ Tabacón Thermal Resort`,
-      horaRecogida: '10:30 AM (Desplazamiento seguro sin riesgo de río)'
-    },
-    notificacionEnviada: {
-      whatsapp: 'MENSAJE_TRANQUILIZADOR_ENTREGADO',
-      smsRespaldo: 'ENVIADO',
-      idioma: viajero.idioma || 'es'
-    }
+  const alerta = body.alerta || {};
+  const affected = Array.isArray(body.viajerosAfectados) ? body.viajerosAfectados : [];
+  const source = String(alerta.fuente || '').trim();
+  const level = String(alerta.nivel || '').trim();
+  if (!source || !level || affected.length === 0) throw new Error('CONTINGENCY_INPUT_REQUIRED: se requieren alerta verificada y viajeros afectados reales.');
+  const reassigned = affected.map((traveler: any) => ({
+    reservaId: String(traveler.reservaId || traveler.bookingId || '').trim(),
+    nombreViajero: String(traveler.nombre || traveler.name || '').trim(),
+    actividadOriginal: String(traveler.actividadOriginal || '').trim(),
+    estadoOriginal: 'PENDIENTE_REPLANIFICACION_SEGURA',
+    actividadSustituta: traveler.actividadSustituta || null,
+    diferenciaTarifaUSD: Number.isFinite(Number(traveler.diferenciaTarifaUSD)) ? Number(traveler.diferenciaTarifaUSD) : null,
+    transporte: traveler.transporte || null,
+    notificacionEnviada: false,
+    requiereConfirmacionOperativa: true
   }));
-
   const duration = Date.now() - start;
-  logAutomationExecution(
-    'WF_COMPLEX_03_CONTINGENCIA_CLIMATICA',
-    duration,
-    'warning',
-    `Contingencia ${alerta.nivel} atendida: ${viajerosAfectados.length} turistas reubicados a salvo`,
-    { cantones: alerta.cantones, reasignaciones }
-  );
-
-  return {
-    exito: true,
-    protocoloSeguridad: 'ACTIVADO_EXITOSAMENTE',
-    fuenteAlerta: alerta.fuente,
-    nivelAlerta: alerta.nivel,
-    cantonesAfectados: alerta.cantones,
-    turistasProtegidos: viajerosAfectados.length,
-    reasignaciones,
-    reporteAseguradoraINS: {
-      codigoSiniestroPreventivo: `INS-CNE-${Date.now()}`,
-      cobertura: '100% Sin costo para el turista bajo póliza de responsabilidad turística'
-    },
-    despachoChoferesAlsamaTours: 'UNIDADES_NOTIFICADAS_Y_RUTAS_ACTUALIZADAS',
-    alertaMesaOperaciones: 'ENVIADA',
-    timestamp: new Date().toISOString()
-  };
+  logAutomationExecution('WF_COMPLEX_03_CONTINGENCIA_CLIMATICA', duration, 'warning', `Plan de contingencia preparado para ${reassigned.length} reservas; requiere validación operativa y de disponibilidad.`, { source, level });
+  return { exito: true, estado: 'PENDIENTE_VALIDACION_OPERATIVA', alerta: { fuente: source, nivel: level, cantones: Array.isArray(alerta.cantones) ? alerta.cantones.slice(0, 20) : [] }, reasignaciones: reassigned, notificacionesDespachadas: false, reservasModificadas: false, motor: 'código_nativo_node' };
 }
-
-/**
- * WF-COMPLEX-04: Facturación Electrónica DGT Hacienda v4.3 & Liquidación
- */
-export async function executeDGTElectronicInvoicingSettlement(body: any) {
-  const start = Date.now();
-  const cliente = body.cliente || {};
-  const venta = body.detalleVenta || {};
-  const totalUSD = Number(venta.montoTotalUSD);
-  const providerId = String(venta.proveedorId || '').trim();
-  const configuredRate = Number(venta.tipoCambioCRC ?? process.env.USD_TO_CRC_RATE);
-  if (!Number.isFinite(totalUSD) || totalUSD <= 0) throw new Error('MONTO_FACTURA_REQUERIDO: montoTotalUSD debe ser un importe positivo verificable.');
-  if (!providerId) throw new Error('PROVEEDOR_REQUERIDO: proveedorId es obligatorio para la liquidación.');
-  if (!Number.isFinite(configuredRate) || configuredRate <= 0) throw new Error('USD_TO_CRC_RATE debe estar configurado para generar importes CRC.');
-  const db = getFirestoreDb();
-  if (!db) throw new Error('PERSISTENCE_REQUIRED: no se puede preparar una operación fiscal sin acceso a Firestore.');
-  const { getOperatorById } = await import('./bookingService');
-  const provider = await getOperatorById(providerId);
-  if (!provider.active || provider.verified !== true) throw new Error('PROVIDER_NOT_OPERATIONAL: el proveedor no está activo y verificado.');
-  const totalCRC = Math.round(totalUSD * configuredRate);
-  const tasaIVA = Number(venta.tasaIVA ?? process.env.VAT_RATE_DEFAULT ?? 0.04);
-  if (!Number.isFinite(tasaIVA) || tasaIVA < 0 || tasaIVA > 1) throw new Error('TASA_IVA_INVALIDA: tasaIVA fuera de rango.');
-  const subtotalUSD = Number((totalUSD / (1 + tasaIVA)).toFixed(2));
-  const ivaUSD = Number((totalUSD - subtotalUSD).toFixed(2));
-  const draftId = `DGT-DRAFT-${crypto.randomUUID()}`;
-  const legalEntityName = String(process.env.LEGAL_ENTITY_NAME || '').trim();
-  const legalEntityId = String(process.env.LEGAL_ENTITY_ID || '').trim();
-  const cabysCode = String(venta.codigoCABYS || process.env.HACIENDA_CABYS_CODE || '').trim();
-  const readyForSubmission = Boolean(legalEntityName && legalEntityId && cabysCode);
-  const duration = Date.now() - start;
-  logAutomationExecution('WF_COMPLEX_04_DGT_FACTURACION_LIQUIDACION', duration, readyForSubmission ? 'warning' : 'warning', `Borrador fiscal preparado ${draftId}; requiere envío y acuse real de Hacienda.`, { draftId, providerId, readyForSubmission });
-  return {
-    exito: true,
-    estadoOperacion: 'PENDIENTE_ENVIO_DGT',
-    requiereConfirmacionExterna: true,
-    draftId,
-    datosFiscales: {
-      receptor: {
-        nombre: String(cliente.nombre || '').trim(),
-        tipoIdentificacion: String(cliente.tipoIdentificacion || '').trim(),
-        numero: String(cliente.numeroIdentificacion || '').trim()
-      },
-      emisorConfigurado: readyForSubmission,
-      codigoCABYSConfigurado: Boolean(cabysCode)
-    },
-    desgloseMonetarioUSD: { subtotalUSD, tarifaIVA: tasaIVA, impuestoIVAUSD: ivaUSD, totalFacturadoUSD: totalUSD },
-    desgloseMonetarioCRC: { subtotalCRC: Math.round(subtotalUSD * configuredRate), impuestoIVACRC: Math.round(ivaUSD * configuredRate), totalFacturadoCRC: totalCRC },
-    hacienda: { estado: 'PENDIENTE_ENVIO_Y_ACUSE', claveNumerica50Digitos: null, acuseHaciendaHash: null },
-    liquidacionBancariaOperador: {
-      proveedorId,
-      nombreProveedor: provider.name,
-      montoBrutoUSD: totalUSD,
-      comisionPlataforma15USD: Number((totalUSD * (1 - provider.commissionRate)).toFixed(2)),
-      montoNetoLiquidadoUSD: Number((totalUSD * (1 - provider.commissionRate)).toFixed(2)),
-      estadoLiquidacion: 'NO_EJECUTADA_HASTA_ACUSE_FISCAL_Y_PAGO_REAL'
-    },
-    archivosGenerados: { xmlFirmadoUrl: null, pdfLegalUrl: null },
-    timestamp: new Date().toISOString()
-  };
-}
-/**
- * WF-COMPLEX-05: Flight Guard Predictivo en Tiempo Real & Despacho Alsama
- */
 export async function executeAutonomousFlightGuardDispatch(body: any) {
   const start = Date.now();
-  const vuelo = body.numeroVuelo || 'AA1245';
-  const retraso = Number(body.minutosRetraso || 65);
-  const pasajero = body.pasajero || { nombre: 'Sarah Jenkins', telefono: '+13125557812', personas: 3 };
-  const aeropuerto = body.aeropuertoLlegada || 'SJO (Aeropuerto Juan Santamaría)';
-
-  // Tiempo estimado de cruce de migración y retiro de maletas
-  const tiempoAduanaMinutos = 45;
-  const horaOriginal = body.horaOriginalProgramada || '14:30';
-  const nuevaHoraSalidaTerminal = '16:20';
-
+  const vuelo = String(body.numeroVuelo || body.flightNumber || '').trim().toUpperCase();
+  const pasajero = body.pasajero || {};
+  const retraso = Number(body.minutosRetraso);
+  const airport = String(body.aeropuertoLlegada || '').trim();
+  if (!vuelo || !airport || !Number.isFinite(retraso) || retraso < 0 || !String(pasajero.nombre || '').trim()) throw new Error('FLIGHT_GUARD_INPUT_REQUIRED: vuelo, aeropuerto, pasajero y retraso válidos son obligatorios.');
+  const externallyVerified = body.externallyVerified === true;
+  const source = String(body.source || '').trim();
+  const adjustedPickupTime = String(body.horaRecogidaAjustada || '').trim();
   const duration = Date.now() - start;
-  logAutomationExecution(
-    'WF_COMPLEX_05_FLIGHT_GUARD',
-    duration,
-    'success',
-    `Vuelo ${vuelo} retrasado ${retraso} min. Despacho Alsama Tours reprogramado a las ${nuevaHoraSalidaTerminal}`,
-    { pasajero: pasajero.nombre, nuevaHora: nuevaHoraSalidaTerminal }
-  );
-
-  return {
-    exito: true,
-    monitoreoVuelo: {
-      aerolinea: body.aerolinea || 'American Airlines',
-      numeroVuelo: vuelo,
-      origen: body.origenVuelo || 'MIA (Miami International)',
-      aeropuertoLlegada: aeropuerto,
-      estadoRadar: retraso > 0 ? `RETRASADO_${retraso}_MINUTOS` : 'EN_TIEMPO',
-      horaProgramada: horaOriginal,
-      horaEstimadaAterrizaje: body.horaEstimadaToquePista || '15:35',
-      minutosRetraso: retraso
-    },
-    despachoChoferAlsamaTours: {
-      proveedor: 'Alsama Tours CR',
-      choferAsignado: process.env.PROVIDER_DEV_NAME || 'Operador de prueba',
-      vehiculo: 'Van Ejecutiva A/C (Placa TS-882)',
-      cartelDigital: `Bienvenido a Costa Rica: ${pasajero.nombre}`,
-      puntoEncuentro: 'Salida Exterior Terminal SJO (Frente a Restaurante Malinche)',
-      horaLlegadaAjustadaChofer: nuevaHoraSalidaTerminal,
-      costoAdicionalPorEspera: '$0 USD (Garantía Oficial Alsama Tours)'
-    },
-    notificacionesDespachadas: {
-      choferWhatsApp: 'DESPACHADO_CON_NUEVA_HORA',
-      turistaMensajeTranquilizador: {
-        canal: 'WhatsApp / SMS',
-        texto: `¡Pura Vida, ${pasajero.nombre}! Estamos monitoreando tu vuelo ${vuelo}. Tu chofer Carlos ya conoce el retraso de ${retraso} minutos y te estará esperando puntualmente en la salida exterior a las ${nuevaHoraSalidaTerminal}. ¡Relájate y disfruta tu viaje!`
-      }
-    },
-    alertaMesaOperaciones: 'ENVIADA',
-    timestamp: new Date().toISOString()
-  };
+  logAutomationExecution('WF_COMPLEX_05_FLIGHT_GUARD', duration, externallyVerified ? 'success' : 'warning', externallyVerified ? `Vuelo ${vuelo} verificado; ajuste operativo preparado.` : `Vuelo ${vuelo} analizado; falta verificación de fuente externa.`);
+  return { exito: true, estado: externallyVerified ? 'VERIFICADO_LISTO_PARA_OPERACIONES' : 'PENDIENTE_VERIFICACION_VUELO', monitoreoVuelo: { numeroVuelo: vuelo, aeropuertoLlegada: airport, minutosRetraso: retraso, fuente: source || null, verificadoExternamente: externallyVerified }, pasajero: { nombre: String(pasajero.nombre).trim(), telefono: String(pasajero.telefono || '').trim() || null, personas: Number(pasajero.personas) || 1 }, ajusteRecogida: adjustedPickupTime ? { hora: adjustedPickupTime, ejecutado: false } : null, notificacionesDespachadas: false, despachoChoferEjecutado: false, motor: 'código_nativo_node' };
 }
-
-/**
- * WF-COMPLEX-06: Asistente Autónomo con Análisis de Sentimiento & Escalamiento
- */
 export async function executeAutonomousCrisisSentimentEscalation(body: any) {
   const start = Date.now();
-  const mensaje = body.mensaje || '';
-  const turista = body.turista || { nombre: 'Cliente de prueba', email: process.env.TEST_CUSTOMER_EMAIL || 'test@example.com' };
-
-  // Scoring de sentimiento multidimensional
-  const urgencyScore = 0.88;
-  const frustrationScore = 0.85;
-  const prioridad = 'P1_CRITICAL';
-  const voucherCompensacion = 'PURA-VIDA-CARE-50';
-
+  const mensaje = String(body.mensaje || '').trim();
+  const turista = body.turista || {};
+  const name = String(turista.nombre || turista.name || '').trim();
+  if (!mensaje || !name) throw new Error('CRISIS_INPUT_REQUIRED: mensaje y viajero identificable son obligatorios.');
+  const urgencyRaw = Number(body.urgencyScore);
+  const frustrationRaw = Number(body.frustrationScore);
+  const urgencyScore = Number.isFinite(urgencyRaw) ? Math.max(0, Math.min(1, urgencyRaw)) : null;
+  const frustrationScore = Number.isFinite(frustrationRaw) ? Math.max(0, Math.min(1, frustrationRaw)) : null;
+  const risk = Math.max(urgencyScore || 0, frustrationScore || 0);
+  const priority = risk >= 0.85 ? 'P1_CRITICAL' : risk >= 0.65 ? 'P2_HIGH' : 'P3_REVIEW';
+  const compensationRequested = body.compensationRequested === true;
   const duration = Date.now() - start;
-  logAutomationExecution(
-    'WF_COMPLEX_06_CRISIS_SENTIMENT',
-    duration,
-    'warning',
-    `Incidente crítico P1 gestionado para ${turista.nombre}. Cupón de $50 USD emitido y supervisor notificado.`,
-    { urgencyScore, frustrationScore, voucherCompensacion }
-  );
-
-  return {
-    exito: true,
-    analisisSentimiento: {
-      puntajeUrgencia: urgencyScore,
-      puntajeFrustracion: frustrationScore,
-      nivelPrioridad: prioridad,
-      riesgoReputacion: 'ALTO_ATENCION_INMEDIATA',
-      idiomaDetectado: turista.idioma || 'es'
-    },
-    resolucionEmpatica: {
-      mensajeRespuestaTurista: `Estimado/a ${turista.nombre}, entendemos perfectamente tu frustración y lamentamos sinceramente el inconveniente en tu lobby. Un supervisor senior de operaciones de Costa Rica Tours ya se comunicó con la unidad de Alsama Tours asignada y está resolviendo el desplazamiento en este momento.`,
-      compensacionDeCortesia: {
-        codigoCupon: voucherCompensacion,
-        valorUSD: 50,
-        descripcion: 'Crédito inmediato de $50 USD aplicable a tours adicionales o comida en ruta'
-      }
-    },
-    escalamientoOperativo: {
-      ticketId: `INC-${Date.now().toString(36).toUpperCase()}`,
-      canalDirectorAlerta: 'DISPARADA_CON_SONIDO_DE_EMERGENCIA',
-      contactoDirectoWhatsAppSupervisor: process.env.EMERGENCY_CONTACT_PHONE ? `https://wa.me/${String(process.env.EMERGENCY_CONTACT_PHONE).replace(/\D/g, '')}?text=Urgencia%20Reserva` : null,
-      guardiaAsignado: 'Director de Operaciones en Turno'
-    },
-    timestamp: new Date().toISOString()
-  };
+  logAutomationExecution('WF_COMPLEX_06_CRISIS_SENTIMENT', duration, 'warning', `Incidente ${priority} preparado para revisión; no se emitió compensación automática.`, { priority, urgencyScore, frustrationScore });
+  return { exito: true, prioridad: priority, analisisSentimiento: { puntajeUrgencia: urgencyScore, puntajeFrustracion: frustrationScore, evidencia: mensaje.slice(0, 1200) }, escalamiento: { requiereSupervisor: priority !== 'P3_REVIEW', ejecutado: false }, compensacion: { solicitada: compensationRequested, emitida: false, requiereAprobacion: compensationRequested }, turista: { nombre: name, email: String(turista.email || '').trim() || null, telefono: String(turista.telefono || turista.phone || '').trim() || null }, motor: 'código_nativo_node' };
 }
-
-// =========================================================================
-// 19. AUTOMATIZACIÓN GENÉRICA NATIVA
-// =========================================================================
 export async function executeGenericAutomation(triggerName: string, body: any = {}) {
   const start = Date.now();
   const duration = Date.now() - start;
