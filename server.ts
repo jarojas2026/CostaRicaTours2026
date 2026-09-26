@@ -197,6 +197,14 @@ const chatLimiter = rateLimit({
   message: { error: 'Límite de solicitudes de chat excedido. Por favor espere un momento.' }
 });
 
+const journeyLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 12,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Límite de planificación excedido. Espere un momento antes de crear otro itinerario.' }
+});
+
 const generalApiLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 120,
@@ -514,37 +522,6 @@ app.get('/api/admin/control-center', requireAdmin, async (_req, res) => {
   }
 });
 
-// Full-trip Journey API: keeps the public planning flow connected to memory,
-// authoritative catalog, live weather, availability, itinerary and sales next step.
-app.post('/api/journey/build', async (req, res) => {
-  try {
-    const result = await buildTripJourney(req.body || {});
-    res.json({ success: true, journey: result });
-  } catch (err: any) {
-    res.status(400).json({ success: false, error: err.message || 'No se pudo construir el viaje' });
-  }
-});
-
-app.get('/api/journey/:journeyId', async (req, res) => {
-  try {
-    const journey = await getTravelerJourney(String(req.params.journeyId || ''));
-    if (!journey) return res.status(404).json({ success: false, error: 'Viaje no encontrado' });
-    res.json({ success: true, journey });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message || 'No se pudo recuperar el viaje' });
-  }
-});
-
-app.post('/api/journey/:journeyId/adapt', async (req, res) => {
-  try {
-    const journey = await adaptTravelerJourney(String(req.params.journeyId || ''), req.body || {});
-    res.json({ success: true, journey });
-  } catch (err: any) {
-    const status = /no encontrado/i.test(err.message || '') ? 404 : 400;
-    res.status(status).json({ success: false, error: err.message || 'No se pudo adaptar el viaje' });
-  }
-});
-
 app.post('/api/internal/provider-inbox/sweep', requireAgentTool, async (_req, res) => {
   try {
     res.json({ success: true, result: await processProviderInboxOnce() });
@@ -576,7 +553,7 @@ app.post('/api/admin/email-operations/sweep', requireAdmin, async (_req, res) =>
   catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Email operations sweep error' }); }
 });
 
-app.post('/api/ai/intelligence', (req, res) => {
+app.post('/api/ai/intelligence', journeyLimiter, async (req, res) => {
   try {
     const action = String(req.body?.action || '').trim();
     switch (action) {
@@ -601,7 +578,7 @@ app.post('/api/ai/intelligence', (req, res) => {
 // ==========================================
  // 🧭 VIAJE COMPLETO: MEMORIA + CATÁLOGO + CLIMA + DISPONIBILIDAD + ITINERARIO + VENTAS
  // ==========================================
-app.post('/api/journey/build', async (req, res) => {
+app.post('/api/journey/build', journeyLimiter, async (req, res) => {
   try {
     const journey = await buildTripJourney({
       sessionId: typeof req.body?.sessionId === 'string' ? req.body.sessionId : undefined,
@@ -632,7 +609,7 @@ app.get('/api/journey/:journeyId', async (req, res) => {
   }
 });
 
-app.post('/api/journey/:journeyId/adapt', async (req, res) => {
+app.post('/api/journey/:journeyId/adapt', journeyLimiter, async (req, res) => {
   try {
     const journey = await adaptTravelerJourney(String(req.params.journeyId || ''), {
       sessionId: typeof req.body?.sessionId === 'string' ? req.body.sessionId : undefined,
@@ -653,29 +630,6 @@ app.post('/api/journey/:journeyId/adapt', async (req, res) => {
   }
 });
 
-// ==========================================
-// 🛎️ CENTRO EJECUTIVO ADMINISTRATIVO
-// ==========================================
-app.get('/api/admin/control-center', requireAdmin, async (_req, res) => {
-  try {
-    return res.json(await getAdminControlCenterSnapshot());
-  } catch (error: any) {
-    return res.status(500).json({ error: error?.message || 'No se pudo generar el centro de control.' });
-  }
-});
-
-// ==========================================
-// 📬 AGENTE INTERNO DE CORREO DE PROVEEDORES
-// ==========================================
-app.post('/api/internal/provider-inbox/sweep', requireAgentTool, async (_req, res) => {
-  try {
-    return res.json(await processProviderInboxOnce());
-  } catch (error: any) {
-    return res.status(500).json({ error: error?.message || 'No se pudo procesar la bandeja de proveedores.' });
-  }
-});
-
-// ==========================================
 // 💳 PASARELAS DE PAGO (STRIPE & PAYPAL)
 // ==========================================
 
