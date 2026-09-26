@@ -345,12 +345,26 @@ export async function executeProviderRealtimeCoordination(
   const whatsappNumber = provider.whatsapp || '';
 
   // Generar URLs de acción de 1 clic para el proveedor
-  const providerPortalUrl = providerPortalConfigured()
+  const portalConfigured = providerPortalConfigured();
+  const providerPortalUrl = portalConfigured
     ? `${APP_URL}/provider/portal?token=${encodeURIComponent(createProviderPortalToken({ orderId: bookingId, providerId: provider.id, ttlMinutes: 1440 }))}`
     : '';
-  const confirmUrl = providerPortalUrl ? `${providerPortalUrl}&action=confirm` : `${APP_URL}/api/provider/respond?action=confirm&bookingId=${encodeURIComponent(bookingId)}&providerId=${encodeURIComponent(provider.id)}`;
-  const modifyTimeUrl = providerPortalUrl ? `${providerPortalUrl}&action=modify_time` : `${APP_URL}/api/provider/respond?action=modify_time&bookingId=${encodeURIComponent(bookingId)}&providerId=${encodeURIComponent(provider.id)}`;
-  const declineUrl = providerPortalUrl ? `${providerPortalUrl}&action=decline` : `${APP_URL}/api/provider/respond?action=decline&bookingId=${encodeURIComponent(bookingId)}&providerId=${encodeURIComponent(provider.id)}`;
+  const legacyActionsAllowed = process.env.NODE_ENV !== 'production' && process.env.ALLOW_LEGACY_PROVIDER_ACTIONS === 'true';
+  const confirmUrl = providerPortalUrl
+    ? `${providerPortalUrl}&action=confirm`
+    : legacyActionsAllowed
+      ? `${APP_URL}/api/provider/respond?action=confirm&bookingId=${encodeURIComponent(bookingId)}&providerId=${encodeURIComponent(provider.id)}`
+      : '';
+  const modifyTimeUrl = providerPortalUrl
+    ? `${providerPortalUrl}&action=modify_time`
+    : legacyActionsAllowed
+      ? `${APP_URL}/api/provider/respond?action=modify_time&bookingId=${encodeURIComponent(bookingId)}&providerId=${encodeURIComponent(provider.id)}`
+      : '';
+  const declineUrl = providerPortalUrl
+    ? `${providerPortalUrl}&action=decline`
+    : legacyActionsAllowed
+      ? `${APP_URL}/api/provider/respond?action=decline&bookingId=${encodeURIComponent(bookingId)}&providerId=${encodeURIComponent(provider.id)}`
+      : '';
 
   // Enlace interactivo a WhatsApp para despacho móvil directo
   const waText = encodeURIComponent(
@@ -1199,7 +1213,7 @@ export async function executeAutomatedProviderPayouts(): Promise<{
 
         const payoutData = await payoutResponse.json();
 
-        if (payoutResponse.ok && (payoutData.batch_header?.batch_status === 'PENDING' || payoutData.batch_header?.batch_status === 'SUCCESS')) {
+        if (payoutResponse.ok && payoutData.batch_header?.batch_status === 'SUCCESS') {
           await updateBookingStatus(bookingId, {
             payoutStatus: 'paid',
             payoutBatchId: deterministicSenderBatchId,
@@ -1217,9 +1231,24 @@ export async function executeAutomatedProviderPayouts(): Promise<{
             status: 'SUCCESS',
             batchId: deterministicSenderBatchId
           });
-          console.log(`✅ [PAYPAL PAYOUT ÉXITO] $${payoutAmountUSD} USD transferido a ${paypalEmail} (Batch: ${deterministicSenderBatchId})`);
-        } else {
-          const reason = `Fallo en PayPal Payout API: ${payoutData.message || JSON.stringify(payoutData)}`;
+          console.log(`✅ [PAYPAL PAYOUT COMPLETADO] $${payoutAmountUSD} USD pagado a ${paypalEmail} (Batch: ${deterministicSenderBatchId})`);
+        } else if (payoutResponse.ok && ['PENDING', 'PROCESSING', 'NEW'].includes(String(payoutData.batch_header?.batch_status || ''))) {
+          await updateBookingStatus(bookingId, {
+            payoutStatus: 'submitted',
+            payoutBatchId: deterministicSenderBatchId,
+            paypalPayoutBatchId: payoutData.batch_header.payout_batch_id,
+            payoutAmountUSD,
+            payoutRecipient: paypalEmail,
+            payoutSubmittedAt: new Date().toISOString()
+          });
+          results.payouts.push({
+            bookingId,
+            providerId,
+            amountUSD: payoutAmountUSD,
+            status: 'SUBMITTED',
+            batchId: deterministicSenderBatchId
+          });
+        } else {         const reason = `Fallo en PayPal Payout API: ${payoutData.message || JSON.stringify(payoutData)}`;
           await recordEscalation({
             type: 'PAYOUT_API_ERROR',
             bookingId,
