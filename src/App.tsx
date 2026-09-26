@@ -395,7 +395,7 @@ export default function App() {
           </div>
         )}
 
-        {activeTab !== 'home' && activeTab !== 'counter' && !activeTab.startsWith('admin') && activeTab !== 'provider' && (
+        {activeTab !== 'counter' && !activeTab.startsWith('admin') && activeTab !== 'provider' && (
           <div className="pt-4 sm:pt-5">
             <TravelerCommandBar
               language={language}
