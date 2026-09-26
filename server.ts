@@ -1086,6 +1086,7 @@ app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
           customerName: booking.customerName,
           customerEmail: booking.customerEmail,
           customerPhone: booking.customerPhone,
+          providerId: booking.providerId || booking.providerInfo?.id || '',
           tourName: booking.tourName,
           date: booking.date,
           tourDate: booking.date,
@@ -1098,7 +1099,16 @@ app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
       }
     }
 
-    const downloadPdfUrl = `/api/bookings/${bookingId}/download-pdf`;
+    const pdfToken = (() => {
+      try {
+        return createCustomerActionToken({ bookingId, action: 'view_pdf' });
+      } catch {
+        return '';
+      }
+    })();
+    const downloadPdfUrl = pdfToken
+      ? `/api/bookings/${encodeURIComponent(bookingId)}/download-pdf?token=${encodeURIComponent(pdfToken)}`
+      : '#';
     const customerName = String(booking.customerName || 'Cliente').replace(/[<>]/g, '');
     const providerMessage = providerCoordinationResult
       ? 'La coordinación con el proveedor fue iniciada.'
