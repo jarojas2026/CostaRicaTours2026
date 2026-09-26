@@ -2226,28 +2226,28 @@ app.post('/api/ops/booking-action', requireOperator, async (req, res) => {
 // 🤖 AGENTES DEL ENJAMBRE (TRIAGE, PROCESADOR, SUPERVISOR)
 // ==========================================
 
-app.post('/api/agents/triage', async (req, res) => {
+app.post('/api/agents/triage', requireAdmin, async (req, res) => {
   const result = await runTriage(req.body.rawMessage || '');
   res.json(result);
 });
 
-app.post('/api/agents/processor', async (req, res) => {
+app.post('/api/agents/processor', requireAdmin, async (req, res) => {
   const { rawMessage, intent, extractedData } = req.body;
   const result = await runProcessor(rawMessage || '', intent || '', extractedData || {});
   res.json(result);
 });
 
-app.post('/api/agents/contingency', async (req, res) => {
+app.post('/api/agents/contingency', requireAdmin, async (req, res) => {
   const result = await runContingency(req.body);
   res.json(result);
 });
 
-app.post('/api/agents/supervisor', async (req, res) => {
+app.post('/api/agents/supervisor', requireAdmin, async (req, res) => {
   const result = await runSupervisor();
   res.json(result);
 });
 
-app.post('/api/agents/log_exception', (req, res) => {
+app.post('/api/agents/log_exception', requireAdmin, (req, res) => {
   const { agentName, errorContext, rawData } = req.body;
   logException(agentName || 'UnknownAgent', errorContext || 'Error', rawData);
   res.json({ success: true });
@@ -2447,7 +2447,7 @@ app.post('/api/ml/itinerary', async (req, res) => {
 });
 
 
-app.post('/api/gemini/booking/urgent', async (req, res) => {
+app.post('/api/gemini/booking/urgent', requireAutomationCredential, async (req, res) => {
   try {
     const { message, language, history, agentId } = req.body;
     const lang = (language || 'es') as 'es' | 'en';
@@ -2641,7 +2641,7 @@ app.post('/api/itinerary/book', async (req, res) => {
 });
 
 // 4. Auditoría operativa y antifraude de reserva con Claude
-app.post('/api/claude/audit-booking', async (req, res) => {
+app.post('/api/claude/audit-booking', requireAdmin, async (req, res) => {
   try {
     const booking = req.body.booking || req.body;
     const auditResult = await analyzeOperationalRiskWithClaude(booking);
@@ -2653,12 +2653,12 @@ app.post('/api/claude/audit-booking', async (req, res) => {
 });
 
 // Compatibilidad de rutas generales
-app.post('/api/workflows/:action', (req, res) => {
-  res.json({ success: true, message: `Workflow ${req.params.action} procesado con éxito` });
+app.post('/api/workflows/:action', requireAutomationCredential, (_req, res) => {
+  return res.status(404).json({ success: false, error: 'Workflow de compatibilidad no implementado. Use el endpoint nativo específico.' });
 });
 
-app.post('/api/gemini/:action', (req, res) => {
-  res.json({ success: true, text: `Respuesta de Gemini para ${req.params.action}` });
+app.post('/api/gemini/:action', requireAutomationCredential, (_req, res) => {
+  return res.status(404).json({ success: false, error: 'Acción Gemini no implementada. Use un endpoint de agente soportado.' });
 });
 
 app.get('/api/chat/history', async (req, res) => {
