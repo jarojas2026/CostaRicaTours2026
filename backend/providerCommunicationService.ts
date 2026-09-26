@@ -68,26 +68,28 @@ async function resolveOperationalProvider(providerId: string, tourId: string): P
     const data = snap.data() || {};
     const verified = data.verified === true || data.verificado === true;
     const active = (data.active === true || data.activo === true) && data.status !== 'inactivo';
-    const activeTours = Array.isArray(data.activeTours) ? data.activeTours.map(String) : (Array.isArray(data.tours) ? data.tours.map(String) : (legacy?.activeTours || []));
-    if (!verified || !active || (activeTours.length > 0 && !activeTours.includes(tourId))) return null;
+    const activeTours = Array.isArray(data.activeTours)
+      ? data.activeTours.map(String)
+      : (Array.isArray(data.tours) ? data.tours.map(String) : []);
+    if (!verified || !active || !activeTours.includes(tourId)) return null;
     return {
       ...(legacy || {} as TourProvider), id: providerId,
-      name: String(data.name || data.nombre || legacy?.name || providerId),
-      category: (data.category || legacy?.category || 'adventure') as TourProvider['category'],
-      region: String(data.region || legacy?.region || 'Costa Rica'),
-      contactName: String(data.contactName || data.contacto || legacy?.contactName || ''),
-      phone: String(data.phone || data.telefono || legacy?.phone || ''),
-      whatsapp: String(data.whatsapp || legacy?.whatsapp || ''),
-      email: String(data.email || data.officialEmail || legacy?.email || legacy?.officialEmail || ''),
-      officialEmail: String(data.officialEmail || data.emailOperativo || legacy?.officialEmail || ''),
+      name: String(data.name || data.nombre || providerId),
+      category: (data.category || 'adventure') as TourProvider['category'],
+      region: String(data.region || 'Costa Rica'),
+      contactName: String(data.contactName || data.contacto || ''),
+      phone: String(data.phone || data.telefono || ''),
+      whatsapp: String(data.whatsapp || ''),
+      email: String(data.email || data.officialEmail || ''),
+      officialEmail: String(data.officialEmail || data.emailOperativo || data.email || ''),
       verified: true,
-      cstLevel: Number(data.cstLevel || legacy?.cstLevel || 0),
-      insPolicyNumber: String(data.insPolicyNumber || legacy?.insPolicyNumber || ''),
-      ictLicense: String(data.ictLicense || legacy?.ictLicense || ''),
+      cstLevel: Number(data.cstLevel || 0),
+      insPolicyNumber: String(data.insPolicyNumber || ''),
+      ictLicense: String(data.ictLicense || ''),
       activeTours,
-      slaTargetMinutes: Number(data.slaTargetMinutes || legacy?.slaTargetMinutes || 30),
-      averageResponseMinutes: Number(data.averageResponseMinutes || legacy?.averageResponseMinutes || 0),
-      acceptanceRate: Number(data.acceptanceRate || legacy?.acceptanceRate || 0),
+      slaTargetMinutes: Math.max(1, Number(data.slaTargetMinutes || 30)),
+      averageResponseMinutes: Math.max(0, Number(data.averageResponseMinutes || 0)),
+      acceptanceRate: Math.max(0, Math.min(100, Number(data.acceptanceRate || 0))),
       status: (data.status === 'busy' ? 'busy' : data.status === 'offline' ? 'offline' : 'active') as TourProvider['status'],
       payoutAccount: data.payoutAccount && typeof data.payoutAccount === 'object'
         ? {
