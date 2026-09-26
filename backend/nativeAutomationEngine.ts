@@ -1392,42 +1392,37 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
   specialRequests?: string;
 }) {
   const start = Date.now();
-
-  // 1. Identificar o asignar tour
   let resolvedTour = TOURS.find((t) => t.id === payload.tourId);
   if (!resolvedTour && payload.tourName) {
-    resolvedTour = TOURS.find((t) => t.title.es.toLowerCase().includes(payload.tourName!.toLowerCase()) || (t.title.en && t.title.en.toLowerCase().includes(payload.tourName!.toLowerCase())));
+    const query = payload.tourName.trim().toLowerCase();
+    resolvedTour = TOURS.find((t) => t.title.es.toLowerCase().includes(query) || String(t.title.en || '').toLowerCase().includes(query));
   }
-  if (!resolvedTour) {
-    resolvedTour = TOURS[0]; // Arenal Volcano por defecto
-  }
+  if (!resolvedTour) throw new Error('TOUR_REQUIRED: el flujo autónomo requiere un tour existente del catálogo.');
 
-  // 2. Extraer o normalizar datos de pasajeros y fechas
-  const adults = Number(payload.adults) || 2;
-  const children = Number(payload.children) || 0;
-  const targetDate = payload.date || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  const targetTime = payload.time || '08:00 AM';
-  const customerName = payload.customerName || 'Viajero Costa Rica Tours';
-  const customerEmail = payload.customerEmail || process.env.ADMIN_EMAIL || 'reservas@costaricatours.cr';
-  const customerPhone = payload.customerPhone || process.env.SINPE_SUPPORT_PHONE || '';
-  const pickupHotel = payload.pickupHotel || (resolvedTour.pickupHotels ? resolvedTour.pickupHotels[0] : 'Recepción de Hotel en La Fortuna');
-  const specialRequests = payload.specialRequests || 'Solicitud de confirmación y coordinación 100% autónoma sin intervención humana';
+  const adults = Number(payload.adults);
+  const children = Number(payload.children || 0);
+  const targetDate = String(payload.date || '').trim();
+  const targetTime = String(payload.time || '').trim();
+  const customerName = String(payload.customerName || '').trim();
+  const customerEmail = String(payload.customerEmail || '').trim().toLowerCase();
+  if (!targetDate || !targetTime) throw new Error('DATE_TIME_REQUIRED: fecha y hora son obligatorias.');
+  if (!Number.isInteger(adults) || adults < 1 || !Number.isInteger(children) || children < 0 || adults + children > 50) throw new Error('PASSENGERS_INVALID: cantidad de pasajeros inválida.');
+  if (!customerName || !customerEmail.includes('@')) throw new Error('CUSTOMER_REQUIRED: nombre y correo válidos son obligatorios.');
 
-  const unitPrice = resolvedTour.priceUSD || 145;
-  const totalUSD = (adults * unitPrice) + (children * ((resolvedTour as any).childrenPriceUSD || Math.round(unitPrice * 0.65)));
-  const rate = Number(process.env.USD_TO_CRC_RATE) || 0;
-  const totalCRC = rate > 0 ? Math.round(totalUSD * rate) : 0;
+  const pickupHotel = String(payload.pickupHotel || '').trim();
+  const specialRequests = String(payload.specialRequests || '').trim().slice(0, 4000);
+  const unitPrice = Number(resolvedTour.priceUSD);
+  if (!Number.isFinite(unitPrice) || unitPrice <= 0) throw new Error('TOUR_PRICE_INVALID: el tour no tiene precio USD válido.');
+  const totalUSD = Number((adults * unitPrice + children * unitPrice * 0.7).toFixed(2));
+  const totalCRC = Math.round(totalUSD * getUsdToCrcRate());
+  const providerId = String((resolvedTour as any).providerId || (resolvedTour as any).operatorId || '').trim();
+  if (!providerId) throw new Error('PROVIDER_REQUIRED: el tour no tiene proveedor operativo persistido.');
 
-  // 3. Ejecutar creación oficial de reserva en Firestore
-  // Esto desencadena internamente en tiempo real:
-  // - Bloqueo de cupos en Firestore
-  // - Evaluación de riesgo antifraude
-  // - executeCustomerBookingConfirmation (Voucher digital con QR y email al cliente)
-  // - executeProviderRealtimeCoordination (Notificación y asignación inmediata al operador)
   const bookingResult = await createBooking({
+    bookingId: `CRT-AI-${crypto.randomUUID()}`,
     tourId: resolvedTour.id,
     tourName: resolvedTour.title.es,
-    providerId: (resolvedTour as any).operatorId || 'alsama-tours-cr',
+    providerId,
     date: targetDate,
     time: targetTime,
     adults,
@@ -1438,77 +1433,36 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
     totalCRC,
     currency: 'USD',
     paymentMethod: 'credit_card',
-    paymentStatus: 'confirmed',
-    customer: {
-      name: customerName,
-      email: customerEmail,
-      phone: customerPhone
-    }
+    paymentStatus: 'pending',
+    customer: { name: customerName, email: customerEmail, phone: String(payload.customerPhone || '').trim() }
   });
-
-  if (bookingResult.conflict || !bookingResult.booking) {
-    const duration = Date.now() - start;
-    logAutomationExecution(
-      'FLUJO_AUTONOMO_COMPLETO',
-      duration,
-      'error',
-      `Fallo en creación autónoma: ${bookingResult.error || 'conflicto de cupos'}`
-    );
-    throw new Error(bookingResult.message || 'No se pudo completar el flujo autónomo.');
-  }
-
+  if (bookingResult.conflict || !bookingResult.booking) throw new Error(bookingResult.message || 'No se pudo crear la reserva.');
   const booking = bookingResult.booking as any;
-  const bookingId = booking.bookingId || booking.id;
+  const bookingId = String(booking.bookingId || booking.id);
   const duration = Date.now() - start;
-
-  // 4. Registrar evento en log de auditoría nativo
-  logAutomationExecution(
-    'FLUJO_AUTONOMO_COMPLETO',
-    duration,
-    'success',
-    `¡Reserva ${bookingId} completada 100% autónoma! Cliente (${customerEmail}) y Proveedor (${booking.providerInfo?.name || 'Alsama Tours'}) notificados.`,
-    {
-      bookingId,
-      totalUSD,
-      customerEmail,
-      providerId: booking.providerId,
-      status: booking.status
-    }
-  );
-
+  logAutomationExecution('FLUJO_AUTONOMO_COMPLETO', duration, 'success', `Reserva ${bookingId} creada; pago pendiente y lifecycle continuará tras verificación server-side.`, { bookingId, totalUSD, status: booking.status, paymentStatus: booking.paymentStatus });
   return {
     success: true,
-    modo: '100% Autónomo (Zero Human Intervention)',
+    modo: 'autonomous_booking_request',
     duracionMs: duration,
     reserva: {
       codigo: bookingId,
       tour: resolvedTour.title.es,
       fecha: `${targetDate} ${targetTime}`,
       pasajeros: `${adults} adultos, ${children} niños`,
-      totalUSD: `$${totalUSD} USD`,
-      estado: 'confirmada',
-      voucherUrl: `/?voucher=${bookingId}`,
-      qrToken: `PASS-${bookingId.replace(/[^A-Z0-9]/gi, '')}`
+      totalUSD: `$${totalUSD.toFixed(2)} USD`,
+      totalCRC,
+      estado: booking.status,
+      pago: booking.paymentStatus,
+      voucherUrl: null,
+      qrToken: null
     },
-    operadorAsignado: {
-      id: booking.providerInfo?.id || 'alsama-tours-cr',
-      nombre: booking.providerInfo?.name || 'Costa Rica Tours - Operaciones Directas',
-      email: process.env.PROVIDER_DEV_EMAIL || '',
-      telefono: booking.providerInfo?.phone || process.env.PROVIDER_DEV_PHONE || '',
-      notificacionDespachada: true,
-      canal: 'Email Seguro + Native Operations Center'
-    },
-    clienteNotificado: {
-      nombre: customerName,
-      email: customerEmail,
-      voucherEnviado: true,
-      canal: 'Email con Voucher QR interactivo'
-    },
+    operadorAsignado: null,
+    clienteNotificado: false,
     automatizacionesProgramadas: [
-      { trigger: 'CRON_RECORDATORIO_24H', tiempo: '24 horas antes del tour a las 7:00 AM CR' },
-      { trigger: 'CRON_VIGILANCIA_2H', tiempo: 'Monitoreo continuo de contingencias' },
-      { trigger: 'CRON_PAGOS_PROVEEDORES_6AM', tiempo: 'Liquidación al operador el día del tour' },
-      { trigger: 'CRON_RESENAS_POST_TOUR_5PM', tiempo: 'Encuesta NPS y fidelización post-tour' }
+      { trigger: 'PAYMENT_VERIFICATION', tiempo: 'Después de recibir confirmación de la pasarela' },
+      { trigger: 'PROVIDER_LIFECYCLE', tiempo: 'Después del pago verificado y despacho al proveedor' },
+      { trigger: 'CUSTOMER_CONFIRMATION', tiempo: 'Después de respuesta del proveedor' }
     ],
     timestamp: new Date().toISOString()
   };
