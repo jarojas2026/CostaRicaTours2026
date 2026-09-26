@@ -7,11 +7,17 @@
  */
 import crypto from 'crypto';
 
-const SECRET = () =>
-  process.env.CUSTOMER_ACTION_SECRET ||
-  process.env.WEBHOOK_SECRET ||
-  process.env.OPERATOR_API_KEY ||
-  '';
+const SECRET = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return String(process.env.CUSTOMER_ACTION_SECRET || '');
+  }
+  return String(
+    process.env.CUSTOMER_ACTION_SECRET ||
+    process.env.WEBHOOK_SECRET ||
+    process.env.OPERATOR_API_KEY ||
+    ''
+  );
+};
 
 type CustomerCapabilityAction = 'view_pdf' | 'decide';
 
