@@ -771,8 +771,8 @@ app.post('/api/paypal/create-order', async (req, res) => {
             }
           ],
           application_context: {
-            return_url: `${req.protocol}://${req.get('host')}?booking=success`,
-            cancel_url: `${req.protocol}://${req.get('host')}?booking=canceled`
+            return_url: `${req.protocol}://${req.get('host')}?booking=success&paypal=1&bookingId=${encodeURIComponent(String(req.body?.bookingId || ''))}`,
+            cancel_url: `${req.protocol}://${req.get('host')}?booking=canceled&bookingId=${encodeURIComponent(String(req.body?.bookingId || ''))}`
           }
         })
       });
@@ -785,10 +785,8 @@ app.post('/api/paypal/create-order', async (req, res) => {
           await updateBookingStatus(bookingId, { paypalOrderId: orderData.id, paymentMethod: 'paypal', paymentStatus: 'pending' });
         }
       }
-      res.json({
-        url: approveLink || `${req.protocol}://${req.get('host')}?booking=success`,
-        id: orderData.id
-      });
+      if (!approveLink || !orderData.id) return res.status(502).json({ error: 'PayPal no devolvió una URL de aprobación válida.' });
+      res.json({ url: approveLink, id: orderData.id });
     } else {
       res.status(401).json({ error: 'Fallo al autenticar con PayPal' });
     }
@@ -798,6 +796,41 @@ app.post('/api/paypal/create-order', async (req, res) => {
   }
 });
 
+// PayPal CAPTURE — la captura sólo se permite contra una orden ya vinculada a una reserva.
+app.post('/api/paypal/capture-order', paymentLimiter, async (req, res) => {
+  try {
+    const orderId = String(req.body?.orderId || '').trim();
+    const bookingId = String(req.body?.bookingId || '').trim();
+    if (!orderId || !bookingId) return res.status(400).json({ success: false, error: 'orderId y bookingId son requeridos.' });
+    const booking = await getBookingById(bookingId);
+    if (!booking) return res.status(404).json({ success: false, error: 'Reserva no encontrada.' });
+    if (String(booking.paypalOrderId || '') !== orderId) return res.status(409).json({ success: false, error: 'La orden PayPal no está vinculada a esta reserva.' });
+    const clientId = process.env.PAYPAL_CLIENT_ID;
+    const secret = process.env.PAYPAL_SECRET;
+    const mode = process.env.PAYPAL_MODE || 'sandbox';
+    const baseUrl = mode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+    if (!clientId || !secret) return res.status(503).json({ success: false, error: 'PayPal no está configurado.' });
+    const authStr = Buffer.from(`${clientId}:${secret}`).toString('base64');
+    const authRes = await fetch(`${baseUrl}/v1/oauth2/token`, { method: 'POST', body: 'grant_type=client_credentials', headers: { Authorization: `Basic ${authStr}`, 'Content-Type': 'application/x-www-form-urlencoded' } });
+    const authData = await authRes.json() as any;
+    if (!authRes.ok || !authData.access_token) return res.status(502).json({ success: false, error: 'No se pudo autenticar con PayPal.' });
+    const captureRes = await fetch(`${baseUrl}/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`, { method: 'POST', headers: { Authorization: `Bearer ${authData.access_token}`, 'Content-Type': 'application/json' } });
+    const captureData = await captureRes.json() as any;
+    if (!captureRes.ok) return res.status(409).json({ success: false, error: captureData?.message || 'PayPal no confirmó la captura.' });
+    const purchase = captureData?.purchase_units?.[0];
+    const capturedAmount = Number(purchase?.payments?.captures?.[0]?.amount?.value || 0);
+    if (!Number.isFinite(capturedAmount) || Math.abs(capturedAmount - Number(booking.totalUSD)) > 0.01) {
+      await createAlert({ source: 'paypal_capture', severity: 'critical', title: 'Importe PayPal no coincide', message: `Captura ${orderId} no coincide con la reserva ${bookingId}.`, bookingId, metadata: { capturedAmount, bookingTotalUSD: booking.totalUSD } });
+      return res.status(409).json({ success: false, error: 'PAYMENT_AMOUNT_MISMATCH' });
+    }
+    const updated = await updateBookingStatus(bookingId, { status: 'paid', paymentStatus: 'completed', paypalOrderId: orderId, paymentVerifiedAt: new Date().toISOString(), paymentProvider: 'paypal' });
+    if (!updated.success) return res.status(409).json({ success: false, error: updated.error || 'No se pudo actualizar la reserva.' });
+    const lifecycle = await advanceReservationLifecycle({ ...booking, ...(updated.booking || {}), bookingId, status: 'paid', paymentStatus: 'completed' });
+    return res.json({ success: true, captured: true, bookingId, lifecycle });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error?.message || 'No se pudo capturar PayPal.' });
+  }
+});
 // ==========================================
  // 🔐 STRIPE WEBHOOK — PAYMENT -> BOOKING LIFECYCLE
  // ==========================================
