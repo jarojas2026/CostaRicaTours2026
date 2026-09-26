@@ -3221,19 +3221,23 @@ startServer();function calculateAuthoritativeServiceBookingTotal(body: any): { t
     const start = new Date(String(body?.date || '')).getTime();
     const end = new Date(String(body?.checkOutDate || '')).getTime();
     if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || !Number.isFinite(service.pricePerNightUSD) || service.pricePerNightUSD <= 0) return null;
+    const pricePerNightUSD = Number(service.pricePerNightUSD);
     const nights = Math.max(1, Math.round((end - start) / 86400000));
-    totalUSD = Number(service.pricePerNightUSD) * nights;
+    totalUSD = pricePerNightUSD * nights;
   } else if (service.type === 'national_park') {
-    if (!Number.isFinite(service.officialPriceUSD) || service.officialPriceUSD <= 0) return null;
-    totalUSD = Number(service.officialPriceUSD) * adults + Number(service.officialPriceUSD) * 0.5 * children;
+    const officialPriceUSD = Number(service.officialPriceUSD);
+    if (!Number.isFinite(officialPriceUSD) || officialPriceUSD <= 0) return null;
+    totalUSD = officialPriceUSD * adults + officialPriceUSD * 0.5 * children;
   } else if (['airport', 'airstrip', 'bus_station', 'train_station'].includes(service.type)) {
-    if (!Number.isFinite(service.averageTicketUSD) || service.averageTicketUSD <= 0) return null;
-    totalUSD = Number(service.averageTicketUSD) * people;
+    const averageTicketUSD = Number(service.averageTicketUSD);
+    if (!Number.isFinite(averageTicketUSD) || averageTicketUSD <= 0) return null;
+    totalUSD = averageTicketUSD * people;
   } else if (service.type === 'taxi_stand') {
     const transferType = String(body?.transferType || 'shared_shuttle');
+    const averageTicketUSD = Number(service.averageTicketUSD);
     if (transferType !== 'shared_shuttle') return null;
-    if (!Number.isFinite(service.averageTicketUSD) || service.averageTicketUSD <= 0) return null;
-    totalUSD = service.averageTicketUSD * people;
+    if (!Number.isFinite(averageTicketUSD) || averageTicketUSD <= 0) return null;
+    totalUSD = averageTicketUSD * people;
   } else return null;
   return { totalUSD: Number(totalUSD.toFixed(2)), tourName: typeof service.name?.es === 'string' ? service.name.es : service.id, details: { serviceId, serviceType: service.type, adults, children } };
 }
