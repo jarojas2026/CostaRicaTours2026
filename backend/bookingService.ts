@@ -565,7 +565,26 @@ export async function createBooking(data: any) {
         }
 
         const slotDoc = await transaction.get(slotRef);
-        const currentBooked = slotDoc.exists ? (Number(slotDoc.data()?.bookedSeats) || 0) : 0;
+        let currentBooked = slotDoc.exists ? (Number(slotDoc.data()?.bookedSeats) || 0) : 0;
+
+        // Reconciliación para slots históricos que todavía no tienen documento
+        // dedicado: contamos las reservas existentes dentro de la misma
+        // transacción antes de crear el slot canónico.
+        if (!slotDoc.exists) {
+          const existingBookingsQuery = db.collection('bookings')
+            .where('tourId', '==', tourId)
+            .where('date', '==', tourDate)
+            .where('time', '==', bookingTime);
+          const existingBookings = await transaction.get(existingBookingsQuery);
+          currentBooked = existingBookings.docs.reduce((sum, doc) => {
+            const existing = doc.data() || {};
+            const status = String(existing.status || '').toLowerCase();
+            if (status === 'cancelada' || status === 'cancelled' || status === 'expirada' || status === 'expired') {
+              return sum;
+            }
+            return sum + (Number(existing.adults) || 0) + (Number(existing.children) || 0);
+          }, 0);
+        }
 
         if (currentBooked + totalPassengers > maxCapacity) {
           const availableLeft = Math.max(0, maxCapacity - currentBooked);
