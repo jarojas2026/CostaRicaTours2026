@@ -14,7 +14,7 @@ export const FullTripJourneyBuilder: React.FC<{ language: Language }> = ({ langu
   React.useEffect(() => {
     const id = localStorage.getItem(journeyStorageKey);
     if (!id) return;
-    fetch(`/api/journey/${encodeURIComponent(id)}`)
+    fetch(`/api/journey/${encodeURIComponent(id)}?sessionId=${encodeURIComponent(localStorage.getItem('crt_journey_session') || '')}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data?.journey?.status !== 'not_found') setJourney(data.journey); })
       .catch(() => undefined);
