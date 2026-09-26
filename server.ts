@@ -133,6 +133,12 @@ const PORT = Number(process.env.PORT) || 3000;
 // Admin gate is defined before any route registration that uses it.
 const requireAdmin = requireOperator;
 
+// Per-instance admission guards complement the global rate limiter and protect costly paths during spikes.
+const apiAdmission = createInFlightLimiter(250);
+const intakeAdmission = createInFlightLimiter(40);
+const aiAdmission = createInFlightLimiter(80);
+const bookingAdmission = createInFlightLimiter(60);
+
 function adminAccessPayload(req: express.Request) {
   const access = (req as any).adminAccess || {};
   return { role: access.role || (req as any).user?.role || null, email: access.email || (req as any).user?.email || null, scope: access.scope || 'operations' };
