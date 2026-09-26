@@ -268,6 +268,14 @@ export async function checkTourAvailability(
       alreadyBooked = inMemorySlots.get(slotKey) || 0;
     }
   } else {
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        available: false,
+        remainingSeats: 0,
+        maxCapacity,
+        reason: 'availability_store_unavailable: no se puede prometer disponibilidad sin la fuente transaccional de verdad.'
+      };
+    }
     alreadyBooked = inMemorySlots.get(slotKey) || 0;
   }
 
