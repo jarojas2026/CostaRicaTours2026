@@ -167,6 +167,30 @@ function requireAgentTool(req: express.Request, res: express.Response, next: exp
   next();
 }
 
+
+/**
+ * Shared gate for legacy/native automation endpoints. In production an
+ * endpoint that can mutate bookings, send messages, run batches or trigger
+ * automation must carry either the dedicated webhook secret or agent token.
+ */
+function requireAutomationCredential(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const webhookSecret = String(process.env.WEBHOOK_SECRET || '');
+  const agentToken = String(process.env.AGENT_INTERNAL_TOKEN || '');
+  if (!webhookSecret && !agentToken) {
+    return res.status(process.env.NODE_ENV === 'production' ? 503 : 401).json({ error: 'Credenciales de automatización no configuradas.' });
+  }
+  const providedWebhook = String(req.headers['x-webhook-secret'] || '');
+  const authorization = String(req.headers.authorization || '');
+  const providedBearer = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
+  const matches = (provided: string, expected: string) => {
+    if (!provided || !expected) return false;
+    const a = Buffer.from(provided);
+    const b = Buffer.from(expected);
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
+  };
+  if (matches(providedWebhook, webhookSecret) || matches(providedBearer, agentToken)) return next();
+  return res.status(401).json({ error: 'No autorizado para automatización.' });
+}
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '256kb', verify: (req, _res, buf) => { (req as any).rawBody = Buffer.from(buf); } }));
 app.use(express.urlencoded({ extended: true, limit: '32kb', parameterLimit: 100 }));
@@ -1614,7 +1638,7 @@ app.post('/api/pagos/solicitud', async (req, res) => {
 });
 
 // 4. Confirmación de Reserva, Voucher Digital QR & Notificaciones Multicanal
-app.post('/api/reservas/confirmar', async (req, res) => {
+app.post('/api/reservas/confirmar', requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeConfirmacionReserva(req.body);
     res.json(result);
@@ -1649,7 +1673,7 @@ app.post(['/webhook/solicitud-soporte', '/api/soporte/crear-ticket'], async (req
 });
 
 // 8. Coordinación y Notificación en Tiempo Real a Proveedores y Operadores Locales
-app.post(['/webhook/notificar-proveedor', '/api/operadores/notificar'], async (req, res) => {
+app.post(['/webhook/notificar-proveedor', '/api/operadores/notificar'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeNotificarProveedor(req.body);
     res.json(result);
@@ -1659,7 +1683,7 @@ app.post(['/webhook/notificar-proveedor', '/api/operadores/notificar'], async (r
 });
 
 // 9. Motor Antifraude y Matriz de Riesgo Criptográfica
-app.post(['/webhook/evaluar-antifraude', '/webhook/antifraude-evaluacion', '/api/seguridad/antifraude'], async (req, res) => {
+app.post(['/webhook/evaluar-antifraude', '/webhook/antifraude-evaluacion', '/api/seguridad/antifraude'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeEvaluarAntifraude(req.body);
     res.json(result);
@@ -1679,7 +1703,7 @@ app.post(['/webhook/panel-control-ops', '/api/ops/action'], requireAdmin, async 
 });
 
 // 12. Sincronización Automática con Google Calendar
-app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], async (req, res) => {
+app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeSyncCalendar(req.body);
     res.json(result);
@@ -1689,7 +1713,7 @@ app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], async (req, 
 });
 
 // 13. Encuesta de Satisfacción Post-Tour & Recolección NPS WhatsApp
-app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], async (req, res) => {
+app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executePostTourNPS(req.body);
     res.json(result);
@@ -1699,7 +1723,7 @@ app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], async (req, res) => {
 });
 
 // 14. Reporte Semanal de Rendimiento, Conversión y Volumen
-app.post(['/webhook/reporte-semanal-conversion', '/api/reportes/semanal'], async (req, res) => {
+app.post(['/webhook/reporte-semanal-conversion', '/api/reportes/semanal'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeReporteSemanalConversion();
     res.json(result);
@@ -1713,7 +1737,7 @@ app.post(['/webhook/reporte-semanal-conversion', '/api/reportes/semanal'], async
 // ==========================================
 
 // WF-COMPLEX-01: Orquestador Autónomo de Itinerarios Multidía (SINAC/IMN/Alsama)
-app.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-planner'], async (req, res) => {
+app.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-planner'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeAutonomousMultiDayPlanner(req.body);
     res.json(result);
@@ -1723,7 +1747,7 @@ app.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-p
 });
 
 // WF-COMPLEX-02: Motor Predictivo de Dynamic Pricing & Yield Management
-app.post(['/webhook/predictive-dynamic-pricing', '/api/automations/dynamic-pricing'], async (req, res) => {
+app.post(['/webhook/predictive-dynamic-pricing', '/api/automations/dynamic-pricing'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeDynamicPricingYieldOptimizer(req.body);
     res.json(result);
@@ -1733,7 +1757,7 @@ app.post(['/webhook/predictive-dynamic-pricing', '/api/automations/dynamic-prici
 });
 
 // WF-COMPLEX-03: Matriz Predictiva de Contingencias Climáticas & Re-enrutamiento
-app.post(['/webhook/weather-contingency-rerouting', '/api/automations/weather-contingency'], async (req, res) => {
+app.post(['/webhook/weather-contingency-rerouting', '/api/automations/weather-contingency'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeEmergencyContingencyRerouting(req.body);
     res.json(result);
@@ -1743,7 +1767,7 @@ app.post(['/webhook/weather-contingency-rerouting', '/api/automations/weather-co
 });
 
 // WF-COMPLEX-04: Facturación Electrónica DGT Hacienda v4.3 & Liquidación Operadores
-app.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-invoicing'], async (req, res) => {
+app.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-invoicing'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeDGTElectronicInvoicingSettlement(req.body);
     res.json(result);
@@ -1753,7 +1777,7 @@ app.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-
 });
 
 // WF-COMPLEX-05: Flight Guard Predictivo en Tiempo Real & Despacho Alsama
-app.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-guard'], async (req, res) => {
+app.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-guard'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeAutonomousFlightGuardDispatch(req.body);
     res.json(result);
@@ -1763,7 +1787,7 @@ app.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-
 });
 
 // WF-COMPLEX-06: Asistente Autónomo con Análisis de Sentimiento & Escalamiento
-app.post(['/webhook/crisis-sentiment-escalation', '/api/automations/crisis-sentiment'], async (req, res) => {
+app.post(['/webhook/crisis-sentiment-escalation', '/api/automations/crisis-sentiment'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeAutonomousCrisisSentimentEscalation(req.body);
     res.json(result);
@@ -1791,7 +1815,7 @@ const additionalWebhooks = [
   '/webhook/supervisor'
 ];
 
-app.post(additionalWebhooks, async (req, res) => {
+app.post(additionalWebhooks, requireAutomationCredential, async (req, res) => {
   try {
     const endpoint = req.path;
     const triggerName = endpoint.replace('/webhook/', '').toUpperCase().replace(/-/g, '_');
@@ -1807,7 +1831,7 @@ app.post(additionalWebhooks, async (req, res) => {
 // ==========================================
 
 // 1. Coordinación en Tiempo Real con Proveedores (Webhook & API Nativa)
-app.post(['/webhook/proveedores-coordinacion', '/webhook/coordinacion-proveedores', '/api/webhooks/provider-coordination', '/api/native/workflows/coordinacion-proveedor', '/api/native/workflows/notificar-proveedor'], async (req, res) => {
+app.post(['/webhook/proveedores-coordinacion', '/webhook/coordinacion-proveedores', '/api/webhooks/provider-coordination', '/api/native/workflows/coordinacion-proveedor', '/api/native/workflows/notificar-proveedor'], requireAutomationCredential, async (req, res) => {
   try {
     const authHeader = req.headers['x-webhook-secret'] as string;
     const result = await executeProviderRealtimeCoordination(req.body, authHeader);
@@ -2060,7 +2084,7 @@ app.post(['/webhook/cliente-confirmacion', '/webhook/confirmacion-cliente', '/ap
 });
 
 // 3. Pagos Automáticos a Proveedores (Batch / Cron Trigger)
-app.post(['/api/payouts/run-batch', '/webhook/pagos-proveedores-batch'], async (req, res) => {
+app.post(['/api/payouts/run-batch', '/webhook/pagos-proveedores-batch'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeAutomatedProviderPayouts();
     res.json(result);
@@ -2070,7 +2094,7 @@ app.post(['/api/payouts/run-batch', '/webhook/pagos-proveedores-batch'], async (
 });
 
 // 4. Vigilancia y Escalamiento de Reservas Pendientes (Cron Trigger)
-app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], async (req, res) => {
+app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeSurveillanceAndEscalation();
     res.json(result);
@@ -2080,7 +2104,7 @@ app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], async 
 });
 
 // 5. Reporte Diario de Operación (Cron Trigger)
-app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], async (req, res) => {
+app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeDailyOperationReport();
     res.json(result);
@@ -2090,7 +2114,7 @@ app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], as
 });
 
 // 6. Solicitud de Reseña Post-Tour (Cron Trigger)
-app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], async (req, res) => {
+app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executePostTourReviewRequests();
     res.json(result);
@@ -2100,7 +2124,7 @@ app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], async
 });
 
 // 7. Recordatorio 24h Antes del Tour (Cron Trigger)
-app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], async (req, res) => {
+app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], requireAutomationCredential, async (req, res) => {
   try {
     const result = await executeTour24hReminders();
     res.json(result);
@@ -2133,7 +2157,7 @@ app.get(['/api/metrics/throughput', '/api/massive/status'], (req, res) => {
 });
 
 // 10. Procesamiento Masivo Concurrente de Consultas en Lote (Batch Inquiries)
-app.post(['/api/massive/batch-inquiries', '/api/massive/process-batch'], async (req, res) => {
+app.post(['/api/massive/batch-inquiries', '/api/massive/process-batch'], requireAutomationCredential, async (req, res) => {
   try {
     const inquiries = Array.isArray(req.body?.inquiries) ? req.body.inquiries : [req.body];
     const results = await Promise.allSettled(
