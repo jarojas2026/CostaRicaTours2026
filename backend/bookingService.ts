@@ -723,6 +723,26 @@ export async function getBookingById(bookingId: string): Promise<any | null> {
  * Recupera sólo reservas que todavía pueden requerir una transición autónoma.
  * Conserva getAllBookings() para backoffice y compatibilidad histórica.
  */
+export async function getExpiredSoftHolds(limit = 250): Promise<any[]> {
+  const col = getBookingsCollection();
+  const safeLimit = Math.max(1, Math.min(500, limit));
+  if (!col) return [];
+  const now = new Date().toISOString();
+  try {
+    const snapshot = await col
+      .where('holdExpiresAt', '<=', now)
+      .orderBy('holdExpiresAt', 'asc')
+      .limit(safeLimit)
+      .get();
+    return snapshot.docs
+      .map((doc: any) => ({ id: doc.id, ...doc.data(), createdAt: normalizeTimestampToDate(doc.data()?.createdAt).toISOString(), updatedAt: normalizeTimestampToDate(doc.data()?.updatedAt).toISOString() }))
+      .filter((b: any) => (b.status === 'hold' || b.status === 'pendiente_pago' || b.holdActive === true) && b.holdActive !== false);
+  } catch (error) {
+    console.warn('Error consultando soft holds expirados:', error);
+    return [];
+  }
+}
+
 export async function getPendingReservationLifecycleBookings(limit = 100): Promise<any[]> {
   const col = getBookingsCollection();
   const safeLimit = Math.max(1, Math.min(250, limit));
@@ -937,15 +957,22 @@ export async function getWeeklyConversionMetrics(): Promise<{
   topTours: Array<{ name: string; count: number; revenueUSD: number }>;
   paymentBreakdown: Record<string, number>;
 }> {
-  const allBookings = await getAllBookings();
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-  const recentBookings = allBookings.filter((b) => {
-    if (!b.createdAt) return true;
-    const created = new Date(b.createdAt);
-    return created >= sevenDaysAgo || allBookings.length < 15;
-  });
+  const col = getBookingsCollection();
+  let recentBookings: any[] = [];
+  if (col) {
+    try {
+      const snapshot = await col.orderBy('createdAt', 'desc').limit(1000).get();
+      recentBookings = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data(), createdAt: normalizeTimestampToDate(doc.data()?.createdAt).toISOString() }))
+        .filter((b: any) => new Date(b.createdAt).getTime() >= sevenDaysAgo.getTime());
+    } catch (error) {
+      console.warn('No se pudo leer el índice reciente de reservas para métricas:', error);
+      recentBookings = [];
+    }
+  } else if (process.env.NODE_ENV !== 'production') {
+    recentBookings = Array.from(inMemoryBookings.values()).filter((b: any) => new Date(String(b.createdAt || '')).getTime() >= sevenDaysAgo.getTime());
+  }
 
   const totalBookings = recentBookings.length;
   const confirmed = recentBookings.filter(
@@ -964,7 +991,7 @@ export async function getWeeklyConversionMetrics(): Promise<{
   const metricsDb = getFirestoreDb();
   if (metricsDb) {
     try {
-      const eventSnapshot = await metricsDb.collection('agent_events').limit(500).get();
+      const eventSnapshot = await metricsDb.collection('agent_events').orderBy('createdAt', 'desc').limit(1000).get();
       totalInquiries = eventSnapshot.docs.filter(doc => {
         const data = doc.data() as any;
         const created = new Date(String(data.createdAt || '')).getTime();
