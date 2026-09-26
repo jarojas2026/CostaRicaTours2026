@@ -2788,23 +2788,27 @@ app.post(['/api/agent/tools/check_calendar_availability', '/api/agent/check-avai
       Number(party_size)
     );
 
-    // Formatear respuesta estructurada para el ciclo ReAct del agente
-    const availableSlots = availabilityResult.available ? ['07:00', '08:30', '13:30'] : ['14:00'];
-    const blockedSlots = availabilityResult.available ? ['10:30'] : ['07:00', '08:30', '10:30'];
+    // La capa de disponibilidad solo devuelve slots cuando existe una fuente
+    // operativa real. No inventamos horarios para satisfacer al agente.
+    const catalogTour = TOURS.find(t => t.id === targetTourId) as any;
+    const requestedTime = typeof req.body?.target_time === 'string' ? req.body.target_time.trim() : '';
+    const catalogWindows = Array.isArray(catalogTour?.departureTimes)
+      ? catalogTour.departureTimes.map(String).slice(0, 12)
+      : [];
 
     res.json({
       success: true,
       available: availabilityResult.available,
       target_date,
+      requested_time: requestedTime || undefined,
       service_duration_minutes: service_duration_minutes || 180,
-      total_seats_remaining: availabilityResult.remainingSeats || 12,
-      max_capacity: availabilityResult.maxCapacity || 20,
-      available_slots: availableSlots,
-      blocked_slots: blockedSlots,
-      closest_alternatives: availableSlots.slice(0, 2),
+      total_seats_remaining: Number.isFinite(Number(availabilityResult.remainingSeats)) ? availabilityResult.remainingSeats : 0,
+      max_capacity: Number.isFinite(Number(availabilityResult.maxCapacity)) ? availabilityResult.maxCapacity : 0,
+      catalog_departure_windows: catalogWindows,
+      catalog_windows_are_not_live_availability: true,
       message: availabilityResult.available
-        ? `Horarios disponibles encontrados para el ${target_date} con ${availabilityResult.remainingSeats} cupos libres.`
-        : `Sin cupos exactos para ese horario (${availabilityResult.reason || 'capacidad agotada'}), se sugieren fechas alternativas.`
+        ? `Capacidad disponible en el sistema para el ${target_date}; el horario exacto requiere un slot operativo verificado.`
+        : `Sin capacidad para la consulta (${availabilityResult.reason || 'capacidad agotada'}). No se generaron horarios sintéticos.`
     });
   } catch (err: any) {
     console.error('Error en tool check_calendar_availability:', err);
