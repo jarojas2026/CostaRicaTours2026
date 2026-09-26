@@ -54,7 +54,7 @@ export function logAutomationExecution(
   details?: any
 ) {
   const entry: NativeAutomationLog = {
-    id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: `log_${crypto.randomUUID()}`,
     trigger,
     timestamp: new Date().toISOString(),
     durationMs,
@@ -202,9 +202,9 @@ export async function executeInicioReserva(body: any) {
   }
 
   const unitPrice = Number(tour.priceUSD);
-  const totalUSD = adults * unitPrice + children * unitPrice;
+  const totalUSD = Number((adults * unitPrice + children * unitPrice * 0.7).toFixed(2));
   const holdExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-  const idReserva = `CRT-HLD-${Math.floor(100000 + Math.random() * 900000)}`;
+  const idReserva = `CRT-HLD-${crypto.randomUUID()}`;
 
   const bookingCustomer = body.cliente || body.customer || {
     nombre: body.customerName,
@@ -215,7 +215,7 @@ export async function executeInicioReserva(body: any) {
   if (!bookingCustomer.nombre || !bookingCustomer.email) throw new Error('Datos del cliente incompletos: nombre y email son obligatorios.');
 
   // Registrar soft-hold nativo en base de datos
-  await createBooking({
+  const holdResult = await createBooking({
     id: idReserva,
     bookingId: idReserva,
     tourId: selectedTourId,
@@ -233,7 +233,10 @@ export async function executeInicioReserva(body: any) {
     pickupHotel: bookingCustomer.hotelRecogida || bookingCustomer.pickupHotel,
     holdExpiresAt,
     holdActive: true
-  }).catch((err) => console.warn('Aviso guardando soft-hold nativo:', err.message));
+  });
+  if (holdResult?.conflict) {
+    throw new Error(holdResult.message || 'No se pudo persistir el soft-hold.');
+  }
 
   const duration = Date.now() - start;
   logAutomationExecution(
@@ -278,9 +281,9 @@ export async function executeSolicitudPago(body: any) {
   const signaturePayload = `${reservationId}:${totalAmount}:${method}:${email}`;
   const hmacSignature = crypto.createHmac('sha256', hmacSecret).update(signaturePayload).digest('hex');
 
-  const sessionId = `cs_${method}_${Math.random().toString(36).substring(2, 14)}`;
+  const sessionId = `cs_${method}_${crypto.randomUUID()}`;
   const checkoutUrl = method === 'paypal'
-    ? `https://www.paypal.com/checkoutnow?token=EC-${Math.random().toString(36).substring(2, 12).toUpperCase()}`
+    ? `https://www.paypal.com/checkoutnow?token=EC-${crypto.randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`
     : `https://checkout.stripe.com/c/pay/${sessionId}#fidkdWxOYHwnPyd1blpxYHZxWjA0TjU8TG5%2FQ2x0X1A1dGFJ`;
 
   const duration = Date.now() - start;
@@ -343,7 +346,7 @@ export async function executeConfirmacionReserva(body: any) {
     paymentStatus: 'completed'
   });
 
-  const qrValidationCode = `CRT-QR-${reservationId}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  const qrValidationCode = `CRT-QR-${reservationId}-${crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
   const voucherUrl = `https://costaricatours.cr/vouchers/${reservationId}.pdf`;
 
   const whatsAppPreview = `¡Pura Vida ${clientData.name || 'Viajero'}! 🇨🇷🌿\nTu reserva para *${tour}* el *${tourDate}* a las *${tourTime}* está *100% CONFIRMADA*.\n\n📍 *Punto de recogida:* ${hotel}\n📄 *Voucher Oficial:* ${voucherUrl}\n🔐 *Código QR:* \`${qrValidationCode}\`\n\n¿Deseas alguna recomendación sobre qué llevar? ¡Estamos a tu servicio!`;
@@ -496,7 +499,7 @@ export async function executeSolicitudItinerario(body: any) {
 // =========================================================================
 export async function executeSolicitudSoporte(body: any) {
   const start = Date.now();
-  const ticketId = `TCK-CR-${Math.floor(100000 + Math.random() * 900000)}`;
+  const ticketId = `TCK-CR-${crypto.randomUUID()}`;
   const reasonText = body.motivo || body.mensaje || 'Consulta operativa sobre recogida o itinerario';
   const lowerReason = reasonText.toLowerCase();
 
@@ -689,7 +692,7 @@ export async function executeSyncCalendar(body: any) {
   const hotel = body.pickupHotel || body.hotelRecogida || 'Lobby Hotel Los Lagos, La Fortuna';
   const client = body.clientName || 'Carlos Montero';
 
-  const eventId = `cal_cr_${Math.random().toString(36).substring(2, 12)}`;
+  const eventId = `cal_cr_${crypto.randomUUID()}`;
   const eventLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
     `🇨🇷 Tour: ${tour} (${client})`
   )}&dates=${tourDate.replace(/-/g, '')}T073000Z/${tourDate.replace(/-/g, '')}T160000Z&details=${encodeURIComponent(
@@ -721,7 +724,7 @@ export async function executePostTourNPS(body: any) {
   const tour = body.tourName || 'Arenal Volcano & Hot Springs';
   const name = body.customerName || 'Carlos Montero';
   const phone = body.customerPhone || process.env.SINPE_SUPPORT_PHONE || '';
-  const promoCode = `PURAVIDA15-${Math.floor(1000 + Math.random() * 9000)}`;
+  const promoCode = `PURAVIDA15-${crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
 
   const duration = Date.now() - start;
   logAutomationExecution('POST_TOUR_NPS', duration, 'success', `Encuesta NPS y cupón ${promoCode} generado para ${name}`);
@@ -797,7 +800,7 @@ export async function executeParquesSinac(body: any) {
   const date = body.fecha || new Date().toISOString().split('T')[0];
   const visitors = Number(body.visitantes || 2);
 
-  const sinacReservationRef = `SINAC-CRT-${Math.floor(100000 + Math.random() * 900000)}`;
+  const sinacReservationRef = `SINAC-CRT-${crypto.randomUUID()}`;
 
   const duration = Date.now() - start;
   logAutomationExecution('RESERVA_PARQUES_SINAC', duration, 'success', `Cupos SINAC bloqueados para ${park} (${visitors} pax)`);
@@ -979,7 +982,7 @@ export async function executeAutonomousMultiDayPlanner(body: any) {
   const totalUSD = subtotalUSD - bundleDiscountUSD;
 
   const itinerarioId = `ITIN-AUTO-${Date.now().toString(36).toUpperCase()}`;
-  const qrPassToken = `CRT-PASS-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+  const qrPassToken = `CRT-PASS-${crypto.randomUUID()}`;
 
   const duration = Date.now() - start;
   logAutomationExecution(
@@ -1204,7 +1207,7 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
   // Clave de 50 dígitos DGT
   const hoy = new Date();
   const fechaStr = `${String(hoy.getDate()).padStart(2, '0')}${String(hoy.getMonth() + 1).padStart(2, '0')}${String(hoy.getFullYear()).slice(-2)}`;
-  const consecutivo = String(Math.floor(Math.random() * 90000000) + 10000000);
+  const consecutivo = `DRAFT-${crypto.randomUUID()}`;
   const clave50 = `506${fechaStr}0031019998880010000101000000${consecutivo}199887766`;
 
   // Liquidación del operador
@@ -1250,7 +1253,7 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
         totalFacturadoCRC: totalCRC
       },
       estadoHacienda: 'ACEPTADO_POR_DGT',
-      acuseHaciendaHash: `SHA256-${Math.random().toString(36).substring(2, 14)}`
+      acuseHaciendaHash: `SHA256-${crypto.randomUUID()}`
     },
     liquidacionBancariaOperador: {
       proveedorId: venta.proveedorId || 'alsama-tours-cr',
