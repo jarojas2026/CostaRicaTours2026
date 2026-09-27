@@ -23,7 +23,7 @@ export async function getPhotoRecommendations(base64Image: string) {
     const base64Data = base64Image.replace(/^data:image\/(png|jpeg|jpg);base64,/, '');
     
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       contents: [
         prompt,
         { inlineData: { data: base64Data, mimeType: 'image/jpeg' } }
