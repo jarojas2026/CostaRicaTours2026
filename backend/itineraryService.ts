@@ -402,7 +402,14 @@ Reglas obligatorias:
 }`;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await withAIResourceTelemetry({
+      operation: 'gemini.itinerary',
+      provider: 'google',
+      model: 'gemini-3.8-flash',
+      region: process.env.VERTEX_AI_REGION || process.env.CLOUD_ML_REGION || undefined,
+      inputText: prompt,
+      extractUsage: extractGeminiUsage
+    }, () => ai.models.generateContent({
       model: 'gemini-3.8-flash',
       contents: prompt,
       config: {
@@ -413,7 +420,7 @@ Devuelve SIEMPRE JSON estructurado estricto conforme al esquema solicitado.`,
         responseMimeType: 'application/json',
         temperature: 0.7
       }
-    });
+    }));
 
     const text = response.text?.trim();
     if (!text) {
