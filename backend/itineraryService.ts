@@ -402,7 +402,7 @@ Reglas obligatorias:
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       contents: prompt,
       config: {
         systemInstruction: `Eres el Diseñador Experto de Itinerarios Oficial de Costa Rica Tours.
