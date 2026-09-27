@@ -9,24 +9,15 @@
 
 import crypto from 'crypto';
 import { EventEmitter } from 'events';
-import { 
-  getAllBookings,
+import {
   getPendingProviderSlaBookings,
-  updateBookingStatus, 
+  updateBookingStatus,
   getSlotKey,
   getFirestoreDb,
   getBookingsCollection
 } from './bookingService';
-import { 
-  executeProviderRealtimeCoordination, 
-  executeCustomerBookingConfirmation, 
-  executeAutonomousProviderFallback,
-  MASTER_OPERATORS_REGISTRY 
-} from './nativeWorkflows';
-import { logAutomationExecution } from './nativeAutomationEngine';
-import { sendAdministrativeAlert } from './notificationService';
+import { executeAutonomousProviderFallback } from './nativeWorkflows';
 
-// Tipos de Prioridad en la Cola de Alto Rendimiento
 export type QueuePriority = 'EMERGENCY' | 'PAYMENT_VERIFICATION' | 'PROVIDER_DISPATCH' | 'BOOKING_LIFECYCLE' | 'INQUIRY_CACHE' | 'BACKGROUND_AUDIT';
 
 export interface MassiveTask<T = any> {
@@ -69,12 +60,8 @@ export interface MassiveThroughputMetrics {
 class IndividualProviderLifecycleManager {
   private slaSweepRunning = false;
 
-  /**
-   * Inicia el ciclo autónomo persistiendo el estado directamente en Firestore
-   */
   async startAutonomousTracking(bookingId: string, providerId: string, tourData: any) {
     try {
-      const db = getFirestoreDb();
       const col = getBookingsCollection();
       const now = Date.now();
 
@@ -97,9 +84,6 @@ class IndividualProviderLifecycleManager {
     }
   }
 
-  /**
-   * Evalúa periódicamente los SLAs pendientes directamente consultando Firestore (Sobrevive a reinicios y escalado a cero).
-   */
   async sweepPendingSlas(): Promise<number> {
     if (this.slaSweepRunning) return 0;
     this.slaSweepRunning = true;
@@ -144,16 +128,18 @@ class IndividualProviderLifecycleManager {
   }
 
   stopTracking(bookingId: string) {
-    // Ya no usa timers en memoria; el estado se gestiona en Firestore.
+    void bookingId;
   }
 
   getActiveMonitorsCount(): number {
-    return 0; // Estado distribuido en Firestore
+    return 0;
   }
 }
 
 /**
- * Orquestador Principal de Procesamiento Masivo
+ * Orquestador Principal de Procesamiento Masivo.
+ * La cola administra carga y observabilidad. Las transiciones persistentes de
+ * reservas pertenecen exclusivamente al reservationLifecycleOrchestrator.
  */
 export class MassiveProcessingEngine extends EventEmitter {
   private queue: MassiveTask[] = [];
@@ -178,9 +164,6 @@ export class MassiveProcessingEngine extends EventEmitter {
     this.startFirestoreSlaSweeper();
   }
 
-  /**
-   * Encola una tarea con prioridad para procesamiento masivo no bloqueante
-   */
   private insertByPriority(task: MassiveTask): void {
     const priorityWeights: Record<QueuePriority, number> = {
       EMERGENCY: 100, PAYMENT_VERIFICATION: 80, PROVIDER_DISPATCH: 70,
@@ -192,8 +175,8 @@ export class MassiveProcessingEngine extends EventEmitter {
   }
 
   async enqueue<T = any>(
-    type: string, 
-    data: T, 
+    type: string,
+    data: T,
     priority: QueuePriority = 'BOOKING_LIFECYCLE',
     maxAttempts = 3
   ): Promise<any> {
@@ -215,15 +198,11 @@ export class MassiveProcessingEngine extends EventEmitter {
       };
 
       this.insertByPriority(task);
-
       this.lastSecondRequests++;
       this.processNext();
     });
   }
 
-  /**
-   * Bucle de ejecución concurrente de la cola
-   */
   private async processNext() {
     if (this.activeWorkers >= this.concurrencyLimit || this.queue.length === 0) {
       return;
@@ -238,7 +217,7 @@ export class MassiveProcessingEngine extends EventEmitter {
     try {
       task.attempts++;
       const result = await this.executeTask(task);
-      
+
       const duration = Date.now() - taskStart;
       this.recordLatency(duration);
       this.totalProcessed++;
@@ -261,53 +240,29 @@ export class MassiveProcessingEngine extends EventEmitter {
     }
   }
 
-  /**
-   * Ejecutor especializado por tipo de tarea
-   */
   private async executeTask(task: MassiveTask): Promise<any> {
     switch (task.type) {
       case 'INDIVIDUAL_BOOKING_AUTONOMOUS_DISPATCH': {
-        const { booking } = task.data;
-        const bookingId = booking.bookingId || booking.id;
-        const providerId = String(booking.providerId || '').trim();
+        const { booking } = task.data as any;
+        const bookingId = String(booking?.bookingId || booking?.id || '');
+        const status = String(booking?.status || '').toLowerCase();
 
-        // 1. Despacho en tiempo real al proveedor
-        const coordRes = await executeProviderRealtimeCoordination({
+        // Antes este worker despachaba al proveedor y enviaba un voucher al cliente
+        // inmediatamente después de crear la reserva. Eso duplicaba al lifecycle y
+        // podía confirmar una operación sin pago/proveedor. Ahora la cola sólo
+        // registra el trabajo; el cron canónico procesa paid -> provider_pending -> confirmed.
+        this.emit('booking.lifecycle.queued', {
           bookingId,
-          idReserva: bookingId,
-          tourName: booking.tourName,
-          tourDate: booking.date,
-          tourTime: booking.time,
-          adults: booking.adults,
-          children: booking.children,
-          totalUSD: booking.totalUSD,
-          customerName: booking.customerName,
-          customerPhone: booking.customerPhone,
-          pickupHotel: booking.pickupHotel,
-          providerId
+          status,
+          queuedAt: new Date().toISOString()
         });
 
-        // 2. Notificación y Voucher al Cliente
-        await executeCustomerBookingConfirmation({
+        return {
+          success: true,
           bookingId,
-          idReserva: bookingId,
-          tourName: booking.tourName,
-          tourDate: booking.date,
-          tourTime: booking.time,
-          adults: booking.adults,
-          children: booking.children,
-          totalUSD: booking.totalUSD,
-          customerName: booking.customerName,
-          customerEmail: booking.customerEmail,
-          customerPhone: booking.customerPhone,
-          pickupHotel: booking.pickupHotel
-        });
-
-        // 3. Iniciar monitor autónomo de SLA individual persistido en Firestore
-        await this.providerLifecycle.startAutonomousTracking(bookingId, providerId, booking);
-        this.successfulDispatches++;
-
-        return { success: true, bookingId, providerDispatched: coordRes.success };
+          status,
+          deferredToCanonicalLifecycle: true
+        };
       }
 
       default:
@@ -322,9 +277,6 @@ export class MassiveProcessingEngine extends EventEmitter {
     }
   }
 
-  /**
-   * Muestreador de throughput por segundo
-   */
   private startThroughputSampler() {
     setInterval(() => {
       this.currentRps = this.lastSecondRequests;
@@ -335,9 +287,6 @@ export class MassiveProcessingEngine extends EventEmitter {
     }, 1000);
   }
 
-  /**
-   * Barredor periódico de SLAs pendientes en Firestore (ejecuta cada 60s)
-   */
   private startFirestoreSlaSweeper() {
     setInterval(async () => {
       try {
@@ -348,9 +297,6 @@ export class MassiveProcessingEngine extends EventEmitter {
     }, 60000);
   }
 
-  /**
-   * Métricas en tiempo real del motor masivo
-   */
   getMetrics(): MassiveThroughputMetrics {
     const avgLatency = this.latencies.length > 0
       ? Math.round(this.latencies.reduce((a, b) => a + b, 0) / this.latencies.length)
@@ -380,5 +326,4 @@ export class MassiveProcessingEngine extends EventEmitter {
   }
 }
 
-// Instancia singleton para toda la aplicación
 export const massiveEngine = new MassiveProcessingEngine();
