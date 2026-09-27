@@ -1280,16 +1280,9 @@ export async function runCustomerServiceAgent(
     ? `• **Reservation Code**: \`${bookingCode}\`\n• **Experience**: ${tourTitle}\n• **Date**: ${bookingDate}\n• **Status**: **${currentStatus.toUpperCase()}** (Payment: ${paymentStatus})\n• **Travelers**: ${paxCount} pax`
     : `• **Código de Reserva**: \`${bookingCode}\`\n• **Excursión**: ${tourTitle}\n• **Fecha**: ${bookingDate}\n• **Estado actual**: **${currentStatus.toUpperCase()}** (Pago: ${paymentStatus})\n• **Viajeros**: ${paxCount} personas`;
 
-  const cancellationPolicyText = isEn
-    ? `📜 **Cancellation & Refund Policy**:\n` +
-      `• The applicable policy is determined by the selected experience and verified provider terms.\n` +
-      `• I will not promise a refund or fee without verifying those terms.\n` +
-      `*(Note: As an automated agent, I do not process refunds directly. I initiate the official ticket for administrative validation).*`
-    : `📜 **Política Oficial de Cancelación y Reembolsos del Operador**:\n` +
-      `• **Más de 72 horas antes**: 100% de reembolso garantizado.\n` +
-      `• **De 48 a 72 horas antes**: 50% de reembolso.\n` +
-      `• **Menos de 48 horas o no presentarse**: Sin reembolso; cambios de fecha sujetos a cupos del operador local.\n` +
-      `*(Nota: Para proteger tus fondos, este agente no aprueba pagos directos; tramita tu solicitud formal ante Administración).*`;
+    const cancellationPolicyText = isEn
+    ? '📜 **Cancellation & refund policy**: Terms depend on the booked experience and the assigned provider. I will retrieve the applicable terms from the reservation record before confirming any cancellation or refund.'
+    : '📜 **Política de cancelación y reembolso**: Las condiciones dependen de la experiencia reservada y del proveedor asignado. Consultaré las condiciones aplicables al expediente antes de confirmar una cancelación o reembolso.';
 
   const replyText = isEn
     ? `🎧 **Customer Service • Booking Verification**\n\n` +
