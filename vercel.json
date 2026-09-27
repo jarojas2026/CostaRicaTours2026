@@ -1,4 +1,82 @@
 {
   "version": 2,
-  "buildCommand": "npm run build"
+  "buildCommand": "npm run build",
+  "rewrites": [
+    {
+      "source": "/ai",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/tours",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/destinations",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/activities",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/map",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/trip",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/itinerary",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/flights",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/blog",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/about",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/culture",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/tools",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/counter",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/ops",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/workspace",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/provider/portal",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/tour/:id",
+      "destination": "/index.html"
+    }
+  ]
 }
