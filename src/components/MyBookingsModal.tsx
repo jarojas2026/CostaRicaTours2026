@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BookingRequest, Language, Currency } from '../types';
 import { X, Ticket, Calendar, Clock, MapPin, Search, Compass } from 'lucide-react';
 
@@ -43,10 +44,10 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
             </div>
             <div>
               <h3 className="text-xl font-black text-white uppercase tracking-tight">
-                {language === 'es' ? 'Mis Reservas Confirmadas' : 'My Confirmed Bookings'}
+                {language === 'es' ? 'Mis Reservas' : 'My Bookings'}
               </h3>
               <span className="text-xs text-stone-400">
-                {bookings.length} {language === 'es' ? 'vouchers registrados' : 'vouchers registered'}
+                {bookings.length} {language === 'es' ? 'reservas registradas' : 'bookings recorded'}
               </span>
             </div>
           </div>
@@ -60,6 +61,10 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
             <X className="w-5 h-5 stroke-[2.5]" />
           </button>
         </div>
+
+        <Link to="/admin" onClick={onClose} className="inline-flex rounded-xl border border-amber-400/40 px-4 py-3 text-sm font-bold text-amber-300">
+          {language === 'es' ? 'Administración · Acceso del propietario' : 'Administration · Owner access'}
+        </Link>
 
         {bookings.length > 0 && (
           <div className="relative">
