@@ -482,7 +482,7 @@ app.get('/api/ai/journey/:journeyId', async (req, res) => {
 app.patch('/api/ai/journey/:journeyId', aiAdmission.middleware, journeyLimiter, async (req, res) => {
   try {
     const result = await adaptTravelerJourney(String(req.params.journeyId || ''), req.body || {});
-    if (result?.status === 'forbidden') return res.status(403).json({ success: false, error: result.error });
+    if (result?.status === 'forbidden' && 'error' in result) return res.status(403).json({ success: false, error: result.error });
     res.json({ success: true, journey: result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message || 'No se pudo adaptar el viaje.' });
