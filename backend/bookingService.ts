@@ -11,7 +11,6 @@ import admin from 'firebase-admin';
 import {
   getFirestore,
   FieldValue,
-  Timestamp,
   type Firestore,
   type CollectionReference
 } from 'firebase-admin/firestore';
@@ -20,10 +19,6 @@ import Stripe from 'stripe';
 import { TOURS } from '../src/data/toursData';
 import { getIdempotentResult, idempotencyDocId, normalizeIdempotencyKey, requestFingerprint } from './idempotencyService';
 import { assertBookingTransition, normalizeBookingLifecycle } from './bookingStateMachine';
-import {
-  executeProviderRealtimeCoordination,
-  executeCustomerBookingConfirmation
-} from './nativeWorkflows';
 import { massiveEngine } from './massiveProcessingEngine';
 
 function resolveFirestoreDatabaseId(): string {
@@ -59,9 +54,7 @@ let dbInstance: Firestore | null = null;
 const inMemoryBookings: Map<string, any> = new Map();
 const inMemorySlots: Map<string, number> = new Map();
 
-/**
- * Inicializa y devuelve la instancia de Firestore Admin
- */
+/** Inicializa y devuelve la instancia de Firestore Admin. */
 export function getFirestoreDb(): Firestore | null {
   if (dbInstance) return dbInstance;
 
@@ -86,14 +79,12 @@ export function getFirestoreDb(): Firestore | null {
 
     return dbInstance;
   } catch (error) {
-    console.warn('⚠️ Firestore Admin no disponible. Operando con caché en memoria segura.');
+    console.warn('⚠️ Firestore Admin no disponible.');
     return null;
   }
 }
 
-/**
- * Obtiene la referencia a la colección de reservas
- */
+/** Obtiene la referencia a la colección de reservas. */
 export function getBookingsCollection(): CollectionReference | null {
   const db = getFirestoreDb();
   if (!db) return null;
@@ -105,35 +96,20 @@ export function getBookingsCollection(): CollectionReference | null {
   }
 }
 
-/**
- * Normaliza cualquier formato de fecha o Timestamp de Firestore a objeto Date
- */
 export function normalizeTimestampToDate(timestampVal: any): Date {
   if (!timestampVal) return new Date();
-  if (typeof timestampVal.toDate === 'function') {
-    return timestampVal.toDate();
-  }
-  if (typeof timestampVal._seconds === 'number') {
-    return new Date(timestampVal._seconds * 1000);
-  }
-  if (typeof timestampVal.seconds === 'number') {
-    return new Date(timestampVal.seconds * 1000);
-  }
+  if (typeof timestampVal.toDate === 'function') return timestampVal.toDate();
+  if (typeof timestampVal._seconds === 'number') return new Date(timestampVal._seconds * 1000);
+  if (typeof timestampVal.seconds === 'number') return new Date(timestampVal.seconds * 1000);
   const parsed = new Date(timestampVal);
   return isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
-/**
- * Genera la clave determinística para el slot de disponibilidad
- */
 export function getSlotKey(tourId: string, date: string, time: string): string {
   const cleanTime = (time || '08:00 AM').replace(/[^a-zA-Z0-9]/g, '_');
   return `${tourId}_${date}_${cleanTime}`;
 }
 
-/**
- * Inicialización de clientes de pago y Gemini
- */
 let stripeClient: Stripe | null = null;
 export function getStripe(): Stripe | null {
   if (!stripeClient && process.env.STRIPE_SECRET_KEY) {
@@ -150,10 +126,7 @@ function getAI(): GoogleGenAI | null {
   return aiClient;
 }
 
-/**
- * 5. OBTENCIÓN DINÁMICA DE OPERADORES DESDE FIRESTORE
- * Consulta la colección 'operators' (o 'proveedores') en Firestore sin hardcoding.
- */
+/** Obtiene operadores desde Firestore; nunca fabrica uno operativo. */
 export async function getOperatorById(providerId: string): Promise<{
   id: string;
   name: string;
@@ -181,7 +154,6 @@ export async function getOperatorById(providerId: string): Promise<{
   if (!db) return defaultFallback;
 
   try {
-    // 1. Buscar en colección 'operators'
     const opDoc = await db.collection('operators').doc(providerId).get();
     if (opDoc.exists) {
       const data = opDoc.data() || {};
@@ -198,7 +170,6 @@ export async function getOperatorById(providerId: string): Promise<{
       };
     }
 
-    // 2. Buscar en colección 'proveedores'
     const provDoc = await db.collection('proveedores').doc(providerId).get();
     if (provDoc.exists) {
       const data = provDoc.data() || {};
@@ -218,15 +189,12 @@ export async function getOperatorById(providerId: string): Promise<{
     console.warn(`⚠️ Error consultando operador ${providerId} en Firestore:`, err);
   }
 
-  // No se fabrican proveedores operativos si Firestore no contiene el registro verificado.
-
-
   return defaultFallback;
 }
 
 /**
- * 1. CONTROL DE DISPONIBILIDAD Y CUPOS EN TIEMPO REAL
- * Compara las reservas existentes para (tourId, date, time) contra el maxGroupSize del tour.
+ * Control de disponibilidad. En producción nunca se presenta memoria local como
+ * disponibilidad real si Firestore no puede verificarse.
  */
 export async function checkTourAvailability(
   tourId: string,
@@ -244,12 +212,10 @@ export async function checkTourAvailability(
 
   if (db) {
     try {
-      // 1. Revisar colección de slots atómicos
       const slotDoc = await db.collection('availability_slots').doc(slotKey).get();
       if (slotDoc.exists) {
         alreadyBooked = Number(slotDoc.data()?.bookedSeats) || 0;
       } else {
-        // Fallback de lectura agregada de bookings
         const snapshot = await db.collection('bookings')
           .where('tourId', '==', tourId)
           .where('date', '==', date)
@@ -265,8 +231,23 @@ export async function checkTourAvailability(
       }
     } catch (err) {
       console.warn('Error al verificar cupos en Firestore:', err);
+      if (process.env.NODE_ENV === 'production') {
+        return {
+          available: false,
+          remainingSeats: 0,
+          maxCapacity,
+          reason: 'No puedo verificar el cupo todavía porque el servicio de disponibilidad no respondió.'
+        };
+      }
       alreadyBooked = inMemorySlots.get(slotKey) || 0;
     }
+  } else if (process.env.NODE_ENV === 'production') {
+    return {
+      available: false,
+      remainingSeats: 0,
+      maxCapacity,
+      reason: 'No puedo verificar el cupo todavía porque la disponibilidad en vivo no está accesible.'
+    };
   } else {
     alreadyBooked = inMemorySlots.get(slotKey) || 0;
   }
@@ -285,21 +266,19 @@ export async function checkTourAvailability(
 }
 
 /**
- * 2. VERIFICACIÓN DE PAGO DEL LADO DEL SERVIDOR
- * Valida de manera segura contra las APIs de PayPal o Stripe antes de confirmar.
+ * Verificación de pago del servidor. Un pago verificado avanza a `paid`; la
+ * confirmación final requiere evidencia operativa del proveedor.
  */
 export async function verifyPaymentServerSide(
   paymentMethod: string,
   details: { paypalOrderId?: string; stripeSessionId?: string }
-): Promise<{ verified: boolean; status: 'confirmada' | 'pendiente_pago'; paymentStatus: 'completed' | 'pending'; meta?: any }> {
-  // Verificación con PayPal Orders API
+): Promise<{ verified: boolean; status: 'paid' | 'pendiente_pago'; paymentStatus: 'completed' | 'pending'; meta?: any }> {
   if (paymentMethod === 'paypal' && details.paypalOrderId) {
     try {
       const paypalClientId = process.env.PAYPAL_CLIENT_ID;
       const paypalSecret = process.env.PAYPAL_SECRET;
       const paypalMode = process.env.PAYPAL_MODE || 'sandbox';
-      const baseUrl =
-        paypalMode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+      const baseUrl = paypalMode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
 
       if (paypalClientId && paypalSecret) {
         const authStr = Buffer.from(`${paypalClientId}:${paypalSecret}`).toString('base64');
@@ -318,11 +297,10 @@ export async function verifyPaymentServerSide(
             headers: { Authorization: `Bearer ${authData.access_token}` }
           });
           const orderData = await orderRes.json();
-
           if (orderData.status === 'COMPLETED') {
             return {
               verified: true,
-              status: 'confirmada',
+              status: 'paid',
               paymentStatus: 'completed',
               meta: { paypalStatus: orderData.status, payer: orderData.payer }
             };
@@ -336,7 +314,6 @@ export async function verifyPaymentServerSide(
     }
   }
 
-  // Verificación con Stripe Checkout Sessions API
   if ((paymentMethod === 'credit_card' || paymentMethod === 'stripe') && details.stripeSessionId) {
     try {
       const stripe = getStripe();
@@ -345,7 +322,7 @@ export async function verifyPaymentServerSide(
         if (session.payment_status === 'paid') {
           return {
             verified: true,
-            status: 'confirmada',
+            status: 'paid',
             paymentStatus: 'completed',
             meta: { stripePaymentIntent: session.payment_intent }
           };
@@ -356,16 +333,9 @@ export async function verifyPaymentServerSide(
     }
   }
 
-  return {
-    verified: false,
-    status: 'pendiente_pago',
-    paymentStatus: 'pending'
-  };
+  return { verified: false, status: 'pendiente_pago', paymentStatus: 'pending' };
 }
 
-/**
- * Genera insights operativos mediante IA para el operador local
- */
 export async function generateOperationalInsights(booking: any) {
   const ai = getAI();
   if (!ai) return null;
@@ -390,20 +360,13 @@ export async function generateOperationalInsights(booking: any) {
       }
     });
 
-    if (response.text) {
-      return JSON.parse(response.text);
-    }
+    if (response.text) return JSON.parse(response.text);
   } catch (err) {
     console.error('Error generando insights con Gemini:', err);
   }
   return null;
 }
 
-/**
- * 3. PERSISTENCIA ATÓMICA CON CONTROL DE CONCURRENCIA (RACE CONDITION FIX)
- * Ejecuta una transacción atómica `db.runTransaction()` en Firestore Admin,
- * actualizando el contador en `availability_slots` y guardando la reserva en `bookings`.
- */
 export async function createBooking(data: any) {
   const idempotencyKey = normalizeIdempotencyKey(data.idempotencyKey);
   const fingerprint = idempotencyKey ? requestFingerprint(data) : null;
@@ -424,20 +387,21 @@ export async function createBooking(data: any) {
   const numChildren = Number(data.children) || 0;
   const totalPassengers = numAdults + numChildren;
   const tourId = data.tourId || 'tour-custom';
-  const tourDate = data.date;
+  const tourDate = String(data.date || '').trim();
+
+  if (!tourDate) {
+    return { conflict: true, error: 'fecha_requerida', message: 'La fecha del servicio es obligatoria para verificar disponibilidad.' };
+  }
 
   const tourInfo = TOURS.find((t) => t.id === tourId);
   const maxCapacity = tourInfo?.maxGroupSize || 15;
   const slotKey = getSlotKey(tourId, tourDate, bookingTime);
-
-  // 1. Obtener información dinámica del operador desde Firestore
   const providerId = String(tourInfo?.providerId || '').trim();
   const providerInfo = await getOperatorById(providerId);
 
-  // 2. Validar pago del lado del servidor de forma estricta (NUNCA adoptar estado del cliente)
   let paymentResult: {
     verified: boolean;
-    status: 'confirmada' | 'pendiente_pago';
+    status: 'paid' | 'pendiente_pago';
     paymentStatus: 'completed' | 'pending';
     meta?: any;
   } = {
@@ -453,7 +417,6 @@ export async function createBooking(data: any) {
       stripeSessionId: data.stripeSessionId
     });
   } else if (data.sinpeReference) {
-    // Si viene referencia SINPE, queda pendiente de verificación manual por operador
     paymentResult = {
       verified: false,
       status: 'pendiente_pago',
@@ -462,7 +425,6 @@ export async function createBooking(data: any) {
     };
   }
 
-  // 3. Generar insights operativos con IA
   const agentInsights = await generateOperationalInsights({
     ...data,
     time: bookingTime,
@@ -484,8 +446,14 @@ export async function createBooking(data: any) {
   };
 
   const db = getFirestoreDb();
+  if (!db && process.env.NODE_ENV === 'production') {
+    return {
+      conflict: true,
+      error: 'availability_unverified',
+      message: 'No puedo verificar ni persistir la disponibilidad en este momento. La solicitud no fue confirmada.'
+    };
+  }
 
-  // Objeto de reserva estandarizado con Timestamp nativo en Firestore
   const newBookingPayload = {
     bookingId,
     tourId,
@@ -495,7 +463,7 @@ export async function createBooking(data: any) {
     time: bookingTime,
     adults: numAdults,
     children: numChildren,
-    pickupHotel: data.pickupHotel || 'Recepción del Hotel',
+    pickupHotel: String(data.pickupHotel || '').trim(),
     specialRequests: data.specialRequests || '',
     totalUSD: calculatedUSD,
     totalCRC: Math.round(calculatedUSD * getUsdToCrcRate()),
@@ -504,6 +472,7 @@ export async function createBooking(data: any) {
     paymentMethod: data.paymentMethod || 'credit_card',
     paymentStatus: paymentResult.paymentStatus,
     status: paymentResult.status,
+    lifecycle: paymentResult.verified ? 'paid' : 'payment_pending',
     sinpeReference: data.sinpeReference || undefined,
     customerName: customerObj.name,
     customerEmail: customerObj.email,
@@ -515,9 +484,6 @@ export async function createBooking(data: any) {
     agentInsights: agentInsights || undefined
   };
 
-  // =========================================================================
-  // TRANSACCIÓN ATÓMICA DE FIRESTORE (Previene Race Conditions y Sobre-Reserva)
-  // =========================================================================
   if (db) {
     try {
       await db.runTransaction(async (transaction) => {
@@ -525,7 +491,6 @@ export async function createBooking(data: any) {
         const bookingRef = db.collection('bookings').doc(bookingId);
         const idempotencyRef = idempotencyKey ? db.collection('idempotency_keys').doc(idempotencyDocId(idempotencyKey)) : null;
 
-        // 1. Idempotencia + lectura transaccional del cupo
         if (idempotencyRef) {
           const idemDoc = await transaction.get(idempotencyRef);
           if (idemDoc.exists) {
@@ -534,34 +499,29 @@ export async function createBooking(data: any) {
             throw new Error('IDEMPOTENT_REPLAY');
           }
         }
+
         const slotDoc = await transaction.get(slotRef);
         const currentBooked = slotDoc.exists ? (Number(slotDoc.data()?.bookedSeats) || 0) : 0;
-
         if (currentBooked + totalPassengers > maxCapacity) {
           const availableLeft = Math.max(0, maxCapacity - currentBooked);
           throw new Error(`NO_AVAILABILITY: Solicitados ${totalPassengers} cupos pero solo quedan ${availableLeft} disponibles.`);
         }
 
-        // 2. Escritura atómica del nuevo cupo en availability_slots
-        transaction.set(
-          slotRef,
-          {
-            tourId,
-            date: tourDate,
-            time: bookingTime,
-            bookedSeats: currentBooked + totalPassengers,
-            maxCapacity,
-            updatedAt: FieldValue.serverTimestamp()
-          },
-          { merge: true }
-        );
+        transaction.set(slotRef, {
+          tourId,
+          date: tourDate,
+          time: bookingTime,
+          bookedSeats: currentBooked + totalPassengers,
+          maxCapacity,
+          updatedAt: FieldValue.serverTimestamp()
+        }, { merge: true });
 
-        // 3. Escritura atómica de la reserva con Timestamp nativo
         transaction.set(bookingRef, {
           ...newBookingPayload,
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp()
         });
+
         if (idempotencyRef) {
           transaction.set(idempotencyRef, {
             fingerprint,
@@ -597,7 +557,6 @@ export async function createBooking(data: any) {
       };
     }
   } else {
-    // Modo de reserva en memoria segura (desarrollo/sin Firebase Admin credentials)
     const currentMemoryBooked = inMemorySlots.get(slotKey) || 0;
     if (currentMemoryBooked + totalPassengers > maxCapacity) {
       return {
@@ -610,7 +569,6 @@ export async function createBooking(data: any) {
     inMemorySlots.set(slotKey, currentMemoryBooked + totalPassengers);
   }
 
-  // Guardar copia normalizada en memoria para respuestas JSON del cliente
   const responseBooking = {
     ...newBookingPayload,
     createdAt: new Date().toISOString(),
@@ -618,13 +576,11 @@ export async function createBooking(data: any) {
   };
   inMemoryBookings.set(bookingId, responseBooking);
 
-  // 4. Automatización de antifraude inmediata
-  const isSuspicious = (responseBooking.totalUSD > 1500) || (responseBooking.customerEmail && /@(tempmail|mailinator|throwaway)\./i.test(responseBooking.customerEmail));
+  const isSuspicious = (responseBooking.totalUSD > 1500) ||
+    (responseBooking.customerEmail && /@(tempmail|mailinator|throwaway)\./i.test(responseBooking.customerEmail));
   const fraudRiskScore = isSuspicious ? 65 : 5;
   console.log(`🛡️ [AUTOMATIZACIÓN NATIVA] Antifraude evaluado: Score ${fraudRiskScore}/100 para ${bookingId}`);
 
-  // 5. Despacho NATIVO MASIVO y AISLADO para cada reserva individual
-  // Encola la tarea en el motor de alto rendimiento para monitoreo de SLA segundo a segundo
   massiveEngine.enqueue(
     'INDIVIDUAL_BOOKING_AUTONOMOUS_DISPATCH',
     { booking: responseBooking },
@@ -633,18 +589,9 @@ export async function createBooking(data: any) {
     console.error(`❌ [MASSIVE-ENGINE] Fallo en despacho asíncrono para ${bookingId}:`, err);
   });
 
-  // automatización nativa fue reemplazado por completo por backend/nativeWorkflows.ts (7
-  // workflows migrados a código propio, sin dependencias externas de pago).
-  // La automatización y notificaciones se ejecutan directamente en el
-  // motor nativo. Ver docs/estado-real-del-sistema.md para el detalle.
-
   return { conflict: false, booking: responseBooking };
 }
 
-/**
- * Lee todas las reservas desde Firestore (o caché en memoria)
- * Normalizando Timestamps de Firestore a formato serializable.
- */
 export async function getBookingById(bookingId: string): Promise<any | null> {
   const cached = inMemoryBookings.get(bookingId);
   if (cached) return cached;
@@ -668,10 +615,6 @@ export async function getBookingById(bookingId: string): Promise<any | null> {
   }
 }
 
-/**
- * Recupera sólo reservas que todavía pueden requerir una transición autónoma.
- * Conserva getAllBookings() para backoffice y compatibilidad histórica.
- */
 export async function getPendingReservationLifecycleBookings(limit = 100): Promise<any[]> {
   const col = getBookingsCollection();
   const safeLimit = Math.max(1, Math.min(250, limit));
@@ -702,7 +645,6 @@ export async function getPendingReservationLifecycleBookings(limit = 100): Promi
   }
 }
 
-/** Recupera sólo reservas con seguimiento de proveedor pendiente. */
 export async function getPendingProviderSlaBookings(limit = 250): Promise<any[]> {
   const col = getBookingsCollection();
   const safeLimit = Math.max(1, Math.min(500, limit));
@@ -760,10 +702,6 @@ export async function getAllBookings(): Promise<any[]> {
   );
 }
 
-/**
- * Actualiza una reserva en Firestore por su ID con Timestamp nativo
- * Si el estado cambia a cancelada/cancelled, libera de forma transaccional los cupos en availability_slots.
- */
 export async function updateBookingStatus(
   bookingId: string,
   updates: Partial<any>
@@ -776,17 +714,13 @@ export async function updateBookingStatus(
     try {
       const docRef = col.doc(bookingId);
       const doc = await docRef.get();
-      if (doc.exists) {
-        existing = { ...doc.data(), ...existing };
-      }
+      if (doc.exists) existing = { ...doc.data(), ...existing };
     } catch (err) {
       console.warn('Error buscando doc en Firestore:', err);
     }
   }
 
-  if (!existing) {
-    return { success: false, error: `Reserva con ID ${bookingId} no encontrada.` };
-  }
+  if (!existing) return { success: false, error: `Reserva con ID ${bookingId} no encontrada.` };
 
   const previousStatus = existing.status;
   const newStatus = updates.status;
@@ -801,13 +735,10 @@ export async function updateBookingStatus(
   }
 
   const isCancelling = (newStatus === 'cancelada' || newStatus === 'cancelled') &&
-                       (previousStatus !== 'cancelada' && previousStatus !== 'cancelled');
-
+    (previousStatus !== 'cancelada' && previousStatus !== 'cancelled');
   const updatedBooking = { ...existing, ...updates, updatedAt: new Date().toISOString() };
   let availabilityReleasedByTransaction = false;
 
-  // Persistir primero. La liberación de cupos ocurre dentro de la misma transacción
-  // que cambia el estado para que una cancelación duplicada sea inocua.
   if (db && col) {
     try {
       if (isCancelling) {
@@ -823,15 +754,23 @@ export async function updateBookingStatus(
             const tourId = String(current.tourId || existing.tourId || '');
             const tourDate = String(current.date || existing.date || '');
             const bookingTime = String(current.time || existing.time || '08:00 AM');
-            const passengers = (Number(current.adults) || Number(existing.adults) || 1) + (Number(current.children) || Number(existing.children) || 0);
+            const passengers = (Number(current.adults) || Number(existing.adults) || 1) +
+              (Number(current.children) || Number(existing.children) || 0);
             if (tourId && tourDate) {
               const slotRef = db.collection('availability_slots').doc(getSlotKey(tourId, tourDate, bookingTime));
               const slotDoc = await transaction.get(slotRef);
               if (slotDoc.exists) {
                 const booked = Number(slotDoc.data()?.bookedSeats) || 0;
-                transaction.update(slotRef, { bookedSeats: Math.max(0, booked - passengers), updatedAt: FieldValue.serverTimestamp() });
+                transaction.update(slotRef, {
+                  bookedSeats: Math.max(0, booked - passengers),
+                  updatedAt: FieldValue.serverTimestamp()
+                });
               }
-              transaction.set(bookingRef, { ...updates, availabilityReleased: true, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+              transaction.set(bookingRef, {
+                ...updates,
+                availabilityReleased: true,
+                updatedAt: FieldValue.serverTimestamp()
+              }, { merge: true });
               return true;
             }
           }
@@ -870,9 +809,6 @@ export async function updateBookingStatus(
   return { success: true, booking: updatedBooking };
 }
 
-/**
- * 📊 Calcula métricas semanales de Tasa de Conversión y volumen de reservas desde Firestore
- */
 export async function getWeeklyConversionMetrics(): Promise<{
   period: { start: string; end: string; days: number };
   totalInquiries: number;
@@ -897,18 +833,16 @@ export async function getWeeklyConversionMetrics(): Promise<{
   });
 
   const totalBookings = recentBookings.length;
-  const confirmed = recentBookings.filter(
-    (b) => b.status === 'confirmada' || b.paymentStatus === 'completed'
+  const confirmed = recentBookings.filter((b) =>
+    ['confirmada', 'confirmed'].includes(String(b.status || '').toLowerCase())
   );
-  const pending = recentBookings.filter(
-    (b) => b.status === 'pendiente_pago' || b.paymentStatus === 'pending'
+  const pending = recentBookings.filter((b) =>
+    ['pendiente_pago', 'payment_pending', 'pending', 'paid', 'provider_pending'].includes(String(b.status || '').toLowerCase())
   );
   const cancelled = recentBookings.filter(
     (b) => b.status === 'cancelada' || b.status === 'cancelled'
   );
 
-  // Métrica comercial real: contamos conversaciones registradas por el Agent Mesh.
-  // Si Firestore no está disponible, no inventamos inquiries; devolvemos 0.
   let totalInquiries = 0;
   const metricsDb = getFirestoreDb();
   if (metricsDb) {
@@ -940,9 +874,7 @@ export async function getWeeklyConversionMetrics(): Promise<{
     totalRevenueUSD += rev;
 
     const tName = b.tourName || 'Tour Costa Rica';
-    if (!tourStats[tName]) {
-      tourStats[tName] = { count: 0, revenueUSD: 0 };
-    }
+    if (!tourStats[tName]) tourStats[tName] = { count: 0, revenueUSD: 0 };
     tourStats[tName].count += 1;
     tourStats[tName].revenueUSD += rev;
 
@@ -950,8 +882,8 @@ export async function getWeeklyConversionMetrics(): Promise<{
     paymentBreakdown[method] = (paymentBreakdown[method] || 0) + 1;
   });
 
-  const averageTicketUSD = confirmed.length > 0 
-    ? Math.round(totalRevenueUSD / confirmed.length) 
+  const averageTicketUSD = confirmed.length > 0
+    ? Math.round(totalRevenueUSD / confirmed.length)
     : 0;
 
   const topTours = Object.entries(tourStats)
@@ -978,15 +910,17 @@ export async function getWeeklyConversionMetrics(): Promise<{
   };
 }
 
-/**
- * Busca una reserva en tiempo real por código de confirmación, ID o email
- */
+/** Busca una reserva por código de confirmación, ID, email o PNR. */
 export async function findBookingByCodeOrEmail(identifier: string): Promise<any | null> {
   const clean = String(identifier || '').trim().toLowerCase();
   if (!clean) return null;
   const col = getBookingsCollection();
   if (!col) {
-    return Array.from(inMemoryBookings.values()).find((b: any) => String(b.bookingId || b.id || '').toLowerCase() === clean || String(b.customer?.email || b.customerEmail || '').toLowerCase() === clean || String(b.flightDetails?.pnrLocator || '').toLowerCase() === clean) || null;
+    return Array.from(inMemoryBookings.values()).find((b: any) =>
+      String(b.bookingId || b.id || '').toLowerCase() === clean ||
+      String(b.customer?.email || b.customerEmail || '').toLowerCase() === clean ||
+      String(b.flightDetails?.pnrLocator || '').toLowerCase() === clean
+    ) || null;
   }
   try {
     const exactId = await col.doc(identifier.trim()).get();
@@ -1004,7 +938,10 @@ export async function findBookingByCodeOrEmail(identifier: string): Promise<any 
     }
     if (/\s/.test(clean)) {
       const recent = await col.orderBy('createdAt', 'desc').limit(100).get();
-      const found = recent.docs.find((doc) => String(doc.data()?.customer?.name || doc.data()?.customer?.fullName || doc.data()?.customerName || '').toLowerCase().includes(clean));
+      const found = recent.docs.find((doc) =>
+        String(doc.data()?.customer?.name || doc.data()?.customer?.fullName || doc.data()?.customerName || '')
+          .toLowerCase().includes(clean)
+      );
       if (found) return { id: found.id, ...found.data() };
     }
   } catch (error) {
@@ -1026,9 +963,6 @@ export interface DailyOpsLogItem {
 
 const dailyOpsLogs: DailyOpsLogItem[] = [];
 
-/**
- * Registra una acción o incidente operativo para el reporte diario de operaciones
- */
 export function recordDailyOpsLog(item: Omit<DailyOpsLogItem, 'id' | 'timestamp'>): DailyOpsLogItem {
   const logItem: DailyOpsLogItem = {
     id: `OPS-${crypto.randomUUID()}`,
@@ -1040,9 +974,6 @@ export function recordDailyOpsLog(item: Omit<DailyOpsLogItem, 'id' | 'timestamp'
   return logItem;
 }
 
-/**
- * Retorna los logs operativos recientes
- */
 export function getDailyOpsLogs(): DailyOpsLogItem[] {
   return dailyOpsLogs;
 }
