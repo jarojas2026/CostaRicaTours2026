@@ -214,7 +214,10 @@ export default function App() {
         localStorage.setItem('crt_customer_session', sessionId);
         const response = await fetch('/api/customer-intake', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(auth.currentUser ? { Authorization: 'Bearer ' + await auth.currentUser.getIdToken() } : {})
+          },
           body: JSON.stringify({
             ...detail,
             message,
