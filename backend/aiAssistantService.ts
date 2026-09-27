@@ -363,7 +363,7 @@ export async function processChatInquiry(
 User query: "${message}"
 Reply ONLY with "YES" or "NO".`;
       const classRes = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.8-flash',
         contents: classifierPrompt,
         config: { temperature: 0 }
       });
@@ -394,7 +394,7 @@ Reply ONLY with "YES" or "NO".`;
     const maxToolRounds = Math.max(1, Math.min(10, Number(platformControls.values.max_agent_tool_rounds) || 3));
     while (toolRounds < maxToolRounds) {
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.8-flash',
         contents: currentContents,
         config
       });
@@ -472,7 +472,7 @@ Reply ONLY with "YES" or "NO".`;
       action: 'direct_whatsapp'
     });
 
-    return { reply, quickActions, agentId: requestedAgentId, modelUsed: 'gemini-2.5-flash' };
+    return { reply, quickActions, agentId: requestedAgentId, modelUsed: 'gemini-3.8-flash' };
   } catch (error) {
     console.warn('Fallback a base de conocimiento oficial:', error);
     return getKnowledgeBaseReply(message, isEn);
@@ -554,7 +554,7 @@ export async function runRouterAgent(message: string, context?: any): Promise<Ro
     const ai = getAI();
     if (ai) {
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.8-flash',
         contents: `Analiza este mensaje de cliente o viajero de Costa Rica Tours:\n"${message}"\nContexto previo: ${JSON.stringify(context || {})}`,
         config: {
           systemInstruction: `Eres el Agente Enrutador oficial de Costa Rica Tours.
@@ -1088,7 +1088,7 @@ REGLAS OBLIGATORIAS DE RESPUESTA:
 6. IDIOMA: Responde en el idioma del viajero (${isEn ? 'English' : 'Español'}).`;
 
       const aiResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.8-flash',
         contents: `${formattedHistory ? `HISTORIAL:\n${formattedHistory}\n\n` : ''}CONSULTA DEL VIAJERO EN MOSTRADOR:\n"${message}"`,
         config: {
           systemInstruction: counterSystemInstruction,
@@ -1109,7 +1109,7 @@ REGLAS OBLIGATORIAS DE RESPUESTA:
             { label: isEn ? '🎟️ View Recommended Tours' : '🎟️ Ver Tours Recomendados', action: 'send_message', data: { message: isEn ? 'Show tours' : 'Ver tours' } },
             { label: isEn ? '💬 Speak with Sofía on WhatsApp' : '💬 Hablar con Sofía por WhatsApp', action: 'direct_whatsapp' }
           ],
-          modelUsed: 'gemini-2.5-flash'
+          modelUsed: 'gemini-3.8-flash'
         };
       }
     }
@@ -1757,7 +1757,7 @@ export async function runTriage(rawMessage: string) {
     const ai = getAI();
     if (!ai) throw new Error('Gemini API key no configurada');
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       contents: `Analiza este mensaje de cliente de turismo en Costa Rica: "${rawMessage}". Extrae intención y datos estructurados.`,
       config: {
         systemInstruction:
@@ -1790,7 +1790,7 @@ export async function runProcessor(rawMessage: string, intent: string, extracted
     if (!ai) throw new Error('Gemini API key no configurada');
     const prompt = `Mensaje: "${rawMessage}", Intención: ${intent}, Datos: ${JSON.stringify(extractedData)}. Genera las acciones necesarias y una respuesta cordial en formato JSON.`;
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       contents: prompt,
       config: {
         systemInstruction:
