@@ -86,7 +86,7 @@ export function getFirestoreDb(): Firestore | null {
 
     return dbInstance;
   } catch (error) {
-    console.warn('⚠️ Firestore Admin no disponible. Operando con caché en memoria segura.');
+    console.warn('⚠️ Firestore Admin no disponible.');
     return null;
   }
 }
@@ -181,7 +181,6 @@ export async function getOperatorById(providerId: string): Promise<{
   if (!db) return defaultFallback;
 
   try {
-    // 1. Buscar en colección 'operators'
     const opDoc = await db.collection('operators').doc(providerId).get();
     if (opDoc.exists) {
       const data = opDoc.data() || {};
@@ -198,7 +197,6 @@ export async function getOperatorById(providerId: string): Promise<{
       };
     }
 
-    // 2. Buscar en colección 'proveedores'
     const provDoc = await db.collection('proveedores').doc(providerId).get();
     if (provDoc.exists) {
       const data = provDoc.data() || {};
@@ -218,15 +216,13 @@ export async function getOperatorById(providerId: string): Promise<{
     console.warn(`⚠️ Error consultando operador ${providerId} en Firestore:`, err);
   }
 
-  // No se fabrican proveedores operativos si Firestore no contiene el registro verificado.
-
-
   return defaultFallback;
 }
 
 /**
  * 1. CONTROL DE DISPONIBILIDAD Y CUPOS EN TIEMPO REAL
  * Compara las reservas existentes para (tourId, date, time) contra el maxGroupSize del tour.
+ * En producción nunca se presenta la memoria local como disponibilidad real.
  */
 export async function checkTourAvailability(
   tourId: string,
@@ -244,12 +240,10 @@ export async function checkTourAvailability(
 
   if (db) {
     try {
-      // 1. Revisar colección de slots atómicos
       const slotDoc = await db.collection('availability_slots').doc(slotKey).get();
       if (slotDoc.exists) {
         alreadyBooked = Number(slotDoc.data()?.bookedSeats) || 0;
       } else {
-        // Fallback de lectura agregada de bookings
         const snapshot = await db.collection('bookings')
           .where('tourId', '==', tourId)
           .where('date', '==', date)
@@ -265,8 +259,23 @@ export async function checkTourAvailability(
       }
     } catch (err) {
       console.warn('Error al verificar cupos en Firestore:', err);
+      if (process.env.NODE_ENV === 'production') {
+        return {
+          available: false,
+          remainingSeats: 0,
+          maxCapacity,
+          reason: 'No puedo verificar el cupo todavía porque el servicio de disponibilidad no respondió.'
+        };
+      }
       alreadyBooked = inMemorySlots.get(slotKey) || 0;
     }
+  } else if (process.env.NODE_ENV === 'production') {
+    return {
+      available: false,
+      remainingSeats: 0,
+      maxCapacity,
+      reason: 'No puedo verificar el cupo todavía porque la disponibilidad en vivo no está accesible.'
+    };
   } else {
     alreadyBooked = inMemorySlots.get(slotKey) || 0;
   }
@@ -286,20 +295,20 @@ export async function checkTourAvailability(
 
 /**
  * 2. VERIFICACIÓN DE PAGO DEL LADO DEL SERVIDOR
- * Valida de manera segura contra las APIs de PayPal o Stripe antes de confirmar.
+ * Valida de manera segura contra las APIs de PayPal o Stripe. Un pago verificado
+ * avanza a `paid`; la reserva sólo puede llegar a `confirmed` después de la
+ * confirmación operativa del proveedor.
  */
 export async function verifyPaymentServerSide(
   paymentMethod: string,
   details: { paypalOrderId?: string; stripeSessionId?: string }
-): Promise<{ verified: boolean; status: 'confirmada' | 'pendiente_pago'; paymentStatus: 'completed' | 'pending'; meta?: any }> {
-  // Verificación con PayPal Orders API
+): Promise<{ verified: boolean; status: 'paid' | 'pendiente_pago'; paymentStatus: 'completed' | 'pending'; meta?: any }> {
   if (paymentMethod === 'paypal' && details.paypalOrderId) {
     try {
       const paypalClientId = process.env.PAYPAL_CLIENT_ID;
       const paypalSecret = process.env.PAYPAL_SECRET;
       const paypalMode = process.env.PAYPAL_MODE || 'sandbox';
-      const baseUrl =
-        paypalMode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+      const baseUrl = paypalMode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
 
       if (paypalClientId && paypalSecret) {
         const authStr = Buffer.from(`${paypalClientId}:${paypalSecret}`).toString('base64');
@@ -322,7 +331,7 @@ export async function verifyPaymentServerSide(
           if (orderData.status === 'COMPLETED') {
             return {
               verified: true,
-              status: 'confirmada',
+              status: 'paid',
               paymentStatus: 'completed',
               meta: { paypalStatus: orderData.status, payer: orderData.payer }
             };
@@ -336,7 +345,6 @@ export async function verifyPaymentServerSide(
     }
   }
 
-  // Verificación con Stripe Checkout Sessions API
   if ((paymentMethod === 'credit_card' || paymentMethod === 'stripe') && details.stripeSessionId) {
     try {
       const stripe = getStripe();
@@ -345,7 +353,7 @@ export async function verifyPaymentServerSide(
         if (session.payment_status === 'paid') {
           return {
             verified: true,
-            status: 'confirmada',
+            status: 'paid',
             paymentStatus: 'completed',
             meta: { stripePaymentIntent: session.payment_intent }
           };
@@ -424,20 +432,22 @@ export async function createBooking(data: any) {
   const numChildren = Number(data.children) || 0;
   const totalPassengers = numAdults + numChildren;
   const tourId = data.tourId || 'tour-custom';
-  const tourDate = data.date;
+  const tourDate = String(data.date || '').trim();
+
+  if (!tourDate) {
+    return { conflict: true, error: 'fecha_requerida', message: 'La fecha del servicio es obligatoria para verificar disponibilidad.' };
+  }
 
   const tourInfo = TOURS.find((t) => t.id === tourId);
   const maxCapacity = tourInfo?.maxGroupSize || 15;
   const slotKey = getSlotKey(tourId, tourDate, bookingTime);
 
-  // 1. Obtener información dinámica del operador desde Firestore
   const providerId = String(tourInfo?.providerId || '').trim();
   const providerInfo = await getOperatorById(providerId);
 
-  // 2. Validar pago del lado del servidor de forma estricta (NUNCA adoptar estado del cliente)
   let paymentResult: {
     verified: boolean;
-    status: 'confirmada' | 'pendiente_pago';
+    status: 'paid' | 'pendiente_pago';
     paymentStatus: 'completed' | 'pending';
     meta?: any;
   } = {
@@ -453,7 +463,6 @@ export async function createBooking(data: any) {
       stripeSessionId: data.stripeSessionId
     });
   } else if (data.sinpeReference) {
-    // Si viene referencia SINPE, queda pendiente de verificación manual por operador
     paymentResult = {
       verified: false,
       status: 'pendiente_pago',
@@ -462,7 +471,6 @@ export async function createBooking(data: any) {
     };
   }
 
-  // 3. Generar insights operativos con IA
   const agentInsights = await generateOperationalInsights({
     ...data,
     time: bookingTime,
@@ -484,8 +492,14 @@ export async function createBooking(data: any) {
   };
 
   const db = getFirestoreDb();
+  if (!db && process.env.NODE_ENV === 'production') {
+    return {
+      conflict: true,
+      error: 'availability_unverified',
+      message: 'No puedo verificar ni persistir la disponibilidad en este momento. La solicitud no fue confirmada.'
+    };
+  }
 
-  // Objeto de reserva estandarizado con Timestamp nativo en Firestore
   const newBookingPayload = {
     bookingId,
     tourId,
@@ -495,7 +509,7 @@ export async function createBooking(data: any) {
     time: bookingTime,
     adults: numAdults,
     children: numChildren,
-    pickupHotel: data.pickupHotel || 'Recepción del Hotel',
+    pickupHotel: String(data.pickupHotel || '').trim(),
     specialRequests: data.specialRequests || '',
     totalUSD: calculatedUSD,
     totalCRC: Math.round(calculatedUSD * getUsdToCrcRate()),
@@ -504,6 +518,7 @@ export async function createBooking(data: any) {
     paymentMethod: data.paymentMethod || 'credit_card',
     paymentStatus: paymentResult.paymentStatus,
     status: paymentResult.status,
+    lifecycle: paymentResult.verified ? 'paid' : 'payment_pending',
     sinpeReference: data.sinpeReference || undefined,
     customerName: customerObj.name,
     customerEmail: customerObj.email,
@@ -515,9 +530,6 @@ export async function createBooking(data: any) {
     agentInsights: agentInsights || undefined
   };
 
-  // =========================================================================
-  // TRANSACCIÓN ATÓMICA DE FIRESTORE (Previene Race Conditions y Sobre-Reserva)
-  // =========================================================================
   if (db) {
     try {
       await db.runTransaction(async (transaction) => {
@@ -525,7 +537,6 @@ export async function createBooking(data: any) {
         const bookingRef = db.collection('bookings').doc(bookingId);
         const idempotencyRef = idempotencyKey ? db.collection('idempotency_keys').doc(idempotencyDocId(idempotencyKey)) : null;
 
-        // 1. Idempotencia + lectura transaccional del cupo
         if (idempotencyRef) {
           const idemDoc = await transaction.get(idempotencyRef);
           if (idemDoc.exists) {
@@ -542,7 +553,6 @@ export async function createBooking(data: any) {
           throw new Error(`NO_AVAILABILITY: Solicitados ${totalPassengers} cupos pero solo quedan ${availableLeft} disponibles.`);
         }
 
-        // 2. Escritura atómica del nuevo cupo en availability_slots
         transaction.set(
           slotRef,
           {
@@ -556,7 +566,6 @@ export async function createBooking(data: any) {
           { merge: true }
         );
 
-        // 3. Escritura atómica de la reserva con Timestamp nativo
         transaction.set(bookingRef, {
           ...newBookingPayload,
           createdAt: FieldValue.serverTimestamp(),
@@ -597,7 +606,6 @@ export async function createBooking(data: any) {
       };
     }
   } else {
-    // Modo de reserva en memoria segura (desarrollo/sin Firebase Admin credentials)
     const currentMemoryBooked = inMemorySlots.get(slotKey) || 0;
     if (currentMemoryBooked + totalPassengers > maxCapacity) {
       return {
@@ -610,7 +618,6 @@ export async function createBooking(data: any) {
     inMemorySlots.set(slotKey, currentMemoryBooked + totalPassengers);
   }
 
-  // Guardar copia normalizada en memoria para respuestas JSON del cliente
   const responseBooking = {
     ...newBookingPayload,
     createdAt: new Date().toISOString(),
@@ -618,13 +625,12 @@ export async function createBooking(data: any) {
   };
   inMemoryBookings.set(bookingId, responseBooking);
 
-  // 4. Automatización de antifraude inmediata
   const isSuspicious = (responseBooking.totalUSD > 1500) || (responseBooking.customerEmail && /@(tempmail|mailinator|throwaway)\./i.test(responseBooking.customerEmail));
   const fraudRiskScore = isSuspicious ? 65 : 5;
   console.log(`🛡️ [AUTOMATIZACIÓN NATIVA] Antifraude evaluado: Score ${fraudRiskScore}/100 para ${bookingId}`);
 
-  // 5. Despacho NATIVO MASIVO y AISLADO para cada reserva individual
-  // Encola la tarea en el motor de alto rendimiento para monitoreo de SLA segundo a segundo
+  // La cola masiva conserva observabilidad y backpressure, pero la reserva sólo
+  // puede producir efectos operativos a través del lifecycle canónico.
   massiveEngine.enqueue(
     'INDIVIDUAL_BOOKING_AUTONOMOUS_DISPATCH',
     { booking: responseBooking },
@@ -632,11 +638,6 @@ export async function createBooking(data: any) {
   ).catch((err) => {
     console.error(`❌ [MASSIVE-ENGINE] Fallo en despacho asíncrono para ${bookingId}:`, err);
   });
-
-  // automatización nativa fue reemplazado por completo por backend/nativeWorkflows.ts (7
-  // workflows migrados a código propio, sin dependencias externas de pago).
-  // La automatización y notificaciones se ejecutan directamente en el
-  // motor nativo. Ver docs/estado-real-del-sistema.md para el detalle.
 
   return { conflict: false, booking: responseBooking };
 }
@@ -806,8 +807,6 @@ export async function updateBookingStatus(
   const updatedBooking = { ...existing, ...updates, updatedAt: new Date().toISOString() };
   let availabilityReleasedByTransaction = false;
 
-  // Persistir primero. La liberación de cupos ocurre dentro de la misma transacción
-  // que cambia el estado para que una cancelación duplicada sea inocua.
   if (db && col) {
     try {
       if (isCancelling) {
@@ -897,18 +896,16 @@ export async function getWeeklyConversionMetrics(): Promise<{
   });
 
   const totalBookings = recentBookings.length;
-  const confirmed = recentBookings.filter(
-    (b) => b.status === 'confirmada' || b.paymentStatus === 'completed'
+  const confirmed = recentBookings.filter((b) =>
+    ['confirmada', 'confirmed'].includes(String(b.status || '').toLowerCase())
   );
-  const pending = recentBookings.filter(
-    (b) => b.status === 'pendiente_pago' || b.paymentStatus === 'pending'
+  const pending = recentBookings.filter((b) =>
+    ['pendiente_pago', 'payment_pending', 'pending', 'paid', 'provider_pending'].includes(String(b.status || '').toLowerCase())
   );
   const cancelled = recentBookings.filter(
     (b) => b.status === 'cancelada' || b.status === 'cancelled'
   );
 
-  // Métrica comercial real: contamos conversaciones registradas por el Agent Mesh.
-  // Si Firestore no está disponible, no inventamos inquiries; devolvemos 0.
   let totalInquiries = 0;
   const metricsDb = getFirestoreDb();
   if (metricsDb) {
@@ -950,8 +947,8 @@ export async function getWeeklyConversionMetrics(): Promise<{
     paymentBreakdown[method] = (paymentBreakdown[method] || 0) + 1;
   });
 
-  const averageTicketUSD = confirmed.length > 0 
-    ? Math.round(totalRevenueUSD / confirmed.length) 
+  const averageTicketUSD = confirmed.length > 0
+    ? Math.round(totalRevenueUSD / confirmed.length)
     : 0;
 
   const topTours = Object.entries(tourStats)
@@ -976,73 +973,4 @@ export async function getWeeklyConversionMetrics(): Promise<{
     topTours,
     paymentBreakdown
   };
-}
-
-/**
- * Busca una reserva en tiempo real por código de confirmación, ID o email
- */
-export async function findBookingByCodeOrEmail(identifier: string): Promise<any | null> {
-  const clean = String(identifier || '').trim().toLowerCase();
-  if (!clean) return null;
-  const col = getBookingsCollection();
-  if (!col) {
-    return Array.from(inMemoryBookings.values()).find((b: any) => String(b.bookingId || b.id || '').toLowerCase() === clean || String(b.customer?.email || b.customerEmail || '').toLowerCase() === clean || String(b.flightDetails?.pnrLocator || '').toLowerCase() === clean) || null;
-  }
-  try {
-    const exactId = await col.doc(identifier.trim()).get();
-    if (exactId.exists) return { id: exactId.id, ...exactId.data() };
-    const [byId, byEmail, byNestedEmail, byPnr] = await Promise.all([
-      col.where('bookingId', '==', identifier.trim()).limit(1).get(),
-      col.where('customerEmail', '==', identifier.trim()).limit(5).get(),
-      col.where('customer.email', '==', identifier.trim()).limit(5).get(),
-      col.where('flightDetails.pnrLocator', '==', identifier.trim()).limit(5).get()
-    ]);
-    const docs = [...byId.docs, ...byEmail.docs, ...byNestedEmail.docs, ...byPnr.docs];
-    if (docs.length) {
-      const doc = docs[0];
-      return { id: doc.id, ...doc.data() };
-    }
-    if (/\s/.test(clean)) {
-      const recent = await col.orderBy('createdAt', 'desc').limit(100).get();
-      const found = recent.docs.find((doc) => String(doc.data()?.customer?.name || doc.data()?.customer?.fullName || doc.data()?.customerName || '').toLowerCase().includes(clean));
-      if (found) return { id: found.id, ...found.data() };
-    }
-  } catch (error) {
-    console.warn('Error ejecutando búsqueda indexada de reserva:', error);
-  }
-  return null;
-}
-
-export interface DailyOpsLogItem {
-  id: string;
-  timestamp: string;
-  type: 'emergency' | 'weather_alert' | 'route_incident' | 'provider_issue' | 'operational_note';
-  severity: 'baja' | 'media' | 'alta' | 'emergencia';
-  details: string;
-  actionTaken: string;
-  assignedTo?: string;
-  resolved: boolean;
-}
-
-const dailyOpsLogs: DailyOpsLogItem[] = [];
-
-/**
- * Registra una acción o incidente operativo para el reporte diario de operaciones
- */
-export function recordDailyOpsLog(item: Omit<DailyOpsLogItem, 'id' | 'timestamp'>): DailyOpsLogItem {
-  const logItem: DailyOpsLogItem = {
-    id: `OPS-${crypto.randomUUID()}`,
-    timestamp: new Date().toISOString(),
-    ...item
-  };
-  dailyOpsLogs.unshift(logItem);
-  if (dailyOpsLogs.length > 200) dailyOpsLogs.pop();
-  return logItem;
-}
-
-/**
- * Retorna los logs operativos recientes
- */
-export function getDailyOpsLogs(): DailyOpsLogItem[] {
-  return dailyOpsLogs;
 }
