@@ -264,6 +264,18 @@ const bookingAdmission = createInFlightLimiter(
   5
 );
 
+async function getOptionalAuthenticatedUser(req: express.Request): Promise<any | null> {
+  const authorization = req.headers.authorization;
+  if (!authorization?.startsWith('Bearer ')) return null;
+  try {
+    const adminAny = admin as any;
+    if (!adminAny.apps || adminAny.apps.length === 0) adminAny.initializeApp();
+    return await adminAny.auth().verifyIdToken(authorization.slice(7).trim());
+  } catch {
+    return null;
+  }
+}
+
 app.use('/api/', generalApiLimiter, apiAdmission.middleware);
 
 app.get('/api/admin/access-check', requireOperator, async (req, res) => {
@@ -298,7 +310,8 @@ app.post('/api/customer-intake', chatLimiter, intakeAdmission.middleware, async 
       sessionId: req.body?.sessionId,
       source: req.body?.source || 'web',
       context: req.body?.context,
-      customer: req.body?.customer
+      customer: req.body?.customer,
+      userId: (await getOptionalAuthenticatedUser(req))?.uid
     });
     res.json(result);
   } catch (error: any) {
