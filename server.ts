@@ -130,6 +130,7 @@ import { getExecutiveAIArchitecture } from './backend/executiveAIArchitecture';
 import { processCustomerIntake, enqueueCustomerIntakeJob, processPendingCustomerIntakeJobs } from './backend/customerIntakeGateway';
 import { sendWhatsAppMessage } from './backend/notificationService';
 import { getFirestoreDb } from './backend/bookingService';
+import { syncAccountProfile, getPersonalAIContext } from './backend/accountProfileService';
 import { processEmailOperationsOnce, getEmailOperationsSnapshot } from './backend/emailOperationsAgent';
 import { runReservationLifecycleSweep, advanceReservationLifecycle } from './backend/reservationLifecycleOrchestrator';
 import { withDistributedAutomationLock } from './backend/cronEngine';
@@ -264,6 +265,29 @@ const bookingAdmission = createInFlightLimiter(
 );
 
 app.use('/api/', generalApiLimiter, apiAdmission.middleware);
+
+app.get('/api/admin/access-check', requireOperator, async (req, res) => {
+  const access = adminAccessPayload(req);
+  return res.json({ ok: access.role === 'admin', role: access.role, email: access.email });
+});
+
+app.get('/api/me/ai-profile', requireAuthenticatedUser, async (req, res) => {
+  try {
+    const user = (req as any).user || {};
+    const role = user.role || user.adminRole || (String(user.email || '').toLowerCase() === String(process.env.ADMIN_EMAIL || '').toLowerCase() ? 'admin' : 'customer');
+    const profile = await syncAccountProfile({
+      uid: String(user.uid),
+      email: user.email || null,
+      displayName: user.name || user.displayName || null,
+      photoURL: user.picture || user.photoURL || null,
+      role
+    });
+    const context = await getPersonalAIContext(String(user.uid));
+    return res.json({ success: true, profile, memory: context.memory });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error?.message || 'No se pudo cargar el perfil IA.' });
+  }
+});
 
 // Health check endpoint
 app.post('/api/customer-intake', chatLimiter, intakeAdmission.middleware, async (req, res) => {
