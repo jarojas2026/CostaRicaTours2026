@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { TOURS } from '../src/data/toursData';
 import type { Language } from '../src/types';
+import { withAIResourceTelemetry, extractGeminiUsage } from './aiResourceTelemetryService';
 
 export interface ItineraryParams {
   days: number;
