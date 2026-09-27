@@ -135,6 +135,7 @@ import { processEmailOperationsOnce, getEmailOperationsSnapshot } from './backen
 import { runReservationLifecycleSweep, advanceReservationLifecycle } from './backend/reservationLifecycleOrchestrator';
 import { withDistributedAutomationLock } from './backend/cronEngine';
 import { createInFlightLimiter } from './backend/admissionControl';
+import { getAIResourceTelemetrySnapshot } from './backend/aiResourceTelemetryService';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -620,6 +621,16 @@ app.get('/api/admin/platform-controls', requireAdmin, async (_req, res) => {
 app.patch('/api/admin/platform-controls', requireAdmin, async (req, res) => {
   try { return res.json(await updatePlatformControls(req.body || {}, adminAccessPayload(req).email || 'admin')); }
   catch (error: any) { return res.status(400).json({ error: error?.message || 'No se pudieron guardar los parámetros.' }); }
+});
+
+app.get('/api/admin/ai-resource-telemetry', requireAdmin, async (req, res) => {
+  try {
+    const hours = Math.max(1, Math.min(168, Number(req.query.hours) || 24));
+    const limit = Math.max(1, Math.min(2000, Number(req.query.limit) || 500));
+    return res.json(await getAIResourceTelemetrySnapshot({ hours, limit }));
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error?.message || 'No se pudo cargar la telemetría de recursos IA.' });
+  }
 });
 
 app.get('/api/admin/control-center', requireAdmin, async (_req, res) => {
