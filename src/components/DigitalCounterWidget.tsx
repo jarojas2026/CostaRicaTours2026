@@ -51,7 +51,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
     const key = 'crt-counter-widget-session';
     const existing = localStorage.getItem(key);
     if (existing) return existing;
-    const created = 'counter_' + (globalThis.crypto?.randomUUID?.() || `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
+    const created = 'counter_' + (globalThis.crypto?.randomUUID?.() || `${Date.now()}_${performance.now().toString(36)}`);
     localStorage.setItem(key, created);
     return created;
   });
