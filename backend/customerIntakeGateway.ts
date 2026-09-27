@@ -3,6 +3,7 @@ import { sendEmail, sendWhatsAppMessage } from './notificationService';
 import { rememberTurn } from './memoryService';
 import { getFirestoreDb } from './bookingService';
 import { resolveTravelerIdentity } from './travelerIdentityService';
+import { randomUUID } from 'crypto';
 
 export interface CustomerIntakePayload {
   message?: string;
@@ -67,7 +68,7 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
   const assistant = extractedData.mediaType
     ? { reply: language === 'en' ? 'We received your media message. A human agent has been notified and will review it. You can also send the request as text for immediate AI assistance.' : 'Recibimos tu mensaje multimedia. Un agente humano ha sido notificado y lo revisará. También puedes enviar la solicitud por texto para recibir asistencia inmediata de la IA.', agentId: 'customer_intake_gateway' }
     : await processChatInquiry(message, language, [], 'auto', sessionId, { allowMutations: !escalation.escalated });
-  const intakeId = `INT-${new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+  const intakeId = `INT-${new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}-${randomUUID().slice(0, 8).toUpperCase()}`;
   const reply = clean(assistant?.reply || 'Recibimos tu solicitud y estamos procesándola.', 8000);
 
   // Persistencia omnicanal: web, WhatsApp y voz pueden continuar el mismo contexto.
