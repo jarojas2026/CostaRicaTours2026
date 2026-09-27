@@ -87,7 +87,7 @@ async function classifyMail(subject: string, body: string, from: string): Promis
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.8-flash',
         contents: [
           'Clasifica un correo entrante para una agencia de viajes de Costa Rica.',
           'Devuelve SOLO JSON: {"kind":"customer_request|provider_response|internal|spam|unknown","confidence":0..1,"intent":"...","shouldAct":true|false,"reason":"..."}.',
