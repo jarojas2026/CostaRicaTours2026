@@ -39,6 +39,7 @@ import { requestCustomerIntake } from './utils/customerIntake';
 import { AdminControlCenterPage } from './pages/AdminControlCenterPage';
 import { ProviderPortalPage } from './pages/ProviderPortalPage';
 import { AccountDashboardPage } from './pages/AccountDashboardPage';
+import { LoginPage } from './pages/LoginPage';
 
 // Code-splitting via React.lazy to reduce initial JS bundle size
 const ItineraryPlanner = lazy(() => import('./components/ItineraryPlanner').then(m => ({ default: m.ItineraryPlanner })));
@@ -581,6 +582,7 @@ export default function App() {
               </div>
             } />
 
+            <Route path="/login" element={<LoginPage language={language === 'es' ? 'es' : 'en'} />} />
             <Route path="/account" element={<AccountDashboardPage language={language === 'es' ? 'es' : 'en'} />} />
 
             <Route path="/counter" element={
