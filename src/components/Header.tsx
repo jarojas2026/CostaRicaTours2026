@@ -459,12 +459,14 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Google User Profile / Sign-in */}
             {user ? (
               <div className="flex items-center gap-1.5 shrink-0">
-                <img 
-                  src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}`} 
-                  alt="Avatar" 
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl object-cover border border-orange-400/50" 
-                  title={user.displayName || user.email || ''}
-                />
+                <button onClick={() => navigate('/account')} className="rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400" aria-label={language === 'es' ? 'Abrir mi cuenta' : 'Open my account'}>
+                  <img 
+                    src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}`} 
+                    alt="Avatar" 
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl object-cover border border-orange-400/50" 
+                    title={user.displayName || user.email || ''}
+                  />
+                </button>
                 <button 
                   onClick={signOut} 
                   className="text-emerald-300/80 hover:text-rose-400 transition-colors p-1 cursor-pointer" 
