@@ -269,7 +269,7 @@ Devuelve ÚNICAMENTE un objeto JSON válido (sin explicaciones adicionales antes
 
   return {
     ...parsed,
-    modelUsed: `Claude 3.5 Sonnet (Vertex AI)`
+    modelUsed: `Claude ${modelName} (Vertex AI)`
   };
 }
 
