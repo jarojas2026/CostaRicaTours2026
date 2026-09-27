@@ -145,7 +145,7 @@ export async function organizeCounterDesk() {
     JSON.stringify(snapshot).slice(0, 60000)
   ].join('\n\n');
 
-  const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+  const response = await ai.models.generateContent({ model: 'gemini-3.8-flash', contents: prompt });
   const raw = response.text || '{}';
   let parsed: any;
   try {
@@ -158,7 +158,7 @@ export async function organizeCounterDesk() {
     success: true,
     generatedAt: new Date().toISOString(),
     mode: 'ai_supervisor',
-    ai: { enabled: true, model: 'gemini-2.5-flash' },
+    ai: { enabled: true, model: 'gemini-3.8-flash' },
     ...parsed,
     snapshot
   };
