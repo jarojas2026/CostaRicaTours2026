@@ -34,7 +34,7 @@ jobs:
     # el propio paso de autenticación mostrará el error correspondiente.
     steps:
       - name: Descargar el código del repositorio
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Autenticar con Google Cloud
         uses: google-github-actions/auth@v2
@@ -71,7 +71,7 @@ jobs:
             --project "$PROJECT_ID" \
             --allow-unauthenticated \
             --min-instances=0 \
-            --max-instances=4 \
+            --max-instances=20 \
             --quiet
 
       - name: Verificar revisión y endpoint de salud
