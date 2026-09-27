@@ -105,7 +105,7 @@ export async function generateClaudeChatResponse(
   const client = getClaudeClient();
   const languageLabels: Record<Language, string> = { es: 'español', en: 'inglés', de: 'alemán', fr: 'francés', zh: 'chino', ja: 'japonés' };
   const isEn = language === 'en';
-  const modelName = process.env.ANTHROPIC_VERTEX_MODEL || 'claude-3-5-sonnet-v2@20241022';
+  const modelName = process.env.ANTHROPIC_VERTEX_MODEL || 'claude-opus-5-5';
 
   if (!client) {
     throw new Error('Claude Vertex AI client not initialized');
