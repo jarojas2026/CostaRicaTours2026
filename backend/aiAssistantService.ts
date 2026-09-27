@@ -390,8 +390,8 @@ Reply ONLY with "YES" or "NO".`;
 
     // Bucle agentic: intención -> herramienta -> observación -> nuevo razonamiento.
     // El límite es gobernable desde el Centro de Control, con 3 como valor seguro por defecto.
-    const platformControls = await getPlatformControls().catch(() => ({ values: { max_agent_tool_rounds: 3 } } as any));
-    const maxToolRounds = Math.max(1, Math.min(10, Number(platformControls.values.max_agent_tool_rounds) || 3));
+    const platformControls = await getPlatformControls().catch(() => ({ maxAgentToolRounds: 3 } as any));
+    const maxToolRounds = Math.max(1, Math.min(12, Number(platformControls.maxAgentToolRounds) || 3));
     while (toolRounds < maxToolRounds) {
       const response = await ai.models.generateContent({
         model: 'gemini-3.8-flash',
