@@ -65,7 +65,6 @@ jobs:
             --source . \
             --region "$REGION" \
             --project "$PROJECT_ID" \
-            --allow-unauthenticated \
             --min-instances=0 \
             --max-instances=20 \
             --quiet
@@ -75,6 +74,9 @@ jobs:
           SERVICE_URL="$(gcloud run services describe "${{ env.SERVICE_NAME }}" --region "${{ env.REGION }}" --format='value(status.url)')"
           echo "Servicio desplegado: $SERVICE_URL"
           echo "Revisión activa: $(gcloud run services describe "${{ env.SERVICE_NAME }}" --region "${{ env.REGION }}" --format='value(status.latestReadyRevisionName)')"
-          curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors "$SERVICE_URL/api/health"
+          ID_TOKEN="$(gcloud auth print-identity-token)"
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors \
+            -H "Authorization: Bearer $ID_TOKEN" \
+            "$SERVICE_URL/api/health"
           echo
-          echo "✅ Cloud Run respondió correctamente al health check."
+          echo "✅ Cloud Run respondió correctamente al health check autenticado."
