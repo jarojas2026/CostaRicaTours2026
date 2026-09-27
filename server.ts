@@ -581,7 +581,7 @@ app.get('/api/admin/platform-controls', requireAdmin, async (_req, res) => {
 });
 
 app.patch('/api/admin/platform-controls', requireAdmin, async (req, res) => {
-  try { return res.json(await updatePlatformControls(req.body || {})); }
+  try { return res.json(await updatePlatformControls(req.body || {}, adminAccessPayload(req).email || 'admin')); }
   catch (error: any) { return res.status(400).json({ error: error?.message || 'No se pudieron guardar los parámetros.' }); }
 });
 
