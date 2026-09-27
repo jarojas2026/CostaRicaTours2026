@@ -57,7 +57,7 @@ export async function proposeSkillUpgrade(input: { id: string; version: string; 
   if (!process.env.GEMINI_API_KEY) return { success: false, reason: 'GEMINI_API_KEY no configurada', proposal: null };
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   const prompt = ['Actúa como arquitecto de skills para un sistema de agentes turísticos.', 'Propón una evolución segura de una skill existente.', 'No generes código. No cambies políticas de seguridad. No inventes herramientas.', 'Devuelve JSON con: version, mission, prerequisites, tools, guardrails, rationale.', 'La nueva versión debe ser semver válida y mantener compatibilidad conceptual.', JSON.stringify({ current, observedFailure: input.observedFailure || '', desiredOutcome: input.desiredOutcome || '' })].join('\\n');
-  const response = await ai.models.generateContent({ model: process.env.SKILL_EVOLUTION_MODEL || 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: 'application/json', temperature: 0.1 } });
+  const response = await ai.models.generateContent({ model: process.env.SKILL_EVOLUTION_MODEL || 'gemini-3.8-flash', contents: prompt, config: { responseMimeType: 'application/json', temperature: 0.1 } });
   const raw = response.text || '{}';
   let proposal: any;
   try { proposal = JSON.parse(raw); } catch { return { success: false, reason: 'Respuesta del modelo no fue JSON válido', proposal: null }; }
