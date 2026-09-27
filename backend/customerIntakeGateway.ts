@@ -11,6 +11,7 @@ export interface CustomerIntakePayload {
   source?: string;
   context?: Record<string, any>;
   customer?: { name?: string; email?: string; phone?: string };
+  userId?: string;
 }
 
 function clean(value: unknown, max = 4000): string {
@@ -70,7 +71,20 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
   const reply = clean(assistant?.reply || 'Recibimos tu solicitud y estamos procesándola.', 8000);
 
   // Persistencia omnicanal: web, WhatsApp y voz pueden continuar el mismo contexto.
+  // Las cuentas autenticadas reciben además una memoria personal estable separada del canal.
   try {
+    if (payload.userId) {
+      await rememberTurn(`account_${String(payload.userId).slice(0, 140)}`, { role: 'user', text: message, agentId: 'customer_intake_gateway' }, {
+        agentId: 'customer_intake_gateway',
+        activeGoal: intent,
+        ownerUserId: payload.userId
+      });
+      await rememberTurn(`account_${String(payload.userId).slice(0, 140)}`, { role: 'assistant', text: reply, agentId: assistant?.agentId || 'concierge' }, {
+        agentId: assistant?.agentId || 'concierge',
+        decision: escalation.escalated ? `Escalación humana: ${escalation.reason}` : 'Solicitud procesada por IA',
+        ownerUserId: payload.userId
+      });
+    }
     await rememberTurn(sessionId, { role: 'user', text: message, agentId: 'customer_intake_gateway' }, {
       agentId: 'customer_intake_gateway',
       activeGoal: intent
