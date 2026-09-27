@@ -6,6 +6,7 @@
 import { AnthropicVertex } from '@anthropic-ai/vertex-sdk';
 import { TOURS } from '../src/data/toursData';
 import type { Language } from '../src/types';
+import { withAIResourceTelemetry, extractClaudeUsage } from './aiResourceTelemetryService';
 
 let claudeClient: AnthropicVertex | null = null;
 let clientInitializationError: string | null = null;
@@ -132,13 +133,20 @@ export async function generateClaudeChatResponse(
     formattedMessages[formattedMessages.length - 1].content += `\n\n${message}`;
   }
 
-  const response = await client.messages.create({
+  const response = await withAIResourceTelemetry({
+    operation: 'claude.chat',
+    provider: 'anthropic',
+    model: modelName,
+    region: process.env.ANTHROPIC_VERTEX_REGION || process.env.CLOUD_ML_REGION || 'us-east5',
+    inputText: message,
+    extractUsage: extractClaudeUsage
+  }, () => client.messages.create({
     model: modelName,
     max_tokens: options?.maxTokens || 1500,
     temperature: options?.temperature ?? 0.7,
     system: CLAUDE_SYSTEM_PROMPT,
     messages: formattedMessages
-  });
+  }));
 
   // Extraer texto devuelto por Claude
   let textOutput = '';
@@ -200,7 +208,7 @@ export async function generateClaudeItinerary(params: {
   modelUsed: string;
 }> {
   const client = getClaudeClient();
-  const modelName = process.env.ANTHROPIC_VERTEX_MODEL || 'claude-3-5-sonnet-v2@20241022';
+  const modelName = process.env.ANTHROPIC_VERTEX_MODEL || 'claude-opus-5-5';
 
   if (!client) {
     throw new Error('Claude Vertex AI client not available for itinerary planning');
@@ -233,13 +241,20 @@ Devuelve ÚNICAMENTE un objeto JSON válido (sin explicaciones adicionales antes
   ]
 }`;
 
-  const response = await client.messages.create({
+  const response = await withAIResourceTelemetry({
+    operation: 'claude.itinerary',
+    provider: 'anthropic',
+    model: modelName,
+    region: process.env.ANTHROPIC_VERTEX_REGION || process.env.CLOUD_ML_REGION || 'us-east5',
+    inputText: prompt,
+    extractUsage: extractClaudeUsage
+  }, () => client.messages.create({
     model: modelName,
     max_tokens: 3000,
     temperature: 0.4,
     system: 'Eres un generador especializado de itinerarios turísticos de Costa Rica. Responde estrictamente en formato JSON válido.',
     messages: [{ role: 'user', content: prompt }]
-  });
+  }));
 
   let rawJson = '';
   for (const block of response.content) {
@@ -270,7 +285,7 @@ export async function analyzeOperationalRiskWithClaude(booking: any): Promise<{
   logisticsInstructions: string[];
 }> {
   const client = getClaudeClient();
-  const modelName = process.env.ANTHROPIC_VERTEX_MODEL || 'claude-3-5-sonnet-v2@20241022';
+  const modelName = process.env.ANTHROPIC_VERTEX_MODEL || 'claude-opus-5-5';
 
   if (!client) {
     const total = Number(booking.totalUSD || 0);
@@ -306,13 +321,20 @@ Devuelve ÚNICAMENTE un JSON con:
 }`;
 
   try {
-    const response = await client.messages.create({
+    const response = await withAIResourceTelemetry({
+      operation: 'claude.operational-risk',
+      provider: 'anthropic',
+      model: modelName,
+      region: process.env.ANTHROPIC_VERTEX_REGION || process.env.CLOUD_ML_REGION || 'us-east5',
+      inputText: prompt,
+      extractUsage: extractClaudeUsage
+    }, () => client.messages.create({
       model: modelName,
       max_tokens: 1000,
       temperature: 0.2,
       system: 'Eres el auditor senior de seguridad y operaciones de Costa Rica Tours. Responde solo en JSON válido.',
       messages: [{ role: 'user', content: prompt }]
-    });
+    }));
 
     let rawJson = '';
     for (const block of response.content) {
