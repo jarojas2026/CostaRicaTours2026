@@ -21,6 +21,7 @@ import {
 } from './bookingService';
 import { GEMINI_FUNCTION_DECLARATIONS, executeAgentTool } from './agentTools';
 import { getPlatformControls } from './platformControlService';
+import { withAIResourceTelemetry, extractGeminiUsage } from './aiResourceTelemetryService';
 
 let aiClient: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI | null {
@@ -362,11 +363,18 @@ export async function processChatInquiry(
       const classifierPrompt = `Does the following user query require up-to-date, real-time information from the internet (e.g. current weather, today's events, road closures, current exchange rates)? 
 User query: "${message}"
 Reply ONLY with "YES" or "NO".`;
-      const classRes = await ai.models.generateContent({
+      const classRes = await withAIResourceTelemetry({
+        operation: 'gemini.query-classifier',
+        provider: 'google',
+        model: 'gemini-3.8-flash',
+        region: process.env.VERTEX_AI_REGION || process.env.CLOUD_ML_REGION || undefined,
+        inputText: classifierPrompt,
+        extractUsage: extractGeminiUsage
+      }, () => ai.models.generateContent({
         model: 'gemini-3.8-flash',
         contents: classifierPrompt,
         config: { temperature: 0 }
-      });
+      }));
       needsGrounding = classRes.text?.trim().toUpperCase().includes('YES') || false;
     } catch(e) {
       console.warn('Classifier error:', e);
@@ -393,11 +401,20 @@ Reply ONLY with "YES" or "NO".`;
     const platformControls = await getPlatformControls().catch(() => ({ maxAgentToolRounds: 3 } as any));
     const maxToolRounds = Math.max(1, Math.min(12, Number(platformControls.maxAgentToolRounds) || 3));
     while (toolRounds < maxToolRounds) {
-      const response = await ai.models.generateContent({
+      const response = await withAIResourceTelemetry({
+        operation: 'gemini.agent-turn',
+        agentId: requestedAgentId,
+        provider: 'google',
+        model: 'gemini-3.8-flash',
+        region: process.env.VERTEX_AI_REGION || process.env.CLOUD_ML_REGION || undefined,
+        sessionId,
+        inputText: message,
+        extractUsage: extractGeminiUsage
+      }, () => ai.models.generateContent({
         model: 'gemini-3.8-flash',
         contents: currentContents,
         config
-      });
+      }));
 
       const calls = response.functionCalls || [];
       if (!calls.length) {
