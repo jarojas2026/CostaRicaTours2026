@@ -78,7 +78,7 @@ La tendencia general parece estar ${trendDirection}.
 Sugiere brevemente una acción de negocio (ej. "subir precio 10%", "promocionar más", "sin cambios"). Responde de forma concisa.`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.8-flash',
         contents: prompt
       });
 
