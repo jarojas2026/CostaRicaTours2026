@@ -1264,10 +1264,9 @@ export async function runCustomerServiceAgent(
     : `• **Código de Reserva**: \`${bookingCode}\`\n• **Excursión**: ${tourTitle}\n• **Fecha**: ${bookingDate}\n• **Estado actual**: **${currentStatus.toUpperCase()}** (Pago: ${paymentStatus})\n• **Viajeros**: ${paxCount} personas`;
 
   const cancellationPolicyText = isEn
-    ? `📜 **Official Operator Cancellation & Refund Policy**:\n` +
-      `• **72+ hours prior**: 100% full refund guarantee.\n` +
-      `• **48 to 72 hours prior**: 50% refund.\n` +
-      `• **Under 48 hours or No-Show**: Non-refundable; date changes subject to provider seat availability.\n` +
+    ? `📜 **Cancellation & Refund Policy**:\n` +
+      `• The applicable policy is determined by the selected experience and verified provider terms.\n` +
+      `• I will not promise a refund or fee without verifying those terms.\n` +
       `*(Note: As an automated agent, I do not process refunds directly. I initiate the official ticket for administrative validation).*`
     : `📜 **Política Oficial de Cancelación y Reembolsos del Operador**:\n` +
       `• **Más de 72 horas antes**: 100% de reembolso garantizado.\n` +
