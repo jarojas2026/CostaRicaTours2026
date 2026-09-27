@@ -20,7 +20,12 @@ export function getClaudeClient(): AnthropicVertex | null {
       process.env.ANTHROPIC_VERTEX_PROJECT_ID ||
       process.env.GCP_PROJECT ||
       process.env.GOOGLE_CLOUD_PROJECT ||
-      'gen-lang-client-0782739149';
+      '';
+
+    if (!projectId) {
+      clientInitializationError = 'ANTHROPIC_VERTEX_PROJECT_ID no está configurado.';
+      return null;
+    }
 
     const region =
       process.env.ANTHROPIC_VERTEX_REGION ||
@@ -49,7 +54,7 @@ export function getClaudeStatus(): { available: boolean; model: string; region: 
   const projectId =
     process.env.ANTHROPIC_VERTEX_PROJECT_ID ||
     process.env.GCP_PROJECT ||
-    'gen-lang-client-0782739149';
+    'not_configured';
   const region =
     process.env.ANTHROPIC_VERTEX_REGION ||
     process.env.CLOUD_ML_REGION ||
