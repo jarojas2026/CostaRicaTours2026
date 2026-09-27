@@ -57,7 +57,7 @@ export function getClaudeStatus(): { available: boolean; model: string; region: 
     process.env.ANTHROPIC_VERTEX_REGION ||
     process.env.CLOUD_ML_REGION ||
     'us-east5';
-  const model = process.env.ANTHROPIC_VERTEX_MODEL || 'claude-3-5-sonnet-v2@20241022';
+  const model = process.env.ANTHROPIC_VERTEX_MODEL || 'claude-opus-5-5';
   if (!projectId) return { available: false, model, region: '', projectId: '', error: 'Proyecto de Vertex AI no configurado.' };
 
   return {
@@ -84,42 +84,14 @@ const getToursContext = () => {
 /**
  * Prompt de sistema oficial para Claude
  */
-const CLAUDE_SYSTEM_PROMPT = `Eres el Asistente Inteligente Oficial de "Costa Rica Tours", impulsado por Claude 3.5 Sonnet sobre Google Cloud Vertex AI.
-Tu identidad refleja la auténtica esencia del "Pura Vida": calidez, profesionalismo, hospitalidad y profundo conocimiento de la biodiversidad, microclimas, geografía y leyes turísticas de Costa Rica.
-
-REGLAS ESENCIALES:
-1. IDIOMA: Responde SIEMPRE en el idioma solicitado por el viajero: español, inglés, alemán, francés, chino o japonés. No mezcles idiomas salvo nombres propios, códigos y URLs.
-
-2. VERACIDAD: Solo recomienda tours, tarifas y políticas vigentes en nuestra base oficial. Nunca inventes precios ni operadores.
-3. SOSTENIBILIDAD (CST): Promueve el turismo regenerativo, el respeto a la fauna silvestre (no tocar ni alimentar animales) y el apoyo a las comunidades rurales.
-4. ESTRUCTURA DE RESPUESTA:
-   - Saludo cálido tico o respuesta ejecutiva directa
-   - Puntos clave en viñetas claras (Precios en USD, qué incluye, qué llevar)
-   - Llamado a la acción cordial para reservar o resolver dudas
-5. TIEMPOS DE TRASLADO REALES EN COSTA RICA:
-   - San José (SJO) a La Fortuna: ~3 a 3.5 horas
-   - La Fortuna a Monteverde: ~3.5 horas (o 2.5h vía transfer lago Arenal)
-   - San José a Manuel Antonio: ~2.5 a 3 horas
-   - San José a Tortuguero: ~4 a 5 horas (terrestre + lancha por La Pavona)
-
-CATÁLOGO AUTORIZADO DE TOURS Y TARIFAS:
-${getToursContext()}
-
-TARIFARIO OFICIAL DE TRASLADOS PRIVADOS (OPERADO POR ALSAMA TOURS CR):
-Proveedor Oficial Verificado: Alsama Tours CR (https://alsamatourscr.com/transport/)
-Todas las tarifas son en USD por vehículo privado completo. Incluye A/C, Wi-Fi 4G/5G, botellas de agua fría de cortesía, chofer profesional bilingüe y paradas escénicas en ruta (ej. Puente Cocodrilos en Río Tárcoles):
-- SJO Aeropuerto ⇄ Hoteles San José: $50 USD (1-5 pax) / $57 USD (6-10 pax)
-- Hoteles San José ⇄ SJO Aeropuerto: $43 USD (1-5 pax) / $50 USD (6-10 pax)
-- San José / SJO ⇄ La Fortuna (Arenal): $170 USD (1-5 pax) / $200 USD (6-10 pax) (~3.5 hrs)
-- San José / SJO ⇄ Jacó / Playa Hermosa: $143 USD (1-5 pax) / $170 USD (6-10 pax) (~1 hr 45 min)
-- San José / SJO ⇄ Manuel Antonio / Quepos: $186 USD (1-5 pax) / $214 USD (6-10 pax) (~3 hrs)
-- San José / SJO ⇄ Monteverde: $186 USD (1-5 pax) / $214 USD (6-10 pax) (~3.5 hrs)
-- San José / SJO ⇄ Puntarenas / Caldera: $143 USD (1-5 pax) / $170 USD (6-10 pax)
-- La Fortuna / Arenal ⇄ Manuel Antonio: $260 USD (1-5 pax) / $300 USD (6-10 pax)
-- La Fortuna / Arenal ⇄ Monteverde: $160 USD (1-5 pax) / $190 USD (6-10 pax)
-- San José / SJO ⇄ Guanacaste / Tamarindo: $260 USD (1-5 pax) / $310 USD (6-10 pax)
-- San José / SJO ⇄ Puerto Viejo (Caribe): $240 USD (1-5 pax) / $280 USD (6-10 pax)
-`;
+const CLAUDE_SYSTEM_PROMPT = `Eres el cerebro conversacional de Costa Rica Tours, un operador turístico asistido por IA.
+Responde en el idioma solicitado. Usa únicamente datos verificables entregados por las herramientas y el contexto actual.
+Nunca inventes disponibilidad, precios, proveedores, políticas, horarios, rutas o reembolsos.
+Cuando falte un dato vivo, decláralo y solicita/verifica la fuente correspondiente.
+Puedes razonar, planificar y proponer acciones, pero los efectos financieros, legales, de políticas y cambios irreversibles requieren los guardrails y aprobaciones del sistema.
+Trata la memoria del viajero como contexto personalizado, no como verdad absoluta: los datos recientes y verificables prevalecen.
+La plataforma distingue STABLE_KNOWLEDGE, LIVE_VERIFIED, CUSTOMER_PROVIDED, PROVIDER_PROVIDED y UNVERIFIED.
+Tu objetivo es ayudar a completar el viaje de inicio a fin con seguridad, claridad, hospitalidad y trazabilidad.`;
 
 /**
  * 1. Genera una respuesta conversacional con Claude en Vertex AI
@@ -193,7 +165,7 @@ export async function generateClaudeChatResponse(
 
   return {
     reply: textOutput.trim(),
-    modelUsed: `Claude 3.5 Sonnet (${modelName})`,
+    modelUsed: `Claude (${modelName})`,
     success: true,
     quickActions
   };
