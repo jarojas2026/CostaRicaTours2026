@@ -343,7 +343,7 @@ export async function executeConfirmacionReserva(body: any) {
     paymentStatus: 'completed'
   });
 
-  const qrValidationCode = `CRT-QR-${reservationId}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  const qrValidationCode = `CRT-QR-${reservationId}-${crypto.randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`;
   const voucherUrl = `https://costaricatours.cr/vouchers/${reservationId}.pdf`;
 
   const whatsAppPreview = `¡Pura Vida ${clientData.name || 'Viajero'}! 🇨🇷🌿\nTu reserva para *${tour}* el *${tourDate}* a las *${tourTime}* está *100% CONFIRMADA*.\n\n📍 *Punto de recogida:* ${hotel}\n📄 *Voucher Oficial:* ${voucherUrl}\n🔐 *Código QR:* \`${qrValidationCode}\`\n\n¿Deseas alguna recomendación sobre qué llevar? ¡Estamos a tu servicio!`;
@@ -1253,8 +1253,8 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
       acuseHaciendaHash: `SHA256-${Math.random().toString(36).substring(2, 14)}`
     },
     liquidacionBancariaOperador: {
-      proveedorId: venta.proveedorId || 'alsama-tours-cr',
-      nombreProveedor: 'Alsama Tours CR (Transporte & Tours)',
+      proveedorId: venta.proveedorId || null,
+      nombreProveedor: venta.proveedorId ? 'Proveedor asignado' : 'Proveedor pendiente de asignación',
       montoBrutoUSD: totalUSD,
       comisionPlataforma15USD: comisionPlataformaUSD,
       montoNetoLiquidadoUSD: liquidacionOperadorUSD,
