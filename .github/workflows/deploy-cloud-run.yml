@@ -30,7 +30,7 @@ jobs:
     # el propio paso de autenticación mostrará el error correspondiente.
     steps:
       - name: Descargar el código del repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Autenticar con Google Cloud
         uses: google-github-actions/auth@v2
