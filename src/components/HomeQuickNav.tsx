@@ -314,7 +314,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
             </div>
             <div>
               <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Cancelación Flexible' : 'Flexible Refund'}</h4>
-              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Reembolso 100% hasta 48h antes' : '100% refund up to 48 hours prior'}</p>
+              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Condiciones de cancelación según la experiencia' : 'Cancellation terms depend on the experience'}</p>
             </div>
           </div>
 
