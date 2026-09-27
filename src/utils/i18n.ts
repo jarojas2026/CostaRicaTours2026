@@ -330,7 +330,7 @@ export const UI_TRANSLATIONS: Record<string, Record<Language, string>> = {
 
 export let EXCHANGE_RATES: Record<string, number> = {
   USD: 1,
-  CRC: 510,
+  CRC: 0,
   EUR: 0.92,
   GBP: 0.78,
   CAD: 1.36,

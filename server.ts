@@ -2063,7 +2063,7 @@ app.get(['/api/provider/status/:bookingId', '/api/operators/status/:bookingId'],
       success: true,
       bookingId,
       status: found.status,
-      providerId: found.providerId || 'alsama-tours-cr',
+      providerId: found.providerId || null,
       providerName: found.providerName || found.providerInfo?.name || 'Alsama Tours CR',
       providerStatus: found.providerStatus || 'pending',
       assignedGuide: found.assignedGuide || 'Por asignar',
@@ -2608,7 +2608,7 @@ app.post('/api/itinerary/book', async (req, res) => {
     }
 
     const bookingDate = startDate || new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0];
-    const generatedId = `CR-ITIN-${Math.floor(100000 + Math.random() * 900000)}`;
+    const generatedId = `CR-ITIN-${crypto.randomUUID()}`;
     const normalizedDays = Math.max(1, Math.min(30, Number(daysCount) || 5));
     const normalizedTravelers = Math.max(1, Math.min(30, Number(travelers) || 2));
     // Precio base autoritativo para itinerarios personalizados. El total generado por IA

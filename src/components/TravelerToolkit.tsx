@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Sun, CloudRain, Calendar, DollarSign, Calculator, ShieldCheck, 
   MapPin, PhoneCall, Info, Sparkles, Check, ChevronRight, Compass,
@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Language, Currency } from '../types';
 import { formatCurrency } from '../utils/i18n';
+import { fetchLiveExchangeRate } from '../utils/currencies';
 
 interface TravelerToolkitProps {
   language: Language;
@@ -132,8 +133,9 @@ export const TravelerToolkit: React.FC<TravelerToolkitProps> = ({
     }));
   };
 
-  const exchangeRate = 510; // 1 USD = 510 CRC
-  const calcCrc = calcUsd * exchangeRate;
+  const [exchangeRate, setExchangeRate] = useState(0);
+  useEffect(() => { fetchLiveExchangeRate().then(setExchangeRate); }, []);
+  const calcCrc = exchangeRate > 0 ? calcUsd * exchangeRate : 0;
   const isEs = language === 'es';
 
   return (
