@@ -3,6 +3,10 @@
   "buildCommand": "npm run build",
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://costa-rica-tours-vk3vz5haqq-uc.a.run.app/api/:path*"
+    },
+    {
       "source": "/ai",
       "destination": "/index.html"
     },
