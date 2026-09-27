@@ -914,7 +914,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                           {language === 'es' ? 'Cancelación Gratis' : 'Free Cancellation'}
                         </div>
                         <div className="text-[10px] text-emerald-300/70">
-                          {language === 'es' ? '100% reembolso hasta 72h antes' : '100% refund up to 72h before'}
+                          {language === 'es' ? 'Consulta las condiciones de cancelación' : 'View cancellation terms'}
                         </div>
                       </div>
                     </div>
