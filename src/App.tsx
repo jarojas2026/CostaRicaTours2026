@@ -38,6 +38,7 @@ import { AdminRouteGuard } from './components/AdminRouteGuard';
 import { requestCustomerIntake } from './utils/customerIntake';
 import { AdminControlCenterPage } from './pages/AdminControlCenterPage';
 import { ProviderPortalPage } from './pages/ProviderPortalPage';
+import { AccountDashboardPage } from './pages/AccountDashboardPage';
 
 // Code-splitting via React.lazy to reduce initial JS bundle size
 const ItineraryPlanner = lazy(() => import('./components/ItineraryPlanner').then(m => ({ default: m.ItineraryPlanner })));
@@ -579,6 +580,8 @@ export default function App() {
                 />
               </div>
             } />
+
+            <Route path="/account" element={<AccountDashboardPage language={language === 'es' ? 'es' : 'en'} />} />
 
             <Route path="/counter" element={
               <Suspense fallback={<div className="py-24 text-center text-emerald-400">Cargando Mostrador Digital...</div>}>
