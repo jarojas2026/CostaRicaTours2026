@@ -21,6 +21,10 @@ permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: production-cloud-run-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
     name: Build y despliegue a Cloud Run
@@ -42,11 +46,23 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
 
+      - name: Preflight — verificar tipos y compilación antes de desplegar
+        run: |
+          npm ci --include=optional
+          npm run lint
+          npm run build
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+          GEMINI_API_KEY: "ci-dummy-key"
+          STRIPE_SECRET_KEY: "sk_test_dummy"
+          VITE_STRIPE_PUBLIC_KEY: "pk_test_dummy"
+          VITE_GOOGLE_MAPS_API_KEY: "dummy-key"
+
       - name: Desplegar directamente desde el código en Cloud Run
         run: |
           # Asegurar que los servicios requeridos de Google Cloud estén activos
           echo "Habilitando APIs requeridas en Google Cloud..."
-          gcloud services enable cloudbuild.googleapis.com run.googleapis.com artifactregistry.googleapis.com --project "$PROJECT_ID" --quiet || true
+          gcloud services enable cloudbuild.googleapis.com run.googleapis.com artifactregistry.googleapis.com --project "$PROJECT_ID" --quiet
 
           echo "Iniciando despliegue en Google Cloud Run..."
           gcloud run deploy "$SERVICE_NAME" \
@@ -58,6 +74,11 @@ jobs:
             --max-instances=4 \
             --quiet
 
-      - name: Mostrar la URL del servicio desplegado
+      - name: Verificar revisión y endpoint de salud
         run: |
-          echo "✅ Desplegado en: $(gcloud run services describe ${{ env.SERVICE_NAME }} --region ${{ env.REGION }} --format='value(status.url)')"
+          SERVICE_URL="$(gcloud run services describe "${{ env.SERVICE_NAME }}" --region "${{ env.REGION }}" --format='value(status.url)')"
+          echo "Servicio desplegado: $SERVICE_URL"
+          echo "Revisión activa: $(gcloud run services describe "${{ env.SERVICE_NAME }}" --region "${{ env.REGION }}" --format='value(status.latestReadyRevisionName)')"
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors "$SERVICE_URL/api/health"
+          echo
+          echo "✅ Cloud Run respondió correctamente al health check."
