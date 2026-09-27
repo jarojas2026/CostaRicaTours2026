@@ -12,6 +12,8 @@ import { getLangText, formatCurrency } from '../utils/i18n';
 import { OPERATORS } from '../data/toursData';
 import { useTours } from '../contexts/ToursContext';
 import { getUsdToCrcRate } from '../utils/currencies';
+import { LazyImage } from '../components/LazyImage';
+import { useTourMedia } from '../hooks/useTourMedia';
 
 interface TourDetailPageProps {
   language: Language;
@@ -39,6 +41,7 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
   const [sinpeRef, setSinpeRef] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const { assets: mediaAssets, loading: mediaLoading, error: mediaError } = useTourMedia(tour?.id, tour ? { image: tour.image, gallery: tour.gallery, title: getLangText(tour.title, language) } : undefined);
 
   useEffect(() => {
     if (TOURS.length > 0) {
@@ -134,7 +137,7 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
   };
 
   const operator = tour.operatorId ? OPERATORS.find(op => op.id === tour.operatorId) : null;
-  const gallery = Array.isArray(tour.gallery) && tour.gallery.length > 0 ? tour.gallery : [tour.image];
+  const gallery = mediaAssets.length > 0 ? mediaAssets.map(asset => asset.url) : (Array.isArray(tour.gallery) && tour.gallery.length > 0 ? tour.gallery : [tour.image]);
 
   return (
     <div className="bg-stone-950 pt-20">
@@ -161,11 +164,14 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
           <div className="lg:col-span-2 space-y-12">
             {/* Gallery Section */}
             <div className="relative aspect-[16/9] rounded-[2.5rem] overflow-hidden group">
-              <img 
-                src={gallery[activeImageIndex]} 
-                alt={getLangText(tour.title, language)}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              <LazyImage
+                src={gallery[Math.min(activeImageIndex, gallery.length - 1)]}
+                alt={mediaAssets[Math.min(activeImageIndex, mediaAssets.length - 1)]?.alt || getLangText(tour.title, language)}
+                className="transition-transform duration-700 group-hover:scale-105"
+                fetchPriority="high"
               />
+              {mediaLoading && <div className="absolute top-4 left-4 px-3 py-2 rounded-full bg-stone-950/75 text-[10px] font-black uppercase tracking-widest text-stone-200 backdrop-blur-sm">{language === 'es' ? 'Cargando imágenes' : 'Loading images'}</div>}
+              {mediaError && <div className="absolute top-4 left-4 px-3 py-2 rounded-full bg-amber-950/75 text-[10px] font-bold text-amber-200 backdrop-blur-sm">{language === 'es' ? 'Galería local disponible' : 'Local gallery available'}</div>}
               <div className="absolute inset-0 bg-gradient-to-t from-stone-950/60 via-transparent to-transparent" />
               
               {/* Thumbnails */}
@@ -178,7 +184,7 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                       activeImageIndex === idx ? 'border-emerald-500 scale-110 shadow-lg shadow-emerald-500/20' : 'border-white/20'
                     }`}
                   >
-                    <img src={img} className="w-full h-full object-cover" alt="" />
+                    <LazyImage src={img} className="w-full h-full object-cover" alt={mediaAssets[idx]?.alt || getLangText(tour.title, language)} />
                   </button>
                 ))}
               </div>
