@@ -73,15 +73,17 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: q, language }),
       });
+      if (!res.ok) throw new Error('Live search unavailable');
       const data = await res.json();
+      if (typeof data.answer !== 'string' || !data.answer.trim()) throw new Error('Empty live search response');
       setResultAnswer(data.answer || (language === 'es' ? 'No se obtuvo respuesta para esta consulta.' : 'No response obtained.'));
-      setResultSources(data.sources || []);
+      setResultSources(Array.isArray(data.sources) ? data.sources.filter((source: GroundedSource) => typeof source?.uri === 'string' && /^https?:\/\//i.test(source.uri)) : []);
     } catch (e) {
       console.error('Error fetching grounded search:', e);
       setResultAnswer(
         language === 'es'
-          ? 'Hubo una interrupción de conexión con la búsqueda en tiempo real. Los Parques Nacionales de Costa Rica operan normalmente con reserva previa en servirr.sinac.go.cr.'
-          : 'Connection error retrieving live data. Costa Rica National Parks operate normally via online booking at servirr.sinac.go.cr.'
+          ? 'No pudimos verificar información en tiempo real. Intenta de nuevo o consulta directamente la fuente oficial antes de planificar tu visita.'
+          : 'We could not verify live information. Try again or check the official source directly before planning your visit.'
       );
     } finally {
       setIsLoading(false);
@@ -110,14 +112,14 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
 
         <span className="text-[11px] bg-emerald-950 text-emerald-300 px-3.5 py-1.5 rounded-full border border-emerald-500/40 font-bold self-start sm:self-auto flex items-center gap-1.5 shadow-sm">
           <Zap className="w-3.5 h-3.5 text-amber-400" />
-          {language === 'es' ? 'Datos Oficiales en Vivo' : 'Official Live Data'}
+          {language === 'es' ? 'Consulta de información actual' : 'Current information search'}
         </span>
       </div>
 
       {/* Quick Topic Chips */}
       <div className="space-y-2">
         <span className="text-[11px] font-black text-emerald-300 uppercase tracking-wider block">
-          {language === 'es' ? 'Consultas Frecuentes Verificadas:' : 'Verified Frequent Inquiries:'}
+          {language === 'es' ? 'Consultas frecuentes:' : 'Frequent inquiries:'}
         </span>
         <div className="flex flex-wrap gap-2">
           {predefinedQueries.map((item) => (
@@ -184,7 +186,9 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
           <div className="flex items-center justify-between border-b border-emerald-500/30 pb-3">
             <span className="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-amber-400" />
-              {language === 'es' ? 'Respuesta Verificada en Tiempo Real:' : 'Verified Live Response:'}
+              {resultSources.length > 0
+                ? (language === 'es' ? 'Respuesta con fuentes:' : 'Response with sources:')
+                : (language === 'es' ? 'Información sin verificar:' : 'Unverified information:')}
             </span>
             <span className="text-[10px] text-emerald-300 font-bold bg-[#041910] border border-emerald-500/40 px-3 py-1 rounded-full">
               ⚡ Gemini 3.5 Flash Grounding
@@ -199,7 +203,7 @@ export const LiveTouristIntelligence: React.FC<LiveTouristIntelligenceProps> = (
           {resultSources.length > 0 && (
             <div className="pt-3 border-t border-emerald-500/20 space-y-2">
               <span className="text-[10px] font-black uppercase text-emerald-300 tracking-wider block">
-                {language === 'es' ? 'Fuentes Oficiales y Enlaces de Google Grounding:' : 'Official Grounding Sources & References:'}
+                {language === 'es' ? 'Fuentes de la consulta:' : 'Search sources and references:'}
               </span>
               <div className="flex flex-wrap gap-2">
                 {resultSources.map((src, idx) => (
