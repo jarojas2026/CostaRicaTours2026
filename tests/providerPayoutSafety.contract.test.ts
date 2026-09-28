@@ -83,7 +83,7 @@ test('scheduled payouts use the fail-closed service behind a distributed lock', 
   assert.match(cron, /from '\.\/providerPayoutService';/);
   assert.match(cron, /withDistributedAutomationLock\('provider-payouts-daily-6am', executeAutomatedProviderPayouts\)/);
 
-  const nativeImport = cron.match(/import \{([\s\S]*?)\} from '\.\/nativeWorkflows';/)?.[1] || '';
+  const nativeImport = cron.match(/import \{([^}]*)\} from '\.\/nativeWorkflows';/)?.[1] || '';
   assert.doesNotMatch(nativeImport, /executeAutomatedProviderPayouts/);
 });
 
