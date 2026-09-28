@@ -25,6 +25,9 @@ jobs:
     name: Provision least-privilege gateway identity
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v3
         with:
@@ -35,15 +38,18 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
 
-      - name: Enable required Google APIs
+      - name: Verify existing Google services and deployment identity
+        shell: bash
         run: |
           set -euo pipefail
-          gcloud services enable \
-            iam.googleapis.com \
-            iamcredentials.googleapis.com \
-            sts.googleapis.com \
-            run.googleapis.com \
-            --project "$PROJECT_ID"
+          echo "Authenticated account: $(gcloud config get-value account)"
+          echo "Project: $PROJECT_ID"
+          gcloud run services describe "$SERVICE_NAME" \
+            --region "$REGION" \
+            --project "$PROJECT_ID" \
+            --format='value(status.url)' >/dev/null
+          echo "Cloud Run API is already usable by the deployment identity."
+          echo "The workflow intentionally does not enable project APIs; doing so requires Service Usage Admin and exceeds the deployer's current least-privilege role."
 
       - name: Provision WIF pool, provider and gateway service account
         shell: bash
