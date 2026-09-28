@@ -221,112 +221,54 @@ export const MASTER_OPERATORS_REGISTRY: Record<string, {
  * Obtiene los datos del proveedor desde Firestore (colecciones 'operators' o 'proveedores')
  * con fallback determinista al registro maestro.
  */
-export async function getProviderFromDb(providerId: string): Promise<any | null> {
+export async function getProviderFromDb(providerId: string, tourId?: string): Promise<any | null> {
   const db = getFirestoreDb();
-  const normalizedId = (providerId || '').toLowerCase().trim();
+  const normalizedId = String(providerId || '').toLowerCase().trim();
+  if (!normalizedId) return null;
 
-  // 1. Si hay base de datos Firestore activa, consultar
   if (db) {
     try {
-      let doc = await db.collection('operators').doc(providerId).get();
-      if (doc.exists) {
+      for (const collectionName of ['operators', 'proveedores']) {
+        const doc = await db.collection(collectionName).doc(providerId).get();
+        if (!doc.exists) continue;
         const data = doc.data() || {};
+        const status = String(data.status || data.estado || '').toLowerCase();
+        const verified = data.verified === true || data.verificado === true;
+        const active = (data.active === true || data.activo === true || status === 'active' || status === 'activo')
+          && !['inactive', 'inactivo', 'disabled', 'deshabilitado'].includes(status);
+        const activeTours = Array.isArray(data.activeTours)
+          ? data.activeTours.map(String)
+          : Array.isArray(data.tours) ? data.tours.map(String) : [];
+
+        if (!verified || !active) return null;
+        if (tourId && activeTours.length > 0 && !activeTours.includes(tourId)) return null;
+
+        const officialEmail = String(data.officialEmail || data.emailOperativo || data.email || '').trim();
         return {
           id: doc.id,
           ...data,
-          officialEmail: data.email,
-          email: getEffectiveProviderEmail(data.email),
-          officialPaypalEmail: data.paypalEmail,
-          paypalEmail: getEffectiveProviderEmail(data.paypalEmail)
-        };
-      }
-
-      doc = await db.collection('proveedores').doc(providerId).get();
-      if (doc.exists) {
-        const data = doc.data() || {};
-        return {
-          id: doc.id,
-          ...data,
-          officialEmail: data.email,
-          email: getEffectiveProviderEmail(data.email),
-          officialPaypalEmail: data.paypalEmail,
-          paypalEmail: getEffectiveProviderEmail(data.paypalEmail)
-        };
-      }
-
-      const opSnap = await db.collection('operators').where('code', '==', providerId).limit(1).get();
-      if (!opSnap.empty) {
-        const data = opSnap.docs[0].data() || {};
-        return {
-          id: opSnap.docs[0].id,
-          ...data,
-          officialEmail: data.email,
-          email: getEffectiveProviderEmail(data.email),
-          officialPaypalEmail: data.paypalEmail,
-          paypalEmail: getEffectiveProviderEmail(data.paypalEmail)
-        };
-      }
-
-      const provSnap = await db.collection('proveedores').where('code', '==', providerId).limit(1).get();
-      if (!provSnap.empty) {
-        const data = provSnap.docs[0].data() || {};
-        return {
-          id: provSnap.docs[0].id,
-          ...data,
-          officialEmail: data.email,
-          email: getEffectiveProviderEmail(data.email),
-          officialPaypalEmail: data.paypalEmail,
-          paypalEmail: getEffectiveProviderEmail(data.paypalEmail)
+          verified: true,
+          active: true,
+          officialEmail,
+          email: getEffectiveProviderEmail(officialEmail),
+          officialPaypalEmail: String(data.officialPaypalEmail || data.paypalEmail || '').trim(),
+          paypalEmail: String(data.paypalEmail || '').trim(),
+          activeTours
         };
       }
     } catch (err) {
       console.warn(`Error buscando proveedor ${providerId} en Firestore:`, err);
+      return null;
     }
   }
 
-  // 2. Búsqueda exacta en catálogo maestro
-  if (MASTER_OPERATORS_REGISTRY[normalizedId]) {
-    return MASTER_OPERATORS_REGISTRY[normalizedId];
+  // El directorio estático es sólo una ayuda de desarrollo explícita. Nunca
+  // autoriza un despacho real ni sustituye una asignación verificada en producción.
+  if (process.env.NODE_ENV !== 'production' && process.env.ALLOW_LEGACY_PROVIDER_DIRECTORY === 'true') {
+    return MASTER_OPERATORS_REGISTRY[normalizedId] || null;
   }
 
-  // 3. Búsqueda por sub-coincidencia de clave
-  for (const [key, val] of Object.entries(MASTER_OPERATORS_REGISTRY)) {
-    if (normalizedId.includes(key) || key.includes(normalizedId)) {
-      return val;
-    }
-  }
-
-  // 4. Mapeos de palabras clave de tours a proveedores
-  if (normalizedId.includes('arenal') || normalizedId.includes('volcan') || normalizedId.includes('termales') || normalizedId.includes('fortuna')) {
-    return MASTER_OPERATORS_REGISTRY['arenal-volcano-ops'];
-  }
-  if (normalizedId.includes('monteverde') || normalizedId.includes('canopy') || normalizedId.includes('tirolesa') || normalizedId.includes('puentes')) {
-    return MASTER_OPERATORS_REGISTRY['monteverde-canopy-ops'];
-  }
-  if (normalizedId.includes('manuel-antonio') || normalizedId.includes('quepos') || normalizedId.includes('parque')) {
-    return MASTER_OPERATORS_REGISTRY['manuel-antonio-ops'];
-  }
-  if (normalizedId.includes('tortuga') || normalizedId.includes('catamaran') || normalizedId.includes('bay-island') || normalizedId.includes('isla')) {
-    return MASTER_OPERATORS_REGISTRY['bay-island-cruises'];
-  }
-  if (normalizedId.includes('pacuare') || normalizedId.includes('rafting') || normalizedId.includes('sarapiqui')) {
-    return MASTER_OPERATORS_REGISTRY['pacuare-rafting-ops'];
-  }
-  if (normalizedId.includes('tortuguero') || normalizedId.includes('canales')) {
-    return MASTER_OPERATORS_REGISTRY['tortuguero-ops'];
-  }
-  if (normalizedId.includes('cafe') || normalizedId.includes('coffee') || normalizedId.includes('doka') || normalizedId.includes('cacao')) {
-    return MASTER_OPERATORS_REGISTRY['doka-estate-coffee'];
-  }
-  if (normalizedId.includes('guanacaste') || normalizedId.includes('tamarindo') || normalizedId.includes('papagayo') || normalizedId.includes('playa')) {
-    return MASTER_OPERATORS_REGISTRY['guanacaste-blue-ocean'];
-  }
-  if (normalizedId.includes('tarcoles') || normalizedId.includes('cocodrilo') || normalizedId.includes('crocodile')) {
-    return MASTER_OPERATORS_REGISTRY['tarcoles-crocodile-safari'];
-  }
-
-  // Fallback seguro: Operaciones Directas Alsama Tours CR
-  return MASTER_OPERATORS_REGISTRY['alsama-tours-cr'];
+  return null;
 }
 
 /**
@@ -354,25 +296,63 @@ export async function executeProviderRealtimeCoordination(
   }
 
   const booking = payload.booking || payload;
-  const bookingId = booking.bookingId || booking.id || `CRT-${Date.now().toString().slice(-6)}`;
-  const providerId = booking.providerId || booking.providerInfo?.id || 'alsama-tours-cr';
-  const tourName = booking.tourName || 'Tour Oficial Costa Rica';
-  const tourDate = booking.date || 'Fecha por confirmar';
-  const tourTime = booking.time || '08:00 AM';
-  const adults = Number(booking.adults ?? 2);
+  const bookingId = String(booking.bookingId || booking.id || '').trim();
+  const providerId = String(booking.providerId || booking.providerInfo?.id || '').trim();
+  const tourId = String(booking.tourId || booking.tour?.id || '').trim();
+  const tourName = String(booking.tourName || booking.tour?.name || tourId).trim();
+  const tourDate = String(booking.date || booking.tourDate || '').trim();
+  const tourTime = String(booking.time || booking.tourTime || '').trim();
+  const adults = Number(booking.adults ?? 0);
   const children = Number(booking.children ?? 0);
   const totalPax = adults + children;
-  const pickupHotel = booking.pickupHotel || 'Recepción del Hotel';
-  const specialRequests = booking.specialRequests || 'Ninguna';
-  const customerName = booking.customerName || booking.customer?.name || 'Cliente Verificado';
-  const customerPhone = booking.customerPhone || booking.customer?.phone || '';
-  const customerEmail = booking.customerEmail || booking.customer?.email || '';
+  const pickupHotel = String(booking.pickupHotel || booking.pickupLocation || '').trim() || 'Por confirmar';
+  const specialRequests = String(booking.specialRequests || '').trim() || 'Sin solicitudes registradas';
+  const customerName = String(booking.customerName || booking.customer?.name || '').trim() || 'Viajero';
+  const customerPhone = String(booking.customerPhone || booking.customer?.phone || '').trim();
+  const customerEmail = String(booking.customerEmail || booking.customer?.email || '').trim();
 
-  // Obtener datos del proveedor
-  const provider = await getProviderFromDb(providerId) || MASTER_OPERATORS_REGISTRY['alsama-tours-cr'];
-  const providerEmail = provider.email;
-  const providerPhone = provider.phone || '+506 8795-9148';
-  const whatsappNumber = provider.whatsapp || '50687959148';
+  const missingOperationalFields = [
+    !bookingId && 'bookingId',
+    !providerId && 'providerId',
+    !tourId && 'tourId',
+    !tourDate && 'date',
+    !tourTime && 'time'
+  ].filter(Boolean) as string[];
+
+  if (missingOperationalFields.length > 0 || !Number.isFinite(totalPax) || totalPax <= 0) {
+    const reason = missingOperationalFields.length > 0
+      ? `Despacho bloqueado: faltan campos operativos (${missingOperationalFields.join(', ')}).`
+      : 'Despacho bloqueado: cantidad de pasajeros inválida.';
+    await recordEscalation({
+      type: 'PROVIDER_ASSIGNMENT_UNVERIFIED',
+      bookingId: bookingId || undefined,
+      providerId: providerId || undefined,
+      reason,
+      customerEmail,
+      customerPhone,
+      details: { tourId: tourId || null, tourDate: tourDate || null, tourTime: tourTime || null, totalPax }
+    });
+    throw new Error(reason);
+  }
+
+  const provider = await getProviderFromDb(providerId, tourId);
+  if (!provider) {
+    const reason = `Despacho bloqueado: el proveedor ${providerId} no está activo y verificado para el tour ${tourId}.`;
+    await recordEscalation({
+      type: 'PROVIDER_ASSIGNMENT_UNVERIFIED',
+      bookingId,
+      providerId,
+      reason,
+      customerEmail,
+      customerPhone,
+      details: { tourId, tourDate, tourTime }
+    });
+    throw new Error(reason);
+  }
+
+  const providerEmail = String(provider.email || '').trim();
+  const providerPhone = String(provider.phone || '').trim();
+  const whatsappNumber = String(provider.whatsapp || '').replace(/[^0-9]/g, '');
 
   // Generar URLs de acción de 1 clic para el proveedor
   const providerPortalUrl = providerPortalConfigured()
@@ -401,8 +381,8 @@ export async function executeProviderRealtimeCoordination(
     providerId: provider.id,
     providerName: provider.name,
     providerEmail: provider.email,
-    providerStatus: 'notified',
-    providerDispatchedAt: new Date().toISOString(),
+    providerStatus: 'dispatch_pending',
+    providerDispatchAttemptedAt: new Date().toISOString(),
     providerActionUrls: { confirm: confirmUrl, modifyTime: modifyTimeUrl, decline: declineUrl }
   }).catch(() => {});
 
@@ -413,7 +393,7 @@ export async function executeProviderRealtimeCoordination(
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; color: #1c1917; border: 1px solid #e7e5e4; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
         <div style="background: linear-gradient(135deg, #041711 0%, #064e3b 100%); color: #ffffff; padding: 24px; text-align: center;">
           <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">Costa Rica Tours • Despacho Operativo 2026</h1>
-          <p style="margin: 6px 0 0 0; font-size: 13px; color: #a7f3d0; font-weight: 500;">Asignación Inmediata de Reserva Turística Certificada CST</p>
+          <p style="margin: 6px 0 0 0; font-size: 13px; color: #a7f3d0; font-weight: 500;">Solicitud de Reserva Turística</p>
         </div>
         
         <div style="padding: 28px; background-color: #ffffff;">
@@ -428,7 +408,7 @@ export async function executeProviderRealtimeCoordination(
           </div>
 
           <p style="font-size: 14px; line-height: 1.5; color: #44403c; margin: 0 0 16px 0;">
-            Estimado equipo de operaciones de <strong>${provider.name}</strong>, se ha recibido una nueva solicitud de reserva a través de la plataforma oficial. Por favor revise los datos y acepte o rechace la solicitud:
+            Estimado equipo de operaciones de <strong>${provider.name}</strong>, se ha recibido una nueva solicitud de reserva a través de Costa Rica Tours. Por favor revise los datos y acepte o rechace la solicitud:
           </p>
 
           <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 24px;">
@@ -472,7 +452,7 @@ export async function executeProviderRealtimeCoordination(
                   ⏰ Proponer Ajuste de Hora
                 </a>
                 <a href="${declineUrl}" style="flex: 1; display: inline-block; background-color: #fef2f2; color: #b91c1c; text-decoration: none; padding: 10px 14px; border-radius: 8px; font-weight: 600; font-size: 12px; border: 1px solid #fecaca; text-align: center;">
-                  🔄 Reasignar Automáticamente
+                  🚫 Reportar sin disponibilidad
                 </a>
               </div>
             </div>
@@ -485,7 +465,7 @@ export async function executeProviderRealtimeCoordination(
         </div>
 
         <div style="background-color: #f8fafc; padding: 16px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0;">
-          Costa Rica Tours 2026 • Plataforma de Turismo Sostenible CST • Despacho Autónomo M2M
+          Costa Rica Tours 2026 • Coordinación operativa de turismo
         </div>
       </div>
     `;
@@ -497,6 +477,10 @@ export async function executeProviderRealtimeCoordination(
     });
 
     if (emailResult.success) {
+      await updateBookingStatus(bookingId, {
+        providerStatus: 'notified',
+        providerDispatchedAt: new Date().toISOString()
+      }).catch(() => {});
       console.log(`✅ [PROVEEDOR NOTIFICADO] Email de despacho enviado a ${providerEmail} (${provider.name}) para reserva #${bookingId}`);
       logAutomationExecution('WF_COORDINACION_PROVEEDOR', 0, 'success', `Proveedor ${provider.name} notificado para reserva ${bookingId}`);
       
@@ -516,6 +500,11 @@ export async function executeProviderRealtimeCoordination(
   const reason = !providerEmail
     ? `Proveedor "${provider.name}" no tiene correo configurado.`
     : `Fallo al enviar correo a "${providerEmail}".`;
+
+  await updateBookingStatus(bookingId, {
+    providerStatus: 'notification_failed',
+    providerNotificationFailedAt: new Date().toISOString()
+  }).catch(() => {});
 
   await recordEscalation({
     type: 'PROVIDER_NOTIFICATION_FAILED',
@@ -592,14 +581,14 @@ export async function handleProviderActionResponse(
     }
   }
 
-  const tourName = bookingData?.tourName || 'Excursión Oficial Costa Rica';
-  const tourDate = bookingData?.date || 'Fecha confirmada';
-  const customerEmail = bookingData?.customerEmail || bookingData?.customer?.email || 'viajero@costaricatours.es';
-  const customerName = bookingData?.customerName || bookingData?.customer?.name || 'Estimado Viajero';
+  const tourName = bookingData?.tourName || 'Experiencia en Costa Rica';
+  const tourDate = bookingData?.date || 'Fecha registrada';
+  const customerEmail = bookingData?.customerEmail || bookingData?.customer?.email || '';
+  const customerName = bookingData?.customerName || bookingData?.customer?.name || 'Viajero';
 
   // 1. CASO: CONFIRMAR RESERVA Y ASIGNAR LOGÍSTICA
   if (action === 'confirm') {
-    const guide = options?.guideName || 'Guía Naturalista Certificado ICT';
+    const guide = options?.guideName || 'Pendiente de asignación por el proveedor';
     const vehicle = options?.vehiclePlate || 'Unidad Turística Oficial Alsama';
     const confirmedAt = new Date().toISOString();
 
@@ -709,7 +698,7 @@ export async function handleProviderActionResponse(
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917; border: 1px solid #e7e5e4; border-radius: 12px; padding: 24px;">
             <h3 style="color: #d97706; margin-top: 0;">Ajuste de Horario para Mejor Experiencia</h3>
             <p>Hola <strong>${customerName}</strong>,</p>
-            <p>Para garantizar mejores condiciones climáticas y avistamiento en <strong>${tourName}</strong>, tu operador sugiere realizar la actividad a las <strong>${proposedTime}</strong>.</p>
+            <p>El proveedor sugirió ajustar la hora de <strong>${tourName}</strong> a las <strong>${proposedTime}</strong>. Este cambio debe quedar registrado antes de considerarse definitivo.</p>
             <p style="font-size: 13px; color: #57534e;">Si este horario te parece bien, no tienes que hacer nada; queda automáticamente actualizado en tu voucher.</p>
           </div>
         `
@@ -761,79 +750,39 @@ export async function executeAutonomousProviderFallback(
   message: string;
   reassigned: boolean;
 }> {
-  console.warn(`🔄 [FAILOVER AUTÓNOMO] Proveedor ${failedProviderId} declinó reserva #${bookingId}. Reasignando a Alsama Tours CR Operaciones Directas...`);
-  
-  const fallbackProvider = MASTER_OPERATORS_REGISTRY['alsama-tours-cr'];
-
-  const fallbackEmail = getEffectiveProviderEmail(fallbackProvider.officialEmail);
-  if (fallbackProvider.verified !== true || !fallbackProvider.active || !fallbackProvider.officialEmail || !fallbackEmail) {
-    await sendAdministrativeAlert({
-      title: 'Failover de proveedor requiere intervención humana',
-      reason: `No existe un canal oficial verificable para reasignar ${bookingId}.`,
-      bookingId,
-      providerId: failedProviderId,
-      details: { failedProviderId, reason, fallbackCandidate: fallbackProvider.id }
-    });
-    return {
-      success: false,
-      action: 'decline_escalate',
-      bookingId,
-      newStatus: 'requiere_intervencion',
-      providerStatus: 'fallback_unverified',
-      message: 'No se reasignó automáticamente: el proveedor directo no está marcado como verificado y no existe un canal operativo aprobado.',
-      reassigned: false
-    };
-  }
-
+  const escalationReason = `Proveedor ${failedProviderId || 'sin identificar'} no confirmó la reserva: ${reason || 'sin detalle'}.`;
   await updateBookingStatus(bookingId, {
-    providerId: fallbackProvider.id,
-    providerName: fallbackProvider.name,
-    providerEmail: fallbackEmail,
-    providerStatus: 'reassigned_to_direct_ops',
-    fallbackReason: reason,
-    fallbackTriggeredAt: new Date().toISOString()
+    providerStatus: 'requires_human_assignment',
+    providerFailoverReason: reason,
+    providerFailoverBlockedAt: new Date().toISOString()
   }).catch(() => {});
 
-  // Despachar inmediatamente notificación prioritaria a Alsama Tours CR
-  await sendEmail({
-    to: fallbackEmail,
-    subject: `🚨 [DESPACHO PRIORITARIO POR REASIGNACIÓN] Reserva #${bookingId} Asignada a Operaciones Directas`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917; border: 2px solid #059669; border-radius: 12px; padding: 24px;">
-        <h2 style="color: #064e3b; margin-top: 0;">⚡ Reasignación Automática de Emergencia</h2>
-        <p>Equipo de <strong>Alsama Tours CR</strong>,</p>
-        <p>El operador externo con ID <code>${failedProviderId}</code> declinó la reserva <strong>#${bookingId}</strong> (Motivo: <em>${reason}</em>).</p>
-        <p>El motor autónomo ha transferido la reserva al equipo de operaciones directas para garantizar servicio sin interrupciones.</p>
-        <div style="background-color: #ecfdf5; padding: 12px; border-radius: 8px; margin: 16px 0;">
-          <a href="${APP_URL}/api/provider/respond?action=confirm&bookingId=${bookingId}&providerId=alsama-tours-cr" style="background-color: #059669; color: white; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">
-            Confirmar Despacho Alsama
-          </a>
-        </div>
-      </div>
-    `
-  }).catch(() => {});
-
-  await sendAdministrativeAlert({
-    title: 'Failover Autónomo de Proveedor Ejecutado',
-    reason: `Operador ${failedProviderId} declinó por: ${reason}`,
+  await recordEscalation({
+    type: 'PROVIDER_REASSIGNMENT_REQUIRED',
     bookingId,
-    providerId: fallbackProvider.id,
-    details: {
-      Accion: 'Reasignado automáticamente a Alsama Tours CR Direct Ops',
-      Estado: 'Reserva protegida, sin impacto al cliente'
-    }
+    providerId: failedProviderId || undefined,
+    reason: escalationReason,
+    details: { policy: 'fail_closed_no_synthetic_provider' }
   });
 
-  logAutomationExecution('WF_COORDINACION_PROVEEDOR', 0, 'success', `Reserva #${bookingId} reasignada automáticamente a Alsama Tours CR`);
+  await sendAdministrativeAlert({
+    title: 'Reasignación de proveedor requiere intervención',
+    reason: escalationReason,
+    bookingId,
+    providerId: failedProviderId,
+    details: { policy: 'No se asigna ningún proveedor sin verificación operativa en Firestore.' }
+  }).catch(() => {});
+
+  logAutomationExecution('WF_COORDINACION_PROVEEDOR', 0, 'warning', `Reserva #${bookingId} requiere proveedor alternativo verificado`);
 
   return {
-    success: true,
-    action: 'decline_and_reassign',
+    success: false,
+    action: 'decline_escalate',
     bookingId,
-    newStatus: 'pendiente_confirmacion_proveedor',
-    providerStatus: 'reassigned_to_direct_ops',
-    message: `Reserva #${bookingId} reasignada a Operaciones Directas Alsama Tours CR para confirmación del despacho; no se considera confirmada todavía.`,
-    reassigned: true
+    newStatus: 'requiere_intervencion',
+    providerStatus: 'requires_human_assignment',
+    message: 'No se reasignó automáticamente. La reserva requiere un proveedor alternativo activo y verificado.',
+    reassigned: false
   };
 }
 

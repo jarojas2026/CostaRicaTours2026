@@ -86,7 +86,6 @@ import {
   executeProviderRealtimeCoordination,
   handleProviderActionResponse,
   executeAutonomousProviderFallback,
-  MASTER_OPERATORS_REGISTRY,
   executeCustomerBookingConfirmation,
   executeCustomerProformaConfirmation,
   executeAutomatedProviderPayouts,
@@ -1080,12 +1079,19 @@ app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
       try {
         providerCoordinationResult = await executeProviderRealtimeCoordination({
           bookingId,
+          providerId: booking.providerId,
+          tourId: booking.tourId,
           customerName: booking.customerName,
           customerEmail: booking.customerEmail,
           customerPhone: booking.customerPhone,
           tourName: booking.tourName,
           date: booking.date,
           tourDate: booking.date,
+          time: booking.time,
+          tourTime: booking.time,
+          adults: booking.adults,
+          children: booking.children,
+          pickupHotel: booking.pickupHotel,
           totalUSD: booking.totalUSD,
           pax: (Number(booking.adults) || 0) + (Number(booking.children) || 0),
           specialRequests: booking.specialRequests
@@ -2036,15 +2042,13 @@ app.post('/api/provider/portal/action', async (req, res) => {
   }
 });
 
-// 1.2 Catálogo de Operadores Turísticos Oficiales CST
-app.get(['/api/provider/catalog', '/api/operators/catalog'], (req, res) => {
-  res.json({
-    success: true,
-    total: Object.keys(MASTER_OPERATORS_REGISTRY).length,
-    operators: Object.values(MASTER_OPERATORS_REGISTRY),
-    standardCommissionRate: 0.15,
-    payoutEngine: 'PayPal Payouts & Automated Bank Transfer',
-    certificationStandard: 'CST (Certificación para la Sostenibilidad Turística de Costa Rica)'
+// 1.2 Catálogo legado de operadores deshabilitado: la fuente operativa es Firestore.
+app.get(['/api/provider/catalog', '/api/operators/catalog'], (_req, res) => {
+  res.status(410).json({
+    success: false,
+    error: 'El catálogo estático de proveedores fue retirado. Los proveedores operativos deben provenir de Firestore y estar activos/verificados.',
+    sourceOfTruth: 'firestore',
+    provenance: 'LIVE_VERIFIED'
   });
 });
 
