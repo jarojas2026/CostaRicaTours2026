@@ -75,6 +75,7 @@ for (const relative of ['backend', 'src', 'public', 'agent']) {
 }
 
 const server = read('server.ts');
+const bookingService = read('backend/bookingService.ts');
 const reservationLifecycle = read('backend/reservationLifecycleOrchestrator.ts');
 if (!/createInFlightLimiter/.test(server) || !/apiAdmission/.test(server) || !/aiAdmission/.test(server)) {
   add('HIGH', 'ADMISSION-001', 'API admission control is missing from server.ts.');
@@ -86,7 +87,7 @@ const cronSource = read('backend/cronEngine.ts');
 if (!/withDistributedAutomationLock/.test(cronSource) || !/automation_locks/.test(cronSource)) {
   add('HIGH', 'CRON-001', 'Distributed automation locking is not wired.');
 }
-if (!/getPendingReservationLifecycleBookings/.test(reservationLifecycle) || !/getPendingReservationLifecycleBookings/.test(read('backend/bookingService.ts'))) {
+if (!/getPendingReservationLifecycleBookings/.test(reservationLifecycle) || !/getPendingReservationLifecycleBookings/.test(bookingService)) {
   add('HIGH', 'LIFECYCLE-001', 'Reservation lifecycle still scans the full booking history.');
 }
 
@@ -151,6 +152,26 @@ if (!/Idempotency-Key/.test(tourDetail)) {
   add('MEDIUM', 'BOOKING-UX-004', 'TourDetailPage does not send an idempotency key for booking creation.');
 }
 
+// Legacy Counter Agent code may remain temporarily for compatibility, but the
+// canonical booking service must fail closed if that shortcut is invoked.
+const assistantService = read('backend/aiAssistantService.ts');
+if (/paymentMethod:\s*['"]agent_counter_booking['"]/.test(assistantService) &&
+    !/Legacy Counter Agent direct booking is disabled/.test(bookingService)) {
+  add('CRITICAL', 'BOOKING-AI-001', 'Legacy Counter Agent direct booking can bypass the canonical reservation lifecycle.');
+}
+
+// SINPE may verify financial state, but it must not directly confirm the
+// service, dispatch providers or send final customer confirmation.
+const sinpeService = read('backend/sinpeService.ts');
+if (/status:\s*['"]confirmada['"]/.test(sinpeService) ||
+    /executeProviderRealtimeCoordination/.test(sinpeService) ||
+    /executeCustomerBookingConfirmation/.test(sinpeService)) {
+  add('CRITICAL', 'PAYMENT-001', 'SINPE verification contains a direct booking/provider/customer confirmation shortcut.');
+}
+if (!/WEBHOOK_SECRET/.test(sinpeService) || !/advanceReservationLifecycle/.test(sinpeService) || !/status:\s*['"]paid['"]/.test(sinpeService)) {
+  add('CRITICAL', 'PAYMENT-002', 'SINPE verification must authenticate the source, persist paid, and delegate to the canonical lifecycle.');
+}
+
 // Vercel must authenticate to private Cloud Run; anonymous rewrites are not accepted.
 const gatewayPath = path.join(root, 'api', '[...path].ts');
 if (!fs.existsSync(gatewayPath)) {
@@ -174,6 +195,10 @@ if (/\/api\/bookings\/:id\/customer-confirm[\s\S]{0,1400}status:\s*action === 'a
 const header = read('src/components/Header.tsx');
 for (const claim of ['Agencia Receptiva Oficial', 'Operador Oficial', 'Tarifas Oficiales Directas']) {
   if (header.includes(claim)) add('MEDIUM', 'TRUST-002', `Public header still contains evidence-sensitive claim: ${claim}`);
+}
+const homeQuickNav = read('src/components/HomeQuickNav.tsx');
+for (const claim of ['Experiencias Estrella Garantizadas', 'Voucher QR Inmediato', 'Tarifa Oficial Directa', 'Reembolso 100% hasta 48h antes']) {
+  if (homeQuickNav.includes(claim)) add('HIGH', 'TRUST-003', `Home discovery surface contains an evidence-sensitive claim: ${claim}`);
 }
 
 const envExample = read('.env.example');

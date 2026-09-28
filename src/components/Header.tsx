@@ -183,7 +183,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center gap-3 whitespace-nowrap overflow-x-auto hide-scrollbar">
               <span className="inline-flex items-center gap-1.5 bg-emerald-950/80 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/30 font-semibold text-[11px]">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>{language === 'es' ? '🇨🇷 Agencia Receptiva Oficial' : '🇨🇷 Official Inbound Agency'}</span>
+                <span>{language === 'es' ? '🇨🇷 Asistencia de viaje en Costa Rica' : '🇨🇷 Costa Rica travel assistance'}</span>
               </span>
 
               <span className="hidden sm:inline text-emerald-500/30">•</span>
@@ -211,7 +211,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             <div className="hidden sm:flex items-center gap-2 text-xs font-bold text-amber-400 shrink-0">
               <ShieldCheck className="w-4 h-4 text-amber-400" />
-              <span>{language === 'es' ? 'Tarifas Oficiales Directas' : 'Direct Official Rates'}</span>
+              <span>{language === 'es' ? 'Disponibilidad verificada al reservar' : 'Availability checked when booking'}</span>
             </div>
 
           </div>
@@ -236,7 +236,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="text-amber-400">Tours</span>
               </div>
               <span className="text-[10px] tracking-wider uppercase font-semibold text-emerald-400 block">
-                {language === 'es' ? 'Operador Oficial' : 'Official Operator'}
+                {language === 'es' ? 'Tours y planificación' : 'Tours & trip planning'}
               </span>
             </div>
           </Link>
@@ -516,7 +516,7 @@ export const Header: React.FC<HeaderProps> = ({
                       Costa Rica <span className="text-amber-400">Tours</span>
                     </span>
                     <span className="text-[8px] text-emerald-400 font-bold uppercase tracking-widest">
-                      Agencia Receptiva Oficial
+                      {language === 'es' ? 'Tours y asistencia de viaje' : 'Tours & travel assistance'}
                     </span>
                   </div>
                 </div>
@@ -650,7 +650,7 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="space-y-1.5 pt-2 border-t border-emerald-500/20">
                 <span className="text-[9px] uppercase font-black tracking-widest text-amber-400 px-1 flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-amber-400" />
-                  {language === 'es' ? 'Inteligencia Artificial Especializada' : 'Specialized Artificial Intelligence'}
+                  {language === 'es' ? 'Asistente y planificación' : 'Assistant & trip planning'}
                 </span>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -664,10 +664,10 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     <span className="flex items-center gap-2">
                       <Bot className="w-4 h-4 text-amber-400" />
-                      <span className="text-xs font-bold">{language === 'es' ? 'Motor de Inteligencia IA' : 'AI Engine & Automations'}</span>
+                      <span className="text-xs font-bold">{language === 'es' ? 'Asistente de viaje' : 'Travel assistant'}</span>
                     </span>
                     <span className="text-[9px] uppercase bg-amber-400 text-stone-950 px-2 py-0.5 rounded-full font-black">
-                      10 Flujos
+                      IA
                     </span>
                   </button>
 
@@ -711,7 +711,7 @@ export const Header: React.FC<HeaderProps> = ({
                       <span className="text-xs font-bold">{language === 'es' ? 'Vuelos a Costa Rica' : 'Flights to CR'}</span>
                     </span>
                     <span className="text-[9px] uppercase bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded-full font-black">
-                      Live
+                      Buscar
                     </span>
                   </button>
 
@@ -725,7 +725,7 @@ export const Header: React.FC<HeaderProps> = ({
                       <Bus className="w-4 h-4 text-emerald-400" />
                       <span className="text-xs font-bold">{language === 'es' ? 'Shuttles & Guía' : 'Shuttles & Guide'}</span>
                     </span>
-                    <span className="text-[9px] uppercase opacity-70">SINAC / 4x4</span>
+                    <span className="text-[9px] uppercase opacity-70">Rutas</span>
                   </button>
 
                   {onOpenLocalBuses && (
@@ -755,7 +755,7 @@ export const Header: React.FC<HeaderProps> = ({
                   className="w-full flex items-center justify-center gap-2 bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] p-3 rounded-2xl font-black text-xs uppercase border border-[#25D366]/40 transition-colors"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  <span>WhatsApp 24/7: +506 8795-9148</span>
+                  <span>WhatsApp: +506 8795-9148</span>
                 </a>
               </div>
 
