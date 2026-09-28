@@ -381,6 +381,15 @@ export async function createBooking(data: any) {
     }
   }
 
+  // The old Counter Agent shortcut fabricated contact values and then announced
+  // a confirmed booking without going through the canonical reservation tool,
+  // payment verification and provider confirmation. Fail closed here so the
+  // conversational layer falls back to a quote/collection step. Real agent
+  // bookings must use the canonical create_reservation / booking lifecycle path.
+  if (String(data.paymentMethod || '').toLowerCase() === 'agent_counter_booking') {
+    throw new Error('Legacy Counter Agent direct booking is disabled. Use the canonical reservation workflow.');
+  }
+
   const bookingId = data.bookingId || `CR-PV-${crypto.randomUUID()}`;
   const bookingTime = data.time || '08:00 AM';
   const numAdults = Number(data.adults) || 1;
