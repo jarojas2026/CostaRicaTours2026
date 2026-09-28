@@ -11,33 +11,33 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ language }) => {
   const features = [
     {
       icon: ShieldCheck,
-      title: { es: 'Operadores Verificados', en: 'Verified Operators' },
-      desc: { es: 'Solo trabajamos con empresas locales con licencias y seguros al día.', en: 'We only partner with local companies with up-to-date licenses and insurance.' }
+      title: { es: 'Verificación Operativa', en: 'Operational Verification' },
+      desc: { es: 'El cupo, las condiciones y los datos del operador se verifican durante el proceso de reserva antes de presentarlos como confirmados.', en: 'Availability, operating conditions and operator details are checked during booking before they are presented as confirmed.' }
     },
     {
       icon: Leaf,
-      title: { es: 'Turismo Sostenible', en: 'Sustainable Tourism' },
-      desc: { es: 'Promovemos experiencias que respetan el ambiente y las comunidades.', en: 'We promote experiences that respect the environment and local communities.' }
+      title: { es: 'Turismo Responsable', en: 'Responsible Tourism' },
+      desc: { es: 'Priorizamos experiencias que respeten áreas protegidas, comunidades y condiciones reales de operación.', en: 'We prioritize experiences that respect protected areas, communities and real operating conditions.' }
     },
     {
       icon: Heart,
-      title: { es: 'Soporte 24/7', en: '24/7 Support' },
-      desc: { es: 'Atención personalizada por WhatsApp y correo en todo momento.', en: 'Personalized support via WhatsApp and email at all times.' }
+      title: { es: 'Asistencia Durante el Viaje', en: 'Trip Assistance' },
+      desc: { es: 'El asistente digital mantiene el contexto del viaje y deriva a atención humana cuando una decisión requiere supervisión.', en: 'The digital assistant keeps trip context and escalates to human support when a decision requires supervision.' }
     },
     {
       icon: Users,
-      title: { es: 'Impacto Local', en: 'Local Impact' },
-      desc: { es: 'El 100% de nuestros operadores son empresas 100% costarricenses.', en: '100% of our operators are 100% Costa Rican businesses.' }
+      title: { es: 'Red Local', en: 'Local Network' },
+      desc: { es: 'La plataforma está diseñada para coordinar servicios turísticos de Costa Rica sin presentar como verificado aquello que todavía requiere confirmación.', en: 'The platform is designed to coordinate Costa Rica travel services without presenting unverified details as confirmed.' }
     },
     {
       icon: Globe,
       title: { es: 'Plataforma Internacional', en: 'Global Platform' },
-      desc: { es: 'Diseñada para conectar viajeros con experiencias, servicios y operadores de todo Costa Rica.', en: 'Designed to connect travelers with experiences, services and operators across Costa Rica.' }
+      desc: { es: 'Diseñada para conectar viajeros con experiencias, servicios y operadores de distintas regiones de Costa Rica.', en: 'Designed to connect travelers with experiences, services and operators across Costa Rica.' }
     },
     {
       icon: Award,
-      title: { es: 'Garantía de Calidad', en: 'Quality Guarantee' },
-      desc: { es: 'Curamos cada experiencia para asegurar memorias inolvidables.', en: 'We curate every experience to ensure unforgettable memories.' }
+      title: { es: 'Selección con Contexto', en: 'Context-Aware Selection' },
+      desc: { es: 'Las recomendaciones combinan catálogo, ruta, preferencias y verificaciones operativas cuando la información necesita estar vigente.', en: 'Recommendations combine catalog data, route, preferences and operational checks whenever information must be current.' }
     }
   ];
 
@@ -49,27 +49,27 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ language }) => {
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-emerald-500 font-black uppercase tracking-[0.3em] text-sm mb-4">Sobre Nosotros</h2>
+          <h2 className="text-emerald-500 font-black uppercase tracking-[0.3em] text-sm mb-4">{language === 'es' ? 'Sobre Nosotros' : 'About Us'}</h2>
           <h3 className="text-4xl md:text-6xl font-black text-white mb-8 tracking-tighter leading-tight">
-            Redefiniendo el Turismo en <span className="text-emerald-500 italic">Costa Rica</span>
+            {language === 'es' ? 'Planificando viajes por' : 'Planning trips across'} <span className="text-emerald-500 italic">Costa Rica</span>
           </h3>
           <p className="text-stone-400 text-lg mb-8 leading-relaxed">
             {language === 'es' 
-              ? 'Nacimos en el corazón de Pérez Zeledón con una misión clara: conectar a los viajeros con la esencia real de Costa Rica. No somos solo una web de reservas; somos el puente entre operadores locales apasionados y aventureros internacionales.'
-              : 'Born in the heart of Pérez Zeledón with a clear mission: to connect travelers with the real essence of Costa Rica. We are not just a booking site; we are the bridge between passionate local operators and international adventurers.'}
+              ? 'Costa Rica Tours conecta planificación, catálogo, asistencia y operación en una sola experiencia. Nuestro objetivo es ayudarte a construir el viaje paso a paso y distinguir con claridad entre una recomendación, una verificación y una reserva realmente confirmada.'
+              : 'Costa Rica Tours connects planning, catalog, assistance and operations in one experience. Our goal is to help you build your trip step by step and clearly distinguish between a recommendation, a verification and a truly confirmed booking.'}
           </p>
           <div className="flex flex-wrap gap-8">
             <div>
-              <div className="text-4xl font-black text-emerald-400 mb-1">100+</div>
-              <div className="text-stone-500 text-xs uppercase font-bold tracking-widest">Tours Curados</div>
+              <div className="text-4xl font-black text-emerald-400 mb-1">6</div>
+              <div className="text-stone-500 text-xs uppercase font-bold tracking-widest">{language === 'es' ? 'Idiomas' : 'Languages'}</div>
             </div>
             <div>
-              <div className="text-4xl font-black text-emerald-400 mb-1">20%</div>
-              <div className="text-stone-500 text-xs uppercase font-bold tracking-widest">Comisión Justa</div>
+              <div className="text-4xl font-black text-emerald-400 mb-1">1</div>
+              <div className="text-stone-500 text-xs uppercase font-bold tracking-widest">{language === 'es' ? 'Asistente de Viaje' : 'Travel Assistant'}</div>
             </div>
             <div>
-              <div className="text-4xl font-black text-emerald-400 mb-1">24/7</div>
-              <div className="text-stone-500 text-xs uppercase font-bold tracking-widest">Soporte Humano</div>
+              <div className="text-4xl font-black text-emerald-400 mb-1">LIVE</div>
+              <div className="text-stone-500 text-xs uppercase font-bold tracking-widest">{language === 'es' ? 'Verificación cuando aplica' : 'Verification when needed'}</div>
             </div>
           </div>
         </motion.div>
@@ -87,7 +87,6 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ language }) => {
               className="w-full h-full object-cover"
             />
           </div>
-          {/* Decorative elements */}
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/20 blur-3xl rounded-full" />
           <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-amber-500/10 blur-3xl rounded-full" />
         </motion.div>
