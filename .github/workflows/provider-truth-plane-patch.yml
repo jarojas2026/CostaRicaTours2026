@@ -1,0 +1,357 @@
+name: Provider truth-plane patch
+
+on:
+  push:
+    branches:
+      - fix/provider-truth-plane-2026-09-28
+
+permissions:
+  contents: write
+
+jobs:
+  apply-provider-safety:
+    if: github.event.head_commit.message == 'chore: stage provider truth-plane safety patch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Apply fail-closed provider patch
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          native_path = Path('backend/nativeWorkflows.ts')
+          server_path = Path('server.ts')
+          native = native_path.read_text()
+          server = server_path.read_text()
+
+          def replace_once(text: str, old: str, new: str, label: str) -> str:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly 1 match, found {count}')
+              return text.replace(old, new, 1)
+
+          provider_resolver = r'''export async function getProviderFromDb(providerId: string, tourId?: string): Promise<any | null> {
+            const db = getFirestoreDb();
+            const normalizedId = String(providerId || '').toLowerCase().trim();
+            if (!normalizedId) return null;
+
+            if (db) {
+              try {
+                for (const collectionName of ['operators', 'proveedores']) {
+                  const doc = await db.collection(collectionName).doc(providerId).get();
+                  if (!doc.exists) continue;
+                  const data = doc.data() || {};
+                  const status = String(data.status || data.estado || '').toLowerCase();
+                  const verified = data.verified === true || data.verificado === true;
+                  const active = (data.active === true || data.activo === true || status === 'active' || status === 'activo')
+                    && !['inactive', 'inactivo', 'disabled', 'deshabilitado'].includes(status);
+                  const activeTours = Array.isArray(data.activeTours)
+                    ? data.activeTours.map(String)
+                    : Array.isArray(data.tours) ? data.tours.map(String) : [];
+
+                  if (!verified || !active) return null;
+                  if (tourId && activeTours.length > 0 && !activeTours.includes(tourId)) return null;
+
+                  const officialEmail = String(data.officialEmail || data.emailOperativo || data.email || '').trim();
+                  return {
+                    id: doc.id,
+                    ...data,
+                    verified: true,
+                    active: true,
+                    officialEmail,
+                    email: getEffectiveProviderEmail(officialEmail),
+                    officialPaypalEmail: String(data.officialPaypalEmail || data.paypalEmail || '').trim(),
+                    paypalEmail: String(data.paypalEmail || '').trim(),
+                    activeTours
+                  };
+                }
+              } catch (err) {
+                console.warn(`Error buscando proveedor ${providerId} en Firestore:`, err);
+                return null;
+              }
+            }
+
+            // El directorio estático es sólo una ayuda de desarrollo explícita. Nunca
+            // autoriza un despacho real ni sustituye una asignación verificada en producción.
+            if (process.env.NODE_ENV !== 'production' && process.env.ALLOW_LEGACY_PROVIDER_DIRECTORY === 'true') {
+              return MASTER_OPERATORS_REGISTRY[normalizedId] || null;
+            }
+
+            return null;
+          }'''
+
+          pattern = re.compile(r"export async function getProviderFromDb\(providerId: string\): Promise<any \| null> \{.*?\n\}(?=\n\n/\*\*\n \* =========================================================================\n \* 1\. COORDINACIÓN)", re.S)
+          native, count = pattern.subn(provider_resolver, native, count=1)
+          if count != 1:
+              raise SystemExit(f'provider resolver: expected 1 match, found {count}')
+
+          coordination_block = r'''  const booking = payload.booking || payload;
+            const bookingId = String(booking.bookingId || booking.id || '').trim();
+            const providerId = String(booking.providerId || booking.providerInfo?.id || '').trim();
+            const tourId = String(booking.tourId || booking.tour?.id || '').trim();
+            const tourName = String(booking.tourName || booking.tour?.name || tourId).trim();
+            const tourDate = String(booking.date || booking.tourDate || '').trim();
+            const tourTime = String(booking.time || booking.tourTime || '').trim();
+            const adults = Number(booking.adults ?? 0);
+            const children = Number(booking.children ?? 0);
+            const totalPax = adults + children;
+            const pickupHotel = String(booking.pickupHotel || booking.pickupLocation || '').trim() || 'Por confirmar';
+            const specialRequests = String(booking.specialRequests || '').trim() || 'Sin solicitudes registradas';
+            const customerName = String(booking.customerName || booking.customer?.name || '').trim() || 'Viajero';
+            const customerPhone = String(booking.customerPhone || booking.customer?.phone || '').trim();
+            const customerEmail = String(booking.customerEmail || booking.customer?.email || '').trim();
+
+            const missingOperationalFields = [
+              !bookingId && 'bookingId',
+              !providerId && 'providerId',
+              !tourId && 'tourId',
+              !tourDate && 'date',
+              !tourTime && 'time'
+            ].filter(Boolean) as string[];
+
+            if (missingOperationalFields.length > 0 || !Number.isFinite(totalPax) || totalPax <= 0) {
+              const reason = missingOperationalFields.length > 0
+                ? `Despacho bloqueado: faltan campos operativos (${missingOperationalFields.join(', ')}).`
+                : 'Despacho bloqueado: cantidad de pasajeros inválida.';
+              await recordEscalation({
+                type: 'PROVIDER_ASSIGNMENT_UNVERIFIED',
+                bookingId: bookingId || undefined,
+                providerId: providerId || undefined,
+                reason,
+                customerEmail,
+                customerPhone,
+                details: { tourId: tourId || null, tourDate: tourDate || null, tourTime: tourTime || null, totalPax }
+              });
+              throw new Error(reason);
+            }
+
+            const provider = await getProviderFromDb(providerId, tourId);
+            if (!provider) {
+              const reason = `Despacho bloqueado: el proveedor ${providerId} no está activo y verificado para el tour ${tourId}.`;
+              await recordEscalation({
+                type: 'PROVIDER_ASSIGNMENT_UNVERIFIED',
+                bookingId,
+                providerId,
+                reason,
+                customerEmail,
+                customerPhone,
+                details: { tourId, tourDate, tourTime }
+              });
+              throw new Error(reason);
+            }
+
+            const providerEmail = String(provider.email || '').trim();
+            const providerPhone = String(provider.phone || '').trim();
+            const whatsappNumber = String(provider.whatsapp || '').replace(/[^0-9]/g, '');'''
+
+          pattern = re.compile(r"  const booking = payload\.booking \|\| payload;.*?  const whatsappNumber = provider\.whatsapp \|\| '50687959148';", re.S)
+          native, count = pattern.subn(coordination_block, native, count=1)
+          if count != 1:
+              raise SystemExit(f'coordination defaults: expected 1 match, found {count}')
+
+          native = replace_once(
+              native,
+              "    providerStatus: 'notified',\n    providerDispatchedAt: new Date().toISOString(),",
+              "    providerStatus: 'dispatch_pending',\n    providerDispatchAttemptedAt: new Date().toISOString(),",
+              'provider pre-notification status'
+          )
+          native = replace_once(
+              native,
+              "    if (emailResult.success) {\n      console.log(`✅ [PROVEEDOR NOTIFICADO]",
+              "    if (emailResult.success) {\n      await updateBookingStatus(bookingId, {\n        providerStatus: 'notified',\n        providerDispatchedAt: new Date().toISOString()\n      }).catch(() => {});\n      console.log(`✅ [PROVEEDOR NOTIFICADO]",
+              'provider success status'
+          )
+          native = replace_once(
+              native,
+              "  await recordEscalation({\n    type: 'PROVIDER_NOTIFICATION_FAILED',",
+              "  await updateBookingStatus(bookingId, {\n    providerStatus: 'notification_failed',\n    providerNotificationFailedAt: new Date().toISOString()\n  }).catch(() => {});\n\n  await recordEscalation({\n    type: 'PROVIDER_NOTIFICATION_FAILED',",
+              'provider failure status'
+          )
+
+          for old, new in [
+              ('Asignación Inmediata de Reserva Turística Certificada CST', 'Solicitud de Reserva Turística'),
+              ('a través de la plataforma oficial.', 'a través de Costa Rica Tours.'),
+              ('Costa Rica Tours 2026 • Plataforma de Turismo Sostenible CST • Despacho Autónomo M2M', 'Costa Rica Tours 2026 • Coordinación operativa de turismo'),
+              ('🔄 Reasignar Automáticamente', '🚫 Reportar sin disponibilidad')
+          ]:
+              native = native.replace(old, new)
+
+          fail_closed_fallback = r'''export async function executeAutonomousProviderFallback(
+            bookingId: string,
+            failedProviderId: string,
+            reason: string
+          ): Promise<{
+            success: boolean;
+            action: string;
+            bookingId: string;
+            newStatus: string;
+            providerStatus: string;
+            message: string;
+            reassigned: boolean;
+          }> {
+            const escalationReason = `Proveedor ${failedProviderId || 'sin identificar'} no confirmó la reserva: ${reason || 'sin detalle'}.`;
+            await updateBookingStatus(bookingId, {
+              providerStatus: 'requires_human_assignment',
+              providerFailoverReason: reason,
+              providerFailoverBlockedAt: new Date().toISOString()
+            }).catch(() => {});
+
+            await recordEscalation({
+              type: 'PROVIDER_REASSIGNMENT_REQUIRED',
+              bookingId,
+              providerId: failedProviderId || undefined,
+              reason: escalationReason,
+              details: { policy: 'fail_closed_no_synthetic_provider' }
+            });
+
+            await sendAdministrativeAlert({
+              title: 'Reasignación de proveedor requiere intervención',
+              reason: escalationReason,
+              bookingId,
+              providerId: failedProviderId,
+              details: { policy: 'No se asigna ningún proveedor sin verificación operativa en Firestore.' }
+            }).catch(() => {});
+
+            logAutomationExecution('WF_COORDINACION_PROVEEDOR', 0, 'warning', `Reserva #${bookingId} requiere proveedor alternativo verificado`);
+
+            return {
+              success: false,
+              action: 'decline_escalate',
+              bookingId,
+              newStatus: 'requiere_intervencion',
+              providerStatus: 'requires_human_assignment',
+              message: 'No se reasignó automáticamente. La reserva requiere un proveedor alternativo activo y verificado.',
+              reassigned: false
+            };
+          }'''
+
+          pattern = re.compile(r"export async function executeAutonomousProviderFallback\(.*?\n\}(?=\n\n// =========================================================================)", re.S)
+          native, count = pattern.subn(fail_closed_fallback, native, count=1)
+          if count != 1:
+              raise SystemExit(f'fail-closed fallback: expected 1 match, found {count}')
+
+          # Remove synthetic provider-confirmation defaults and guarantee language.
+          replacements = {
+              "bookingData?.tourName || 'Excursión Oficial Costa Rica'": "bookingData?.tourName || 'Experiencia en Costa Rica'",
+              "bookingData?.date || 'Fecha confirmada'": "bookingData?.date || 'Fecha registrada'",
+              "bookingData?.customerEmail || bookingData?.customer?.email || 'viajero@costaricatours.es'": "bookingData?.customerEmail || bookingData?.customer?.email || ''",
+              "bookingData?.customerName || bookingData?.customer?.name || 'Estimado Viajero'": "bookingData?.customerName || bookingData?.customer?.name || 'Viajero'",
+              "options?.guideName || 'Guía Naturalista Certificado ICT'": "options?.guideName || 'Pendiente de asignación por el proveedor'",
+              "options?.vehiclePlate || 'Microbús Turismo Placa SJO-CR-2026'": "options?.vehiclePlate || 'Pendiente de asignación por el proveedor'",
+              '📍 <strong>Estado:</strong> 100% Confirmado con logística lista': '📍 <strong>Estado:</strong> Proveedor confirmó disponibilidad; logística sujeta a los detalles registrados',
+              'Para garantizar mejores condiciones climáticas y avistamiento en <strong>${tourName}</strong>, tu operador sugiere realizar la actividad a las <strong>${proposedTime}</strong>.': 'El proveedor sugirió ajustar la hora de <strong>${tourName}</strong> a las <strong>${proposedTime}</strong>. Este cambio debe quedar registrado antes de considerarse definitivo.'
+          }
+          for old, new in replacements.items():
+              native = native.replace(old, new)
+
+          # Server: stop importing/exposing the synthetic master registry.
+          server = replace_once(server, '  MASTER_OPERATORS_REGISTRY,\n', '', 'remove master registry import')
+
+          catalog_pattern = re.compile(r"// 1\.2 Catálogo de Operadores Turísticos Oficiales CST\napp\.get\(\['/api/provider/catalog', '/api/operators/catalog'\], \(req, res\) => \{.*?\n\}\);", re.S)
+          catalog_replacement = '''// 1.2 Catálogo legado de operadores deshabilitado: la fuente operativa es Firestore.
+          app.get(['/api/provider/catalog', '/api/operators/catalog'], (_req, res) => {
+            res.status(410).json({
+              success: false,
+              error: 'El catálogo estático de proveedores fue retirado. Los proveedores operativos deben provenir de Firestore y estar activos/verificados.',
+              sourceOfTruth: 'firestore',
+              provenance: 'LIVE_VERIFIED'
+            });
+          });'''
+          server, count = catalog_pattern.subn(catalog_replacement, server, count=1)
+          if count != 1:
+              raise SystemExit(f'legacy catalog endpoint: expected 1 match, found {count}')
+
+          call_old = '''        providerCoordinationResult = await executeProviderRealtimeCoordination({
+                  bookingId,
+                  customerName: booking.customerName,
+                  customerEmail: booking.customerEmail,
+                  customerPhone: booking.customerPhone,
+                  tourName: booking.tourName,
+                  date: booking.date,
+                  tourDate: booking.date,
+                  totalUSD: booking.totalUSD,
+                  pax: (Number(booking.adults) || 0) + (Number(booking.children) || 0),
+                  specialRequests: booking.specialRequests
+                });'''
+          call_new = '''        providerCoordinationResult = await executeProviderRealtimeCoordination({
+                  bookingId,
+                  providerId: booking.providerId,
+                  tourId: booking.tourId,
+                  customerName: booking.customerName,
+                  customerEmail: booking.customerEmail,
+                  customerPhone: booking.customerPhone,
+                  tourName: booking.tourName,
+                  date: booking.date,
+                  tourDate: booking.date,
+                  time: booking.time,
+                  tourTime: booking.time,
+                  adults: booking.adults,
+                  children: booking.children,
+                  pickupHotel: booking.pickupHotel,
+                  totalUSD: booking.totalUSD,
+                  pax: (Number(booking.adults) || 0) + (Number(booking.children) || 0),
+                  specialRequests: booking.specialRequests
+                });'''
+          server = replace_once(server, call_old, call_new, 'provider coordination call')
+
+          native_path.write_text(native)
+          server_path.write_text(server)
+
+          Path('tests/providerTruthPlane.contract.test.ts').write_text(r'''import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import test from 'node:test';
+
+          const read = (file: string) => fs.readFileSync(path.join(process.cwd(), file), 'utf8');
+
+          test('provider dispatch fails closed instead of assigning static fallback operators', () => {
+            const native = read('backend/nativeWorkflows.ts');
+            assert.equal(native.includes("await getProviderFromDb(providerId) || MASTER_OPERATORS_REGISTRY['alsama-tours-cr']"), false);
+            assert.equal(native.includes("booking.providerId || booking.providerInfo?.id || 'alsama-tours-cr'"), false);
+            assert.equal(native.includes('Reasignando a Alsama Tours CR Operaciones Directas'), false);
+            assert.match(native, /PROVIDER_ASSIGNMENT_UNVERIFIED/);
+            assert.match(native, /requires_human_assignment/);
+            assert.match(native, /ALLOW_LEGACY_PROVIDER_DIRECTORY/);
+          });
+
+          test('provider coordination receives the booking provider and tour identity', () => {
+            const server = read('server.ts');
+            assert.match(server, /providerId: booking\.providerId/);
+            assert.match(server, /tourId: booking\.tourId/);
+            assert.equal(server.includes('Object.values(MASTER_OPERATORS_REGISTRY)'), false);
+            assert.match(server, /sourceOfTruth: 'firestore'/);
+          });
+
+          test('provider status only becomes notified after successful delivery', () => {
+            const native = read('backend/nativeWorkflows.ts');
+            assert.match(native, /providerStatus: 'dispatch_pending'/);
+            assert.match(native, /if \(emailResult\.success\)[\s\S]*providerStatus: 'notified'/);
+            assert.match(native, /providerStatus: 'notification_failed'/);
+          });
+          ''')
+          PY
+
+      - name: Validate build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit generated safety fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/provider-truth-plane-patch.yml
+          git add backend/nativeWorkflows.ts server.ts tests/providerTruthPlane.contract.test.ts
+          git commit -m "fix: fail closed on unverified provider routing"
+          git push origin HEAD:fix/provider-truth-plane-2026-09-28
