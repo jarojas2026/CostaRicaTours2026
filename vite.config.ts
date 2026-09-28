@@ -87,7 +87,7 @@ export default defineConfig(() => {
           {
             // Media metadata is safe to cache briefly. Availability, bookings,
             // payments and admin endpoints are intentionally never cached.
-            urlPattern: ({ url }) => url.origin === self.location.origin && /^\/api\/tours\/[^/]+\/media$/.test(url.pathname),
+            urlPattern: /\/api\/tours\/[^/]+\/media(?:\?.*)?$/,
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'tour-media-metadata',
