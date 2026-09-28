@@ -39,6 +39,7 @@ const HOP_BY_HOP = new Set([
 const RETIRED_PUBLIC_PATHS = [
   '/api/pagos/solicitud',
   '/api/reservas/confirmar',
+  '/api/payouts/run-batch',
 ];
 const RETIRED_PUBLIC_PREFIXES = [
   '/api/workflows/',

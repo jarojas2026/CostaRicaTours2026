@@ -11,8 +11,8 @@ import { logAutomationExecution } from './nativeAutomationEngine';
 import { processProviderInboxOnce } from './providerInboxAgent';
 import { runReservationLifecycleSweep } from './reservationLifecycleOrchestrator';
 import { processEmailOperationsOnce } from './emailOperationsAgent';
+import { executeAutomatedProviderPayouts } from './providerPayoutService';
 import {
-  executeAutomatedProviderPayouts,
   executeSurveillanceAndEscalation,
   executeDailyOperationReport,
   executePostTourReviewRequests,
@@ -100,12 +100,25 @@ export function initializeAutomationEngine() {
 
   const CR_TIMEZONE = { timezone: 'America/Costa_Rica' };
 
-  // 1. CRON: PAGOS AUTOMÁTICOS A PROVEEDORES (Diario 6:00 AM Costa Rica)
+  // 1. CRON: PAGOS A PROVEEDORES (Diario 6:00 AM Costa Rica)
+  // El servicio financiero es fail-closed y requiere ENABLE_PROVIDER_PAYOUTS=true,
+  // credenciales PayPal live, pago verificado, proveedor confirmado y fecha ya cumplida.
   cron.schedule('0 6 * * *', async () => {
-    console.log('🕒 [CRON 06:00 AM CR] Ejecutando: Pagos Automáticos a Proveedores');
+    console.log('🕒 [CRON 06:00 AM CR] Ejecutando: Liquidación Segura a Proveedores');
     try {
-      const res = await executeAutomatedProviderPayouts();
-      logAutomationExecution('CRON_PAGOS_PROVEEDORES_6AM', 0, 'success', `Pagos ejecutados: ${res.totalProcessed} procesadas, $${res.totalPaidUSD} USD liquidados.`);
+      const res = await withDistributedAutomationLock('provider-payouts-daily-6am', executeAutomatedProviderPayouts);
+      if (!res) {
+        logAutomationExecution('CRON_PAGOS_PROVEEDORES_6AM', 0, 'warning', 'Ejecución omitida: otro runtime mantiene el lock distribuido.');
+        return;
+      }
+      const level = res.success ? 'success' : 'warning';
+      const blocked = res.blockedReason ? ` Bloqueado: ${res.blockedReason}.` : '';
+      logAutomationExecution(
+        'CRON_PAGOS_PROVEEDORES_6AM',
+        0,
+        level,
+        `Payout seguro: ${res.totalProcessed} procesadas, $${res.totalPaidUSD} USD confirmados como pagados.${blocked}`
+      );
     } catch (error: any) {
       console.error('❌ Error ejecutando CRON_PAGOS_PROVEEDORES_6AM:', error);
       logAutomationExecution('CRON_PAGOS_PROVEEDORES_6AM', 0, 'error', `Fallo: ${error.message}`);

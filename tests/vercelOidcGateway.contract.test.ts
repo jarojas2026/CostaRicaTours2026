@@ -111,7 +111,6 @@ test('private gateway authenticates runtime requests and preserves user auth', a
     await t.test('privileged routes reject anonymous callers before any Google or Cloud Run request', async () => {
       delete process.env.VERCEL_OIDC_TOKEN;
       const privilegedPaths = [
-        '/api/payouts/run-batch',
         '/api/automations/multi-day-planner',
         '/api/automations/dynamic-pricing',
         '/api/calendario/sincronizar',
@@ -139,9 +138,9 @@ test('private gateway authenticates runtime requests and preserves user auth', a
       assert.equal(result.calls, 3);
     });
 
-    await t.test('retired legacy payment and confirmation routes never reach upstream services', async () => {
+    await t.test('retired legacy payment confirmation and payout routes never reach upstream services', async () => {
       delete process.env.VERCEL_OIDC_TOKEN;
-      for (const path of ['/api/pagos/solicitud', '/api/reservas/confirmar', '/api/workflows/legacy-confirm']) {
+      for (const path of ['/api/pagos/solicitud', '/api/reservas/confirmar', '/api/payouts/run-batch', '/api/workflows/legacy-confirm']) {
         const result = await invoke({ includeUserAuth: false, path });
         assert.equal(result.status, 410);
         assert.equal(result.payload.error, 'legacy_route_retired');
