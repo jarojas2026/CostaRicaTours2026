@@ -105,6 +105,16 @@ export function normalizeTimestampToDate(timestampVal: any): Date {
   return isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
+function hasProviderConfirmationEvidence(existing: any, updates: any): boolean {
+  const statuses = [
+    updates?.providerStatus,
+    updates?.serviceOrderStatus,
+    existing?.providerStatus,
+    existing?.serviceOrderStatus
+  ].map((value) => String(value || '').trim().toLowerCase());
+  return statuses.some((value) => value === 'confirmed' || value === 'confirmada');
+}
+
 export function getSlotKey(tourId: string, date: string, time: string): string {
   const cleanTime = (time || '08:00 AM').replace(/[^a-zA-Z0-9]/g, '_');
   return `${tourId}_${date}_${cleanTime}`;
@@ -741,6 +751,16 @@ export async function updateBookingStatus(
     assertBookingTransition(fromLifecycle, toLifecycle);
   } catch (transitionErr: any) {
     return { success: false, error: transitionErr.message };
+  }
+
+  // Customer approval records commercial consent; it is never provider evidence.
+  // This specifically contains the legacy /customer-confirm route while keeping
+  // explicit operator/provider workflows available for supervised operations.
+  if (toLifecycle === 'confirmed' && updates.customerConfirmedAt && !hasProviderConfirmationEvidence(existing, updates)) {
+    return {
+      success: false,
+      error: 'La aprobación del cliente fue registrada, pero la reserva no puede confirmarse hasta recibir evidencia de confirmación del proveedor.'
+    };
   }
 
   const isCancelling = (newStatus === 'cancelada' || newStatus === 'cancelled') &&
