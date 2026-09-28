@@ -8,8 +8,6 @@ import { Language, Currency } from '../types';
 import { MapTourismService } from '../data/mapServicesData';
 import { formatCurrency, getLangText } from '../utils/i18n';
 import { getUsdToCrcRate } from '../utils/currencies';
-import { auth, db } from '../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 interface MapServiceBookingModalProps {
   service: MapTourismService | null;
@@ -57,6 +55,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [confirmedBookingData, setConfirmedBookingData] = useState<any>(null);
+  const [submissionError, setSubmissionError] = useState('');
 
   // Price calculations
   let calculatedTotalUSD = 0;
@@ -122,11 +121,9 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
-    const bookingId = `CR-MAP-${Math.floor(100000 + Math.random() * 900000)}`;
+    setSubmissionError('');
 
     const newBooking = {
-      bookingId,
       tourId: service.id,
       tourName: getLangText(service.name, language),
       serviceType: service.type,
@@ -149,39 +146,35 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
         phone: customerPhone,
         country: 'Costa Rica'
       },
-      status: 'confirmada',
+      status: 'solicitada',
+      paymentStatus: 'pending',
       createdAt: new Date().toISOString()
     };
 
     try {
-      // 1. Send to server backend
-      await fetch('/api/bookings', {
+      const bookingRes = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newBooking)
-      }).catch((err) => console.warn('Backend webhook ping:', err));
-
-      // 2. Persist in Firestore if available
-      try {
-        const currentUser = auth.currentUser;
-        await addDoc(collection(db, 'bookings'), {
-          ...newBooking,
-          userId: currentUser ? currentUser.uid : 'anonymous_map_user',
-          createdAt: serverTimestamp()
-        });
-      } catch (err) {
-        console.warn('Firestore fallback to local state:', err);
+      });
+      const bookingResult = await bookingRes.json().catch(() => ({}));
+      if (!bookingRes.ok || bookingResult?.conflict || !bookingResult?.booking) {
+        throw new Error(bookingResult?.message || bookingResult?.error || 'No se pudo registrar la solicitud de reserva.');
       }
 
-      setConfirmedBookingData(newBooking);
+      const authoritativeBooking = bookingResult.booking;
+      setConfirmedBookingData(authoritativeBooking);
       setIsConfirmed(true);
       if (onBookingSuccess) {
-        onBookingSuccess(newBooking);
+        onBookingSuccess(authoritativeBooking);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating map service booking:', error);
-      setConfirmedBookingData(newBooking);
-      setIsConfirmed(true);
+      setSubmissionError(
+        error?.message || (language === 'es'
+          ? 'No se pudo registrar la solicitud. Inténtalo nuevamente.'
+          : 'The request could not be registered. Please try again.')
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -231,7 +224,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
         {/* Modal Body */}
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
           {isConfirmed ? (
-            /* Confirmation Screen */
+            /* Request Receipt Screen */
             <div className="text-center py-6 space-y-4">
               <div className="w-16 h-16 rounded-full bg-emerald-500 text-stone-950 flex items-center justify-center mx-auto shadow-2xl ring-8 ring-emerald-500/20">
                 <Check className="w-8 h-8 stroke-[3]" />
@@ -239,23 +232,23 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
 
               <div>
                 <h4 className="text-xl sm:text-2xl font-black text-white">
-                  {language === 'es' ? '¡Reserva Registrada Exitosamente!' : 'Booking Confirmed Successfully!'}
+                  {language === 'es' ? 'Solicitud registrada' : 'Request registered'}
                 </h4>
                 <p className="text-xs sm:text-sm text-emerald-200/80 mt-1 max-w-md mx-auto">
                   {language === 'es' 
-                    ? 'Hemos enviado el voucher oficial con código de confirmación y detalles de acceso a tu correo electrónico.' 
-                    : 'We have dispatched your confirmation voucher and entry details directly to your email.'}
+                    ? 'La solicitud fue recibida. La disponibilidad, el precio final, el pago y la confirmación dependen de la verificación operativa correspondiente.' 
+                    : 'Your request was received. Availability, final price, payment, and confirmation remain subject to operational verification.'}
                 </p>
               </div>
 
-              {/* Booking Summary Box */}
+              {/* Booking Request Summary Box */}
               <div className="bg-emerald-950/60 border border-emerald-500/30 rounded-2xl p-4 text-left space-y-2 text-xs">
                 <div className="flex justify-between pb-2 border-b border-emerald-500/20">
-                  <span className="text-emerald-300 font-bold">{language === 'es' ? 'Código de Reserva:' : 'Booking ID:'}</span>
+                  <span className="text-emerald-300 font-bold">{language === 'es' ? 'Referencia:' : 'Reference:'}</span>
                   <span className="font-mono font-bold text-white">{confirmedBookingData?.bookingId}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-emerald-300">{language === 'es' ? 'Servicio:' : 'Service:'}</span>
+                  <span className="text-emerald-300">{language === 'es' ? 'Servicio solicitado:' : 'Requested service:'}</span>
                   <span className="font-bold text-white text-right">{getLangText(service.name, language)}</span>
                 </div>
                 <div className="flex justify-between">
@@ -267,7 +260,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                   <span className="font-bold text-white">{adults} {language === 'es' ? 'adultos' : 'adults'} {children > 0 && `+ ${children} niños`}</span>
                 </div>
                 <div className="flex justify-between pt-2 border-t border-emerald-500/20">
-                  <span className="text-emerald-300 font-bold">{language === 'es' ? 'Total Liquidado:' : 'Total Amount:'}</span>
+                  <span className="text-emerald-300 font-bold">{language === 'es' ? 'Total estimado:' : 'Estimated total:'}</span>
                   <span className="font-black text-amber-300 text-sm">{formatCurrency(calculatedTotalUSD, currency)}{calculatedTotalCRC !== null ? ` (₡${calculatedTotalCRC.toLocaleString()})` : ''}</span>
                 </div>
               </div>
@@ -282,7 +275,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
               </div>
             </div>
           ) : (
-            /* Booking Form */
+            /* Booking Request Form */
             <form onSubmit={handleBookingSubmit} className="space-y-5">
               {/* Quick Service Highlights */}
               <div className="bg-emerald-950/50 border border-emerald-500/20 p-3.5 rounded-2xl flex items-start gap-3">
@@ -515,7 +508,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
               {/* Contact Information */}
               <div className="space-y-3 pt-2 border-t border-emerald-500/20">
                 <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400">
-                  {language === 'es' ? 'Datos del Titular de la Reserva' : 'Lead Traveler Information'}
+                  {language === 'es' ? 'Datos del Titular de la Solicitud' : 'Lead Traveler Information'}
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -575,11 +568,17 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                 </div>
               </div>
 
+              {submissionError && (
+                <div className="rounded-xl border border-red-400/30 bg-red-950/40 px-4 py-3 text-xs font-semibold text-red-200" role="alert">
+                  {submissionError}
+                </div>
+              )}
+
               {/* Price Calculation & Submit */}
               <div className="pt-4 border-t border-emerald-500/20 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
                   <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                    {language === 'es' ? 'Total Calculado del Servicio' : 'Total Calculated Price'}
+                    {language === 'es' ? 'Estimado informativo del servicio' : 'Informational service estimate'}
                   </span>
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-black text-amber-300">
@@ -589,6 +588,9 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                       (₡{(calculatedTotalCRC ?? 0).toLocaleString()})
                     </span>
                   </div>
+                  <span className="text-[10px] text-emerald-300/70">
+                    {language === 'es' ? 'El precio y la disponibilidad finales requieren verificación.' : 'Final price and availability require verification.'}
+                  </span>
                 </div>
 
                 <button
@@ -601,7 +603,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                   ) : (
                     <>
                       <CreditCard className="w-4 h-4" />
-                      <span>{language === 'es' ? 'Confirmar Reserva Oficial' : 'Confirm Official Booking'}</span>
+                      <span>{language === 'es' ? 'Enviar Solicitud' : 'Submit Request'}</span>
                     </>
                   )}
                 </button>
