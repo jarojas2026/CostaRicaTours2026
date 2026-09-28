@@ -46,7 +46,9 @@ const RETIRED_PUBLIC_PREFIXES = [
 
 // Defense in depth for operations that should never be reachable anonymously
 // through the public frontend gateway, even if a backend route accidentally
-// loses its Express auth middleware in a future change.
+// loses its Express auth middleware in a future change. Public inquiry,
+// availability, itinerary-planning and booking-intake APIs are intentionally
+// not included here.
 const PRIVILEGED_PREFIXES = [
   '/api/admin',
   '/api/internal',
@@ -55,9 +57,16 @@ const PRIVILEGED_PREFIXES = [
   '/api/payouts',
   '/api/surveillance',
   '/api/reports',
+  '/api/reportes',
   '/api/reviews/run-request-batch',
   '/api/reminders/run-24h',
   '/api/self-dev',
+  '/api/automations',
+  '/api/calendario/sincronizar',
+  '/api/operadores/notificar',
+  '/api/nps/despachar',
+  '/api/agents/supervisor',
+  '/api/agents/log_exception',
   '/api/ai/evaluation',
   '/api/ai/learning',
   '/api/ai/autonomy',
