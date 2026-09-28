@@ -55,12 +55,12 @@ export async function askCounterDesk(input: CounterDeskAskInput) {
     await rememberTurn(
       sessionId,
       { role: 'user', text: message },
-      { agentId: result.agentId || 'counter_agent', channel, activeGoal: 'traveler_assistance' }
+      { agentId: result.agentId || 'counter_agent', activeGoal: `traveler_assistance:${channel}` }
     );
     await rememberTurn(
       sessionId,
       { role: 'assistant', text: result.reply },
-      { agentId: result.agentId || 'counter_agent', channel, decision: 'unified_concierge_response' }
+      { agentId: result.agentId || 'counter_agent', decision: `unified_concierge_response:${channel}` }
     );
   }
 
