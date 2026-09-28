@@ -5,6 +5,7 @@ import test from 'node:test';
 
 const read = (file: string) => fs.readFileSync(path.join(process.cwd(), file), 'utf8');
 
+// These contracts keep provider identity, dispatch, actions and payouts on verified operational data.
 test('provider dispatch fails closed instead of assigning static fallback operators', () => {
   const native = read('backend/nativeWorkflows.ts');
   assert.equal(native.includes("await getProviderFromDb(providerId) || MASTER_OPERATORS_REGISTRY['alsama-tours-cr']"), false);
@@ -34,7 +35,6 @@ test('provider status only becomes notified after successful delivery', () => {
   assert.match(native, /if \(emailResult\.success\)[\s\S]*providerStatus: 'notified'/);
   assert.match(native, /providerStatus: 'notification_failed'/);
 });
-
 
 test('provider public actions require a signed portal capability and do not auto-confirm the booking', () => {
   const native = read('backend/nativeWorkflows.ts');
