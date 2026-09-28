@@ -33,8 +33,14 @@ jobs:
       - name: Instalar dependencias
         run: npm ci --include=optional
 
+      - name: Bloquear vulnerabilidades críticas de producción
+        run: npm run audit:security:prod
+
       - name: Auditar fixtures y tokens mock
         run: node scripts/securityFixtureAudit.mjs
+
+      - name: Verificar contratos críticos del lifecycle
+        run: npm run test:contracts
 
       - name: Verificar tipos de TypeScript (equivalente a "npm run lint")
         run: npm run lint
