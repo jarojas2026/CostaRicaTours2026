@@ -5,12 +5,14 @@ import App from './App.tsx';
 import './index.css';
 import { ToursProvider } from './contexts/ToursContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { RouteMetadata } from './components/RouteMetadata';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
       <ToursProvider>
         <BrowserRouter>
+          <RouteMetadata />
           <App />
         </BrowserRouter>
       </ToursProvider>

@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /operations
+Disallow: /api/
+Disallow: /operator
+Disallow: /provider
 
-Sitemap: https://costaricatours.netlify.app/sitemap.xml
+Sitemap: https://costaricatours2026.vercel.app/sitemap.xml

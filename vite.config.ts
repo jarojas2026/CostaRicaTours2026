@@ -114,6 +114,12 @@ export default defineConfig(() => {
     },
     build: {
       chunkSizeWarningLimit: 900,
+      // PDF generation is loaded only after the traveler explicitly requests it.
+      // Vite otherwise preloads this ~600 kB async vendor chunk from index.html,
+      // paying the network cost on every visit even when no PDF is generated.
+      modulePreload: {
+        resolveDependencies: (_filename, deps) => deps.filter(dep => !dep.includes('vendor-pdf-')),
+      },
       rollupOptions: {
         output: {
           manualChunks(id: string) {
