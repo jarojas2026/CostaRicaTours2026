@@ -16,3 +16,5 @@ docs
 agent/
 functions/
 app/applet/
+tests/
+coverage/

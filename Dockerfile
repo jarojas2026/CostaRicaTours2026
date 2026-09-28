@@ -18,35 +18,32 @@ FROM node:22-slim AS builder
 
 WORKDIR /app
 
-# Copiamos primero solo los archivos de dependencias para aprovechar
-# el cache de Docker: si no cambian las dependencias, no se vuelven a
-# instalar en cada build, ahorrando tiempo y minutos de CI.
+ENV NODE_OPTIONS="--max-old-space-size=2048"
+
+# Copiamos primero solo los archivos de dependencias para aprovechar el cache
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund --include=optional
 
-# Ahora sí copiamos el resto del código y compilamos.
+# Copiamos el código fuente y compilamos
 COPY . .
 RUN npm run build
+
+# Limpiamos dependencias de desarrollo para reducir el tamaño final
+RUN npm prune --omit=dev --no-audit --no-fund
 
 # ---------- Etapa 2: Producción ----------
 FROM node:22-slim AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production
+ENV PORT=3000
 
-# Solo dependencias de producción (más liviano, sin herramientas de
-# desarrollo como Vite, TypeScript, esbuild, etc.)
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --no-audit --no-fund --include=optional
-
-# Copiamos el resultado ya compilado desde la etapa "builder":
-# dist/ contiene tanto el frontend (HTML/JS/CSS) como server.cjs
-# (el backend ya empaquetado en un solo archivo).
+# Copiamos solo los artefactos necesarios para la ejecución
+COPY package.json ./
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 
-# Cloud Run le indica a la aplicación en qué puerto escuchar mediante
-# la variable de entorno PORT (normalmente 8080). server.ts ya está
-# preparado para leerla (const PORT = process.env.PORT || 3000).
-EXPOSE 8080
+# Puerto estándar de ejecución (3000 por defecto en AI Studio, configurable por PORT en Cloud Run)
+EXPOSE 3000
 
 CMD ["node", "dist/server.cjs"]

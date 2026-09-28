@@ -47,7 +47,7 @@ async function resolveCommand(commandId: string, actor: any, resolution: 'approv
     if (!snap.exists) return { success: false, commandId: id, status: 'not_found' };
     const current = snap.data() || {};
     if (current.status !== 'pending_approval') return { success: false, commandId: id, status: current.status || 'unknown' };
-    const patch: Record<string, unknown> = { status: resolution, updatedAt: now };
+    const patch: Record<string, any> = { status: resolution, updatedAt: now };
     if (resolution === 'approved') patch.approval = { email: actor.email || null, role: actor.role, at: now };
     else patch.rejection = { email: actor.email || null, role: actor.role, at: now, reason: String(reason || 'Sin motivo').slice(0, 1000) };
     transaction.update(ref, patch);
