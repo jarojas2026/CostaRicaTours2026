@@ -32,6 +32,18 @@ const HOP_BY_HOP = new Set([
   'content-length',
 ]);
 
+// Legacy compatibility endpoints that can fabricate a payment-session URL or
+// bypass the canonical payment -> provider -> confirmation lifecycle. They are
+// retained in the backend for migration/audit purposes but are not exposed by
+// the public Vercel gateway.
+const RETIRED_PUBLIC_PATHS = [
+  '/api/pagos/solicitud',
+  '/api/reservas/confirmar',
+];
+const RETIRED_PUBLIC_PREFIXES = [
+  '/api/workflows/',
+];
+
 // Defense in depth for operations that should never be reachable anonymously
 // through the public frontend gateway, even if a backend route accidentally
 // loses its Express auth middleware in a future change.
@@ -88,6 +100,11 @@ function requestPath(req: VercelRequest): string {
   } catch {
     return '/api';
   }
+}
+
+function isRetiredPublicPath(pathname: string): boolean {
+  return RETIRED_PUBLIC_PATHS.includes(pathname)
+    || RETIRED_PUBLIC_PREFIXES.some(prefix => pathname.startsWith(prefix));
 }
 
 function isPrivilegedPath(pathname: string): boolean {
@@ -189,6 +206,14 @@ function targetUrl(req: VercelRequest): string {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const pathname = requestPath(req);
   res.setHeader('cache-control', 'no-store, max-age=0');
+
+  if (isRetiredPublicPath(pathname)) {
+    return res.status(410).json({
+      success: false,
+      error: 'legacy_route_retired',
+      message: 'Esta ruta heredada ya no está disponible públicamente. Utiliza el flujo vigente de disponibilidad, reserva y pago.',
+    });
+  }
 
   if (isPrivilegedPath(pathname) && !hasApplicationAuth(req)) {
     return res.status(401).json({
