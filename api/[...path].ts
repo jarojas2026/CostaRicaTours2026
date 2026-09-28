@@ -32,16 +32,104 @@ const HOP_BY_HOP = new Set([
   'content-length',
 ]);
 
+// Legacy compatibility endpoints that can fabricate a payment-session URL or
+// bypass the canonical payment -> provider -> confirmation lifecycle. They are
+// retained in the backend for migration/audit purposes but are not exposed by
+// the public Vercel gateway.
+const RETIRED_PUBLIC_PATHS = [
+  '/api/pagos/solicitud',
+  '/api/reservas/confirmar',
+];
+const RETIRED_PUBLIC_PREFIXES = [
+  '/api/workflows/',
+];
+
+// Defense in depth for operations that should never be reachable anonymously
+// through the public frontend gateway, even if a backend route accidentally
+// loses its Express auth middleware in a future change.
+const PRIVILEGED_PREFIXES = [
+  '/api/admin',
+  '/api/internal',
+  '/api/ops',
+  '/api/native',
+  '/api/payouts',
+  '/api/surveillance',
+  '/api/reports',
+  '/api/reviews/run-request-batch',
+  '/api/reminders/run-24h',
+  '/api/self-dev',
+  '/api/ai/evaluation',
+  '/api/ai/learning',
+  '/api/ai/autonomy',
+  '/api/ai/skills',
+  '/api/ai/mesh',
+  '/api/ai/demand-forecast',
+  '/api/ai/fraud-check',
+  '/api/fcm/send',
+];
+
+function env(name: string): string {
+  return String(process.env[name] || '').trim();
+}
+
 function requireEnv(name: string): string {
-  const value = String(process.env[name] || '').trim();
+  const value = env(name);
   if (!value) throw new Error(`Missing required gateway configuration: ${name}`);
   return value;
 }
 
+function getWifAudience(): string {
+  const explicit = env('GCP_WIF_AUDIENCE');
+  if (explicit) return explicit;
+
+  // This optional decomposition makes configuration less error-prone while
+  // still refusing to guess any Google project/provider identity.
+  const projectNumber = env('GCP_PROJECT_NUMBER');
+  const poolId = env('GCP_WIF_POOL_ID');
+  const providerId = env('GCP_WIF_PROVIDER_ID');
+  if (projectNumber && poolId && providerId) {
+    return `//iam.googleapis.com/projects/${projectNumber}/locations/global/workloadIdentityPools/${poolId}/providers/${providerId}`;
+  }
+
+  throw new Error('Missing required gateway configuration: GCP_WIF_AUDIENCE');
+}
+
+function requestPath(req: VercelRequest): string {
+  try {
+    return new URL(req.url || '/api', 'https://gateway.invalid').pathname;
+  } catch {
+    return '/api';
+  }
+}
+
+function isRetiredPublicPath(pathname: string): boolean {
+  return RETIRED_PUBLIC_PATHS.includes(pathname)
+    || RETIRED_PUBLIC_PREFIXES.some(prefix => pathname.startsWith(prefix));
+}
+
+function isPrivilegedPath(pathname: string): boolean {
+  return PRIVILEGED_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
+
+function hasApplicationAuth(req: VercelRequest): boolean {
+  const authorization = req.headers.authorization;
+  const bearer = typeof authorization === 'string' && authorization.startsWith('Bearer ') && authorization.length > 'Bearer '.length;
+  const operatorKey = req.headers['x-operator-key'];
+  return bearer || (typeof operatorKey === 'string' && operatorKey.trim().length > 0);
+}
+
+function getRuntimeOidcToken(req: VercelRequest): string {
+  // Vercel supplies a fresh request-scoped identity token. The environment
+  // token remains only as a compatibility fallback for local/build scenarios.
+  const requestToken = req.headers['x-vercel-oidc-token'];
+  const runtimeToken = typeof requestToken === 'string' ? requestToken.trim() : '';
+  if (runtimeToken) return runtimeToken;
+  return requireEnv('VERCEL_OIDC_TOKEN');
+}
+
 async function exchangeVercelOidcForGoogleAccessToken(vercelOidcToken: string): Promise<string> {
-  const audience = requireEnv('GCP_WIF_AUDIENCE');
   const body = new URLSearchParams({
-    audience,
+    audience: getWifAudience(),
     grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
     requested_token_type: 'urn:ietf:params:oauth:token-type:access_token',
     scope: 'https://www.googleapis.com/auth/cloud-platform',
@@ -91,12 +179,7 @@ async function getCloudRunIdToken(req: VercelRequest): Promise<string> {
     return cloudRunTokenCache.token;
   }
 
-  // Functions receive a fresh platform token in the request header. The env
-  // token is only a fallback for local development/build environments.
-  const requestToken = req.headers['x-vercel-oidc-token'];
-  const vercelOidcToken = (typeof requestToken === 'string' ? requestToken.trim() : '')
-    || requireEnv('VERCEL_OIDC_TOKEN');
-  const accessToken = await exchangeVercelOidcForGoogleAccessToken(vercelOidcToken);
+  const accessToken = await exchangeVercelOidcForGoogleAccessToken(getRuntimeOidcToken(req));
   const token = await generateCloudRunIdToken(accessToken);
 
   // Google ID tokens are typically valid for about one hour. Cache conservatively.
@@ -121,6 +204,25 @@ function targetUrl(req: VercelRequest): string {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const pathname = requestPath(req);
+  res.setHeader('cache-control', 'no-store, max-age=0');
+
+  if (isRetiredPublicPath(pathname)) {
+    return res.status(410).json({
+      success: false,
+      error: 'legacy_route_retired',
+      message: 'Esta ruta heredada ya no está disponible públicamente. Utiliza el flujo vigente de disponibilidad, reserva y pago.',
+    });
+  }
+
+  if (isPrivilegedPath(pathname) && !hasApplicationAuth(req)) {
+    return res.status(401).json({
+      success: false,
+      error: 'application_auth_required',
+      message: 'Esta operación requiere autenticación de administrador u operador.',
+    });
+  }
+
   try {
     const cloudRunIdToken = await getCloudRunIdToken(req);
     const headers = new Headers();
@@ -150,10 +252,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     upstream.headers.forEach((value, name) => {
       const lower = name.toLowerCase();
-      if (HOP_BY_HOP.has(lower) || lower === 'content-encoding' || lower === 'content-length') return;
+      if (HOP_BY_HOP.has(lower) || lower === 'content-encoding' || lower === 'content-length' || lower === 'cache-control') return;
       res.setHeader(name, value);
     });
     res.setHeader('x-crt-upstream-status', String(upstream.status));
+    res.setHeader('cache-control', 'no-store, max-age=0');
 
     const buffer = Buffer.from(await upstream.arrayBuffer());
     return res.status(upstream.status).send(buffer);

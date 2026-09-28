@@ -1,0 +1,125 @@
+name: Configure Vercel to Cloud Run WIF
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/configure-vercel-wif.yml'
+
+permissions:
+  contents: read
+
+env:
+  PROJECT_ID: gen-lang-client-0782739149
+  REGION: us-central1
+  SERVICE_NAME: costa-rica-tours
+  WIF_POOL_ID: vercel
+  WIF_PROVIDER_ID: vercel-production
+  GATEWAY_SERVICE_ACCOUNT_ID: vercel-cloud-run-gateway
+  VERCEL_TEAM_SLUG: jarojas800-7900s-projects
+  VERCEL_PROJECT_NAME: costaricatours2026
+
+jobs:
+  configure:
+    name: Provision least-privilege gateway identity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Configure gcloud
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Enable required Google APIs
+        run: |
+          set -euo pipefail
+          gcloud services enable \
+            iam.googleapis.com \
+            iamcredentials.googleapis.com \
+            sts.googleapis.com \
+            run.googleapis.com \
+            --project "$PROJECT_ID"
+
+      - name: Provision WIF pool, provider and gateway service account
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
+          SERVICE_ACCOUNT_EMAIL="${GATEWAY_SERVICE_ACCOUNT_ID}@${PROJECT_ID}.iam.gserviceaccount.com"
+          VERCEL_ISSUER="https://oidc.vercel.com/${VERCEL_TEAM_SLUG}"
+          VERCEL_AUDIENCE="https://vercel.com/${VERCEL_TEAM_SLUG}"
+          VERCEL_SUBJECT="owner:${VERCEL_TEAM_SLUG}:project:${VERCEL_PROJECT_NAME}:environment:production"
+          WIF_AUDIENCE="//iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${WIF_POOL_ID}/providers/${WIF_PROVIDER_ID}"
+          FEDERATED_PRINCIPAL="principal://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${WIF_POOL_ID}/subject/${VERCEL_SUBJECT}"
+
+          if ! gcloud iam service-accounts describe "$SERVICE_ACCOUNT_EMAIL" --project "$PROJECT_ID" >/dev/null 2>&1; then
+            gcloud iam service-accounts create "$GATEWAY_SERVICE_ACCOUNT_ID" \
+              --project "$PROJECT_ID" \
+              --display-name='Vercel private Cloud Run gateway'
+          fi
+
+          if ! gcloud iam workload-identity-pools describe "$WIF_POOL_ID" --location=global --project "$PROJECT_ID" >/dev/null 2>&1; then
+            gcloud iam workload-identity-pools create "$WIF_POOL_ID" \
+              --location=global \
+              --project "$PROJECT_ID" \
+              --display-name='Vercel production workloads' \
+              --description='Federated identity pool for the Costa Rica Tours Vercel production deployment.'
+          fi
+
+          if ! gcloud iam workload-identity-pools providers describe "$WIF_PROVIDER_ID" \
+            --workload-identity-pool="$WIF_POOL_ID" \
+            --location=global \
+            --project "$PROJECT_ID" >/dev/null 2>&1; then
+            gcloud iam workload-identity-pools providers create-oidc "$WIF_PROVIDER_ID" \
+              --workload-identity-pool="$WIF_POOL_ID" \
+              --location=global \
+              --project "$PROJECT_ID" \
+              --display-name='Vercel production OIDC' \
+              --issuer-uri="$VERCEL_ISSUER" \
+              --allowed-audiences="$VERCEL_AUDIENCE" \
+              --attribute-mapping='google.subject=assertion.sub' \
+              --attribute-condition="assertion.sub == '${VERCEL_SUBJECT}'"
+          fi
+
+          gcloud iam service-accounts add-iam-policy-binding "$SERVICE_ACCOUNT_EMAIL" \
+            --project "$PROJECT_ID" \
+            --member="$FEDERATED_PRINCIPAL" \
+            --role='roles/iam.workloadIdentityUser' \
+            --quiet
+
+          gcloud iam service-accounts add-iam-policy-binding "$SERVICE_ACCOUNT_EMAIL" \
+            --project "$PROJECT_ID" \
+            --member="$FEDERATED_PRINCIPAL" \
+            --role='roles/iam.serviceAccountTokenCreator' \
+            --quiet
+
+          gcloud run services add-iam-policy-binding "$SERVICE_NAME" \
+            --region "$REGION" \
+            --project "$PROJECT_ID" \
+            --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
+            --role='roles/run.invoker' \
+            --quiet
+
+          SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
+
+          {
+            echo '## Vercel → private Cloud Run federation values'
+            echo
+            echo 'Cloud Run remains private. Configure these non-secret values in the Vercel production environment:'
+            echo
+            echo "- GCP_WIF_AUDIENCE=${WIF_AUDIENCE}"
+            echo "- GCP_WIF_SERVICE_ACCOUNT=${SERVICE_ACCOUNT_EMAIL}"
+            echo "- CLOUD_RUN_BACKEND_URL=${SERVICE_URL}"
+            echo
+            echo "Trusted Vercel subject: ${VERCEL_SUBJECT}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "WIF audience: $WIF_AUDIENCE"
+          echo "Gateway service account: $SERVICE_ACCOUNT_EMAIL"
+          echo "Cloud Run service: $SERVICE_URL"
