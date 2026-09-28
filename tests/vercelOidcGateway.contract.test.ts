@@ -116,6 +116,16 @@ test('private gateway authenticates runtime requests and preserves user auth', a
       assert.equal(result.calls, 0);
     });
 
+    await t.test('retired legacy payment and confirmation routes never reach upstream services', async () => {
+      delete process.env.VERCEL_OIDC_TOKEN;
+      for (const path of ['/api/pagos/solicitud', '/api/reservas/confirmar', '/api/workflows/legacy-confirm']) {
+        const result = await invoke({ includeUserAuth: false, path });
+        assert.equal(result.status, 410);
+        assert.equal(result.payload.error, 'legacy_route_retired');
+        assert.equal(result.calls, 0);
+      }
+    });
+
     await t.test('public API routes still use the zero-trust infrastructure identity', async () => {
       process.env.VERCEL_OIDC_TOKEN = 'test-public-oidc';
       const result = await invoke({
