@@ -1,19 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Sparkles, 
-  Compass, 
-  CreditCard, 
-  QrCode, 
-  Star, 
-  CheckCircle, 
-  ShieldCheck, 
-  Users, 
-  PhoneCall, 
-  ArrowRight,
-  HeartHandshake,
-  Award
-} from 'lucide-react';
+import { Sparkles, Compass, CreditCard, CheckCircle2, ArrowRight, ShieldCheck, Bot, Route, MessageCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Language } from '../types';
 
@@ -24,7 +11,7 @@ interface HomeTrustSectionsProps {
 
 export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
   language,
-  onOpenCustomFunnel
+  onOpenCustomFunnel,
 }) => {
   const isEs = language === 'es';
   const navigate = useNavigate();
@@ -33,114 +20,72 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
     {
       num: '01',
       icon: Compass,
-      title: isEs ? '1. Explorá y Personalizá' : '1. Explore & Customize',
-      desc: isEs 
-        ? 'Elegí entre más de 25 tours oficiales con guías certificados o dejá que nuestros Asistentes IA diseñen tu itinerario a la medida.'
-        : 'Choose from 25+ official certified tours or let our AI assistants craft your tailored day-by-day itinerary.',
-      badge: isEs ? 'Catálogo 100% Verificado' : '100% Verified Catalog'
+      title: isEs ? 'Explorá experiencias' : 'Explore experiences',
+      desc: isEs
+        ? 'Compará tours, destinos y actividades del catálogo y usá el asistente para ordenar opciones según fechas, intereses y logística.'
+        : 'Compare tours, destinations and activities from the catalog, and use the assistant to organize options around dates, interests and logistics.',
     },
     {
       num: '02',
       icon: CreditCard,
-      title: isEs ? '2. Reservá con Pago Protegido' : '2. Secure Protected Booking',
-      desc: isEs 
-        ? 'Pagá en segundos con Stripe, PayPal, tarjetas internacionales o SINPE Móvil local con cifrado bancario de 256 bits.'
-        : 'Pay in seconds with Stripe, PayPal, international cards, or local SINPE Móvil with 256-bit bank encryption.',
-      badge: isEs ? 'Cancelación Gratuita' : 'Free Cancellation'
+      title: isEs ? 'Solicitá y verificá' : 'Request and verify',
+      desc: isEs
+        ? 'La disponibilidad, el precio aplicable y el estado del pago se verifican durante el proceso. Una solicitud no se presenta como confirmada antes de completar esas verificaciones.'
+        : 'Availability, applicable price and payment state are checked during the process. A request is not shown as confirmed before those checks are completed.',
     },
     {
       num: '03',
-      icon: QrCode,
-      title: isEs ? '3. Recibí tu Voucher QR al Instante' : '3. Instant QR Voucher in Minutes',
-      desc: isEs 
-        ? 'Recibí tu confirmación oficial y código QR directo en tu WhatsApp y correo electrónico, listo para mostrar a tu operador local.'
-        : 'Get your official booking confirmation & entry QR code directly on WhatsApp and email, ready to scan with your guide.',
-      badge: isEs ? 'Soporte 24/7 en Destino' : '24/7 On-Ground Support'
-    }
+      icon: CheckCircle2,
+      title: isEs ? 'Confirmación operativa' : 'Operational confirmation',
+      desc: isEs
+        ? 'La reserva final se confirma cuando el pago correspondiente y la operación del proveedor quedan validados. El estado se mantiene visible en Mis Reservas.'
+        : 'The final booking is confirmed after the relevant payment and provider operation have been validated. The status remains visible in My Bookings.',
+    },
   ];
 
-  const testimonials = [
+  const capabilities = [
     {
-      name: 'Sarah & Mark Miller',
-      country: isEs ? 'California, EE. UU.' : 'California, USA',
-      flag: '🇺🇸',
-      rating: 5,
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-      tour: isEs ? 'Combo Volcán Arenal & Termales' : 'Arenal Volcano & Hot Springs Combo',
-      text: isEs 
-        ? '¡Fue el mejor día de nuestras vacaciones en Costa Rica! La caminata por la colada de lava fue fascinante y las termales de Baldi al atardecer fueron pura relajación. El guía conocía cada ave y perezoso.'
-        : 'The absolute highlight of our trip to Costa Rica! The lava trail hike was breathtaking and the evening thermal pools at Baldi were pure bliss. Our guide spotted 4 sloths and a toucan!',
-      date: isEs ? 'Hace 4 días' : '4 days ago'
+      icon: Bot,
+      title: isEs ? 'Asistente de viaje' : 'Travel assistant',
+      desc: isEs
+        ? 'Ayuda a descubrir opciones, preparar itinerarios y continuar una solicitud sin presentar información estática como si fuera una verificación en vivo.'
+        : 'Helps discover options, prepare itineraries and continue a request without presenting static information as live verification.',
     },
     {
-      name: 'Gonzalo Fernández',
-      country: isEs ? 'Madrid, España' : 'Madrid, Spain',
-      flag: '🇪🇸',
-      rating: 5,
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-      tour: isEs ? 'Monteverde Extreme Canopy & Puentes' : 'Monteverde Extreme Zipline & Bridges',
-      text: isEs 
-        ? 'Impresionante tirarse en el cable Superman de 1.5 km volando sobre la niebla del bosque nuboso de Monteverde. Los puentes colgantes valen totalmente la pena, vimos 2 quetzales. ¡Pura Vida!'
-        : 'Incredible flying over the cloud forest mist on the 1.5km Superman cable. The hanging bridges are magical and we even saw two Resplendent Quetzals. Top-notch safety and guides!',
-      date: isEs ? 'Hace 1 semana' : '1 week ago'
+      icon: Route,
+      title: isEs ? 'Planificación conectada' : 'Connected planning',
+      desc: isEs
+        ? 'El itinerario combina catálogo, memoria del viajero, geografía y servicios de verificación cuando están disponibles.'
+        : 'The itinerary combines the catalog, traveler context, geography and verification services when available.',
     },
     {
-      name: 'Elena Rostova',
-      country: isEs ? 'Múnich, Alemania' : 'Munich, Germany',
-      flag: '🇩🇪',
-      rating: 5,
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
-      tour: isEs ? 'Parque Nacional Manuel Antonio' : 'Manuel Antonio National Park Safari',
-      text: isEs 
-        ? 'Vimos 6 perezosos gracias al telescopio HD del guía. Las fotos que tomamos a través del lente del telescopio parecen de revista National Geographic. La playa del parque es paradisíaca.'
-        : 'We saw 6 sloths thanks to the guide’s high-power spotting telescope. The photos we captured look straight out of National Geographic. The white sand beach inside the park is paradise.',
-      date: isEs ? 'Hace 2 semanas' : '2 weeks ago'
+      icon: ShieldCheck,
+      title: isEs ? 'Estados claros' : 'Clear booking states',
+      desc: isEs
+        ? 'Pago verificado, proveedor pendiente y reserva confirmada son estados distintos. La plataforma no los trata como equivalentes.'
+        : 'Payment verified, provider pending and booking confirmed are different states. The platform does not treat them as equivalent.',
     },
-    {
-      name: 'David K. & Friends',
-      country: isEs ? 'Toronto, Canadá' : 'Toronto, Canada',
-      flag: '🇨🇦',
-      rating: 5,
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
-      tour: isEs ? 'Rafting Río Pacuare Clase IV' : 'Pacuare River Whitewater Rafting Class IV',
-      text: isEs 
-        ? 'World-class whitewater rafting! El cañón del Río Pacuare entre cascadas y selva virgen es surreal. El equipo de seguridad es súper profesional y el almuerzo en la ribera del río fue un 10/10.'
-        : 'World-class whitewater rafting! The Pacuare canyon surrounded by waterfalls and untouched jungle is surreal. Outstanding safety team and the riverside lunch was 10/10.',
-      date: isEs ? 'Hace 2 semanas' : '2 weeks ago'
-    }
-  ];
-
-  const partners = [
-    { name: 'SINAC', subtitle: isEs ? 'Parques Nacionales Oficial' : 'Official National Parks', icon: '🌿' },
-    { name: 'ICT Costa Rica', subtitle: isEs ? 'Instituto Turismo' : 'Tourism Board Partner', icon: '🇨🇷' },
-    { name: 'CANATUR', subtitle: isEs ? 'Cámara Nacional Turismo' : 'National Chamber of Tourism', icon: '🏅' },
-    { name: 'Selvatura Park', subtitle: isEs ? 'Monteverde Canopy' : 'Monteverde Canopy', icon: '🌲' },
-    { name: 'Baldi Hot Springs', subtitle: isEs ? 'Aguas Termales Arenal' : 'Arenal Thermal Springs', icon: '🌋' },
-    { name: 'Pacuare Outdoor', subtitle: isEs ? 'Rafting Certificado' : 'Certified Whitewater', icon: '🚣' },
-    { name: 'Sansa Airlines', subtitle: isEs ? 'Vuelos Domésticos' : 'Domestic Flights', icon: '✈️' }
   ];
 
   return (
-    <div className="space-y-24 py-16">
-      
-      {/* 1. SECCIÓN CÓMO FUNCIONA */}
+    <div className="space-y-20 py-16">
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-14">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-300 text-xs font-bold uppercase tracking-widest mb-3">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            {isEs ? 'Simple & Seguro' : 'Simple & Safe'}
+            {isEs ? 'Planificá con información clara' : 'Plan with clear information'}
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-            {isEs ? '¿Cómo funciona CostaRicaTours?' : 'How CostaRicaTours Works'}
+            {isEs ? 'Cómo funciona una reserva' : 'How a booking works'}
           </h2>
           <p className="mt-3 text-base text-emerald-100/80">
-            {isEs 
-              ? 'Desde la primera consulta con nuestra IA hasta tu regreso a casa, una experiencia de viaje fluida y sin complicaciones.'
-              : 'From your first AI consultation to your flight back home, a smooth and stress-free travel experience.'}
+            {isEs
+              ? 'La plataforma separa recomendación, verificación y confirmación para que siempre sepas qué está listo y qué todavía requiere una acción operativa.'
+              : 'The platform separates recommendation, verification and confirmation so you can always see what is ready and what still requires an operational step.'}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {steps.map((step, idx) => {
             const Icon = step.icon;
             return (
@@ -149,215 +94,93 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: idx * 0.15 }}
-                className="relative modern-card p-8 group flex flex-col justify-between"
+                transition={{ duration: 0.45, delay: idx * 0.1 }}
+                className="modern-card p-8"
               >
-                <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-600/30 to-amber-500/20 border border-teal-500/40 flex items-center justify-center text-amber-400 group-hover:scale-110 group-hover:bg-amber-500/20 transition-all">
-                      <Icon className="w-7 h-7" />
-                    </div>
-                    <span className="text-3xl font-black text-teal-300/40 font-mono select-none">
-                      {step.num}
-                    </span>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-600/30 to-amber-500/20 border border-teal-500/40 flex items-center justify-center text-amber-400">
+                    <Icon className="w-7 h-7" />
                   </div>
-
-                  <h3 className="text-xl font-bold text-white group-hover:text-amber-300 transition-colors">
-                    {step.title}
-                  </h3>
-                  <p className="mt-3 text-emerald-100/80 text-sm leading-relaxed">
-                    {step.desc}
-                  </p>
+                  <span className="text-3xl font-black text-teal-300/40 font-mono">{step.num}</span>
                 </div>
-
-                <div className="mt-6 pt-4 border-t border-emerald-500/20 flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-teal-400 shrink-0" />
-                  <span className="text-xs font-semibold text-teal-200">
-                    {step.badge}
-                  </span>
-                </div>
+                <h3 className="text-xl font-bold text-white">{step.title}</h3>
+                <p className="mt-3 text-emerald-100/80 text-sm leading-relaxed">{step.desc}</p>
               </motion.div>
             );
           })}
         </div>
       </section>
 
-      {/* 2. SECCIÓN TESTIMONIOS REALES */}
       <section className="bg-[#051c14]/90 py-16 border-y border-emerald-500/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase tracking-wider mb-2">
-                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                {isEs ? '4.98 / 5 Estrellas en +1,200 Reseñas' : '4.98 / 5 Stars from +1,200 Reviews'}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-10">
+            <div className="max-w-3xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase tracking-wider mb-3">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                {isEs ? 'Transparencia operativa' : 'Operational transparency'}
               </div>
               <h2 className="text-3xl sm:text-4xl font-black text-white">
-                {isEs ? 'Viajeros felices viviendo el Pura Vida' : 'Happy Travelers Living Pura Vida'}
+                {isEs ? 'Tecnología que acompaña el viaje' : 'Technology that supports the journey'}
               </h2>
+              <p className="mt-3 text-sm sm:text-base text-emerald-100/75 leading-relaxed">
+                {isEs
+                  ? 'Los módulos de IA, memoria, clima, disponibilidad, reservas y proveedores se coordinan detrás de la experiencia del viajero. Cuando una fuente viva no está disponible, la interfaz debe decirlo en lugar de inventar una respuesta.'
+                  : 'AI, memory, weather, availability, booking and provider modules coordinate behind the traveler experience. When a live source is unavailable, the interface should say so instead of inventing an answer.'}
+              </p>
             </div>
             <button
-              onClick={() => navigate('/tours')}
-              className="inline-flex items-center gap-2 text-sm font-bold text-amber-400 hover:text-amber-300 transition-colors cursor-pointer"
+              onClick={() => navigate('/ai')}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-black text-stone-950 hover:bg-emerald-400 transition-colors"
             >
-              <span>{isEs ? 'Ver todos los tours disponibles' : 'View all available tours'}</span>
+              {isEs ? 'Abrir asistente' : 'Open assistant'}
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {testimonials.map((item, idx) => (
-              <motion.div
-                key={item.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: idx * 0.1 }}
-                className="modern-card p-6 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <img 
-                      src={item.avatar} 
-                      alt={item.name}
-                      className="w-11 h-11 rounded-full object-cover border-2 border-amber-400/80 shadow"
-                    />
-                    <div>
-                      <h4 className="text-sm font-bold text-white leading-tight">
-                        {item.name}
-                      </h4>
-                      <p className="text-xs text-emerald-200/70 flex items-center gap-1.5 mt-0.5">
-                        <span>{item.flag}</span>
-                        <span>{item.country}</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1 mb-2.5">
-                    {[...Array(item.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                    ))}
-                    <span className="text-xs text-emerald-400 font-semibold ml-1.5 flex items-center gap-1">
-                      <CheckCircle className="w-3 h-3 text-emerald-400" />
-                      {isEs ? 'Verificado' : 'Verified'}
-                    </span>
-                  </div>
-
-                  <p className="text-xs font-semibold text-amber-300/90 mb-2">
-                    {item.tour}
-                  </p>
-
-                  <p className="text-emerald-100/80 text-xs leading-relaxed italic">
-                    "{item.text}"
-                  </p>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-emerald-900/30 text-[11px] text-emerald-300/60">
-                  {item.date}
-                </div>
-              </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {capabilities.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="rounded-2xl border border-emerald-500/20 bg-[#031710]/80 p-6">
+                <Icon className="w-6 h-6 text-emerald-400" />
+                <h3 className="mt-4 text-lg font-bold text-white">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-emerald-100/70">{desc}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 3. SECCIÓN NUESTROS PROVEEDORES Y ALIADOS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-900/40 border border-emerald-600/30 text-emerald-300 text-xs font-bold uppercase tracking-wider mb-2">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            {isEs ? 'Garantía de Calidad' : 'Quality Assurance'}
+        <div className="rounded-3xl border border-emerald-500/25 bg-gradient-to-br from-emerald-950/80 to-[#031710] p-7 sm:p-10 flex flex-col lg:flex-row lg:items-center justify-between gap-7">
+          <div className="max-w-3xl">
+            <h2 className="text-2xl sm:text-3xl font-black text-white">
+              {isEs ? '¿No sabés qué reservar todavía?' : 'Not sure what to book yet?'}
+            </h2>
+            <p className="mt-3 text-emerald-100/75 leading-relaxed">
+              {isEs
+                ? 'Contanos fechas, cantidad de viajeros e intereses. El planificador puede construir una propuesta y señalar qué elementos necesitan verificación antes de reservar.'
+                : 'Share your dates, party size and interests. The planner can build a proposal and indicate which items need verification before booking.'}
+            </p>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white">
-            {isEs ? 'Operadores y Aliados Oficiales de Costa Rica' : 'Official Costa Rican Operators & Partners'}
-          </h2>
-          <p className="mt-2 text-sm text-emerald-100/80">
-            {isEs 
-              ? 'Trabajamos directamente con empresas locales acreditadas por el Instituto Costarricense de Turismo y SINAC.'
-              : 'Direct partnership with accredited local operators under the Costa Rica Tourism Board and SINAC standards.'}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4">
-          {partners.map((p) => (
-            <div 
-              key={p.name}
-              className="modern-card p-4 flex flex-col items-center justify-center text-center hover:scale-105"
+          <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+            <button
+              onClick={onOpenCustomFunnel}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-400 px-5 py-3 text-sm font-black text-stone-950 hover:bg-amber-300 transition-colors"
             >
-              <span className="text-2xl mb-1">{p.icon}</span>
-              <span className="text-xs font-bold text-white mt-1 leading-tight">{p.name}</span>
-              <span className="text-[10px] text-teal-300/80 mt-0.5">{p.subtitle}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 4. BANNER CTA ALTO IMPACTO: ARMÁ TU VIAJE A MEDIDA */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative rounded-2xl overflow-hidden bg-[#052118] border border-amber-500/30 p-8 sm:p-12 shadow-xl shadow-black/50">
-          {/* Subtle background glow */}
-          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-8 space-y-4 text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-black uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                {isEs ? 'Concierge VIP & Asesoría Gratuita' : 'VIP Concierge & Free Consultation'}
-              </div>
-
-              <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                {isEs ? '¿Buscás una experiencia 100% personalizada en Costa Rica?' : 'Looking for a 100% Tailored Costa Rican Experience?'}
-              </h3>
-
-              <p className="text-base text-emerald-100/90 leading-relaxed max-w-2xl">
-                {isEs 
-                  ? 'Nuestra inteligencia artificial especializada y equipo de concierges locales diseñan tu aventura ideal en menos de 2 minutos: transporte privado o shuttle, hoteles con encanto y los mejores tours con cupos garantizados.'
-                  : 'Our dedicated travel AI and local concierge specialists will craft your dream itinerary in under 2 minutes: private or shuttle transport, charming boutique stays, and premier tours with guaranteed spots.'}
-              </p>
-
-              <div className="flex flex-wrap gap-4 pt-2 text-xs text-emerald-100/80 font-medium">
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle className="w-4 h-4 text-amber-400" />
-                  {isEs ? 'Sin compromisos ni cargos ocultos' : 'No hidden fees or obligations'}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle className="w-4 h-4 text-amber-400" />
-                  {isEs ? 'Presupuesto ajustado a tus fechas' : 'Custom budget & dates'}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle className="w-4 h-4 text-amber-400" />
-                  {isEs ? 'Atención en Español e Inglés' : 'English & Spanish support'}
-                </span>
-              </div>
-            </div>
-
-            <div className="lg:col-span-4 flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={onOpenCustomFunnel}
-                className="w-full btn-primary"
-              >
-                <Sparkles className="w-5 h-5 text-stone-950" />
-                <span>{isEs ? 'Armar mi Viaje a Medida' : 'Build My Custom Trip'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate('/itinerary')}
-                className="w-full btn-outline bg-transparent border-emerald-600/40 text-white hover:bg-emerald-900/40 group"
-                title={isEs ? 'Planificador inteligente con IA en segundos' : 'Smart AI trip planner in seconds'}
-              >
-                <Compass className="w-4 h-4 text-amber-400 group-hover:rotate-45 transition-transform duration-300" />
-                <span>{isEs ? 'Generar Itinerario con IA' : 'Generate AI Itinerary'}</span>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 ml-1">
-                  {isEs ? 'Gratis' : 'Free'}
-                </span>
-              </button>
-            </div>
+              <Route className="w-4 h-4" />
+              {isEs ? 'Planear mi viaje' : 'Plan my trip'}
+            </button>
+            <a
+              href="https://wa.me/50687959148?text=Hola%20Costa%20Rica%20Tours,%20quisiera%20ayuda%20para%20planificar%20mi%20viaje."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-400/40 px-5 py-3 text-sm font-bold text-emerald-200 hover:bg-emerald-950/70 transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" />
+              WhatsApp
+            </a>
           </div>
         </div>
       </section>
-
     </div>
   );
 };

@@ -31,6 +31,7 @@ if (unique(declarationNames).length !== declarationNames.length) add('HIGH', 'AI
 
 const unsafeContact = ['8888', '7777'].join('-');
 const unsafeContactCompact = '88887777';
+void unsafeContactCompact;
 
 const providerService = read('backend/providerCommunicationService.ts');
 if (!/resolveOperationalProvider/.test(providerService) || !/await resolveOperationalProvider/.test(providerService)) {
@@ -79,7 +80,6 @@ for (const relative of ['backend', 'src', 'public', 'agent']) {
   }
 }
 
-
 const server = read('server.ts');
 const reservationLifecycle = read('backend/reservationLifecycleOrchestrator.ts');
 if (!/createInFlightLimiter/.test(server) || !/apiAdmission/.test(server) || !/aiAdmission/.test(server)) {
@@ -111,7 +111,7 @@ if (/setInterval\(async \(\) =>[\\s\\S]*processPendingCustomerIntakeJobs/.test(s
 if (!/runReservationLifecycleSweep/.test(reservationLifecycle) || !/\/api\/internal\/reservation-lifecycle\/sweep/.test(server)) {
   add('CRITICAL', 'BOOKING-001', 'Reservation lifecycle orchestrator is not connected to the protected server endpoint.');
 }
-if (!/runReservationLifecycleSweep\(100\)/.test(read('backend/cronEngine.ts'))) {
+if (!/runReservationLifecycleSweep\(100\)/.test(cronSource)) {
   add('HIGH', 'BOOKING-002', 'Reservation lifecycle orchestrator is not scheduled by the native cron engine.');
 }
 if (!/claim\(/.test(reservationLifecycle) || !/reservation_lifecycle_events/.test(reservationLifecycle)) {
@@ -129,7 +129,7 @@ if (!/EMAIL_MAX_ATTEMPTS/.test(emailOperations) || !/claimed === 'terminal'/.tes
 if (!/processEmailOperationsOnce/.test(server) || !/\/api\/internal\/email-operations\/sweep/.test(server)) {
   add('CRITICAL', 'EMAIL-001', 'Autonomous email agent is not connected to a protected server endpoint.');
 }
-if (!/processEmailOperationsOnce\(\)/.test(read('backend/cronEngine.ts'))) {
+if (!/processEmailOperationsOnce/.test(cronSource) || !/email-operations-1m/.test(cronSource)) {
   add('HIGH', 'EMAIL-002', 'Autonomous email agent is not scheduled by the native cron engine.');
 }
 if (!/claimEvent/.test(emailOperations) || !/status === 'error'/.test(emailOperations)) {
