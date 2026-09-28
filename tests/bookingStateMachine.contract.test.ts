@@ -16,6 +16,12 @@ test('verified payment normalizes to paid without implying provider confirmation
   assert.notEqual(normalizeBookingLifecycle('pendiente_pago', 'paid'), 'confirmed');
 });
 
+test('payment cannot skip provider confirmation stage', () => {
+  assert.equal(canTransitionBooking('payment_pending', 'confirmed'), false);
+  assert.equal(canTransitionBooking('paid', 'confirmed'), false);
+  assert.equal(canTransitionBooking('paid', 'provider_pending'), true);
+});
+
 test('provider_pending is a distinct lifecycle stage', () => {
   assert.equal(normalizeBookingLifecycle('provider_pending'), 'provider_pending');
   assert.ok(nextSafeTransitions('provider_pending').includes('confirmed'));

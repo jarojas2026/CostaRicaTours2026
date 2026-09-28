@@ -48,11 +48,15 @@ const LEGACY_MAP: Record<string, BookingLifecycle> = {
   reembolsada: 'refunded'
 };
 
+/**
+ * Confirmation is provider-owned. Payment and customer approval may advance
+ * commercial intent, but neither may skip the provider_pending stage.
+ */
 const TRANSITIONS: Record<BookingLifecycle, BookingLifecycle[]> = {
   prospect: ['hold', 'cancelled'],
   hold: ['payment_pending', 'cancelled'],
-  payment_pending: ['paid', 'confirmed', 'cancelled'],
-  paid: ['provider_pending', 'confirmed', 'cancelled', 'refunded'],
+  payment_pending: ['paid', 'cancelled'],
+  paid: ['provider_pending', 'cancelled', 'refunded'],
   provider_pending: ['confirmed', 'cancelled'],
   confirmed: ['in_operation', 'cancelled'],
   in_operation: ['completed', 'cancelled'],
