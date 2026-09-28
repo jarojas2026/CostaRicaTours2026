@@ -1,4 +1,4 @@
-name: Configure Vercel to Cloud Run WIF
+name: Check and Configure Vercel to Cloud Run WIF
 
 on:
   workflow_dispatch: {}
@@ -16,13 +16,16 @@ env:
   SERVICE_NAME: costa-rica-tours
   WIF_POOL_ID: vercel
   WIF_PROVIDER_ID: vercel-production
-  GATEWAY_SERVICE_ACCOUNT_ID: vercel-cloud-run-gateway
   VERCEL_TEAM_SLUG: jarojas800-7900s-projects
   VERCEL_PROJECT_NAME: costaricatours2026
+  # Reuse the existing deployment identity instead of requiring permission to
+  # create another service account. This account already invokes the private
+  # Cloud Run health endpoint during deployments.
+  GATEWAY_SERVICE_ACCOUNT: github-deployer@gen-lang-client-0782739149.iam.gserviceaccount.com
 
 jobs:
   configure:
-    name: Provision least-privilege gateway identity
+    name: Check/provision least-privilege gateway identity
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -38,51 +41,52 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
 
-      - name: Verify existing Google services and deployment identity
+      - name: Verify existing Cloud Run deployment identity
         shell: bash
         run: |
           set -euo pipefail
           echo "Authenticated account: $(gcloud config get-value account)"
           echo "Project: $PROJECT_ID"
+          gcloud iam service-accounts describe "$GATEWAY_SERVICE_ACCOUNT" --project "$PROJECT_ID" >/dev/null
           gcloud run services describe "$SERVICE_NAME" \
             --region "$REGION" \
             --project "$PROJECT_ID" \
             --format='value(status.url)' >/dev/null
-          echo "Cloud Run API is already usable by the deployment identity."
-          echo "The workflow intentionally does not enable project APIs; doing so requires Service Usage Admin and exceeds the deployer's current least-privilege role."
+          echo "Existing deployment identity and private Cloud Run service are readable."
 
-      - name: Provision WIF pool, provider and gateway service account
+      - name: Check or provision WIF resources without broadening deployer privileges
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
 
           PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
-          SERVICE_ACCOUNT_EMAIL="${GATEWAY_SERVICE_ACCOUNT_ID}@${PROJECT_ID}.iam.gserviceaccount.com"
+          SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
           VERCEL_ISSUER="https://oidc.vercel.com/${VERCEL_TEAM_SLUG}"
           VERCEL_AUDIENCE="https://vercel.com/${VERCEL_TEAM_SLUG}"
           VERCEL_SUBJECT="owner:${VERCEL_TEAM_SLUG}:project:${VERCEL_PROJECT_NAME}:environment:production"
           WIF_AUDIENCE="//iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${WIF_POOL_ID}/providers/${WIF_PROVIDER_ID}"
           FEDERATED_PRINCIPAL="principal://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${WIF_POOL_ID}/subject/${VERCEL_SUBJECT}"
-
-          if ! gcloud iam service-accounts describe "$SERVICE_ACCOUNT_EMAIL" --project "$PROJECT_ID" >/dev/null 2>&1; then
-            gcloud iam service-accounts create "$GATEWAY_SERVICE_ACCOUNT_ID" \
-              --project "$PROJECT_ID" \
-              --display-name='Vercel private Cloud Run gateway'
-          fi
+          READY=true
+          BLOCKERS=()
 
           if ! gcloud iam workload-identity-pools describe "$WIF_POOL_ID" --location=global --project "$PROJECT_ID" >/dev/null 2>&1; then
-            gcloud iam workload-identity-pools create "$WIF_POOL_ID" \
+            echo "WIF pool is absent; attempting least-privilege creation."
+            if ! gcloud iam workload-identity-pools create "$WIF_POOL_ID" \
               --location=global \
               --project "$PROJECT_ID" \
               --display-name='Vercel production workloads' \
-              --description='Federated identity pool for the Costa Rica Tours Vercel production deployment.'
+              --description='Federated identity pool for the Costa Rica Tours Vercel production deployment.'; then
+              READY=false
+              BLOCKERS+=("Create Workload Identity Pool '$WIF_POOL_ID' (requires iam.workloadIdentityPools.create).")
+            fi
           fi
 
-          if ! gcloud iam workload-identity-pools providers describe "$WIF_PROVIDER_ID" \
+          if [[ "$READY" == true ]] && ! gcloud iam workload-identity-pools providers describe "$WIF_PROVIDER_ID" \
             --workload-identity-pool="$WIF_POOL_ID" \
             --location=global \
             --project "$PROJECT_ID" >/dev/null 2>&1; then
-            gcloud iam workload-identity-pools providers create-oidc "$WIF_PROVIDER_ID" \
+            echo "Vercel OIDC provider is absent; attempting creation."
+            if ! gcloud iam workload-identity-pools providers create-oidc "$WIF_PROVIDER_ID" \
               --workload-identity-pool="$WIF_POOL_ID" \
               --location=global \
               --project "$PROJECT_ID" \
@@ -90,42 +94,68 @@ jobs:
               --issuer-uri="$VERCEL_ISSUER" \
               --allowed-audiences="$VERCEL_AUDIENCE" \
               --attribute-mapping='google.subject=assertion.sub' \
-              --attribute-condition="assertion.sub == '${VERCEL_SUBJECT}'"
+              --attribute-condition="assertion.sub == '${VERCEL_SUBJECT}'"; then
+              READY=false
+              BLOCKERS+=("Create OIDC provider '$WIF_PROVIDER_ID' restricted to the Vercel production subject.")
+            fi
           fi
 
-          gcloud iam service-accounts add-iam-policy-binding "$SERVICE_ACCOUNT_EMAIL" \
-            --project "$PROJECT_ID" \
-            --member="$FEDERATED_PRINCIPAL" \
-            --role='roles/iam.workloadIdentityUser' \
-            --quiet
+          if [[ "$READY" == true ]]; then
+            if ! gcloud iam service-accounts add-iam-policy-binding "$GATEWAY_SERVICE_ACCOUNT" \
+              --project "$PROJECT_ID" \
+              --member="$FEDERATED_PRINCIPAL" \
+              --role='roles/iam.workloadIdentityUser' \
+              --quiet; then
+              READY=false
+              BLOCKERS+=("Grant roles/iam.workloadIdentityUser on $GATEWAY_SERVICE_ACCOUNT to the Vercel federated principal.")
+            fi
+          fi
 
-          gcloud iam service-accounts add-iam-policy-binding "$SERVICE_ACCOUNT_EMAIL" \
-            --project "$PROJECT_ID" \
-            --member="$FEDERATED_PRINCIPAL" \
-            --role='roles/iam.serviceAccountTokenCreator' \
-            --quiet
-
-          gcloud run services add-iam-policy-binding "$SERVICE_NAME" \
-            --region "$REGION" \
-            --project "$PROJECT_ID" \
-            --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
-            --role='roles/run.invoker' \
-            --quiet
-
-          SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
+          if [[ "$READY" == true ]]; then
+            if ! gcloud iam service-accounts add-iam-policy-binding "$GATEWAY_SERVICE_ACCOUNT" \
+              --project "$PROJECT_ID" \
+              --member="$FEDERATED_PRINCIPAL" \
+              --role='roles/iam.serviceAccountTokenCreator' \
+              --quiet; then
+              READY=false
+              BLOCKERS+=("Grant roles/iam.serviceAccountTokenCreator on $GATEWAY_SERVICE_ACCOUNT to the Vercel federated principal.")
+            fi
+          fi
 
           {
-            echo '## Vercel → private Cloud Run federation values'
+            echo '## Vercel → private Cloud Run WIF readiness'
             echo
-            echo 'Cloud Run remains private. Configure these non-secret values in the Vercel production environment:'
+            echo "- Project number: ${PROJECT_NUMBER}"
+            echo "- Cloud Run service: ${SERVICE_URL}"
+            echo "- Gateway service account: ${GATEWAY_SERVICE_ACCOUNT}"
+            echo "- Trusted Vercel subject: ${VERCEL_SUBJECT}"
             echo
-            echo "- GCP_WIF_AUDIENCE=${WIF_AUDIENCE}"
-            echo "- GCP_WIF_SERVICE_ACCOUNT=${SERVICE_ACCOUNT_EMAIL}"
-            echo "- CLOUD_RUN_BACKEND_URL=${SERVICE_URL}"
-            echo
-            echo "Trusted Vercel subject: ${VERCEL_SUBJECT}"
+            if [[ "$READY" == true ]]; then
+              echo '### Google-side federation is ready'
+              echo
+              echo 'Configure these non-secret values in the Vercel production environment:'
+              echo
+              echo "- GCP_WIF_AUDIENCE=${WIF_AUDIENCE}"
+              echo "- GCP_WIF_SERVICE_ACCOUNT=${GATEWAY_SERVICE_ACCOUNT}"
+              echo "- CLOUD_RUN_BACKEND_URL=${SERVICE_URL}"
+            else
+              echo '### Google-side federation still needs an IAM administrator'
+              echo
+              echo 'The GitHub deployment identity intentionally does not have project-wide IAM administration. No broader role was granted automatically.'
+              echo
+              for blocker in "${BLOCKERS[@]}"; do
+                echo "- ${blocker}"
+              done
+              echo
+              echo 'After an IAM administrator performs the listed one-time action(s), rerun this workflow. Cloud Run remains private meanwhile.'
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
-          echo "WIF audience: $WIF_AUDIENCE"
-          echo "Gateway service account: $SERVICE_ACCOUNT_EMAIL"
-          echo "Cloud Run service: $SERVICE_URL"
+          if [[ "$READY" == true ]]; then
+            echo "WIF_READY=true"
+            echo "GCP_WIF_AUDIENCE=$WIF_AUDIENCE"
+            echo "GCP_WIF_SERVICE_ACCOUNT=$GATEWAY_SERVICE_ACCOUNT"
+            echo "CLOUD_RUN_BACKEND_URL=$SERVICE_URL"
+          else
+            echo "::warning::WIF is not fully provisioned because the deployment service account lacks IAM-admin permissions. See the job summary for the exact one-time action required."
+          fi
