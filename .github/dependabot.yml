@@ -1,0 +1,42 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "America/Costa_Rica"
+    open-pull-requests-limit: 8
+    groups:
+      firebase:
+        patterns:
+          - "firebase*"
+          - "@firebase/*"
+      google-cloud:
+        patterns:
+          - "@google/*"
+          - "@google-cloud/*"
+          - "googleapis"
+          - "gaxios"
+      frontend-runtime:
+        patterns:
+          - "react*"
+          - "@vitejs/*"
+          - "vite*"
+          - "tailwindcss"
+          - "@tailwindcss/*"
+      payments:
+        patterns:
+          - "stripe"
+          - "@stripe/*"
+    ignore:
+      # Major-version changes need an explicit compatibility PR and production-flow validation.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
