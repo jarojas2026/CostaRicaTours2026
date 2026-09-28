@@ -28,6 +28,14 @@ test('provider_pending is a distinct lifecycle stage', () => {
   assert.equal(canTransitionBooking('provider_pending', 'completed'), false);
 });
 
+test('expired holds are terminal and cannot become paid later', () => {
+  assert.equal(normalizeBookingLifecycle('expirada'), 'expired');
+  assert.equal(canTransitionBooking('hold', 'expired'), true);
+  assert.equal(canTransitionBooking('payment_pending', 'expired'), true);
+  assert.deepEqual(nextSafeTransitions('expired'), []);
+  assert.equal(canTransitionBooking('expired', 'paid'), false);
+});
+
 test('confirmed service must enter operation before completion', () => {
   assert.equal(canTransitionBooking('confirmed', 'in_operation'), true);
   assert.equal(canTransitionBooking('confirmed', 'completed'), false);
