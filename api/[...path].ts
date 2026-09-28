@@ -75,7 +75,12 @@ const PRIVILEGED_PREFIXES = [
   '/api/ai/mesh',
   '/api/ai/demand-forecast',
   '/api/ai/fraud-check',
+  '/api/fcm/register',
   '/api/fcm/send',
+  '/api/proformas',
+  '/api/bookings/send-proforma-confirmation',
+  '/api/provider/status',
+  '/api/operators/status',
 ];
 
 function env(name: string): string {
