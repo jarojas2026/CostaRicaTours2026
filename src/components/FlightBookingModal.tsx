@@ -7,8 +7,6 @@ import {
 import { FlightRoute, Language, Currency, BookingRequest } from '../types';
 import { formatCurrency, getLangText } from '../utils/i18n';
 import { getUsdToCrcRate } from '../utils/currencies';
-import { auth, db } from '../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 interface FlightBookingModalProps {
   flight: FlightRoute;
@@ -52,6 +50,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessTicket, setShowSuccessTicket] = useState(false);
   const [confirmedBookingData, setConfirmedBookingData] = useState<BookingRequest | null>(null);
+  const [submissionError, setSubmissionError] = useState('');
 
   if (!isOpen) return null;
 
@@ -64,17 +63,16 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
   const crcRate = getUsdToCrcRate();
   const totalCRC = crcRate > 0 ? Math.round(totalUSD * crcRate) : 0;
 
-  const pnrPreview = `CR-AIR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || !email.trim()) return;
+    if (!fullName.trim() || !email.trim() || !phone.trim()) return;
 
     setIsSubmitting(true);
-    const pnrCode = pnrPreview;
+    setSubmissionError('');
 
+    // The browser only submits a request. Payment/provider/confirmation state is
+    // authoritative on the server and must never be fabricated by the client.
     const newBooking: BookingRequest = {
-      bookingId: pnrCode,
       tourId: `flight-${flight.airlineCode.toLowerCase()}-${flight.originAirportCode.toLowerCase()}-${flight.destinationAirportCode.toLowerCase()}`,
       tourName: `${flight.airline} (${flight.flightNumber}) • ${flight.originAirportCode} ➔ ${flight.destinationAirportCode}`,
       date: departureDate,
@@ -90,11 +88,11 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
       customer: {
         fullName,
         email,
-        phone: phone || '+506 8795-9148',
+        phone,
         country: flight.originCountry,
       },
       paymentMethod,
-      paymentStatus: paymentMethod === 'pay_at_pickup' ? 'on_arrival' : 'completed',
+      paymentStatus: 'pending',
       flightDetails: {
         flightNumber: flight.flightNumber,
         airline: flight.airline,
@@ -107,9 +105,8 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
         includesBaggage: true,
         includesAirportTransfer: includeAirportTransfer,
         passengerCount: passengersCount,
-        pnrLocator: pnrCode,
       },
-      status: 'confirmada',
+      status: 'solicitada',
       createdAt: new Date().toISOString(),
     };
 
@@ -120,8 +117,8 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify({
              tourId: 'flight-' + flight.flightNumber,
-             tourName: 'Vuelo Privado ' + flight.flightNumber + ' - ' + flight.airline,
-             totalUSD: totalUSD,
+             tourName: 'Vuelo ' + flight.flightNumber + ' - ' + flight.airline,
+             totalUSD,
              customerEmail: email,
              date: departureDate,
              passengers: passengersCount,
@@ -132,34 +129,38 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
              includeTravelInsurance
            })
         });
-        const stripeData = await stripeRes.json();
-        if (stripeData.url) {
-           window.location.href = stripeData.url;
-           return;
+        const stripeData = await stripeRes.json().catch(() => ({}));
+        if (!stripeRes.ok) {
+          throw new Error(stripeData?.message || stripeData?.error || 'No se pudo iniciar el pago seguro.');
         }
+        if (!stripeData.url) {
+          throw new Error('La pasarela no devolvió un enlace de pago verificable.');
+        }
+        window.location.href = stripeData.url;
+        return;
       }
 
-      await fetch('/api/bookings', {
+      const bookingRes = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newBooking),
       });
+      const bookingResult = await bookingRes.json().catch(() => ({}));
+      if (!bookingRes.ok || bookingResult?.conflict || !bookingResult?.booking) {
+        throw new Error(bookingResult?.message || bookingResult?.error || 'No se pudo registrar la solicitud de reserva.');
+      }
 
-      const currentUser = auth.currentUser;
-      await addDoc(collection(db, 'bookings'), { 
-        ...newBooking, 
-        userId: currentUser ? currentUser.uid : 'anonymous', 
-        createdAt: serverTimestamp() 
-      });
-
-      setConfirmedBookingData(newBooking);
+      const authoritativeBooking = bookingResult.booking as BookingRequest;
+      setConfirmedBookingData(authoritativeBooking);
       setShowSuccessTicket(true);
-      onBookingSuccess(newBooking);
-    } catch (err) {
+      onBookingSuccess(authoritativeBooking);
+    } catch (err: any) {
       console.error('Error booking flight:', err);
-      setConfirmedBookingData(newBooking);
-      setShowSuccessTicket(true);
-      onBookingSuccess(newBooking);
+      setSubmissionError(
+        err?.message || (language === 'es'
+          ? 'No se pudo registrar la solicitud. Inténtalo nuevamente.'
+          : 'The request could not be registered. Please try again.')
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -187,7 +188,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                 </span>
               </div>
               <h3 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
-                {language === 'es' ? 'Reserva de Vuelo a Costa Rica' : 'Costa Rica Flight Reservation'}
+                {language === 'es' ? 'Solicitud de Vuelo a Costa Rica' : 'Costa Rica Flight Request'}
               </h3>
             </div>
           </div>
@@ -200,7 +201,6 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
           </button>
         </div>
 
-        {/* Boarding Pass Ticket View Modal (If Success) */}
         {showSuccessTicket && confirmedBookingData ? (
           <div className="p-6 space-y-5 text-center">
             <div className="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto shadow-md">
@@ -209,27 +209,26 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
 
             <div>
               <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest block">
-                {language === 'es' ? '¡Reserva Confirmada!' : 'Booking Confirmed!'}
+                {language === 'es' ? 'Solicitud registrada' : 'Request registered'}
               </span>
               <h4 className="text-2xl font-black text-slate-900 mt-1">
-                PNR: <span className="text-emerald-600 font-mono">{confirmedBookingData.bookingId}</span>
+                {language === 'es' ? 'Referencia:' : 'Reference:'} <span className="text-emerald-600 font-mono">{confirmedBookingData.bookingId}</span>
               </h4>
               <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
                 {language === 'es' 
-                  ? 'Hemos enviado el voucher oficial y la confirmación a tu correo electrónico. Chofer oficial te esperará en la sala de llegadas.'
-                  : 'Official voucher & PNR locator sent to your email. Official driver will meet you in the arrival hall.'}
+                  ? 'La solicitud fue recibida. El pago, el vuelo, los servicios adicionales y la confirmación final dependen de la verificación del backend y de los proveedores.'
+                  : 'Your request was received. Payment, flight, add-ons, and final confirmation remain subject to backend and provider verification.'}
               </p>
             </div>
 
-            {/* Simulated Digital Ticket */}
             <div className="bg-slate-900 text-white p-5 rounded-2xl border border-slate-800 text-left shadow-xl relative overflow-hidden">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-emerald-400 block">Aerolínea & Vuelo</span>
+                  <span className="text-[10px] uppercase font-bold text-emerald-400 block">Aerolínea & Vuelo solicitado</span>
                   <span className="text-sm font-extrabold text-white">{flight.airline} ({flight.flightNumber})</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Fecha Vuelo</span>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Fecha solicitada</span>
                   <span className="text-xs font-bold text-white">{departureDate}</span>
                 </div>
               </div>
@@ -259,12 +258,12 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                   <span className="font-bold text-white">{fullName}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase text-slate-400 block">Cabina</span>
+                  <span className="text-[10px] uppercase text-slate-400 block">Cabina solicitada</span>
                   <span className="font-bold text-white">{selectedCabin}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] uppercase text-slate-400 block">Código QR</span>
-                  <span className="font-mono text-emerald-400 font-bold">Válido 🇨🇷</span>
+                  <span className="text-[10px] uppercase text-slate-400 block">Estado</span>
+                  <span className="font-mono text-amber-300 font-bold">Pendiente de verificación</span>
                 </div>
               </div>
             </div>
@@ -308,280 +307,83 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
               </div>
             </div>
 
-            {/* Booking Form */}
             <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5 max-h-[62vh] overflow-y-auto">
-              
-              {/* Flight Date, Passengers & Cabin */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-700 uppercase flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5 text-emerald-600" />
                     {language === 'es' ? 'Fecha de Salida' : 'Departure Date'}
                   </label>
-                  <input
-                    type="date"
-                    required
-                    value={departureDate}
-                    min={new Date().toISOString().split('T')[0]}
-                    onChange={(e) => setDepartureDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                  />
+                  <input type="date" required value={departureDate} min={new Date().toISOString().split('T')[0]} onChange={(e) => setDepartureDate(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50" />
                 </div>
-
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700 uppercase flex items-center gap-1">
-                    <User className="w-3.5 h-3.5 text-emerald-600" />
-                    {language === 'es' ? 'Pasajeros' : 'Passengers'}
-                  </label>
-                  <select
-                    value={passengersCount}
-                    onChange={(e) => setPassengersCount(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer"
-                  >
-                    {[1, 2, 3, 4, 5, 6, 8, 10].map((num) => (
-                      <option key={num} value={num}>
-                        {num} {num === 1 ? (language === 'es' ? 'Pasajero' : 'Passenger') : (language === 'es' ? 'Pasajeros' : 'Passengers')}
-                      </option>
-                    ))}
+                  <label className="text-xs font-semibold text-slate-700 uppercase flex items-center gap-1"><User className="w-3.5 h-3.5 text-emerald-600" />{language === 'es' ? 'Pasajeros' : 'Passengers'}</label>
+                  <select value={passengersCount} onChange={(e) => setPassengersCount(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer">
+                    {[1, 2, 3, 4, 5, 6, 8, 10].map((num) => <option key={num} value={num}>{num} {num === 1 ? (language === 'es' ? 'Pasajero' : 'Passenger') : (language === 'es' ? 'Pasajeros' : 'Passengers')}</option>)}
                   </select>
                 </div>
-
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700 uppercase flex items-center gap-1">
-                    <Award className="w-3.5 h-3.5 text-emerald-600" />
-                    {language === 'es' ? 'Clase de Cabina' : 'Cabin Class'}
-                  </label>
-                  <select
-                    value={selectedCabin}
-                    onChange={(e) => setSelectedCabin(e.target.value as any)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer"
-                  >
-                    <option value="Economy">Economy Class</option>
-                    <option value="Business">Business Class (VIP)</option>
-                  </select>
+                  <label className="text-xs font-semibold text-slate-700 uppercase flex items-center gap-1"><Award className="w-3.5 h-3.5 text-emerald-600" />{language === 'es' ? 'Clase de Cabina' : 'Cabin Class'}</label>
+                  <select value={selectedCabin} onChange={(e) => setSelectedCabin(e.target.value as any)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer"><option value="Economy">Economy Class</option><option value="Business">Business Class (VIP)</option></select>
                 </div>
               </div>
 
-              {/* Seat Preference Selector */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 uppercase flex items-center gap-1">
-                  <Plane className="w-3.5 h-3.5 text-emerald-600" />
-                  {language === 'es' ? 'Preferencia de Asiento:' : 'Seat Preference:'}
-                </label>
+                <label className="text-xs font-semibold text-slate-700 uppercase flex items-center gap-1"><Plane className="w-3.5 h-3.5 text-emerald-600" />{language === 'es' ? 'Preferencia de Asiento:' : 'Seat Preference:'}</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { id: 'window', label: language === 'es' ? '🪟 Ventana' : '🪟 Window' },
                     { id: 'aisle', label: language === 'es' ? '💺 Pasillo' : '💺 Aisle' },
                     { id: 'extra_legroom', label: language === 'es' ? '🦵 Espacio Extra' : '🦵 Extra Legroom' },
-                  ].map((s) => (
-                    <button
-                      type="button"
-                      key={s.id}
-                      onClick={() => setSeatPreference(s.id as any)}
-                      className={`py-2 px-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
-                        seatPreference === s.id
-                          ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm'
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
+                  ].map((s) => <button type="button" key={s.id} onClick={() => setSeatPreference(s.id as any)} className={`py-2 px-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${seatPreference === s.id ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'}`}>{s.label}</button>)}
                 </div>
               </div>
 
-              {/* Integrated Costa Rica Airport Package Services */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/90 space-y-3">
-                <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-emerald-600" />
-                  {language === 'es' ? 'Servicios Receptivos Integrados de Costa Rica Tours:' : 'Integrated Costa Rica Airport Services:'}
-                </span>
-
+                <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-emerald-600" />{language === 'es' ? 'Servicios Receptivos Integrados de Costa Rica Tours:' : 'Integrated Costa Rica Airport Services:'}</span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <label className="flex items-start gap-2 p-2.5 rounded-xl bg-white border border-slate-200 cursor-pointer hover:border-emerald-500 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={includeAirportTransfer}
-                      onChange={(e) => setIncludeAirportTransfer(e.target.checked)}
-                      className="w-4 h-4 accent-emerald-600 rounded mt-0.5"
-                    />
-                    <div>
-                      <span className="text-xs font-bold text-slate-900 block">
-                        {language === 'es' ? 'Chofer VIP Aeropuerto' : 'VIP Airport Driver'}
-                      </span>
-                      <p className="text-[11px] text-slate-500 mt-0.5 leading-tight">
-                        {language === 'es' ? 'Recepción + Agua (+ $45 USD)' : 'Meet & greet (+ $45 USD)'}
-                      </p>
-                    </div>
-                  </label>
-
-                  <label className="flex items-start gap-2 p-2.5 rounded-xl bg-white border border-slate-200 cursor-pointer hover:border-emerald-500 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={includeWelcomeSimKit}
-                      onChange={(e) => setIncludeWelcomeSimKit(e.target.checked)}
-                      className="w-4 h-4 accent-emerald-600 rounded mt-0.5"
-                    />
-                    <div>
-                      <span className="text-xs font-bold text-slate-900 block">
-                        {language === 'es' ? 'SIM 4G/5G + Soporte' : '4G/5G SIM Kit'}
-                      </span>
-                      <p className="text-[11px] text-slate-500 mt-0.5 leading-tight">
-                        {language === 'es' ? '10GB listo al bajar (+ $15 USD)' : '10GB data (+ $15 USD)'}
-                      </p>
-                    </div>
-                  </label>
-
-                  <label className="flex items-start gap-2 p-2.5 rounded-xl bg-white border border-slate-200 cursor-pointer hover:border-emerald-500 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={includeTravelInsurance}
-                      onChange={(e) => setIncludeTravelInsurance(e.target.checked)}
-                      className="w-4 h-4 accent-emerald-600 rounded mt-0.5"
-                    />
-                    <div>
-                      <span className="text-xs font-bold text-slate-900 block">
-                        {language === 'es' ? 'Seguro Médico Assist' : 'Travel Insurance'}
-                      </span>
-                      <p className="text-[11px] text-slate-500 mt-0.5 leading-tight">
-                        {language === 'es' ? 'Cobertura médica CR (+ $29 USD)' : 'CR Medical cover (+ $29 USD)'}
-                      </p>
-                    </div>
-                  </label>
+                  <label className="flex items-start gap-2 p-2.5 rounded-xl bg-white border border-slate-200 cursor-pointer hover:border-emerald-500 transition-colors"><input type="checkbox" checked={includeAirportTransfer} onChange={(e) => setIncludeAirportTransfer(e.target.checked)} className="w-4 h-4 accent-emerald-600 rounded mt-0.5" /><div><span className="text-xs font-bold text-slate-900 block">{language === 'es' ? 'Chofer VIP Aeropuerto' : 'VIP Airport Driver'}</span><p className="text-[11px] text-slate-500 mt-0.5 leading-tight">{language === 'es' ? 'Recepción + Agua (+ $45 USD)' : 'Meet & greet (+ $45 USD)'}</p></div></label>
+                  <label className="flex items-start gap-2 p-2.5 rounded-xl bg-white border border-slate-200 cursor-pointer hover:border-emerald-500 transition-colors"><input type="checkbox" checked={includeWelcomeSimKit} onChange={(e) => setIncludeWelcomeSimKit(e.target.checked)} className="w-4 h-4 accent-emerald-600 rounded mt-0.5" /><div><span className="text-xs font-bold text-slate-900 block">{language === 'es' ? 'SIM 4G/5G + Soporte' : '4G/5G SIM Kit'}</span><p className="text-[11px] text-slate-500 mt-0.5 leading-tight">{language === 'es' ? '10GB listo al bajar (+ $15 USD)' : '10GB data (+ $15 USD)'}</p></div></label>
+                  <label className="flex items-start gap-2 p-2.5 rounded-xl bg-white border border-slate-200 cursor-pointer hover:border-emerald-500 transition-colors"><input type="checkbox" checked={includeTravelInsurance} onChange={(e) => setIncludeTravelInsurance(e.target.checked)} className="w-4 h-4 accent-emerald-600 rounded mt-0.5" /><div><span className="text-xs font-bold text-slate-900 block">{language === 'es' ? 'Seguro Médico Assist' : 'Travel Insurance'}</span><p className="text-[11px] text-slate-500 mt-0.5 leading-tight">{language === 'es' ? 'Cobertura médica CR (+ $29 USD)' : 'CR Medical cover (+ $29 USD)'}</p></div></label>
                 </div>
               </div>
 
-              {/* Passenger Details */}
               <div className="space-y-3">
-                <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider block">
-                  {language === 'es' ? 'Datos del Pasajero Titular:' : 'Lead Passenger Details:'}
-                </span>
-
+                <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider block">{language === 'es' ? 'Datos del Pasajero Titular:' : 'Lead Passenger Details:'}</span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-700">
-                      {language === 'es' ? 'Nombre Completo (como en Pasaporte) *' : 'Full Name (as in Passport) *'}
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Ej: Carlos Fernandez"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-700">
-                      {language === 'es' ? 'Correo Electrónico (para Voucher & PNR) *' : 'Email (for Voucher & PNR) *'}
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="ejemplo@correo.com"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-700">
-                      {language === 'es' ? 'Teléfono / WhatsApp *' : 'Phone / WhatsApp *'}
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+506 8888-8888"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-700">
-                      {language === 'es' ? 'Número de Pasaporte' : 'Passport Number'}
-                    </label>
-                    <input
-                      type="text"
-                      value={passportNumber}
-                      onChange={(e) => setPassportNumber(e.target.value)}
-                      placeholder="PAS-987654321"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                    />
-                  </div>
+                  <div className="space-y-1"><label className="text-[11px] font-semibold text-slate-700">{language === 'es' ? 'Nombre Completo (como en Pasaporte) *' : 'Full Name (as in Passport) *'}</label><input type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Ej: Carlos Fernandez" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50" /></div>
+                  <div className="space-y-1"><label className="text-[11px] font-semibold text-slate-700">{language === 'es' ? 'Correo Electrónico *' : 'Email *'}</label><input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ejemplo@correo.com" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50" /></div>
+                  <div className="space-y-1"><label className="text-[11px] font-semibold text-slate-700">{language === 'es' ? 'Teléfono / WhatsApp *' : 'Phone / WhatsApp *'}</label><input type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+506 8888-8888" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50" /></div>
+                  <div className="space-y-1"><label className="text-[11px] font-semibold text-slate-700">{language === 'es' ? 'Número de Pasaporte' : 'Passport Number'}</label><input type="text" value={passportNumber} onChange={(e) => setPassportNumber(e.target.value)} placeholder="PAS-987654321" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50" /></div>
                 </div>
               </div>
 
-              {/* Payment Method Selector */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-700 uppercase block">
-                  {language === 'es' ? 'Método de Pago:' : 'Payment Method:'}
-                </label>
+                <label className="text-xs font-semibold text-slate-700 uppercase block">{language === 'es' ? 'Método de Pago:' : 'Payment Method:'}</label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {[
                     { id: 'credit_card', label: language === 'es' ? 'Tarjeta de Crédito / Débito' : 'Credit / Debit Card', icon: <CreditCard className="w-3.5 h-3.5" /> },
                     { id: 'pay_at_pickup', label: language === 'es' ? 'Pago a la Llegada en CR' : 'Pay Upon Arrival', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
                     { id: 'sinpe_movil', label: 'SINPE Móvil / Transfer', icon: <Phone className="w-3.5 h-3.5" /> },
-                  ].map((m) => (
-                    <button
-                      type="button"
-                      key={m.id}
-                      onClick={() => setPaymentMethod(m.id as any)}
-                      className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                        paymentMethod === m.id
-                          ? 'bg-slate-900 text-white border-slate-900 font-bold shadow-sm'
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      {m.icon}
-                      <span>{m.label}</span>
-                    </button>
-                  ))}
+                  ].map((m) => <button type="button" key={m.id} onClick={() => setPaymentMethod(m.id as any)} className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${paymentMethod === m.id ? 'bg-slate-900 text-white border-slate-900 font-bold shadow-sm' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'}`}>{m.icon}<span>{m.label}</span></button>)}
                 </div>
               </div>
 
-              {/* Total Summary & Submit Action */}
+              {submissionError && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700" role="alert">{submissionError}</div>}
+
               <div className="bg-slate-900 text-white p-4.5 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-4 shadow-xl">
                 <div>
-                  <span className="text-xs text-slate-300 font-semibold block">
-                    {language === 'es' ? 'Total Paquete Vuelo + Traslado Receptivo:' : 'Total Flight + Reception Package:'}
-                  </span>
-                  <div className="flex items-baseline gap-2 mt-0.5">
-                    <span className="text-2xl sm:text-3xl font-black text-emerald-400">
-                      {formatCurrency(totalUSD, currency)}
-                    </span>
-                    <span className="text-xs text-slate-400 font-mono">
-                      (₡{totalCRC.toLocaleString()} CRC)
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-slate-400 block mt-0.5">
-                    {language === 'es' ? 'Incluye 10kg mano + 23kg maleta + recepción aeropuerto' : 'Includes 10kg carry-on + 23kg checked bag + airport meet'}
-                  </span>
+                  <span className="text-xs text-slate-300 font-semibold block">{language === 'es' ? 'Total estimado del paquete solicitado:' : 'Estimated requested package total:'}</span>
+                  <div className="flex items-baseline gap-2 mt-0.5"><span className="text-2xl sm:text-3xl font-black text-emerald-400">{formatCurrency(totalUSD, currency)}</span><span className="text-xs text-slate-400 font-mono">(₡{totalCRC.toLocaleString()} CRC)</span></div>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">{language === 'es' ? 'La disponibilidad y el total final se confirman en el flujo operativo.' : 'Availability and final total are confirmed in the operational flow.'}</span>
                 </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="min-h-[44px] min-w-[44px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-6 py-3.5 rounded-2xl text-xs uppercase tracking-wider transition-all shadow-lg flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <span>{language === 'es' ? 'Generando PNR...' : 'Generating PNR...'}</span>
-                  ) : (
-                    <>
-                      <Check className="w-4 h-4" />
-                      <span>{language === 'es' ? 'Confirmar Reserva de Vuelo' : 'Confirm Flight Booking'}</span>
-                    </>
-                  )}
+                <button type="submit" disabled={isSubmitting} className="min-h-[44px] min-w-[44px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-6 py-3.5 rounded-2xl text-xs uppercase tracking-wider transition-all shadow-lg flex items-center gap-2 cursor-pointer disabled:opacity-50">
+                  {isSubmitting ? <span>{language === 'es' ? 'Procesando...' : 'Processing...'}</span> : <><Check className="w-4 h-4" /><span>{paymentMethod === 'credit_card' ? (language === 'es' ? 'Continuar al pago seguro' : 'Continue to secure payment') : (language === 'es' ? 'Enviar solicitud' : 'Submit request')}</span></>}
                 </button>
               </div>
-
             </form>
           </>
         )}
-
       </div>
     </div>
   );
