@@ -88,7 +88,6 @@ import {
   executeAutonomousProviderFallback,
   executeCustomerBookingConfirmation,
   executeCustomerProformaConfirmation,
-  executeAutomatedProviderPayouts,
   executeSurveillanceAndEscalation,
   executeDailyOperationReport,
   executePostTourReviewRequests,
@@ -98,6 +97,7 @@ import {
   executePreSaleProspectRecovery,
   executePostSaleVipLoyalty
 } from './backend/nativeWorkflows';
+import { executeAutomatedProviderPayouts } from './backend/providerPayoutService';
 import { executeSinpeVerification } from './backend/sinpeService';
 import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
 import { verifyProviderPortalToken } from './backend/providerPortalService';
@@ -2095,14 +2095,22 @@ app.post(['/webhook/cliente-confirmacion', '/webhook/confirmacion-cliente', '/ap
   }
 });
 
-// 3. Pagos Automáticos a Proveedores (Batch / Cron Trigger)
-app.post(['/api/payouts/run-batch', '/webhook/pagos-proveedores-batch'], async (req, res) => {
+// 3. Ejecución manual de liquidaciones a proveedores.
+// El cron interno invoca providerPayoutService directamente; no existe webhook público.
+app.post('/api/payouts/run-batch', requireAdmin, async (_req, res) => {
   try {
     const result = await executeAutomatedProviderPayouts();
     res.json(result);
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+app.post('/webhook/pagos-proveedores-batch', (_req, res) => {
+  res.status(410).json({
+    success: false,
+    error: 'Webhook legado retirado. Las liquidaciones se ejecutan por el cron interno o por un administrador autenticado.'
+  });
 });
 
 // 4. Vigilancia y Escalamiento de Reservas Pendientes (Cron Trigger)
