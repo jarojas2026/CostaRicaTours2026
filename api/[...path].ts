@@ -85,14 +85,17 @@ async function generateCloudRunIdToken(accessToken: string): Promise<string> {
   return String(payload.token);
 }
 
-async function getCloudRunIdToken(): Promise<string> {
+async function getCloudRunIdToken(req: VercelRequest): Promise<string> {
   const now = Date.now();
   if (cloudRunTokenCache && cloudRunTokenCache.expiresAt - now > 60_000) {
     return cloudRunTokenCache.token;
   }
 
-  // Vercel injects this automatically when OIDC is enabled for the project.
-  const vercelOidcToken = requireEnv('VERCEL_OIDC_TOKEN');
+  // Functions receive a fresh platform token in the request header. The env
+  // token is only a fallback for local development/build environments.
+  const requestToken = req.headers['x-vercel-oidc-token'];
+  const vercelOidcToken = (typeof requestToken === 'string' ? requestToken.trim() : '')
+    || requireEnv('VERCEL_OIDC_TOKEN');
   const accessToken = await exchangeVercelOidcForGoogleAccessToken(vercelOidcToken);
   const token = await generateCloudRunIdToken(accessToken);
 
@@ -119,12 +122,12 @@ function targetUrl(req: VercelRequest): string {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const cloudRunIdToken = await getCloudRunIdToken();
+    const cloudRunIdToken = await getCloudRunIdToken(req);
     const headers = new Headers();
 
     for (const [name, value] of Object.entries(req.headers)) {
       const lower = name.toLowerCase();
-      if (HOP_BY_HOP.has(lower) || value === undefined) continue;
+      if (HOP_BY_HOP.has(lower) || lower === 'x-vercel-oidc-token' || value === undefined) continue;
       headers.set(name, Array.isArray(value) ? value.join(',') : String(value));
     }
 
