@@ -30,9 +30,6 @@ if (missingExecutors.length) add('CRITICAL', 'AI-TOOLS-003', `Tools in registry 
 if (unique(declarationNames).length !== declarationNames.length) add('HIGH', 'AI-TOOLS-004', 'Duplicate Gemini function declaration names detected.');
 
 const unsafeContact = ['8888', '7777'].join('-');
-const unsafeContactCompact = '88887777';
-void unsafeContactCompact;
-
 const providerService = read('backend/providerCommunicationService.ts');
 if (!/resolveOperationalProvider/.test(providerService) || !/await resolveOperationalProvider/.test(providerService)) {
   add('HIGH', 'PROVIDER-004', 'Provider dispatch does not enforce an operational Firestore provider record before sending orders.');
@@ -57,11 +54,8 @@ function collectSourceFiles(startDir: string): string[] {
     for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
       if (['node_modules', '.git', 'dist', 'coverage'].includes(entry.name)) continue;
       const full = path.join(current, entry.name);
-      if (entry.isDirectory()) {
-        stack.push(full);
-      } else if (entry.isFile() && /\.(ts|tsx|js|jsx|md)$/.test(entry.name)) {
-        files.push(full);
-      }
+      if (entry.isDirectory()) stack.push(full);
+      else if (entry.isFile() && /\.(ts|tsx|js|jsx|md)$/.test(entry.name)) files.push(full);
     }
   }
   return files;
@@ -97,14 +91,14 @@ if (!/getPendingReservationLifecycleBookings/.test(reservationLifecycle) || !/ge
 }
 
 const voiceService = read('backend/voiceAgentDeskService.ts');
-if (/if \(!authToken\) return true/.test(voiceService) || /if \(!authToken\)\\s*\\{\\s*return true/.test(voiceService)) {
+if (/if \(!authToken\) return true/.test(voiceService) || /if \(!authToken\)\s*\{\s*return true/.test(voiceService)) {
   add('CRITICAL', 'VOICE-SEC-001', 'Voice webhook signature verification fails open when the provider token is missing.');
 }
 if (/verifyVoiceSignature\(/.test(server) && !/VOICE_PROVIDER_AUTH_TOKEN/.test(voiceService)) {
   add('HIGH', 'VOICE-SEC-002', 'Voice webhook route exists but its signature configuration is not visible in the voice service.');
 }
 
-if (/setInterval\(async \(\) =>[\\s\\S]*processPendingCustomerIntakeJobs/.test(server)) {
+if (/setInterval\(async \(\) =>[\s\S]*processPendingCustomerIntakeJobs/.test(server)) {
   add('MEDIUM', 'QUEUE-001', 'Customer Intake has an in-process sweep; production serverless deployments also need an external scheduler calling the protected queue endpoint.');
 }
 
@@ -117,15 +111,15 @@ if (!/runReservationLifecycleSweep\(100\)/.test(cronSource)) {
 if (!/claim\(/.test(reservationLifecycle) || !/reservation_lifecycle_events/.test(reservationLifecycle)) {
   add('HIGH', 'BOOKING-003', 'Reservation lifecycle orchestration lacks durable idempotent event tracking.');
 }
+
 const massiveEngine = read('backend/massiveProcessingEngine.ts');
 if (!/QUEUE_BACKPRESSURE/.test(massiveEngine) || !/maxQueueDepth/.test(massiveEngine)) add('HIGH', 'QUEUE-004', 'Massive Processing Engine lacks an explicit queue ceiling/backpressure guard.');
-if (/sweepPendingSlas[\\s\\S]*getAllBookings\(\)/.test(massiveEngine)) add('HIGH', 'QUEUE-005', 'Provider SLA sweep still scans all bookings.');
+if (/sweepPendingSlas[\s\S]*getAllBookings\(\)/.test(massiveEngine)) add('HIGH', 'QUEUE-005', 'Provider SLA sweep still scans all bookings.');
 
 const emailOperations = read('backend/emailOperationsAgent.ts');
 if (!/EMAIL_MAX_ATTEMPTS/.test(emailOperations) || !/claimed === 'terminal'/.test(emailOperations)) {
   add('MEDIUM', 'EMAIL-004', 'Email operations lacks a terminal retry guard for poison messages.');
 }
-
 if (!/processEmailOperationsOnce/.test(server) || !/\/api\/internal\/email-operations\/sweep/.test(server)) {
   add('CRITICAL', 'EMAIL-001', 'Autonomous email agent is not connected to a protected server endpoint.');
 }
@@ -134,6 +128,52 @@ if (!/processEmailOperationsOnce/.test(cronSource) || !/email-operations-1m/.tes
 }
 if (!/claimEvent/.test(emailOperations) || !/status === 'error'/.test(emailOperations)) {
   add('HIGH', 'EMAIL-003', 'Email operation queue lacks visible idempotent/recoverable claim handling.');
+}
+
+// Customer-facing booking truthfulness regression guards.
+const tourDetail = read('src/pages/TourDetailPage.tsx');
+if (/status:\s*[^\n]*(?:confirmada|confirmed)/i.test(tourDetail)) {
+  add('CRITICAL', 'BOOKING-UX-001', 'TourDetailPage assigns a final confirmed status from the browser. Confirmation must remain server/provider-owned.');
+}
+if (/CR-PV-\$\{Math\.floor/.test(tourDetail) || /Math\.random\(\)[\s\S]{0,120}bookingId/.test(tourDetail)) {
+  add('HIGH', 'BOOKING-UX-002', 'TourDetailPage still creates booking identifiers client-side.');
+}
+if (/navigate\(['"]\/bookings['"]\)/.test(tourDetail)) {
+  add('HIGH', 'BOOKING-UX-003', 'TourDetailPage navigates to the legacy/noncanonical /bookings route.');
+}
+if (/150\+\s*reviews/i.test(tourDetail)) {
+  add('HIGH', 'TRUST-001', 'TourDetailPage contains a hardcoded 150+ reviews social-proof claim.');
+}
+if (!/\/api\/tours\/\$\{encodeURIComponent\(tour\.id\)\}\/availability/.test(tourDetail)) {
+  add('HIGH', 'AVAILABILITY-001', 'TourDetailPage does not visibly verify live availability before submitting a booking request.');
+}
+if (!/Idempotency-Key/.test(tourDetail)) {
+  add('MEDIUM', 'BOOKING-UX-004', 'TourDetailPage does not send an idempotency key for booking creation.');
+}
+
+// Vercel must authenticate to private Cloud Run; anonymous rewrites are not accepted.
+const gatewayPath = path.join(root, 'api', '[...path].ts');
+if (!fs.existsSync(gatewayPath)) {
+  add('HIGH', 'GATEWAY-001', 'Vercel /api gateway is missing; frontend and private Cloud Run cannot communicate through same-origin API calls.');
+} else {
+  const gateway = fs.readFileSync(gatewayPath, 'utf8');
+  if (!/VERCEL_OIDC_TOKEN/.test(gateway) || !/sts\.googleapis\.com/.test(gateway) || !/x-serverless-authorization/i.test(gateway)) {
+    add('CRITICAL', 'GATEWAY-002', 'Vercel gateway does not visibly implement OIDC/WIF authentication for private Cloud Run.');
+  }
+  if (/fetch\([^\n]*CLOUD_RUN_BACKEND_URL[\s\S]{0,300}catch[\s\S]{0,200}fetch\(/.test(gateway)) {
+    add('CRITICAL', 'GATEWAY-003', 'Vercel gateway appears to fall back to a second/anonymous backend request after authentication failure.');
+  }
+}
+
+// Legacy customer itinerary approval must not be confused with provider confirmation.
+if (/\/api\/bookings\/:id\/customer-confirm[\s\S]{0,1400}status:\s*action === 'aprobado' \? 'confirmada'/.test(server)) {
+  add('HIGH', 'LIFECYCLE-002', 'Customer itinerary approval still writes final booking confirmation before provider coordination. Migrate this route to record approval separately.');
+}
+
+// Public trust language is surfaced as debt until evidence-backed claims replace it.
+const header = read('src/components/Header.tsx');
+for (const claim of ['Agencia Receptiva Oficial', 'Operador Oficial', 'Tarifas Oficiales Directas']) {
+  if (header.includes(claim)) add('MEDIUM', 'TRUST-002', `Public header still contains evidence-sensitive claim: ${claim}`);
 }
 
 const envExample = read('.env.example');

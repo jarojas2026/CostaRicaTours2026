@@ -15,17 +15,37 @@ export type BookingLifecycle =
   | 'cancelled'
   | 'refunded';
 
+/**
+ * Accept both canonical values and the legacy Spanish/English values that
+ * already exist in Firestore. Canonical states must round-trip unchanged;
+ * otherwise an existing `provider_pending` booking can be accidentally
+ * interpreted as a new prospect and bypass transition protection.
+ */
 const LEGACY_MAP: Record<string, BookingLifecycle> = {
+  prospect: 'prospect',
+  prospecto: 'prospect',
+  hold: 'hold',
   pending: 'payment_pending',
+  payment_pending: 'payment_pending',
   pendiente_pago: 'payment_pending',
   paid: 'paid',
-  completed: 'completed',
-  confirmada: 'confirmed',
+  pagada: 'paid',
+  provider_pending: 'provider_pending',
+  'provider-pending': 'provider_pending',
+  proveedor_pendiente: 'provider_pending',
   confirmed: 'confirmed',
+  confirmada: 'confirmed',
+  in_operation: 'in_operation',
+  'in-operation': 'in_operation',
+  en_operacion: 'in_operation',
+  completed: 'completed',
+  completada: 'completed',
   cancelled: 'cancelled',
+  canceled: 'cancelled',
   cancelada: 'cancelled',
   refund: 'refunded',
-  refunded: 'refunded'
+  refunded: 'refunded',
+  reembolsada: 'refunded'
 };
 
 const TRANSITIONS: Record<BookingLifecycle, BookingLifecycle[]> = {
@@ -42,9 +62,9 @@ const TRANSITIONS: Record<BookingLifecycle, BookingLifecycle[]> = {
 };
 
 export function normalizeBookingLifecycle(status?: string, paymentStatus?: string): BookingLifecycle {
-  const payment = LEGACY_MAP[String(paymentStatus || '').toLowerCase()];
+  const payment = LEGACY_MAP[String(paymentStatus || '').trim().toLowerCase()];
   if (payment === 'paid' || payment === 'refunded') return payment;
-  return LEGACY_MAP[String(status || '').toLowerCase()] || 'prospect';
+  return LEGACY_MAP[String(status || '').trim().toLowerCase()] || 'prospect';
 }
 
 export function canTransitionBooking(from: BookingLifecycle, to: BookingLifecycle): boolean {

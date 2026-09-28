@@ -4,7 +4,6 @@ import { getProvidersOverview } from './providerCommunicationService';
 import { getNativeEngineStatus } from './nativeAutomationEngine';
 import { processChatInquiry } from './aiAssistantService';
 import { getOperationalMemory, rememberTurn } from './memoryService';
-import { buildAgentKnowledgeContext } from './agentKnowledgeFabric';
 import type { Language } from '../src/types';
 
 export type CounterDeskAskInput = {
@@ -14,6 +13,26 @@ export type CounterDeskAskInput = {
   context?: Record<string, any>;
 };
 
+type ConciergeChannel = 'web' | 'voice' | 'email' | 'whatsapp' | 'hotel' | 'unknown';
+
+function normalizeChannel(context?: Record<string, any>): ConciergeChannel {
+  const raw = String(context?.channel || context?.source || '').toLowerCase();
+  if (raw.includes('voice') || raw.includes('call')) return 'voice';
+  if (raw.includes('mail')) return 'email';
+  if (raw.includes('whatsapp')) return 'whatsapp';
+  if (raw.includes('hotel') || context?.hotelId || context?.room) return 'hotel';
+  if (raw.includes('web') || !raw) return 'web';
+  return 'unknown';
+}
+
+/**
+ * Public unified Concierge boundary.
+ *
+ * Customers interact with one stable Counter/Concierge identity. Specialist
+ * agents, model selection, memory retrieval and tool routing remain backend
+ * implementation details. This keeps web, voice, email and WhatsApp sessions
+ * consistent without leaking prompt/knowledge context to the public API.
+ */
 export async function askCounterDesk(input: CounterDeskAskInput) {
   const message = String(input.message || '').trim().slice(0, 5000);
   if (!message) throw new Error('message es requerido');
@@ -21,8 +40,8 @@ export async function askCounterDesk(input: CounterDeskAskInput) {
   const language: Language = input.language || 'es';
   const modelLanguage: 'es' | 'en' = language === 'es' ? 'es' : 'en';
   const sessionId = String(input.sessionId || '').trim();
+  const channel = normalizeChannel(input.context);
   const history = sessionId ? (await getOperationalMemory(sessionId)).turns : [];
-  const knowledgeContext = await buildAgentKnowledgeContext({ query: message, sessionId: sessionId || undefined });
 
   const result = await processChatInquiry(
     message,
@@ -33,19 +52,33 @@ export async function askCounterDesk(input: CounterDeskAskInput) {
   );
 
   if (sessionId) {
-    await rememberTurn(sessionId, { role: 'user', text: message }, { agentId: result.agentId || 'counter_agent' });
-    await rememberTurn(sessionId, { role: 'assistant', text: result.reply }, { agentId: result.agentId || 'counter_agent' });
+    await rememberTurn(
+      sessionId,
+      { role: 'user', text: message },
+      { agentId: result.agentId || 'counter_agent', activeGoal: `traveler_assistance:${channel}` }
+    );
+    await rememberTurn(
+      sessionId,
+      { role: 'assistant', text: result.reply },
+      { agentId: result.agentId || 'counter_agent', decision: `unified_concierge_response:${channel}` }
+    );
   }
 
   return {
     success: true,
-    agentId: result.agentId || 'counter_agent',
+    // Stable public identity: internal specialist/model routing is intentionally hidden.
+    agentId: 'counter_agent',
+    publicRole: 'concierge',
     reply: result.reply,
     quickActions: result.quickActions || [],
     sources: result.sources || [],
     language,
-    modelUsed: result.modelUsed,
-    knowledgeContext: knowledgeContext.slice(0, 12000),
+    channel,
+    verificationPolicy: {
+      availability: 'live_required',
+      payment: 'server_verified',
+      providerConfirmation: 'provider_required'
+    },
     timestamp: new Date().toISOString()
   };
 }
@@ -127,7 +160,6 @@ export async function runCounterSafeAutopilot() {
     snapshot
   };
 }
-
 
 export async function organizeCounterDesk() {
   const snapshot = await getCounterOperationsSnapshot();
