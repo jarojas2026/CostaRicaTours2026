@@ -23,6 +23,13 @@ import {
   executePostSaleVipLoyalty
 } from './nativeWorkflows';
 
+// Legacy post-booking workflows still contain older assumptions about what
+// constitutes a confirmed service. They remain available for migration/testing,
+// but production cron execution is fail-closed until explicitly enabled after
+// their lifecycle contracts have been verified.
+const PROVIDER_PAYOUTS_ENABLED = process.env.ENABLE_PROVIDER_PAYOUTS === 'true';
+const LEGACY_POST_BOOKING_AUTOMATIONS_ENABLED = process.env.ENABLE_LEGACY_POST_BOOKING_AUTOMATIONS === 'true';
+
 // =========================================================================
 // 6. CRON: Liberación Automática de Soft Holds Expirados (Cada 5 minutos)
 // =========================================================================
@@ -32,27 +39,40 @@ export async function cleanupExpiredSoftHolds() {
     const now = new Date().toISOString();
 
     const expiredHolds = allBookings.filter(b =>
-      (b.status === 'hold' || b.status === 'pendiente_pago' || b.holdActive) &&
+      (b.status === 'hold' || b.status === 'pendiente_pago' || b.status === 'payment_pending' || b.holdActive) &&
       b.holdExpiresAt &&
       b.holdExpiresAt < now
     );
 
     let releasedCount = 0;
-    if (expiredHolds.length > 0) {
-      for (const booking of expiredHolds) {
-        await updateBookingStatus(booking.id || booking.bookingId, {
-          status: 'expirada',
-          holdActive: false,
-          liberadaAt: new Date().toISOString()
-        });
-        releasedCount++;
+    for (const booking of expiredHolds) {
+      const bookingId = booking.id || booking.bookingId;
+      const result = await updateBookingStatus(bookingId, {
+        // Cancellation is the existing availability-release path. Preserve the
+        // business reason separately so an expired hold is not confused with a
+        // traveler-requested cancellation.
+        status: 'cancelada',
+        lifecycle: 'cancelled',
+        cancellationReason: 'soft_hold_expired',
+        holdActive: false,
+        expiredAt: new Date().toISOString()
+      });
+      if (!result.success) {
         logAutomationExecution(
           'AUTO_RELEASE_HOLD',
-          5,
-          'success',
-          `Cupo liberado automáticamente para reserva expirada: ${booking.bookingId || booking.id}`
+          0,
+          'error',
+          `No se pudo liberar el hold expirado ${bookingId}: ${result.error || 'error desconocido'}`
         );
+        continue;
       }
+      releasedCount += 1;
+      logAutomationExecution(
+        'AUTO_RELEASE_HOLD',
+        5,
+        'success',
+        `Cupo liberado automáticamente para hold expirado: ${bookingId}`
+      );
     }
     return { success: true, releasedCount, totalChecked: allBookings.length };
   } catch (error: any) {
@@ -82,7 +102,12 @@ export async function withDistributedAutomationLock<T>(lockId: string, work: () 
         }
       }
       const now = new Date().toISOString();
-      tx.set(ref, { status: 'running', acquiredAt: now, updatedAt: now, owner: process.env.VERCEL_REGION || process.env.HOSTNAME || 'node' }, { merge: true });
+      tx.set(ref, {
+        status: 'running',
+        acquiredAt: now,
+        updatedAt: now,
+        owner: process.env.VERCEL_REGION || process.env.HOSTNAME || 'node'
+      }, { merge: true });
     });
   } catch (error: any) {
     if (error?.message === 'automation_lock_busy') return null;
@@ -91,7 +116,11 @@ export async function withDistributedAutomationLock<T>(lockId: string, work: () 
   try {
     return await work();
   } finally {
-    await ref.set({ status: 'idle', releasedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, { merge: true }).catch(() => undefined);
+    await ref.set({
+      status: 'idle',
+      releasedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }, { merge: true }).catch(() => undefined);
   }
 }
 
@@ -100,122 +129,134 @@ export function initializeAutomationEngine() {
 
   const CR_TIMEZONE = { timezone: 'America/Costa_Rica' };
 
-  // 1. CRON: PAGOS AUTOMÁTICOS A PROVEEDORES (Diario 6:00 AM Costa Rica)
-  cron.schedule('0 6 * * *', async () => {
-    console.log('🕒 [CRON 06:00 AM CR] Ejecutando: Pagos Automáticos a Proveedores');
-    try {
-      const res = await executeAutomatedProviderPayouts();
-      logAutomationExecution('CRON_PAGOS_PROVEEDORES_6AM', 0, 'success', `Pagos ejecutados: ${res.totalProcessed} procesadas, $${res.totalPaidUSD} USD liquidados.`);
-    } catch (error: any) {
-      console.error('❌ Error ejecutando CRON_PAGOS_PROVEEDORES_6AM:', error);
-      logAutomationExecution('CRON_PAGOS_PROVEEDORES_6AM', 0, 'error', `Fallo: ${error.message}`);
-    }
-  }, CR_TIMEZONE);
+  // 1. PAGOS A PROVEEDORES
+  // Fail-closed: el flujo legado puede interpretar pago del cliente como
+  // confirmación operativa. Solo se agenda si la política se habilita de forma
+  // explícita después de validar reglas de liquidación y proveedor.
+  if (PROVIDER_PAYOUTS_ENABLED) {
+    cron.schedule('0 6 * * *', async () => {
+      console.log('🕒 [CRON 06:00 AM CR] Ejecutando: Pagos a Proveedores');
+      try {
+        const res = await withDistributedAutomationLock('provider-payouts-6am', executeAutomatedProviderPayouts);
+        if (res) {
+          logAutomationExecution(
+            'CRON_PAGOS_PROVEEDORES_6AM',
+            0,
+            'success',
+            `Pagos ejecutados: ${res.totalProcessed} procesadas, $${res.totalPaidUSD} USD liquidados.`
+          );
+        }
+      } catch (error: any) {
+        console.error('❌ Error ejecutando CRON_PAGOS_PROVEEDORES_6AM:', error);
+        logAutomationExecution('CRON_PAGOS_PROVEEDORES_6AM', 0, 'error', `Fallo: ${error.message}`);
+      }
+    }, CR_TIMEZONE);
+  } else {
+    console.warn('🔒 Pagos automáticos a proveedores deshabilitados. Configure ENABLE_PROVIDER_PAYOUTS=true solo tras validar la política de liquidación.');
+  }
 
-  // 2. CRON: RECORDATORIO 24H ANTES DEL TOUR (Diario 7:00 AM Costa Rica)
-  cron.schedule('0 7 * * *', async () => {
-    console.log('🕒 [CRON 07:00 AM CR] Ejecutando: Recordatorios 24h Antes del Tour');
-    try {
-      const res = await executeTour24hReminders();
-      logAutomationExecution('CRON_RECORDATORIO_24H_7AM', 0, 'success', `Recordatorios para ${res.tomorrowDate}: ${res.totalRemindersSent} enviados.`);
-    } catch (error: any) {
-      console.error('❌ Error ejecutando CRON_RECORDATORIO_24H_7AM:', error);
-      logAutomationExecution('CRON_RECORDATORIO_24H_7AM', 0, 'error', `Fallo: ${error.message}`);
-    }
-  }, CR_TIMEZONE);
+  // 2, 4, 5, 6, 7 y 9. Automatizaciones post-booking legadas.
+  // Permanecen en el código para migración y pruebas, pero no deben enviar
+  // comunicaciones/cupones ni inferir confirmación desde paymentStatus en
+  // producción sin una habilitación deliberada.
+  if (LEGACY_POST_BOOKING_AUTOMATIONS_ENABLED) {
+    cron.schedule('0 7 * * *', async () => {
+      try {
+        const res = await withDistributedAutomationLock('tour-reminders-7am', executeTour24hReminders);
+        if (res) logAutomationExecution('CRON_RECORDATORIO_24H_7AM', 0, 'success', `Recordatorios para ${res.tomorrowDate}: ${res.totalRemindersSent} enviados.`);
+      } catch (error: any) {
+        console.error('❌ Error ejecutando CRON_RECORDATORIO_24H_7AM:', error);
+        logAutomationExecution('CRON_RECORDATORIO_24H_7AM', 0, 'error', `Fallo: ${error.message}`);
+      }
+    }, CR_TIMEZONE);
 
-  // 3. CRON: VIGILANCIA Y ESCALAMIENTO DE RESERVAS (Cada 2 Horas)
+    cron.schedule('0 17 * * *', async () => {
+      try {
+        const res = await withDistributedAutomationLock('post-tour-reviews-5pm', executePostTourReviewRequests);
+        if (res) logAutomationExecution('CRON_RESENAS_POST_TOUR_5PM', 0, 'success', `Reseñas: ${res.eligibleBookings} elegibles, ${res.emailsSent} emails despachados.`);
+      } catch (error: any) {
+        console.error('❌ Error ejecutando CRON_RESENAS_POST_TOUR_5PM:', error);
+        logAutomationExecution('CRON_RESENAS_POST_TOUR_5PM', 0, 'error', `Fallo: ${error.message}`);
+      }
+    }, CR_TIMEZONE);
+
+    cron.schedule('0 20 * * *', async () => {
+      try {
+        const res = await withDistributedAutomationLock('daily-ops-report-8pm', executeDailyOperationReport);
+        if (res) logAutomationExecution('CRON_REPORTE_DIARIO_8PM', 0, 'success', `Reporte diario ${res.reportDate}: ${res.totalBookingsToday} reservas, $${res.revenueUSD} USD facturados.`);
+      } catch (error: any) {
+        console.error('❌ Error ejecutando CRON_REPORTE_DIARIO_8PM:', error);
+        logAutomationExecution('CRON_REPORTE_DIARIO_8PM', 0, 'error', `Fallo: ${error.message}`);
+      }
+    }, CR_TIMEZONE);
+
+    cron.schedule('0 */4 * * *', async () => {
+      try {
+        const res = await withDistributedAutomationLock('legacy-weather-monitor-4h', executeWeatherMonitoringAlerts);
+        if (res) logAutomationExecution('CRON_CLIMA_4H', 0, 'success', `Monitoreo legado de clima: ${res.checkedBookings} evaluadas, ${res.alertsSent} avisos emitidos.`);
+      } catch (error: any) {
+        console.error('❌ Error ejecutando CRON_CLIMA_4H:', error);
+        logAutomationExecution('CRON_CLIMA_4H', 0, 'error', `Fallo: ${error.message}`);
+      }
+    }, CR_TIMEZONE);
+
+    cron.schedule('30 6 * * *', async () => {
+      try {
+        const res = await withDistributedAutomationLock('morning-concierge-630am', executeMorningConciergeTips);
+        if (res) logAutomationExecution('CRON_CONCIERGE_MATUTINO_630AM', 0, 'success', `Concierge matutino: ${res.tipsSent} recomendaciones enviadas.`);
+      } catch (error: any) {
+        console.error('❌ Error ejecutando CRON_CONCIERGE_MATUTINO_630AM:', error);
+        logAutomationExecution('CRON_CONCIERGE_MATUTINO_630AM', 0, 'error', `Fallo: ${error.message}`);
+      }
+    }, CR_TIMEZONE);
+
+    cron.schedule('0 10 * * *', async () => {
+      try {
+        const res = await withDistributedAutomationLock('legacy-vip-loyalty-10am', executePostSaleVipLoyalty);
+        if (res) logAutomationExecution('CRON_FIDELIZACION_VIP_10AM', 0, 'success', `Fidelización VIP: ${res.couponsSent} cupones generados.`);
+      } catch (error: any) {
+        console.error('❌ Error ejecutando CRON_FIDELIZACION_VIP_10AM:', error);
+        logAutomationExecution('CRON_FIDELIZACION_VIP_10AM', 0, 'error', `Fallo: ${error.message}`);
+      }
+    }, CR_TIMEZONE);
+  } else {
+    console.warn('🔒 Automatizaciones post-booking legadas deshabilitadas hasta completar migración a estados confirmed/in_operation/completed.');
+  }
+
+  // 3. Vigilancia y escalamiento de reservas pendientes (cada 2 horas).
   cron.schedule('0 */2 * * *', async () => {
-    console.log('🕒 [CRON CADA 2 HORAS] Ejecutando: Vigilancia y Escalamiento de Reservas');
     try {
-      const res = await executeSurveillanceAndEscalation();
-      logAutomationExecution('CRON_VIGILANCIA_2H', 0, 'success', `Vigilancia completada: ${res.checkedBookings} revisadas, ${res.alertsSent} alertas enviadas.`);
+      const res = await withDistributedAutomationLock('booking-surveillance-2h', executeSurveillanceAndEscalation);
+      if (res) logAutomationExecution('CRON_VIGILANCIA_2H', 0, 'success', `Vigilancia: ${res.checkedBookings} revisadas, ${res.alertsSent} alertas.`);
     } catch (error: any) {
       console.error('❌ Error ejecutando CRON_VIGILANCIA_2H:', error);
       logAutomationExecution('CRON_VIGILANCIA_2H', 0, 'error', `Fallo: ${error.message}`);
     }
   }, CR_TIMEZONE);
 
-  // 4. CRON: SOLICITUD DE RESEÑA POST-TOUR (Diario 5:00 PM Costa Rica)
-  cron.schedule('0 17 * * *', async () => {
-    console.log('🕒 [CRON 05:00 PM CR] Ejecutando: Solicitudes de Reseña Post-Tour');
-    try {
-      const res = await executePostTourReviewRequests();
-      logAutomationExecution('CRON_RESENAS_POST_TOUR_5PM', 0, 'success', `Reseñas: ${res.eligibleBookings} elegibles, ${res.emailsSent} emails despachados.`);
-    } catch (error: any) {
-      console.error('❌ Error ejecutando CRON_RESENAS_POST_TOUR_5PM:', error);
-      logAutomationExecution('CRON_RESENAS_POST_TOUR_5PM', 0, 'error', `Fallo: ${error.message}`);
-    }
-  }, CR_TIMEZONE);
-
-  // 5. CRON: REPORTE DIARIO DE OPERACIÓN (Diario 8:00 PM Costa Rica)
-  cron.schedule('0 20 * * *', async () => {
-    console.log('🕒 [CRON 08:00 PM CR] Ejecutando: Reporte Diario de Operación');
-    try {
-      const res = await executeDailyOperationReport();
-      logAutomationExecution('CRON_REPORTE_DIARIO_8PM', 0, 'success', `Reporte diario ${res.reportDate}: ${res.totalBookingsToday} reservas, $${res.revenueUSD} USD facturados.`);
-    } catch (error: any) {
-      console.error('❌ Error ejecutando CRON_REPORTE_DIARIO_8PM:', error);
-      logAutomationExecution('CRON_REPORTE_DIARIO_8PM', 0, 'error', `Fallo: ${error.message}`);
-    }
-  }, CR_TIMEZONE);
-
-  // 6. CRON: ALERTA METEOROLÓGICA Y ADAPTACIÓN DE ITINERARIO (Cada 4 Horas)
-  cron.schedule('0 */4 * * *', async () => {
-    console.log('🕒 [CRON C/4H] Ejecutando: Monitoreo Meteorológico y Seguridad');
-    try {
-      const res = await executeWeatherMonitoringAlerts();
-      logAutomationExecution('CRON_CLIMA_4H', 0, 'success', `Monitoreo de clima: ${res.checkedBookings} evaluadas, ${res.alertsSent} avisos emitidos.`);
-    } catch (error: any) {
-      console.error('❌ Error ejecutando CRON_CLIMA_4H:', error);
-      logAutomationExecution('CRON_CLIMA_4H', 0, 'error', `Fallo: ${error.message}`);
-    }
-  }, CR_TIMEZONE);
-
-  // 7. CRON: CONCIERGE MATUTINO Y TIPS DE SEGURIDAD (Diario 6:30 AM Costa Rica)
-  cron.schedule('30 6 * * *', async () => {
-    console.log('🕒 [CRON 06:30 AM CR] Ejecutando: Concierge Matutino para Tours de Hoy');
-    try {
-      const res = await executeMorningConciergeTips();
-      logAutomationExecution('CRON_CONCIERGE_MATUTINO_630AM', 0, 'success', `Concierge matutino: ${res.tipsSent} recomendaciones enviadas.`);
-    } catch (error: any) {
-      console.error('❌ Error ejecutando CRON_CONCIERGE_MATUTINO_630AM:', error);
-      logAutomationExecution('CRON_CONCIERGE_MATUTINO_630AM', 0, 'error', `Fallo: ${error.message}`);
-    }
-  }, CR_TIMEZONE);
-
-  // 8. CRON: RECUPERACIÓN DE PROSPECTOS Y CARRITOS ABANDONADOS (Cada 1 Hora)
+  // 8. Recuperación de prospectos/pre-venta (cada hora).
   cron.schedule('0 * * * *', async () => {
-    console.log('🕒 [CRON CADA HORA] Ejecutando: Recuperación de Prospectos Pre-Venta');
     try {
-      const res = await executePreSaleProspectRecovery();
-      logAutomationExecution('CRON_RECUPERACION_PREVENTA_1H', 0, 'success', `Recuperación pre-venta: ${res.recoveredSent} prospectos asistidos.`);
+      const res = await withDistributedAutomationLock('pre-sale-recovery-1h', executePreSaleProspectRecovery);
+      if (res) logAutomationExecution('CRON_RECUPERACION_PREVENTA_1H', 0, 'success', `Recuperación pre-venta: ${res.recoveredSent} prospectos asistidos.`);
     } catch (error: any) {
       console.error('❌ Error ejecutando CRON_RECUPERACION_PREVENTA_1H:', error);
       logAutomationExecution('CRON_RECUPERACION_PREVENTA_1H', 0, 'error', `Fallo: ${error.message}`);
     }
   }, CR_TIMEZONE);
 
-  // 9. CRON: FIDELIZACIÓN Y CUPONES VIP POST-VENTA (Diario 10:00 AM Costa Rica)
-  cron.schedule('0 10 * * *', async () => {
-    console.log('🕒 [CRON 10:00 AM CR] Ejecutando: Fidelización y Cupones VIP Post-Venta');
-    try {
-      const res = await executePostSaleVipLoyalty();
-      logAutomationExecution('CRON_FIDELIZACION_VIP_10AM', 0, 'success', `Fidelización VIP: ${res.couponsSent} cupones generados.`);
-    } catch (error: any) {
-      console.error('❌ Error ejecutando CRON_FIDELIZACION_VIP_10AM:', error);
-      logAutomationExecution('CRON_FIDELIZACION_VIP_10AM', 0, 'error', `Fallo: ${error.message}`);
-    }
-  }, CR_TIMEZONE);
-
-  // 10. CRON: AGENTE DE BANDEJA DE PROVEEDORES (Cada minuto)
+  // 10. Agente de bandeja de proveedores (cada minuto).
   // Gmail OAuth es opcional: si no está configurado, el agente queda inactivo sin romper el resto del sistema.
   cron.schedule('* * * * *', async () => {
     try {
       const res = await withDistributedAutomationLock('provider-inbox-1m', processProviderInboxOnce);
       if (res?.enabled && (res.processed || res.errors)) {
-        logAutomationExecution('CRON_PROVIDER_INBOX_1M', 0, res.errors ? 'warning' : 'success',
-          'Bandeja de proveedores: ' + res.processed + ' procesadas, ' + res.errors + ' errores, ' + res.ignored + ' ignoradas.');
+        logAutomationExecution(
+          'CRON_PROVIDER_INBOX_1M',
+          0,
+          res.errors ? 'warning' : 'success',
+          'Bandeja de proveedores: ' + res.processed + ' procesadas, ' + res.errors + ' errores, ' + res.ignored + ' ignoradas.'
+        );
       }
     } catch (error: any) {
       console.error('❌ Error ejecutando CRON_PROVIDER_INBOX_1M:', error);
@@ -223,14 +264,18 @@ export function initializeAutomationEngine() {
     }
   }, CR_TIMEZONE);
 
-  // 12. CRON: CICLO AUTÓNOMO DE RESERVAS (Cada minuto)
-  // Revisa pagos, despacho a proveedor, confirmaciones y notificación al cliente.
+  // 11. Ciclo autónomo de reservas (cada minuto).
+  // Este es el orquestador canónico: pago -> proveedor -> confirmación -> cliente.
   cron.schedule('* * * * *', async () => {
     try {
       const res = await withDistributedAutomationLock('reservation-lifecycle-1m', () => runReservationLifecycleSweep(100));
       if (res && (res.scanned || res.errors)) {
-        logAutomationExecution('CRON_RESERVATION_LIFECYCLE_1M', res.durationMs, res.errors ? 'warning' : 'success',
-          'Ciclo de reservas: ' + res.scanned + ' revisadas, ' + res.results.filter((x: any) => x.status === 'completed').length + ' acciones, ' + res.errors + ' errores.');
+        logAutomationExecution(
+          'CRON_RESERVATION_LIFECYCLE_1M',
+          res.durationMs,
+          res.errors ? 'warning' : 'success',
+          'Ciclo de reservas: ' + res.scanned + ' revisadas, ' + res.results.filter((x: any) => x.status === 'completed').length + ' acciones, ' + res.errors + ' errores.'
+        );
       }
     } catch (error: any) {
       console.error('❌ Error ejecutando CRON_RESERVATION_LIFECYCLE_1M:', error);
@@ -238,15 +283,17 @@ export function initializeAutomationEngine() {
     }
   }, CR_TIMEZONE);
 
-  // 11. CRON: AGENTE OMNICANAL DE CORREO (Cada minuto)
-  // Revisa Gmail y Outlook, clasifica solicitudes, continúa reservas existentes
-  // y responde automáticamente cuando la política de autonomía y la confianza lo permiten.
+  // 12. Agente omnicanal de correo (cada minuto).
   cron.schedule('* * * * *', async () => {
     try {
       const res = await withDistributedAutomationLock('email-operations-1m', processEmailOperationsOnce);
       if (res && (res.scanned || res.errors.length)) {
-        logAutomationExecution('CRON_EMAIL_OPERATIONS_1M', 0, res.errors.length ? 'warning' : 'success',
-          'Correo autónomo: ' + res.scanned + ' escaneados, ' + res.results.length + ' procesados, ' + res.errors.length + ' errores.');
+        logAutomationExecution(
+          'CRON_EMAIL_OPERATIONS_1M',
+          0,
+          res.errors.length ? 'warning' : 'success',
+          'Correo autónomo: ' + res.scanned + ' escaneados, ' + res.results.length + ' procesados, ' + res.errors.length + ' errores.'
+        );
       }
     } catch (error: any) {
       console.error('❌ Error ejecutando CRON_EMAIL_OPERATIONS_1M:', error);
@@ -254,10 +301,15 @@ export function initializeAutomationEngine() {
     }
   }, CR_TIMEZONE);
 
-  // 10. CRON: Liberación Automática de Soft Holds Expirados (Cada 5 minutos)
+  // 13. Liberación automática de soft holds expirados (cada 5 minutos).
   cron.schedule('*/5 * * * *', async () => {
-    await withDistributedAutomationLock('soft-hold-cleanup-5m', cleanupExpiredSoftHolds);
-  });
+    try {
+      await withDistributedAutomationLock('soft-hold-cleanup-5m', cleanupExpiredSoftHolds);
+    } catch (error: any) {
+      console.error('❌ Error ejecutando soft-hold-cleanup-5m:', error);
+      logAutomationExecution('CRON_SOFT_HOLD_CLEANUP_5M', 0, 'error', 'Fallo: ' + error.message);
+    }
+  }, CR_TIMEZONE);
 
-  console.log('✅ Motor de Automatizaciones Nativo (Node.js/Express) activo y programado.');
+  console.log('✅ Motor de Automatizaciones Nativo activo. Lifecycle, correo, proveedor, pre-venta y holds usan locks distribuidos.');
 }
