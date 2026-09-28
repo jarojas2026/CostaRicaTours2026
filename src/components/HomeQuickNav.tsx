@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import { Compass, Map, Sparkles, Bus, Coffee, ArrowRight, ShieldCheck, CheckCircle2, Star, Clock, Flame, Users, Bot, Plane } from 'lucide-react';
+import { Compass, Map, Sparkles, Bus, Coffee, ArrowRight, ShieldCheck, CheckCircle2, Clock, Flame, Users, Bot, Plane } from 'lucide-react';
 import { Language, Currency, Tour } from '../types';
 import { useTours } from '../contexts/ToursContext';
 import { getLangText, formatCurrency } from '../utils/i18n';
@@ -24,16 +24,16 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
   const { tours: TOURS } = useTours();
   const tico = language === 'es';
 
-  // 3 Curated Must-Do Tours for fast discovery without clutter
+  // Three catalog entries for fast discovery without invented popularity/review claims.
   const curatedTours = TOURS.slice(0, 3);
 
   const navCards = [
     {
       id: 'tours',
       title: tico ? 'Catálogo de Tours' : 'Tours & Adventures',
-      subtitle: tico ? '100+ experiencias y servicios, con catálogo nacional en expansión' : '100+ experiences and services, with a growing nationwide catalog',
+      subtitle: tico ? 'Explora experiencias por región, estilo y duración' : 'Explore experiences by region, style and duration',
       icon: <Compass className="w-6 h-6 text-orange-400" />,
-      badge: tico ? 'Más Popular' : 'Most Popular',
+      badge: tico ? 'Explorar' : 'Explore',
       badgeColor: 'bg-orange-500/20 text-orange-300 border-orange-500/40',
       tab: 'tours' as const,
       gradient: 'from-[#0b3323] to-[#051c14] hover:border-amber-400/80',
@@ -41,14 +41,14 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
     },
     {
       id: 'ai',
-      title: tico ? '🤖 8 Agentes IA' : '🤖 8 AI Agents Hub',
-      subtitle: tico ? '8 especialistas para itinerarios, biología, reservas, 4x4, chef, mochileros y accesibilidad' : '8 specialists for itineraries, wildlife, bookings, 4x4, chef, backpackers & accessibility',
+      title: tico ? '🤖 Asistente de Viaje' : '🤖 Travel Assistant',
+      subtitle: tico ? 'Planifica, compara y prepara el siguiente paso de tu viaje' : 'Plan, compare and prepare the next step of your trip',
       icon: <Bot className="w-6 h-6 text-orange-400" />,
-      badge: tico ? 'Multi-Flujo' : 'Multi-Workflow',
+      badge: tico ? 'Asistente' : 'Assistant',
       badgeColor: 'bg-orange-400 text-stone-950 font-black',
       tab: 'ai' as const,
       gradient: 'from-[#0d3d2c] to-[#072419] hover:border-amber-400',
-      actionText: tico ? 'Hablar con Agentes' : 'Chat with Agents'
+      actionText: tico ? 'Hablar con el asistente' : 'Chat with the assistant'
     },
     {
       id: 'map',
@@ -64,20 +64,20 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
     {
       id: 'flights',
       title: tico ? '✈️ Vuelos a Costa Rica' : '✈️ Flights to Costa Rica',
-      subtitle: tico ? 'Rastreador en vivo desde tu país a San José (SJO) y Liberia (LIR) con reserva y traslados' : 'Live tracker from your origin country to SJO & LIR with booking and airport transfer',
+      subtitle: tico ? 'Busca opciones hacia San José (SJO) y Liberia (LIR)' : 'Search options to San José (SJO) and Liberia (LIR)',
       icon: <Plane className="w-6 h-6 text-orange-400" />,
-      badge: tico ? 'En Vivo' : 'Live Radar',
+      badge: tico ? 'Buscar' : 'Search',
       badgeColor: 'bg-orange-400 text-stone-950 font-black',
       tab: 'flights' as const,
       gradient: 'from-[#222110] to-[#0c1409] hover:border-amber-400/80',
-      actionText: tico ? 'Ver Vuelos y Reservar' : 'View Flights & Book'
+      actionText: tico ? 'Buscar vuelos' : 'Search flights'
     },
     {
       id: 'culture',
       title: tico ? '🇨🇷 Rincón Tico' : '🇨🇷 Tico Culture & Food',
       subtitle: tico ? 'Diccionario, gastronomía típica, café y tradiciones' : 'Local slang, typical dishes, coffee & wildlife',
       icon: <Coffee className="w-6 h-6 text-orange-300" />,
-      badge: tico ? '100% Auténtico' : '100% Authentic',
+      badge: tico ? 'Cultura' : 'Culture',
       badgeColor: 'bg-yellow-500/20 text-orange-300 border-yellow-500/40',
       tab: 'culture' as const,
       gradient: 'from-[#261d11] to-[#120f09] hover:border-amber-400/80',
@@ -86,20 +86,20 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
     {
       id: 'tools',
       title: tico ? 'Guía, Parques & Shuttles' : 'Guide, Parks & Shuttles',
-      subtitle: tico ? 'Parques SINAC, empaque, 911, moneda, buses y shuttles' : 'SINAC Parks, packing checklist, 911, currency & transport',
+      subtitle: tico ? 'Parques, empaque, emergencias, moneda, buses y shuttles' : 'Parks, packing, emergencies, currency & transport',
       icon: <Bus className="w-6 h-6 text-teal-400" />,
-      badge: tico ? 'Imprescindible' : 'Must Know',
+      badge: tico ? 'Guía' : 'Guide',
       badgeColor: 'bg-teal-500/20 text-teal-300 border-teal-500/40',
       tab: 'tools' as const,
       gradient: 'from-[#092e22] to-[#041711] hover:border-teal-400/80',
-      actionText: tico ? 'Ver Guía Completa' : 'View Travel Guide'
+      actionText: tico ? 'Ver guía' : 'View travel guide'
     },
     {
       id: 'itinerary',
       title: tico ? 'Planificador con IA' : 'AI Trip Planner',
-      subtitle: tico ? 'Crea un itinerario inteligente personalizado en segundos' : 'Generate a custom smart itinerary in seconds',
+      subtitle: tico ? 'Crea una propuesta de itinerario y luego verifica la operación' : 'Create an itinerary proposal and then verify operations',
       icon: <Sparkles className="w-6 h-6 text-orange-400" />,
-      badge: tico ? 'Gratis & Rápido' : 'Free & Fast',
+      badge: tico ? 'Planificar' : 'Plan',
       badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
       tab: 'itinerary' as const,
       gradient: 'from-[#1b192e] to-[#0d0c18] hover:border-purple-400/80',
@@ -107,14 +107,14 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
     },
     {
       id: 'vip',
-      title: tico ? '✨ VIP Concierge Privado' : '✨ VIP Private Concierge',
-      subtitle: tico ? 'Jets privados, yates de lujo y chofer bilingüe dedicado' : 'Private jets, luxury yachts & dedicated bilingual driver',
+      title: tico ? '✨ Viaje a Medida' : '✨ Tailored Trip',
+      subtitle: tico ? 'Solicita una propuesta personalizada según tu ruta y preferencias' : 'Request a personalized proposal for your route and preferences',
       icon: <Sparkles className="w-6 h-6 text-amber-400" />,
-      badge: tico ? 'Exclusivo' : 'Exclusive',
+      badge: tico ? 'Personalizado' : 'Custom',
       badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
       tab: 'tours' as const,
       gradient: 'from-[#292211] to-[#141007] hover:border-amber-400/80',
-      actionText: tico ? 'Cotizar VIP' : 'Request VIP'
+      actionText: tico ? 'Solicitar propuesta' : 'Request proposal'
     }
   ];
 
@@ -182,16 +182,16 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
         </div>
       </section>
 
-      {/* 2. Top Curated Highlights (Must-Dos) - Simple, punchy, not overloaded */}
+      {/* 2. Catalog Highlights */}
       <section className="space-y-6 pt-4">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs font-black text-teal-400 uppercase tracking-widest mb-1">
               <Flame className="w-4 h-4 text-orange-400" />
-              {tico ? 'Top 3 Imperdibles de Costa Rica' : 'Top 3 Must-Do Experiences'}
+              {tico ? 'Ideas para empezar' : 'Ideas to get started'}
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-white">
-              {tico ? 'Experiencias Estrella Garantizadas' : 'Signature Costa Rica Highlights'}
+              {tico ? 'Experiencias destacadas del catálogo' : 'Featured catalog experiences'}
             </h2>
           </div>
 
@@ -199,7 +199,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
             onClick={() => navigate('/tours')}
             className="inline-flex items-center gap-2 text-sm font-bold text-orange-400 hover:text-orange-300 transition-colors cursor-pointer group"
           >
-            <span>{tico ? 'Ver todo el catálogo nacional' : 'Explore the nationwide catalog'}</span>
+            <span>{tico ? 'Ver todo el catálogo' : 'Explore the full catalog'}</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
@@ -224,11 +224,10 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-black/30" />
-                  
-                  <div className="absolute top-3 left-3 flex gap-2">
-                    <span className="bg-[#051a13]/90 backdrop-blur-md text-teal-300 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full border border-teal-500/30 flex items-center gap-1">
-                      <Star className="w-3 h-3 text-orange-400 fill-orange-400" />
-                      {tour.rating} ({tour.reviewsCount})
+
+                  <div className="absolute top-3 left-3">
+                    <span className="bg-[#051a13]/90 backdrop-blur-md text-teal-300 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full border border-teal-500/30">
+                      {tico ? 'Experiencia del catálogo' : 'Catalog experience'}
                     </span>
                   </div>
 
@@ -261,7 +260,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
                   <div className="pt-3 border-t border-emerald-500/25 flex items-center justify-between">
                     <div className="text-[11px] text-teal-300 font-bold flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
-                      <span>{tico ? 'Cancelación Gratuita 48h' : 'Free 48h Cancel'}</span>
+                      <span>{tico ? 'Cupo se verifica al solicitar' : 'Availability checked on request'}</span>
                     </div>
 
                     <span className="text-xs font-black text-orange-400 group-hover:underline flex items-center gap-1">
@@ -275,7 +274,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
         </div>
       </section>
 
-      {/* 3. Official Guarantee & Receptive Quality Strip */}
+      {/* 3. Booking truth strip */}
       <section className="bg-[#062017]/95 rounded-3xl p-6 sm:p-7 border border-emerald-500/30 backdrop-blur-md shadow-2xl text-white">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6 text-left">
           <div className="flex items-start gap-3">
@@ -283,8 +282,8 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Agencia Receptiva' : 'Official Agency'}</h4>
-              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Guías ICT y pólizas de seguro al día' : 'ICT certified guides & full liability insurance'}</p>
+              <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Disponibilidad verificada' : 'Availability checked'}</h4>
+              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Consultamos cupo antes de afirmar disponibilidad' : 'We check capacity before claiming availability'}</p>
             </div>
           </div>
 
@@ -293,8 +292,8 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Tarifa Oficial Directa' : 'Official Rate'}</h4>
-              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Sin sobreprecios ni costos ocultos' : 'Direct rates with zero hidden markups'}</p>
+              <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Precio antes de pagar' : 'Price before payment'}</h4>
+              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'La cotización muestra el importe antes de continuar' : 'Your quote shows the amount before you continue'}</p>
             </div>
           </div>
 
@@ -303,8 +302,8 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Voucher QR Inmediato' : 'Instant QR Voucher'}</h4>
-              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Confirmación digital y soporte directo' : 'Instant confirmation with digital voucher'}</p>
+              <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Voucher tras confirmar' : 'Voucher after confirmation'}</h4>
+              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Pago y proveedor se verifican antes de la confirmación final' : 'Payment and provider are verified before final confirmation'}</p>
             </div>
           </div>
 
@@ -313,8 +312,8 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
               <Clock className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Cancelación Flexible' : 'Flexible Refund'}</h4>
-              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Reembolso 100% hasta 48h antes' : '100% refund up to 48 hours prior'}</p>
+              <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Condiciones claras' : 'Clear conditions'}</h4>
+              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Cambios y cancelaciones dependen del servicio contratado' : 'Change and cancellation terms depend on the booked service'}</p>
             </div>
           </div>
 
@@ -323,8 +322,8 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
               <Users className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Asistencia Tica 24/7' : '24/7 Concierge'}</h4>
-              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Atención local vía WhatsApp' : 'Local WhatsApp support in destination'}</p>
+              <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Asistencia de viaje' : 'Travel assistance'}</h4>
+              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Consulta por WhatsApp cuando necesites apoyo' : 'Use WhatsApp when you need assistance'}</p>
             </div>
           </div>
         </div>
