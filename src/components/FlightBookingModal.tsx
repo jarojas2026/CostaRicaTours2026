@@ -7,8 +7,6 @@ import {
 import { FlightRoute, Language, Currency, BookingRequest } from '../types';
 import { formatCurrency, getLangText } from '../utils/i18n';
 import { getUsdToCrcRate } from '../utils/currencies';
-import { auth, db } from '../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 interface FlightBookingModalProps {
   flight: FlightRoute;
@@ -52,6 +50,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessTicket, setShowSuccessTicket] = useState(false);
   const [confirmedBookingData, setConfirmedBookingData] = useState<BookingRequest | null>(null);
+  const [submissionError, setSubmissionError] = useState('');
 
   if (!isOpen) return null;
 
@@ -64,17 +63,16 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
   const crcRate = getUsdToCrcRate();
   const totalCRC = crcRate > 0 ? Math.round(totalUSD * crcRate) : 0;
 
-  const pnrPreview = `CR-AIR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || !email.trim()) return;
+    if (!fullName.trim() || !email.trim() || !phone.trim()) return;
 
     setIsSubmitting(true);
-    const pnrCode = pnrPreview;
+    setSubmissionError('');
 
+    // The browser submits a request only. Payment/provider/confirmation state
+    // remains authoritative on the server and must never be fabricated here.
     const newBooking: BookingRequest = {
-      bookingId: pnrCode,
       tourId: `flight-${flight.airlineCode.toLowerCase()}-${flight.originAirportCode.toLowerCase()}-${flight.destinationAirportCode.toLowerCase()}`,
       tourName: `${flight.airline} (${flight.flightNumber}) • ${flight.originAirportCode} ➔ ${flight.destinationAirportCode}`,
       date: departureDate,
@@ -90,11 +88,11 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
       customer: {
         fullName,
         email,
-        phone: phone || '+506 8795-9148',
+        phone,
         country: flight.originCountry,
       },
       paymentMethod,
-      paymentStatus: paymentMethod === 'pay_at_pickup' ? 'on_arrival' : 'completed',
+      paymentStatus: 'pending',
       flightDetails: {
         flightNumber: flight.flightNumber,
         airline: flight.airline,
@@ -107,9 +105,8 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
         includesBaggage: true,
         includesAirportTransfer: includeAirportTransfer,
         passengerCount: passengersCount,
-        pnrLocator: pnrCode,
       },
-      status: 'confirmada',
+      status: 'solicitada',
       createdAt: new Date().toISOString(),
     };
 
@@ -120,8 +117,8 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify({
              tourId: 'flight-' + flight.flightNumber,
-             tourName: 'Vuelo Privado ' + flight.flightNumber + ' - ' + flight.airline,
-             totalUSD: totalUSD,
+             tourName: 'Vuelo ' + flight.flightNumber + ' - ' + flight.airline,
+             totalUSD,
              customerEmail: email,
              date: departureDate,
              passengers: passengersCount,
@@ -132,34 +129,38 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
              includeTravelInsurance
            })
         });
-        const stripeData = await stripeRes.json();
-        if (stripeData.url) {
-           window.location.href = stripeData.url;
-           return;
+        const stripeData = await stripeRes.json().catch(() => ({}));
+        if (!stripeRes.ok) {
+          throw new Error(stripeData?.message || stripeData?.error || 'No se pudo iniciar el pago seguro.');
         }
+        if (!stripeData.url) {
+          throw new Error('La pasarela no devolvió un enlace de pago verificable.');
+        }
+        window.location.href = stripeData.url;
+        return;
       }
 
-      await fetch('/api/bookings', {
+      const bookingRes = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newBooking),
       });
+      const bookingResult = await bookingRes.json().catch(() => ({}));
+      if (!bookingRes.ok || bookingResult?.conflict || !bookingResult?.booking) {
+        throw new Error(bookingResult?.message || bookingResult?.error || 'No se pudo registrar la solicitud de reserva.');
+      }
 
-      const currentUser = auth.currentUser;
-      await addDoc(collection(db, 'bookings'), { 
-        ...newBooking, 
-        userId: currentUser ? currentUser.uid : 'anonymous', 
-        createdAt: serverTimestamp() 
-      });
-
-      setConfirmedBookingData(newBooking);
+      const authoritativeBooking = bookingResult.booking as BookingRequest;
+      setConfirmedBookingData(authoritativeBooking);
       setShowSuccessTicket(true);
-      onBookingSuccess(newBooking);
-    } catch (err) {
+      onBookingSuccess(authoritativeBooking);
+    } catch (err: any) {
       console.error('Error booking flight:', err);
-      setConfirmedBookingData(newBooking);
-      setShowSuccessTicket(true);
-      onBookingSuccess(newBooking);
+      setSubmissionError(
+        err?.message || (language === 'es'
+          ? 'No se pudo registrar la solicitud. Inténtalo nuevamente.'
+          : 'The request could not be registered. Please try again.')
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -187,7 +188,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                 </span>
               </div>
               <h3 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
-                {language === 'es' ? 'Reserva de Vuelo a Costa Rica' : 'Costa Rica Flight Reservation'}
+                {language === 'es' ? 'Solicitud de Vuelo a Costa Rica' : 'Costa Rica Flight Request'}
               </h3>
             </div>
           </div>
@@ -200,7 +201,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
           </button>
         </div>
 
-        {/* Boarding Pass Ticket View Modal (If Success) */}
+        {/* Request Receipt View (If Accepted by Backend) */}
         {showSuccessTicket && confirmedBookingData ? (
           <div className="p-6 space-y-5 text-center">
             <div className="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto shadow-md">
@@ -209,27 +210,27 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
 
             <div>
               <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest block">
-                {language === 'es' ? '¡Reserva Confirmada!' : 'Booking Confirmed!'}
+                {language === 'es' ? 'Solicitud registrada' : 'Request registered'}
               </span>
               <h4 className="text-2xl font-black text-slate-900 mt-1">
-                PNR: <span className="text-emerald-600 font-mono">{confirmedBookingData.bookingId}</span>
+                {language === 'es' ? 'Referencia:' : 'Reference:'} <span className="text-emerald-600 font-mono">{confirmedBookingData.bookingId}</span>
               </h4>
               <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
                 {language === 'es' 
-                  ? 'Hemos enviado el voucher oficial y la confirmación a tu correo electrónico. Chofer oficial te esperará en la sala de llegadas.'
-                  : 'Official voucher & PNR locator sent to your email. Official driver will meet you in the arrival hall.'}
+                  ? 'La solicitud fue recibida. El pago, el vuelo, los servicios adicionales y la confirmación final dependen de la verificación del backend y de los proveedores.'
+                  : 'Your request was received. Payment, flight, add-ons, and final confirmation remain subject to backend and provider verification.'}
               </p>
             </div>
 
-            {/* Simulated Digital Ticket */}
+            {/* Requested Flight Summary */}
             <div className="bg-slate-900 text-white p-5 rounded-2xl border border-slate-800 text-left shadow-xl relative overflow-hidden">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-emerald-400 block">Aerolínea & Vuelo</span>
+                  <span className="text-[10px] uppercase font-bold text-emerald-400 block">Aerolínea & Vuelo solicitado</span>
                   <span className="text-sm font-extrabold text-white">{flight.airline} ({flight.flightNumber})</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Fecha Vuelo</span>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Fecha solicitada</span>
                   <span className="text-xs font-bold text-white">{departureDate}</span>
                 </div>
               </div>
@@ -259,12 +260,12 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                   <span className="font-bold text-white">{fullName}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase text-slate-400 block">Cabina</span>
+                  <span className="text-[10px] uppercase text-slate-400 block">Cabina solicitada</span>
                   <span className="font-bold text-white">{selectedCabin}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] uppercase text-slate-400 block">Código QR</span>
-                  <span className="font-mono text-emerald-400 font-bold">Válido 🇨🇷</span>
+                  <span className="text-[10px] uppercase text-slate-400 block">Estado</span>
+                  <span className="font-mono text-amber-300 font-bold">Pendiente de verificación</span>
                 </div>
               </div>
             </div>
@@ -308,7 +309,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
               </div>
             </div>
 
-            {/* Booking Form */}
+            {/* Booking Request Form */}
             <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5 max-h-[62vh] overflow-y-auto">
               
               {/* Flight Date, Passengers & Cabin */}
@@ -474,7 +475,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
 
                   <div className="space-y-1">
                     <label className="text-[11px] font-semibold text-slate-700">
-                      {language === 'es' ? 'Correo Electrónico (para Voucher & PNR) *' : 'Email (for Voucher & PNR) *'}
+                      {language === 'es' ? 'Correo Electrónico *' : 'Email *'}
                     </label>
                     <input
                       type="email"
@@ -543,11 +544,17 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                 </div>
               </div>
 
+              {submissionError && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700" role="alert">
+                  {submissionError}
+                </div>
+              )}
+
               {/* Total Summary & Submit Action */}
               <div className="bg-slate-900 text-white p-4.5 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-4 shadow-xl">
                 <div>
                   <span className="text-xs text-slate-300 font-semibold block">
-                    {language === 'es' ? 'Total Paquete Vuelo + Traslado Receptivo:' : 'Total Flight + Reception Package:'}
+                    {language === 'es' ? 'Total estimado del paquete solicitado:' : 'Estimated requested package total:'}
                   </span>
                   <div className="flex items-baseline gap-2 mt-0.5">
                     <span className="text-2xl sm:text-3xl font-black text-emerald-400">
@@ -558,7 +565,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                     </span>
                   </div>
                   <span className="text-[10px] text-slate-400 block mt-0.5">
-                    {language === 'es' ? 'Incluye 10kg mano + 23kg maleta + recepción aeropuerto' : 'Includes 10kg carry-on + 23kg checked bag + airport meet'}
+                    {language === 'es' ? 'La disponibilidad y el total final se confirman en el flujo operativo.' : 'Availability and final total are confirmed in the operational flow.'}
                   </span>
                 </div>
 
@@ -568,11 +575,15 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                   className="min-h-[44px] min-w-[44px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-6 py-3.5 rounded-2xl text-xs uppercase tracking-wider transition-all shadow-lg flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting ? (
-                    <span>{language === 'es' ? 'Generando PNR...' : 'Generating PNR...'}</span>
+                    <span>{language === 'es' ? 'Procesando...' : 'Processing...'}</span>
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
-                      <span>{language === 'es' ? 'Confirmar Reserva de Vuelo' : 'Confirm Flight Booking'}</span>
+                      <span>
+                        {paymentMethod === 'credit_card'
+                          ? (language === 'es' ? 'Continuar al pago seguro' : 'Continue to secure payment')
+                          : (language === 'es' ? 'Enviar solicitud' : 'Submit request')}
+                      </span>
                     </>
                   )}
                 </button>
