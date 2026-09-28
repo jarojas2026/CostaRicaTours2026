@@ -47,13 +47,23 @@ function getBookingStage(booking: BookingRequest): BookingStage {
     };
   }
 
-  if (['confirmed', 'confirmada'].includes(raw) || ['confirmed', 'confirmada'].includes(providerStatus)) {
+  if (['confirmed', 'confirmada'].includes(raw)) {
     return {
       labelEs: 'Reserva confirmada',
       labelEn: 'Booking confirmed',
-      descriptionEs: 'El proveedor confirmó la operación. Tu voucher puede estar disponible.',
-      descriptionEn: 'The provider confirmed the operation. Your voucher may be available.',
+      descriptionEs: 'La reserva completó el ciclo de confirmación operativa. Tu voucher puede estar disponible.',
+      descriptionEn: 'The booking completed the operational confirmation lifecycle. Your voucher may be available.',
       confirmed: true,
+    };
+  }
+
+  if (['confirmed', 'confirmada'].includes(providerStatus)) {
+    return {
+      labelEs: 'Proveedor confirmó · finalizando',
+      labelEn: 'Provider confirmed · finalizing',
+      descriptionEs: 'El proveedor confirmó la operación. El sistema está finalizando la confirmación de la reserva antes de habilitar el voucher.',
+      descriptionEn: 'The provider confirmed the operation. The system is finalizing the booking confirmation before enabling the voucher.',
+      confirmed: false,
     };
   }
 
