@@ -110,10 +110,33 @@ test('private gateway authenticates runtime requests and preserves user auth', a
 
     await t.test('privileged routes reject anonymous callers before any Google or Cloud Run request', async () => {
       delete process.env.VERCEL_OIDC_TOKEN;
-      const result = await invoke({ includeUserAuth: false, path: '/api/payouts/run-batch' });
-      assert.equal(result.status, 401);
-      assert.equal(result.payload.error, 'application_auth_required');
-      assert.equal(result.calls, 0);
+      const privilegedPaths = [
+        '/api/payouts/run-batch',
+        '/api/automations/multi-day-planner',
+        '/api/automations/dynamic-pricing',
+        '/api/calendario/sincronizar',
+        '/api/operadores/notificar',
+        '/api/nps/despachar',
+        '/api/reportes/semanal',
+        '/api/agents/supervisor',
+        '/api/agents/log_exception',
+      ];
+      for (const path of privilegedPaths) {
+        const result = await invoke({ includeUserAuth: false, path });
+        assert.equal(result.status, 401, path);
+        assert.equal(result.payload.error, 'application_auth_required', path);
+        assert.equal(result.calls, 0, path);
+      }
+    });
+
+    await t.test('authenticated operational routes continue to reach the private backend', async () => {
+      process.env.VERCEL_OIDC_TOKEN = 'test-ops-oidc';
+      const result = await invoke({
+        path: '/api/automations/multi-day-planner',
+        expectedToken: 'test-ops-oidc',
+      });
+      assert.equal(result.status, 403);
+      assert.equal(result.calls, 3);
     });
 
     await t.test('retired legacy payment and confirmation routes never reach upstream services', async () => {
