@@ -12,6 +12,7 @@ export type BookingLifecycle =
   | 'confirmed'
   | 'in_operation'
   | 'completed'
+  | 'expired'
   | 'cancelled'
   | 'refunded';
 
@@ -40,6 +41,9 @@ const LEGACY_MAP: Record<string, BookingLifecycle> = {
   en_operacion: 'in_operation',
   completed: 'completed',
   completada: 'completed',
+  expired: 'expired',
+  expirada: 'expired',
+  expirado: 'expired',
   cancelled: 'cancelled',
   canceled: 'cancelled',
   cancelada: 'cancelled',
@@ -54,13 +58,14 @@ const LEGACY_MAP: Record<string, BookingLifecycle> = {
  */
 const TRANSITIONS: Record<BookingLifecycle, BookingLifecycle[]> = {
   prospect: ['hold', 'cancelled'],
-  hold: ['payment_pending', 'cancelled'],
-  payment_pending: ['paid', 'cancelled'],
+  hold: ['payment_pending', 'expired', 'cancelled'],
+  payment_pending: ['paid', 'expired', 'cancelled'],
   paid: ['provider_pending', 'cancelled', 'refunded'],
   provider_pending: ['confirmed', 'cancelled'],
   confirmed: ['in_operation', 'cancelled'],
   in_operation: ['completed', 'cancelled'],
   completed: [],
+  expired: [],
   cancelled: ['refunded'],
   refunded: []
 };
