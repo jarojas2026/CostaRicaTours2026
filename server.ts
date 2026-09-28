@@ -1856,82 +1856,13 @@ app.post(['/webhook/proveedores-coordinacion', '/webhook/coordinacion-proveedore
   }
 });
 
-// 1.1 Endpoint Bidireccional de Respuesta del Proveedor (GET para enlaces de correo/WhatsApp y POST para APIs)
-app.all(['/api/provider/respond', '/webhook/provider-response', '/api/webhooks/provider-response'], async (req, res) => {
-  try {
-    const action = String(req.query.action || req.body?.action || 'confirm');
-    const bookingId = String(req.query.bookingId || req.body?.bookingId || req.body?.id || '');
-    const providerId = String(req.query.providerId || req.body?.providerId || '');
-    const guideName = String(req.query.guideName || req.body?.guideName || 'Guía Naturalista Certificado ICT');
-    const vehiclePlate = String(req.query.vehiclePlate || req.body?.vehiclePlate || 'Unidad Oficial Alsama Tours');
-    const proposedTime = String(req.query.proposedTime || req.body?.proposedTime || '');
-    const providerNotes = String(req.query.notes || req.body?.notes || req.body?.providerNotes || '');
-
-    if (!bookingId) {
-      return res.status(400).json({ success: false, error: 'bookingId es obligatorio' });
-    }
-
-    const result = await handleProviderActionResponse(bookingId, action, {
-      guideName,
-      vehiclePlate,
-      proposedTime,
-      providerNotes,
-      providerId
-    });
-
-    // Si la solicitud proviene de un navegador web (clic en correo del proveedor)
-    if (req.method === 'GET' || req.accepts('html')) {
-      const isConfirm = action === 'confirm';
-      const isDecline = action === 'decline';
-      const badgeColor = isConfirm ? '#059669' : isDecline ? '#b91c1c' : '#d97706';
-      const title = isConfirm ? '✅ ¡Reserva Confirmada Exitosamente!' : isDecline ? '🔄 Reasignación en Proceso' : '⏰ Ajuste de Horario Solicitado';
-
-      return res.send(`
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>${title} • Costa Rica Tours</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #041711; color: #f8fafc; margin: 0; padding: 40px 16px; display: flex; justify-content: center; align-items: center; min-height: 80vh; }
-            .card { background: #08291e; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 20px; max-width: 520px; width: 100%; padding: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); text-align: center; }
-            .badge { display: inline-block; background-color: ${badgeColor}; color: #ffffff; padding: 6px 14px; border-radius: 9999px; font-weight: 800; font-size: 13px; text-transform: uppercase; margin-bottom: 16px; letter-spacing: 0.5px; }
-            h1 { font-size: 24px; margin: 0 0 12px 0; color: #ecfdf5; }
-            p { font-size: 15px; line-height: 1.6; color: #a7f3d0; margin: 0 0 20px 0; }
-            .details { background: #03150e; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 16px; margin: 20px 0; text-align: left; font-size: 14px; }
-            .details div { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
-            .details div:last-child { border-bottom: none; }
-            .details span:first-child { color: #94a3b8; }
-            .details span:last-child { font-weight: bold; color: #f8fafc; }
-            .footer { font-size: 12px; color: #6ee7b7; margin-top: 24px; }
-            .btn { display: inline-block; background: #f59e0b; color: #041711; text-decoration: none; padding: 12px 24px; border-radius: 12px; font-weight: 800; margin-top: 16px; transition: transform 0.2s; }
-          </style>
-        </head>
-        <body>
-          <div class="card">
-            <div class="badge">${action.toUpperCase()}</div>
-            <h1>${title}</h1>
-            <p>${result.message}</p>
-            <div class="details">
-              <div><span>ID Reserva:</span><span>#${bookingId}</span></div>
-              <div><span>Estado en Sistema:</span><span style="color: #34d399;">${result.newStatus.toUpperCase()}</span></div>
-              <div><span>Estado Proveedor:</span><span>${result.providerStatus}</span></div>
-              <div><span>Registro Autodependiente:</span><span>Auditoría M2M 2026</span></div>
-            </div>
-            <p class="footer">Este cambio ha sincronizado automáticamente el calendario, el voucher del cliente y la base de datos.</p>
-            <a href="/" class="btn">Volver a Costa Rica Tours</a>
-          </div>
-        </body>
-        </html>
-      `);
-    }
-
-    res.json(result);
-  } catch (err: any) {
-    console.error('Error en /api/provider/respond:', err);
-    res.status(500).json({ success: false, error: err.message });
-  }
+// 1.1 Endpoint legado de respuesta del proveedor retirado.
+// Las mutaciones públicas sólo se aceptan mediante /api/provider/portal/action con token firmado.
+app.all(['/api/provider/respond', '/webhook/provider-response', '/api/webhooks/provider-response'], (_req, res) => {
+  res.status(410).json({
+    success: false,
+    error: 'Endpoint legado retirado. Use el portal seguro del proveedor con enlace firmado.'
+  });
 });
 
 /**

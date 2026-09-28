@@ -34,3 +34,23 @@ test('provider status only becomes notified after successful delivery', () => {
   assert.match(native, /if \(emailResult\.success\)[\s\S]*providerStatus: 'notified'/);
   assert.match(native, /providerStatus: 'notification_failed'/);
 });
+
+
+test('provider public actions require a signed portal capability and do not auto-confirm the booking', () => {
+  const native = read('backend/nativeWorkflows.ts');
+  const server = read('server.ts');
+  const start = native.indexOf('export async function handleProviderActionResponse');
+  const end = native.indexOf('export async function executeAutonomousProviderFallback', start);
+  assert.ok(start >= 0 && end > start, 'provider handler not found');
+  const handler = native.slice(start, end);
+
+  assert.equal(native.includes('/api/provider/respond?action='), false);
+  assert.match(native, /PROVIDER_PORTAL_UNCONFIGURED/);
+  assert.equal(handler.includes("status: 'confirmada'"), false);
+  assert.equal(handler.includes('Unidad Turística Oficial Alsama'), false);
+  assert.equal(handler.includes("options?.proposedTime || '09:00 AM'"), false);
+  assert.match(handler, /serviceOrderStatus: 'confirmed'/);
+  assert.match(handler, /PROVIDER_RESPONSE_IDENTITY_MISMATCH/);
+  assert.match(server, /app\.all\(\['\/api\/provider\/respond'[\s\S]*status\(410\)/);
+  assert.match(server, /verifyProviderPortalToken/);
+});

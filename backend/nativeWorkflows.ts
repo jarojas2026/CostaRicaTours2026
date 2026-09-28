@@ -354,13 +354,25 @@ export async function executeProviderRealtimeCoordination(
   const providerPhone = String(provider.phone || '').trim();
   const whatsappNumber = String(provider.whatsapp || '').replace(/[^0-9]/g, '');
 
-  // Generar URLs de acción de 1 clic para el proveedor
-  const providerPortalUrl = providerPortalConfigured()
-    ? `${APP_URL}/provider/portal?token=${encodeURIComponent(createProviderPortalToken({ orderId: bookingId, providerId: provider.id, ttlMinutes: 1440 }))}`
-    : '';
-  const confirmUrl = providerPortalUrl ? `${providerPortalUrl}&action=confirm` : `${APP_URL}/api/provider/respond?action=confirm&bookingId=${encodeURIComponent(bookingId)}&providerId=${encodeURIComponent(provider.id)}`;
-  const modifyTimeUrl = providerPortalUrl ? `${providerPortalUrl}&action=modify_time` : `${APP_URL}/api/provider/respond?action=modify_time&bookingId=${encodeURIComponent(bookingId)}&providerId=${encodeURIComponent(provider.id)}`;
-  const declineUrl = providerPortalUrl ? `${providerPortalUrl}&action=decline` : `${APP_URL}/api/provider/respond?action=decline&bookingId=${encodeURIComponent(bookingId)}&providerId=${encodeURIComponent(provider.id)}`;
+  // Las acciones del proveedor sólo se aceptan mediante el portal firmado.
+  if (!providerPortalConfigured()) {
+    const reason = 'Despacho bloqueado: PROVIDER_ACTION_SECRET no está configurado para generar un enlace seguro de proveedor.';
+    await recordEscalation({
+      type: 'PROVIDER_PORTAL_UNCONFIGURED',
+      bookingId,
+      providerId: provider.id,
+      reason,
+      customerEmail,
+      customerPhone,
+      details: { tourId, tourDate, tourTime }
+    });
+    throw new Error(reason);
+  }
+  const providerPortalUrl = `${APP_URL}/provider/portal?token=${encodeURIComponent(createProviderPortalToken({ orderId: bookingId, providerId: provider.id, ttlMinutes: 1440 }))}`;
+  // El portal presenta las acciones válidas y envía la decisión al endpoint firmado.
+  const confirmUrl = providerPortalUrl;
+  const modifyTimeUrl = providerPortalUrl;
+  const declineUrl = providerPortalUrl;
 
   // Enlace interactivo a WhatsApp para despacho móvil directo
   const waText = encodeURIComponent(
@@ -570,58 +582,47 @@ export async function handleProviderActionResponse(
 }> {
   console.log(`⚡ [RESPUESTA PROVEEDOR] Procesando acción "${action}" para reserva #${bookingId}`);
   const db = getFirestoreDb();
-  let bookingData: any = null;
+  if (!db) throw new Error('Firestore no disponible; no se puede validar una respuesta de proveedor.');
 
-  if (db) {
-    try {
-      const doc = await db.collection('bookings').doc(bookingId).get();
-      if (doc.exists) bookingData = doc.data();
-    } catch (err) {
-      console.warn('⚠️ Error leyendo reserva en Firestore:', err);
-    }
+  const doc = await db.collection('bookings').doc(bookingId).get();
+  if (!doc.exists) throw new Error(`Reserva #${bookingId} no encontrada.`);
+  const bookingData: any = doc.data() || {};
+  const assignedProviderId = String(bookingData.providerId || bookingData.providerInfo?.id || '').trim();
+  const respondingProviderId = String(options?.providerId || '').trim();
+  if (!assignedProviderId || !respondingProviderId || assignedProviderId !== respondingProviderId) {
+    const reason = `Respuesta bloqueada: proveedor no coincide con la asignación de la reserva #${bookingId}.`;
+    await recordEscalation({
+      type: 'PROVIDER_RESPONSE_IDENTITY_MISMATCH',
+      bookingId,
+      providerId: respondingProviderId || undefined,
+      reason,
+      details: { assignedProviderId: assignedProviderId || null }
+    });
+    throw new Error(reason);
   }
 
-  const tourName = bookingData?.tourName || 'Experiencia en Costa Rica';
-  const tourDate = bookingData?.date || 'Fecha registrada';
-  const customerEmail = bookingData?.customerEmail || bookingData?.customer?.email || '';
-  const customerName = bookingData?.customerName || bookingData?.customer?.name || 'Viajero';
+  const provider = await getProviderFromDb(respondingProviderId, String(bookingData.tourId || ''));
+  if (!provider) {
+    const reason = `Respuesta bloqueada: proveedor ${respondingProviderId} no está activo y verificado para esta reserva.`;
+    await recordEscalation({ type: 'PROVIDER_RESPONSE_UNVERIFIED', bookingId, providerId: respondingProviderId, reason });
+    throw new Error(reason);
+  }
 
-  // 1. CASO: CONFIRMAR RESERVA Y ASIGNAR LOGÍSTICA
   if (action === 'confirm') {
-    const guide = options?.guideName || 'Pendiente de asignación por el proveedor';
-    const vehicle = options?.vehiclePlate || 'Unidad Turística Oficial Alsama';
     const confirmedAt = new Date().toISOString();
-
-    await updateBookingStatus(bookingId, {
-      status: 'confirmada',
+    const patch: Record<string, any> = {
       providerStatus: 'confirmed',
-      assignedGuide: guide,
-      assignedVehicle: vehicle,
+      serviceOrderStatus: 'confirmed',
       providerConfirmedAt: confirmedAt,
-      providerNotes: options?.providerNotes || 'Confirmado por operador local.'
-    }).catch(() => {});
+      providerNotes: String(options?.providerNotes || '').trim() || 'Confirmado por proveedor.'
+    };
+    const guide = String(options?.guideName || '').trim();
+    const vehicle = String(options?.vehiclePlate || '').trim();
+    if (guide) patch.assignedGuide = guide;
+    if (vehicle) patch.assignedVehicle = vehicle;
 
-    // Notificar al cliente automáticamente con los detalles del chofer / guía
-    if (customerEmail) {
-      await sendEmail({
-        to: customerEmail,
-        subject: `🎉 ¡Operador y Guía Confirmados! Tu reserva #${bookingId} está 100% lista`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917; border: 1px solid #e7e5e4; border-radius: 12px; padding: 24px;">
-            <h2 style="color: #064e3b; margin-top: 0;">¡Todo listo para tu aventura! 🌿</h2>
-            <p>Hola <strong>${customerName}</strong>,</p>
-            <p>Tu operador local ha confirmado la logística de tu experiencia <strong>${tourName}</strong>:</p>
-            <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 16px; border-radius: 6px; margin: 16px 0;">
-              <p style="margin: 4px 0;"><strong>📅 Fecha:</strong> ${tourDate}</p>
-              <p style="margin: 4px 0;"><strong>👤 Guía Asignado:</strong> ${guide}</p>
-              <p style="margin: 4px 0;"><strong>🚐 Vehículo:</strong> ${vehicle}</p>
-              <p style="margin: 4px 0;"><strong>📍 Estado:</strong> 100% Confirmado con logística lista</p>
-            </div>
-            <p style="font-size: 13px; color: #57534e;">¡Nos vemos en el punto de encuentro acordado! ¡Pura Vida! 🇨🇷</p>
-          </div>
-        `
-      }).catch(() => {});
-    }
+    const updated = await updateBookingStatus(bookingId, patch);
+    if (!updated.success) throw new Error(updated.error || `No se pudo registrar la confirmación del proveedor para ${bookingId}.`);
 
     try {
       const { sendAgentMessage, publishAgentEvent } = await import('./agentMeshService');
@@ -631,41 +632,34 @@ export async function handleProviderActionResponse(
         toAgent: 'customer_service',
         audience: 'internal',
         type: 'response',
-        subject: 'Proveedor confirmó logística',
-        payload: { bookingId, providerId: options?.providerId, guide, vehicle, tourName, tourDate }
+        subject: 'Proveedor confirmó disponibilidad',
+        payload: { bookingId, providerId: respondingProviderId, guide: guide || null, vehicle: vehicle || null }
       });
-      await publishAgentEvent('provider.booking.confirmed', { bookingId, providerId: options?.providerId, guide, vehicle }, bookingId);
-      const { recordLearningEvent } = await import('./learningEngine');
-      await recordLearningEvent({
-        agentId: 'provider_liaison',
-        input: `Coordinación de proveedor para ${bookingId}`,
-        output: 'Proveedor confirmó logística',
-        outcome: 'success',
-        reward: 1,
-        metadata: { bookingId, providerId: options?.providerId, action: 'confirm' }
-      });
-    } catch (meshErr) { console.warn('Agent mesh provider confirmation unavailable:', meshErr); }
+      await publishAgentEvent('provider.booking.confirmed', { bookingId, providerId: respondingProviderId, guide: guide || null, vehicle: vehicle || null }, bookingId);
+    } catch (meshErr) {
+      console.warn('Agent mesh provider confirmation unavailable:', meshErr);
+    }
 
-    logAutomationExecution('WF_COORDINACION_PROVEEDOR', 0, 'success', `Reserva #${bookingId} confirmada por operador con guía ${guide}`);
-
+    logAutomationExecution('WF_COORDINACION_PROVEEDOR', 0, 'success', `Proveedor ${respondingProviderId} confirmó disponibilidad para #${bookingId}`);
     return {
       success: true,
       action: 'confirm',
       bookingId,
-      newStatus: 'confirmada',
+      newStatus: String(bookingData.status || 'provider_pending'),
       providerStatus: 'confirmed',
-      message: `¡Reserva #${bookingId} confirmada con éxito! Guía: ${guide}. Cliente notificado.`
+      message: `Proveedor ${respondingProviderId} confirmó disponibilidad. El lifecycle canónico validará la transición final y la notificación al cliente.`
     };
   }
 
-  // 2. CASO: AJUSTE DE HORA SOLICITADO POR EL OPERADOR
   if (action === 'modify_time') {
-    const proposedTime = options?.proposedTime || '09:00 AM';
-    await updateBookingStatus(bookingId, {
+    const proposedTime = String(options?.proposedTime || '').trim();
+    if (!proposedTime) throw new Error('proposedTime es obligatorio para solicitar un cambio de horario.');
+    const updated = await updateBookingStatus(bookingId, {
       providerStatus: 'time_change_requested',
       proposedTime,
-      providerNotes: options?.providerNotes || `Operador sugiere horario ${proposedTime}`
-    }).catch(() => {});
+      providerNotes: String(options?.providerNotes || '').trim() || `Proveedor solicita horario ${proposedTime}`
+    });
+    if (!updated.success) throw new Error(updated.error || `No se pudo registrar el cambio de horario para ${bookingId}.`);
 
     try {
       const { sendAgentMessage, publishAgentEvent } = await import('./agentMeshService');
@@ -676,56 +670,37 @@ export async function handleProviderActionResponse(
         audience: 'internal',
         type: 'request',
         subject: 'Proveedor solicita cambio de horario',
-        payload: { bookingId, proposedTime, providerId: options?.providerId, notes: options?.providerNotes }
+        payload: { bookingId, proposedTime, providerId: respondingProviderId, notes: options?.providerNotes }
       });
-      await publishAgentEvent('provider.booking.time_change_requested', { bookingId, proposedTime, providerId: options?.providerId }, bookingId);
-      const { recordLearningEvent } = await import('./learningEngine');
-      await recordLearningEvent({
-        agentId: 'provider_liaison',
-        input: `Cambio de horario solicitado para ${bookingId}`,
-        output: proposedTime,
-        outcome: 'partial',
-        reward: 0.1,
-        metadata: { bookingId, providerId: options?.providerId, action: 'modify_time' }
-      });
-    } catch (meshErr) { console.warn('Agent mesh provider time-change unavailable:', meshErr); }
-
-    if (customerEmail) {
-      await sendEmail({
-        to: customerEmail,
-        subject: `⏰ Ajuste de Horario Sugerido para tu Reserva #${bookingId}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917; border: 1px solid #e7e5e4; border-radius: 12px; padding: 24px;">
-            <h3 style="color: #d97706; margin-top: 0;">Ajuste de Horario para Mejor Experiencia</h3>
-            <p>Hola <strong>${customerName}</strong>,</p>
-            <p>El proveedor sugirió ajustar la hora de <strong>${tourName}</strong> a las <strong>${proposedTime}</strong>. Este cambio debe quedar registrado antes de considerarse definitivo.</p>
-            <p style="font-size: 13px; color: #57534e;">Si este horario te parece bien, no tienes que hacer nada; queda automáticamente actualizado en tu voucher.</p>
-          </div>
-        `
-      }).catch(() => {});
+      await publishAgentEvent('provider.booking.time_change_requested', { bookingId, proposedTime, providerId: respondingProviderId }, bookingId);
+    } catch (meshErr) {
+      console.warn('Agent mesh provider time-change unavailable:', meshErr);
     }
 
     return {
       success: true,
       action: 'modify_time',
       bookingId,
-      newStatus: bookingData?.status || 'confirmada',
+      newStatus: String(bookingData.status || 'provider_pending'),
       providerStatus: 'time_change_requested',
-      message: `Ajuste de horario a ${proposedTime} registrado y comunicado al viajero.`
+      message: `Cambio de horario solicitado por el proveedor y pendiente de resolución; no se modificó automáticamente el voucher del viajero.`
     };
   }
 
-  // 3. CASO: DECLINAR -> REASIGNACIÓN AUTÓNOMA INMEDIATA
   if (action === 'decline') {
-    return await executeAutonomousProviderFallback(bookingId, options?.providerId || 'original-provider', options?.providerNotes || 'Sin disponibilidad');
+    return executeAutonomousProviderFallback(
+      bookingId,
+      respondingProviderId,
+      String(options?.providerNotes || '').trim() || 'Proveedor indicó que no puede atender la solicitud.'
+    );
   }
 
   return {
     success: false,
     action,
     bookingId,
-    newStatus: bookingData?.status || 'pendiente',
-    providerStatus: 'unknown',
+    newStatus: String(bookingData.status || 'provider_pending'),
+    providerStatus: String(bookingData.providerStatus || 'unknown'),
     message: `Acción "${action}" no reconocida.`
   };
 }
@@ -734,8 +709,8 @@ export async function handleProviderActionResponse(
  * =========================================================================
  * FALLBACK AUTÓNOMO DE PROVEEDORES (SELF-HEALING FAILOVER)
  * =========================================================================
- * Reasigna instantáneamente una reserva rechazada a la flota directa de Alsama Tours CR,
- * despachando nuevo aviso a la central de operaciones sin cancelar la experiencia al viajero.
+ * Bloquea la reasignación automática cuando no existe una alternativa verificada y
+ * escala el caso para que ninguna reserva termine asignada a un proveedor sintético.
  */
 export async function executeAutonomousProviderFallback(
   bookingId: string,
