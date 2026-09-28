@@ -316,8 +316,16 @@ export async function executeSinpeVerification(
   let providerDispatched = false;
 
   try {
-    const lifecycleResult = await advanceReservationLifecycle(bookingId);
-    providerDispatched = lifecycleResult.action === 'provider_dispatched' || lifecycleResult.to === 'provider_pending';
+    const verifiedBooking = {
+      ...booking,
+      ...(updateResult.booking || {}),
+      bookingId,
+      status: 'paid',
+      lifecycle: 'paid',
+      paymentStatus: 'completed'
+    };
+    const lifecycleResult = await advanceReservationLifecycle(verifiedBooking);
+    providerDispatched = lifecycleResult.action === 'provider_dispatch' && lifecycleResult.status === 'completed';
   } catch (err: any) {
     // El pago sigue correctamente verificado como `paid`. El barrido idempotente
     // del lifecycle reintentará el despacho sin duplicar efectos.
