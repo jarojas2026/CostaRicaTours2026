@@ -56,6 +56,12 @@ const RETIRED_PUBLIC_PATHS = [
 const RETIRED_PUBLIC_PREFIXES = [
   '/api/workflows/',
 ];
+const RETIRED_PUBLIC_PATTERNS = [
+  // Defense in depth: the backend now retires this route too. Keep the public
+  // gateway fail-closed so a future backend regression cannot turn an email
+  // GET click into payment, cancellation, or provider state.
+  /^\/api\/bookings\/[^/]+\/customer-confirm$/,
+];
 
 // Defense in depth for operations that should never be reachable anonymously
 // through the public frontend gateway, even if a backend route accidentally
@@ -131,7 +137,8 @@ function requestPath(req: VercelRequest): string {
 
 function isRetiredPublicPath(pathname: string): boolean {
   return RETIRED_PUBLIC_PATHS.includes(pathname)
-    || RETIRED_PUBLIC_PREFIXES.some(prefix => pathname.startsWith(prefix));
+    || RETIRED_PUBLIC_PREFIXES.some(prefix => pathname.startsWith(prefix))
+    || RETIRED_PUBLIC_PATTERNS.some(pattern => pattern.test(pathname));
 }
 
 function isPrivilegedPath(pathname: string): boolean {

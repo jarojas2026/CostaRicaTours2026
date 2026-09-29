@@ -42,8 +42,13 @@ if (/return match \|\| REGISTERED_PROVIDERS\[0\]/.test(providerService)) {
 if (/\bactive:\s*true/.test(providerService) && !/verified\?: boolean/.test(providerService)) {
   add('HIGH', 'PROVIDER-002', 'Static provider directory contains operationally active providers without an explicit verification field.');
 }
-if (/fallbackProvider\.verified !== true/.test(nativeWorkflows) === false) {
-  add('HIGH', 'PROVIDER-003', 'Direct-operations failover does not require explicit provider verification.');
+const providerFailoverFailsClosed =
+  /requires_human_assignment/.test(nativeWorkflows) &&
+  /fail_closed_no_synthetic_provider/.test(nativeWorkflows) &&
+  /reassigned:\s*false/.test(nativeWorkflows);
+const providerFailoverSelectsVerifiedReplacement = /fallbackProvider\.verified\s*!==\s*true/.test(nativeWorkflows);
+if (!providerFailoverFailsClosed && !providerFailoverSelectsVerifiedReplacement) {
+  add('HIGH', 'PROVIDER-003', 'Direct-operations failover neither fails closed for human assignment nor visibly requires explicit verification for a replacement provider.');
 }
 
 function collectSourceFiles(startDir: string): string[] {
@@ -131,7 +136,6 @@ if (!/claimEvent/.test(emailOperations) || !/status === 'error'/.test(emailOpera
   add('HIGH', 'EMAIL-003', 'Email operation queue lacks visible idempotent/recoverable claim handling.');
 }
 
-// Customer-facing booking truthfulness regression guards.
 const tourDetail = read('src/pages/TourDetailPage.tsx');
 if (/status:\s*[^\n]*(?:confirmada|confirmed)/i.test(tourDetail)) {
   add('CRITICAL', 'BOOKING-UX-001', 'TourDetailPage assigns a final confirmed status from the browser. Confirmation must remain server/provider-owned.');
@@ -152,16 +156,12 @@ if (!/Idempotency-Key/.test(tourDetail)) {
   add('MEDIUM', 'BOOKING-UX-004', 'TourDetailPage does not send an idempotency key for booking creation.');
 }
 
-// Legacy Counter Agent code may remain temporarily for compatibility, but the
-// canonical booking service must fail closed if that shortcut is invoked.
 const assistantService = read('backend/aiAssistantService.ts');
 if (/paymentMethod:\s*['"]agent_counter_booking['"]/.test(assistantService) &&
     !/Legacy Counter Agent direct booking is disabled/.test(bookingService)) {
   add('CRITICAL', 'BOOKING-AI-001', 'Legacy Counter Agent direct booking can bypass the canonical reservation lifecycle.');
 }
 
-// SINPE may verify financial state, but it must not directly confirm the
-// service, dispatch providers or send final customer confirmation.
 const sinpeService = read('backend/sinpeService.ts');
 if (/status:\s*['"]confirmada['"]/.test(sinpeService) ||
     /executeProviderRealtimeCoordination/.test(sinpeService) ||
@@ -172,7 +172,6 @@ if (!/WEBHOOK_SECRET/.test(sinpeService) || !/advanceReservationLifecycle/.test(
   add('CRITICAL', 'PAYMENT-002', 'SINPE verification must authenticate the source, persist paid, and delegate to the canonical lifecycle.');
 }
 
-// Vercel must authenticate to private Cloud Run; anonymous rewrites are not accepted.
 const gatewayPath = path.join(root, 'api', '[...path].ts');
 if (!fs.existsSync(gatewayPath)) {
   add('HIGH', 'GATEWAY-001', 'Vercel /api gateway is missing; frontend and private Cloud Run cannot communicate through same-origin API calls.');
@@ -184,14 +183,18 @@ if (!fs.existsSync(gatewayPath)) {
   if (/fetch\([^\n]*CLOUD_RUN_BACKEND_URL[\s\S]{0,300}catch[\s\S]{0,200}fetch\(/.test(gateway)) {
     add('CRITICAL', 'GATEWAY-003', 'Vercel gateway appears to fall back to a second/anonymous backend request after authentication failure.');
   }
+  if (!/customer-confirm/.test(gateway)) {
+    add('HIGH', 'GATEWAY-004', 'Retired customer confirmation route is not visibly contained by the public gateway.');
+  }
 }
 
-// Legacy customer itinerary approval must not be confused with provider confirmation.
-if (/\/api\/bookings\/:id\/customer-confirm[\s\S]{0,1400}status:\s*action === 'aprobado' \? 'confirmada'/.test(server)) {
-  add('HIGH', 'LIFECYCLE-002', 'Customer itinerary approval still writes final booking confirmation before provider coordination. Migrate this route to record approval separately.');
+const customerConfirmRoute = server.match(/app\.(?:get|all)\('\/api\/bookings\/:id\/customer-confirm'[\s\S]*?\n\}\);/)?.[0] || '';
+if (/status:\s*action === 'aprobado' \? ['"](?:confirmada|pagada|paid|confirmed)['"]/.test(customerConfirmRoute) ||
+    /paymentStatus:\s*['"]completed['"]/.test(customerConfirmRoute) ||
+    /executeProviderRealtimeCoordination/.test(customerConfirmRoute)) {
+  add('HIGH', 'LIFECYCLE-002', 'Customer itinerary approval still mutates payment/provider lifecycle state. Migrate it to record customer approval separately from verified payment and provider confirmation.');
 }
 
-// Public trust language is surfaced as debt until evidence-backed claims replace it.
 const header = read('src/components/Header.tsx');
 for (const claim of ['Agencia Receptiva Oficial', 'Operador Oficial', 'Tarifas Oficiales Directas']) {
   if (header.includes(claim)) add('MEDIUM', 'TRUST-002', `Public header still contains evidence-sensitive claim: ${claim}`);
