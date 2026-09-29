@@ -56,6 +56,13 @@ const RETIRED_PUBLIC_PATHS = [
 const RETIRED_PUBLIC_PREFIXES = [
   '/api/workflows/',
 ];
+const RETIRED_PUBLIC_PATTERNS = [
+  // The legacy email approval endpoint currently mutates financial state and
+  // dispatches a provider from a GET request. Until the backend route is
+  // migrated to record customer approval independently, fail closed here so a
+  // customer click can never be interpreted as verified payment.
+  /^\/api\/bookings\/[^/]+\/customer-confirm$/,
+];
 
 // Defense in depth for operations that should never be reachable anonymously
 // through the public frontend gateway, even if a backend route accidentally
@@ -131,7 +138,8 @@ function requestPath(req: VercelRequest): string {
 
 function isRetiredPublicPath(pathname: string): boolean {
   return RETIRED_PUBLIC_PATHS.includes(pathname)
-    || RETIRED_PUBLIC_PREFIXES.some(prefix => pathname.startsWith(prefix));
+    || RETIRED_PUBLIC_PREFIXES.some(prefix => pathname.startsWith(prefix))
+    || RETIRED_PUBLIC_PATTERNS.some(pattern => pattern.test(pathname));
 }
 
 function isPrivilegedPath(pathname: string): boolean {
@@ -160,7 +168,7 @@ async function exchangeVercelOidcForGoogleAccessToken(vercelOidcToken: string): 
     grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
     requested_token_type: 'urn:ietf:params:oauth:token-type:access_token',
     scope: 'https://www.googleapis.com/auth/cloud-platform',
-    subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+    subject_token_type: 'urn:ietf:params:oauth:grant-type:jwt',
     subject_token: vercelOidcToken,
   });
 
