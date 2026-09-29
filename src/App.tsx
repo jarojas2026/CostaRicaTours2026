@@ -124,36 +124,31 @@ export default function App() {
   const [intakeEscalated, setIntakeEscalated] = useState(false);
   const [intakeId, setIntakeId] = useState('');
   const [intakeMessage, setIntakeMessage] = useState('');
+  const [paymentReturnError, setPaymentReturnError] = useState('');
 
-  // Check URL parameters for successful payment redirect (Stripe/PayPal)
+  // A payment return is only a prompt to ask the server to verify the provider.
+  // It never creates a provisional "paid" booking from URL parameters.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('booking') === 'success') {
       const sessionId = params.get('session_id');
-      setRecentBooking({
-        bookingId: "VERIFICANDO...",
-        tourId: "procesando",
-        tourName: "Tu Experiencia en Costa Rica",
-        customer: {
-          fullName: "Verificando...",
-          email: "",
-          phone: "",
-          country: ""
-        },
-        date: "Confirmando fecha...",
-        time: "Confirmando hora...",
-        adults: 1,
-        children: 0,
-        pickupHotel: "",
-        specialRequests: "",
-        totalUSD: 0,
-        totalCRC: 0,
-        paymentMethod: "credit_card",
-        status: "pendiente_pago",
-        createdAt: new Date().toISOString()
-      });
-
-      // Cleanup URL
+      const paypalOrderId = params.get('token');
+      const endpoint = sessionId ? '/api/payments/stripe/return' : paypalOrderId ? '/api/payments/paypal/return' : '';
+      if (!endpoint) {
+        setPaymentReturnError(language === 'es' ? 'No recibimos una referencia de pago verificable.' : 'No verifiable payment reference was received.');
+      } else {
+        void fetch(endpoint, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sessionId ? { sessionId } : { orderId: paypalOrderId })
+        }).then(async response => {
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok || !data.booking?.bookingId) throw new Error(data.error || 'Payment verification failed');
+          setRecentBooking(data.booking);
+          setMyBookings(previous => [data.booking, ...previous.filter(item => item.bookingId !== data.booking.bookingId)]);
+        }).catch(error => {
+          setPaymentReturnError(error.message || (language === 'es' ? 'El pago no pudo verificarse aún.' : 'The payment could not be verified yet.'));
+        });
+      }
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (params.get('booking') === 'canceled') {
       alert(language === 'es' ? 'El pago fue cancelado. Puedes volver a intentarlo cuando gustes.' : 'Payment was canceled. You can try again whenever you are ready.');
@@ -403,6 +398,12 @@ export default function App() {
               onNavigate={(path) => navigate(path)}
               onOpenTripBuilder={() => setIsCustomFunnelOpen(true)}
             />
+          </div>
+        )}
+
+        {paymentReturnError && (
+          <div role="alert" className="mx-auto mt-4 max-w-5xl rounded-xl border border-amber-500/40 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
+            {paymentReturnError}
           </div>
         )}
 

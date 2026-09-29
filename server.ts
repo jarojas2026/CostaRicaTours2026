@@ -23,6 +23,7 @@ import { FLIGHT_ROUTES } from './src/data/flightsData';
 import {
   getStripe,
   createBooking,
+  getBookingById,
   getAllBookings,
   updateBookingStatus,
   checkTourAvailability,
@@ -678,9 +679,13 @@ app.post('/api/internal/provider-inbox/sweep', requireAgentTool, async (_req, re
 // 💳 PASARELAS DE PAGO (STRIPE & PAYPAL)
 // ==========================================
 
-app.post('/api/stripe/create-checkout-session', async (req, res) => {
+app.post('/api/stripe/create-checkout-session', paymentLimiter, async (req, res) => {
   try {
-    const { tourName, totalUSD, customerEmail } = req.body;
+    const { bookingId, tourName, totalUSD, customerEmail } = req.body;
+    const booking = await getBookingById(String(bookingId || ''));
+    if (!booking || booking.paymentStatus === 'completed') {
+      return res.status(409).json({ error: 'La reserva no existe o ya tiene un pago verificado.' });
+    }
     const authoritativeTotal = calculateAuthoritativeCheckoutTotal(req.body);
     if (authoritativeTotal === null) return res.status(400).json({ error: 'No se pudo verificar el precio de la reserva en el catálogo.' });
     if (Math.abs(Number(totalUSD) - authoritativeTotal) > 0.01) {
@@ -705,6 +710,8 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
         }
       ],
       mode: 'payment',
+      client_reference_id: booking.bookingId,
+      metadata: { bookingId: booking.bookingId },
       success_url: `${req.protocol}://${req.get('host')}?booking=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.protocol}://${req.get('host')}?booking=canceled`,
       customer_email: customerEmail
@@ -716,9 +723,13 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
   }
 });
 
-app.post('/api/paypal/create-order', async (req, res) => {
+app.post('/api/paypal/create-order', paymentLimiter, async (req, res) => {
   try {
-    const { totalUSD, tourName } = req.body;
+    const { bookingId, totalUSD, tourName } = req.body;
+    const booking = await getBookingById(String(bookingId || ''));
+    if (!booking || booking.paymentStatus === 'completed') {
+      return res.status(409).json({ error: 'La reserva no existe o ya tiene un pago verificado.' });
+    }
     const authoritativeTotal = calculateAuthoritativeCheckoutTotal(req.body);
     if (authoritativeTotal === null) return res.status(400).json({ error: 'No se pudo verificar el precio de la reserva en el catálogo.' });
     if (Math.abs(Number(totalUSD) - authoritativeTotal) > 0.01) {
@@ -757,12 +768,13 @@ app.post('/api/paypal/create-order', async (req, res) => {
           intent: 'CAPTURE',
           purchase_units: [
             {
+              custom_id: booking.bookingId,
               amount: { currency_code: 'USD', value: (totalUSD || 0).toString() },
               description: tourName || 'Tour Costa Rica Tours'
             }
           ],
           application_context: {
-            return_url: `${req.protocol}://${req.get('host')}?booking=success`,
+            return_url: `${req.protocol}://${req.get('host')}?booking=success&provider=paypal`,
             cancel_url: `${req.protocol}://${req.get('host')}?booking=canceled`
           }
         })
@@ -782,6 +794,74 @@ app.post('/api/paypal/create-order', async (req, res) => {
   } catch (err: any) {
     console.error('Error en PayPal:', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Payment returns never trust a browser query parameter as proof of payment.
+// They retrieve the provider record, validate its booking reference and amount,
+// then move only that pending booking to `paid`. Provider confirmation remains
+// a separate lifecycle transition.
+app.post('/api/payments/stripe/return', paymentLimiter, async (req, res) => {
+  try {
+    const sessionId = String(req.body?.sessionId || '').trim();
+    const stripe = getStripe();
+    if (!sessionId || !stripe) return res.status(400).json({ error: 'No se puede verificar el pago de tarjeta todavía.' });
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const bookingId = String(session.metadata?.bookingId || session.client_reference_id || '').trim();
+    const booking = await getBookingById(bookingId);
+    const expectedCents = Math.round(Number(booking?.totalUSD || 0) * 100);
+    if (!booking || session.payment_status !== 'paid' || session.currency !== 'usd' || session.amount_total !== expectedCents) {
+      return res.status(409).json({ error: 'El pago no coincide con una reserva pendiente válida.' });
+    }
+
+    const result = await updateBookingStatus(bookingId, {
+      status: 'paid',
+      paymentStatus: 'completed',
+      paymentVerifiedAt: new Date().toISOString(),
+      paymentEvidence: { provider: 'stripe', sessionId: session.id, paymentIntent: session.payment_intent }
+    });
+    if (!result.success) return res.status(409).json(result);
+    return res.json({ success: true, booking: result.booking });
+  } catch (error: any) {
+    return res.status(502).json({ error: error.message || 'No se pudo verificar el pago de tarjeta.' });
+  }
+});
+
+app.post('/api/payments/paypal/return', paymentLimiter, async (req, res) => {
+  try {
+    const orderId = String(req.body?.orderId || '').trim();
+    const paypalClientId = process.env.PAYPAL_CLIENT_ID;
+    const paypalSecret = process.env.PAYPAL_SECRET;
+    const paypalMode = process.env.PAYPAL_MODE || 'sandbox';
+    const baseUrl = paypalMode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+    if (!orderId || !paypalClientId || !paypalSecret) return res.status(400).json({ error: 'No se puede verificar PayPal todavía.' });
+
+    const basic = Buffer.from(`${paypalClientId}:${paypalSecret}`).toString('base64');
+    const auth = await fetch(`${baseUrl}/v1/oauth2/token`, { method: 'POST', body: 'grant_type=client_credentials', headers: { Authorization: `Basic ${basic}`, 'Content-Type': 'application/x-www-form-urlencoded' } });
+    const accessToken = (await auth.json()).access_token;
+    if (!accessToken) return res.status(502).json({ error: 'PayPal no autorizó la verificación.' });
+
+    let orderResponse = await fetch(`${baseUrl}/v2/checkout/orders/${orderId}`, { headers: { Authorization: `Bearer ${accessToken}` } });
+    let order = await orderResponse.json();
+    if (order.status === 'APPROVED') {
+      orderResponse = await fetch(`${baseUrl}/v2/checkout/orders/${orderId}/capture`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' } });
+      order = await orderResponse.json();
+    }
+    const unit = order.purchase_units?.[0];
+    const bookingId = String(unit?.custom_id || '').trim();
+    const booking = await getBookingById(bookingId);
+    if (!booking || order.status !== 'COMPLETED' || unit?.amount?.currency_code !== 'USD' || Number(unit?.amount?.value) !== Number(booking.totalUSD)) {
+      return res.status(409).json({ error: 'El pago de PayPal no coincide con una reserva pendiente válida.' });
+    }
+    const result = await updateBookingStatus(bookingId, {
+      status: 'paid', paymentStatus: 'completed', paymentVerifiedAt: new Date().toISOString(),
+      paymentEvidence: { provider: 'paypal', orderId: order.id }
+    });
+    if (!result.success) return res.status(409).json(result);
+    return res.json({ success: true, booking: result.booking });
+  } catch (error: any) {
+    return res.status(502).json({ error: error.message || 'No se pudo verificar el pago de PayPal.' });
   }
 });
 
@@ -1061,80 +1141,12 @@ app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confi
   }
 });
 
-// Aprobación de Itinerario por parte del Cliente (Confirmación de Proforma) -> Despacho a Proveedores
-app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
-  try {
-    const bookingId = String(req.params.id);
-    const action = req.query.action === 'reject' ? 'rechazado' : 'aprobado';
-    const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
-
-    if (!booking) return res.status(404).send('Reserva no encontrada.');
-
-    const updateResult = await updateBookingStatus(bookingId, {
-      status: action === 'aprobado' ? 'pagada' : 'cancelada',
-      customerConfirmedAt: new Date().toISOString()
-    });
-    if (!updateResult.success) return res.status(409).send(updateResult.error || 'No se pudo actualizar la reserva.');
-
-    let providerCoordinationResult: any = null;
-    if (action === 'aprobado') {
-      try {
-        providerCoordinationResult = await executeProviderRealtimeCoordination({
-          bookingId,
-          providerId: booking.providerId,
-          tourId: booking.tourId,
-          customerName: booking.customerName,
-          customerEmail: booking.customerEmail,
-          customerPhone: booking.customerPhone,
-          tourName: booking.tourName,
-          date: booking.date,
-          tourDate: booking.date,
-          time: booking.time,
-          tourTime: booking.time,
-          adults: booking.adults,
-          children: booking.children,
-          pickupHotel: booking.pickupHotel,
-          totalUSD: booking.totalUSD,
-          pax: (Number(booking.adults) || 0) + (Number(booking.children) || 0),
-          specialRequests: booking.specialRequests
-        });
-      } catch (provErr) {
-        console.warn('⚠️ [FALLO EN COORDINACIÓN DE PROVEEDORES]:', provErr);
-      }
-    }
-
-    const downloadPdfUrl = `/api/bookings/${bookingId}/download-pdf`;
-    const customerName = String(booking.customerName || 'Cliente').replace(/[<>]/g, '');
-    const providerMessage = providerCoordinationResult
-      ? 'La coordinación con el proveedor fue iniciada.'
-      : 'La coordinación con el proveedor quedó pendiente de seguimiento.';
-
-    res.send(`
-      <!DOCTYPE html>
-      <html lang="es"><head>
-        <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Confirmación • Costa Rica Tours</title>
-        <style>
-          body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#041711;color:#f8fafc;margin:0;padding:24px 16px;display:flex;justify-content:center;align-items:center;min-height:100vh}
-          .card{background:#fff;color:#1e293b;max-width:580px;width:100%;border-radius:20px;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,.5)}
-          .hero{background:linear-gradient(135deg,#064e3b,#047857);color:#fff;padding:32px 24px;text-align:center}.content{padding:28px 24px}
-          .badge{display:inline-block;background:#ecfdf5;color:#047857;font-weight:800;font-size:12px;padding:6px 14px;border-radius:9999px;text-transform:uppercase;letter-spacing:.5px;border:1px solid #a7f3d0}
-          .btn{display:block;width:100%;background:#059669;color:#fff;text-align:center;padding:14px;border-radius:10px;font-weight:800;text-decoration:none;font-size:15px;margin-top:12px;box-sizing:border-box}
-          .box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin:18px 0;font-size:13px;color:#475569}
-        </style>
-      </head><body><div class="card">
-        <div class="hero"><div style="font-size:40px">🌿</div><h1>Solicitud procesada</h1><p>${customerName}, recibimos tu decisión.</p></div>
-        <div class="content"><div style="text-align:center"><span class="badge">Expediente #${bookingId}</span></div>
-          <div class="box"><strong>Tour:</strong> ${String(booking.tourName || 'Experiencia Costa Rica')}<br/>
-          <strong>Fecha:</strong> ${String(booking.date || 'No especificada')}<br/>
-          <strong>Estado:</strong> ${String(action)}<br/><br/>${providerMessage}</div>
-          <a href="${downloadPdfUrl}" class="btn">Descargar comprobante</a>
-        </div>
-      </div></body></html>`);
-  } catch (err: any) {
-    res.status(500).send(`Error al procesar confirmación: ${err.message}`);
-  }
+// Retired: a GET link is never allowed to change payment, cancellation or
+// provider state. Customer decisions now go through the signed workflow.
+app.all('/api/bookings/:id/customer-confirm', (_req, res) => {
+  res.status(410).json({
+    error: 'El enlace legado fue retirado. Abrir un enlace no confirma pagos ni modifica reservas.'
+  });
 });
 
 // 🚨 SISTEMA PROPIO DE ALERTAS ADMINISTRATIVAS
