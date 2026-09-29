@@ -29,7 +29,8 @@ import { OfflineBanner } from './components/OfflineBanner';
 import { DigitalCounterWidget } from './components/DigitalCounterWidget';
 import { Home, ChevronRight, ArrowLeft, Bot, MessageCircle, X, Loader2 } from 'lucide-react';
 import { AdminRouteGuard } from './components/AdminRouteGuard';
-import { requestCustomerIntake } from './utils/customerIntake';
+import { directWhatsAppUrl } from './utils/directWhatsApp';
+import { useSupportPanel } from './hooks/useSupportPanel';
 import { AdminControlCenterPage } from './pages/AdminControlCenterPage';
 import { ProviderPortalPage } from './pages/ProviderPortalPage';
 import { TravelerCommandBar } from './components/TravelerCommandBar';
@@ -93,6 +94,7 @@ export default function App() {
   useEffect(() => {
     if (location.pathname !== '/tours') return;
     const next = new URLSearchParams();
+    if (searchParams.get('favorites') === '1') next.set('favorites', '1');
     if (searchQuery.trim()) next.set('q', searchQuery.trim());
     if (selectedCategory !== 'all') next.set('category', selectedCategory);
     if (selectedRegion !== 'all') next.set('region', selectedRegion);
@@ -124,6 +126,7 @@ export default function App() {
   const [intakeEscalated, setIntakeEscalated] = useState(false);
   const [intakeId, setIntakeId] = useState('');
   const [intakeMessage, setIntakeMessage] = useState('');
+  useSupportPanel('intake', intakeOpen, setIntakeOpen);
   const [paymentReturnError, setPaymentReturnError] = useState('');
 
   // A payment return is only a prompt to ask the server to verify the provider.
@@ -167,6 +170,7 @@ export default function App() {
       setIntakeReply('');
       setIntakeHandoffUrl(undefined);
       setIntakeEscalated(false);
+      setIntakeId('');
       try {
         const sessionId = detail.sessionId || localStorage.getItem('crt_customer_session') || `web_${globalThis.crypto?.randomUUID?.() || Date.now().toString(36)}`;
         localStorage.setItem('crt_customer_session', sessionId);
@@ -188,35 +192,16 @@ export default function App() {
         setIntakeHandoffUrl(data.customer?.handoffUrl);
         setIntakeId(data.intakeId || '');
       } catch (error: any) {
-        setIntakeReply(error?.message || (language === 'es' ? 'No pudimos procesar tu solicitud. Intenta nuevamente.' : 'We could not process your request. Please try again.'));
-        setIntakeEscalated(true);
+        setIntakeReply(language === 'es' ? 'No pudimos completar la consulta. No se ha confirmado ninguna reserva ni notificación al equipo. Puedes consultar directamente por WhatsApp.' : 'We could not complete the inquiry. No booking or team notification has been confirmed. You can contact us directly on WhatsApp.');
+        setIntakeEscalated(false);
+        setIntakeHandoffUrl(directWhatsAppUrl(message));
       } finally {
         setIntakeLoading(false);
       }
     };
-    const handleBusinessWhatsAppClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      const anchor = target?.closest('a') as HTMLAnchorElement | null;
-      if (!anchor) return;
-      const href = anchor.getAttribute('href') || '';
-      if (!/wa\.me\/50687959148/i.test(href)) return;
-      if (anchor.dataset.humanHandoff === 'true') return;
-      event.preventDefault();
-      event.stopPropagation();
-      const message = decodeURIComponent((href.split('?text=')[1] || '').replace(/\+/g, ' ')) ||
-        (language === 'es' ? 'Quiero información sobre Costa Rica Tours.' : 'I would like information about Costa Rica Tours.');
-      requestCustomerIntake({
-        message,
-        language,
-        source: `whatsapp-click:${location.pathname}`,
-        context: { originalHref: href, page: location.pathname }
-      });
-    };
     window.addEventListener('customer-intake-request', handleCustomerIntake as EventListener);
-    document.addEventListener('click', handleBusinessWhatsAppClick, true);
     return () => {
       window.removeEventListener('customer-intake-request', handleCustomerIntake as EventListener);
-      document.removeEventListener('click', handleBusinessWhatsAppClick, true);
     };
   }, [language, location.pathname]);
 
@@ -320,10 +305,10 @@ export default function App() {
     <div className="min-h-screen max-h-screen overflow-y-auto bg-[#041711] text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950 relative pb-16 lg:pb-0">
       {intakeOpen && (
         <div className="fixed inset-0 z-[10050] bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-label={language === 'es' ? 'Atención inteligente' : 'AI customer care'}>
-          <div className="w-full max-w-xl rounded-3xl border border-emerald-400/25 bg-[#041711] shadow-2xl overflow-hidden">
+          <div className="w-full max-w-xl max-h-[90dvh] overflow-y-auto rounded-3xl border border-emerald-400/25 bg-[#041711] shadow-2xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-emerald-500/15">
               <div className="flex items-center gap-3"><span className="w-10 h-10 rounded-2xl bg-emerald-400/15 flex items-center justify-center"><Bot className="text-emerald-300" size={21}/></span><div><div className="text-[10px] uppercase tracking-widest font-black text-emerald-300">Costa Rica Tours AI</div><div className="font-black text-white">{language === 'es' ? 'Tu solicitud está siendo atendida' : 'Your request is being handled'}</div></div></div>
-              <button type="button" onClick={() => setIntakeOpen(false)} className="w-9 h-9 rounded-full bg-white/5 text-stone-300 hover:bg-white/10 flex items-center justify-center"><X size={18}/></button>
+              <button type="button" aria-label={language === 'es' ? 'Cerrar consulta' : 'Close inquiry'} onClick={() => setIntakeOpen(false)} className="w-9 h-9 shrink-0 rounded-full bg-white/5 text-stone-300 hover:bg-white/10 flex items-center justify-center"><X size={18}/></button>
             </div>
             <div className="p-5 space-y-4">
               <div className="rounded-2xl bg-black/20 border border-white/5 p-4 text-xs text-stone-400"><span className="font-bold text-stone-200">{language === 'es' ? 'Solicitud:' : 'Request:'}</span> {intakeMessage || (language === 'es' ? 'Solicitud recibida' : 'Request received')}</div>
@@ -331,7 +316,7 @@ export default function App() {
                 {intakeLoading ? <div className="flex items-center gap-3 text-emerald-200 text-sm"><Loader2 className="animate-spin" size={18}/>{language === 'es' ? 'Los agentes están analizando tu solicitud, disponibilidad y contexto...' : 'Our agents are analyzing your request, availability and context...'}</div> : <p className="text-sm leading-relaxed text-stone-100 whitespace-pre-wrap">{intakeReply}</p>}
               </div>
               {!intakeLoading && intakeEscalated && (
-                <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-xs text-amber-100">{language === 'es' ? 'La IA determinó que esta solicitud necesita revisión humana. Ya se registró y notificó al equipo.' : 'AI determined that this request needs human review. It has been logged and the team notified.'}</div>
+                <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-xs text-amber-100">{language === 'es' ? 'Esta solicitud necesita revisión humana; todavía no es una reserva confirmada.' : 'This inquiry needs human review; it is not a confirmed booking yet.'}</div>
               )}
               {!intakeLoading && intakeHandoffUrl && (
                 <a data-human-handoff="true" href={intakeHandoffUrl} target="_blank" rel="noreferrer" className="w-full rounded-2xl bg-emerald-400 text-stone-950 font-black py-3 flex items-center justify-center gap-2"><MessageCircle size={17}/>{language === 'es' ? 'Continuar con un asesor por WhatsApp' : 'Continue with a human advisor on WhatsApp'}</a>

@@ -427,11 +427,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* My Bookings Button */}
             <div className="flex items-center gap-1.5">
               <button
-                onClick={() => {
-                  if (setActiveTab) setActiveTab('tours');
-                  // Filter for favorites somehow or just open a list
-                  // For now, let's just make it a visual indicator that they have favorites
-                }}
+                onClick={() => navigate('/tours?favorites=1')}
                 className="relative flex items-center justify-center w-9 h-9 bg-emerald-950/70 hover:bg-emerald-900 text-rose-400 p-2 rounded-xl border border-emerald-500/40 transition-all hover:scale-105 cursor-pointer shadow-sm shrink-0"
                 aria-label={language === 'es' ? 'Ver favoritos' : 'View favorites'}
               >

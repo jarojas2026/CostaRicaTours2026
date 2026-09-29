@@ -74,6 +74,7 @@ export const ToursPage: React.FC<ToursPageProps> = ({
   }, [maxPrice]);
 
   const favorites = propFavorites || ctxFavorites;
+  const onlyFavorites = searchParams.get('favorites') === '1';
   const toggleFavorite = propToggleFavorite || ctxToggleFavorite;
 
   const comparedTours = propComparedTours || localComparedTours;
@@ -95,8 +96,15 @@ export const ToursPage: React.FC<ToursPageProps> = ({
       exit={{ opacity: 0, y: -20 }}
       className="pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-12"
     >
+      {onlyFavorites && (
+        <section aria-label={language === 'es' ? 'Tus favoritos' : 'Your favorites'}>
+          <h1 className="text-2xl font-bold">{language === 'es' ? 'Tus favoritos' : 'Your favorites'}</h1>
+          {favorites.length === 0 && <p>{language === 'es' ? 'Todavía no guardaste tours. Usa el corazón de cada experiencia para añadirla aquí.' : 'No saved tours yet. Use the heart on an experience to add it here.'}</p>}
+          <button className="mt-3 rounded-xl border border-emerald-400 px-4 py-2" onClick={() => updateCatalogUrl('favorites', null)}>{language === 'es' ? 'Ver todos los tours' : 'View all tours'}</button>
+        </section>
+      )}
       <ToursGrid
-        tours={tours}
+        tours={onlyFavorites ? tours.filter(tour => favorites.includes(tour.id)) : tours}
         language={language}
         currency={currency}
         onSelectTour={onSelectTour || ((tour) => navigate(`/tour/${tour.id}`))}

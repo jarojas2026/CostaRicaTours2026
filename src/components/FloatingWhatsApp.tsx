@@ -20,7 +20,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Language, Tour } from '../types';
 import { getLangText } from '../utils/i18n';
 import { useTours } from '../contexts/ToursContext';
-import { requestCustomerIntake } from '../utils/customerIntake';
+import { directWhatsAppUrl } from '../utils/directWhatsApp';
+import { useSupportPanel } from '../hooks/useSupportPanel';
 
 export interface QuickAction {
   label: string;
@@ -158,6 +159,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
 }) => {
   const { tours } = useTours();
   const [isOpen, setIsOpen] = useState(false);
+  useSupportPanel('concierge', isOpen, setIsOpen);
   const [input, setInput] = useState(initialMessage);
   const [sending, setSending] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
@@ -354,12 +356,8 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
       : (language === 'es'
           ? 'Hola, quiero información y consultar disponibilidad sobre un tour en Costa Rica.'
           : 'Hello, I would like information and availability for a tour in Costa Rica.'));
-    requestCustomerIntake({
-      message: contextualMessage,
-      language,
-      source: 'floating-whatsapp',
-      context: { tourId: mentionedTour?.id, page: window.location.pathname }
-    });
+    window.open(directWhatsAppUrl(contextualMessage), '_blank', 'noopener,noreferrer');
+    setIsOpen(false);
   };
 
   const handleAction = (action: string, data?: unknown) => {
@@ -439,7 +437,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
             initial={{ opacity: 0, y: 20, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.96 }}
-            className="whatsapp-modal-window mb-3 w-[90vw] max-w-[400px] h-[min(620px,calc(100vh-120px))] rounded-2xl overflow-hidden bg-[#07241a] border border-emerald-500/30 shadow-2xl flex flex-col relative"
+            className="whatsapp-modal-window mb-3 w-[90vw] max-w-[400px] h-[min(620px,calc(100dvh-180px))] rounded-2xl overflow-hidden bg-[#07241a] border border-emerald-500/30 shadow-2xl flex flex-col relative"
           >
             <div className="p-3.5 bg-[#1E7B4A] text-white flex items-center justify-between shadow-md">
               <div className="flex items-center gap-2.5">
