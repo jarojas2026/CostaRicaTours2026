@@ -1,4 +1,16 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { IncomingMessage, ServerResponse } from 'http';
+
+export type VercelRequest = IncomingMessage & {
+  query: Record<string, string | string[]>;
+  cookies?: Record<string, string>;
+  body: any;
+};
+
+export type VercelResponse = ServerResponse & {
+  status: (statusCode: number) => VercelResponse;
+  send: (body: any) => VercelResponse;
+  json: (jsonBody: any) => VercelResponse;
+};
 
 /**
  * Zero-trust Vercel -> private Cloud Run gateway.

@@ -286,7 +286,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
   };
 
   const generateWhatsAppLink = () => {
-    const operatorLabel = selectedTour?.operatorName || selectedTour?.operatorId || 'Operador Oficial';
+    const operatorLabel = selectedTour?.operatorName || selectedTour?.operatorId || 'Operador Local';
     const msg = isEs
       ? `Hola Costa Rica Tours (+506 8795 9148), coticé desde el Mostrador Digital para el tour:\n• Tour: "${tourName}"\n• Operador: ${operatorLabel}\n• Fecha: ${availDate || 'Por definir'}\n• Pasajeros: ${availAdults} Adultos, ${availChildren} Niños\n• Total con IVA: ${formatCurrency(totalUSD, currency)}\n\n¿Tienen cupo disponible para confirmar la reserva?`
       : `Hello Costa Rica Tours (+506 8795 9148), I quoted from the Digital Counter for:\n• Tour: "${tourName}"\n• Operator: ${operatorLabel}\n• Date: ${availDate || 'TBD'}\n• Guests: ${availAdults} Adults, ${availChildren} Children\n• Total with VAT: ${formatCurrency(totalUSD, currency)}\n\nDo you have availability to confirm the booking?`;

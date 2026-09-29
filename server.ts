@@ -1069,7 +1069,7 @@ app.get('/api/bookings/:id/customer-confirm', async (req, res) => {
     if (!booking) return res.status(404).send('Reserva no encontrada.');
 
     const updateResult = await updateBookingStatus(bookingId, {
-      status: action === 'aprobado' ? 'confirmada' : 'cancelada',
+      status: action === 'aprobado' ? 'pagada' : 'cancelada',
       customerConfirmedAt: new Date().toISOString()
     });
     if (!updateResult.success) return res.status(409).send(updateResult.error || 'No se pudo actualizar la reserva.');
@@ -2962,7 +2962,7 @@ async function startServer() {
     });
   }
 
-  await hydrateSkillGenome();
+  hydrateSkillGenome().catch(err => console.warn('Skill Genome hydration skipped:', err));
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor Full-Stack corriendo en http://0.0.0.0:${PORT}`);
     console.log(`🧠 Motor de IA nativo listo: Gemini/Vertex + Claude + automatización Node.js/Firestore.`);
@@ -2970,7 +2970,9 @@ async function startServer() {
   });
 }
 
-startServer();function calculateAuthoritativeCheckoutTotal(body: any): number | null {
+startServer();
+
+function calculateAuthoritativeCheckoutTotal(body: any): number | null {
   const passengers = Math.max(1, Number(body?.passengers) || (Number(body?.adults) || 0) + (Number(body?.children) || 0));
   const tourId = String(body?.tourId || '');
 
