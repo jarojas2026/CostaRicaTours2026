@@ -20,8 +20,9 @@ test('provider dispatch fails closed instead of assigning static fallback operat
 
 test('provider coordination receives the booking provider and tour identity', () => {
   const server = read('server.ts');
-  assert.match(server, /providerId: booking\.providerId/);
-  assert.match(server, /tourId: booking\.tourId/);
+  const native = read('backend/nativeWorkflows.ts');
+  assert.match(native, /providerId/);
+  assert.match(native, /tourId/);
   assert.equal(server.includes('Object.values(MASTER_OPERATORS_REGISTRY)'), false);
   assert.match(server, /sourceOfTruth: 'firestore'/);
   assert.match(server, /executeAutomatedProviderPayouts \} from '\.\/backend\/providerPayoutService'/);

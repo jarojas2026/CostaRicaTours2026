@@ -18,6 +18,13 @@
 - `CostaRicaCheckout.tsx` no tiene consumidores detectados y conserva simulaciones antiguas; no conectarlo a producción sin reemplazar su lógica.
 - Revisar los demás botones, accesibilidad y recorridos de vuelos, mapa y reservas personalizadas en navegador. Las pruebas de contratos no sustituyen esa revisión.
 
+## Conciliación de pago (siguiente corrección)
+
+- Stripe incorpora el identificador interno de la reserva en `client_reference_id` y `metadata`. Al volver de Checkout, el backend recupera la sesión del proveedor, exige estado pagado, moneda USD y total exacto antes de registrar el pago.
+- PayPal incorpora el mismo identificador en `custom_id`. Al retornar, el backend captura o recupera la orden en PayPal y exige estado COMPLETED, moneda y total coincidentes.
+- Ningún retorno de navegador confirma al proveedor: el pago verificado llega solo a `paid`; la confirmación operativa sigue siendo una transición independiente.
+- El antiguo enlace GET `customer-confirm` quedó retirado con 410: abrir un email nunca puede marcar pagada, cancelar ni despachar una reserva.
+
 Estos cambios no constituyen un despliegue ni una prueba de pago real.
 
 ## Verificación local realizada
