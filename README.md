@@ -2,6 +2,14 @@
 
 Plataforma full-stack de venta, asesoría, planificación y operación de servicios turísticos en Costa Rica.
 
+### Ruta de despliegue y fuente de verdad
+
+`main` en `jarojas2026/CostaRicaTours2026` es la fuente de código. La ruta de producción propuesta es: GitHub Actions compila y despliega el backend privado `costa-rica-tours` en Cloud Run (`gen-lang-client-0782739149`, `us-central1`); Vercel publica el frontend y su puerta `/api` llama a ese servicio mediante `CLOUD_RUN_BACKEND_URL` y WIF. La sincronización con Google AI Studio sirve para editar y revisar código, pero su botón de despliegue crea un servicio paralelo (`costaricatours2026` en `us-west2`, fallido en la captura del 28 de septiembre de 2026). No volver a usar ese despliegue como producción mientras se consolida la ruta canónica.
+
+La URL de Vercel sigue siendo la referencia pública provisional. El propietario ha mencionado `CostaRicaTours.ia`, `costaricatours.ai` y `CostaTours.io`; ninguno está comprado ni elegido como dominio definitivo. `.ia` no figura entre las extensiones delegadas por IANA; confirmar la grafía `.ai` antes de buscar o comprar. No cambiar enlaces de contacto, documentos, metadatos ni DNS hasta verificar propiedad del dominio, correo, HTTPS y flujo completo. Véase [`docs/despliegues-canonicos.md`](docs/despliegues-canonicos.md) para inventario, comprobaciones y migración sin interrumpir reservas.
+
+Decisiones y pendientes de conversaciones anteriores: conservar los agentes, servicios y reservas existentes; usar Web/WhatsApp/Voz/Email/Counter Desk como entradas al Customer Intake y al mismo ciclo de Concierge; exigir datos vivos para disponibilidad, pagos y proveedores. La puerta privada Vercel → WIF/IAM → Cloud Run está implementada, pero debe verificarse con `CLOUD_RUN_BACKEND_URL`, `GCP_WIF_AUDIENCE` y `GCP_WIF_SERVICE_ACCOUNT` reales antes de afirmar que `/api/health` o las reservas funcionan en producción. Persisten verificaciones de webhook de pagos, aprobación del cliente frente a confirmación del proveedor, scheduler externo, pruebas E2E autenticadas e imágenes del catálogo. Integrar a `main` solo con checks verdes.
+
 > **Principio rector:** el sistema no debe limitarse a contestar preguntas. Debe entender al viajero, recordar su contexto, construir un viaje, verificar datos vivos, convertir una intención en una reserva y coordinar la operación con proveedores, manteniendo al humano informado cuando una decisión requiere supervisión.
 
 ---

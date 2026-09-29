@@ -12,14 +12,8 @@ import { BookingConfirmationModal } from './components/BookingConfirmationModal'
 import { MyBookingsModal } from './components/MyBookingsModal';
 import { Footer } from './components/Footer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
-import { CustomFunnelModal } from './components/CustomFunnelModal';
-import { TravelerToolkit } from './components/TravelerToolkit';
-import { MicroclimateRadar } from './components/MicroclimateRadar';
 import { AmbientBackground } from './components/AmbientBackground';
-import { LegalModal } from './components/LegalModal';
 import { CookiesBanner } from './components/CookiesBanner';
-import { LocalBusesModal } from './components/LocalBusesModal';
-import { FormsManagerModal } from './components/FormsManagerModal';
 import { NationalTransportSection } from './components/NationalTransportSection';
 import { TicoCultureSection } from './components/TicoCultureSection';
 import { Home as HomePage } from './pages/Home';
@@ -42,6 +36,11 @@ import { TravelerCommandBar } from './components/TravelerCommandBar';
 
 // Code-splitting via React.lazy to reduce initial JS bundle size
 const ItineraryPlanner = lazy(() => import('./components/ItineraryPlanner').then(m => ({ default: m.ItineraryPlanner })));
+const CustomFunnelModal = lazy(() => import('./components/CustomFunnelModal').then(m => ({ default: m.CustomFunnelModal })));
+const TravelerToolkit = lazy(() => import('./components/TravelerToolkit').then(m => ({ default: m.TravelerToolkit })));
+const LegalModal = lazy(() => import('./components/LegalModal').then(m => ({ default: m.LegalModal })));
+const LocalBusesModal = lazy(() => import('./components/LocalBusesModal').then(m => ({ default: m.LocalBusesModal })));
+const FormsManagerModal = lazy(() => import('./components/FormsManagerModal').then(m => ({ default: m.FormsManagerModal })));
 const TravelerOSPage = lazy(() => import('./pages/TravelerOSPage').then(m => ({ default: m.TravelerOSPage })));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const AIAssistant = lazy(() => import('./components/AIAssistant').then(m => ({ default: m.AIAssistant })));
@@ -561,12 +560,12 @@ export default function App() {
             
             <Route path="/tools" element={
               <div className="space-y-12 py-8">
-                <TravelerToolkit
+                <Suspense fallback={null}><TravelerToolkit
                   language={language}
                   currency={currency}
                   onOpenTripBuilder={() => setIsCustomFunnelOpen(true)}
                   onOpenLocalBuses={() => setIsLocalBusesOpen(true)}
-                />
+                /></Suspense>
                 <NationalTransportSection
                   language={language}
                   currency={currency}
@@ -677,32 +676,32 @@ export default function App() {
       )}
 
       {/* Custom Travel Package Builder Modal */}
-      <CustomFunnelModal
+      {isCustomFunnelOpen && <Suspense fallback={null}><CustomFunnelModal
         isOpen={isCustomFunnelOpen}
         onClose={() => setIsCustomFunnelOpen(false)}
         language={language}
         currency={currency}
         onSelectTour={(t) => navigate(`/tour/${t.id}`)}
-      />
+      /></Suspense>}
 
-      <LocalBusesModal
+      {isLocalBusesOpen && <Suspense fallback={null}><LocalBusesModal
         isOpen={isLocalBusesOpen}
         onClose={() => setIsLocalBusesOpen(false)}
         language={language}
         currency={currency}
-      />
+      /></Suspense>}
       
-      <FormsManagerModal
+      {isFormsManagerModalOpen && <Suspense fallback={null}><FormsManagerModal
         isOpen={isFormsManagerModalOpen}
         onClose={() => setIsFormsManagerModalOpen(false)}
         language={language}
-      />
+      /></Suspense>}
 
-      <LegalModal
+      {isLegalModalOpen && <Suspense fallback={null}><LegalModal
         isOpen={isLegalModalOpen}
         onClose={() => setIsLegalModalOpen(false)}
         language={language}
-      />
+      /></Suspense>}
 
       {isAdminDashboardOpen && (
         <Suspense fallback={null}>
