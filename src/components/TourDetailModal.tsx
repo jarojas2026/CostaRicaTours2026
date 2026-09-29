@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createBookingAttempt, requirePaymentUrl } from '../utils/bookingAttempt';
 import { 
   Star, Clock, MapPin, CheckCircle2, ShieldCheck, Calendar, Users, Hotel, 
   ChevronRight, ChevronLeft, X, AlertCircle, CreditCard, Smartphone, Banknote, 
@@ -36,6 +37,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
   const [sinpeRef, setSinpeRef] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const attempt = useRef(createBookingAttempt());
+  const submitting = useRef(false);
 
   // Close on Escape key
   useEffect(() => {
@@ -77,18 +80,18 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting.current) return;
     setErrorMessage(null);
     if (!selectedDate || !fullName || !email) {
       setErrorMessage(language === 'es' ? 'Por favor completa todos los campos requeridos.' : 'Please fill in all required fields.');
       return;
     }
     setIsSubmitting(true);
+    submitting.current = true;
 
-    const generatedBookingId = `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
     const departureTime = (tour.departureTimes && tour.departureTimes.length > 0) ? tour.departureTimes[0] : '08:00 AM';
 
     const bookingPayload: BookingRequest = {
-      bookingId: generatedBookingId,
       tourId: tour.id,
       tourName: modalTitle,
       date: selectedDate,
@@ -100,15 +103,13 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
       totalUSD,
       totalCRC,
       paymentMethod,
-      customer: { fullName, email, phone: phone || '+506', country: 'CR' },
-      status: paymentMethod === 'sinpe_movil' ? 'pendiente_pago' : 'confirmada',
-      createdAt: new Date().toISOString()
+      customer: { fullName: fullName.trim(), email: email.trim(), phone: phone.trim(), country: 'unspecified' }
     };
 
     try {
       const bookingRes = await fetch('/api/bookings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': attempt.current({ ...bookingPayload, sinpeRef }) },
         body: JSON.stringify({
           ...bookingPayload,
           customerName: fullName,
@@ -120,27 +121,18 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
       const bookingData = await bookingRes.json();
 
-      if (!bookingRes.ok) {
+      if (!bookingRes.ok || !bookingData.booking?.bookingId) {
         throw new Error(bookingData.message || bookingData.error || (language === 'es' ? 'Error al registrar la reserva en el servidor.' : 'Error creating reservation on server.'));
       }
 
-      if (paymentMethod === 'sinpe_movil' && sinpeRef.trim()) {
-        fetch('/api/sinpe/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            bookingId: generatedBookingId,
-            sinpeReference: sinpeRef,
-            customerPhone: phone
-          })
-        }).catch(() => {});
-      }
+      const bookingId = bookingData.booking.bookingId;
 
       if (paymentMethod === 'credit_card') {
         const stripeRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || ""}/api/stripe/create-checkout-session`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            bookingId,
             tourId: tour.id,
             tourName: modalTitle,
             totalUSD,
@@ -152,32 +144,31 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
           })
         });
         const stripeData = await stripeRes.json();
-        if (stripeData.url) {
-          window.location.href = stripeData.url;
-          return;
-        }
+        if (!stripeRes.ok) throw new Error(stripeData.error || 'Pago no disponible / Payment unavailable');
+        window.location.href = requirePaymentUrl(stripeData.url);
+        return;
       } else if (paymentMethod === 'paypal') {
         const paypalRes = await fetch('/api/paypal/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ totalUSD, tourName: modalTitle, tourId: tour.id, passengers: adults + children, adults, children })
+          body: JSON.stringify({ bookingId, totalUSD, tourName: modalTitle, tourId: tour.id, passengers: adults + children, adults, children })
         });
         const paypalData = await paypalRes.json();
-        if (paypalData.url) {
-          window.location.href = paypalData.url;
-          return;
-        }
+        if (!paypalRes.ok) throw new Error(paypalData.error || 'PayPal no disponible / PayPal unavailable');
+        window.location.href = requirePaymentUrl(paypalData.url);
+        return;
       }
 
-      const confirmedBooking = bookingData.booking || bookingPayload;
-      if (onConfirmBooking) onConfirmBooking(confirmedBooking);
+      const confirmedBooking = bookingData.booking;
       if (onBookingSuccess) onBookingSuccess(confirmedBooking);
+      else if (onConfirmBooking) onConfirmBooking(confirmedBooking);
 
-      setIsSubmitting(false);
       onClose();
     } catch (error: any) {
       console.error('Error al procesar reserva:', error);
       setErrorMessage(error.message || (language === 'es' ? 'Ocurrió un error al procesar tu solicitud.' : 'An error occurred processing your request.'));
+    } finally {
+      submitting.current = false;
       setIsSubmitting(false);
     }
   };
@@ -382,6 +373,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                       min={new Date().toISOString().split('T')[0]}
                       className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors" 
                       value={selectedDate} 
+                      aria-label={language === 'es' ? 'Fecha de viaje' : 'Travel date'}
                       onChange={e => setSelectedDate(e.target.value)} 
                     />
                   </div>
@@ -393,6 +385,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                     <select 
                       className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors"
                       value={adults}
+                      aria-label={language === 'es' ? 'Adultos' : 'Adults'}
                       onChange={e => setAdults(Number(e.target.value))}
                     >
                       {[1,2,3,4,5,6,7,8,9,10,12,15,20].map(n => (
@@ -410,6 +403,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                     <select 
                       className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors"
                       value={children}
+                      aria-label={language === 'es' ? 'Niños' : 'Children'}
                       onChange={e => setChildren(Number(e.target.value))}
                     >
                       {[0,1,2,3,4,5,6].map(n => (
@@ -427,6 +421,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                       placeholder={language === 'es' ? 'Ej: Hotel Arenal' : 'Ex: Arenal Lodge'}
                       className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors"
                       value={pickupHotel}
+                      aria-label={language === 'es' ? 'Hotel o punto de encuentro' : 'Hotel or meeting point'}
                       onChange={e => setPickupHotel(e.target.value)}
                     />
                   </div>
@@ -442,6 +437,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                     placeholder="Ej: María González"
                     className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors" 
                     value={fullName} 
+                    autoComplete="name"
+                    aria-label={language === 'es' ? 'Nombre completo' : 'Full name'}
                     onChange={e => setFullName(e.target.value)} 
                   />
                 </div>
@@ -457,6 +454,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                       placeholder="maria@ejemplo.com"
                       className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors" 
                       value={email} 
+                      autoComplete="email"
+                      aria-label={language === 'es' ? 'Correo electrónico' : 'Email address'}
                       onChange={e => setEmail(e.target.value)} 
                     />
                   </div>
@@ -471,6 +470,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                       placeholder="+506 8888-8888"
                       className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors" 
                       value={phone} 
+                      autoComplete="tel"
+                      aria-label={language === 'es' ? 'Teléfono con código de país' : 'Phone with country code'}
                       onChange={e => setPhone(e.target.value)} 
                     />
                   </div>
@@ -483,6 +484,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                   <select 
                     className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors" 
                     value={paymentMethod} 
+                    aria-label={language === 'es' ? 'Método de pago' : 'Payment method'}
                     onChange={e => setPaymentMethod(e.target.value as any)}
                   >
                     <option value="credit_card" className="bg-stone-900">💳 Tarjeta de Crédito / Débito (Stripe)</option>
@@ -506,13 +508,14 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                       placeholder="Ej: SINPE-849201"
                       className="w-full bg-stone-950 border border-amber-500/40 rounded-lg px-2.5 py-1.5 text-xs text-white"
                       value={sinpeRef}
+                      aria-label={language === 'es' ? 'Referencia SINPE' : 'SINPE reference'}
                       onChange={e => setSinpeRef(e.target.value)}
                     />
                   </div>
                 )}
 
                 {errorMessage && (
-                  <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-2">
+                  <div role="alert" className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>{errorMessage}</span>
                   </div>
@@ -529,19 +532,19 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                   ) : (
                     <CreditCard className="w-4 h-4" />
                   )}
-                  <span>{language === 'es' ? 'Confirmar Reserva Oficial' : 'Confirm Official Booking'}</span>
+                  <span>{language === 'es' ? 'Crear solicitud de reserva' : 'Create booking request'}</span>
                 </button>
 
                 {/* Trust Badges */}
                 <div className="flex items-center justify-center gap-4 text-[10px] text-stone-400 font-bold uppercase tracking-wider pt-1">
                   <span className="flex items-center gap-1">
                     <Lock className="w-3 h-3 text-emerald-400" />
-                    <span>SSL 256-bit</span>
+                    <span>{language === 'es' ? 'Pago verificado por servidor' : 'Server-verified payment'}</span>
                   </span>
                   <span>•</span>
                   <span className="flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                    <span>{language === 'es' ? 'Garantía 100%' : '100% Guaranteed'}</span>
+                    <span>{language === 'es' ? 'Sujeto a confirmación' : 'Subject to confirmation'}</span>
                   </span>
                 </div>
               </form>

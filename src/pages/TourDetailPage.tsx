@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createBookingAttempt, requirePaymentUrl } from '../utils/bookingAttempt';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Clock, MapPin, ShieldCheck, Calendar, Users,
@@ -16,9 +17,10 @@ import { useTourMedia } from '../hooks/useTourMedia';
 interface TourDetailPageProps {
   language: Language;
   currency: Currency;
+  onBookingSuccess: (booking: BookingRequest) => void;
 }
 
-export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, currency }) => {
+export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, currency, onBookingSuccess }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { tours: TOURS, loading } = useTours();
@@ -38,6 +40,8 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
   const [sinpeRef, setSinpeRef] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const attempt = useRef(createBookingAttempt());
+  const submitting = useRef(false);
   const { assets: mediaAssets, loading: mediaLoading, error: mediaError } = useTourMedia(
     tour?.id,
     tour ? { image: tour.image, gallery: tour.gallery, title: getLangText(tour.title, language) } : undefined
@@ -109,6 +113,7 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting.current) return;
     setErrorMessage(null);
 
     if (!selectedDate || !fullName.trim() || !email.trim()) {
@@ -117,12 +122,12 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
     }
 
     setIsSubmitting(true);
+    submitting.current = true;
     try {
       const available = availabilityState === 'available' ? true : await checkAvailability();
       if (!available) return;
 
       const tourTitle = getLangText(tour.title, language, 'Tour de Costa Rica');
-      const idempotencyKey = globalThis.crypto?.randomUUID?.() || `web-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
       const bookingPayload: BookingRequest & { sinpeReference?: string; currency?: Currency } = {
         tourId: tour.id,
@@ -150,13 +155,13 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Idempotency-Key': idempotencyKey,
+          'Idempotency-Key': attempt.current(bookingPayload),
         },
         body: JSON.stringify(bookingPayload)
       });
       const bookingData = await bookingRes.json().catch(() => ({}));
 
-      if (!bookingRes.ok) {
+      if (!bookingRes.ok || !bookingData.booking?.bookingId) {
         throw new Error(bookingData.message || bookingData.error || (language === 'es' ? 'No se pudo registrar la solicitud.' : 'The request could not be recorded.'));
       }
 
@@ -182,9 +187,10 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
         const stripeData = await stripeRes.json().catch(() => ({}));
         if (!stripeRes.ok) throw new Error(stripeData.error || (language === 'es' ? 'El pago con tarjeta no está disponible.' : 'Card payment is unavailable.'));
         if (stripeData.url) {
-          window.location.href = stripeData.url;
+          window.location.href = requirePaymentUrl(stripeData.url);
           return;
         }
+        throw new Error('Enlace de pago no disponible / Payment link unavailable');
       }
 
       if (paymentMethod === 'paypal') {
@@ -196,15 +202,18 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
         const paypalData = await paypalRes.json().catch(() => ({}));
         if (!paypalRes.ok) throw new Error(paypalData.error || (language === 'es' ? 'PayPal no está disponible.' : 'PayPal is unavailable.'));
         if (paypalData.url) {
-          window.location.href = paypalData.url;
+          window.location.href = requirePaymentUrl(paypalData.url);
           return;
         }
+        throw new Error('Enlace de PayPal no disponible / PayPal link unavailable');
       }
 
+      onBookingSuccess(bookingData.booking);
       navigate('/trip', { state: { bookingId } });
     } catch (error: any) {
       setErrorMessage(error?.message || (language === 'es' ? 'No se pudo procesar la solicitud.' : 'The request could not be processed.'));
     } finally {
+      submitting.current = false;
       setIsSubmitting(false);
     }
   };
@@ -422,7 +431,7 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                   )}
 
                   {errorMessage && (
-                    <div className="rounded-2xl border border-amber-500/30 bg-amber-950/30 px-4 py-3 text-xs leading-relaxed text-amber-200">{errorMessage}</div>
+                    <div role="alert" className="rounded-2xl border border-amber-500/30 bg-amber-950/30 px-4 py-3 text-xs leading-relaxed text-amber-200">{errorMessage}</div>
                   )}
 
                   <button disabled={isSubmitting} type="submit" className="w-full bg-emerald-500 hover:bg-emerald-400 text-stone-950 font-black py-5 rounded-2xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-3 transition-all transform hover:-translate-y-1 active:translate-y-0 disabled:opacity-50">

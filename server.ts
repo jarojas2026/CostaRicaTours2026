@@ -769,8 +769,11 @@ app.post('/api/paypal/create-order', async (req, res) => {
       });
       const orderData = await orderRes.json();
       const approveLink = orderData.links?.find((link: any) => link.rel === 'approve')?.href;
+      if (!orderRes.ok || !orderData.id || !approveLink) {
+        return res.status(502).json({ error: 'PayPal no devolvió un enlace de aprobación. La reserva sigue pendiente de pago.' });
+      }
       res.json({
-        url: approveLink || `${req.protocol}://${req.get('host')}?booking=success`,
+        url: approveLink,
         id: orderData.id
       });
     } else {
