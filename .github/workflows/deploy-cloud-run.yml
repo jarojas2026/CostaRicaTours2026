@@ -48,7 +48,7 @@ jobs:
 
       - name: Preflight — verificar tipos y compilación antes de desplegar
         run: |
-          npm ci --include=optional
+          npm ci --include=optional --legacy-peer-deps
           npm run lint
           npm run build
         env:
