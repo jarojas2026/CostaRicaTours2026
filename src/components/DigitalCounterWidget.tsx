@@ -31,6 +31,7 @@ import {
 import { Language, Currency, Tour } from '../types';
 import { useTours } from '../contexts/ToursContext';
 import { formatCurrency, getLangText } from '../utils/i18n';
+import { useSupportPanel } from '../hooks/useSupportPanel';
 
 export interface DigitalCounterWidgetProps {
   language: Language;
@@ -63,8 +64,9 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
   selectedTour: propSelectedTour
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  useSupportPanel('counter', isOpen, setIsOpen);
   const [activeTab, setActiveTab] = useState<'chat' | 'availability' | 'faq' | 'embed'>('chat');
-  const [showTeaser, setShowTeaser] = useState(true);
+  const [showTeaser, setShowTeaser] = useState(false);
   const [sessionId] = useState(() => {
     const key = 'crt-counter-widget-session';
     const existing = localStorage.getItem(key);
