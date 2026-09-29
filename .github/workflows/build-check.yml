@@ -31,7 +31,7 @@ jobs:
           cache: "npm"
 
       - name: Instalar dependencias
-        run: npm ci --include=optional
+        run: npm ci --include=optional --legacy-peer-deps
 
       - name: Bloquear vulnerabilidades críticas de producción
         run: npm run audit:security:prod

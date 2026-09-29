@@ -57,7 +57,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
         return {
           icon: <CreditCard className="w-3.5 h-3.5" />,
           label: language === 'es' ? 'Tarjeta de Crédito / Débito' : 'Credit / Debit Card',
-          status: language === 'es' ? 'Pagado (Confirmado)' : 'Paid (Confirmed)',
+          status: booking.paymentStatus === 'completed' ? (language === 'es' ? 'Pago verificado' : 'Payment verified') : (language === 'es' ? 'Pago pendiente' : 'Payment pending'),
           color: 'bg-stone-100 text-stone-900 border-teal-300'
         };
       case 'sinpe_movil':
@@ -73,21 +73,21 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
         return {
           icon: <Banknote className="w-3.5 h-3.5" />,
           label: language === 'es' ? 'Pago al Abordar (Efectivo/Tarjeta)' : 'Pay at Pickup (Cash/Card)',
-          status: language === 'es' ? 'Garantizado ($0 ahora)' : 'Guaranteed ($0 now)',
+          status: language === 'es' ? 'Pendiente de coordinación' : 'Coordination pending',
           color: 'bg-amber-100 text-amber-900 border-orange-300'
         };
       case 'paypal':
         return {
           icon: <CreditCard className="w-3.5 h-3.5" />,
           label: 'PayPal Express',
-          status: language === 'es' ? 'Pagado (Protección PayPal)' : 'Paid (PayPal Protected)',
+          status: booking.paymentStatus === 'completed' ? (language === 'es' ? 'Pago verificado' : 'Payment verified') : (language === 'es' ? 'Pago pendiente' : 'Payment pending'),
           color: 'bg-blue-100 text-blue-900 border-blue-300'
         };
       default:
         return {
           icon: <Check className="w-3.5 h-3.5" />,
-          label: language === 'es' ? 'Confirmado' : 'Confirmed',
-          status: language === 'es' ? 'Garantizado' : 'Guaranteed',
+          label: language === 'es' ? 'Por coordinar' : 'To be arranged',
+          status: language === 'es' ? 'Pendiente de verificación' : 'Verification pending',
           color: 'bg-stone-100 text-stone-900 border-teal-300'
         };
     }
@@ -197,7 +197,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
   };
 
   const whatsappMsg = encodeURIComponent(
-    `🇨🇷 *Voucher Oficial Costa Rica Tours (costaricatours.es)*\n` +
+    `🇨🇷 *Solicitud Costa Rica Tours (costaricatours.es)*\n` +
     `*ID de Reserva:* ${booking.bookingId}\n` +
     `*Tour:* ${booking.tourName}\n` +
     `*Fecha:* ${booking.date} | *Hora:* ${booking.time}\n` +
@@ -218,7 +218,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
             <div>
               <h2 style={{ color: '#1E4D2B', fontSize: '30px', margin: 0, fontWeight: '900', letterSpacing: '-0.5px' }}>COSTA RICA TOURS</h2>
               <p style={{ margin: '4px 0 0 0', color: '#57534E', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                {language === 'es' ? 'Voucher Oficial • costaricatours.es • Pura Vida' : 'Official Voucher • costaricatours.es • Pura Vida'}
+                {language === 'es' ? 'Resumen de solicitud • costaricatours.es' : 'Request summary • costaricatours.es'}
               </p>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -293,8 +293,8 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
             <h4 style={{ margin: '0 0 6px 0', color: '#1E4D2B', fontSize: '15px', fontWeight: '800' }}>💡 {language === 'es' ? 'Instrucciones de Recogida (Pickup)' : 'Pickup Instructions'}</h4>
             <p style={{ margin: 0, fontSize: '13px', color: '#44403C', lineHeight: '1.6' }}>
               {language === 'es'
-                ? 'El chofer o guía del servicio asociado se presentará en la recepción/lobby de tu hotel 15 minutos antes de la hora indicada y preguntará por el nombre del titular de la reserva. Por favor, presenta este voucher digital o impreso al momento de abordar.'
-                : 'Your assigned local driver or tour guide will arrive at your hotel lobby 15 minutes before departure time and will ask for the lead traveler\'s name. Please present this digital or printed voucher when boarding.'}
+                ? 'El punto y horario de encuentro requieren confirmación del operador. Este resumen no acredita pago ni garantiza disponibilidad.'
+                : 'Meeting location and time require operator confirmation. This summary is not proof of payment or guaranteed availability.'}
             </p>
           </div>
           
@@ -326,11 +326,11 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
             </div>
 
             <span className="text-[10px] font-black uppercase tracking-widest text-orange-300 block">
-              {language === 'es' ? '¡Reserva Confirmada y Garantizada!' : 'Booking Confirmed & Guaranteed!'}
+              {language === 'es' ? 'Solicitud de reserva registrada' : 'Booking request recorded'}
             </span>
 
             <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
-              {language === 'es' ? 'Voucher de Servicio Turístico' : 'Tourist Service Voucher'}
+              {language === 'es' ? 'Consulta el estado de pago y confirmación del operador' : 'Check payment status and operator confirmation'}
             </h2>
 
             <div className="inline-block bg-[#0C1E14]/90 text-[#F5EEDC] px-4 py-1 rounded-full font-mono font-bold text-xs border border-[#2D663B]/60">
@@ -466,8 +466,8 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
             </span>
             <p className="text-stone-700 text-[11px] leading-relaxed">
               {language === 'es'
-                ? 'El chofer o guía del servicio asociado se presentará en la recepción/lobby de tu hotel 15 minutos antes de la hora indicada preguntando por el titular de la reserva. Presenta este código QR o voucher al abordar.'
-                : 'Your assigned driver or tour guide will meet you at your hotel lobby 15 minutes before the departure time and ask for the lead traveler\'s name. Present this QR code or voucher upon boarding.'}
+                ? 'Espera la confirmación del operador antes de viajar. El punto de encuentro y horario están sujetos a coordinación.'
+                : 'Wait for operator confirmation before traveling. Meeting location and time must be arranged.'}
             </p>
           </div>
 
@@ -484,7 +484,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
                 ) : (
                   <Printer className="w-4 h-4 text-orange-300" />
                 )}
-                <span>{isGeneratingPDF ? (language === 'es' ? 'Generando...' : 'Generating...') : (language === 'es' ? 'Descargar Voucher PDF' : 'Download PDF Voucher')}</span>
+                <span>{isGeneratingPDF ? (language === 'es' ? 'Generando...' : 'Generating...') : (language === 'es' ? 'Descargar resumen PDF' : 'Download request PDF')}</span>
               </button>
 
               <a

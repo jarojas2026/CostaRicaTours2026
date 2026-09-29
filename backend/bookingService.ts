@@ -457,12 +457,14 @@ export async function createBooking(data: any) {
     0
   );
 
-  const customerObj = data.customer || {
+  const customerInput = data.customer || {
     name: data.customerName || 'Cliente',
     email: data.customerEmail || '',
     phone: data.customerPhone || '',
     country: data.customerCountry || 'CR'
   };
+  const customerName = String(customerInput.fullName || customerInput.name || data.customerName || '').trim();
+  const customerObj = { ...customerInput, name: customerName, fullName: customerName };
 
   const db = getFirestoreDb();
   if (!db && process.env.NODE_ENV === 'production') {

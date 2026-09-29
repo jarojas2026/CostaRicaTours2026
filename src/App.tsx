@@ -278,7 +278,7 @@ export default function App() {
   const handleBookingSuccess = (booking: BookingRequest) => {
     setSelectedTour(null);
     setRecentBooking(booking);
-    setMyBookings(prev => [booking, ...prev]);
+    setMyBookings(prev => [booking, ...prev.filter(item => item.bookingId !== booking.bookingId)]);
   };
 
   // Dynamic WhatsApp Message context
@@ -440,7 +440,7 @@ export default function App() {
             } />
 
             <Route path="/tour/:id" element={
-              <TourDetailPage language={language} currency={currency} />
+              <TourDetailPage language={language} currency={currency} onBookingSuccess={handleBookingSuccess} />
             } />
 
             <Route path="/destinations" element={
