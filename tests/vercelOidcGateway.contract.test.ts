@@ -39,7 +39,7 @@ test('private gateway authenticates runtime requests and preserves user auth', a
       expectedAudience = process.env.GCP_WIF_AUDIENCE || '',
     } = options;
 
-    now += 60 * 60_000; // Expire the module cache between independent scenarios.
+    now += 60 * 60_000;
     let calls = 0;
     globalThis.fetch = (async (input: any, init?: RequestInit) => {
       calls += 1;
@@ -48,6 +48,7 @@ test('private gateway authenticates runtime requests and preserves user auth', a
         const tokenExchange = new URLSearchParams(String(init?.body));
         assert.equal(tokenExchange.get('subject_token'), expectedToken);
         assert.equal(tokenExchange.get('audience'), expectedAudience);
+        assert.equal(tokenExchange.get('subject_token_type'), 'urn:ietf:params:oauth:token-type:jwt');
         return Response.json({ access_token: 'test-google-access' });
       }
       if (calls === 2) {
@@ -84,7 +85,7 @@ test('private gateway authenticates runtime requests and preserves user auth', a
     await t.test('runtime header works without an environment token', async () => {
       delete process.env.VERCEL_OIDC_TOKEN;
       const result = await invoke({ headers: { 'x-vercel-oidc-token': 'test-runtime-oidc' }, expectedToken: 'test-runtime-oidc' });
-      assert.equal(result.status, 403); // Preserve the backend's denial, never grant access.
+      assert.equal(result.status, 403);
       assert.equal(result.calls, 3);
       assert.equal(result.responseHeaders.get('cache-control'), 'no-store, max-age=0');
     });
@@ -130,31 +131,30 @@ test('private gateway authenticates runtime requests and preserves user auth', a
 
     await t.test('authenticated operational routes continue to reach the private backend', async () => {
       process.env.VERCEL_OIDC_TOKEN = 'test-ops-oidc';
-      const result = await invoke({
-        path: '/api/automations/multi-day-planner',
-        expectedToken: 'test-ops-oidc',
-      });
+      const result = await invoke({ path: '/api/automations/multi-day-planner', expectedToken: 'test-ops-oidc' });
       assert.equal(result.status, 403);
       assert.equal(result.calls, 3);
     });
 
-    await t.test('retired legacy payment confirmation and payout routes never reach upstream services', async () => {
+    await t.test('retired legacy payment, customer confirmation and payout routes never reach upstream services', async () => {
       delete process.env.VERCEL_OIDC_TOKEN;
-      for (const path of ['/api/pagos/solicitud', '/api/reservas/confirmar', '/api/payouts/run-batch', '/api/workflows/legacy-confirm']) {
+      for (const path of [
+        '/api/pagos/solicitud',
+        '/api/reservas/confirmar',
+        '/api/payouts/run-batch',
+        '/api/workflows/legacy-confirm',
+        '/api/bookings/CRT-2026-001/customer-confirm?action=aprobado',
+      ]) {
         const result = await invoke({ includeUserAuth: false, path });
-        assert.equal(result.status, 410);
-        assert.equal(result.payload.error, 'legacy_route_retired');
-        assert.equal(result.calls, 0);
+        assert.equal(result.status, 410, path);
+        assert.equal(result.payload.error, 'legacy_route_retired', path);
+        assert.equal(result.calls, 0, path);
       }
     });
 
     await t.test('public API routes still use the zero-trust infrastructure identity', async () => {
       process.env.VERCEL_OIDC_TOKEN = 'test-public-oidc';
-      const result = await invoke({
-        includeUserAuth: false,
-        path: '/api/health',
-        expectedToken: 'test-public-oidc',
-      });
+      const result = await invoke({ includeUserAuth: false, path: '/api/health', expectedToken: 'test-public-oidc' });
       assert.equal(result.status, 403);
       assert.equal(result.calls, 3);
     });
@@ -166,12 +166,7 @@ test('private gateway authenticates runtime requests and preserves user auth', a
       process.env.GCP_WIF_PROVIDER_ID = 'vercel-production';
       process.env.VERCEL_OIDC_TOKEN = 'test-derived-oidc';
       const expectedAudience = '//iam.googleapis.com/projects/123456789/locations/global/workloadIdentityPools/vercel/providers/vercel-production';
-      const result = await invoke({
-        includeUserAuth: false,
-        path: '/api/health',
-        expectedToken: 'test-derived-oidc',
-        expectedAudience,
-      });
+      const result = await invoke({ includeUserAuth: false, path: '/api/health', expectedToken: 'test-derived-oidc', expectedAudience });
       assert.equal(result.status, 403);
       assert.equal(result.calls, 3);
     });
