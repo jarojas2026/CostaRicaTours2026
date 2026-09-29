@@ -128,6 +128,7 @@ export default defineConfig(() => {
             if (id.includes('leaflet') || id.includes('@vis.gl') || id.includes('react-google-maps')) return 'vendor-maps';
             if (id.includes('jspdf') || id.includes('html2canvas')) return 'vendor-pdf';
             if (id.includes('motion') || id.includes('framer-motion')) return 'vendor-motion';
+            if (id.includes('lucide-react')) return 'vendor-icons';
             if (id.includes('react-dom') || id.includes('react-router') || id.includes('/react/')) return 'vendor-react';
           },
         },

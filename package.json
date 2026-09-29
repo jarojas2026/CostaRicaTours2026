@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "npm run audit:system && vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "build": "npm run audit:system && vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist/server.cjs",
     "start": "node dist/server.cjs",
     "lint": "tsc --noEmit",
     "test:contracts": "tsx --test tests/*.test.ts",
@@ -63,10 +63,8 @@
     "@types/pdfkit": "^0.17.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vercel/node": "^13.0.1",
-    "sharp": "^0.35.4",
-    "typescript": "^5.8.2",
-    "vercel": "^59.17.0"
+    "@vercel/node": "^16.0.1",
+    "typescript": "^5.8.2"
   },
   "optionalDependencies": {
     "lightningcss-linux-x64-gnu": "1.33.0"
