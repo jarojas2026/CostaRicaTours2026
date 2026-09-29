@@ -48,6 +48,7 @@ test('private gateway authenticates runtime requests and preserves user auth', a
         const tokenExchange = new URLSearchParams(String(init?.body));
         assert.equal(tokenExchange.get('subject_token'), expectedToken);
         assert.equal(tokenExchange.get('audience'), expectedAudience);
+        assert.equal(tokenExchange.get('subject_token_type'), 'urn:ietf:params:oauth:token-type:jwt');
         return Response.json({ access_token: 'test-google-access' });
       }
       if (calls === 2) {
@@ -138,13 +139,19 @@ test('private gateway authenticates runtime requests and preserves user auth', a
       assert.equal(result.calls, 3);
     });
 
-    await t.test('retired legacy payment confirmation and payout routes never reach upstream services', async () => {
+    await t.test('retired legacy payment, customer approval and payout routes never reach upstream services', async () => {
       delete process.env.VERCEL_OIDC_TOKEN;
-      for (const path of ['/api/pagos/solicitud', '/api/reservas/confirmar', '/api/payouts/run-batch', '/api/workflows/legacy-confirm']) {
+      for (const path of [
+        '/api/pagos/solicitud',
+        '/api/reservas/confirmar',
+        '/api/payouts/run-batch',
+        '/api/workflows/legacy-confirm',
+        '/api/bookings/CRT-2026-001/customer-confirm?action=aprobado',
+      ]) {
         const result = await invoke({ includeUserAuth: false, path });
-        assert.equal(result.status, 410);
-        assert.equal(result.payload.error, 'legacy_route_retired');
-        assert.equal(result.calls, 0);
+        assert.equal(result.status, 410, path);
+        assert.equal(result.payload.error, 'legacy_route_retired', path);
+        assert.equal(result.calls, 0, path);
       }
     });
 
