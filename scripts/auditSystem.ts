@@ -42,8 +42,13 @@ if (/return match \|\| REGISTERED_PROVIDERS\[0\]/.test(providerService)) {
 if (/\bactive:\s*true/.test(providerService) && !/verified\?: boolean/.test(providerService)) {
   add('HIGH', 'PROVIDER-002', 'Static provider directory contains operationally active providers without an explicit verification field.');
 }
-if (/fallbackProvider\.verified !== true/.test(nativeWorkflows) === false) {
-  add('HIGH', 'PROVIDER-003', 'Direct-operations failover does not require explicit provider verification.');
+const providerFailoverFailsClosed =
+  /requires_human_assignment/.test(nativeWorkflows) &&
+  /fail_closed_no_synthetic_provider/.test(nativeWorkflows) &&
+  /reassigned:\s*false/.test(nativeWorkflows);
+const providerFailoverSelectsVerifiedReplacement = /fallbackProvider\.verified\s*!==\s*true/.test(nativeWorkflows);
+if (!providerFailoverFailsClosed && !providerFailoverSelectsVerifiedReplacement) {
+  add('HIGH', 'PROVIDER-003', 'Direct-operations failover neither fails closed for human assignment nor visibly requires explicit verification for a replacement provider.');
 }
 
 function collectSourceFiles(startDir: string): string[] {
@@ -184,11 +189,18 @@ if (!fs.existsSync(gatewayPath)) {
   if (/fetch\([^\n]*CLOUD_RUN_BACKEND_URL[\s\S]{0,300}catch[\s\S]{0,200}fetch\(/.test(gateway)) {
     add('CRITICAL', 'GATEWAY-003', 'Vercel gateway appears to fall back to a second/anonymous backend request after authentication failure.');
   }
+  if (!/customer-confirm\$/.test(gateway) && !/customer-confirm/.test(gateway)) {
+    add('HIGH', 'GATEWAY-004', 'Legacy customer approval route is not visibly contained by the public gateway while backend migration remains pending.');
+  }
 }
 
-// Legacy customer itinerary approval must not be confused with provider confirmation.
-if (/\/api\/bookings\/:id\/customer-confirm[\s\S]{0,1400}status:\s*action === 'aprobado' \? 'confirmada'/.test(server)) {
-  add('HIGH', 'LIFECYCLE-002', 'Customer itinerary approval still writes final booking confirmation before provider coordination. Migrate this route to record approval separately.');
+// Legacy customer itinerary approval must never create financial truth or
+// provider confirmation. Detect all known variants, not only final confirmed.
+const customerConfirmRoute = server.match(/app\.get\('\/api\/bookings\/:id\/customer-confirm'[\s\S]*?\n\}\);/)?.[0] || '';
+if (/status:\s*action === 'aprobado' \? ['"](?:confirmada|pagada|paid|confirmed)['"]/.test(customerConfirmRoute) ||
+    /paymentStatus:\s*['"]completed['"]/.test(customerConfirmRoute) ||
+    /executeProviderRealtimeCoordination/.test(customerConfirmRoute)) {
+  add('HIGH', 'LIFECYCLE-002', 'Customer itinerary approval still mutates payment/provider lifecycle state. Migrate it to record customer approval separately from verified payment and provider confirmation.');
 }
 
 // Public trust language is surfaced as debt until evidence-backed claims replace it.
