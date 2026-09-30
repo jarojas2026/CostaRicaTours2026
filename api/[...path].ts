@@ -56,10 +56,6 @@ const RETIRED_PUBLIC_PATTERNS = [
   /^\/api\/bookings\/[^/]+\/customer-confirm$/,
 ];
 
-// Defense in depth: these operational datasets/actions must never be anonymous.
-// Public booking intake and customer-facing inquiry routes are intentionally
-// excluded; provider registries, financial details, status operations and admin
-// surfaces require application-level auth before Vercel contacts Cloud Run.
 const PRIVILEGED_PREFIXES = [
   '/api/admin',
   '/api/internal',
@@ -93,6 +89,11 @@ const PRIVILEGED_PREFIXES = [
   '/api/provider/status',
   '/api/operators/status',
 ];
+
+const PAYMENT_CREATION_PATHS = new Set([
+  '/api/stripe/create-checkout-session',
+  '/api/paypal/create-order',
+]);
 
 function env(name: string): string {
   return String(process.env[name] || '').trim();
@@ -204,7 +205,6 @@ async function getCloudRunIdToken(req: VercelRequest): Promise<string> {
 
   const accessToken = await exchangeVercelOidcForGoogleAccessToken(getRuntimeOidcToken(req));
   const token = await generateCloudRunIdToken(accessToken);
-
   cloudRunTokenCache = { token, expiresAt: now + 50 * 60_000 };
   return token;
 }
@@ -223,6 +223,47 @@ function targetUrl(req: VercelRequest): string {
     ? original
     : `/api/${original.replace(/^\//, '')}`;
   return `${backend}${normalized}`;
+}
+
+async function assertProviderEvidenceBeforePayment(bookingId: string, cloudRunIdToken: string) {
+  if (!bookingId) {
+    return { ok: false as const, status: 400, error: 'booking_id_required', message: 'Se requiere una reserva válida antes de crear un pago.' };
+  }
+
+  const backend = requireEnv('CLOUD_RUN_BACKEND_URL').replace(/\/$/, '');
+  const statusResponse = await fetch(`${backend}/api/provider/status/${encodeURIComponent(bookingId)}`, {
+    method: 'GET',
+    headers: {
+      accept: 'application/json',
+      'x-serverless-authorization': `Bearer ${cloudRunIdToken}`,
+      'x-crt-gateway': 'vercel-oidc-wif-payment-precheck',
+    },
+    redirect: 'manual',
+    signal: AbortSignal.timeout(15_000),
+  });
+  const data = await statusResponse.json().catch(() => ({})) as any;
+  if (!statusResponse.ok) {
+    return {
+      ok: false as const,
+      status: statusResponse.status === 404 ? 404 : 409,
+      error: 'provider_evidence_unavailable',
+      message: 'No se pudo verificar la confirmación del proveedor para esta reserva.'
+    };
+  }
+
+  const providerStatus = String(data.providerStatus || '').toLowerCase();
+  const providerConfirmed = Boolean(data.providerConfirmedAt)
+    || ['confirmed', 'confirmada', 'available', 'accepted'].includes(providerStatus);
+  if (!providerConfirmed) {
+    return {
+      ok: false as const,
+      status: 409,
+      error: 'provider_confirmation_required',
+      message: 'El proveedor todavía no ha confirmado disponibilidad. No se generó ningún cobro.'
+    };
+  }
+
+  return { ok: true as const };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -247,8 +288,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const cloudRunIdToken = await getCloudRunIdToken(req);
-    const headers = new Headers();
 
+    if (PAYMENT_CREATION_PATHS.has(pathname)) {
+      const bookingId = String(req.body?.bookingId || '').trim();
+      const providerGate = await assertProviderEvidenceBeforePayment(bookingId, cloudRunIdToken);
+      if (!providerGate.ok) {
+        return res.status(providerGate.status).json({
+          success: false,
+          error: providerGate.error,
+          message: providerGate.message,
+        });
+      }
+    }
+
+    const headers = new Headers();
     for (const [name, value] of Object.entries(req.headers)) {
       const lower = name.toLowerCase();
       if (HOP_BY_HOP.has(lower) || lower === 'x-vercel-oidc-token' || value === undefined) continue;
