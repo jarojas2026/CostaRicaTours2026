@@ -31,6 +31,13 @@ export const config = {
 type TokenCache = { token: string; expiresAt: number };
 let cloudRunTokenCache: TokenCache | null = null;
 
+type ProviderEvidenceState = 'pending' | 'confirmed' | 'unavailable' | 'not_found' | 'error';
+type ProviderEvidence = {
+  state: ProviderEvidenceState;
+  statusCode: number;
+  providerConfirmedAt?: string | null;
+};
+
 const HOP_BY_HOP = new Set([
   'connection',
   'keep-alive',
@@ -94,6 +101,8 @@ const PAYMENT_CREATION_PATHS = new Set([
   '/api/stripe/create-checkout-session',
   '/api/paypal/create-order',
 ]);
+
+const CUSTOMER_READINESS_PREFIX = '/api/customer/booking-readiness/';
 
 function env(name: string): string {
   return String(process.env[name] || '').trim();
@@ -225,41 +234,52 @@ function targetUrl(req: VercelRequest): string {
   return `${backend}${normalized}`;
 }
 
-async function assertProviderEvidenceBeforePayment(bookingId: string, cloudRunIdToken: string) {
-  if (!bookingId) {
-    return { ok: false as const, status: 400, error: 'booking_id_required', message: 'Se requiere una reserva válida antes de crear un pago.' };
-  }
+function customerReadinessBookingId(pathname: string): string | null {
+  if (!pathname.startsWith(CUSTOMER_READINESS_PREFIX)) return null;
+  const bookingId = decodeURIComponent(pathname.slice(CUSTOMER_READINESS_PREFIX.length)).trim();
+  return /^CR-PV-[0-9a-f-]{30,}$/i.test(bookingId) ? bookingId : null;
+}
 
+async function readProviderEvidence(bookingId: string, cloudRunIdToken: string): Promise<ProviderEvidence> {
   const backend = requireEnv('CLOUD_RUN_BACKEND_URL').replace(/\/$/, '');
   const statusResponse = await fetch(`${backend}/api/provider/status/${encodeURIComponent(bookingId)}`, {
     method: 'GET',
     headers: {
       accept: 'application/json',
       'x-serverless-authorization': `Bearer ${cloudRunIdToken}`,
-      'x-crt-gateway': 'vercel-oidc-wif-payment-precheck',
+      'x-crt-gateway': 'vercel-oidc-wif-provider-evidence',
     },
     redirect: 'manual',
     signal: AbortSignal.timeout(15_000),
   });
   const data = await statusResponse.json().catch(() => ({})) as any;
-  if (!statusResponse.ok) {
-    return {
-      ok: false as const,
-      status: statusResponse.status === 404 ? 404 : 409,
-      error: 'provider_evidence_unavailable',
-      message: 'No se pudo verificar la confirmación del proveedor para esta reserva.'
-    };
-  }
+  if (statusResponse.status === 404) return { state: 'not_found', statusCode: 404 };
+  if (!statusResponse.ok) return { state: 'error', statusCode: 502 };
 
   const providerStatus = String(data.providerStatus || '').toLowerCase();
-  const providerConfirmed = Boolean(data.providerConfirmedAt)
-    || ['confirmed', 'confirmada', 'available', 'accepted'].includes(providerStatus);
-  if (!providerConfirmed) {
+  if (data.providerConfirmedAt || ['confirmed', 'confirmada', 'available', 'accepted'].includes(providerStatus)) {
+    return { state: 'confirmed', statusCode: 200, providerConfirmedAt: data.providerConfirmedAt || null };
+  }
+  if (['rejected', 'declined', 'unavailable', 'cancelled', 'canceled'].includes(providerStatus)) {
+    return { state: 'unavailable', statusCode: 200 };
+  }
+  return { state: 'pending', statusCode: 200 };
+}
+
+async function assertProviderEvidenceBeforePayment(bookingId: string, cloudRunIdToken: string) {
+  if (!bookingId) {
+    return { ok: false as const, status: 400, error: 'booking_id_required', message: 'Se requiere una reserva válida antes de crear un pago.' };
+  }
+
+  const evidence = await readProviderEvidence(bookingId, cloudRunIdToken);
+  if (evidence.state !== 'confirmed') {
     return {
       ok: false as const,
-      status: 409,
-      error: 'provider_confirmation_required',
-      message: 'El proveedor todavía no ha confirmado disponibilidad. No se generó ningún cobro.'
+      status: evidence.statusCode === 404 ? 404 : 409,
+      error: evidence.state === 'not_found' ? 'booking_not_found' : 'provider_confirmation_required',
+      message: evidence.state === 'not_found'
+        ? 'La solicitud de reserva no existe.'
+        : 'El proveedor todavía no ha confirmado disponibilidad. No se generó ningún cobro.'
     };
   }
 
@@ -288,6 +308,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const cloudRunIdToken = await getCloudRunIdToken(req);
+    const readinessBookingId = customerReadinessBookingId(pathname);
+
+    if (pathname.startsWith(CUSTOMER_READINESS_PREFIX)) {
+      if (!readinessBookingId) {
+        return res.status(400).json({ success: false, error: 'invalid_booking_id', state: 'error', readyForPayment: false });
+      }
+      const evidence = await readProviderEvidence(readinessBookingId, cloudRunIdToken);
+      if (evidence.state === 'not_found') {
+        return res.status(404).json({ success: false, error: 'booking_not_found', state: 'not_found', readyForPayment: false });
+      }
+      if (evidence.state === 'error') {
+        return res.status(502).json({ success: false, error: 'provider_evidence_unavailable', state: 'error', readyForPayment: false });
+      }
+      return res.status(200).json({
+        success: true,
+        bookingId: readinessBookingId,
+        state: evidence.state,
+        readyForPayment: evidence.state === 'confirmed',
+        providerConfirmedAt: evidence.state === 'confirmed' ? evidence.providerConfirmedAt || null : null,
+      });
+    }
 
     if (PAYMENT_CREATION_PATHS.has(pathname)) {
       const bookingId = String(req.body?.bookingId || '').trim();
