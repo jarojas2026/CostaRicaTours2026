@@ -430,7 +430,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
   };
 
   return (
-    <div className="fixed bottom-[calc(4.8rem+env(safe-area-inset-bottom))] right-3 sm:right-4 lg:bottom-6 lg:right-6 z-[80]">
+    <div className="fixed bottom-[calc(9rem+env(safe-area-inset-bottom))] right-3 sm:right-4 lg:bottom-6 lg:right-6 z-[80]">
       <AnimatePresence>
         {isOpen && (
           <motion.div

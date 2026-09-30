@@ -292,7 +292,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-white/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-[10000] bg-white/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
       <div className="bg-white w-full max-w-3xl rounded-[2.5rem] border border-neutral-200 shadow-2xl overflow-hidden flex flex-col my-auto max-h-[90vh]">
         
         {/* Header */}
