@@ -1,5 +1,4 @@
 import { getFirestoreDb } from './bookingService';
-import { getProvidersOverview } from './providerCommunicationService';
 
 export type OperationalProvider = {
   id: string;
@@ -24,6 +23,8 @@ export type OperationalProvider = {
 };
 
 const clean = (value: unknown, max = 400) => String(value ?? '').trim().slice(0, max);
+const PROVIDER_LIMIT = Math.max(25, Math.min(1000, Number(process.env.OPERATIONAL_PROVIDER_READ_LIMIT || 250)));
+const ORDER_LIMIT = Math.max(25, Math.min(1000, Number(process.env.OPERATIONAL_ORDER_READ_LIMIT || 250)));
 
 function listStrings(value: unknown) {
   return Array.isArray(value) ? value.map(v => clean(v, 160)).filter(Boolean) : [];
@@ -57,15 +58,43 @@ function normalizeProvider(id: string, data: Record<string, any>, sourceCollecti
   };
 }
 
+async function readProviderCollection(collectionName: OperationalProvider['sourceCollection']) {
+  const db = getFirestoreDb();
+  if (!db) return [] as any[];
+  try {
+    const canonical = collectionName === 'operators'
+      ? db.collection(collectionName).where('verified', '==', true).where('active', '==', true).limit(PROVIDER_LIMIT)
+      : db.collection(collectionName).where('verificado', '==', true).where('activo', '==', true).limit(PROVIDER_LIMIT);
+    const snap = await canonical.get();
+    return snap.docs || [];
+  } catch {
+    // Backward-compatible fallback for records that still use mixed field names.
+    const snap = await db.collection(collectionName).limit(PROVIDER_LIMIT).get().catch(() => null);
+    return snap?.docs || [];
+  }
+}
+
+async function readRecentServiceOrders() {
+  const db = getFirestoreDb();
+  if (!db) return [] as any[];
+  try {
+    const snap = await db.collection('service_orders').orderBy('dispatchedAt', 'desc').limit(ORDER_LIMIT).get();
+    return (snap.docs || []).map((doc: any) => ({ id: doc.id, ...(doc.data() || {}) }));
+  } catch {
+    const snap = await db.collection('service_orders').limit(ORDER_LIMIT).get().catch(() => null);
+    return (snap?.docs || []).map((doc: any) => ({ id: doc.id, ...(doc.data() || {}) }))
+      .sort((a: any, b: any) => Date.parse(String(b.dispatchedAt || b.updatedAt || '')) - Date.parse(String(a.dispatchedAt || a.updatedAt || '')));
+  }
+}
+
 export async function listVerifiedOperationalProviders(): Promise<OperationalProvider[]> {
   const db = getFirestoreDb();
   if (!db) return [];
 
   const byId = new Map<string, OperationalProvider>();
   for (const collectionName of ['operators', 'proveedores'] as const) {
-    const snap = await db.collection(collectionName).get().catch(() => null);
-    if (!snap) continue;
-    for (const doc of snap.docs || []) {
+    const docs = await readProviderCollection(collectionName);
+    for (const doc of docs) {
       const provider = normalizeProvider(doc.id, doc.data() || {}, collectionName);
       if (!provider) continue;
       // Prefer the canonical operators collection when an ID exists in both.
@@ -76,32 +105,41 @@ export async function listVerifiedOperationalProviders(): Promise<OperationalPro
 }
 
 export async function getOperationalProviderOverview() {
-  const providers = await listVerifiedOperationalProviders();
-  // Service-order state is real runtime state; legacy provider metadata is deliberately discarded.
-  const orderOverview = getProvidersOverview();
-  const orders = Array.isArray(orderOverview.recentServiceOrders) ? orderOverview.recentServiceOrders : [];
+  const [providers, orders] = await Promise.all([
+    listVerifiedOperationalProviders(),
+    readRecentServiceOrders()
+  ]);
   const providerIds = new Set(providers.map(provider => provider.id));
   const operationalOrders = orders.filter((order: any) => providerIds.has(String(order.providerId || '')));
 
   return {
-    sourceOfTruth: 'firestore_verified_providers',
+    sourceOfTruth: 'firestore_verified_providers_and_service_orders',
     observedAt: new Date().toISOString(),
     totalProviders: providers.length,
     activeProviders: providers.length,
     providers: providers.map(provider => {
       const providerOrders = operationalOrders.filter((order: any) => String(order.providerId) === provider.id);
       const completed = providerOrders.filter((order: any) => order.status === 'completed');
-      const confirmed = providerOrders.filter((order: any) => ['confirmed', 'in_progress', 'completed'].includes(String(order.status)));
+      const accepted = providerOrders.filter((order: any) => ['confirmed', 'in_progress', 'completed'].includes(String(order.status)));
+      const responseSamples = providerOrders
+        .map((order: any) => {
+          const dispatched = Date.parse(String(order.dispatchedAt || ''));
+          const responded = Date.parse(String(order.confirmedAt || order.rejectedAt || order.updatedAt || ''));
+          return Number.isFinite(dispatched) && Number.isFinite(responded) && responded >= dispatched ? (responded - dispatched) / 60_000 : null;
+        })
+        .filter((value: any) => Number.isFinite(value));
       return {
         ...provider,
         totalOrdersAssigned: providerOrders.length,
         activeOrdersCount: providerOrders.filter((order: any) => ['dispatched', 'confirmed', 'in_progress'].includes(String(order.status))).length,
-        observedAcceptanceRate: providerOrders.length ? Math.round((confirmed.length / providerOrders.length) * 1000) / 10 : null,
+        observedAcceptanceRate: providerOrders.length ? Math.round((accepted.length / providerOrders.length) * 1000) / 10 : null,
+        averageResponseMinutes: responseSamples.length ? Math.round((responseSamples.reduce((sum: number, value: number) => sum + value, 0) / responseSamples.length) * 10) / 10 : null,
         completedOrdersCount: completed.length
       };
     }),
     recentServiceOrders: operationalOrders.slice(0, 25),
     activeOrdersCount: operationalOrders.filter((order: any) => ['dispatched', 'confirmed', 'in_progress'].includes(String(order.status))).length,
-    legacyDirectoryExcluded: true
+    legacyDirectoryExcluded: true,
+    readWindow: { providersPerCollection: PROVIDER_LIMIT, serviceOrders: ORDER_LIMIT }
   };
 }
