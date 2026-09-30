@@ -98,6 +98,7 @@ import {
   executePreSaleProspectRecovery,
   executePostSaleVipLoyalty
 } from './backend/nativeWorkflows';
+import { hasInternalJobToken } from './backend/internalJobAuth';
 import { handleStripeWebhook, handlePayPalWebhook } from './backend/paymentWebhookHttpService';
 import { executeAutomatedProviderPayouts } from './backend/providerPayoutService';
 import { executeSinpeVerification } from './backend/sinpeService';
@@ -151,12 +152,7 @@ function requireAgentTool(req: express.Request, res: express.Response, next: exp
   if (!configured) {
     return res.status(503).json({ error: 'Herramientas internas de agentes no configuradas.' });
   }
-  const authorization = req.headers.authorization;
-  const provided = authorization?.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
-  if (!provided) return res.status(401).json({ error: 'Autenticación requerida.' });
-  const expectedBuffer = Buffer.from(configured);
-  const providedBuffer = Buffer.from(provided);
-  if (expectedBuffer.length !== providedBuffer.length || !crypto.timingSafeEqual(expectedBuffer, providedBuffer)) {
+  if (!hasInternalJobToken(req.headers, configured)) {
     return res.status(401).json({ error: 'No autorizado.' });
   }
   next();
@@ -336,10 +332,7 @@ app.post('/api/webhooks/whatsapp', async (req, res) => {
 
 app.post('/api/internal/customer-intake/process', async (req, res) => {
   const configured = process.env.CUSTOMER_INTAKE_JOB_TOKEN;
-  const authorization = String(req.headers.authorization || '');
-  const provided = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
-  if (!configured || !provided || provided.length !== configured.length ||
-      !crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(configured))) {
+  if (!hasInternalJobToken(req.headers, configured)) {
     return res.status(401).json({ success: false, error: 'No autorizado.' });
   }
   try {
