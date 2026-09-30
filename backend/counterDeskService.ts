@@ -1,6 +1,6 @@
 import { getAllBookings, checkTourAvailability } from './bookingService';
 import { getAlerts } from './alertService';
-import { getProvidersOverview } from './providerCommunicationService';
+import { getOperationalProviderOverview } from './operationalProviderRegistryService';
 import { getNativeEngineStatus } from './nativeAutomationEngine';
 import { processChatInquiry } from './aiAssistantService';
 import { getOperationalMemory, rememberTurn } from './memoryService';
@@ -27,11 +27,9 @@ function normalizeChannel(context?: Record<string, any>): ConciergeChannel {
 
 /**
  * Public unified Concierge boundary.
- *
  * Customers interact with one stable Counter/Concierge identity. Specialist
  * agents, model selection, memory retrieval and tool routing remain backend
- * implementation details. This keeps web, voice, email and WhatsApp sessions
- * consistent without leaking prompt/knowledge context to the public API.
+ * implementation details.
  */
 export async function askCounterDesk(input: CounterDeskAskInput) {
   const message = String(input.message || '').trim().slice(0, 5000);
@@ -66,7 +64,6 @@ export async function askCounterDesk(input: CounterDeskAskInput) {
 
   return {
     success: true,
-    // Stable public identity: internal specialist/model routing is intentionally hidden.
     agentId: 'counter_agent',
     publicRole: 'concierge',
     reply: result.reply,
@@ -87,7 +84,15 @@ export async function getCounterOperationsSnapshot() {
   const [bookings, alerts, providers] = await Promise.all([
     getAllBookings(),
     getAlerts({ resolved: false }),
-    Promise.resolve(getProvidersOverview())
+    getOperationalProviderOverview().catch(() => ({
+      sourceOfTruth: 'unavailable',
+      totalProviders: 0,
+      activeProviders: 0,
+      activeOrdersCount: 0,
+      providers: [],
+      recentServiceOrders: [],
+      legacyDirectoryExcluded: true
+    }))
   ]);
 
   const now = Date.now();
@@ -98,21 +103,22 @@ export async function getCounterOperationsSnapshot() {
 
   const pendingPayments = bookings.filter((b: any) => ['pending', 'pendiente_pago'].includes(String(b.paymentStatus || b.status || '').toLowerCase()));
   const unresolvedCritical = alerts.filter((a: any) => a.severity === 'critical').length;
-
-  const providerList = Array.isArray((providers as any).providers)
-    ? (providers as any).providers
-    : Array.isArray(providers) ? providers : [];
+  const providerList = Array.isArray((providers as any).providers) ? (providers as any).providers : [];
 
   return {
     generatedAt: new Date().toISOString(),
     engine: getNativeEngineStatus(),
+    providerTruth: {
+      sourceOfTruth: (providers as any).sourceOfTruth || 'firestore_verified_providers',
+      legacyDirectoryExcluded: true
+    },
     counters: {
       totalBookings: bookings.length,
       upcoming72h: upcoming.length,
       pendingPayments: pendingPayments.length,
       unresolvedAlerts: alerts.length,
       criticalAlerts: unresolvedCritical,
-      activeProviders: providerList.filter((p: any) => p.status === 'active').length
+      activeProviders: Number((providers as any).activeProviders || providerList.length)
     },
     upcoming: upcoming.slice(0, 12).map((b: any) => ({
       bookingId: b.bookingId || b.id,
@@ -128,9 +134,15 @@ export async function getCounterOperationsSnapshot() {
       bookingId: a.bookingId, providerId: a.providerId, createdAt: a.createdAt
     })),
     providers: providerList.slice(0, 20).map((p: any) => ({
-      id: p.id, name: p.name, region: p.region, status: p.status,
-      slaTargetMinutes: p.slaTargetMinutes, averageResponseMinutes: p.averageResponseMinutes,
-      acceptanceRate: p.acceptanceRate
+      id: p.id,
+      name: p.name,
+      region: p.region,
+      status: p.operationalStatus || 'active',
+      verified: p.verified === true,
+      sourceCollection: p.sourceCollection,
+      slaTargetMinutes: p.slaTargetMinutes,
+      observedAcceptanceRate: p.observedAcceptanceRate,
+      activeOrdersCount: p.activeOrdersCount
     }))
   };
 }
@@ -173,6 +185,7 @@ export async function organizeCounterDesk() {
   const prompt = [
     'Eres el supervisor operativo de una plataforma de tours en Costa Rica.',
     'Organiza el trabajo a partir del snapshot real. No inventes datos, no cambies precios, reservas ni pagos.',
+    'La lista de proveedores incluida ya está filtrada a registros verificados/activos de Firestore; si está vacía, no inventes proveedores.',
     'Devuelve JSON con: summary, priorities (máximo 8 objetos con id, priority high|medium|low, action, reason), watchlist (máximo 6 strings), handoffs (máximo 6 strings).',
     'Prioriza seguridad, pagos pendientes, salidas próximas, alertas y cobertura de proveedores.',
     JSON.stringify(snapshot).slice(0, 60000)
