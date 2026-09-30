@@ -4,6 +4,7 @@ import {
   RefreshCw, Cpu, Zap, Navigation, DollarSign, Radio, Check, X,
   Sparkles, MapPin, FileText, AlertTriangle
 } from 'lucide-react';
+import { auth } from '../firebase';
 
 interface ProviderCommunicationHubProps {
   language?: 'es' | 'en';
@@ -18,17 +19,36 @@ export const ProviderCommunicationHub: React.FC<ProviderCommunicationHubProps> =
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<'providers' | 'orders' | 'self_dev' | 'routes'>('providers');
 
+  const adminToken = async () => {
+    const user = auth.currentUser;
+    if (!user) throw new Error(language === 'es' ? 'Sesión administrativa no disponible.' : 'Admin session is not available.');
+    return user.getIdToken();
+  };
+
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [resProv, resSelfDev] = await Promise.all([
-        fetch('/api/providers').then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch('/api/self-dev/status').then(r => r.ok ? r.json() : null).catch(() => null)
-      ]);
-      if (resProv) setProvidersData(resProv);
-      if (resSelfDev) setSelfDevData(resSelfDev);
-    } catch (e) {
+      const token = await adminToken();
+      const response = await fetch('/api/admin/control-center', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const control = await response.json();
+      if (!response.ok) throw new Error(control?.error || control?.message || 'Admin Control Center request failed');
+      const providerPlane = control?.providers || {};
+      setProvidersData({
+        sourceOfTruth: providerPlane.sourceOfTruth,
+        legacyDirectoryExcluded: providerPlane.legacyDirectoryExcluded === true,
+        observedAt: providerPlane.observedAt,
+        providers: Array.isArray(providerPlane.list) ? providerPlane.list.filter((provider: any) => provider?.verified === true) : [],
+        recentServiceOrders: Array.isArray(providerPlane.recentServiceOrders) ? providerPlane.recentServiceOrders : []
+      });
+      setSelfDevData(control?.evolution?.selfDevelopment || null);
+    } catch (e: any) {
       console.error('Error fetching provider hub data:', e);
+      setProvidersData({ providers: [], recentServiceOrders: [], legacyDirectoryExcluded: true });
+      setActionFeedback(language === 'es'
+        ? `No se pudo leer el plano operativo verificado: ${e?.message || 'error no especificado'}`
+        : `Verified operational plane could not be loaded: ${e?.message || 'unspecified error'}`);
     } finally {
       setLoading(false);
     }
@@ -43,7 +63,11 @@ export const ProviderCommunicationHub: React.FC<ProviderCommunicationHubProps> =
   const handleRunSelfHealing = async () => {
     try {
       setHealingRunning(true);
-      const res = await fetch('/api/self-dev/run-healing', { method: 'POST' });
+      const token = await adminToken();
+      const res = await fetch('/api/self-dev/run-healing', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Self-healing request failed');
 
@@ -69,9 +93,13 @@ export const ProviderCommunicationHub: React.FC<ProviderCommunicationHubProps> =
 
   const handleProviderAction = async (orderId: string, action: 'confirm' | 'reject' | 'delay' | 'no_show') => {
     try {
+      const token = await adminToken();
       const res = await fetch('/api/providers/action', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify({ orderId, action })
       });
       const data = await res.json();
@@ -86,7 +114,7 @@ export const ProviderCommunicationHub: React.FC<ProviderCommunicationHubProps> =
     }
   };
 
-  const providers = providersData?.providers || [];
+  const providers = (providersData?.providers || []).filter((provider: any) => provider?.verified === true);
   const serviceOrders = providersData?.recentServiceOrders || [];
   const selfLogs = selfDevData?.recentHealingLogs || [];
   const routeOptimizations = selfDevData?.routeOptimizations || [];
@@ -111,8 +139,12 @@ export const ProviderCommunicationHub: React.FC<ProviderCommunicationHubProps> =
           </div>
           <p className="text-xs text-emerald-200/80">
             {language === 'es'
-              ? 'Órdenes, SLA, recuperación y señales comerciales basadas en datos operativos registrados. Los valores modelados se muestran como advisory, no como verdad transaccional.'
-              : 'Orders, SLA, recovery and commercial signals based on recorded operational data. Modeled values are shown as advisory, not transactional truth.'}
+              ? 'Órdenes y proveedores desde el plano administrativo autenticado. Sólo registros verificados/activos de Firestore participan como verdad operacional.'
+              : 'Orders and providers from the authenticated admin plane. Only verified/active Firestore records participate as operational truth.'}
+          </p>
+          <p className="text-[10px] text-slate-500">
+            {providersData?.sourceOfTruth || (language === 'es' ? 'Fuente operativa no disponible' : 'Operational source unavailable')}
+            {providersData?.observedAt ? ` • ${new Date(providersData.observedAt).toLocaleString()}` : ''}
           </p>
         </div>
 
@@ -173,6 +205,7 @@ export const ProviderCommunicationHub: React.FC<ProviderCommunicationHubProps> =
             <div className="md:col-span-2 bg-slate-900/60 rounded-2xl p-8 text-center text-slate-400 border border-slate-800">
               <ShieldCheck className="w-10 h-10 mx-auto text-slate-600 mb-2" />
               <p className="font-bold text-white">{language === 'es' ? 'No hay proveedores operativos verificados para mostrar' : 'No verified operational providers to display'}</p>
+              <p className="text-xs text-slate-500 mt-1">{language === 'es' ? 'No se utiliza el directorio histórico como fallback.' : 'Historical directory is not used as fallback.'}</p>
             </div>
           )}
           {providers.map((prov: any) => (
@@ -180,11 +213,11 @@ export const ProviderCommunicationHub: React.FC<ProviderCommunicationHubProps> =
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <div className="flex items-center gap-2">
-                    {prov.verified && <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">VERIFICADO</span>}
+                    <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">VERIFICADO</span>
                     {prov.cstLevel != null && <span className="text-[10px] text-slate-400">CST: {prov.cstLevel}</span>}
                   </div>
                   <h4 className="text-sm font-black text-white mt-1 group-hover:text-emerald-300 transition">{prov.name}</h4>
-                  <p className="text-xs text-slate-400">{prov.contactName} • {prov.region}</p>
+                  <p className="text-xs text-slate-400">{prov.contactName || '—'} • {prov.region || 'Costa Rica'}</p>
                 </div>
                 <div className="text-right shrink-0">
                   {prov.averageResponseMinutes != null && prov.slaTargetMinutes != null ? (
@@ -194,7 +227,7 @@ export const ProviderCommunicationHub: React.FC<ProviderCommunicationHubProps> =
                   ) : (
                     <span className="text-[10px] text-slate-500">SLA sin evidencia suficiente</span>
                   )}
-                  {prov.acceptanceRate != null && <p className="text-[10px] text-slate-400 mt-0.5">Aceptación observada: {prov.acceptanceRate}%</p>}
+                  {prov.observedAcceptanceRate != null && <p className="text-[10px] text-slate-400 mt-0.5">Aceptación observada: {prov.observedAcceptanceRate}%</p>}
                 </div>
               </div>
 
@@ -203,12 +236,10 @@ export const ProviderCommunicationHub: React.FC<ProviderCommunicationHubProps> =
                   <span className="text-slate-400">Canal operativo:</span>
                   <span className="text-amber-300 font-bold flex items-center gap-1"><MessageSquare className="w-3 h-3 text-emerald-400" /> {prov.whatsapp ? 'WhatsApp configurado' : 'No configurado'}</span>
                 </div>
-                {prov.payoutAccount?.number && (
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-slate-400">Liquidación:</span>
-                    <span className="font-mono text-white text-[10px]">{prov.payoutAccount?.type === 'sinpe_movil' ? 'SINPE Móvil configurado' : 'Cuenta configurada'}</span>
-                  </div>
-                )}
+                <div className="flex justify-between items-center text-[11px]">
+                  <span className="text-slate-400">Órdenes activas:</span>
+                  <span className="font-mono text-white text-[10px]">{Number(prov.activeOrdersCount || 0)}</span>
+                </div>
               </div>
 
               <div className="flex items-center gap-2 pt-1">
@@ -247,7 +278,7 @@ export const ProviderCommunicationHub: React.FC<ProviderCommunicationHubProps> =
             <div className="bg-slate-900/60 rounded-2xl p-8 text-center text-slate-400 border border-slate-800">
               <FileText className="w-10 h-10 mx-auto text-slate-600 mb-2" />
               <p className="font-bold text-white">{language === 'es' ? 'No hay órdenes de servicio activas' : 'No active service orders'}</p>
-              <p className="text-xs text-slate-500 mt-1">{language === 'es' ? 'Las órdenes aparecen aquí después de ser creadas por el lifecycle real de reserva.' : 'Orders appear here after creation by the real booking lifecycle.'}</p>
+              <p className="text-xs text-slate-500 mt-1">{language === 'es' ? 'Las órdenes aparecen aquí desde Firestore después de ser creadas por el lifecycle real de reserva.' : 'Orders appear here from Firestore after creation by the real booking lifecycle.'}</p>
             </div>
           ) : serviceOrders.map((order: any) => (
             <div key={order.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
