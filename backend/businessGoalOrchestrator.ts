@@ -84,6 +84,7 @@ export async function executeBusinessGoal(input: ExecuteBusinessGoalInput): Prom
       sessionId: continuity.sessionId,
       goal,
       requiredFacts: pendingFacts,
+      requirements: input.requirements,
       nextAction,
       sourceChannel: input.channel
     });
