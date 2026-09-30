@@ -346,7 +346,7 @@ export default {
     const url = new URL(request.url);
     const rewrittenPath = url.searchParams.get('__crt_path');
     if (url.pathname === '/api/[...path]' && rewrittenPath !== null) {
-      url.pathname = '/api/' + rewrittenPath.replace(/^\\/+/, '');
+      url.pathname = '/api/' + rewrittenPath.replace(/^\/+/, '');
     }
     url.searchParams.delete('__crt_path');
     // Explicit facade endpoints own these paths. A direct request to the
