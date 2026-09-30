@@ -18,8 +18,9 @@ concurrency:
 
 jobs:
   build:
-    name: Instalar, verificar tipos y compilar
+    name: Instalar, verificar contratos, tipos y compilar
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Descargar el código del repositorio
         uses: actions/checkout@v7
@@ -39,7 +40,10 @@ jobs:
       - name: Auditar fixtures y tokens mock
         run: node scripts/securityFixtureAudit.mjs
 
-      - name: Verificar contratos críticos del lifecycle
+      - name: Auditar routing de WhatsApp y escalamiento IA
+        run: npm run audit:whatsapp
+
+      - name: Verificar contratos críticos del lifecycle y memoria organizativa
         run: npm run test:contracts
 
       - name: Verificar tipos de TypeScript (equivalente a "npm run lint")
