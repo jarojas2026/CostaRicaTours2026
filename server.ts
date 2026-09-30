@@ -162,10 +162,6 @@ app.set('trust proxy', 1);
 app.use(express.json({ limit: '256kb', verify: (req, _res, buf) => { (req as any).rawBody = Buffer.from(buf); } }));
 app.use(express.urlencoded({ extended: true, limit: '32kb', parameterLimit: 100 }));
 
-// Signature verification uses rawBody captured above; fulfillment stays canonical.
-app.post('/api/webhooks/stripe', handleStripeWebhook);
-app.post('/api/webhooks/paypal', handlePayPalWebhook);
-
 // ==========================================
 // 🛡️ RATE LIMITING MIDDLEWARES
 // ==========================================
@@ -207,6 +203,10 @@ const aiAdmission = createInFlightLimiter(20, 3);
 const bookingAdmission = createInFlightLimiter(30, 2);
 
 app.use('/api/', generalApiLimiter, apiAdmission.middleware);
+
+// Signature verification uses rawBody captured above; fulfillment stays canonical.
+app.post('/api/webhooks/stripe', handleStripeWebhook);
+app.post('/api/webhooks/paypal', handlePayPalWebhook);
 
 // Health check endpoint
 app.post('/api/customer-intake', chatLimiter, intakeAdmission.middleware, async (req, res) => {
