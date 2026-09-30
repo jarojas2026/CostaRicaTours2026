@@ -1,9 +1,8 @@
 name: Deploy to Google Cloud Run
 
 # Producción se despliega únicamente después de que el gate principal
-# Build & Type Check termine exitosamente en main. Esto evita construir o
-# desplegar commits que todavía no han superado seguridad, contratos, tipos
-# y compilación. workflow_dispatch se conserva para recuperación manual.
+# Build & Type Check termine exitosamente en main. workflow_dispatch se
+# conserva para recuperación manual.
 on:
   workflow_run:
     workflows: ["Build & Type Check"]
@@ -14,13 +13,16 @@ env:
   SERVICE_NAME: costa-rica-tours
   REGION: us-central1
   PROJECT_ID: gen-lang-client-0782739149
+  # Ruta preferida: Workload Identity Federation (OIDC sin llave persistente).
+  # Compatibilidad: si aún no existen estos secretos, se usa GCP_SA_KEY.
+  GCP_WIF_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+  GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+  GCP_SA_KEY_JSON: ${{ secrets.GCP_SA_KEY }}
 
 permissions:
   contents: read
   id-token: write
 
-# Sólo importa el despliegue más reciente. Si llega un commit nuevo y ya
-# validado, un deploy viejo deja de representar el estado deseado.
 concurrency:
   group: production-cloud-run-deploy
   cancel-in-progress: true
@@ -50,18 +52,32 @@ jobs:
         with:
           ref: ${{ steps.deploy_ref.outputs.sha }}
 
-      - name: Autenticar con Google Cloud
+      - name: Autenticar con Google Cloud — OIDC keyless (preferido)
+        if: env.GCP_WIF_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != ''
         uses: google-github-actions/auth@v3
         with:
-          credentials_json: "${{ secrets.GCP_SA_KEY }}"
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: Autenticar con Google Cloud — llave JSON (fallback temporal)
+        if: env.GCP_WIF_PROVIDER == '' || env.GCP_SERVICE_ACCOUNT == ''
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ env.GCP_SA_KEY_JSON }}
+
+      - name: Verificar que existe un método de autenticación configurado
+        shell: bash
+        run: |
+          if [ -z "$GCP_WIF_PROVIDER" ] && [ -z "$GCP_SA_KEY_JSON" ]; then
+            echo "::error::Configure GCP_WORKLOAD_IDENTITY_PROVIDER + GCP_SERVICE_ACCOUNT (recomendado) o GCP_SA_KEY como fallback."
+            exit 1
+          fi
 
       - name: Configurar gcloud CLI
         uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: ${{ env.PROJECT_ID }}
 
-      # El trigger workflow_run ya garantiza que CI completo pasó. Para un
-      # lanzamiento manual sí ejecutamos un gate local antes de tocar prod.
       - name: Preflight manual — contratos, tipos y build
         if: github.event_name == 'workflow_dispatch'
         run: |
