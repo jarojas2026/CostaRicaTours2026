@@ -123,7 +123,7 @@ export async function processStripeWebhook(rawBody: Buffer, signature: string | 
             paymentIntent: session.payment_intent
           }
         });
-        if (!updated.success) throw new Error(updated.message || 'No se pudo reconciliar Stripe.');
+        if (!updated.success) throw new Error(updated.error || 'No se pudo reconciliar Stripe.');
       }
       await finishEvent('stripe', event.id, { status: 'processed', bookingId, type: event.type });
       return { accepted: true, eventId: event.id, bookingId };
@@ -219,7 +219,7 @@ export async function processPayPalWebhook(headers: Record<string, string | stri
           paymentVerifiedAt: new Date().toISOString(),
           paymentEvidence: { provider: 'paypal', webhookEventId: eventId, captureId: resource.id }
         });
-        if (!updated.success) throw new Error(updated.message || 'No se pudo reconciliar PayPal.');
+        if (!updated.success) throw new Error(updated.error || 'No se pudo reconciliar PayPal.');
       }
       await finishEvent('paypal', eventId, { status: 'processed', bookingId, type: event.event_type });
       return { accepted: true, eventId, bookingId };
