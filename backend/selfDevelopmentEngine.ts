@@ -1,20 +1,15 @@
 /**
  * 🧠 MOTOR DE AUTO-DESARROLLO, AUTO-REPARACIÓN & INTELIGENCIA DINÁMICA 2026
  * =========================================================================
- * Provee capacidades autónomas avanzadas:
- * 1. Auto-Healing: Detección y corrección continua de anomalías (liberación de
- *    bloqueos expirados, saneamiento de errores de red, reintentos de webhook).
- * 2. Optimización de Rutas de Flota: Algoritmo de agrupamiento inteligente
- *    de hoteles (Central Valley, Guanacaste, Arenal) para reducir tiempos y CO2.
- * 3. Elasticidad de Precios Dinámicos (Self-Learning): Cálculo de demanda en
- *    tiempo real según temporada (Verde/Alta), ocupación de cupos y alertas CNE.
- * 4. Registro de Evolución & Telemetría: Historial de decisiones del sistema.
+ * Regla de evidencia: este módulo sólo reporta como ejecutada una acción que
+ * realmente ocurrió. Los scores derivados exponen su base y no sustituyen
+ * observabilidad de infraestructura. No se generan rutas, ahorros, SLA ni
+ * resultados sintéticos para decorar el panel administrativo.
  * =========================================================================
  */
 
 import { getAllBookings } from './bookingService';
 import { cleanupExpiredSoftHolds } from './cronEngine';
-import { createAlert } from './alertService';
 import { getProvidersOverview, handleProviderAction } from './providerCommunicationService';
 import { TOURS } from '../src/data/toursData';
 
@@ -45,177 +40,176 @@ export interface DynamicPricingInsight {
   recommendedPriceUSD: number;
   demandFactor: 'very_high' | 'high' | 'normal' | 'low';
   justification: string;
+  evidence?: {
+    bookingCount: number;
+    passengerCount: number;
+    modelAssumption: string;
+  };
 }
 
-// Historial de eventos de auto-desarrollo en memoria (inicia limpio y registra únicamente ejecuciones reales)
 const selfDevelopmentLog: SelfHealingAction[] = [];
 
+function clampScore(value: number) {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function currentSlaBreaches(overview: ReturnType<typeof getProvidersOverview>, now = Date.now()) {
+  return overview.recentServiceOrders.filter(order =>
+    order.status === 'dispatched' &&
+    Boolean(order.slaDeadline) &&
+    new Date(order.slaDeadline).getTime() < now
+  );
+}
+
+function healthFromObservedSignals(input: {
+  cleanupHealthy?: boolean;
+  unresolvedSlaBreaches: number;
+  failedRecoveries?: number;
+}) {
+  let score = 100;
+  if (input.cleanupHealthy === false) score -= 25;
+  score -= Math.min(45, input.unresolvedSlaBreaches * 15);
+  score -= Math.min(30, (input.failedRecoveries || 0) * 10);
+  return clampScore(score);
+}
+
 /**
- * Ejecuta un ciclo completo de auto-diagnóstico y auto-reparación
+ * Ejecuta un ciclo real de auto-diagnóstico y auto-reparación.
  */
 export async function runSelfHealingCycle(): Promise<{
   success: boolean;
   actionsExecuted: SelfHealingAction[];
   systemHealthScore: number;
+  healthScoreBasis: Record<string, unknown>;
   metrics: {
     staleLocksFreed: number;
+    slaBreachesDetected: number;
     slaBreachesRecovered: number;
+    slaBreachesUnresolved: number;
     routesOptimized: number;
   };
 }> {
   const actions: SelfHealingAction[] = [];
   const now = new Date();
 
-  // 1. Detección y liberación REAL de soft-holds expirados en base de datos
   const cleanupResult = await cleanupExpiredSoftHolds().catch(() => ({ success: false, releasedCount: 0, totalChecked: 0 }));
-  const freedLocksCount = cleanupResult.releasedCount || 0;
+  const freedLocksCount = Number(cleanupResult.releasedCount || 0);
 
   if (freedLocksCount > 0) {
     const lockAction: SelfHealingAction = {
       id: `sh_${Date.now()}_lock`,
       timestamp: now.toISOString(),
       category: 'soft_hold_cleanup',
-      description: `Auto-limpieza de ${freedLocksCount} bloqueos temporales que alcanzaron el límite de 15 minutos sin pago`,
-      impact: `${freedLocksCount} cupos liberados y devueltos al inventario público de reservas`,
+      description: `Liberación de ${freedLocksCount} soft-holds expirados detectados en la base de reservas.`,
+      impact: `${freedLocksCount} hold(s) pasaron por la rutina real de liberación de inventario.`,
       resolved: true
     };
     actions.push(lockAction);
     selfDevelopmentLog.unshift(lockAction);
   }
 
-  // 2. Verificación de SLAs de Operadores y Proveedores
-  const providerOverview = getProvidersOverview();
-  const unconfirmedOrders = providerOverview.recentServiceOrders.filter(
-    o => o.status === 'dispatched' && new Date(o.slaDeadline).getTime() < now.getTime()
-  );
-
+  const providerOverviewBefore = getProvidersOverview();
+  const staleOrders = currentSlaBreaches(providerOverviewBefore, now.getTime());
   let slaBreachesRecovered = 0;
-  if (unconfirmedOrders.length > 0) {
-    for (const staleOrder of unconfirmedOrders) {
-      await handleProviderAction({
+  let failedRecoveries = 0;
+
+  for (const staleOrder of staleOrders) {
+    try {
+      const result = await handleProviderAction({
         orderId: staleOrder.id,
         action: 'reject',
-        notes: 'Auto-remediación: SLA de confirmación de 30m excedido por el operador primario.'
-      }).catch(() => {});
-      slaBreachesRecovered++;
+        notes: 'Auto-remediación: SLA de confirmación excedido; iniciar recuperación/failover sólo con proveedor verificado.'
+      });
+      if (result.success) slaBreachesRecovered++;
+      else failedRecoveries++;
+    } catch {
+      failedRecoveries++;
     }
+  }
+
+  if (staleOrders.length > 0) {
     const slaAction: SelfHealingAction = {
       id: `sh_${Date.now()}_sla`,
       timestamp: now.toISOString(),
       category: 'provider_sla_escalation',
-      description: `Auto-escalación y reasignación failover de ${slaBreachesRecovered} órdenes con timeout de respuesta`,
-      impact: 'Cero cancelaciones imprevistas para los turistas',
-      resolved: true
+      description: `Se detectaron ${staleOrders.length} órdenes fuera de SLA; ${slaBreachesRecovered} se procesaron por la ruta real de recuperación.`,
+      impact: failedRecoveries > 0
+        ? `${failedRecoveries} orden(es) requieren seguimiento adicional o revisión humana.`
+        : 'Las órdenes detectadas fueron entregadas al flujo real de recuperación/failover.',
+      resolved: failedRecoveries === 0
     };
     actions.push(slaAction);
     selfDevelopmentLog.unshift(slaAction);
   }
 
-  // 3. Auto-optimización de memoria y conexiones
-  const memAction: SelfHealingAction = {
-    id: `sh_${Date.now()}_mem`,
-    timestamp: now.toISOString(),
-    category: 'memory_sanitization',
-    description: 'Saneamiento preventivo de búferes de logs y compactación de índices en memoria',
-    impact: 'Latencia promedio estabilizada en < 2ms por consulta',
-    resolved: true
-  };
-  actions.push(memAction);
-  selfDevelopmentLog.unshift(memAction);
+  if (selfDevelopmentLog.length > 50) selfDevelopmentLog.length = 50;
 
-  // Mantener solo los últimos 50 registros
-  if (selfDevelopmentLog.length > 50) {
-    selfDevelopmentLog.length = 50;
-  }
+  const providerOverviewAfter = getProvidersOverview();
+  const unresolved = currentSlaBreaches(providerOverviewAfter).length;
+  const systemHealthScore = healthFromObservedSignals({
+    cleanupHealthy: Boolean(cleanupResult.success),
+    unresolvedSlaBreaches: unresolved,
+    failedRecoveries
+  });
 
   return {
-    success: true,
+    success: Boolean(cleanupResult.success) && failedRecoveries === 0,
     actionsExecuted: actions,
-    systemHealthScore: 99.4,
+    systemHealthScore,
+    healthScoreBasis: {
+      derived: true,
+      definition: 'Internal operational score based only on soft-hold cleanup execution and currently observed provider SLA exceptions.',
+      cleanupHealthy: Boolean(cleanupResult.success),
+      bookingsCheckedForExpiredHolds: Number(cleanupResult.totalChecked || 0),
+      unresolvedSlaBreaches: unresolved,
+      failedRecoveries,
+      observedAt: new Date().toISOString()
+    },
     metrics: {
       staleLocksFreed: freedLocksCount,
+      slaBreachesDetected: staleOrders.length,
       slaBreachesRecovered,
-      routesOptimized: 2
+      slaBreachesUnresolved: unresolved,
+      routesOptimized: 0
     }
   };
 }
 
 /**
- * Optimización inteligente de rutas y horarios de recogida (Heurística de Agrupamiento)
+ * No devuelve rutas demostrativas. Hasta que exista telemetría real de pickups,
+ * tiempos/geo y una ejecución del optimizador, la respuesta correcta es vacía.
  */
 export function calculateOptimizedRoutes(): RouteOptimizationResult[] {
-  return [
-    {
-      zone: 'Valle Central (San José - Escazú - Heredia)',
-      totalPickups: 6,
-      originalEstimatedMinutes: 110,
-      optimizedEstimatedMinutes: 78,
-      minutesSaved: 32,
-      co2SavedKg: 4.8,
-      optimizedSequence: [
-        '1. Hotel Grano de Oro (San José Centro - 06:00 AM)',
-        '2. Gran Hotel Costa Rica (Avenida Central - 06:15 AM)',
-        '3. Radisson San José (Barrio Tournón - 06:25 AM)',
-        '4. AC Hotel by Marriott (Avenida Escazú - 06:45 AM)',
-        '5. InterContinental Costa Rica (Multiplaza - 06:55 AM)',
-        '6. Costa Rica Marriott Hotel Hacienda Belén (07:15 AM)'
-      ]
-    },
-    {
-      zone: 'Zona Arenal (La Fortuna - Volcán)',
-      totalPickups: 4,
-      originalEstimatedMinutes: 65,
-      optimizedEstimatedMinutes: 44,
-      minutesSaved: 21,
-      co2SavedKg: 3.1,
-      optimizedSequence: [
-        '1. Arenal Kioro Suites & Spa (07:30 AM)',
-        '2. Tabacón Thermal Resort & Spa (07:45 AM)',
-        '3. The Springs Resort & Spa (08:00 AM)',
-        '4. Hotel Los Lagos Nature Resort (08:15 AM)'
-      ]
-    }
-  ];
+  return [];
 }
 
 /**
- * Cálculo inteligente de elasticidad y demanda dinámica basado en reservas reales
+ * Señal comercial advisory basada en reservas registradas y catálogo.
+ * No cambia precios server-authoritative ni se presenta como disponibilidad.
  */
 export async function calculateDynamicPricingInsights(): Promise<DynamicPricingInsight[]> {
   const allBookings = await getAllBookings();
   const insights: DynamicPricingInsight[] = [];
-
-  // Analizar los 3 tours principales del catálogo
   const targetTours = TOURS.slice(0, 5);
 
   for (const tour of targetTours) {
-    const tourBookings = allBookings.filter(b => b.tourId === tour.id || (b.tourName && b.tourName.toLowerCase().includes(tour.id)));
-    const totalPax = tourBookings.reduce((sum, b) => sum + (b.adults || 1) + (b.children || 0), 0);
-    const capacity = (tour.maxGroupSize || 15) * 4; // Cupo mensual base de 4 salidas
+    const tourBookings = allBookings.filter((booking: any) => {
+      const status = String(booking.status || '').toLowerCase();
+      const notCancelled = !['cancelled', 'canceled', 'cancelada', 'expirada', 'refunded'].includes(status);
+      const matchesTour = booking.tourId === tour.id || (booking.tourName && String(booking.tourName).toLowerCase().includes(String(tour.id).toLowerCase()));
+      return notCancelled && matchesTour;
+    });
+    const totalPax = tourBookings.reduce((sum: number, booking: any) => sum + Number(booking.adults || 1) + Number(booking.children || 0), 0);
 
-    let demandFactor: 'very_high' | 'high' | 'normal' | 'low' = 'normal';
+    // This denominator is explicitly a planning model, not measured inventory.
+    const planningCapacity = Math.max(1, Number(tour.maxGroupSize || 15) * 4);
+    const modeledLoad = totalPax / planningCapacity;
+
+    let demandFactor: DynamicPricingInsight['demandFactor'] = 'normal';
     let multiplier = 1.0;
-    let justification = 'Demanda estándar del tour con cupos normales.';
-
-    const occupancyRate = capacity > 0 ? totalPax / capacity : 0;
-
-    if (occupancyRate > 0.75) {
-      demandFactor = 'very_high';
-      multiplier = 1.12;
-      justification = `Alta demanda real (${totalPax} pasajeros registrados, >75% del cupo base). Rendimiento dinámico optimizado.`;
-    } else if (occupancyRate > 0.4) {
-      demandFactor = 'high';
-      multiplier = 1.06;
-      justification = `Demanda activa comprobada (${totalPax} pasajeros registrados). Tarifa estándar con alta preferencia.`;
-    } else if (occupancyRate > 0.15) {
-      demandFactor = 'normal';
-      multiplier = 1.0;
-      justification = `Ocupación regular (${totalPax} pasajeros en base de datos). Tarifa base de catálogo garantizada.`;
-    } else {
-      demandFactor = 'low';
-      multiplier = 0.95;
-      justification = `Temporada con cupos disponibles (${totalPax} pasajeros). Oportunidad de incentivo de reserva anticipada (-5%).`;
-    }
+    if (modeledLoad > 0.75) { demandFactor = 'very_high'; multiplier = 1.12; }
+    else if (modeledLoad > 0.4) { demandFactor = 'high'; multiplier = 1.06; }
+    else if (modeledLoad <= 0.15) { demandFactor = 'low'; multiplier = 0.95; }
 
     insights.push({
       tourId: tour.id,
@@ -224,25 +218,37 @@ export async function calculateDynamicPricingInsights(): Promise<DynamicPricingI
       currentDemandMultiplier: multiplier,
       recommendedPriceUSD: Math.round(tour.priceUSD * multiplier * 100) / 100,
       demandFactor,
-      justification
+      justification: `Advisory model using ${tourBookings.length} recorded non-cancelled booking(s) and ${totalPax} passenger(s). It does not modify the authoritative catalog price.`,
+      evidence: {
+        bookingCount: tourBookings.length,
+        passengerCount: totalPax,
+        modelAssumption: `Planning denominator = maxGroupSize (${Number(tour.maxGroupSize || 15)}) × 4 hypothetical departures; not live inventory.`
+      }
     });
   }
 
   return insights.slice(0, 3);
 }
 
-/**
- * Retorna el estado global del motor de auto-desarrollo
- */
 export async function getSelfDevelopmentOverview() {
+  const providerOverview = getProvidersOverview();
+  const unresolvedSlaBreaches = currentSlaBreaches(providerOverview).length;
+  const systemHealthScore = healthFromObservedSignals({ unresolvedSlaBreaches });
+
   return {
-    status: 'ACTIVE_SELF_EVOLVING',
-    systemHealthScore: 99.7,
+    status: 'ACTIVE_EVIDENCE_BACKED_AUTOMATION',
+    systemHealthScore,
+    healthScoreBasis: {
+      derived: true,
+      definition: 'Current admin overview score derived from observed provider SLA exceptions. Infrastructure health requires its authoritative monitoring source.',
+      unresolvedSlaBreaches,
+      observedAt: new Date().toISOString()
+    },
     autoHealingActionsTotal: selfDevelopmentLog.length,
     recentHealingLogs: selfDevelopmentLog.slice(0, 15),
     routeOptimizations: calculateOptimizedRoutes(),
     pricingIntelligence: await calculateDynamicPricingInsights(),
-    version: '2026.4-AutonomousPro',
+    version: '2026.5-EvidenceBacked',
     uptimeSeconds: Math.floor(process.uptime()),
     timestamp: new Date().toISOString()
   };
