@@ -127,7 +127,7 @@ export async function getOperationalProviderOverview() {
           const responded = Date.parse(String(order.confirmedAt || order.rejectedAt || order.updatedAt || ''));
           return Number.isFinite(dispatched) && Number.isFinite(responded) && responded >= dispatched ? (responded - dispatched) / 60_000 : null;
         })
-        .filter((value: any) => Number.isFinite(value));
+        .filter((value): value is number => value !== null && Number.isFinite(value));
       return {
         ...provider,
         totalOrdersAssigned: providerOrders.length,
