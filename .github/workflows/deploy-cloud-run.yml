@@ -23,15 +23,15 @@ permissions:
   contents: read
   id-token: write
 
-concurrency:
-  group: production-cloud-run-deploy
-  cancel-in-progress: true
-
 jobs:
   deploy:
     name: Desplegar SHA validado a Cloud Run
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    # Skipped PR runs must not cancel a production rollout already in progress.
+    concurrency:
+      group: production-cloud-run-deploy
+      cancel-in-progress: false
     if: >-
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
       (github.event.workflow_run.conclusion == 'success' &&

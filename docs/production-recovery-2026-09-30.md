@@ -8,6 +8,8 @@
 - Operational payment signals use the existing event payload contract. Telemetry failure does not reject an already persisted payment; lifecycle recovery reads durable bookings independently.
 - The Vercel Web handler forwards original JSON and form bytes, preserving signatures. Request bodies are limited to 256 KiB. Existing public concierge facades continue to use the named Node adapter.
 - Vercel now installs from package-lock.json and runs the release security/contract/type checks before building. Cloud Run automatic deployment accepts only successful push builds from this repository's main branch. Manual recovery also requires main and Node 22.
+- Deployment concurrency belongs to the eligible deploy job, with cancel-in-progress disabled. Skipped PR-triggered workflow runs cannot cancel a valid production rollout (observed in run 36764135696).
+- Ephemeral gha-creds-*.json authentication files are excluded from Git, Cloud Build uploads and Docker build contexts.
 - Internal sweep routes share distributed locks with their corresponding in-process jobs. A separate application credential header supports Cloud Scheduler OIDC without replacing application authentication.
 
 ## External blockers: do not claim production ready
