@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createBookingAttempt, requirePaymentUrl } from '../utils/bookingAttempt';
 import { 
-  Star, Clock, MapPin, CheckCircle2, ShieldCheck, Calendar, Users, Hotel, 
-  ChevronRight, ChevronLeft, X, AlertCircle, CreditCard, Smartphone, Banknote, 
-  Lock, Sparkles, Check, Info, ArrowRight, Phone, MessageCircle, Share2, Heart
+  Star, Clock, CheckCircle2, ShieldCheck, Calendar, Users, X, AlertCircle, CreditCard, Smartphone,
+  Lock, Sparkles, Check, Info, MessageCircle
 } from 'lucide-react';
 import { Tour, Language, Currency, BookingRequest } from '../types';
-import { getLangText, formatCurrency } from '../utils/i18n';
+import { getLangText } from '../utils/i18n';
 import { getUsdToCrcRate } from '../utils/currencies';
 import { OPERATORS } from '../data/toursData';
 import { LazyImage } from './LazyImage';
@@ -30,7 +29,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
   const [pickupHotel, setPickupHotel] = useState('');
-  const [specialRequests, setSpecialRequests] = useState('');
+  const [specialRequests] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'paypal' | 'sinpe_movil' | 'pay_at_pickup'>('credit_card');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fullName, setFullName] = useState('');
@@ -81,31 +80,77 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     ? tour.whatToBring 
     : (tour.whatToBring?.[language] || tour.whatToBring?.es || tour.whatToBring?.en || []);
 
-  const waitForProviderResponse = async (bookingId: string, maxWaitMs = 60_000): Promise<ProviderCheckState> => {
+  const buildBookingRequest = () => {
+    const departureTime = (tour.departureTimes && tour.departureTimes.length > 0) ? tour.departureTimes[0] : '08:00 AM';
+    const bookingPayload: BookingRequest = {
+      tourId: tour.id,
+      tourName: modalTitle,
+      date: selectedDate,
+      time: departureTime,
+      adults,
+      children,
+      pickupHotel: pickupHotel || 'Recepción del Hotel',
+      specialRequests,
+      totalUSD,
+      totalCRC,
+      paymentMethod,
+      customer: { fullName: fullName.trim(), email: email.trim(), phone: phone.trim(), country: 'unspecified' }
+    };
+    const requestBody = {
+      ...bookingPayload,
+      customerName: fullName,
+      customerEmail: email,
+      customerPhone: phone,
+      sinpeReference: undefined
+    };
+    const idempotencyKey = attempt.current({ ...bookingPayload, sinpeRef });
+    return { bookingPayload, requestBody, idempotencyKey };
+  };
+
+  /**
+   * Reconsulta el mismo expediente usando el contrato idempotente de /api/bookings.
+   * No abre el endpoint operacional /api/provider/status al público y no crea una
+   * segunda reserva: la misma Idempotency-Key + el mismo cuerpo devuelve el booking
+   * existente, ya enriquecido por la respuesta del proveedor.
+   */
+  const waitForProviderResponse = async (maxWaitMs = 60_000): Promise<ProviderCheckState> => {
     const deadline = Date.now() + maxWaitMs;
     setProviderCheckState('checking');
 
     while (Date.now() < deadline) {
       try {
-        const response = await fetch(`/api/provider/status/${encodeURIComponent(bookingId)}`, {
-          method: 'GET',
-          headers: { Accept: 'application/json' },
+        const { requestBody, idempotencyKey } = buildBookingRequest();
+        const response = await fetch('/api/bookings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Idempotency-Key': idempotencyKey
+          },
+          body: JSON.stringify(requestBody),
           cache: 'no-store'
         });
         const data = await response.json().catch(() => ({}));
-        if (response.ok) {
-          const providerStatus = String(data.providerStatus || '').toLowerCase();
-          if (data.providerConfirmedAt || ['confirmed', 'confirmada', 'available', 'accepted'].includes(providerStatus)) {
+        if (response.ok && data.booking) {
+          const providerStatus = String(data.booking.providerStatus || '').toLowerCase();
+          const serviceOrderStatus = String(data.booking.serviceOrderStatus || '').toLowerCase();
+          if (
+            data.booking.providerConfirmedAt ||
+            ['confirmed', 'confirmada', 'available', 'accepted'].includes(providerStatus) ||
+            ['confirmed', 'confirmada', 'available', 'accepted'].includes(serviceOrderStatus)
+          ) {
             setProviderCheckState('confirmed');
             return 'confirmed';
           }
-          if (['rejected', 'declined', 'unavailable', 'cancelled', 'canceled'].includes(providerStatus)) {
+          if (
+            ['rejected', 'declined', 'unavailable', 'cancelled', 'canceled'].includes(providerStatus) ||
+            ['rejected', 'declined', 'unavailable', 'cancelled', 'canceled'].includes(serviceOrderStatus)
+          ) {
             setProviderCheckState('unavailable');
             return 'unavailable';
           }
         }
       } catch (error) {
-        console.warn('Provider status poll failed:', error);
+        console.warn('Provider-backed booking replay failed:', error);
       }
 
       await new Promise(resolve => window.setTimeout(resolve, 3000));
@@ -165,22 +210,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     setIsSubmitting(true);
     submitting.current = true;
 
-    const departureTime = (tour.departureTimes && tour.departureTimes.length > 0) ? tour.departureTimes[0] : '08:00 AM';
-
-    const bookingPayload: BookingRequest = {
-      tourId: tour.id,
-      tourName: modalTitle,
-      date: selectedDate,
-      time: departureTime,
-      adults,
-      children,
-      pickupHotel: pickupHotel || 'Recepción del Hotel',
-      specialRequests,
-      totalUSD,
-      totalCRC,
-      paymentMethod,
-      customer: { fullName: fullName.trim(), email: email.trim(), phone: phone.trim(), country: 'unspecified' }
-    };
+    const { bookingPayload, requestBody, idempotencyKey } = buildBookingRequest();
 
     try {
       let bookingId: string = pendingBookingId || '';
@@ -193,14 +223,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
         const bookingRes = await fetch('/api/bookings', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Idempotency-Key': attempt.current({ ...bookingPayload, sinpeRef }) },
-          body: JSON.stringify({
-            ...bookingPayload,
-            customerName: fullName,
-            customerEmail: email,
-            customerPhone: phone,
-            sinpeReference: undefined
-          })
+          headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
+          body: JSON.stringify(requestBody)
         });
 
         const bookingData = await bookingRes.json();
@@ -219,7 +243,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
         ? `Solicitud ${bookingId} enviada. Esperando respuesta del proveedor para ${selectedDate}.`
         : `Request ${bookingId} sent. Waiting for the provider response for ${selectedDate}.`);
 
-      const providerResult = await waitForProviderResponse(bookingId);
+      const providerResult = await waitForProviderResponse();
 
       if (providerResult === 'unavailable') {
         setStatusMessage(language === 'es'
@@ -273,6 +297,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
       : `Hello, I'm interested in the tour "${modalTitle}" in ${tour.location?.placeName || 'Costa Rica'}. I'd like to check availability for ${selectedDate || '[date]'} for ${adults + children} people.`
   )}`;
 
+  const requestLocked = Boolean(pendingBookingId);
+
   return (
     <div 
       className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md overflow-hidden"
@@ -306,8 +332,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
               onClick={onClose}
               type="button"
               className="w-10 h-10 rounded-full bg-stone-900/90 hover:bg-amber-500 text-stone-300 hover:text-stone-950 border border-white/20 hover:border-amber-400 flex items-center justify-center transition-all duration-200 shadow-lg cursor-pointer"
-              aria-label="Cerrar modal"
-              title="Cerrar (Esc)"
+              aria-label={language === 'es' ? 'Cerrar' : 'Close'}
+              title={language === 'es' ? 'Cerrar (Esc)' : 'Close (Esc)'}
             >
               <X className="w-5 h-5 stroke-[2.5]" />
             </button>
@@ -456,12 +482,13 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                     </label>
                     <input 
                       required 
+                      disabled={requestLocked}
                       type="date" 
                       min={new Date().toISOString().split('T')[0]}
-                      className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors" 
+                      className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors disabled:opacity-60" 
                       value={selectedDate} 
                       aria-label={language === 'es' ? 'Fecha de viaje' : 'Travel date'}
-                      onChange={e => { setSelectedDate(e.target.value); setPendingBookingId(null); setProviderCheckState('idle'); setStatusMessage(null); }} 
+                      onChange={e => { setSelectedDate(e.target.value); setProviderCheckState('idle'); setStatusMessage(null); }} 
                     />
                   </div>
 
@@ -470,10 +497,11 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                       {language === 'es' ? 'Adultos' : 'Adults'}
                     </label>
                     <select 
-                      className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors"
+                      disabled={requestLocked}
+                      className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors disabled:opacity-60"
                       value={adults}
                       aria-label={language === 'es' ? 'Adultos' : 'Adults'}
-                      onChange={e => { setAdults(Number(e.target.value)); setPendingBookingId(null); setProviderCheckState('idle'); setStatusMessage(null); }}
+                      onChange={e => setAdults(Number(e.target.value))}
                     >
                       {[1,2,3,4,5,6,7,8,9,10,12,15,20].map(n => (
                         <option key={n} value={n} className="bg-stone-900">{n} {n === 1 ? (language === 'es' ? 'Adulto' : 'Adult') : (language === 'es' ? 'Adultos' : 'Adults')}</option>
@@ -488,10 +516,11 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                       {language === 'es' ? 'Niños (-12)' : 'Children (-12)'}
                     </label>
                     <select 
-                      className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors"
+                      disabled={requestLocked}
+                      className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors disabled:opacity-60"
                       value={children}
                       aria-label={language === 'es' ? 'Niños' : 'Children'}
-                      onChange={e => { setChildren(Number(e.target.value)); setPendingBookingId(null); setProviderCheckState('idle'); setStatusMessage(null); }}
+                      onChange={e => setChildren(Number(e.target.value))}
                     >
                       {[0,1,2,3,4,5,6].map(n => (
                         <option key={n} value={n} className="bg-stone-900">{n} {language === 'es' ? 'Niños' : 'Children'}</option>
@@ -504,9 +533,10 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                       {language === 'es' ? 'Hotel / Pickup' : 'Pickup Hotel'}
                     </label>
                     <input 
+                      disabled={requestLocked}
                       type="text" 
                       placeholder={language === 'es' ? 'Ej: Hotel Arenal' : 'Ex: Arenal Lodge'}
-                      className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors"
+                      className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors disabled:opacity-60"
                       value={pickupHotel}
                       aria-label={language === 'es' ? 'Hotel o punto de encuentro' : 'Hotel or meeting point'}
                       onChange={e => setPickupHotel(e.target.value)}
@@ -520,9 +550,10 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                   </label>
                   <input 
                     required 
+                    disabled={requestLocked}
                     type="text" 
                     placeholder="Ej: María González"
-                    className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors" 
+                    className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors disabled:opacity-60" 
                     value={fullName} 
                     autoComplete="name"
                     aria-label={language === 'es' ? 'Nombre completo' : 'Full name'}
@@ -537,9 +568,10 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                     </label>
                     <input 
                       required 
+                      disabled={requestLocked}
                       type="email" 
                       placeholder="maria@ejemplo.com"
-                      className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors" 
+                      className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors disabled:opacity-60" 
                       value={email} 
                       autoComplete="email"
                       aria-label={language === 'es' ? 'Correo electrónico' : 'Email address'}
@@ -553,9 +585,10 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                     </label>
                     <input 
                       required 
+                      disabled={requestLocked}
                       type="tel" 
                       placeholder="+506 8888-8888"
-                      className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors" 
+                      className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors disabled:opacity-60" 
                       value={phone} 
                       autoComplete="tel"
                       aria-label={language === 'es' ? 'Teléfono con código de país' : 'Phone with country code'}
@@ -569,7 +602,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                     {language === 'es' ? 'Método de pago preferido (después de disponibilidad)' : 'Preferred payment method (after availability)'}
                   </label>
                   <select 
-                    className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors" 
+                    disabled={requestLocked}
+                    className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors disabled:opacity-60" 
                     value={paymentMethod} 
                     aria-label={language === 'es' ? 'Método de pago' : 'Payment method'}
                     onChange={e => setPaymentMethod(e.target.value as any)}
@@ -580,6 +614,14 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                     <option value="pay_at_pickup" className="bg-stone-900">💵 Pago en Efectivo al Abordar</option>
                   </select>
                 </div>
+
+                {requestLocked && providerCheckState !== 'confirmed' && (
+                  <p className="text-[11px] text-stone-400">
+                    {language === 'es'
+                      ? 'Los datos quedan bloqueados mientras consultamos este mismo expediente para evitar solicitudes duplicadas.'
+                      : 'Details are locked while this same request is checked to prevent duplicate bookings.'}
+                  </p>
+                )}
 
                 {paymentMethod === 'sinpe_movil' && (
                   <div className={`p-3 rounded-xl space-y-1.5 text-xs border ${providerCheckState === 'confirmed' ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-amber-500/10 border-amber-500/30'}`}>
@@ -633,7 +675,9 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                   )}
                   <span>
                     {pendingBookingId
-                      ? (language === 'es' ? 'Revisar respuesta del proveedor' : 'Check provider response')
+                      ? (providerCheckState === 'confirmed'
+                          ? (language === 'es' ? 'Continuar al pago' : 'Continue to payment')
+                          : (language === 'es' ? 'Revisar respuesta del proveedor' : 'Check provider response'))
                       : (language === 'es' ? 'Consultar disponibilidad y solicitar reserva' : 'Check availability & request booking')}
                   </span>
                 </button>
