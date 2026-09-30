@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import gatewayHandler from '../[...path]';
+import { handler as gatewayHandler } from '../[...path]';
 
 /**
  * Public Counter facade.

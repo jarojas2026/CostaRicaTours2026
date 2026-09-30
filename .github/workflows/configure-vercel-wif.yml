@@ -157,5 +157,6 @@ jobs:
             echo "GCP_WIF_SERVICE_ACCOUNT=$GATEWAY_SERVICE_ACCOUNT"
             echo "CLOUD_RUN_BACKEND_URL=$SERVICE_URL"
           else
-            echo "::warning::WIF is not fully provisioned because the deployment service account lacks IAM-admin permissions. See the job summary for the exact one-time action required."
+            echo "::error::WIF is not fully provisioned because the deployment service account lacks IAM-admin permissions. See the job summary for the exact one-time action required."
+            exit 1
           fi
