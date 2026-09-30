@@ -14,21 +14,49 @@ function safeEventDocId(provider: string, eventId: string): string {
   return `${provider}_${eventId}`.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 240);
 }
 
+/**
+ * Claims a provider event exactly once while still allowing a failed or stale
+ * processing attempt to be retried. This is important because Stripe and PayPal
+ * deliberately redeliver webhooks when our endpoint returns a non-2xx response.
+ */
 async function claimEvent(provider: 'stripe' | 'paypal', eventId: string): Promise<boolean> {
   const db = getFirestoreDb();
   if (!db) {
     if (process.env.NODE_ENV === 'production') throw new Error('Firestore no disponible para idempotencia de pagos.');
     return true;
   }
+
   const ref = db.collection('payment_webhook_events').doc(safeEventDocId(provider, eventId));
   return db.runTransaction(async tx => {
     const snap = await tx.get(ref);
-    if (snap.exists) return false;
+    const now = new Date();
+
+    if (snap.exists) {
+      const data = snap.data() || {};
+      const status = String(data.status || '');
+      const claimedAt = Date.parse(String(data.claimedAt || data.receivedAt || ''));
+      const staleProcessing = status === 'processing' && Number.isFinite(claimedAt) && now.getTime() - claimedAt > 10 * 60 * 1000;
+      const retryable = status === 'failed' || staleProcessing;
+      if (!retryable) return false;
+
+      tx.set(ref, {
+        provider,
+        eventId,
+        status: 'processing',
+        claimedAt: now.toISOString(),
+        retryCount: Number(data.retryCount || 0) + 1,
+        lastError: data.error || null
+      }, { merge: true });
+      return true;
+    }
+
     tx.create(ref, {
       provider,
       eventId,
       status: 'processing',
-      receivedAt: new Date().toISOString()
+      receivedAt: now.toISOString(),
+      claimedAt: now.toISOString(),
+      retryCount: 0
     });
     return true;
   });
@@ -77,6 +105,7 @@ export async function processStripeWebhook(rawBody: Buffer, signature: string | 
     if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
       const session = event.data.object as Stripe.Checkout.Session;
       const bookingId = String(session.metadata?.bookingId || session.client_reference_id || '').trim();
+      if (!bookingId) throw new Error('Evento Stripe sin referencia de reserva.');
       const booking = await getBookingById(bookingId);
       if (!booking) throw new Error('Reserva Stripe no encontrada.');
       if (session.payment_status !== 'paid' || session.currency !== 'usd' || session.amount_total !== bookingAmountCents(booking)) {
@@ -171,14 +200,16 @@ export async function processPayPalWebhook(headers: Record<string, string | stri
   try {
     if (event.event_type === 'PAYMENT.CAPTURE.COMPLETED') {
       const resource = event.resource || {};
-      const bookingId = String(resource.custom_id || resource.supplementary_data?.related_ids?.order_id && event.resource?.custom_id || '').trim();
+      // custom_id is the booking correlation key established when the order/capture is created.
+      // Never infer a booking from PayPal's order ID: that would couple two unrelated identifiers.
+      const bookingId = String(resource.custom_id || '').trim();
       if (!bookingId) {
         await finishEvent('paypal', eventId, { status: 'review_required', type: event.event_type, captureId: resource.id });
         return { accepted: true, eventId, reason: 'booking_reference_missing' };
       }
       const booking = await getBookingById(bookingId);
       const value = Number(resource.amount?.value);
-      if (!booking || resource.status !== 'COMPLETED' || resource.amount?.currency_code !== 'USD' || Math.abs(value - Number(booking.totalUSD)) > 0.01) {
+      if (!booking || resource.status !== 'COMPLETED' || resource.amount?.currency_code !== 'USD' || !Number.isFinite(value) || Math.abs(value - Number(booking.totalUSD)) > 0.01) {
         throw new Error('Evento PayPal no coincide con importe/moneda/estado de la reserva.');
       }
       if (booking.paymentStatus !== 'completed') {
