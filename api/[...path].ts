@@ -44,10 +44,6 @@ const HOP_BY_HOP = new Set([
   'content-length',
 ]);
 
-// Legacy compatibility endpoints that can fabricate a payment-session URL or
-// bypass the canonical payment -> provider -> confirmation lifecycle. They are
-// retained in the backend for migration/audit purposes but are not exposed by
-// the public Vercel gateway.
 const RETIRED_PUBLIC_PATHS = [
   '/api/pagos/solicitud',
   '/api/reservas/confirmar',
@@ -57,17 +53,13 @@ const RETIRED_PUBLIC_PREFIXES = [
   '/api/workflows/',
 ];
 const RETIRED_PUBLIC_PATTERNS = [
-  // Defense in depth: the backend now retires this route too. Keep the public
-  // gateway fail-closed so a future backend regression cannot turn an email
-  // GET click into payment, cancellation, or provider state.
   /^\/api\/bookings\/[^/]+\/customer-confirm$/,
 ];
 
-// Defense in depth for operations that should never be reachable anonymously
-// through the public frontend gateway, even if a backend route accidentally
-// loses its Express auth middleware in a future change. Public inquiry,
-// availability, itinerary-planning and booking-intake APIs are intentionally
-// not included here.
+// Defense in depth: these operational datasets/actions must never be anonymous.
+// Public booking intake and customer-facing inquiry routes are intentionally
+// excluded; provider registries, financial details, status operations and admin
+// surfaces require application-level auth before Vercel contacts Cloud Run.
 const PRIVILEGED_PREFIXES = [
   '/api/admin',
   '/api/internal',
@@ -97,6 +89,7 @@ const PRIVILEGED_PREFIXES = [
   '/api/fcm/send',
   '/api/proformas',
   '/api/bookings/send-proforma-confirmation',
+  '/api/providers',
   '/api/provider/status',
   '/api/operators/status',
 ];
@@ -115,8 +108,6 @@ function getWifAudience(): string {
   const explicit = env('GCP_WIF_AUDIENCE');
   if (explicit) return explicit;
 
-  // This optional decomposition makes configuration less error-prone while
-  // still refusing to guess any Google project/provider identity.
   const projectNumber = env('GCP_PROJECT_NUMBER');
   const poolId = env('GCP_WIF_POOL_ID');
   const providerId = env('GCP_WIF_PROVIDER_ID');
@@ -153,8 +144,6 @@ function hasApplicationAuth(req: VercelRequest): boolean {
 }
 
 function getRuntimeOidcToken(req: VercelRequest): string {
-  // Vercel supplies a fresh request-scoped identity token. The environment
-  // token remains only as a compatibility fallback for local/build scenarios.
   const requestToken = req.headers['x-vercel-oidc-token'];
   const runtimeToken = typeof requestToken === 'string' ? requestToken.trim() : '';
   if (runtimeToken) return runtimeToken;
@@ -216,7 +205,6 @@ async function getCloudRunIdToken(req: VercelRequest): Promise<string> {
   const accessToken = await exchangeVercelOidcForGoogleAccessToken(getRuntimeOidcToken(req));
   const token = await generateCloudRunIdToken(accessToken);
 
-  // Google ID tokens are typically valid for about one hour. Cache conservatively.
   cloudRunTokenCache = { token, expiresAt: now + 50 * 60_000 };
   return token;
 }
@@ -267,7 +255,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       headers.set(name, Array.isArray(value) ? value.join(',') : String(value));
     }
 
-    // Keep end-user Authorization intact. Cloud Run IAM authenticates this header instead.
     headers.set('x-serverless-authorization', `Bearer ${cloudRunIdToken}`);
     headers.set('x-forwarded-host', String(req.headers.host || ''));
     headers.set('x-forwarded-proto', 'https');
