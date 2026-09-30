@@ -3,6 +3,10 @@
   "buildCommand": "npm run check:release && npm run build",
   "rewrites": [
     {
+      "source": "/api/:crtPath((?!agent/counter$|gemini/concierge$|itinerary/book$).*)",
+      "destination": "/api/[...path]?__crt_path=:crtPath"
+    },
+    {
       "source": "/ai",
       "destination": "/index.html"
     },

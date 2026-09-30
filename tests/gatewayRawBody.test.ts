@@ -43,6 +43,23 @@ test('Web gateway preserves signed JSON, form data and query strings byte for by
       assert.deepEqual(await result.json(), { received: true });
       assert.equal(result.headers.get('cache-control'), 'no-store, max-age=0');
     }
+    now += 60 * 60_000;
+    globalThis.fetch = (async (input: any, init?: RequestInit) => {
+      if (String(input).includes('sts.googleapis.com')) return Response.json({ access_token: 'test-access' });
+      if (String(input).includes('iamcredentials.googleapis.com')) return Response.json({ token: 'test-id-token' });
+      assert.equal(String(input), 'https://backend.example.invalid/api/tours/arenal/availability?date=2026-12-01');
+      return Response.json({ available: false });
+    }) as typeof fetch;
+    const nested = await gateway.fetch(new Request('https://app.example.invalid/api/[...path]?__crt_path=tours%2Farenal%2Favailability&date=2026-12-01', {
+      headers: { 'x-vercel-oidc-token': 'test-runtime' }
+    }));
+    assert.equal(nested.status, 200);
+    for (const path of ['agent/counter', 'gemini/concierge', 'itinerary/book']) {
+      const direct = await gateway.fetch(new Request('https://app.example.invalid/api/[...path]?__crt_path=' + encodeURIComponent(path)));
+      assert.equal(direct.status, 400);
+    }
+    const nestedPrivate = await gateway.fetch(new Request('https://app.example.invalid/api/[...path]?__crt_path=admin%2Fcontrol-center'));
+    assert.equal(nestedPrivate.status, 401);
     let externalCalls = 0;
     globalThis.fetch = (async () => { externalCalls++; throw new Error('must not call upstream'); }) as typeof fetch;
     const tooLarge = await gateway.fetch(new Request('https://app.example.invalid/api/bookings', {

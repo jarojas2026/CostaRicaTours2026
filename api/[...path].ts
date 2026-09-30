@@ -344,6 +344,23 @@ export default {
       }
     }
     const url = new URL(request.url);
+    const rewrittenPath = url.searchParams.get('__crt_path');
+    if (url.pathname === '/api/[...path]' && rewrittenPath !== null) {
+      url.pathname = '/api/' + rewrittenPath.replace(/^\\/+/, '');
+    }
+    url.searchParams.delete('__crt_path');
+    // Explicit facade endpoints own these paths. A direct request to the
+    // rewrite target must not reach their retired backend implementations.
+    if (rewrittenPath !== null && ['/api/agent/counter', '/api/gemini/concierge', '/api/itinerary/book'].includes(url.pathname)) {
+      return Response.json({ success: false, error: 'use_public_facade' }, {
+        status: 400, headers: responseHeaders
+      });
+    }
+    if (!url.pathname.startsWith('/api/')) {
+      return Response.json({ success: false, error: 'invalid_api_path' }, {
+        status: 400, headers: responseHeaders
+      });
+    }
     const req = {
       method: request.method,
       url: url.pathname + url.search,
