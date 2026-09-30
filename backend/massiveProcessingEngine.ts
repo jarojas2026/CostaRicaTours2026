@@ -247,21 +247,28 @@ export class MassiveProcessingEngine extends EventEmitter {
         const bookingId = String(booking?.bookingId || booking?.id || '');
         const status = String(booking?.status || '').toLowerCase();
 
-        // Antes este worker despachaba al proveedor y enviaba un voucher al cliente
-        // inmediatamente después de crear la reserva. Eso duplicaba al lifecycle y
-        // podía confirmar una operación sin pago/proveedor. Ahora la cola sólo
-        // registra el trabajo; el cron canónico procesa paid -> provider_pending -> confirmed.
-        this.emit('booking.lifecycle.queued', {
+        // Ejecutar el lifecycle inmediatamente después del intake, no esperar al cron.
+        // La importación dinámica evita un ciclo de módulos en tiempo de carga porque
+        // bookingService encola esta tarea y también es dependencia del orquestador.
+        const { advanceReservationLifecycle } = await import('./reservationLifecycleOrchestrator');
+        const lifecycleResult = await advanceReservationLifecycle(booking);
+
+        if (lifecycleResult.status === 'completed' && lifecycleResult.action.includes('dispatch')) {
+          this.successfulDispatches++;
+        }
+
+        this.emit('booking.lifecycle.executed', {
           bookingId,
           status,
-          queuedAt: new Date().toISOString()
+          result: lifecycleResult,
+          executedAt: new Date().toISOString()
         });
 
         return {
-          success: true,
+          success: lifecycleResult.status !== 'error',
           bookingId,
           status,
-          deferredToCanonicalLifecycle: true
+          lifecycle: lifecycleResult
         };
       }
 
