@@ -36,12 +36,42 @@ function say(text: string, language: 'es' | 'en' = 'es') {
 
 function gather(action: string, language: 'es' | 'en') {
   const lang = language === 'en' ? 'en-US' : 'es-MX';
-  return `<Gather input="speech dtmf" language="${lang}" speechTimeout="auto" timeout="5" action="${esc(action)}" method="POST" actionOnEmptyResult="true" numDigits="1"></Gather>`;
+  return `<Gather input="speech dtmf" language="${lang}" speechTimeout="auto" timeout="5" action="${esc(action)}" method="POST" actionOnEmptyResult="true" numDigits="1" bargeIn="true"></Gather>`;
 }
 
 function humanNumbers() {
   return (process.env.VOICE_HUMAN_NUMBERS || process.env.VOICE_HUMAN_NUMBER || '')
-    .split(',').map(value => value.trim()).filter(Boolean).slice(0, 8);
+    .split(',').map(value => value.trim()).filter(value => /^\+[1-9]\d{7,14}$/.test(value)).slice(0, 8);
+}
+
+export function voiceHumanTransferAvailable() {
+  return humanNumbers().length > 0;
+}
+
+function gatherWithSilenceCount(action: string, language: 'es' | 'en', silenceCount: number) {
+  const url = new URL(action);
+  url.searchParams.set('silenceCount', String(silenceCount));
+  return gather(url.toString(), language);
+}
+
+const TERMINAL_CALL_STATUSES = new Set(['completed', 'busy', 'failed', 'no-answer', 'canceled', 'cancelled']);
+
+export function buildVoiceCallStatusUpdate(status: string, now = new Date().toISOString()) {
+  const normalized = String(status || 'unknown').trim().toLowerCase().slice(0, 40) || 'unknown';
+  return {
+    status: normalized,
+    updatedAt: now,
+    ...(TERMINAL_CALL_STATUSES.has(normalized) ? { endedAt: now } : {})
+  };
+}
+
+export function buildVoiceTransferStatusUpdate(status: string, now = new Date().toISOString()) {
+  const normalized = String(status || 'unknown').trim().toLowerCase().slice(0, 40) || 'unknown';
+  return {
+    humanTransferStatus: normalized,
+    humanTransferUpdatedAt: now,
+    ...(normalized === 'completed' ? { humanTransferredAt: now } : {})
+  };
 }
 
 export function voiceAgentDeskConfig() {
@@ -52,7 +82,7 @@ export function voiceAgentDeskConfig() {
     inboundPath: '/api/voice/incoming',
     responsePath: '/api/voice/respond',
     statusPath: '/api/voice/status',
-    humanTransferConfigured: humanNumbers().length > 0,
+    humanTransferConfigured: voiceHumanTransferAvailable(),
     humanTransferLabel: process.env.VOICE_HUMAN_LABEL || 'Agent Desk humano',
     hotelIntegrationMode: 'DID/SIP/PBX-forwarding',
     contextFields: ['hotelId', 'hotelName', 'room', 'language'],
@@ -95,18 +125,30 @@ export function createInboundVoiceResponse(input: {
 }) {
   configuredOrThrow();
   const language = input.language === 'en' ? 'en' : 'es';
+  const transferPrompt = input.humanTransferAvailable
+    ? (language === 'en' ? ' Speak after the tone, or press 0 to reach a human agent.' : ' Hable después del tono, o marque 0 para comunicarse con un agente.')
+    : (language === 'en' ? ' Speak after the tone and tell me how I can help.' : ' Hable después del tono y dígame cómo puedo ayudarle.');
   const greeting = language === 'en'
-    ? `Welcome to the Costa Rica Tours Agent Desk${input.hotelName ? ` at ${input.hotelName}` : ''}. I can help with tours, availability, routes, reservations and local information. Speak after the tone, or press 0 to reach a human agent.`
-    : `Bienvenido al Agent Desk de Costa Rica Tours${input.hotelName ? ` en ${input.hotelName}` : ''}. Puedo ayudarle con tours, disponibilidad, rutas, reservas e información local. Hable después del tono, o marque 0 para comunicarse con un agente.`;
+    ? `Welcome to the Costa Rica Tours Agent Desk${input.hotelName ? ` at ${input.hotelName}` : ''}. I can help with tours, availability, routes, reservations and local information.${transferPrompt}`
+    : `Bienvenido al Agent Desk de Costa Rica Tours${input.hotelName ? ` en ${input.hotelName}` : ''}. Puedo ayudarle con tours, disponibilidad, rutas, reservas e información local.${transferPrompt}`;
   const parts = [
     say(greeting, language),
     gather(input.responseUrl, language)
   ];
-  if (input.humanTransferAvailable) {
-    parts.push(say(language === 'en' ? 'Press 0 at any time for a human agent.' : 'Marque 0 en cualquier momento para hablar con un agente humano.', language));
-  }
-  parts.push(`<Redirect method="POST">${esc(input.responseUrl)}</Redirect>`);
   return xml(parts);
+}
+
+export function createHumanTransferResult(input: {
+  status: string;
+  responseUrl: string;
+  language?: 'es' | 'en';
+}) {
+  if (String(input.status || '').toLowerCase() === 'completed') return xml([]);
+  const language = input.language === 'en' ? 'en' : 'es';
+  const message = language === 'en'
+    ? 'No human agent answered. I can keep helping you; please tell me what you need or press 0 to try the Agent Desk again.'
+    : 'No contestó un agente humano. Puedo seguir ayudándole; dígame qué necesita o marque 0 para volver a intentar con el Agent Desk.';
+  return xml([say(message, language), gatherWithSilenceCount(input.responseUrl, language, 0)]);
 }
 
 export async function handleVoiceTurn(input: {
@@ -120,6 +162,7 @@ export async function handleVoiceTurn(input: {
   responseUrl: string;
   humanTransferUrl?: string;
   from?: string;
+  silenceCount?: number;
 }) {
   configuredOrThrow();
   const language = input.language === 'en' ? 'en' : 'es';
@@ -134,9 +177,37 @@ export async function handleVoiceTurn(input: {
   }
 
   if (!textInput && !digits) {
+    const nextSilenceCount = Math.max(0, Math.min(3, Number(input.silenceCount) || 0)) + 1;
+    if (nextSilenceCount >= 3) {
+      const transferAvailable = Boolean(input.humanTransferUrl && voiceHumanTransferAvailable());
+      if (transferAvailable) {
+        return xml([
+          say(language === 'en' ? 'I have not heard a response. I will try to connect you with a human agent.' : 'No he recibido respuesta. Intentaré comunicarle con un agente humano.', language),
+          `<Dial timeout="30" answerOnBridge="true" action="${esc(input.humanTransferUrl!)}" method="POST">${humanNumbers().map(number => `<Number>${esc(number)}</Number>`).join('')}</Dial>`
+        ]);
+      }
+      return xml([
+        say(language === 'en' ? 'I still cannot hear you. Please call again when convenient. Goodbye.' : 'Todavía no puedo escucharle. Puede llamar de nuevo cuando guste. Hasta luego.', language),
+        '<Hangup/>'
+      ]);
+    }
     return xml([
       say(language === 'en' ? 'I did not hear you. Please tell me what you need.' : 'No pude escucharle. Dígame qué necesita.', language),
-      gather(input.responseUrl, language)
+      gatherWithSilenceCount(input.responseUrl, language, nextSilenceCount)
+    ]);
+  }
+
+  if (digits && digits !== '0') {
+    return xml([
+      say(language === 'en' ? 'Please speak your request, or press 0 for a human agent.' : 'Diga lo que necesita o marque 0 para hablar con un agente humano.', language),
+      gatherWithSilenceCount(input.responseUrl, language, 0)
+    ]);
+  }
+
+  if (digits === '0') {
+    return xml([
+      say(language === 'en' ? 'A human agent is not available right now. Please tell me what you need.' : 'No hay un agente humano disponible en este momento. Dígame qué necesita.', language),
+      gatherWithSilenceCount(input.responseUrl, language, 0)
     ]);
   }
 
@@ -194,8 +265,7 @@ export async function handleVoiceTurn(input: {
 
   return xml([
     say(spoken.slice(0, 4000), language),
-    gather(input.responseUrl, language),
-    `<Redirect method="POST">${esc(input.responseUrl)}</Redirect>`
+    gatherWithSilenceCount(input.responseUrl, language, 0)
   ]);
 }
 
@@ -223,18 +293,29 @@ export async function rememberVoiceCallStart(context: VoiceCallContext) {
 
 export async function rememberVoiceCallEnd(callId: string, status: string) {
   const db = getFirestoreDb();
+  const update = buildVoiceCallStatusUpdate(status);
   if (db) {
     await db.collection('voice_call_sessions').doc(callId).set({
-      status,
-      endedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      ...update
     }, { merge: true });
   }
-  const identity = await resolveTravelerIdentity({ sessionId: `voice_${callId}`, channel: 'voice' });
-  await rememberTurn(identity.sessionId, {
-    role: 'assistant',
-    text: `Fin de llamada Agent Desk. Estado: ${status}`
-  }, { agentId: 'voice_agent_desk' });
+}
+
+export async function rememberVoiceCallStatus(callId: string, status: string) {
+  const db = getFirestoreDb();
+  if (!db) return;
+  await db.collection('voice_call_sessions').doc(callId).set({
+    ...buildVoiceCallStatusUpdate(status)
+  }, { merge: true });
+}
+
+export async function rememberVoiceHumanTransferStatus(callId: string, status: string) {
+  const db = getFirestoreDb();
+  if (db) {
+    await db.collection('voice_call_sessions').doc(callId).set({
+      ...buildVoiceTransferStatusUpdate(status)
+    }, { merge: true });
+  }
 }
 
 

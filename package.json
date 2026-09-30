@@ -8,7 +8,7 @@
     "build": "npm run audit:system && vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist/server.cjs",
     "start": "node dist/server.cjs",
     "lint": "tsc --noEmit",
-    "test:contracts": "tsx --test tests/*.test.ts",
+    "test:contracts": "node --test-force-exit --import tsx --test tests/*.test.ts",
     "audit:security:prod": "npm audit --omit=dev --audit-level=critical",
     "audit:whatsapp": "tsx scripts/auditCustomerWhatsAppRouting.ts",
     "audit:system": "tsx scripts/auditSystem.ts"

@@ -7,6 +7,14 @@ export interface CustomerIntakeRequest {
   sessionId?: string;
   customer?: { name?: string; email?: string; phone?: string };
   context?: Record<string, any>;
+  onResult?: (result: CustomerIntakeResult) => void;
+}
+
+export interface CustomerIntakeResult {
+  ok: boolean;
+  reply?: string;
+  intakeId?: string;
+  handoffUrl?: string;
 }
 
 export function requestCustomerIntake(payload: CustomerIntakeRequest): void {

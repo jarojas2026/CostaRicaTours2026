@@ -191,10 +191,18 @@ export default function App() {
         setIntakeEscalated(Boolean(data.decision?.escalated));
         setIntakeHandoffUrl(data.customer?.handoffUrl);
         setIntakeId(data.intakeId || '');
+        detail.onResult?.({
+          ok: true,
+          reply: data.customer?.reply,
+          intakeId: data.intakeId || ''
+        });
       } catch (error: any) {
-        setIntakeReply(language === 'es' ? 'No pudimos completar la consulta. No se ha confirmado ninguna reserva ni notificación al equipo. Puedes consultar directamente por WhatsApp.' : 'We could not complete the inquiry. No booking or team notification has been confirmed. You can contact us directly on WhatsApp.');
+        const failureReply = language === 'es' ? 'No pudimos completar la consulta. No se ha confirmado ninguna reserva ni notificación al equipo. Puedes consultar directamente por WhatsApp.' : 'We could not complete the inquiry. No booking or team notification has been confirmed. You can contact us directly on WhatsApp.';
+        setIntakeReply(failureReply);
         setIntakeEscalated(false);
-        setIntakeHandoffUrl(directWhatsAppUrl(message));
+        const handoffUrl = directWhatsAppUrl(message);
+        setIntakeHandoffUrl(handoffUrl);
+        detail.onResult?.({ ok: false, reply: failureReply, handoffUrl });
       } finally {
         setIntakeLoading(false);
       }

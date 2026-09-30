@@ -113,8 +113,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
             <p className="text-base sm:text-lg text-stone-200 max-w-2xl font-normal leading-relaxed">
               {language === 'es' 
-                ? 'Encuentra y reserva todas las experiencias, shuttles y tours de Costa Rica en una sola plataforma. Trabajamos con los mejores operadores locales para garantizarte disponibilidad y el precio oficial.'
-                : 'Find and book all experiences, shuttles, and tours in Costa Rica on a single platform. We work with the best local operators to guarantee you availability and the official price.'}
+                ? 'Explora experiencias, shuttles y tours de Costa Rica en una sola plataforma. La disponibilidad, el operador y el precio final se verifican durante la solicitud; enviarla no confirma la reserva.'
+                : 'Explore Costa Rica experiences, shuttles, and tours in one place. Availability, operator, and final price are checked during your request; submitting it does not confirm a booking.'}
             </p>
 
             {/* Search and Filters Island */}

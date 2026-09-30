@@ -102,7 +102,7 @@ import { executeAutomatedProviderPayouts } from './backend/providerPayoutService
 import { executeSinpeVerification } from './backend/sinpeService';
 import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
 import { verifyProviderPortalToken } from './backend/providerPortalService';
-import { createInboundVoiceResponse, handleVoiceTurn, voiceAgentDeskConfig, verifyVoiceSignature, rememberVoiceCallStart, rememberVoiceCallEnd, getVoiceCallSession } from './backend/voiceAgentDeskService';
+import { createInboundVoiceResponse, createHumanTransferResult, handleVoiceTurn, voiceAgentDeskConfig, voiceHumanTransferAvailable, verifyVoiceSignature, rememberVoiceCallStart, rememberVoiceCallEnd, rememberVoiceCallStatus, rememberVoiceHumanTransferStatus, getVoiceCallSession } from './backend/voiceAgentDeskService';
 import { getSelfDevelopmentOverview, runSelfHealingCycle } from './backend/selfDevelopmentEngine';
 import { askCounterDesk, getCounterOperationsSnapshot, organizeCounterDesk } from './backend/counterDeskService';
 import { runEvaluationSuite } from './backend/agentEvaluationService';
@@ -1265,7 +1265,7 @@ app.post('/api/voice/incoming', async (req, res) => {
     await rememberVoiceCallStart({ callId, from: req.body?.From, to: req.body?.To, hotelId, hotelName, room, language, startedAt: new Date().toISOString() });
     const twiml = createInboundVoiceResponse({
       callId, language, hotelName, room, responseUrl,
-      humanTransferAvailable: Boolean(process.env.VOICE_HUMAN_NUMBER)
+      humanTransferAvailable: voiceHumanTransferAvailable()
     });
     res.type('text/xml').send(twiml);
   } catch (err: any) {
@@ -1287,7 +1287,11 @@ app.post('/api/voice/respond', async (req, res) => {
     const hotelName = String(req.query?.hotelName || req.body?.hotelName || '').trim() || undefined;
     const room = String(req.query?.room || req.body?.room || '').trim() || undefined;
     const responseUrl = `${baseUrl}/api/voice/respond?hotelId=${encodeURIComponent(hotelId || '')}&hotelName=${encodeURIComponent(hotelName || '')}&room=${encodeURIComponent(room || '')}&language=${language}`;
-    const humanTransferUrl = `${baseUrl}/api/voice/human-transfer?callId=${encodeURIComponent(callId)}`;
+    const transferUrl = new URL(`${baseUrl}/api/voice/human-transfer`);
+    transferUrl.searchParams.set('callId', callId);
+    transferUrl.searchParams.set('language', language);
+    transferUrl.searchParams.set('responseUrl', responseUrl);
+    const humanTransferUrl = transferUrl.toString();
     const twiml = await handleVoiceTurn({
       callId,
       speech: req.body?.SpeechResult,
@@ -1297,6 +1301,7 @@ app.post('/api/voice/respond', async (req, res) => {
       hotelName,
       room,
       from: req.body?.From,
+      silenceCount: Number(req.query?.silenceCount || 0),
       responseUrl,
       humanTransferUrl
     });
@@ -1307,10 +1312,29 @@ app.post('/api/voice/respond', async (req, res) => {
 });
 
 app.post('/api/voice/human-transfer', async (req, res) => {
-  const status = String(req.body?.DialCallStatus || req.query?.status || 'completed');
-  const callId = String(req.body?.CallSid || req.query?.callId || '');
-  if (callId) await rememberVoiceCallEnd(callId, status);
-  res.type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+  const params = Object.fromEntries(Object.entries(req.body || {}).map(([k, v]) => [k, String(v ?? '')]));
+  const signature = req.headers['x-twilio-signature'];
+  const baseUrl = process.env.PUBLIC_BASE_URL || process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+  if (!verifyVoiceSignature(`${baseUrl}${req.originalUrl}`, params, typeof signature === 'string' ? signature : undefined)) {
+    return res.status(403).type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response><Say>Unauthorized</Say></Response>');
+  }
+  const status = String(req.body?.DialCallStatus || req.query?.status || 'unknown').toLowerCase();
+  const callId = String(req.query?.callId || '').trim();
+  if (!callId) return res.status(400).type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response><Say>Call identifier required</Say></Response>');
+  await rememberVoiceHumanTransferStatus(callId, status);
+  if (status === 'completed') await rememberVoiceCallEnd(callId, 'completed');
+  const language = String(req.query?.language || '').toLowerCase().startsWith('en') ? 'en' : 'es';
+  const responseUrl = String(req.query?.responseUrl || '');
+  let safeResponseUrl = false;
+  try {
+    const callback = new URL(responseUrl);
+    const publicOrigin = new URL(baseUrl).origin;
+    safeResponseUrl = callback.origin === publicOrigin && callback.pathname === '/api/voice/respond';
+  } catch {}
+  if (!safeResponseUrl) {
+    return res.type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>');
+  }
+  res.type('text/xml').send(createHumanTransferResult({ status, responseUrl, language }));
 });
 
 app.get('/api/voice/calls/:callId', requireAdmin, async (req, res) => {
@@ -1327,9 +1351,23 @@ app.get('/api/voice/calls/:callId', requireAdmin, async (req, res) => {
 
 app.post('/api/voice/status', async (req, res) => {
   try {
+    const params = Object.fromEntries(Object.entries(req.body || {}).map(([k, v]) => [k, String(v ?? '')]));
+    const signature = req.headers['x-twilio-signature'];
+    const baseUrl = process.env.PUBLIC_BASE_URL || process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+    if (!verifyVoiceSignature(`${baseUrl}${req.originalUrl}`, params, typeof signature === 'string' ? signature : undefined)) {
+      return res.status(403).send();
+    }
     const callId = String(req.body?.CallSid || req.body?.callId || '');
-    if (callId) await rememberVoiceCallEnd(callId, String(req.body?.CallStatus || 'unknown'));
-  } catch {}
+    if (!callId) return res.status(400).send();
+    const status = String(req.body?.CallStatus || 'unknown').toLowerCase();
+    if (['completed', 'busy', 'failed', 'no-answer', 'canceled', 'cancelled'].includes(status)) {
+      await rememberVoiceCallEnd(callId, status);
+    } else {
+      await rememberVoiceCallStatus(callId, status);
+    }
+  } catch {
+    return res.status(500).send();
+  }
   res.status(204).send();
 });
 
@@ -3011,6 +3049,3 @@ function calculateAuthoritativeCheckoutTotal(body: any): number | null {
   const children = Number.isFinite(childrenRaw) ? Math.max(0, childrenRaw) : 0;
   return Number((tour.priceUSD * adults + tour.priceUSD * 0.7 * children).toFixed(2));
 }
-
-
-
