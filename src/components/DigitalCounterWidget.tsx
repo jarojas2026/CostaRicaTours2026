@@ -327,7 +327,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
   return (
     <>
       {/* Dock del Mostrador Digital de Reservas (posicionado al lado de WhatsApp sin solapamiento) */}
-      <div className="fixed bottom-[calc(4.8rem+env(safe-area-inset-bottom))] right-[4.75rem] sm:right-24 lg:bottom-6 lg:right-24 z-[80] flex flex-col items-end gap-2">
+      <div className="fixed bottom-[calc(9rem+env(safe-area-inset-bottom))] right-[4.75rem] sm:right-24 lg:bottom-6 lg:right-24 z-[80] flex flex-col items-end gap-2">
         
         {/* Teaser Pill Flotante Interactivo */}
         <AnimatePresence>
@@ -370,7 +370,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(true)}
-          className="group flex items-center gap-2.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 hover:from-amber-300 hover:to-amber-400 text-stone-950 font-black p-3 sm:px-5 sm:py-3.5 rounded-full shadow-[0_10px_30px_rgba(245,158,11,0.4)] border-2 border-stone-950 cursor-pointer transition-all"
+          className="group flex items-center gap-2.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 hover:from-amber-300 hover:to-amber-400 text-stone-950 font-black p-2 sm:p-3 lg:px-5 lg:py-3.5 rounded-full shadow-[0_10px_30px_rgba(245,158,11,0.4)] border-2 border-stone-950 cursor-pointer transition-all"
           aria-label={isEs ? 'Abrir Mostrador Digital de Reservas 24/7' : 'Open 24/7 Digital Booking Counter'}
           title={isEs ? 'Mostrador Digital: Cotización y Disponibilidad 24/7' : 'Digital Counter: 24/7 Live Rates & Availability'}
         >
@@ -381,7 +381,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
             <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-stone-950 animate-pulse" />
           </div>
 
-          <div className="text-left hidden md:block leading-tight pr-1">
+          <div className="text-left hidden lg:block leading-tight pr-1">
             <span className="text-[10px] uppercase font-black tracking-wider text-stone-900 block">
               {isEs ? 'Mostrador Digital' : 'Digital Counter'}
             </span>
