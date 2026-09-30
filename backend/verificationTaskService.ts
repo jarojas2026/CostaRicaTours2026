@@ -18,6 +18,11 @@ export type VerificationTask = {
   createdAt: string;
   updatedAt: string;
   evidence?: Evidence[];
+  observedFacts?: Record<string, unknown>;
+  remainingFacts?: string[];
+  attemptCount?: number;
+  lastAttemptAt?: string;
+  nextAttemptAfter?: string;
   failureReason?: string;
 };
 
@@ -69,7 +74,10 @@ export async function createVerificationTask(input: {
     nextAction: clean(input.nextAction, 300),
     sourceChannel: clean(input.sourceChannel, 120),
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
+    observedFacts: {},
+    remainingFacts: requiredFacts,
+    attemptCount: 0
   };
 
   const db = getFirestoreDb();
@@ -98,10 +106,49 @@ export async function getVerificationTask(taskId: string) {
 
 export async function markVerificationTaskInProgress(taskId: string) {
   const db = getFirestoreDb();
+  const now = new Date().toISOString();
   if (!db) return { persisted: false, taskId, status: 'in_progress' as const };
   const ref = db.collection('verification_tasks').doc(clean(taskId, 180));
-  await ref.set({ status: 'in_progress', startedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, { merge: true });
+  await db.runTransaction(async (tx: any) => {
+    const snap = await tx.get(ref);
+    const attempts = Number(snap.data()?.attemptCount || 0) + 1;
+    tx.set(ref, { status: 'in_progress', attemptCount: attempts, lastAttemptAt: now, startedAt: now, updatedAt: now }, { merge: true });
+  });
   return { persisted: true, taskId, status: 'in_progress' as const };
+}
+
+export async function recordVerificationObservation(input: {
+  taskId: string;
+  evidence: Evidence;
+  facts: Record<string, unknown>;
+  retryAfterMs?: number;
+}) {
+  const db = getFirestoreDb();
+  if (!db) return { persisted: false, taskId: input.taskId, status: 'pending' as const };
+  const ref = db.collection('verification_tasks').doc(clean(input.taskId, 180));
+  let result: any = null;
+  await db.runTransaction(async (tx: any) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new Error('verification_task_not_found');
+    const task = snap.data() as VerificationTask;
+    const observedFacts = { ...(task.observedFacts || {}), ...(input.facts || {}) };
+    const remainingFacts = normalizeFacts((task.requiredFacts || []).filter(key => observedFacts[key] === undefined || observedFacts[key] === null || observedFacts[key] === ''));
+    const evidence = [...(task.evidence || []), input.evidence].slice(-20);
+    const complete = remainingFacts.length === 0;
+    const now = new Date().toISOString();
+    const patch = {
+      observedFacts,
+      remainingFacts,
+      evidence,
+      status: complete ? 'verified' : 'pending',
+      verifiedAt: complete ? now : undefined,
+      nextAttemptAfter: complete ? null : new Date(Date.now() + Math.max(15_000, input.retryAfterMs || 5 * 60_000)).toISOString(),
+      updatedAt: now
+    };
+    tx.set(ref, patch, { merge: true });
+    result = { taskId: input.taskId, ...patch };
+  });
+  return { persisted: true, ...result };
 }
 
 export async function completeVerificationTask(input: {
@@ -119,6 +166,7 @@ export async function completeVerificationTask(input: {
     status: 'verified' as const,
     evidence,
     verifiedFacts,
+    remainingFacts: [],
     verifiedAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -126,6 +174,19 @@ export async function completeVerificationTask(input: {
   const ref = db.collection('verification_tasks').doc(clean(input.taskId, 180));
   await ref.set(patch, { merge: true });
   return { persisted: true, taskId: input.taskId, ...patch };
+}
+
+export async function deferVerificationTask(taskId: string, reason: string, retryAfterMs = 5 * 60_000) {
+  const db = getFirestoreDb();
+  const patch = {
+    status: 'pending' as const,
+    failureReason: clean(reason, 1000),
+    nextAttemptAfter: new Date(Date.now() + Math.max(15_000, retryAfterMs)).toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  if (!db) return { persisted: false, taskId, ...patch };
+  await db.collection('verification_tasks').doc(clean(taskId, 180)).set(patch, { merge: true });
+  return { persisted: true, taskId, ...patch };
 }
 
 export async function failVerificationTask(taskId: string, reason: string, humanReview = false) {
