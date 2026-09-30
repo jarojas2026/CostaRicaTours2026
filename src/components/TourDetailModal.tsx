@@ -45,7 +45,6 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
   const attempt = useRef(createBookingAttempt());
   const submitting = useRef(false);
 
-  // Close on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -74,7 +73,6 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
   const modalTitle = getLangText(tour.title, language, 'Tour de Costa Rica');
   const modalDescription = getLangText(tour.description, language, '');
 
-  // Safe inclusions & what to bring extraction across any language
   const inclusions: string[] = Array.isArray(tour.inclusions) 
     ? tour.inclusions 
     : (tour.inclusions?.[language] || tour.inclusions?.es || tour.inclusions?.en || []);
@@ -185,7 +183,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     };
 
     try {
-      let bookingId = pendingBookingId;
+      let bookingId: string = pendingBookingId || '';
       let confirmedBooking: any = null;
 
       if (!bookingId) {
@@ -211,7 +209,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
           throw new Error(bookingData.message || bookingData.error || (language === 'es' ? 'Error al registrar la solicitud en el servidor.' : 'Error creating the request on server.'));
         }
 
-        bookingId = bookingData.booking.bookingId;
+        bookingId = String(bookingData.booking.bookingId);
         confirmedBooking = bookingData.booking;
         setPendingBookingId(bookingId);
         sessionStorage.setItem('crt_last_booking_id', bookingId);
@@ -284,7 +282,6 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
         className="relative w-full max-w-5xl max-h-[92vh] flex flex-col bg-[#051c14] border border-emerald-500/30 text-stone-100 rounded-3xl shadow-2xl shadow-black/90 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Floating Control Bar */}
         <div className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-3.5 bg-[#03150e]/95 backdrop-blur-md border-b border-emerald-500/20">
           <div className="flex items-center gap-2 min-w-0 pr-4">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
@@ -305,7 +302,6 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
               <span>WhatsApp</span>
             </a>
 
-            {/* High-contrast Close Button */}
             <button
               onClick={onClose}
               type="button"
@@ -318,9 +314,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
           </div>
         </div>
 
-        {/* Scrollable Content Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain divide-y divide-emerald-950/40">
-          {/* Hero Image Showcase */}
           <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] bg-stone-950 overflow-hidden">
             <LazyImage 
               src={galleryImages[activeImageIdx]} 
@@ -329,7 +323,6 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#051c14] via-transparent to-black/40 pointer-events-none" />
 
-            {/* Thumbnails Navigation */}
             {galleryImages.length > 1 && (
               <div className="absolute bottom-3 left-4 right-4 flex gap-2 overflow-x-auto pb-1 scrollbar-none z-10">
                 {galleryImages.map((img, idx) => (
@@ -348,9 +341,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
             )}
           </div>
 
-          {/* Main 2-Column Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-emerald-500/20">
-            {/* Left Column (Details) */}
             <div className="lg:col-span-7 p-6 sm:p-8 space-y-6">
               <div>
                 <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight mb-3">
@@ -363,7 +354,6 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                 )}
               </div>
 
-              {/* Key Chips */}
               <div className="flex flex-wrap gap-2.5">
                 <div className="px-3.5 py-1.5 bg-[#03150e] rounded-full border border-emerald-500/30 flex items-center gap-2 text-xs">
                   <Clock className="w-3.5 h-3.5 text-amber-400" />
@@ -380,7 +370,6 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                 </div>
               </div>
 
-              {/* Description */}
               <div className="space-y-2">
                 <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400">
                   {language === 'es' ? 'Descripción de la Experiencia' : 'Experience Description'}
@@ -390,7 +379,6 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                 </p>
               </div>
 
-              {/* Inclusions */}
               {inclusions.length > 0 && (
                 <div className="space-y-3 pt-2">
                   <h4 className="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-1.5">
@@ -408,7 +396,6 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                 </div>
               )}
 
-              {/* What to Bring */}
               {whatToBring.length > 0 && (
                 <div className="space-y-3 pt-2">
                   <h4 className="text-xs font-black uppercase tracking-widest text-emerald-400 flex items-center gap-1.5">
@@ -426,7 +413,6 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                 </div>
               )}
 
-              {/* Operator Badge */}
               {operator && (
                 <div className="p-4 bg-[#03150e] border border-emerald-500/20 rounded-2xl flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
@@ -443,7 +429,6 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
               )}
             </div>
 
-            {/* Right Column (Booking Form) */}
             <div className="lg:col-span-5 p-6 sm:p-8 bg-[#041910] space-y-5">
               <div className="p-4 bg-[#03150e] rounded-2xl border border-emerald-500/30">
                 <div className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-1">
@@ -634,7 +619,6 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                   </div>
                 )}
 
-                {/* Primary Booking Button */}
                 <button 
                   disabled={isSubmitting} 
                   type="submit" 
@@ -654,7 +638,6 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                   </span>
                 </button>
 
-                {/* Trust Badges */}
                 <div className="flex items-center justify-center gap-4 text-[10px] text-stone-400 font-bold uppercase tracking-wider pt-1">
                   <span className="flex items-center gap-1">
                     <Lock className="w-3 h-3 text-emerald-400" />
