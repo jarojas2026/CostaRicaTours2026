@@ -1,18 +1,16 @@
 name: Deploy to Google Cloud Run
 
-# Se ejecuta automáticamente cada vez que hay un push a "main".
-# También se puede lanzar manualmente desde la pestaña "Actions" de GitHub.
-# Este workflow solo se encarga del despliegue; no modifica el código de la aplicación.
+# Producción se despliega únicamente después de que el gate principal
+# Build & Type Check termine exitosamente en main. Esto evita construir o
+# desplegar commits que todavía no han superado seguridad, contratos, tipos
+# y compilación. workflow_dispatch se conserva para recuperación manual.
 on:
-  push:
-    branches: [main]
+  workflow_run:
+    workflows: ["Build & Type Check"]
+    types: [completed]
   workflow_dispatch: {}
 
 env:
-  # Nombre del servicio en Cloud Run y región donde vive.
-  # San José, Costa Rica está más cerca de la región "us-central1"
-  # (Iowa) que de otras opciones de Google Cloud en Latinoamérica
-  # limitadas; es una de las regiones más económicas y estables.
   SERVICE_NAME: costa-rica-tours
   REGION: us-central1
   PROJECT_ID: gen-lang-client-0782739149
@@ -21,20 +19,36 @@ permissions:
   contents: read
   id-token: write
 
+# Sólo importa el despliegue más reciente. Si llega un commit nuevo y ya
+# validado, un deploy viejo deja de representar el estado deseado.
 concurrency:
   group: production-cloud-run-deploy
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
-    name: Build y despliegue a Cloud Run
+    name: Desplegar SHA validado a Cloud Run
     runs-on: ubuntu-latest
-    # No se usa "if" con secrets aquí. GitHub no permite usar directamente
-    # el contexto "secrets" en la condición de un job. Si faltan los secretos,
-    # el propio paso de autenticación mostrará el error correspondiente.
+    timeout-minutes: 35
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
     steps:
-      - name: Descargar el código del repositorio
+      - name: Resolver SHA de despliegue
+        id: deploy_ref
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Descargar exactamente el código validado
         uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.deploy_ref.outputs.sha }}
 
       - name: Autenticar con Google Cloud
         uses: google-github-actions/auth@v3
@@ -46,9 +60,15 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
 
-      - name: Preflight — verificar tipos y compilación antes de desplegar
+      # El trigger workflow_run ya garantiza que CI completo pasó. Para un
+      # lanzamiento manual sí ejecutamos un gate local antes de tocar prod.
+      - name: Preflight manual — contratos, tipos y build
+        if: github.event_name == 'workflow_dispatch'
         run: |
           npm ci --include=optional --legacy-peer-deps
+          npm run audit:security:prod
+          npm run audit:whatsapp
+          npm run test:contracts
           npm run lint
           npm run build
         env:
@@ -58,9 +78,9 @@ jobs:
           VITE_STRIPE_PUBLIC_KEY: "pk_test_dummy"
           VITE_GOOGLE_MAPS_API_KEY: "dummy-key"
 
-      - name: Desplegar directamente desde el código en Cloud Run
+      - name: Desplegar código validado en Cloud Run
         run: |
-          echo "Iniciando despliegue en Google Cloud Run..."
+          echo "Desplegando SHA ${{ steps.deploy_ref.outputs.sha }} en Cloud Run..."
           gcloud run deploy "$SERVICE_NAME" \
             --source . \
             --region "$REGION" \
@@ -71,11 +91,13 @@ jobs:
             --cpu=1 \
             --quiet
 
-      - name: Verificar revisión y endpoint de salud
+      - name: Verificar revisión, SHA y endpoint de salud
         run: |
-          SERVICE_URL="$(gcloud run services describe "${{ env.SERVICE_NAME }}" --region "${{ env.REGION }}" --format='value(status.url)')"
+          SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
+          REVISION="$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.latestReadyRevisionName)')"
           echo "Servicio desplegado: $SERVICE_URL"
-          echo "Revisión activa: $(gcloud run services describe "${{ env.SERVICE_NAME }}" --region "${{ env.REGION }}" --format='value(status.latestReadyRevisionName)')"
+          echo "Revisión activa: $REVISION"
+          echo "SHA desplegado: ${{ steps.deploy_ref.outputs.sha }}"
           ID_TOKEN="$(gcloud auth print-identity-token)"
           curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors \
             -H "Authorization: Bearer $ID_TOKEN" \
