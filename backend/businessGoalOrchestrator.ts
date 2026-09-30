@@ -2,6 +2,7 @@ import { emitOperationalEvent } from './operationalEventBus';
 import { openOrResumeOmnichannelJourney, recordVerificationPending } from './omnichannelJourneyBridge';
 import { inferBusinessGoal, requiredOperationalFacts, type BusinessGoal } from './operationalTruthPolicy';
 import { rememberOrganizationalFlow } from './organizationalMemoryService';
+import { createVerificationTask } from './verificationTaskService';
 
 export type ExecuteBusinessGoalInput = {
   channel: string;
@@ -25,6 +26,7 @@ export type BusinessGoalExecution = {
   verifiedFacts: unknown[];
   pendingFacts: string[];
   actionsExecuted: string[];
+  verificationTaskIds: string[];
   providerRequests: string[];
   nextAction: string;
   customerCommunicationState: 'not_required' | 'ready_for_acknowledgement' | 'awaiting_verification' | 'human_review';
@@ -61,6 +63,7 @@ export async function executeBusinessGoal(input: ExecuteBusinessGoalInput): Prom
   const pendingFacts = input.actor === 'customer' ? requiredOperationalFacts(goal) : [];
   const nextAction = nextActionFor(goal, input.actor, pendingFacts);
   const actionsExecuted = ['resolve_identity_continuity', 'load_organizational_memory', 'classify_business_goal', 'separate_truth_planes'];
+  const verificationTaskIds: string[] = [];
 
   if (pendingFacts.length) {
     await recordVerificationPending({
@@ -74,6 +77,18 @@ export async function executeBusinessGoal(input: ExecuteBusinessGoalInput): Prom
       nextAction
     });
     actionsExecuted.push('record_verification_requirements');
+
+    const verificationTask = await createVerificationTask({
+      correlationId: continuity.correlationId,
+      journeyId: continuity.journeyId,
+      sessionId: continuity.sessionId,
+      goal,
+      requiredFacts: pendingFacts,
+      nextAction,
+      sourceChannel: input.channel
+    });
+    verificationTaskIds.push(verificationTask.task.taskId);
+    actionsExecuted.push(verificationTask.created ? 'create_verification_task' : 'resume_verification_task');
   }
 
   const customerCommunicationState: BusinessGoalExecution['customerCommunicationState'] =
@@ -96,6 +111,7 @@ export async function executeBusinessGoal(input: ExecuteBusinessGoalInput): Prom
     metadata: {
       goal,
       pendingFactCount: pendingFacts.length,
+      verificationTaskIds,
       customerCommunicationState
     }
   });
@@ -110,6 +126,7 @@ export async function executeBusinessGoal(input: ExecuteBusinessGoalInput): Prom
       channel: input.channel,
       actor: input.actor,
       pendingFacts,
+      verificationTaskIds,
       nextAction
     }
   }).catch(() => undefined);
@@ -123,6 +140,7 @@ export async function executeBusinessGoal(input: ExecuteBusinessGoalInput): Prom
     verifiedFacts: [],
     pendingFacts,
     actionsExecuted,
+    verificationTaskIds,
     providerRequests: [],
     nextAction,
     customerCommunicationState
