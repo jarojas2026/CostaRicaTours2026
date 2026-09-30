@@ -18,7 +18,7 @@ export type Evidence = {
   reference?: string;
 };
 
-const LIVE_SOURCES = new Set<EvidenceSource>(['provider_portal', 'provider_api', 'inventory_api']);
+const LIVE_SOURCES = new Set<EvidenceSource>(['provider_email', 'provider_portal', 'provider_api', 'inventory_api']);
 const clean = (value: unknown, max = 160) => String(value ?? '').trim().slice(0, max);
 
 export function isFreshEvidence(evidence: Evidence, now = Date.now()) {
