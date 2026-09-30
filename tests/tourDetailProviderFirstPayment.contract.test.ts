@@ -14,7 +14,7 @@ test('tour booking waits for provider evidence before Stripe or PayPal', () => {
 });
 
 test('pending provider response never creates a duplicate booking', () => {
-  assert.match(source, /let bookingId = pendingBookingId/);
+  assert.match(source, /let bookingId[^=]*= pendingBookingId \|\| ''/);
   assert.match(source, /if \(!bookingId\)/);
   assert.match(source, /setPendingBookingId\(bookingId\)/);
   assert.match(source, /Revisar respuesta del proveedor/);
