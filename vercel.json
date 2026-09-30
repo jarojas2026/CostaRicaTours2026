@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run check:release && npm run build",
   "rewrites": [
     {
       "source": "/ai",
@@ -78,5 +78,6 @@
       "source": "/tour/:id",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "installCommand": "npm ci --include=optional --legacy-peer-deps"
 }

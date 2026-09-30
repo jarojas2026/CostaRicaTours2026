@@ -98,6 +98,7 @@ import {
   executePreSaleProspectRecovery,
   executePostSaleVipLoyalty
 } from './backend/nativeWorkflows';
+import { handleStripeWebhook, handlePayPalWebhook } from './backend/paymentWebhookHttpService';
 import { executeAutomatedProviderPayouts } from './backend/providerPayoutService';
 import { executeSinpeVerification } from './backend/sinpeService';
 import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
@@ -164,6 +165,10 @@ function requireAgentTool(req: express.Request, res: express.Response, next: exp
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '256kb', verify: (req, _res, buf) => { (req as any).rawBody = Buffer.from(buf); } }));
 app.use(express.urlencoded({ extended: true, limit: '32kb', parameterLimit: 100 }));
+
+// Signature verification uses rawBody captured above; fulfillment stays canonical.
+app.post('/api/webhooks/stripe', handleStripeWebhook);
+app.post('/api/webhooks/paypal', handlePayPalWebhook);
 
 // ==========================================
 // 🛡️ RATE LIMITING MIDDLEWARES
@@ -338,7 +343,8 @@ app.post('/api/internal/customer-intake/process', async (req, res) => {
     return res.status(401).json({ success: false, error: 'No autorizado.' });
   }
   try {
-    const result = await processPendingCustomerIntakeJobs(Number(req.body?.limit || 10));
+    const result = await withDistributedAutomationLock('customer-intake-worker-5s', () => processPendingCustomerIntakeJobs(Number(req.body?.limit || 10)));
+    if (!result) return res.status(409).json({ success: false, error: 'automation_lock_busy' });
     return res.json({ success: true, ...result });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error?.message || 'No se pudo procesar la cola.' });
@@ -443,7 +449,7 @@ app.patch('/api/ai/journey/:journeyId', aiAdmission.middleware, async (req, res)
 // 📬 PROVIDER INBOX — lectura operativa del correo cada minuto
 app.post('/api/ops/provider-inbox/check', requireAdmin, async (_req, res) => {
   try {
-    res.json({ success: true, result: await processProviderInboxOnce() });
+    res.json({ success: true, result: await withDistributedAutomationLock('provider-inbox-1m', processProviderInboxOnce) });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message || 'No se pudo revisar la bandeja.' });
   }
@@ -555,14 +561,14 @@ app.post('/api/internal/provider-inbox/sweep', requireAgentTool, async (_req, re
 
 app.post('/api/internal/email-operations/sweep', requireAgentTool, async (_req, res) => {
   try {
-    res.json({ success: true, result: await processEmailOperationsOnce() });
+    res.json({ success: true, result: await withDistributedAutomationLock('email-operations-1m', processEmailOperationsOnce) });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message || 'Email operations error' });
   }
 });
 
 app.post('/api/internal/reservation-lifecycle/sweep', requireAgentTool, async (_req, res) => {
-  try { res.json({ success: true, result: await runReservationLifecycleSweep(100) }); }
+  try { res.json({ success: true, result: await withDistributedAutomationLock('reservation-lifecycle-1m', () => runReservationLifecycleSweep(100)) }); }
   catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Reservation lifecycle error' }); }
 });
 

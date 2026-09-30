@@ -237,7 +237,7 @@ function targetUrl(req: VercelRequest): string {
   return `${backend}${normalized}`;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function handler(req: VercelRequest, res: VercelResponse) {
   const pathname = requestPath(req);
   res.setHeader('cache-control', 'no-store, max-age=0');
 
@@ -303,3 +303,72 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 }
+
+/**
+ * The Web handler receives the original bytes before Node request.body helpers
+ * can parse and reserialize JSON or form data. This preserves Stripe/WhatsApp
+ * signatures and Twilio form fields through the private gateway.
+ */
+const MAX_GATEWAY_BODY_BYTES = 256 * 1024;
+
+export default {
+  async fetch(request: Request): Promise<Response> {
+    const responseHeaders = new Headers({ 'cache-control': 'no-store, max-age=0' });
+    let status = 200;
+    let responseBody: BodyInit | null = null;
+    let rawBody: Buffer | undefined;
+    if (request.method !== 'GET' && request.method !== 'HEAD' && request.body) {
+      const reader = request.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let size = 0;
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          size += value.byteLength;
+          if (size > MAX_GATEWAY_BODY_BYTES) {
+            await reader.cancel();
+            return Response.json({ success: false, error: 'payload_too_large' }, {
+              status: 413, headers: responseHeaders
+            });
+          }
+          chunks.push(value);
+        }
+        rawBody = Buffer.concat(chunks);
+      } catch {
+        return Response.json({ success: false, error: 'invalid_request_body' }, {
+          status: 400, headers: responseHeaders
+        });
+      } finally {
+        reader.releaseLock();
+      }
+    }
+    const url = new URL(request.url);
+    const req = {
+      method: request.method,
+      url: url.pathname + url.search,
+      headers: Object.fromEntries(request.headers.entries()),
+      body: rawBody
+    } as unknown as VercelRequest;
+    const res = {
+      setHeader(name: string, value: string | number | readonly string[]) {
+        responseHeaders.set(name, Array.isArray(value) ? value.join(',') : String(value));
+        return this;
+      },
+      status(code: number) { status = code; return this; },
+      send(value: any) {
+        responseBody = Buffer.isBuffer(value) ? new Uint8Array(value) : value;
+        return this;
+      },
+      json(value: unknown) {
+        responseHeaders.set('content-type', 'application/json');
+        responseBody = JSON.stringify(value);
+        return this;
+      }
+    } as unknown as VercelResponse;
+    await handler(req, res);
+    return new Response(request.method === 'HEAD' || [204, 205, 304].includes(status) ? null : responseBody, {
+      status, headers: responseHeaders
+    });
+  }
+};

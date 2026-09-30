@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import handler from '../api/[...path]';
+import { handler } from '../api/[...path]';
 
 test('private gateway authenticates runtime requests and preserves user auth', async (t) => {
   const names = [

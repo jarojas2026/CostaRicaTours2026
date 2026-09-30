@@ -52,6 +52,14 @@ jobs:
         with:
           ref: ${{ steps.deploy_ref.outputs.sha }}
 
+      - name: Verificar que existe un método de autenticación configurado
+        shell: bash
+        run: |
+          if { [ -z "$GCP_WIF_PROVIDER" ] || [ -z "$GCP_SERVICE_ACCOUNT" ]; } && [ -z "$GCP_SA_KEY_JSON" ]; then
+            echo "::error::Configure GCP_WORKLOAD_IDENTITY_PROVIDER + GCP_SERVICE_ACCOUNT (recomendado) o GCP_SA_KEY como fallback."
+            exit 1
+          fi
+
       - name: Autenticar con Google Cloud — OIDC keyless (preferido)
         if: env.GCP_WIF_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != ''
         uses: google-github-actions/auth@v3
@@ -65,27 +73,23 @@ jobs:
         with:
           credentials_json: ${{ env.GCP_SA_KEY_JSON }}
 
-      - name: Verificar que existe un método de autenticación configurado
-        shell: bash
-        run: |
-          if [ -z "$GCP_WIF_PROVIDER" ] && [ -z "$GCP_SA_KEY_JSON" ]; then
-            echo "::error::Configure GCP_WORKLOAD_IDENTITY_PROVIDER + GCP_SERVICE_ACCOUNT (recomendado) o GCP_SA_KEY como fallback."
-            exit 1
-          fi
-
       - name: Configurar gcloud CLI
         uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: ${{ env.PROJECT_ID }}
 
+      - name: Configurar Node.js para recuperación manual
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+
       - name: Preflight manual — contratos, tipos y build
         if: github.event_name == 'workflow_dispatch'
         run: |
           npm ci --include=optional --legacy-peer-deps
-          npm run audit:security:prod
-          npm run audit:whatsapp
-          npm run test:contracts
-          npm run lint
+          npm run check:release
           npm run build
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
