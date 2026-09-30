@@ -14,7 +14,7 @@
     "audit:system": "tsx scripts/auditSystem.ts"
   },
   "dependencies": {
-    "@anthropic-ai/vertex-sdk": "^0.19.8",
+    "@anthropic-ai/vertex-sdk": "^0.19.11",
     "@google/genai": "^2.4.0",
     "@stripe/stripe-js": "^9.15.0",
     "@tailwindcss/vite": "^4.1.14",
