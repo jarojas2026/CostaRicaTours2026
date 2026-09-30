@@ -27,6 +27,7 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
 
   const [tour, setTour] = useState<Tour | null>(() => TOURS.find(t => t.id === id || t.slug === id) || null);
   const [selectedDate, setSelectedDate] = useState('');
+  const [dateInput, setDateInput] = useState('');
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
   const [pickupHotel, setPickupHotel] = useState('');
@@ -378,7 +379,21 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] ml-4">{language === 'es' ? 'Fecha de viaje' : 'Travel date'}</label>
-                    <input required type="date" max="9999-12-31" inputMode="numeric" aria-describedby="travel-date-help" className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors" value={selectedDate} onChange={e => { const value = e.currentTarget.value; if (!value || /^\\d{4}-\\d{2}-\\d{2}$/.test(value)) setSelectedDate(value); }} />\n                    <span id="travel-date-help" className="sr-only">AAAA-MM-DD</span>
+                    <input required type="text" inputMode="numeric" autoComplete="bday" maxLength={10} placeholder="DD/MM/AAAA" aria-describedby="travel-date-help" className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors" value={dateInput} onChange={e => {
+                      const digits = e.currentTarget.value.replace(/\\D/g, '').slice(0, 8);
+                      const formatted = digits.length > 4 ? digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4) : digits.length > 2 ? digits.slice(0, 2) + '/' + digits.slice(2) : digits;
+                      setDateInput(formatted);
+                      if (digits.length === 8) {
+                        const day = Number(digits.slice(0, 2));
+                        const month = Number(digits.slice(2, 4));
+                        const year = Number(digits.slice(4));
+                        const candidate = new Date(year, month - 1, day);
+                        if (candidate.getFullYear() === year && candidate.getMonth() === month - 1 && candidate.getDate() === day) {
+                          setSelectedDate(digits.slice(4) + '-' + digits.slice(2, 4) + '-' + digits.slice(0, 2));
+                        } else setSelectedDate('');
+                      } else setSelectedDate('');
+                    }} />
+                    <span id="travel-date-help" className="sr-only">Formato: DD/MM/AAAA</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
