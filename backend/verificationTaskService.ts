@@ -123,6 +123,9 @@ export async function recordVerificationObservation(input: {
   facts: Record<string, unknown>;
   retryAfterMs?: number;
 }) {
+  if (!canPromoteTruth({ from: 'PROVIDER_PROVIDED', to: 'LIVE_VERIFIED', evidence: input.evidence })) {
+    throw new Error('verification_observation_requires_fresh_authoritative_evidence');
+  }
   const db = getFirestoreDb();
   if (!db) return { persisted: false, taskId: input.taskId, status: 'pending' as const };
   const ref = db.collection('verification_tasks').doc(clean(input.taskId, 180));
