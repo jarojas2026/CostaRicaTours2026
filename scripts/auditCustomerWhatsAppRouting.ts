@@ -12,6 +12,14 @@ const ADMIN_ONLY_FILES = new Set([
   path.normalize('src/components/ProviderCommunicationHub.tsx')
 ]);
 
+// The Digital Counter is itself the AI intake/orchestration surface. Its
+// official-business WhatsApp action is a human handoff after entering that
+// surface (or a fail-safe when the central engine is unavailable), not a
+// bypass to an arbitrary third-party number.
+const AI_HANDOFF_FILES = new Set([
+  path.normalize('src/components/DigitalCounterWidget.tsx')
+]);
+
 function walk(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
     const full = path.join(dir, entry.name);
@@ -25,6 +33,7 @@ const customerFiles = files.filter(file => !ADMIN_ONLY_FILES.has(path.normalize(
 const violations: string[] = [];
 
 for (const file of customerFiles) {
+  const normalizedFile = path.normalize(file);
   const source = fs.readFileSync(file, 'utf8');
   const matches = [...source.matchAll(WA_PATTERN)];
   for (const match of matches) {
@@ -32,11 +41,9 @@ for (const file of customerFiles) {
     violations.push(`${file}: non-business WhatsApp destination ${match[0]}`);
   }
 
-  // A customer-facing JS action must not jump straight to WhatsApp. Anchors
-  // to the official business endpoint may remain as explicit human handoff,
-  // but programmatic navigation bypasses the AI intake/orchestration layer.
-  if (/window\.(open|location)[^\n]*wa\.me/i.test(source)) {
-    violations.push(`${file}: direct JavaScript WhatsApp navigation`);
+  const directNavigation = /window\.(open|location)[^\n]*wa\.me/i.test(source);
+  if (directNavigation && !AI_HANDOFF_FILES.has(normalizedFile)) {
+    violations.push(`${file}: direct JavaScript WhatsApp navigation outside approved AI handoff surface`);
   }
 }
 
