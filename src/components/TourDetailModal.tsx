@@ -21,6 +21,8 @@ interface TourDetailModalProps {
   onBookingSuccess?: (booking: BookingRequest) => void;
 }
 
+type ProviderCheckState = 'idle' | 'checking' | 'confirmed' | 'pending' | 'unavailable';
+
 export const TourDetailModal: React.FC<TourDetailModalProps> = ({ 
   tour, isOpen = true, onClose, language, currency, onConfirmBooking, onBookingSuccess 
 }) => {
@@ -36,6 +38,9 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
   const [phone, setPhone] = useState('');
   const [sinpeRef, setSinpeRef] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [providerCheckState, setProviderCheckState] = useState<ProviderCheckState>('idle');
+  const [pendingBookingId, setPendingBookingId] = useState<string | null>(null);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const attempt = useRef(createBookingAttempt());
   const submitting = useRef(false);
@@ -78,11 +83,84 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     ? tour.whatToBring 
     : (tour.whatToBring?.[language] || tour.whatToBring?.es || tour.whatToBring?.en || []);
 
+  const waitForProviderResponse = async (bookingId: string, maxWaitMs = 60_000): Promise<ProviderCheckState> => {
+    const deadline = Date.now() + maxWaitMs;
+    setProviderCheckState('checking');
+
+    while (Date.now() < deadline) {
+      try {
+        const response = await fetch(`/api/provider/status/${encodeURIComponent(bookingId)}`, {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+          cache: 'no-store'
+        });
+        const data = await response.json().catch(() => ({}));
+        if (response.ok) {
+          const providerStatus = String(data.providerStatus || '').toLowerCase();
+          if (data.providerConfirmedAt || ['confirmed', 'confirmada', 'available', 'accepted'].includes(providerStatus)) {
+            setProviderCheckState('confirmed');
+            return 'confirmed';
+          }
+          if (['rejected', 'declined', 'unavailable', 'cancelled', 'canceled'].includes(providerStatus)) {
+            setProviderCheckState('unavailable');
+            return 'unavailable';
+          }
+        }
+      } catch (error) {
+        console.warn('Provider status poll failed:', error);
+      }
+
+      await new Promise(resolve => window.setTimeout(resolve, 3000));
+    }
+
+    setProviderCheckState('pending');
+    return 'pending';
+  };
+
+  const continueToOnlinePayment = async (bookingId: string) => {
+    if (paymentMethod === 'credit_card') {
+      const stripeRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/stripe/create-checkout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId,
+          tourId: tour.id,
+          tourName: modalTitle,
+          totalUSD,
+          customerEmail: email,
+          date: selectedDate,
+          passengers: adults + children,
+          adults,
+          children
+        })
+      });
+      const stripeData = await stripeRes.json();
+      if (!stripeRes.ok) throw new Error(stripeData.error || 'Pago no disponible / Payment unavailable');
+      window.location.href = requirePaymentUrl(stripeData.url);
+      return true;
+    }
+
+    if (paymentMethod === 'paypal') {
+      const paypalRes = await fetch('/api/paypal/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId, totalUSD, tourName: modalTitle, tourId: tour.id, passengers: adults + children, adults, children })
+      });
+      const paypalData = await paypalRes.json();
+      if (!paypalRes.ok) throw new Error(paypalData.error || 'PayPal no disponible / PayPal unavailable');
+      window.location.href = requirePaymentUrl(paypalData.url);
+      return true;
+    }
+
+    return false;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting.current) return;
     setErrorMessage(null);
-    if (!selectedDate || !fullName || !email) {
+    setStatusMessage(null);
+    if (!selectedDate || !fullName || !email || !phone) {
       setErrorMessage(language === 'es' ? 'Por favor completa todos los campos requeridos.' : 'Please fill in all required fields.');
       return;
     }
@@ -107,63 +185,81 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     };
 
     try {
-      const bookingRes = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': attempt.current({ ...bookingPayload, sinpeRef }) },
-        body: JSON.stringify({
-          ...bookingPayload,
-          customerName: fullName,
-          customerEmail: email,
-          customerPhone: phone,
-          sinpeReference: paymentMethod === 'sinpe_movil' ? sinpeRef : undefined
-        })
-      });
+      let bookingId = pendingBookingId;
+      let confirmedBooking: any = null;
 
-      const bookingData = await bookingRes.json();
+      if (!bookingId) {
+        setStatusMessage(language === 'es'
+          ? 'Registrando tu solicitud y consultando al proveedor real. No se realizará ningún cobro hasta confirmar disponibilidad.'
+          : 'Registering your request and checking with the real provider. No charge will be made until availability is confirmed.');
 
-      if (!bookingRes.ok || !bookingData.booking?.bookingId) {
-        throw new Error(bookingData.message || bookingData.error || (language === 'es' ? 'Error al registrar la reserva en el servidor.' : 'Error creating reservation on server.'));
-      }
-
-      const bookingId = bookingData.booking.bookingId;
-
-      if (paymentMethod === 'credit_card') {
-        const stripeRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || ""}/api/stripe/create-checkout-session`, {
+        const bookingRes = await fetch('/api/bookings', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Idempotency-Key': attempt.current({ ...bookingPayload, sinpeRef }) },
           body: JSON.stringify({
-            bookingId,
-            tourId: tour.id,
-            tourName: modalTitle,
-            totalUSD,
+            ...bookingPayload,
+            customerName: fullName,
             customerEmail: email,
-            date: selectedDate,
-            passengers: adults + children,
-            adults,
-            children
+            customerPhone: phone,
+            sinpeReference: undefined
           })
         });
-        const stripeData = await stripeRes.json();
-        if (!stripeRes.ok) throw new Error(stripeData.error || 'Pago no disponible / Payment unavailable');
-        window.location.href = requirePaymentUrl(stripeData.url);
-        return;
-      } else if (paymentMethod === 'paypal') {
-        const paypalRes = await fetch('/api/paypal/create-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bookingId, totalUSD, tourName: modalTitle, tourId: tour.id, passengers: adults + children, adults, children })
-        });
-        const paypalData = await paypalRes.json();
-        if (!paypalRes.ok) throw new Error(paypalData.error || 'PayPal no disponible / PayPal unavailable');
-        window.location.href = requirePaymentUrl(paypalData.url);
+
+        const bookingData = await bookingRes.json();
+
+        if (!bookingRes.ok || !bookingData.booking?.bookingId) {
+          throw new Error(bookingData.message || bookingData.error || (language === 'es' ? 'Error al registrar la solicitud en el servidor.' : 'Error creating the request on server.'));
+        }
+
+        bookingId = bookingData.booking.bookingId;
+        confirmedBooking = bookingData.booking;
+        setPendingBookingId(bookingId);
+        sessionStorage.setItem('crt_last_booking_id', bookingId);
+      }
+
+      setStatusMessage(language === 'es'
+        ? `Solicitud ${bookingId} enviada. Esperando respuesta del proveedor para ${selectedDate}.`
+        : `Request ${bookingId} sent. Waiting for the provider response for ${selectedDate}.`);
+
+      const providerResult = await waitForProviderResponse(bookingId);
+
+      if (providerResult === 'unavailable') {
+        setStatusMessage(language === 'es'
+          ? 'El proveedor no confirmó el espacio solicitado. No se realizó ningún cobro. Revisaremos alternativas para la misma fecha.'
+          : 'The provider did not confirm the requested space. No charge was made. We will review alternatives for the same date.');
         return;
       }
 
-      const confirmedBooking = bookingData.booking;
-      if (onBookingSuccess) onBookingSuccess(confirmedBooking);
-      else if (onConfirmBooking) onConfirmBooking(confirmedBooking);
+      if (providerResult !== 'confirmed') {
+        setStatusMessage(language === 'es'
+          ? `La solicitud ${bookingId} sigue en espera del proveedor. No se realizó ningún cobro. Puedes volver a pulsar el botón para revisar la respuesta sin crear otra solicitud.`
+          : `Request ${bookingId} is still waiting for the provider. No charge was made. You can press the button again to check the response without creating another request.`);
+        return;
+      }
 
-      onClose();
+      setStatusMessage(language === 'es'
+        ? 'Disponibilidad confirmada por el proveedor. Ahora sí podemos continuar con el método de pago elegido.'
+        : 'Availability confirmed by the provider. We can now continue with your selected payment method.');
+
+      const redirected = await continueToOnlinePayment(bookingId);
+      if (redirected) return;
+
+      if (paymentMethod === 'sinpe_movil') {
+        setStatusMessage(language === 'es'
+          ? `Disponibilidad confirmada para ${bookingId}. Ahora puedes realizar SINPE al +506 8795 9148. La reserva no se marcará como pagada hasta que el comprobante sea verificado por el servidor.`
+          : `Availability confirmed for ${bookingId}. You may now complete SINPE to +506 8795 9148. The booking will not be marked paid until the receipt is verified by the server.`);
+        return;
+      }
+
+      if (paymentMethod === 'pay_at_pickup') {
+        setStatusMessage(language === 'es'
+          ? `Disponibilidad confirmada para ${bookingId}. Elegiste pago al abordar; la solicitud queda registrada y sujeta a las reglas finales del proveedor. No se realizó un cobro online.`
+          : `Availability confirmed for ${bookingId}. You selected pay at pickup; the request is recorded and remains subject to the provider's final rules. No online charge was made.`);
+        if (confirmedBooking) {
+          if (onBookingSuccess) onBookingSuccess(confirmedBooking);
+          else if (onConfirmBooking) onConfirmBooking(confirmedBooking);
+        }
+      }
     } catch (error: any) {
       console.error('Error al procesar reserva:', error);
       setErrorMessage(error.message || (language === 'es' ? 'Ocurrió un error al procesar tu solicitud.' : 'An error occurred processing your request.'));
@@ -361,6 +457,12 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                 </div>
               </div>
 
+              <div className="grid grid-cols-3 gap-2 text-[10px] font-bold uppercase tracking-wide">
+                <div className={`rounded-xl border p-2 text-center ${pendingBookingId ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300' : 'border-white/10 bg-white/5 text-stone-400'}`}>{language === 'es' ? '1. Solicitud' : '1. Request'}</div>
+                <div className={`rounded-xl border p-2 text-center ${providerCheckState === 'confirmed' ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300' : providerCheckState === 'checking' || providerCheckState === 'pending' ? 'border-amber-500/50 bg-amber-500/10 text-amber-300' : 'border-white/10 bg-white/5 text-stone-400'}`}>{language === 'es' ? '2. Proveedor' : '2. Provider'}</div>
+                <div className={`rounded-xl border p-2 text-center ${providerCheckState === 'confirmed' ? 'border-amber-500/50 bg-amber-500/10 text-amber-300' : 'border-white/10 bg-white/5 text-stone-400'}`}>{language === 'es' ? '3. Pago' : '3. Payment'}</div>
+              </div>
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
@@ -374,7 +476,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                       className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors" 
                       value={selectedDate} 
                       aria-label={language === 'es' ? 'Fecha de viaje' : 'Travel date'}
-                      onChange={e => setSelectedDate(e.target.value)} 
+                      onChange={e => { setSelectedDate(e.target.value); setPendingBookingId(null); setProviderCheckState('idle'); setStatusMessage(null); }} 
                     />
                   </div>
 
@@ -386,7 +488,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                       className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors"
                       value={adults}
                       aria-label={language === 'es' ? 'Adultos' : 'Adults'}
-                      onChange={e => setAdults(Number(e.target.value))}
+                      onChange={e => { setAdults(Number(e.target.value)); setPendingBookingId(null); setProviderCheckState('idle'); setStatusMessage(null); }}
                     >
                       {[1,2,3,4,5,6,7,8,9,10,12,15,20].map(n => (
                         <option key={n} value={n} className="bg-stone-900">{n} {n === 1 ? (language === 'es' ? 'Adulto' : 'Adult') : (language === 'es' ? 'Adultos' : 'Adults')}</option>
@@ -404,7 +506,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                       className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors"
                       value={children}
                       aria-label={language === 'es' ? 'Niños' : 'Children'}
-                      onChange={e => setChildren(Number(e.target.value))}
+                      onChange={e => { setChildren(Number(e.target.value)); setPendingBookingId(null); setProviderCheckState('idle'); setStatusMessage(null); }}
                     >
                       {[0,1,2,3,4,5,6].map(n => (
                         <option key={n} value={n} className="bg-stone-900">{n} {language === 'es' ? 'Niños' : 'Children'}</option>
@@ -462,7 +564,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-stone-400 uppercase tracking-wider">
-                      WhatsApp (+506) *
+                      WhatsApp / Phone *
                     </label>
                     <input 
                       required 
@@ -479,7 +581,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-stone-400 uppercase tracking-wider">
-                    {language === 'es' ? 'Método de Pago' : 'Payment Method'}
+                    {language === 'es' ? 'Método de pago preferido (después de disponibilidad)' : 'Preferred payment method (after availability)'}
                   </label>
                   <select 
                     className="w-full bg-stone-950/80 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400 transition-colors" 
@@ -495,22 +597,33 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                 </div>
 
                 {paymentMethod === 'sinpe_movil' && (
-                  <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-1.5 text-xs">
-                    <div className="font-bold text-amber-400 flex items-center gap-1.5">
+                  <div className={`p-3 rounded-xl space-y-1.5 text-xs border ${providerCheckState === 'confirmed' ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-amber-500/10 border-amber-500/30'}`}>
+                    <div className={`font-bold flex items-center gap-1.5 ${providerCheckState === 'confirmed' ? 'text-emerald-300' : 'text-amber-400'}`}>
                       <Smartphone className="w-3.5 h-3.5" />
-                      <span>SINPE Móvil Oficial: +506 8795 9148</span>
+                      <span>{providerCheckState === 'confirmed' ? 'SINPE Móvil Oficial: +506 8795 9148' : (language === 'es' ? 'Primero confirmamos disponibilidad' : 'Availability is confirmed first')}</span>
                     </div>
                     <p className="text-stone-300 text-[11px]">
-                      {language === 'es' ? 'Envía el comprobante bancario o ingresa el número de referencia:' : 'Send bank receipt or enter reference code:'}
+                      {providerCheckState === 'confirmed'
+                        ? (language === 'es' ? 'El proveedor confirmó espacio. El pago sólo contará cuando el comprobante sea verificado por el servidor.' : 'The provider confirmed space. Payment only counts after the receipt is server-verified.')
+                        : (language === 'es' ? 'No realices la transferencia todavía. Enviaremos la solicitud al proveedor y habilitaremos el pago cuando confirme el espacio.' : 'Do not transfer yet. We will ask the provider first and enable payment only after the space is confirmed.')}
                     </p>
-                    <input
-                      type="text"
-                      placeholder="Ej: SINPE-849201"
-                      className="w-full bg-stone-950 border border-amber-500/40 rounded-lg px-2.5 py-1.5 text-xs text-white"
-                      value={sinpeRef}
-                      aria-label={language === 'es' ? 'Referencia SINPE' : 'SINPE reference'}
-                      onChange={e => setSinpeRef(e.target.value)}
-                    />
+                    {providerCheckState === 'confirmed' && (
+                      <input
+                        type="text"
+                        placeholder="Ej: SINPE-849201"
+                        className="w-full bg-stone-950 border border-emerald-500/40 rounded-lg px-2.5 py-1.5 text-xs text-white"
+                        value={sinpeRef}
+                        aria-label={language === 'es' ? 'Referencia SINPE' : 'SINPE reference'}
+                        onChange={e => setSinpeRef(e.target.value)}
+                      />
+                    )}
+                  </div>
+                )}
+
+                {statusMessage && (
+                  <div role="status" className={`p-3 rounded-xl text-xs flex items-start gap-2 border ${providerCheckState === 'confirmed' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200' : 'bg-amber-500/10 border-amber-500/30 text-amber-200'}`}>
+                    {providerCheckState === 'confirmed' ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" /> : <Clock className="w-4 h-4 shrink-0 mt-0.5" />}
+                    <span>{statusMessage}</span>
                   </div>
                 )}
 
@@ -529,22 +642,28 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                 >
                   {isSubmitting ? (
                     <div className="w-5 h-5 border-2 border-stone-950 border-t-transparent rounded-full animate-spin" />
-                  ) : (
+                  ) : providerCheckState === 'confirmed' ? (
                     <CreditCard className="w-4 h-4" />
+                  ) : (
+                    <Calendar className="w-4 h-4" />
                   )}
-                  <span>{language === 'es' ? 'Crear solicitud de reserva' : 'Create booking request'}</span>
+                  <span>
+                    {pendingBookingId
+                      ? (language === 'es' ? 'Revisar respuesta del proveedor' : 'Check provider response')
+                      : (language === 'es' ? 'Consultar disponibilidad y solicitar reserva' : 'Check availability & request booking')}
+                  </span>
                 </button>
 
                 {/* Trust Badges */}
                 <div className="flex items-center justify-center gap-4 text-[10px] text-stone-400 font-bold uppercase tracking-wider pt-1">
                   <span className="flex items-center gap-1">
                     <Lock className="w-3 h-3 text-emerald-400" />
-                    <span>{language === 'es' ? 'Pago verificado por servidor' : 'Server-verified payment'}</span>
+                    <span>{language === 'es' ? 'Sin cobro antes de disponibilidad' : 'No charge before availability'}</span>
                   </span>
                   <span>•</span>
                   <span className="flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                    <span>{language === 'es' ? 'Sujeto a confirmación' : 'Subject to confirmation'}</span>
+                    <span>{language === 'es' ? 'Proveedor verificado' : 'Verified provider'}</span>
                   </span>
                 </div>
               </form>
@@ -557,4 +676,3 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 };
 
 export default TourDetailModal;
-
