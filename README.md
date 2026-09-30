@@ -8,7 +8,9 @@ Plataforma full-stack de venta, asesoría, planificación y operación de servic
 
 La URL de Vercel sigue siendo la referencia pública provisional. El propietario ha mencionado `CostaRicaTours.ia`, `costaricatours.ai` y `CostaTours.io`; ninguno está comprado ni elegido como dominio definitivo. `.ia` no figura entre las extensiones delegadas por IANA; confirmar la grafía `.ai` antes de buscar o comprar. No cambiar enlaces de contacto, documentos, metadatos ni DNS hasta verificar propiedad del dominio, correo, HTTPS y flujo completo. Véase [`docs/despliegues-canonicos.md`](docs/despliegues-canonicos.md) para inventario, comprobaciones y migración sin interrumpir reservas.
 
-Decisiones y pendientes de conversaciones anteriores: conservar los agentes, servicios y reservas existentes; usar Web/WhatsApp/Voz/Email/Counter Desk como entradas al Customer Intake y al mismo ciclo de Concierge; exigir datos vivos para disponibilidad, pagos y proveedores. La puerta privada Vercel → WIF/IAM → Cloud Run está implementada, pero debe verificarse con `CLOUD_RUN_BACKEND_URL`, `GCP_WIF_AUDIENCE` y `GCP_WIF_SERVICE_ACCOUNT` reales antes de afirmar que `/api/health` o las reservas funcionan en producción. Persisten verificaciones de webhook de pagos, aprobación del cliente frente a confirmación del proveedor, scheduler externo, pruebas E2E autenticadas e imágenes del catálogo. Integrar a `main` solo con checks verdes.
+La revisión de producción y el trabajo incremental del Agent Desk están registrados en [`docs/auditoria-consolidacion-2026-09-30.md`](docs/auditoria-consolidacion-2026-09-30.md). La guía operativa de voz está en [`docs/portable-voice-agent-desk.md`](docs/portable-voice-agent-desk.md).
+
+Decisiones y pendientes de conversaciones anteriores: conservar los agentes, servicios y reservas existentes; usar Web/WhatsApp/Voz/Email/Counter Desk como entradas al mismo ciclo de Concierge; exigir datos vivos para disponibilidad, pagos y proveedores. **La API pública está actualmente degradada:** el 30 de septiembre de 2026 `/api/health` y `/api/tours` respondieron HTTP 503 `backend_gateway_unavailable`; los logs de Vercel identifican `GCP_WIF_AUDIENCE` ausente. Hasta restaurar las variables de producción `GCP_WIF_AUDIENCE`, `GCP_WIF_SERVICE_ACCOUNT` y `CLOUD_RUN_BACKEND_URL`, la portada Vercel puede abrir, pero no se debe anunciar como operativa la reserva, el Agent Desk ni ninguna función que necesite el backend. No hacer público Cloud Run para sortear este bloqueo. Persisten scheduler externo, pruebas E2E autenticadas, configuración real de telefonía, OAuth Gmail/Outlook e imágenes verificadas del catálogo. La auditoría del recorrido viajero y las correcciones pendientes de desplegar están en [`docs/auditoria-consolidacion-2026-09-30.md`](docs/auditoria-consolidacion-2026-09-30.md). Integrar a `main` solo con checks verdes.
 
 > **Principio rector:** el sistema no debe limitarse a contestar preguntas. Debe entender al viajero, recordar su contexto, construir un viaje, verificar datos vivos, convertir una intención en una reserva y coordinar la operación con proveedores, manteniendo al humano informado cuando una decisión requiere supervisión.
 
@@ -30,6 +32,7 @@ El producto debe funcionar como:
 - memoria operativa del viajero;
 - motor de adaptación por clima y cambios operativos;
 - mostrador digital full-stack;
+- Agent Desk de voz portable para hoteles/PBX, con memoria por llamada y transferencia humana cuando esté configurada ([operación y límites](docs/portable-voice-agent-desk.md));
 - centro ejecutivo de control para el propietario/administrador;
 - plataforma que puede seguir evolucionando mediante nuevos agentes y herramientas sin perder las reglas de negocio existentes.
 

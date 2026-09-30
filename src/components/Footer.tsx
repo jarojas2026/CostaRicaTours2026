@@ -18,7 +18,7 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
           <div className="flex items-center gap-2">
             <Lock className="w-4 h-4 text-teal-400" />
             <span className="font-semibold text-[11px] sm:text-xs">
-              {language === 'es' ? '🔒 Pago 100% Seguro con Encriptación SSL de 256-bits • Garantía de Reembolso hasta 48h antes' : '🔒 100% Secure Payment with 256-bit SSL • Refund Guarantee up to 48h before'}
+              {language === 'es' ? 'Disponibilidad, precio final y condiciones se verifican antes de confirmar la reserva' : 'Availability, final price, and terms are checked before a booking is confirmed'}
             </span>
           </div>
 
@@ -191,4 +191,3 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
     </footer>
   );
 };
-
