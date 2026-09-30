@@ -3,6 +3,7 @@ import { openOrResumeOmnichannelJourney, recordVerificationPending } from './omn
 import { inferBusinessGoal, requiredOperationalFacts, type BusinessGoal } from './operationalTruthPolicy';
 import { rememberOrganizationalFlow } from './organizationalMemoryService';
 import { createVerificationTask } from './verificationTaskService';
+import { attemptVerificationTask } from './verificationTaskWorker';
 
 export type ExecuteBusinessGoalInput = {
   channel: string;
@@ -28,6 +29,7 @@ export type BusinessGoalExecution = {
   actionsExecuted: string[];
   verificationTaskIds: string[];
   providerRequests: string[];
+  verificationExecution?: unknown;
   nextAction: string;
   customerCommunicationState: 'not_required' | 'ready_for_acknowledgement' | 'awaiting_verification' | 'human_review';
 };
@@ -64,6 +66,7 @@ export async function executeBusinessGoal(input: ExecuteBusinessGoalInput): Prom
   const nextAction = nextActionFor(goal, input.actor, pendingFacts);
   const actionsExecuted = ['resolve_identity_continuity', 'load_organizational_memory', 'classify_business_goal', 'separate_truth_planes'];
   const verificationTaskIds: string[] = [];
+  let verificationExecution: unknown;
 
   if (pendingFacts.length) {
     await recordVerificationPending({
@@ -90,10 +93,27 @@ export async function executeBusinessGoal(input: ExecuteBusinessGoalInput): Prom
     });
     verificationTaskIds.push(verificationTask.task.taskId);
     actionsExecuted.push(verificationTask.created ? 'create_verification_task' : 'resume_verification_task');
+
+    // Try the configured live adapter immediately. The task remains durable and
+    // pending when no adapter is configured, evidence is partial, or the source
+    // cannot prove live truth; no synthetic availability is generated.
+    verificationExecution = await attemptVerificationTask(verificationTask.task).catch((error: any) => ({
+      taskId: verificationTask.task.taskId,
+      status: 'pending',
+      reason: clean(error?.message, 600) || 'Live verification attempt failed.'
+    }));
+    actionsExecuted.push('attempt_live_verification');
   }
 
+  const executionStatus = String((verificationExecution as any)?.status || '');
   const customerCommunicationState: BusinessGoalExecution['customerCommunicationState'] =
-    input.actor === 'provider' ? 'not_required' : pendingFacts.length ? 'awaiting_verification' : 'ready_for_acknowledgement';
+    input.actor === 'provider'
+      ? 'not_required'
+      : executionStatus === 'human_review'
+        ? 'human_review'
+        : pendingFacts.length
+          ? 'awaiting_verification'
+          : 'ready_for_acknowledgement';
 
   await rememberOrganizationalFlow({
     journeyId: continuity.journeyId,
@@ -105,7 +125,7 @@ export async function executeBusinessGoal(input: ExecuteBusinessGoalInput): Prom
     direction: 'internal',
     actor: 'system',
     intent: goal,
-    status: 'goal_classified',
+    status: executionStatus === 'verified' ? 'verification_complete' : 'goal_classified',
     actionsExecuted,
     providerRequests: [],
     nextAction,
@@ -113,6 +133,7 @@ export async function executeBusinessGoal(input: ExecuteBusinessGoalInput): Prom
       goal,
       pendingFactCount: pendingFacts.length,
       verificationTaskIds,
+      verificationExecution,
       customerCommunicationState
     }
   });
@@ -128,6 +149,7 @@ export async function executeBusinessGoal(input: ExecuteBusinessGoalInput): Prom
       actor: input.actor,
       pendingFacts,
       verificationTaskIds,
+      verificationExecution,
       nextAction
     }
   }).catch(() => undefined);
@@ -138,12 +160,13 @@ export async function executeBusinessGoal(input: ExecuteBusinessGoalInput): Prom
     sessionId: continuity.sessionId,
     goal,
     confirmedFacts: continuity.confirmedFacts,
-    verifiedFacts: [],
-    pendingFacts,
+    verifiedFacts: executionStatus === 'verified' ? [((verificationExecution as any)?.observedFacts || {})] : [],
+    pendingFacts: executionStatus === 'verified' ? [] : pendingFacts,
     actionsExecuted,
     verificationTaskIds,
     providerRequests: [],
-    nextAction,
+    verificationExecution,
+    nextAction: executionStatus === 'verified' ? 'prepare_evidence_backed_quote_or_continue_domain_workflow' : nextAction,
     customerCommunicationState
   };
 }
