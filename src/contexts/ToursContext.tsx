@@ -48,7 +48,16 @@ export const ToursProvider = ({ children }: { children: ReactNode }) => {
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const fetchedTours: Tour[] = [];
         snapshot.forEach((doc) => {
-          fetchedTours.push(doc.data() as Tour);
+          const remoteTour = doc.data() as Tour;
+          const localTour = TOURS.find((tour) =>
+            tour.id === remoteTour.id ||
+            tour.title.es === remoteTour.title?.es ||
+            tour.title.en === remoteTour.title?.en
+          );
+
+          // Firestore is catalog data, but route identity must remain canonical.
+          // Preserve the local id when an imported record has a stale/mismatched id.
+          fetchedTours.push(localTour ? { ...localTour, ...remoteTour, id: localTour.id } : remoteTour);
         });
         if (fetchedTours.length > 0) {
           fetchedTours.sort((a, b) => (a.id || '').localeCompare(b.id || ''));
