@@ -11,6 +11,7 @@ export type VerificationTask = {
   sessionId: string;
   goal: BusinessGoal;
   requiredFacts: string[];
+  requirements?: Record<string, unknown>;
   status: VerificationTaskStatus;
   nextAction: string;
   sourceChannel: string;
@@ -24,6 +25,11 @@ const clean = (value: unknown, max = 300) => String(value ?? '').trim().slice(0,
 
 function normalizeFacts(facts: string[]) {
   return Array.from(new Set(facts.map(f => clean(f, 120)).filter(Boolean))).sort();
+}
+
+function firestoreSafeRequirements(requirements?: Record<string, unknown>) {
+  if (!requirements) return undefined;
+  return JSON.parse(JSON.stringify(requirements)) as Record<string, unknown>;
 }
 
 export function verificationTaskId(input: {
@@ -44,6 +50,7 @@ export async function createVerificationTask(input: {
   sessionId: string;
   goal: BusinessGoal;
   requiredFacts: string[];
+  requirements?: Record<string, unknown>;
   nextAction: string;
   sourceChannel: string;
 }) {
@@ -57,6 +64,7 @@ export async function createVerificationTask(input: {
     sessionId: clean(input.sessionId, 200),
     goal: input.goal,
     requiredFacts,
+    requirements: firestoreSafeRequirements(input.requirements),
     status: 'pending',
     nextAction: clean(input.nextAction, 300),
     sourceChannel: clean(input.sourceChannel, 120),
@@ -70,12 +78,22 @@ export async function createVerificationTask(input: {
   let created = false;
   await db.runTransaction(async (tx: any) => {
     const snap = await tx.get(ref);
-    if (snap.exists) return;
+    if (snap.exists) {
+      tx.set(ref, { requirements: task.requirements, updatedAt: now, nextAction: task.nextAction }, { merge: true });
+      return;
+    }
     tx.create(ref, task);
     created = true;
   });
   const snap = await ref.get();
   return { persisted: true, task: snap.exists ? ({ taskId, ...(snap.data() || {}) } as VerificationTask) : task, created };
+}
+
+export async function getVerificationTask(taskId: string) {
+  const db = getFirestoreDb();
+  if (!db) return null;
+  const snap = await db.collection('verification_tasks').doc(clean(taskId, 180)).get();
+  return snap.exists ? ({ taskId: snap.id, ...(snap.data() || {}) } as VerificationTask) : null;
 }
 
 export async function markVerificationTaskInProgress(taskId: string) {
