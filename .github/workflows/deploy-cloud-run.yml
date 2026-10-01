@@ -14,11 +14,10 @@ env:
   REGION: us-central1
   PROJECT_ID: gen-lang-client-0782739149
   FIRESTORE_DATABASE_ID: ai-studio-costaricatours-88d81273-09f7-4f87-991c-60b9b0db0dea
-  # Ruta preferida: Workload Identity Federation (OIDC sin llave persistente).
-  # Compatibilidad: si aún no existen estos secretos, se usa GCP_SA_KEY.
-  GCP_WIF_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-  GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-  GCP_SA_KEY_JSON: ${{ secrets.GCP_SA_KEY }}
+  # GitHub Actions -> Google Cloud mediante WIF/OIDC sin llaves persistentes.
+  # Estos identificadores de recursos no son secretos.
+  GCP_WIF_PROVIDER: projects/937250723434/locations/global/workloadIdentityPools/github-actions/providers/github
+  GCP_SERVICE_ACCOUNT: github-deployer@gen-lang-client-0782739149.iam.gserviceaccount.com
 
 permissions:
   contents: read
@@ -53,26 +52,11 @@ jobs:
         with:
           ref: ${{ steps.deploy_ref.outputs.sha }}
 
-      - name: Autenticar con Google Cloud — OIDC keyless (preferido)
-        if: env.GCP_WIF_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != ''
+      - name: Autenticar con Google Cloud — GitHub OIDC keyless
         uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
-
-      - name: Autenticar con Google Cloud — llave JSON (fallback temporal)
-        if: env.GCP_WIF_PROVIDER == '' || env.GCP_SERVICE_ACCOUNT == ''
-        uses: google-github-actions/auth@v3
-        with:
-          credentials_json: ${{ env.GCP_SA_KEY_JSON }}
-
-      - name: Verificar que existe un método de autenticación configurado
-        shell: bash
-        run: |
-          if [ -z "$GCP_WIF_PROVIDER" ] && [ -z "$GCP_SA_KEY_JSON" ]; then
-            echo "::error::Configure GCP_WORKLOAD_IDENTITY_PROVIDER + GCP_SERVICE_ACCOUNT (recomendado) o GCP_SA_KEY como fallback."
-            exit 1
-          fi
 
       - name: Configurar gcloud CLI
         uses: google-github-actions/setup-gcloud@v3
