@@ -13,6 +13,10 @@ import {
 export const config = gatewayConfig;
 
 const INTERNAL_PATH_QUERY = '__crt_path';
+const LEGACY_AGENT_AVAILABILITY_PATHS = new Set([
+  'agent/check-availability',
+  'agent/tools/check_calendar_availability',
+]);
 
 function firstQueryValue(value: string | string[] | undefined): string {
   return Array.isArray(value) ? String(value[0] || '') : String(value || '');
@@ -37,12 +41,14 @@ function translatedGatewayRequest(
   req: VercelRequest,
   targetPath: string,
   body: Record<string, unknown>,
+  method?: string,
 ): VercelRequest {
   return new Proxy(req, {
     get(target, property, receiver) {
       if (property === 'url') return targetPath;
       if (property === 'body') return body;
       if (property === 'query') return {};
+      if (property === 'method' && method) return method;
       return Reflect.get(target, property, receiver);
     },
   }) as VercelRequest;
@@ -95,6 +101,39 @@ async function handlePaymentWebhook(
   return gatewayHandler(translated, res);
 }
 
+function safeAvailabilityTarget(req: VercelRequest): { url: string } | { error: string } {
+  const body = req.body || {};
+  const tourId = String(body.tour_id || body.tourId || '').trim();
+  const date = String(body.target_date || body.date || '').trim();
+  const time = String(body.time || '').trim();
+  const seatsRaw = Number(body.party_size ?? body.partySize ?? body.seats ?? 1);
+  const seats = Number.isInteger(seatsRaw) ? seatsRaw : NaN;
+
+  if (!tourId) return { error: 'tour_id_required' };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: 'valid_target_date_required' };
+  if (!Number.isInteger(seats) || seats < 1 || seats > 50) return { error: 'valid_party_size_required' };
+
+  const params = new URLSearchParams({ date, seats: String(seats) });
+  if (time) params.set('time', time);
+  return { url: `/api/tours/${encodeURIComponent(tourId)}/availability?${params.toString()}` };
+}
+
+async function handleLegacyAgentAvailability(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, available: false, error: 'method_not_allowed' });
+  }
+
+  const target = safeAvailabilityTarget(req);
+  if ('error' in target) {
+    return res.status(400).json({ success: false, available: false, error: target.error });
+  }
+
+  res.setHeader('x-crt-availability-source', 'authoritative-booking-service');
+  res.setHeader('cache-control', 'no-store, max-age=0');
+  const translated = translatedGatewayRequest(req, target.url, {}, 'GET');
+  return gatewayHandler(translated, res);
+}
+
 /**
  * Stable one-level Vercel Function entrypoint for the private Cloud Run gateway.
  *
@@ -111,6 +150,10 @@ async function handlePaymentWebhook(
  * PayPal signature verification. Valid payment events are translated to the
  * existing private reconciliation endpoints, which remain the source of truth.
  *
+ * Legacy agent availability aliases are translated to the same authoritative
+ * Firestore-backed availability endpoint used by the customer-facing product.
+ * The edge never manufactures time slots or default capacity values.
+ *
  * The explicit `.js` suffix is intentional: Vercel emits ESM JavaScript at
  * runtime and Node ESM does not resolve extensionless relative imports.
  */
@@ -124,6 +167,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return await handlePaymentWebhook(forwardedPath, req, res);
     }
 
+    // The legacy itinerary endpoint creates a synthetic fixed-price record and
+    // labels it confirmed before provider/payment evidence. Keep the historical
+    // implementation in Cloud Run for auditability, but do not expose it as a
+    // public booking path. Journey/proforma flows must reach canonical booking.
+    if (forwardedPath === 'itinerary/book') {
+      return res.status(410).json({
+        success: false,
+        error: 'legacy_itinerary_booking_retired',
+        state: 'proposal_only',
+        message: 'El itinerario sigue siendo una propuesta hasta verificar precio, disponibilidad, proveedor y pago mediante el flujo de reserva vigente.',
+      });
+    }
+
+    if (LEGACY_AGENT_AVAILABILITY_PATHS.has(forwardedPath)) {
+      return await handleLegacyAgentAvailability(req, res);
+    }
+
     req.url = `/api/${forwardedPath}${currentUrl.search}`;
     if (req.query && INTERNAL_PATH_QUERY in req.query) delete req.query[INTERNAL_PATH_QUERY];
 
@@ -133,7 +193,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const isWebhookError = /Stripe|PayPal|webhook|payload/i.test(message);
     if (isWebhookError) console.error('[payment-webhook-gateway]', message);
 
-    return res.status(isWebhookError ? 400 : 400).json({
+    return res.status(400).json({
       success: false,
       error: isWebhookError ? 'payment_webhook_rejected' : 'invalid_gateway_path',
       message,
