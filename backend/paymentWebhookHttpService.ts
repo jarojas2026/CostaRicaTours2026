@@ -11,9 +11,10 @@ async function emitPaymentSignal(provider: 'stripe' | 'paypal', result: Awaited<
   await emitOperationalEvent({
     type: 'payment.verified',
     source: `payment-webhook:${provider}`,
-    entityType: 'booking',
-    entityId: result.bookingId,
     payload: {
+      entityType: 'booking',
+      entityId: result.bookingId,
+      bookingId: result.bookingId,
       provider,
       eventId: result.eventId,
       correlationId: webhookCorrelationId(provider, result.eventId)
