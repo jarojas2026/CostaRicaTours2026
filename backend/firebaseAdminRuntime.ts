@@ -17,9 +17,10 @@ function projectId(): string | undefined {
 
 /**
  * Single Firebase Admin app for server-side services.
- * Google-hosted production uses Application Default Credentials from
- * the Cloud Run service identity. A JSON credential remains supported
- * only for explicit non-Google compatibility environments.
+ * Google-hosted production uses Application Default Credentials from the
+ * Cloud Run service identity; no deployment credential is copied into the
+ * running container. A JSON credential remains supported only for explicit
+ * non-Google compatibility environments.
  */
 export function getFirebaseAdminApp(): App {
   if (cachedApp) return cachedApp;
