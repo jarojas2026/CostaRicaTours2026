@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
-import admin from 'firebase-admin';
+import { getFirebaseAdminAuth } from './firebaseAdminRuntime';
 
 /**
  * Autenticación de operaciones:
@@ -15,10 +15,8 @@ export async function requireOperator(req: Request, res: Response, next: NextFun
   const authorization = req.headers.authorization;
   if (authorization?.startsWith('Bearer ')) {
     try {
-      const adminAny = admin as any;
-      if (!adminAny.apps || adminAny.apps.length === 0) adminAny.initializeApp();
       const token = authorization.slice('Bearer '.length).trim();
-      const decoded = await adminAny.auth().verifyIdToken(token);
+      const decoded = await getFirebaseAdminAuth().verifyIdToken(token);
       const role = decoded.role || decoded.adminRole || (decoded.email === process.env.ADMIN_EMAIL ? 'admin' : undefined);
       const allowedEmails = String(process.env.ADMIN_ALLOWED_EMAILS || '')
         .split(',')
