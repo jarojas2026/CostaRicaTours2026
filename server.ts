@@ -98,6 +98,7 @@ import {
   executePreSaleProspectRecovery,
   executePostSaleVipLoyalty
 } from './backend/nativeWorkflows';
+import { handleStripeWebhook, handlePayPalWebhook } from './backend/paymentWebhookHttpService';
 import { executeAutomatedProviderPayouts } from './backend/providerPayoutService';
 import { executeSinpeVerification } from './backend/sinpeService';
 import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
@@ -206,6 +207,13 @@ const aiAdmission = createInFlightLimiter(20, 3);
 const bookingAdmission = createInFlightLimiter(30, 2);
 
 app.use('/api/', generalApiLimiter, apiAdmission.middleware);
+
+// Signed payment webhooks. Stripe uses the byte-exact rawBody captured by
+// express.json({ verify }) above; PayPal verifies its provider signature before
+// any booking/payment state is mutated. These routes intentionally do not use
+// application auth because the payment-provider signature is the authorization.
+app.post('/api/webhooks/stripe', handleStripeWebhook);
+app.post('/api/webhooks/paypal', handlePayPalWebhook);
 
 // Health check endpoint
 app.post('/api/customer-intake', chatLimiter, intakeAdmission.middleware, async (req, res) => {
