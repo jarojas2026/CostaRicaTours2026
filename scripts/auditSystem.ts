@@ -103,6 +103,17 @@ if (/if \(!authToken\) return true/.test(voiceService) || /if \(!authToken\)\s*\
 if (/verifyVoiceSignature\(/.test(server) && !/VOICE_PROVIDER_AUTH_TOKEN/.test(voiceService)) {
   add('HIGH', 'VOICE-SEC-002', 'Voice webhook route exists but its signature configuration is not visible in the voice service.');
 }
+for (const route of ["app.post('/api/voice/incoming'", "app.post('/api/voice/respond'", "app.post('/api/voice/human-transfer'", "app.post('/api/voice/status'"]) {
+  const start = server.indexOf(route);
+  const nextRoute = server.indexOf('\napp.', start + route.length);
+  const handler = start < 0 ? '' : server.slice(start, nextRoute < 0 ? undefined : nextRoute);
+  if (!/verifyVoiceSignature/.test(handler)) {
+    add('CRITICAL', 'VOICE-SEC-003', `Voice provider callback lacks signature validation: ${route}.`);
+  }
+}
+if (!/VOICE_HUMAN_NUMBERS/.test(voiceService) || !/TERMINAL_CALL_STATUSES/.test(voiceService)) {
+  add('HIGH', 'VOICE-OPS-001', 'Portable voice operations lack multi-operator routing or terminal call-state handling.');
+}
 
 if (/setInterval\(async \(\) =>[\s\S]*processPendingCustomerIntakeJobs/.test(server)) {
   add('MEDIUM', 'QUEUE-001', 'Customer Intake has an in-process sweep; production serverless deployments also need an external scheduler calling the protected queue endpoint.');

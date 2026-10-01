@@ -86,8 +86,8 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
       id: '1',
       sender: 'agent',
       text: isEs 
-        ? '¡Hola! Bienvenido al Mostrador Digital de Costa Rica Tours. Soy tu Counter Digital Oficial 24/7.\n\n¿En qué te puedo asesorar específicamente hoy? Puedo verificar cupos en tiempo real con operadores locales (como ALSAMA Tours), calcular cotizaciones exactas, explicarte la temporada de ballenas o revisar la garantía de cancelación 24h.'
-        : 'Hello! Welcome to the Costa Rica Tours Digital Counter. I am your Official 24/7 Digital Concierge.\n\nHow can I specifically assist you today? I can check real-time availability with local operators (such as ALSAMA Tours), calculate exact quotes, guide you on whale watching seasons, or review our 24h cancellation guarantee.',
+        ? '¡Hola! Bienvenido al Mostrador Digital de Costa Rica Tours. Puedo ayudarte a explorar tours, consultar los cupos registrados y preparar una solicitud. El operador debe confirmar disponibilidad, precio final y condiciones antes de que la reserva quede confirmada.'
+        : 'Hello! Welcome to the Costa Rica Tours Digital Counter. I can help you explore tours, check capacity recorded in our system, and prepare a request. The operator must confirm availability, final price, and terms before a booking is confirmed.',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       quickActions: [
         {
@@ -103,7 +103,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
           action: 'arenal_info'
         },
         {
-          label: isEs ? '🛡️ Políticas de Cancelación 24h' : '🛡️ 24h Cancellation Policies',
+          label: isEs ? '🛡️ Condiciones de cancelación' : '🛡️ Cancellation terms',
           action: 'policies'
         }
       ]
@@ -232,8 +232,8 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
     }
     if (action === 'policies') {
       handleSendMessage(isEs 
-        ? '¿Cuáles son las políticas de reserva, métodos de pago aceptados y garantía de cancelación 24 horas?' 
-        : 'What are the booking policies, accepted payment methods and 24h cancellation guarantee?');
+        ? '¿Cuáles son las condiciones de reserva, los métodos de pago disponibles y la política de cancelación de este servicio?'
+        : 'What are this service’s booking terms, available payment methods, and cancellation policy?');
       return;
     }
     if (action === 'whatsapp_direct') {
@@ -327,7 +327,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
   return (
     <>
       {/* Dock del Mostrador Digital de Reservas (posicionado al lado de WhatsApp sin solapamiento) */}
-      <div className="fixed bottom-[calc(4.8rem+env(safe-area-inset-bottom))] right-[4.75rem] sm:right-24 lg:bottom-6 lg:right-24 z-[80] flex flex-col items-end gap-2">
+      <div className="fixed bottom-[calc(9rem+env(safe-area-inset-bottom))] right-[4.75rem] sm:right-24 lg:bottom-6 lg:right-24 z-[80] flex flex-col items-end gap-2">
         
         {/* Teaser Pill Flotante Interactivo */}
         <AnimatePresence>
@@ -370,7 +370,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(true)}
-          className="group flex items-center gap-2.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 hover:from-amber-300 hover:to-amber-400 text-stone-950 font-black p-3 sm:px-5 sm:py-3.5 rounded-full shadow-[0_10px_30px_rgba(245,158,11,0.4)] border-2 border-stone-950 cursor-pointer transition-all"
+          className="group flex items-center gap-2.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 hover:from-amber-300 hover:to-amber-400 text-stone-950 font-black p-2 sm:p-3 lg:px-5 lg:py-3.5 rounded-full shadow-[0_10px_30px_rgba(245,158,11,0.4)] border-2 border-stone-950 cursor-pointer transition-all"
           aria-label={isEs ? 'Abrir Mostrador Digital de Reservas 24/7' : 'Open 24/7 Digital Booking Counter'}
           title={isEs ? 'Mostrador Digital: Cotización y Disponibilidad 24/7' : 'Digital Counter: 24/7 Live Rates & Availability'}
         >
@@ -381,7 +381,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
             <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-stone-950 animate-pulse" />
           </div>
 
-          <div className="text-left hidden md:block leading-tight pr-1">
+          <div className="text-left hidden lg:block leading-tight pr-1">
             <span className="text-[10px] uppercase font-black tracking-wider text-stone-900 block">
               {isEs ? 'Mostrador Digital' : 'Digital Counter'}
             </span>
@@ -646,7 +646,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                     <div className="flex items-center justify-between border-b border-emerald-500/20 pb-3">
                       <h4 className="text-sm font-black text-amber-400 uppercase tracking-wider flex items-center gap-2">
                         <Sparkles className="w-4 h-4" />
-                        <span>{isEs ? 'Cotizador Oficial & Verificación de Cupos' : 'Official Quote & Live Availability'}</span>
+                        <span>{isEs ? 'Cotizador estimado & consulta de cupos registrados' : 'Estimated quote & recorded seat check'}</span>
                       </h4>
                       {(selectedTour?.operatorName || selectedTour?.operatorId) && (
                         <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-600/40 px-2 py-0.5 rounded-lg">
@@ -753,8 +753,8 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                     >
                       <ShieldCheck className="w-4 h-4 text-amber-400" />
                       {availabilityLoading
-                        ? (isEs ? 'Consultando sistema del operador…' : 'Querying operator system…')
-                        : (isEs ? 'Verificar Cupos en Tiempo Real' : 'Verify Live Seats with Operator')}
+                        ? (isEs ? 'Consultando cupos registrados…' : 'Checking recorded seats…')
+                        : (isEs ? 'Consultar cupos registrados' : 'Check recorded seats')}
                     </button>
 
                     {/* Resultado de Disponibilidad */}
@@ -764,12 +764,12 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                           <div>
                             <div className="text-xs font-black text-white flex items-center gap-1.5">
                               <span className={`w-2 h-2 rounded-full ${availability.available ? 'bg-emerald-400' : 'bg-amber-400'} animate-pulse`} />
-                              {availability.available ? (isEs ? '¡Cupo Confirmado Disponible!' : 'Space Confirmed Available!') : (isEs ? 'Cupo Limitado / Requiere Validación' : 'Limited Space / Needs Confirmation')}
+                              {availability.available ? (isEs ? 'Hay cupo registrado; falta confirmar con el operador' : 'Seats are recorded as available; operator confirmation is still required') : (isEs ? 'Cupo no verificado o insuficiente; requiere validación' : 'Availability is unverified or insufficient; confirmation is required')}
                             </div>
                             <div className="text-[11px] text-stone-300 mt-1 leading-relaxed">
                               {availability.reason || (availability.remainingSeats != null 
                                 ? (isEs ? `Quedan ${availability.remainingSeats} espacios para la fecha seleccionada.` : `${availability.remainingSeats} spaces remaining for the selected date.`)
-                                : (isEs ? 'Operador notificado. Puedes asegurar tu reserva de inmediato.' : 'Operator notified. You can secure your spot right now.'))}
+                                : (isEs ? 'Esta consulta revisa los cupos registrados en la plataforma; no contacta ni confirma por sí sola al operador.' : 'This check reads capacity recorded in the platform; it does not contact or confirm with the operator.'))}
                             </div>
                           </div>
                           <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />

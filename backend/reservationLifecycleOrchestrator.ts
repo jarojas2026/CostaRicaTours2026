@@ -62,12 +62,16 @@ async function finish(key: string, patch: any) {
  * Orquestador canónico del ciclo de reserva.
  * No sustituye la máquina de estados: coordina los servicios existentes alrededor de ella.
  *
- * prospect/hold -> payment_pending -> paid -> provider_pending -> confirmed
- * -> in_operation -> completed
+ * Flujo preferido de producción:
+ * request/payment_pending -> provider inquiry -> provider confirmed -> payment -> paid -> confirmed
  *
- * Cada paso es idempotente y queda trazado. No se confirma una reserva
- * únicamente por haber creado el documento: la confirmación requiere pago
- * verificado y/o evidencia operativa del proveedor.
+ * Compatibilidad heredada:
+ * paid -> provider_pending -> confirmed
+ *
+ * Cada paso es idempotente y queda trazado. Crear el documento nunca equivale a
+ * disponibilidad confirmada ni a una reserva final. Cuando el cliente todavía no
+ * ha pagado, se solicita primero evidencia operativa al proveedor para evitar cobrar
+ * por un servicio que aún no ha sido aceptado.
  */
 export async function advanceReservationLifecycle(booking: any): Promise<LifecycleResult> {
   const bookingId = String(booking.bookingId || booking.id || '');
@@ -76,6 +80,10 @@ export async function advanceReservationLifecycle(booking: any): Promise<Lifecyc
   const status = String(booking.status || '').toLowerCase();
   const paymentStatus = String(booking.paymentStatus || '').toLowerCase();
   const from = status || paymentStatus || 'prospect';
+  const paymentPending = ['pendiente_pago', 'payment_pending', 'pending'].includes(status)
+    && !['paid', 'completed', 'approved'].includes(paymentStatus);
+  const providerConfirmed = ['confirmed', 'confirmada'].includes(String(booking.serviceOrderStatus || '').toLowerCase())
+    || ['confirmed', 'confirmada'].includes(String(booking.providerStatus || '').toLowerCase());
 
   // 1. Pago verificado: avanzar a paid sin saltarse la máquina de estados.
   if ((status === 'pendiente_pago' || status === 'payment_pending' || status === 'pending') &&
@@ -93,7 +101,72 @@ export async function advanceReservationLifecycle(booking: any): Promise<Lifecyc
     return { bookingId, from, action: 'advance_paid', status: 'completed', message: 'Reserva avanzada a paid.' };
   }
 
-  // 2. Reserva pagada sin orden: crear y despachar orden al proveedor verificado.
+  // 2. Solicitud aún no pagada: consultar primero al proveedor real.
+  // Esto convierte la creación de booking en una solicitud transaccional útil y evita
+  // enviar al cliente a Stripe/PayPal antes de saber si el operador puede atenderla.
+  if (paymentPending && !booking.serviceOrderId) {
+    const key = `${bookingId}:prepayment-provider-dispatch`;
+    if (await alreadyProcessed(key)) return { bookingId, from, action: 'prepayment_provider_dispatch_already_processed', status: 'skipped', message: 'Consulta al proveedor ya procesada.' };
+    if (!await claim(key, { bookingId, transition: 'prepayment_provider_dispatch' })) return { bookingId, from, action: 'prepayment_provider_dispatch_claimed', status: 'skipped', message: 'Otro proceso está consultando al proveedor.' };
+
+    try {
+      const order = await dispatchServiceOrder({
+        bookingId,
+        tourId: String(booking.tourId || ''),
+        tourName: String(booking.tourName || booking.tour?.name || 'Tour Costa Rica'),
+        date: String(booking.date || ''),
+        time: String(booking.time || '08:00 AM'),
+        adults: Number(booking.adults || 0),
+        children: Number(booking.children || 0),
+        pickupLocation: String(booking.pickupHotel || booking.pickupLocation || ''),
+        customer: {
+          name: String(booking.customerName || booking.customer?.name || ''),
+          phone: String(booking.customerPhone || booking.customer?.phone || ''),
+          email: String(booking.customerEmail || booking.customer?.email || '')
+        },
+        totalUSD: Number(booking.totalUSD || booking.totalAmount || 0),
+        providerId: booking.providerId
+      });
+
+      await updateBookingStatus(bookingId, {
+        lifecycle: 'payment_pending',
+        serviceOrderId: order.id,
+        serviceOrderStatus: order.status,
+        providerId: order.providerId,
+        providerName: order.providerName,
+        providerStatus: 'pending',
+        providerDispatchedAt: new Date().toISOString()
+      });
+      await finish(key, { status: 'completed', action: 'prepayment_provider_dispatch', serviceOrderId: order.id });
+      return { bookingId, from, action: 'prepayment_provider_dispatch', status: 'completed', message: `Consulta ${order.id} enviada al proveedor antes del cobro.` };
+    } catch (error: any) {
+      await finish(key, { status: 'error', action: 'prepayment_provider_dispatch', error: String(error?.message || error) });
+      return { bookingId, from, action: 'prepayment_provider_dispatch', status: 'error', message: String(error?.message || error) };
+    }
+  }
+
+  // 3. El proveedor confirmó mientras el cliente aún no ha pagado.
+  // Mantener payment_pending, pero publicar evidencia de disponibilidad para que la UI
+  // pueda habilitar el siguiente paso de cobro sin declarar la reserva confirmada.
+  if (paymentPending && providerConfirmed && String(booking.providerStatus || '').toLowerCase() !== 'confirmed') {
+    const key = `${bookingId}:provider-availability-confirmed`;
+    if (await alreadyProcessed(key)) return { bookingId, from, action: 'provider_availability_already_processed', status: 'skipped', message: 'Disponibilidad del proveedor ya registrada.' };
+    if (!await claim(key, { bookingId, transition: 'provider_availability_confirmed' })) return { bookingId, from, action: 'provider_availability_claimed', status: 'skipped', message: 'Otro proceso está registrando la disponibilidad.' };
+
+    const updated = await updateBookingStatus(bookingId, {
+      providerStatus: 'confirmed',
+      providerConfirmedAt: booking.providerConfirmedAt || new Date().toISOString(),
+      lifecycle: 'payment_pending'
+    });
+    if (!updated.success) {
+      await finish(key, { status: 'error', error: updated.error });
+      return { bookingId, from, action: 'provider_availability_confirmed', status: 'error', message: updated.error || 'No se pudo registrar la disponibilidad del proveedor.' };
+    }
+    await finish(key, { status: 'completed', action: 'provider_availability_confirmed' });
+    return { bookingId, from, action: 'provider_availability_confirmed', status: 'completed', message: 'Proveedor confirmó disponibilidad; el pago puede solicitarse.' };
+  }
+
+  // 4. Compatibilidad heredada: reserva ya pagada sin orden, despachar al proveedor.
   if (status === 'paid' && !booking.serviceOrderId) {
     const key = `${bookingId}:provider-dispatch`;
     if (await alreadyProcessed(key)) return { bookingId, from, action: 'provider_dispatch_already_processed', status: 'skipped', message: 'Despacho ya procesado.' };
@@ -117,7 +190,7 @@ export async function advanceReservationLifecycle(booking: any): Promise<Lifecyc
         totalUSD: Number(booking.totalUSD || booking.totalAmount || 0),
         providerId: booking.providerId
       });
-      await updateBookingStatus(bookingId, { status: 'provider_pending', lifecycle: 'provider_pending', serviceOrderId: order.id, serviceOrderStatus: order.status, providerId: order.providerId, providerName: order.providerName });
+      await updateBookingStatus(bookingId, { status: 'provider_pending', lifecycle: 'provider_pending', serviceOrderId: order.id, serviceOrderStatus: order.status, providerId: order.providerId, providerName: order.providerName, providerStatus: 'pending' });
       await finish(key, { status: 'completed', action: 'provider_dispatch', serviceOrderId: order.id });
       return { bookingId, from, action: 'provider_dispatch', status: 'completed', message: `Orden ${order.id} despachada.` };
     } catch (error: any) {
@@ -126,13 +199,13 @@ export async function advanceReservationLifecycle(booking: any): Promise<Lifecyc
     }
   }
 
-  // 3. Proveedor confirmado: hacer la transición a confirmed y notificar al cliente.
-  if (['provider_pending', 'paid'].includes(status) && ['confirmed', 'confirmada'].includes(String(booking.serviceOrderStatus || '').toLowerCase())) {
+  // 5. Proveedor confirmado + pago verificado: transición final a confirmed y notificar al cliente.
+  if (['provider_pending', 'paid'].includes(status) && providerConfirmed) {
     const key = `${bookingId}:customer-confirmation`;
     if (await alreadyProcessed(key)) return { bookingId, from, action: 'customer_confirmation_already_processed', status: 'skipped', message: 'Cliente ya notificado.' };
     if (!await claim(key, { bookingId, transition: 'customer_confirmation' })) return { bookingId, from, action: 'customer_confirmation_claimed', status: 'skipped', message: 'Otro proceso está notificando al cliente.' };
 
-    const transitioned = await updateBookingStatus(bookingId, { status: 'confirmed', lifecycle: 'confirmed', confirmedAt: new Date().toISOString() });
+    const transitioned = await updateBookingStatus(bookingId, { status: 'confirmed', lifecycle: 'confirmed', confirmedAt: new Date().toISOString(), providerStatus: 'confirmed' });
     if (!transitioned.success) {
       await finish(key, { status: 'error', error: transitioned.error });
       return { bookingId, from, action: 'confirm_transition', status: 'error', message: transitioned.error || 'Transición no permitida.' };

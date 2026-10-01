@@ -1158,7 +1158,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                     tour={tour}
                     language={language}
                     currency={currency}
-                    onSelectTour={(t) => navigate(`/tour/${t.id}`)}
+                    onSelectTour={onSelectTour || ((t) => navigate(`/tour/${t.id}`))}
                     isFavorite={favorites.includes(tour.id)}
                     onToggleFavorite={toggleFavorite}
                     isCompared={comparedTours.some(t => t.id === tour.id)}

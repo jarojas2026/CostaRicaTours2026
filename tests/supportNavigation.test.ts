@@ -30,5 +30,14 @@ test('support routes do not intercept WhatsApp or report an unverified notificat
   assert.doesNotMatch(app, /Ya se registró y notificó al equipo/);
   assert.doesNotMatch(floating, /requestCustomerIntake/);
   assert.match(floating, /window\.open\(directWhatsAppUrl\(contextualMessage\)/);
-  assert.match(app, /setIntakeHandoffUrl\(directWhatsAppUrl\(message\)\)/);
+  assert.match(app, /const handoffUrl = directWhatsAppUrl\(message\)/);
+});
+
+test('contact inquiries report delivery only after the customer-intake request resolves', () => {
+  const contact = readFileSync('src/components/ContactSection.tsx', 'utf8');
+  assert.match(contact, /onResult:\s*result\s*=>\s*setStatus/);
+  assert.match(contact, /No se pudo enviar la consulta/);
+  assert.match(contact, /required=\{!phone\.trim\(\)\}/);
+  assert.match(contact, /required=\{!email\.trim\(\)\}/);
+  assert.match(contact, /id="contact-message"[\s\S]*?required/);
 });

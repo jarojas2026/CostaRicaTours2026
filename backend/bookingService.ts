@@ -7,7 +7,7 @@ import crypto from 'crypto';
 
 import fs from 'fs';
 import path from 'path';
-import admin from 'firebase-admin';
+import { getFirebaseAdminApp } from './firebaseAdminRuntime';
 import {
   getFirestore,
   FieldValue,
@@ -59,27 +59,15 @@ export function getFirestoreDb(): Firestore | null {
   if (dbInstance) return dbInstance;
 
   try {
-    const adminAny = admin as any;
-    if (!adminAny.apps || adminAny.apps.length === 0) {
-      if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        adminAny.initializeApp({
-          credential: adminAny.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
-          projectId: process.env.FIREBASE_PROJECT_ID
-        });
-      } else {
-        adminAny.initializeApp();
-      }
-    }
-
-    try {
-      dbInstance = getFirestore(adminAny.app(), FIRESTORE_DATABASE_ID);
-    } catch {
-      dbInstance = getFirestore(adminAny.app());
-    }
-
+    const app = getFirebaseAdminApp();
+    dbInstance = getFirestore(app, FIRESTORE_DATABASE_ID);
     return dbInstance;
-  } catch (error) {
-    console.warn('⚠️ Firestore Admin no disponible.');
+  } catch (error: any) {
+    console.warn('⚠️ Firestore Admin no disponible.', {
+      name: error?.name || null,
+      code: error?.code || null,
+      message: error?.message || String(error)
+    });
     return null;
   }
 }

@@ -7,6 +7,8 @@ import { resolveTravelerIdentity } from './travelerIdentityService';
 import { rememberTurn } from './memoryService';
 import { sendEmail } from './notificationService';
 import { emitOperationalEvent } from './operationalEventBus';
+import { executeBusinessGoal } from './businessGoalOrchestrator';
+import { extractCustomerTravelRequirements } from './customerRequirementExtractor';
 
 type MailProvider = 'gmail' | 'outlook';
 type MailMessage = {
@@ -97,7 +99,7 @@ async function classifyMail(subject: string, body: string, from: string): Promis
           input
         ].join('\n')
       });
-      const raw = (response.text || '').trim().replace(/^\`\`\`json\s*|\s*\`\`\`$/gi, '');
+      const raw = (response.text || '').trim().replace(/^```json\s*|\s*```$/gi, '');
       const parsed = JSON.parse(raw);
       if (['customer_request', 'provider_response', 'internal', 'spam', 'unknown'].includes(parsed.kind)) {
         return {
@@ -309,27 +311,40 @@ async function processProviderResponseEmail(mail: MailMessage) {
 }
 
 async function processCustomerEmail(mail: MailMessage, classification: Classification) {
-  const identity = await resolveTravelerIdentity({
-    email: mail.from,
-    sessionId: `email_${mail.provider}_${mail.id}`,
-    channel: `email:${mail.provider}`
-  });
+  const sourceMessage = `${mail.subject}\n\n${mail.text}`;
   const triage = await runTriage(mail.text || mail.subject);
   const intent = clean(triage?.intent || classification.intent, 120);
   const confidence = Number(triage?.confidence) || classification.confidence;
-  const risk = riskyCustomerRequest(`${mail.subject}\n${mail.text}`);
+  const risk = riskyCustomerRequest(sourceMessage);
+  const requirements = extractCustomerTravelRequirements(sourceMessage);
+
+  const businessGoal = await executeBusinessGoal({
+    channel: `email:${mail.provider}`,
+    messageId: mail.id,
+    threadId: mail.threadId,
+    actor: 'customer',
+    intent,
+    message: sourceMessage,
+    requirements
+  });
+
+  const identity = await resolveTravelerIdentity({
+    email: mail.from,
+    sessionId: businessGoal.sessionId,
+    channel: `email:${mail.provider}`
+  });
   const autonomous = !risk && confidence >= 0.72;
 
   const assistant = await processChatInquiry(
-    `${mail.subject}\n\n${mail.text}`,
-    /[\u00C0-\u024F]/.test(mail.text) || /hola|reserva|precio|disponibilidad/i.test(mail.text) ? 'es' : 'en',
+    sourceMessage,
+    requirements.language || (/[\u00C0-\u024F]/.test(mail.text) || /hola|reserva|precio|disponibilidad/i.test(mail.text) ? 'es' : 'en'),
     [],
     'auto',
     identity.sessionId,
     { allowMutations: autonomous }
   );
 
-  await rememberTurn(identity.sessionId, { role: 'user', text: `${mail.subject}\n${mail.text}`, agentId: 'email_operations_agent' }, { agentId: 'email_operations_agent', activeGoal: intent });
+  await rememberTurn(identity.sessionId, { role: 'user', text: sourceMessage, agentId: 'email_operations_agent' }, { agentId: 'email_operations_agent', activeGoal: intent });
   await rememberTurn(identity.sessionId, { role: 'assistant', text: assistant.reply, agentId: assistant.agentId || 'concierge' }, { agentId: assistant.agentId || 'concierge', decision: autonomous ? 'email_autonomous' : 'email_review' });
 
   if (!autonomous) {
@@ -338,13 +353,23 @@ async function processCustomerEmail(mail: MailMessage, classification: Classific
       intent,
       confidence,
       risk,
+      goal: businessGoal.goal,
+      journeyId: businessGoal.journeyId || null,
+      sessionId: businessGoal.sessionId,
+      correlationId: businessGoal.correlationId,
+      confirmedRequirements: requirements,
+      pendingFacts: businessGoal.pendingFacts,
+      nextAction: businessGoal.nextAction,
       reason: risk ? 'Solicitud sensible requiere revisión.' : 'Confianza insuficiente para mutación automática.',
       aiReply: assistant.reply.slice(0, 6000)
     });
-    return { status: 'needs_human_review', reply: assistant.reply, intent, confidence, risk };
+    return { status: 'needs_human_review', reply: assistant.reply, intent, confidence, risk, businessGoal };
   }
 
-  const reply = assistant.reply.trim() || 'Recibimos tu solicitud y estamos verificando disponibilidad.';
+  const verificationNotice = businessGoal.pendingFacts.length
+    ? `\n\nEstado de verificación: conservamos tus datos confirmados y estamos verificando ${businessGoal.pendingFacts.join(', ')}. No consideramos disponibilidad, tarifa final ni reserva como confirmadas hasta contar con evidencia operativa.`
+    : '';
+  const reply = (assistant.reply.trim() || 'Recibimos tu solicitud y estamos verificando disponibilidad.') + verificationNotice;
   if (mail.provider === 'gmail') {
     const client = await gmailClient();
     if (!client) throw new Error('Gmail no disponible para responder.');
@@ -362,17 +387,34 @@ async function processCustomerEmail(mail: MailMessage, classification: Classific
     confidence,
     risk,
     autonomous: true,
+    goal: businessGoal.goal,
+    journeyId: businessGoal.journeyId || null,
+    sessionId: businessGoal.sessionId,
+    correlationId: businessGoal.correlationId,
+    confirmedRequirements: requirements,
+    pendingFacts: businessGoal.pendingFacts,
+    nextAction: businessGoal.nextAction,
     reply: reply.slice(0, 6000),
     completedAt: new Date().toISOString()
   });
   await emitOperationalEvent({
     type: 'email.request.autonomous_completed',
     source: 'email_operations_agent',
-    conversationId: identity.sessionId,
-    payload: { provider: mail.provider, messageId: mail.id, from: mail.from, intent, confidence }
+    conversationId: businessGoal.journeyId || identity.sessionId,
+    payload: {
+      provider: mail.provider,
+      messageId: mail.id,
+      threadId: mail.threadId || null,
+      from: mail.from,
+      intent,
+      confidence,
+      goal: businessGoal.goal,
+      correlationId: businessGoal.correlationId,
+      pendingFacts: businessGoal.pendingFacts
+    }
   }).catch(() => undefined);
 
-  return { status: 'completed', reply, intent, confidence, risk };
+  return { status: 'completed', reply, intent, confidence, risk, businessGoal };
 }
 
 export async function processEmailOperationsOnce() {

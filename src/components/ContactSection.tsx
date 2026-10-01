@@ -11,10 +11,24 @@ interface ContactSectionProps {
 export const ContactSection: React.FC<ContactSectionProps> = ({ language }) => {
   const [name,setName]=useState('');
   const [email,setEmail]=useState('');
+  const [phone,setPhone]=useState('');
   const [subject,setSubject]=useState('Consulta de disponibilidad');
   const [message,setMessage]=useState('');
   const [status,setStatus]=useState('');
-  const submit=(e:React.FormEvent)=>{e.preventDefault(); const text=[`Hola Costa Rica Tours, soy ${name||'un viajero'}.`,`Email: ${email||'no indicado'}.`,`Asunto: ${subject}.`,`Mensaje: ${message||'Quisiera más información.'}`].join('\\n'); requestCustomerIntake({message:text,language,source:'contact-form',customer:{name,email}}); setStatus(language==='es'?'Tu solicitud fue enviada al asistente de IA para análisis.':'Your request was sent to the AI assistant for analysis.');};
+  const submit=(e:React.FormEvent)=>{
+    e.preventDefault();
+    setStatus(language==='es'?'Enviando consulta…':'Sending your inquiry…');
+    const text=[`Hola Costa Rica Tours, soy ${name||'un viajero'}.`,`Email: ${email||'no indicado'}.`,`Teléfono: ${phone||'no indicado'}.`,`Asunto: ${subject}.`,`Mensaje: ${message.trim()}`].join('\n');
+    requestCustomerIntake({
+      message:text,
+      language,
+      source:'contact-form',
+      customer:{name,email,phone},
+      onResult: result => setStatus(result.ok
+        ? (language==='es' ? `Consulta recibida.${result.intakeId ? ` Número de seguimiento: ${result.intakeId}` : ''}` : `Inquiry received.${result.intakeId ? ` Reference: ${result.intakeId}` : ''}`)
+        : (language==='es' ? 'No se pudo enviar la consulta. No se notificó al equipo; puedes continuar por WhatsApp.' : 'The inquiry could not be sent. The team was not notified; you can continue on WhatsApp.'))
+    });
+  };
   return (
     <section className="py-24 px-4 max-w-7xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
@@ -78,26 +92,42 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ language }) => {
           <form className="space-y-6" onSubmit={submit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-4">Nombre</label>
+                <label htmlFor="contact-name" className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-4">Nombre</label>
                 <input 
+                  id="contact-name"
                   type="text" 
                   className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
                   placeholder="Tu nombre" value={name} onChange={e=>setName(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-4">Email</label>
+                <label htmlFor="contact-email" className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-4">Email</label>
                 <input 
+                  id="contact-email"
                   type="email" 
+                  required={!phone.trim()}
                   className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
                   placeholder="hola@ejemplo.com" value={email} onChange={e=>setEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label htmlFor="contact-phone" className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-4">{language === 'es' ? 'Teléfono / WhatsApp' : 'Phone / WhatsApp'}</label>
+                <input
+                  id="contact-phone"
+                  type="tel"
+                  autoComplete="tel"
+                  required={!email.trim()}
+                  className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                  placeholder="+506 8888 8888"
+                  value={phone}
+                  onChange={e=>setPhone(e.target.value)}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-4">Asunto</label>
-              <select value={subject} onChange={e=>setSubject(e.target.value)} className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors appearance-none">
+              <label htmlFor="contact-subject" className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-4">Asunto</label>
+              <select id="contact-subject" value={subject} onChange={e=>setSubject(e.target.value)} className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors appearance-none">
                 <option>{language === 'es' ? 'Consulta de disponibilidad' : 'Availability Check'}</option>
                 <option>{language === 'es' ? 'Cotización a medida' : 'Custom Quote'}</option>
                 <option>{language === 'es' ? 'Soporte técnico' : 'Technical Support'}</option>
@@ -106,9 +136,12 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ language }) => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-4">Mensaje</label>
+              <label htmlFor="contact-message" className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-4">Mensaje</label>
               <textarea 
+                id="contact-message"
                 rows={4}
+                required
+                minLength={3}
                 className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
                 placeholder={language === 'es' ? 'Cuéntanos tu plan...' : 'Tell us your plan...'} value={message} onChange={e=>setMessage(e.target.value)}
               />

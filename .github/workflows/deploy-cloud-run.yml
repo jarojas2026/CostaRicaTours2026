@@ -1,21 +1,24 @@
 name: Deploy to Google Cloud Run
 
-# Se ejecuta automáticamente cada vez que hay un push a "main".
-# También se puede lanzar manualmente desde la pestaña "Actions" de GitHub.
-# Este workflow solo se encarga del despliegue; no modifica el código de la aplicación.
+# Producción se despliega únicamente después de que el gate principal
+# Build & Type Check termine exitosamente en main. workflow_dispatch se
+# conserva para recuperación manual.
 on:
-  push:
-    branches: [main]
+  workflow_run:
+    workflows: ["Build & Type Check"]
+    types: [completed]
   workflow_dispatch: {}
 
 env:
-  # Nombre del servicio en Cloud Run y región donde vive.
-  # San José, Costa Rica está más cerca de la región "us-central1"
-  # (Iowa) que de otras opciones de Google Cloud en Latinoamérica
-  # limitadas; es una de las regiones más económicas y estables.
   SERVICE_NAME: costa-rica-tours
   REGION: us-central1
   PROJECT_ID: gen-lang-client-0782739149
+  FIRESTORE_DATABASE_ID: ai-studio-costaricatours-88d81273-09f7-4f87-991c-60b9b0db0dea
+  # Ruta preferida: Workload Identity Federation (OIDC sin llave persistente).
+  # Compatibilidad: si aún no existen estos secretos, se usa GCP_SA_KEY.
+  GCP_WIF_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+  GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+  GCP_SA_KEY_JSON: ${{ secrets.GCP_SA_KEY }}
 
 permissions:
   contents: read
@@ -23,32 +26,108 @@ permissions:
 
 concurrency:
   group: production-cloud-run-deploy
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
-    name: Build y despliegue a Cloud Run
+    name: Desplegar SHA validado a Cloud Run
     runs-on: ubuntu-latest
-    # No se usa "if" con secrets aquí. GitHub no permite usar directamente
-    # el contexto "secrets" en la condición de un job. Si faltan los secretos,
-    # el propio paso de autenticación mostrará el error correspondiente.
+    timeout-minutes: 35
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
     steps:
-      - name: Descargar el código del repositorio
-        uses: actions/checkout@v7
+      - name: Resolver SHA de despliegue
+        id: deploy_ref
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Autenticar con Google Cloud
+      - name: Descargar exactamente el código validado
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.deploy_ref.outputs.sha }}
+
+      - name: Autenticar con Google Cloud — OIDC keyless (preferido)
+        if: env.GCP_WIF_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != ''
         uses: google-github-actions/auth@v3
         with:
-          credentials_json: "${{ secrets.GCP_SA_KEY }}"
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: Autenticar con Google Cloud — llave JSON (fallback temporal)
+        if: env.GCP_WIF_PROVIDER == '' || env.GCP_SERVICE_ACCOUNT == ''
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ env.GCP_SA_KEY_JSON }}
+
+      - name: Verificar que existe un método de autenticación configurado
+        shell: bash
+        run: |
+          if [ -z "$GCP_WIF_PROVIDER" ] && [ -z "$GCP_SA_KEY_JSON" ]; then
+            echo "::error::Configure GCP_WORKLOAD_IDENTITY_PROVIDER + GCP_SERVICE_ACCOUNT (recomendado) o GCP_SA_KEY como fallback."
+            exit 1
+          fi
 
       - name: Configurar gcloud CLI
         uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: ${{ env.PROJECT_ID }}
 
-      - name: Preflight — verificar tipos y compilación antes de desplegar
+      - name: Recuperar identidad de build y auditar identidad runtime
+        id: identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
+          DEFAULT_COMPUTE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+
+          if ! gcloud iam service-accounts describe "$DEFAULT_COMPUTE_SA" --project "$PROJECT_ID" >/dev/null 2>&1; then
+            echo "::error::La cuenta predeterminada de Compute/Cloud Build no existe: $DEFAULT_COMPUTE_SA"
+            exit 1
+          fi
+
+          BUILD_DISABLED="$(gcloud iam service-accounts describe "$DEFAULT_COMPUTE_SA" --project "$PROJECT_ID" --format='value(disabled)')"
+          if [ "$BUILD_DISABLED" = "True" ] || [ "$BUILD_DISABLED" = "true" ]; then
+            echo "La cuenta usada actualmente por Cloud Build está deshabilitada. Reactivándola para recuperar despliegues desde source..."
+            gcloud iam service-accounts enable "$DEFAULT_COMPUTE_SA" --project "$PROJECT_ID"
+          fi
+
+          EFFECTIVE_DISABLED="$(gcloud iam service-accounts describe "$DEFAULT_COMPUTE_SA" --project "$PROJECT_ID" --format='value(disabled)')"
+          if [ "$EFFECTIVE_DISABLED" = "True" ] || [ "$EFFECTIVE_DISABLED" = "true" ]; then
+            echo "::error::La identidad de build continúa deshabilitada: $DEFAULT_COMPUTE_SA"
+            exit 1
+          fi
+
+          RUNTIME_SA="$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(spec.template.spec.serviceAccountName)' 2>/dev/null || true)"
+          if [ -z "$RUNTIME_SA" ]; then
+            RUNTIME_SA="$DEFAULT_COMPUTE_SA"
+          fi
+
+          echo "Build identity: $DEFAULT_COMPUTE_SA"
+          echo "Cloud Run runtime identity: $RUNTIME_SA"
+          echo "runtime_service_account=$RUNTIME_SA" >> "$GITHUB_OUTPUT"
+
+          if gcloud iam service-accounts describe "$RUNTIME_SA" --project "$PROJECT_ID" >/dev/null 2>&1; then
+            RUNTIME_DISABLED="$(gcloud iam service-accounts describe "$RUNTIME_SA" --project "$PROJECT_ID" --format='value(disabled)')"
+            if [ "$RUNTIME_DISABLED" = "True" ] || [ "$RUNTIME_DISABLED" = "true" ]; then
+              echo "La identidad runtime de Cloud Run está deshabilitada. Reactivándola para restaurar Application Default Credentials..."
+              gcloud iam service-accounts enable "$RUNTIME_SA" --project "$PROJECT_ID"
+            fi
+          fi
+
+      - name: Preflight manual — contratos, tipos y build
+        if: github.event_name == 'workflow_dispatch'
         run: |
           npm ci --include=optional --legacy-peer-deps
+          npm run audit:security:prod
+          npm run audit:whatsapp
+          npm run test:contracts
           npm run lint
           npm run build
         env:
@@ -58,27 +137,47 @@ jobs:
           VITE_STRIPE_PUBLIC_KEY: "pk_test_dummy"
           VITE_GOOGLE_MAPS_API_KEY: "dummy-key"
 
-      - name: Desplegar directamente desde el código en Cloud Run
+      - name: Desplegar código validado en Cloud Run
         run: |
-          echo "Iniciando despliegue en Google Cloud Run..."
+          echo "Desplegando SHA ${{ steps.deploy_ref.outputs.sha }} en Cloud Run..."
           gcloud run deploy "$SERVICE_NAME" \
             --source . \
             --region "$REGION" \
             --project "$PROJECT_ID" \
+            --update-env-vars "FIREBASE_PROJECT_ID=$PROJECT_ID,FIRESTORE_DATABASE_ID=$FIRESTORE_DATABASE_ID" \
             --min-instances=0 \
             --max-instances=20 \
             --memory=512Mi \
             --cpu=1 \
             --quiet
 
-      - name: Verificar revisión y endpoint de salud
+      - name: Verificar revisión, SHA, identidad, salud y Firestore
+        shell: bash
         run: |
-          SERVICE_URL="$(gcloud run services describe "${{ env.SERVICE_NAME }}" --region "${{ env.REGION }}" --format='value(status.url)')"
+          set -euo pipefail
+          SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
+          REVISION="$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.latestReadyRevisionName)')"
+          RUNTIME_SA="$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(spec.template.spec.serviceAccountName)')"
           echo "Servicio desplegado: $SERVICE_URL"
-          echo "Revisión activa: $(gcloud run services describe "${{ env.SERVICE_NAME }}" --region "${{ env.REGION }}" --format='value(status.latestReadyRevisionName)')"
+          echo "Revisión activa: $REVISION"
+          echo "SHA desplegado: ${{ steps.deploy_ref.outputs.sha }}"
+          echo "Identidad runtime: ${RUNTIME_SA:-${{ steps.identities.outputs.runtime_service_account }}}"
+
           ID_TOKEN="$(gcloud auth print-identity-token)"
           curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors \
             -H "Authorization: Bearer $ID_TOKEN" \
             "$SERVICE_URL/api/health"
           echo
-          echo "✅ Cloud Run respondió correctamente al health check autenticado."
+
+          AVAILABILITY_URL="$SERVICE_URL/api/tours/arenal-volcano-hotsprings/availability?date=2026-11-25&time=08%3A00%20AM&seats=2"
+          AVAILABILITY_JSON="$(curl --fail --silent --show-error --retry 3 --retry-delay 3 --retry-all-errors \
+            -H "Authorization: Bearer $ID_TOKEN" \
+            "$AVAILABILITY_URL")"
+          echo "Smoke de disponibilidad: $AVAILABILITY_JSON"
+
+          if printf '%s' "$AVAILABILITY_JSON" | grep -Eq 'disponibilidad en vivo no está accesible|servicio de disponibilidad no respondió'; then
+            echo "::error::Cloud Run está sano, pero Firestore/ADC todavía no está operativo para disponibilidad."
+            exit 1
+          fi
+
+          echo "✅ Cloud Run respondió correctamente y la ruta de disponibilidad alcanzó Firestore sin fallback de infraestructura."

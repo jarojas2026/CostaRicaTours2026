@@ -41,7 +41,9 @@ VOICE_HUMAN_NUMBERS=+506XXXXXXXX,+506YYYYYYYY
 VOICE_HUMAN_LABEL=Agent Desk Costa Rica Tours
 ```
 
-`VOICE_HUMAN_NUMBER` remains supported for a single operator.
+`VOICE_HUMAN_NUMBERS` accepts up to eight comma-separated E.164 numbers. Invalid values are ignored. `VOICE_HUMAN_NUMBER` remains supported for one operator.
+
+The provider signing token is mandatory for every public webhook. Requests with a missing or invalid signature receive `403`; do not expose the webhook without configuring the provider's signing secret. Set the provider callback URLs to the public Vercel `/api/voice/...` routes so requests pass through the same private-backend gateway as the web Counter Desk.
 
 ## Endpoints
 
@@ -50,6 +52,7 @@ VOICE_HUMAN_LABEL=Agent Desk Costa Rica Tours
 - `POST /api/voice/human-transfer` — records transfer completion.
 - `POST /api/voice/status` — records provider call status.
 - `GET /api/voice/config` — admin-only integration status.
+- `GET /api/voice/calls/:callId` — admin-only call session record.
 
 ## Human Agent Desk
 
@@ -57,7 +60,11 @@ The human team can be distributed: each operator can answer from a mobile phone,
 
 ## Safety
 
-- Provider signature validation is enabled automatically when `VOICE_PROVIDER_AUTH_TOKEN` is configured.
+- All provider callbacks validate `X-Twilio-Signature` using `VOICE_PROVIDER_AUTH_TOKEN`; callbacks fail closed when the token is absent.
+- Only terminal provider call states receive an `endedAt` timestamp. `in-progress`, `ringing`, and other nonterminal callbacks do not close the session.
+- Failed or unanswered human transfers return the caller to the AI voice prompt; completed transfers end the TwiML response.
+- Empty speech retries are bounded. After three consecutive silent turns, the system tries a configured human destination or ends the call cleanly.
+- DTMF `0` requests a human transfer; unsupported keys do not get misinterpreted as natural-language booking requests.
 - No payment, booking confirmation, cancellation, or itinerary mutation is performed merely because a caller asks by voice.
 - Voice context is labeled as `channel=voice` and remains connected to the existing operational memory.
 - Human handoff is explicit.
@@ -83,3 +90,7 @@ This makes the phone channel another interface to the same operational brain rat
 ### AI voice
 
 The current voice gateway uses neural provider text-to-speech through the provider's Voice `<Say>` capability. The application layer keeps telephony/TTS credentials outside Git and can later swap the synthesis provider without changing the tourism, memory or booking services.
+
+## Production readiness boundary
+
+The code path is implemented, but it is not proof that an operator number or telephony provider is active. Before announcing phone service, configure a real provider account/number, set the server secrets, register the incoming/response/status/transfer callback URLs, and complete an authenticated test call in Spanish and English. The live Vercel API gateway currently reports a missing `GCP_WIF_AUDIENCE`, so the Agent Desk endpoints cannot currently reach Cloud Run through production until the required Vercel production configuration is restored.
