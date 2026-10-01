@@ -3,6 +3,10 @@
   "buildCommand": "npm run build",
   "rewrites": [
     {
+      "source": "/api/:path((?!gateway$).*)",
+      "destination": "/api/gateway?__crt_path=:path"
+    },
+    {
       "source": "/ai",
       "destination": "/index.html"
     },
