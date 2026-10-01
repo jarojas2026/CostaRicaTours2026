@@ -1244,6 +1244,19 @@ app.post('/api/counter/organize', requireAdmin, async (_req, res) => {
 // Hotels can forward a room phone to one DID and keep the integration provider-neutral.
 // No credentials are stored in the repository.
 // ==========================================
+app.use(['/api/voice/incoming', '/api/voice/respond', '/api/voice/human-transfer', '/api/voice/status'], (req, res, next) => {
+  const config = voiceAgentDeskConfig();
+  if (!config.ready) return res.status(503).send('Voice configuration pending');
+  const params = Object.fromEntries(Object.entries(req.body || {}).map(([k, v]) => [k, String(v ?? '')]));
+  const signature = req.headers['x-twilio-signature'];
+  const baseUrl = String(config.publicBaseUrl).replace(/\/$/, '');
+  if (!verifyVoiceSignature(`${baseUrl}${req.originalUrl}`, params, typeof signature === 'string' ? signature : undefined)) {
+    return res.status(403).send('Unauthorized');
+  }
+  if (!/^CA[a-fA-F0-9]{32}$/.test(String(req.body?.CallSid || ''))) return res.status(400).send('Invalid CallSid');
+  next();
+});
+
 app.get('/api/voice/config', requireAdmin, async (_req, res) => {
   res.json({ success: true, config: voiceAgentDeskConfig() });
 });
@@ -1252,7 +1265,7 @@ app.post('/api/voice/incoming', async (req, res) => {
   try {
     const params = Object.fromEntries(Object.entries(req.body || {}).map(([k, v]) => [k, String(v ?? '')]));
     const signature = req.headers['x-twilio-signature'];
-    const baseUrl = process.env.PUBLIC_BASE_URL || process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = voiceAgentDeskConfig().publicBaseUrl;
     if (!verifyVoiceSignature(`${baseUrl}${req.originalUrl}`, params, typeof signature === 'string' ? signature : undefined)) {
       return res.status(403).type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response><Say>Unauthorized</Say></Response>');
     }
@@ -1265,7 +1278,7 @@ app.post('/api/voice/incoming', async (req, res) => {
     await rememberVoiceCallStart({ callId, from: req.body?.From, to: req.body?.To, hotelId, hotelName, room, language, startedAt: new Date().toISOString() });
     const twiml = createInboundVoiceResponse({
       callId, language, hotelName, room, responseUrl,
-      humanTransferAvailable: Boolean(process.env.VOICE_HUMAN_NUMBER)
+      humanTransferAvailable: voiceAgentDeskConfig().humanTransferConfigured
     });
     res.type('text/xml').send(twiml);
   } catch (err: any) {
@@ -1277,7 +1290,7 @@ app.post('/api/voice/respond', async (req, res) => {
   try {
     const params = Object.fromEntries(Object.entries(req.body || {}).map(([k, v]) => [k, String(v ?? '')]));
     const signature = req.headers['x-twilio-signature'];
-    const baseUrl = process.env.PUBLIC_BASE_URL || process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = voiceAgentDeskConfig().publicBaseUrl;
     if (!verifyVoiceSignature(`${baseUrl}${req.originalUrl}`, params, typeof signature === 'string' ? signature : undefined)) {
       return res.status(403).type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response><Say>Unauthorized</Say></Response>');
     }
@@ -1307,10 +1320,12 @@ app.post('/api/voice/respond', async (req, res) => {
 });
 
 app.post('/api/voice/human-transfer', async (req, res) => {
-  const status = String(req.body?.DialCallStatus || req.query?.status || 'completed');
-  const callId = String(req.body?.CallSid || req.query?.callId || '');
-  if (callId) await rememberVoiceCallEnd(callId, status);
-  res.type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+  // The parent call remains live until its signed status callback reports completion.
+  const status = String(req.body?.DialCallStatus || 'failed');
+  const message = status === 'completed'
+    ? 'Gracias por contactar a Costa Rica Tours.'
+    : 'No fue posible conectar con el equipo humano. Puede contactarnos por WhatsApp desde nuestra página web. No se ha confirmado ninguna reserva con esta transferencia.';
+  res.type('text/xml').send(`<?xml version="1.0" encoding="UTF-8"?><Response><Say language="es-MX">${message}</Say><Hangup/></Response>`);
 });
 
 app.get('/api/voice/calls/:callId', requireAdmin, async (req, res) => {
@@ -1328,8 +1343,9 @@ app.get('/api/voice/calls/:callId', requireAdmin, async (req, res) => {
 app.post('/api/voice/status', async (req, res) => {
   try {
     const callId = String(req.body?.CallSid || req.body?.callId || '');
-    if (callId) await rememberVoiceCallEnd(callId, String(req.body?.CallStatus || 'unknown'));
-  } catch {}
+    const status = String(req.body?.CallStatus || 'unknown');
+    if (callId && ['completed', 'busy', 'failed', 'no-answer', 'canceled'].includes(status)) await rememberVoiceCallEnd(callId, status);
+  } catch { return res.status(503).send('Unable to persist call status'); }
   res.status(204).send();
 });
 
@@ -1956,12 +1972,13 @@ app.post('/api/provider/portal/action', async (req, res) => {
     if (String(order.providerId) !== capability.providerId) {
       return res.status(403).json({ success: false, error: 'Este enlace no corresponde al proveedor asignado.' });
     }
-    if (!['dispatched', 'reassigned'].includes(String(order.status)) && action !== 'complete') {
+    if (!['dispatched', 'reassigned'].includes(String(order.status)) && action !== 'complete' && !(action === 'confirm' && order.status === 'confirmed')) {
       return res.status(409).json({ success: false, error: 'Esta solicitud ya no está pendiente de respuesta.', status: order.status });
     }
 
     const result = await handleProviderAction({
       orderId: snap.id,
+      expectedProviderId: capability.providerId,
       action: action as any,
       notes: String(req.body?.notes || '').trim().slice(0, 1200) || undefined,
       operatorContact: String(req.body?.operatorContact || '').trim().slice(0, 180) || undefined,

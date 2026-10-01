@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createBookingAttempt, requirePaymentUrl } from '../utils/bookingAttempt';
+import { bookingInquiry } from '../utils/bookingInquiry';
+import { directWhatsAppUrl } from '../utils/directWhatsApp';
 import { 
   Star, Clock, MapPin, CheckCircle2, ShieldCheck, Calendar, Users, Hotel, 
   ChevronRight, ChevronLeft, X, AlertCircle, CreditCard, Smartphone, Banknote, 
@@ -173,11 +175,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     }
   };
 
-  const whatsappInquiryUrl = `https://wa.me/50687959148?text=${encodeURIComponent(
-    language === 'es'
-      ? `Hola, estoy interesado en el tour "${modalTitle}" en ${tour.location?.placeName || 'Costa Rica'}. Quisiera consultar disponibilidad para ${selectedDate || '[fecha]'} para ${adults + children} personas.`
-      : `Hello, I'm interested in the tour "${modalTitle}" in ${tour.location?.placeName || 'Costa Rica'}. I'd like to check availability for ${selectedDate || '[date]'} for ${adults + children} people.`
-  )}`;
+  const whatsappInquiryUrl = directWhatsAppUrl(bookingInquiry({ language, tour: modalTitle, date: selectedDate, adults, children, pickup: pickupHotel }));
 
   return (
     <div 
@@ -517,7 +515,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                 {errorMessage && (
                   <div role="alert" className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{errorMessage}</span>
+                    <div><span>{errorMessage}</span><a href={whatsappInquiryUrl} target="_blank" rel="noopener noreferrer" className="block mt-2 underline font-bold">{language === 'es' ? 'Continuar la solicitud por WhatsApp (sin confirmar reserva)' : 'Continue inquiry on WhatsApp (not a confirmed booking)'}</a></div>
                   </div>
                 )}
 

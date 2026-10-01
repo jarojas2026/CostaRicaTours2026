@@ -16,7 +16,10 @@ export const ProviderPortalPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [action, setAction] = useState<'confirm' | 'reject' | 'delay' | null>(null);
+  const [action, setAction] = useState<'confirm' | 'reject' | 'delay' | null>(() => {
+    const intent = new URLSearchParams(window.location.search).get('intent');
+    return intent === 'confirm' || intent === 'reject' || intent === 'delay' ? intent : null;
+  });
   const [guide, setGuide] = useState('');
   const [vehicle, setVehicle] = useState('');
   const [delay, setDelay] = useState('15');
@@ -37,6 +40,7 @@ export const ProviderPortalPage: React.FC = () => {
   }, [token]);
 
   const submit = async (selectedAction: 'confirm' | 'reject' | 'delay') => {
+    if (saving) return;
     setSaving(true); setError(''); setMessage('');
     try {
       const r = await fetch('/api/provider/portal/action', {
@@ -72,7 +76,7 @@ export const ProviderPortalPage: React.FC = () => {
           {error && <div className="m-5 p-4 rounded-2xl bg-rose-950/50 border border-rose-500/30 text-rose-200 text-sm flex gap-2"><AlertTriangle className="w-5 h-5 shrink-0" />{error}</div>}
           {message && <div className="m-5 p-4 rounded-2xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-200 text-sm flex gap-2"><CheckCircle2 className="w-5 h-5 shrink-0" />{message}</div>}
 
-          {order && !error && (
+          {order && (
             <div className="p-5 sm:p-8 space-y-5">
               <section className="grid sm:grid-cols-2 gap-3">
                 <Info icon={<CalendarDays />} label="Fecha y hora" value={order.date + ' · ' + order.time} />
@@ -111,7 +115,7 @@ export const ProviderPortalPage: React.FC = () => {
 
                   {action === 'delay' && <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-4"><label className="text-xs font-bold text-amber-200">Demora / ajuste estimado (minutos)</label><input type="number" min="5" max="1440" value={delay} onChange={e => setDelay(e.target.value)} className="mt-2 w-full rounded-xl bg-slate-950 border border-slate-700 p-3" /><Confirm onClick={() => submit('delay')} saving={saving} label="Enviar ajuste al centro de operaciones" /></div>}
                   {action === 'reject' && <div className="rounded-2xl border border-rose-500/30 bg-rose-950/20 p-4"><p className="text-sm text-rose-100">Indique en las notas por qué no puede atender esta solicitud. El sistema buscará un proveedor compatible si existe.</p><Confirm onClick={() => submit('reject')} saving={saving} label="Confirmar rechazo" /></div>}
-                  {action === 'confirm' && <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4"><p className="text-sm text-emerald-100">Al aceptar, la reserva se marcará como confirmada y se enviará la actualización al viajero.</p><Confirm onClick={() => submit('confirm')} saving={saving} label="Confirmar y enviar" /></div>}
+                  {action === 'confirm' && <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4"><p className="text-sm text-emerald-100">Revisa los datos antes de aceptar. Se registrará tu aceptación; el pago y el aviso al viajero se verifican por separado.</p><Confirm onClick={() => submit('confirm')} saving={saving} label="Confirmar aceptación" /></div>}
                 </>
               ) : (
                 <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-5 text-center"><CheckCircle2 className="w-10 h-10 mx-auto text-emerald-400" /><p className="font-bold mt-2">Estado actual: {order.status}</p><p className="text-sm text-slate-400 mt-1">Esta solicitud ya recibió una respuesta.</p></div>

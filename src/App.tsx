@@ -118,6 +118,7 @@ export default function App() {
   const [isLocalBusesOpen, setIsLocalBusesOpen] = useState(false);
   const [isFormsManagerModalOpen, setIsFormsManagerModalOpen] = useState(false);
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
+  const [legalTab, setLegalTab] = useState<'terminos' | 'cancelacion' | 'privacidad' | 'escnna'>('terminos');
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
   const [intakeOpen, setIntakeOpen] = useState(false);
   const [intakeLoading, setIntakeLoading] = useState(false);
@@ -684,6 +685,7 @@ export default function App() {
       /></Suspense>}
 
       {isLegalModalOpen && <Suspense fallback={null}><LegalModal
+        initialTab={legalTab}
         isOpen={isLegalModalOpen}
         onClose={() => setIsLegalModalOpen(false)}
         language={language}
@@ -712,7 +714,7 @@ export default function App() {
         onOpenAIAssistant={() => navigate('/ai')} 
         onSelectTour={(t) => navigate(`/tour/${t.id}`)}
       />
-      <Footer language={language} onOpenLegal={() => setIsLegalModalOpen(true)} />
+      <Footer language={language} onOpenLegal={tab => { setLegalTab(tab); setIsLegalModalOpen(true); }} />
       <CookiesBanner language={language} />
     </div>
   );

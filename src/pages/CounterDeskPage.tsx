@@ -141,17 +141,17 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
             </p>
           </div>
           <div className="flex flex-wrap gap-2 text-[10px] font-black uppercase">
-            <span className={`rounded-full border px-3 py-1.5 ${voiceConfig?.enabled ? 'border-emerald-400/30 text-emerald-300 bg-emerald-400/5' : 'border-amber-400/30 text-amber-300 bg-amber-400/5'}`}>
-              {voiceConfig?.enabled ? 'VOICE ONLINE' : 'VOICE CONFIG PENDING'}
+            <span className={`rounded-full border px-3 py-1.5 ${voiceConfig?.ready ? 'border-emerald-400/30 text-emerald-300 bg-emerald-400/5' : 'border-amber-400/30 text-amber-300 bg-amber-400/5'}`}>
+              {voiceConfig?.ready ? (es ? 'CONFIGURADO · PRUEBA TELEFÓNICA PENDIENTE' : 'CONFIGURED · PHONE TEST REQUIRED') : 'VOICE CONFIG PENDING'}
             </span>
             {voiceConfig?.humanTransferConfigured && <span className="rounded-full border border-sky-400/30 text-sky-300 bg-sky-400/5 px-3 py-1.5">HUMAN HANDOFF</span>}
           </div>
         </div>
         <div className="grid sm:grid-cols-3 gap-3 mt-4">
           {[
-            [es ? 'Hoteles' : 'Hotels', es ? 'DID / PBX / SIP' : 'DID / PBX / SIP'],
+            [es ? 'Primera atención' : 'First response', voiceConfig?.primaryHandler || 'Agent Desk IA'],
             [es ? 'Contexto' : 'Context', es ? 'Hotel · habitación · idioma' : 'Hotel · room · language'],
-            [es ? 'Escalamiento' : 'Escalation', voiceConfig?.humanTransferConfigured ? (es ? 'Agente humano' : 'Human agent') : (es ? 'Por configurar' : 'To configure')]
+            [es ? 'Responsable humano' : 'Human owner', voiceConfig?.humanTransferConfigured ? voiceConfig.humanTransferLabel : (es ? 'Por asignar y configurar' : 'Assignment and configuration required')]
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl border border-white/5 bg-black/20 p-3">
               <div className="text-[9px] uppercase font-black text-stone-500">{label}</div>
@@ -159,6 +159,7 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
             </div>
           ))}
         </div>
+        {voiceConfig?.missing?.length > 0 && <p className="mt-3 text-xs text-amber-200" role="status">{es ? 'Configuración pendiente: ' : 'Missing configuration: '}{voiceConfig.missing.join(', ')}</p>}
       </section>
 
       <section className="grid grid-cols-2 lg:grid-cols-6 gap-3">
