@@ -2,6 +2,17 @@
 
 **Actualizado: 1 de octubre de 2026**
 
+## Agent Desk: integridad de consultas y estado operativo — 1 de octubre
+
+- Los tres accesos de WhatsApp del mostrador utilizan el mismo resumen ES/EN: tour, fecha, adultos, niños y recogida. Abren un borrador; no crean reservas ni envían mensajes automáticamente. Se reutiliza `bookingInquiry`, sin un sistema paralelo de reservas.
+- El centro administrativo distingue datos no cargados de valores cero y muestra errores de sesión/permisos/servicio, así como la hora de recepción del último estado. No interpreta la falta de datos como ausencia de alertas. Se conservan las restricciones administrativas del backend.
+- Cambio de sesión: se limpian respuestas y datos operativos; respuestas antiguas no actualizan la sesión nueva. Las consultas tienen límite de 30 segundos sin reintentos automáticos.
+- Los accesos rápidos de plan operativo y alertas utilizan las rutas administrativas existentes, en lugar de enviar esas órdenes al chat público. No se amplían permisos.
+- Cambiar fecha, tour o pasajeros cancela la consulta de cupos anterior. La FAQ ya no promete un reembolso universal del 100%.
+- Alcance de verificación: pruebas aisladas de transporte, estado y resumen de consulta; una aprobación de CI no sustituye una reserva real, respuesta de proveedor, pago verificado ni prueba de telefonía. La solicitud QA en producción sigue sin enviarse. No se cambiaron IAM, secretos ni canales de despliegue.
+- Reversión: revertir este PR; no hay migraciones de datos.
+- Comprobación visual de esta iteración pendiente: la vista previa local arrancó, pero el conector de navegador agotó su espera en dos intentos. No se registra como E2E aprobado.
+
 ## Revisión incremental de voz — 1 de octubre
 
 - Conectividad observada: `/api/health` y `/api/tours` de `costaricatours2026.vercel.app` respondieron HTTP 200. No se hicieron reservas, pagos, notificaciones ni llamadas reales. No se verificó aquí el SHA desplegado en Cloud Run.

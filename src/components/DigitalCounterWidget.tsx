@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Bot, 
@@ -32,6 +32,8 @@ import { Language, Currency, Tour } from '../types';
 import { useTours } from '../contexts/ToursContext';
 import { formatCurrency, getLangText } from '../utils/i18n';
 import { useSupportPanel } from '../hooks/useSupportPanel';
+import { bookingInquiry } from '../utils/bookingInquiry';
+import { deskRequest } from '../utils/deskRequest';
 
 export interface DigitalCounterWidgetProps {
   language: Language;
@@ -115,9 +117,11 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
   const [availDate, setAvailDate] = useState('');
   const [availAdults, setAvailAdults] = useState(2);
   const [availChildren, setAvailChildren] = useState(0);
+  const [pickup, setPickup] = useState('');
   const [copiedCode, setCopiedCode] = useState(false);
   const [availability, setAvailability] = useState<any>(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const availabilityRequest = useRef<AbortController | null>(null);
   const [tourSearchTerm, setTourSearchTerm] = useState('');
 
   // Sincronizar si cambia el propSelectedTour
@@ -159,13 +163,11 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
     setIsTyping(true);
 
     try {
-      const response = await fetch('/api/counter/ask', {
+      const data = await deskRequest('/api/counter/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, sessionId, language })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Counter Agent unavailable');
+      }, language);
 
       const agentMsg: Message = {
         id: (Date.now() + 1).toString(),
@@ -237,11 +239,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
       return;
     }
     if (action === 'whatsapp_direct') {
-      const tourName = selectedTour ? getLangText(selectedTour.title, language) : 'Costa Rica Tours';
-      const msg = isEs
-        ? `Hola Costa Rica Tours, estoy en el Mostrador Digital y quisiera coordinar disponibilidad para "${tourName}".`
-        : `Hello Costa Rica Tours, I am at the Digital Counter and would like to coordinate availability for "${tourName}".`;
-      window.open(`https://wa.me/50687959148?text=${encodeURIComponent(msg)}`, '_blank');
+      window.open(generateWhatsAppLink(), '_blank', 'noopener,noreferrer');
       return;
     }
     if (action === 'select_tour' && data) {
@@ -266,8 +264,17 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
   const totalUSD = subtotalUSD + vatUSD;
   const tourName = selectedTour ? getLangText(selectedTour.title, language) : 'Tour';
 
+  useEffect(() => {
+    setAvailability(null);
+    setAvailabilityLoading(false);
+    return () => { availabilityRequest.current?.abort(); };
+  }, [selectedTour?.id, availDate, availAdults, availChildren]);
+
   const checkLiveAvailability = async () => {
     if (!availDate || !selectedTour) return;
+    availabilityRequest.current?.abort();
+    const controller = new AbortController();
+    availabilityRequest.current = controller;
     setAvailabilityLoading(true);
     try {
       const seats = availAdults + availChildren;
@@ -275,23 +282,21 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
         date: availDate,
         seats: String(seats)
       });
-      const response = await fetch('/api/tours/' + encodeURIComponent(selectedTour.id) + '/availability?' + params.toString());
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Availability error');
+      const data = await deskRequest('/api/tours/' + encodeURIComponent(selectedTour.id) + '/availability?' + params.toString(), { signal: controller.signal }, language);
+      if (controller.signal.aborted) return;
+      if (typeof data.available !== 'boolean') throw new Error('Invalid availability response');
       setAvailability(data);
     } catch (error) {
+      if (controller.signal.aborted) return;
       console.error('Live availability error:', error);
       setAvailability({ available: false, reason: isEs ? 'No se pudo verificar el cupo en este momento. Consulta directa con el asesor.' : 'Availability could not be verified right now. Check with the advisor.' });
     } finally {
-      setAvailabilityLoading(false);
+      if (!controller.signal.aborted) setAvailabilityLoading(false);
     }
   };
 
   const generateWhatsAppLink = () => {
-    const operatorLabel = selectedTour?.operatorName || selectedTour?.operatorId || 'Operador Local';
-    const msg = isEs
-      ? `Hola Costa Rica Tours (+506 8795 9148), coticé desde el Mostrador Digital para el tour:\n• Tour: "${tourName}"\n• Operador: ${operatorLabel}\n• Fecha: ${availDate || 'Por definir'}\n• Pasajeros: ${availAdults} Adultos, ${availChildren} Niños\n• Total con IVA: ${formatCurrency(totalUSD, currency)}\n\n¿Tienen cupo disponible para confirmar la reserva?`
-      : `Hello Costa Rica Tours (+506 8795 9148), I quoted from the Digital Counter for:\n• Tour: "${tourName}"\n• Operator: ${operatorLabel}\n• Date: ${availDate || 'TBD'}\n• Guests: ${availAdults} Adults, ${availChildren} Children\n• Total with VAT: ${formatCurrency(totalUSD, currency)}\n\nDo you have availability to confirm the booking?`;
+    const msg = bookingInquiry({ language, tour: tourName, date: availDate, adults: availAdults, children: availChildren, pickup });
     return `https://wa.me/50687959148?text=${encodeURIComponent(msg)}`;
   };
 
@@ -674,6 +679,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                         />
                       </div>
                       <select
+                        aria-label={isEs ? 'Seleccionar tour' : 'Select tour'}
                         value={availTourId}
                         onChange={e => {
                           setAvailTourId(e.target.value);
@@ -698,6 +704,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                         </label>
                         <input
                           type="date"
+                          aria-label={isEs ? 'Fecha deseada' : 'Desired date'}
                           value={availDate}
                           min={new Date().toISOString().split('T')[0]}
                           onChange={e => {
@@ -718,8 +725,9 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                           min="1"
                           max="25"
                           value={availAdults}
+                          aria-label={isEs ? 'Adultos' : 'Adults'}
                           onChange={e => {
-                            setAvailAdults(Math.max(1, parseInt(e.target.value) || 1));
+                            setAvailAdults(Math.min(25, Math.max(1, parseInt(e.target.value) || 1)));
                             setAvailability(null);
                           }}
                           className="w-full bg-[#020e09] border border-emerald-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
@@ -736,8 +744,9 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                           min="0"
                           max="15"
                           value={availChildren}
+                          aria-label={isEs ? 'Niños' : 'Children'}
                           onChange={e => {
-                            setAvailChildren(Math.max(0, parseInt(e.target.value) || 0));
+                            setAvailChildren(Math.min(15, Math.max(0, parseInt(e.target.value) || 0)));
                             setAvailability(null);
                           }}
                           className="w-full bg-[#020e09] border border-emerald-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
@@ -746,6 +755,18 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                     </div>
 
                     {/* Botón para Comprobar Disponibilidad */}
+                    <label className="block space-y-1 text-xs text-stone-300">
+                      <span>{isEs ? 'Hotel o punto de encuentro (opcional)' : 'Hotel or meeting point (optional)'}</span>
+                      <input
+                        value={pickup}
+                        onChange={event => setPickup(event.target.value)}
+                        maxLength={300}
+                        className="w-full bg-[#020e09] border border-emerald-500/30 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-400"
+                      />
+                    </label>
+                    <p className="text-xs text-stone-300">
+                      {isEs ? 'WhatsApp abre una consulta con estos datos para que la revises y envíes. No crea ni confirma una reserva automáticamente.' : 'WhatsApp opens an inquiry with these details for you to review and send. It does not automatically create or confirm a booking.'}
+                    </p>
                     <button
                       onClick={checkLiveAvailability}
                       disabled={!availDate || availabilityLoading}
@@ -856,10 +877,10 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                             : 'Costa Rica has 2 humpback whale seasons: JULY to OCTOBER (from Antarctica, most abundant) and DECEMBER to MARCH (from North America) at Marino Ballena National Park (Uvita).'
                         },
                         {
-                          q: isEs ? '🛡️ ¿Cómo funciona la cancelación gratuita 24h?' : '🛡️ How does 24h free cancellation work?',
+                          q: isEs ? '🛡️ ¿Qué condiciones de cancelación aplican?' : '🛡️ Which cancellation terms apply?',
                           a: isEs 
-                            ? 'Garantizamos reembolso del 100% notificando al menos 24 horas antes del inicio del tour. El pago completo debe estar registrado antes del servicio.'
-                            : 'We guarantee a 100% full refund if notified at least 24 hours prior to tour start. Full payment is required before service.'
+                            ? 'Las condiciones dependen del tour y del operador. Solicita la política aplicable antes de pagar. Cancelar una solicitud no implica un reembolso automático; el equipo debe revisar el caso.'
+                            : 'Terms depend on the tour and operator. Request the applicable policy before paying. Cancelling a request does not automatically issue a refund; the team must review the case.'
                         },
                         {
                           q: isEs ? '🚐 ¿Tienen servicio de transporte desde el Aeropuerto SJO?' : '🚐 Is there airport transfer from SJO?',
@@ -951,7 +972,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                 </div>
 
                 <a
-                  href="https://wa.me/50687959148?text=Hola%20Costa%20Rica%20Tours,%20quisiera%20asesoria%20personalizada%20con%20el%20Mostrador%20Digital."
+                  href={generateWhatsAppLink()}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-[#25D366] hover:bg-[#20ba59] text-stone-950 font-black px-4 py-2 rounded-xl text-xs uppercase flex items-center gap-2 shadow-md transition-colors"
