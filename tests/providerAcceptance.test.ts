@@ -21,6 +21,15 @@ test('acceptance writes both documents in a transaction and fails on persistence
   await acceptProviderOrder(db, order.id, 'provider-test', {});
   assert.equal(writes.length, 2);
   assert.equal(writes[1].data.status, 'confirmed');
+  assert.equal(writes[1].data.lifecycle, 'confirmed');
+  const repeatWrites: any[] = [];
+  await acceptProviderOrder({ ...db, runTransaction: async (fn: any) => fn({
+    get: async (ref: any) => ({ exists: true, id: ref.id, data: () => ref.collection === 'bookings' ? booking : { ...order, status: 'confirmed', confirmedAt: 'original-time' } }),
+    update: (ref: any, data: any) => repeatWrites.push({ ref, data }),
+  }) }, order.id, 'provider-test', {});
+  assert.equal(repeatWrites.length, 1);
+  assert.equal(repeatWrites[0].data.status, 'confirmed');
+  assert.equal(repeatWrites[0].data.providerConfirmedAt, 'original-time');
   await assert.rejects(acceptProviderOrder({ ...db, runTransaction: async () => { throw new Error('storage unavailable'); } }, order.id, 'provider-test', {}), /storage unavailable/);
   await assert.rejects(acceptProviderOrder(null, order.id, 'provider-test', {}));
 });

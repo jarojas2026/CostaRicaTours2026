@@ -377,6 +377,7 @@ export async function executeProviderRealtimeCoordination(
     const bookingRef = portalDb.collection('bookings').doc(bookingId);
     const [existing, savedBooking] = await Promise.all([tx.get(ref), tx.get(bookingRef)]);
     if (!savedBooking.exists) throw new Error('Reserva no persistida; despacho bloqueado.');
+    if (savedBooking.data()?.serviceOrderId && savedBooking.data()?.serviceOrderId !== bookingId) throw new Error('La reserva ya tiene otra orden; use el despacho existente.');
     if (savedBooking.data()?.providerId && savedBooking.data()?.providerId !== provider.id) throw new Error('Asignación del proveedor cambió.');
     if (existing.exists) {
       if (existing.data()?.providerId !== provider.id) throw new Error('La orden corresponde a otro proveedor.');

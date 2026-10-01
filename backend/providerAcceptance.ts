@@ -13,7 +13,7 @@ export function providerAcceptancePatch(booking: any, order: any, providerId: st
     serviceOrderStatus: 'confirmed',
     providerConfirmedAt: order.confirmedAt || now,
     providerStatus: 'accepted',
-    ...(confirmed ? { status: 'confirmed' } : {}),
+    ...(confirmed ? { status: 'confirmed', lifecycle: 'confirmed' } : {}),
     updatedAt: now,
   };
 }
