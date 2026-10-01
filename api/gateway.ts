@@ -2,7 +2,7 @@ import gatewayHandler, {
   config,
   type VercelRequest,
   type VercelResponse,
-} from './[...path]';
+} from './[...path].js';
 
 export { config };
 
@@ -36,6 +36,9 @@ function normalizeForwardedPath(value: string): string {
  * zero-trust gateway we restore `req.url`, so all retired/privileged-route
  * guards continue evaluating the real public path and Cloud Run receives the
  * original API URL and query string.
+ *
+ * The explicit `.js` suffix is intentional: Vercel emits ESM JavaScript at
+ * runtime and Node ESM does not resolve extensionless relative imports.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
