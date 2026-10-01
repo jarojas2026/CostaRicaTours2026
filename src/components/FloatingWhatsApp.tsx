@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
   Bot,
@@ -167,6 +167,8 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
   const [tourSearchQuery, setTourSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [activeTour, setActiveTour] = useState<Tour | null>(null);
+  const sessionIdRef = useRef(`concierge-${typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Date.now()}`);
 
   const filteredTours = useMemo(() => {
     const query = tourSearchQuery.trim().toLowerCase();
@@ -266,17 +268,22 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
     };
   }, []);
 
-  const mentionedTour = useMemo(() => {
-    const text = input.toLowerCase();
+  const findTourInText = (value: string) => {
+    const text = value.toLowerCase();
     return tours.find((tour) => {
       const title = getLangText(tour.title, language).toLowerCase();
       return title && text.length > 3 && (text.includes(title) || title.split(' ').some((word) => word.length > 5 && text.includes(word)));
-    });
-  }, [input, tours, language]);
+    }) || null;
+  };
+
+  const mentionedTour = useMemo(() => findTourInText(input), [input, tours, language]);
+  const contextTour = mentionedTour || activeTour;
 
   const sendMessage = async (message = input) => {
     const text = message.trim();
     if (!text || sending) return;
+    const matchedTour = findTourInText(text);
+    if (matchedTour) setActiveTour(matchedTour);
     setSending(true);
     setBookingStatus('pending');
     setHistory((prev) => [...prev, { role: 'user' as const, text }].slice(-30));
@@ -286,7 +293,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, language, sessionId: `whatsapp-${Date.now()}` })
+        body: JSON.stringify({ message: text, language, sessionId: sessionIdRef.current })
       });
       const data = await response.json().catch(() => ({}));
       const reply = data.reply || data.message || data.response || (
@@ -299,7 +306,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
         text: reply,
         quickActions: [
           {
-            label: language === 'es' ? 'Verificar fechas' : 'Check dates',
+            label: language === 'es' ? 'Elegir fecha y pasajeros' : 'Choose date & travelers',
             action: 'availability',
             variant: 'primary',
             icon: 'calendar'
@@ -319,7 +326,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
         ]
       }].slice(-30));
       if (data.bookingStatus) setBookingStatus(data.bookingStatus);
-      else setBookingStatus('payment_required');
+      else setBookingStatus('pending');
     } catch (error) {
       console.error('Floating WhatsApp AI error:', error);
       setHistory((prev) => [...prev, {
@@ -349,10 +356,10 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
   };
 
   const openDirectWhatsApp = (message = '') => {
-    const contextualMessage = message || (mentionedTour
+    const contextualMessage = message || (contextTour
       ? (language === 'es'
-          ? `Hola, estoy interesado en el tour "${getLangText(mentionedTour.title, language)}" en Costa Rica. Quisiera consultar disponibilidad y tarifas.`
-          : `Hello, I am interested in the tour "${getLangText(mentionedTour.title, language)}" in Costa Rica. I would like to check availability and rates.`)
+          ? `Hola, estoy interesado en el tour "${getLangText(contextTour.title, language)}" en Costa Rica. Quisiera consultar disponibilidad y tarifas.`
+          : `Hello, I am interested in the tour "${getLangText(contextTour.title, language)}" in Costa Rica. I would like to check availability and rates.`)
       : (language === 'es'
           ? 'Hola, quiero información y consultar disponibilidad sobre un tour en Costa Rica.'
           : 'Hello, I would like information and availability for a tour in Costa Rica.'));
@@ -366,11 +373,29 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
       return;
     }
     if (action === 'availability') {
-      const tourName = mentionedTour ? `para "${getLangText(mentionedTour.title, language)}"` : '';
-      const prompt = language === 'es'
-        ? `Quiero verificar disponibilidad y próximas fechas ${tourName}.`.trim()
-        : `I want to check availability and upcoming dates ${tourName ? `for "${mentionedTour ? getLangText(mentionedTour.title, language) : ''}"` : ''}.`.trim();
-      void sendMessage(prompt);
+      if (contextTour) {
+        setActiveTour(contextTour);
+        if (onSelectTour) {
+          onSelectTour(contextTour);
+          setIsOpen(false);
+          return;
+        }
+        const title = getLangText(contextTour.title, language);
+        void sendMessage(language === 'es'
+          ? `Quiero elegir fecha y pasajeros para "${title}".`
+          : `I want to choose a date and travelers for "${title}".`);
+        return;
+      }
+
+      setIsSearchOpen(true);
+      setIsSearchFocused(true);
+      setHistory((prev) => [...prev, {
+        role: 'bot' as const,
+        text: language === 'es'
+          ? 'Primero selecciona el tour que quieres consultar. Usa el buscador de arriba; al elegirlo abriré directamente su formulario de fecha, pasajeros y hotel, sin repetir la misma pregunta.'
+          : 'First select the tour you want to check. Use the search above; once selected I will open its date, travelers and hotel form directly without repeating the same question.'
+      }].slice(-30));
+      setBookingStatus('none');
       return;
     }
     if (action === 'recommend') {
@@ -410,6 +435,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
 
   const handleSelectTourFromSearch = (tour: Tour, actionType: 'chat' | 'whatsapp' | 'view' = 'chat') => {
     const title = getLangText(tour.title, language);
+    setActiveTour(tour);
     if (actionType === 'whatsapp') {
       const msg = language === 'es'
         ? `Hola, encontré el tour "${title}" en el buscador del chat y quisiera consultar disponibilidad.`
@@ -644,8 +670,8 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
                   </div>
                 </div>
               ))}
-              {mentionedTour && (
-                <ChatMiniCard tour={mentionedTour} language={language} onSelectTour={onSelectTour} />
+              {contextTour && (
+                <ChatMiniCard tour={contextTour} language={language} onSelectTour={onSelectTour} />
               )}
               {sending && (
                 <div className="text-xs text-emerald-200 flex items-center gap-2">

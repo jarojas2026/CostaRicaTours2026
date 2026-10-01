@@ -10,6 +10,7 @@ test('sensitive operational route families require application auth at the Verce
     '/api/fcm/send',
     '/api/proformas',
     '/api/bookings/send-proforma-confirmation',
+    '/api/providers',
     '/api/provider/status',
     '/api/operators/status',
   ];

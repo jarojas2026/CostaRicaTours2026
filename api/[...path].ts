@@ -31,6 +31,13 @@ export const config = {
 type TokenCache = { token: string; expiresAt: number };
 let cloudRunTokenCache: TokenCache | null = null;
 
+type ProviderEvidenceState = 'pending' | 'confirmed' | 'unavailable' | 'not_found' | 'error';
+type ProviderEvidence = {
+  state: ProviderEvidenceState;
+  statusCode: number;
+  providerConfirmedAt?: string | null;
+};
+
 const HOP_BY_HOP = new Set([
   'connection',
   'keep-alive',
@@ -44,10 +51,6 @@ const HOP_BY_HOP = new Set([
   'content-length',
 ]);
 
-// Legacy compatibility endpoints that can fabricate a payment-session URL or
-// bypass the canonical payment -> provider -> confirmation lifecycle. They are
-// retained in the backend for migration/audit purposes but are not exposed by
-// the public Vercel gateway.
 const RETIRED_PUBLIC_PATHS = [
   '/api/pagos/solicitud',
   '/api/reservas/confirmar',
@@ -57,17 +60,9 @@ const RETIRED_PUBLIC_PREFIXES = [
   '/api/workflows/',
 ];
 const RETIRED_PUBLIC_PATTERNS = [
-  // Defense in depth: the backend now retires this route too. Keep the public
-  // gateway fail-closed so a future backend regression cannot turn an email
-  // GET click into payment, cancellation, or provider state.
   /^\/api\/bookings\/[^/]+\/customer-confirm$/,
 ];
 
-// Defense in depth for operations that should never be reachable anonymously
-// through the public frontend gateway, even if a backend route accidentally
-// loses its Express auth middleware in a future change. Public inquiry,
-// availability, itinerary-planning and booking-intake APIs are intentionally
-// not included here.
 const PRIVILEGED_PREFIXES = [
   '/api/admin',
   '/api/internal',
@@ -97,9 +92,17 @@ const PRIVILEGED_PREFIXES = [
   '/api/fcm/send',
   '/api/proformas',
   '/api/bookings/send-proforma-confirmation',
+  '/api/providers',
   '/api/provider/status',
   '/api/operators/status',
 ];
+
+const PAYMENT_CREATION_PATHS = new Set([
+  '/api/stripe/create-checkout-session',
+  '/api/paypal/create-order',
+]);
+
+const CUSTOMER_READINESS_PREFIX = '/api/customer/booking-readiness/';
 
 function env(name: string): string {
   return String(process.env[name] || '').trim();
@@ -115,8 +118,6 @@ function getWifAudience(): string {
   const explicit = env('GCP_WIF_AUDIENCE');
   if (explicit) return explicit;
 
-  // This optional decomposition makes configuration less error-prone while
-  // still refusing to guess any Google project/provider identity.
   const projectNumber = env('GCP_PROJECT_NUMBER');
   const poolId = env('GCP_WIF_POOL_ID');
   const providerId = env('GCP_WIF_PROVIDER_ID');
@@ -153,8 +154,6 @@ function hasApplicationAuth(req: VercelRequest): boolean {
 }
 
 function getRuntimeOidcToken(req: VercelRequest): string {
-  // Vercel supplies a fresh request-scoped identity token. The environment
-  // token remains only as a compatibility fallback for local/build scenarios.
   const requestToken = req.headers['x-vercel-oidc-token'];
   const runtimeToken = typeof requestToken === 'string' ? requestToken.trim() : '';
   if (runtimeToken) return runtimeToken;
@@ -215,8 +214,6 @@ async function getCloudRunIdToken(req: VercelRequest): Promise<string> {
 
   const accessToken = await exchangeVercelOidcForGoogleAccessToken(getRuntimeOidcToken(req));
   const token = await generateCloudRunIdToken(accessToken);
-
-  // Google ID tokens are typically valid for about one hour. Cache conservatively.
   cloudRunTokenCache = { token, expiresAt: now + 50 * 60_000 };
   return token;
 }
@@ -235,6 +232,58 @@ function targetUrl(req: VercelRequest): string {
     ? original
     : `/api/${original.replace(/^\//, '')}`;
   return `${backend}${normalized}`;
+}
+
+function customerReadinessBookingId(pathname: string): string | null {
+  if (!pathname.startsWith(CUSTOMER_READINESS_PREFIX)) return null;
+  const bookingId = decodeURIComponent(pathname.slice(CUSTOMER_READINESS_PREFIX.length)).trim();
+  return /^CR-PV-[0-9a-f-]{30,}$/i.test(bookingId) ? bookingId : null;
+}
+
+async function readProviderEvidence(bookingId: string, cloudRunIdToken: string): Promise<ProviderEvidence> {
+  const backend = requireEnv('CLOUD_RUN_BACKEND_URL').replace(/\/$/, '');
+  const statusResponse = await fetch(`${backend}/api/provider/status/${encodeURIComponent(bookingId)}`, {
+    method: 'GET',
+    headers: {
+      accept: 'application/json',
+      'x-serverless-authorization': `Bearer ${cloudRunIdToken}`,
+      'x-crt-gateway': 'vercel-oidc-wif-provider-evidence',
+    },
+    redirect: 'manual',
+    signal: AbortSignal.timeout(15_000),
+  });
+  const data = await statusResponse.json().catch(() => ({})) as any;
+  if (statusResponse.status === 404) return { state: 'not_found', statusCode: 404 };
+  if (!statusResponse.ok) return { state: 'error', statusCode: 502 };
+
+  const providerStatus = String(data.providerStatus || '').toLowerCase();
+  if (data.providerConfirmedAt || ['confirmed', 'confirmada', 'available', 'accepted'].includes(providerStatus)) {
+    return { state: 'confirmed', statusCode: 200, providerConfirmedAt: data.providerConfirmedAt || null };
+  }
+  if (['rejected', 'declined', 'unavailable', 'cancelled', 'canceled'].includes(providerStatus)) {
+    return { state: 'unavailable', statusCode: 200 };
+  }
+  return { state: 'pending', statusCode: 200 };
+}
+
+async function assertProviderEvidenceBeforePayment(bookingId: string, cloudRunIdToken: string) {
+  if (!bookingId) {
+    return { ok: false as const, status: 400, error: 'booking_id_required', message: 'Se requiere una reserva válida antes de crear un pago.' };
+  }
+
+  const evidence = await readProviderEvidence(bookingId, cloudRunIdToken);
+  if (evidence.state !== 'confirmed') {
+    return {
+      ok: false as const,
+      status: evidence.statusCode === 404 ? 404 : 409,
+      error: evidence.state === 'not_found' ? 'booking_not_found' : 'provider_confirmation_required',
+      message: evidence.state === 'not_found'
+        ? 'La solicitud de reserva no existe.'
+        : 'El proveedor todavía no ha confirmado disponibilidad. No se generó ningún cobro.'
+    };
+  }
+
+  return { ok: true as const };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -259,15 +308,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const cloudRunIdToken = await getCloudRunIdToken(req);
-    const headers = new Headers();
+    const readinessBookingId = customerReadinessBookingId(pathname);
 
+    if (pathname.startsWith(CUSTOMER_READINESS_PREFIX)) {
+      if (!readinessBookingId) {
+        return res.status(400).json({ success: false, error: 'invalid_booking_id', state: 'error', readyForPayment: false });
+      }
+      const evidence = await readProviderEvidence(readinessBookingId, cloudRunIdToken);
+      if (evidence.state === 'not_found') {
+        return res.status(404).json({ success: false, error: 'booking_not_found', state: 'not_found', readyForPayment: false });
+      }
+      if (evidence.state === 'error') {
+        return res.status(502).json({ success: false, error: 'provider_evidence_unavailable', state: 'error', readyForPayment: false });
+      }
+      return res.status(200).json({
+        success: true,
+        bookingId: readinessBookingId,
+        state: evidence.state,
+        readyForPayment: evidence.state === 'confirmed',
+        providerConfirmedAt: evidence.state === 'confirmed' ? evidence.providerConfirmedAt || null : null,
+      });
+    }
+
+    if (PAYMENT_CREATION_PATHS.has(pathname)) {
+      const bookingId = String(req.body?.bookingId || '').trim();
+      const providerGate = await assertProviderEvidenceBeforePayment(bookingId, cloudRunIdToken);
+      if (!providerGate.ok) {
+        return res.status(providerGate.status).json({
+          success: false,
+          error: providerGate.error,
+          message: providerGate.message,
+        });
+      }
+    }
+
+    const headers = new Headers();
     for (const [name, value] of Object.entries(req.headers)) {
       const lower = name.toLowerCase();
       if (HOP_BY_HOP.has(lower) || lower === 'x-vercel-oidc-token' || value === undefined) continue;
       headers.set(name, Array.isArray(value) ? value.join(',') : String(value));
     }
 
-    // Keep end-user Authorization intact. Cloud Run IAM authenticates this header instead.
     headers.set('x-serverless-authorization', `Bearer ${cloudRunIdToken}`);
     headers.set('x-forwarded-host', String(req.headers.host || ''));
     headers.set('x-forwarded-proto', 'https');
