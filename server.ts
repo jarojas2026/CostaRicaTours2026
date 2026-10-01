@@ -99,6 +99,7 @@ import {
   executePostSaleVipLoyalty
 } from './backend/nativeWorkflows';
 import { handleStripeWebhook, handlePayPalWebhook } from './backend/paymentWebhookHttpService';
+import { hasInternalJobToken } from './backend/internalJobAuth';
 import { executeAutomatedProviderPayouts } from './backend/providerPayoutService';
 import { executeSinpeVerification } from './backend/sinpeService';
 import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
@@ -151,12 +152,7 @@ function requireAgentTool(req: express.Request, res: express.Response, next: exp
   if (!configured) {
     return res.status(503).json({ error: 'Herramientas internas de agentes no configuradas.' });
   }
-  const authorization = req.headers.authorization;
-  const provided = authorization?.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
-  if (!provided) return res.status(401).json({ error: 'Autenticación requerida.' });
-  const expectedBuffer = Buffer.from(configured);
-  const providedBuffer = Buffer.from(provided);
-  if (expectedBuffer.length !== providedBuffer.length || !crypto.timingSafeEqual(expectedBuffer, providedBuffer)) {
+  if (!hasInternalJobToken(req.headers as Record<string, string | string[] | undefined>, configured)) {
     return res.status(401).json({ error: 'No autorizado.' });
   }
   next();
@@ -339,14 +335,15 @@ app.post('/api/webhooks/whatsapp', async (req, res) => {
 
 app.post('/api/internal/customer-intake/process', async (req, res) => {
   const configured = process.env.CUSTOMER_INTAKE_JOB_TOKEN;
-  const authorization = String(req.headers.authorization || '');
-  const provided = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
-  if (!configured || !provided || provided.length !== configured.length ||
-      !crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(configured))) {
+  if (!hasInternalJobToken(req.headers as Record<string, string | string[] | undefined>, configured)) {
     return res.status(401).json({ success: false, error: 'No autorizado.' });
   }
   try {
-    const result = await processPendingCustomerIntakeJobs(Number(req.body?.limit || 10));
+    const result = await withDistributedAutomationLock(
+      'customer-intake-worker-5s',
+      () => processPendingCustomerIntakeJobs(Number(req.body?.limit || 10))
+    );
+    if (!result) return res.status(409).json({ success: false, error: 'automation_lock_busy' });
     return res.json({ success: true, ...result });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error?.message || 'No se pudo procesar la cola.' });
@@ -451,7 +448,7 @@ app.patch('/api/ai/journey/:journeyId', aiAdmission.middleware, async (req, res)
 // 📬 PROVIDER INBOX — lectura operativa del correo cada minuto
 app.post('/api/ops/provider-inbox/check', requireAdmin, async (_req, res) => {
   try {
-    res.json({ success: true, result: await processProviderInboxOnce() });
+    res.json({ success: true, result: await withDistributedAutomationLock('provider-inbox-1m', processProviderInboxOnce) });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message || 'No se pudo revisar la bandeja.' });
   }
@@ -555,7 +552,7 @@ app.post('/api/journey/:journeyId/adapt', async (req, res) => {
 
 app.post('/api/internal/provider-inbox/sweep', requireAgentTool, async (_req, res) => {
   try {
-    res.json({ success: true, result: await processProviderInboxOnce() });
+    res.json({ success: true, result: await withDistributedAutomationLock('provider-inbox-1m', processProviderInboxOnce) });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message || 'Provider inbox error' });
   }
@@ -563,14 +560,14 @@ app.post('/api/internal/provider-inbox/sweep', requireAgentTool, async (_req, re
 
 app.post('/api/internal/email-operations/sweep', requireAgentTool, async (_req, res) => {
   try {
-    res.json({ success: true, result: await processEmailOperationsOnce() });
+    res.json({ success: true, result: await withDistributedAutomationLock('email-operations-1m', processEmailOperationsOnce) });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message || 'Email operations error' });
   }
 });
 
 app.post('/api/internal/reservation-lifecycle/sweep', requireAgentTool, async (_req, res) => {
-  try { res.json({ success: true, result: await runReservationLifecycleSweep(100) }); }
+  try { res.json({ success: true, result: await withDistributedAutomationLock('reservation-lifecycle-1m', () => runReservationLifecycleSweep(100)) }); }
   catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Reservation lifecycle error' }); }
 });
 
@@ -580,7 +577,7 @@ app.get('/api/admin/email-operations', requireAdmin, async (_req, res) => {
 });
 
 app.post('/api/admin/email-operations/sweep', requireAdmin, async (_req, res) => {
-  try { res.json({ success: true, result: await processEmailOperationsOnce() }); }
+  try { res.json({ success: true, result: await withDistributedAutomationLock('email-operations-1m', processEmailOperationsOnce) }); }
   catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Email operations sweep error' }); }
 });
 
