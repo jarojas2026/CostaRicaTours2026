@@ -104,7 +104,7 @@ import { executeAutomatedProviderPayouts } from './backend/providerPayoutService
 import { executeSinpeVerification } from './backend/sinpeService';
 import { getProvidersOverview, handleProviderAction } from './backend/providerCommunicationService';
 import { verifyProviderPortalToken } from './backend/providerPortalService';
-import { createInboundVoiceResponse, createHumanTransferResult, handleVoiceTurn, voiceAgentDeskConfig, voiceHumanTransferAvailable, verifyVoiceSignature, rememberVoiceCallStart, rememberVoiceCallEnd, rememberVoiceCallStatus, rememberVoiceHumanTransferStatus, getVoiceCallSession } from './backend/voiceAgentDeskService';
+import { createInboundVoiceResponse, createHumanTransferResult, createVoiceRecoveryResponse, handleVoiceTurn, voiceAgentDeskConfig, voiceHumanTransferAvailable, verifyVoiceSignature, rememberVoiceCallStart, rememberVoiceCallEnd, rememberVoiceCallStatus, rememberVoiceHumanTransferStatus, getVoiceCallSession } from './backend/voiceAgentDeskService';
 import { getSelfDevelopmentOverview, runSelfHealingCycle } from './backend/selfDevelopmentEngine';
 import { askCounterDesk, getCounterOperationsSnapshot, organizeCounterDesk } from './backend/counterDeskService';
 import { runEvaluationSuite } from './backend/agentEvaluationService';
@@ -1267,6 +1267,8 @@ app.get('/api/voice/config', requireAdmin, async (_req, res) => {
 });
 
 app.post('/api/voice/incoming', async (req, res) => {
+  const language = String(req.query?.language || req.body?.language || '').toLowerCase().startsWith('en') ? 'en' : 'es';
+  let responseUrl = `${voiceAgentDeskConfig().publicBaseUrl}/api/voice/respond?language=${language}`;
   try {
     const params = Object.fromEntries(Object.entries(req.body || {}).map(([k, v]) => [k, String(v ?? '')]));
     const signature = req.headers['x-twilio-signature'];
@@ -1278,8 +1280,7 @@ app.post('/api/voice/incoming', async (req, res) => {
     const hotelId = String(req.query?.hotelId || req.body?.hotelId || '').trim() || undefined;
     const hotelName = String(req.query?.hotelName || req.body?.hotelName || '').trim() || undefined;
     const room = String(req.query?.room || req.body?.room || '').trim() || undefined;
-    const language = String(req.query?.language || req.body?.language || '').toLowerCase().startsWith('en') ? 'en' : 'es';
-    const responseUrl = `${baseUrl}/api/voice/respond?hotelId=${encodeURIComponent(hotelId || '')}&hotelName=${encodeURIComponent(hotelName || '')}&room=${encodeURIComponent(room || '')}&language=${language}`;
+    responseUrl = `${baseUrl}/api/voice/respond?hotelId=${encodeURIComponent(hotelId || '')}&hotelName=${encodeURIComponent(hotelName || '')}&room=${encodeURIComponent(room || '')}&language=${language}`;
     await rememberVoiceCallStart({ callId, from: req.body?.From, to: req.body?.To, hotelId, hotelName, room, language, startedAt: new Date().toISOString() });
     const twiml = createInboundVoiceResponse({
       callId, language, hotelName, room, responseUrl,
@@ -1287,11 +1288,14 @@ app.post('/api/voice/incoming', async (req, res) => {
     });
     res.type('text/xml').send(twiml);
   } catch (err: any) {
-    res.status(500).type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response><Say>El Agent Desk no está disponible temporalmente.</Say></Response>');
+    console.warn('[Voice] Incoming call setup failed; offering safe recovery.');
+    res.status(200).type('text/xml').send(createVoiceRecoveryResponse({ responseUrl, language, recoveryCount: Number(req.query?.recoveryCount || 0) }));
   }
 });
 
 app.post('/api/voice/respond', async (req, res) => {
+  const language = String(req.query?.language || req.body?.language || '').toLowerCase().startsWith('en') ? 'en' : 'es';
+  let responseUrl = `${voiceAgentDeskConfig().publicBaseUrl}/api/voice/respond?language=${language}`;
   try {
     const params = Object.fromEntries(Object.entries(req.body || {}).map(([k, v]) => [k, String(v ?? '')]));
     const signature = req.headers['x-twilio-signature'];
@@ -1300,11 +1304,10 @@ app.post('/api/voice/respond', async (req, res) => {
       return res.status(403).type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response><Say>Unauthorized</Say></Response>');
     }
     const callId = String(req.body?.CallSid || req.body?.callId || `call_${Date.now()}`);
-    const language = String(req.query?.language || req.body?.language || '').toLowerCase().startsWith('en') ? 'en' : 'es';
     const hotelId = String(req.query?.hotelId || req.body?.hotelId || '').trim() || undefined;
     const hotelName = String(req.query?.hotelName || req.body?.hotelName || '').trim() || undefined;
     const room = String(req.query?.room || req.body?.room || '').trim() || undefined;
-    const responseUrl = `${baseUrl}/api/voice/respond?hotelId=${encodeURIComponent(hotelId || '')}&hotelName=${encodeURIComponent(hotelName || '')}&room=${encodeURIComponent(room || '')}&language=${language}`;
+    responseUrl = `${baseUrl}/api/voice/respond?hotelId=${encodeURIComponent(hotelId || '')}&hotelName=${encodeURIComponent(hotelName || '')}&room=${encodeURIComponent(room || '')}&language=${language}`;
     const transferUrl = new URL(`${baseUrl}/api/voice/human-transfer`);
     transferUrl.searchParams.set('callId', callId);
     transferUrl.searchParams.set('language', language);
@@ -1325,7 +1328,8 @@ app.post('/api/voice/respond', async (req, res) => {
     });
     res.type('text/xml').send(twiml);
   } catch (err: any) {
-    res.status(500).type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response><Say>No pude procesar la solicitud. Puede volver a intentarlo o marcar 0 para un agente.</Say></Response>');
+    console.warn('[Voice] Turn failed; previous business operation will not be replayed.');
+    res.status(200).type('text/xml').send(createVoiceRecoveryResponse({ responseUrl, language, recoveryCount: Number(req.query?.recoveryCount || 0) }));
   }
 });
 

@@ -70,6 +70,14 @@ The human team can be distributed: each operator can answer from a mobile phone,
 - Human handoff is explicit.
 - No telephony secret belongs in the repository.
 
+### Technical failure recovery
+
+After authenticated incoming/respond processing fails, the server returns an actionable TwiML response (HTTP 200), preserving language and hotel context. It warns that the business outcome is unverified and gathers **new** input rather than redirecting/replaying the original request. Two consecutive recoveries are permitted; further failures end with a website/WhatsApp contact message. This does not mark a reservation or payment successful. Authentication failures still fail closed.
+
+The recovery offers key 0 only when human destinations are configured. A party size such as “one person” or “solo una persona” does not trigger human routing. These paths are covered by isolated regression tests; live telephony and provider latency must still be tested before enabling the line.
+
+TwiML input reference: https://www.twilio.com/docs/voice/twiml/gather
+
 
 ## Full-stack reservation flow
 
@@ -93,4 +101,4 @@ The current voice gateway uses neural provider text-to-speech through the provid
 
 ## Production readiness boundary
 
-The code path is implemented, but it is not proof that an operator number or telephony provider is active. Before announcing phone service, configure a real provider account/number, set the server secrets, register the incoming/response/status/transfer callback URLs, and complete an authenticated test call in Spanish and English. The live Vercel API gateway currently reports a missing `GCP_WIF_AUDIENCE`, so the Agent Desk endpoints cannot currently reach Cloud Run through production until the required Vercel production configuration is restored.
+The code path is implemented, but it is not proof that an operator number or telephony provider is active. Before announcing phone service, configure a real provider account/number, set the server secrets, register the incoming/response/status/transfer callback URLs, and complete an authenticated test call in Spanish and English. On October 1, 2026 the public Vercel `/api/health` and `/api/tours` returned HTTP 200, superseding the earlier observed gateway 503. This connectivity check does not verify voice provisioning, live calls, bookings or payments.

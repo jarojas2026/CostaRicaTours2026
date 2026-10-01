@@ -18,6 +18,9 @@ test('voice transfer accepts only unique international phone numbers and explici
   for (const speech of ['Quiero un operador', 'una persona por favor', 'a human please']) assert.equal(requestsHuman(speech), true);
   assert.equal(requestsHuman('', '0'), true);
   assert.equal(requestsHuman('playa para cuatro'), false);
+  for (const speech of ['one person for the forest tour', 'solo una persona', 'somos dos personas']) assert.equal(requestsHuman(speech), false);
+  assert.equal(requestsHuman('I want to speak to a person'), true);
+  assert.equal(requestsHuman('quiero hablar con una persona'), true);
 });
 
 test('every voice callback is signature guarded before routes and status errors request retry', () => {

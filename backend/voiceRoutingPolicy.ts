@@ -17,5 +17,11 @@ export function voiceRoutingPolicy(env: Record<string, string | undefined> = pro
 }
 
 export function requestsHuman(speech = '', digits = '') {
-  return digits.trim() === '0' || /\b(humano|humana|persona|operador|operadora|asesor|asesora|human|person|operator|representative)\b/i.test(speech);
+  if (digits.trim() === '0') return true;
+  const text = speech.trim();
+  // "One person" describes party size, not a request to transfer the call.
+  return /\b(humano|humana|operador|operadora|asesor|asesora|human|operator|representative)\b/i.test(text)
+    || /^(una\s+)?persona(?:\s+por favor)?[.!?]*$/i.test(text)
+    || /\b(hablar|comunicarme|conectar|p[aá]same)\b.*\bpersona\b/i.test(text)
+    || /\b(speak|talk|connect|transfer)\b.*\bperson\b/i.test(text);
 }
