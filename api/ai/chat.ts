@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import gatewayHandler from '../[...path]';
+import gatewayHandler from '../[...path].js';
 
 /**
  * Backwards-compatible traveler chat facade.
