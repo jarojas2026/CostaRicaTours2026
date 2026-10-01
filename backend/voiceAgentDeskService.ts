@@ -3,6 +3,7 @@ import { askCounterDesk } from './counterDeskService';
 import { rememberTurn } from './memoryService';
 import { getFirestoreDb } from './bookingService';
 import { resolveTravelerIdentity } from './travelerIdentityService';
+import { voiceRoutingPolicy, requestsHuman } from './voiceRoutingPolicy';
 
 export type VoiceCallContext = {
   callId: string;
@@ -40,8 +41,7 @@ function gather(action: string, language: 'es' | 'en') {
 }
 
 function humanNumbers() {
-  return (process.env.VOICE_HUMAN_NUMBERS || process.env.VOICE_HUMAN_NUMBER || '')
-    .split(',').map(value => value.trim()).filter(value => /^\+[1-9]\d{7,14}$/.test(value)).slice(0, 8);
+  return voiceRoutingPolicy().numbers;
 }
 
 export function voiceHumanTransferAvailable() {
@@ -75,15 +75,19 @@ export function buildVoiceTransferStatusUpdate(status: string, now = new Date().
 }
 
 export function voiceAgentDeskConfig() {
+  const routing = voiceRoutingPolicy();
   return {
     enabled: Boolean(process.env.VOICE_AGENT_DESK_ENABLED === 'true'),
+    ready: routing.ready,
+    missing: routing.missing,
+    primaryHandler: routing.primaryHandler,
     provider: 'twilio-compatible',
-    publicBaseUrl: process.env.PUBLIC_BASE_URL || process.env.APP_URL || '',
+    publicBaseUrl: routing.publicBaseUrl,
     inboundPath: '/api/voice/incoming',
     responsePath: '/api/voice/respond',
     statusPath: '/api/voice/status',
     humanTransferConfigured: voiceHumanTransferAvailable(),
-    humanTransferLabel: process.env.VOICE_HUMAN_LABEL || 'Agent Desk humano',
+    humanTransferLabel: routing.humanTransferLabel,
     hotelIntegrationMode: 'DID/SIP/PBX-forwarding',
     contextFields: ['hotelId', 'hotelName', 'room', 'language'],
     capabilities: [
@@ -129,8 +133,8 @@ export function createInboundVoiceResponse(input: {
     ? (language === 'en' ? ' Speak after the tone, or press 0 to reach a human agent.' : ' Hable después del tono, o marque 0 para comunicarse con un agente.')
     : (language === 'en' ? ' Speak after the tone and tell me how I can help.' : ' Hable después del tono y dígame cómo puedo ayudarle.');
   const greeting = language === 'en'
-    ? `Welcome to the Costa Rica Tours Agent Desk${input.hotelName ? ` at ${input.hotelName}` : ''}. I can help with tours, availability, routes, reservations and local information.${transferPrompt}`
-    : `Bienvenido al Agent Desk de Costa Rica Tours${input.hotelName ? ` en ${input.hotelName}` : ''}. Puedo ayudarle con tours, disponibilidad, rutas, reservas e información local.${transferPrompt}`;
+    ? `Welcome to the Costa Rica Tours virtual assistant${input.hotelName ? ` at ${input.hotelName}` : ''}. I can help with tour inquiries and reservation requests. Availability and payment must be verified.${transferPrompt}`
+    : `Bienvenido al asistente virtual de Costa Rica Tours${input.hotelName ? ` en ${input.hotelName}` : ''}. Puedo ayudarle con consultas de tours y solicitudes de reserva. La disponibilidad y el pago deben verificarse.${transferPrompt}`;
   const parts = [
     say(greeting, language),
     gather(input.responseUrl, language)
@@ -169,10 +173,17 @@ export async function handleVoiceTurn(input: {
   const textInput = String(input.speech || '').trim();
   const digits = String(input.digits || '').trim();
 
-  if (digits === '0' && input.humanTransferUrl && humanNumbers().length > 0) {
+  if (requestsHuman(textInput, digits) && input.humanTransferUrl && humanNumbers().length > 0) {
     return xml([
       say(language === 'en' ? 'Connecting you with our Agent Desk team.' : 'Le conecto con nuestro equipo del Agent Desk.', language),
       `<Dial timeout="30" answerOnBridge="true" action="${esc(input.humanTransferUrl)}" method="POST">${humanNumbers().map(number => `<Number>${esc(number)}</Number>`).join('')}</Dial>`
+    ]);
+  }
+
+  if (requestsHuman(textInput, digits)) {
+    return xml([
+      say(language === 'en' ? 'No human transfer line is configured. You can contact the team using WhatsApp on our website. I can still help with general questions.' : 'No hay una línea de transferencia humana configurada. Puede contactar al equipo mediante WhatsApp en nuestra página. Puedo seguir ayudándole con consultas generales.', language),
+      gather(input.responseUrl, language)
     ]);
   }
 

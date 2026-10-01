@@ -56,6 +56,8 @@ const inMemorySlots: Map<string, number> = new Map();
 
 /** Inicializa y devuelve la instancia de Firestore Admin. */
 export function getFirestoreDb(): Firestore | null {
+  // Explicit contract-test isolation only; production still uses ADC normally.
+  if (process.env.NODE_ENV === 'test' && process.env.FIRESTORE_CONTRACT_TEST_OFFLINE === 'true') return null;
   if (dbInstance) return dbInstance;
 
   try {

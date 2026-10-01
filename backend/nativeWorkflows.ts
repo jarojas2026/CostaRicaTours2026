@@ -368,11 +368,33 @@ export async function executeProviderRealtimeCoordination(
     });
     throw new Error(reason);
   }
-  const providerPortalUrl = `${APP_URL}/provider/portal?token=${encodeURIComponent(createProviderPortalToken({ orderId: bookingId, providerId: provider.id, ttlMinutes: 1440 }))}`;
+  const portalOrigin = new URL(APP_URL);
+  if (portalOrigin.protocol !== 'https:') throw new Error('APP_URL debe ser HTTPS para enviar enlaces al proveedor.');
+  const portalDb = getFirestoreDb();
+  if (!portalDb) throw new Error('No se puede despachar una solicitud sin Firestore.');
+  await portalDb.runTransaction(async tx => {
+    const ref = portalDb.collection('service_orders').doc(bookingId);
+    const bookingRef = portalDb.collection('bookings').doc(bookingId);
+    const [existing, savedBooking] = await Promise.all([tx.get(ref), tx.get(bookingRef)]);
+    if (!savedBooking.exists) throw new Error('Reserva no persistida; despacho bloqueado.');
+    if (savedBooking.data()?.serviceOrderId && savedBooking.data()?.serviceOrderId !== bookingId) throw new Error('La reserva ya tiene otra orden; use el despacho existente.');
+    if (savedBooking.data()?.providerId && savedBooking.data()?.providerId !== provider.id) throw new Error('Asignación del proveedor cambió.');
+    if (existing.exists) {
+      if (existing.data()?.providerId !== provider.id) throw new Error('La orden corresponde a otro proveedor.');
+      if (!['dispatched', 'reassigned'].includes(existing.data()?.status)) throw new Error('Orden ya respondida; no se vuelve a despachar.');
+      return;
+    }
+    tx.set(ref, { id: bookingId, bookingId, providerId: provider.id, providerName: provider.name,
+      tourId, tourName, date: tourDate, time: tourTime, adults, children,
+      pickupLocation: pickupHotel, customer: { name: customerName, phone: customerPhone, email: customerEmail },
+      notes: specialRequests || '', status: 'dispatched', dispatchedAt: new Date().toISOString() });
+    tx.update(bookingRef, { serviceOrderId: bookingId, providerId: provider.id, serviceOrderStatus: 'dispatched' });
+  });
+  const providerPortalUrl = `${portalOrigin.origin}/provider/portal?token=${encodeURIComponent(createProviderPortalToken({ orderId: bookingId, providerId: provider.id, ttlMinutes: 1440 }))}`;
   // El portal presenta las acciones válidas y envía la decisión al endpoint firmado.
-  const confirmUrl = providerPortalUrl;
-  const modifyTimeUrl = providerPortalUrl;
-  const declineUrl = providerPortalUrl;
+  const confirmUrl = providerPortalUrl + '&intent=confirm';
+  const modifyTimeUrl = providerPortalUrl + '&intent=delay';
+  const declineUrl = providerPortalUrl + '&intent=reject';
 
   // Enlace interactivo a WhatsApp para despacho móvil directo
   const waText = encodeURIComponent(

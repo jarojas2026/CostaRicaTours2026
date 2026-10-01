@@ -111,7 +111,8 @@ for (const route of ["app.post('/api/voice/incoming'", "app.post('/api/voice/res
     add('CRITICAL', 'VOICE-SEC-003', `Voice provider callback lacks signature validation: ${route}.`);
   }
 }
-if (!/VOICE_HUMAN_NUMBERS/.test(voiceService) || !/TERMINAL_CALL_STATUSES/.test(voiceService)) {
+const voiceRouting = read('backend/voiceRoutingPolicy.ts');
+if (!/VOICE_HUMAN_NUMBERS/.test(voiceRouting) || !/voiceRoutingPolicy\(\)\.numbers/.test(voiceService) || !/TERMINAL_CALL_STATUSES/.test(voiceService)) {
   add('HIGH', 'VOICE-OPS-001', 'Portable voice operations lack multi-operator routing or terminal call-state handling.');
 }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Language } from '../types';
 import { X, ShieldCheck, FileText, Lock, AlertCircle, Building, Book } from 'lucide-react';
 
@@ -6,17 +6,25 @@ interface LegalModalProps {
   isOpen: boolean;
   onClose: () => void;
   language: Language;
+  initialTab?: TabType;
 }
 
-type TabType = 'terminos' | 'cancelacion' | 'privacidad' | 'escnna';
+export type TabType = 'terminos' | 'cancelacion' | 'privacidad' | 'escnna';
 
-export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, language }) => {
-  const [activeTab, setActiveTab] = useState<TabType>('terminos');
+export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, language, initialTab = 'terminos' }) => {
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+  useEffect(() => { if (isOpen) setActiveTab(initialTab); }, [isOpen, initialTab]);
+  useEffect(() => {
+    if (!isOpen) return;
+    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', close);
+    return () => window.removeEventListener('keydown', close);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div role="dialog" aria-modal="true" aria-label={language === 'es' ? 'Políticas y Legal' : 'Legal & Policies'} className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white text-stone-900 rounded-[2rem] w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-black/10 relative overflow-hidden">
         
         {/* Header */}
@@ -26,7 +34,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, languag
               <ShieldCheck className="w-5 h-5 text-orange-400" />
             </div>
             <div>
-              <h2 className="text-xl font-black uppercase tracking-wider text-white">
+              <h2 className="text-xl font-black uppercase tracking-wider text-stone-900">
                 {language === 'es' ? 'Políticas y Legal' : 'Legal & Policies'}
               </h2>
               <p className="text-[11px] text-stone-800/70 uppercase tracking-widest font-bold">
@@ -36,6 +44,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, languag
           </div>
           
           <button
+            aria-label={language === 'es' ? 'Cerrar políticas' : 'Close policies'}
             onClick={onClose}
             className="min-h-[44px] min-w-[44px] w-10 h-10 bg-stone-100 hover:bg-stone-200 text-stone-900 rounded-full flex items-center justify-center transition-colors"
           >

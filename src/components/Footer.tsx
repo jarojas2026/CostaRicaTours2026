@@ -5,7 +5,7 @@ import { Phone, MapPin, Mail, ShieldCheck, Heart, Globe, Sparkles, MessageCircle
 
 interface FooterProps {
   language: Language;
-  onOpenLegal?: () => void;
+  onOpenLegal?: (tab: 'terminos' | 'cancelacion' | 'privacidad' | 'escnna') => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
@@ -176,13 +176,13 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold">
-            <button onClick={onOpenLegal} className="hover:underline text-teal-400 hover:text-white transition-colors">{language === 'es' ? 'Términos y Condiciones' : 'Terms & Conditions'}</button>
+            <button onClick={() => onOpenLegal?.('terminos')} className="hover:underline text-teal-400 hover:text-white transition-colors">{language === 'es' ? 'Términos y Condiciones' : 'Terms & Conditions'}</button>
             <span className="text-stone-800">|</span>
-            <button onClick={onOpenLegal} className="hover:underline text-teal-400 hover:text-white transition-colors">{language === 'es' ? 'Política de Cancelación' : 'Cancellation Policy'}</button>
+            <button onClick={() => onOpenLegal?.('cancelacion')} className="hover:underline text-teal-400 hover:text-white transition-colors">{language === 'es' ? 'Política de Cancelación' : 'Cancellation Policy'}</button>
             <span className="text-stone-800">|</span>
-            <button onClick={onOpenLegal} className="hover:underline text-teal-400 hover:text-white transition-colors">{language === 'es' ? 'Privacidad y Datos (MEIC)' : 'Privacy (MEIC)'}</button>
+            <button onClick={() => onOpenLegal?.('privacidad')} className="hover:underline text-teal-400 hover:text-white transition-colors">{language === 'es' ? 'Privacidad y Datos (MEIC)' : 'Privacy (MEIC)'}</button>
             <span className="text-stone-800">|</span>
-            <button onClick={onOpenLegal} className="hover:underline text-teal-400 hover:text-white transition-colors">Normas SINAC & ESCNNA</button>
+            <button onClick={() => onOpenLegal?.('escnna')} className="hover:underline text-teal-400 hover:text-white transition-colors">Normas SINAC & ESCNNA</button>
             <span className="text-stone-800">|</span>
             
           </div>

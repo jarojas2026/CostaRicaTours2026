@@ -11,6 +11,7 @@ import { getAllBookings, getFirestoreDb, updateBookingStatus } from './bookingSe
 import { createAlert } from './alertService';
 import { sendEmail } from './notificationService';
 import { createProviderPortalToken, providerPortalConfigured } from './providerPortalService';
+import { acceptProviderOrder } from './providerAcceptance';
 
 export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || '';
 
@@ -263,14 +264,13 @@ const serviceOrdersStore: Map<string, ServiceOrder> = new Map();
 
 async function persistServiceOrder(order: ServiceOrder) {
   const db = (await import('./bookingService')).getFirestoreDb();
+  if (!db) throw new Error('No se puede guardar la orden sin Firestore.');
   if (db) {
     await db.collection('service_orders').doc(order.id).set(order, { merge: true });
   }
 }
 
 async function loadServiceOrder(orderId: string): Promise<ServiceOrder | null> {
-  const cached = serviceOrdersStore.get(orderId);
-  if (cached) return cached;
   const db = (await import('./bookingService')).getFirestoreDb();
   if (!db) return null;
   const doc = await db.collection('service_orders').doc(orderId).get();
@@ -439,6 +439,7 @@ export async function dispatchServiceOrder(params: {
  */
 export async function handleProviderAction(params: {
   orderId: string;
+  expectedProviderId?: string;
   action: 'confirm' | 'reject' | 'delay' | 'no_show' | 'complete';
   notes?: string;
   operatorContact?: string;
@@ -460,22 +461,12 @@ export async function handleProviderAction(params: {
   const now = new Date().toISOString();
 
   if (params.action === 'confirm') {
-    order.status = 'confirmed';
-    order.confirmedAt = now;
-    order.notes = params.notes || 'Confirmado por operador local con cupo garantizado';
-    order.assignedGuide = params.assignedGuide || order.assignedGuide;
-    order.assignedVehicle = params.assignedVehicle || order.assignedVehicle;
-    
-    await updateBookingStatus(order.bookingId, {
-      serviceOrderStatus: 'confirmed',
-      providerConfirmedAt: now
-    }).catch(() => {});
-    await persistServiceOrder(order).catch(() => {});
-
+    const acceptedOrder: ServiceOrder = await acceptProviderOrder(getFirestoreDb(), params.orderId, params.expectedProviderId || order.providerId, params);
+    serviceOrdersStore.set(acceptedOrder.id, acceptedOrder);
     return {
       success: true,
-      order,
-      message: `Orden ${order.id} confirmada exitosamente por ${order.providerName}.`
+      order: acceptedOrder,
+      message: `Aceptación de ${acceptedOrder.providerName} registrada para ${acceptedOrder.id}. El pago y la notificación al viajero se verifican por separado.`
     };
   }
 
@@ -493,8 +484,10 @@ export async function handleProviderAction(params: {
   }
 
   if (params.action === 'delay') {
+    if (!params.notes?.trim()) throw new Error('Describe el cambio solicitado en las notas.');
+    if (!Number.isInteger(params.estimatedDelayMinutes) || params.estimatedDelayMinutes! < 5 || params.estimatedDelayMinutes! > 1440) throw new Error('El ajuste debe estar entre 5 y 1440 minutos.');
     order.notes = `${params.notes || 'Demora reportada'}${params.estimatedDelayMinutes ? ` (${params.estimatedDelayMinutes} min)` : ''}`;
-    await persistServiceOrder(order).catch(() => {});
+    await persistServiceOrder(order);
     
     // Crear alerta operativa preventiva
     await createAlert({
