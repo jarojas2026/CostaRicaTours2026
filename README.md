@@ -2,6 +2,8 @@
 
 Plataforma full-stack de venta, asesoría, planificación y operación de servicios turísticos en Costa Rica.
 
+Actualización incremental del Agent Desk (1 de octubre de 2026): consultas WhatsApp unificadas con grupo y recogida, estados operativos desconocidos diferenciados de cero, errores de acceso visibles y consultas con tiempo límite sin reintentos automáticos. Ver alcance y pendientes reales en [`docs/estado-real-del-sistema.md`](docs/estado-real-del-sistema.md). Estos controles no equivalen a una reserva confirmada ni activan telefonía.
+
 ### Ruta de despliegue y fuente de verdad
 
 `main` en `jarojas2026/CostaRicaTours2026` es la fuente de código. La ruta de producción propuesta es: GitHub Actions compila y despliega el backend privado `costa-rica-tours` en Cloud Run (`gen-lang-client-0782739149`, `us-central1`); Vercel publica el frontend y su puerta `/api` llama a ese servicio mediante `CLOUD_RUN_BACKEND_URL` y WIF. La sincronización con Google AI Studio sirve para editar y revisar código, pero su botón de despliegue crea un servicio paralelo (`costaricatours2026` en `us-west2`, fallido en la captura del 28 de septiembre de 2026). No volver a usar ese despliegue como producción mientras se consolida la ruta canónica.

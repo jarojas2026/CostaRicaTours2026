@@ -1,7 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Bot, CalendarCheck, CircleAlert, Gauge, MessageCircle, RefreshCw, Send, ShieldCheck, Sparkles, Users, Zap } from 'lucide-react';
 import { Language } from '../types';
 import { auth } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { deskCounterValue, deskRequest, hasDeskSnapshot } from '../utils/deskRequest';
 
 interface Props { language: Language; }
 
@@ -22,86 +24,103 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
   const [aiPlan, setAiPlan] = useState<any>(null);
   const [error, setError] = useState('');
   const [voiceConfig, setVoiceConfig] = useState<any>(null);
+  const [operationsError, setOperationsError] = useState('');
+  const [voiceError, setVoiceError] = useState('');
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const requestVersion = useRef(0);
+  const sessionVersion = useRef(0);
 
-  const loadAutopilot = async () => {
+  const loadAutopilot = useCallback(async () => {
+    const version = ++requestVersion.current;
+    const user = auth.currentUser;
     try {
-      const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
-      if (!token) return;
-      const r = await fetch('/api/counter/autopilot', { headers: { Authorization: 'Bearer ' + token } });
-      const data = await r.json();
-      if (r.ok) setAutopilot(data);
-    } catch {}
-  };
+      if (!user) throw new Error(es ? 'Inicia sesión con una cuenta autorizada para ver datos operativos.' : 'Sign in with an authorized account to view operational data.');
+      const token = await user.getIdToken();
+      const data = await deskRequest('/api/counter/autopilot', { headers: { Authorization: 'Bearer ' + token } }, language);
+      if (!hasDeskSnapshot(data)) throw new Error(es ? 'No se recibió un estado operativo válido.' : 'No valid operational snapshot was received.');
+      if (version !== requestVersion.current || auth.currentUser !== user) return;
+      setAutopilot(data);
+      setLastUpdated(new Date().toISOString());
+      setOperationsError('');
+    } catch (e) {
+      if (version !== requestVersion.current || auth.currentUser !== user) return;
+      setAutopilot(null);
+      setAiPlan(null);
+      setLastUpdated(null);
+      setOperationsError(e instanceof Error ? e.message : (es ? 'Datos no disponibles.' : 'Data unavailable.'));
+    }
+  }, [es, language]);
 
   const organizeWithAI = async () => {
+    if (loading) return;
+    const version = sessionVersion.current;
     setLoading(true); setError('');
     try {
       const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
-      if (!token) throw new Error(es ? 'Inicia sesión como operador para organizar operaciones.' : 'Sign in as an operator to organize operations.');
-      const r = await fetch('/api/counter/organize', {
+      if (!token) throw new Error(es ? 'Inicia sesión con una cuenta administrativa autorizada.' : 'Sign in with an authorized administrative account.');
+      if (version !== sessionVersion.current) return;
+      const data = await deskRequest('/api/counter/organize', {
         method: 'POST',
         headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || 'Error');
+      }, language);
+      if (version !== sessionVersion.current) return;
       setAiPlan(data);
-      setAutopilot(data);
-    } catch (e: any) { setError(e.message || 'Error'); }
-    finally { setLoading(false); }
+      await loadAutopilot();
+    } catch (e: any) { if (version === sessionVersion.current) setError(e.message || 'Error'); }
+    finally { if (version === sessionVersion.current) setLoading(false); }
   };
 
   useEffect(() => {
-    const loadVoiceConfig = async () => {
+    const unsubscribe = onAuthStateChanged(auth, async user => {
+      const version = ++sessionVersion.current;
+      requestVersion.current++;
+      setAutopilot(null); setAiPlan(null); setVoiceConfig(null); setLastUpdated(null);
+      setReply(''); setError(''); setVoiceError(''); setLoading(false);
+      void loadAutopilot();
+      if (!user) return;
       try {
-        const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
-        if (!token) return;
-        const r = await fetch('/api/voice/config', { headers: { Authorization: 'Bearer ' + token } });
-        if (r.ok) { const data = await r.json(); setVoiceConfig(data.config); }
-      } catch {}
-    };
-    loadVoiceConfig();
-    loadAutopilot();
-    const id = window.setInterval(loadAutopilot, 60000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  const counters = useMemo(() => autopilot?.snapshot?.counters || {}, [autopilot]);
+        const token = await user.getIdToken();
+        const data = await deskRequest('/api/voice/config', { headers: { Authorization: 'Bearer ' + token } }, language);
+        if (version === sessionVersion.current) setVoiceConfig(data.config || null);
+      } catch (e) {
+        if (version === sessionVersion.current) setVoiceError(es ? 'No se pudo verificar la configuración de voz.' : 'Voice configuration could not be verified.');
+      }
+    });
+    const id = window.setInterval(() => { void loadAutopilot(); }, 60000);
+    return () => { unsubscribe(); window.clearInterval(id); requestVersion.current++; sessionVersion.current++; };
+  }, [loadAutopilot, language, es]);
 
   const ask = async (text = message) => {
     if (!text.trim() || loading) return;
+    const version = sessionVersion.current;
     setLoading(true); setError('');
     try {
-      const r = await fetch('/api/counter/ask', {
+      const data = await deskRequest('/api/counter/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, sessionId, language })
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || 'No se pudo contactar al Counter Agent');
-      setReply(data.reply || '');
-      setMessage('');
+      }, language);
+      if (version !== sessionVersion.current) return;
+      if (typeof data.reply !== 'string' || !data.reply.trim()) throw new Error(es ? 'El asesor no devolvió una respuesta. Tu consulta sigue sin resolver.' : 'The advisor returned no answer. Your inquiry is still unresolved.');
+      setReply(data.reply);
+      setMessage(current => current === text ? '' : current);
     } catch (e: any) {
-      setError(e.message || 'Error');
-    } finally { setLoading(false); }
+      if (version === sessionVersion.current) setError(e.message || 'Error');
+    } finally { if (version === sessionVersion.current) setLoading(false); }
   };
 
   const refresh = async () => {
+    if (loading) return;
+    const version = sessionVersion.current;
     setLoading(true);
-    try {
-      const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
-      if (!token) throw new Error(es ? 'Inicia sesión como operador.' : 'Sign in as an operator.');
-      const r = await fetch('/api/counter/autopilot', { headers: { Authorization: 'Bearer ' + token } });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || 'Error');
-      setAutopilot(data);
-    } catch (e: any) { setError(e.message || 'Error'); }
-    finally { setLoading(false); }
+    try { await loadAutopilot(); }
+    finally { if (version === sessionVersion.current) setLoading(false); }
   };
 
   const quick = [
-    es ? 'Quiero reservar un tour y verificar cupos' : 'I want to book a tour and check availability',
-    es ? 'Organiza las operaciones de las próximas 72 horas' : 'Organize the next 72 hours of operations',
-    es ? '¿Qué problemas requieren atención ahora?' : 'What needs attention right now?'
+    { label: es ? 'Consultar un tour y sus cupos' : 'Ask about a tour and availability', action: () => ask(es ? 'Quiero reservar un tour y verificar cupos' : 'I want to book a tour and check availability') },
+    { label: es ? 'Proponer plan operativo de 72 horas' : 'Propose a 72-hour operations plan', action: organizeWithAI },
+    { label: es ? 'Consultar alertas operativas' : 'Check operational alerts', action: refresh }
   ];
 
   return (
@@ -142,7 +161,7 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
           </div>
           <div className="flex flex-wrap gap-2 text-[10px] font-black uppercase">
             <span className={`rounded-full border px-3 py-1.5 ${voiceConfig?.ready ? 'border-emerald-400/30 text-emerald-300 bg-emerald-400/5' : 'border-amber-400/30 text-amber-300 bg-amber-400/5'}`}>
-              {voiceConfig?.ready ? (es ? 'CONFIGURADO · PRUEBA TELEFÓNICA PENDIENTE' : 'CONFIGURED · PHONE TEST REQUIRED') : 'VOICE CONFIG PENDING'}
+              {voiceConfig?.ready ? (es ? 'CONFIGURADO · PRUEBA TELEFÓNICA PENDIENTE' : 'CONFIGURED · PHONE TEST REQUIRED') : (es ? 'VOZ NO VERIFICADA' : 'VOICE UNVERIFIED')}
             </span>
             {voiceConfig?.humanTransferConfigured && <span className="rounded-full border border-sky-400/30 text-sky-300 bg-sky-400/5 px-3 py-1.5">HUMAN HANDOFF</span>}
           </div>
@@ -160,16 +179,22 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
           ))}
         </div>
         {voiceConfig?.missing?.length > 0 && <p className="mt-3 text-xs text-amber-200" role="status">{es ? 'Configuración pendiente: ' : 'Missing configuration: '}{voiceConfig.missing.join(', ')}</p>}
+        {voiceError && <p className="mt-3 text-xs text-amber-200" role="status">{voiceError}</p>}
       </section>
 
+      <div className="rounded-2xl border border-amber-400/20 bg-[#061d14] p-4 text-sm text-stone-200" role="status" aria-live="polite">
+        {operationsError || (lastUpdated
+          ? `${es ? 'Última consulta recibida' : 'Last snapshot received'}: ${new Date(lastUpdated).toLocaleTimeString(es ? 'es-CR' : 'en-US')}`
+          : (es ? 'Datos operativos aún no verificados. Los guiones no significan cero reservas.' : 'Operational data is not verified yet. Dashes do not mean zero bookings.'))}
+      </div>
       <section className="grid grid-cols-2 lg:grid-cols-6 gap-3">
         {[
-          [Gauge, counters.totalBookings ?? 0, es ? 'Reservas' : 'Bookings'],
-          [CalendarCheck, counters.upcoming72h ?? 0, es ? 'Próximas 72h' : 'Next 72h'],
-          [CircleAlert, counters.unresolvedAlerts ?? 0, es ? 'Alertas' : 'Alerts'],
-          [ShieldCheck, counters.criticalAlerts ?? 0, es ? 'Críticas' : 'Critical'],
-          [Users, counters.activeProviders ?? 0, es ? 'Proveedores' : 'Providers'],
-          [Zap, counters.pendingPayments ?? 0, es ? 'Pagos pendientes' : 'Pending payments']
+          [Gauge, deskCounterValue(autopilot, 'totalBookings'), es ? 'Reservas' : 'Bookings'],
+          [CalendarCheck, deskCounterValue(autopilot, 'upcoming72h'), es ? 'Próximas 72h' : 'Next 72h'],
+          [CircleAlert, deskCounterValue(autopilot, 'unresolvedAlerts'), es ? 'Alertas' : 'Alerts'],
+          [ShieldCheck, deskCounterValue(autopilot, 'criticalAlerts'), es ? 'Críticas' : 'Critical'],
+          [Users, deskCounterValue(autopilot, 'activeProviders'), es ? 'Proveedores' : 'Providers'],
+          [Zap, deskCounterValue(autopilot, 'pendingPayments'), es ? 'Pagos pendientes' : 'Pending payments']
         ].map(([Icon, value, label]: any) => (
           <div key={label} className="rounded-2xl border border-emerald-500/20 bg-[#061d14] p-4">
             <Icon className="w-5 h-5 text-amber-300 mb-2" />
@@ -190,13 +215,13 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
             {reply || (es ? 'Pregunta por disponibilidad, reservas, proveedores, pagos, rutas o atención al cliente.' : 'Ask about availability, bookings, providers, payments, routing or customer service.')}
           </div>
           <div className="flex flex-wrap gap-2 my-4">
-            {quick.map(q => <button key={q} onClick={() => ask(q)} className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-xs text-amber-100 hover:bg-amber-400/10">{q}</button>)}
+            {quick.map(q => <button key={q.label} onClick={q.action} disabled={loading} className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-xs text-amber-100 hover:bg-amber-400/10 disabled:opacity-50">{q.label}</button>)}
           </div>
           <div className="flex gap-2">
-            <input value={message} onChange={e => setMessage(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') ask(); }} placeholder={es ? 'Escribe al Counter Agent…' : 'Message the Counter Agent…'} className="flex-1 rounded-2xl border border-emerald-500/20 bg-black/20 px-4 py-3 text-sm text-white outline-none focus:border-amber-400/50" />
-            <button onClick={() => ask()} disabled={loading} className="rounded-2xl bg-amber-400 px-4 text-stone-950 disabled:opacity-50"><Send size={18} /></button>
+            <input aria-label={es ? 'Consulta al asesor' : 'Ask the advisor'} maxLength={5000} value={message} onChange={e => setMessage(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') ask(); }} placeholder={es ? 'Escribe al Counter Agent…' : 'Message the Counter Agent…'} className="flex-1 rounded-2xl border border-emerald-500/20 bg-black/20 px-4 py-3 text-sm text-white outline-none focus:border-amber-400/50" />
+            <button aria-label={es ? 'Enviar consulta' : 'Send inquiry'} onClick={() => ask()} disabled={loading || !message.trim()} className="rounded-2xl bg-amber-400 px-4 text-stone-950 disabled:opacity-50"><Send size={18} /></button>
           </div>
-          {error && <p className="mt-3 text-xs text-rose-300">{error}</p>}
+          {error && <p role="alert" className="mt-3 text-xs text-rose-300">{error}</p>}
         </div>
 
         <div className="rounded-3xl border border-violet-400/20 bg-[#0b0a18] p-5">
@@ -215,7 +240,7 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
                 <p className="text-xs text-stone-400 mt-1">{a.reason}</p>
               </div>
             ))}
-            {!autopilot?.actions?.length && !aiPlan?.priorities?.length && <p className="text-sm text-stone-500">Sin acciones sugeridas.</p>}
+            {!autopilot?.actions?.length && !aiPlan?.priorities?.length && <p className="text-sm text-stone-400">{autopilot ? (es ? 'Sin acciones sugeridas en esta consulta.' : 'No suggested actions in this snapshot.') : (es ? 'Pendiente de cargar operaciones.' : 'Operational data has not loaded.')}</p>}
             {aiPlan?.summary && <div className="mt-3 rounded-xl border border-violet-400/20 bg-violet-400/5 p-3 text-xs text-violet-100">{aiPlan.summary}</div>}
             {(aiPlan?.priorities || []).slice(0, 8).map((a: any) => (
               <div key={'ai-' + a.id} className="rounded-2xl border border-violet-400/20 bg-violet-400/5 p-3">
@@ -232,6 +257,7 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
         <div className="rounded-3xl border border-emerald-500/20 bg-[#061d14] p-5">
           <h2 className="font-black text-white mb-3">{es ? 'Salidas próximas' : 'Upcoming departures'}</h2>
           <div className="space-y-2 max-h-72 overflow-auto">
+            {!autopilot?.snapshot?.upcoming?.length && <p className="text-sm text-stone-400">{autopilot ? (es ? 'Sin salidas en esta consulta de las próximas 72 horas.' : 'No departures in this 72-hour snapshot.') : (es ? 'Salidas no verificadas.' : 'Departures unverified.')}</p>}
             {(autopilot?.snapshot?.upcoming || []).map((b: any) => (
               <div key={b.bookingId} className="flex justify-between gap-3 rounded-xl bg-black/20 p-3 text-xs">
                 <div><div className="font-bold text-white">{b.tourName || b.bookingId}</div><div className="text-stone-400">{b.date} {b.time || ''}</div></div>
@@ -246,7 +272,7 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
             {(autopilot?.snapshot?.alerts || []).map((a: any) => (
               <div key={a.id} className="rounded-xl bg-black/20 p-3 text-xs"><div className="font-bold text-white">{a.title}</div><div className="text-stone-400">{a.message}</div></div>
             ))}
-            {!autopilot?.snapshot?.alerts?.length && <p className="text-sm text-stone-500">No hay alertas activas.</p>}
+            {!autopilot?.snapshot?.alerts?.length && <p className="text-sm text-stone-400">{autopilot ? (es ? 'Sin alertas en esta consulta.' : 'No alerts in this snapshot.') : (es ? 'Alertas no verificadas.' : 'Alerts unverified.')}</p>}
           </div>
         </div>
       </section>
