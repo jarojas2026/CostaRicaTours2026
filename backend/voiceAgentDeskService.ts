@@ -155,6 +155,32 @@ export function createHumanTransferResult(input: {
   return xml([say(message, language), gatherWithSilenceCount(input.responseUrl, language, 0)]);
 }
 
+// A technical failure is not evidence that a booking was rejected or confirmed.
+// Collect NEW input, never redirect/replay the previous business operation.
+export function createVoiceRecoveryResponse(input: {
+  responseUrl: string;
+  language?: 'es' | 'en';
+  recoveryCount?: number;
+}) {
+  const language = input.language === 'en' ? 'en' : 'es';
+  const count = input.recoveryCount ?? 0;
+  const message = language === 'en'
+    ? 'A technical problem prevented me from verifying the result. Do not repeat a payment or booking request before checking its status.'
+    : 'Un problema técnico me impidió verificar el resultado. No repita un pago o una solicitud de reserva sin revisar antes su estado.';
+  if (!Number.isInteger(count) || count < 0 || count >= 2) {
+    return xml([say(message + (language === 'en'
+      ? ' Please contact our team using WhatsApp on our website. Goodbye.'
+      : ' Contacte al equipo mediante WhatsApp en nuestra página. Hasta luego.'), language), '<Hangup/>']);
+  }
+  const action = new URL(input.responseUrl);
+  action.searchParams.set('recoveryCount', String(count + 1));
+  action.searchParams.set('silenceCount', '0');
+  const prompt = voiceHumanTransferAvailable()
+    ? (language === 'en' ? ' Press 0 to speak to a human agent, or ask a general question.' : ' Marque 0 para hablar con un agente humano, o haga una consulta general.')
+    : (language === 'en' ? ' You can ask a general question or contact us using WhatsApp on our website.' : ' Puede hacer una consulta general o contactarnos mediante WhatsApp en nuestra página.');
+  return xml([say(message + prompt, language), gather(action.toString(), language)]);
+}
+
 export async function handleVoiceTurn(input: {
   callId: string;
   speech?: string;
@@ -209,15 +235,11 @@ export async function handleVoiceTurn(input: {
   }
 
   if (digits && digits !== '0') {
+    const prompt = voiceHumanTransferAvailable()
+      ? (language === 'en' ? 'Please speak your request, or press 0 for a human agent.' : 'Diga lo que necesita o marque 0 para hablar con un agente humano.')
+      : (language === 'en' ? 'That key is not supported. Please speak your request.' : 'Esa tecla no está disponible. Diga lo que necesita.');
     return xml([
-      say(language === 'en' ? 'Please speak your request, or press 0 for a human agent.' : 'Diga lo que necesita o marque 0 para hablar con un agente humano.', language),
-      gatherWithSilenceCount(input.responseUrl, language, 0)
-    ]);
-  }
-
-  if (digits === '0') {
-    return xml([
-      say(language === 'en' ? 'A human agent is not available right now. Please tell me what you need.' : 'No hay un agente humano disponible en este momento. Dígame qué necesita.', language),
+      say(prompt, language),
       gatherWithSilenceCount(input.responseUrl, language, 0)
     ]);
   }

@@ -1,6 +1,18 @@
 # ESTADO REAL DEL SISTEMA - Costa Rica Tours 2026
 
-**Actualizado: 19 de septiembre de 2026**
+**Actualizado: 1 de octubre de 2026**
+
+## Revisión incremental de voz — 1 de octubre
+
+- Conectividad observada: `/api/health` y `/api/tours` de `costaricatours2026.vercel.app` respondieron HTTP 200. No se hicieron reservas, pagos, notificaciones ni llamadas reales. No se verificó aquí el SHA desplegado en Cloud Run.
+- Fallo detectado: errores en `/api/voice/incoming` y `/api/voice/respond` respondían HTTP 500 y, en el segundo caso, indicaban marcar 0 sin un `<Gather>` que recibiera la tecla.
+- Corrección: recuperación bilingüe con nuevas instrucciones del llamante, máximo dos recuperaciones consecutivas y salida explícita a contacto web/WhatsApp. Nunca se reproduce automáticamente una operación cuyo resultado no pudo verificarse.
+- Una tecla no soportada no anuncia un destino humano inexistente. Expresiones de tamaño del grupo («one person», «solo una persona») no disparan transferencia.
+- Se conservan las firmas obligatorias, estados de pago/proveedor y límites de silencio existentes. No se cambiaron IAM, teléfonos, secretos, DNS ni canales de despliegue.
+- Responsabilidad autorizada por el propietario: Reservas y Servicio al Cliente, con su teléfono como destino humano inicial. Activación real y prueba telefónica ES/EN todavía pendientes; no se considera operativa solo por pasar CI.
+- Reversión: revertir el PR de recuperación de voz, sin migraciones de datos. Integrar únicamente con pruebas, TypeScript, compilación y CI verdes; la comprobación de producción es independiente.
+
+Las secciones siguientes conservan el historial del 19 de septiembre; no sustituyen una comprobación actual de las dependencias externas.
 
 ## Estado actual
 

@@ -7,6 +7,7 @@ import {
   buildVoiceTransferStatusUpdate,
   createHumanTransferResult,
   createInboundVoiceResponse,
+  createVoiceRecoveryResponse,
   handleVoiceTurn,
   verifyVoiceSignature,
   voiceAgentDeskConfig
@@ -73,9 +74,52 @@ test('silence is bounded and unsupported DTMF does not enter the AI intent pipel
     const ended = await handleVoiceTurn({ ...shared, silenceCount: 2 });
     assert.match(ended, /<Hangup\/>/);
     const badDigit = await handleVoiceTurn({ ...shared, digits: '4' });
-    assert.match(badDigit, /Diga lo que necesita o marque 0/);
+    assert.match(badDigit, /Diga lo que necesita/);
+    assert.doesNotMatch(badDigit, /marque 0/);
     assert.doesNotMatch(badDigit, /DTMF request/);
   });
+});
+
+test('technical voice failures collect new input with bounded retries and no business replay', async () => {
+  await withEnv({ VOICE_AGENT_DESK_ENABLED: 'true', VOICE_HUMAN_NUMBERS: '+50688881234', VOICE_HUMAN_NUMBER: '' }, async () => {
+    const input = { responseUrl: 'https://example.test/api/voice/respond?language=es&hotelName=A%26B', language: 'es' as const };
+    for (const recoveryCount of [0, 1]) {
+      const result = createVoiceRecoveryResponse({ ...input, recoveryCount });
+      assert.match(result, new RegExp(`recoveryCount=${recoveryCount + 1}`));
+      assert.match(result, /<Gather input="speech dtmf"/);
+      assert.match(result, /marque 0/i);
+      assert.match(result, /No repita un pago/);
+      assert.doesNotMatch(result, /<Redirect|<Dial|<Hangup/);
+      assert.match(result, /&amp;/);
+    }
+    for (const recoveryCount of [2, 3, -1, NaN, Infinity, 0.5]) {
+      const result = createVoiceRecoveryResponse({ ...input, recoveryCount });
+      assert.match(result, /<Hangup\/>/);
+      assert.doesNotMatch(result, /<Gather|<Redirect|<Dial/);
+    }
+    const handoff = await handleVoiceTurn({ callId: 'CA-test', digits: '0', responseUrl: input.responseUrl, humanTransferUrl: 'https://example.test/api/voice/human-transfer' });
+    assert.match(handoff, /<Dial/);
+  });
+});
+
+test('English recovery does not offer an unconfigured human line', async () => {
+  await withEnv({ VOICE_HUMAN_NUMBERS: '', VOICE_HUMAN_NUMBER: '' }, () => {
+    const result = createVoiceRecoveryResponse({ responseUrl: 'https://example.test/api/voice/respond?language=en', language: 'en' });
+    assert.match(result, /language="en-US"/);
+    assert.match(result, /Do not repeat a payment/);
+    assert.match(result, /WhatsApp/);
+    assert.doesNotMatch(result, /press 0|<Dial/i);
+  });
+});
+
+test('signed inbound and speech route failures return actionable recovery TwiML', () => {
+  const server = readFileSync(new URL('../server.ts', import.meta.url), 'utf8');
+  for (const [route, end] of [['incoming', 'respond'], ['respond', 'human-transfer']]) {
+    const handler = server.slice(server.indexOf(`app.post('/api/voice/${route}'`), server.indexOf(`app.post('/api/voice/${end}'`));
+    assert.match(handler, /verifyVoiceSignature/);
+    assert.match(handler, /status\(200\)\.type\('text\/xml'\)\.send\(createVoiceRecoveryResponse/);
+    assert.match(handler, /recoveryCount: Number\(req.query\?\.recoveryCount/);
+  }
 });
 
 test('failed human transfer returns the traveler to voice assistance; successful transfer ends cleanly', () => {
