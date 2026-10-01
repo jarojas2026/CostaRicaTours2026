@@ -48,7 +48,7 @@ jobs:
             gcloud iam workload-identity-pools create "$WIF_POOL_ID" \
               --location=global \
               --project "$PROJECT_ID" \
-              --display-name='GitHub Actions production deploys' \
+              --display-name='GitHub Actions deploys' \
               --description='Keyless GitHub Actions federation for CostaRicaTours2026.'
           fi
 
