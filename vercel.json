@@ -1,6 +1,8 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
   "buildCommand": "npm run build",
+  "ignoreCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then exit 1; else echo 'Skipping automatic preview build; GitHub CI is authoritative for feature branches.'; exit 0; fi",
   "rewrites": [
     {
       "source": "/api/:path((?!gateway$).*)",
