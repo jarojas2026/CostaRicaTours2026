@@ -18,10 +18,12 @@ export function getUsdToCrcRate(): number {
 
 export async function fetchLiveExchangeRate(): Promise<number> {
   try {
-    const res = await fetch('/api/currency/exchange-rate');
+    const res = await fetch('/api/currency/exchange-rate', { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
-      const rate = Number(data.rate || data.USD_TO_CRC || data.crcRate);
+      // `usdToCrc` is the canonical server contract. Older aliases remain
+      // accepted for backwards compatibility with previous deployments.
+      const rate = Number(data.usdToCrc ?? data.rate ?? data.USD_TO_CRC ?? data.crcRate);
       if (Number.isFinite(rate) && rate > 0) {
         cachedUsdToCrcRate = rate;
         return rate;
