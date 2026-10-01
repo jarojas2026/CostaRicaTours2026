@@ -1,8 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Activity, CheckCircle2, Clock3, Mail, RefreshCw, ShieldCheck, Sparkles, TriangleAlert } from 'lucide-react';
 import type { Language } from '../types';
+import { auth } from '../firebase';
 
 type Props = { language: Language };
+
+async function operatorAuthorizationHeader(): Promise<Record<string, string>> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('operator_auth_required');
+  const token = await user.getIdToken();
+  if (!token) throw new Error('operator_auth_required');
+  return { Authorization: `Bearer ${token}` };
+}
 
 export default function EmailOperationsPage({ language }: Props) {
   const es = language === 'es';
@@ -15,16 +24,23 @@ export default function EmailOperationsPage({ language }: Props) {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/admin/email-operations');
+      const authorization = await operatorAuthorizationHeader();
+      const res = await fetch('/api/admin/email-operations', {
+        headers: authorization,
+        cache: 'no-store',
+      });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'No se pudo cargar el centro de correo.');
       setData(json);
     } catch (e: any) {
-      setError(e?.message || 'Error');
+      const message = e?.message === 'operator_auth_required'
+        ? (es ? 'Inicia sesión como operador para acceder al centro de correo.' : 'Sign in as an operator to access email operations.')
+        : (e?.message || 'Error');
+      setError(message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [es]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -32,12 +48,20 @@ export default function EmailOperationsPage({ language }: Props) {
     setRunning(true);
     setError('');
     try {
-      const res = await fetch('/api/admin/email-operations/sweep', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+      const authorization = await operatorAuthorizationHeader();
+      const res = await fetch('/api/admin/email-operations/sweep', {
+        method: 'POST',
+        headers: { ...authorization, 'content-type': 'application/json' },
+        body: '{}',
+      });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'No se pudo ejecutar el agente.');
       await load();
     } catch (e: any) {
-      setError(e?.message || 'Error');
+      const message = e?.message === 'operator_auth_required'
+        ? (es ? 'Inicia sesión como operador para ejecutar el agente de correo.' : 'Sign in as an operator to run the email agent.')
+        : (e?.message || 'Error');
+      setError(message);
     } finally {
       setRunning(false);
     }
