@@ -7,7 +7,6 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  error?: Error;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -15,8 +14,8 @@ export class ErrorBoundary extends Component<Props, State> {
     hasError: false
   };
 
-  public static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+  public static getDerivedStateFromError(_error: Error): State {
+    return { hasError: true };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -26,50 +25,51 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#041711] flex items-center justify-center p-6 text-stone-100">
+        <main role="alert" aria-live="assertive" className="min-h-screen bg-[#041711] flex items-center justify-center p-6 text-stone-100">
           <div className="max-w-md w-full bg-[#052118] border border-emerald-500/30 rounded-3xl p-8 shadow-2xl text-center space-y-6">
             <div className="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
-              <AlertTriangle className="w-8 h-8 animate-bounce" />
+              <AlertTriangle aria-hidden="true" className="w-8 h-8" />
             </div>
             
             <div className="space-y-2">
-              <h1 className="text-2xl font-bold font-heading text-white">¡Ups! Algo inesperado ocurrió</h1>
+              <h1 className="text-2xl font-bold font-heading text-white">No pudimos mostrar esta sección</h1>
               <p className="text-sm text-stone-300 leading-relaxed">
-                Hemos detectado un pequeño tropiezo técnico en esta sección. No te preocupes, tus datos y reservas están seguros con nosotros.
+                Intenta recargar la página. Si el problema continúa, vuelve al inicio e inténtalo de nuevo.
+              </p>
+              <p lang="en" className="text-sm text-stone-400 leading-relaxed">
+                We couldn’t load this section. Refresh the page, or return home and try again.
               </p>
             </div>
 
-            {this.state.error && (
-              <div className="bg-[#03140e] p-3 rounded-xl border border-emerald-500/20 text-left text-xs font-mono text-amber-300/80 overflow-x-auto max-h-24">
-                {this.state.error.message}
-              </div>
-            )}
-
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <button
+                type="button"
+                aria-label="Recargar página / Reload page"
                 onClick={() => window.location.reload()}
                 className="flex-1 bg-amber-400 hover:bg-amber-300 text-stone-950 font-bold py-3 px-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <RefreshCw className="w-4 h-4" />
-                <span>Recargar Pantalla</span>
+                <RefreshCw aria-hidden="true" className="w-4 h-4" />
+                <span>Recargar / Reload</span>
               </button>
               
               <button
+                type="button"
+                aria-label="Ir al inicio / Go home"
                 onClick={() => {
-                  this.setState({ hasError: false });
-                  window.location.href = '/';
+                  window.location.assign('/');
                 }}
                 className="flex-1 bg-emerald-900/60 hover:bg-emerald-900 text-white font-bold py-3 px-4 rounded-xl border border-emerald-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <Home className="w-4 h-4 text-amber-400" />
-                <span>Ir al Inicio</span>
+                <Home aria-hidden="true" className="w-4 h-4 text-amber-400" />
+                <span>Inicio / Home</span>
               </button>
             </div>
           </div>
-        </div>
+        </main>
       );
     }
 
     return this.props.children;
   }
 }
+
