@@ -3015,6 +3015,16 @@ app.post('/api/fcm/send', async (req, res) => {
   }
 });
 
+// Unknown API paths must remain API errors; never let the production SPA
+// fallback disguise a missing backend route as a successful HTML response.
+app.use('/api', (req, res) => {
+  return res.status(404).json({
+    success: false,
+    error: 'api_route_not_found',
+    message: 'Ruta de API no encontrada. / API route not found.',
+  });
+});
+
 // ==========================================
 // 🚀 MIDDLEWARE VITE (FULL-STACK SPA + BACKEND)
 // ==========================================
