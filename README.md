@@ -2,6 +2,8 @@
 
 Plataforma full-stack de venta, asesoría, planificación y operación de servicios turísticos en Costa Rica.
 
+Portal de proveedores: las respuestas se presentan exitosas solo tras guardar el pedido y se distinguen de la notificación al viajero y de la liquidación financiera. Ver alcance vigente en [`docs/estado-real-del-sistema.md`](docs/estado-real-del-sistema.md).
+
 Actualización incremental del Agent Desk (1 de octubre de 2026): consultas WhatsApp unificadas con grupo y recogida, estados operativos desconocidos diferenciados de cero, errores de acceso visibles y consultas con tiempo límite sin reintentos automáticos. Ver alcance y pendientes reales en [`docs/estado-real-del-sistema.md`](docs/estado-real-del-sistema.md). Estos controles no equivalen a una reserva confirmada ni activan telefonía.
 
 ### Ruta de despliegue y fuente de verdad

@@ -2,6 +2,13 @@
 
 **Actualizado: 1 de octubre de 2026**
 
+## Respuestas del operador: persistencia y mensajes exactos — 1 de octubre
+
+- Demora, no presentación y servicio completado solo cambian el estado del pedido después de guardar la orden; el error de persistencia ahora llega al canal llamante en vez de presentarse como éxito. La memoria se actualiza después de Firestore.
+- El portal ya no afirma que una demora notificó al viajero ni que completar el tour aprobó la liquidación. Se conserva el proceso financiero independiente y sus requisitos de pago, proveedor, fecha y operación.
+- El aviso de no presentación indica revisión operativa; no altera el ciclo de la reserva del cliente ni calcula reembolsos automáticamente.
+- Verificación de producción y notificación real al viajero siguen siendo dependencias separadas del resultado HTTP del portal.
+
 ## Agent Desk: integridad de consultas y estado operativo — 1 de octubre
 
 - Los tres accesos de WhatsApp del mostrador utilizan el mismo resumen ES/EN: tour, fecha, adultos, niños y recogida. Abren un borrador; no crean reservas ni envían mensajes automáticamente. Se reutiliza `bookingInquiry`, sin un sistema paralelo de reservas.

@@ -486,8 +486,12 @@ export async function handleProviderAction(params: {
   if (params.action === 'delay') {
     if (!params.notes?.trim()) throw new Error('Describe el cambio solicitado en las notas.');
     if (!Number.isInteger(params.estimatedDelayMinutes) || params.estimatedDelayMinutes! < 5 || params.estimatedDelayMinutes! > 1440) throw new Error('El ajuste debe estar entre 5 y 1440 minutos.');
-    order.notes = `${params.notes || 'Demora reportada'}${params.estimatedDelayMinutes ? ` (${params.estimatedDelayMinutes} min)` : ''}`;
-    await persistServiceOrder(order);
+    const updatedOrder: ServiceOrder = {
+      ...order,
+      notes: `${params.notes} (${params.estimatedDelayMinutes} min)`
+    };
+    await persistServiceOrder(updatedOrder);
+    serviceOrdersStore.set(updatedOrder.id, updatedOrder);
     
     // Crear alerta operativa preventiva
     await createAlert({
@@ -501,15 +505,19 @@ export async function handleProviderAction(params: {
 
     return {
       success: true,
-      order,
-      message: `Demora registrada y notificada al Centro de Alertas y viajero.`
+      order: updatedOrder,
+      message: 'Demora registrada en la orden. La comunicación al viajero se gestiona por separado.'
     };
   }
 
   if (params.action === 'no_show') {
-    order.status = 'no_show';
-    order.notes = params.notes || 'Pasajero no se presentó en lobby tras 15 min de cortesía.';
-    await persistServiceOrder(order).catch(() => {});
+    const updatedOrder: ServiceOrder = {
+      ...order,
+      status: 'no_show',
+      notes: params.notes || 'Pasajero no se presentó en lobby tras 15 min de cortesía.'
+    };
+    await persistServiceOrder(updatedOrder);
+    serviceOrdersStore.set(updatedOrder.id, updatedOrder);
     
     await createAlert({
       source: 'Operaciones en Ruta (Guías & Choferes)',
@@ -522,18 +530,19 @@ export async function handleProviderAction(params: {
 
     return {
       success: true,
-      order,
-      message: `Reporte de No-Show ingresado en sistema.`
+      order: updatedOrder,
+      message: 'Reporte de no presentación guardado en la orden para revisión operativa.'
     };
   }
 
   if (params.action === 'complete') {
-    order.status = 'completed';
-    await persistServiceOrder(order).catch(() => {});
+    const updatedOrder: ServiceOrder = { ...order, status: 'completed' };
+    await persistServiceOrder(updatedOrder);
+    serviceOrdersStore.set(updatedOrder.id, updatedOrder);
     return {
       success: true,
-      order,
-      message: `Servicio completado exitosamente. Liquidación habilitada para pago.`
+      order: updatedOrder,
+      message: 'Servicio marcado como completado. La liquidación requiere sus verificaciones y proceso independientes.'
     };
   }
 
