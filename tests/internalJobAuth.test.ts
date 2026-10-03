@@ -88,4 +88,3 @@ test('scheduler preflight returns create/update decisions only after every targe
   assert.equal(operations.length, jobs.length);
   assert.ok(operations.every(operation => operation.update));
 });
-
