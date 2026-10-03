@@ -73,6 +73,36 @@ export function schedulerArgs(job: ReturnType<typeof schedulerPlan>[number], upd
   ];
 }
 
+type SchedulerJob = ReturnType<typeof schedulerPlan>[number];
+type DescribeResult = { status: number | null; stderr: string; stdout: string; error?: Error };
+
+/** Inspect every existing target before the caller is allowed to mutate any job. */
+export function preflightSchedulerJobs(
+  jobs: SchedulerJob[],
+  describe: (job: SchedulerJob) => DescribeResult
+): Array<{ job: SchedulerJob; update: boolean }> {
+  return jobs.map(job => {
+    const existing = describe(job);
+    if (existing.error) throw new Error('gcloud is unavailable.');
+    const update = existing.status === 0;
+    if (!update && !/NOT_FOUND|not found/i.test(existing.stderr)) {
+      throw new Error(`Cannot inspect scheduler job ${job.name}; check API and IAM access.`);
+    }
+    if (update) {
+      let current: { httpTarget?: { uri?: string } };
+      try {
+        current = JSON.parse(existing.stdout);
+      } catch {
+        throw new Error(`Cannot parse scheduler job ${job.name}; no jobs were changed.`);
+      }
+      if (current.httpTarget?.uri !== job.uri) {
+        throw new Error(`Existing job ${job.name} targets a different endpoint; review it before updating.`);
+      }
+    }
+    return { job, update };
+  });
+}
+
 function main() {
   const jobs = schedulerPlan(process.env);
   const apply = process.argv.includes('--apply');
@@ -82,24 +112,14 @@ function main() {
   }, null, 2));
   if (!apply) return;
 
-  for (const job of jobs) {
-    const existing = spawnSync('gcloud', [
+  const operations = preflightSchedulerJobs(jobs, job => spawnSync('gcloud', [
       'scheduler', 'jobs', 'describe', job.name,
       '--project', job.project,
       '--location', job.location,
       '--format=json',
-    ], { encoding: 'utf8' });
-    if (existing.error) throw new Error('gcloud is unavailable.');
-    const update = existing.status === 0;
-    if (!update && !/NOT_FOUND|not found/i.test(existing.stderr)) {
-      throw new Error(`Cannot inspect scheduler job ${job.name}; check API and IAM access.`);
-    }
-    if (update) {
-      const current = JSON.parse(existing.stdout);
-      if (current.httpTarget?.uri !== job.uri) {
-        throw new Error(`Existing job ${job.name} targets a different endpoint; review it before updating.`);
-      }
-    }
+    ], { encoding: 'utf8' }));
+
+  for (const { job, update } of operations) {
     const result = spawnSync('gcloud', schedulerArgs(job, update), { encoding: 'utf8' });
     if (result.error || result.status !== 0) {
       throw new Error(`Failed to configure ${job.name}; check Cloud Scheduler/IAM audit logs. No secret output was printed.`);
