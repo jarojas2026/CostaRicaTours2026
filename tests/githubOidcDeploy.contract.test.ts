@@ -27,3 +27,17 @@ test('private Cloud Run smoke checks use an audience-bound ID token from auth@v3
   assert.match(workflow, /Authorization: Bearer \$CLOUD_RUN_ID_TOKEN/);
   assert.doesNotMatch(workflow, /gcloud auth print-identity-token/);
 });
+
+test('only the canonical GitHub workflow deploys the Cloud Run production service', () => {
+  const workflowsDirectory = path.join(process.cwd(), '.github', 'workflows');
+  const workflowFiles = fs.readdirSync(workflowsDirectory).filter((file) => /\.ya?ml$/i.test(file));
+  const cloudRunDeployWorkflows = workflowFiles
+    .filter((file) => /\bgcloud\s+run\s+deploy\b/i.test(
+      fs.readFileSync(path.join(workflowsDirectory, file), 'utf8'),
+    ))
+    .sort();
+
+  assert.deepEqual(cloudRunDeployWorkflows, ['deploy-cloud-run.yml']);
+  assert.match(workflow, /^\s*SERVICE_NAME:\s*costa-rica-tours\s*$/m);
+  assert.match(workflow, /^\s*REGION:\s*us-central1\s*$/m);
+});
