@@ -19,3 +19,11 @@ test('deploy remains gated by successful main Build & Type Check', () => {
   assert.match(workflow, /workflow_run\.conclusion == 'success'/);
   assert.match(workflow, /workflow_run\.head_branch == 'main'/);
 });
+
+test('private Cloud Run smoke checks use an audience-bound ID token from auth@v3', () => {
+  assert.match(workflow, /id: cloud_run_service[\s\S]*?echo "url=\$SERVICE_URL" >> "\$GITHUB_OUTPUT"/);
+  assert.match(workflow, /id: cloud_run_id_token[\s\S]*?token_format: id_token[\s\S]*?id_token_audience: \$\{\{ steps\.cloud_run_service\.outputs\.url \}\}[\s\S]*?id_token_include_email: true/);
+  assert.match(workflow, /CLOUD_RUN_ID_TOKEN: \$\{\{ steps\.cloud_run_id_token\.outputs\.id_token \}\}/);
+  assert.match(workflow, /Authorization: Bearer \$CLOUD_RUN_ID_TOKEN/);
+  assert.doesNotMatch(workflow, /gcloud auth print-identity-token/);
+});
