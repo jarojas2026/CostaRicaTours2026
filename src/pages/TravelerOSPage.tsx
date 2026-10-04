@@ -307,7 +307,14 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
               <div className="mt-2 text-2xl font-black text-white">{es ? 'USD → CRC' : 'USD → CRC'}</div>
               <div className="mt-4"><input type="number" min={0} value={usdAmount} onChange={e=>setUsdAmount(Math.max(0,Number(e.target.value)||0))} className="w-full rounded-2xl bg-black/20 border border-white/10 px-4 py-3 text-white outline-none focus:border-emerald-300" /></div>
               <div className="mt-3 rounded-2xl bg-black/20 p-4"><div className="text-xs text-stone-500">USD</div><div className="text-2xl font-black text-emerald-200">{usdAmount.toLocaleString('en-US',{style:'currency',currency:'USD'})}</div><div className="my-2 text-stone-700">↓</div><div className="text-xs text-stone-500">CRC</div><div className="text-2xl font-black text-white">{crcValue ? `₡${crcValue.toLocaleString('es-CR')}` : '—'}</div></div>
-              <div className="mt-3 flex items-center justify-between text-[11px] text-stone-500"><span>1 USD = {crcRate > 0 ? crcRate.toFixed(2) : '—'} CRC</span><button type="button" onClick={refreshRate} className="inline-flex items-center gap-1.5 text-emerald-300 hover:text-white">{rateStatus==='loading'?<RefreshCw size={13} className="animate-spin"/>:<RefreshCw size={13}/>} {rateStatus==='live'?(es?'Actualizado':'Updated'):(es?'Actualizar':'Refresh')}</button></div>
+              {crcRate <= 0 && <p role="status" aria-live="polite" className="mt-3 text-xs leading-relaxed text-amber-200/90">
+                {rateStatus === 'loading'
+                  ? (es ? 'Consultando el tipo de cambio…' : 'Checking the exchange rate…')
+                  : (es
+                    ? 'No se pudo verificar el tipo de cambio. No mostramos una conversión estimada; confirma el total en CRC al solicitar tu cotización.'
+                    : 'The exchange rate could not be verified. We do not show an estimate; confirm the CRC total when requesting your quote.')}
+              </p>}
+              <div className="mt-3 flex items-center justify-between text-[11px] text-stone-500"><span>1 USD = {crcRate > 0 ? crcRate.toFixed(2) : '—'} CRC</span><button type="button" onClick={refreshRate} aria-label={es ? 'Actualizar tipo de cambio' : 'Refresh exchange rate'} className="inline-flex items-center gap-1.5 text-emerald-300 hover:text-white">{rateStatus==='loading'?<RefreshCw size={13} className="animate-spin"/>:<RefreshCw size={13}/>} {rateStatus==='live'?(es?'Actualizado':'Updated'):rateStatus==='fallback'?(es?'Reintentar':'Retry'):(es?'Actualizar':'Refresh')}</button></div>
             </section>
 
             <section className="rounded-[2rem] border border-white/10 bg-[#071c14] p-5 sm:p-6">

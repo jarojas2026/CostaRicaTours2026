@@ -6,6 +6,9 @@ import './index.css';
 import { ToursProvider } from './contexts/ToursContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { RouteMetadata } from './components/RouteMetadata';
+import { installViteChunkRecovery } from './utils/viteChunkRecovery';
+
+installViteChunkRecovery(window);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

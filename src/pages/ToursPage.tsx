@@ -4,6 +4,7 @@ import { ToursGrid } from '../components/ToursGrid';
 import { Tour, Language, Currency, TourCategory, TourRegion } from '../types';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTours } from '../contexts/ToursContext';
+import { RegionalExperienceGuides } from '../components/RegionalExperienceGuides';
 
 interface ToursPageProps {
   language: Language;
@@ -102,6 +103,16 @@ export const ToursPage: React.FC<ToursPageProps> = ({
           {favorites.length === 0 && <p>{language === 'es' ? 'Todavía no guardaste tours. Usa el corazón de cada experiencia para añadirla aquí.' : 'No saved tours yet. Use the heart on an experience to add it here.'}</p>}
           <button className="mt-3 rounded-xl border border-emerald-400 px-4 py-2" onClick={() => updateCatalogUrl('favorites', null)}>{language === 'es' ? 'Ver todos los tours' : 'View all tours'}</button>
         </section>
+      )}
+      {!onlyFavorites && (
+        <RegionalExperienceGuides
+          language={language}
+          tours={tours}
+          onSelectRegion={(region) => {
+            setSelectedRegion(region);
+            updateCatalogUrl('region', region);
+          }}
+        />
       )}
       <ToursGrid
         tours={onlyFavorites ? tours.filter(tour => favorites.includes(tour.id)) : tours}

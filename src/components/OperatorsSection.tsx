@@ -13,6 +13,7 @@ interface OperatorsSectionProps {
 export const OperatorsSection: React.FC<OperatorsSectionProps> = ({ language, onSelectOperator }) => {
   const navigate = useNavigate();
   const isEs = language === 'es';
+  const verifiedOperators = OPERATORS.filter((operator) => operator.verifiedBadge);
 
   return (
     <section id="operators-section" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
@@ -20,15 +21,15 @@ export const OperatorsSection: React.FC<OperatorsSectionProps> = ({ language, on
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 text-xs font-black uppercase tracking-wider mb-2">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>{isEs ? 'Catálogo de Servicios y Operadores' : 'Services & Operators Catalog'}</span>
+            <span>{isEs ? 'Operadores y servicios' : 'Operators & services'}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-            {isEs ? 'Explora la red turística de Costa Rica' : 'Explore Costa Rica’s tourism network'}
+            {isEs ? 'Encuentra opciones con información comprobable' : 'Find options with verifiable information'}
           </h2>
           <p className="text-stone-300 text-sm sm:text-base max-w-2xl mt-2">
             {isEs
-              ? 'Estos perfiles ayudan a descubrir opciones. La asignación del operador, el cupo, las condiciones y cualquier dato que deba estar vigente se verifican durante la solicitud antes de confirmar una reserva.'
-              : 'These profiles help you discover options. Operator assignment, availability, conditions and any information that must be current are checked during the request before a booking is confirmed.'}
+              ? 'Solo publicamos perfiles de operadores cuando su identidad y contacto han sido verificados. Antes de confirmar, se debe verificar disponibilidad real, proveedor asignado y condiciones aplicables.'
+              : 'We publish operator profiles only after their identity and contact details are verified. Before confirming, real availability, the assigned provider and applicable terms must be checked.'}
           </p>
         </div>
 
@@ -39,8 +40,8 @@ export const OperatorsSection: React.FC<OperatorsSectionProps> = ({ language, on
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {OPERATORS.map((op: OperatorProfile, idx) => (
+      {verifiedOperators.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {verifiedOperators.map((op: OperatorProfile, idx) => (
           <motion.div
             key={op.id}
             initial={{ opacity: 0, y: 20 }}
@@ -120,7 +121,22 @@ export const OperatorsSection: React.FC<OperatorsSectionProps> = ({ language, on
             </div>
           </motion.div>
         ))}
-      </div>
+      </div> : <div className="rounded-3xl border border-amber-400/25 bg-[#041910] p-6 sm:p-8">
+        <p className="max-w-3xl text-sm leading-relaxed text-stone-200">
+          {isEs
+            ? 'Aún no hay perfiles de operador publicados con verificación completa. Puedes consultar por zona y te indicaremos qué opciones se logren confirmar; no mostraremos contactos de ejemplo como proveedores reales.'
+            : 'There are no operator profiles published with completed verification yet. Ask about an area and we will share options that can be confirmed; sample contacts will not be presented as real providers.'}
+        </p>
+        <a
+          href={`https://wa.me/50687959148?text=${encodeURIComponent(isEs ? 'Hola, quiero consultar operadores y experiencias verificables para mi viaje a Costa Rica.' : 'Hello, I would like to ask about verifiable operators and experiences for my trip to Costa Rica.')}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-black text-stone-950 hover:bg-[#20ba59]"
+        >
+          <MessageCircle className="h-4 w-4" />
+          {isEs ? 'Consultar opciones por WhatsApp' : 'Ask about options on WhatsApp'}
+        </a>
+      </div>}
     </section>
   );
 };

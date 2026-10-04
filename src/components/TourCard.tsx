@@ -3,7 +3,8 @@ import { Tour, Language, Currency } from '../types';
 import { getLangText, formatCurrency, UI_TRANSLATIONS } from '../utils/i18n';
 
 import { LazyImage } from './LazyImage';
-import { Star, Clock, MapPin, Leaf, Shield, ArrowRight, ExternalLink, X, Compass, Navigation, Heart, Scale, Check } from 'lucide-react';
+import { Star, Clock, MapPin, Shield, ArrowRight, ExternalLink, X, Compass, Navigation, Heart, Scale, Check } from 'lucide-react';
+import { isBookableTour } from '../utils/tourListing';
 
 interface TourCardProps {
   tour: Tour;
@@ -51,6 +52,8 @@ export const TourCard: React.FC<TourCardProps> = ({
 
   // Convert USD to selected currency
   const formattedPrice = formatCurrency(tour.priceUSD, currency);
+  const isBookable = isBookableTour(tour);
+  const hasVerifiedRating = isBookable && tour.reviewsVerified === true && tour.reviewsCount > 0;
 
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${tour.location.lat},${tour.location.lng}`;
   const embedMapsUrl = `https://maps.google.com/maps?q=${tour.location.lat},${tour.location.lng}&z=12&output=embed`;
@@ -78,7 +81,12 @@ export const TourCard: React.FC<TourCardProps> = ({
           {/* Top Row: Clean Highlight Badge & Action Buttons */}
           <div className="absolute top-0 left-0 w-full p-3.5 flex items-center justify-between z-10">
             <div>
-              {tour.bestseller ? (
+              {!isBookable ? (
+                <span className="inline-flex items-center gap-1.5 bg-stone-950/90 text-amber-200 text-xs font-bold px-3 py-1 rounded-full border border-amber-400/40 backdrop-blur-md shadow-md">
+                  <Compass className="w-3.5 h-3.5" />
+                  <span>{language === 'es' ? 'Experiencia para consultar' : 'Experience to inquire about'}</span>
+                </span>
+              ) : tour.bestseller ? (
                 <span className="inline-flex items-center gap-1.5 bg-amber-400 text-stone-950 text-xs font-black px-3 py-1 rounded-full shadow-md">
                   <span>🔥</span>
                   <span>{language === 'es' ? 'Más Popular' : 'Top Choice'}</span>
@@ -88,12 +96,7 @@ export const TourCard: React.FC<TourCardProps> = ({
                   <Check className="w-3.5 h-3.5 text-emerald-400" />
                   <span>{language === 'es' ? 'Cancelación Gratis' : 'Free Cancel'}</span>
                 </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 bg-emerald-950/90 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full border border-emerald-400/40 backdrop-blur-md shadow-md">
-                  <Leaf className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{language === 'es' ? 'Sostenible CST' : 'CST Certified'}</span>
-                </span>
-              )}
+              ) : null}
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -138,11 +141,13 @@ export const TourCard: React.FC<TourCardProps> = ({
 
           {/* Bottom of Photo: Rating & Duration Chips */}
           <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs font-bold text-white z-10 pointer-events-none">
-            <div className="inline-flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/15">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-              <span className="font-extrabold text-white">{tour.rating}</span>
-              <span className="text-stone-300 font-normal">({tour.reviewsCount})</span>
-            </div>
+            {hasVerifiedRating && (
+              <div className="inline-flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/15">
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <span className="font-extrabold text-white">{tour.rating}</span>
+                <span className="text-stone-300 font-normal">({tour.reviewsCount})</span>
+              </div>
+            )}
 
             <div className="inline-flex items-center gap-1 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/15 text-stone-200">
               <Clock className="w-3.5 h-3.5 text-amber-400" />
@@ -182,15 +187,17 @@ export const TourCard: React.FC<TourCardProps> = ({
           {/* Footer: Clear Price & Primary Action */}
           <div className="flex items-center justify-between pt-4 mt-4 border-t border-emerald-500/20">
             <div className="space-y-0.5">
-              <span className="text-xs text-stone-400 font-medium block">
-                {language === 'es' ? 'Precio por persona' : 'Price per person'}
-              </span>
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-black text-amber-400 tracking-tight">
-                  {formattedPrice}
+                <span className={`${isBookable ? 'text-2xl' : 'text-sm'} font-black text-amber-400 tracking-tight`}>
+                  {isBookable ? formattedPrice : (language === 'es' ? 'Tarifa por confirmar' : 'Price to be confirmed')}
                 </span>
-                <span className="text-xs font-bold text-stone-300">{currency}</span>
+                {isBookable && <span className="text-xs font-bold text-stone-300">{currency}</span>}
               </div>
+              <span className="text-[10px] text-stone-400 font-medium block">
+                {isBookable
+                  ? (language === 'es' ? 'Por persona · confirma el total antes del pago' : 'Per person · confirm the total before payment')
+                  : (language === 'es' ? 'Operador y cupo no vinculados aún' : 'Provider and inventory not linked yet')}
+              </span>
             </div>
 
             <button 
