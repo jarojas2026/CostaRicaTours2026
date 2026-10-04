@@ -47,15 +47,15 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
                   Costa Rica <span className="text-orange-400">Tours</span>
                 </span>
                 <span className="text-[10px] font-black uppercase tracking-widest text-teal-400">
-                  {isEs ? 'Tours Oficiales & Aventura' : 'Official Tours & Adventure'}
+                  {isEs ? 'Experiencias & Aventura' : 'Experiences & Adventure'}
                 </span>
               </div>
             </div>
             
             <p className="text-xs leading-relaxed text-stone-400">
               {isEs 
-                ? 'Plataforma líder en experiencias ecoturísticas sostenibles en Costa Rica. Conectamos viajeros con los mejores operadores locales certificados.' 
-                : 'Leading platform for sustainable ecotourism experiences in Costa Rica. We connect travelers with the best certified local operators.'}
+                ? 'Descubre experiencias y solicita una cotización. Proveedor, precio, disponibilidad, credenciales y condiciones se verifican antes de reservar.' 
+                : 'Discover experiences and request a quote. Provider, price, availability, credentials and terms are verified before booking.'}
             </p>
 
             <div className="flex flex-col gap-3">
