@@ -50,7 +50,11 @@ export type TourRegion =
   | 'cartago'
   | 'turrialba'
   | 'corcovado'
-  | 'golfo_dulce';
+  | 'golfo_dulce'
+  | 'central_pacific'
+  | 'sarapiqui'
+  | 'los_santos'
+  | 'golfito';
 
 export interface Tour {
   id: string;
@@ -69,6 +73,7 @@ export interface Tour {
   difficultyLabel: Localized<string>;
   rating: number;
   reviewsCount: number;
+  reviewsVerified?: boolean;
   featured?: boolean;
   bestseller?: boolean;
   ecoCert: boolean;
@@ -80,6 +85,8 @@ export interface Tour {
   providerId?: string;
   operatorName?: string;
   operatorLogo?: string;
+  /** Bookable listings require an onboarded provider and a verified price/booking path. */
+  catalogStatus?: 'discovery' | 'inquiry' | 'bookable';
   // Indicador explícito si el dato o precio es una demostración no confirmada
   isDemoData?: boolean;
   freeCancellation?: boolean;

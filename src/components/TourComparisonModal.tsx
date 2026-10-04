@@ -3,6 +3,7 @@ import { Tour, Language, Currency } from '../types';
 import { getLangText } from '../utils/i18n';
 import { getUsdToCrcRate, formatCrc } from '../utils/currencies';
 import { X, Scale, Star, Leaf, Clock, MapPin, Check, ExternalLink, ArrowRight } from 'lucide-react';
+import { isBookableTour } from '../utils/tourListing';
 
 interface TourComparisonModalProps {
   comparedTours: Tour[];
@@ -85,9 +86,11 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
               {comparedTours.map((tour) => {
                 const titleText = getLangText(tour.title, language);
                 const crcFormatted = formatCrc(tour.priceUSD);
-                const priceFormatted = currency === 'CRC' && crcFormatted
+                const priceFormatted = isBookableTour(tour) && currency === 'CRC' && crcFormatted
                   ? crcFormatted
-                  : `$${tour.priceUSD}`;
+                  : isBookableTour(tour)
+                    ? `$${tour.priceUSD}`
+                    : (language === 'es' ? 'Consultar tarifa' : 'Ask for price');
 
                 return (
                   <div key={tour.id} className="bg-stone-50 p-4 rounded-2xl border border-black/10 flex flex-col justify-between space-y-3 relative group">
@@ -143,7 +146,9 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
                 const crcFormatted = formatCrc(tour.priceUSD);
                 return (
                   <div key={tour.id} className="font-black text-white text-sm">
-                    {currency === 'CRC' && crcFormatted ? crcFormatted : `$${tour.priceUSD}`}
+                    {isBookableTour(tour)
+                      ? (currency === 'CRC' && crcFormatted ? crcFormatted : `$${tour.priceUSD}`)
+                      : (language === 'es' ? 'Por confirmar' : 'To be confirmed')}
                   </div>
                 );
               })}
@@ -173,9 +178,11 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
               </div>
               {comparedTours.map((tour) => (
                 <div key={tour.id} className="flex items-center gap-1 text-[#FFD700] font-black">
-                  <Star className="w-4 h-4 fill-[#FFD700]" />
-                  <span>{tour.rating}</span>
-                  <span className="text-[10px] text-gray-300 font-normal">({tour.reviewsCount} reseñas)</span>
+                  {isBookableTour(tour) && tour.reviewsVerified === true && tour.reviewsCount > 0 ? <>
+                    <Star className="w-4 h-4 fill-[#FFD700]" />
+                    <span>{tour.rating}</span>
+                    <span className="text-[10px] text-gray-300 font-normal">({tour.reviewsCount} {language === 'es' ? 'reseñas' : 'reviews'})</span>
+                  </> : <span className="text-[11px] text-gray-300 font-normal">{language === 'es' ? 'Sin reseñas verificadas' : 'No verified reviews'}</span>}
                 </div>
               ))}
             </div>
@@ -207,7 +214,7 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
               </div>
               {comparedTours.map((tour) => (
                 <div key={tour.id} className="text-[11px] text-gray-300 leading-relaxed">
-                  {tour.pickupHotels.length} hoteles en la zona ({tour.pickupHotels.slice(0, 2).join(', ')}...)
+                  {language === 'es' ? 'Coordinar punto de encuentro con el operador' : 'Coordinate the meeting point with the provider'}
                 </div>
               ))}
             </div>

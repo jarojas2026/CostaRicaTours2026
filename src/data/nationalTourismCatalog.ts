@@ -84,10 +84,10 @@ export const NATIONAL_TOURISM_REGIONS = [
 export const MARKETPLACE_CATALOG_POLICY = {
   scope: "national",
   model: "open_catalog",
-  curatedSeed: "100+ experiences and services, expandable without a hard product ceiling",
+  curatedSeed: "Reference experience records; they are not bookable offers until a provider and current price are verified",
   providerDrivenExpansion: true,
-  liveAvailabilityRequiredBeforeBooking: true,
   providerVerificationRequiredBeforeSale: true,
+  liveAvailabilityRequiredBeforeBooking: true,
   supportsCustomProducts: true,
   supportsPackagesAndBundles: true,
   supportsPrivateAndGroupProducts: true,

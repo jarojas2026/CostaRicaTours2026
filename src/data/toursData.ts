@@ -10,8 +10,8 @@ export const CATEGORIES: CategoryInfo[] = [
     name: { es: 'Volcanes y Termales', en: 'Volcanoes & Hot Springs', fr: 'Volcans & Sources Chaudes', de: 'Vulkane & Heiße Quellen', zh: '火山与温泉' },
     iconName: 'Flame',
     description: {
-      es: 'Explora coladas de lava del Volcán Arenal y relájate en aguas termales minerales naturales.',
-      en: 'Explore lava flows at Arenal Volcano and unwind in natural mineral hot springs.'
+      es: 'Explora senderos volcánicos, paisajes y termales de distintas regiones; verifica accesos y condiciones antes del viaje.',
+      en: 'Explore volcanic trails, landscapes and hot springs across regions; check access and conditions before traveling.'
     }
   },
   {
@@ -19,8 +19,8 @@ export const CATEGORIES: CategoryInfo[] = [
     name: { es: 'Aventura y Canopy', en: 'Adventure & Zipline', fr: 'Aventure & Tyrolienne', de: 'Abenteuer & Zipline', zh: '探险与滑索' },
     iconName: 'Zap',
     description: {
-      es: 'Siente la adrenalina volando sobre las copas de los árboles en el bosque nuboso.',
-      en: 'Feel the rush flying over rainforest tree canopies in misty cloud forests.'
+      es: 'Encuentra actividades de aventura como canopy y puentes; altura, duración, requisitos y operación dependen del proveedor.',
+      en: 'Find adventure activities such as ziplining and hanging bridges; height, duration, requirements and operation depend on the provider.'
     }
   },
   {
@@ -28,8 +28,8 @@ export const CATEGORIES: CategoryInfo[] = [
     name: { es: 'Naturaleza y Fauna', en: 'Nature & Wildlife', fr: 'Nature & Faune', de: 'Natur & Wildtiere', zh: '自然与野生动物' },
     iconName: 'Trees',
     description: {
-      es: 'Observa perezosos, monos capuchinos, tucanes y ranas de ojos rojos con guías experimentados.',
-      en: 'Spot sloths, capuchin monkeys, toucans, and red-eyed tree frogs with certified naturalists.'
+      es: 'Explora áreas naturales y opciones de observación de fauna. Los avistamientos y las credenciales del guía se confirman por separado.',
+      en: 'Explore natural areas and wildlife-watching options. Sightings and guide credentials must be confirmed separately.'
     }
   },
   {
@@ -37,8 +37,8 @@ export const CATEGORIES: CategoryInfo[] = [
     name: { es: 'Playas y Sol', en: 'Beaches & Sun', fr: 'Plages & Soleil', de: 'Strände & Sonne', zh: '海滩与阳光' },
     iconName: 'Sun',
     description: {
-      es: 'Playas de arena blanca, snorkel y atardeceres de película en el Pacífico.',
-      en: 'Pristine white sand beaches, snorkeling, and sunset catamaran cruises on the Pacific.'
+      es: 'Descubre playas y actividades costeras; el acceso, el oleaje y las salidas al mar dependen del sitio y las condiciones.',
+      en: 'Discover beaches and coastal activities; access, surf and marine departures depend on the location and conditions.'
     }
   },
   {
@@ -46,8 +46,8 @@ export const CATEGORIES: CategoryInfo[] = [
     name: { es: 'Rafting y Ríos', en: 'Whitewater Rafting', fr: 'Rafting en Rivière', de: 'Wildwasser-Rafting', zh: '漂流探险' },
     iconName: 'Waves',
     description: {
-      es: 'Desciende los cañones vírgenes del Río Pacuare, votado uno de los más bellos del mundo.',
-      en: 'Navigate pristine jungle canyons on the Pacuare River, rated top 5 in the world.'
+      es: 'Compara opciones de rafting y río. Nivel, temporada, caudal, transporte y requisitos deben confirmarse con el operador.',
+      en: 'Compare rafting and river options. Difficulty, season, water level, transport and requirements must be confirmed with the provider.'
     }
   },
   {
@@ -55,8 +55,8 @@ export const CATEGORIES: CategoryInfo[] = [
     name: { es: 'Cultura y Café', en: 'Culture & Coffee', fr: 'Culture & Café', de: 'Kultur & Kaffee', zh: '文化与咖啡' },
     iconName: 'Coffee',
     description: {
-      es: 'Aprende el proceso del café costarricense "El Grano de Oro" y chocolate artesanal de cacao puro.',
-      en: 'Discover Costa Rica’s famous coffee roasting and traditional cacao chocolate making.'
+      es: 'Conoce experiencias culturales y gastronómicas de café, cacao y cocina local; cada visita requiere confirmar finca, horario e idioma.',
+      en: 'Explore coffee, cacao and local-food experiences; confirm the farm, schedule and language for each visit.'
     }
   },
   {
@@ -103,6 +103,24 @@ export const CATEGORIES: CategoryInfo[] = [
       es: 'Vive el espectáculo natural del avistamiento de ballenas jorobadas en el Parque Marino Ballena.',
       en: 'Experience the natural spectacle of humpback whale watching in Marino Ballena Park.'
     }
+  },
+  {
+    id: 'combos',
+    name: { es: 'Combos y experiencias de día completo', en: 'Combos & Full-Day Experiences' },
+    iconName: 'Route',
+    description: {
+      es: 'Combina atractivos cercanos en una ruta; confirma traslados, entradas, ritmo y disponibilidad antes de reservar.',
+      en: 'Combine nearby attractions into one route; confirm transfers, admissions, pace and availability before booking.'
+    }
+  },
+  {
+    id: 'multiday',
+    name: { es: 'Viajes de varios días', en: 'Multi-Day Journeys' },
+    iconName: 'CalendarDays',
+    description: {
+      es: 'Rutas con varias noches y traslados entre regiones que deben validarse según fechas y logística.',
+      en: 'Multi-night routes and inter-region transfers that must be checked against dates and logistics.'
+    }
   }
 ];
 
@@ -121,7 +139,7 @@ export const OPERATORS: OperatorProfile[] = [
     rating: 4.9,
     reviewsCount: 150,
     yearsExperience: 12,
-    verifiedBadge: true,
+    verifiedBadge: false,
     commissionRate: 0.20,
     contact: {
       phone: '+506 8888 8888',
@@ -145,7 +163,7 @@ export const OPERATORS: OperatorProfile[] = [
     rating: 4.8,
     reviewsCount: 3200,
     yearsExperience: 25,
-    verifiedBadge: true,
+    verifiedBadge: false,
     commissionRate: 0.20,
     contact: {
       phone: '+506 2222 2222',
@@ -170,7 +188,7 @@ export const REGIONS: RegionInfo[] = [
     id: 'monteverde',
     name: { es: 'Monteverde', en: 'Monteverde' },
     tagline: { es: 'Mágico Bosque Nuboso y Biodiversidad', en: 'Magical Cloud Forest & Biodiversity' },
-    description: { es: 'Un paraíso de neblina, puentes colgantes y el místico quetzal resplandeciente.', en: 'A paradise of mist, hanging bridges, and the mystical resplendent quetzal.' },
+    description: { es: 'Bosque nuboso, senderos y actividades de naturaleza; clima y observación de fauna varían.', en: 'Cloud forest, trails and nature activities; weather and wildlife sightings vary.' },
     image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 33, y: 44 }
   },
@@ -178,7 +196,7 @@ export const REGIONS: RegionInfo[] = [
     id: 'manuel_antonio',
     name: { es: 'Manuel Antonio', en: 'Manuel Antonio' },
     tagline: { es: 'Donde el Bosque Encuentra el Mar', en: 'Where Rainforest Meets Ocean' },
-    description: { es: 'Playas de arena blanca y exuberante selva llena de perezosos y monos.', en: 'White sand beaches and lush rainforest full of sloths and monkeys.' },
+    description: { es: 'Costa y bosque tropical con opciones de senderismo y naturaleza; avistamientos no garantizados.', en: 'Coast and tropical forest with hiking and nature options; wildlife sightings are not guaranteed.' },
     image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 50, y: 68 }
   },
@@ -186,7 +204,7 @@ export const REGIONS: RegionInfo[] = [
     id: 'pacuare',
     name: { es: 'Río Pacuare / Turrialba', en: 'Pacuare River / Turrialba' },
     tagline: { es: 'Los Mejores Rápidos de Costa Rica', en: 'World-Class Whitewater Rafting' },
-    description: { es: 'Uno de los ríos más bellos del mundo para el rafting de aguas bravas.', en: 'One of the most beautiful rivers in the world for whitewater rafting.' },
+    description: { es: 'Rutas de río y rafting sujetas a nivel de agua, temporada, clima y operación local.', en: 'River and rafting trips depend on water levels, season, weather and local operation.' },
     image: 'https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 62, y: 52 }
   },
@@ -194,7 +212,7 @@ export const REGIONS: RegionInfo[] = [
     id: 'guanacaste',
     name: { es: 'Guanacaste / Tamarindo', en: 'Guanacaste / Tamarindo' },
     tagline: { es: 'Sol, Surf y Playas Doradas', en: 'Sunshine, Surf & Golden Beaches' },
-    description: { es: 'Famoso por su clima seco, surf de clase mundial y atardeceres espectaculares.', en: 'Famous for its dry weather, world-class surf, and spectacular sunsets.' },
+    description: { es: 'Región extensa con playas, áreas protegidas y comunidades; clima y condiciones cambian por zona y temporada.', en: 'A large region with beaches, protected areas and communities; weather and conditions vary by area and season.' },
     image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 18, y: 32 }
   },
@@ -210,7 +228,7 @@ export const REGIONS: RegionInfo[] = [
     id: 'osa',
     name: { es: 'Uvita / Marino Ballena / Osa', en: 'Uvita / Marino Ballena / Osa' },
     tagline: { es: 'El Hogar de las Ballenas y Corcovado', en: 'Home of Whales & Corcovado' },
-    description: { es: 'Famoso por el tómbolo en cola de ballena y el Parque Nacional Corcovado, el más biodiverso del mundo.', en: 'Famous for the Whale Tail sandbar and Corcovado National Park, the most biodiverse on Earth.' },
+    description: { es: 'Uvita, Marino Ballena, Osa y Corcovado ofrecen entornos costeros y naturales con accesos y condiciones distintas.', en: 'Uvita, Marino Ballena, Osa and Corcovado offer coastal and natural areas with different access rules and conditions.' },
     image: 'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 58, y: 82 }
   },
@@ -234,9 +252,41 @@ export const REGIONS: RegionInfo[] = [
     id: 'caribe',
     name: { es: 'Caribe Sur / Puerto Viejo', en: 'South Caribbean / Puerto Viejo' },
     tagline: { es: 'Ritmo Afrocaribeño, Arrecifes y Naturaleza', en: 'Afro-Caribbean Vibe, Reefs & Wildlife' },
-    description: { es: 'Playas turquesa, cultura rasta y un ambiente relajado inigualable.', en: 'Turquoise beaches, rasta culture, and an unmatched relaxed vibe.' },
+    description: { es: 'Playas, cultura afrocaribeña y gastronomía local; algunas actividades marinas dependen del estado del mar.', en: 'Beaches, Afro-Caribbean culture and local food; some marine activities depend on sea conditions.' },
     image: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=85',
     coordinates: { x: 82, y: 62 }
+  },
+  {
+    id: 'sarapiqui',
+    name: { es: 'Sarapiquí / Llanuras del Norte', en: 'Sarapiquí / Northern Plains' },
+    tagline: { es: 'Ríos, bosque lluvioso y turismo rural', en: 'Rivers, rainforest & rural tourism' },
+    description: { es: 'Una zona de ríos, áreas naturales, actividades de aventura y comunidades rurales.', en: 'A region of rivers, natural areas, adventure activities and rural communities.' },
+    image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
+    coordinates: { x: 68, y: 30 }
+  },
+  {
+    id: 'central_pacific',
+    name: { es: 'Pacífico Central / Carara', en: 'Central Pacific / Carara' },
+    tagline: { es: 'Bosque de transición y esteros', en: 'Transitional forest & estuaries' },
+    description: { es: 'Carara, Tárcoles y los manglares de la costa central; verifica accesos y condiciones.', en: 'Carara, Tárcoles and central-coast mangroves; check access and conditions.' },
+    image: 'https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85',
+    coordinates: { x: 49, y: 66 }
+  },
+  {
+    id: 'los_santos',
+    name: { es: 'Los Santos / Dota', en: 'Los Santos / Dota' },
+    tagline: { es: 'Montaña, bosque y comunidades rurales', en: 'Mountains, forest & rural communities' },
+    description: { es: 'Senderos de montaña y observación de aves, sujetos al clima y a condiciones locales.', en: 'Mountain trails and birdwatching, subject to weather and local conditions.' },
+    image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
+    coordinates: { x: 54, y: 67 }
+  },
+  {
+    id: 'golfito',
+    name: { es: 'Golfito / Golfo Dulce', en: 'Golfito / Golfo Dulce' },
+    tagline: { es: 'Mar, bosque y comunidades del sur', en: 'Ocean, forest & southern communities' },
+    description: { es: 'Navegación y actividades marinas en el sur; confirma condiciones, permisos y operador.', en: 'Boating and marine activities in the south; confirm conditions, permits and operator.' },
+    image: 'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85',
+    coordinates: { x: 55, y: 88 }
   }
 ];
 
@@ -1550,7 +1600,7 @@ export const TOURS: Tour[] = [
       en: 'Costa Rica’s most spectacular tiered waterfall with giant freshwater swimming pools'
     },
     category: 'wildlife',
-    region: 'manuel_antonio',
+    region: 'osa',
     image: 'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=85',
@@ -1620,7 +1670,7 @@ export const TOURS: Tour[] = [
       en: 'Witness wild humpback whale mothers and calves at the famous Uvita Whale Tail reef'
     },
     category: 'beaches',
-    region: 'manuel_antonio',
+    region: 'osa',
     image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
@@ -2577,7 +2627,7 @@ export const TOURS: Tour[] = [
       en: 'Encounter mother whales & calves at the iconic Whale Tail sandbar formation'
     },
     category: 'wildlife',
-    region: 'manuel_antonio',
+    region: 'osa',
     image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
@@ -2632,7 +2682,7 @@ export const TOURS: Tour[] = [
       en: 'Pristine Pacific waters teeming with sea turtles, reef sharks & giant rays'
     },
     category: 'beaches',
-    region: 'manuel_antonio',
+    region: 'osa',
     image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
@@ -3097,7 +3147,7 @@ export const TOURS: Tour[] = [
       en: 'Caribbean rainforest safari: caimans, toucans, monkeys & aerial tram canopy glide'
     },
     category: 'wildlife',
-    region: 'sjo',
+    region: 'sarapiqui',
     image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',

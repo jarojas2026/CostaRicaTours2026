@@ -4,8 +4,9 @@ import { Tour, TourCategory, TourRegion, Language, Currency } from '../types';
 import { TourCard } from './TourCard';
 import { LazyImage } from './LazyImage';
 import { TourComparisonModal } from './TourComparisonModal';
-import { REGIONS } from '../data/toursData';
+import { CATEGORIES, REGIONS } from '../data/toursData';
 import { formatCurrency, getLangText } from '../utils/i18n';
+import { isBookableTour, normalizeCatalogSearch } from '../utils/tourListing';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Compass, Search, Filter, SlidersHorizontal, Sparkles, LayoutGrid, List, 
@@ -64,6 +65,10 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
 }) => {
   const navigate = useNavigate();
   const tours = propTours || [];
+  const availableRegions = REGIONS.filter((region) => tours.some((tour) => tour.region === region.id));
+  const availableCategories = CATEGORIES.filter((category) => tours.some((tour) => tour.category === category.id));
+  const hasBookableOffers = tours.some(isBookableTour);
+  const hasVerifiedRatings = tours.some((tour) => isBookableTour(tour) && tour.reviewsVerified === true && tour.reviewsCount > 0);
   // Local Catalog State
   const [currentPage, setCurrentPage] = useState(1);
   const [isListening, setIsListening] = useState(false);
@@ -120,11 +125,27 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
   let processedTours = tours.filter(tour => {
     // Search Filter
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const title = getLangText(tour.title, language).toLowerCase();
-      const desc = getLangText(tour.description, language).toLowerCase();
-      const place = tour.location.placeName.toLowerCase();
-      if (!title.includes(q) && !desc.includes(q) && !place.includes(q)) return false;
+      const q = normalizeCatalogSearch(searchQuery);
+      const region = REGIONS.find((item) => item.id === tour.region);
+      const category = CATEGORIES.find((item) => item.id === tour.category);
+      const localizedValues = [tour.title, tour.subtitle, tour.description, tour.highlights, tour.inclusions, region?.name, region?.description, category?.name, category?.description]
+        .flatMap((value) => value ? Object.values(value).flatMap((part) => Array.isArray(part) ? part : [part]) : []);
+      const synonyms = [
+        tour.region === 'sarapiqui' ? 'sarapiqui sarapiquí northern plains llanuras del norte río river bote boat aves birding canopy rafting' : '',
+        tour.region === 'central_pacific' ? 'pacifico central central pacific tarcoles carara damas manglar mangrove kayak' : '',
+        tour.region === 'los_santos' ? 'los santos dota san gerardo quetzal aves birdwatching hiking senderismo' : '',
+        tour.region === 'golfito' || tour.region === 'golfo_dulce' ? 'golfito golfo dulce gulf osa puerto jimenez pavones zancudo whale dolphin pesca fishing' : '',
+        tour.region === 'osa' ? 'osa uvita ballena dominical corcovado caño drake bay golfito whale watching' : '',
+        tour.region === 'caribe' || tour.region === 'caribe_sur' ? 'caribe caribbean puerto viejo cahuita limon afrocaribeño afro caribbean' : '',
+        tour.region === 'sjo' || tour.region === 'san_jose' ? 'san jose san josé valle central central valley cartago poas poás irazu i razu' : '',
+        tour.category === 'wildlife' ? 'fauna animales vida silvestre naturaleza wildlife animal spotting' : '',
+        tour.category === 'beaches' ? 'playa playa costa beach ocean snorkeling surf mar' : '',
+        tour.category === 'culture' ? 'cultura café cafe coffee cacao chocolate community historia heritage' : '',
+        tour.category === 'canopy' ? 'zipline tirolesa canopy aventura adventure' : '',
+        tour.category === 'rafting' ? 'rafting whitewater aguas bravas río river' : ''
+      ];
+      const haystack = normalizeCatalogSearch([...localizedValues, tour.location.placeName, tour.region, tour.category, ...synonyms].join(' '));
+      if (!haystack.includes(q)) return false;
     }
 
     // Category Filter
@@ -137,25 +158,22 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
     if (difficultyFilter !== 'all' && tour.difficulty !== difficultyFilter) return false;
 
     // Price Filter
-    if (tour.priceUSD > maxPrice) return false;
+    if (hasBookableOffers && isBookableTour(tour) && tour.priceUSD > maxPrice) return false;
 
     // Real-Time Duration Filter
     if (maxDurationHours < 14 && tour.durationHours > maxDurationHours) return false;
 
     // Real-Time Rating Filter
-    if (minRating > 0 && tour.rating < minRating) return false;
+    if (hasVerifiedRatings && minRating > 0 && (!isBookableTour(tour) || tour.reviewsVerified !== true || tour.rating < minRating)) return false;
 
     // Bestseller Toggle
-    if (bestsellerOnly && !tour.bestseller) return false;
+    if (hasBookableOffers && bestsellerOnly && (!isBookableTour(tour) || !tour.bestseller)) return false;
 
     // Eco-Friendly Toggle
-    if (ecoFriendlyOnly) {
-        const isEco = ['wildlife', 'canopy', 'rafting'].includes(tour.category) || (tour.description.es && tour.description.es.toLowerCase().includes('reserva'));
-        if (!isEco) return false;
-    }
+    if (ecoFriendlyOnly && !['wildlife', 'canopy', 'rafting', 'hiking', 'waterfalls'].includes(tour.category)) return false;
 
     // Free Cancellation Toggle
-    if (freeCancellationOnly && !tour.freeCancellation) return false;
+    if (hasBookableOffers && freeCancellationOnly && (!isBookableTour(tour) || !tour.freeCancellation)) return false;
 
     // Favorites Only Toggle
     if (favoritesOnly && !favorites.includes(tour.id)) return false;
@@ -165,12 +183,25 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
 
   // Sorting Logic
   processedTours.sort((a, b) => {
-    if (sortBy === 'rating') return b.rating - a.rating;
-    if (sortBy === 'price_asc') return a.priceUSD - b.priceUSD;
-    if (sortBy === 'price_desc') return b.priceUSD - a.priceUSD;
+    if (sortBy === 'rating' && hasVerifiedRatings) {
+      const aRating = isBookableTour(a) && a.reviewsVerified ? a.rating : -1;
+      const bRating = isBookableTour(b) && b.reviewsVerified ? b.rating : -1;
+      return bRating - aRating;
+    }
+    if (sortBy === 'price_asc' || sortBy === 'price_desc') {
+      const aKnown = isBookableTour(a);
+      const bKnown = isBookableTour(b);
+      if (aKnown !== bKnown) return aKnown ? -1 : 1;
+      if (!aKnown) return getLangText(a.title, language).localeCompare(getLangText(b.title, language), language);
+      return sortBy === 'price_asc' ? a.priceUSD - b.priceUSD : b.priceUSD - a.priceUSD;
+    }
     if (sortBy === 'duration') return b.durationHours - a.durationHours;
-    // 'popular' default sort
-    return (b.reviewsCount * b.rating) - (a.reviewsCount * a.rating);
+    if (hasVerifiedRatings) {
+      const aScore = isBookableTour(a) && a.reviewsVerified ? a.reviewsCount * a.rating : -1;
+      const bScore = isBookableTour(b) && b.reviewsVerified ? b.reviewsCount * b.rating : -1;
+      if (aScore !== bScore) return bScore - aScore;
+    }
+    return getLangText(a.title, language).localeCompare(getLangText(b.title, language), language);
   });
 
   // Count active filters
@@ -179,11 +210,12 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
     (selectedRegion !== 'all' ? 1 : 0) +
     (difficultyFilter !== 'all' ? 1 : 0) +
     (searchQuery.trim() ? 1 : 0) +
-    (maxPrice < 200 ? 1 : 0) +
+    (hasBookableOffers && maxPrice < 200 ? 1 : 0) +
     (maxDurationHours < 14 ? 1 : 0) +
-    (minRating > 0 ? 1 : 0) +
-    (bestsellerOnly ? 1 : 0) +
+    (hasVerifiedRatings && minRating > 0 ? 1 : 0) +
+    (hasBookableOffers && bestsellerOnly ? 1 : 0) +
     (ecoFriendlyOnly ? 1 : 0) +
+    (hasBookableOffers && freeCancellationOnly ? 1 : 0) +
     (favoritesOnly ? 1 : 0);
 
   const resetAllFilters = () => {
@@ -257,7 +289,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 aria-label={language === 'es' ? 'Filtrar por región' : 'Filter by region'}
               >
                 <option value="all">📍 {language === 'es' ? 'Todas las Regiones' : 'All Regions'}</option>
-                {REGIONS.map(reg => (
+                {availableRegions.map(reg => (
                   <option key={reg.id} value={reg.id}>
                     📍 {getLangText(reg.name, language).split('/')[0]}
                   </option>
@@ -266,13 +298,13 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               <MapPin className="w-3.5 h-3.5 text-amber-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
-            {/* Real-time Sliders Quick Toggle */}
-            <button
+            {/* Price controls are not shown until verified, provider-backed offers exist. */}
+            {hasBookableOffers && <button
               type="button"
               id="toggle-realtime-sliders-btn"
               onClick={() => setShowLiveSliders(!showLiveSliders)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold transition-all cursor-pointer border ${
-                showLiveSliders || maxPrice < 200 || maxDurationHours < 14 || minRating > 0
+                showLiveSliders || (hasBookableOffers && maxPrice < 200) || maxDurationHours < 14 || (hasVerifiedRatings && minRating > 0)
                   ? 'bg-amber-400 text-stone-950 border-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.35)]'
                   : 'bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-200/90 border-emerald-500/30'
               }`}
@@ -280,10 +312,10 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
             >
               <Zap className={`w-3.5 h-3.5 ${isSliding ? 'animate-bounce text-stone-950' : ''}`} />
               <span>{language === 'es' ? 'Sliders en Vivo' : 'Live Sliders'}</span>
-              {(maxPrice < 200 || maxDurationHours < 14 || minRating > 0) && (
+              {((hasBookableOffers && maxPrice < 200) || maxDurationHours < 14 || (hasVerifiedRatings && minRating > 0)) && (
                 <span className="w-2 h-2 rounded-full bg-emerald-950 animate-pulse"></span>
               )}
-            </button>
+            </button>}
 
             {/* Dedicated Filters Drawer Button */}
             <button
@@ -314,9 +346,9 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 aria-label={language === 'es' ? 'Ordenar tours' : 'Sort tours'}
               >
                 <option value="popular">🔥 {language === 'es' ? 'Populares' : 'Popular'}</option>
-                <option value="rating">⭐ {language === 'es' ? 'Calificación' : 'Top Rated'}</option>
-                <option value="price_asc">💲 {language === 'es' ? 'Precio: Menor' : 'Price: Low'}</option>
-                <option value="price_desc">💎 {language === 'es' ? 'Precio: Mayor' : 'Price: High'}</option>
+                {hasVerifiedRatings && <option value="rating">⭐ {language === 'es' ? 'Calificación verificada' : 'Verified rating'}</option>}
+                {hasBookableOffers && <option value="price_asc">💲 {language === 'es' ? 'Precio: Menor' : 'Price: Low'}</option>}
+                {hasBookableOffers && <option value="price_desc">💎 {language === 'es' ? 'Precio: Mayor' : 'Price: High'}</option>}
                 <option value="duration">⏱️ {language === 'es' ? 'Duración' : 'Duration'}</option>
               </select>
               <ArrowUpDown className="w-3.5 h-3.5 text-amber-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -387,9 +419,9 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
 
                 <div className="flex items-center gap-3 text-xs">
                   <span className="text-emerald-200 font-bold">
-                    {language === 'es' ? `${processedTours.length} de ${tours.length} tours` : `${processedTours.length} of ${tours.length} tours`}
+                    {language === 'es' ? `${processedTours.length} de ${tours.length} experiencias` : `${processedTours.length} of ${tours.length} experiences`}
                   </span>
-                  {(maxPrice < 200 || maxDurationHours < 14 || minRating > 0) && (
+                  {((hasBookableOffers && maxPrice < 200) || maxDurationHours < 14 || (hasVerifiedRatings && minRating > 0)) && (
                     <button
                       type="button"
                       onClick={() => {
@@ -514,91 +546,25 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
           )}
         </AnimatePresence>
 
-        {/* Horizontal Category Carousel (Slim Pills with Smooth Scroll) */}
+        {/* Activity filters are generated from the experiences actually in this catalog. */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar pt-1 border-t border-emerald-500/15">
           <button
             type="button"
             onClick={() => setSelectedCategory('all')}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border shrink-0 ${
-              selectedCategory === 'all'
-                ? 'bg-amber-400 text-stone-950 border-amber-300 font-black shadow-sm'
-                : 'bg-emerald-950/50 text-emerald-200/80 hover:text-white border-emerald-500/20 hover:border-emerald-500/40'
-            }`}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border shrink-0 ${selectedCategory === 'all' ? 'bg-amber-400 text-stone-950 border-amber-300 font-black shadow-sm' : 'bg-emerald-950/50 text-emerald-200/80 hover:text-white border-emerald-500/20 hover:border-emerald-500/40'}`}
           >
-            ✨ {language === 'es' ? 'Todos' : 'All'}
+            ✨ {language === 'es' ? 'Todas las actividades' : 'All activities'}
           </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedCategory('combos')}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border shrink-0 ${
-              selectedCategory === 'combos'
-                ? 'bg-amber-400 text-stone-950 border-amber-300 font-black shadow-sm'
-                : 'bg-emerald-950/50 text-emerald-200/80 hover:text-white border-emerald-500/20 hover:border-emerald-500/40'
-            }`}
-          >
-            🚀 {language === 'es' ? 'Combos 3-en-1' : '3-in-1 Combos'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedCategory('volcanoes')}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border shrink-0 ${
-              selectedCategory === 'volcanoes'
-                ? 'bg-amber-400 text-stone-950 border-amber-300 font-black shadow-sm'
-                : 'bg-emerald-950/50 text-emerald-200/80 hover:text-white border-emerald-500/20 hover:border-emerald-500/40'
-            }`}
-          >
-            🌋 {language === 'es' ? 'Volcanes y Termales' : 'Volcanoes'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedCategory('canopy')}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border shrink-0 ${
-              selectedCategory === 'canopy'
-                ? 'bg-amber-400 text-stone-950 border-amber-300 font-black shadow-sm'
-                : 'bg-emerald-950/50 text-emerald-200/80 hover:text-white border-emerald-500/20 hover:border-emerald-500/40'
-            }`}
-          >
-            ⚡ {language === 'es' ? 'Canopy y Tirolesas' : 'Zipline'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedCategory('wildlife')}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border shrink-0 ${
-              selectedCategory === 'wildlife'
-                ? 'bg-amber-400 text-stone-950 border-amber-300 font-black shadow-sm'
-                : 'bg-emerald-950/50 text-emerald-200/80 hover:text-white border-emerald-500/20 hover:border-emerald-500/40'
-            }`}
-          >
-            🦥 {language === 'es' ? 'Perezosos y Fauna' : 'Wildlife'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedCategory('beaches')}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border shrink-0 ${
-              selectedCategory === 'beaches'
-                ? 'bg-amber-400 text-stone-950 border-amber-300 font-black shadow-sm'
-                : 'bg-emerald-950/50 text-emerald-200/80 hover:text-white border-emerald-500/20 hover:border-emerald-500/40'
-            }`}
-          >
-            🏝️ {language === 'es' ? 'Playas y Catamarán' : 'Beaches'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedCategory('rafting')}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border shrink-0 ${
-              selectedCategory === 'rafting'
-                ? 'bg-amber-400 text-stone-950 border-amber-300 font-black shadow-sm'
-                : 'bg-emerald-950/50 text-emerald-200/80 hover:text-white border-emerald-500/20 hover:border-emerald-500/40'
-            }`}
-          >
-            🚣 {language === 'es' ? 'Rafting en Ríos' : 'Rafting'}
-          </button>
+          {availableCategories.map((category) => (
+            <button
+              key={category.id}
+              type="button"
+              onClick={() => setSelectedCategory(category.id)}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border shrink-0 ${selectedCategory === category.id ? 'bg-amber-400 text-stone-950 border-amber-300 font-black shadow-sm' : 'bg-emerald-950/50 text-emerald-200/80 hover:text-white border-emerald-500/20 hover:border-emerald-500/40'}`}
+            >
+              {getLangText(category.name, language)}
+            </button>
+          ))}
         </div>
 
         {/* Active Filters Tag Bar (Compact, only visible when filters are set) */}
@@ -617,7 +583,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
 
             {selectedCategory !== 'all' && (
               <span className="bg-emerald-950/80 text-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1 text-[11px] font-medium">
-                🏷️ {selectedCategory}
+                🏷️ {getLangText(CATEGORIES.find((category) => category.id === selectedCategory)?.name || { es: selectedCategory }, language)}
                 <X className="w-3 h-3 cursor-pointer text-stone-400 hover:text-white ml-0.5" onClick={() => setSelectedCategory('all')} />
               </span>
             )}
@@ -636,7 +602,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               </span>
             )}
 
-            {maxPrice < 200 && (
+            {hasBookableOffers && maxPrice < 200 && (
               <span className="bg-emerald-950/80 text-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1 text-[11px] font-medium">
                 💰 ≤ ${maxPrice}
                 <X className="w-3 h-3 cursor-pointer text-stone-400 hover:text-white ml-0.5" onClick={() => setMaxPrice(200)} />
@@ -650,7 +616,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               </span>
             )}
 
-            {minRating > 0 && (
+            {hasVerifiedRatings && minRating > 0 && (
               <span className="bg-emerald-950/80 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-500/30 flex items-center gap-1 text-[11px] font-medium">
                 ⭐ ≥ {minRating.toFixed(1)}
                 <X className="w-3 h-3 cursor-pointer text-stone-400 hover:text-white ml-0.5" onClick={() => setMinRating(0)} />
@@ -666,7 +632,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
 
             {ecoFriendlyOnly && (
               <span className="bg-emerald-950/80 text-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1 text-[11px] font-medium">
-                🌿 {language === 'es' ? 'Eco-Sostenible' : 'Eco-Friendly'}
+                🌿 {language === 'es' ? 'Actividades de naturaleza' : 'Nature activities'}
                 <X className="w-3 h-3 cursor-pointer text-stone-400 hover:text-white ml-0.5" onClick={() => setEcoFriendlyOnly(false)} />
               </span>
             )}
@@ -731,7 +697,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                       {language === 'es' ? 'Filtros y Preferencias' : 'Filters & Preferences'}
                     </h3>
                     <p className="text-[11px] text-emerald-300/70">
-                      {processedTours.length} {language === 'es' ? 'tours disponibles' : 'tours available'}
+                      {processedTours.length} {language === 'es' ? 'fichas de experiencia' : 'experience listings'}
                     </p>
                   </div>
                 </div>
@@ -750,7 +716,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 text-stone-200 modal-scrollable">
                 
                 {/* Section 1: Maximum Price Range */}
-                <div className="space-y-3 bg-[#07241a]/60 p-4 rounded-2xl border border-emerald-500/20">
+                <div className={`${hasBookableOffers ? '' : 'hidden'} space-y-3 bg-[#07241a]/60 p-4 rounded-2xl border border-emerald-500/20`}>
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
                       <span>💰 {language === 'es' ? 'Presupuesto Máximo' : 'Max Budget'}</span>
@@ -828,7 +794,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 </div>
 
                 {/* Section 1.6: Minimum Rating in Drawer */}
-                <div className="space-y-3 bg-[#07241a]/60 p-4 rounded-2xl border border-emerald-500/20">
+                <div className={`${hasVerifiedRatings ? '' : 'hidden'} space-y-3 bg-[#07241a]/60 p-4 rounded-2xl border border-emerald-500/20`}>
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
                       <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
@@ -897,7 +863,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   <button
                     type="button"
                     onClick={() => setFreeCancellationOnly(!freeCancellationOnly)}
-                    className={`w-full p-3 rounded-xl border flex items-center justify-between text-left transition-all ${
+                    className={`${hasBookableOffers ? '' : 'hidden'} w-full p-3 rounded-xl border flex items-center justify-between text-left transition-all ${
                       freeCancellationOnly
                         ? 'bg-emerald-900 text-white border-emerald-400 shadow-sm'
                         : 'bg-emerald-950/60 text-emerald-100/80 border-emerald-500/20 hover:border-emerald-500/40'
@@ -914,7 +880,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                           {language === 'es' ? 'Cancelación Gratis' : 'Free Cancellation'}
                         </div>
                         <div className="text-[10px] text-emerald-300/70">
-                          {language === 'es' ? '100% reembolso hasta 72h antes' : '100% refund up to 72h before'}
+                          {language === 'es' ? 'Condiciones publicadas por el proveedor' : 'Cancellation terms published by provider'}
                         </div>
                       </div>
                     </div>
@@ -941,10 +907,10 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                       </div>
                       <div>
                         <div className="text-xs font-bold text-white">
-                          {language === 'es' ? 'Certificación CST / Eco-Friendly' : 'CST Eco-Certified'}
+                          {language === 'es' ? 'Actividades de naturaleza' : 'Nature activities'}
                         </div>
                         <div className="text-[10px] text-emerald-300/70">
-                          {language === 'es' ? 'Operadores con sostenibilidad ambiental' : 'Environmentally certified tour operators'}
+                          {language === 'es' ? 'Filtro por actividad; no acredita una certificación' : 'Activity filter; not proof of certification'}
                         </div>
                       </div>
                     </div>
@@ -957,7 +923,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   <button
                     type="button"
                     onClick={() => setBestsellerOnly(!bestsellerOnly)}
-                    className={`w-full p-3 rounded-xl border flex items-center justify-between text-left transition-all ${
+                    className={`${hasBookableOffers ? '' : 'hidden'} w-full p-3 rounded-xl border flex items-center justify-between text-left transition-all ${
                       bestsellerOnly
                         ? 'bg-orange-950/80 text-white border-orange-400 shadow-sm'
                         : 'bg-emerald-950/60 text-emerald-100/80 border-emerald-500/20 hover:border-emerald-500/40'
@@ -974,7 +940,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                           {language === 'es' ? 'Solo Bestsellers' : 'Bestsellers Only'}
                         </div>
                         <div className="text-[10px] text-orange-300/70">
-                          {language === 'es' ? 'Las experiencias más valoradas por viajeros' : 'Most popular & highest reviewed experiences'}
+                          {language === 'es' ? 'Sólo datos de popularidad verificados' : 'Verified popularity data only'}
                         </div>
                       </div>
                     </div>
@@ -1038,7 +1004,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                     >
                       📍 {language === 'es' ? 'Todas las Regiones' : 'All Regions'}
                     </button>
-                    {REGIONS.map((reg) => (
+                    {availableRegions.map((reg) => (
                       <button
                         key={reg.id}
                         type="button"
@@ -1075,7 +1041,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   onClick={() => setIsFiltersDrawerOpen(false)}
                   className="flex-1 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer"
                 >
-                  {language === 'es' ? `Ver ${processedTours.length} Tours` : `Show ${processedTours.length} Tours`}
+                  {language === 'es' ? `Ver ${processedTours.length} experiencias` : `Show ${processedTours.length} experiences`}
                 </button>
               </div>
 
@@ -1095,7 +1061,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
 
         <div className="flex items-center gap-3">
           <span className="bg-emerald-950 text-amber-400 border border-emerald-500/30 px-3.5 py-1 rounded-full text-xs font-bold">
-            {processedTours.length} {language === 'es' ? 'tours listados' : 'tours listed'}
+            {processedTours.length} {language === 'es' ? 'experiencias en el catálogo' : 'catalog experiences'}
           </span>
         </div>
       </div>

@@ -11,6 +11,7 @@ import { getLangText } from '../utils/i18n';
 import { getUsdToCrcRate } from '../utils/currencies';
 import { OPERATORS } from '../data/toursData';
 import { LazyImage } from './LazyImage';
+import { isBookableTour } from '../utils/tourListing';
 
 interface TourDetailModalProps {
   tour: Tour | null;
@@ -71,6 +72,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     : [tour.image || 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85'];
 
   const operator = tour.operatorId ? OPERATORS.find(op => op.id === tour.operatorId) : null;
+  const isBookable = isBookableTour(tour);
+  const hasVerifiedRating = isBookable && tour.reviewsVerified === true && tour.reviewsCount > 0;
   const modalTitle = getLangText(tour.title, language, 'Tour de Costa Rica');
   const modalDescription = getLangText(tour.description, language, '');
 
@@ -383,15 +386,11 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                   <Clock className="w-3.5 h-3.5 text-amber-400" />
                   <span className="text-stone-200 font-bold">{tour.duration || getLangText(tour.durationLabel, language)}</span>
                 </div>
-                <div className="px-3.5 py-1.5 bg-[#03150e] rounded-full border border-emerald-500/30 flex items-center gap-2 text-xs">
+                {hasVerifiedRating && <div className="px-3.5 py-1.5 bg-[#03150e] rounded-full border border-emerald-500/30 flex items-center gap-2 text-xs">
                   <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                   <span className="text-white font-bold">{tour.rating}</span>
-                  <span className="text-stone-400">({tour.reviewsCount || 120}+ reviews)</span>
-                </div>
-                <div className="px-3.5 py-1.5 bg-[#03150e] rounded-full border border-emerald-500/30 flex items-center gap-2 text-xs">
-                  <Users className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-stone-200 font-bold">{language === 'es' ? 'Grupos Pequeños' : 'Small Groups'}</span>
-                </div>
+                  <span className="text-stone-400">({tour.reviewsCount} {language === 'es' ? 'reseñas verificadas' : 'verified reviews'})</span>
+                </div>}
               </div>
 
               <div className="space-y-2">
@@ -437,7 +436,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                 </div>
               )}
 
-              {operator && (
+              {operator?.verifiedBadge && isBookable && (
                 <div className="p-4 bg-[#03150e] border border-emerald-500/20 rounded-2xl flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
                     <ShieldCheck className="w-5 h-5 text-emerald-400" />
@@ -454,6 +453,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
             </div>
 
             <div className="lg:col-span-5 p-6 sm:p-8 bg-[#041910] space-y-5">
+              {isBookable ? <>
               <div className="p-4 bg-[#03150e] rounded-2xl border border-emerald-500/30">
                 <div className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-1">
                   {language === 'es' ? 'Tarifa Total Estimada' : 'Estimated Total Fare'}
@@ -692,6 +692,25 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                   </span>
                 </div>
               </form>
+              </> : (
+                <div className="rounded-2xl border border-amber-400/30 bg-amber-950/20 p-5">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-amber-300">
+                    {language === 'es' ? 'Ficha de exploración · no reservable todavía' : 'Discovery listing · not bookable yet'}
+                  </div>
+                  <h3 className="mt-2 text-xl font-black text-white">
+                    {language === 'es' ? 'Confirma primero quién opera esta experiencia' : 'First confirm who operates this experience'}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-stone-300">
+                    {language === 'es'
+                      ? 'Esta ficha es una referencia para explorar Costa Rica. El operador, la tarifa actual y los cupos no están conectados a inventario verificado, así que no acepta reservas ni pagos desde aquí.'
+                      : 'This listing is a reference for exploring Costa Rica. The operator, current price and availability are not connected to verified inventory, so booking and payment are not enabled here.'}
+                  </p>
+                  <a href={whatsappInquiryUrl} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-black text-stone-950 hover:bg-[#20ba59]">
+                    <MessageCircle className="w-4 h-4" />
+                    {language === 'es' ? 'Preguntar por opciones verificables' : 'Ask for verifiable options'}
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </div>

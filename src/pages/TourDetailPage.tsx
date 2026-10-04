@@ -13,6 +13,7 @@ import { useTours } from '../contexts/ToursContext';
 import { getUsdToCrcRate } from '../utils/currencies';
 import { LazyImage } from '../components/LazyImage';
 import { useTourMedia } from '../hooks/useTourMedia';
+import { isBookableTour } from '../utils/tourListing';
 
 interface TourDetailPageProps {
   language: Language;
@@ -84,6 +85,10 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
   const bookingTime = tour.departureTimes?.[0] || '08:00 AM';
   const passengers = adults + children;
   const requestLocked = Boolean(pendingBookingId);
+  const isBookable = isBookableTour(tour);
+  const whatsappInquiryUrl = `https://wa.me/50687959148?text=${encodeURIComponent(language === 'es'
+    ? `Hola, quiero consultar opciones verificables para ${getLangText(tour.title, language)}. Fecha tentativa: ${selectedDate || 'por definir'}. Grupo: ${passengers} personas.`
+    : `Hello, I would like to ask about verifiable options for ${getLangText(tour.title, language)}. Tentative date: ${selectedDate || 'to be decided'}. Group: ${passengers} people.`)}`;
 
   const checkAvailability = async () => {
     if (!selectedDate) {
@@ -439,17 +444,25 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
             <div className="sticky top-24 space-y-6">
               <div className="p-8 bg-stone-900 rounded-[2.5rem] border border-emerald-500/20 shadow-2xl shadow-emerald-500/10">
                 <div className="mb-8">
-                  <div className="text-stone-500 text-xs font-black uppercase tracking-widest mb-2">{language === 'es' ? 'Precio de catálogo' : 'Catalog price'}</div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl sm:text-5xl font-black text-emerald-400">{formatCurrency(totalUSD, currency)}</span>
-                    <span className="text-stone-400 text-xs font-bold uppercase">{currency} / total</span>
-                  </div>
-                  <p className="mt-2 text-[11px] leading-relaxed text-stone-500">
-                    {language === 'es' ? 'Primero validamos capacidad y enviamos la solicitud al proveedor. El pago se habilita únicamente cuando exista evidencia de disponibilidad.' : 'We first validate capacity and send the request to the provider. Payment is enabled only after provider availability evidence exists.'}
-                  </p>
+                  {isBookable ? <>
+                    <div className="text-stone-500 text-xs font-black uppercase tracking-widest mb-2">{language === 'es' ? 'Precio de catálogo · por confirmar' : 'Catalog price · confirm before booking'}</div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-4xl sm:text-5xl font-black text-emerald-400">{formatCurrency(totalUSD, currency)}</span>
+                      <span className="text-stone-400 text-xs font-bold uppercase">{currency} / total</span>
+                    </div>
+                    <p className="mt-2 text-[11px] leading-relaxed text-stone-500">
+                      {language === 'es' ? 'El proveedor debe confirmar disponibilidad y precio final antes de habilitar el pago.' : 'The provider must confirm availability and the final price before payment is enabled.'}
+                    </p>
+                  </> : <>
+                    <div className="text-stone-500 text-xs font-black uppercase tracking-widest mb-2">{language === 'es' ? 'Tarifa no verificada' : 'Unverified price'}</div>
+                    <div className="text-2xl font-black text-amber-300">{language === 'es' ? 'Consultar precio' : 'Ask for current price'}</div>
+                    <p className="mt-2 text-[11px] leading-relaxed text-stone-400">
+                      {language === 'es' ? 'Esta ficha aún no tiene proveedor, tarifa ni cupos vinculados. No admite reserva ni pago en línea.' : 'This listing has no linked provider, price or inventory yet. Online booking and payment are not available.'}
+                    </p>
+                  </>}
                 </div>
 
-                {operator && (
+                {operator?.verifiedBadge && isBookable && (
                   <div className="mb-6 p-4 bg-stone-950/70 rounded-2xl border border-emerald-500/20 space-y-1">
                     <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">
                       {language === 'es' ? 'Operador asociado en catálogo' : 'Catalog operator reference'}
@@ -459,13 +472,13 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                   </div>
                 )}
 
-                <div className="grid grid-cols-3 gap-2 mb-5 text-[9px] font-black uppercase tracking-wide text-center">
+                {isBookable && <div className="grid grid-cols-3 gap-2 mb-5 text-[9px] font-black uppercase tracking-wide text-center">
                   <div className={`rounded-xl border px-2 py-2 ${pendingBookingId ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' : 'border-white/10 text-stone-500'}`}>{language === 'es' ? 'Solicitud' : 'Request'}</div>
                   <div className={`rounded-xl border px-2 py-2 ${providerCheckState === 'confirmed' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' : providerCheckState === 'checking' || providerCheckState === 'pending' ? 'border-amber-500/40 bg-amber-500/10 text-amber-300' : 'border-white/10 text-stone-500'}`}>{language === 'es' ? 'Proveedor' : 'Provider'}</div>
                   <div className={`rounded-xl border px-2 py-2 ${providerCheckState === 'confirmed' ? 'border-amber-500/40 bg-amber-500/10 text-amber-300' : 'border-white/10 text-stone-500'}`}>{language === 'es' ? 'Pago' : 'Payment'}</div>
-                </div>
+                </div>}
 
-                <form onSubmit={handleSubmit} className="space-y-5">
+                {isBookable ? <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] ml-4">{language === 'es' ? 'Fecha de viaje' : 'Travel date'}</label>
                     <input required disabled={requestLocked} type="text" inputMode="numeric" autoComplete="bday" maxLength={10} placeholder="DD/MM/AAAA" aria-describedby="travel-date-help" className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors disabled:opacity-60" value={dateInput} onChange={e => {
@@ -562,7 +575,19 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                     <div className="flex flex-col items-center gap-1"><ShieldCheck size={16} className="text-emerald-500/60" /><span className="text-[8px] font-black text-stone-600 uppercase tracking-widest">{language === 'es' ? 'Proveedor' : 'Provider'}</span></div>
                     <div className="flex flex-col items-center gap-1"><Smartphone size={16} className="text-emerald-500/60" /><span className="text-[8px] font-black text-stone-600 uppercase tracking-widest">{language === 'es' ? 'Pago después' : 'Payment after'}</span></div>
                   </div>
-                </form>
+                </form> : (
+                  <div className="space-y-4 rounded-2xl border border-amber-500/25 bg-amber-950/20 p-4">
+                    <p className="text-sm leading-relaxed text-stone-200">
+                      {language === 'es'
+                        ? 'Podemos usar esta ficha como punto de partida, pero primero hay que confirmar un operador real, la tarifa vigente, los permisos de acceso y los cupos de tu fecha.'
+                        : 'Use this listing as a starting point; first we need to confirm a real operator, current price, access requirements and availability for your date.'}
+                    </p>
+                    <a href={whatsappInquiryUrl} target="_blank" rel="noopener noreferrer" className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 font-black text-stone-950 hover:bg-[#20ba59]">
+                      <MessageCircle className="w-4 h-4" />
+                      {language === 'es' ? 'Pedir opciones verificables por WhatsApp' : 'Ask for verified options on WhatsApp'}
+                    </a>
+                  </div>
+                )}
               </div>
 
               <div className="p-8 bg-stone-950 border border-white/5 rounded-[2.5rem] space-y-4">
@@ -574,7 +599,7 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                   </div>
                 </div>
                 <a
-                  href={`https://wa.me/50687959148?text=${encodeURIComponent(language === 'es' ? `Hola, estoy interesado en el tour ${getLangText(tour.title, language)}. Quisiera consultar disponibilidad para ${selectedDate || '[fecha]'} para ${passengers} personas.` : `Hello, I am interested in the tour ${getLangText(tour.title, language)}. I would like to check availability for ${selectedDate || '[date]'} for ${passengers} people.`)}`}
+                  href={whatsappInquiryUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full text-center bg-[#25D366] hover:bg-[#20ba59] text-stone-950 font-black py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2"
