@@ -135,8 +135,34 @@ jobs:
             --cpu=1 \
             --quiet
 
+      - name: Resolver URL del servicio para smoke tests
+        id: cloud_run_service
+        shell: bash
+        run: |
+          set -euo pipefail
+          SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
+          if [ -z "$SERVICE_URL" ]; then
+            echo "::error::Cloud Run no devolvió la URL del servicio desplegado."
+            exit 1
+          fi
+          echo "url=$SERVICE_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Obtener ID token para invocar Cloud Run privado
+        id: cloud_run_id_token
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: id_token
+          id_token_audience: ${{ steps.cloud_run_service.outputs.url }}
+          id_token_include_email: true
+          create_credentials_file: false
+          export_environment_variables: false
+
       - name: Verificar revisión, SHA, identidad, salud y Firestore
         shell: bash
+        env:
+          CLOUD_RUN_ID_TOKEN: ${{ steps.cloud_run_id_token.outputs.id_token }}
         run: |
           set -euo pipefail
           SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
@@ -147,15 +173,14 @@ jobs:
           echo "SHA desplegado: ${{ steps.deploy_ref.outputs.sha }}"
           echo "Identidad runtime: ${RUNTIME_SA:-${{ steps.identities.outputs.runtime_service_account }}}"
 
-          ID_TOKEN="$(gcloud auth print-identity-token)"
           curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors \
-            -H "Authorization: Bearer $ID_TOKEN" \
+            -H "Authorization: Bearer $CLOUD_RUN_ID_TOKEN" \
             "$SERVICE_URL/api/health"
           echo
 
           AVAILABILITY_URL="$SERVICE_URL/api/tours/arenal-volcano-hotsprings/availability?date=2026-11-25&time=08%3A00%20AM&seats=2"
           AVAILABILITY_JSON="$(curl --fail --silent --show-error --retry 3 --retry-delay 3 --retry-all-errors \
-            -H "Authorization: Bearer $ID_TOKEN" \
+            -H "Authorization: Bearer $CLOUD_RUN_ID_TOKEN" \
             "$AVAILABILITY_URL")"
           echo "Smoke de disponibilidad: $AVAILABILITY_JSON"
 
