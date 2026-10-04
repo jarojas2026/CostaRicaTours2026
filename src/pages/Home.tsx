@@ -5,6 +5,7 @@ import { HomeQuickNav } from '../components/HomeQuickNav';
 import { CategoriesSection } from '../components/CategoriesSection';
 import { DestinationsSection } from '../components/DestinationsSection';
 import { FeaturedToursSection } from '../components/FeaturedToursSection';
+import { ServicesSection } from '../components/ServicesSection';
 import { OperatorsSection } from '../components/OperatorsSection';
 import { HomeTrustSections } from '../components/HomeTrustSections';
 import { AboutSection } from '../components/AboutSection';
@@ -103,6 +104,14 @@ export const Home: React.FC<HomeProps> = ({
         onSelectTour={(tour) => {
           if (setSelectedTour) setSelectedTour(tour);
         }}
+        onOpenCustomFunnel={() => setIsCustomFunnelOpen(true)}
+      />
+
+      {/* Diversified products and traveler needs; unverified offers stay quote-led */}
+      <ServicesSection
+        language={language}
+        onNavigateTab={onNavigateTab}
+        setSelectedCategory={setSelectedCategory}
         onOpenCustomFunnel={() => setIsCustomFunnelOpen(true)}
       />
 
