@@ -9,7 +9,7 @@
     "start": "node dist/server.cjs",
     "lint": "tsc --noEmit",
     "test:contracts": "node --test-force-exit --import ./tests/offlineEnv.mjs --import tsx --test tests/*.test.ts tests/*.test.mjs",
-    "audit:security:prod": "npm audit --omit=dev --audit-level=critical",
+    "audit:security:prod": "npm audit --omit=dev --audit-level=high",
     "audit:whatsapp": "tsx scripts/auditCustomerWhatsAppRouting.ts",
     "audit:system": "tsx scripts/auditSystem.ts",
     "check:release": "npm run audit:security:prod && node scripts/securityFixtureAudit.mjs && npm run audit:whatsapp && npm run test:contracts && node --max-old-space-size=4096 node_modules/typescript/bin/tsc --noEmit && npm run build",
@@ -68,6 +68,9 @@
     "@types/react-dom": "^19.3.0",
     "@vercel/node": "^16.0.1",
     "typescript": "^5.8.2"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.14.5"
   },
   "optionalDependencies": {
     "lightningcss-linux-x64-gnu": "1.33.0"

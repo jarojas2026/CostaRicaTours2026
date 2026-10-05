@@ -36,3 +36,13 @@ El endpoint público `/api/health` respondió 200 antes del merge. Esto no demue
 - Medir carga, latencia y memoria; comprobar alertas, respaldos y recuperación con acceso operativo. No se han certificado en esta revisión.
 
 Se mantienen automatización nativa, servicios de reservas, reglas de negocio y datos reales. Los documentos históricos que proponen n8n no sustituyen AGENTS.md ni la arquitectura vigente.
+
+## Seguimiento: dependencias y gate de seguridad
+
+El despliegue Cloud Run del merge `3dae5de` terminó correctamente (Actions run `37262484017`).
+
+Sobre esa base, se fija `@grpc/grpc-js` en `1.14.5` mediante npm overrides. Firebase cliente traía `~1.9.0`, por lo que una actualización ordinaria del lockfile no eliminaba sus avisos. Se conserva Firebase 12.19.0 y Firebase Admin 14.5.0; no se aplica la degradación de Firebase sugerida por `npm audit fix --force`. La versión 1.14.5 corrige los dos avisos gRPC citados arriba y ya era utilizada por el backend Google.
+
+La auditoría de producción después del cambio devuelve 3 avisos moderados, 0 altos y 0 críticos. Los tres moderados corresponden a ajv, uuid y su dependencia gaxios; las herramientas de desarrollo no están incluidas en ese conteo. El gate `audit:security:prod` ahora bloquea severidad alta y crítica, tanto en CI como en el chequeo de release. Revisar este override cuando Firebase incorpore una versión corregida; no eliminarlo mientras reaparezcan los avisos.
+
+Se repiten las 163 pruebas, TypeScript, auditores y compilación del frontend/backend. Estas comprobaciones no sustituyen una prueba de integración contra Firestore real ni certifican el scheduler o el flujo comercial completo. Los demás pendientes anteriores siguen abiertos.
