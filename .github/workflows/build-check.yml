@@ -34,7 +34,7 @@ jobs:
       - name: Instalar dependencias
         run: npm ci --include=optional --legacy-peer-deps
 
-      - name: Bloquear vulnerabilidades críticas de producción
+      - name: Bloquear vulnerabilidades altas y críticas de producción
         run: npm run audit:security:prod
 
       - name: Auditar fixtures y tokens mock
