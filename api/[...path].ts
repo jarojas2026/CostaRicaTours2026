@@ -30,6 +30,7 @@ export const config = {
 
 type TokenCache = { token: string; expiresAt: number };
 let cloudRunTokenCache: TokenCache | null = null;
+let cloudRunTokenRefresh: Promise<string> | null = null;
 
 type ProviderEvidenceState = 'pending' | 'confirmed' | 'unavailable' | 'not_found' | 'error';
 type ProviderEvidence = {
@@ -212,10 +213,22 @@ async function getCloudRunIdToken(req: VercelRequest): Promise<string> {
     return cloudRunTokenCache.token;
   }
 
-  const accessToken = await exchangeVercelOidcForGoogleAccessToken(getRuntimeOidcToken(req));
-  const token = await generateCloudRunIdToken(accessToken);
-  cloudRunTokenCache = { token, expiresAt: now + 50 * 60_000 };
-  return token;
+  // Concurrent cold-start requests share only the infrastructure identity.
+  // Customer Authorization remains request-scoped in the forwarding code.
+  if (!cloudRunTokenRefresh) {
+    cloudRunTokenRefresh = (async () => {
+      const accessToken = await exchangeVercelOidcForGoogleAccessToken(getRuntimeOidcToken(req));
+      const token = await generateCloudRunIdToken(accessToken);
+      cloudRunTokenCache = { token, expiresAt: now + 50 * 60_000 };
+      return token;
+    })();
+  }
+  try {
+    return await cloudRunTokenRefresh;
+  } finally {
+    // Rejected exchanges must not poison subsequent requests.
+    cloudRunTokenRefresh = null;
+  }
 }
 
 function requestBody(req: VercelRequest): BodyInit | undefined {

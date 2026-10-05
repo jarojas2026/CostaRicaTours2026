@@ -7,6 +7,12 @@
 import type { NextFunction, Request, Response } from 'express';
 
 export function createInFlightLimiter(maxConcurrent: number, retryAfterSeconds = 2) {
+  if (!Number.isSafeInteger(maxConcurrent) || maxConcurrent < 1) {
+    throw new RangeError('maxConcurrent must be a positive safe integer.');
+  }
+  if (!Number.isSafeInteger(retryAfterSeconds) || retryAfterSeconds < 1) {
+    throw new RangeError('retryAfterSeconds must be a positive safe integer.');
+  }
   let inFlight = 0;
 
   const middleware = function inFlightLimiter(_req: Request, res: Response, next: NextFunction) {
