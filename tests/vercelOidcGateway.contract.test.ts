@@ -159,6 +159,59 @@ test('private gateway authenticates runtime requests and preserves user auth', a
       assert.equal(result.calls, 3);
     });
 
+    await t.test('concurrent requests share identity refresh, preserve user isolation and recover after failure', async () => {
+      now += 60 * 60_000;
+      process.env.VERCEL_OIDC_TOKEN = 'test-concurrent-oidc';
+      let exchanges = 0;
+      let generations = 0;
+      let failExchange = true;
+      const users = new Set<string>();
+      globalThis.fetch = (async (input: any, init?: RequestInit) => {
+        if (String(input).includes('sts.googleapis.com')) {
+          exchanges += 1;
+          await new Promise(resolve => setImmediate(resolve));
+          return failExchange
+            ? Response.json({ error: 'temporarily_unavailable' }, { status: 503 })
+            : Response.json({ access_token: 'test-concurrent-access' });
+        }
+        if (String(input).includes(':generateIdToken')) {
+          generations += 1;
+          return Response.json({ token: 'test-concurrent-id' });
+        }
+        const headers = new Headers(init?.headers);
+        users.add(headers.get('authorization') || '');
+        assert.equal(headers.get('x-serverless-authorization'), 'Bearer test-concurrent-id');
+        return Response.json({ ok: true });
+      }) as typeof fetch;
+      async function request(index: number) {
+        let status = 0;
+        const res = {
+          setHeader() {},
+          status(code: number) { status = code; return this; },
+          send() { return this; },
+          json() { return this; },
+        } as unknown as VercelResponse;
+        await handler({ method: 'GET', url: '/api/health', headers: {
+          authorization: `Bearer test-user-${index}`,
+        }} as VercelRequest, res);
+        return status;
+      }
+      assert.deepEqual(await Promise.all(Array.from({ length: 20 }, (_, i) => request(i))), Array(20).fill(503));
+      assert.equal(exchanges, 1);
+      assert.equal(generations, 0);
+      assert.equal(users.size, 0);
+      failExchange = false;
+      assert.deepEqual(await Promise.all(Array.from({ length: 20 }, (_, i) => request(i))), Array(20).fill(200));
+      assert.equal(exchanges, 2);
+      assert.equal(generations, 1);
+      assert.equal(users.size, 20);
+      assert.equal(await request(21), 200);
+      assert.equal(exchanges, 2, 'warm requests reuse the cached identity');
+      now += 60 * 60_000;
+      assert.equal(await request(22), 200);
+      assert.equal(exchanges, 3, 'expired identities are refreshed');
+    });
+
     await t.test('WIF audience can be derived from explicit provider identity pieces', async () => {
       delete process.env.GCP_WIF_AUDIENCE;
       process.env.GCP_PROJECT_NUMBER = '123456789';
