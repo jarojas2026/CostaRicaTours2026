@@ -26,7 +26,8 @@ export type TourCategory =
   | 'whale_watching'
   | 'kayak'
   | 'fishing'
-  | 'family';
+  | 'family'
+  | 'services';
 
 export type TourRegion =
   | 'arenal'
@@ -66,10 +67,12 @@ export interface Tour {
   image: string;
   gallery: string[];
   priceUSD: number;
+  childPriceUSD?: number;
+  cancellationPolicy?: string;
   duration?: string; // Friendly duration (e.g. "4 hours", "Full day")
   durationHours: number;
   durationLabel: Localized<string>;
-  difficulty: 'fácil' | 'moderado' | 'exigente';
+  difficulty: 'fácil' | 'moderado' | 'exigente' | 'por_confirmar';
   difficultyLabel: Localized<string>;
   rating: number;
   reviewsCount: number;

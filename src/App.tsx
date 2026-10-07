@@ -46,8 +46,6 @@ const TravelerOSPage = lazy(() => import('./pages/TravelerOSPage').then(m => ({ 
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const AIAssistant = lazy(() => import('./components/AIAssistant').then(m => ({ default: m.AIAssistant })));
 const FlightTrackerGadget = lazy(() => import('./components/FlightTrackerGadget').then(m => ({ default: m.FlightTrackerGadget })));
-const LiveTouristIntelligence = lazy(() => import('./components/LiveTouristIntelligence').then(m => ({ default: m.LiveTouristIntelligence })));
-const PhotoTourFinder = lazy(() => import('./components/PhotoTourFinder').then(m => ({ default: m.PhotoTourFinder })));
 const GoogleWorkspaceHub = lazy(() => import('./components/GoogleWorkspaceHub').then(m => ({ default: m.GoogleWorkspaceHub })));
 const CounterDeskPage = lazy(() => import('./pages/CounterDeskPage').then(m => ({ default: m.CounterDeskPage })));
 const AutonomousOperationsPage = lazy(() => import('./pages/AutonomousOperationsPage').then(m => ({ default: m.default })));
@@ -384,7 +382,7 @@ export default function App() {
           </div>
         )}
 
-        {activeTab !== 'counter' && !activeTab.startsWith('admin') && activeTab !== 'provider' && (
+        {activeTab !== 'counter' && activeTab !== 'ai' && !activeTab.startsWith('admin') && activeTab !== 'provider' && (
           <div className="pt-4 sm:pt-5">
             <TravelerCommandBar
               language={language}
@@ -493,20 +491,7 @@ export default function App() {
             } />
 
             <Route path="/ai" element={
-              <div className="space-y-8 pb-12 py-8">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-                  <Suspense fallback={<div className="h-48 animate-pulse bg-emerald-950/20 rounded-2xl" />}>
-                    <LiveTouristIntelligence
-                      language={language}
-                      onAskAgent={(topic) => {
-                        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-                      }}
-                    />
-                  </Suspense>
-                  <Suspense fallback={<div className="h-40 animate-pulse bg-emerald-950/20 rounded-2xl" />}>
-                    <PhotoTourFinder />
-                  </Suspense>
-                </div>
+              <div className="w-full min-w-0 overflow-x-clip py-5 sm:py-8">
                 <Suspense fallback={<div className="py-24 text-center text-emerald-400">Cargando...</div>}>
                   <AIAssistant
                     language={language}

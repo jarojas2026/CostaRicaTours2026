@@ -58,6 +58,8 @@ test('Agent Desk supports multiple valid human numbers and does not announce una
     assert.equal(voiceAgentDeskConfig().humanTransferConfigured, true);
     const twiml = createInboundVoiceResponse({ callId: 'CA1', responseUrl: 'https://example.test/respond', humanTransferAvailable: true });
     assert.match(twiml, /marque 0/i);
+    assert.match(twiml, /<Gather[^>]*><Say[\s\S]*<\/Say><\/Gather>/);
+    assert.doesNotMatch(twiml, /bargeIn=|después del tono/);
   });
 
   await withEnv({ VOICE_AGENT_DESK_ENABLED: 'true', VOICE_HUMAN_NUMBERS: '', VOICE_HUMAN_NUMBER: '' }, () => {

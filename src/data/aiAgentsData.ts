@@ -5,24 +5,24 @@ export const AI_AGENTS: AIAgent[] = [
     id: 'counter_agent',
     workflowCategory: 'booking',
     name: {
-      es: 'Sofía • Counter Agent & Mostrador',
-      en: 'Sofía • Front-Desk Counter Agent',
+      es: 'Sofía • Asistente de viajes',
+      en: 'Sofía • Travel assistant',
       de: 'Sofía • Counter-Agentur & Schalter',
       fr: 'Sofía • Agente de Comptoir & Accueil',
       zh: 'Sofía • 前台柜台客服专员',
       ja: 'ソフィア • カウンター＆予約デスク'
     },
     role: {
-      es: 'Experta en Turismo, Ejecución Inmediata de Reservas & Servicio al Cliente',
-      en: 'Tourism Expert, Instant Booking Execution & Customer Service',
+      es: 'Ayuda para planear, consultar y reservar',
+      en: 'Help with planning, questions and bookings',
       de: 'Tourismusexpertin, Sofortbuchung & Kundenservice',
       fr: 'Experte en Tourisme, Réservations Immédiates & Service Client',
       zh: '哥斯达黎加旅游专家、即时预订执行与客户服务',
       ja: '観光エキスパート・即時予約執行・カスタマーサービス'
     },
     badge: {
-      es: 'Mostrador 24/7',
-      en: 'Front Desk 24/7',
+      es: 'Asistente de viajes',
+      en: 'Travel assistant',
       de: 'Schalter 24/7',
       fr: 'Comptoir 24/7',
       zh: '24小时前台',
@@ -33,16 +33,16 @@ export const AI_AGENTS: AIAgent[] = [
     bgGradient: 'from-amber-500/20 via-emerald-500/10 to-stone-900/40',
     borderColor: '#F59E0B',
     description: {
-      es: 'Agente integral de mostrador turístico. Gestiona y ejecuta reservas en tiempo real, verifica disponibilidad, coordina pagos, atiende dudas de clientes y brinda asesoría experta sobre Costa Rica con conocimiento instantáneo de alto nivel.',
-      en: 'Comprehensive front-desk tourism agent. Manages and executes real-time bookings, verifies availability, coordinates payments, handles customer inquiries, and delivers expert Costa Rica guidance with instant knowledge.',
+      es: 'Te ayuda a explorar Costa Rica, organizar ideas y preparar consultas. La disponibilidad, el precio y la confirmación final dependen del proveedor y se verifican antes del pago.',
+      en: 'Helps you explore Costa Rica, organize ideas and prepare inquiries. Availability, pricing and final confirmation depend on the provider and are verified before payment.',
       de: 'Umfassende Counter-Agentin für Tourismus. Verwaltet und führt Sofortbuchungen aus, prüft Verfügbarkeiten und bietet Expertenrat für Costa Rica.',
       fr: 'Agente de comptoir touristique polyvalente. Gère et exécute les réservations en direct, vérifie les disponibilités et conseille avec expertise.',
       zh: '全能前台旅游专员。实时执行预订、查验空位、协调支付并提供权威的哥斯达黎加旅游咨询。',
       ja: '総合カウンターデスク専門員。リアルタイムでの予約実行、空き枠確認、決済案内、観光案内を即座に提供します。'
     },
     welcomeMessage: {
-      es: '¡Pura Vida! Bienvenida(o) al Mostrador de Costa Rica Tours. Soy Sofía, tu Counter Agent oficial. Como experta en turismo costarricense, puedo ejecutar tus reservas al instante, verificar cupos en vivo, resolver cualquier duda sobre tus reservas existentes y orientarte con conocimiento instantáneo. ¿Qué tour o gestión deseas realizar hoy?',
-      en: 'Pura Vida! Welcome to the Costa Rica Tours Front Desk. I am Sofía, your official Counter Agent. As a tourism specialist, I can execute your bookings immediately, check live availability, assist with existing bookings, and answer any travel question with instant precision. How can I assist you today?',
+      es: '¡Pura Vida! Soy Sofía, tu asistente para viajar por Costa Rica. Puedo ayudarte a comparar experiencias, planear una ruta o preparar una consulta. Confirmaremos precio y disponibilidad con el proveedor antes de cobrar. ¿Qué tienes en mente?',
+      en: 'Pura Vida! I am Sofía, your Costa Rica travel assistant. I can help compare experiences, plan a route or prepare an inquiry. We will confirm price and availability with the provider before payment. What do you have in mind?',
       de: 'Pura Vida! Willkommen am Schalter von Costa Rica Tours. Ich bin Sofía, Ihre offizielle Counter-Agentin. Ich kann Buchungen sofort ausführen, Plätze prüfen und Ihnen bei allen Fragen helfen. Wie kann ich behilflich sein?',
       fr: 'Pura Vida ! Bienvenue au comptoir de Costa Rica Tours. Je suis Sofía, votre agente officielle. Je peux exécuter vos réservations instantanément et répondre à toutes vos questions.',
       zh: 'Pura Vida！欢迎光临 Costa Rica Tours 官方服务台。我是您的专属前台专员 Sofía。我可以为您即时执行预订、查验实时席位、查询现有订单，并以专家水准提供解答。今天您想了解或预订什么呢？',
@@ -50,14 +50,14 @@ export const AI_AGENTS: AIAgent[] = [
     },
     suggestedQuestions: {
       es: [
-        'Quiero hacer una reserva inmediata',
-        'Consultar o cambiar mi reserva existente',
+        'Quiero consultar una experiencia',
+        'Necesito ayuda con una reserva existente',
         '¿Cuáles son los mejores tours en Arenal y Manuel Antonio?',
         '¿Cómo funcionan los pagos por SINPE Móvil y tarjeta?'
       ],
       en: [
-        'I want to make an instant booking',
-        'Check or modify my existing reservation',
+        'I want to ask about an experience',
+        'I need help with an existing booking',
         'What are the best tours in Arenal and Manuel Antonio?',
         'How do payments work (Card, PayPal, SINPE)?'
       ],

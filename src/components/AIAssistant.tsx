@@ -6,14 +6,13 @@ import { ArrowLeft,
   Bot, Send, Sparkles, Mic, MicOff, User, RefreshCw, X, MessageSquare, 
   Compass, ArrowRight, Trash2, HelpCircle, CheckCircle2, Ticket, 
   Image as ImageIcon, BrainCircuit, XCircle, Leaf, Trees, ShieldCheck, 
-  Info, Clock, ChevronRight, Zap, Coffee, Compass as CompassIcon, Waves, Mountain,
+  Info, Clock, ChevronDown, ChevronRight, Zap, Coffee, Compass as CompassIcon, Waves, Mountain,
   Volume2, VolumeX, Phone, Calendar, Code, Copy, Check, Globe, ExternalLink
 } from 'lucide-react';
 import { useTours } from '../contexts/ToursContext';
 import { getLangText, UI_TRANSLATIONS, formatCurrency } from '../utils/i18n';
 import { getEcoFactForTour, getEcoFactForRegion } from '../data/ecoFacts';
 import { AI_AGENTS, getAIAgentById } from '../data/aiAgentsData';
-import { NativeAutomationStudio } from './NativeAutomationStudio';
 import { ClaudeItineraryModal } from './ClaudeItineraryModal';
 import { getUsdToCrcRate, formatCrc } from '../utils/currencies';
 import { useChatAnalytics } from '../hooks/useChatAnalytics';
@@ -67,7 +66,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
   const [activeAgentId, setActiveAgentId] = useState<AgentId>('counter_agent');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'booking' | 'nature_adventure' | 'logistics_food' | 'specialized'>('all');
-  const [subTab, setSubTab] = useState<'chat' | 'automation'>('chat');
   const currentAgent = getAIAgentById(activeAgentId);
 
   const [chatSessionId] = useState(() => {
@@ -580,7 +578,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   };
 
   const currentQuestions = getLangText(currentAgent.suggestedQuestions, language, []) as string[];
-  const currentTags = getLangText(currentAgent.specialtyTags, language, []) as string[];
 
   return (
     <div className="bg-[#03150d] py-6 sm:py-10 px-4 sm:px-6 lg:px-8 border-t border-emerald-500/20 relative overflow-hidden">
@@ -604,57 +601,39 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         <div className="text-center space-y-2.5">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#051c14] text-amber-400 rounded-full text-xs font-bold uppercase tracking-widest border border-amber-400/30 shadow-inner">
             <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-            {language === 'es' ? 'Motor de Inteligencia Artificial & Automatización Nativa' : 'AI Intelligence Engine & Native Automation'}
+            {language === 'es' ? 'Asistencia para tu viaje' : 'Travel assistance'}
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight">
-            {language === 'es' ? 'Centro de Asistentes & Agentes IA de Costa Rica' : 'Costa Rica AI Travel Agents & Workflows'}
+          <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+            {language === 'es' ? '¿Cómo podemos ayudarte con tu viaje?' : 'How can we help with your trip?'}
           </h2>
           <p className="text-sm sm:text-base text-emerald-100/70 max-w-3xl mx-auto leading-relaxed">
             {language === 'es'
-              ? 'Interactúa con nuestro Asistente Unificado o explora los 19 flujos operativos nativos que ejecutan reservas en Firestore, pasarelas de pago y contingencias climáticas.'
-              : 'Interact with our Unified Concierge or explore the 19 operational native workflows executing Firestore bookings, payment gateways, and weather contingencies.'
+              ? 'Habla con Sofía en un solo chat. Puedes planear, buscar experiencias, consultar transporte o pedir ayuda con una reserva. El precio y la disponibilidad se confirman antes de cobrar.'
+              : 'Talk to Sofía in one chat. Plan a trip, find experiences, ask about transport, or get help with a booking. Price and availability are confirmed before payment.'
             }
           </p>
 
           {/* SubTab Switcher: Chat Agents vs automatización nativa Workflows */}
-          <div className="flex items-center justify-center pt-3">
-            <div className="bg-[#020e08] p-1.5 rounded-2xl border border-emerald-500/30 inline-flex items-center gap-2 shadow-2xl">
-              <button
-                onClick={() => setSubTab('chat')}
-                className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
-                  subTab === 'chat'
-                    ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-stone-950 shadow-md scale-105'
-                    : 'text-emerald-200/80 hover:text-white hover:bg-[#072418]'
-                }`}
-              >
-                <Bot className="w-4 h-4" />
-                <span>{language === 'es' ? 'Chat con Agentes Especialistas' : 'Specialist Agents Chat'}</span>
-              </button>
-
-              <button
-                onClick={() => setSubTab('automation')}
-                className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
-                  subTab === 'automation'
-                    ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-stone-950 shadow-md scale-105'
-                    : 'text-emerald-200/80 hover:text-white hover:bg-[#072418]'
-                }`}
-              >
-                <Zap className="w-4 h-4 text-amber-400" />
-                <span>{language === 'es' ? 'Flujos & Automatizaciones Nativas' : 'Native Workflows & Pipelines'}</span>
-                <span className="bg-emerald-500 text-stone-950 text-[9px] font-black px-1.5 py-0.5 rounded-full">
-                  PROD
-                </span>
-              </button>
+          <div className="mx-auto mt-4 max-w-3xl rounded-2xl border border-emerald-500/25 bg-[#020e08]/70 p-4 text-left">
+            <p className="mb-3 text-xs font-bold uppercase tracking-wide text-emerald-300">{language === 'es' ? 'Elige por dónde empezar' : 'Choose where to start'}</p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {[
+                { es: 'Planear un viaje', en: 'Plan a trip', promptEs: 'Ayúdame a planear un viaje a Costa Rica. Pregúntame fechas, presupuesto, grupo e intereses.' , promptEn: 'Help me plan a Costa Rica trip. Ask me about dates, budget, group and interests.' },
+                { es: 'Buscar tours y experiencias', en: 'Find tours and experiences', promptEs: 'Quiero explorar tours y experiencias en Costa Rica. Pregúntame qué región y actividades me interesan.' , promptEn: 'I want to explore tours and experiences in Costa Rica. Ask what regions and activities interest me.' },
+                { es: 'Consultar transporte', en: 'Ask about transport', promptEs: 'Necesito consultar un traslado en Costa Rica. Ayúdame a preparar una solicitud con origen, destino, fecha y pasajeros.' , promptEn: 'I need a transfer in Costa Rica. Help me prepare an inquiry with pickup, destination, date and passengers.' },
+                { es: 'Ayuda con una reserva', en: 'Get booking help', promptEs: 'Necesito ayuda con una reserva existente. Indícame qué datos puedo compartir de forma segura para ubicarla.' , promptEn: 'I need help with an existing booking. Tell me what information I can safely share to find it.' }
+              ].map((item) => (
+                <button key={item.en} type="button" onClick={() => handleSendMessage(language === 'es' ? item.promptEs : item.promptEn)} className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-emerald-500/20 bg-[#051c14] px-4 py-3 text-left text-sm font-bold text-white transition hover:border-amber-400/50 hover:bg-[#0a2e21] focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400">
+                  <span>{language === 'es' ? item.es : item.en}</span><ArrowRight className="h-4 w-4 shrink-0 text-amber-300" />
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {subTab === 'automation' ? (
-          <NativeAutomationStudio language={language} />
-        ) : (
-          <>
+        <>
             {/* Workflow Category Filter Tabs */}
-            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+            <div className="hidden flex flex-wrap items-center justify-center gap-2 pt-1">
           {[
             { id: 'all', label: { es: 'Todos (15)', en: 'All (15)' }, icon: '✨' },
             { id: 'booking', label: { es: 'Reservas & Itinerarios', en: 'Bookings' }, icon: '🧭' },
@@ -682,16 +661,12 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         </div>
 
         {/* Multi-Agent Selector Bar */}
-        <div className="bg-[#051c14]/90 backdrop-blur-xl p-3 sm:p-3.5 rounded-2xl border border-emerald-500/25 shadow-xl">
+        <div className="hidden bg-[#051c14]/90 backdrop-blur-xl p-3 sm:p-3.5 rounded-2xl border border-emerald-500/25 shadow-xl">
           <div className="flex items-center justify-between px-2 pb-2 text-[11px] font-bold text-emerald-400/80 uppercase tracking-wider">
             <span>{language === 'es' ? 'Selecciona tu Agente Especialista:' : 'Select your Specialist Agent:'}</span>
-            <button
-              onClick={() => setSubTab('automation')}
-              className="text-amber-400 hover:text-amber-300 text-[10px] font-black flex items-center gap-1 cursor-pointer transition-colors"
-            >
-              <Zap className="w-3 h-3 text-amber-400" />
-              <span>{language === 'es' ? 'Ver Centro de Automatización ⚡' : 'View Automation Center ⚡'}</span>
-            </button>
+            <span className="text-[10px] font-medium normal-case tracking-normal text-emerald-200/70">
+              {language === 'es' ? 'Puedes empezar escribiendo o elegir una opción.' : 'Start by typing or choose an option.'}
+            </span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
@@ -741,7 +716,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
         {/* Current Agent Workflow Steps Banner - Modern Connected Pipeline */}
         {currentAgent.workflowSteps && (
-          <div className="bg-[#03180f]/90 p-4 rounded-2xl border border-emerald-500/30 shadow-xl space-y-2.5">
+          <div className="hidden bg-[#03180f]/90 p-4 rounded-2xl border border-emerald-500/30 shadow-xl space-y-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-black text-amber-400 uppercase tracking-wider">
                 <CompassIcon className="w-4 h-4 text-amber-400" />
@@ -783,7 +758,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         )}
 
         {/* Chat Window Container */}
-        <div className="bg-[#051c14]/95 backdrop-blur-2xl border border-emerald-500/30 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col h-[580px]">
+        <div className="bg-[#051c14]/95 backdrop-blur-2xl border border-emerald-500/30 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col h-[min(72dvh,680px)] min-h-[360px]">
           
           {/* Chat Header Bar with Active Agent Profile */}
           <div className="bg-[#020e08] p-3 sm:p-4 border-b border-emerald-500/20 flex flex-wrap items-center justify-between gap-3">
@@ -797,7 +772,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                     {getLangText(currentAgent.name, language)}
                   </h3>
                   <span className="bg-emerald-950/80 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/40">
-                    {getLangText(currentAgent.badge, language)}
+                    {language === 'es' ? 'Asistente de viajes' : 'Travel assistant'}
                   </span>
                 </div>
                 <p className="text-[11px] text-emerald-100/70 font-medium line-clamp-1">
@@ -806,64 +781,17 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               </div>
             </div>
 
-            {/* Specialty Tags */}
-            <div className="hidden md:flex items-center gap-1.5">
-              {currentTags.slice(0, 2).map((tag, idx) => (
-                <span key={idx} className="text-[10px] bg-emerald-950/60 text-emerald-300 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                  #{tag}
-                </span>
-              ))}
-            </div>
-
             {/* Header Actions */}
             <div className="flex items-center gap-2">
-              {/* AI Engine Switcher (Claude vs Gemini) */}
-              <div className="hidden sm:flex items-center bg-[#051c14] p-0.5 rounded-xl border border-emerald-500/30 text-[11px] font-bold">
-                <button
-                  onClick={() => setAiEngine('claude')}
-                  className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
-                    aiEngine === 'claude'
-                      ? 'bg-amber-400 text-stone-950 shadow-sm font-black'
-                      : 'text-stone-400 hover:text-white'
-                  }`}
-                  title="Anthropic Claude 3.5 Sonnet (Google Cloud Vertex AI)"
-                >
-                  <span>🧠 Claude 3.5</span>
-                </button>
-                <button
-                  onClick={() => setAiEngine('gemini')}
-                  className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
-                    aiEngine === 'gemini'
-                      ? 'bg-emerald-500 text-stone-950 shadow-sm font-black'
-                      : 'text-stone-400 hover:text-white'
-                  }`}
-                  title="Google Gemini 3.5 Flash con Google Search Grounding en tiempo real"
-                >
-                  <span>⚡ Gemini 3.5 Grounding</span>
-                </button>
-              </div>
-
               {/* Claude Itinerary Planner Button */}
               <button
                 onClick={() => setIsItineraryModalOpen(true)}
-                title={language === 'es' ? 'Planificador Experto Claude' : 'Claude Itinerary Planner'}
-                className="p-1.5 sm:px-2.5 sm:py-1.5 transition-all rounded-lg border bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border-amber-400/50 flex items-center gap-1 text-xs font-bold cursor-pointer shadow-sm"
+                title={language === 'es' ? 'Crear un itinerario' : 'Create an itinerary'}
+                aria-label={language === 'es' ? 'Crear un itinerario' : 'Create an itinerary'}
+                className="p-2 sm:px-2.5 sm:py-1.5 transition-all rounded-lg border bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border-amber-400/50 flex items-center gap-1 text-xs font-bold cursor-pointer shadow-sm"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden md:inline">{language === 'es' ? 'Itinerario Claude' : 'Claude Itinerary'}</span>
-              </button>
-
-              <button
-                onClick={() => setThinkingMode(!thinkingMode)}
-                title={language === 'es' ? 'Modo de Pensamiento Profundo' : 'Deep Thinking Mode'}
-                className={`p-2 transition-colors rounded-lg border flex items-center gap-1 text-xs font-bold cursor-pointer ${
-                  thinkingMode 
-                    ? 'bg-amber-400/20 text-amber-300 border-amber-400/50' 
-                    : 'bg-[#020e08] text-stone-400 border-emerald-500/20 hover:text-amber-400'
-                }`}
-              >
-                <BrainCircuit className="w-4 h-4" />
-                <span className="hidden sm:inline">Thinking: {thinkingMode ? 'ON' : 'OFF'}</span>
+                <span className="hidden sm:inline">{language === 'es' ? 'Crear itinerario' : 'Build itinerary'}</span>
               </button>
               
               <button
@@ -881,60 +809,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               )}
             </div>
           </div>
-
-          {/* Mostrador Turístico Digital & Virtual: Quick Operations Bar */}
-          {activeAgentId === 'counter_agent' && (
-            <div className="bg-[#020e08]/95 border-b border-emerald-500/20 px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <span className="text-emerald-300 font-bold text-[11px]">
-                  {language === 'es' ? 'Mostrador 24/7 En Vivo • Tours Costa Rica' : '24/7 Live Counter Desk • Tours Costa Rica'}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
-                <button
-                  onClick={() => {
-                    if (TOURS.length > 0) {
-                      setInChatBookingTour(TOURS[0]);
-                      setInChatDate(new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0]);
-                    }
-                  }}
-                  className="px-2 py-1 rounded-lg bg-emerald-950/80 hover:bg-emerald-900/90 text-emerald-200 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap"
-                >
-                  <span>🛎️</span>
-                  <span>{language === 'es' ? 'Nueva Reserva' : 'New Booking'}</span>
-                </button>
-
-                <button
-                  onClick={() => handleSendMessage(language === 'es' ? 'Deseo consultar el estado de mi reserva con mi código o email' : 'I would like to check my booking status using my code or email')}
-                  className="px-2 py-1 rounded-lg bg-[#041d13] hover:bg-[#072a1c] text-stone-200 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap"
-                >
-                  <span>🔍</span>
-                  <span>{language === 'es' ? 'Consultar Reserva' : 'Check Booking'}</span>
-                </button>
-
-                <button
-                  onClick={() => handleSendMessage(language === 'es' ? '¿Cuáles son las tarifas oficiales y rutas de traslados privados de Alsama Tours?' : 'What are the official private transfer rates and routes by Alsama Tours?')}
-                  className="px-2 py-1 rounded-lg bg-[#041d13] hover:bg-[#072a1c] text-stone-200 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap"
-                >
-                  <span>🚐</span>
-                  <span>{language === 'es' ? 'Traslados Alsama' : 'Alsama Transfers'}</span>
-                </button>
-
-                <button
-                  onClick={() => setShowWidgetModal(true)}
-                  className="px-2 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border border-amber-400/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap"
-                >
-                  <Code className="w-3 h-3 text-amber-400" />
-                  <span>{language === 'es' ? 'Widget Web' : 'Web Widget'}</span>
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Messages Body */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-[#020e08]/60">
@@ -1428,23 +1302,21 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
         </div>
 
-        {/* 8-Agent Showcase Grid Cards with Workflow Steps */}
-        <div className="pt-4 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-              <Bot className="w-5 h-5 text-amber-400" />
-              {language === 'es' ? 'Equipo de Asesores & Flujos IA de Costa Rica' : 'Costa Rica AI Advisory & Workflow Team'}
-            </h3>
-            <span className="text-xs text-emerald-300/80 font-bold">
-              {language === 'es' ? 'Procesamiento automático de tus solicitudes en backend' : 'Automatic processing of your requests in the backend'}
+        <details className="group rounded-2xl border border-emerald-500/20 bg-[#051c14]/70 p-4">
+          <summary className="cursor-pointer list-none text-sm font-bold text-emerald-100 marker:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400">
+            <span className="flex items-center justify-between gap-3">
+              <span>{language === 'es' ? 'Ver especialistas disponibles (opcional)' : 'View available specialists (optional)'}</span>
+              <ChevronDown className="h-4 w-4 shrink-0 text-amber-300 transition-transform group-open:rotate-180" />
             </span>
-          </div>
+            <span className="mt-1 block text-xs font-normal text-emerald-200/60">
+              {language === 'es' ? 'El asistente principal puede ayudarte a encontrar el tema adecuado.' : 'The main assistant can help route your request.'}
+            </span>
+          </summary>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {AI_AGENTS.filter(a => selectedCategory === 'all' || a.workflowCategory === selectedCategory).map((agent) => {
               const isCurrent = agent.id === activeAgentId;
               const agentName = getLangText(agent.name, language);
-              const agentRole = getLangText(agent.role, language);
               const agentDesc = getLangText(agent.description, language);
               const agentBadge = getLangText(agent.badge, language);
               const workflowSteps = getLangText(agent.workflowSteps, language, []) as string[];
@@ -1522,9 +1394,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               );
             })}
           </div>
-        </div>
+        </details>
       </>
-    )}
 
       </div>
 

@@ -18,6 +18,8 @@ import { initializeAutomationEngine, cleanupExpiredSoftHolds } from './backend/c
 import { google } from 'googleapis';
 import { requireOperator } from './backend/authMiddleware';
 import { TOURS } from './src/data/toursData';
+import { checkoutQuote, checkoutOrigin } from './backend/commercePolicy';
+import { commerceAdminRouter } from './backend/commerceAdminRouter';
 import { getTourMediaById } from './backend/tourMediaService';
 import { FLIGHT_ROUTES } from './src/data/flightsData';
 import {
@@ -161,6 +163,7 @@ function requireAgentTool(req: express.Request, res: express.Response, next: exp
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '256kb', verify: (req, _res, buf) => { (req as any).rawBody = Buffer.from(buf); } }));
 app.use(express.urlencoded({ extended: true, limit: '32kb', parameterLimit: 100 }));
+app.use('/api/admin/commerce', commerceAdminRouter);
 
 // ==========================================
 // 🛡️ RATE LIMITING MIDDLEWARES
@@ -686,16 +689,15 @@ app.post('/api/internal/provider-inbox/sweep', requireAgentTool, async (_req, re
 
 app.post('/api/stripe/create-checkout-session', paymentLimiter, async (req, res) => {
   try {
-    const { bookingId, tourName, totalUSD, customerEmail } = req.body;
+    const { bookingId } = req.body;
     const booking = await getBookingById(String(bookingId || ''));
     if (!booking || booking.paymentStatus === 'completed') {
       return res.status(409).json({ error: 'La reserva no existe o ya tiene un pago verificado.' });
     }
-    const authoritativeTotal = calculateAuthoritativeCheckoutTotal(req.body);
-    if (authoritativeTotal === null) return res.status(400).json({ error: 'No se pudo verificar el precio de la reserva en el catálogo.' });
-    if (Math.abs(Number(totalUSD) - authoritativeTotal) > 0.01) {
-      return res.status(409).json({ error: 'El importe enviado no coincide con el precio calculado en el servidor.', expectedTotalUSD: authoritativeTotal });
-    }
+    let payment;
+    try { payment = checkoutQuote(booking); }
+    catch (error: any) { return res.status(409).json({ error: error.message }); }
+    const returnOrigin = checkoutOrigin();
     const stripe = getStripe();
     if (!stripe) {
       console.error('🔴 STRIPE_SECRET_KEY no configurada. Se rechaza el intento de pago.');
@@ -708,8 +710,8 @@ app.post('/api/stripe/create-checkout-session', paymentLimiter, async (req, res)
         {
           price_data: {
             currency: 'usd',
-            product_data: { name: tourName || 'Tour Costa Rica Tours' },
-            unit_amount: Math.round(Number(totalUSD || 0) * 100)
+            product_data: { name: booking.tourName || 'Tour Costa Rica Tours' },
+            unit_amount: payment.totalCents
           },
           quantity: 1
         }
@@ -717,9 +719,9 @@ app.post('/api/stripe/create-checkout-session', paymentLimiter, async (req, res)
       mode: 'payment',
       client_reference_id: booking.bookingId,
       metadata: { bookingId: booking.bookingId },
-      success_url: `${req.protocol}://${req.get('host')}?booking=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.protocol}://${req.get('host')}?booking=canceled`,
-      customer_email: customerEmail
+      success_url: `${returnOrigin}/?booking=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${returnOrigin}/?booking=canceled`,
+      customer_email: booking.customerEmail || undefined
     });
     res.json({ url: session.url, id: session.id });
   } catch (err: any) {
@@ -730,16 +732,15 @@ app.post('/api/stripe/create-checkout-session', paymentLimiter, async (req, res)
 
 app.post('/api/paypal/create-order', paymentLimiter, async (req, res) => {
   try {
-    const { bookingId, totalUSD, tourName } = req.body;
+    const { bookingId } = req.body;
     const booking = await getBookingById(String(bookingId || ''));
     if (!booking || booking.paymentStatus === 'completed') {
       return res.status(409).json({ error: 'La reserva no existe o ya tiene un pago verificado.' });
     }
-    const authoritativeTotal = calculateAuthoritativeCheckoutTotal(req.body);
-    if (authoritativeTotal === null) return res.status(400).json({ error: 'No se pudo verificar el precio de la reserva en el catálogo.' });
-    if (Math.abs(Number(totalUSD) - authoritativeTotal) > 0.01) {
-      return res.status(409).json({ error: 'El importe enviado no coincide con el precio calculado en el servidor.', expectedTotalUSD: authoritativeTotal });
-    }
+    let payment;
+    try { payment = checkoutQuote(booking); }
+    catch (error: any) { return res.status(409).json({ error: error.message }); }
+    const returnOrigin = checkoutOrigin();
     const paypalClientId = process.env.PAYPAL_CLIENT_ID;
     const paypalSecret = process.env.PAYPAL_SECRET;
     const paypalMode = process.env.PAYPAL_MODE || 'sandbox';
@@ -774,13 +775,13 @@ app.post('/api/paypal/create-order', paymentLimiter, async (req, res) => {
           purchase_units: [
             {
               custom_id: booking.bookingId,
-              amount: { currency_code: 'USD', value: (totalUSD || 0).toString() },
-              description: tourName || 'Tour Costa Rica Tours'
+              amount: { currency_code: 'USD', value: payment.totalUSD.toFixed(2) },
+              description: booking.tourName || 'Tour Costa Rica Tours'
             }
           ],
           application_context: {
-            return_url: `${req.protocol}://${req.get('host')}?booking=success&provider=paypal`,
-            cancel_url: `${req.protocol}://${req.get('host')}?booking=canceled`
+            return_url: `${returnOrigin}/?booking=success&provider=paypal`,
+            cancel_url: `${returnOrigin}/?booking=canceled`
           }
         })
       });

@@ -172,13 +172,13 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      <header id="main-header" className={`w-full sticky top-0 z-[70] bg-[#031710]/95 backdrop-blur-xl border-b border-emerald-500/20 text-white shadow-xl transition-all duration-300 ${isScrolled ? 'shadow-emerald-950/40' : ''}`}>
+      <header id="main-header" className={`sticky top-0 z-[70] w-full max-w-full bg-[#031710]/95 backdrop-blur-xl border-b border-emerald-500/20 text-white shadow-xl transition-all duration-300 ${isScrolled ? 'shadow-emerald-950/40' : ''}`}>
         
         {/* Top Assistance & Trust Strip (Collapses smoothly on scroll to maximize visible screen) */}
         <div className={`bg-[#010e08] text-xs px-3 sm:px-6 border-b border-emerald-500/15 text-stone-200 transition-all duration-300 overflow-hidden ${
           isScrolled ? 'max-h-0 opacity-0 py-0 border-b-0 pointer-events-none' : 'max-h-12 opacity-100 py-1.5'
         }`}>
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs">
+          <div className="max-w-7xl mx-auto min-w-0 flex items-center justify-between gap-3 text-xs">
             
             <div className="flex items-center gap-3 whitespace-nowrap overflow-x-auto hide-scrollbar">
               <span className="inline-flex items-center gap-1.5 bg-emerald-950/80 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/30 font-semibold text-[11px]">
@@ -209,7 +209,7 @@ export const Header: React.FC<HeaderProps> = ({
               </a>
             </div>
 
-            <div className="hidden sm:flex items-center gap-2 text-xs font-bold text-amber-400 shrink-0">
+            <div className="hidden 2xl:flex items-center gap-2 text-xs font-bold text-amber-400 shrink-0">
               <ShieldCheck className="w-4 h-4 text-amber-400" />
               <span>{language === 'es' ? 'Disponibilidad verificada al reservar' : 'Availability checked when booking'}</span>
             </div>
@@ -218,7 +218,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Main Navigation Bar */}
-        <div className={`max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 transition-all duration-300 flex items-center justify-between gap-2 lg:gap-4 ${
+        <div className={`w-full max-w-7xl min-w-0 mx-auto px-3 sm:px-6 lg:px-8 transition-all duration-300 flex items-center justify-between gap-2 lg:gap-4 ${
           isScrolled ? 'py-2' : 'py-2.5'
         }`}>
           
@@ -242,7 +242,7 @@ export const Header: React.FC<HeaderProps> = ({
           </Link>
 
           {/* Unified High-Tech Desktop Navigation (Visible on lg screens and up) */}
-          <nav className="hidden lg:flex items-center gap-1 bg-[#010e08]/80 p-1.5 rounded-full border border-emerald-500/25 backdrop-blur-xl shadow-inner">
+          <nav className="hidden 2xl:flex shrink-0 items-center gap-1 bg-[#010e08]/80 p-1.5 rounded-full border border-emerald-500/25 backdrop-blur-xl shadow-inner whitespace-nowrap">
             <Link
               to="/"
               className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
@@ -330,11 +330,11 @@ export const Header: React.FC<HeaderProps> = ({
           </nav>
 
           {/* Right Action Tools & Controls */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <div className="block"><PWAInstallButton language={language} /></div>
+          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="hidden sm:block"><PWAInstallButton language={language} /></div>
             
             {/* Currency Selector */}
-            <div className="relative">
+            <div className="relative hidden sm:block">
               <button
                 onClick={() => {
                   setIsCurrencyMenuOpen(!isCurrencyMenuOpen);
@@ -379,7 +379,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             {/* Language Selector */}
-            <div className="relative">
+            <div className="relative hidden sm:block">
               <button
                 onClick={() => {
                   setIsLangMenuOpen(!isLangMenuOpen);
@@ -428,7 +428,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => navigate('/tours?favorites=1')}
-                className="relative flex items-center justify-center w-9 h-9 bg-emerald-950/70 hover:bg-emerald-900 text-rose-400 p-2 rounded-xl border border-emerald-500/40 transition-all hover:scale-105 cursor-pointer shadow-sm shrink-0"
+                className="relative hidden sm:flex items-center justify-center w-9 h-9 bg-emerald-950/70 hover:bg-emerald-900 text-rose-400 p-2 rounded-xl border border-emerald-500/40 transition-all hover:scale-105 cursor-pointer shadow-sm shrink-0"
                 aria-label={language === 'es' ? 'Ver favoritos' : 'View favorites'}
               >
                 <Heart className="w-4 h-4 fill-rose-500" />
@@ -472,18 +472,20 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               <button
                 onClick={signInWithGoogle}
-                className="hidden lg:flex items-center gap-1 text-[11px] font-bold bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 px-2.5 py-1.5 rounded-xl border border-emerald-500/40 transition-colors shrink-0 cursor-pointer"
+                className="hidden 2xl:flex items-center gap-1 text-[11px] font-bold bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 px-2.5 py-1.5 rounded-xl border border-emerald-500/40 transition-colors shrink-0 cursor-pointer"
               >
                 <LogIn className="w-3.5 h-3.5 text-amber-400" />
                 <span>{t('signIn')}</span>
               </button>
             )}
 
-            {/* Mobile / Tablet Drawer Hamburger Button (Visible on screens < 1024px) */}
+            {/* Compact navigation remains available until the full menu fits comfortably. */}
             <button
               onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
-              className="lg:hidden p-2 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 border border-emerald-500/40 transition-colors cursor-pointer shrink-0"
-              aria-label="Abrir Menú"
+              className="2xl:hidden p-2 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 border border-emerald-500/40 transition-colors cursor-pointer shrink-0"
+              aria-label={language === 'es' ? 'Abrir menú' : 'Open menu'}
+              aria-expanded={isMobileDrawerOpen}
+              aria-controls="main-navigation-drawer"
             >
               {isMobileDrawerOpen ? <X className="w-4 h-4 text-amber-400" /> : <Menu className="w-4 h-4 text-emerald-200" />}
             </button>
@@ -495,11 +497,11 @@ export const Header: React.FC<HeaderProps> = ({
         {isMobileDrawerOpen && (
           <>
             <div
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[90] lg:hidden"
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[90] 2xl:hidden"
               onClick={() => setIsMobileDrawerOpen(false)}
             />
             
-            <div className="fixed top-[95px] left-2 right-2 sm:left-4 sm:right-4 max-h-[82vh] bg-[#061f17] border border-emerald-500/30 rounded-3xl z-[100] shadow-2xl p-4 sm:p-5 overflow-y-auto lg:hidden space-y-4 animate-fade-in modal-scrollable text-white">
+            <div id="main-navigation-drawer" className="absolute top-full left-2 right-2 sm:left-4 sm:right-4 max-h-[calc(100dvh-6rem)] bg-[#061f17] border border-emerald-500/30 rounded-3xl z-[100] shadow-2xl p-4 sm:p-5 overflow-y-auto 2xl:hidden space-y-4 animate-fade-in modal-scrollable text-white">
               
               {/* Drawer Header */}
               <div className="flex items-center justify-between border-b border-emerald-500/20 pb-3">
@@ -577,6 +579,19 @@ export const Header: React.FC<HeaderProps> = ({
                     </span>
                   )}
                 </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <label className="text-[10px] font-bold text-emerald-300">{language === 'es' ? 'Idioma' : 'Language'}
+                  <select value={language} onChange={(event) => handleLanguageSelect(event.target.value as Language)} className="mt-1 w-full rounded-xl border border-emerald-500/30 bg-[#03140d] px-2.5 py-2 text-xs text-white">
+                    {SUPPORTED_LANGUAGES.map((item) => <option key={item.code} value={item.code}>{item.flag} {item.nativeName}</option>)}
+                  </select>
+                </label>
+                <label className="text-[10px] font-bold text-emerald-300">{language === 'es' ? 'Moneda' : 'Currency'}
+                  <select value={currency} onChange={(event) => setCurrency(event.target.value)} className="mt-1 w-full rounded-xl border border-emerald-500/30 bg-[#03140d] px-2.5 py-2 text-xs text-white">
+                    {CURRENCIES.map((item) => <option key={item} value={item}>{item}</option>)}
+                  </select>
+                </label>
               </div>
 
               {/* Section 1: Tours & Destinos */}

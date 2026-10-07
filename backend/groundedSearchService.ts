@@ -78,16 +78,13 @@ export async function performGroundedSearch(
   const ai = getAI();
   if (!ai) {
     return {
-      success: true,
+      success: false,
       answer:
         language === 'es'
-          ? 'Los Parques Nacionales de Costa Rica operan normalmente con reserva previa en servirr.sinac.go.cr. Para Manuel Antonio y Volcán Poás se recomienda adquirir entradas con antelación en línea. El ferry de Paquera opera con salidas regulares desde Puntarenas.'
-          : 'Costa Rica National Parks are operating with online reservations required at servirr.sinac.go.cr. For Manuel Antonio and Poás Volcano, reserve tickets well in advance. Paquera ferry runs regular daily departures from Puntarenas.',
-      sources: [
-        { uri: 'https://servir.sinac.go.cr', title: 'SINAC - Sistema Nacional de Áreas de Conservación' },
-        { uri: 'https://www.visitcostarica.com', title: 'ICT - Instituto Costarricense de Turismo' }
-      ],
-      modelUsed: 'deterministic-knowledge'
+          ? 'La consulta en vivo no está disponible. No he verificado horarios, tarifas, accesos, clima ni cupos. Solicite una verificación al equipo antes de organizar o pagar el servicio.'
+          : 'Live lookup is unavailable. I have not verified schedules, fares, access, weather or capacity. Ask the team to verify the service before arranging or paying for it.',
+      sources: [],
+      modelUsed: 'unavailable'
     };
   }
 
@@ -120,6 +117,14 @@ export async function performGroundedSearch(
     }
 
     const searchQueries = response.candidates?.[0]?.groundingMetadata?.webSearchQueries || [];
+    if (!sources.length || !response.text?.trim()) {
+      return {
+        success: false,
+        answer: language === 'es' ? 'La búsqueda no devolvió fuentes verificables. No puedo confirmar información operativa en vivo.' : 'The search returned no verifiable sources. I cannot confirm live operational information.',
+        sources: [],
+        modelUsed: 'unverified-response'
+      };
+    }
 
     return {
       success: true,

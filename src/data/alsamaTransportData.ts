@@ -1,7 +1,7 @@
 /**
- * 🚐 Catálogo y Tarifario Oficial de Transporte - Alsama Tours CR
- * Proveedor Verificado de Transporte Turístico y Privado en Costa Rica
- * Referencia oficial: https://alsamatourscr.com/transport/
+ * Reference routes only. Historical route estimates below are not verified offers,
+ * prices, schedules, capacities, or availability and must never be used to charge.
+ * Confirm every service directly with the provider before publishing it as bookable.
  */
 
 export interface AlsamaTransportRoute {
@@ -34,44 +34,20 @@ export const ALSAMA_PROVIDER_INFO: AlsamaTransportProviderInfo = {
   id: 'alsama-tours-cr',
   name: 'Alsama Tours CR',
   badge: {
-    es: 'Proveedor Oficial Verificado • CST Sostenible',
-    en: 'Verified Official Provider • CST Certified'
+    es: 'Proveedor recomendado • Acuerdo por confirmar',
+    en: 'Recommended provider • Agreement to be confirmed'
   },
   website: 'https://alsamatourscr.com/',
   transportUrl: 'https://alsamatourscr.com/transport/',
   description: {
-    es: 'Alsama Tours CR es nuestro operador oficial de traslados turísticos privados en Costa Rica. Ofrece servicio puerta a puerta con choferes profesionales bilingües, unidades ejecutivas modernas con aire acondicionado de alta potencia, conexión Wi-Fi a bordo y agua embotellada de cortesía.',
-    en: 'Alsama Tours CR is our official private tourist transportation provider in Costa Rica. Offering door-to-door service with certified bilingual drivers, modern air-conditioned executive vans, on-board Wi-Fi, and complimentary bottled water.'
+    es: 'Proveedor recomendado por Costa Rica Tours. Consulta su sitio público; la relación comercial, los servicios, tarifas, disponibilidad y condiciones se confirman directamente antes de reservar.',
+    en: 'Recommended by Costa Rica Tours. Visit its public website; the commercial relationship, services, rates, availability and terms must be confirmed directly before booking.'
   },
-  amenities: [
-    { icon: 'Wind', es: 'Aire Acondicionado de Alta Potencia', en: 'High-Power Air Conditioning' },
-    { icon: 'Wifi', es: 'Conexión Wi-Fi 4G/5G a bordo', en: 'On-Board High-Speed Wi-Fi' },
-    { icon: 'Coffee', es: 'Agua embotellada de cortesía', en: 'Complimentary Bottled Water' },
-    { icon: 'MapPin', es: 'Paradas escénicas en ruta (Fotos y Comida)', en: 'Scenic stops on the way (Photos & Meals)' },
-    { icon: 'Clock', es: 'Puntualidad garantizada con monitoreo de vuelos', en: 'Guaranteed Punctuality & Flight Tracking' },
-    { icon: 'ShieldCheck', es: 'Póliza de seguro MOPT/ICT e INS al 100%', en: 'Full MOPT/ICT & INS Traveler Insurance' }
-  ],
-  fleetTypes: [
-    {
-      name: 'Van Ejecutiva (1 - 5 Pasajeros)',
-      capacity: 'Hasta 5 pasajeros + 5 maletas grandes',
-      description: {
-        es: 'Toyota HiAce / Hyundai H1 equipada con asientos reclinables, maletero amplio y cargadores USB.',
-        en: 'Toyota HiAce / Hyundai H1 featuring reclining seats, spacious luggage compartment and USB chargers.'
-      }
-    },
-    {
-      name: 'Microbús Familiar (6 - 10 Pasajeros)',
-      capacity: 'Hasta 10 pasajeros + 10 maletas',
-      description: {
-        es: 'Microbús espacioso ideal para familias grandes y grupos de amigos que viajan con equipaje completo.',
-        en: 'Spacious passenger van ideal for extended families and travel groups with full luggage.'
-      }
-    }
-  ],
+  amenities: [],
+  fleetTypes: [],
   cancellationPolicy: {
-    es: 'Cancelación gratuita hasta 24 horas antes de la hora acordada de recogida.',
-    en: 'Free cancellation up to 24 hours prior to the scheduled pickup time.'
+    es: 'Condiciones de cancelación por confirmar con el proveedor.',
+    en: 'Cancellation terms to be confirmed with the provider.'
   }
 };
 

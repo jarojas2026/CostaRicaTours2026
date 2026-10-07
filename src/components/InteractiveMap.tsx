@@ -1751,7 +1751,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     { id: 'canopy', label: { es: '🪂 Canopy & Tirolesa', en: 'Canopy & Zipline' } },
                     { id: 'beaches', label: { es: '🏄 Playas & Catamarán', en: 'Beaches & Ocean' } },
                     { id: 'rafting', label: { es: '🛶 Rafting en Ríos', en: 'River Rafting' } },
-                    { id: 'culture', label: { es: '☕ Café & Chocolate', en: 'Coffee & Culture' } }
+                    { id: 'culture', label: { es: '☕ Café & Chocolate', en: 'Coffee & Culture' } },
+                    { id: 'services', label: { es: '🚐 Transporte y servicios', en: 'Transport & services' } }
                   ].map((cat) => (
                     <button
                       key={cat.id}
