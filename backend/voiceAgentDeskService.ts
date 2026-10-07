@@ -35,9 +35,9 @@ function say(text: string, language: 'es' | 'en' = 'es') {
   return `<Say language="${lang}" voice="${voice}">${esc(text)}</Say>`;
 }
 
-function gather(action: string, language: 'es' | 'en') {
+function gather(action: string, language: 'es' | 'en', prompt = '') {
   const lang = language === 'en' ? 'en-US' : 'es-MX';
-  return `<Gather input="speech dtmf" language="${lang}" speechTimeout="auto" timeout="5" action="${esc(action)}" method="POST" actionOnEmptyResult="true" numDigits="1" bargeIn="true"></Gather>`;
+  return `<Gather input="speech dtmf" language="${lang}" speechTimeout="auto" timeout="5" action="${esc(action)}" method="POST" actionOnEmptyResult="true" numDigits="1">${prompt ? say(prompt, language) : ''}</Gather>`;
 }
 
 function humanNumbers() {
@@ -48,10 +48,10 @@ export function voiceHumanTransferAvailable() {
   return humanNumbers().length > 0;
 }
 
-function gatherWithSilenceCount(action: string, language: 'es' | 'en', silenceCount: number) {
+function gatherWithSilenceCount(action: string, language: 'es' | 'en', silenceCount: number, prompt = '') {
   const url = new URL(action);
   url.searchParams.set('silenceCount', String(silenceCount));
-  return gather(url.toString(), language);
+  return gather(url.toString(), language, prompt);
 }
 
 const TERMINAL_CALL_STATUSES = new Set(['completed', 'busy', 'failed', 'no-answer', 'canceled', 'cancelled']);
@@ -130,14 +130,13 @@ export function createInboundVoiceResponse(input: {
   configuredOrThrow();
   const language = input.language === 'en' ? 'en' : 'es';
   const transferPrompt = input.humanTransferAvailable
-    ? (language === 'en' ? ' Speak after the tone, or press 0 to reach a human agent.' : ' Hable después del tono, o marque 0 para comunicarse con un agente.')
-    : (language === 'en' ? ' Speak after the tone and tell me how I can help.' : ' Hable después del tono y dígame cómo puedo ayudarle.');
+    ? (language === 'en' ? ' Tell me what you need, or press 0 to reach a human agent.' : ' Dígame qué necesita, o marque 0 para comunicarse con un agente.')
+    : (language === 'en' ? ' Tell me how I can help.' : ' Dígame cómo puedo ayudarle.');
   const greeting = language === 'en'
     ? `Welcome to the Costa Rica Tours virtual assistant${input.hotelName ? ` at ${input.hotelName}` : ''}. I can help with tour inquiries and reservation requests. Availability and payment must be verified.${transferPrompt}`
     : `Bienvenido al asistente virtual de Costa Rica Tours${input.hotelName ? ` en ${input.hotelName}` : ''}. Puedo ayudarle con consultas de tours y solicitudes de reserva. La disponibilidad y el pago deben verificarse.${transferPrompt}`;
   const parts = [
-    say(greeting, language),
-    gather(input.responseUrl, language)
+    gather(input.responseUrl, language, greeting)
   ];
   return xml(parts);
 }
@@ -152,7 +151,7 @@ export function createHumanTransferResult(input: {
   const message = language === 'en'
     ? 'No human agent answered. I can keep helping you; please tell me what you need or press 0 to try the Agent Desk again.'
     : 'No contestó un agente humano. Puedo seguir ayudándole; dígame qué necesita o marque 0 para volver a intentar con el Agent Desk.';
-  return xml([say(message, language), gatherWithSilenceCount(input.responseUrl, language, 0)]);
+  return xml([gatherWithSilenceCount(input.responseUrl, language, 0, message)]);
 }
 
 // A technical failure is not evidence that a booking was rejected or confirmed.
@@ -178,7 +177,7 @@ export function createVoiceRecoveryResponse(input: {
   const prompt = voiceHumanTransferAvailable()
     ? (language === 'en' ? ' Press 0 to speak to a human agent, or ask a general question.' : ' Marque 0 para hablar con un agente humano, o haga una consulta general.')
     : (language === 'en' ? ' You can ask a general question or contact us using WhatsApp on our website.' : ' Puede hacer una consulta general o contactarnos mediante WhatsApp en nuestra página.');
-  return xml([say(message + prompt, language), gather(action.toString(), language)]);
+  return xml([gather(action.toString(), language, message + prompt)]);
 }
 
 export async function handleVoiceTurn(input: {
@@ -229,8 +228,7 @@ export async function handleVoiceTurn(input: {
       ]);
     }
     return xml([
-      say(language === 'en' ? 'I did not hear you. Please tell me what you need.' : 'No pude escucharle. Dígame qué necesita.', language),
-      gatherWithSilenceCount(input.responseUrl, language, nextSilenceCount)
+      gatherWithSilenceCount(input.responseUrl, language, nextSilenceCount, language === 'en' ? 'I did not hear you. Please tell me what you need.' : 'No pude escucharle. Dígame qué necesita.')
     ]);
   }
 
@@ -239,8 +237,7 @@ export async function handleVoiceTurn(input: {
       ? (language === 'en' ? 'Please speak your request, or press 0 for a human agent.' : 'Diga lo que necesita o marque 0 para hablar con un agente humano.')
       : (language === 'en' ? 'That key is not supported. Please speak your request.' : 'Esa tecla no está disponible. Diga lo que necesita.');
     return xml([
-      say(prompt, language),
-      gatherWithSilenceCount(input.responseUrl, language, 0)
+      gatherWithSilenceCount(input.responseUrl, language, 0, prompt)
     ]);
   }
 
@@ -297,8 +294,7 @@ export async function handleVoiceTurn(input: {
   await rememberTurn(sessionId, { role: 'assistant', text: spoken }, { agentId: 'voice_agent_desk' });
 
   return xml([
-    say(spoken.slice(0, 4000), language),
-    gatherWithSilenceCount(input.responseUrl, language, 0)
+    gatherWithSilenceCount(input.responseUrl, language, 0, spoken.slice(0, 4000))
   ]);
 }
 

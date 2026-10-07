@@ -56,12 +56,12 @@ export const ToursProvider = ({ children }: { children: ReactNode }) => {
             tour.title.en === remoteTour.title?.en
           );
 
-          // Firestore is catalog data, but route identity must remain canonical.
-          // Preserve the local id when an imported record has a stale/mismatched id.
+          // Match backend lookup by explicit remote identity. Title matches only
+          // enrich presentation; they must never select a different sale product.
           fetchedTours.push({
             ...(localTour || {} as Tour),
             ...remoteTour,
-            id: localTour?.id || remoteTour.id,
+            id: remoteTour.id || doc.id,
             catalogStatus: canBook ? 'bookable' : 'inquiry',
             isDemoData: !canBook
           });

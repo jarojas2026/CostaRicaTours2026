@@ -29,6 +29,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
   tour, isOpen = true, onClose, language, currency, onConfirmBooking, onBookingSuccess 
 }) => {
   const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
   const [pickupHotel, setPickupHotel] = useState('');
@@ -63,7 +64,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
 
   if (!tour || !isOpen) return null;
 
-  const totalUSD = (tour.priceUSD * adults) + (tour.priceUSD * 0.7 * children);
+  const childPrice = tour.childPriceUSD ?? Math.round(tour.priceUSD * 70) / 100;
+  const totalUSD = (Math.round(tour.priceUSD * 100) * adults + Math.round(childPrice * 100) * children) / 100;
   const crcRate = getUsdToCrcRate();
   const totalCRC = crcRate > 0 ? Math.round(totalUSD * crcRate) : 0;
 
@@ -86,7 +88,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     : (tour.whatToBring?.[language] || tour.whatToBring?.es || tour.whatToBring?.en || []);
 
   const buildBookingRequest = () => {
-    const departureTime = (tour.departureTimes && tour.departureTimes.length > 0) ? tour.departureTimes[0] : '08:00 AM';
+    const departureTime = selectedTime || tour.departureTimes?.[0] || '08:00 AM';
     const bookingPayload: BookingRequest = {
       tourId: tour.id,
       tourName: modalTitle,
@@ -473,6 +475,13 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                <label className="block text-xs text-stone-300">
+                  {language === 'es' ? 'Horario publicado por el proveedor' : 'Provider departure time'}
+                  <select required disabled={requestLocked} value={selectedTime || tour.departureTimes?.[0] || ''} onChange={e => setSelectedTime(e.target.value)} className="mt-2 w-full rounded-xl bg-stone-950 border border-white/15 p-3">
+                    {(tour.departureTimes || []).map(time => <option key={time} value={time}>{time}</option>)}
+                  </select>
+                </label>
+                {tour.cancellationPolicy && <p className="text-xs text-stone-300">{language === 'es' ? 'Cancelación: ' : 'Cancellation: '}{tour.cancellationPolicy}</p>}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-stone-400 uppercase tracking-wider">

@@ -16,7 +16,8 @@ import {
 } from 'firebase-admin/firestore';
 import { GoogleGenAI } from '@google/genai';
 import Stripe from 'stripe';
-import { TOURS } from '../src/data/toursData';
+import { resolveCommerceTour } from './commerceCatalog';
+import { assertServiceDate, reservationQuote, slotAvailability } from './commercePolicy';
 import { getIdempotentResult, idempotencyDocId, normalizeIdempotencyKey, requestFingerprint } from './idempotencyService';
 import { assertBookingTransition, normalizeBookingLifecycle } from './bookingStateMachine';
 import { massiveEngine } from './massiveProcessingEngine';
@@ -151,7 +152,7 @@ export async function getOperatorById(providerId: string): Promise<{
     active: false
   };
 
-  if (!db) return defaultFallback;
+  if (!db || !providerId) return defaultFallback;
 
   try {
     const opDoc = await db.collection('operators').doc(providerId).get();
@@ -202,67 +203,21 @@ export async function checkTourAvailability(
   time?: string,
   requestedSeats = 1
 ): Promise<{ available: boolean; remainingSeats: number; maxCapacity: number; reason?: string }> {
-  const tour = TOURS.find((t) => t.id === tourId);
-  const maxCapacity = tour?.maxGroupSize || 15;
-  const bookingTime = time || '08:00 AM';
-  const slotKey = getSlotKey(tourId, date, bookingTime);
-
-  const db = getFirestoreDb();
-  let alreadyBooked = 0;
-
-  if (db) {
-    try {
-      const slotDoc = await db.collection('availability_slots').doc(slotKey).get();
-      if (slotDoc.exists) {
-        alreadyBooked = Number(slotDoc.data()?.bookedSeats) || 0;
-      } else {
-        const snapshot = await db.collection('bookings')
-          .where('tourId', '==', tourId)
-          .where('date', '==', date)
-          .where('time', '==', bookingTime)
-          .get();
-
-        snapshot.forEach((doc) => {
-          const b = doc.data();
-          if (b.status !== 'cancelada' && b.status !== 'cancelled') {
-            alreadyBooked += (Number(b.adults) || 0) + (Number(b.children) || 0);
-          }
-        });
-      }
-    } catch (err) {
-      console.warn('Error al verificar cupos en Firestore:', err);
-      if (process.env.NODE_ENV === 'production') {
-        return {
-          available: false,
-          remainingSeats: 0,
-          maxCapacity,
-          reason: 'No puedo verificar el cupo todavía porque el servicio de disponibilidad no respondió.'
-        };
-      }
-      alreadyBooked = inMemorySlots.get(slotKey) || 0;
-    }
-  } else if (process.env.NODE_ENV === 'production') {
-    return {
-      available: false,
-      remainingSeats: 0,
-      maxCapacity,
-      reason: 'No puedo verificar el cupo todavía porque la disponibilidad en vivo no está accesible.'
-    };
-  } else {
-    alreadyBooked = inMemorySlots.get(slotKey) || 0;
+  try {
+    assertServiceDate(date);
+    const liveDb = getFirestoreDb();
+    if (!liveDb) throw new Error('No puedo verificar disponibilidad en vivo porque el servicio de inventario no está accesible.');
+    const product: any = await resolveCommerceTour(liveDb, tourId);
+    if (!product || product.catalogStatus !== 'bookable') throw new Error('Experiencia pendiente de vincular con un proveedor.');
+    const operator = await getOperatorById(product.providerId);
+    if (!operator.active) throw new Error('El proveedor no está habilitado.');
+    const departure = time || product.departureTimes?.[0] || '08:00 AM';
+    const snap = await liveDb.collection('availability_slots').doc(getSlotKey(tourId, date, departure)).get();
+    const capacity = slotAvailability(snap.data(), tourId, product.providerId, date, departure, requestedSeats);
+    return { available: true, remainingSeats: capacity.remainingSeats, maxCapacity: capacity.maxCapacity };
+  } catch (error: any) {
+    return { available: false, remainingSeats: 0, maxCapacity: 0, reason: error.message || 'Disponibilidad no verificada.' };
   }
-
-  const remainingSeats = Math.max(0, maxCapacity - alreadyBooked);
-  const available = remainingSeats >= requestedSeats;
-
-  return {
-    available,
-    remainingSeats,
-    maxCapacity,
-    reason: available
-      ? undefined
-      : `No queda cupo suficiente. Cupos disponibles: ${remainingSeats}, solicitados: ${requestedSeats}.`
-  };
 }
 
 /**
@@ -390,10 +345,10 @@ export async function createBooking(data: any) {
     throw new Error('Legacy Counter Agent direct booking is disabled. Use the canonical reservation workflow.');
   }
 
-  const bookingId = data.bookingId || `CR-PV-${crypto.randomUUID()}`;
+  const bookingId = `CR-PV-${crypto.randomUUID()}`;
   const bookingTime = data.time || '08:00 AM';
-  const numAdults = Number(data.adults) || 1;
-  const numChildren = Number(data.children) || 0;
+  const numAdults = Number(data.adults ?? 1);
+  const numChildren = Number(data.children ?? 0);
   const totalPassengers = numAdults + numChildren;
   const tourId = data.tourId || 'tour-custom';
   const tourDate = String(data.date || '').trim();
@@ -402,11 +357,28 @@ export async function createBooking(data: any) {
     return { conflict: true, error: 'fecha_requerida', message: 'La fecha del servicio es obligatoria para verificar disponibilidad.' };
   }
 
-  const tourInfo = TOURS.find((t) => t.id === tourId);
-  const maxCapacity = tourInfo?.maxGroupSize || 15;
+  const db = getFirestoreDb();
+  let tourInfo: any;
+  let quote: ReturnType<typeof reservationQuote>;
+  try {
+    assertServiceDate(tourDate);
+    tourInfo = await resolveCommerceTour(db, tourId);
+    quote = reservationQuote(tourInfo, numAdults, numChildren);
+    if (data.totalUSD != null && (!Number.isFinite(Number(data.totalUSD)) || Math.abs(Number(data.totalUSD) - quote.totalUSD) > 0.01)) {
+      throw new Error('La tarifa cambió. Actualice la ficha para revisar el importe antes de reservar.');
+    }
+    if (!tourInfo.departureTimes?.includes(bookingTime)) throw new Error('Horario no publicado por el proveedor.');
+    if (data.paypalOrderId || data.stripeSessionId) throw new Error('Cree primero la reserva y complete después su pago vinculado.');
+  } catch (error: any) {
+    return { conflict: true, error: 'commerce_not_ready', message: error.message };
+  }
+  let maxCapacity = 0;
   const slotKey = getSlotKey(tourId, tourDate, bookingTime);
   const providerId = String(tourInfo?.providerId || '').trim();
   const providerInfo = await getOperatorById(providerId);
+  if (!providerInfo.active || !providerInfo.verified) {
+    return { conflict: true, error: 'provider_unverified', message: 'El proveedor todavía no está verificado y habilitado.' };
+  }
 
   let paymentResult: {
     verified: boolean;
@@ -420,12 +392,7 @@ export async function createBooking(data: any) {
     meta: undefined
   };
 
-  if (data.paypalOrderId || data.stripeSessionId) {
-    paymentResult = await verifyPaymentServerSide(data.paymentMethod || 'credit_card', {
-      paypalOrderId: data.paypalOrderId,
-      stripeSessionId: data.stripeSessionId
-    });
-  } else if (data.sinpeReference) {
+  if (data.sinpeReference) {
     paymentResult = {
       verified: false,
       status: 'pendiente_pago',
@@ -441,11 +408,11 @@ export async function createBooking(data: any) {
     children: numChildren
   });
 
-  const calculatedUSD = Number(
-    data.totalUSD ||
-    (data.currency === 'CRC' ? Number(data.totalAmount || 0) / getUsdToCrcRate() : data.totalAmount) ||
-    0
-  );
+  const calculatedUSD = quote.totalUSD;
+  const crcRate = getUsdToCrcRateOptional();
+  if (data.currency === 'CRC' && !crcRate) {
+    return { conflict: true, error: 'exchange_rate_unavailable', message: 'La tarifa CRC no puede verificarse. Seleccione USD.' };
+  }
 
   const customerInput = data.customer || {
     name: data.customerName || 'Cliente',
@@ -456,8 +423,7 @@ export async function createBooking(data: any) {
   const customerName = String(customerInput.fullName || customerInput.name || data.customerName || '').trim();
   const customerObj = { ...customerInput, name: customerName, fullName: customerName };
 
-  const db = getFirestoreDb();
-  if (!db && process.env.NODE_ENV === 'production') {
+  if (!db) {
     return {
       conflict: true,
       error: 'availability_unverified',
@@ -468,7 +434,8 @@ export async function createBooking(data: any) {
   const newBookingPayload = {
     bookingId,
     tourId,
-    tourName: data.tourName || tourInfo?.title?.es || 'Tour en Costa Rica',
+    tourName: tourInfo?.title?.es || 'Tour en Costa Rica',
+    priceSnapshot: { unitPriceUSD: quote.unitPriceUSD, childPriceUSD: quote.childPriceUSD, catalogDocumentId: tourInfo.catalogDocumentId },
     providerId,
     date: tourDate,
     time: bookingTime,
@@ -477,9 +444,9 @@ export async function createBooking(data: any) {
     pickupHotel: String(data.pickupHotel || '').trim(),
     specialRequests: data.specialRequests || '',
     totalUSD: calculatedUSD,
-    totalCRC: Math.round(calculatedUSD * getUsdToCrcRate()),
-    totalAmount: data.currency === 'CRC' ? Math.round(calculatedUSD * getUsdToCrcRate()) : calculatedUSD,
-    currency: data.currency || 'USD',
+    totalCRC: crcRate ? Math.round(calculatedUSD * crcRate) : null,
+    totalAmount: data.currency === 'CRC' ? Math.round(calculatedUSD * crcRate) : calculatedUSD,
+    currency: data.currency === 'CRC' ? 'CRC' : 'USD',
     paymentMethod: data.paymentMethod || 'credit_card',
     paymentStatus: paymentResult.paymentStatus,
     status: paymentResult.status,
@@ -512,7 +479,30 @@ export async function createBooking(data: any) {
         }
 
         const slotDoc = await transaction.get(slotRef);
-        const currentBooked = slotDoc.exists ? (Number(slotDoc.data()?.bookedSeats) || 0) : 0;
+        if (!slotDoc.exists) {
+          const legacyBookings = await transaction.get(
+            db.collection('bookings')
+              .where('tourId', '==', tourId)
+              .where('date', '==', tourDate)
+              .where('time', '==', bookingTime)
+              .limit(1)
+          );
+          if (!legacyBookings.empty) throw new Error('Debe conciliar las reservas existentes antes de abrir este cupo.');
+        }
+        const productDoc = await transaction.get(db.collection('tours').doc(tourInfo.catalogDocumentId));
+        const product: any = productDoc.data();
+        const currentQuote = reservationQuote(product, numAdults, numChildren);
+        if (product.providerId !== providerId || currentQuote.totalUSD !== calculatedUSD || !product.departureTimes?.includes(bookingTime)) {
+          throw new Error('La oferta cambió durante la solicitud. Revise la tarifa y vuelva a intentar.');
+        }
+        const opDoc = await transaction.get(db.collection('operators').doc(providerId));
+        const provDoc = await transaction.get(db.collection('proveedores').doc(providerId));
+        const op = opDoc.exists ? opDoc.data() : provDoc.data();
+        const enabled = opDoc.exists ? op?.verified === true && op?.active === true : op?.verificado === true && op?.activo === true;
+        if (!enabled || op?.status === 'inactivo') throw new Error('El proveedor ya no está habilitado.');
+        const slot = slotAvailability(slotDoc.data(), tourId, providerId, tourDate, bookingTime, totalPassengers);
+        const currentBooked = slot.bookedSeats;
+        maxCapacity = slot.maxCapacity;
         if (currentBooked + totalPassengers > maxCapacity) {
           const availableLeft = Math.max(0, maxCapacity - currentBooked);
           throw new Error(`NO_AVAILABILITY: Solicitados ${totalPassengers} cupos pero solo quedan ${availableLeft} disponibles.`);
@@ -527,8 +517,8 @@ export async function createBooking(data: any) {
           updatedAt: FieldValue.serverTimestamp()
         }, { merge: true });
 
-        transaction.set(bookingRef, {
-          ...newBookingPayload,
+        transaction.create(bookingRef, {
+          ...JSON.parse(JSON.stringify(newBookingPayload)),
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp()
         });
@@ -604,10 +594,8 @@ export async function createBooking(data: any) {
 }
 
 export async function getBookingById(bookingId: string): Promise<any | null> {
-  const cached = inMemoryBookings.get(bookingId);
-  if (cached) return cached;
   const col = getBookingsCollection();
-  if (!col) return null;
+  if (!col) return process.env.NODE_ENV === 'test' ? inMemoryBookings.get(bookingId) || null : null;
   try {
     const doc = await col.doc(bookingId).get();
     if (!doc.exists) return null;
@@ -725,9 +713,10 @@ export async function updateBookingStatus(
     try {
       const docRef = col.doc(bookingId);
       const doc = await docRef.get();
-      if (doc.exists) existing = { ...doc.data(), ...existing };
+      existing = doc.exists ? doc.data() : undefined;
     } catch (err) {
       console.warn('Error buscando doc en Firestore:', err);
+      return { success: false, error: 'No se pudo verificar el estado actual de la reserva.' };
     }
   }
 

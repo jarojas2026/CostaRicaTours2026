@@ -32,7 +32,6 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
   const [routeSearch, setRouteSearch] = useState<string>('');
 
   const selectedRoute = ALSAMA_TRANSPORT_ROUTES.find(r => r.id === selectedRouteId) || ALSAMA_TRANSPORT_ROUTES[0];
-  const currentPriceUSD = groupSize === '1-5' ? selectedRoute.price1to5USD : selectedRoute.price6to10USD;
 
   const filteredRoutes = ALSAMA_TRANSPORT_ROUTES.filter(r => {
     if (!routeSearch.trim()) return true;
@@ -65,8 +64,8 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
           
           <p className="text-sm sm:text-base text-stone-900 font-medium leading-relaxed">
             {language === 'es' 
-              ? 'Conectamos todas las opciones para moverte por el país: traslados privados oficiales con Alsama Tours CR, shuttles compartidos hotel-a-hotel, renta de 4x4, vuelos y buses públicos.'
-              : 'All your Costa Rica travel options: official private transfers with Alsama Tours CR, shared hotel-to-hotel shuttles, 4x4 rentals, domestic flights, and public buses.'}
+              ? 'Explora opciones para moverte por Costa Rica. Cada servicio, proveedor, precio y horario debe confirmarse antes de reservar.'
+              : 'Explore ways to get around Costa Rica. Confirm each service, provider, price and schedule before booking.'}
           </p>
         </div>
 
@@ -81,9 +80,9 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
             }`}
           >
             <span>🚐</span>
-            <span>{language === 'es' ? 'Traslados Privados (Alsama Tours)' : 'Private Transfers (Alsama Tours)'}</span>
+            <span>{language === 'es' ? 'Consultar transporte (Alsama Tours)' : 'Ask about transport (Alsama Tours)'}</span>
             <span className="ml-1 bg-amber-400 text-stone-950 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">
-              {language === 'es' ? 'Oficial' : 'Official'}
+              {language === 'es' ? 'Por confirmar' : 'To confirm'}
             </span>
           </button>
 
@@ -140,7 +139,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
         {activeTab === 'alsama_private' && (
           <div className="space-y-8 animate-in fade-in duration-300">
             
-            {/* Provider Verification Banner */}
+            {/* Prospective provider and quote inquiry */}
             <div className="bg-gradient-to-br from-[#0B2B18] via-[#0E351F] to-[#081F12] rounded-3xl p-6 sm:p-8 border border-emerald-500/40 shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
               
@@ -149,19 +148,21 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                   <div className="flex flex-wrap items-center gap-2.5">
                     <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-xs font-black uppercase px-3.5 py-1 rounded-full flex items-center gap-1.5">
                       <Award className="w-3.5 h-3.5 text-amber-400" />
-                      <span>{ALSAMA_PROVIDER_INFO.badge[language === 'es' ? 'es' : 'en']}</span>
+                      <span>{language === 'es' ? 'Proveedor recomendado · por validar' : 'Recommended provider · verification pending'}</span>
                     </span>
                     <span className="text-amber-300 text-xs font-bold flex items-center gap-1">
-                      ★ Proveedor Verificado de Costa Rica Tours
+                      {language === 'es' ? 'Sin acuerdo comercial confirmado' : 'No confirmed commercial agreement'}
                     </span>
                   </div>
 
                   <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-stone-900 tracking-tight">
-                    🚐 Traslados Privados Oficiales • Alsama Tours CR
+                    🚐 {language === 'es' ? 'Solicita transporte y servicios de Alsama Tours CR' : 'Request transport and services from Alsama Tours CR'}
                   </h3>
 
                   <p className="text-xs sm:text-sm text-stone-900 max-w-3xl leading-relaxed">
-                    {ALSAMA_PROVIDER_INFO.description[language === 'es' ? 'es' : 'en']}
+                    {language === 'es'
+                      ? 'Proveedor recomendado por Costa Rica Tours. Consulta su sitio y solicita disponibilidad y precio; cada servicio debe confirmarse directamente antes de considerarse reservado.'
+                      : 'Recommended by Costa Rica Tours. Visit its website and request availability and a quote; each service must be confirmed directly before it is considered booked.'}
                   </p>
                 </div>
 
@@ -172,14 +173,14 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                     rel="noopener noreferrer"
                     className="bg-[#071A0F] hover:bg-[#0c2918] text-emerald-300 border border-emerald-500/40 font-bold text-xs uppercase px-4 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm"
                   >
-                    <span>{language === 'es' ? 'Ver Tarifario en Alsama Tours' : 'View on Alsama Tours'}</span>
+                    <span>{language === 'es' ? 'Visitar web de Alsama Tours' : 'Visit Alsama Tours website'}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                   <a
                     href={`https://wa.me/50687959148?text=${encodeURIComponent(
                       language === 'es'
-                        ? 'Hola Costa Rica Tours (costaricatours.es), quisiera cotizar un traslado privado oficial con Alsama Tours CR.'
-                        : 'Hello Costa Rica Tours (costaricatours.es), I would like to book an official private transfer with Alsama Tours CR.'
+                        ? 'Hola Costa Rica Tours. Quisiera solicitar una cotización de transporte o un servicio turístico con Alsama Tours. Aún no es una reserva confirmada.'
+                        : 'Hello Costa Rica Tours. I would like to request a quote for transport or a travel service with Alsama Tours. This is not a confirmed booking.'
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -191,22 +192,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                 </div>
               </div>
 
-              {/* Amenities Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-6">
-                {ALSAMA_PROVIDER_INFO.amenities.map((amenity, i) => (
-                  <div key={i} className="bg-[#071A0F]/80 p-3 rounded-2xl border border-emerald-500/20 flex flex-col items-center text-center gap-2">
-                    {i === 0 && <Wind className="w-5 h-5 text-emerald-400" />}
-                    {i === 1 && <Wifi className="w-5 h-5 text-teal-400" />}
-                    {i === 2 && <Coffee className="w-5 h-5 text-amber-400" />}
-                    {i === 3 && <MapPin className="w-5 h-5 text-orange-400" />}
-                    {i === 4 && <Clock className="w-5 h-5 text-sky-400" />}
-                    {i === 5 && <ShieldCheck className="w-5 h-5 text-emerald-400" />}
-                    <span className="text-[11px] font-semibold text-stone-900 leading-tight">
-                      {amenity[language === 'es' ? 'es' : 'en']}
-                    </span>
-                  </div>
-                ))}
-              </div>
+            <p className="mt-4 text-xs text-amber-200">{language === 'es' ? 'Precios, horarios, vehículo, inclusiones, políticas y disponibilidad: pendientes de confirmación con el proveedor. Enviar esta consulta no reserva ni genera un cobro.' : 'Prices, schedules, vehicle, inclusions, policies and availability must be confirmed with the provider. Sending this inquiry does not book or charge.'}</p>
             </div>
 
             {/* Interactive Route Calculator & Quote Generator */}
@@ -218,18 +204,18 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                   </div>
                   <div>
                     <h4 className="text-xl sm:text-2xl font-black text-stone-900">
-                      {language === 'es' ? 'Calculadora de Tarifas de Traslado en Tiempo Real' : 'Real-Time Transfer Fare Calculator'}
+                      {language === 'es' ? 'Solicitar cotización de traslado' : 'Request a transfer quote'}
                     </h4>
                     <p className="text-xs text-stone-900">
                       {language === 'es'
-                        ? 'Tarifas transparentes por vehículo completo, sin costos ocultos, operado por Alsama Tours CR.'
-                        : 'Transparent rates per private vehicle, no hidden fees, operated by Alsama Tours CR.'}
+                        ? 'Elige una ruta de referencia y tamaño de grupo; confirmaremos precio y disponibilidad.'
+                        : 'Choose a sample route and group size; price and availability will be confirmed.'}
                     </p>
                   </div>
                 </div>
 
                 <span className="hidden sm:inline-flex bg-teal-500/20 text-teal-300 text-xs font-bold px-3 py-1 rounded-full border border-teal-400/30">
-                  {language === 'es' ? 'Tarifas 2026 Vigentes' : 'Current 2026 Rates'}
+                  {language === 'es' ? 'Cotización por confirmar' : 'Quote to be confirmed'}
                 </span>
               </div>
 
@@ -248,8 +234,8 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                       className="w-full bg-[#071A0F] text-stone-900 border border-teal-500/50 rounded-2xl px-4 py-3.5 text-sm font-semibold focus:outline-none focus:border-teal-400 shadow-inner"
                     >
                       {ALSAMA_TRANSPORT_ROUTES.map((route) => (
-                        <option key={route.id} value={route.id} className="bg-[#071A0F] text-stone-900">
-                          {route.origin[language === 'es' ? 'es' : 'en']} ➔ {route.destination[language === 'es' ? 'es' : 'en']} ({route.durationLabel[language === 'es' ? 'es' : 'en']})
+                            <option key={route.id} value={route.id} className="bg-[#071A0F] text-stone-900">
+                          {route.origin[language === 'es' ? 'es' : 'en']} ➔ {route.destination[language === 'es' ? 'es' : 'en']}
                         </option>
                       ))}
                     </select>
@@ -276,8 +262,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                           </span>
                           {groupSize === '1-5' && <Check className="w-4 h-4 text-teal-400" />}
                         </div>
-                        <span className="text-[11px] text-stone-900 block">Van Ejecutiva (Toyota HiAce)</span>
-                        <span className="text-sm font-black text-stone-900 mt-1 block">${selectedRoute.price1to5USD} USD</span>
+                            <span className="text-[11px] text-stone-900 block">{language === 'es' ? 'Vehículo y tarifa por confirmar' : 'Vehicle and rate to be confirmed'}</span>
                       </button>
 
                       <button
@@ -296,8 +281,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                           </span>
                           {groupSize === '6-10' && <Check className="w-4 h-4 text-amber-400" />}
                         </div>
-                        <span className="text-[11px] text-stone-900 block">Microbús Extendido Familiar</span>
-                        <span className="text-sm font-black text-stone-900 mt-1 block">${selectedRoute.price6to10USD} USD</span>
+                            <span className="text-[11px] text-stone-900 block">{language === 'es' ? 'Vehículo y tarifa por confirmar' : 'Vehicle and rate to be confirmed'}</span>
                       </button>
                     </div>
                   </div>
@@ -307,9 +291,9 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                       <MapPin className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
                       <div>
                         <strong className="text-stone-900 block">
-                          {language === 'es' ? 'Paradas Escénicas Incluidas en Ruta:' : 'Scenic Stops Included on Route:'}
+                          {language === 'es' ? 'Ruta de referencia para cotizar:' : 'Sample route for a quote:'}
                         </strong>
-                        <span>{selectedRoute.scenicStops[language === 'es' ? 'es' : 'en']}</span>
+                        <span>{language === 'es' ? 'Paradas y recorrido se coordinan con el proveedor.' : 'Stops and routing are coordinated with the provider.'}</span>
                       </div>
                     </div>
                   )}
@@ -320,7 +304,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                   <div>
                     <div className="flex items-center justify-between text-xs text-stone-900 mb-2">
                       <span className="uppercase tracking-wider font-bold text-teal-300">
-                        {language === 'es' ? 'Tarifa Total por Vehículo Privado' : 'Total Private Vehicle Fare'}
+                        {language === 'es' ? 'Precio del servicio' : 'Service price'}
                       </span>
                       <span className="bg-emerald-500/20 text-emerald-300 text-[11px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400/30">
                         {groupSize === '1-5' ? '1-5 Pax' : '6-10 Pax'}
@@ -328,51 +312,37 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                     </div>
 
                     <div className="flex items-baseline gap-3">
-                      <span className="text-4xl sm:text-5xl font-black text-stone-900 tracking-tight">
-                        ${currentPriceUSD}
-                      </span>
-                      <span className="text-sm font-bold text-teal-300">USD</span>
-                      <span className="text-xs text-stone-800 font-medium">
-                        (~{formatCurrency(currentPriceUSD, 'CRC')})
+                      <span className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight">
+                        {language === 'es' ? 'Por cotizar' : 'Quote required'}
                       </span>
                     </div>
 
                     <p className="text-[11px] text-stone-900 mt-2 leading-relaxed">
                       {language === 'es'
-                        ? 'Incluye combustible, chofer bilingüe certificado, peajes, A/C, Wi-Fi a bordo y agua de cortesía. Precio por trayecto completo.'
-                        : 'Includes fuel, bilingual certified driver, road tolls, A/C, on-board Wi-Fi and complimentary water. One-way private trip.'}
+                        ? 'Solicita una cotización; inclusiones y condiciones se confirmarán antes de reservar.'
+                        : 'Request a quote; inclusions and terms will be confirmed before booking.'}
                     </p>
 
-                    <div className="mt-4 pt-4 border-t border-stone-200/60 grid grid-cols-2 gap-2 text-xs text-stone-800">
-                      <div>
-                        <span className="text-stone-900 block text-[10px] uppercase">{language === 'es' ? 'Tiempo Estimado' : 'Est. Time'}</span>
-                        <strong className="text-stone-900 font-bold">{selectedRoute.durationLabel[language === 'es' ? 'es' : 'en']}</strong>
-                      </div>
-                      <div>
-                        <span className="text-stone-900 block text-[10px] uppercase">{language === 'es' ? 'Distancia' : 'Distance'}</span>
-                        <strong className="text-stone-900 font-bold">{selectedRoute.distanceKm} km</strong>
-                      </div>
-                    </div>
                   </div>
 
                   <div className="space-y-2.5 pt-2">
                     <a
                       href={`https://wa.me/50687959148?text=${encodeURIComponent(
                         language === 'es'
-                          ? `Hola Costa Rica Tours (costaricatours.es), quisiera reservar el traslado privado oficial con Alsama Tours CR:\n• Ruta: ${selectedRoute.origin.es} ➔ ${selectedRoute.destination.es}\n• Grupo: ${groupSize === '1-5' ? '1 a 5 pasajeros' : '6 a 10 pasajeros'}\n• Tarifa: $${currentPriceUSD} USD\n¿Me pueden confirmar disponibilidad para mi fecha?`
-                          : `Hello Costa Rica Tours (costaricatours.es), I would like to book the official private transfer with Alsama Tours CR:\n• Route: ${selectedRoute.origin.en} ➔ ${selectedRoute.destination.en}\n• Group: ${groupSize === '1-5' ? '1 to 5 passengers' : '6 to 10 passengers'}\n• Rate: $${currentPriceUSD} USD\nCould you confirm availability for my date?`
+                          ? `Hola Costa Rica Tours. Quisiera cotizar un traslado con Alsama Tours:\n• Ruta solicitada: ${selectedRoute.origin.es} ➔ ${selectedRoute.destination.es}\n• Grupo: ${groupSize === '1-5' ? '1 a 5 pasajeros' : '6 a 10 pasajeros'}\nPor favor confirmar precio, disponibilidad, vehículo e inclusiones. Entiendo que esto es una consulta, no una reserva confirmada.`
+                          : `Hello Costa Rica Tours. I would like a quote for a transfer with Alsama Tours:\n• Requested route: ${selectedRoute.origin.en} ➔ ${selectedRoute.destination.en}\n• Group: ${groupSize === '1-5' ? '1 to 5 passengers' : '6 to 10 passengers'}\nPlease confirm price, availability, vehicle and inclusions. I understand this is an inquiry, not a confirmed booking.`
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black text-xs uppercase px-5 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
                     >
                       <MessageCircle className="w-4 h-4" />
-                      <span>{language === 'es' ? 'Reservar Traslado por WhatsApp' : 'Book Transfer via WhatsApp'}</span>
+                      <span>{language === 'es' ? 'Solicitar cotización por WhatsApp' : 'Request a quote on WhatsApp'}</span>
                     </a>
 
                     <div className="flex items-center justify-center gap-2 text-[11px] text-stone-900">
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>{language === 'es' ? 'Cancelación gratuita hasta 24 horas antes' : 'Free cancellation up to 24h prior'}</span>
+                      <span>{language === 'es' ? 'Condiciones por confirmar' : 'Terms to be confirmed'}</span>
                     </div>
                   </div>
                 </div>
@@ -385,12 +355,12 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h4 className="text-xl font-black text-stone-900 flex items-center gap-2">
-                    📋 {language === 'es' ? 'Tarifario Oficial Completo de Traslados Privados' : 'Full Official Private Transfer Rate Sheet'}
+                    📋 {language === 'es' ? 'Rutas de referencia para solicitar cotización' : 'Sample routes to request a quote'}
                   </h4>
                   <p className="text-xs text-stone-900">
                     {language === 'es' 
-                      ? 'Referencia directa de Alsama Tours CR. Precios fijos y garantizados en dólares estadounidenses (USD).'
-                      : 'Direct reference from Alsama Tours CR. Guaranteed fixed rates in US Dollars (USD).'}
+                      ? 'La lista ayuda a preparar una consulta; no confirma operación, horarios ni precio de Alsama Tours.'
+                      : 'This list helps prepare an inquiry; it does not confirm Alsama Tours service, schedule or price.'}
                   </p>
                 </div>
 
@@ -414,9 +384,8 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                     <tr className="border-b border-teal-500/30 text-teal-300 uppercase tracking-wider text-[11px]">
                       <th className="py-3 px-3 font-bold">{language === 'es' ? 'Origen / Salida' : 'Origin'}</th>
                       <th className="py-3 px-3 font-bold">{language === 'es' ? 'Destino' : 'Destination'}</th>
-                      <th className="py-3 px-3 font-bold text-center">{language === 'es' ? 'Duración' : 'Duration'}</th>
-                      <th className="py-3 px-3 font-bold text-right text-emerald-300">1 - 5 Pax</th>
-                      <th className="py-3 px-3 font-bold text-right text-amber-300">6 - 10 Pax</th>
+                      <th className="py-3 px-3 font-bold text-center">{language === 'es' ? 'Tarifa' : 'Rate'}</th>
+                      <th className="py-3 px-3 font-bold text-center">{language === 'es' ? 'Grupo' : 'Group'}</th>
                       <th className="py-3 px-3 font-bold text-center">{language === 'es' ? 'Acción' : 'Action'}</th>
                     </tr>
                   </thead>
@@ -442,15 +411,8 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                           <td className="py-3.5 px-3">
                             <span className="font-bold text-stone-900">{route.destination[language === 'es' ? 'es' : 'en']}</span>
                           </td>
-                          <td className="py-3.5 px-3 text-center text-stone-900">
-                            {route.durationLabel[language === 'es' ? 'es' : 'en']}
-                          </td>
-                          <td className="py-3.5 px-3 text-right font-black text-emerald-400">
-                            ${route.price1to5USD} USD
-                          </td>
-                          <td className="py-3.5 px-3 text-right font-black text-amber-400">
-                            ${route.price6to10USD} USD
-                          </td>
+                          <td className="py-3.5 px-3 text-center text-stone-900">{language === 'es' ? 'Por cotizar' : 'Quote required'}</td>
+                          <td className="py-3.5 px-3 text-center text-stone-900">{language === 'es' ? 'Por confirmar' : 'To confirm'}</td>
                           <td className="py-3.5 px-3 text-center">
                             <button
                               type="button"
@@ -459,8 +421,8 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                                 setSelectedRouteId(route.id);
                                 const targetUrl = `https://wa.me/50687959148?text=${encodeURIComponent(
                                   language === 'es'
-                                    ? `Hola Costa Rica Tours, deseo reservar traslado con Alsama Tours CR: ${route.origin.es} ➔ ${route.destination.es} ($${route.price1to5USD} USD 1-5 pax / $${route.price6to10USD} USD 6-10 pax).`
-                                    : `Hello Costa Rica Tours, I want to book transfer with Alsama Tours CR: ${route.origin.en} ➔ ${route.destination.en} ($${route.price1to5USD} USD 1-5 pax / $${route.price6to10USD} USD 6-10 pax).`
+                                    ? `Hola Costa Rica Tours. Quisiera cotizar la ruta ${route.origin.es} ➔ ${route.destination.es} con Alsama Tours. Por favor confirmar disponibilidad, tarifa, vehículo y condiciones. Esto no es una reserva confirmada.`
+                                    : `Hello Costa Rica Tours. I would like a quote for ${route.origin.en} ➔ ${route.destination.en} with Alsama Tours. Please confirm availability, rate, vehicle and terms. This is not a confirmed booking.`
                                 )}`;
                                 requestCustomerIntake({
                                   message: language === 'es'

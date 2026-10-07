@@ -121,6 +121,15 @@ export const CATEGORIES: CategoryInfo[] = [
       es: 'Rutas con varias noches y traslados entre regiones que deben validarse según fechas y logística.',
       en: 'Multi-night routes and inter-region transfers that must be checked against dates and logistics.'
     }
+  },
+  {
+    id: 'services',
+    name: { es: 'Transporte y servicios', en: 'Transport & Services' },
+    iconName: 'Bus',
+    description: {
+      es: 'Traslados, transporte y servicios turísticos. Precio, ruta, proveedor y disponibilidad se confirman antes de reservar.',
+      en: 'Transfers, transport and travel services. Price, route, provider and availability are confirmed before booking.'
+    }
   }
 ];
 
@@ -129,25 +138,26 @@ export const OPERATORS: OperatorProfile[] = [
     id: 'alsama-tours',
     name: 'ALSAMA Tours',
     slug: 'alsama-tours',
-    tagline: { es: 'Expertos en Marino Ballena y Uvita', en: 'Marino Ballena & Uvita Experts' },
+    tagline: { es: 'Proveedor candidato para tours y transporte', en: 'Prospective tours and transport provider' },
     description: {
-      es: 'ALSAMA Tours es un operador local especializado en experiencias marinas y de naturaleza en la zona de Uvita y el Parque Nacional Marino Ballena.',
-      en: 'ALSAMA Tours is a local operator specializing in marine and nature experiences in the Uvita area and Marino Ballena National Park.'
+      es: 'Proveedor recomendado por Costa Rica Tours. Su web pública ofrece servicios turísticos en Costa Rica. La relación comercial, los servicios, tarifas, disponibilidad y condiciones aún deben confirmarse directamente.',
+      en: 'Recommended by Costa Rica Tours. Its public website offers travel services in Costa Rica. The commercial relationship, services, rates, availability and terms still need direct confirmation.'
     },
     location: 'Uvita, Puntarenas',
     region: 'osa',
-    rating: 4.9,
-    reviewsCount: 150,
-    yearsExperience: 12,
+    rating: 0,
+    reviewsCount: 0,
+    yearsExperience: 0,
     verifiedBadge: false,
-    commissionRate: 0.20,
+    commissionRate: 0,
     contact: {
-      phone: '+506 8888 8888',
-      whatsapp: '+506 8888 8888',
-      email: 'info@alsamatours.com'
+      phone: '',
+      whatsapp: '',
+      email: 'info@alsamatourscr.com',
+      website: 'https://alsamatourscr.com/'
     },
-    specialties: { es: ['Avistamiento de Ballenas', 'Delfines', 'Snorkel'], en: ['Whale Watching', 'Dolphins', 'Snorkel'] },
-    cancellationPolicy: { es: 'Cancelación gratuita hasta 24 horas antes.', en: 'Free cancellation up to 24 hours before.' }
+    specialties: { es: ['Transporte privado', 'Tours y servicios turísticos por confirmar'], en: ['Private transport', 'Tours and travel services to be confirmed'] },
+    cancellationPolicy: { es: 'Condiciones por confirmar directamente antes de reservar.', en: 'Terms must be confirmed directly before booking.' }
   },
   {
     id: 'expediciones-tropicales',
