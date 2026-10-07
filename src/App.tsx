@@ -695,18 +695,22 @@ export default function App() {
       )}
 
       <BottomNav language={language} activeTab={activeTab} />
-      <DigitalCounterWidget 
-        language={language} 
-        currency={currency} 
-        selectedTour={selectedTour}
-        onSelectTour={(t) => navigate(`/tour/${t.id}`)} 
-      />
-      <FloatingWhatsApp 
-        language={language} 
-        initialMessage={whatsappMessage} 
-        onOpenAIAssistant={() => navigate('/ai')} 
-        onSelectTour={(t) => navigate(`/tour/${t.id}`)}
-      />
+      {activeTab !== 'ai' && (
+        <>
+          <DigitalCounterWidget 
+            language={language} 
+            currency={currency} 
+            selectedTour={selectedTour}
+            onSelectTour={(t) => navigate(`/tour/${t.id}`)} 
+          />
+          <FloatingWhatsApp 
+            language={language} 
+            initialMessage={whatsappMessage} 
+            onOpenAIAssistant={() => navigate('/ai')} 
+            onSelectTour={(t) => navigate(`/tour/${t.id}`)}
+          />
+        </>
+      )}
       <Footer language={language} onOpenLegal={tab => { setLegalTab(tab); setIsLegalModalOpen(true); }} />
       <CookiesBanner language={language} />
     </div>

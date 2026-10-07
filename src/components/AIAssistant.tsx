@@ -1249,7 +1249,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 e.preventDefault();
                 handleSendMessage();
               }}
-              className="flex gap-2 relative"
+              className="relative grid w-full min-w-0 grid-cols-[48px_48px_minmax(0,1fr)] gap-2 sm:flex"
             >
               <input 
                 type="file" 
@@ -1287,12 +1287,12 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                     : `Ask ${getLangText(currentAgent.name, language)}...`
                 }
                 disabled={isLoading || isRecording}
-                className="flex-1 bg-[#051c14] border border-emerald-500/30 focus:border-amber-400 text-white px-4 py-3 rounded-xl text-base focus:outline-none placeholder-emerald-300/40"
+                className="col-span-3 row-start-2 w-full min-w-0 bg-[#051c14] border border-emerald-500/30 focus:border-amber-400 text-white px-4 py-3 rounded-xl text-base focus:outline-none placeholder-emerald-300/40 sm:col-span-1 sm:row-auto sm:flex-1"
               />
               <button
                 type="submit"
                 disabled={isLoading || (!inputMessage.trim() && !selectedImage)}
-                className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-stone-950 font-black px-6 py-3 rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-1.5 cursor-pointer shadow-lg shadow-amber-400/20 active:scale-95"
+                className="col-start-3 row-start-1 flex min-w-0 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 px-3 py-3 text-xs font-black uppercase tracking-wider text-stone-950 shadow-lg shadow-amber-400/20 transition-all hover:from-amber-300 hover:to-amber-400 active:scale-95 disabled:opacity-50 cursor-pointer sm:col-auto sm:row-auto sm:px-6"
               >
                 <Send className="w-4 h-4" />
                 <span className="hidden sm:inline">{t('aiSend')}</span>

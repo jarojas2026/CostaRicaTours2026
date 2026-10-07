@@ -192,7 +192,7 @@ export const Header: React.FC<HeaderProps> = ({
                 href="https://wa.me/50687959148?text=Hola%20Costa%20Rica%20Tours%20(costaricatours.es),%20quisiera%20consultar%20sobre%20los%20tours%20y%20traslados."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-stone-200 hover:text-emerald-300 font-medium transition-colors text-xs"
+                className="hidden sm:inline-flex items-center gap-1.5 text-stone-200 hover:text-emerald-300 font-medium transition-colors text-xs"
               >
                 <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
                 <span>WhatsApp: <strong className="text-emerald-300 font-bold">+506 8795-9148</strong></span>
