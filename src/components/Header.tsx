@@ -209,7 +209,7 @@ export const Header: React.FC<HeaderProps> = ({
               </a>
             </div>
 
-            <div className="hidden 2xl:flex items-center gap-2 text-xs font-bold text-amber-400 shrink-0">
+            <div className="hidden min-[1680px]:flex items-center gap-2 text-xs font-bold text-amber-400 shrink-0">
               <ShieldCheck className="w-4 h-4 text-amber-400" />
               <span>{language === 'es' ? 'Disponibilidad verificada al reservar' : 'Availability checked when booking'}</span>
             </div>
@@ -218,7 +218,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Main Navigation Bar */}
-        <div className={`w-full max-w-7xl min-w-0 mx-auto px-3 sm:px-6 lg:px-8 transition-all duration-300 flex items-center justify-between gap-2 lg:gap-4 ${
+        <div className={`w-full max-w-7xl min-[1680px]:max-w-[1680px] min-w-0 mx-auto px-3 sm:px-6 lg:px-8 transition-all duration-300 flex items-center justify-between gap-2 lg:gap-4 ${
           isScrolled ? 'py-2' : 'py-2.5'
         }`}>
           
@@ -241,8 +241,8 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </Link>
 
-          {/* Unified High-Tech Desktop Navigation (Visible on lg screens and up) */}
-          <nav className="hidden 2xl:flex shrink-0 items-center gap-1 bg-[#010e08]/80 p-1.5 rounded-full border border-emerald-500/25 backdrop-blur-xl shadow-inner whitespace-nowrap">
+          {/* Unified High-Tech Desktop Navigation (Visible only when the full menu fits) */}
+          <nav className="hidden min-[1680px]:flex shrink-0 items-center gap-1 bg-[#010e08]/80 p-1.5 rounded-full border border-emerald-500/25 backdrop-blur-xl shadow-inner whitespace-nowrap">
             <Link
               to="/"
               className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
@@ -472,7 +472,7 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               <button
                 onClick={signInWithGoogle}
-                className="hidden 2xl:flex items-center gap-1 text-[11px] font-bold bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 px-2.5 py-1.5 rounded-xl border border-emerald-500/40 transition-colors shrink-0 cursor-pointer"
+                className="hidden min-[1680px]:flex items-center gap-1 text-[11px] font-bold bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 px-2.5 py-1.5 rounded-xl border border-emerald-500/40 transition-colors shrink-0 cursor-pointer"
               >
                 <LogIn className="w-3.5 h-3.5 text-amber-400" />
                 <span>{t('signIn')}</span>
@@ -482,7 +482,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Compact navigation remains available until the full menu fits comfortably. */}
             <button
               onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
-              className="2xl:hidden p-2 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 border border-emerald-500/40 transition-colors cursor-pointer shrink-0"
+              className="min-[1680px]:hidden p-2 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 border border-emerald-500/40 transition-colors cursor-pointer shrink-0"
               aria-label={language === 'es' ? 'Abrir menú' : 'Open menu'}
               aria-expanded={isMobileDrawerOpen}
               aria-controls="main-navigation-drawer"
@@ -497,11 +497,11 @@ export const Header: React.FC<HeaderProps> = ({
         {isMobileDrawerOpen && (
           <>
             <div
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[90] 2xl:hidden"
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[90] min-[1680px]:hidden"
               onClick={() => setIsMobileDrawerOpen(false)}
             />
             
-            <div id="main-navigation-drawer" className="absolute top-full left-2 right-2 sm:left-4 sm:right-4 max-h-[calc(100dvh-6rem)] bg-[#061f17] border border-emerald-500/30 rounded-3xl z-[100] shadow-2xl p-4 sm:p-5 overflow-y-auto 2xl:hidden space-y-4 animate-fade-in modal-scrollable text-white">
+            <div id="main-navigation-drawer" className="absolute top-full left-2 right-2 sm:left-4 sm:right-4 max-h-[calc(100dvh-6rem)] bg-[#061f17] border border-emerald-500/30 rounded-3xl z-[100] shadow-2xl p-4 sm:p-5 overflow-y-auto min-[1680px]:hidden space-y-4 animate-fade-in modal-scrollable text-white">
               
               {/* Drawer Header */}
               <div className="flex items-center justify-between border-b border-emerald-500/20 pb-3">
