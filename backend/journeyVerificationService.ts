@@ -16,7 +16,7 @@ export async function verifyJourneyAvailability(params: {
       status: 'date_required' as const,
       verifiedAt: null,
       items: [],
-      summary: 'Se requiere una fecha para consultar disponibilidad real.'
+      summary: 'Se requiere una fecha para consultar capacidad interna y, cuando corresponda, iniciar la verificación con el proveedor.'
     };
   }
   if (!selected.length) {
@@ -43,7 +43,9 @@ export async function verifyJourneyAvailability(params: {
         maxCapacity: result.maxCapacity,
         reason: result.reason,
         verifiedAt: new Date().toISOString(),
-        source: 'bookingService'
+        source: 'bookingService_internal_capacity',
+        providerConfirmed: false,
+        truthLevel: 'internal_capacity_signal'
       };
     } catch (error) {
       return {
@@ -52,7 +54,9 @@ export async function verifyJourneyAvailability(params: {
         available: false,
         reason: error instanceof Error ? error.message : 'No se pudo verificar disponibilidad.',
         verifiedAt: new Date().toISOString(),
-        source: 'bookingService'
+        source: 'bookingService_internal_capacity',
+        providerConfirmed: false,
+        truthLevel: 'internal_capacity_signal'
       };
     }
   }));
@@ -69,13 +73,15 @@ export async function verifyJourneyAvailability(params: {
     status,
     verifiedAt: new Date().toISOString(),
     items,
+    providerConfirmed: false,
+    truthLevel: 'internal_capacity_signal',
     summary: status === 'available'
-      ? 'Las experiencias seleccionadas tienen cupo según la consulta operativa realizada.'
+      ? 'La capacidad interna consultada no muestra conflicto para las experiencias seleccionadas; esto no equivale a confirmación de inventario del proveedor.'
       : status === 'limited'
-        ? 'Hay cupos, pero algunas experiencias requieren atención por capacidad limitada.'
+        ? 'La capacidad interna aparece limitada; debe verificarse con el proveedor antes de cotizar o reservar.'
         : status === 'unavailable'
-          ? 'Las experiencias seleccionadas no tienen cupo suficiente para el grupo solicitado.'
-          : 'La disponibilidad requiere confirmación operativa antes de reservar.'
+          ? 'La capacidad interna no soporta el grupo solicitado en este momento; no se afirma indisponibilidad del proveedor sin evidencia autoritativa.'
+          : 'La disponibilidad requiere confirmación del proveedor o una fuente de inventario autoritativa antes de reservar.'
   };
 }
 
