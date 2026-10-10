@@ -4,7 +4,7 @@ import { sendEmail, sendWhatsAppMessage } from './notificationService';
 import { rememberTurn } from './memoryService';
 import { getFirestoreDb } from './bookingService';
 import { resolveTravelerIdentity } from './travelerIdentityService';
-import { buildTripJourney } from './travelJourneyOrchestrator';
+import { adaptTravelerJourney, buildTripJourney } from './travelJourneyOrchestrator';
 import { executeBusinessGoal } from './businessGoalOrchestrator';
 
 export interface CustomerIntakePayload {
@@ -267,7 +267,7 @@ async function buildStructuredJourneyAssistant(
     request.specialRequests
   ].filter(Boolean).join(' · ');
 
-  const journey = await buildTripJourney({
+  const journeyInput = {
     sessionId,
     query,
     days: request.days,
@@ -287,7 +287,13 @@ async function buildStructuredJourneyAssistant(
     lodgingPreference: request.stayStyle || undefined,
     specialRequests: request.specialRequests || undefined,
     language
-  });
+  };
+  const existingJourneyId = clean(payload.context?.existingJourneyId, 120);
+  const journey = existingJourneyId
+    ? await adaptTravelerJourney(existingJourneyId, journeyInput).then(result =>
+        result?.status === 'not_found' ? buildTripJourney(journeyInput) : result
+      )
+    : await buildTripJourney(journeyInput);
 
   const missingForQuote = request.requestQuote ? missingQuoteInputs(request, payload) : [];
   let workflow: any = null;
