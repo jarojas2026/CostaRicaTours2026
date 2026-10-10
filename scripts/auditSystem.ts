@@ -116,8 +116,19 @@ if (!/VOICE_HUMAN_NUMBERS/.test(voiceRouting) || !/voiceRoutingPolicy\(\)\.numbe
   add('HIGH', 'VOICE-OPS-001', 'Portable voice operations lack multi-operator routing or terminal call-state handling.');
 }
 
-if (/setInterval\(async \(\) =>[\s\S]*processPendingCustomerIntakeJobs/.test(server)) {
-  add('MEDIUM', 'QUEUE-001', 'Customer Intake has an in-process sweep; production serverless deployments also need an external scheduler calling the protected queue endpoint.');
+const schedulerConfigPath = path.join(root, 'scripts', 'configureOperationalScheduler.ts');
+const schedulerConfig = fs.existsSync(schedulerConfigPath) ? fs.readFileSync(schedulerConfigPath, 'utf8') : '';
+const hasCustomerIntakeExternalSchedulerDefinition =
+  /crt-customer-intake/.test(schedulerConfig) &&
+  /\/api\/internal\/customer-intake\/process/.test(schedulerConfig) &&
+  /CUSTOMER_INTAKE_JOB_TOKEN/.test(schedulerConfig) &&
+  /--oidc-service-account-email/.test(schedulerConfig);
+
+if (/setInterval\(async \(\) =>[\s\S]*processPendingCustomerIntakeJobs/.test(server) && !hasCustomerIntakeExternalSchedulerDefinition) {
+  add('MEDIUM', 'QUEUE-001', 'Customer Intake has an in-process sweep but no external scheduler provisioning definition for the protected queue endpoint.');
+}
+if (hasCustomerIntakeExternalSchedulerDefinition) {
+  add('INFO', 'QUEUE-002', 'Customer Intake external scheduler provisioning is defined in code; deployment and executions still require environment verification.');
 }
 
 if (!/runReservationLifecycleSweep/.test(reservationLifecycle) || !/\/api\/internal\/reservation-lifecycle\/sweep/.test(server)) {
