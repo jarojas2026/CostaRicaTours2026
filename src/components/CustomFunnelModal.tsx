@@ -6,7 +6,6 @@ import {
   DollarSign, MessageCircle, Info, RefreshCw, Save, WifiOff, Trash2
 } from 'lucide-react';
 import { Language, Currency } from '../types';
-import { formatCurrency } from '../utils/i18n';
 
 const CUSTOM_FUNNEL_DRAFT_KEY = 'costa_rica_custom_funnel_draft';
 
@@ -184,107 +183,52 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
     );
   };
 
-  // Estimate total cost per person / total
-  const calculateEstimate = () => {
-    let basePerson = 120 * durationDays; // base stays & activities
-    
-    // Transport
-    if (transportType === 'private') basePerson += 180;
-    if (transportType === 'rental') basePerson += 220;
-    if (transportType === 'flight') basePerson += 300;
-    if (transportType === 'shuttle') basePerson += 90;
-
-    // Destinations
-    basePerson += selectedDestinations.length * 65;
-
-    // Accommodation style multiplier
-    if (stayStyle === 'ecolodge') basePerson *= 1.1;
-    if (stayStyle === 'boutique') basePerson *= 1.25;
-    if (stayStyle === 'resort') basePerson *= 1.5;
-
-    // Addons
-    let addons = 0;
-    if (includeSim) addons += 25;
-    if (includeGuide) addons += 45;
-    if (includeNationalParkPass) addons += 30;
-    if (includeInsurance) addons += 40;
-
-    const totalPerAdult = Math.round(basePerson + addons);
-    const totalPerChild = Math.round((basePerson * 0.6) + (addons * 0.5));
-    let baseTotalUSD = (totalPerAdult * adults) + (totalPerChild * children);
-    
-    // Group discount
-    const isGroupDiscount = (adults + children) >= 5;
-    const totalUSD = isGroupDiscount ? Math.round(baseTotalUSD * 0.9) : baseTotalUSD;
-
-    return {
-      perAdultUSD: totalPerAdult,
-      totalUSD,
-      isGroupDiscount
-    };
+  const buildTripRequestMessage = () => {
+    const travelers = adults + children;
+    const destinationText = selectedDestinations.length
+      ? selectedDestinations.join(', ')
+      : (language === 'es' ? 'por definir' : 'to be defined');
+    return language === 'es'
+      ? `Necesito un itinerario personalizado de ${durationDays} días en Costa Rica para ${travelers} viajeros (${adults} adultos, ${children} niños). Llegamos por ${arrivalAirport}. Queremos visitar: ${destinationText}. Preferimos transporte ${transportType}, alojamiento ${stayStyle} y una ruta lógica que distribuya los atractivos por día sin sobrecargar los traslados. La temporada indicada es ${travelMonth}. Genera primero la propuesta día por día y deja claramente separados los servicios que todavía requieren verificación de disponibilidad o precio.`
+      : `I need a ${durationDays}-day custom Costa Rica itinerary for ${travelers} travelers (${adults} adults, ${children} children), arriving through ${arrivalAirport}. We want to visit: ${destinationText}. We prefer ${transportType} transport, ${stayStyle} lodging, and a logical day-by-day route without excessive transfers. The selected season is ${travelMonth}. Build the itinerary first and clearly separate anything that still requires live availability or price verification.`;
   };
 
-  const { perAdultUSD, totalUSD, isGroupDiscount } = calculateEstimate();
-
-  const handleSendWhatsApp = () => {
-    const textEs = `🌴 *COTIZACIÓN DE VIAJE CUSTOMIZADO - COSTA RICA* 🌴
-
-✈️ *Llegada:* Aeropuerto ${arrivalAirport}
-📅 *Temporada:* ${travelMonth}
-⏱️ *Duración:* ${durationDays} Días
-👥 *Pasajeros:* ${adults} Adultos, ${children} Niños
-🚐 *Transporte:* ${transportType.toUpperCase()}
-📍 *Destinos:* ${selectedDestinations.join(', ')}
-🏨 *Alojamiento:* estilo ${stayStyle.toUpperCase()}
-⭐ *Adicionales:*
-- Pass Parques SINAC: ${includeNationalParkPass ? 'SÍ' : 'NO'}
-- Guía Turístico: ${includeGuide ? 'SÍ' : 'NO'}
-- eSIM Costa Rica: ${includeSim ? 'SÍ' : 'NO'}
-- Seguro de Viaje: ${includeInsurance ? 'SÍ' : 'NO'}
-
-💰 *Estimado Total:* $${totalUSD} USD (${formatCurrency(totalUSD, 'CRC')} CRC)
-
-Por favor confirmen disponibilidad y atención personalizada para mi grupo. Pura Vida!`;
-
-    const textEn = `🌴 *CUSTOM COSTA RICA TRIP QUOTE* 🌴
-
-✈️ *Arrival:* ${arrivalAirport} Airport
-📅 *Season:* ${travelMonth}
-⏱️ *Duration:* ${durationDays} Days
-👥 *Travelers:* ${adults} Adults, ${children} Kids
-🚐 *Transport:* ${transportType.toUpperCase()}
-📍 *Destinations:* ${selectedDestinations.join(', ')}
-🏨 *Stay Style:* ${stayStyle.toUpperCase()}
-⭐ *Perks:*
-- SINAC Park Passes: ${includeNationalParkPass ? 'YES' : 'NO'}
-- Certified Guide: ${includeGuide ? 'YES' : 'NO'}
-- Costa Rica eSIM: ${includeSim ? 'YES' : 'NO'}
-- Travel Insurance: ${includeInsurance ? 'YES' : 'NO'}
-
-💰 *Estimated Total:* $${totalUSD} USD
-
-Please confirm availability and custom itinerary details for our trip! Pura Vida!`;
-
-    const message = language === 'es' ? textEs : textEn;
-    const url = `https://wa.me/50687959148?text=${encodeURIComponent(message)}`;
-    
-    // Copy to clipboard as safe backup
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(message).catch(() => {});
-    }
+  const handleGenerateItinerary = () => {
+    const message = buildTripRequestMessage();
+    const travelers = adults + children;
 
     requestCustomerIntake({
       message,
       language,
       source: 'custom-trip-funnel',
-      context: { page: window.location.pathname, originalHref: url }
+      context: {
+        page: window.location.pathname,
+        requestKind: 'custom_multi_day_itinerary',
+        journeyRequest: {
+          arrivalAirport,
+          travelMonth,
+          durationDays,
+          adults,
+          children,
+          travelers,
+          transportType,
+          selectedDestinations,
+          stayStyle,
+          addons: {
+            nationalParkPass: includeNationalParkPass,
+            guide: includeGuide,
+            esim: includeSim,
+            insurance: includeInsurance
+          }
+        }
+      }
     });
   };
 
   const handleCopyQuote = () => {
-    const textEs = `🌴 COTIZACIÓN PERSONALIZADA COSTARICATOURS 🌴\nLlegada: Aeropuerto ${arrivalAirport} (${travelMonth})\nDuración: ${durationDays} Días | Viajeros: ${adults} Adultos, ${children} Niños\nTransporte: ${transportType.toUpperCase()} | Destinos: ${selectedDestinations.join(', ')}\nPresupuesto Estimado: $${totalUSD} USD`;
+    const text = buildTripRequestMessage();
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(textEs).then(() => {
+      navigator.clipboard.writeText(text).then(() => {
         setCopiedQuote(true);
         setTimeout(() => setCopiedQuote(false), 3000);
       });
@@ -301,7 +245,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
             <div className="flex flex-wrap items-center gap-2">
               <span className="bg-orange-500 text-stone-900 text-[10px] font-black uppercase px-3 py-1 rounded-full inline-flex items-center gap-1 shadow-sm">
                 <Sparkles className="w-3 h-3" />
-                {language === 'es' ? 'Cotizador Inteligente 2026' : 'Smart Trip Package Builder 2026'}
+                {language === 'es' ? 'Planificador Inteligente 2026' : 'Smart Trip Planner 2026'}
               </span>
               {lastSavedTime && (
                 <span className="bg-stone-100 text-stone-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 border border-teal-700">
@@ -314,7 +258,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
               {language === 'es' ? 'Diseña Tu Paquete a Costa Rica' : 'Build Your Custom Costa Rica Package'}
             </h2>
             <p className="text-xs text-stone-800">
-              {language === 'es' ? 'Paso ' + step + ' de 4 • Cotización personalizada al instante' : 'Step ' + step + ' of 4 • Instant tailored quote'}
+              {language === 'es' ? 'Paso ' + step + ' de 4 • Diseña una propuesta de viaje verificable' : 'Step ' + step + ' of 4 • Build a verifiable trip proposal'}
             </p>
           </div>
 
@@ -331,7 +275,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
           <div className="bg-stone-50 border-b border-stone-200 px-6 py-2.5 text-xs text-stone-900 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-teal-600 shrink-0" />
-              <span>{language === 'es' ? 'Se recuperó tu cotización personalizada guardada.' : 'Restored your previous customized quote draft.'}</span>
+              <span>{language === 'es' ? 'Se recuperó tu propuesta de viaje guardada.' : 'Restored your saved trip proposal.'}</span>
             </div>
             <button
               onClick={handleResetDraft}
@@ -585,7 +529,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
               <div className="space-y-1">
                 <h3 className="text-lg font-black text-stone-950 uppercase flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-teal-600" />
-                  {language === 'es' ? '4. Ventajas Incluidas & Cotización' : '4. Included Perks & Instant Quote'}
+                  {language === 'es' ? '4. Resumen & Preferencias del Itinerario' : '4. Itinerary Summary & Preferences'}
                 </h3>
               </div>
 
@@ -617,26 +561,20 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/10 pb-4">
                   <div>
                     <span className="text-xs uppercase tracking-wider font-extrabold text-orange-300 block">
-                      {language === 'es' ? 'Estimado Total Paquete Completo' : 'Total Custom Package Estimate'}
+                      {language === 'es' ? 'Solicitud lista para crear el itinerario' : 'Ready to build your itinerary'}
                     </span>
                     <span className="text-xs text-stone-800/80">
                       {adults} {language === 'es' ? 'Adultos' : 'Adults'} {children > 0 && `+ ${children} ${language === 'es' ? 'Niños' : 'Kids'}`} • {durationDays} {language === 'es' ? 'Días' : 'Days'}
                     </span>
                   </div>
-                  <div className="text-right">
-                    <div className="text-3xl font-black text-orange-400">
-                      ${totalUSD} <span className="text-sm font-bold text-stone-900">USD</span>
+                  <div className="text-right max-w-[220px]">
+                    <div className="text-sm font-black text-emerald-700">
+                      {language === 'es' ? 'Itinerario primero' : 'Itinerary first'}
                     </div>
-                    <div className="text-xs text-orange-300 font-mono">
-                      ≈ {formatCurrency(totalUSD, 'CRC')} CRC
-                    </div>
-                    {isGroupDiscount && (
-                      <div className="text-[10px] text-orange-400 font-bold uppercase mt-1">
-                        🎁 {language === 'es' ? '10% Descuento Grupo Aplicado' : '10% Group Discount'}
-                      </div>
-                    )}
-                    <div className="text-[9px] text-stone-800 mt-1 uppercase font-bold">
-                      {language === 'es' ? 'Incluye IVA (13%) y tarifas locales' : 'Includes 13% VAT & fees'}
+                    <div className="text-[10px] text-stone-600 mt-1 leading-relaxed">
+                      {language === 'es'
+                        ? 'Precio, cupos, hoteles y condiciones se verifican después con datos operativos.'
+                        : 'Price, capacity, lodging and terms are verified afterward using operational data.'}
                     </div>
                   </div>
                 </div>
@@ -645,8 +583,8 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
                   <CheckCircle2 className="w-4 h-4 text-orange-400 flex-shrink-0" />
                   <span>
                     {language === 'es' 
-                      ? 'Sin costo inicial. Envía tus datos por WhatsApp para verificar disponibilidad de hoteles y transporte.' 
-                      : 'No upfront fee. Send your quote via WhatsApp to verify hotel and tour availability.'}
+                      ? 'La IA construirá una ruta día por día con tus destinos y viajeros. Ningún cupo, tarifa o alojamiento se presentará como confirmado sin verificación real.' 
+                      : 'AI will build a day-by-day route from your destinations and traveler count. No capacity, fare or lodging will be shown as confirmed without live verification.'}
                   </span>
                 </div>
               </div>
@@ -684,7 +622,7 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
                 title={language === 'es' ? 'Copiar texto al portapapeles' : 'Copy text to clipboard'}
               >
                 {copiedQuote ? <Check className="w-4 h-4 text-emerald-600" /> : <Save className="w-4 h-4 text-neutral-500" />}
-                <span>{copiedQuote ? (language === 'es' ? '¡Copiado!' : 'Copied!') : (language === 'es' ? 'Copiar Cotización' : 'Copy Quote')}</span>
+                <span>{copiedQuote ? (language === 'es' ? '¡Copiado!' : 'Copied!') : (language === 'es' ? 'Copiar Solicitud' : 'Copy Request')}</span>
               </button>
 
               {onOpenItineraryPlanner && (
@@ -702,11 +640,11 @@ Please confirm availability and custom itinerary details for our trip! Pura Vida
               )}
 
               <button
-                onClick={handleSendWhatsApp}
+                onClick={handleGenerateItinerary}
                 className="min-h-[44px] min-w-[44px] w-full sm:w-auto px-6 py-2.5 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-stone-900 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 cursor-pointer"
               >
-                <MessageCircle className="w-4 h-4 fill-white" />
-                <span>{language === 'es' ? 'Enviar por WhatsApp' : 'Send via WhatsApp'}</span>
+                <Sparkles className="w-4 h-4" />
+                <span>{language === 'es' ? 'Crear itinerario con IA' : 'Build itinerary with AI'}</span>
               </button>
             </div>
           )}
