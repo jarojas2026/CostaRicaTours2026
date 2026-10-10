@@ -15,6 +15,7 @@ test('custom trip funnel captures reservation-ready context instead of inventing
   assert.match(funnel, /specialRequests/);
   assert.match(funnel, /customerEmail/);
   assert.match(funnel, /requestQuote/);
+  assert.match(funnel, /existingJourneyId: localStorage\.getItem\('crt_active_journey'\)/);
   assert.match(funnel, /Crear plan y verificar para cotizar/);
   assert.doesNotMatch(funnel, /Estimado Total Paquete Completo/);
   assert.doesNotMatch(funnel, /10% Descuento Grupo Aplicado/);
@@ -38,6 +39,8 @@ test('custom trip funnel uses stable destination ids and migrates legacy labels'
 test('customer intake routes structured custom trips through Journey Orchestrator and the existing verification workflow', () => {
   const intake = read('backend/customerIntakeGateway.ts');
   assert.match(intake, /buildTripJourney/);
+  assert.match(intake, /adaptTravelerJourney/);
+  assert.match(intake, /existingJourneyId/);
   assert.match(intake, /executeBusinessGoal/);
   assert.match(intake, /buildStructuredJourneyAssistant/);
   assert.match(intake, /requestedGoal: 'itinerary_quote'/);
