@@ -66,9 +66,14 @@ const TRANSITIONS: Record<BookingLifecycle, BookingLifecycle[]> = {
 };
 
 export function normalizeBookingLifecycle(status?: string, paymentStatus?: string): BookingLifecycle {
+  const lifecycle = LEGACY_MAP[String(status || '').trim().toLowerCase()];
   const payment = LEGACY_MAP[String(paymentStatus || '').trim().toLowerCase()];
-  if (payment === 'paid' || payment === 'refunded') return payment;
-  return LEGACY_MAP[String(status || '').trim().toLowerCase()] || 'prospect';
+  // A payment must never regress an operationally confirmed booking to 'paid'.
+  // A verified refund, however, may close a cancelled booking.
+  if (payment === 'refunded') return 'refunded';
+  if (lifecycle && ['provider_pending', 'confirmed', 'in_operation', 'completed', 'cancelled', 'refunded'].includes(lifecycle)) return lifecycle;
+  if (payment === 'paid') return 'paid';
+  return lifecycle || 'prospect';
 }
 
 export function canTransitionBooking(from: BookingLifecycle, to: BookingLifecycle): boolean {
