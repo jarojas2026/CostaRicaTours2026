@@ -6,7 +6,7 @@ import {
   Leaf, Car, Luggage, X, Phone, Mail, User, Check
 } from 'lucide-react';
 import { useTours } from '../contexts/ToursContext';
-import { getUsdToCrcRate } from '../utils/currencies';
+import { requestCustomerIntake } from '../utils/customerIntake';
 
 interface ItineraryPlannerProps {
   language: Language;
@@ -68,6 +68,8 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
   const [customerPhone, setCustomerPhone] = useState('');
   const [startDate, setStartDate] = useState(new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0]);
   const [isBookingSubmitting, setIsBookingSubmitting] = useState(false);
+  const [bookingAdults, setBookingAdults] = useState(2);
+  const [bookingChildren, setBookingChildren] = useState(0);
   const [bookingSuccessId, setBookingSuccessId] = useState<string | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
 
@@ -104,10 +106,10 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
 
       setItinerary({
         title: data.title || data.itinerary_title || (isEn ? 'Tailored Pura Vida Itinerary' : 'Itinerario Personalizado Pura Vida'),
-        summary: data.summary || (isEn ? 'Custom route crafted specifically to your travel preferences with verified tours and local logistics.' : 'Ruta maestra diseñada con guías certificados y logística garantizada en Costa Rica.'),
+        summary: data.summary || (isEn ? 'Exploratory route based on your preferences. Tours, lodging, transfers, schedules and prices require verification before booking.' : 'Ruta exploratoria basada en tus preferencias. Tours, hospedaje, traslados, horarios y precios requieren verificación antes de reservar.'),
         totalDays: data.totalDays || daysCount,
-        estimatedBudgetUSD: data.estimatedBudgetUSD || data.estimated_budget_usd || (daysCount * 2 * 165),
-        estimatedBudgetCRC: data.estimatedBudgetCRC || data.estimated_budget_crc || (getUsdToCrcRate() > 0 ? Math.round((daysCount * 2 * 165) * getUsdToCrcRate()) : 0),
+        estimatedBudgetUSD: data.estimatedBudgetUSD || data.estimated_budget_usd || undefined,
+        estimatedBudgetCRC: undefined,
         recommendedSeason: data.recommendedSeason || data.recommended_season || (isEn ? 'December - May (Dry Season) / June - Nov (Green Season)' : 'Diciembre - Mayo (Temporada Seca) / Junio - Noviembre (Temporada Verde)'),
         packingList: data.packingList || data.packing_list || [
           isEn ? 'Sturdy hiking boots' : 'Zapatos de senderismo cerrados',
@@ -117,7 +119,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
         ],
         days: parsedDays,
         tips: data.tips || data.local_tips || [
-          isEn ? 'US Dollars and major credit cards accepted everywhere.' : 'Dólares y tarjetas aceptados en todas las zonas turísticas.',
+          isEn ? 'Confirm payment methods, exchange rates and local conditions for each supplier before relying on them.' : 'Confirma métodos de pago, tipo de cambio y condiciones de cada proveedor antes de depender de ellos.',
           isEn ? 'Stay hydrated with fresh tropical pipa fría.' : 'Hidrátate con agua de pipa fría en paradas de ruta.'
         ],
         modelUsed: data.modelUsed || data.model_used || 'Costa Rica Tours Intelligent Engine 2026'
@@ -129,45 +131,76 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
     }
   };
 
-  const handleBookFullItinerary = async (e: React.FormEvent) => {
+  const handleBookFullItinerary = (e: React.FormEvent) => {
     e.preventDefault();
     setBookingError(null);
 
-    if (!customerName || !customerEmail) {
-      setBookingError(isEn ? 'Please fill in your name and email.' : 'Por favor ingresa tu nombre y correo electrónico.');
+    if (!customerName.trim() || !customerEmail.trim()) {
+      setBookingError(isEn ? 'Please provide the lead traveler name and email.' : 'Indica el nombre y correo del viajero responsable.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim())) {
+      setBookingError(isEn ? 'Please enter a valid email address.' : 'Ingresa un correo electrónico válido.');
+      return;
+    }
+    if (!startDate) {
+      setBookingError(isEn ? 'Choose an exact start date so availability and prices can be verified.' : 'Selecciona una fecha exacta de inicio para verificar cupos y precios.');
+      return;
+    }
+    if (bookingAdults < 1 || bookingChildren < 0) {
+      setBookingError(isEn ? 'At least one adult is required.' : 'Se requiere al menos un adulto.');
       return;
     }
 
     setIsBookingSubmitting(true);
-    try {
-      const res = await fetch('/api/itinerary/book', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          itineraryTitle: itinerary?.title || `Ruta Costa Rica ${daysCount} Días`,
-          daysCount: itinerary?.totalDays || daysCount,
-          travelers: group === 'Solo' ? 1 : (group === 'Pareja' ? 2 : 4),
-          customerName,
-          customerEmail,
-          customerPhone: customerPhone || '+506 8000-CRTOURS',
+    const destinations = Array.from(new Set(
+      (itinerary?.days || [])
+        .map(day => day.location || day.destination)
+        .filter((value): value is string => Boolean(value))
+    )).slice(0, 8);
+    const travelers = bookingAdults + bookingChildren;
+    const message = isEn
+      ? `Please turn this exploratory ${itinerary?.totalDays || daysCount}-day itinerary into a verifiable quote request for ${travelers} travelers (${bookingAdults} adults, ${bookingChildren} children), starting ${startDate}. Style: ${style}. Budget preference: ${budget}. Proposed areas: ${destinations.join(', ') || 'to be refined'}. Do not confirm booking, provider inventory or payment until each component is verified.`
+      : `Convierte este itinerario exploratorio de ${itinerary?.totalDays || daysCount} días en una solicitud de cotización verificable para ${travelers} viajeros (${bookingAdults} adultos, ${bookingChildren} niños), iniciando el ${startDate}. Estilo: ${style}. Preferencia de presupuesto: ${budget}. Zonas propuestas: ${destinations.join(', ') || 'por afinar'}. No confirmes reserva, inventario del proveedor ni pago hasta verificar cada componente.`;
+
+    requestCustomerIntake({
+      message,
+      language,
+      source: 'itinerary-planner-quote',
+      customer: {
+        name: customerName.trim(),
+        email: customerEmail.trim(),
+        phone: customerPhone.trim() || undefined
+      },
+      context: {
+        requestKind: 'custom_multi_day_itinerary',
+        existingJourneyId: localStorage.getItem('crt_active_journey') || undefined,
+        journeyRequest: {
           startDate,
-          totalUSD: itinerary?.estimatedBudgetUSD || (daysCount * 2 * 165),
-          currency: 'USD'
-        })
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || data.error || 'Error al procesar reserva');
+          durationDays: itinerary?.totalDays || daysCount,
+          adults: bookingAdults,
+          children: bookingChildren,
+          travelers,
+          pace: style.toLowerCase().includes('relax') ? 'relaxed' : style.toLowerCase().includes('aventura') ? 'active' : 'balanced',
+          selectedDestinations: destinations,
+          priorities: [style],
+          specialRequests: `Budget preference: ${budget}. Source proposal: ${itinerary?.title || 'AI itinerary planner'}.`,
+          requestQuote: true,
+          arrivalAirport: 'SJO',
+          departureAirport: 'SJO',
+          transportType: 'private',
+          stayStyle: budget === 'Lujo Boutique' ? 'resort' : budget === 'Económico' ? 'ecolodge' : 'boutique'
+        }
+      },
+      onResult: (result) => {
+        setIsBookingSubmitting(false);
+        if (!result.ok) {
+          setBookingError(result.reply || (isEn ? 'The quote request could not be opened.' : 'No se pudo abrir la solicitud de cotización.'));
+          return;
+        }
+        setBookingSuccessId(result.journeyId || result.intakeId || (isEn ? 'REQUEST-RECORDED' : 'SOLICITUD-REGISTRADA'));
       }
-
-      setBookingSuccessId(data.bookingId || `CR-ITIN-${Date.now().toString().slice(-6)}`);
-    } catch (err: any) {
-      console.error('Error al reservar itinerario:', err);
-      setBookingError(err.message || (isEn ? 'Failed to process booking.' : 'No se pudo procesar la reserva.'));
-    } finally {
-      setIsBookingSubmitting(false);
-    }
+    });
   };
 
   const applyPreset = (presetDays: number, presetStyle: string, presetBudget: string, presetGroup: string) => {
@@ -387,12 +420,12 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                 </div>
                 {itinerary.estimatedBudgetUSD && (
                   <div className="text-right">
-                    <span className="text-xs font-semibold text-stone-500 block">{isEn ? 'Estimated Total:' : 'Presupuesto Estimado:'}</span>
+                    <span className="text-xs font-semibold text-stone-500 block">{isEn ? 'Planning estimate (not a quote):' : 'Estimación de planificación (no cotización):'}</span>
                     <span className="text-xl font-black text-emerald-800">
                       ${itinerary.estimatedBudgetUSD.toLocaleString()} USD
                     </span>
-                    <span className="text-xs text-stone-500 font-bold ml-1">
-                      (₡{itinerary.estimatedBudgetCRC?.toLocaleString('es-CR')} CRC)
+                    <span className="block text-[10px] text-stone-500 font-medium mt-1">
+                      {isEn ? 'Must be replaced by verified component pricing before payment.' : 'Debe sustituirse por precios verificados por componente antes de cualquier pago.'}
                     </span>
                   </div>
                 )}
@@ -530,11 +563,19 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
             <div className="pt-4 border-t border-stone-200 flex flex-col sm:flex-row gap-3">
               <button
                 type="button"
-                onClick={() => setIsBookingModalOpen(true)}
+                onClick={() => {
+                  if (group === 'Solo') { setBookingAdults(1); setBookingChildren(0); }
+                  else if (group === 'Pareja') { setBookingAdults(2); setBookingChildren(0); }
+                  else if (group === 'Familia') { setBookingAdults(2); setBookingChildren(2); }
+                  else { setBookingAdults(4); setBookingChildren(0); }
+                  setBookingError(null);
+                  setBookingSuccessId(null);
+                  setIsBookingModalOpen(true);
+                }}
                 className="flex-1 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-700/20 transition-all cursor-pointer"
               >
                 <CheckCircle2 className="w-5 h-5" />
-                <span>{isEn ? 'Book Full Itinerary with Agent' : 'Reservar Este Itinerario Completo'}</span>
+                <span>{isEn ? 'Verify & Request Quote' : 'Verificar y Solicitar Cotización'}</span>
               </button>
             </div>
 
@@ -561,15 +602,15 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                   <Check className="w-10 h-10" />
                 </div>
                 <h3 className="text-2xl font-black text-stone-900">
-                  {isEn ? 'Pura Vida! Itinerary Booked' : '¡Pura Vida! Itinerario Reservado'}
+                  {isEn ? 'Quote Request Registered' : 'Solicitud de Cotización Registrada'}
                 </h3>
                 <p className="text-xs font-mono font-bold text-emerald-800 bg-emerald-50 py-1.5 px-4 rounded-full inline-block">
-                  Reserva #{bookingSuccessId}
+                  {isEn ? 'Reference' : 'Referencia'} #{bookingSuccessId}
                 </p>
                 <p className="text-sm text-stone-600 leading-relaxed">
                   {isEn
-                    ? `Your ${daysCount}-day itinerary has been officially reserved. We dispatched your confirmation and Waze meeting points to ${customerEmail}.`
-                    : `Tu ruta de ${daysCount} días ha sido guardada. Te enviamos la confirmación y los vouchers de traslados a ${customerEmail}.`
+                    ? `Your ${daysCount}-day proposal is now in the verification/quote workflow. Nothing has been booked or charged yet; verified options and terms must come first.`
+                    : `Tu propuesta de ${daysCount} días entró al flujo de verificación/cotización. Todavía no se reservó ni cobró nada; primero deben confirmarse opciones y condiciones verificadas.`
                   }
                 </p>
                 <button
@@ -579,29 +620,33 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                   }}
                   className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg transition"
                 >
-                  {isEn ? 'Close & View Trips' : 'Cerrar y Ver Mis Reservas'}
+                  {isEn ? 'Close' : 'Cerrar'}
                 </button>
               </div>
             ) : (
               <form onSubmit={handleBookFullItinerary} className="space-y-4">
                 <div>
                   <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 block">
-                    {isEn ? 'Official Package Reservation' : 'Reserva Oficial del Paquete'}
+                    {isEn ? 'Verification & Quote Request' : 'Solicitud de Verificación y Cotización'}
                   </span>
                   <h3 className="text-xl font-black text-stone-900">
                     {itinerary?.title || `Ruta Costa Rica ${daysCount} Días`}
                   </h3>
                 </div>
 
-                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs text-stone-500 font-semibold block">{isEn ? 'Total Package Estimate:' : 'Total Estimado:'}</span>
-                    <span className="text-xl font-black text-emerald-950">
-                      ${itinerary?.estimatedBudgetUSD || (daysCount * 2 * 165)} USD
-                    </span>
-                  </div>
-                  <div className="text-right text-xs font-bold text-emerald-800">
-                    <span>{daysCount} {isEn ? 'Days' : 'Días'} • {group}</span>
+                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-xs font-black text-emerald-950 block">
+                        {isEn ? 'Proposal — not a confirmed booking' : 'Propuesta — no es una reserva confirmada'}
+                      </span>
+                      <span className="text-[11px] leading-relaxed text-emerald-800 block mt-1">
+                        {isEn
+                          ? 'We will verify component availability, supplier terms and final prices before presenting a payable option.'
+                          : 'Verificaremos cupos por componente, condiciones de proveedores y precios finales antes de presentar una opción pagable.'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -642,7 +687,18 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-stone-700 block mb-1">{isEn ? 'Adults' : 'Adultos'}</label>
+                    <input type="number" min="1" max="50" value={bookingAdults} onChange={e => setBookingAdults(Math.max(1, Number(e.target.value) || 1))} className="w-full border border-stone-300 rounded-xl px-3 py-2.5 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-stone-700 block mb-1">{isEn ? 'Children' : 'Niños'}</label>
+                    <input type="number" min="0" max="50" value={bookingChildren} onChange={e => setBookingChildren(Math.max(0, Number(e.target.value) || 0))} className="w-full border border-stone-300 rounded-xl px-3 py-2.5 text-sm" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="font-bold text-stone-700 block mb-1 flex items-center gap-1">
                         <Phone className="w-3.5 h-3.5 text-stone-400" />
@@ -686,7 +742,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                   ) : (
                     <>
                       <ShieldCheck className="w-4 h-4" />
-                      <span>{isEn ? 'Confirm & Reserve Itinerary' : 'Confirmar y Reservar Itinerario'}</span>
+                      <span>{isEn ? 'Start Verification & Quote' : 'Iniciar Verificación y Cotización'}</span>
                     </>
                   )}
                 </button>
