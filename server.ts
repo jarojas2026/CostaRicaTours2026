@@ -2629,7 +2629,7 @@ app.post('/api/itinerary/book', async (_req, res) => {
   return res.status(409).json({
     success: false,
     error: 'custom_itinerary_requires_quote',
-    message: 'El itinerario generado es una propuesta. Antes de reservar debemos verificar precios, cupos, proveedores y logística de cada componente y preparar una cotización.',
+    message: 'El itinerario generado es una propuesta. Antes de reservar debemos verificar precios, cupos y logística de cada servicio, además de proveedor y condiciones operativas, y preparar una cotización.',
     nextAction: 'request_quote',
     canonicalFlow: ['planning', 'verification', 'quote', 'customer_acceptance', 'booking_payment']
   });
