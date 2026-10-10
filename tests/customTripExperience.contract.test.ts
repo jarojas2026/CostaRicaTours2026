@@ -84,3 +84,22 @@ test('customer-facing intake renders markdown and preserves the active journey r
   assert.match(intakeUtil, /journeyId\?: string/);
   assert.match(intakeUtil, /workflow\?: unknown/);
 });
+test('legacy itinerary planner cannot fabricate a confirmed multi-day booking', () => {
+  const planner = read('src/components/ItineraryPlanner.tsx');
+  const server = read('server.ts');
+  assert.match(planner, /requestCustomerIntake/);
+  assert.match(planner, /Start Verification & Quote/);
+  assert.match(planner, /Iniciar Verificación y Cotización/);
+  assert.doesNotMatch(planner, /officially reserved/);
+  assert.doesNotMatch(planner, /Itinerario Reservado/);
+  assert.doesNotMatch(planner, /vouchers de traslados/);
+  assert.doesNotMatch(planner, /daysCount \* 2 \* 165/);
+  assert.match(server, /custom_itinerary_requires_quote/);
+  assert.match(server, /canonicalFlow: \['planning', 'verification', 'quote', 'customer_acceptance', 'booking_payment'\]/);
+  const routeStart = server.indexOf("app.post('/api/itinerary/book'");
+  const routeEnd = server.indexOf('// 4. Auditoría operativa', routeStart);
+  const legacyRoute = server.slice(routeStart, routeEnd);
+  assert.doesNotMatch(legacyRoute, /createBooking\(/);
+  assert.doesNotMatch(legacyRoute, /status: 'confirmada'/);
+});
+
