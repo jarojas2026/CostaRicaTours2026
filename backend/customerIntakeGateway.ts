@@ -4,6 +4,7 @@ import { sendEmail, sendWhatsAppMessage } from './notificationService';
 import { rememberTurn } from './memoryService';
 import { getFirestoreDb } from './bookingService';
 import { resolveTravelerIdentity } from './travelerIdentityService';
+import { buildTripJourney } from './travelJourneyOrchestrator';
 
 export interface CustomerIntakePayload {
   message?: string;
@@ -23,13 +24,138 @@ function needsHumanEscalation(intent: string, confidence: number, message: strin
   if (extractedData?.mediaType) return { escalated: true, reason: 'El canal recibió contenido multimedia que requiere revisión humana.' };
   const explicitHuman = /humano|asesor|persona|agente|ll[aá]mame|llamada|quiero hablar|quiero que me llamen|human|agent|call me/i.test(lower);
   const sensitive = ['cancellation', 'modification'].includes(intent);
-  const complex = /grupo grande|evento|corporativo|boda|luna de miel|multi.?destino|personalizado|problema|reclamo|queja|emergencia|urgente|refund|reembolso/i.test(lower);
+  const complex = /grupo grande|evento|corporativo|boda|problema|reclamo|queja|emergencia|urgente|refund|reembolso/i.test(lower);
   const missingBookingIdentity = sensitive && !extractedData?.bookingId && !extractedData?.email;
   if (explicitHuman) return { escalated: true, reason: 'El cliente solicitó atención humana.' };
   if (confidence < 0.72) return { escalated: true, reason: 'La intención no alcanzó el umbral de confianza autónoma.' };
   if (sensitive || missingBookingIdentity) return { escalated: true, reason: 'La solicitud requiere validación humana antes de ejecutar cambios sensibles.' };
   if (complex) return { escalated: true, reason: 'La solicitud supera el perímetro de resolución autónoma estándar.' };
   return { escalated: false, reason: 'Solicitud dentro del perímetro autónomo.' };
+}
+
+function normalizeRequestedRegions(destinations: unknown): string[] {
+  if (!Array.isArray(destinations)) return [];
+  const normalized = destinations.map(item => clean(item, 120)).filter(Boolean);
+  const regions = normalized.map(destination => {
+    const value = destination.toLowerCase();
+    if (/arenal|fortuna/.test(value)) return 'Arenal';
+    if (/monteverde|nuboso/.test(value)) return 'Monteverde';
+    if (/manuel antonio|quepos/.test(value)) return 'Manuel Antonio';
+    if (/guanacaste|tamarindo|papagayo/.test(value)) return 'Guanacaste';
+    if (/pacuare|turrialba/.test(value)) return 'Pacuare';
+    if (/tortuguero|caribe/.test(value)) return 'Caribe';
+    if (/osa|corcovado|uvita/.test(value)) return 'Pacífico Sur';
+    return destination;
+  });
+  return Array.from(new Set(regions)).slice(0, 8);
+}
+
+function getStructuredJourneyRequest(payload: CustomerIntakePayload) {
+  const request = payload.context?.journeyRequest;
+  const marked = payload.context?.requestKind === 'custom_multi_day_itinerary' || payload.source === 'custom-trip-funnel';
+  if (!marked || !request || typeof request !== 'object') return null;
+  const adults = Math.max(0, Math.min(Number(request.adults) || 0, 200));
+  const children = Math.max(0, Math.min(Number(request.children) || 0, 200));
+  const travelers = Math.max(1, Math.min(Number(request.travelers) || adults + children || 1, 200));
+  const days = Math.max(1, Math.min(Number(request.durationDays) || 7, 21));
+  const selectedDestinations = Array.isArray(request.selectedDestinations)
+    ? request.selectedDestinations.map((item: unknown) => clean(item, 120)).filter(Boolean).slice(0, 8)
+    : [];
+  return {
+    adults,
+    children,
+    travelers,
+    days,
+    arrivalAirport: clean(request.arrivalAirport, 12) || 'SJO',
+    travelMonth: clean(request.travelMonth, 120),
+    transportType: clean(request.transportType, 80),
+    stayStyle: clean(request.stayStyle, 80),
+    selectedDestinations,
+    regions: normalizeRequestedRegions(selectedDestinations),
+    addons: request.addons && typeof request.addons === 'object' ? request.addons : {}
+  };
+}
+
+function formatJourneyForCustomer(journey: any, request: ReturnType<typeof getStructuredJourneyRequest>, language: 'es' | 'en') {
+  const days = Array.isArray(journey?.itinerary?.days) ? journey.itinerary.days : [];
+  const availability = String(journey?.live?.availabilityStatus || 'pending').toLowerCase();
+  const routeStatus = availability === 'available'
+    ? (language === 'en' ? 'Availability signals were checked for the services that support live verification.' : 'Se consultaron señales de disponibilidad para los servicios que admiten verificación viva.')
+    : (language === 'en' ? 'Availability is still pending verification; this is a trip proposal, not a confirmed booking.' : 'La disponibilidad todavía está pendiente de verificación; esta es una propuesta de viaje, no una reserva confirmada.');
+  const requested = request?.selectedDestinations?.length
+    ? request.selectedDestinations.join(' · ')
+    : (language === 'en' ? 'Destinations to be refined' : 'Destinos por definir');
+  const dayLines = days.map((day: any) => {
+    const title = clean(day?.title, 180) || (language === 'en' ? 'Flexible day' : 'Día flexible');
+    const description = clean(day?.description, 500);
+    const region = clean(day?.region, 120);
+    return language === 'en'
+      ? `### Day ${day?.day || ''} · ${title}\n${region ? `**Area:** ${region}\n` : ''}${description}`
+      : `### Día ${day?.day || ''} · ${title}\n${region ? `**Zona:** ${region}\n` : ''}${description}`;
+  }).join('\n\n');
+
+  if (language === 'en') {
+    return [
+      `## Your ${request?.days || journey?.traveler?.days || ''}-day Costa Rica itinerary proposal`,
+      `**Travelers:** ${request?.travelers || journey?.traveler?.travelers || ''} (${request?.adults || 0} adults, ${request?.children || 0} children)  `,
+      `**Arrival:** ${request?.arrivalAirport || journey?.traveler?.arrivalAirport || 'SJO'}  `,
+      `**Requested highlights:** ${requested}  `,
+      request?.transportType ? `**Transport preference:** ${request.transportType}  ` : '',
+      request?.stayStyle ? `**Lodging preference:** ${request.stayStyle}` : '',
+      '',
+      dayLines || 'The day-by-day route still needs more trip details.',
+      '',
+      '### Operational status',
+      routeStatus,
+      '**Price:** pending verified quotation. I will not turn a transfer tariff or heuristic estimate into the price of the full trip.',
+      '',
+      `**Next step:** ${journey?.sales?.nextAction || 'Refine the proposal and verify each bookable service.'}`
+    ].filter(Boolean).join('\n');
+  }
+
+  return [
+    `## Propuesta de itinerario Costa Rica · ${request?.days || journey?.traveler?.days || ''} días`,
+    `**Viajeros:** ${request?.travelers || journey?.traveler?.travelers || ''} (${request?.adults || 0} adultos, ${request?.children || 0} niños)  `,
+    `**Llegada:** ${request?.arrivalAirport || journey?.traveler?.arrivalAirport || 'SJO'}  `,
+    `**Atractivos solicitados:** ${requested}  `,
+    request?.transportType ? `**Transporte preferido:** ${request.transportType}  ` : '',
+    request?.stayStyle ? `**Alojamiento preferido:** ${request.stayStyle}` : '',
+    '',
+    dayLines || 'La ruta día por día necesita más datos del viaje.',
+    '',
+    '### Estado operativo',
+    routeStatus,
+    '**Precio:** pendiente de cotización verificada. No voy a convertir un tarifario de traslados ni una estimación heurística en el precio del viaje completo.',
+    '',
+    `**Siguiente paso:** ${journey?.sales?.nextAction || 'Afinar la propuesta y verificar cada servicio reservable.'}`
+  ].filter(Boolean).join('\n');
+}
+
+async function buildStructuredJourneyAssistant(payload: CustomerIntakePayload, sessionId: string, language: 'es' | 'en') {
+  const request = getStructuredJourneyRequest(payload);
+  if (!request) return null;
+  const query = [
+    request.selectedDestinations.join(', '),
+    request.transportType ? `transport ${request.transportType}` : '',
+    request.stayStyle ? `lodging ${request.stayStyle}` : '',
+    request.travelMonth ? `season ${request.travelMonth}` : ''
+  ].filter(Boolean).join(' · ');
+  const journey = await buildTripJourney({
+    sessionId,
+    query,
+    days: request.days,
+    travelers: request.travelers,
+    profile: request.stayStyle || 'relaxed',
+    regions: request.regions,
+    arrivalAirport: request.arrivalAirport,
+    activities: request.selectedDestinations,
+    language
+  });
+  return {
+    reply: formatJourneyForCustomer(journey, request, language),
+    agentId: 'journey_orchestrator',
+    journeyId: journey.journeyId
+  };
 }
 
 function ownerPhone(): string {
@@ -60,13 +186,19 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
   const intent = clean(triage?.intent || 'general_inquiry', 80);
   const confidence = Number.isFinite(Number(triage?.confidence)) ? Number(triage.confidence) : 0.5;
   const extractedData = { ...(triage?.extractedData || {}), customer: payload.customer || undefined, mediaType: payload.context?.mediaType || undefined };
+  const structuredJourneyRequest = getStructuredJourneyRequest(payload);
   const escalation = identity.identityConflict
     ? { escalated: true, reason: 'La identidad del viajero presenta señales conflictivas; requiere verificación antes de acciones sensibles.' }
-    : needsHumanEscalation(intent, confidence, message, extractedData);
+    : structuredJourneyRequest
+      ? { escalated: false, reason: 'Planificación multidía estructurada dentro del perímetro autónomo; precio y disponibilidad permanecen sujetos a verificación.' }
+      : needsHumanEscalation(intent, confidence, message, extractedData);
 
+  const journeyAssistant = !extractedData.mediaType
+    ? await buildStructuredJourneyAssistant(payload, sessionId, language)
+    : null;
   const assistant = extractedData.mediaType
     ? { reply: language === 'en' ? 'We received your media message. A human agent has been notified and will review it. You can also send the request as text for immediate AI assistance.' : 'Recibimos tu mensaje multimedia. Un agente humano ha sido notificado y lo revisará. También puedes enviar la solicitud por texto para recibir asistencia inmediata de la IA.', agentId: 'customer_intake_gateway' }
-    : await processChatInquiry(message, language, [], 'auto', sessionId, { allowMutations: !escalation.escalated });
+    : journeyAssistant || await processChatInquiry(message, language, [], 'auto', sessionId, { allowMutations: !escalation.escalated });
   const intakeId = `INT-${crypto.randomUUID()}`;
   const reply = clean(assistant?.reply || 'Recibimos tu solicitud y estamos procesándola.', 8000);
 
