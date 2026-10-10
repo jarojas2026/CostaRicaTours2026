@@ -1,6 +1,7 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import ReactMarkdown from 'react-markdown';
 import { REGIONS } from './data/toursData';
 import { useTours } from './contexts/ToursContext';
 import { Tour, Language, Currency, TourCategory, TourRegion, BookingRequest } from './types';
@@ -320,7 +321,21 @@ export default function App() {
             <div className="p-5 space-y-4">
               <div className="rounded-2xl bg-black/20 border border-white/5 p-4 text-xs text-stone-400"><span className="font-bold text-stone-200">{language === 'es' ? 'Solicitud:' : 'Request:'}</span> {intakeMessage || (language === 'es' ? 'Solicitud recibida' : 'Request received')}</div>
               <div className="rounded-2xl bg-emerald-400/5 border border-emerald-400/15 p-5 min-h-[100px]">
-                {intakeLoading ? <div className="flex items-center gap-3 text-emerald-200 text-sm"><Loader2 className="animate-spin" size={18}/>{language === 'es' ? 'Los agentes están analizando tu solicitud, disponibilidad y contexto...' : 'Our agents are analyzing your request, availability and context...'}</div> : <p className="text-sm leading-relaxed text-stone-100 whitespace-pre-wrap">{intakeReply}</p>}
+                {intakeLoading ? <div className="flex items-center gap-3 text-emerald-200 text-sm"><Loader2 className="animate-spin" size={18}/>{language === 'es' ? 'Los agentes están analizando tu solicitud, disponibilidad y contexto...' : 'Our agents are analyzing your request, availability and context...'}</div> : (
+                  <ReactMarkdown
+                    components={{
+                      h2: ({ children }) => <h2 className="text-base font-black text-white mb-3">{children}</h2>,
+                      h3: ({ children }) => <h3 className="text-sm font-black text-emerald-200 mt-4 mb-1.5">{children}</h3>,
+                      p: ({ children }) => <p className="text-sm leading-relaxed text-stone-100 mb-2.5">{children}</p>,
+                      strong: ({ children }) => <strong className="font-black text-white">{children}</strong>,
+                      ul: ({ children }) => <ul className="list-disc pl-5 space-y-1 text-sm text-stone-100 mb-3">{children}</ul>,
+                      ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1 text-sm text-stone-100 mb-3">{children}</ol>,
+                      a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer" className="text-emerald-300 underline underline-offset-2 break-all">{children}</a>
+                    }}
+                  >
+                    {intakeReply}
+                  </ReactMarkdown>
+                )}
               </div>
               {!intakeLoading && intakeEscalated && (
                 <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-xs text-amber-100">{language === 'es' ? 'Esta solicitud necesita revisión humana; todavía no es una reserva confirmada.' : 'This inquiry needs human review; it is not a confirmed booking yet.'}</div>
