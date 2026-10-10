@@ -319,6 +319,7 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
       context: {
         page: window.location.pathname,
         requestKind: 'custom_multi_day_itinerary',
+        existingJourneyId: localStorage.getItem('crt_active_journey') || undefined,
         journeyRequest: {
           startDate: startDate || undefined,
           arrivalAirport,
