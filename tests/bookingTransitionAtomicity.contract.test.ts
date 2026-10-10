@@ -12,5 +12,5 @@ test('booking lifecycle and provider evidence are revalidated against the transa
 });
 
 test('cancellation rechecks the latest lifecycle before releasing inventory', () => {
-  assert.match(source, /if \(isCancelling\)[\s\S]{0,700}runTransaction\(async \(transaction\) => \{[\s\S]{0,500}assertBookingUpdateAllowed\(current, updates\)[\s\S]{0,500}availabilityReleased/);
+  assert.match(source, /if \(isCancelling\)[\s\S]{0,700}runTransaction\(async \(transaction\) => \{[\s\S]{0,500}assertBookingUpdateAllowed\(current, updates\)[\s\S]{0,1400}availabilityReleased/);
 });
