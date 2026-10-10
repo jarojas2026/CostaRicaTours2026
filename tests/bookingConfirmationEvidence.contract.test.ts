@@ -8,7 +8,7 @@ const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
 
 test('legacy customer approval route cannot stand in for provider confirmation', () => {
   assert.match(server, /\/api\/bookings\/:id\/customer-confirm/);
-  assert.match(bookingService, /toLifecycle === 'confirmed' && updates\.customerConfirmedAt/);
+  assert.match(bookingService, /toLifecycle === 'confirmed' && updates\??\.customerConfirmedAt/);
   assert.match(bookingService, /hasProviderConfirmationEvidence\(existing, updates\)/);
 });
 
