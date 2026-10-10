@@ -67,9 +67,15 @@ function timeoutSignal(ms: number) {
 export function validateLiveInventoryObservation(goal: BusinessGoal, value: unknown): LiveInventoryGatewayResult {
   if (!value || typeof value !== 'object') return { status: 'unverified', reason: 'Inventory adapter returned no structured observation.' };
   const data = value as any;
+  const source = clean(data.source, 240);
+  if (!source) {
+    return { status: 'unverified', reason: 'Inventory observation is missing a traceable source.' };
+  }
+
   const observedAt = clean(data.observedAt, 80);
   const observedMs = Date.parse(observedAt);
-  if (!Number.isFinite(observedMs) || observedMs > Date.now() + 60_000 || Date.now() - observedMs > 30 * 60_000) {
+  const now = Date.now();
+  if (!Number.isFinite(observedMs) || observedMs > now + 60_000 || now - observedMs > 30 * 60_000) {
     return { status: 'unverified', reason: 'Inventory observation is missing a fresh observedAt timestamp.' };
   }
   if (data.authoritative !== true) {
@@ -81,22 +87,41 @@ export function validateLiveInventoryObservation(goal: BusinessGoal, value: unkn
   if (!data.facts || typeof data.facts !== 'object' || Array.isArray(data.facts)) {
     return { status: 'unverified', reason: 'Inventory adapter returned no facts object.' };
   }
+
   const required = REQUIRED_FACTS[goal] || [];
-  const missing = required.filter(key => data.facts[key] === undefined || data.facts[key] === null || data.facts[key] === '');
+  const missing = required.filter(key => {
+    const fact = data.facts[key];
+    return fact === undefined || fact === null || (typeof fact === 'string' && !fact.trim());
+  });
   if (missing.length) {
     return { status: 'unverified', reason: `Inventory observation is missing required facts: ${missing.join(', ')}.` };
   }
+
+  if (required.includes('availability') && typeof data.facts.availability !== 'boolean') {
+    return { status: 'unverified', reason: 'Inventory availability must be an explicit boolean value.' };
+  }
+
+  const priceKey = required.includes('serverAuthoritativePrice') ? 'serverAuthoritativePrice' :
+    required.includes('finalPrice') ? 'finalPrice' : undefined;
+  if (priceKey) {
+    const price = data.facts[priceKey];
+    if (typeof price !== 'number' || !Number.isFinite(price) || price < 0) {
+      return { status: 'unverified', reason: `Inventory ${priceKey} must be a finite non-negative number.` };
+    }
+  }
+
   if (data.expiresAt) {
-    const expiresMs = Date.parse(String(data.expiresAt));
-    if (!Number.isFinite(expiresMs) || expiresMs <= Date.now()) {
-      return { status: 'unverified', reason: 'Inventory observation is already expired.' };
+    const expiresAt = clean(data.expiresAt, 80);
+    const expiresMs = Date.parse(expiresAt);
+    if (!Number.isFinite(expiresMs) || expiresMs <= now || expiresMs <= observedMs) {
+      return { status: 'unverified', reason: 'Inventory observation expiry must be valid and later than both the observation and current time.' };
     }
   }
 
   return {
     status: 'verified_observation',
     observation: {
-      source: clean(data.source, 240) || 'configured_inventory_gateway',
+      source,
       sourceType: data.sourceType,
       authoritative: true,
       observedAt,

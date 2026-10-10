@@ -106,6 +106,17 @@ function hasProviderConfirmationEvidence(existing: any, updates: any): boolean {
   return statuses.some((value) => value === 'confirmed' || value === 'confirmada');
 }
 
+function assertBookingUpdateAllowed(existing: any, updates: any): void {
+  const fromLifecycle = normalizeBookingLifecycle(existing?.status, existing?.paymentStatus);
+  const toLifecycle = updates?.status
+    ? normalizeBookingLifecycle(updates.status)
+    : normalizeBookingLifecycle(existing?.status, updates?.paymentStatus);
+  assertBookingTransition(fromLifecycle, toLifecycle);
+  if (toLifecycle === 'confirmed' && updates?.customerConfirmedAt && !hasProviderConfirmationEvidence(existing, updates)) {
+    throw new Error('La aprobación del cliente fue registrada, pero la reserva no puede confirmarse hasta recibir evidencia de confirmación del proveedor.');
+  }
+}
+
 export function getSlotKey(tourId: string, date: string, time: string): string {
   const cleanTime = (time || '08:00 AM').replace(/[^a-zA-Z0-9]/g, '_');
   return `${tourId}_${date}_${cleanTime}`;
@@ -724,29 +735,15 @@ export async function updateBookingStatus(
 
   const previousStatus = existing.status;
   const newStatus = updates.status;
-  const fromLifecycle = normalizeBookingLifecycle(previousStatus, existing.paymentStatus);
-  const toLifecycle = updates.status
-    ? normalizeBookingLifecycle(updates.status)
-    : normalizeBookingLifecycle(previousStatus, updates.paymentStatus);
   try {
-    assertBookingTransition(fromLifecycle, toLifecycle);
+    assertBookingUpdateAllowed(existing, updates);
   } catch (transitionErr: any) {
     return { success: false, error: transitionErr.message };
   }
 
-  // Customer approval records commercial consent; it is never provider evidence.
-  // This specifically contains the legacy /customer-confirm route while keeping
-  // explicit operator/provider workflows available for supervised operations.
-  if (toLifecycle === 'confirmed' && updates.customerConfirmedAt && !hasProviderConfirmationEvidence(existing, updates)) {
-    return {
-      success: false,
-      error: 'La aprobación del cliente fue registrada, pero la reserva no puede confirmarse hasta recibir evidencia de confirmación del proveedor.'
-    };
-  }
-
   const isCancelling = (newStatus === 'cancelada' || newStatus === 'cancelled') &&
     (previousStatus !== 'cancelada' && previousStatus !== 'cancelled');
-  const updatedBooking = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  let updatedBooking = { ...existing, ...updates, updatedAt: new Date().toISOString() };
   let availabilityReleasedByTransaction = false;
 
   if (db && col) {
@@ -757,6 +754,9 @@ export async function updateBookingStatus(
           const bookingSnap = await transaction.get(bookingRef);
           if (!bookingSnap.exists) throw new Error('Reserva no encontrada durante la cancelación.');
           const current = bookingSnap.data() || {};
+          assertBookingUpdateAllowed(current, updates);
+          existing = current;
+          updatedBooking = { ...current, ...updates, updatedAt: new Date().toISOString() };
           const currentStatus = String(current.status || '').toLowerCase();
           const alreadyCancelled = currentStatus === 'cancelada' || currentStatus === 'cancelled';
           const alreadyReleased = current.availabilityReleased === true;
@@ -788,7 +788,16 @@ export async function updateBookingStatus(
           return false;
         });
       } else {
-        await col.doc(bookingId).set({ ...updates, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+        const bookingRef = col.doc(bookingId);
+        await db.runTransaction(async (transaction) => {
+          const bookingSnap = await transaction.get(bookingRef);
+          if (!bookingSnap.exists) throw new Error('Reserva no encontrada durante la actualización.');
+          const current = bookingSnap.data() || {};
+          assertBookingUpdateAllowed(current, updates);
+          existing = current;
+          updatedBooking = { ...current, ...updates, updatedAt: new Date().toISOString() };
+          transaction.set(bookingRef, { ...updates, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+        });
       }
     } catch (err: any) {
       console.error('Error actualizando en Firestore:', err);
