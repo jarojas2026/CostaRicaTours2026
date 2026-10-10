@@ -14,6 +14,8 @@ export interface CustomerIntakeResult {
   ok: boolean;
   reply?: string;
   intakeId?: string;
+  journeyId?: string;
+  workflow?: unknown;
   handoffUrl?: string;
 }
 

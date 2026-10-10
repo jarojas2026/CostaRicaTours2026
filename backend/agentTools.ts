@@ -103,7 +103,7 @@ export const AGENT_TOOL_REGISTRY = {
     sideEffect: false
   },
   build_trip_journey: {
-    description: 'Build or rebuild a complete traveler journey using memory, catalog, live availability, weather, route strategy, itinerary and sales next steps.',
+    description: 'Build or rebuild a complete traveler journey using memory, catalog, route strategy, current weather context, internal capacity signals and explicit provider/live verification boundaries.',
     sideEffect: true
   },
   adapt_trip_journey: {
@@ -115,7 +115,7 @@ export const AGENT_TOOL_REGISTRY = {
     sideEffect: false
   },
   verify_journey_availability: {
-    description: 'Verify live capacity for the selected experiences in a traveler journey for a specific date and party size.',
+    description: 'Check internal booking-capacity signals for selected journey experiences. This does not equal provider-confirmed inventory; provider/live verification is still required.',
     sideEffect: false
   },
   observe_journey_state: {
@@ -390,11 +390,23 @@ export async function executeAgentTool(
     case 'build_trip_journey':
       return buildTripJourney({
         sessionId: args.sessionId ? String(args.sessionId) : undefined,
-        query: args.query ? String(args.query) : '', days: Number(args.days), travelers: Number(args.travelers),
-        profile: args.profile, regions: Array.isArray(args.regions) ? args.regions.map((x: unknown) => String(x)) : undefined,
+        query: args.query ? String(args.query) : '',
+        days: Number(args.days),
+        travelers: Number(args.travelers),
+        adults: args.adults === undefined ? undefined : Number(args.adults),
+        children: args.children === undefined ? undefined : Number(args.children),
+        profile: args.profile,
+        pace: args.pace ? String(args.pace) : undefined,
+        budgetUSD: args.budgetUSD === undefined ? undefined : Number(args.budgetUSD),
+        priorities: Array.isArray(args.priorities) ? args.priorities.map((x: unknown) => String(x)) : undefined,
+        transportPreference: args.transportPreference ? String(args.transportPreference) : undefined,
+        lodgingPreference: args.lodgingPreference ? String(args.lodgingPreference) : undefined,
+        specialRequests: args.specialRequests ? String(args.specialRequests) : undefined,
+        regions: Array.isArray(args.regions) ? args.regions.map((x: unknown) => String(x)) : undefined,
         arrivalAirport: args.arrivalAirport ? String(args.arrivalAirport) : undefined,
         departureAirport: args.departureAirport ? String(args.departureAirport) : undefined,
-        date: args.date ? String(args.date) : undefined, time: args.time ? String(args.time) : undefined,
+        date: args.date ? String(args.date) : undefined,
+        time: args.time ? String(args.time) : undefined,
         selectedTourIds: Array.isArray(args.selectedTourIds) ? args.selectedTourIds.map((x: unknown) => String(x)) : undefined,
         activities: Array.isArray(args.activities) ? args.activities.map((x: unknown) => String(x)) : undefined,
         language: args.language === 'en' ? 'en' : 'es'
@@ -403,12 +415,23 @@ export async function executeAgentTool(
       if (!args.journeyId) throw new Error('journeyId requerido');
       return adaptTravelerJourney(String(args.journeyId), {
         sessionId: args.sessionId ? String(args.sessionId) : undefined,
-        query: args.query ? String(args.query) : undefined, days: args.days === undefined ? undefined : Number(args.days),
-        travelers: args.travelers === undefined ? undefined : Number(args.travelers), profile: args.profile,
+        query: args.query ? String(args.query) : undefined,
+        days: args.days === undefined ? undefined : Number(args.days),
+        travelers: args.travelers === undefined ? undefined : Number(args.travelers),
+        adults: args.adults === undefined ? undefined : Number(args.adults),
+        children: args.children === undefined ? undefined : Number(args.children),
+        profile: args.profile,
+        pace: args.pace ? String(args.pace) : undefined,
+        budgetUSD: args.budgetUSD === undefined ? undefined : Number(args.budgetUSD),
+        priorities: Array.isArray(args.priorities) ? args.priorities.map((x: unknown) => String(x)) : undefined,
+        transportPreference: args.transportPreference ? String(args.transportPreference) : undefined,
+        lodgingPreference: args.lodgingPreference ? String(args.lodgingPreference) : undefined,
+        specialRequests: args.specialRequests ? String(args.specialRequests) : undefined,
         regions: Array.isArray(args.regions) ? args.regions.map((x: unknown) => String(x)) : undefined,
         arrivalAirport: args.arrivalAirport ? String(args.arrivalAirport) : undefined,
         departureAirport: args.departureAirport ? String(args.departureAirport) : undefined,
-        date: args.date ? String(args.date) : undefined, time: args.time ? String(args.time) : undefined,
+        date: args.date ? String(args.date) : undefined,
+        time: args.time ? String(args.time) : undefined,
         selectedTourIds: Array.isArray(args.selectedTourIds) ? args.selectedTourIds.map((x: unknown) => String(x)) : undefined,
         activities: Array.isArray(args.activities) ? args.activities.map((x: unknown) => String(x)) : undefined,
         language: args.language === 'en' ? 'en' : undefined
@@ -457,12 +480,15 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
   },
   {
     name: 'build_trip_journey',
-    description: 'Build a complete Costa Rica trip from traveler memory, expert intelligence, authoritative catalog, live weather, live availability, itinerary and sales next step.',
+    description: 'Build a professional day-by-day Costa Rica trip from traveler memory, constraints, catalog matches and route strategy while keeping provider inventory and final pricing explicitly unverified until authoritative evidence exists.',
     parameters: {
       type: 'OBJECT',
       properties: {
         sessionId: { type: 'STRING' }, query: { type: 'STRING' }, days: { type: 'NUMBER' }, travelers: { type: 'NUMBER' },
-        profile: { type: 'STRING' }, regions: { type: 'ARRAY', items: { type: 'STRING' } },
+        adults: { type: 'NUMBER' }, children: { type: 'NUMBER' }, profile: { type: 'STRING' }, pace: { type: 'STRING' },
+        budgetUSD: { type: 'NUMBER' }, priorities: { type: 'ARRAY', items: { type: 'STRING' } },
+        transportPreference: { type: 'STRING' }, lodgingPreference: { type: 'STRING' }, specialRequests: { type: 'STRING' },
+        regions: { type: 'ARRAY', items: { type: 'STRING' } },
         arrivalAirport: { type: 'STRING' }, departureAirport: { type: 'STRING' }, date: { type: 'STRING' }, time: { type: 'STRING' },
         selectedTourIds: { type: 'ARRAY', items: { type: 'STRING' } }, activities: { type: 'ARRAY', items: { type: 'STRING' } },
         language: { type: 'STRING' }
@@ -476,7 +502,10 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
       type: 'OBJECT',
       properties: {
         journeyId: { type: 'STRING' }, sessionId: { type: 'STRING' }, query: { type: 'STRING' }, days: { type: 'NUMBER' }, travelers: { type: 'NUMBER' },
-        profile: { type: 'STRING' }, regions: { type: 'ARRAY', items: { type: 'STRING' } }, arrivalAirport: { type: 'STRING' },
+        adults: { type: 'NUMBER' }, children: { type: 'NUMBER' }, profile: { type: 'STRING' }, pace: { type: 'STRING' },
+        budgetUSD: { type: 'NUMBER' }, priorities: { type: 'ARRAY', items: { type: 'STRING' } },
+        transportPreference: { type: 'STRING' }, lodgingPreference: { type: 'STRING' }, specialRequests: { type: 'STRING' },
+        regions: { type: 'ARRAY', items: { type: 'STRING' } }, arrivalAirport: { type: 'STRING' },
         departureAirport: { type: 'STRING' }, date: { type: 'STRING' }, time: { type: 'STRING' },
         selectedTourIds: { type: 'ARRAY', items: { type: 'STRING' } }, activities: { type: 'ARRAY', items: { type: 'STRING' } },
         language: { type: 'STRING' }

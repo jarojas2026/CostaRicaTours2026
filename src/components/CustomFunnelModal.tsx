@@ -9,6 +9,37 @@ import { Language, Currency } from '../types';
 
 const CUSTOM_FUNNEL_DRAFT_KEY = 'costa_rica_custom_funnel_draft';
 
+const DESTINATION_OPTIONS = [
+  { id: 'Arenal', es: 'Volcán Arenal & La Fortuna', en: 'Arenal Volcano & La Fortuna' },
+  { id: 'Monteverde', es: 'Bosque Nuboso Monteverde', en: 'Monteverde Cloud Forest' },
+  { id: 'Manuel Antonio', es: 'Manuel Antonio & Quepos', en: 'Manuel Antonio & Quepos' },
+  { id: 'Guanacaste', es: 'Guanacaste & Tamarindo', en: 'Guanacaste & Tamarindo' },
+  { id: 'Pacuare', es: 'Río Pacuare & Turrialba', en: 'Pacuare River & Turrialba' },
+  { id: 'Caribe', es: 'Tortuguero & Caribe', en: 'Tortuguero & Caribbean' },
+  { id: 'Pacífico Sur', es: 'Osa, Corcovado & Pacífico Sur', en: 'Osa, Corcovado & South Pacific' }
+] as const;
+
+const LEGACY_DESTINATION_ALIASES: Record<string, string> = {
+  'Arenal Volcano & Thermal Springs': 'Arenal',
+  'Volcán Arenal & Termales': 'Arenal',
+  'Bosque Nuboso Monteverde': 'Monteverde',
+  'Manuel Antonio National Park': 'Manuel Antonio',
+  'Parque Nacional Manuel Antonio': 'Manuel Antonio',
+  'Playas de Guanacaste & Tamarindo': 'Guanacaste',
+  'Rafting Río Pacuare': 'Pacuare',
+  'Tortuguero & Caribe Norte': 'Caribe',
+  'Península de Osa & Corcovado': 'Pacífico Sur'
+};
+
+function normalizeSavedDestinations(value: unknown): string[] {
+  if (!Array.isArray(value)) return ['Arenal', 'Manuel Antonio'];
+  const validIds = new Set(DESTINATION_OPTIONS.map(option => option.id));
+  return Array.from(new Set(value.map(item => {
+    const raw = String(item || '').trim();
+    return LEGACY_DESTINATION_ALIASES[raw] || raw;
+  }).filter(id => validIds.has(id as any))));
+}
+
 interface CustomFunnelModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -30,19 +61,25 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
 
   // Step 1: Trip Basics
   const [arrivalAirport, setArrivalAirport] = useState<'SJO' | 'LIR'>('SJO');
-  const [travelMonth, setTravelMonth] = useState<string>('Diciembre - Abril (Dry Season)');
+  const [departureAirport, setDepartureAirport] = useState<'SJO' | 'LIR'>('SJO');
+  const [startDate, setStartDate] = useState('');
   const [durationDays, setDurationDays] = useState<number>(7);
   const [adults, setAdults] = useState<number>(2);
   const [children, setChildren] = useState<number>(0);
+  const [pace, setPace] = useState<'relaxed' | 'balanced' | 'active'>('balanced');
+  const [budgetUSD, setBudgetUSD] = useState('');
+  const [specialRequests, setSpecialRequests] = useState('');
+  const [requestQuote, setRequestQuote] = useState(true);
+  const [customerName, setCustomerName] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [formError, setFormError] = useState('');
 
   // Step 2: Transport & Transfers
   const [transportType, setTransportType] = useState<'shuttle' | 'private' | 'rental' | 'flight'>('private');
   
   // Step 3: Destinations & Stays
-  const [selectedDestinations, setSelectedDestinations] = useState<string[]>([
-    'Arenal Volcano & Thermal Springs',
-    'Manuel Antonio National Park'
-  ]);
+  const [selectedDestinations, setSelectedDestinations] = useState<string[]>(['Arenal', 'Manuel Antonio']);
   const [stayStyle, setStayStyle] = useState<'ecolodge' | 'boutique' | 'resort'>('boutique');
 
   // Step 4: Add-on Perks
@@ -81,19 +118,27 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
           if (draft) {
             if (draft.step) setStep(draft.step);
             if (draft.arrivalAirport) setArrivalAirport(draft.arrivalAirport);
-            if (draft.travelMonth) setTravelMonth(draft.travelMonth);
+            if (draft.departureAirport) setDepartureAirport(draft.departureAirport);
+            if (draft.startDate) setStartDate(draft.startDate);
             if (draft.durationDays) setDurationDays(draft.durationDays);
             if (draft.adults) setAdults(draft.adults);
             if (draft.children !== undefined) setChildren(draft.children);
             if (draft.transportType) setTransportType(draft.transportType);
             if (draft.selectedDestinations && Array.isArray(draft.selectedDestinations)) {
-              setSelectedDestinations(draft.selectedDestinations);
+              setSelectedDestinations(normalizeSavedDestinations(draft.selectedDestinations));
             }
             if (draft.stayStyle) setStayStyle(draft.stayStyle);
             if (draft.includeSim !== undefined) setIncludeSim(draft.includeSim);
             if (draft.includeGuide !== undefined) setIncludeGuide(draft.includeGuide);
             if (draft.includeNationalParkPass !== undefined) setIncludeNationalParkPass(draft.includeNationalParkPass);
             if (draft.includeInsurance !== undefined) setIncludeInsurance(draft.includeInsurance);
+            if (draft.pace) setPace(draft.pace);
+            if (draft.budgetUSD !== undefined) setBudgetUSD(String(draft.budgetUSD || ''));
+            if (draft.specialRequests !== undefined) setSpecialRequests(String(draft.specialRequests || ''));
+            if (draft.requestQuote !== undefined) setRequestQuote(Boolean(draft.requestQuote));
+            if (draft.customerName !== undefined) setCustomerName(String(draft.customerName || ''));
+            if (draft.customerEmail !== undefined) setCustomerEmail(String(draft.customerEmail || ''));
+            if (draft.customerPhone !== undefined) setCustomerPhone(String(draft.customerPhone || ''));
             if (draft.savedAt) setLastSavedTime(draft.savedAt);
             setHasRestoredDraft(true);
           }
@@ -116,7 +161,8 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
       const payload = {
         step,
         arrivalAirport,
-        travelMonth,
+        departureAirport,
+        startDate,
         durationDays,
         adults,
         children,
@@ -127,6 +173,13 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
         includeGuide,
         includeNationalParkPass,
         includeInsurance,
+        pace,
+        budgetUSD,
+        specialRequests,
+        requestQuote,
+        customerName,
+        customerEmail,
+        customerPhone,
         savedAt: timeFormatted,
         updatedAt: now.toISOString()
       };
@@ -147,7 +200,8 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
       clearInterval(intervalTimer);
     };
   }, [
-    isOpen, step, arrivalAirport, travelMonth, durationDays, adults, children,
+    isOpen, step, arrivalAirport, departureAirport, startDate, durationDays, adults, children,
+    pace, budgetUSD, specialRequests, requestQuote, customerName, customerEmail, customerPhone,
     transportType, selectedDestinations, stayStyle, includeSim, includeGuide,
     includeNationalParkPass, includeInsurance
   ]);
@@ -160,17 +214,26 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
     }
     setStep(1);
     setArrivalAirport('SJO');
-    setTravelMonth('Diciembre - Abril (Dry Season)');
+    setDepartureAirport('SJO');
+    setStartDate('');
     setDurationDays(7);
     setAdults(2);
     setChildren(0);
     setTransportType('private');
-    setSelectedDestinations(['Arenal Volcano & Thermal Springs', 'Manuel Antonio National Park']);
+    setSelectedDestinations(['Arenal', 'Manuel Antonio']);
     setStayStyle('boutique');
     setIncludeSim(true);
     setIncludeGuide(true);
     setIncludeNationalParkPass(true);
     setIncludeInsurance(false);
+    setPace('balanced');
+    setBudgetUSD('');
+    setSpecialRequests('');
+    setRequestQuote(true);
+    setCustomerName('');
+    setCustomerEmail('');
+    setCustomerPhone('');
+    setFormError('');
     setHasRestoredDraft(false);
     setLastSavedTime(null);
   };
@@ -183,37 +246,96 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
     );
   };
 
+  const selectedDestinationLabels = selectedDestinations.map(id => {
+    const option = DESTINATION_OPTIONS.find(item => item.id === id);
+    return option ? (language === 'es' ? option.es : option.en) : id;
+  });
+
+  const selectedPriorities = [
+    includeNationalParkPass ? (language === 'es' ? 'parques nacionales y naturaleza' : 'national parks and nature') : '',
+    includeGuide ? (language === 'es' ? 'guía naturalista cuando aporte valor' : 'naturalist guide where useful') : '',
+    includeSim ? (language === 'es' ? 'opciones de conectividad' : 'connectivity options') : '',
+    includeInsurance ? (language === 'es' ? 'información sobre seguro de viaje' : 'travel insurance information') : ''
+  ].filter(Boolean);
+
   const buildTripRequestMessage = () => {
     const travelers = adults + children;
-    const destinationText = selectedDestinations.length
-      ? selectedDestinations.join(', ')
+    const destinationText = selectedDestinationLabels.length
+      ? selectedDestinationLabels.join(', ')
       : (language === 'es' ? 'por definir' : 'to be defined');
+    const outcome = requestQuote
+      ? (language === 'es'
+          ? 'Después de proponer la ruta, inicia la verificación operativa necesaria para preparar una cotización real; no reserves ni cobres hasta completar las verificaciones.'
+          : 'After proposing the route, start the operational verification needed for a real quote; do not book or charge until verification is complete.')
+      : (language === 'es'
+          ? 'Por ahora quiero sólo una propuesta de viaje; no inicies reserva ni pago.'
+          : 'For now I only want a trip proposal; do not start booking or payment.');
+
     return language === 'es'
-      ? `Necesito un itinerario personalizado de ${durationDays} días en Costa Rica para ${travelers} viajeros (${adults} adultos, ${children} niños). Llegamos por ${arrivalAirport}. Queremos visitar: ${destinationText}. Preferimos transporte ${transportType}, alojamiento ${stayStyle} y una ruta lógica que distribuya los atractivos por día sin sobrecargar los traslados. La temporada indicada es ${travelMonth}. Genera primero la propuesta día por día y deja claramente separados los servicios que todavía requieren verificación de disponibilidad o precio.`
-      : `I need a ${durationDays}-day custom Costa Rica itinerary for ${travelers} travelers (${adults} adults, ${children} children), arriving through ${arrivalAirport}. We want to visit: ${destinationText}. We prefer ${transportType} transport, ${stayStyle} lodging, and a logical day-by-day route without excessive transfers. The selected season is ${travelMonth}. Build the itinerary first and clearly separate anything that still requires live availability or price verification.`;
+      ? `Necesito un viaje personalizado de ${durationDays} días en Costa Rica para ${travelers} viajeros (${adults} adultos, ${children} niños). Fecha de inicio: ${startDate || 'por definir'}. Llegada: ${arrivalAirport}. Salida: ${departureAirport}. Queremos visitar: ${destinationText}. Ritmo: ${pace}. Preferimos transporte ${transportType} y alojamiento ${stayStyle}. ${budgetUSD ? `Presupuesto máximo declarado para el grupo: $${budgetUSD} USD; úsalo como restricción, no como precio cotizado.` : ''} ${selectedPriorities.length ? `Prioridades: ${selectedPriorities.join(', ')}.` : ''} ${specialRequests ? `Necesidades o solicitudes especiales: ${specialRequests}.` : ''} Construye una ruta día por día, optimiza geografía y traslados, usa servicios reales del catálogo cuando correspondan y marca claramente todo lo que requiera verificación. ${outcome}`
+      : `I need a custom ${durationDays}-day Costa Rica trip for ${travelers} travelers (${adults} adults, ${children} children). Start date: ${startDate || 'to be defined'}. Arrival: ${arrivalAirport}. Departure: ${departureAirport}. We want to visit: ${destinationText}. Pace: ${pace}. We prefer ${transportType} transport and ${stayStyle} lodging. ${budgetUSD ? `Declared group budget ceiling: $${budgetUSD} USD; use it as a constraint, not as a quoted price.` : ''} ${selectedPriorities.length ? `Priorities: ${selectedPriorities.join(', ')}.` : ''} ${specialRequests ? `Special needs or requests: ${specialRequests}.` : ''} Build a day-by-day route, optimize geography and transfers, use real catalog services when they fit, and clearly mark anything requiring verification. ${outcome}`;
   };
 
   const handleGenerateItinerary = () => {
-    const message = buildTripRequestMessage();
+    setFormError('');
     const travelers = adults + children;
+    const emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim());
 
+    if (durationDays < 3 || durationDays > 21) {
+      setFormError(language === 'es' ? 'La duración debe estar entre 3 y 21 días.' : 'Trip duration must be between 3 and 21 days.');
+      return;
+    }
+    if (adults < 1 || travelers < 1) {
+      setFormError(language === 'es' ? 'Debe viajar al menos un adulto.' : 'At least one adult traveler is required.');
+      return;
+    }
+    if (!selectedDestinations.length) {
+      setFormError(language === 'es' ? 'Selecciona al menos un destino para construir una ruta coherente.' : 'Select at least one destination to build a coherent route.');
+      return;
+    }
+    if (requestQuote && !startDate) {
+      setFormError(language === 'es' ? 'Indica una fecha exacta de inicio para verificar disponibilidad y cotizar.' : 'Provide an exact start date to verify availability and prepare a quote.');
+      return;
+    }
+    if (requestQuote && !customerName.trim()) {
+      setFormError(language === 'es' ? 'Indica el nombre del viajero responsable para abrir la solicitud de cotización.' : 'Provide the lead traveler name to open the quote request.');
+      return;
+    }
+    if (requestQuote && !emailLooksValid) {
+      setFormError(language === 'es' ? 'Indica un correo válido para continuar la verificación de la cotización.' : 'Provide a valid email to continue quote verification.');
+      return;
+    }
+
+    const message = buildTripRequestMessage();
     requestCustomerIntake({
       message,
       language,
       source: 'custom-trip-funnel',
+      customer: {
+        name: customerName.trim() || undefined,
+        email: customerEmail.trim() || undefined,
+        phone: customerPhone.trim() || undefined
+      },
       context: {
         page: window.location.pathname,
         requestKind: 'custom_multi_day_itinerary',
+        existingJourneyId: localStorage.getItem('crt_active_journey') || undefined,
         journeyRequest: {
+          startDate: startDate || undefined,
           arrivalAirport,
-          travelMonth,
+          departureAirport,
           durationDays,
           adults,
           children,
           travelers,
+          pace,
+          budgetUSD: budgetUSD ? Number(budgetUSD) : undefined,
           transportType,
           selectedDestinations,
           stayStyle,
+          priorities: selectedPriorities,
+          specialRequests: specialRequests.trim() || undefined,
+          requestQuote,
           addons: {
             nationalParkPass: includeNationalParkPass,
             guide: includeGuide,
@@ -363,6 +485,51 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
+                <div>
+                  <label className="text-xs font-bold text-neutral-700 block mb-1">
+                    {language === 'es' ? 'Fecha exacta de inicio' : 'Exact start date'}
+                  </label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full bg-white border border-neutral-300 rounded-xl px-3 py-2 text-sm font-bold text-neutral-800"
+                  />
+                  <p className="mt-1 text-[10px] text-neutral-500">
+                    {language === 'es' ? 'Necesaria para verificar cupos y precios vivos.' : 'Required for live availability and price verification.'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-neutral-700 block mb-1">
+                    {language === 'es' ? 'Aeropuerto de salida' : 'Departure airport'}
+                  </label>
+                  <select
+                    value={departureAirport}
+                    onChange={(e) => setDepartureAirport(e.target.value as 'SJO' | 'LIR')}
+                    className="w-full bg-white border border-neutral-300 rounded-xl px-3 py-2 text-sm font-bold text-neutral-800"
+                  >
+                    <option value="SJO">SJO · Juan Santamaría</option>
+                    <option value="LIR">LIR · Guanacaste/Liberia</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-neutral-700 block mb-1">
+                    {language === 'es' ? 'Ritmo del viaje' : 'Trip pace'}
+                  </label>
+                  <select
+                    value={pace}
+                    onChange={(e) => setPace(e.target.value as 'relaxed' | 'balanced' | 'active')}
+                    className="w-full bg-white border border-neutral-300 rounded-xl px-3 py-2 text-sm font-bold text-neutral-800"
+                  >
+                    <option value="relaxed">{language === 'es' ? 'Relajado · más tiempo libre' : 'Relaxed · more free time'}</option>
+                    <option value="balanced">{language === 'es' ? 'Equilibrado' : 'Balanced'}</option>
+                    <option value="active">{language === 'es' ? 'Activo · más experiencias' : 'Active · more experiences'}</option>
+                  </select>
+                </div>
+              </div>
+
               {/* Duration & Group size */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-neutral-50 p-4 rounded-2xl border border-neutral-200">
                 <div>
@@ -372,7 +539,7 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                   <input
                     type="number"
                     min="3"
-                    max="30"
+                    max="21"
                     value={durationDays}
                     onChange={(e) => setDurationDays(Number(e.target.value))}
                     className="w-full bg-white border border-neutral-300 rounded-xl px-3 py-2 text-sm font-bold text-neutral-800"
@@ -425,10 +592,38 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
-                  { id: 'private', title: 'Van Privada con Chofer VIP', desc: 'Confort total, paradas ilimitadas, aire acondicionado y flexibilidad de horario.', tag: 'Popular' },
-                  { id: 'rental', title: 'Alquiler SUV 4x4 (Drive CR)', desc: 'Libertad completa con GPS Waze, seguro full y vehículo para todo terreno.', tag: 'Aventura' },
-                  { id: 'shuttle', title: 'Shuttle Compartido Hotel-to-Hotel', desc: 'Opción económica, puntual con pickups directo en tu hospedaje.', tag: 'Económico' },
-                  { id: 'flight', title: 'Vuelos Domésticos Sansa / VIP', desc: 'Ahorra tiempo volando directo a Drake Bay, Nosara, Tambor o Tamarindo.', tag: 'Rápido' }
+                  {
+                    id: 'private',
+                    titleEs: 'Transporte privado con conductor',
+                    titleEn: 'Private driver transfer',
+                    descEs: 'Preferencia de movilidad puerta a puerta. Operador, vehículo, horario, ruta y tarifa se verifican antes de cotizar.',
+                    descEn: 'Door-to-door mobility preference. Provider, vehicle, schedule, route and price are verified before quoting.',
+                    tagEs: 'Flexible', tagEn: 'Flexible'
+                  },
+                  {
+                    id: 'rental',
+                    titleEs: 'Vehículo de alquiler',
+                    titleEn: 'Rental vehicle',
+                    descEs: 'Opción para conducir por cuenta propia. Tipo de vehículo, seguros, depósito y condiciones se verifican con el proveedor.',
+                    descEn: 'Self-drive option. Vehicle type, insurance, deposit and terms are verified with the supplier.',
+                    tagEs: 'Independiente', tagEn: 'Independent'
+                  },
+                  {
+                    id: 'shuttle',
+                    titleEs: 'Shuttle compartido',
+                    titleEn: 'Shared shuttle',
+                    descEs: 'Preferencia de transporte compartido entre destinos. Rutas, horarios, recogida y cupos se verifican.',
+                    descEn: 'Shared transport preference between destinations. Routes, schedules, pickup and seats are verified.',
+                    tagEs: 'Compartido', tagEn: 'Shared'
+                  },
+                  {
+                    id: 'flight',
+                    titleEs: 'Vuelo doméstico',
+                    titleEn: 'Domestic flight',
+                    descEs: 'Útil para reducir algunos traslados largos cuando exista una ruta adecuada. Horarios, equipaje, tarifa y operación se verifican en vivo.',
+                    descEn: 'Useful to shorten some long transfers when a suitable route exists. Schedule, baggage, fare and operation are verified live.',
+                    tagEs: 'Aéreo', tagEn: 'Air'
+                  }
                 ].map((opt) => (
                   <div
                     key={opt.id}
@@ -440,12 +635,12 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-black text-sm text-neutral-900">{opt.title}</span>
+                      <span className="font-black text-sm text-neutral-900">{language === 'es' ? opt.titleEs : opt.titleEn}</span>
                       <span className="bg-amber-100 text-teal-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                        {opt.tag}
+                        {language === 'es' ? opt.tagEs : opt.tagEn}
                       </span>
                     </div>
-                    <p className="text-xs text-neutral-500">{opt.desc}</p>
+                    <p className="text-xs text-neutral-500">{language === 'es' ? opt.descEs : opt.descEn}</p>
                   </div>
                 ))}
               </div>
@@ -467,20 +662,12 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
 
               {/* Destination Chips */}
               <div className="flex flex-wrap gap-2">
-                {[
-                  'Volcán Arenal & Termales',
-                  'Bosque Nuboso Monteverde',
-                  'Parque Nacional Manuel Antonio',
-                  'Playas de Guanacaste & Tamarindo',
-                  'Rafting Río Pacuare',
-                  'Tortuguero & Caribe Norte',
-                  'Península de Osa & Corcovado'
-                ].map((dest) => {
-                  const isSelected = selectedDestinations.includes(dest);
+                {DESTINATION_OPTIONS.map((dest) => {
+                  const isSelected = selectedDestinations.includes(dest.id);
                   return (
                     <button
-                      key={dest}
-                      onClick={() => toggleDestination(dest)}
+                      key={dest.id}
+                      onClick={() => toggleDestination(dest.id)}
                       className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
                         isSelected
                           ? 'bg-teal-600 text-stone-900 border-teal-600 shadow-sm'
@@ -488,7 +675,7 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                       }`}
                     >
                       {isSelected ? <Check className="w-3.5 h-3.5 text-stone-900" /> : <Compass className="w-3.5 h-3.5 text-stone-600" />}
-                      <span>{dest}</span>
+                      <span>{language === 'es' ? dest.es : dest.en}</span>
                     </button>
                   );
                 })}
@@ -501,9 +688,9 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { id: 'ecolodge', label: '🌱 Eco-Lodge Sustentable', desc: 'Rodeado de naturaleza' },
-                    { id: 'boutique', label: '⭐ Boutique Hotel VIP', desc: 'Confort y estilo' },
-                    { id: 'resort', label: '👑 Luxury Resort 5★', desc: 'Termales & Spa' },
+                    { id: 'ecolodge', es: 'Eco-lodge / naturaleza', en: 'Eco-lodge / nature', descEs: 'Preferencia de categoría; propiedad y tarifa se verifican.', descEn: 'Category preference; property and rate are verified.' },
+                    { id: 'boutique', es: 'Hotel boutique / gama media-alta', en: 'Boutique / upper-midscale hotel', descEs: 'Confort y escala pequeña; no implica una propiedad específica.', descEn: 'Comfort and smaller scale; no specific property is implied.' },
+                    { id: 'resort', es: 'Resort / alta gama', en: 'Resort / upscale', descEs: 'Preferencia de nivel de servicio; disponibilidad y condiciones se verifican.', descEn: 'Service-level preference; availability and terms are verified.' },
                   ].map((st) => (
                     <button
                       key={st.id}
@@ -514,11 +701,33 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                           : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
                       }`}
                     >
-                      <span className="font-bold text-xs block">{st.label}</span>
-                      <span className="text-[10px] text-neutral-500">{st.desc}</span>
+                      <span className="font-bold text-xs block">{language === 'es' ? st.es : st.en}</span>
+                      <span className="text-[10px] text-neutral-500">{language === 'es' ? st.descEs : st.descEn}</span>
                     </button>
                   ))}
                 </div>
+              <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                <label className="text-xs font-bold text-neutral-700 block mb-1">
+                  {language === 'es' ? 'Presupuesto máximo del grupo (USD, opcional)' : 'Group budget ceiling (USD, optional)'}
+                </label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-neutral-400" />
+                  <input
+                    type="number"
+                    min="0"
+                    step="50"
+                    value={budgetUSD}
+                    onChange={(e) => setBudgetUSD(e.target.value)}
+                    placeholder={language === 'es' ? 'Ej. 4500' : 'e.g. 4500'}
+                    className="w-full bg-white border border-neutral-300 rounded-xl pl-9 pr-3 py-2 text-sm font-bold text-neutral-800"
+                  />
+                </div>
+                <p className="mt-1 text-[10px] text-neutral-500">
+                  {language === 'es'
+                    ? 'Se usa como restricción de diseño; nunca se convierte automáticamente en una tarifa o cobro.'
+                    : 'Used as a planning constraint; it is never automatically treated as a fare or charge.'}
+                </p>
+              </div>
               </div>
             </div>
           )}
@@ -536,15 +745,35 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
               {/* Toggles */}
               <div className="space-y-2">
                 {[
-                  { state: includeNationalParkPass, set: setIncludeNationalParkPass, title: '🎫 Reservaciones Parques SINAC', desc: 'Garantiza entradas a Manuel Antonio, Poás y Tenorio.' },
-                  { state: includeGuide, set: setIncludeGuide, title: '🦥 Guía Turístico Certificado', desc: 'Acompañamiento profesional con telescopios para avistamiento.' },
-                  { state: includeSim, set: setIncludeSim, title: '📱 eSIM Costa Rica con Datos 5G', desc: 'Conexión a internet instantánea para Waze y WhatsApp.' },
-                  { state: includeInsurance, set: setIncludeInsurance, title: '🛡️ Seguro Médico de Viaje Local', desc: 'Cobertura médica y asistencia en carretera 24/7.' },
+                  {
+                    state: includeNationalParkPass, set: setIncludeNationalParkPass,
+                    titleEs: '🎫 Incluir parques nacionales', titleEn: '🎫 Include national parks',
+                    descEs: 'La IA los incorpora como preferencia; entradas, horario, aforo y reglas se verifican antes de cotizar.',
+                    descEn: 'AI treats parks as a preference; admission, hours, capacity and rules are verified before quoting.'
+                  },
+                  {
+                    state: includeGuide, set: setIncludeGuide,
+                    titleEs: '🦥 Preferencia por guía naturalista', titleEn: '🦥 Naturalist guide preference',
+                    descEs: 'Se buscará cuando aporte valor. Credenciales, idioma, disponibilidad y tarifa se verifican.',
+                    descEn: 'Included when useful. Credentials, language, availability and price are verified.'
+                  },
+                  {
+                    state: includeSim, set: setIncludeSim,
+                    titleEs: '📱 Opciones de conectividad', titleEn: '📱 Connectivity options',
+                    descEs: 'Solicita recomendaciones de conectividad/eSIM; no se presume que estén incluidas en el paquete.',
+                    descEn: 'Request connectivity/eSIM options; they are not assumed to be included in the package.'
+                  },
+                  {
+                    state: includeInsurance, set: setIncludeInsurance,
+                    titleEs: '🛡️ Información sobre seguro de viaje', titleEn: '🛡️ Travel insurance information',
+                    descEs: 'Solicita opciones e información. Coberturas, exclusiones y precio nunca se inventan.',
+                    descEn: 'Request options and information. Coverage, exclusions and price are never invented.'
+                  }
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl border border-neutral-200">
                     <div>
-                      <span className="font-bold text-xs text-neutral-900 block">{item.title}</span>
-                      <span className="text-[10px] text-neutral-500">{item.desc}</span>
+                      <span className="font-bold text-xs text-neutral-900 block">{language === 'es' ? item.titleEs : item.titleEn}</span>
+                      <span className="text-[10px] text-neutral-500">{language === 'es' ? item.descEs : item.descEn}</span>
                     </div>
                     <input
                       type="checkbox"
@@ -554,6 +783,68 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                     />
                   </div>
                 ))}
+              </div>
+
+              <div className="space-y-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                <div>
+                  <label className="text-xs font-bold text-neutral-700 block mb-1">
+                    {language === 'es' ? 'Necesidades, intereses o restricciones' : 'Needs, interests or constraints'}
+                  </label>
+                  <textarea
+                    value={specialRequests}
+                    onChange={(e) => setSpecialRequests(e.target.value)}
+                    maxLength={1200}
+                    rows={3}
+                    placeholder={language === 'es'
+                      ? 'Ej. viajamos con niños, queremos fauna y playa, evitar trayectos muy largos, celebración, movilidad, alimentación...'
+                      : 'e.g. traveling with children, wildlife + beach, avoid long drives, celebration, mobility, dietary needs...'}
+                    className="w-full resize-y bg-white border border-neutral-300 rounded-xl px-3 py-2 text-sm text-neutral-800"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-wide text-neutral-600 block mb-1">
+                      {language === 'es' ? 'Nombre responsable' : 'Lead traveler'}
+                    </label>
+                    <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full bg-white border border-neutral-300 rounded-xl px-3 py-2 text-sm text-neutral-800" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-wide text-neutral-600 block mb-1">Email</label>
+                    <input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} className="w-full bg-white border border-neutral-300 rounded-xl px-3 py-2 text-sm text-neutral-800" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-wide text-neutral-600 block mb-1">
+                      {language === 'es' ? 'Teléfono (opcional)' : 'Phone (optional)'}
+                    </label>
+                    <input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} className="w-full bg-white border border-neutral-300 rounded-xl px-3 py-2 text-sm text-neutral-800" />
+                  </div>
+                </div>
+
+                <label className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={requestQuote}
+                    onChange={(e) => setRequestQuote(e.target.checked)}
+                    className="mt-0.5 w-5 h-5 accent-emerald-600"
+                  />
+                  <span>
+                    <span className="block text-xs font-black text-emerald-900">
+                      {language === 'es' ? 'Después del plan, iniciar verificación para cotizar' : 'After planning, start quote verification'}
+                    </span>
+                    <span className="block mt-1 text-[10px] leading-relaxed text-emerald-800">
+                      {language === 'es'
+                        ? 'Crea trabajo durable de verificación. No confirma disponibilidad, reserva ni pago hasta recibir evidencia válida.'
+                        : 'Creates durable verification work. It does not confirm availability, booking or payment until valid evidence is received.'}
+                    </span>
+                  </span>
+                </label>
+
+                {formError && (
+                  <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
+                    {formError}
+                  </div>
+                )}
               </div>
 
               {/* Estimate Result Box */}
@@ -573,8 +864,8 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                     </div>
                     <div className="text-[10px] text-stone-600 mt-1 leading-relaxed">
                       {language === 'es'
-                        ? 'Precio, cupos, hoteles y condiciones se verifican después con datos operativos.'
-                        : 'Price, capacity, lodging and terms are verified afterward using operational data.'}
+                        ? (requestQuote ? 'Plan → verificación → cotización. Nada se cobra ni confirma antes de validar cada componente.' : 'Crearás una propuesta de ruta sin iniciar reserva ni cobro.')
+                        : (requestQuote ? 'Plan → verification → quote. Nothing is charged or confirmed before each component is validated.' : 'You will create a route proposal without starting a booking or charge.')}
                     </div>
                   </div>
                 </div>
@@ -644,7 +935,7 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                 className="min-h-[44px] min-w-[44px] w-full sm:w-auto px-6 py-2.5 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-stone-900 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>{language === 'es' ? 'Crear itinerario con IA' : 'Build itinerary with AI'}</span>
+                <span>{requestQuote ? (language === 'es' ? 'Crear plan y verificar para cotizar' : 'Build plan & verify for quote') : (language === 'es' ? 'Crear itinerario' : 'Build itinerary')}</span>
               </button>
             </div>
           )}
