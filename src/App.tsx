@@ -191,10 +191,15 @@ export default function App() {
         setIntakeEscalated(Boolean(data.decision?.escalated));
         setIntakeHandoffUrl(data.customer?.handoffUrl);
         setIntakeId(data.intakeId || '');
+        if (data.journey?.journeyId) {
+          localStorage.setItem('crt_active_journey', String(data.journey.journeyId));
+        }
         detail.onResult?.({
           ok: true,
           reply: data.customer?.reply,
-          intakeId: data.intakeId || ''
+          intakeId: data.intakeId || '',
+          journeyId: data.journey?.journeyId,
+          workflow: data.journey?.workflow
         });
       } catch (error: any) {
         const failureReply = language === 'es' ? 'No pudimos completar la consulta. No se ha confirmado ninguna reserva ni notificación al equipo. Puedes consultar directamente por WhatsApp.' : 'We could not complete the inquiry. No booking or team notification has been confirmed. You can contact us directly on WhatsApp.';
