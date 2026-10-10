@@ -2622,65 +2622,17 @@ app.post('/api/gemini/itinerary', async (req, res) => {
   }
 });
 
-// Endpoint para reservar un itinerario completo personalizado
-app.post('/api/itinerary/book', async (req, res) => {
-  try {
-    const {
-      itineraryTitle,
-      daysCount,
-      travelers,
-      customerName,
-      customerEmail,
-      customerPhone,
-      startDate,
-      currency,
-      specialRequests
-    } = req.body;
-
-    if (!customerName || !customerEmail) {
-      return res.status(400).json({ success: false, error: 'customerName y customerEmail son obligatorios' });
-    }
-
-    const bookingDate = startDate || new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0];
-    const generatedId = `CR-ITIN-${crypto.randomUUID()}`;
-    const normalizedDays = Math.max(1, Math.min(30, Number(daysCount) || 5));
-    const normalizedTravelers = Math.max(1, Math.min(30, Number(travelers) || 2));
-    // Precio base autoritativo para itinerarios personalizados. El total generado por IA
-    // se conserva solo como referencia, nunca como importe de cobro controlado por cliente.
-    const calculatedUSD = Number((normalizedDays * normalizedTravelers * 165).toFixed(2));
-
-    const bookingRecord = await createBooking({
-      bookingId: generatedId,
-      tourId: 'custom-multi-day-itinerary',
-      tourName: itineraryTitle || `Paquete Costa Rica ${normalizedDays} Días`,
-      date: bookingDate,
-      time: '08:00 AM',
-      adults: normalizedTravelers,
-      children: 0,
-      customerName,
-      customerEmail,
-      customerPhone: customerPhone || '',
-      totalUSD: calculatedUSD,
-      totalAmount: currency === 'CRC' 
-        ? (Number(process.env.USD_TO_CRC_RATE) > 0 ? Math.round(calculatedUSD * Number(process.env.USD_TO_CRC_RATE)) : calculatedUSD) 
-        : calculatedUSD,
-      currency: currency || 'USD',
-      paymentMethod: 'itinerary_deposit',
-      paymentStatus: 'pending',
-      status: 'confirmada',
-      notes: specialRequests || 'Itinerario Multi-Día personalizado'
-    } as any);
-
-    res.json({
-      success: true,
-      bookingId: generatedId,
-      booking: bookingRecord,
-      message: `¡Itinerario reservado con éxito! Se ha generado tu reserva #${generatedId}.`
-    });
-  } catch (err: any) {
-    console.error('Error al reservar itinerario:', err);
-    res.status(500).json({ success: false, error: err.message });
-  }
+// Compatibilidad: los itinerarios generados son propuestas y nunca se convierten
+// directamente en una reserva o un cobro. El flujo canónico es
+// planificación -> verificación -> cotización -> aceptación -> reserva/pago.
+app.post('/api/itinerary/book', async (_req, res) => {
+  return res.status(409).json({
+    success: false,
+    error: 'custom_itinerary_requires_quote',
+    message: 'El itinerario generado es una propuesta. Antes de reservar debemos verificar precios, cupos, proveedores y logística de cada componente y preparar una cotización.',
+    nextAction: 'request_quote',
+    canonicalFlow: ['planning', 'verification', 'quote', 'customer_acceptance', 'booking_payment']
+  });
 });
 
 // 4. Auditoría operativa y antifraude de reserva con Claude
