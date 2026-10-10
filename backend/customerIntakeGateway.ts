@@ -289,11 +289,15 @@ async function buildStructuredJourneyAssistant(
     language
   };
   const existingJourneyId = clean(payload.context?.existingJourneyId, 120);
-  const journey = existingJourneyId
-    ? await adaptTravelerJourney(existingJourneyId, journeyInput).then(result =>
-        result?.status === 'not_found' ? buildTripJourney(journeyInput) : result
-      )
-    : await buildTripJourney(journeyInput);
+  let journey: any;
+  if (existingJourneyId) {
+    const adapted = await adaptTravelerJourney(existingJourneyId, journeyInput);
+    journey = adapted?.status === 'not_found'
+      ? await buildTripJourney(journeyInput)
+      : adapted;
+  } else {
+    journey = await buildTripJourney(journeyInput);
+  }
 
   const missingForQuote = request.requestQuote ? missingQuoteInputs(request, payload) : [];
   let workflow: any = null;
@@ -464,9 +468,9 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
       humanHandoffAvailable: escalation.escalated,
       handoffUrl
     },
-    journey: assistant?.journeyId ? {
-      journeyId: assistant.journeyId,
-      workflow: assistant.workflow || null
+    journey: journeyAssistant?.journeyId ? {
+      journeyId: journeyAssistant.journeyId,
+      workflow: journeyAssistant.workflow || null
     } : undefined,
     operatorNotification: {
       email: emailResult.success,
