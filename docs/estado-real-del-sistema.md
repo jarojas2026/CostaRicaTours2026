@@ -1,5 +1,14 @@
 # ESTADO REAL DEL SISTEMA - Costa Rica Tours 2026
 
+## Revisión del gateway nativo de reservas — 11 de octubre de 2026 (PR pendiente)
+
+Se detectó en `backend/nativeAutomationEngine.ts/executeInicioReserva` que la ruta `/api/reservas/inicio` anunciaba un bloqueo de 15 minutos y devolvía un ID `CRT-HLD-*` generado localmente, aun cuando el servicio canónico `createBooking` fallara o devolviera `conflict:true`. El servicio canónico genera sus propios identificadores y no acreditó en ese punto un vencimiento de 15 minutos.
+
+Corrección propuesta: comprobar el resultado de la transacción canónica; rechazar estados conflictivos y errores; devolver únicamente el identificador de reserva realmente creado; no prometer expiración ni bloqueo temporal sin evidencia. La reserva correcta queda *pendiente de pago*, nunca confirmada solo por entrar al checkout. Se añaden pruebas de contrato para preservar estas invariantes.
+
+**Alcance y pendientes:** esta corrección NO implementa un TTL de reserva, liberación automática o conciliación de cupos, NO garantiza pagos y NO constituye una prueba E2E de proveedor/pasarela. La liberación idempotente y validación integrada de cupos siguen en [Issue #175](https://github.com/jarojas2026/CostaRicaTours2026/issues/175) y [Issue #174](https://github.com/jarojas2026/CostaRicaTours2026/issues/174). No desplegar como función de 15 minutos hasta cerrar esas pruebas.
+
+
 **Actualizado: 1 de octubre de 2026**
 
 ## Respuestas del operador: persistencia y mensajes exactos — 1 de octubre

@@ -179,32 +179,27 @@ export async function executeInicioReserva(body: any) {
   const selectedTourId = String(body.idTour || body.tourId || '').trim();
   const selectedDate = String(body.fechaSeleccionada || body.date || '').trim();
   const selectedTime = String(body.hora || body.time || '').trim();
-  const tour = TOURS.find((item:any) => item.id === selectedTourId || item.slug === selectedTourId);
-  if (!tour || !selectedDate || !selectedTime) throw new Error('tourId, date y time son obligatorios y deben corresponder a un tour del catálogo.');
+  const tour = TOURS.find((item: any) => item.id === selectedTourId || item.slug === selectedTourId);
+  if (!tour || !selectedDate || !selectedTime) {
+    throw new Error('tourId, date y time son obligatorios y deben corresponder a un tour del catálogo.');
+  }
   const selectedTourName = tour.title.es;
   const adults = Number(body.cantidadPersonas?.adultos ?? body.adults ?? 0);
   const children = Number(body.cantidadPersonas?.ninos ?? body.children ?? 0);
   const totalSeats = adults + children;
-  if (!Number.isInteger(adults) || adults < 1 || !Number.isInteger(children) || children < 0 || totalSeats > 50) throw new Error('Cantidad de pasajeros inválida.');
+  if (!Number.isSafeInteger(adults) || adults < 1 || !Number.isSafeInteger(children) || children < 0 || totalSeats > 50) {
+    throw new Error('Cantidad de pasajeros inválida.');
+  }
 
-  // Verificación de disponibilidad real contra Firestore
   const availability = await checkTourAvailability(selectedTourId, selectedDate, selectedTime, totalSeats);
-
   if (!availability.available) {
-    const duration = Date.now() - start;
-    logAutomationExecution('INICIO_RESERVA', duration, 'warning', `Sin cupo para ${selectedTourName} (${totalSeats} solicitados)`);
+    logAutomationExecution('INICIO_RESERVA', Date.now() - start, 'warning',
+      `No se pudo verificar cupo para ${selectedTourName}`);
     return {
-      exito: false,
-      disponible: false,
-      motivo: availability.reason || 'No hay cupos suficientes para la fecha solicitada.',
+      exito: false, disponible: false, motivo: availability.reason || 'No se pudo verificar disponibilidad.',
       cuposRestantes: availability.remainingSeats
     };
   }
-
-  const unitPrice = Number(tour.priceUSD);
-  const totalUSD = adults * unitPrice + children * unitPrice;
-  const holdExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-  const idReserva = `CRT-HLD-${Math.floor(100000 + Math.random() * 900000)}`;
 
   const bookingCustomer = body.cliente || body.customer || {
     nombre: body.customerName,
@@ -212,51 +207,62 @@ export async function executeInicioReserva(body: any) {
     telefono: body.customerPhone,
     hotelRecogida: body.pickupHotel
   };
-  if (!bookingCustomer.nombre || !bookingCustomer.email) throw new Error('Datos del cliente incompletos: nombre y email son obligatorios.');
+  const name = String(bookingCustomer?.nombre || bookingCustomer?.name || '').trim();
+  const email = String(bookingCustomer?.email || '').trim();
+  if (!name || !email) throw new Error('Datos del cliente incompletos: nombre y email son obligatorios.');
 
-  // Registrar soft-hold nativo en base de datos
-  await createBooking({
-    id: idReserva,
-    bookingId: idReserva,
-    tourId: selectedTourId,
-    tourName: selectedTourName,
-    date: selectedDate,
-    time: selectedTime,
-    adults,
-    children,
-    totalUSD,
-    status: 'pendiente_pago',
-    paymentStatus: 'pending',
-    customerName: bookingCustomer.nombre || bookingCustomer.name,
-    customerEmail: bookingCustomer.email,
-    customerPhone: bookingCustomer.telefono || bookingCustomer.phone,
-    pickupHotel: bookingCustomer.hotelRecogida || bookingCustomer.pickupHotel,
-    holdExpiresAt,
-    holdActive: true
-  }).catch((err) => console.warn('Aviso guardando soft-hold nativo:', err.message));
+  // The canonical booking service owns identifiers, authoritative quotes and
+  // the Firestore transaction. Never invent a hold identifier or TTL.
+  let result: { conflict?: boolean; booking?: { bookingId?: string; totalUSD?: number }; error?: string; message?: string };
+  try {
+    result = await createBooking({
+      tourId: selectedTourId,
+      date: selectedDate,
+      time: selectedTime,
+      adults,
+      children,
+      customerName: name,
+      customerEmail: email,
+      customerPhone: bookingCustomer.telefono || bookingCustomer.phone,
+      pickupHotel: bookingCustomer.hotelRecogida || bookingCustomer.pickupHotel,
+      idempotencyKey: body.idempotencyKey
+    });
+  } catch (error: any) {
+    logAutomationExecution('INICIO_RESERVA', Date.now() - start, 'error',
+      'No fue posible persistir la reserva solicitada.');
+    return { exito: false, disponible: false, error: 'booking_persist_failed',
+      motivo: 'No se pudo guardar la solicitud. No se confirmó ningún bloqueo de cupos.' };
+  }
 
-  const duration = Date.now() - start;
-  logAutomationExecution(
-    'INICIO_RESERVA',
-    duration,
-    'success',
-    `Soft-hold creado para ${idReserva} (${totalSeats} cupos bloqueados por 15m)`
-  );
+  if (result.conflict || !result.booking?.bookingId) {
+    logAutomationExecution('INICIO_RESERVA', Date.now() - start, 'warning',
+      'La reserva canónica rechazó la solicitud.');
+    return { exito: false, disponible: false, error: result.error || 'booking_unverified',
+      motivo: result.message || 'No se pudo registrar la reserva; ningún bloqueo está confirmado.' };
+  }
+
+  const bookingId = String(result.booking.bookingId);
+  const amount = Number(result.booking.totalUSD);
+  logAutomationExecution('INICIO_RESERVA', Date.now() - start, 'success',
+    `Reserva pendiente de pago registrada: ${bookingId}`);
 
   return {
     exito: true,
-    bloqueoActivo: true,
-    idReserva,
-    expiraEnMinutos: 15,
-    expiresAt: holdExpiresAt,
-    cuposBloqueados: totalSeats,
-    cuposRestantesDespuesDeBloqueo: Math.max(0, availability.remainingSeats - totalSeats),
-    montoUSD: totalUSD,
+    disponible: true,
+    bloqueoActivo: false,
+    reservaPendientePago: true,
+    idReserva: bookingId,
+    bookingId,
+    expiraEnMinutos: null,
+    expiresAt: null,
+    cuposBloqueados: null,
+    cuposRestantesDespuesDeBloqueo: null,
+    montoUSD: Number.isFinite(amount) ? amount : null,
     tourId: selectedTourId,
     tourName: selectedTourName,
-    checkoutUrl: `/checkout?reserva=${idReserva}`,
+    checkoutUrl: `/checkout?reserva=${encodeURIComponent(bookingId)}`,
     motor: 'código_nativo_node',
-    mensaje: 'Cupos bloqueados exitosamente en Firestore por 15 minutos mientras el cliente finaliza el pago.'
+    mensaje: 'Solicitud registrada como pendiente de pago. No existe un bloqueo temporal de 15 minutos verificado.'
   };
 }
 
