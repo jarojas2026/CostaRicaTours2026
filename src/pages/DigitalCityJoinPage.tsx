@@ -17,7 +17,7 @@ const types: Record<DigitalCityEntityKind, [string, string]> = {
   private_place: ['Espacio privado', 'Private place'], event_organizer: ['Organizador de eventos', 'Event organizer']
 };
 
-export function DigitalCityJoinPage({ language }: { language: Language }) {
+export function DigitalCityJoinPage({ language, onOpenPrivacy }: { language: Language; onOpenPrivacy: () => void }) {
   const es = language === 'es';
   const [user, setUser] = useState<User | null>(auth.currentUser);
   const [kind, setKind] = useState<DigitalCityEntityKind>('microbusiness');
@@ -107,6 +107,7 @@ export function DigitalCityJoinPage({ language }: { language: Language }) {
         <label>{es ? 'Nombre del participante o entidad' : 'Participant or entity name'}<input value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={160} className={inputClass} required/></label>
         <label>{es ? 'Localidad' : 'Locality'}<input value={locality} onChange={e => setLocality(e.target.value)} maxLength={160} className={inputClass} required/></label>
         <label className="sm:col-span-2">{es ? 'Fuente pública HTTPS (requerida para espacios públicos)' : 'Public HTTPS source (required for public places)'}<input type="url" value={officialSourceUrl} onChange={e => setOfficialSourceUrl(e.target.value)} maxLength={600} placeholder="https://" className={inputClass}/></label>
+        <div className="sm:col-span-2 text-xs text-stone-300"><button type="button" onClick={onOpenPrivacy} className="font-semibold underline text-amber-200">{es ? 'Leer nuestra política de privacidad' : 'Read our privacy policy'}</button><p className="mt-1">{es ? 'Tus datos se utilizarán para evaluar esta solicitud y no se publicarán automáticamente.' : 'Your information will be used to evaluate this application and will not be published automatically.'}</p></div>
         <label className="sm:col-span-2 flex gap-2 items-start"><input type="checkbox" checked={consentToPublication} onChange={e => setConsentToPublication(e.target.checked)} className="mt-0.5"/>{es ? 'Autorizo presentar esta información para solicitar una futura publicación; nada se publica de inmediato.' : 'I consent to submitting this information for possible future publication; nothing is published now.'}</label>
         <label className="sm:col-span-2 flex gap-2 items-start"><input type="checkbox" checked={representsEntity} onChange={e => setRepresentsEntity(e.target.checked)} className="mt-0.5"/>{es ? 'Declaro estar autorizado para representar a la entidad, sujeto a verificación.' : 'I declare authority to represent this entity, subject to verification.'}</label>
         <button disabled={busy || !consentToPublication} type="submit" className="sm:col-span-2 inline-flex items-center justify-center gap-2 rounded-xl bg-amber-400 px-5 py-3 font-black text-stone-950 disabled:opacity-50"><ClipboardCheck size={17}/>{busy ? '…' : es ? 'Enviar solicitud privada' : 'Submit private application'}</button>
