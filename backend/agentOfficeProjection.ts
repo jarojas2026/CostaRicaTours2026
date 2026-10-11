@@ -14,7 +14,7 @@ export type AgentOfficeAgent = {
 };
 
 type Identity = { id: string; mission: string };
-type Event = { type?: unknown; createdAt?: unknown; payload?: { agentId?: unknown } | null };
+type Event = { type?: unknown; createdAt?: unknown; payload?: { agentId?: unknown; [key: string]: unknown } | null };
 
 export function projectAgentOffice(
   identities: readonly Identity[],
