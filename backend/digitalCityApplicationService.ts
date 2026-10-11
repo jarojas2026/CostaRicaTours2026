@@ -80,8 +80,8 @@ function requireDb() {
 }
 
 /** Idempotent by actor + normalized entity identity, quota enforced transactionally. */
-export async function submitCityApplication(input: RegistrationPreflightInput, uid: string) {
-  const db = requireDb();
+export async function submitCityApplication(input: RegistrationPreflightInput, uid: string, database?: NonNullable<ReturnType<typeof getFirestoreDb>>) {
+  const db = database ?? requireDb();
   const candidate = prepareCityApplication(input, uid);
   const docRef = db.collection(COLLECTION).doc(candidate.id);
   const day = candidate.createdAt.slice(0, 10);
@@ -132,7 +132,7 @@ const MODERATION_TRANSITIONS: Record<CityApplicationStatus, CityApplicationStatu
 };
 
 /** Human triage only. Never publishes, activates a provider, or grants any permissions. */
-export async function triageCityApplication(id: string, actorUid: string, to: CityApplicationStatus, reason: string) {
+export async function triageCityApplication(id: string, actorUid: string, to: CityApplicationStatus, reason: string, database?: NonNullable<ReturnType<typeof getFirestoreDb>>) {
   if (!/^dca_[a-f0-9]{40}$/.test(id)) throw new CityApplicationError('invalid_application', 'Expediente inválido.');
   if (typeof actorUid !== 'string' || !actorUid) throw new CityApplicationError('invalid_application', 'Revisor no autorizado.');
   if (!['under_review', 'needs_information', 'rejected'].includes(to)) {
@@ -142,7 +142,7 @@ export async function triageCityApplication(id: string, actorUid: string, to: Ci
   if (cleanReason.length < 10 || cleanReason.length > 600) {
     throw new CityApplicationError('invalid_application', 'Incluya una justificación de 10 a 600 caracteres.');
   }
-  const db = requireDb();
+  const db = database ?? requireDb();
   const ref = db.collection(COLLECTION).doc(id);
   const auditRef = db.collection(AUDIT_COLLECTION).doc();
   return db.runTransaction(async (tx) => {
