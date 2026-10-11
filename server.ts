@@ -20,6 +20,7 @@ import { requireOperator } from './backend/authMiddleware';
 import { TOURS } from './src/data/toursData';
 import { checkoutQuote, checkoutOrigin } from './backend/commercePolicy';
 import { commerceAdminRouter } from './backend/commerceAdminRouter';
+import { knowledgeCityRouter } from './backend/knowledgeCityRouter';
 import { getTourMediaById } from './backend/tourMediaService';
 import { FLIGHT_ROUTES } from './src/data/flightsData';
 import {
@@ -164,6 +165,7 @@ app.set('trust proxy', 1);
 app.use(express.json({ limit: '256kb', verify: (req, _res, buf) => { (req as any).rawBody = Buffer.from(buf); } }));
 app.use(express.urlencoded({ extended: true, limit: '32kb', parameterLimit: 100 }));
 app.use('/api/admin/commerce', commerceAdminRouter);
+app.use('/api/admin/knowledge', knowledgeCityRouter);
 
 // ==========================================
 // 🛡️ RATE LIMITING MIDDLEWARES
