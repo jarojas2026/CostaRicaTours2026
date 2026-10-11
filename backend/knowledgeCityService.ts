@@ -172,8 +172,10 @@ export async function getKnowledgeCityOverview() {
     db.collection('bookings').orderBy('createdAt', 'desc').limit(100).get(),
     db.collection('organizational_flow_events').orderBy('createdAt', 'desc').limit(100).get()
   ]);
-  const docs = (i: number): Record<string, any>[] =>
-    sources[i].status === 'fulfilled' ? sources[i].value.docs.map(doc => doc.data()) : [];
+  const docs = (i: number): Record<string, any>[] => {
+    const source = sources[i];
+    return source?.status === 'fulfilled' ? source.value.docs.map(doc => doc.data()) : [];
+  };
   const articles = docs(0) as KnowledgeArticle[];
   const bookings = docs(1);
   const events = docs(2);
