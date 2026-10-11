@@ -121,6 +121,7 @@ import { buildTripJourney, adaptTravelerJourney, getTravelerJourney } from './ba
 import { observeJourneyState, guardianReplanJourney } from './backend/journeyVerificationService';
 import { processProviderInboxOnce } from './backend/providerInboxAgent';
 import { getAdminControlCenterSnapshot } from './backend/adminControlCenterService';
+import { evaluateDigitalCityRegistration } from './backend/digitalCityRegistrationPolicy';
 import { getPlatformControls, updatePlatformControls } from './backend/platformControlService';
 import { runAdminAICommand, listAdminAICommands, approveAdminAICommand, rejectAdminAICommand } from './backend/adminAICommandService';
 import { getExecutiveAIArchitecture } from './backend/executiveAIArchitecture';
@@ -514,6 +515,16 @@ app.get('/api/admin/platform-controls', requireAdmin, async (_req, res) => {
 app.patch('/api/admin/platform-controls', requireAdmin, async (req, res) => {
   try { return res.json(await updatePlatformControls(req.body || {})); }
   catch (error: any) { return res.status(400).json({ error: error?.message || 'No se pudieron guardar los parámetros.' }); }
+});
+
+// Read-only global city onboarding preflight. No users, listings or payments are created.
+app.post('/api/admin/digital-city/registration/preflight', requireAdmin, (req, res) => {
+  try {
+    const result = evaluateDigitalCityRegistration(req.body);
+    return res.status(result.status === 'invalid' ? 400 : 200).json(result);
+  } catch {
+    return res.status(400).json({ error: 'No se pudo evaluar la solicitud.' });
+  }
 });
 
 app.get('/api/admin/control-center', requireAdmin, async (_req, res) => {
