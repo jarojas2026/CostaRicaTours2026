@@ -74,3 +74,18 @@ Todo agente turístico debe utilizar `backend/costaRicaTourismKnowledge.ts` como
 - Si falta evidencia, marcar el dato como no verificado y escalar a una fuente o herramienta adecuada.
 
 Esta capa aumenta la capacidad de razonamiento de los agentes sin convertir conocimiento estático en falsas garantías operativas.
+
+
+---
+
+## 12. Ciudad digital nacional y oficina administrativa de agentes (2026-10-11)
+
+El objetivo nuevo es abarcar servicios legítimos de toda Costa Rica, desde perfiles independientes y comunidades hasta organizaciones, espacios públicos, privados y eventos, **sin atribuir representación oficial ni habilitar transacciones hasta verificar derechos y autorizaciones**.
+
+- Antes de crear una entidad, colección o motor: consultar `docs/ciudad-digital-ecosistema-nacional-2026.md`, `docs/arquitectura-ciudad-digital.md` y los servicios ya existentes. No duplicar `bookings`, `tours`, identidades ni herramientas.
+- Distinguir publicación informativa de capacidad de contratar/reservar. Los perfiles individuales requieren consentimiento y permisos; los miembros de varias organizaciones no heredan permisos globales.
+- La oficina virtual administrativa es una **proyección de eventos verificables**, no un juego que simule actividad. Nunca marcar agentes como `running`/`idle` a partir de su nombre o una pantalla estática. Sin heartbeat/tarea transaccional, mostrar incertidumbre.
+- Evitar exposición de contenido privado de viajeros, mensajes internos, secretos y payloads de eventos a través del dashboard, incluso detrás de login.
+- Ninguna acción de agentes de IA puede ejecutar reembolsos, modificar permisos, dar de alta organizaciones comerciales o desplegar código sin reglas de autorización, aprobación y auditoría.
+- Evaluar nuevas librerías/modelos (OpenAI, Google ADK, Kimi, DeepSeek, Qwen, Temporal, OpenTelemetry, React Flow) como alternativas, no introducirlas en producción ni subir costes sin evaluación técnica y legal.
+- **Credenciales:** cualquier archivo de cuenta de servicio con clave privada compartido fuera del gestor de secretos debe tratarse como comprometido; revocar/rotar y utilizar GitHub OIDC + Workload Identity Federation. Nunca copiar su clave al repositorio, documentación ni logs.
