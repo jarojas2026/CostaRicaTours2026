@@ -213,7 +213,7 @@ export async function executeInicioReserva(body: any) {
 
   // The canonical booking service owns identifiers, authoritative quotes and
   // the Firestore transaction. Never invent a hold identifier or TTL.
-  let result: Awaited<ReturnType<typeof createBooking>>;
+  let result: { conflict?: boolean; booking?: { bookingId?: string; totalUSD?: number }; error?: string; message?: string };
   try {
     result = await createBooking({
       tourId: selectedTourId,
