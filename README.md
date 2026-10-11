@@ -1499,3 +1499,17 @@ Se revisaron fuentes oficiales de OpenAI Agents SDK, Google ADK, LangGraph, Temp
 - **Seguridad:** una clave de cuenta de servicio compartida externamente necesita revocación/rotación; usar federación de identidades sin claves en CI/CD.
 
 Se mantienen íntegros el catálogo y reserva única, motor nativo, memoria, Agent Desk, autenticación, Firestore, Stripe/PayPal y reglas de no inventar fuentes. Expandir al mundo exige jurisdicción y proveedores verificables, no registros sintéticos.
+
+
+---
+
+## 35. Solicitudes privadas de ciudad digital (2026-10-11)
+
+**Documentación funcional:** [Fase 2: solicitudes privadas y revisión](docs/ciudad-digital-solicitudes-privadas-2026.md).
+
+- `/participar`: formulario público bilingüe, requiere Google/Firebase ID token y correo verificado; el acceso de esta página no pide permisos Gmail ni Calendar.
+- API `/api/digital-city/applications`: expediente privado idempotente, validado por `digitalCityRegistrationPolicy`, 3 solicitudes nuevas por cuenta y día con cuota transaccional, sin activar perfiles comerciales.
+- `/api/digital-city/applications/mine`: únicamente expedientes de la persona autenticada.
+- `/api/digital-city/applications/admin/queue` y `/admin/:id/triage`: seguimiento exclusivo del administrador, auditoría de revisión; no puede publicar/activar desde este flujo.
+- Colecciones nuevas de solicitudes, cuotas y auditoría bajo Firestore Default Deny para clientes. No alterar `operators`, `proveedores`, `tours`, `bookings` o `payments`.
+- **Pendiente:** políticas legales de privacidad/retención/corrección, reenvío de expedientes incompletos, validación documental, pruebas con Emulator, publicación revisada, membresías y comercialización. Una solicitud recibida NO significa negocio aprobado, ni proveedor asociado, ni cupos disponibles.

@@ -95,6 +95,12 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
                 </Link>
               </li>
               <li>
+                <Link to="/participar" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
+                  <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
+                  {isEs ? 'Participar en la ciudad digital' : 'Join the digital city'}
+                </Link>
+              </li>
+              <li>
                 <Link to="/itinerary" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
                   <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
                   {isEs ? 'Itinerario IA' : 'AI Itinerary'}

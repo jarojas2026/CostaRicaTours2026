@@ -21,6 +21,7 @@ import { TOURS } from './src/data/toursData';
 import { checkoutQuote, checkoutOrigin } from './backend/commercePolicy';
 import { commerceAdminRouter } from './backend/commerceAdminRouter';
 import { knowledgeCityRouter } from './backend/knowledgeCityRouter';
+import { digitalCityApplicationRouter } from './backend/digitalCityApplicationRouter';
 import { getTourMediaById } from './backend/tourMediaService';
 import { FLIGHT_ROUTES } from './src/data/flightsData';
 import {
@@ -209,6 +210,7 @@ const aiAdmission = createInFlightLimiter(20, 3);
 const bookingAdmission = createInFlightLimiter(30, 2);
 
 app.use('/api/', generalApiLimiter, apiAdmission.middleware);
+app.use('/api/digital-city/applications', digitalCityApplicationRouter);
 
 // Signed payment webhooks. Stripe uses the byte-exact rawBody captured by
 // express.json({ verify }) above; PayPal verifies its provider signature before

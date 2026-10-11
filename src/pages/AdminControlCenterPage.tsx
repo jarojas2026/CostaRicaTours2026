@@ -6,6 +6,7 @@ import {CommerceOperationsPanel} from '../components/CommerceOperationsPanel';
 import {KnowledgeCityPanel} from '../components/KnowledgeCityPanel';
 import {AgentOfficeMap} from '../components/AgentOfficeMap';
 import {DigitalCityRegistrationPreflight} from '../components/DigitalCityRegistrationPreflight';
+import {DigitalCityReviewQueue} from '../components/DigitalCityReviewQueue';
 
 export const AdminControlCenterPage:React.FC<{language:Language}>=({language})=>{
  const es=language==='es';const [data,setData]=useState<any>(null);const [error,setError]=useState('');const [loading,setLoading]=useState(true);
@@ -19,6 +20,7 @@ export const AdminControlCenterPage:React.FC<{language:Language}>=({language})=>
   <KnowledgeCityPanel language={language}/>
   <AgentOfficeMap language={language} snapshot={data?.agentOffice}/>
   <DigitalCityRegistrationPreflight language={language}/>
+  <DigitalCityReviewQueue language={language}/>
   <section className='rounded-[32px] border border-amber-400/20 bg-gradient-to-br from-[#071e14] via-[#041711] to-[#020b07] p-7 shadow-2xl'><div className='flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4'><div><div className='flex items-center gap-2 text-amber-300 text-[10px] font-black uppercase tracking-[.22em]'><ShieldCheck size={15}/> {es?'Nivel administrativo':'Administrative level'}</div><h1 className='mt-2 text-3xl md:text-5xl font-black text-white'>{es?'Centro de Control Costa Rica Tours':'Costa Rica Tours Control Center'}</h1><p className='mt-3 max-w-4xl text-sm text-stone-300'>{es?'Ventas, viajeros, proveedores, IA, automatizaciones, fallos y evolución en una sola vista.':'Sales, travelers, providers, AI, automation, failures and evolution in one view.'}</p></div><button onClick={load} disabled={loading} className='inline-flex items-center gap-2 rounded-2xl bg-amber-400 px-4 py-3 font-black text-stone-950'><RefreshCw size={17} className={loading?'animate-spin':''}/>{es?'Actualizar':'Refresh'}</button></div></section>
   <section className='grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3'>{cards.map(([Icon,value,label]:any)=><div key={label} className='rounded-2xl border border-emerald-500/15 bg-[#061d14] p-4'><Icon className='text-amber-300' size={18}/><div className='mt-2 text-2xl font-black text-white'>{value??'—'}</div><div className='mt-1 text-[9px] font-black uppercase tracking-wider text-stone-500'>{label}</div></div>)}</section>
   <section className='grid xl:grid-cols-3 gap-5'>
