@@ -105,6 +105,7 @@ export function isKnowledgeEligible(article: KnowledgeArticle, audience: Knowled
     && Boolean(article.reviewedBy)
     && Number.isFinite(Date.parse(article.verifiedAt))
     && Date.parse(article.verifiedAt) <= at.getTime()
+    && at.getTime() - Date.parse(article.verifiedAt) <= 180 * 86400000
     && Number.isFinite(Date.parse(article.expiresAt))
     && Date.parse(article.expiresAt) > at.getTime();
 }
