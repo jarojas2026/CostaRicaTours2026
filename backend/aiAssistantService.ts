@@ -321,6 +321,7 @@ export async function processChatInquiry(
     liveToolContext += '\nFABRICA DE CONOCIMIENTO OPERATIVO:\n' + await buildAgentKnowledgeContext({
       query: message,
       sessionId,
+      language,
       agentId: engine === 'counter_agent' ? 'counter_agent' : 'concierge'
     });
   } catch (knowledgeErr) {
