@@ -44,3 +44,15 @@ test('cancelled booking may only continue to refund', () => {
   assert.deepEqual(nextSafeTransitions('cancelled'), ['refunded']);
   assert.equal(canTransitionBooking('cancelled', 'confirmed'), false);
 });
+
+test('paid status cannot regress provider or operational progress', () => {
+  for (const status of ['provider_pending', 'confirmed', 'in_operation', 'completed', 'cancelled'] as const) {
+    assert.equal(normalizeBookingLifecycle(status, 'paid'), status);
+  }
+});
+
+test('verified refunds remain terminal and legacy pending payments can advance', () => {
+  assert.equal(normalizeBookingLifecycle('cancelled', 'refunded'), 'refunded');
+  assert.equal(normalizeBookingLifecycle('pendiente_pago', 'paid'), 'paid');
+  assert.equal(normalizeBookingLifecycle('confirmada', 'completed'), 'confirmed');
+});
