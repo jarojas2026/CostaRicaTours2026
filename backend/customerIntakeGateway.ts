@@ -3,6 +3,7 @@ import { runTriage, processChatInquiry } from './aiAssistantService';
 import { sendEmail, sendWhatsAppMessage } from './notificationService';
 import { rememberTurn } from './memoryService';
 import { getFirestoreDb } from './bookingService';
+import { rememberOrganizationalFlow } from './organizationalMemoryService';
 import { resolveTravelerIdentity } from './travelerIdentityService';
 import { adaptTravelerJourney, buildTripJourney } from './travelJourneyOrchestrator';
 import { executeBusinessGoal } from './businessGoalOrchestrator';
@@ -391,6 +392,24 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
     ? { reply: language === 'en' ? 'We received your media message. A human agent has been notified and will review it. You can also send the request as text for immediate AI assistance.' : 'Recibimos tu mensaje multimedia. Un agente humano ha sido notificado y lo revisará. También puedes enviar la solicitud por texto para recibir asistencia inmediata de la IA.', agentId: 'customer_intake_gateway' }
     : journeyAssistant || await processChatInquiry(message, language, [], 'auto', sessionId, { allowMutations: !escalation.escalated });
   const reply = clean(assistant?.reply || 'Recibimos tu solicitud y estamos procesándola.', 8000);
+
+  // Sales/support knowledge pulse: record a minimal omnichannel signal, never
+  // the customer's message, identity, private response or payment information.
+  try {
+    await rememberOrganizationalFlow({
+      channel: source,
+      externalMessageId: intakeId,
+      sessionId,
+      direction: 'inbound',
+      actor: 'customer',
+      intent,
+      status: escalation.escalated ? 'escalated' : 'assisted',
+      nextAction: escalation.escalated ? 'human_review' : 'await_customer',
+      metadata: { source: 'customer_intake', confidence: Math.round(confidence * 100) / 100 }
+    });
+  } catch (eventError) {
+    console.warn('Customer intake knowledge signal not persisted:', eventError instanceof Error ? eventError.name : 'unknown');
+  }
 
   // Persistencia omnicanal: web, WhatsApp y voz pueden continuar el mismo contexto.
   try {
