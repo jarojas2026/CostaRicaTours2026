@@ -89,3 +89,17 @@ El objetivo nuevo es abarcar servicios legítimos de toda Costa Rica, desde perf
 - Ninguna acción de agentes de IA puede ejecutar reembolsos, modificar permisos, dar de alta organizaciones comerciales o desplegar código sin reglas de autorización, aprobación y auditoría.
 - Evaluar nuevas librerías/modelos (OpenAI, Google ADK, Kimi, DeepSeek, Qwen, Temporal, OpenTelemetry, React Flow) como alternativas, no introducirlas en producción ni subir costes sin evaluación técnica y legal.
 - **Credenciales:** cualquier archivo de cuenta de servicio con clave privada compartido fuera del gestor de secretos debe tratarse como comprometido; revocar/rotar y utilizar GitHub OIDC + Workload Identity Federation. Nunca copiar su clave al repositorio, documentación ni logs.
+
+
+---
+
+## 13. Ciudad global y habilidades progresivas
+
+Ver `docs/ciudad-digital-global-skills-2026.md` y `.agents/skills/global-city-onboarding/SKILL.md` antes de modificar registro universal, membresías, geografía global o catálogo internacional.
+
+- Costa Rica es el núcleo existente; el soporte internacional debe ser explícito por país y autorizado por cada jurisdicción, sin afirmar presencia o convenios donde no los hay.
+- Un preflight de registro es **solo una comprobación de requisitos**; no verifica la identidad, la representación, la legalidad de venta, el consentimiento contractual, la disponibilidad o el pago, y no guarda registros.
+- Nunca dar por publicados, verificados o reservables personas, empresas, comunidades, espacios públicos o privados usando solamente datos introducidos en el navegador o sugeridos por IA.
+- Las skills deben seguir el formato Agent Skills `SKILL.md`, cargarse bajo demanda, especificar límites de herramientas y reutilizar `backend/agentTools.ts`; la existencia del archivo no otorga nuevas capacidades de ejecución.
+- Si un flujo reporta cupos o pagos sin verificar la respuesta transaccional, priorizar reparación y regresión antes de aumentar la autonomía o habilitar países nuevos. Issue #175 es bloqueo P0.
+- Conservar todas las reglas anteriores de protección, auditoría, compatibilidad, CI, idempotencia y autorización.
