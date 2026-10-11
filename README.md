@@ -1438,3 +1438,46 @@ The administrative control center must report persisted/observed events, not syn
 
 ### Future AI handoff
 Any future agent must first search the repository for an existing capability, then connect to the existing source of truth. Do not create parallel reservation, catalog, memory, provider or automation systems when the corresponding service already exists.
+
+
+---
+
+## 33. Ciudad digital nacional — visión y contrato de implementación (2026-10-11)
+
+**Documento maestro incremental:** [Ecosistema nacional, inscripciones, oficinas virtuales y plan operativo](docs/ciudad-digital-ecosistema-nacional-2026.md). Complementa, sin reemplazar, [arquitectura inicial de ciudad digital](docs/arquitectura-ciudad-digital.md) y [AGENTS.md](AGENTS.md).
+
+Costa Rica Tours busca conectar **toda la oferta legítima de Costa Rica**: personas, trabajadores independientes, microempresas, turismo rural, comunidades, asociaciones, cooperativas, empresas, instituciones, espacios privados/públicos, eventos, parques y servicios especializados. Es una visión progresiva, **no una afirmación de que esos registros, cobros o integraciones ya están disponibles**.
+
+### Registro universal y confianza
+
+- Separar `Person`, `Organization`, `Membership`, `Place`, `Service`, `Event`, `Verification` y `Policy` como conceptos, reutilizando colecciones existentes. El frontend no debe establecer privilegios de organización por sí mismo.
+- Una persona puede representar múltiples organizaciones con roles y permisos independientes, concedidos por el backend.
+- Ficha informativa, entidad verificada y servicio reservable son estados diferentes. No habilitar cobros, inventario o alianzas oficiales sin contratos, autorización, evidencia y estado válido.
+- Los datos de parques, entidades públicas, espacios privados, comunidades y personas tienen límites legales, de consentimiento, propiedad intelectual y operatividad. No suplantar organismos ni asumir autorización de venta.
+- Moderación, documentación, derecho de rectificación, acceso y privacidad antes de habilitar inscripción pública masiva.
+- Nuevas verticales reutilizan `bookingService`, `commerceCatalog`, `paymentWebhookService`, `providerPortalService`, `agentTools` y `travelJourneyOrchestrator`, nunca sus propios motores incompatibles.
+
+### Oficina virtual de agentes, dentro del administrador
+
+Primera versión (rama de trabajo, sujeta a CI): `src/components/AgentOfficeMap.tsx` se integra en `src/pages/AdminControlCenterPage.tsx`. El servidor añade `agentOffice` al snapshot del endpoint administrativo **ya autenticado** `/api/admin/control-center` mediante `backend/agentOfficeProjection.ts`. No se crea endpoint público.
+
+- Distribución visual por equipos y agente seleccionable; funciona con los agentes registrados en `AGENT_IDENTITIES`.
+- Fuente: lectura limitada de `agent_events`; muestra **actividad observada** (5 min), **sin señal reciente** o **telemetría no disponible**.
+- No expone eventos originales, texto de clientes, payloads, secretos ni conversaciones.
+- No finge `trabajando`, `en reposo`, tarea en curso ni controles ejecutables. Esos datos requieren una siguiente fase con `executionId`, tarea, inicio, fin, heartbeat, manejo de eventos obsoletos y auditoría.
+- Los botones del plano solo inspeccionan. Acciones administrativas futuras deben pasar autenticación, autorización por operación y aprobación humana cuando corresponda.
+
+### Orden de crecimiento y verificación
+
+1. **Seguridad:** credenciales rotadas/gestionadas con identidad sin claves, permisos mínimos y auditoría de accesos.
+2. **Comercio base:** pruebas completas de reserva, proveedor, pago/webhook, reintentos, disponibilidad, reembolso y conciliación en sandbox.
+3. **Observabilidad:** tareas y eventos de agentes verificables, tracing, alarmas y recuperación operativa.
+4. **Registro universal:** perfil, organización, membresías, representación y revisión.
+5. **Territorio y servicios:** geografía, directorio, búsqueda, eventos y nuevas verticales con procedencia.
+6. **Escala:** carga medida, paginación, caching, cola/outbox según necesidad real, costes y SLO.
+
+### Investigación tecnológica
+
+Se revisaron fuentes oficiales de OpenAI Agents SDK, Google ADK, LangGraph, Temporal, OpenTelemetry, React Flow, Kimi, DeepSeek, Qwen y Google Workload Identity Federation. Son **candidatos para evaluación**; no se afirman instalados ni gratuitos. Ningún framework debe reemplazar el motor nativo sin necesidad medida. Ver enlaces y criterios en el documento maestro.
+
+**Regla invariable:** no rehacer la plataforma ni perder funciones, nunca fingir reservas/servicios/actividad de agentes, proteger los datos personales y públicos, probar cada cambio, pasar CI, revisar el diff y desplegar controladamente.
