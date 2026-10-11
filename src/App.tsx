@@ -424,7 +424,7 @@ export default function App() {
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
             <Route path="/provider/portal" element={<ProviderPortalPage />} />
-            <Route path="/participar" element={<Suspense fallback={<div className="py-12 text-center text-amber-200">Cargando…</div>}><DigitalCityJoinPage language={language} /></Suspense>} />
+            <Route path="/participar" element={<Suspense fallback={<div className="py-12 text-center text-amber-200">Cargando…</div>}><DigitalCityJoinPage language={language} onOpenPrivacy={() => { setLegalTab('privacidad'); setIsLegalModalOpen(true); }} /></Suspense>} />
 
             <Route path="/" element={
               <HomePage
