@@ -64,5 +64,5 @@ test('unverified articles are not used for public guidance and empty searches re
   assert.deepEqual(rankKnowledgeArticles([article], '', 'es', 'public', at), []);
   assert.deepEqual(rankKnowledgeArticles([article], '!!!!!', 'es', 'public', at), []);
   assert.equal(isKnowledgeEligible({ ...article, reviewedBy: '' } as KnowledgeArticle, 'public', at), false);
-  assert.equal(isKnowledgeEligible({ ...article, expiresAt: '2027-02-01T00:00:00Z' } as KnowledgeArticle, 'public', new Date('2027-01-01T00:00:00Z')), false);
+  assert.equal(isKnowledgeEligible({ ...article, expiresAt: '2027-06-01T00:00:00Z' } as KnowledgeArticle, 'public', new Date('2027-05-01T00:00:00Z')), false);
 });
