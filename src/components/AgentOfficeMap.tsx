@@ -33,7 +33,7 @@ export function AgentOfficeMap({ language, snapshot }: { language: Language; sna
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const agents = Array.isArray(snapshot?.agents) ? snapshot.agents : [];
   const selected = agents.find(agent => agent.id === selectedId) || agents[0];
-  const assigned = new Set(departments.flatMap(department => [...department.members]));
+  const assigned: Set<string> = new Set(departments.flatMap(department => [...department.members]));
   const groups = [
     ...departments.map(group => ({ ...group, agents: agents.filter(agent => (group.members as readonly string[]).includes(agent.id)) })),
     { id: 'other', es: 'Otras especialidades', en: 'Other specialists', agents: agents.filter(agent => !assigned.has(agent.id)) }
