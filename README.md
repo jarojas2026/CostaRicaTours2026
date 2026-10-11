@@ -1481,3 +1481,21 @@ Primera versión (rama de trabajo, sujeta a CI): `src/components/AgentOfficeMap.
 Se revisaron fuentes oficiales de OpenAI Agents SDK, Google ADK, LangGraph, Temporal, OpenTelemetry, React Flow, Kimi, DeepSeek, Qwen y Google Workload Identity Federation. Son **candidatos para evaluación**; no se afirman instalados ni gratuitos. Ningún framework debe reemplazar el motor nativo sin necesidad medida. Ver enlaces y criterios en el documento maestro.
 
 **Regla invariable:** no rehacer la plataforma ni perder funciones, nunca fingir reservas/servicios/actividad de agentes, proteger los datos personales y públicos, probar cada cambio, pasar CI, revisar el diff y desplegar controladamente.
+
+
+---
+
+## 34. Ciudad digital internacional y Agent Skills (2026-10-11)
+
+**Estado real:** primer módulo de preparación de inscripción en rama de desarrollo, no marketplace internacional lanzado.
+
+- Arquitectura detallada: [Ciudad digital internacional y Skills](docs/ciudad-digital-global-skills-2026.md). Continúa [la ciudad digital de Costa Rica](docs/ciudad-digital-ecosistema-nacional-2026.md) y las reglas de [AGENTS.md](AGENTS.md).
+- Preflight administrativo bilingüe: `src/components/DigitalCityRegistrationPreflight.tsx`, integrado en el administrador actual, llama al endpoint protegido `POST /api/admin/digital-city/registration/preflight`.
+- Política tipada de preinscripción `backend/digitalCityRegistrationPolicy.ts`: distingue personas, freelance, microempresas, empresas, comunidades, asociaciones, instituciones, espacios públicos/privados y organizadores; valida país, localidad, consentimiento, representación y fuente.
+- **No crea perfiles ni publica contenido**: incluso si una propuesta es apta para moderación, no puede reservarse, publicarse ni cobrar. Requiere construir inscripción autenticada, permisos por organización, verificación y obligaciones locales antes de activar operaciones.
+- Nueva skill estandarizada: [`.agents/skills/global-city-onboarding/SKILL.md`](.agents/skills/global-city-onboarding/SKILL.md). Usa el formato Agent Skills con activación bajo demanda; no implica haber conectado modelos nuevos ni otorgado permisos adicionales a IA.
+- GitHub: no fusionar a la fuerza PRs de Dependabot #151, #152, #154–#157 si GitHub informa conflictos o desactualización frente a `main`. Deben reconciliarse y pasar CI actual.
+- **Riesgo operativo P0 detectado:** ver issue [#175](https://github.com/jarojas2026/CostaRicaTours2026/issues/175) sobre reportar un hold exitoso cuando el registro canónico pudo fallar. No anunciarlo solucionado hasta corregir y probar el flujo.
+- **Seguridad:** una clave de cuenta de servicio compartida externamente necesita revocación/rotación; usar federación de identidades sin claves en CI/CD.
+
+Se mantienen íntegros el catálogo y reserva única, motor nativo, memoria, Agent Desk, autenticación, Firestore, Stripe/PayPal y reglas de no inventar fuentes. Expandir al mundo exige jurisdicción y proveedores verificables, no registros sintéticos.
