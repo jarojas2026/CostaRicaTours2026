@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Language } from '../types';
+import { requestCustomerIntake } from '../utils/customerIntake';
 import { Phone, MapPin, Mail, ShieldCheck, Heart, Globe, Sparkles, MessageCircle, Lock, CreditCard, ChevronRight } from 'lucide-react';
 
 interface FooterProps {
@@ -59,15 +60,19 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
             </p>
 
             <div className="flex flex-col gap-3">
-              <a
-                href="https://wa.me/50687959148"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-extrabold text-sm flex items-center gap-2 text-white hover:text-teal-300 transition-colors"
+              <button
+                type="button"
+                onClick={() => requestCustomerIntake({
+                  message: isEs
+                    ? 'Quisiera hablar con Costa Rica Tours sobre opciones turísticas y recibir atención con verificación.'
+                    : 'I would like help with Costa Rica travel options and a verified inquiry.',
+                  language, source: 'footer:assistance'
+                })}
+                className="font-extrabold text-sm flex items-center gap-2 text-white hover:text-teal-300 transition-colors text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300"
               >
                 <MessageCircle className="w-5 h-5 text-[#25D366]" />
-                +506 8795-9148
-              </a>
+                {isEs ? 'Consultar por IA · WhatsApp si se requiere' : 'Ask AI · WhatsApp if needed'}
+              </button>
               <a
                 href="mailto:jarojas800@gmail.com"
                 className="font-extrabold text-xs flex items-center gap-2 text-white hover:text-teal-300 transition-colors"

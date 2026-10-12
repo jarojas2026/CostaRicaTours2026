@@ -32,6 +32,7 @@ import { SUPPORTED_LANGUAGES, UI_TRANSLATIONS } from '../utils/i18n';
 import { CURRENCIES } from '../utils/currencies';
 import { auth, signInWithGoogle, signOut } from '../firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { requestCustomerIntake } from '../utils/customerIntake';
 
 interface HeaderProps {
   language: Language;
@@ -188,15 +189,19 @@ export const Header: React.FC<HeaderProps> = ({
 
               <span className="hidden sm:inline text-emerald-500/30">•</span>
               
-              <a
-                href="https://wa.me/50687959148?text=Hola%20Costa%20Rica%20Tours%20(costaricatours.es),%20quisiera%20consultar%20sobre%20los%20tours%20y%20traslados."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hidden sm:inline-flex items-center gap-1.5 text-stone-200 hover:text-emerald-300 font-medium transition-colors text-xs"
+              <button
+                type="button"
+                onClick={() => requestCustomerIntake({
+                  message: language === 'es'
+                    ? 'Quisiera consultar sobre tours y traslados en Costa Rica. ¿Qué opciones pueden verificar para mi viaje?'
+                    : 'I would like to ask about Costa Rica tours and transfers. What options can you verify for my trip?',
+                  language, source: 'header:assistance'
+                })}
+                className="hidden sm:inline-flex items-center gap-1.5 text-stone-200 hover:text-emerald-300 font-medium transition-colors text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300"
               >
                 <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
-                <span>WhatsApp: <strong className="text-emerald-300 font-bold">+506 8795-9148</strong></span>
-              </a>
+                <span>{language === 'es' ? 'Consulta por IA → WhatsApp' : 'AI inquiry → WhatsApp'}</span>
+              </button>
 
               <span className="hidden lg:inline text-emerald-500/30">•</span>
 
@@ -759,15 +764,22 @@ export const Header: React.FC<HeaderProps> = ({
 
               {/* WhatsApp Support in Drawer */}
               <div className="pt-3 border-t border-emerald-500/20 space-y-2">
-                <a
-                  href="https://wa.me/50687959148?text=Hola%20Costa%20Rica%20Tours%20(costaricatours.es),%20quisiera%20ayuda%20para%20reservar."
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    requestCustomerIntake({
+                      message: language === 'es'
+                        ? 'Quisiera ayuda para reservar un tour, con disponibilidad y precio verificados.'
+                        : 'I need help booking a tour with verified availability and pricing.',
+                      language, source: 'header:mobile-assistance'
+                    });
+                  }}
                   className="w-full flex items-center justify-center gap-2 bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] p-3 rounded-2xl font-black text-xs uppercase border border-[#25D366]/40 transition-colors"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  <span>WhatsApp: +506 8795-9148</span>
-                </a>
+                  <span>{language === 'es' ? 'Consulta con IA y asistencia' : 'AI assisted inquiry'}</span>
+                </button>
               </div>
 
             </div>
