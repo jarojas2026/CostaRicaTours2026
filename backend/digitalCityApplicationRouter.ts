@@ -4,7 +4,7 @@ import { getFirebaseAdminAuth } from './firebaseAdminRuntime';
 import { requireOperator } from './authMiddleware';
 import {
   CityApplicationError, listCityApplicationsForReview, listMyCityApplications,
-  submitCityApplication, triageCityApplication, type CityApplicationStatus
+  submitCityApplication, triageCityApplication, resubmitCityApplication, withdrawCityApplication, type CityApplicationStatus
 } from './digitalCityApplicationService';
 
 export const digitalCityApplicationRouter = Router();
@@ -30,7 +30,7 @@ async function requireVerifiedApplicant(req: Request, res: Response, next: NextF
 
 function failure(res: Response, error: unknown) {
   if (error instanceof CityApplicationError) {
-    const status = error.code === 'not_found' ? 404 : error.code === 'storage_unavailable' ? 503 : error.code === 'rate_limited' ? 429 : 400;
+    const status = error.code === 'not_found' ? 404 : error.code === 'storage_unavailable' ? 503 : error.code === 'rate_limited' ? 429 : error.code === 'invalid_transition' ? 409 : 400;
     return res.status(status).json({ error: error.message, code: error.code });
   }
   console.error('City application storage request failed', error instanceof Error ? error.name : 'unknown');
@@ -53,6 +53,29 @@ digitalCityApplicationRouter.get('/mine', requireVerifiedApplicant, async (req, 
   try {
     const applications = await listMyCityApplications((req as any).cityApplicantUid);
     return res.json({ applications });
+  } catch (error) { return failure(res, error); }
+});
+
+// Revision-guarded private amendments: never accept an applicant UID from body.
+digitalCityApplicationRouter.patch('/:id/resubmit', intakeLimiter, requireVerifiedApplicant, async (req, res) => {
+  try {
+    const result = await resubmitCityApplication(
+      String(req.params.id || ''), (req as any).cityApplicantUid,
+      req.body || {}, Number(req.body?.expectedRevision)
+    );
+    return res.json(result);
+  } catch (error) { return failure(res, error); }
+});
+
+// Withdrawal minimizes the applicant's public-facing fields. It is not a
+// substitute for legally reviewed, full erasure/retention handling.
+digitalCityApplicationRouter.post('/:id/withdraw', intakeLimiter, requireVerifiedApplicant, async (req, res) => {
+  try {
+    const result = await withdrawCityApplication(
+      String(req.params.id || ''), (req as any).cityApplicantUid,
+      Number(req.body?.expectedRevision)
+    );
+    return res.json(result);
   } catch (error) { return failure(res, error); }
 });
 
