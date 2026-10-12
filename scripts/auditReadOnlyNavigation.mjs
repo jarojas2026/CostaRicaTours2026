@@ -182,9 +182,12 @@ try {
   }
 
   await recordInteraction(desktop, 'home quick catalog click', '/', async page => {
-    const target = page.getByText(/Catálogo de Tours|Tours & Adventures/, { exact: true }).first();
+    // HomeQuickNav already wraps the card in a semantic React Router Link.
+    // Target the actual anchor, not its heading, and allow query parameters.
+    const target = page.locator('a[href="/tours"]').filter({ hasText: /Catálogo de Tours|Tours & Adventures/ }).first();
+    await target.waitFor({ state: 'visible', timeout: 12_000 });
     await target.click({ timeout: 12_000 });
-    await page.waitForURL('**/tours', { timeout: 12_000 });
+    await page.waitForURL(url => url.pathname === '/tours', { timeout: 12_000 });
     return { path: new URL(page.url()).pathname };
   });
   await recordInteraction(desktop, 'footer category link keeps catalog filter', '/', async page => {
@@ -246,12 +249,14 @@ try {
   }
 
   await recordInteraction(desktop, 'footer privacy dialog open/close', '/', async page => {
-    const button = page.getByRole('button', { name: /Privacidad y Datos|Privacy \(MEIC\)/ }).first();
+    const button = page.locator('footer button').filter({ hasText: /Privacidad y Datos|Privacy/ }).first();
     await button.click({ timeout: 12_000 });
     const dialogs = page.locator('[role="dialog"],[aria-modal="true"]');
+    await dialogs.first().waitFor({ timeout: 12_000 });
     const count = await dialogs.count();
     await page.keyboard.press('Escape');
-    return { dialogCount: count };
+    await dialogs.first().waitFor({ state: 'hidden', timeout: 8_000 });
+    return { dialogCount: count, closedWithEscape: true };
   });
   await recordInteraction(desktop, 'empty participate form validation (no submit)', '/participar', async page => {
     const forms = await page.locator('form').count();
@@ -326,4 +331,4 @@ const lines = [
 ];
 await writeFile(join(OUT,'report.md'), lines.join('\n'));
 process.stdout.write('AUDIT_SUMMARY ' + JSON.stringify(report.summary) + '\n');
-if (report.summary.pagesFailed) process.exitCode = 1;
+if (report.summary.pagesFailed || report.summary.interactionsFailed) process.exitCode = 1;
