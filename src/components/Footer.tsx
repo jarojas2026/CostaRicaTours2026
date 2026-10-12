@@ -24,12 +24,9 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-teal-300">
-            <span>{language === 'es' ? 'Métodos de Pago Aceptados:' : 'Accepted Payments:'}</span>
-            <span className="bg-[#0a2c1e] px-2 py-0.5 rounded border border-emerald-500/40 text-stone-100">VISA</span>
-            <span className="bg-[#0a2c1e] px-2 py-0.5 rounded border border-emerald-500/40 text-stone-100">Mastercard</span>
-            <span className="bg-[#0a2c1e] px-2 py-0.5 rounded border border-emerald-500/40 text-stone-100">PayPal</span>
-            <span className="bg-[#0a2c1e] px-2 py-0.5 rounded border border-emerald-500/40 text-stone-100">Apple Pay</span>
-            <span className="bg-[#0a2c1e] px-2 py-0.5 rounded border border-emerald-500/40 text-amber-400">SINPE Móvil</span>
+            <span>{language === 'es'
+              ? 'Opciones de pago sujetas a verificación en la cotización y el proceso de reserva.'
+              : 'Payment options are confirmed during quotation and checkout.'}</span>
           </div>
         </div>
       </div>
@@ -188,7 +185,7 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-teal-400" />
             <span>
-              © {new Date().getFullYear()} Costa Rica Tours (costaricatours.es). Todos los derechos reservados.
+              © {new Date().getFullYear()} Costa Rica Tours. {isEs ? 'Todos los derechos reservados.' : 'All rights reserved.'}
             </span>
           </div>
 
