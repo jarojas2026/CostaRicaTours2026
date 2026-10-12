@@ -4,6 +4,7 @@ import { ShieldCheck, MapPin, ArrowRight, MessageCircle } from 'lucide-react';
 import { Language, OperatorProfile } from '../types';
 import { OPERATORS } from '../data/toursData';
 import { useNavigate } from 'react-router-dom';
+import { requestCustomerIntake } from '../utils/customerIntake';
 
 interface OperatorsSectionProps {
   language: Language;
@@ -98,15 +99,18 @@ export const OperatorsSection: React.FC<OperatorsSectionProps> = ({ language, on
               </span>
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <a
-                  href={`https://wa.me/50687959148?text=Hola,%20quisiera%20consultar%20disponibilidad%20de%20servicios%20relacionados%20con%20${encodeURIComponent(op.name)}.`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => requestCustomerIntake({
+                    message: isEs ? `Quisiera consultar servicios de ${op.name} y verificar su disponibilidad real.`
+                      : `I would like to ask about ${op.name} and verify actual service availability.`,
+                    language, source: 'operator-listing:' + op.id, context: { operatorId: op.id }
+                  })}
                   className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] px-3.5 py-2 rounded-xl text-xs font-bold border border-[#25D366]/40 transition-colors"
                 >
                   <MessageCircle className="w-3.5 h-3.5" />
-                  <span>{isEs ? 'Consultar' : 'Inquire'}</span>
-                </a>
+                  <span>{isEs ? 'Consultar con IA' : 'Ask AI'}</span>
+                </button>
                 <button
                   onClick={() => {
                     if (onSelectOperator) onSelectOperator(op.id);
@@ -127,15 +131,18 @@ export const OperatorsSection: React.FC<OperatorsSectionProps> = ({ language, on
             ? 'Aún no hay perfiles de operador publicados con verificación completa. Puedes consultar por zona y te indicaremos qué opciones se logren confirmar; no mostraremos contactos de ejemplo como proveedores reales.'
             : 'There are no operator profiles published with completed verification yet. Ask about an area and we will share options that can be confirmed; sample contacts will not be presented as real providers.'}
         </p>
-        <a
-          href={`https://wa.me/50687959148?text=${encodeURIComponent(isEs ? 'Hola, quiero consultar operadores y experiencias verificables para mi viaje a Costa Rica.' : 'Hello, I would like to ask about verifiable operators and experiences for my trip to Costa Rica.')}`}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
+          onClick={() => requestCustomerIntake({
+            message: isEs ? 'Quiero consultar operadores y experiencias verificables para mi viaje a Costa Rica.'
+              : 'I would like to ask about verifiable operators and experiences for my Costa Rica trip.',
+            language, source: 'operators:unverified-inquiry'
+          })}
           className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-black text-stone-950 hover:bg-[#20ba59]"
         >
           <MessageCircle className="h-4 w-4" />
-          {isEs ? 'Consultar opciones por WhatsApp' : 'Ask about options on WhatsApp'}
-        </a>
+          {isEs ? 'Consultar opciones con IA' : 'Ask AI about options'}
+        </button>
       </div>}
     </section>
   );
