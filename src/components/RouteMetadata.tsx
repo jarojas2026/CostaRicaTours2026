@@ -14,6 +14,16 @@ const ROUTE_METADATA: Array<{
     description: 'Descubre tours, naturaleza, playas y aventuras en Costa Rica. Planifica tu viaje, solicita disponibilidad y recibe asistencia durante el proceso de reserva.',
   },
   {
+    match: pathname => pathname === '/ciudad',
+    title: 'Ciudad Digital de Costa Rica | Plaza central y distritos',
+    description: 'Recorre el plano de la ciudad digital de Costa Rica Tours: experiencias, comunidades, mapa turístico, vuelos, itinerarios y asistencia IA. Las inscripciones requieren revisión.',
+  },
+  {
+    match: pathname => pathname === '/participar',
+    title: 'Solicita participar en la ciudad digital | Costa Rica Tours',
+    description: 'Envía una solicitud privada para participar en el ecosistema digital. Los perfiles no se publican ni habilitan comercialmente sin revisión.',
+  },
+  {
     match: pathname => pathname === '/tours',
     title: 'Tours en Costa Rica | Explora experiencias y solicita disponibilidad',
     description: 'Explora tours y experiencias en Costa Rica por región y actividad. Consulta detalles y solicita disponibilidad antes de reservar.',
