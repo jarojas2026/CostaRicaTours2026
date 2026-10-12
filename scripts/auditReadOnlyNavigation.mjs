@@ -143,6 +143,20 @@ try {
   const mobile = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, deviceScaleFactor: 2, hasTouch: true, reducedMotion: 'reduce' });
   for (const path of ALL_ROUTES) await checkRoute(desktop, path, 'desktop');
   for (const path of MOBILE_ROUTES) await checkRoute(mobile, path, 'mobile');
+  // Navigate first-time pages with the consent banner present; afterward use
+  // an explicit, least-privilege consent fixture for non-consent click tests.
+  const consentContext = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+  await recordInteraction(consentContext, 'cookie banner reject non-essential consent', '/', async page => {
+    const reject = page.getByRole('button', { name: /Rechazar|Reject/ }).first();
+    await reject.click({ timeout: 12_000 });
+    const choice = await page.evaluate(() => localStorage.getItem('cookie-consent'));
+    if (choice !== 'essential') throw new Error('Consent state was not persisted as essential');
+    return { consent: choice };
+  });
+  await consentContext.close();
+  await desktop.addInitScript(() => localStorage.setItem('cookie-consent', 'essential'));
+  await mobile.addInitScript(() => localStorage.setItem('cookie-consent', 'essential'));
+
 
   await recordInteraction(desktop, 'city district select -> detail', '/ciudad', async page => {
     const buttons = page.getByRole('button', { name: /Ver en el plano|View on plan/ });
