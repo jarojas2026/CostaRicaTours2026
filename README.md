@@ -1513,3 +1513,18 @@ Se mantienen íntegros el catálogo y reserva única, motor nativo, memoria, Age
 - `/api/digital-city/applications/admin/queue` y `/admin/:id/triage`: seguimiento exclusivo del administrador, auditoría de revisión; no puede publicar/activar desde este flujo.
 - Colecciones nuevas de solicitudes, cuotas y auditoría bajo Firestore Default Deny para clientes. No alterar `operators`, `proveedores`, `tours`, `bookings` o `payments`.
 - **Pendiente:** políticas legales de privacidad/retención/corrección, reenvío de expedientes incompletos, validación documental, pruebas con Emulator, publicación revisada, membresías y comercialización. Una solicitud recibida NO significa negocio aprobado, ni proveedor asociado, ni cupos disponibles.
+
+
+---
+
+## 36. Corrección y retiro de solicitudes privadas de la ciudad digital (2026-10-11)
+
+Fase 2B, sobre la inscripción implementada en [`/participar`](src/pages/DigitalCityJoinPage.tsx):
+
+- El solicitante autenticado puede **corregir y reenviar** un expediente si el administrador lo marcó `needs_information`, conservando identificador y fecha de creación. El backend vuelve a verificar consentimiento, país y representación declarada; no permite modificar el tipo ni el país del expediente ya abierto.
+- El solicitante puede **retirar** un expediente. El backend borra sus campos descriptivos del registro principal, marca `withdrawn` y bloquea publicaciones y transacciones. **No es supresión legal completa**: conserva UID, categoría, país, marcas temporales y una auditoría mínima, pendientes de política de retención.
+- Ambos flujos requieren **Firebase ID token con email verificado**, son transaccionales en Firestore, comprueban la propiedad del expediente y el número de revisión esperado contra cambios simultáneos.
+- La oficina administrativa mantiene únicamente `under_review`, `needs_information` y `rejected`; **ninguna transición habilita ventas** o crea un proveedor comercial.
+- La implementación y sus límites se describen en [docs/ciudad-digital-solicitudes-privadas-2026.md](docs/ciudad-digital-solicitudes-privadas-2026.md). No se ha certificado aún el ciclo E2E con Firestore Emulator ni la revisión legal de privacidad, conservación y supresión.
+
+**Regla:** no confundir retiro con eliminación completa de datos ni preinscripción con entidad publicada o reservable.
