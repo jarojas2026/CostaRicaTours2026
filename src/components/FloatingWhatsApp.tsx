@@ -296,6 +296,10 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
         body: JSON.stringify({ message: text, language, sessionId: sessionIdRef.current })
       });
       const data = await response.json().catch(() => ({}));
+      // Transport failures must never be presented as a successful AI reply.
+      if (!response.ok || data.success === false || data.error) {
+        throw new Error('AI chat request failed');
+      }
       const reply = data.reply || data.message || data.response || (
         language === 'es'
           ? 'Recibí tu consulta. Puedo ayudarte a verificar disponibilidad y preparar los detalles de tu reserva.'
