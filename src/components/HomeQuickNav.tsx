@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Compass, Map, Sparkles, Bus, Coffee, ArrowRight, ShieldCheck, CheckCircle2, Clock, Flame, Users, Bot, Plane } from 'lucide-react';
 import { Language, Currency, Tour } from '../types';
 import { useTours } from '../contexts/ToursContext';
@@ -141,8 +141,9 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          {navCards.map((card, idx) => (
-            <motion.div
+          {navCards.map((card, idx) => {
+            const content = (
+              <motion.div
               key={card.id}
               initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -150,7 +151,6 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
               whileTap={{ scale: 0.98 }}
               viewport={{ once: true }}
               transition={{ duration: 0.25, delay: idx * 0.04 }}
-              onClick={() => navigate(`/${card.tab}`)}
               className={`group relative p-5 rounded-2xl bg-gradient-to-br ${card.gradient} border border-teal-500/20 hover:border-amber-400/80 hover:shadow-[0_10px_30px_rgba(255,140,0,0.15)] transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden`}
             >
               <div className="space-y-3">
@@ -177,8 +177,20 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
                 <span>{card.actionText}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+            return card.id === 'vip' ? (
+              <button key={card.id} type="button" onClick={onOpenCustomFunnel}
+                className="block w-full rounded-2xl text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">
+                {content}
+              </button>
+            ) : (
+              <Link key={card.id} to={`/${card.tab}`}
+                className="block w-full rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">
+                {content}
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -209,11 +221,10 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
             const title = getLangText(tour.title, language);
             const desc = getLangText(tour.description, language);
             return (
+              <Link key={tour.id} to={`/tour/${tour.id}`} className="block rounded-3xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">
               <motion.div
-                key={tour.id}
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.2 }}
-                onClick={() => navigate(`/tour/${tour.id}`)}
                 className="group relative rounded-3xl bg-[#08241b]/90 border border-emerald-500/30 overflow-hidden shadow-xl hover:border-amber-400/60 cursor-pointer flex flex-col justify-between"
               >
                 <div className="relative h-48 overflow-hidden">
@@ -269,6 +280,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
                   </div>
                 </div>
               </motion.div>
+              </Link>
             );
           })}
         </div>
