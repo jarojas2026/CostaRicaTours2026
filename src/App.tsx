@@ -90,7 +90,7 @@ export default function App() {
   // Keep SPA navigation feeling native: every route starts at the top.
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' });
-  }, [location.pathname, location.search]);
+  }, [location.pathname]);
 
   // Modals state
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
