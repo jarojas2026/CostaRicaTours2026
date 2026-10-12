@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Language, Currency } from '../types';
 import { formatCurrency, getLangText } from '../utils/i18n';
+import { requestCustomerIntake } from '../utils/customerIntake';
 
 interface LocalBusesModalProps {
   isOpen: boolean;
@@ -331,19 +332,18 @@ export const LocalBusesModal: React.FC<LocalBusesModalProps> = ({
             </div>
 
             {/* Quick WhatsApp Advice Button */}
-            <a
-              href={`https://wa.me/50687959148?text=${encodeURIComponent(
-                language === 'es' 
-                  ? 'Hola Costa Rica Tours (costaricatours.es), quisiera consultar sobre horarios y empresas de bus local para viajar por Costa Rica.'
-                  : 'Hello Costa Rica Tours (costaricatours.es), I would like to inquire about local bus schedules and transport in Costa Rica.'
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => requestCustomerIntake({
+                message: language === 'es' ? 'Necesito información verificable sobre horarios y empresas de bus local en Costa Rica.'
+                  : 'I need verifiable information about local bus operators and schedules in Costa Rica.',
+                language, source: 'local-buses:general'
+              })}
               className="bg-[#E67E22] hover:bg-[#d67118] text-white font-black text-xs uppercase px-5 py-3 rounded-2xl shadow-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer hover:scale-105"
             >
               <MessageCircle className="w-4 h-4" />
-              <span>{language === 'es' ? 'Consultar Horario por WhatsApp' : 'Inquire Bus Info via WhatsApp'}</span>
-            </a>
+              <span>{language === 'es' ? 'Consultar horarios con IA' : 'Ask AI about bus schedules'}</span>
+            </button>
           </div>
 
           {/* Category Filter Pills */}
@@ -500,19 +500,20 @@ export const LocalBusesModal: React.FC<LocalBusesModalProps> = ({
                       <span>{language === 'es' ? 'Ver Mapa Terminal' : 'Map Terminal'}</span>
                     </a>
 
-                    <a
-                      href={`https://wa.me/50687959148?text=${encodeURIComponent(
-                        language === 'es' 
-                          ? `Hola Costa Rica Tours (costaricatours.es), quisiera ayuda e información sobre la ruta de bus local: ${destination} (${route.company}).`
-                          : `Hello Costa Rica Tours (costaricatours.es), I would like information on the local bus route: ${destination} (${route.company}).`
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => requestCustomerIntake({
+                        message: language === 'es'
+                          ? `Quisiera verificar información de la ruta de bus local: ${destination} (${route.company}).`
+                          : `I would like to verify this local bus route: ${destination} (${route.company}).`,
+                        language, source: 'local-buses:route:' + route.id,
+                        context: { routeId: route.id }
+                      })}
                       className="bg-[#1E7B4A] hover:bg-[#165a36] text-white font-black text-xs uppercase px-4 py-2 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
                     >
                       <MessageCircle className="w-3.5 h-3.5 text-[#E67E22]" />
-                      <span>{language === 'es' ? 'Consultar' : 'Inquire'}</span>
-                    </a>
+                      <span>{language === 'es' ? 'Consultar con IA' : 'Ask AI'}</span>
+                    </button>
                   </div>
 
                 </div>
