@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowRight, ArrowUpRight, Compass, MessageCircle } from 'lucide-react';
 import { Tour, TourRegion, Language } from '../types';
 import { REGIONAL_EXPERIENCE_GUIDES } from '../data/regionalExperienceGuides';
+import { requestCustomerIntake } from '../utils/customerIntake';
 
 interface RegionalExperienceGuidesProps {
   language: Language;
@@ -34,7 +35,6 @@ export const RegionalExperienceGuides: React.FC<RegionalExperienceGuidesProps> =
           const message = es
             ? `Hola, quiero planear una experiencia en ${guide.name.es}. ¿Qué opciones y operadores pueden verificar para mis fechas?`
             : `Hello, I'd like to plan an experience in ${guide.name.en}. Which options and operators can you verify for my dates?`;
-          const whatsappUrl = `https://wa.me/50687959148?text=${encodeURIComponent(message)}`;
 
           return (
             <article key={guide.id} className="flex min-h-56 flex-col rounded-2xl border border-white/10 bg-black/20 p-4">
@@ -52,9 +52,12 @@ export const RegionalExperienceGuides: React.FC<RegionalExperienceGuidesProps> =
                     {es ? `Ver ${count} ficha${count === 1 ? '' : 's'} del catálogo` : `View ${count} catalog ${count === 1 ? 'listing' : 'listings'}`} <ArrowRight size={14} />
                   </button>
                 ) : (
-                  <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-emerald-200">
-                    <MessageCircle size={14} /> {es ? 'Consultar opciones para esta zona' : 'Ask about options in this area'}
-                  </a>
+                  <button type="button" onClick={() => requestCustomerIntake({
+                    message, language, source: 'regional-guide:' + guide.id,
+                    context: { regionId: guide.regionId }
+                  })} className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-emerald-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+                    <MessageCircle size={14} /> {es ? 'Consultar esta región con IA' : 'Ask AI about this region'}
+                  </button>
                 )}
                 <a href={guide.officialGuideUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] font-semibold text-stone-400 underline decoration-stone-600 underline-offset-2 hover:text-white">
                   {es ? 'Guía oficial ICT' : 'Official ICT guide'} <ArrowUpRight size={12} />
