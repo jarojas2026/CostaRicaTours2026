@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { HeroSection } from '../components/HeroSection';
 import { HomeQuickNav } from '../components/HomeQuickNav';
+import { DigitalCityGateway } from '../components/DigitalCityGateway';
 import { CategoriesSection } from '../components/CategoriesSection';
 import { DestinationsSection } from '../components/DestinationsSection';
 import { FeaturedToursSection } from '../components/FeaturedToursSection';
@@ -71,6 +72,9 @@ export const Home: React.FC<HomeProps> = ({
           onOpenCustomFunnel={() => setIsCustomFunnelOpen(true)}
         />
       </div>
+
+      {/* Connected city masterplan entrance: complements the travel-first navigation. */}
+      <DigitalCityGateway language={language} />
 
       {/* Costa Rica Pulse — visual destination/weather inspiration */}
       <DestinationPulse
