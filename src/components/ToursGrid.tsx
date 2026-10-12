@@ -160,7 +160,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
     if (difficultyFilter !== 'all' && tour.difficulty !== difficultyFilter) return false;
 
     // Price Filter
-    if (hasBookableOffers && isBookableTour(tour) && tour.priceUSD > maxPrice) return false;
+    if (hasBookableOffers && maxPrice < 500 && isBookableTour(tour) && tour.priceUSD > maxPrice) return false;
 
     // Real-Time Duration Filter
     if (maxDurationHours < 14 && tour.durationHours > maxDurationHours) return false;
@@ -309,7 +309,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               id="toggle-realtime-sliders-btn"
               onClick={() => setShowLiveSliders(!showLiveSliders)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold transition-all cursor-pointer border ${
-                showLiveSliders || (hasBookableOffers && maxPrice < 200) || maxDurationHours < 14 || (hasVerifiedRatings && minRating > 0)
+                showLiveSliders || (hasBookableOffers && maxPrice < 500) || maxDurationHours < 14 || (hasVerifiedRatings && minRating > 0)
                   ? 'bg-amber-400 text-stone-950 border-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.35)]'
                   : 'bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-200/90 border-emerald-500/30'
               }`}
@@ -317,7 +317,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
             >
               <Zap className={`w-3.5 h-3.5 ${isSliding ? 'animate-bounce text-stone-950' : ''}`} />
               <span>{language === 'es' ? 'Sliders en Vivo' : 'Live Sliders'}</span>
-              {((hasBookableOffers && maxPrice < 200) || maxDurationHours < 14 || (hasVerifiedRatings && minRating > 0)) && (
+              {((hasBookableOffers && maxPrice < 500) || maxDurationHours < 14 || (hasVerifiedRatings && minRating > 0)) && (
                 <span className="w-2 h-2 rounded-full bg-emerald-950 animate-pulse"></span>
               )}
             </button>}
@@ -426,11 +426,11 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   <span className="text-emerald-200 font-bold">
                     {language === 'es' ? `${processedTours.length} de ${tours.length} experiencias` : `${processedTours.length} of ${tours.length} experiences`}
                   </span>
-                  {((hasBookableOffers && maxPrice < 200) || maxDurationHours < 14 || (hasVerifiedRatings && minRating > 0)) && (
+                  {((hasBookableOffers && maxPrice < 500) || maxDurationHours < 14 || (hasVerifiedRatings && minRating > 0)) && (
                     <button
                       type="button"
                       onClick={() => {
-                        setMaxPrice(200);
+                        setMaxPrice(500);
                         setMaxDurationHours(14);
                         setMinRating(0);
                       }}
@@ -453,13 +453,13 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                       <span>{language === 'es' ? 'Precio Máx:' : 'Max Price:'}</span>
                     </span>
                     <span className="font-mono font-bold text-amber-300 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-500/30 text-[11px]">
-                      {maxPrice >= 200 ? (language === 'es' ? 'Sin límite' : 'No limit') : `${formatCurrency(maxPrice, currency)} (${maxPrice} USD)`}
+                      {maxPrice >= 500 ? (language === 'es' ? 'Sin límite' : 'No limit') : `${formatCurrency(maxPrice, currency)} (${maxPrice} USD)`}
                     </span>
                   </div>
                   <input
                     type="range"
                     min={40}
-                    max={200}
+                    max={500}
                     step={5}
                     value={maxPrice}
                     onMouseDown={() => setIsSliding(true)}
@@ -474,7 +474,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                     <span>$40</span>
                     <span>$100</span>
                     <span>$150</span>
-                    <span>$200+ USD</span>
+                    <span>$500+ USD</span>
                   </div>
                 </div>
 
@@ -607,7 +607,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               </span>
             )}
 
-            {hasBookableOffers && maxPrice < 200 && (
+            {hasBookableOffers && maxPrice < 500 && (
               <span className="bg-emerald-950/80 text-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1 text-[11px] font-medium">
                 💰 ≤ ${maxPrice}
                 <X className="w-3 h-3 cursor-pointer text-stone-400 hover:text-white ml-0.5" onClick={() => setMaxPrice(500)} />
@@ -727,14 +727,14 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                       <span>💰 {language === 'es' ? 'Presupuesto Máximo' : 'Max Budget'}</span>
                     </label>
                     <span className="text-sm font-black text-white bg-emerald-950 px-2.5 py-1 rounded-full border border-emerald-500/40">
-                      {maxPrice >= 200 ? (language === 'es' ? 'Sin límite ($200+)' : 'No limit ($200+)') : `${formatCurrency(maxPrice, currency)} (${maxPrice} USD)`}
+                      {maxPrice >= 500 ? (language === 'es' ? 'Sin límite ($500+)' : 'No limit ($500+)') : `${formatCurrency(maxPrice, currency)} (${maxPrice} USD)`}
                     </span>
                   </div>
 
                   <input
                     type="range"
                     min={40}
-                    max={200}
+                    max={500}
                     step={10}
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(Number(e.target.value))}
@@ -746,12 +746,12 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                     <span>$80 USD</span>
                     <span>$120 USD</span>
                     <span>$160 USD</span>
-                    <span>$200+ USD</span>
+                    <span>$500+ USD</span>
                   </div>
 
                   {/* Quick Price Shortcuts */}
                   <div className="flex items-center gap-1.5 pt-1">
-                    {[60, 100, 150, 200].map((preset) => (
+                    {[60, 100, 150, 500].map((preset) => (
                       <button
                         key={preset}
                         type="button"
@@ -762,7 +762,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                             : 'bg-emerald-950/70 text-emerald-200/80 border-emerald-500/20 hover:border-emerald-500/40'
                         }`}
                       >
-                        {preset === 200 ? (language === 'es' ? 'Todos' : 'All') : `≤ $${preset}`}
+                        {preset === 500 ? (language === 'es' ? 'Todos' : 'All') : `≤ $${preset}`}
                       </button>
                     ))}
                   </div>
