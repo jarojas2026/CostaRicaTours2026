@@ -1561,3 +1561,18 @@ Mantener la ciudad administrativa detrás del sistema de roles existente; separa
 - `tests/catalogRouteFilters.test.ts` cubre categorías válidas, filtros combinados, favoritos, restablecimiento y entradas inválidas.
 
 **Alcance:** corrección del comportamiento de navegación, no una certificación de pagos, reservas, filtros SEO o de todos los clics. Pruebas Playwright de solo lectura existentes en `scripts/auditReadOnlyNavigation.mjs` siguen siendo la base del inventario progresivo. Validar también variantes ES/EN, móvil y `popstate` del navegador antes de ampliar su cobertura automatizada.
+
+
+---
+
+## 39. Contacto público y derivación responsable con IA (2026-10-12)
+
+La regla comercial `consulta pública → agente IA → evaluación de contexto → respuesta o derivación humana` usa el flujo **existente** `src/utils/customerIntake.ts` y su evento `customer-intake-request`, manejado por `src/App.tsx` mediante `POST /api/customer-intake`. **No se crea otro agente, sistema de mensajería ni reserva paralela.**
+
+- Encabezado (escritorio y móvil), pie de página, portada (confianza y tours destacados), operadores, regiones, detalle de tours y consultas de buses usan ahora `requestCustomerIntake` antes de ofrecer contacto externo.
+- En transportes privados, shuttles, alquiler de autos y vuelos domésticos, las ocho acciones iniciales de cotización conservan el texto de ruta/servicio, con `source` trazable; las solicitudes no equivalen a precios ni cupos confirmados.
+- El backend decide si requiere intervención humana. El flujo del modal existente presenta el enlace de derivación devuelto por la IA; ante fallo, indica explícitamente que no hay reserva ni notificación confirmadas y ofrece el WhatsApp comercial como contingencia.
+- `tests/publicAiIntakeRouting.test.ts` añade verificación contractual contra enlaces iniciales que evadan el enrutamiento IA.
+- **Fuera de alcance:** enlaces de compartir comprobantes o atención que aparecen **después** de una compra/reserva o de asistencia dentro de IA; esos flujos requieren revisión diferenciada, no se deben bloquear ciegamente. Correos `mailto:` públicos, políticas de consentimiento y UX completa siguen bajo auditoría.
+
+**Importante:** un clic abre una solicitud atendida por el flujo actual; no afirmar que existe proveedor confirmado, cobro procesado, inventario reservado ni comunicación humana recibida sin evidencia del servicio transaccional. Mantener ES/EN y la escalación cuando corresponda.
