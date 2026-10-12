@@ -121,9 +121,15 @@ async function recordInteraction(context, label, url, action) {
     await page.goto(BASE + url, { waitUntil: 'domcontentloaded', timeout: 30_000 });
     await page.waitForTimeout(1000);
     const details = await action(page);
-    report.interactions.push({ label, result: 'observed', ...(details || {}) });
+    report.interactions.push({ label, result: details?.skipped ? 'skipped' : 'observed', ...(details || {}) });
   } catch (e) {
-    report.interactions.push({ label, result: 'failed', error: String(e).slice(0,420) });
+    try {
+      const slug = label.replace(/[^a-z0-9-]+/gi, '-').toLowerCase().slice(0,70);
+      await page.screenshot({ path: join(OUT, 'failed-click-' + slug + '.png'), fullPage: false });
+    } catch { /* screenshots must not prevent the report */ }
+    report.interactions.push({ label, result: 'failed',
+      atPath: new URL(page.url()).pathname,
+      error: String(e).slice(0,2500) });
   } finally {
     process.stdout.write('INTERACTION ' + JSON.stringify(report.interactions[report.interactions.length - 1]) + '\\n');
     await page.close();
@@ -151,6 +157,15 @@ try {
     await page.waitForURL('**/participar', { timeout: 15_000 });
     return { path: new URL(page.url()).pathname };
   });
+  for (const path of ['/tours', '/map', '/flights', '/itinerary', '/ai']) {
+    await recordInteraction(desktop, 'city -> ' + path + ' district link', '/ciudad', async page => {
+      const link = page.locator('a[href="' + path + '"]').last();
+      await link.click({ timeout: 12_000 });
+      await page.waitForURL('**' + path, { timeout: 12_000, waitUntil: 'domcontentloaded' });
+      return { path: new URL(page.url()).pathname };
+    });
+  }
+
   await recordInteraction(desktop, 'home quick catalog click', '/', async page => {
     const target = page.getByText(/Catálogo de Tours|Tours & Adventures/, { exact: true }).first();
     await target.click({ timeout: 12_000 });
@@ -167,19 +182,19 @@ try {
   });
   await recordInteraction(desktop, 'empty participate form validation (no submit)', '/participar', async page => {
     const forms = await page.locator('form').count();
-    return { forms, note: forms ? 'Only inspected, not submitted' : 'May require login to display application form' };
+    return { forms, skipped: true, note: forms ? 'Only inspected, not submitted' : 'Requires login to display application form' };
   });
   await recordInteraction(desktop, 'tour details read-only navigation', '/tours', async page => {
     const links = page.locator('a[href^="/tour/"]');
     const count = await links.count();
-    if (!count) return { count, note: 'Tour cards may use onClick instead of anchor tags; requires investigation' };
+    if (!count) return { count, skipped: true, note: 'Tour cards may use onClick instead of anchor tags; requires investigation' };
     await links.first().click({ timeout: 10_000 });
     return { count, destination: new URL(page.url()).pathname };
   });
   await recordInteraction(mobile, 'mobile header menu toggle (no outbound click)', '/', async page => {
     const candidates = page.locator('button[aria-label*="men"],button[aria-label*="Men"],button[aria-label*="menu"],button[aria-label*="Menu"]');
     const count = await candidates.count();
-    if (!count) return { count, note: 'Menu toggle requires manual role/name audit' };
+    if (!count) return { count, skipped: true, note: 'Menu toggle requires manual role/name audit' };
     await candidates.first().click();
     return { count, expanded: await candidates.first().getAttribute('aria-expanded') };
   });
@@ -187,7 +202,7 @@ try {
     const b = page.locator('button[aria-label*="WhatsApp Concierge"]');
     const count = await b.count();
     if (count) await b.first().click();
-    return { count, note: 'Opened only; no AI request or WhatsApp action' };
+    return { count, skipped: !count, note: 'Opened only; no AI request or WhatsApp action' };
   });
 } finally {
   await browser.close();
@@ -202,7 +217,9 @@ report.summary = {
   pagesNeedingAuthenticatedTests: report.routes.filter(x => x.access !== 'public').length,
   buttonsAndLinksObserved: report.routes.reduce((n,x) => n + (x.clickables || 0), 0),
   interactionsAttempted: report.interactions.length,
-  interactionsFailed: report.interactions.filter(x => x.result === 'failed').length
+  interactionsFailed: report.interactions.filter(x => x.result === 'failed').length,
+  interactionsSkipped: report.interactions.filter(x => x.result === 'skipped').length,
+  interactionsObserved: report.interactions.filter(x => x.result === 'observed').length
 };
 await writeFile(join(OUT,'report.json'), JSON.stringify(report,null,2));
 const lines = [
