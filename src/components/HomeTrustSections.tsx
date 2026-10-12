@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles, Compass, CreditCard, CheckCircle2, ArrowRight, ShieldCheck, Bot, Route, MessageCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Language } from '../types';
+import { requestCustomerIntake } from '../utils/customerIntake';
 
 interface HomeTrustSectionsProps {
   language: Language;
@@ -169,15 +170,18 @@ export const HomeTrustSections: React.FC<HomeTrustSectionsProps> = ({
               <Route className="w-4 h-4" />
               {isEs ? 'Planear mi viaje' : 'Plan my trip'}
             </button>
-            <a
-              href="https://wa.me/50687959148?text=Hola%20Costa%20Rica%20Tours,%20quisiera%20ayuda%20para%20planificar%20mi%20viaje."
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-400/40 px-5 py-3 text-sm font-bold text-emerald-200 hover:bg-emerald-950/70 transition-colors"
+            <button
+              type="button"
+              onClick={() => requestCustomerIntake({
+                message: isEs ? 'Necesito ayuda para planificar un viaje a Costa Rica y conocer opciones verificables.'
+                  : 'I need help planning a Costa Rica trip and exploring verifiable options.',
+                language, source: 'homepage:trust-assistance'
+              })}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-400/40 px-5 py-3 text-sm font-bold text-emerald-200 hover:bg-emerald-950/70 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300"
             >
               <MessageCircle className="w-4 h-4" />
-              WhatsApp
-            </a>
+              {isEs ? 'Asistencia inteligente' : 'AI travel assistance'}
+            </button>
           </div>
         </div>
       </section>
