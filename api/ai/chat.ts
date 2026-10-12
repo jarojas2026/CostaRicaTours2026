@@ -24,6 +24,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const proxyReq = {
     ...req,
+    // IncomingMessage.headers may be exposed by a prototype getter rather than
+    // as an enumerable own property. Object spread alone drops it in Vercel.
+    // Preserve the original infrastructure and application auth headers.
+    headers: req.headers,
+    method: req.method,
     url: '/api/gemini/concierge',
     body: {
       message: message.slice(0, 8000),
