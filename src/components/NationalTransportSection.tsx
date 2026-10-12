@@ -176,19 +176,21 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                     <span>{language === 'es' ? 'Visitar web de Alsama Tours' : 'Visit Alsama Tours website'}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
-                  <a
-                    href={`https://wa.me/50687959148?text=${encodeURIComponent(
+                              <button
+              type="button"
+              onClick={() => requestCustomerIntake({
+                message: 
                       language === 'es'
                         ? 'Hola Costa Rica Tours. Quisiera solicitar una cotización de transporte o un servicio turístico con Alsama Tours. Aún no es una reserva confirmada.'
                         : 'Hello Costa Rica Tours. I would like to request a quote for transport or a travel service with Alsama Tours. This is not a confirmed booking.'
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black text-xs uppercase px-5 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    <span>{language === 'es' ? 'Consultar por WhatsApp' : 'WhatsApp Direct Inquiry'}</span>
-                  </a>
+                    ,
+                language, source: 'national-transport:general-alsama'
+              })}
+              className="bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black text-xs uppercase px-5 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg"
+            >
+              <MessageCircle className="w-4 h-4" />
+                    <span>{language === 'es' ? 'Consultar con IA' : 'AI assisted inquiry'}</span>
+            </button>
                 </div>
               </div>
 
@@ -326,19 +328,21 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                   </div>
 
                   <div className="space-y-2.5 pt-2">
-                    <a
-                      href={`https://wa.me/50687959148?text=${encodeURIComponent(
+                                <button
+              type="button"
+              onClick={() => requestCustomerIntake({
+                message: 
                         language === 'es'
                           ? `Hola Costa Rica Tours. Quisiera cotizar un traslado con Alsama Tours:\n• Ruta solicitada: ${selectedRoute.origin.es} ➔ ${selectedRoute.destination.es}\n• Grupo: ${groupSize === '1-5' ? '1 a 5 pasajeros' : '6 a 10 pasajeros'}\nPor favor confirmar precio, disponibilidad, vehículo e inclusiones. Entiendo que esto es una consulta, no una reserva confirmada.`
                           : `Hello Costa Rica Tours. I would like a quote for a transfer with Alsama Tours:\n• Requested route: ${selectedRoute.origin.en} ➔ ${selectedRoute.destination.en}\n• Group: ${groupSize === '1-5' ? '1 to 5 passengers' : '6 to 10 passengers'}\nPlease confirm price, availability, vehicle and inclusions. I understand this is an inquiry, not a confirmed booking.`
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black text-xs uppercase px-5 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      <span>{language === 'es' ? 'Solicitar cotización por WhatsApp' : 'Request a quote on WhatsApp'}</span>
-                    </a>
+                      ,
+                language, source: 'national-transport:route-calculator'
+              })}
+              className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black text-xs uppercase px-5 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+            >
+              <MessageCircle className="w-4 h-4" />
+                      <span>{language === 'es' ? 'Solicitar cotización con IA' : 'Ask AI for a quote'}</span>
+            </button>
 
                     <div className="flex items-center justify-center gap-2 text-[11px] text-stone-900">
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
@@ -487,19 +491,21 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                 </div>
 
                 <div className="pt-5 mt-5 border-t border-stone-200/60">
-                  <a
-                    href={`https://wa.me/50687959148?text=${encodeURIComponent(
+                              <button
+              type="button"
+              onClick={() => requestCustomerIntake({
+                message: 
                       language === 'es'
                         ? 'Hola Costa Rica Tours (costaricatours.es), quisiera cotizar un shuttle turístico compartido hotel-a-hotel.'
                         : 'Hello Costa Rica Tours (costaricatours.es), I would like to book a shared hotel-to-hotel tourist shuttle.'
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black text-xs uppercase px-4 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
-                  >
-                    <MessageCircle className="w-4 h-4" />
+                    ,
+                language, source: 'national-transport:shuttle-shared'
+              })}
+              className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black text-xs uppercase px-4 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
+            >
+              <MessageCircle className="w-4 h-4" />
                     <span>{language === 'es' ? 'Cotizar Shuttle Compartido' : 'Inquire Shared Shuttle'}</span>
-                  </a>
+            </button>
                 </div>
               </div>
 
@@ -536,19 +542,21 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                 </div>
 
                 <div className="pt-5 mt-5 border-t border-stone-200/60">
-                  <a
-                    href={`https://wa.me/50687959148?text=${encodeURIComponent(
+                              <button
+              type="button"
+              onClick={() => requestCustomerIntake({
+                message: 
                       language === 'es'
                         ? 'Hola Costa Rica Tours (costaricatours.es), quisiera cotizar traslado shuttle hacia Puerto Viejo / Cahuita / Caribe.'
                         : 'Hello Costa Rica Tours (costaricatours.es), I would like to book a tourist shuttle to Puerto Viejo / Cahuita / Caribbean.'
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black text-xs uppercase px-4 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
-                  >
-                    <MessageCircle className="w-4 h-4" />
+                    ,
+                language, source: 'national-transport:shuttle-caribe'
+              })}
+              className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black text-xs uppercase px-4 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
+            >
+              <MessageCircle className="w-4 h-4" />
                     <span>{language === 'es' ? 'Cotizar Shuttle Caribe' : 'Inquire Caribbean Shuttle'}</span>
-                  </a>
+            </button>
                 </div>
               </div>
 
@@ -585,19 +593,21 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                 </div>
 
                 <div className="pt-5 mt-5 border-t border-stone-200/60">
-                  <a
-                    href={`https://wa.me/50687959148?text=${encodeURIComponent(
+                              <button
+              type="button"
+              onClick={() => requestCustomerIntake({
+                message: 
                       language === 'es'
                         ? 'Hola Costa Rica Tours (costaricatours.es), quisiera cotizar un traslado privado exclusivo para mi grupo.'
                         : 'Hello Costa Rica Tours (costaricatours.es), I would like to quote a private van transfer for my group.'
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black text-xs uppercase px-4 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
-                  >
-                    <MessageCircle className="w-4 h-4" />
+                    ,
+                language, source: 'national-transport:van-private'
+              })}
+              className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black text-xs uppercase px-4 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
+            >
+              <MessageCircle className="w-4 h-4" />
                     <span>{language === 'es' ? 'Cotizar Van Privada' : 'Inquire Private Van'}</span>
-                  </a>
+            </button>
                 </div>
               </div>
 
@@ -651,19 +661,21 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                 </div>
 
                 <div className="pt-6 mt-6 border-t border-stone-200/60 flex flex-col sm:flex-row gap-3">
-                  <a
-                    href={`https://wa.me/50687959148?text=${encodeURIComponent(
+                              <button
+              type="button"
+              onClick={() => requestCustomerIntake({
+                message: 
                       language === 'es'
                         ? 'Hola Costa Rica Tours (costaricatours.es), quisiera cotizar el alquiler de un vehículo 4x4 para mis fechas de viaje.'
                         : 'Hello Costa Rica Tours (costaricatours.es), I would like to quote a 4x4 rental car for my travel dates.'
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black text-xs uppercase px-5 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    <span>{language === 'es' ? 'Cotizar Alquiler 4x4 por WhatsApp' : 'Inquire 4x4 Rental via WhatsApp'}</span>
-                  </a>
+                    ,
+                language, source: 'national-transport:rental-4x4'
+              })}
+              className="flex-1 bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black text-xs uppercase px-5 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
+            >
+              <MessageCircle className="w-4 h-4" />
+                    <span>{language === 'es' ? 'Cotizar Alquiler 4x4 con IA' : 'Inquire 4x4 Rental with AI'}</span>
+            </button>
                 </div>
               </div>
 
@@ -708,19 +720,21 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                 </div>
 
                 <div className="pt-6 mt-6 border-t border-stone-200/60 flex flex-col sm:flex-row gap-3">
-                  <a
-                    href={`https://wa.me/50687959148?text=${encodeURIComponent(
+                              <button
+              type="button"
+              onClick={() => requestCustomerIntake({
+                message: 
                       language === 'es'
                         ? 'Hola Costa Rica Tours (costaricatours.es), quisiera cotizar un auto automático para mi viaje.'
                         : 'Hello Costa Rica Tours (costaricatours.es), I would like to quote an automatic rental car for my trip.'
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black text-xs uppercase px-5 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
-                  >
-                    <MessageCircle className="w-4 h-4" />
+                    ,
+                language, source: 'national-transport:rental-automatic'
+              })}
+              className="flex-1 bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black text-xs uppercase px-5 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
+            >
+              <MessageCircle className="w-4 h-4" />
                     <span>{language === 'es' ? 'Cotizar Auto Automático' : 'Inquire Automatic Car'}</span>
-                  </a>
+            </button>
                 </div>
               </div>
 
@@ -748,19 +762,21 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                   </p>
                 </div>
 
-                <a
-                  href={`https://wa.me/50687959148?text=${encodeURIComponent(
+                            <button
+              type="button"
+              onClick={() => requestCustomerIntake({
+                message: 
                     language === 'es'
                       ? 'Hola Costa Rica Tours (costaricatours.es), quisiera cotizar y reservar vuelos domésticos internos en Costa Rica.'
                       : 'Hello Costa Rica Tours (costaricatours.es), I would like to quote and book domestic flights in Costa Rica.'
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black text-xs uppercase px-6 py-3.5 rounded-xl transition-all flex items-center gap-2 shadow-lg shrink-0 cursor-pointer"
-                >
-                  <MessageCircle className="w-4 h-4" />
+                  ,
+                language, source: 'national-transport:domestic-flights'
+              })}
+              className="bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black text-xs uppercase px-6 py-3.5 rounded-xl transition-all flex items-center gap-2 shadow-lg shrink-0 cursor-pointer"
+            >
+              <MessageCircle className="w-4 h-4" />
                   <span>{language === 'es' ? 'Cotizar Vuelos Domésticos' : 'Inquire Domestic Flights'}</span>
-                </a>
+            </button>
               </div>
 
               {/* Flight Route Cards */}
