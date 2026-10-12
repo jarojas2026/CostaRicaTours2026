@@ -17,6 +17,14 @@
       "destination": "/index.html"
     },
     {
+      "source": "/ciudad",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/participar",
+      "destination": "/index.html"
+    },
+    {
       "source": "/destinations",
       "destination": "/index.html"
     },
