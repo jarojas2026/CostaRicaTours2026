@@ -7,6 +7,7 @@ import {
 import type { Language } from '../types';
 import { CITY_DISTRICTS, type CityDistrict } from '../data/digitalCityDistricts';
 import { DigitalCityAudienceHub } from '../components/DigitalCityAudienceHub';
+import { DigitalCityServiceJourney } from '../components/DigitalCityServiceJourney';
 
 const icons = { compass: Compass, map: Map, users: Users, plane: Plane, route: Route, bot: Bot };
 const districts = [
@@ -154,6 +155,8 @@ export function DigitalCityArchitecturePage({ language }: { language: Language }
         {districts[2].map(d => <DistrictCard key={d.id} district={d} es={es} selected={selectedId===d.id} onSelect={setSelectedId}/>)}
       </div>
     </section>
+
+    <div className="mt-12"><DigitalCityServiceJourney language={language} /></div>
 
     <section aria-labelledby="confianza-ciudad" className="mt-12 grid gap-6 rounded-3xl border border-emerald-400/15 bg-[#061b14] p-6 md:grid-cols-[.8fr_1.2fr] md:p-8">
       <div>
