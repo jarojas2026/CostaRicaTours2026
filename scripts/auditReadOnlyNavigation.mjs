@@ -1,5 +1,6 @@
 /**
  * Browser-based read-only navigation audit.
+ * Customer-intake click checks use an in-browser mocked API response only.
  * NEVER submit forms, invoke payments, create bookings, send messages, accept
  * provider orders, or impersonate a logged-in user in this audit.
  *
@@ -33,7 +34,7 @@ await mkdir(OUT, { recursive: true });
 const report = {
   target: BASE,
   startedAt: new Date().toISOString(),
-  safety: 'READ ONLY: no customer submissions, provider actions or payment operations',
+  safety: 'READ ONLY: no customer submissions, provider actions or payment operations; AI contact requests are mocked',
   routes: [],
   interactions: [],
   summary: {},
@@ -186,6 +187,64 @@ try {
     await page.waitForURL('**/tours', { timeout: 12_000 });
     return { path: new URL(page.url()).pathname };
   });
+  await recordInteraction(desktop, 'footer category link keeps catalog filter', '/', async page => {
+    const link = page.locator('footer a[href="/tours?category=canopy"]').first();
+    await link.click({ timeout: 12_000 });
+    await page.waitForURL(url => url.pathname === '/tours' && url.searchParams.get('category') === 'canopy', { timeout: 12_000 });
+    await page.waitForTimeout(800);
+    const category = new URL(page.url()).searchParams.get('category');
+    if (category !== 'canopy') throw new Error('Footer category filter was replaced after route hydration');
+    return { category, path: new URL(page.url()).pathname, note: 'No booking or provider request sent' };
+  });
+
+  await recordInteraction(desktop, 'catalog category click, back-forward and deep-link persistence', '/tours?category=wildlife&region=osa', async page => {
+    await page.waitForTimeout(900);
+    let current = new URL(page.url());
+    if (current.searchParams.get('category') !== 'wildlife' || current.searchParams.get('region') !== 'osa') {
+      throw new Error('Initial deep link was replaced: ' + current.search);
+    }
+    const categoryChip = page.getByRole('button', { name: /Volcanes y Termales|Volcanoes & Hot Springs/i }).first();
+    await categoryChip.click({ timeout: 12_000 });
+    await page.waitForURL(url => url.pathname === '/tours' && url.searchParams.get('category') === 'volcanoes', { timeout: 12_000 });
+    current = new URL(page.url());
+    if (current.searchParams.get('region') !== 'osa') throw new Error('Changing category erased the region filter');
+    await page.goBack({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(700);
+    current = new URL(page.url());
+    if (current.searchParams.get('category') !== 'wildlife' || current.searchParams.get('region') !== 'osa') {
+      throw new Error('Browser back did not restore the shared filters');
+    }
+    return { original: 'wildlife+osa', changed: 'volcanoes+osa', restored: current.search, noNetworkMutations: true };
+  });
+
+  // These tests STUB the AI intake endpoint inside Chromium. They must never
+  // contact production providers, send messages, create journeys or persist data.
+  for (const entry of [
+    { label: 'header assistance AI-first handoff', selector: 'header button', text: /Consulta por IA|AI inquiry/i, source: 'header:assistance' },
+    { label: 'footer assistance AI-first handoff', selector: 'footer button', text: /Consultar por IA|Ask AI/i, source: 'footer:assistance' }
+  ]) {
+    await recordInteraction(desktop, entry.label + ' (network mocked)', '/', async page => {
+      let intercepted = null;
+      await page.route('**/api/customer-intake', async route => {
+        intercepted = route.request().postDataJSON();
+        await route.fulfill({
+          status: 200, contentType: 'application/json',
+          body: JSON.stringify({
+            customer: { reply: 'TEST FIXTURE — simulated AI response; no request saved.' },
+            decision: { escalated: false }, intakeId: 'TEST-MOCK-INTAKE'
+          })
+        });
+      });
+      const candidate = page.locator(entry.selector).filter({ hasText: entry.text }).first();
+      await candidate.click({ timeout: 12_000 });
+      await page.getByRole('dialog').first().waitFor({ timeout: 12_000 });
+      await page.getByText('TEST FIXTURE — simulated AI response; no request saved.').waitFor({ timeout: 12_000 });
+      if (intercepted?.source !== entry.source) throw new Error('Missing AI-first intake context: ' + JSON.stringify(intercepted));
+      if (!intercepted?.message) throw new Error('AI intake was invoked with no customer message');
+      return { requestSource: intercepted.source, networkMocked: true, providerMessagesSent: false };
+    });
+  }
+
   await recordInteraction(desktop, 'footer privacy dialog open/close', '/', async page => {
     const button = page.getByRole('button', { name: /Privacidad y Datos|Privacy \(MEIC\)/ }).first();
     await button.click({ timeout: 12_000 });
@@ -244,6 +303,7 @@ const lines = [
   'Finished: ' + report.finishedAt,
   '',
   '> Safety: no bookings, payment actions, provider replies, login, contact messages or data mutations.',
+  '> AI-first contact click checks return an explicitly labeled fixture inside Chromium; no real intake is dispatched.',
   '',
   '> This audit counts observable controls and exercises ONLY a limited set of safe interactions; it does NOT claim every button was clicked.',
   '',
