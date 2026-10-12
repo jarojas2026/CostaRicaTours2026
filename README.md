@@ -1545,3 +1545,19 @@ Fase 2B, sobre la inscripción implementada en [`/participar`](src/pages/Digital
 - El diseño se inspira en urbanismo tropical contemporáneo (plaza, accesos y distritos) y apunta a WCAG 2.2 AA. **No se afirma certificación de accesibilidad ni verificación completa de navegación en producción**.
 
 Mantener la ciudad administrativa detrás del sistema de roles existente; separar módulos visuales de decisiones, reservas y pagos reales. Cualquier entidad o servicio futuro necesita fuente, consentimiento, autorización, revisión y estado verificable antes de mostrarse como activo.
+
+
+---
+
+## 38. Navegación del catálogo, filtros compartibles y enlaces verificados (2026-10-12)
+
+**Corrección orientada a auditoría de clics:** `src/utils/catalogRouteFilters.ts` centraliza lectura/validación de `q`, `category`, `region`, `difficulty`, `maxPrice` y `favorites` en `/tours`. El catálogo usa la URL como fuente de verdad para soportar enlaces compartidos, recarga, historial y navegación entre secciones sin carreras entre efectos React.
+
+- `src/pages/ToursPage.tsx` modifica cada filtro mediante un parche explícito de la URL y restablece todos los filtros en una única acción; mantiene favoritos sin borrar accidentalmente el parámetro con cada búsqueda.
+- `src/App.tsx` **solo hidrata** el estado compartido desde el URL del catálogo y no vuelve a sobrescribir enlaces entrantes antes de procesarlos. Se conserva selección desde portada y navegación regional utilizando URLs explícitas.
+- Hero, tarjetas de categorías, destinos y mapa navegan con `catalogSearchHref`, de modo que una selección de categoría/región abra la lista correspondiente y no una vista general por accidente.
+- Footer: enlace “Aventura y canopy” usa la categoría real `canopy` del catálogo, en lugar de `adventure`, que no es un identificador admitido.
+- Los controles de precio no dicen “sin límite” a USD 200 cuando el filtro aún excluye opciones; el precio máximo predeterminado de interfaz USD 500 desactiva el filtro de precio. No se introducen tarifas ni supuestos de disponibilidad.
+- `tests/catalogRouteFilters.test.ts` cubre categorías válidas, filtros combinados, favoritos, restablecimiento y entradas inválidas.
+
+**Alcance:** corrección del comportamiento de navegación, no una certificación de pagos, reservas, filtros SEO o de todos los clics. Pruebas Playwright de solo lectura existentes en `scripts/auditReadOnlyNavigation.mjs` siguen siendo la base del inventario progresivo. Validar también variantes ES/EN, móvil y `popstate` del navegador antes de ampliar su cobertura automatizada.
