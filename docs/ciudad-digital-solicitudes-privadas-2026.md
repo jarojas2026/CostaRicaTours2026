@@ -33,3 +33,18 @@ Estados en esta fase: `submitted`, `under_review`, `needs_information`, `rejecte
 
 ## Gates
 `npm run test:contracts`, `npm run lint`, `npm run build`, CI y seguridad; revisión de permisos/privacidad antes de merge. No modificar directamente `operators`, `proveedores`, `tours`, `bookings`, `payments` ni `traveler_identities`.
+
+
+## Fase 2B — corrección y retiro privados (11 de octubre de 2026)
+
+**Entrega en PR; se incorpora a producción únicamente después de CI y revisión.**
+
+- `PATCH /api/digital-city/applications/:id/resubmit`: disponible al UID verificado del expediente cuando su estado es `needs_information`. Requiere un `expectedRevision` coincidente con el registro de Firestore; la transacción rechaza correcciones después de que otro actor haya modificado el estado. País y tipo de entidad no pueden cambiar dentro del expediente. Consentimiento y representación se evalúan de nuevo.
+- `POST /api/digital-city/applications/:id/withdraw`: disponible al titular autenticado; retira el expediente de los estados activos y limpia `displayName`, `locality`, `officialSourceUrl`, `moderationReason`, consentimiento y declaración de representación. Mantiene `applicantUid`, ID, tipo de entidad, país, marca temporal y una auditoría mínima. Es idempotente cuando el estado ya es `withdrawn`.
+- La moderación incrementa `revision`; expedientes anteriores que no tengan el campo empiezan con versión lógica 1. Se rechazan replays de nuevas inscripciones con el mismo ID de un expediente retirado o rechazado.
+- El frontend muestra controles de corrección para `needs_information` y de retiro para expedientes no retirados. Todos los cambios siguen autenticados en backend.
+- Ninguna de estas rutas crea empresas, publica perfiles, verifica representación, autoriza pagos, elimina la auditoría ni cambia las colecciones comerciales.
+
+**Privacidad y retención:** un retiro no equivale a eliminar toda la información personal del ecosistema. La auditoría histórica puede contener texto libre que requiere gestión de conservación y rectificación independiente. Se necesita un procedimiento de solicitud legal de acceso, exportación, rectificación y supresión, y una revisión jurídica del aviso de privacidad antes de promocionar esta inscripción como un servicio plenamente operativo internacional.
+
+**Pendiente de validar:** pruebas integrales Firebase Emulator, comprobación de cookies/tokens por navegador, operaciones simultáneas reales y procedimiento de borrado/retención y exportación. Las pruebas automatizadas incluidas prueban invariantes y transacciones aisladas, pero no son equivalentes a una prueba de extremo a extremo en producción.
