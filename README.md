@@ -1528,3 +1528,20 @@ Fase 2B, sobre la inscripción implementada en [`/participar`](src/pages/Digital
 - La implementación y sus límites se describen en [docs/ciudad-digital-solicitudes-privadas-2026.md](docs/ciudad-digital-solicitudes-privadas-2026.md). No se ha certificado aún el ciclo E2E con Firestore Emulator ni la revisión legal de privacidad, conservación y supresión.
 
 **Regla:** no confundir retiro con eliminación completa de datos ni preinscripción con entidad publicada o reservable.
+
+
+---
+
+## 37. Plano arquitectónico de la ciudad digital (2026-10-11)
+
+**Documento arquitectónico:** [Plano, distritos, accesibilidad y fases](docs/plano-arquitectonico-ciudad-digital-2026.md).
+
+- `/ciudad`: una **plaza conceptual** con seis distritos vinculados a rutas existentes: catálogo `/tours`, territorio `/map`, comunidad `/participar`, movilidad `/flights`, itinerarios `/itinerary` y asesoría `/ai`. No representa un mapa físico ni inventa empresas, convenios o disponibilidad.
+- `src/pages/DigitalCityArchitecturePage.tsx`: interfaz responsive con orientación, mapa esquemático, selección de distritos, accesos directos y criterios de confianza verificable.
+- `src/components/DigitalCityGateway.tsx`: acceso visual desde la portada turística actual, sin reemplazar buscador, catálogo, fuentes ni servicios de dominio.
+- `src/data/digitalCityDistricts.ts`: contrato central para identidad de distritos, destinos reales y textos ES/EN.
+- `src/components/Footer.tsx`, `src/components/RouteMetadata.tsx` y `src/App.tsx`: descubrimiento, metadatos y ruta lazy.
+- `tests/digitalCityArchitecturalNavigation.test.ts`: pruebas de rutas reales, etiquetas, estructura semántica y enlaces.
+- El diseño se inspira en urbanismo tropical contemporáneo (plaza, accesos y distritos) y apunta a WCAG 2.2 AA. **No se afirma certificación de accesibilidad ni verificación completa de navegación en producción**.
+
+Mantener la ciudad administrativa detrás del sistema de roles existente; separar módulos visuales de decisiones, reservas y pagos reales. Cualquier entidad o servicio futuro necesita fuente, consentimiento, autorización, revisión y estado verificable antes de mostrarse como activo.
