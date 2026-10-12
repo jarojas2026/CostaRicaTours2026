@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { CATEGORIES } from '../data/toursData';
+import { catalogSearchHref } from '../utils/catalogRouteFilters';
 import { Language } from '../types';
 import * as Icons from 'lucide-react';
 
@@ -40,7 +41,7 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ language, 
               transition={{ delay: index * 0.05 }}
               onClick={() => {
                 onSelectCategory(category.id);
-                navigate('/tours');
+                navigate(catalogSearchHref({ category: category.id }));
               }}
               className="group relative flex flex-col items-center justify-center p-6 bg-stone-900/50 border border-emerald-500/10 rounded-3xl hover:bg-emerald-500 hover:border-emerald-400 transition-all duration-300"
             >

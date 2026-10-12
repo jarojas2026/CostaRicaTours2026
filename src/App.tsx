@@ -1,8 +1,9 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { Routes, Route, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { REGIONS } from './data/toursData';
+import { catalogSearchHref, readCatalogRouteFilters } from './utils/catalogRouteFilters';
 import { useTours } from './contexts/ToursContext';
 import { Tour, Language, Currency, TourCategory, TourRegion, BookingRequest } from './types';
 import { detectBrowserLanguage, getLangText, fetchExchangeRates } from './utils/i18n';
@@ -62,7 +63,6 @@ import { onAuthStateChanged } from 'firebase/auth';
 export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { tours: TOURS, loading: toursLoading } = useTours();
   const [language, setLanguage] = useState<Language>(detectBrowserLanguage);
   const [currency, setCurrency] = useState<Currency>('USD');
@@ -74,42 +74,22 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<TourCategory | 'all'>('all');
   const [selectedRegion, setSelectedRegion] = useState<TourRegion | 'all'>('all');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<'all' | 'fácil' | 'moderado' | 'exigente'>('all');
-  const [maxPrice, setMaxPrice] = useState<number>(500);
 
-  // Shareable catalog state: filters/search survive refresh, back/forward and copied links.
-  useEffect(() => {
-    const q = searchParams.get('q');
-    const category = searchParams.get('category') as TourCategory | null;
-    const region = searchParams.get('region') as TourRegion | null;
-    const difficulty = searchParams.get('difficulty') as 'fácil' | 'moderado' | 'exigente' | null;
-    const price = Number(searchParams.get('maxPrice'));
-    if (location.pathname === '/tours') {
-      if (q !== null) setSearchQuery(q);
-      if (category) setSelectedCategory(category);
-      if (region) setSelectedRegion(region);
-      if (difficulty && ['fácil', 'moderado', 'exigente'].includes(difficulty)) setSelectedDifficulty(difficulty);
-      if (Number.isFinite(price) && price > 0) setMaxPrice(price);
-    }
-  }, [location.pathname, searchParams]);
-
+  // One-way hydration from the URL avoids stale local filter state clobbering
+  // /tours?category=... deep links before React finishes rendering.
+  // The ToursPage writes filter changes directly to the URL.
   useEffect(() => {
     if (location.pathname !== '/tours') return;
-    const next = new URLSearchParams();
-    if (searchParams.get('favorites') === '1') next.set('favorites', '1');
-    if (searchQuery.trim()) next.set('q', searchQuery.trim());
-    if (selectedCategory !== 'all') next.set('category', selectedCategory);
-    if (selectedRegion !== 'all') next.set('region', selectedRegion);
-    if (selectedDifficulty !== 'all') next.set('difficulty', selectedDifficulty);
-    if (maxPrice < 500) next.set('maxPrice', String(maxPrice));
-    const current = searchParams.toString();
-    if (next.toString() !== current) setSearchParams(next, { replace: true });
-  }, [location.pathname, searchQuery, selectedCategory, selectedRegion, selectedDifficulty, maxPrice, searchParams, setSearchParams]);
+    const filters = readCatalogRouteFilters(new URLSearchParams(location.search));
+    setSearchQuery(filters.q);
+    setSelectedCategory(filters.category);
+    setSelectedRegion(filters.region);
+  }, [location.pathname, location.search]);
 
   // Keep SPA navigation feeling native: every route starts at the top.
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' });
-  }, [location.pathname, location.search]);
+  }, [location.pathname]);
 
   // Modals state
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
@@ -471,8 +451,8 @@ export default function App() {
                 <DestinationsSection 
                   language={language}
                   onSelectRegion={(regionId) => {
-                    setSelectedRegion(regionId as any);
-                    navigate('/tours');
+                    setSelectedRegion(regionId as TourRegion);
+                    navigate(catalogSearchHref({ region: regionId as TourRegion }));
                   }}
                 />
               </div>
@@ -488,8 +468,8 @@ export default function App() {
                 <CategoriesSection 
                   language={language} 
                   onSelectCategory={(catId) => {
-                    setSelectedCategory(catId as any);
-                    navigate('/tours');
+                    setSelectedCategory(catId as TourCategory);
+                    navigate(catalogSearchHref({ category: catId as TourCategory }));
                   }}
                 />
               </div>
@@ -505,7 +485,7 @@ export default function App() {
                   onSelectRegion={setSelectedRegion}
                   onExploreRegionTours={(reg) => {
                     setSelectedRegion(reg);
-                    navigate('/tours');
+                    navigate(catalogSearchHref({ region: reg }));
                   }}
                   onExitMap={() => navigate('/tours')}
                   onSelectTour={(t) => navigate(`/tour/${t.id}`)}

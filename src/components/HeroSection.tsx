@@ -5,6 +5,7 @@ import { formatCurrency } from '../utils/i18n';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language, TourRegion, TourCategory, Currency } from '../types';
 import { UI_TRANSLATIONS } from '../utils/i18n';
+import { catalogSearchHref } from '../utils/catalogRouteFilters';
 
 interface HeroSectionProps {
   currency: Currency;
@@ -184,7 +185,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => navigate('/tours')}
+                  onClick={() => navigate(catalogSearchHref({ q: searchQuery, region: selectedRegion, category: selectedCategory }))}
                   className="w-full sm:w-auto flex-1 btn-secondary shadow-lg shadow-emerald-600/20"
                 >
                   <Compass className="w-4 h-4 text-amber-400" />
@@ -210,7 +211,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   type="button"
                   onClick={() => {
                     setSelectedCategory('volcanoes');
-                    navigate('/tours');
+                    navigate(catalogSearchHref({ category: 'volcanoes' }));
                   }}
                   className="px-3 py-1 rounded-full bg-[#03150e] hover:bg-amber-400 hover:text-stone-950 border border-emerald-500/30 text-stone-200 transition-colors cursor-pointer font-medium"
                 >
@@ -220,7 +221,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   type="button"
                   onClick={() => {
                     setSelectedCategory('wildlife');
-                    navigate('/tours');
+                    navigate(catalogSearchHref({ category: 'wildlife' }));
                   }}
                   className="px-3 py-1 rounded-full bg-[#03150e] hover:bg-amber-400 hover:text-stone-950 border border-emerald-500/30 text-stone-200 transition-colors cursor-pointer font-medium"
                 >
@@ -230,7 +231,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   type="button"
                   onClick={() => {
                     setSelectedCategory('rafting');
-                    navigate('/tours');
+                    navigate(catalogSearchHref({ category: 'rafting' }));
                   }}
                   className="px-3 py-1 rounded-full bg-[#03150e] hover:bg-amber-400 hover:text-stone-950 border border-emerald-500/30 text-stone-200 transition-colors cursor-pointer font-medium"
                 >
@@ -240,7 +241,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   type="button"
                   onClick={() => {
                     setSelectedCategory('beaches');
-                    navigate('/tours');
+                    navigate(catalogSearchHref({ category: 'beaches' }));
                   }}
                   className="px-3 py-1 rounded-full bg-[#03150e] hover:bg-amber-400 hover:text-stone-950 border border-emerald-500/30 text-stone-200 transition-colors cursor-pointer font-medium"
                 >

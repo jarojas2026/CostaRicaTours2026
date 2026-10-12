@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { REGIONS } from '../data/toursData';
+import { catalogSearchHref } from '../utils/catalogRouteFilters';
 import { Language } from '../types';
 import { MapPin, ChevronRight } from 'lucide-react';
 
@@ -45,7 +46,7 @@ export const DestinationsSection: React.FC<DestinationsSectionProps> = ({ langua
             transition={{ delay: index * 0.1 }}
             onClick={() => {
               onSelectRegion(region.id);
-              navigate('/tours');
+              navigate(catalogSearchHref({ region: region.id }));
             }}
             className="group relative h-80 rounded-[2.5rem] overflow-hidden border border-white/5 hover:border-emerald-500/30 transition-all duration-500 shadow-2xl"
           >

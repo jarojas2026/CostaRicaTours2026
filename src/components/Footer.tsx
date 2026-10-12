@@ -126,9 +126,9 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
             <h4 className="text-white font-black uppercase tracking-widest text-xs">{isEs ? 'Categorías' : 'Categories'}</h4>
             <ul className="space-y-3 text-sm">
               <li>
-                <Link to="/tours?category=adventure" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
+                <Link to="/tours?category=canopy" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
                   <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
-                  {isEs ? 'Aventura' : 'Adventure'}
+                  {isEs ? 'Aventura y canopy' : 'Adventure and ziplining'}
                 </Link>
               </li>
               <li>
