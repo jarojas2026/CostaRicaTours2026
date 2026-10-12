@@ -7,7 +7,8 @@ import type { Language } from '../types';
 
 type Mine = {
   id: string; kind: DigitalCityEntityKind; displayName: string; countryCode: string;
-  locality: string; status: string; createdAt: string; moderationReason: string | null
+  locality: string; status: string; createdAt: string; moderationReason: string | null;
+  officialSourceUrl?: string; representationDeclared?: boolean; revision?: number
 };
 const types: Record<DigitalCityEntityKind, [string, string]> = {
   individual: ['Persona', 'Person'], freelancer: ['Profesional independiente', 'Freelancer'],
@@ -31,6 +32,7 @@ export function DigitalCityJoinPage({ language, onOpenPrivacy }: { language: Lan
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [editing, setEditing] = useState<{ id: string; revision: number } | null>(null);
 
   useEffect(() => onAuthStateChanged(auth, setUser), []);
 
@@ -68,19 +70,51 @@ export function DigitalCityJoinPage({ language, onOpenPrivacy }: { language: Lan
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); setBusy(true); setError(''); setSuccess('');
     try {
-      const result = await request('', {
-        method: 'POST',
+      const result = await request(editing ? '/' + encodeURIComponent(editing.id) + '/resubmit' : '', {
+        method: editing ? 'PATCH' : 'POST',
         body: JSON.stringify({ kind, countryCode, displayName, locality,
-          officialSourceUrl, consentToPublication, representsEntity })
+          officialSourceUrl, consentToPublication, representsEntity,
+          ...(editing ? { expectedRevision: editing.revision } : {}) })
       });
       setSuccess(es
-        ? 'Solicitud privada recibida para revisión. No es un registro público ni permite vender.'
-        : 'Private application received for review. This is not a public listing or permission to sell.');
+        ? (editing ? 'Corrección enviada de forma privada para nueva revisión.' : 'Solicitud privada recibida para revisión. No es un registro público ni permite vender.')
+        : (editing ? 'Private correction submitted for review.' : 'Private application received for review. This is not a public listing or permission to sell.'));
       setMine((await request('/mine')).applications || []);
-      if (!result.idempotent) { setDisplayName(''); setConsentToPublication(false); setRepresentsEntity(false); }
+      if (editing || !result.idempotent) {
+        setEditing(null); setDisplayName(''); setLocality(''); setOfficialSourceUrl('');
+        setConsentToPublication(false); setRepresentsEntity(false);
+      }
     } catch (e: any) { setError(e?.message || 'Submission failed'); }
     finally { setBusy(false); }
   };
+
+  const correct = (item: Mine) => {
+    setEditing({ id: item.id, revision: item.revision || 1 });
+    setKind(item.kind); setCountryCode(item.countryCode); setDisplayName(item.displayName);
+    setLocality(item.locality); setOfficialSourceUrl(item.officialSourceUrl || '');
+    setRepresentsEntity(item.representationDeclared === true);
+    setConsentToPublication(false);
+    setError(''); setSuccess('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const withdraw = async (item: Mine) => {
+    const confirmed = window.confirm(es
+      ? '¿Retirar este expediente? Se borrarán los campos de nombre, localidad y enlace público del expediente activo, pero se conservarán metadatos mínimos y una auditoría.'
+      : 'Withdraw this application? Name, locality and public URL will be cleared from the active record; minimal metadata and audit entries remain.');
+    if (!confirmed) return;
+    setBusy(true); setError(''); setSuccess('');
+    try {
+      await request('/' + encodeURIComponent(item.id) + '/withdraw', {
+        method: 'POST', body: JSON.stringify({ expectedRevision: item.revision || 1 })
+      });
+      setMine((await request('/mine')).applications || []);
+      if (editing?.id === item.id) setEditing(null);
+      setSuccess(es ? 'Solicitud retirada. Esto no constituye eliminación legal completa.' : 'Application withdrawn. This is not complete legal erasure.');
+    } catch (err: any) { setError(err?.message || 'Withdrawal failed'); }
+    finally { setBusy(false); }
+  };
+
   const inputClass = 'mt-1 w-full rounded-xl border border-emerald-500/25 bg-[#082c20] px-3 py-3 text-white focus:outline-2 focus:outline-amber-300';
   return <main className="mx-auto max-w-5xl px-4 py-10 text-stone-100 space-y-6">
     <header className="rounded-3xl border border-emerald-500/25 bg-[#061d14] p-6">
@@ -97,20 +131,21 @@ export function DigitalCityJoinPage({ language, onOpenPrivacy }: { language: Lan
       <p className="text-xs text-stone-300">{es ? 'Necesitas una cuenta Google con correo verificado. No solicitamos acceso a Gmail ni Calendar.' : 'A verified Google account is required. Gmail and Calendar permissions are not requested.'}</p>
       <button type="button" disabled={busy} onClick={() => void signIn()} className="rounded-xl bg-amber-400 px-5 py-3 font-bold text-stone-950">{es ? 'Continuar con Google' : 'Continue with Google'}</button>
     </section> : <section className="rounded-2xl border border-white/10 bg-[#071b13] p-5 space-y-4">
-      <h2 className="flex items-center gap-2 font-bold text-white"><Building2 size={18}/>{es ? 'Nueva solicitud' : 'New application'}</h2>
+      <h2 className="flex items-center gap-2 font-bold text-white"><Building2 size={18}/>{editing ? (es ? 'Corregir solicitud existente' : 'Correct an existing application') : (es ? 'Nueva solicitud' : 'New application')}</h2>
+      {editing && <button type="button" onClick={() => { setEditing(null); setConsentToPublication(false); }} className="text-xs underline text-amber-200">{es ? 'Cancelar edición' : 'Cancel edit'}</button>}
       <p className="text-xs text-stone-400">{es ? 'Sesión identificada. Límite de 3 solicitudes nuevas por día. Los datos introducidos no demuestran representación legal.' : 'Signed in. Maximum 3 new applications per day. Submitted information does not prove legal representation.'}</p>
       <form onSubmit={e => void submit(e)} className="grid gap-4 sm:grid-cols-2 text-xs">
-        <label>{es ? 'Participante' : 'Participant'}<select value={kind} onChange={e => setKind(e.target.value as DigitalCityEntityKind)} className={inputClass}>
+        <label>{es ? 'Participante' : 'Participant'}<select value={kind} onChange={e => setKind(e.target.value as DigitalCityEntityKind)} disabled={editing !== null} className={inputClass}>
           {DIGITAL_CITY_ENTITY_KINDS.map(type => <option key={type} value={type}>{types[type][es ? 0 : 1]}</option>)}
         </select></label>
-        <label>{es ? 'Código del país' : 'Country code'}<input value={countryCode} onChange={e => setCountryCode(e.target.value.toUpperCase())} maxLength={2} placeholder="CR" className={inputClass} required/></label>
+        <label>{es ? 'Código del país' : 'Country code'}<input value={countryCode} onChange={e => setCountryCode(e.target.value.toUpperCase())} disabled={editing !== null} maxLength={2} placeholder="CR" className={inputClass} required/></label>
         <label>{es ? 'Nombre del participante o entidad' : 'Participant or entity name'}<input value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={160} className={inputClass} required/></label>
         <label>{es ? 'Localidad' : 'Locality'}<input value={locality} onChange={e => setLocality(e.target.value)} maxLength={160} className={inputClass} required/></label>
         <label className="sm:col-span-2">{es ? 'Fuente pública HTTPS (requerida para espacios públicos)' : 'Public HTTPS source (required for public places)'}<input type="url" value={officialSourceUrl} onChange={e => setOfficialSourceUrl(e.target.value)} maxLength={600} placeholder="https://" className={inputClass}/></label>
         <div className="sm:col-span-2 text-xs text-stone-300"><button type="button" onClick={onOpenPrivacy} className="font-semibold underline text-amber-200">{es ? 'Leer nuestra política de privacidad' : 'Read our privacy policy'}</button><p className="mt-1">{es ? 'Tus datos se utilizarán para evaluar esta solicitud y no se publicarán automáticamente.' : 'Your information will be used to evaluate this application and will not be published automatically.'}</p></div>
         <label className="sm:col-span-2 flex gap-2 items-start"><input type="checkbox" checked={consentToPublication} onChange={e => setConsentToPublication(e.target.checked)} className="mt-0.5"/>{es ? 'Autorizo presentar esta información para solicitar una futura publicación; nada se publica de inmediato.' : 'I consent to submitting this information for possible future publication; nothing is published now.'}</label>
         <label className="sm:col-span-2 flex gap-2 items-start"><input type="checkbox" checked={representsEntity} onChange={e => setRepresentsEntity(e.target.checked)} className="mt-0.5"/>{es ? 'Declaro estar autorizado para representar a la entidad, sujeto a verificación.' : 'I declare authority to represent this entity, subject to verification.'}</label>
-        <button disabled={busy || !consentToPublication} type="submit" className="sm:col-span-2 inline-flex items-center justify-center gap-2 rounded-xl bg-amber-400 px-5 py-3 font-black text-stone-950 disabled:opacity-50"><ClipboardCheck size={17}/>{busy ? '…' : es ? 'Enviar solicitud privada' : 'Submit private application'}</button>
+        <button disabled={busy || !consentToPublication} type="submit" className="sm:col-span-2 inline-flex items-center justify-center gap-2 rounded-xl bg-amber-400 px-5 py-3 font-black text-stone-950 disabled:opacity-50"><ClipboardCheck size={17}/>{busy ? '…' : editing ? (es ? 'Reenviar corrección' : 'Resubmit correction') : es ? 'Enviar solicitud privada' : 'Submit private application'}</button>
       </form>
     </section>}
     {error && <p role="alert" className="rounded-xl bg-rose-950/40 p-3 text-rose-200 text-sm">{error}</p>}
@@ -121,6 +156,12 @@ export function DigitalCityJoinPage({ language, onOpenPrivacy }: { language: Lan
         <b>{item.displayName}</b><p className="text-xs text-stone-400">{item.kind} · {item.countryCode} · {item.locality}</p>
         <p className="text-xs text-amber-200">{es ? 'Estado' : 'Status'}: {item.status}</p>
         {item.moderationReason && <p className="mt-1 text-xs text-stone-300">{item.moderationReason}</p>}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {item.status === 'needs_information' && <button type="button" disabled={busy} onClick={() => correct(item)}
+            className="rounded-lg border border-amber-400/40 px-3 py-2 text-xs text-amber-200">{es ? 'Corregir y reenviar' : 'Correct and resubmit'}</button>}
+          {item.status !== 'withdrawn' && <button type="button" disabled={busy} onClick={() => void withdraw(item)}
+            className="rounded-lg border border-rose-400/40 px-3 py-2 text-xs text-rose-200">{es ? 'Retirar solicitud' : 'Withdraw application'}</button>}
+        </div>
       </div>)}
       {!mine.length && <p className="text-xs text-stone-400">{es ? 'No hay solicitudes guardadas.' : 'No saved applications.'}</p>}
     </section>}
