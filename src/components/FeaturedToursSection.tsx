@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { Compass, Sparkles, Filter, ArrowRight, Star, ShieldCheck, Heart, SlidersHorizontal, Flame, Trees, Sun, Waves, Coffee } from 'lucide-react';
 import { Tour, Language, Currency } from '../types';
+import { requestCustomerIntake } from '../utils/customerIntake';
 import { useTours } from '../contexts/ToursContext';
 import { TourCard } from './TourCard';
 import { getLangText } from '../utils/i18n';
@@ -155,14 +156,17 @@ export const FeaturedToursSection: React.FC<FeaturedToursSectionProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
-          <a
-            href="https://wa.me/50687959148?text=Hola%20Costa%20Rica%20Tours,%20quisiera%20consultar%20por%20un%20paquete%20o%20itinerario%20personalizado."
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-[#25D366] hover:bg-[#20ba59] text-stone-950 font-black px-5 py-3 rounded-2xl text-xs uppercase flex items-center gap-2 shadow-lg transition-all"
+          <button
+            type="button"
+            onClick={() => requestCustomerIntake({
+              message: isEs ? 'Quiero consultar un paquete privado o itinerario personalizado en Costa Rica.'
+                : 'I would like to ask about a private package or personalized Costa Rica itinerary.',
+              language, source: 'homepage:featured-packages'
+            })}
+            className="bg-[#25D366] hover:bg-[#20ba59] text-stone-950 font-black px-5 py-3 rounded-2xl text-xs uppercase flex items-center gap-2 shadow-lg transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300"
           >
-            <span>WhatsApp: +506 8795 9148</span>
-          </a>
+            <span>{isEs ? 'Consultar con asistencia IA' : 'Ask our AI travel team'}</span>
+          </button>
           <button
             onClick={() => navigate('/tours')}
             className="bg-amber-400 hover:bg-amber-300 text-stone-950 font-black px-5 py-3 rounded-2xl text-xs uppercase flex items-center gap-2 shadow-lg transition-all cursor-pointer"
