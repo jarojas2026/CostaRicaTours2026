@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import type { Language } from '../types';
 import { CITY_DISTRICTS, type CityDistrict } from '../data/digitalCityDistricts';
+import { DigitalCityAudienceHub } from '../components/DigitalCityAudienceHub';
 
 const icons = { compass: Compass, map: Map, users: Users, plane: Plane, route: Route, bot: Bot };
 const districts = [
@@ -69,7 +70,7 @@ export function DigitalCityArchitecturePage({ language }: { language: Language }
           {es ? 'El plano maestro · Costa Rica' : 'The masterplan · Costa Rica'}
         </p>
         <h1 className="max-w-4xl text-4xl font-black leading-[1.05] text-white sm:text-5xl lg:text-6xl">
-          {es ? 'Una ciudad para descubrir, conectar y construir.' : 'A city to discover, connect and build.'}
+          {es ? 'Descubre Costa Rica. Planea tu viaje. Conecta con nuevas oportunidades.' : 'Explore Costa Rica. Plan your trip. Connect with new opportunities.'}
         </h1>
         <p className="max-w-3xl text-base leading-relaxed text-stone-200/85">
           {es
@@ -102,11 +103,13 @@ export function DigitalCityArchitecturePage({ language }: { language: Language }
       </div>
     </header>
 
+    <div className="mt-12"><DigitalCityAudienceHub language={language} /></div>
+
     <section aria-labelledby="plano-ciudad-heading" className="mt-12">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
         <div>
           <span className="text-xs font-bold uppercase tracking-[.16em] text-amber-300">{es ? 'Plano de orientación' : 'Orientation plan'}</span>
-          <h2 id="plano-ciudad-heading" className="mt-1 text-2xl font-black text-white sm:text-3xl">{es ? 'Seis distritos. Una plaza central.' : 'Six districts. One central plaza.'}</h2>
+          <h2 id="plano-ciudad-heading" className="mt-1 text-2xl font-black text-white sm:text-3xl">{es ? 'Explora todas las áreas de la ciudad.' : 'Explore every area of the city.'}</h2>
         </div>
         <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-950/40 px-3 py-2 text-xs font-semibold text-emerald-200"><MapPinned size={16} aria-hidden="true"/>{es ? 'Plano conceptual, no geográfico' : 'Conceptual layout, not geographic'}</span>
       </div>

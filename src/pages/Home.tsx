@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { HeroSection } from '../components/HeroSection';
 import { HomeQuickNav } from '../components/HomeQuickNav';
 import { DigitalCityGateway } from '../components/DigitalCityGateway';
+import { DigitalCityAudienceHub } from '../components/DigitalCityAudienceHub';
 import { CategoriesSection } from '../components/CategoriesSection';
 import { DestinationsSection } from '../components/DestinationsSection';
 import { FeaturedToursSection } from '../components/FeaturedToursSection';
@@ -75,6 +76,7 @@ export const Home: React.FC<HomeProps> = ({
 
       {/* Connected city masterplan entrance: complements the travel-first navigation. */}
       <DigitalCityGateway language={language} />
+      <DigitalCityAudienceHub language={language} compact />
 
       {/* Costa Rica Pulse — visual destination/weather inspiration */}
       <DestinationPulse
