@@ -52,6 +52,7 @@ const CounterDeskPage = lazy(() => import('./pages/CounterDeskPage').then(m => (
 const AutonomousOperationsPage = lazy(() => import('./pages/AutonomousOperationsPage').then(m => ({ default: m.default })));
 const EmailOperationsPage = lazy(() => import('./pages/EmailOperationsPage').then(m => ({ default: m.default })));
 const DigitalCityJoinPage = lazy(() => import('./pages/DigitalCityJoinPage').then(m => ({ default: m.DigitalCityJoinPage })));
+const DigitalCityArchitecturePage = lazy(() => import('./pages/DigitalCityArchitecturePage').then(m => ({ default: m.DigitalCityArchitecturePage })));
 
 
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
@@ -424,6 +425,7 @@ export default function App() {
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
             <Route path="/provider/portal" element={<ProviderPortalPage />} />
+            <Route path="/ciudad" element={<Suspense fallback={<div className="py-12 text-center text-amber-200">Cargando ciudad digital…</div>}><DigitalCityArchitecturePage language={language} /></Suspense>} />
             <Route path="/participar" element={<Suspense fallback={<div className="py-12 text-center text-amber-200">Cargando…</div>}><DigitalCityJoinPage language={language} onOpenPrivacy={() => { setLegalTab('privacidad'); setIsLegalModalOpen(true); }} /></Suspense>} />
 
             <Route path="/" element={
