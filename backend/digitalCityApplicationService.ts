@@ -12,7 +12,7 @@ const QUOTA_COLLECTION = 'digital_city_application_quotas';
 const AUDIT_COLLECTION = 'digital_city_application_audit';
 const MAX_DAILY_NEW_APPLICATIONS = 3;
 
-export type CityApplicationStatus = 'submitted' | 'under_review' | 'needs_information' | 'rejected';
+export type CityApplicationStatus = 'submitted' | 'under_review' | 'needs_information' | 'rejected' | 'withdrawn';
 export type CityApplicationRecord = {
   id: string;
   applicantUid: string;
@@ -22,8 +22,9 @@ export type CityApplicationRecord = {
   displayName: string;
   officialSourceUrl: string;
   representationDeclared: boolean;
-  publicationConsentDeclared: true;
+  publicationConsentDeclared: boolean;
   status: CityApplicationStatus;
+  revision?: number;
   createdAt: string;
   updatedAt: string;
   moderationReason: string | null;
@@ -64,6 +65,7 @@ export function prepareCityApplication(input: RegistrationPreflightInput, applic
     representationDeclared: input.representsEntity === true,
     publicationConsentDeclared: true,
     status: 'submitted',
+    revision: 1,
     createdAt: at,
     updatedAt: at,
     moderationReason: null,
@@ -91,6 +93,7 @@ export async function submitCityApplication(input: RegistrationPreflightInput, u
     if (existing.exists) {
       const stored = existing.data() as CityApplicationRecord;
       if (stored.applicantUid !== uid) throw new CityApplicationError('invalid_application', 'Expediente no autorizado.');
+      if (stored.status === 'withdrawn' || stored.status === 'rejected') throw new CityApplicationError('invalid_transition', 'El expediente anterior está cerrado; contacte al equipo de revisión.');
       return { application: stored, idempotent: true };
     }
     const quota = await tx.get(quotaRef);
@@ -128,7 +131,8 @@ const MODERATION_TRANSITIONS: Record<CityApplicationStatus, CityApplicationStatu
   submitted: ['under_review', 'needs_information', 'rejected'],
   under_review: ['needs_information', 'rejected'],
   needs_information: [],
-  rejected: []
+  rejected: [],
+  withdrawn: []
 };
 
 /** Human triage only. Never publishes, activates a provider, or grants any permissions. */
@@ -153,8 +157,100 @@ export async function triageCityApplication(id: string, actorUid: string, to: Ci
       throw new CityApplicationError('invalid_transition', 'La transición ya no es válida; actualice el expediente.');
     }
     const now = new Date().toISOString();
-    tx.update(ref, { status: to, moderationReason: cleanReason, updatedAt: now });
+    tx.update(ref, { status: to, moderationReason: cleanReason, updatedAt: now, revision: (current.revision || 1) + 1 });
     tx.create(auditRef, { applicationId: id, from: current.status, to, actorUid, reason: cleanReason, createdAt: now });
     return { id, status: to, updatedAt: now };
+  });
+}
+
+
+/**
+ * Applicants may correct only documents explicitly returned for information.
+ * The original record ID and creation date remain stable. The Firestore
+ * transaction protects against concurrent moderation or repeated submissions.
+ */
+export async function resubmitCityApplication(
+  id: string,
+  uid: string,
+  input: RegistrationPreflightInput,
+  expectedRevision: number,
+  database?: NonNullable<ReturnType<typeof getFirestoreDb>>
+) {
+  if (!/^dca_[a-f0-9]{40}$/.test(id) || !uid) throw new CityApplicationError('invalid_application', 'Solicitud inválida.');
+  if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 1) {
+    throw new CityApplicationError('invalid_application', 'Actualice el expediente antes de reenviar.');
+  }
+  const replacement = prepareCityApplication(input, uid);
+  const db = database ?? requireDb();
+  const ref = db.collection(COLLECTION).doc(id);
+  const auditRef = db.collection(AUDIT_COLLECTION).doc();
+  return db.runTransaction(async tx => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new CityApplicationError('not_found', 'Expediente no encontrado.');
+    const previous = snap.data() as CityApplicationRecord;
+    if (previous.applicantUid !== uid) throw new CityApplicationError('not_found', 'Expediente no encontrado.');
+    if (previous.status !== 'needs_information') {
+      throw new CityApplicationError('invalid_transition', 'Solo se pueden reenviar expedientes con información pendiente.');
+    }
+    const revision = previous.revision || 1;
+    if (revision !== expectedRevision) throw new CityApplicationError('invalid_transition', 'El expediente cambió. Actualice la página antes de continuar.');
+    if (previous.kind !== replacement.kind || previous.countryCode !== replacement.countryCode) {
+      throw new CityApplicationError('invalid_application', 'El tipo de entidad y el país no pueden cambiar dentro de este expediente.');
+    }
+    const now = new Date().toISOString();
+    tx.update(ref, {
+      displayName: replacement.displayName, locality: replacement.locality,
+      officialSourceUrl: replacement.officialSourceUrl,
+      representationDeclared: replacement.representationDeclared,
+      publicationConsentDeclared: true, status: 'submitted', moderationReason: null,
+      updatedAt: now, revision: revision + 1,
+      publishable: false, bookable: false, paymentEnabled: false
+    });
+    tx.create(auditRef, {
+      applicationId: id, actorUid: uid, action: 'applicant_resubmitted',
+      from: previous.status, to: 'submitted', revision: revision + 1, createdAt: now
+    });
+    return { id, status: 'submitted' as const, revision: revision + 1, published: false, bookable: false };
+  });
+}
+
+/**
+ * Withdrawal stops review and minimizes application data. This is not total
+ * legal erasure: UID, categorical metadata and a minimal audit trail remain.
+ * Full deletion/retention requests need a separately verified process.
+ */
+export async function withdrawCityApplication(
+  id: string,
+  uid: string,
+  expectedRevision: number,
+  database?: NonNullable<ReturnType<typeof getFirestoreDb>>
+) {
+  if (!/^dca_[a-f0-9]{40}$/.test(id) || !uid) throw new CityApplicationError('invalid_application', 'Solicitud inválida.');
+  if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 1) {
+    throw new CityApplicationError('invalid_application', 'Actualice el expediente antes de retirarlo.');
+  }
+  const db = database ?? requireDb();
+  const ref = db.collection(COLLECTION).doc(id);
+  const auditRef = db.collection(AUDIT_COLLECTION).doc();
+  return db.runTransaction(async tx => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new CityApplicationError('not_found', 'Expediente no encontrado.');
+    const previous = snap.data() as CityApplicationRecord;
+    if (previous.applicantUid !== uid) throw new CityApplicationError('not_found', 'Expediente no encontrado.');
+    if (previous.status === 'withdrawn') return { id, status: 'withdrawn' as const, idempotent: true };
+    const revision = previous.revision || 1;
+    if (revision !== expectedRevision) throw new CityApplicationError('invalid_transition', 'El expediente cambió. Actualice la página.');
+    const now = new Date().toISOString();
+    tx.update(ref, {
+      status: 'withdrawn', revision: revision + 1, updatedAt: now,
+      displayName: '', locality: '', officialSourceUrl: '',
+      representationDeclared: false, publicationConsentDeclared: false,
+      moderationReason: null, publishable: false, bookable: false, paymentEnabled: false
+    });
+    tx.create(auditRef, {
+      applicationId: id, actorUid: uid, action: 'applicant_withdrew',
+      from: previous.status, to: 'withdrawn', createdAt: now
+    });
+    return { id, status: 'withdrawn' as const, idempotent: false };
   });
 }
