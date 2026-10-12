@@ -62,21 +62,44 @@ async function checkRoute(context, route, device) {
       const links = [...document.querySelectorAll('a[href]')];
       const bodyLength = (document.body?.innerText || '').trim().length;
       const pageHeight = document.documentElement.scrollHeight;
+      const candidateNodes = [
+        document.scrollingElement,
+        document.body,
+        document.getElementById('root'),
+        ...document.querySelectorAll('main,section,[class*="overflow"],[role="main"]')
+      ].filter(Boolean);
+      const scrollOptions = [...new Set(candidateNodes)].map(node => ({
+        node, distance: Math.max(0, node.scrollHeight - node.clientHeight),
+        overflow: getComputedStyle(node).overflowY
+      })).filter(item => item.distance > 50)
+        .sort((a,b) => b.distance - a.distance);
+      const scrollTarget = scrollOptions[0];
+      const scrollDistance = scrollTarget?.distance || 0;
+      const scrollContainer = scrollTarget
+        ? (scrollTarget.node.id || scrollTarget.node.tagName.toLowerCase()) + ':' + scrollTarget.overflow
+        : null;
       const invalidHrefs = links
         .map(a => a.getAttribute('href'))
         .filter(href => !href || href === '#' || /^javascript:/i.test(href));
       const hasHorizontalOverflow = document.documentElement.scrollWidth > document.documentElement.clientWidth + 5;
       const forms = document.querySelectorAll('form').length;
-      const max = Math.min(pageHeight, 16000);
-      for (let offset = 0; offset < max; offset += Math.max(350, window.innerHeight * 0.7)) {
-        window.scrollTo({ top: offset, behavior: 'instant' });
-        await new Promise(resolve => setTimeout(resolve, 14));
+      if (scrollTarget) {
+        const max = Math.min(scrollTarget.distance, 30000);
+        for (let offset = 0; offset < max; offset += Math.max(400, window.innerHeight * 0.7)) {
+          scrollTarget.node.scrollTop = offset;
+          await new Promise(resolve => setTimeout(resolve, 14));
+        }
+        scrollTarget.node.scrollTop = scrollTarget.node.scrollHeight;
+      } else {
+        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
       }
-      window.scrollTo({ top: pageHeight, behavior: 'instant' });
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 180));
+      const reachedBottom = scrollTarget
+        ? scrollTarget.node.scrollTop + scrollTarget.node.clientHeight >= scrollTarget.node.scrollHeight - 15
+        : window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 15;
       return { title: document.title, heading, bodyLength, clickables: clickables.length,
         links: links.length, invalidHrefs: invalidHrefs.slice(0,12), forms, pageHeight,
-        hasHorizontalOverflow, reachedBottom: window.scrollY + window.innerHeight >= Math.min(pageHeight,document.documentElement.scrollHeight) - 8 };
+        scrollContainer, scrollDistance, hasHorizontalOverflow, reachedBottom };
     });
     if (['/', '/ciudad', '/participar', '/tours', '/ai'].includes(route) && device === 'desktop') {
       await page.screenshot({ path: join(OUT, 'desktop-' + (route === '/' ? 'home' : route.slice(1).replaceAll('/','-')) + '-bottom.png'), fullPage: false });
@@ -86,7 +109,7 @@ async function checkRoute(context, route, device) {
   }
   const item = { route, device, responseStatus, ...details, jsErrors: errors, fatal,
     access: PROTECTED.has(route) ? 'requires-authenticated-testing' : 'public',
-    outcome: fatal || responseStatus === null || responseStatus >= 500 || !details.bodyLength ? 'fail' : 'observed' };
+    outcome: fatal || responseStatus === null || responseStatus >= 400 || !details.bodyLength ? 'fail' : 'observed' };
   report.routes.push(item);
   process.stdout.write('PAGE ' + JSON.stringify(item).slice(0,450) + '\n');
   await page.close();
@@ -102,6 +125,7 @@ async function recordInteraction(context, label, url, action) {
   } catch (e) {
     report.interactions.push({ label, result: 'failed', error: String(e).slice(0,420) });
   } finally {
+    process.stdout.write('INTERACTION ' + JSON.stringify(report.interactions[report.interactions.length - 1]) + '\\n');
     await page.close();
   }
 }
@@ -128,7 +152,7 @@ try {
     return { path: new URL(page.url()).pathname };
   });
   await recordInteraction(desktop, 'home quick catalog click', '/', async page => {
-    const target = page.getByText('Catálogo de Tours', { exact: true }).first();
+    const target = page.getByText(/Catálogo de Tours|Tours & Adventures/, { exact: true }).first();
     await target.click({ timeout: 12_000 });
     await page.waitForURL('**/tours', { timeout: 12_000 });
     return { path: new URL(page.url()).pathname };
@@ -173,6 +197,8 @@ report.finishedAt = new Date().toISOString();
 report.summary = {
   routesVisited: report.routes.length,
   pagesFailed: report.routes.filter(x => x.outcome === 'fail').length,
+  httpErrors: report.routes.filter(x => x.responseStatus !== null && x.responseStatus >= 400).length,
+  scrollablePages: report.routes.filter(x => x.scrollDistance > 0).length,
   pagesNeedingAuthenticatedTests: report.routes.filter(x => x.access !== 'public').length,
   buttonsAndLinksObserved: report.routes.reduce((n,x) => n + (x.clickables || 0), 0),
   interactionsAttempted: report.interactions.length,
@@ -192,9 +218,9 @@ const lines = [
   '',
   '## Route matrix',
   '',
-  '| Device | Route | HTTP | Heading | Controls | Scroll bottom | JS errors | Access |',
-  '|---|---|---:|---|---:|---|---:|---|',
-  ...report.routes.map(x=>`| ${x.device} | ${x.route} | ${x.responseStatus ?? '—'} | ${String(x.heading||'—').replaceAll('|','/').slice(0,45)} | ${x.clickables??'—'} | ${x.reachedBottom ? 'yes' : 'no'} | ${x.jsErrors.length} | ${x.access} |`),
+  '| Device | Route | HTTP | Heading | Controls | Scroll distance | Bottom | JS errors | Access |',
+  '|---|---|---:|---|---:|---:|---|---:|---|',
+  ...report.routes.map(x=>`| ${x.device} | ${x.route} | ${x.responseStatus ?? '—'} | ${String(x.heading||'—').replaceAll('|','/').slice(0,45)} | ${x.clickables??'—'} | ${x.scrollDistance??'—'} | ${x.reachedBottom ? 'yes' : 'no'} | ${x.jsErrors.length} | ${x.access} |`),
   '', '## Safe clicks',
   '',
   ...report.interactions.map(x=>`- ${x.result === 'observed' ? 'PASS' : 'FAIL'} — ${x.label}: ${x.error || JSON.stringify(x).slice(0,180)}`),
