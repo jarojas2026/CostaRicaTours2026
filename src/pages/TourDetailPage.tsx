@@ -14,6 +14,7 @@ import { getUsdToCrcRate } from '../utils/currencies';
 import { LazyImage } from '../components/LazyImage';
 import { useTourMedia } from '../hooks/useTourMedia';
 import { isBookableTour } from '../utils/tourListing';
+import { requestCustomerIntake } from '../utils/customerIntake';
 
 interface TourDetailPageProps {
   language: Language;
@@ -86,9 +87,13 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
   const passengers = adults + children;
   const requestLocked = Boolean(pendingBookingId);
   const isBookable = isBookableTour(tour);
-  const whatsappInquiryUrl = `https://wa.me/50687959148?text=${encodeURIComponent(language === 'es'
-    ? `Hola, quiero consultar opciones verificables para ${getLangText(tour.title, language)}. Fecha tentativa: ${selectedDate || 'por definir'}. Grupo: ${passengers} personas.`
-    : `Hello, I would like to ask about verifiable options for ${getLangText(tour.title, language)}. Tentative date: ${selectedDate || 'to be decided'}. Group: ${passengers} people.`)}`;
+  const inquiryMessage = language === 'es'
+    ? `Quiero consultar opciones verificables para ${getLangText(tour.title, language)}. Fecha tentativa: ${selectedDate || 'por definir'}. Grupo: ${passengers} personas.`
+    : `I would like to ask about verifiable options for ${getLangText(tour.title, language)}. Tentative date: ${selectedDate || 'to be decided'}. Group: ${passengers} people.`;
+  const requestTourAssistance = () => requestCustomerIntake({
+    message: inquiryMessage, language, source: 'tour-detail:' + tour.id,
+    context: { tourId: tour.id, date: selectedDate || undefined, passengers }
+  });
 
   const checkAvailability = async () => {
     if (!selectedDate) {
@@ -582,10 +587,10 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                         ? 'Podemos usar esta ficha como punto de partida, pero primero hay que confirmar un operador real, la tarifa vigente, los permisos de acceso y los cupos de tu fecha.'
                         : 'Use this listing as a starting point; first we need to confirm a real operator, current price, access requirements and availability for your date.'}
                     </p>
-                    <a href={whatsappInquiryUrl} target="_blank" rel="noopener noreferrer" className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 font-black text-stone-950 hover:bg-[#20ba59]">
+                    <button type="button" onClick={requestTourAssistance} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 font-black text-stone-950 hover:bg-[#20ba59]">
                       <MessageCircle className="w-4 h-4" />
-                      {language === 'es' ? 'Pedir opciones verificables por WhatsApp' : 'Ask for verified options on WhatsApp'}
-                    </a>
+                      {language === 'es' ? 'Consultar opciones con IA' : 'Ask AI about available options'}
+                    </button>
                   </div>
                 )}
               </div>
@@ -598,15 +603,14 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                     <p className="text-stone-500 text-xs">{language === 'es' ? 'Asistencia por WhatsApp' : 'Assistance via WhatsApp'}</p>
                   </div>
                 </div>
-                <a
-                  href={whatsappInquiryUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={requestTourAssistance}
                   className="w-full text-center bg-[#25D366] hover:bg-[#20ba59] text-stone-950 font-black py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <MessageCircle className="w-5 h-5" />
-                  <span>{language === 'es' ? 'Consultar por WhatsApp' : 'Inquire via WhatsApp'}</span>
-                </a>
+                  <span>{language === 'es' ? 'Consultar con IA' : 'Ask AI for assistance'}</span>
+                </button>
               </div>
             </div>
           </div>
