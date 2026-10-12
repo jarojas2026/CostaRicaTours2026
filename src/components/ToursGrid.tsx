@@ -28,6 +28,7 @@ interface ToursGridProps {
   setDifficultyFilter: (diff: 'all' | 'fácil' | 'moderado' | 'exigente') => void;
   maxPrice: number;
   setMaxPrice: (price: number) => void;
+  onResetCatalogFilters?: () => void;
   onSelectTour?: (tour: Tour) => void;
   onBack?: () => void;
   onOpenMap?: () => void;
@@ -53,6 +54,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
   setDifficultyFilter,
   maxPrice,
   setMaxPrice,
+  onResetCatalogFilters,
   onOpenMap,
   onBack,
   onSelectTour,
@@ -210,7 +212,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
     (selectedRegion !== 'all' ? 1 : 0) +
     (difficultyFilter !== 'all' ? 1 : 0) +
     (searchQuery.trim() ? 1 : 0) +
-    (hasBookableOffers && maxPrice < 200 ? 1 : 0) +
+    (hasBookableOffers && maxPrice < 500 ? 1 : 0) +
     (maxDurationHours < 14 ? 1 : 0) +
     (hasVerifiedRatings && minRating > 0 ? 1 : 0) +
     (hasBookableOffers && bestsellerOnly ? 1 : 0) +
@@ -219,11 +221,14 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
     (favoritesOnly ? 1 : 0);
 
   const resetAllFilters = () => {
-    setSelectedCategory('all');
-    setSelectedRegion('all');
-    setDifficultyFilter('all');
-    setSearchQuery('');
-    setMaxPrice(200);
+    if (onResetCatalogFilters) onResetCatalogFilters();
+    else {
+      setSelectedCategory('all');
+      setSelectedRegion('all');
+      setDifficultyFilter('all');
+      setSearchQuery('');
+      setMaxPrice(500);
+    }
     setMaxDurationHours(14);
     setMinRating(0);
     setBestsellerOnly(false);
@@ -605,7 +610,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
             {hasBookableOffers && maxPrice < 200 && (
               <span className="bg-emerald-950/80 text-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1 text-[11px] font-medium">
                 💰 ≤ ${maxPrice}
-                <X className="w-3 h-3 cursor-pointer text-stone-400 hover:text-white ml-0.5" onClick={() => setMaxPrice(200)} />
+                <X className="w-3 h-3 cursor-pointer text-stone-400 hover:text-white ml-0.5" onClick={() => setMaxPrice(500)} />
               </span>
             )}
 
