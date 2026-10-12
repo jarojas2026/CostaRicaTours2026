@@ -5,6 +5,7 @@ import { Tour, Language, Currency, TourCategory, TourRegion } from '../types';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTours } from '../contexts/ToursContext';
 import { RegionalExperienceGuides } from '../components/RegionalExperienceGuides';
+import { DEFAULT_CATALOG_PRICE, patchCatalogRouteFilters, readCatalogRouteFilters, type CatalogRouteFilters } from '../utils/catalogRouteFilters';
 
 interface ToursPageProps {
   language: Language;
@@ -27,11 +28,8 @@ interface ToursPageProps {
 export const ToursPage: React.FC<ToursPageProps> = ({
   language,
   currency,
-  selectedCategory = 'all',
   setSelectedCategory = () => {},
-  selectedRegion = 'all',
   setSelectedRegion = () => {},
-  searchQuery = '',
   setSearchQuery = () => {},
   onSelectTour,
   favorites: propFavorites,
@@ -45,34 +43,38 @@ export const ToursPage: React.FC<ToursPageProps> = ({
   const [searchParams, setSearchParams] = useSearchParams();
   const { tours, favorites: ctxFavorites, toggleFavorite: ctxToggleFavorite } = useTours();
 
-  const [selectedDifficulty, setSelectedDifficulty] = React.useState<'all' | 'fácil' | 'moderado' | 'exigente'>('all');
-  const [maxPrice, setMaxPrice] = React.useState<number>(500);
-
+  const filters = readCatalogRouteFilters(searchParams);
   const [localComparedTours, setLocalComparedTours] = React.useState<Tour[]>([]);
   const [localViewMode, setLocalViewMode] = React.useState<'grid' | 'list'>('grid');
 
-  React.useEffect(() => {
-    const difficulty = searchParams.get('difficulty') as 'fácil' | 'moderado' | 'exigente' | null;
-    const price = Number(searchParams.get('maxPrice'));
-    if (difficulty && ['fácil', 'moderado', 'exigente'].includes(difficulty)) setSelectedDifficulty(difficulty);
-    if (Number.isFinite(price) && price > 0) setMaxPrice(price);
-  }, [searchParams]);
-
-  const updateCatalogUrl = React.useCallback((key: string, value: string | null) => {
-    const next = new URLSearchParams(searchParams);
-    if (!value || value === 'all') next.delete(key);
-    else next.set(key, value);
-    if (next.toString() === searchParams.toString()) return;
-    setSearchParams(next, { replace: true });
+  // All edits commit a single URL patch; this is the catalog's canonical state.
+  // Unlike the legacy effects, user selections cannot race the initial link.
+  const updateCatalogUrl = React.useCallback((changes: Partial<CatalogRouteFilters>) => {
+    const next = patchCatalogRouteFilters(searchParams, changes);
+    if (next.toString() !== searchParams.toString()) {
+      const noisy = 'q' in changes || 'maxPrice' in changes;
+      setSearchParams(next, { replace: noisy });
+    }
   }, [searchParams, setSearchParams]);
 
-  React.useEffect(() => {
-    updateCatalogUrl('difficulty', selectedDifficulty === 'all' ? null : selectedDifficulty);
-  }, [selectedDifficulty]);
-
-  React.useEffect(() => {
-    updateCatalogUrl('maxPrice', maxPrice >= 500 ? null : String(maxPrice));
-  }, [maxPrice]);
+  const selectCategory = (category: TourCategory | 'all') => {
+    setSelectedCategory(category);
+    updateCatalogUrl({ category });
+  };
+  const selectRegion = (region: TourRegion | 'all') => {
+    setSelectedRegion(region);
+    updateCatalogUrl({ region });
+  };
+  const selectQuery = (query: string) => {
+    setSearchQuery(query);
+    updateCatalogUrl({ q: query });
+  };
+  const resetAllCatalogFilters = () => {
+    setSelectedCategory('all');
+    setSelectedRegion('all');
+    setSearchQuery('');
+    updateCatalogUrl({ q: '', category: 'all', region: 'all', difficulty: 'all', maxPrice: DEFAULT_CATALOG_PRICE, favorites: false });
+  };
 
   const favorites = propFavorites || ctxFavorites;
   const onlyFavorites = searchParams.get('favorites') === '1';
@@ -101,7 +103,7 @@ export const ToursPage: React.FC<ToursPageProps> = ({
         <section aria-label={language === 'es' ? 'Tus favoritos' : 'Your favorites'}>
           <h1 className="text-2xl font-bold">{language === 'es' ? 'Tus favoritos' : 'Your favorites'}</h1>
           {favorites.length === 0 && <p>{language === 'es' ? 'Todavía no guardaste tours. Usa el corazón de cada experiencia para añadirla aquí.' : 'No saved tours yet. Use the heart on an experience to add it here.'}</p>}
-          <button className="mt-3 rounded-xl border border-emerald-400 px-4 py-2" onClick={() => updateCatalogUrl('favorites', null)}>{language === 'es' ? 'Ver todos los tours' : 'View all tours'}</button>
+          <button className="mt-3 rounded-xl border border-emerald-400 px-4 py-2" onClick={() => updateCatalogUrl({ favorites: false })}>{language === 'es' ? 'Ver todos los tours' : 'View all tours'}</button>
         </section>
       )}
       {!onlyFavorites && (
@@ -109,8 +111,7 @@ export const ToursPage: React.FC<ToursPageProps> = ({
           language={language}
           tours={tours}
           onSelectRegion={(region) => {
-            setSelectedRegion(region);
-            updateCatalogUrl('region', region);
+            selectRegion(region);
           }}
         />
       )}
@@ -119,16 +120,17 @@ export const ToursPage: React.FC<ToursPageProps> = ({
         language={language}
         currency={currency}
         onSelectTour={onSelectTour || ((tour) => navigate(`/tour/${tour.id}`))}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        selectedRegion={selectedRegion}
-        setSelectedRegion={setSelectedRegion}
-        difficultyFilter={selectedDifficulty}
-        setDifficultyFilter={setSelectedDifficulty}
-        maxPrice={maxPrice}
-        setMaxPrice={setMaxPrice}
+        searchQuery={filters.q}
+        setSearchQuery={selectQuery}
+        selectedCategory={filters.category}
+        setSelectedCategory={selectCategory}
+        selectedRegion={filters.region}
+        setSelectedRegion={selectRegion}
+        difficultyFilter={filters.difficulty}
+        setDifficultyFilter={(difficulty) => updateCatalogUrl({ difficulty })}
+        maxPrice={filters.maxPrice}
+        setMaxPrice={(maxPrice) => updateCatalogUrl({ maxPrice })}
+        onResetCatalogFilters={resetAllCatalogFilters}
         favorites={favorites}
         toggleFavorite={toggleFavorite}
         comparedTours={comparedTours}
