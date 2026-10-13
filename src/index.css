@@ -20,8 +20,14 @@
   }
   
   html {
-    scrollbar-gutter: stable;
+    scrollbar-gutter: auto;
     overflow-x: clip;
+  }
+
+  @media (min-width: 768px) {
+    html {
+      scrollbar-gutter: stable;
+    }
   }
 
   html, body, #root {
