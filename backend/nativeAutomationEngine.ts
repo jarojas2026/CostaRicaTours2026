@@ -272,44 +272,24 @@ export async function executeInicioReserva(body: any) {
 export async function executeSolicitudPago(body: any) {
   const start = Date.now();
   const reservationId = String(body.idReserva || body.bookingId || '').trim();
-  const totalAmount = Number(body.montoUSD || body.amount);
-  if (!reservationId || !Number.isFinite(totalAmount) || totalAmount <= 0) throw new Error('bookingId y montoUSD válido son obligatorios.');
-  const method = (body.metodoPago || body.paymentMethod || 'credit_card').toLowerCase();
-  const tour = body.nombreTour || body.tourName || 'Tour Oficial Costa Rica';
-  const email = body.correoCliente || body.customerEmail || process.env.SUPPORT_EMAIL || '';
+  if (!reservationId) throw new Error('bookingId es obligatorio.');
 
-  // Firma criptográfica HMAC SHA-256 generada en código seguro del servidor
-  const hmacSecret = process.env.PAYMENT_HMAC_SECRET;
-  if (!hmacSecret) throw new Error('PAYMENT_HMAC_SECRET no está configurado en el servidor.');
-  const signaturePayload = `${reservationId}:${totalAmount}:${method}:${email}`;
-  const hmacSignature = crypto.createHmac('sha256', hmacSecret).update(signaturePayload).digest('hex');
-
-  const sessionId = `cs_${method}_${Math.random().toString(36).substring(2, 14)}`;
-  const checkoutUrl = method === 'paypal'
-    ? `https://www.paypal.com/checkoutnow?token=EC-${Math.random().toString(36).substring(2, 12).toUpperCase()}`
-    : `https://checkout.stripe.com/c/pay/${sessionId}#fidkdWxOYHwnPyd1blpxYHZxWjA0TjU8TG5%2FQ2x0X1A1dGFJ`;
-
-  const duration = Date.now() - start;
-  logAutomationExecution(
-    'SOLICITUD_PAGO',
-    duration,
-    'success',
-    `Sesión de pago generada (${method}) para reserva ${reservationId}: $${totalAmount} USD`
-  );
-
+  // The native workflow is a legacy adapter, NOT a payment provider. Only
+  // provider-created, server-verified checkout sessions may be returned to a
+  // customer. The canonical payment service must be used by the authenticated
+  // booking checkout endpoint; do not invent Stripe/PayPal tokens or URLs here.
+  logAutomationExecution('SOLICITUD_PAGO', Date.now() - start, 'warning',
+    'Checkout legado bloqueado: se requiere sesión real de pasarela para la reserva.');
   return {
-    exito: true,
+    exito: false,
     idReserva: reservationId,
-    checkoutUrl,
-    sessionId,
-    firmaHMAC: hmacSignature,
-    montoUSD: totalAmount,
-    metodo: method,
-    expiraEn: '30 minutos',
-    estado: 'esperando_pago',
-    tourName: tour,
+    checkoutUrl: null,
+    sessionId: null,
+    montoUSD: null,
+    estado: 'requiere_pasarela_verificada',
+    error: 'verified_payment_checkout_required',
     motor: 'código_nativo_node',
-    mensaje: 'Sesión de pasarela generada y conciliación criptográfica activa en backend.'
+    mensaje: 'No se ha creado una sesión de pago verificada. Continúe por el checkout autenticado del servicio de pagos; ningún cobro fue iniciado.'
   };
 }
 
