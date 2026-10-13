@@ -1631,3 +1631,41 @@ La Fase 3 introduce una autoridad explícita de propietario sin convertir el nav
 - Las decisiones pendientes de `adminAICommandService` pueden ser propuestas por admin/owner, pero aprobar o rechazar queda reservado al owner.
 
 **Límite de esta fase:** las operaciones heredadas de reservas, pagos y mensajería existentes no se reescriben ni se duplican. La barrera de gobernanza debe envolverse en cada nueva ejecución/JARVIS/tool-call; una integración antigua no instrumentada no debe presentarse como revocable en tiempo real.
+
+
+---
+
+## 43. Oficina Digital de Agentes — Fase 4: JARVIS maestro (2026-10-12)
+
+JARVIS ya existe como identidad real del registro de agentes y ocupa la `jarvis_room`. Su función es supervisar y delegar; no reemplaza los servicios de reservas, pagos, proveedores, memoria ni disponibilidad.
+
+### Flujo de una orden del owner
+
+1. `POST /api/admin/jarvis/command` solo acepta un owner autenticado.
+2. La orden se registra mediante `adminAICommandService.ts`. Una orden emitida directamente por el owner queda autorizada como **intake de planificación**; esto no autoriza por sí mismo ningún pago, mensaje, cambio de precio o publicación.
+3. `jarvisOrchestrator.ts` descompone la orden por dominios, reutiliza `supervisorOrchestrator.ts` como fallback de routing y consulta el registro real de agentes.
+4. JARVIS solo asigna un agente sin `currentTask` y que no esté `working`, `waiting_approval`, `blocked`, `paused` o `revoked`. `no_signal` no se presenta como `idle`; puede recibir una tarea en cola y comenzará a tener telemetría únicamente cuando un worker real la recoja.
+5. Antes de encolar trabajo, JARVIS consulta `agentGovernanceService.ts` y `autonomyPolicy.ts`.
+6. Las acciones sensibles generan una entrada en `agent_approvals`. JARVIS devuelve siempre: qué entendió, plan, quién lo hace y qué necesita aprobación.
+7. La delegación usa `agentRuns` + `agentMeshService`; no existe un segundo sistema de reservas o pagos.
+8. `runJarvisSupervisionSweep()` reutiliza el lock distribuido del motor nativo y reconcilia planes cada minuto. Una ejecución fallida se reintenta como máximo **2 veces**; después se escala al supervisor/owner.
+9. `agentActionGate.ts` es la barrera reusable para un executor: valida gobernanza y generación de autorización antes de cada acción. Si la acción requiere aprobación, consume la autorización one-shot exacta por `action + resourceRef`.
+
+### Estados y verdad operacional
+
+- Un mensaje en el mesh significa **tarea en cola**, no que el agente ya la ejecutó.
+- El agente solo se verá `working` cuando un worker instrumentado invoque el runtime y produzca heartbeat.
+- Un plan JARVIS se guarda en `jarvis_plans`, es legible únicamente por el owner desde Firestore y no puede escribirse desde el navegador.
+- JARVIS no crea disponibilidad, confirmaciones, costes, respuestas de proveedores ni resultados sintéticos.
+- Si una tarea exige más autonomía que la configurada, queda `blocked_autonomy`; JARVIS no aumenta el nivel por su cuenta.
+- `payment`, `refund`, `payout`, `customer_message`, `mass_message`, `price_change` y `publication` requieren aprobación explícita aunque el agente esté en autonomía 3.
+- Acciones humanas que no tienen un canal aprobado (por ejemplo eliminación o cambios legales/política) siguen bloqueadas por `agentActionGate.ts`.
+
+### Endpoints owner-only
+
+- `POST /api/admin/jarvis/command`
+- `GET /api/admin/jarvis/plans`
+- `GET /api/admin/jarvis/plans/:planId`
+- `POST /api/admin/jarvis/plans/:planId/reconcile`
+
+**Límite de esta fase:** JARVIS ya planifica, gobierna, encola, supervisa y reintenta tareas auditables. Los ejecutores especializados continúan siendo los servicios/agentes existentes; una tarea en cola no se marca como ejecutada hasta que uno de esos ejecutores la procese realmente.
