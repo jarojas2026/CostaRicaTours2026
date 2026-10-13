@@ -36,14 +36,7 @@ export const CostaRicaCheckout: React.FC<CostaRicaCheckoutProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [completedBookingId, setCompletedBookingId] = useState<string | null>(null);
-  const [secondsLeft, setSecondsLeft] = useState(0); // No verified temporary hold exists
-
-
-  const formatTimer = (sec: number) => {
-    const mins = Math.floor(sec / 60);
-    const secs = sec % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  
 
   const exchangeRate = getUsdToCrcRate();
   const totalUSD = (priceUsd * adults) + (priceUsd * 0.65 * children);
@@ -125,20 +118,13 @@ export const CostaRicaCheckout: React.FC<CostaRicaCheckoutProps> = ({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Soft-Hold Countdown Banner */}
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-2 flex items-center justify-between text-xs text-amber-900 font-medium">
-              <span className="flex items-center gap-1.5 font-bold">
-                <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-                Cupo reservado temporalmente:
-              </span>
-              <span className="bg-amber-500 text-stone-950 font-black px-2 py-0.5 rounded-md font-mono text-xs shadow-xs">
-                {formatTimer(secondsLeft)}
-              </span>
+            <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+              Este formulario heredado no está habilitado para reservar ni cobrar. Los precios mostrados son orientativos y requieren cotización verificada.
             </div>
 
             <div className="flex justify-between items-start pr-6 mb-1">
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Reserva Inmediata & Automatizada</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Consulta orientativa de experiencia</span>
                 <h2 className="text-xl font-black text-slate-900 leading-tight">{tourTitle}</h2>
               </div>
             </div>
@@ -146,7 +132,7 @@ export const CostaRicaCheckout: React.FC<CostaRicaCheckoutProps> = ({
             {/* Resumen y Selector de Moneda */}
             <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-4 flex justify-between items-center">
               <div>
-                <p className="text-xs text-slate-500 font-medium">Total a Pagar</p>
+                <p className="text-xs text-slate-500 font-medium">Estimación no vinculante</p>
                 <p className="text-2xl font-black text-emerald-950">{totalDisplay}</p>
               </div>
               <div className="inline-flex rounded-xl border border-slate-200 p-1 bg-white shadow-xs">
@@ -363,7 +349,7 @@ export const CostaRicaCheckout: React.FC<CostaRicaCheckoutProps> = ({
 
             <div className="flex items-center gap-2 text-[11px] text-slate-500 pt-1">
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Garantía Pura Vida con operadores costarricenses certificados.</span>
+              <span>La identidad del operador, los cupos y las condiciones requieren verificación.</span>
             </div>
 
             <button
@@ -374,7 +360,7 @@ export const CostaRicaCheckout: React.FC<CostaRicaCheckoutProps> = ({
               {loading ? (
                 <span>Procesando Reserva...</span>
               ) : (
-                <span>Confirmar Reserva ({totalDisplay})</span>
+                <span>Solicitar verificación (sin cobro)</span>
               )}
             </button>
           </form>
