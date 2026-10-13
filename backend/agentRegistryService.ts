@@ -7,7 +7,7 @@ import type {
 } from '../shared/agentOfficeTypes';
 
 const COLLECTION = 'agents';
-const REGISTRY_VERSION = 2;
+const REGISTRY_VERSION = 3;
 
 type AgentProfileMetadata = {
   name: LocalizedText;
@@ -16,6 +16,11 @@ type AgentProfileMetadata = {
 };
 
 const AGENT_PROFILE_METADATA: Readonly<Record<string, AgentProfileMetadata>> = {
+  jarvis: {
+    name: { es: 'JARVIS', en: 'JARVIS' },
+    office: 'jarvis_room',
+    missionEn: 'Receive owner orders, decompose and delegate them within policy, monitor outcomes and escalate when needed.',
+  },
   concierge: {
     name: { es: 'Concierge', en: 'Concierge' },
     office: 'reception_sales',

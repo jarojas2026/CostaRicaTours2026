@@ -125,6 +125,7 @@ import { getAdminControlCenterSnapshot } from './backend/adminControlCenterServi
 import { syncAgentRegistryFromKnowledgeFabric } from './backend/agentRegistryService';
 import { getGlobalAgentControl, listAgentGovernanceAudit, pauseAgent, resumeAgent, revokeAgent, restoreAgent, setAgentAutonomy, setGlobalAgentShutdown } from './backend/agentGovernanceService';
 import { listOwnerApprovals, approveOwnerApproval, rejectOwnerApproval } from './backend/ownerApprovalService';
+import { getJarvisPlan, listJarvisPlans, reconcileJarvisPlan, runJarvisOwnerCommand } from './backend/jarvisOrchestrator';
 import { evaluateDigitalCityRegistration } from './backend/digitalCityRegistrationPolicy';
 import { getPlatformControls, updatePlatformControls } from './backend/platformControlService';
 import { runAdminAICommand, listAdminAICommands, approveAdminAICommand, rejectAdminAICommand } from './backend/adminAICommandService';
@@ -612,6 +613,44 @@ app.post('/api/admin/agent-office/approvals/:approvalId/reject', requireOwner, a
     ));
   } catch (error: any) {
     return res.status(400).json({ error: error?.message || 'No se pudo rechazar la acción.' });
+  }
+});
+
+app.post('/api/admin/jarvis/command', requireOwner, async (req, res) => {
+  try {
+    return res.json(await runJarvisOwnerCommand({
+      ownerOrder: String(req.body?.order || req.body?.prompt || ''),
+      language: req.body?.language === 'en' ? 'en' : 'es',
+      actor: adminAccessPayload(req)
+    }));
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || 'JARVIS no pudo crear un plan gobernado.' });
+  }
+});
+
+app.get('/api/admin/jarvis/plans', requireOwner, async (req, res) => {
+  try {
+    return res.json({ plans: await listJarvisPlans(Number(req.query.limit) || 40) });
+  } catch (error: any) {
+    return res.status(500).json({ error: error?.message || 'No se pudieron cargar los planes de JARVIS.' });
+  }
+});
+
+app.get('/api/admin/jarvis/plans/:planId', requireOwner, async (req, res) => {
+  try {
+    const plan = await getJarvisPlan(String(req.params.planId || ''));
+    if (!plan) return res.status(404).json({ error: 'Plan JARVIS no encontrado.' });
+    return res.json({ plan });
+  } catch (error: any) {
+    return res.status(500).json({ error: error?.message || 'No se pudo cargar el plan de JARVIS.' });
+  }
+});
+
+app.post('/api/admin/jarvis/plans/:planId/reconcile', requireOwner, async (req, res) => {
+  try {
+    return res.json({ plan: await reconcileJarvisPlan(String(req.params.planId || '')) });
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || 'JARVIS no pudo reconciliar el plan.' });
   }
 });
 

@@ -113,6 +113,15 @@ export async function requestOwnerApproval(input: {
   return approval;
 }
 
+export async function getOwnerApproval(approvalId: string): Promise<OwnerApprovalRequest | null> {
+  const id = String(approvalId || '').trim();
+  if (!id) return null;
+  const db = getFirestoreDb();
+  if (!db) return null;
+  const snapshot = await db.collection(COLLECTION).doc(id).get();
+  return snapshot.exists ? snapshot.data() as OwnerApprovalRequest : null;
+}
+
 export async function listOwnerApprovals(input: {
   status?: OwnerApprovalRequest['status'];
   limit?: number;

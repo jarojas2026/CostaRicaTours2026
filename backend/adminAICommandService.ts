@@ -17,9 +17,13 @@ function sanitize(params: { prompt: string; mode: string; actor: any }): AdminAI
   if (!prompt) throw new Error('El comando IA no puede estar vacío.');
   if (!params.actor || !['owner', 'admin'].includes(String(params.actor.role || ''))) throw new Error('Se requiere identidad administrativa.');
   const now = new Date().toISOString();
+  const ownerIssued = params.actor.role === 'owner';
   return { id: `cmd_${crypto.randomUUID()}`, prompt, mode,
     actor: { email: params.actor.email || null, role: params.actor.role || null },
-    status: 'pending_approval', createdAt: now, updatedAt: now };
+    status: ownerIssued ? 'approved' : 'pending_approval',
+    createdAt: now,
+    updatedAt: now,
+    ...(ownerIssued ? { approval: { email: params.actor.email || null, role: 'owner', at: now } } : {}) };
 }
 export async function listAdminAICommands(limit = 40) {
   const db = getFirestoreDb(); if (!db) return [];
@@ -33,7 +37,9 @@ export async function runAdminAICommand(params: { prompt: string; mode: string; 
   const command = sanitize(params);
   await db.collection(COLLECTION).doc(command.id).set(command);
   return { success: true, commandId: command.id, status: command.status,
-    response: 'Comando registrado para revisión. Ningún cambio irreversible se ejecutó automáticamente.',
+    response: command.status === 'approved'
+      ? 'Orden del owner registrada. JARVIS aún debe respetar autonomía y aprobaciones sensibles.'
+      : 'Comando registrado para revisión. Ningún cambio irreversible se ejecutó automáticamente.',
     timestamp: command.createdAt };
 }
 async function resolveCommand(commandId: string, actor: any, resolution: 'approved' | 'rejected', reason?: string) {

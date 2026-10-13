@@ -11,6 +11,7 @@ import { logAutomationExecution } from './nativeAutomationEngine';
 import { processProviderInboxOnce } from './providerInboxAgent';
 import { runReservationLifecycleSweep } from './reservationLifecycleOrchestrator';
 import { processEmailOperationsOnce } from './emailOperationsAgent';
+import { runJarvisSupervisionSweep } from './jarvisOrchestrator';
 import { executeAutomatedProviderPayouts } from './providerPayoutService';
 import {
   executeSurveillanceAndEscalation,
@@ -271,6 +272,25 @@ export function initializeAutomationEngine() {
   cron.schedule('*/5 * * * *', async () => {
     await withDistributedAutomationLock('soft-hold-cleanup-5m', cleanupExpiredSoftHolds);
   });
+
+  // JARVIS supervision: observes queued/failed delegated runs, retries at most
+  // twice and escalates. It never executes a payment/message/publication itself.
+  cron.schedule('* * * * *', async () => {
+    try {
+      const res = await withDistributedAutomationLock('jarvis-supervision-1m', () => runJarvisSupervisionSweep(25));
+      if (res && (res.reconciled || res.failures.length)) {
+        logAutomationExecution(
+          'CRON_JARVIS_SUPERVISION_1M',
+          0,
+          res.failures.length ? 'warning' : 'success',
+          'JARVIS supervision: ' + res.scanned + ' plans scanned, ' + res.reconciled + ' reconciled, ' + res.failures.length + ' failures.'
+        );
+      }
+    } catch (error: any) {
+      console.error('❌ Error ejecutando CRON_JARVIS_SUPERVISION_1M:', error);
+      logAutomationExecution('CRON_JARVIS_SUPERVISION_1M', 0, 'error', 'Fallo: ' + error.message);
+    }
+  }, CR_TIMEZONE);
 
   console.log('✅ Motor de Automatizaciones Nativo (Node.js/Express) activo y programado.');
 }
