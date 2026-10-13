@@ -57,6 +57,22 @@ export default defineConfig(() => {
         ],
         runtimeCaching: [
           {
+            // Capas del mapa nacional (GeoJSON públicos). Se sirven al instante desde caché
+            // y se actualizan en segundo plano: el mapa funciona sin señal en zonas rurales.
+            urlPattern: /\/data\/mapa\/[a-z_]+\.geojson$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'mapa-nacional-capas',
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+              cacheableResponse: {
+                statuses: [200],
+              },
+            },
+          },
+          {
             urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
             handler: 'CacheFirst',
             options: {

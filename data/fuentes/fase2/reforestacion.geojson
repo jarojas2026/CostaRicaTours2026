@@ -1,0 +1,1260 @@
+{
+ "type": "FeatureCollection",
+ "metadata": {
+  "generado": "2026-10-12",
+  "descripcion": "Proyectos de reforestación, viveros y restauración visitables o apoyables en Costa Rica",
+  "nota": "Coordenadas aproximadas salvo coord_precision='fuente' o 'POI'"
+ },
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.5966783,
+     9.4666326
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Reforestación del bosque nuboso – Cloudbridge",
+    "organizacion": "Cloudbridge Nature Reserve (Cloud Forest Conservation Alliance)",
+    "tipo_proyecto": "reforestación / corredor",
+    "region_provincia": "Brunca – San Gerardo de Rivas, Pérez Zeledón, San José",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – voluntariado (mín. 2 semanas: vivero, siembra, mantenimiento), voluntariado grupal de 1+ días, tours interpretativos; entrada turistas USD 12",
+    "contacto": "manager@cloudbridge.org; info@cloudbridge.org; 8856-5519; cloudbridge.org",
+    "lat": 9.4666326,
+    "lng": -83.5966783,
+    "coord_precision": "localidad (Nominatim: San Gerardo de Rivas; reserva ~2,5 km al este)",
+    "fuente": "https://www.cloudbridge.org/visit/ ; https://www.cloudbridge.org/volunteering/volunteer-opportunities/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.8056103,
+     9.288116
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Reforestación comunitaria en fincas – ACCT Platanillo",
+    "organizacion": "Association Community Carbon Trees (ACCT)",
+    "tipo_proyecto": "reforestación / vivero",
+    "region_provincia": "Brunca – Platanillo, Pérez Zeledón, San José",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – tour de reforestación ~5 h USD 50 con almuerzo; visita a vivero ACCT Platanillo 3 h USD 35; patrocinio USD 30 por árbol (siembra + 4 años de mantenimiento)",
+    "contacto": "communitycarbontrees@gmail.com; communitycarbontrees.org",
+    "lat": 9.288116,
+    "lng": -83.8056103,
+    "coord_precision": "localidad (Nominatim: Platanillo)",
+    "fuente": "https://www.communitycarbontrees.org/events ; https://www.globalgiving.org/projects/plant-native-trees-community-save-rainforest-costa-rica/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.7009331,
+     9.4181632
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Conservación de la cuenca del río Quebradas – FUDEBIOL",
+    "organizacion": "FUDEBIOL",
+    "tipo_proyecto": "restauración (cuenca)",
+    "region_provincia": "Brunca – Quebradas, Pérez Zeledón, San José",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – sitio visitable con programas ambientales y educativos (8 km al norte de San Isidro)",
+    "contacto": "fudebiol@gmail.com; +506 8973-1001; fudebiol.com",
+    "lat": 9.4181632,
+    "lng": -83.7009331,
+    "coord_precision": "localidad (Nominatim: Quebradas)",
+    "fuente": "http://fudebiol.com/en"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.8056103,
+     9.288116
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Finca de reforestación y vivero cerca de Platanillo – EALA",
+    "organizacion": "Latin Ambiente (EALA)",
+    "tipo_proyecto": "reforestación / vivero",
+    "region_provincia": "Brunca – Platanillo (12 km de Dominical), Pérez Zeledón",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – vivero desde 2019 y ~1.500 árboles nativos sembrados en 2019",
+    "contacto": "latinambiente.org",
+    "lat": 9.288116,
+    "lng": -83.8056103,
+    "coord_precision": "localidad (Nominatim: Platanillo)",
+    "fuente": "https://www.latinambiente.org/index.php/42/29_ha_farm_near_Platanillo.html"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.7799512,
+     9.3124811
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Proyecto de reforestación Río Magnolia",
+    "organizacion": "Rio Magnolia Nature Lodge",
+    "tipo_proyecto": "reforestación",
+    "region_provincia": "Brunca – La Alfombra, Pérez Zeledón",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – lodge ecoturístico que participa en un proyecto de reforestación (90 ha protegidas)",
+    "contacto": "—",
+    "lat": 9.3124811,
+    "lng": -83.7799512,
+    "coord_precision": "localidad (Photon: iglesia de La Alfombra)",
+    "fuente": "https://hummingbird.bio/costa-rica-project-sites/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.7950829,
+     9.2564814
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Reforestación sintrópica Diamante – Diamante Bridge Collective",
+    "organizacion": "Diamante Bridge Collective",
+    "tipo_proyecto": "reforestación (agroforestal)",
+    "region_provincia": "Brunca – San Salvador de Barú / valle del Diamante, Pérez Zeledón",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – proyectos de reforestación sintrópica y árboles frutales en bordes de camino",
+    "contacto": "diamantebridgecollective@gmail.org (tal como aparece en la web); diamantebridge.org",
+    "lat": 9.2564814,
+    "lng": -83.7950829,
+    "coord_precision": "localidad (Photon: San Salvador, Barú)",
+    "fuente": "https://diamantebridge.org/projects"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.8893659,
+     9.3039563
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Restauración del Refugio Hacienda Barú",
+    "organizacion": "Hacienda Barú (Refugio Nacional de Vida Silvestre)",
+    "tipo_proyecto": "restauración / corredor",
+    "region_provincia": "Pacífico Central – Savegre, Quepos (cerca de Dominical), Puntarenas",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – visitable; caminata manglar y playa incluye recorrido por la reforestación con especies nativas; 150 ha restauradas de potreros",
+    "contacto": "+506 8932-8669; haciendabaru.com",
+    "lat": 9.3039563,
+    "lng": -83.8893659,
+    "coord_precision": "POI (Nominatim: Hacienda Barú)",
+    "fuente": "https://www.haciendabaru.com/en/are-we-green/ ; https://uvitainfo.trekksoft.com/en/baru"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.7363979,
+     9.1730967
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Reforestación de corredores en Uvita – Somos El Cambio",
+    "organizacion": "Somos El Cambio (Envision)",
+    "tipo_proyecto": "reforestación / corredor",
+    "region_provincia": "Brunca – Uvita, Osa, Puntarenas",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – siembra de árboles en linderos y potreros para conectividad y protección de nacientes",
+    "contacto": "somoselcambio.org",
+    "lat": 9.1730967,
+    "lng": -83.7363979,
+    "coord_precision": "localidad (Nominatim: Uvita)",
+    "fuente": "https://www.somoselcambio.org/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.3320299,
+     8.3925587
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Restauración Ridge to Reef – Osa Conservation Campus",
+    "organizacion": "Osa Conservation",
+    "tipo_proyecto": "reforestación / corredor / vivero",
+    "region_provincia": "Brunca – Piro, Península de Osa (Puerto Jiménez), Puntarenas",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – voluntariado en el campus (siembra de árboles, entre otras tareas): internacionales USD 80/día (1–2 sem.), nacionales USD 55/día; Earthwatch 'Rainforest Revival'",
+    "contacto": "reservations@osaconservation.org; osaconservation.org",
+    "lat": 8.3925587,
+    "lng": -83.3320299,
+    "coord_precision": "POI (Nominatim: Playa Piro; campus junto a la playa)",
+    "fuente": "https://osaconservation.org/visit-us/volunteer ; https://osaconservation.org/wp-content/uploads/2026/06/2025-Impact-Report-FINAL-Eng.pdf"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.6384543,
+     8.7187294
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Restauración de ecosistemas y agricultura regenerativa – Bahía Drake",
+    "organizacion": "Fundación Corcovado",
+    "tipo_proyecto": "reforestación / restauración",
+    "region_provincia": "Brunca – El Progreso, Bahía Drake, Osa, Puntarenas",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – voluntariado 'Corcovado Eco Community Development' (reforestación, agricultura regenerativa); +4.000 árboles nativos en Reserva Forestal Golfo Dulce",
+    "contacto": "info@corcovadofoundation.org; 2297-3013; corcovadofoundation.org",
+    "lat": 8.7187294,
+    "lng": -83.6384543,
+    "coord_precision": "localidad (Nominatim: aeropuerto de Bahía Drake, El Progreso)",
+    "fuente": "https://corcovadofoundation.org/voluntariado/corcovado-eco-community-development ; https://corcovadofoundation.org/home-corcovado-foundation/ecosystem-restoration/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.4710716,
+     8.8619019
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Restauración de manglar Térraba-Sierpe (Manglares CR-Benín)",
+    "organizacion": "Fundación Corcovado / SINAC",
+    "tipo_proyecto": "restauración (manglar)",
+    "region_provincia": "Brunca – Humedal Nacional Térraba-Sierpe, Osa, Puntarenas",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – proyecto piloto (13 ha en 3 manglares del Pacífico); no se indica visitación",
+    "contacto": "info@corcovadofoundation.org; 2297-3013",
+    "lat": 8.8619019,
+    "lng": -83.4710716,
+    "coord_precision": "localidad (Nominatim: Sierpe; el humedal es extenso)",
+    "fuente": "https://corcovadofoundation.org/costa-rica-mangrove-restoration ; https://presidencia.gobiernocarlosalvarado.cr/comunicados/2021/08/fundacion-corcovado-asumira-gestion-de-manglares-costa-rica-benin/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.4332117,
+     8.6442476
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Vivero y reforestación de manglar – LAST Playa Blanca",
+    "organizacion": "LAST (Latin American Sea Turtles)",
+    "tipo_proyecto": "restauración (manglar) / vivero",
+    "region_provincia": "Brunca – Playa Blanca, Golfo Dulce (Puerto Jiménez), Puntarenas",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – voluntariado (mín. 7 días): recolección de propágulos, vivero y siembra de mangle",
+    "contacto": "latinamericanseaturtles.com (formulario de inscripción)",
+    "lat": 8.6442476,
+    "lng": -83.4332117,
+    "coord_precision": "localidad (Nominatim: Playa Blanca)",
+    "fuente": "https://www.latinamericanseaturtles.com/volunteer-osa.php ; https://www.latinamericanseaturtles.com/conservation-programs-osa.php"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.0588096,
+     8.4275684
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Restauración de manglares – Misión Tiburón (Golfo Dulce)",
+    "organizacion": "Misión Tiburón",
+    "tipo_proyecto": "restauración (manglar)",
+    "region_provincia": "Brunca – Santuario del Tiburón Martillo, Golfo Dulce, Puntarenas",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – proyecto comunitario desde 2021, +12.000 plántulas; no se publica visitación",
+    "contacto": "— (no visto)",
+    "lat": 8.4275684,
+    "lng": -83.0588096,
+    "coord_precision": "región (Nominatim: Golfito; ubicación exacta no publicada)",
+    "fuente": "https://economictimes.indiatimes.com/magazines/panache/this-coastal-region-in-costa-rica-lost-its-mangrove-forests-now-12000-seedlings-and-restored-water-channels-are-bringing-them-back/printarticle/133734813.cms"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.1879634,
+     8.6570218
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Refugio Tinti – reforestación biomimética",
+    "organizacion": "Refugio Tinti",
+    "tipo_proyecto": "reforestación",
+    "region_provincia": "Brunca – La Gamba, Golfito, Puntarenas",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – visitas y voluntariado (mín. 1 mes); donaciones",
+    "contacto": "info@refugiotinti.com; 8816-1107; 8945-4899",
+    "lat": 8.6570218,
+    "lng": -83.1879634,
+    "coord_precision": "localidad (Nominatim: Calle La Gamba)",
+    "fuente": "https://www.refugiotinti.com/get-involved/ ; https://www.refugiotinti.com/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -82.9685142,
+     8.7901949
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Restauración forestal – Estación Biológica Las Cruces / Jardín Botánico Wilson",
+    "organizacion": "Organización para Estudios Tropicales (OET/OTS); Pierella Rainforest Reclamation Project",
+    "tipo_proyecto": "restauración / vivero",
+    "region_provincia": "Brunca – San Vito, Coto Brus, Puntarenas",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – visitable (hospedaje, jardín); voluntarios en jornadas de siembra (p. ej. 2.000 árboles con voluntarios, PRFRP); curso 'Forest Restoration in Action'",
+    "contacto": "(506) 2524-0607; tropicalstudies.org",
+    "lat": 8.7901949,
+    "lng": -82.9685142,
+    "coord_precision": "POI (Nominatim: Jardín Botánico Wilson)",
+    "fuente": "https://tropicalstudies.org/portfolio/natural-history-visitors-las-cruces/ ; https://www.prfrp.org/about-us/las_cruces/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.1341389,
+     8.3563919
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Reforestación de la reserva Tiskita",
+    "organizacion": "Tiskita Jungle Lodge",
+    "tipo_proyecto": "reforestación",
+    "region_provincia": "Brunca – Punta Banco / Pavones, Golfito, Puntarenas",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – huéspedes recorren áreas reforestadas y huerto; no se publica programa de siembra para visitantes",
+    "contacto": "tiskita.com",
+    "lat": 8.3563919,
+    "lng": -83.1341389,
+    "coord_precision": "POI (Photon: Tiskita Lodge)",
+    "fuente": "https://tiskita.com/conservation/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.8192212,
+     10.3057157
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Bosque Eterno de los Niños – Bajo del Tigre (arboreto de reforestación)",
+    "organizacion": "Asociación Conservacionista de Monteverde (ACM / Monteverde Conservation League)",
+    "tipo_proyecto": "reforestación / restauración",
+    "region_provincia": "Puntarenas – Monteverde",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – senderos Bajo del Tigre (USD 8 adultos / 5 estudiantes), caminata nocturna; área de reforestación/arboreto; voluntariado",
+    "contacto": "info@acmcr.org; (506) 2645-5003; acmcr.org",
+    "lat": 10.3057157,
+    "lng": -84.8192212,
+    "coord_precision": "POI (Nominatim: Bosque Eterno de los Niños – Bajo del Tigre)",
+    "fuente": "https://acmcr.org/en/reforestation/ ; https://www.monteverdeinfo.com/cloud-forests"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.5818909,
+     10.3410335
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Vivero de árboles nativos Finca Steller (BEN)",
+    "organizacion": "Asociación Conservacionista de Monteverde (ACM)",
+    "tipo_proyecto": "vivero / reforestación",
+    "region_provincia": "Alajuela – La Tigra, San Carlos",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – vivero con ~20 especies nativas; árboles donados a comunidades o vendidos a hoteles/individuos a precio simbólico",
+    "contacto": "info@acmcr.org; (506) 2645-5003",
+    "lat": 10.3410335,
+    "lng": -84.5818909,
+    "coord_precision": "localidad (Nominatim: La Tigra; finca cercana)",
+    "fuente": "https://acmcr.org/en/reforestation/ ; https://costaricainfolink.com/es/reserva-privada-bosque-eterno-de-los-ninos-costa-rica/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.5818909,
+     10.3410335
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Plant a tree – Reserva Bosque La Tigra",
+    "organizacion": "La Tigra Rainforest Lodge",
+    "tipo_proyecto": "reforestación / vivero / corredor",
+    "region_provincia": "Alajuela – La Tigra, San Carlos",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – tour 'plant a tree' para turistas con charla; +11.000 árboles nativos hacia el Bosque Eterno de los Niños; vivero propio",
+    "contacto": "info@latigralodge.com; latigralodge.com",
+    "lat": 10.3410335,
+    "lng": -84.5818909,
+    "coord_precision": "localidad (Nominatim: La Tigra)",
+    "fuente": "https://latigralodge.com/sustainability"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.8136439,
+     10.2911515
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Programa de reforestación del Corredor Biológico Pájaro Campana – MVI",
+    "organizacion": "Monteverde Institute (MVI)",
+    "tipo_proyecto": "reforestación / corredor / vivero",
+    "region_provincia": "Puntarenas – Monteverde (Corredor Pájaro Campana hasta el golfo)",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – árboles gratis a vecinos del corredor; programas académicos/voluntarios (p. ej. DukeEngage)",
+    "contacto": "info@mvinstitute.org; 2645-5053; 2645-5365",
+    "lat": 10.2911515,
+    "lng": -84.8136439,
+    "coord_precision": "localidad (Nominatim: Monteverde)",
+    "fuente": "https://monteverde-institute.org/community ; http://monteverde-institute-blog.org/environmental/reforestation-program-at-the-mvi"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.8136439,
+     10.2911515
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Restauración del bosque tropical – Corredor Pájaro Campana (FCC)",
+    "organizacion": "Fundación Conservacionista Costarricense (FCC)",
+    "tipo_proyecto": "reforestación / corredor / vivero",
+    "region_provincia": "Puntarenas – Monteverde (vertiente del Pacífico)",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – +325.000 árboles distribuidos; trabaja con escuelas y voluntarios; viajes de servicio (Sierra Club Outings)",
+    "contacto": "fccmonteverde.org",
+    "lat": 10.2911515,
+    "lng": -84.8136439,
+    "coord_precision": "localidad (Nominatim: Monteverde)",
+    "fuente": "https://www.fccmonteverde.org/tropical-forest-restoration.html ; https://outings.sierraclub.org/trip/Costa-Rica-Service-Reforestation-Tropical-Trails"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.7877117,
+     10.3036512
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Siembra de árboles – Reserva Bosque Nuboso Monteverde (CCT)",
+    "organizacion": "Centro Científico Tropical (CCT)",
+    "tipo_proyecto": "reforestación / vivero / corredor",
+    "region_provincia": "Puntarenas – Monteverde",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – siembra de nativas en vertiente del Pacífico en época lluviosa (mayo–octubre); resto del año vivero; 2–3 h (programas académicos/grupos)",
+    "contacto": "comunicacion@cct.or.cr; +506 2253-3267",
+    "lat": 10.3036512,
+    "lng": -84.7877117,
+    "coord_precision": "POI (Nominatim: Reserva Biológica Bosque Nuboso Monteverde)",
+    "fuente": "https://cct.or.cr/wp-content/uploads/2023/11/academic-programs-2023.pdf"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.644436,
+     10.4716839
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Reforestación Ranch Villa Arenal",
+    "organizacion": "Ranch Villa Arenal",
+    "tipo_proyecto": "reforestación / corredor",
+    "region_provincia": "Alajuela – La Fortuna, San Carlos",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – patrocinio: Teak Pack USD 35 (1 árbol + siembra + 1 año mant.), Espavel Pack USD 60 (3 árboles), Almendro Amarillo Pack USD 175 (5 árboles); +2.000 nativos sembrados",
+    "contacto": "ranchvillaarenal.com",
+    "lat": 10.4716839,
+    "lng": -84.644436,
+    "coord_precision": "localidad (Nominatim: La Fortuna)",
+    "fuente": "https://www.ranchvillaarenal.com/reforest"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.1274339,
+     10.4128722
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Guided Tree Planting Tour – Dave & Dave's Nature Park",
+    "organizacion": "Dave & Dave's Nature Park",
+    "tipo_proyecto": "reforestación",
+    "region_provincia": "Heredia – Sarapiquí (La Virgen)",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – tour de siembra 1–1,5 h, 13:30, guía bilingüe y café; reforestación de antigua palmera; precio a consultar",
+    "contacto": "entercostarica.com (Pacific Trade Winds) +1-800-630-9126",
+    "lat": 10.4128722,
+    "lng": -84.1274339,
+    "coord_precision": "aprox (Photon: resultado sin nombre en Sarapiquí cercano a La Virgen)",
+    "fuente": "https://www.entercostarica.com/tours/sarapiqui-tours/guided-tree-planting-tour---family-student"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.1416703,
+     10.5702905
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Reserva Bosque Lluvioso de Sarapiquí y Vivero Casa del Titor",
+    "organizacion": "Macaw Recovery Network (Red de Recuperación de Guacamayos)",
+    "tipo_proyecto": "restauración / vivero / corredor",
+    "region_provincia": "Heredia – Pangola, La Virgen de Sarapiquí",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – siembra por Mujeres Guardabosques de Pangola, voluntarios y equipo MRN",
+    "contacto": "+506 8505-3336; +506 8451-4675; macawrecoverynetwork.org",
+    "lat": 10.5702905,
+    "lng": -84.1416703,
+    "coord_precision": "localidad (Photon: Pangola)",
+    "fuente": "https://macawrecoverynetwork.org/es/sanando-habitats/ ; https://es.mongabay.com/2023/10/costa-rica-nace-reserva-del-bosque-lluvioso-de-sarapiqui-salvar-gran-guacamaya-verde/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.0064343,
+     10.4246602
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Proyecto Valores – restauración ribereña Corredor San Juan–La Selva",
+    "organizacion": "OET / Estación Biológica La Selva",
+    "tipo_proyecto": "restauración / corredor",
+    "region_provincia": "Heredia – Sarapiquí",
+    "se_puede_visitar_o_participar": "sí (grupos)",
+    "detalle_participacion": "sí (grupos) – 75 voluntarios de escuelas, universidades y empresas han participado en siembras en fincas",
+    "contacto": "tropicalstudies.org",
+    "lat": 10.4246602,
+    "lng": -84.0064343,
+    "coord_precision": "POI (Nominatim: Estación Biológica La Selva)",
+    "fuente": "https://tropicalstudies.org/valores-project/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.0661435,
+     10.4523276
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Refugio Lapa Verde – reforestación y humedales",
+    "organizacion": "Refugio Lapa Verde",
+    "tipo_proyecto": "reforestación / corredor",
+    "region_provincia": "Heredia – Chilamate y Pueblo Nuevo, Sarapiquí",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – 30 ha en reforestación, 300 ha en regeneración; familias participan en reforestación",
+    "contacto": "—",
+    "lat": 10.4523276,
+    "lng": -84.0661435,
+    "coord_precision": "localidad (Photon: Chilamate, Sarapiquí)",
+    "fuente": "https://laregion.cr/lapa-verde-un-refugio-que-protege-la-biodiversidad-y-promueve-bienestar-en-sarapiqui/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.0661435,
+     10.4523276
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Chilamate Rainforest – restauración de riberas",
+    "organizacion": "Chilamate Rainforest Eco Retreat",
+    "tipo_proyecto": "restauración",
+    "region_provincia": "Heredia – Chilamate, Puerto Viejo de Sarapiquí",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – huéspedes, estudiantes e investigadores; adopción simbólica de m² de bosque",
+    "contacto": "+506 8748-2287; WhatsApp +506 8992-1611",
+    "lat": 10.4523276,
+    "lng": -84.0661435,
+    "coord_precision": "localidad (Photon: Chilamate, Sarapiquí)",
+    "fuente": "https://chilamaterainforest.com/our-journey-in-conservation/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.0082509,
+     10.4541393
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Mi Huella Positiva – voluntariado corporativo de reforestación",
+    "organizacion": "FUNDECOR",
+    "tipo_proyecto": "reforestación / restauración",
+    "region_provincia": "Heredia/Limón – Sarapiquí, Pococí y región Central (Coronado, Barva)",
+    "se_puede_visitar_o_participar": "sí (empresas)",
+    "detalle_participacion": "sí (empresas) – jornadas corporativas de siembra con insumos; +5.000 nativos desde 2023",
+    "contacto": "edambiental@fundecor.org; info@fundecor.org; +506 2290-8818",
+    "lat": 10.4541393,
+    "lng": -84.0082509,
+    "coord_precision": "cantón (Nominatim: Puerto Viejo de Sarapiquí; zona de proyectos, no oficina)",
+    "fuente": "https://fundecor.org/educacion-ambiental/ ; https://fundecor.org/wp-content/uploads/2026/04/Resumen-publico-Plan-de-Manejo_Desarrollo-Forestal_2025.pdf"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.1173685,
+     10.0479867
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Programa de Reforestación Hacienda Barvak",
+    "organizacion": "Hacienda Barvak",
+    "tipo_proyecto": "reforestación",
+    "region_provincia": "Heredia – montañas de Heredia",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – empresas, escuelas, grupos y familias: día guiado con herramientas y siembra, opcional brunch/almuerzo",
+    "contacto": "+506 7216-4660 (WhatsApp); servicioalcliente@barvak.com",
+    "lat": 10.0479867,
+    "lng": -84.1173685,
+    "coord_precision": "fuente (coordenadas Waze publicadas por Barvak)",
+    "fuente": "https://haciendabarvak.com/en/reforestation"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.0321109,
+     10.0297134
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Rearborización de la finca Breña Mora (UNA)",
+    "organizacion": "Universidad Nacional (UNA) – INISEFOR",
+    "tipo_proyecto": "restauración",
+    "region_provincia": "Heredia – San Isidro de Heredia",
+    "se_puede_visitar_o_participar": "no indicado",
+    "detalle_participacion": "no indicado – proyecto universitario",
+    "contacto": "unacomunica.una.ac.cr",
+    "lat": 10.0297134,
+    "lng": -84.0321109,
+    "coord_precision": "localidad (Nominatim: San Isidro de Heredia)",
+    "fuente": "https://www.unacomunica.una.ac.cr/index.php/marzo-2023/4456-una-inicia-proceso-de-rearborizacion-de-finca-brena-mora"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.1915696,
+     9.9179767
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Vivero institucional UCR – Finca Experimental Santa Ana",
+    "organizacion": "Universidad de Costa Rica (UGA y Programa de Voluntariado)",
+    "tipo_proyecto": "vivero / reforestación",
+    "region_provincia": "San José – Santa Ana",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – produce ~5.000 árboles nativos/año para sedes y corredores biológicos",
+    "contacto": "ucr.ac.cr",
+    "lat": 9.9179767,
+    "lng": -84.1915696,
+    "coord_precision": "localidad (Nominatim: Santa Ana)",
+    "fuente": "https://surcosdigital.com/en-el-2022-la-ucr-producira-5-000-arboles-para-reforestar-sus-sedes-y-corredores-biologicos/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.2667,
+     10.1667
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Reserva Forestal Grecia – Bosque del Niño",
+    "organizacion": "SINAC – Área de Conservación Cordillera Volcánica Central",
+    "tipo_proyecto": "restauración / reforestación",
+    "region_provincia": "Alajuela – San Isidro de Grecia (faldas del Poás)",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – visitable (8:00–15:30; no residentes USD 5); voluntariado corporativo de mantenimiento; propuesta de restauración ecológica de plantación",
+    "contacto": "sinac.go.cr",
+    "lat": 10.1667,
+    "lng": -84.2667,
+    "coord_precision": "aprox (fuente académica: 10°10'N 84°16'O)",
+    "fuente": "https://sinac.go.cr/EN-US/ac/accvc/gfr/Pages/default.aspx ; https://exa.ai/library/publication/l5h0kl37bgv"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.0480084,
+     9.9628295
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Pago por Servicios Ambientales y compensación de carbono",
+    "organizacion": "FONAFIFO",
+    "tipo_proyecto": "programa nacional (PSA / reforestación)",
+    "region_provincia": "San José – San Vicente de Moravia (oficina central)",
+    "se_puede_visitar_o_participar": "sí (empresas/donantes)",
+    "detalle_participacion": "sí (empresas/donantes) – compra de compensación nacional (USD 6/unidad para licenciatarios CST), donaciones deducibles (art. 8q); propietarios: inscripción al PSA",
+    "contacto": "fonafifo@fonafifo.go.cr; (506) 2545-3500; mercadeo@fonafifo.go.cr",
+    "lat": 9.9628295,
+    "lng": -84.0480084,
+    "coord_precision": "localidad (Nominatim: San Vicente de Moravia)",
+    "fuente": "https://www.fonafifo.go.cr/es/servicios/inscripcion-al-psa ; http://www.fonafifo.go.cr/en"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.1008188,
+     9.9400432
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Siembratón nacional",
+    "organizacion": "Oficina Nacional Forestal (ONF)",
+    "tipo_proyecto": "programa nacional (reforestación)",
+    "region_provincia": "San José – Sabana Norte (oficina)",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – cualquiera puede sembrar y registrar árboles en siembraton.cr y recibir certificado",
+    "contacto": "+506 2293-5834; onfcr.org; siembraton.cr",
+    "lat": 9.9400432,
+    "lng": -84.1008188,
+    "coord_precision": "localidad (Nominatim: Sabana Norte)",
+    "fuente": "https://www.larepublica.net/noticia/costa-rica-lanza-la-siembraton-2025-para-sembrar-25-millones-de-arboles-en-un-ano ; https://onfcr.org/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.0524657,
+     9.9323135
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "SAVIA – conservación y restauración fuera de ASP",
+    "organizacion": "Asociación Costa Rica por Siempre",
+    "tipo_proyecto": "programa de financiamiento (restauración)",
+    "region_provincia": "San José – San Pedro de Montes de Oca (oficina)",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – financia proyectos (convocatorias) de restauración de bosques; apoyo de donantes/empresas",
+    "contacto": "forevercostarica.org",
+    "lat": 9.9323135,
+    "lng": -84.0524657,
+    "coord_precision": "localidad (Nominatim: San Pedro)",
+    "fuente": "https://costaricaporsiempre.org/programa-economia-verde-azul/savia/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.4415015,
+     9.9072613
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Corredor Biológico Carara–Potenciana",
+    "organizacion": "Arbofilia (Asociación Protectora de Árboles)",
+    "tipo_proyecto": "reforestación / corredor",
+    "region_provincia": "San José/Puntarenas – Turrubares a Carara (Pacífico Central)",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – donar árboles o adoptar hectárea; taller 'Work & Learn' / ayudar a sembrar",
+    "contacto": "+506 2294-6218; arbofilia.net",
+    "lat": 9.9072613,
+    "lng": -84.4415015,
+    "coord_precision": "cantón (Nominatim: San Pablo de Turrubares; corredor extenso)",
+    "fuente": "http://arbofilia.net/en/answer.html ; http://arbofilia.net/cr/contact.html ; https://treesforall.nl/en/projecten/costa-rica"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.3664237,
+     9.6055608
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Reforestación KSTR – Las Mesas de Parrita",
+    "organizacion": "Kids Saving the Rainforest (KSTR)",
+    "tipo_proyecto": "reforestación / corredor",
+    "region_provincia": "Puntarenas – Las Mesas, Parrita (centro de rescate en Manuel Antonio)",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – adopción de árboles, compensación para empresas, jornadas de voluntarios (p. ej. Día de la Tierra)",
+    "contacto": "kidssavingtherainforest.org",
+    "lat": 9.6055608,
+    "lng": -84.3664237,
+    "coord_precision": "localidad (Photon: Las Mesas, Parrita)",
+    "fuente": "https://www.kidssavingtherainforest.org/reforestation ; https://drifttravel.com/kids-saving-the-rainforest-to-plant-400-trees-this-earth-day/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.078033,
+     9.532882
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Vivero y adopción de árboles – Santa Juana Lodge",
+    "organizacion": "Santa Juana Lodge & Nature Reserve",
+    "tipo_proyecto": "vivero / reforestación",
+    "region_provincia": "Puntarenas – Santa Juana, Quepos",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – tour rural USD 163 p/p incluye visita al vivero; parte del precio financia reforestación; certificado de adopción de árbol",
+    "contacto": "entercostarica.com +1-800-630-9126",
+    "lat": 9.532882,
+    "lng": -84.078033,
+    "coord_precision": "fuente (coordenadas publicadas en la ficha del tour)",
+    "fuente": "https://www.entercostarica.com/tours/santa-juana-rural-mountain-adventure-tour"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.6625648,
+     9.9281703
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Reforestación costera Playa Guiones (BarriGuiones)",
+    "organizacion": "Costas Verdes",
+    "tipo_proyecto": "reforestación (costera) / vivero",
+    "region_provincia": "Guanacaste – Playa Guiones, Nosara",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – voluntariado en campañas, tours de siembra, 'adopta un árbol', patrocinio empresas",
+    "contacto": "info@costasverdes.org; +506 8730-3264",
+    "lat": 9.9281703,
+    "lng": -85.6625648,
+    "coord_precision": "POI (Nominatim: Playa Guiones)",
+    "fuente": "https://www.costasverdes.org/get-involved ; https://senderonosara.com/costas-verdes"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.6034681,
+     9.5740991
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Reforestación costera +Hermosa",
+    "organizacion": "Costas Verdes",
+    "tipo_proyecto": "reforestación (costera)",
+    "region_provincia": "Puntarenas – Playa Hermosa, Garabito",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – campañas de voluntariado y adopción de árboles (primer proyecto, 2009/2010)",
+    "contacto": "info@costasverdes.org; +506 8730-3264",
+    "lat": 9.5740991,
+    "lng": -84.6034681,
+    "coord_precision": "POI (Nominatim: Playa Hermosa)",
+    "fuente": "https://www.costasverdes.org/our-mission ; https://www.theguardian.com/global-development/2026/jun/02/costa-rica-coastline-costas-verdes-native-trees"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.0641517,
+     9.8633686
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Reserva Karen Mogensen – reforestación y conservación",
+    "organizacion": "ASEPALECO",
+    "tipo_proyecto": "reforestación / restauración / corredor",
+    "region_provincia": "Puntarenas – Jicaral, Península de Nicoya",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – visita y ecolodge Cerro Escondido; voluntariado con empresas; donaciones para ampliar reserva",
+    "contacto": "infoasepaleco@gmail.com; +506 2650-0607; info@karenmogensenreserve.org; +506 8811-7629",
+    "lat": 9.8633686,
+    "lng": -85.0641517,
+    "coord_precision": "aprox (Photon: Calle Reserva Karen Mogensen, Lepanto)",
+    "fuente": "https://www.asepalecocostarica.org/ ; https://www.karenmogensenreserve.org/ ; https://es.amigosofcostarica.org/affiliates/karen-mogensen-reserve"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.7269718,
+     10.7712672
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Programa de Restauración y Silvicultura – ACG (corredor Santa Rosa–Guanacaste)",
+    "organizacion": "SINAC – Área de Conservación Guanacaste",
+    "tipo_proyecto": "restauración / corredor",
+    "region_provincia": "Guanacaste – Sector Santa Rosa, La Cruz/Liberia",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – campañas de siembra con voluntarios independientes, empresas y universidades (p. ej. 24.000 árboles en 2016)",
+    "contacto": "acguanacaste.ac.cr",
+    "lat": 10.7712672,
+    "lng": -85.7269718,
+    "coord_precision": "POI (Photon: Parque Nacional Santa Rosa)",
+    "fuente": "https://www.acguanacaste.ac.cr/87-espanol/noticias/noticias-de-restauracion-y-silvicultura/3555-llevamos-7500-arboles-sembrados"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.5817286,
+     10.7391763
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Restauración de bosque seco – Estación Experimental Forestal Horizontes",
+    "organizacion": "ACG / FONAFIFO",
+    "tipo_proyecto": "restauración / vivero",
+    "region_provincia": "Guanacaste – Nacascolo, Liberia",
+    "se_puede_visitar_o_participar": "no indicado",
+    "detalle_participacion": "no indicado – restauración de ~7.400 ha de antigua finca agrícola; ensayos con especies nativas",
+    "contacto": "fonafifo.go.cr",
+    "lat": 10.7391763,
+    "lng": -85.5817286,
+    "coord_precision": "POI (Photon: Estación Experimental Forestal Horizontes)",
+    "fuente": "http://www.fonafifo.go.cr/media/4684/proyecto-bosque-seco-web-eng.pdf"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.4339037,
+     9.8601038
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Wild Legacy – reforestación ACG/Zapotal",
+    "organizacion": "Guanacaste Dry Forest Conservation Fund (GDFCF) y Zapotal Golf & Beach Club",
+    "tipo_proyecto": "reforestación",
+    "region_provincia": "Guanacaste – Zapotal",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – donar/elegir árboles (p. ej. cocobolo, caoba, cortez: USD 500 c/u) o cualquier monto",
+    "contacto": "donate@gdfcf.org; monique@gdfcf.org; wildlegacyproject.org",
+    "lat": 9.8601038,
+    "lng": -85.4339037,
+    "coord_precision": "aprox – no verificado (Photon: Zapotal, Nandayure; ubicación del club no confirmada)",
+    "fuente": "https://wildlegacyproject.org/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.00603,
+     9.8674477
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Tree Planting – Selva Bananito",
+    "organizacion": "Selva Bananito Lodge / Fundación Cuencas de Limón",
+    "tipo_proyecto": "reforestación / corredor",
+    "region_provincia": "Limón – Bananito, Talamanca (Caribe)",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – siembra de árbol USD 30 p/p; voluntariado (reforestación, senderos)",
+    "contacto": "selvabananito.com",
+    "lat": 9.8674477,
+    "lng": -83.00603,
+    "coord_precision": "POI (Photon: Selva Bananito Lodge)",
+    "fuente": "https://selvabananito.com/tours/tree-planting/ ; https://selvabananito.com/voluntourism/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.4815563,
+     10.1493599
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Reforestación cuenca del río Pacuare – finca Terciopelo",
+    "organizacion": "Rivers and Forests Alliance (RAFA) con CATIE, SINAC, ICE",
+    "tipo_proyecto": "reforestación / corredor",
+    "region_provincia": "Cartago/Limón – río Pacuare (Turrialba–Siquirres)",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – siembras con grupos (p. ej. 142 estudiantes, 1.040 árboles en 2022)",
+    "contacto": "riversandforestsalliance.org",
+    "lat": 10.1493599,
+    "lng": -83.4815563,
+    "coord_precision": "cantón (Photon: Siquirres; finca exacta no publicada)",
+    "fuente": "https://www.catie.ac.cr/en/2022/11/16/siembran-1040-arboles-en-la-cuenca-del-rio-pacuare/ ; https://riversandforestsalliance.org/the-rafa-verto-catie-forest-is-growing-and-thriving/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.6658551,
+     9.8852883
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Banco de Semillas Forestales y donación de árboles – CATIE",
+    "organizacion": "CATIE",
+    "tipo_proyecto": "vivero / reforestación",
+    "region_provincia": "Cartago – Turrialba",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – donó 700 árboles a campaña Pacuare; campus en zona de Bosque Modelo Reventazón",
+    "contacto": "catie.ac.cr",
+    "lat": 9.8852883,
+    "lng": -83.6658551,
+    "coord_precision": "aprox (Photon: Ganadería CATIE, campus)",
+    "fuente": "https://www.catie.ac.cr/en/2022/11/16/siembran-1040-arboles-en-la-cuenca-del-rio-pacuare/ ; https://www.catie.ac.cr/en/catie-tesoro-turrialbeno"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.5914035,
+     10.2104447
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Reforestación con especies nativas – Universidad EARTH",
+    "organizacion": "Universidad EARTH",
+    "tipo_proyecto": "reforestación / vivero",
+    "region_provincia": "Limón – Mercedes, Guácimo",
+    "se_puede_visitar_o_participar": "consultar",
+    "detalle_participacion": "consultar – ~500 ha reforestadas, vivero forestal, 'Siembra Institucional'; programas académicos internacionales",
+    "contacto": "+506 2713-0000; earth.ac.cr",
+    "lat": 10.2104447,
+    "lng": -83.5914035,
+    "coord_precision": "POI (Photon: Universidad EARTH)",
+    "fuente": "https://restoration.elti.yale.edu/resource/iniciativas-de-reforestacion-con-especies-forestales-nativas-de-la-universidad-earth ; https://www.earth.ac.cr/our-campuses"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -82.7750879,
+     9.6496543
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Proyecto de reforestación",
+    "nombre": "Yuyo – agroforestería y restauración en Puerto Viejo",
+    "organizacion": "Yuyo (proyecto privado)",
+    "tipo_proyecto": "restauración (agroforestal)",
+    "region_provincia": "Limón – Puerto Viejo de Talamanca (entre Gandoca-Manzanillo y Keköldi)",
+    "se_puede_visitar_o_participar": "sí",
+    "detalle_participacion": "sí – voluntariado (agroforestería, permacultura)",
+    "contacto": "yuyo.info",
+    "lat": 9.6496543,
+    "lng": -82.7750879,
+    "coord_precision": "localidad (Photon: Puerto Viejo de Talamanca; finca ~3 km tierra adentro)",
+    "fuente": "https://yuyo.info/ ; https://yuyo.info/volunteering/"
+   }
+  }
+ ]
+}

@@ -29,7 +29,7 @@ Unos 2.000 puntos tienen teléfono publicado.
 ```bash
 curl -LO https://download.geofabrik.de/central-america/costa-rica-latest.osm.pbf
 pip install osmium
-python3 scripts/export_osm_layers.py   # escribe public/data/mapa/*.geojson
+python3 scripts/mapa/export_osm_layers.py   # escribe public/data/mapa/*.geojson
 ```
 Recomendado: mensual.
 
@@ -54,3 +54,12 @@ Las fichas muestran "Ubicación aproximada" cuando el punto es de distrito, pobl
 
 ## Fase 3 — de punto a servicio vendible
 Unir cada POI con operadores y servicios (tours, transporte, alimentación, hospedaje, guías, asesoría, entradas) para que el punto se pueda reservar desde la ficha (`MapServiceBookingModal`).
+
+
+## Fase 3 — datos como código (octubre 2026)
+- **Pipeline reproducible**: `scripts/mapa/` (`export_osm_layers.py`, `fetch_ccss.py`, `normalize_fase2.py`). Las capas curadas de la fase 2 viven en `data/fuentes/fase2/*.geojson` y se normalizan a `public/data/mapa/`.
+- **Actualización automática**: `.github/workflows/refresh-map-data.yml` corre cada lunes (y a demanda), regenera OSM y CCSS, valida y abre un PR solo si hay cambios.
+- **Validación**: `tests/nationalMapData.contract.test.ts` (todas las capas: puntos dentro de Costa Rica, ids únicos, enlaces de reserva solo oficiales) y `tests/operatorProspects.contract.test.ts`.
+- **Offline / móvil**: el service worker (Workbox) guarda las capas con *stale-while-revalidate*: abren al instante y funcionan sin señal.
+- **Operadores**: `src/data/operators/operatorProspects.{json,ts}` — 50 prospectos tipados y validados en tiempo de ejecución, con `verification` y `partnershipStatus`. `getSellableOperators()` solo devuelve operadores verificados con acuerdo firmado (hoy ninguno).
+- **Teselas vectoriales (PMTiles)**: evaluadas y descartadas por ahora. Con ~26.000 puntos, las capas ya viajan comprimidas con Brotli (la más grande ≈230 KB gzip) y la búsqueda nacional necesita los datos completos. Conviene adoptarlas cuando se agreguen polígonos (límites de parques, corredores) o se pase a MapLibre.

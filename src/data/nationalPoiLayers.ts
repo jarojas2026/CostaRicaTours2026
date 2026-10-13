@@ -5,7 +5,7 @@ import { Language } from '../types';
  *
  * Fuentes: OpenStreetMap (© colaboradores de OpenStreetMap, licencia ODbL),
  * extracto Geofabrik de Costa Rica. Archivos en /public/data/mapa/*.geojson,
- * generados con scripts/export_osm_layers.py. Se cargan bajo demanda (lazy)
+ * generados con scripts/mapa/export_osm_layers.py. Se cargan bajo demanda (lazy)
  * cuando el usuario activa cada capa, para no penalizar la carga inicial.
  */
 export type NationalPoiGroupId =

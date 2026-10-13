@@ -1,6 +1,6 @@
 # Genera public/data/mapa/*.geojson desde el extracto OSM de Costa Rica.
 # Uso: curl -LO https://download.geofabrik.de/central-america/costa-rica-latest.osm.pbf
-#      pip install osmium && python3 scripts/export_osm_layers.py
+#      pip install osmium && python3 scripts/mapa/export_osm_layers.py
 # Datos © colaboradores de OpenStreetMap, licencia ODbL (atribución obligatoria).
 import osmium, json, collections, os
 def cat(t):
@@ -34,6 +34,7 @@ feats=collections.defaultdict(list)
 def add(t,lat,lon,oid):
     r=cat(t)
     if not r or lat is None: return
+    if not (5.0 <= lat <= 11.3 and -87.6 <= lon <= -82.4): return  # fuera de Costa Rica (incluye Isla del Coco y Montes Submarinos)
     g,s=r
     p={'id':oid,'grupo':g,'tipo':s,'nombre':t.get('name',''),'telefono':t.get('phone',t.get('contact:phone','')),'web':t.get('website',t.get('contact:website','')),'horario':t.get('opening_hours',''),'direccion':' '.join(x for x in [t.get('addr:street',''),t.get('addr:city','')] if x)}
     p={k:v for k,v in p.items() if v}

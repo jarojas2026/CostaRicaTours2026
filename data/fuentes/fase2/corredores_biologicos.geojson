@@ -1,0 +1,884 @@
+{
+ "type": "FeatureCollection",
+ "name": "corredores_biologicos_costa_rica",
+ "metadata": {
+  "generado": "2026-10-12",
+  "nota": "SINAC reporta hoy 54 corredores (incl. 8 interurbanos). Este archivo cubre los 37 de la capa SINAC 2008 + 1 interurbano. La capa oficial actual (SNIT/SINAC WFS PNE:corredoresbiologicos en https://geos1pne.sirefor.go.cr/wfs) no respondió."
+ },
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.095,
+     9.47365
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Aguirre",
+    "area_conservacion": "ACOPAC",
+    "codigo_sinac_2008": 6,
+    "area_ha_aprox": 55186,
+    "lat": 9.47365,
+    "lng": -84.095,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.60644,
+     9.35625
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Alexander Skutch",
+    "area_conservacion": "ACLA-P",
+    "codigo_sinac_2008": 16,
+    "area_ha_aprox": 5951,
+    "lat": 9.35625,
+    "lng": -83.60644,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.87056,
+     10.48084
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Arenal- Tenorio",
+    "area_conservacion": "ACA-T",
+    "codigo_sinac_2008": 29,
+    "area_ha_aprox": 33890,
+    "lat": 10.48084,
+    "lng": -84.87056,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.50136,
+     10.11814
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Chorotega",
+    "area_conservacion": "ACT",
+    "codigo_sinac_2008": 3,
+    "area_ha_aprox": 327334,
+    "lat": 10.11814,
+    "lng": -85.50136,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.93703,
+     9.86594
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Cobri Surac",
+    "area_conservacion": "ACCVC",
+    "codigo_sinac_2008": 25,
+    "area_ha_aprox": 18449,
+    "lat": 9.86594,
+    "lng": -83.93703,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.59188,
+     10.44639
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Colorado-Tortuguero",
+    "area_conservacion": "ACTo",
+    "codigo_sinac_2008": 2,
+    "area_ha_aprox": 35823,
+    "lat": 10.44639,
+    "lng": -83.59188,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.20516,
+     9.97185
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Cordillera A Cordillera",
+    "area_conservacion": "ACLA-C",
+    "codigo_sinac_2008": 21,
+    "area_ha_aprox": 13979,
+    "lat": 9.97185,
+    "lng": -83.20516,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.06402,
+     9.10776
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico El Quetzal-Tres Colinas",
+    "area_conservacion": "ACLA-P",
+    "codigo_sinac_2008": 17,
+    "area_ha_aprox": 1778,
+    "lat": 9.10776,
+    "lng": -83.06402,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.16079,
+     8.88118
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Fila Langusiana",
+    "area_conservacion": "ACLA-P",
+    "codigo_sinac_2008": 14,
+    "area_ha_aprox": 32534,
+    "lat": 8.88118,
+    "lng": -83.16079,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.26744,
+     10.39142
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Fila Nambiral",
+    "area_conservacion": "ACA-T",
+    "codigo_sinac_2008": 34,
+    "area_ha_aprox": 10993,
+    "lat": 10.39142,
+    "lng": -85.26744,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.11322,
+     10.25113
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Fila Zapotal",
+    "area_conservacion": "ACA-T",
+    "codigo_sinac_2008": 28,
+    "area_ha_aprox": 38927,
+    "lat": 10.25113,
+    "lng": -85.11322,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.05797,
+     8.98568
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Fuente De Vida",
+    "area_conservacion": "ACLA-P",
+    "codigo_sinac_2008": 13,
+    "area_ha_aprox": 10207,
+    "lat": 8.98568,
+    "lng": -83.05797,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.72304,
+     10.15626
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Guácimo",
+    "area_conservacion": "ACTo",
+    "codigo_sinac_2008": 1,
+    "area_ha_aprox": 26017,
+    "lat": 10.15626,
+    "lng": -83.72304,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.9809131,
+     9.9318
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Interurbano Río María Aguilar",
+    "area_conservacion": "ACC",
+    "codigo_sinac_2008": null,
+    "area_ha_aprox": null,
+    "lat": 9.9318,
+    "lng": -83.98091,
+    "coord_precision": "aproximada (punto OSM vía Photon)",
+    "fuente": "https://photon.komoot.io (OSM leisure=nature_reserve 'Corredor Biológico Río María Aguilar'); lista SINAC: https://www.sinac.go.cr/ES/bimapas/Paginas/mapascb.aspx",
+    "notas": "Corredor interurbano posterior a 2008; no está en la capa 2008."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.10507,
+     10.90743
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Las Camelias",
+    "area_conservacion": "ACA-HN",
+    "codigo_sinac_2008": 35,
+    "area_ha_aprox": 22799,
+    "lat": 10.90743,
+    "lng": -85.10507,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.16047,
+     10.77904
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Miravalles-Rincón De La Vieja",
+    "area_conservacion": "ACA-T",
+    "codigo_sinac_2008": 31,
+    "area_ha_aprox": 4238,
+    "lat": 10.77904,
+    "lng": -85.16047,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.09535,
+     10.5076
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Miravalles-Santa Rosa",
+    "area_conservacion": "ACA-T",
+    "codigo_sinac_2008": 30,
+    "area_ha_aprox": 42110,
+    "lat": 10.5076,
+    "lng": -85.09535,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.29113,
+     10.18078
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Moin-Tortuguero",
+    "area_conservacion": "ACLA-C",
+    "codigo_sinac_2008": 18,
+    "area_ha_aprox": 13946,
+    "lat": 10.18078,
+    "lng": -83.29113,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.51407,
+     10.04861
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Montes Del Aguacate",
+    "area_conservacion": "ACCVC",
+    "codigo_sinac_2008": 26,
+    "area_ha_aprox": 45869,
+    "lat": 10.04861,
+    "lng": -84.51407,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.38244,
+     10.62858
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Morocochas",
+    "area_conservacion": "ACG",
+    "codigo_sinac_2008": 22,
+    "area_ha_aprox": 9998,
+    "lat": 10.62858,
+    "lng": -85.38244,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.52008,
+     8.63281
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Osa",
+    "area_conservacion": "ACOSA",
+    "codigo_sinac_2008": 4,
+    "area_ha_aprox": 121824,
+    "lat": 8.63281,
+    "lng": -83.52008,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.57509,
+     9.9994
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Osreo",
+    "area_conservacion": "ACOPAC",
+    "codigo_sinac_2008": 12,
+    "area_ha_aprox": 31884,
+    "lat": 9.9994,
+    "lng": -84.57509,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.63883,
+     9.11802
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Paso De La Danta",
+    "area_conservacion": "ACOSA (ACLA-P) (ACOPAC)",
+    "codigo_sinac_2008": 5,
+    "area_ha_aprox": 20144,
+    "lat": 9.11802,
+    "lng": -83.63883,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.4959,
+     9.7805
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Paso De Las Lapas",
+    "area_conservacion": "ACOPAC",
+    "codigo_sinac_2008": 11,
+    "area_ha_aprox": 94484,
+    "lat": 9.7805,
+    "lng": -84.4959,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.48153,
+     10.24034
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Paso De Las Nubes",
+    "area_conservacion": "ACCVC (ACA-HN)",
+    "codigo_sinac_2008": 27,
+    "area_ha_aprox": 40395,
+    "lat": 10.24034,
+    "lng": -84.48153,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.21918,
+     9.68258
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Pirrís",
+    "area_conservacion": "ACOPAC",
+    "codigo_sinac_2008": 7,
+    "area_ha_aprox": 23770,
+    "lat": 9.68258,
+    "lng": -84.21918,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.539,
+     9.6524
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Playa Hermosa",
+    "area_conservacion": "ACOPAC",
+    "codigo_sinac_2008": 9,
+    "area_ha_aprox": 13039,
+    "lat": 9.6524,
+    "lng": -84.539,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.86903,
+     10.15482
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Pájaro Campana",
+    "area_conservacion": "ACOPAC (ACA-T)",
+    "codigo_sinac_2008": 10,
+    "area_ha_aprox": 88742,
+    "lat": 10.15482,
+    "lng": -84.86903,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.30594,
+     10.60573
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Rincon - Barbudal",
+    "area_conservacion": "ACA-T",
+    "codigo_sinac_2008": 32,
+    "area_ha_aprox": 29862,
+    "lat": 10.60573,
+    "lng": -85.30594,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.39233,
+     10.89263
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Rincón Cacao",
+    "area_conservacion": "ACG",
+    "codigo_sinac_2008": 24,
+    "area_ha_aprox": 2850,
+    "lat": 10.89263,
+    "lng": -85.39233,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.24936,
+     10.87446
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Rincón Rain Forest",
+    "area_conservacion": "ACG",
+    "codigo_sinac_2008": 23,
+    "area_ha_aprox": 32609,
+    "lat": 10.87446,
+    "lng": -85.24936,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.80543,
+     10.77903
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Ruta Los Malekus-Medio Queso",
+    "area_conservacion": "ACA-HN (ACA-T)",
+    "codigo_sinac_2008": 36,
+    "area_ha_aprox": 147091,
+    "lat": 10.77903,
+    "lng": -84.80543,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.37402,
+     9.28925
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Río Cañas",
+    "area_conservacion": "ACLA-P",
+    "codigo_sinac_2008": 15,
+    "area_ha_aprox": 5136,
+    "lat": 9.28925,
+    "lng": -83.37402,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.1831,
+     10.61527
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico San Juan La Selva",
+    "area_conservacion": "ACA-HN (ACCVC)",
+    "codigo_sinac_2008": 37,
+    "area_ha_aprox": 244237,
+    "lat": 10.61527,
+    "lng": -84.1831,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.9124,
+     9.55589
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Santos",
+    "area_conservacion": "ACOPAC",
+    "codigo_sinac_2008": 8,
+    "area_ha_aprox": 77720,
+    "lat": 9.55589,
+    "lng": -83.9124,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -82.8302,
+     9.65783
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Talamanca-Caribe",
+    "area_conservacion": "ACLA-C",
+    "codigo_sinac_2008": 19,
+    "area_ha_aprox": 28246,
+    "lat": 9.65783,
+    "lng": -82.8302,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.06048,
+     10.71237
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Tenorio - Miravalles",
+    "area_conservacion": "ACA-T",
+    "codigo_sinac_2008": 33,
+    "area_ha_aprox": 12514,
+    "lat": 10.71237,
+    "lng": -85.06048,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.6179,
+     9.92187
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Corredor biológico",
+    "nombre": "Corredor Biológico Volcanica Central Talamanca",
+    "area_conservacion": "(ACLA-C)  (ACCVC)",
+    "codigo_sinac_2008": 20,
+    "area_ha_aprox": 114632,
+    "lat": 9.92187,
+    "lng": -83.6179,
+    "coord_precision": "aproximada (centroide del polígono; punto interior si el centroide cae fuera)",
+    "fuente": "https://services5.arcgis.com/FKwcDz27wRAj4HUT/arcgis/rest/services/correbiosinac2008crtm05_EDITS/FeatureServer/0",
+    "notas": "Polígono de la capa SINAC 2008 (correbiosinac2008crtm05), copia editada publicada en ArcGIS Online; límites y nombres pueden haber cambiado."
+   }
+  }
+ ]
+}
