@@ -24,17 +24,17 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, languag
   if (!isOpen) return null;
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={language === 'es' ? 'Políticas y Legal' : 'Legal & Policies'} className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white text-stone-900 rounded-[2rem] w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-black/10 relative overflow-hidden">
+    <div role="dialog" aria-modal="true" aria-label={language === 'es' ? 'Políticas y Legal' : 'Legal & Policies'} className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-sm flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white text-stone-900 rounded-2xl sm:rounded-[2rem] w-full max-w-4xl max-h-[96dvh] sm:max-h-[90vh] flex flex-col shadow-2xl border border-black/10 relative overflow-hidden my-1 sm:my-0">
         
         {/* Header */}
-        <div className="p-6 border-b border-black/10 flex items-center justify-between shrink-0 bg-stone-100/50">
-          <div className="flex items-center gap-3">
+        <div className="p-4 sm:p-6 border-b border-black/10 flex items-start sm:items-center justify-between gap-3 shrink-0 bg-stone-100/50">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="w-10 h-10 bg-white border border-black/10 rounded-full flex items-center justify-center shadow-inner">
               <ShieldCheck className="w-5 h-5 text-orange-400" />
             </div>
-            <div>
-              <h2 className="text-xl font-black uppercase tracking-wider text-stone-900">
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-xl font-black uppercase tracking-wider text-stone-900">
                 {language === 'es' ? 'Políticas y Legal' : 'Legal & Policies'}
               </h2>
               <p className="text-[11px] text-stone-800/70 uppercase tracking-widest font-bold">
@@ -54,7 +54,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, languag
 
         <div className="flex flex-col sm:flex-row flex-1 min-h-0">
           {/* Tabs Sidebar */}
-          <div className="sm:w-64 border-r border-black/10 p-4 space-y-2 shrink-0 overflow-x-auto sm:overflow-y-auto flex sm:flex-col">
+          <div className="w-full sm:w-64 max-w-full border-b sm:border-b-0 sm:border-r border-black/10 p-3 sm:p-4 gap-2 shrink-0 overflow-x-auto sm:overflow-y-auto flex sm:flex-col">
             <button
               onClick={() => setActiveTab('terminos')}
               className={`flex items-center gap-2.5 px-4 py-3 rounded-xl text-left transition-colors whitespace-nowrap sm:whitespace-normal font-bold text-sm ${
@@ -102,7 +102,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, languag
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-y-auto p-6 sm:p-8 bg-white">
+          <div className="flex-1 min-w-0 overflow-y-auto p-4 sm:p-8 bg-white">
             <div className="prose prose-invert prose-emerald max-w-none text-sm space-y-6">
               
               {activeTab === 'terminos' && (
