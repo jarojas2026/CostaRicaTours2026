@@ -1,9 +1,10 @@
 import crypto from 'crypto';
 import { getFirestoreDb } from './bookingService';
-import type {
-  GovernanceActor,
-  OwnerApprovalAction,
-  OwnerApprovalRequest,
+import {
+  OWNER_APPROVAL_ACTIONS,
+  type GovernanceActor,
+  type OwnerApprovalAction,
+  type OwnerApprovalRequest,
 } from '../shared/ownerApprovalTypes';
 
 const COLLECTION = 'agent_approvals';
@@ -60,6 +61,12 @@ function cleanActor(actor: GovernanceActor): GovernanceActor {
   };
 }
 
+function assertApprovalAction(action: OwnerApprovalAction): void {
+  if (!(OWNER_APPROVAL_ACTIONS as readonly string[]).includes(action)) {
+    throw new Error('Tipo de aprobación no permitido.');
+  }
+}
+
 export async function requestOwnerApproval(input: {
   action: OwnerApprovalAction;
   summary: string;
@@ -69,6 +76,7 @@ export async function requestOwnerApproval(input: {
 }): Promise<OwnerApprovalRequest> {
   const db = getFirestoreDb();
   if (!db) throw new Error('Firestore no disponible: no se puede crear la aprobación.');
+  assertApprovalAction(input.action);
 
   const now = new Date().toISOString();
   const metadata = normalizeMetadata(input.metadata);
