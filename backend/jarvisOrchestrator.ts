@@ -12,6 +12,7 @@ import {
   getAgentRun,
 } from './agentRunLedgerService';
 import { sendAgentMessage } from './agentMeshService';
+import { decideSupervisorRoute } from './supervisorOrchestrator';
 import {
   getOwnerApproval,
   requestOwnerApproval,
@@ -205,14 +206,15 @@ export function decomposeJarvisOrder(
 }> {
   const order = cleanOrder(ownerOrder);
   const matches = TASK_RULES.filter((rule) => rule.match.test(order));
+  const supervisorFallback = decideSupervisorRoute('jarvis.owner_order', { message: order });
   const selected = matches.length ? matches : [{
-    id: 'triage',
+    id: 'supervisor-fallback',
     match: /.*/,
-    preferredAgentId: 'triage',
+    preferredAgentId: supervisorFallback.targetAgent || 'triage',
     actionClass: 'observe' as ActionClass,
     approvalAction: null,
-    objectiveEs: 'Clasificar la orden, reunir evidencia y proponer el siguiente paso sin efectos comerciales.',
-    objectiveEn: 'Classify the order, gather evidence and propose the next step without commercial side effects.',
+    objectiveEs: `Clasificar la orden, reunir evidencia y proponer el siguiente paso. Ruta supervisor: ${supervisorFallback.reason}`,
+    objectiveEn: `Classify the order, gather evidence and propose the next step. Supervisor route: ${supervisorFallback.reason}`,
   }];
 
   const seen = new Set<string>();
