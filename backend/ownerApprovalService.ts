@@ -112,10 +112,13 @@ export async function listOwnerApprovals(input: {
   const db = getFirestoreDb();
   if (!db) return [];
   const safeLimit = Math.min(Math.max(Math.trunc(input.limit || 60), 1), 200);
-  let query: FirebaseFirestore.Query = db.collection(COLLECTION);
-  if (input.status) query = query.where('status', '==', input.status);
-  const snapshot = await query.orderBy('createdAt', 'desc').limit(safeLimit).get();
-  return snapshot.docs.map((document) => document.data() as OwnerApprovalRequest);
+  const snapshot = await db.collection(COLLECTION)
+    .orderBy('createdAt', 'desc')
+    .limit(input.status ? 200 : safeLimit)
+    .get();
+  const approvals = snapshot.docs.map((document) => document.data() as OwnerApprovalRequest);
+  return (input.status ? approvals.filter((approval) => approval.status === input.status) : approvals)
+    .slice(0, safeLimit);
 }
 
 async function decideOwnerApproval(input: {
