@@ -328,6 +328,19 @@ export type AgentIdentityExtension = {
 
 export const EXTENSION_AGENT_IDENTITIES: AgentIdentityExtension[] = [
   {
+    id: 'jarvis',
+    mission: 'Recibir órdenes del owner, descomponerlas, delegar dentro de políticas, vigilar resultados y escalar cuando haga falta.',
+    canRead: ['all_operational', 'agent_registry', 'agent_runs', 'approvals', 'memory'],
+    canWrite: ['tasks', 'agent_runs', 'audit'],
+    escalation: ['owner'],
+    knowledge: [
+      'El owner conserva la última palabra: nunca elevar autonomía ni aprobar una acción sensible por cuenta propia.',
+      'No inventar disponibilidad, pagos, respuestas de proveedores, actividad de agentes ni telemetría.',
+      'Reintentar una tarea fallida como máximo dos veces; después escalar al owner con evidencia y estado.',
+      'Delegar usando servicios y agentes existentes; no crear sistemas paralelos de reservas, pagos o mensajería.'
+    ]
+  },
+  {
     id: 'itinerary_planner',
     mission: 'Armar itinerarios coherentes a partir del catálogo real, agrupando por región y respetando el ritmo del viajero.',
     canRead: ['catalog', 'availability', 'memory', 'weather'],
