@@ -1594,3 +1594,20 @@ La primera fase de la **Oficina Digital de Agentes** agrega únicamente el plano
 - Esta fase no cambia reservas, pagos, disponibilidad, proveedores, precios ni mensajería y no crea un segundo sistema de agentes.
 
 **Siguiente fase:** instrumentar `operationalEventBus`, heartbeat de 15 segundos y proyección de `no_signal` después de 60 segundos sin latido, manteniendo como desconocido cualquier estado sin telemetría verificable.
+
+
+---
+
+## 41. Oficina Digital de Agentes — Fase 2: eventos y heartbeat (2026-10-12)
+
+La telemetría de la Oficina Digital se apoya en el registro `agents` de la Fase 1 y en el bus existente; no crea un segundo sistema de eventos.
+
+- `operationalEventBus.ts` incorpora los eventos tipados `agent.started`, `agent.step`, `agent.waiting_approval`, `agent.completed`, `agent.failed` y `agent.heartbeat` (además de pausa/revocación para la siguiente fase). Los heartbeats se publican sin volver a pasar por el supervisor para evitar recursión y tormentas de mensajes.
+- `agentRuntimeService.ts` define heartbeat cada **15 segundos** durante una ejecución instrumentada. El lease deja de renovar si la tarea ya no corresponde o el agente está pausado/revocado.
+- `agentOfficeProjection.ts` considera una telemetría ejecutable válida solo durante **60 segundos** desde el último heartbeat. Después muestra `no_signal`; un evento genérico reciente no puede convertir un agente en `working`.
+- Heartbeats o eventos con timestamps futuros se rechazan para la proyección. Los estados de gobierno `paused` y `revoked` se conservan aunque no exista heartbeat, porque representan una decisión explícita y no actividad inferida.
+- `adminControlCenterService.ts` usa el registro persistido para el estado del agente. Si Firestore no contiene el registro, utiliza únicamente el perfil estático con `no_signal`; nunca deduce `idle`.
+- El servidor sincroniza de forma idempotente las identidades existentes al iniciar. La sincronización es transaccional y no reinicia estado, autonomía, tarea, heartbeat, modelo, herramientas ni consumo de un agente ya creado.
+- Las pruebas cubren el umbral exacto de 60 segundos, heartbeat de 15 segundos, eventos requeridos, pérdida de señal, timestamps futuros y preservación de estados de gobierno.
+
+**Límite de esta fase:** los servicios existentes todavía deben envolver sus ejecuciones con el runtime para que aparezcan como `working`. Si un flujo no está instrumentado, la interfaz seguirá mostrando `no_signal` en lugar de inventar actividad.

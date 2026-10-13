@@ -3,7 +3,7 @@ import { getAlerts } from './alertService';
 import { getOperationalProviderOverview } from './operationalProviderRegistryService';
 import { getNativeEngineStatus, getNativeAutomationLogs } from './nativeAutomationEngine';
 import { getSelfDevelopmentOverview } from './selfDevelopmentEngine';
-import { AGENT_IDENTITIES } from './agentKnowledgeFabric';
+import { buildAgentRegistrySeed, listRegisteredAgents } from './agentRegistryService';
 import { listSkillVersions } from './skillGenome';
 import { getEmailOperationsSnapshot } from './emailOperationsAgent';
 import { projectAgentOffice } from './agentOfficeProjection';
@@ -20,18 +20,32 @@ export async function getAdminControlCenterSnapshot(){
  const journeyData=journeys.map((d:any)=>({id:d.id,...d.data()})),pipeline={discovery:0,verification:0,readyToQuote:0,recovery:0,total:journeyData.length};
  journeyData.forEach((j:any)=>{const s=String(j.sales?.stage||j.status||'').toUpperCase();if(s==='DISCOVERY'||s==='PLANNING')pipeline.discovery++;else if(s==='VERIFICATION'||s==='VERIFICATION_COMPLETE')pipeline.verification++;else if(s==='READY_TO_QUOTE')pipeline.readyToQuote++;else if(s==='RECOVERY')pipeline.recovery++;});
  const providerList=((providers as any).providers||[]).slice(0,30).map((p:any)=>({id:p.id,name:p.name,region:p.region,status:p.operationalStatus||'active',verified:p.verified===true,sourceCollection:p.sourceCollection,contactName:p.contactName,phone:p.phone,whatsapp:p.whatsapp,email:p.email,officialEmail:p.officialEmail,activeTours:p.activeTours||[],activeOrdersCount:p.activeOrdersCount,slaTargetMinutes:p.slaTargetMinutes,averageResponseMinutes:p.averageResponseMinutes,observedAcceptanceRate:p.observedAcceptanceRate,completedOrdersCount:p.completedOrdersCount,cstLevel:p.cstLevel,ictLicense:p.ictLicense,insPolicyNumber:p.insPolicyNumber}));
- // A bounded, read-only sample: absence of activity is not proof of an idle agent.
- let officeTelemetryAvailable = false;
+ // Agent status comes from the dedicated registry heartbeat, not from generic
+ // event activity. Events are sampled only to expose the latest event type.
+ let registryAgents = await listRegisteredAgents().catch(() => []);
+ const registryPersisted = registryAgents.length > 0;
+ if (!registryPersisted) registryAgents = buildAgentRegistrySeed(new Date());
+
  let officeEvents: any[] = [];
  if (db) {
   try {
    const officeSample = await db.collection('agent_events').orderBy('createdAt', 'desc').limit(120).get();
    officeEvents = officeSample.docs.map((doc: any) => doc.data());
-   officeTelemetryAvailable = true;
   } catch {
-   console.warn('Agent office telemetry unavailable; agent statuses remain unknown.');
+   console.warn('Agent office event sample unavailable; heartbeat status remains authoritative.');
   }
  }
- const agentOffice = projectAgentOffice(AGENT_IDENTITIES, officeEvents, new Date().toISOString(), officeTelemetryAvailable);
- return{generatedAt:new Date().toISOString(),agentOffice,business:{totalBookings:bookings.length,confirmedBookings:confirmed.length,pendingBookings:pending.length,failedOrCancelled:failed.length,upcoming72h:upcoming.length,revenueUSD:revenue,averageBookingUSD:confirmed.length?money(revenue/confirmed.length):0},conversion,alerts:{unresolved:alerts.length,critical:alerts.filter((a:any)=>a.severity==='critical').length,warning:alerts.filter((a:any)=>a.severity==='warning').length,recent:alerts.slice(0,20)},agents:AGENT_IDENTITIES.map((a:any)=>({id:a.id,mission:a.mission,capabilities:a.canRead||[],writableDomains:a.canWrite||[],escalation:a.escalation||[]})),automation:{engine:getNativeEngineStatus(),recentLogs:getNativeAutomationLogs(50),providerInbox:{mode:'Gmail OAuth + native cron every minute',configured:Boolean(process.env.GMAIL_CLIENT_ID&&process.env.GMAIL_CLIENT_SECRET&&process.env.GMAIL_REFRESH_TOKEN)},emailOperations:await getEmailOperationsSnapshot(20)},providers:{sourceOfTruth:(providers as any).sourceOfTruth||'firestore_verified_providers',legacyDirectoryExcluded:true,observedAt:(providers as any).observedAt||new Date().toISOString(),total:(providers as any).totalProviders||0,active:(providers as any).activeProviders||0,activeOrders:(providers as any).activeOrdersCount||0,list:providerList,recentServiceOrders:((providers as any).recentServiceOrders||[]).slice(0,25)},evolution:{selfDevelopment:selfDevelopment||{enabled:false},skills:listSkillVersions().map((s:any)=>({id:s.id,version:s.version,lifecycle:s.lifecycle,exposure:s.exposure,routingScore:s.routingScore})),recentEvaluations:evaluations.map((d:any)=>({id:d.id,...d.data()})).slice(0,20)},documents:{journeys:journeys.length,inboxEvents:inbox.length,evaluations:evaluations.length,memories:memories.length},journeyPipeline:pipeline,journeyRecent:journeyData.slice(0,20).map((j:any)=>({id:j.journeyId||j.id,updatedAt:j.updatedAt,stage:j.sales?.stage||j.status||'unknown',nextAction:j.sales?.nextAction||'',travelers:j.traveler?.travelers||0,profile:j.traveler?.profile||'',regions:j.planning?.regions||[]})),providerInbox:inbox.map((d:any)=>({id:d.id,...d.data()})).slice(0,30)};
+ const agentOffice = projectAgentOffice(registryAgents, officeEvents, new Date().toISOString(), registryPersisted);
+ const adminAgents = registryAgents.map((agent:any)=>({
+  id:agent.id,
+  mission:agent.mission?.es||agent.mission||'',
+  missionEn:agent.mission?.en||'',
+  office:agent.office||null,
+  status:agent.status||'no_signal',
+  capabilities:agent.permissions?.read||[],
+  writableDomains:agent.permissions?.write||[],
+  escalation:agent.permissions?.escalation||[],
+  autonomyLevel:Number.isInteger(agent.autonomyLevel)?agent.autonomyLevel:null
+ }));
+ return{generatedAt:new Date().toISOString(),agentOffice,business:{totalBookings:bookings.length,confirmedBookings:confirmed.length,pendingBookings:pending.length,failedOrCancelled:failed.length,upcoming72h:upcoming.length,revenueUSD:revenue,averageBookingUSD:confirmed.length?money(revenue/confirmed.length):0},conversion,alerts:{unresolved:alerts.length,critical:alerts.filter((a:any)=>a.severity==='critical').length,warning:alerts.filter((a:any)=>a.severity==='warning').length,recent:alerts.slice(0,20)},agents:adminAgents,automation:{engine:getNativeEngineStatus(),recentLogs:getNativeAutomationLogs(50),providerInbox:{mode:'Gmail OAuth + native cron every minute',configured:Boolean(process.env.GMAIL_CLIENT_ID&&process.env.GMAIL_CLIENT_SECRET&&process.env.GMAIL_REFRESH_TOKEN)},emailOperations:await getEmailOperationsSnapshot(20)},providers:{sourceOfTruth:(providers as any).sourceOfTruth||'firestore_verified_providers',legacyDirectoryExcluded:true,observedAt:(providers as any).observedAt||new Date().toISOString(),total:(providers as any).totalProviders||0,active:(providers as any).activeProviders||0,activeOrders:(providers as any).activeOrdersCount||0,list:providerList,recentServiceOrders:((providers as any).recentServiceOrders||[]).slice(0,25)},evolution:{selfDevelopment:selfDevelopment||{enabled:false},skills:listSkillVersions().map((s:any)=>({id:s.id,version:s.version,lifecycle:s.lifecycle,exposure:s.exposure,routingScore:s.routingScore})),recentEvaluations:evaluations.map((d:any)=>({id:d.id,...d.data()})).slice(0,20)},documents:{journeys:journeys.length,inboxEvents:inbox.length,evaluations:evaluations.length,memories:memories.length},journeyPipeline:pipeline,journeyRecent:journeyData.slice(0,20).map((j:any)=>({id:j.journeyId||j.id,updatedAt:j.updatedAt,stage:j.sales?.stage||j.status||'unknown',nextAction:j.sales?.nextAction||'',travelers:j.traveler?.travelers||0,profile:j.traveler?.profile||'',regions:j.planning?.regions||[]})),providerInbox:inbox.map((d:any)=>({id:d.id,...d.data()})).slice(0,30)};
 }
