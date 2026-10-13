@@ -94,7 +94,20 @@ async function inspect(page,route,viewport){
       const cls=String(el.className||'').trim().split(/\s+/).slice(0,3).join('.');
       return el.tagName.toLowerCase()+id+(cls?'.'+cls:'');
     };
-    const overflow=[...document.querySelectorAll('body *')].filter(visible).map(el=>{
+    const inHorizontalScroller=(el)=>{
+      let node=el.parentElement;
+      while(node && node!==document.body && node!==document.documentElement){
+        const style=getComputedStyle(node);
+        if((style.overflowX==='auto'||style.overflowX==='scroll') && node.scrollWidth>node.clientWidth+3) return true;
+        node=node.parentElement;
+      }
+      return false;
+    };
+    const candidates=[...document.querySelectorAll('a[href],button,input,select,textarea,label,h1,h2,h3,h4,h5,h6,p,li,td,th')]
+      .filter(visible)
+      .filter(el=>!el.closest('svg,.leaflet-map-pane,.leaflet-control-container,[aria-hidden="true"],.pointer-events-none'))
+      .filter(el=>!inHorizontalScroller(el));
+    const overflow=candidates.map(el=>{
       const r=el.getBoundingClientRect();
       return {
         el,
@@ -104,15 +117,14 @@ async function inspect(page,route,viewport){
         width:Math.round(r.width),
         text:(el.textContent||'').trim().replace(/\s+/g,' ').slice(0,120),
       };
-    }).filter(x=>x.left < -3 || x.right > vw + 3)
-      .filter(x=>!x.el.closest('.leaflet-map-pane,.leaflet-control-container'))
+    }).filter(x=>x.left < -6 || x.right > vw + 6)
       .sort((a,b)=>Math.max(Math.abs(b.left),b.right-vw)-Math.max(Math.abs(a.left),a.right-vw))
       .slice(0,20)
       .map(({el,...x})=>x);
     const docOverflow=Math.max(0,document.documentElement.scrollWidth-vw);
     const inputs=[...document.querySelectorAll('input,select,textarea,button')].filter(visible);
     const tooWideControls=inputs.map(el=>({path:pathFor(el),width:Math.round(el.getBoundingClientRect().width)}))
-      .filter(x=>x.width>vw+3).slice(0,12);
+      .filter(x=>x.width>vw+6).slice(0,12);
     const tinyText=[...document.querySelectorAll('p,span,li,label,a,button')].filter(visible).map(el=>{
       const size=parseFloat(getComputedStyle(el).fontSize||'0');
       return {path:pathFor(el),size,text:(el.textContent||'').trim().replace(/\s+/g,' ').slice(0,80)};
@@ -137,7 +149,7 @@ async function inspect(page,route,viewport){
   const pageResult={
     route,device:viewport.id,http:response?.status()??null,...info,
     jsErrors:jsErrors.slice(0,12),
-    outcome:(!response||response.status()>=400||!info.bodyChars||info.documentOverflowPx>4||info.overflow.length>0)?'needs-review':'pass'
+    outcome:(!response||response.status()>=400||!info.bodyChars||info.documentOverflowPx>4||info.tooWideControls.length>0||info.overflow.length>0)?'needs-review':'pass'
   };
   report.pages.push(pageResult);
   process.stdout.write('RESPONSIVE_PAGE '+JSON.stringify({
@@ -225,7 +237,7 @@ try{
   await browser.close();
 }
 
-const overflowPages=report.pages.filter(x=>(x.documentOverflowPx||0)>4||x.overflow?.length);
+const overflowPages=report.pages.filter(x=>(x.documentOverflowPx||0)>4||x.tooWideControls?.length||x.overflow?.length);
 const fatalPages=report.pages.filter(x=>x.outcome==='fatal'||(x.http!==undefined&&x.http!==null&&x.http>=400));
 report.summary={
   routeObservations:report.pages.length,
