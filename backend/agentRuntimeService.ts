@@ -1,4 +1,5 @@
 import { getFirestoreDb } from './bookingService';
+import type { DocumentReference } from 'firebase-admin/firestore';
 import { emitAgentOperationalEvent } from './operationalEventBus';
 import type { AgentRecord, AgentStatus } from '../shared/agentOfficeTypes';
 
@@ -23,7 +24,7 @@ function assertRuntimeStatus(status: AgentStatus): void {
   }
 }
 
-async function loadAgentOrThrow(agentId: string): Promise<{ ref: FirebaseFirestore.DocumentReference; data: AgentRecord }> {
+async function loadAgentOrThrow(agentId: string): Promise<{ ref: DocumentReference; data: AgentRecord }> {
   const id = String(agentId || '').trim();
   if (!id) throw new Error('agentId es obligatorio.');
   const db = getFirestoreDb();
