@@ -440,6 +440,11 @@ export async function runJarvisOwnerCommand(input: {
   const plan: JarvisPlanRecord = {
     id: planId,
     commandId: command.commandId,
+    requestedBy: {
+      uid: input.actor.uid || null,
+      email: input.actor.email || null,
+      role: 'owner',
+    },
     ownerOrder,
     language,
     understood: language === 'en'
@@ -658,8 +663,8 @@ export async function reconcileJarvisPlan(planId: string): Promise<JarvisPlanRec
 
 function planOwnerActor(plan: JarvisPlanRecord): GovernanceActor {
   return {
-    uid: null,
-    email: plan.commandId,
+    uid: plan.requestedBy.uid || null,
+    email: plan.requestedBy.email || null,
     role: 'owner',
   };
 }
