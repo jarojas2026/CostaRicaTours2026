@@ -1,0 +1,1402 @@
+{
+ "type": "FeatureCollection",
+ "name": "pasos_fauna_costa_rica",
+ "metadata": {
+  "generado": "2026-10-12",
+  "nota": "Puntos 'exacta' provienen del conjunto de datos OSF del estudio BID 2026 (Rutas 1 y 160). Puntos 'aproximada' representan conjuntos de estructuras (ver 'cantidad') geocodificados con Photon (OSM) porque Nominatim devolvió 429. 'cantidad' null = número no confirmado."
+ },
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.037024,
+     10.301701
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Limonal–Cañas · Puente de dosel 1",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Ruta Nacional 1 (Interamericana Norte), sección Limonal–Cañas",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Mamíferos arborícolas (mono congo Alouatta palliata, zorro de balsa Caluromys derbianus, ardilla Sciurus variegatoides)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": "2022-2023",
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 10.301701,
+    "lng": -85.037024,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Paso del Mono Aullador. Proyecto con 16 pasos (6 aéreos, 10 terrestres). Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.046622,
+     10.321246
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Limonal–Cañas · Puente de dosel 2",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Ruta Nacional 1 (Interamericana Norte), sección Limonal–Cañas",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Mamíferos arborícolas (mono congo Alouatta palliata, zorro de balsa Caluromys derbianus, ardilla Sciurus variegatoides)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": "2022-2023",
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 10.321246,
+    "lng": -85.046622,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Paso del Mono Aullador. Proyecto con 16 pasos (6 aéreos, 10 terrestres). Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.069954,
+     10.334293
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Limonal–Cañas · Puente de dosel 3",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Ruta Nacional 1 (Interamericana Norte), sección Limonal–Cañas",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Mamíferos arborícolas (mono congo Alouatta palliata, zorro de balsa Caluromys derbianus, ardilla Sciurus variegatoides)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": "2022-2023",
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 10.334293,
+    "lng": -85.069954,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Paso del Mono Aullador. Proyecto con 16 pasos (6 aéreos, 10 terrestres). Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.076731,
+     10.347515
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Limonal–Cañas · Puente de dosel 4",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Ruta Nacional 1 (Interamericana Norte), sección Limonal–Cañas",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Mamíferos arborícolas (mono congo Alouatta palliata, zorro de balsa Caluromys derbianus, ardilla Sciurus variegatoides)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": "2022-2023",
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 10.347515,
+    "lng": -85.076731,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Paso del Mono Aullador. Proyecto con 16 pasos (6 aéreos, 10 terrestres). Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.077215,
+     10.349463
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Limonal–Cañas · Puente de dosel 5",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Ruta Nacional 1 (Interamericana Norte), sección Limonal–Cañas",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Mamíferos arborícolas (mono congo Alouatta palliata, zorro de balsa Caluromys derbianus, ardilla Sciurus variegatoides)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": "2022-2023",
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 10.349463,
+    "lng": -85.077215,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Paso del Mono Aullador. Proyecto con 16 pasos (6 aéreos, 10 terrestres). Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.084513,
+     10.363562
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Limonal–Cañas · Puente de dosel 6",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Ruta Nacional 1 (Interamericana Norte), sección Limonal–Cañas",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Mamíferos arborícolas (mono congo Alouatta palliata, zorro de balsa Caluromys derbianus, ardilla Sciurus variegatoides)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": "2022-2023",
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 10.363562,
+    "lng": -85.084513,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Paso del Mono Aullador. Proyecto con 16 pasos (6 aéreos, 10 terrestres). Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.072845,
+     10.337473
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Limonal–Cañas · Alcantarilla de cajón (sin repisa) 1",
+    "tipo_paso": "alcantarilla",
+    "ruta_o_lugar": "Ruta Nacional 1 (Interamericana Norte), sección Limonal–Cañas",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Fauna terrestre (iguanas, garrobo, tepezcuintle, zorro pelón, oso hormiguero, puercoespín, manigordo)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": "2022-2023",
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 10.337473,
+    "lng": -85.072845,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Paso del Mono Aullador. Proyecto con 16 pasos (6 aéreos, 10 terrestres). Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.069545,
+     10.334383
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Limonal–Cañas · Alcantarilla de cajón (sin repisa) 2",
+    "tipo_paso": "alcantarilla",
+    "ruta_o_lugar": "Ruta Nacional 1 (Interamericana Norte), sección Limonal–Cañas",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Fauna terrestre (iguanas, garrobo, tepezcuintle, zorro pelón, oso hormiguero, puercoespín, manigordo)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": "2022-2023",
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 10.334383,
+    "lng": -85.069545,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Paso del Mono Aullador. Proyecto con 16 pasos (6 aéreos, 10 terrestres). Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.03543,
+     10.292657
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Limonal–Cañas · Alcantarilla de cajón (sin repisa) 3",
+    "tipo_paso": "alcantarilla",
+    "ruta_o_lugar": "Ruta Nacional 1 (Interamericana Norte), sección Limonal–Cañas",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Fauna terrestre (iguanas, garrobo, tepezcuintle, zorro pelón, oso hormiguero, puercoespín, manigordo)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": "2022-2023",
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 10.292657,
+    "lng": -85.03543,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Paso del Mono Aullador. Proyecto con 16 pasos (6 aéreos, 10 terrestres). Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.030783,
+     10.278632
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Limonal–Cañas · Alcantarilla de cajón (sin repisa) 4",
+    "tipo_paso": "alcantarilla",
+    "ruta_o_lugar": "Ruta Nacional 1 (Interamericana Norte), sección Limonal–Cañas",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Fauna terrestre (iguanas, garrobo, tepezcuintle, zorro pelón, oso hormiguero, puercoespín, manigordo)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": "2022-2023",
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 10.278632,
+    "lng": -85.030783,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Paso del Mono Aullador. Proyecto con 16 pasos (6 aéreos, 10 terrestres). Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.081275,
+     10.39964
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Limonal–Cañas · Puente vehicular adaptado con repisa seca 1",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 1 (Interamericana Norte), sección Limonal–Cañas",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Fauna terrestre (iguanas, garrobo, tepezcuintle, zorro pelón, oso hormiguero, puercoespín, manigordo)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": "2022-2023",
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 10.39964,
+    "lng": -85.081275,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Paso del Mono Aullador. Proyecto con 16 pasos (6 aéreos, 10 terrestres). Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.084422,
+     10.381015
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Limonal–Cañas · Puente vehicular adaptado con repisa seca 2",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 1 (Interamericana Norte), sección Limonal–Cañas",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Fauna terrestre (iguanas, garrobo, tepezcuintle, zorro pelón, oso hormiguero, puercoespín, manigordo)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": "2022-2023",
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 10.381015,
+    "lng": -85.084422,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Paso del Mono Aullador. Proyecto con 16 pasos (6 aéreos, 10 terrestres). Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.084362,
+     10.363853
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Limonal–Cañas · Puente vehicular adaptado con repisa seca 3",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 1 (Interamericana Norte), sección Limonal–Cañas",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Fauna terrestre (iguanas, garrobo, tepezcuintle, zorro pelón, oso hormiguero, puercoespín, manigordo)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": "2022-2023",
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 10.363853,
+    "lng": -85.084362,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Paso del Mono Aullador. Proyecto con 16 pasos (6 aéreos, 10 terrestres). Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.077415,
+     10.349928
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Limonal–Cañas · Puente vehicular adaptado con repisa seca 4",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 1 (Interamericana Norte), sección Limonal–Cañas",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Fauna terrestre (iguanas, garrobo, tepezcuintle, zorro pelón, oso hormiguero, puercoespín, manigordo)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": "2022-2023",
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 10.349928,
+    "lng": -85.077415,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Paso del Mono Aullador. Proyecto con 16 pasos (6 aéreos, 10 terrestres). Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.046805,
+     10.3214
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Limonal–Cañas · Puente vehicular adaptado con repisa seca 5",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 1 (Interamericana Norte), sección Limonal–Cañas",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Fauna terrestre (iguanas, garrobo, tepezcuintle, zorro pelón, oso hormiguero, puercoespín, manigordo)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": "2022-2023",
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 10.3214,
+    "lng": -85.046805,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Paso del Mono Aullador. Proyecto con 16 pasos (6 aéreos, 10 terrestres). Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.03683,
+     10.30171
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Limonal–Cañas · Puente vehicular adaptado con repisa seca 6",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 1 (Interamericana Norte), sección Limonal–Cañas",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Fauna terrestre (iguanas, garrobo, tepezcuintle, zorro pelón, oso hormiguero, puercoespín, manigordo)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": "2022-2023",
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 10.30171,
+    "lng": -85.03683,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Paso del Mono Aullador. Proyecto con 16 pasos (6 aéreos, 10 terrestres). Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.943138,
+     9.884468
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 160 Playa Naranjo–Paquera · Paso inferior (alcantarilla de cajón con repisa seca y malla) 1",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 160, sección Playa Naranjo–Paquera (península de Nicoya)",
+    "provincia": "Puntarenas",
+    "especies_objetivo": "Fauna terrestre (coyote, manigordo, garrobo, zorro pelón, mapache, pizote, tolomuco)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": null,
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 9.884468,
+    "lng": -84.943138,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Peninsular. 8 pasos inferiores con repisa seca y malla guía + 4 puentes de dosel. Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.938717,
+     9.84343
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 160 Playa Naranjo–Paquera · Paso inferior (alcantarilla de cajón con repisa seca y malla) 2",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 160, sección Playa Naranjo–Paquera (península de Nicoya)",
+    "provincia": "Puntarenas",
+    "especies_objetivo": "Fauna terrestre (coyote, manigordo, garrobo, zorro pelón, mapache, pizote, tolomuco)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": null,
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 9.84343,
+    "lng": -84.938717,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Peninsular. 8 pasos inferiores con repisa seca y malla guía + 4 puentes de dosel. Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.93631,
+     9.845482
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 160 Playa Naranjo–Paquera · Paso inferior (alcantarilla de cajón con repisa seca y malla) 3",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 160, sección Playa Naranjo–Paquera (península de Nicoya)",
+    "provincia": "Puntarenas",
+    "especies_objetivo": "Fauna terrestre (coyote, manigordo, garrobo, zorro pelón, mapache, pizote, tolomuco)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": null,
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 9.845482,
+    "lng": -84.93631,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Peninsular. 8 pasos inferiores con repisa seca y malla guía + 4 puentes de dosel. Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.960615,
+     9.914123
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 160 Playa Naranjo–Paquera · Paso inferior (alcantarilla de cajón con repisa seca y malla) 4",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 160, sección Playa Naranjo–Paquera (península de Nicoya)",
+    "provincia": "Puntarenas",
+    "especies_objetivo": "Fauna terrestre (coyote, manigordo, garrobo, zorro pelón, mapache, pizote, tolomuco)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": null,
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 9.914123,
+    "lng": -84.960615,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Peninsular. 8 pasos inferiores con repisa seca y malla guía + 4 puentes de dosel. Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.941807,
+     9.838237
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 160 Playa Naranjo–Paquera · Paso inferior (alcantarilla de cajón con repisa seca y malla) 5",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 160, sección Playa Naranjo–Paquera (península de Nicoya)",
+    "provincia": "Puntarenas",
+    "especies_objetivo": "Fauna terrestre (coyote, manigordo, garrobo, zorro pelón, mapache, pizote, tolomuco)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": null,
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 9.838237,
+    "lng": -84.941807,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Peninsular. 8 pasos inferiores con repisa seca y malla guía + 4 puentes de dosel. Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.943015,
+     9.837592
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 160 Playa Naranjo–Paquera · Paso inferior (alcantarilla de cajón con repisa seca y malla) 6",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 160, sección Playa Naranjo–Paquera (península de Nicoya)",
+    "provincia": "Puntarenas",
+    "especies_objetivo": "Fauna terrestre (coyote, manigordo, garrobo, zorro pelón, mapache, pizote, tolomuco)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": null,
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 9.837592,
+    "lng": -84.943015,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Peninsular. 8 pasos inferiores con repisa seca y malla guía + 4 puentes de dosel. Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.940582,
+     9.84055
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 160 Playa Naranjo–Paquera · Paso inferior (alcantarilla de cajón con repisa seca y malla) 7",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 160, sección Playa Naranjo–Paquera (península de Nicoya)",
+    "provincia": "Puntarenas",
+    "especies_objetivo": "Fauna terrestre (coyote, manigordo, garrobo, zorro pelón, mapache, pizote, tolomuco)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": null,
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 9.84055,
+    "lng": -84.940582,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Peninsular. 8 pasos inferiores con repisa seca y malla guía + 4 puentes de dosel. Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.953623,
+     9.833582
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 160 Playa Naranjo–Paquera · Paso inferior (alcantarilla de cajón con repisa seca y malla) 8",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 160, sección Playa Naranjo–Paquera (península de Nicoya)",
+    "provincia": "Puntarenas",
+    "especies_objetivo": "Fauna terrestre (coyote, manigordo, garrobo, zorro pelón, mapache, pizote, tolomuco)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": null,
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 9.833582,
+    "lng": -84.953623,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Peninsular. 8 pasos inferiores con repisa seca y malla guía + 4 puentes de dosel. Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.937068,
+     9.87461
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 160 Playa Naranjo–Paquera · Puente de dosel 1",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Ruta Nacional 160, sección Playa Naranjo–Paquera (península de Nicoya)",
+    "provincia": "Puntarenas",
+    "especies_objetivo": "Mamíferos arborícolas (mono congo, mono carablanca Cebus imitator, martilla Potos flavus, ardilla)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": null,
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 9.87461,
+    "lng": -84.937068,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Peninsular. 8 pasos inferiores con repisa seca y malla guía + 4 puentes de dosel. Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.937321,
+     9.902691
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 160 Playa Naranjo–Paquera · Puente de dosel 2",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Ruta Nacional 160, sección Playa Naranjo–Paquera (península de Nicoya)",
+    "provincia": "Puntarenas",
+    "especies_objetivo": "Mamíferos arborícolas (mono congo, mono carablanca Cebus imitator, martilla Potos flavus, ardilla)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": null,
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 9.902691,
+    "lng": -84.937321,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Peninsular. 8 pasos inferiores con repisa seca y malla guía + 4 puentes de dosel. Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.95971,
+     9.909014
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 160 Playa Naranjo–Paquera · Puente de dosel 3",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Ruta Nacional 160, sección Playa Naranjo–Paquera (península de Nicoya)",
+    "provincia": "Puntarenas",
+    "especies_objetivo": "Mamíferos arborícolas (mono congo, mono carablanca Cebus imitator, martilla Potos flavus, ardilla)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": null,
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 9.909014,
+    "lng": -84.95971,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Peninsular. 8 pasos inferiores con repisa seca y malla guía + 4 puentes de dosel. Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.939323,
+     9.842394
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 160 Playa Naranjo–Paquera · Puente de dosel 4",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Ruta Nacional 160, sección Playa Naranjo–Paquera (península de Nicoya)",
+    "provincia": "Puntarenas",
+    "especies_objetivo": "Mamíferos arborícolas (mono congo, mono carablanca Cebus imitator, martilla Potos flavus, ardilla)",
+    "responsable": "MOPT / CONAVI (PROGAS), financiado por BID",
+    "año": null,
+    "cantidad": 1,
+    "estado": "existente",
+    "lat": 9.842394,
+    "lng": -84.939323,
+    "coord_precision": "exacta (estación de cámara en la estructura)",
+    "metodo_coord": "Coordenadas del conjunto de datos OSF del estudio",
+    "fuente": "https://osf.io/6fe83/ (datos de Teixeira et al. 2026, IDB-WP-1778: https://publications.iadb.org/publications/english/document/Effectiveness-of-Crossing-Structures-for-Wildlife-on-Two-Roads-Associated-with-Biological-Corridors-in-Costa-Rica.pdf)",
+    "notas": "Corredor Biológico Peninsular. 8 pasos inferiores con repisa seca y malla guía + 4 puentes de dosel. Coordenada = estación de cámara trampa en la estructura (2024-2025)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.881289,
+     9.271493
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Refugio Hacienda Barú · 29 pasos inferiores (Costanera Sur)",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 34 (Costanera Sur), ~3 km frente al RNVS Hacienda Barú, Dominical",
+    "provincia": "Puntarenas",
+    "especies_objetivo": "Fauna terrestre: manigordo, saíno, tepezcuintle, guatusa, oso hormiguero, pizote, mapache, tolomuco, zorros, armadillo (21 especies registradas)",
+    "responsable": "Desarrollador de la Ruta 34 (MOPT/CONAVI) a solicitud del RNVS Hacienda Barú",
+    "año": 2010,
+    "cantidad": 29,
+    "estado": "existente",
+    "lat": 9.271493,
+    "lng": -83.881289,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Geocodificado (Photon/OSM: oficina Hacienda Barú); los pasos están a lo largo de la ruta frente al refugio",
+    "fuente": "https://transportecology.info/research/underpass-functionality-route34-costa-rica",
+    "notas": "Primer sitio de Costa Rica con pasos inferiores específicos para fauna. 29 inferiores = 7 alcantarillas redondas + 22 cuadradas (13 exclusivas 1,5x1,5 m, 9 mixtas con drenaje). También La Nación 2014: https://www.nacion.com/ciencia/medio-ambiente/animales-si-usan-los-pasos-de-fauna-en-tramo-de-costanera-sur/C7STTOUAINAIDBWV7QT5LJMBNI/story/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.880789,
+     9.271993
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Refugio Hacienda Barú · 4 pasos aéreos (Costanera Sur)",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Ruta Nacional 34 (Costanera Sur), frente al RNVS Hacienda Barú, Dominical",
+    "provincia": "Puntarenas",
+    "especies_objetivo": "Mamíferos arborícolas: monos, ardillas, otras especies arborícolas",
+    "responsable": "Desarrollador de la Ruta 34 / RNVS Hacienda Barú (guías de canopy apoyaron la instalación)",
+    "año": 2010,
+    "cantidad": 4,
+    "estado": "existente",
+    "lat": 9.271993,
+    "lng": -83.880789,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Geocodificado (Photon/OSM), desplazado ~70 m para no superponer",
+    "fuente": "https://transportecology.info/research/underpass-functionality-route34-costa-rica",
+    "notas": "Parte del mismo conjunto de 33 estructuras."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.937807,
+     10.161615
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 32 Braulio Carrillo · pasos aéreos tipo escalera (Quebrada González)",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Ruta Nacional 32, sector Quebrada González, tramo cruce Río Frío–puente río Sucio (PN Braulio Carrillo)",
+    "provincia": "Limón",
+    "especies_objetivo": "Oso hormiguero (Tamandua mexicana), martilla (Potos flavus), mono araña (Ateles geoffroyi) y otros arborícolas",
+    "responsable": "MINAE-SINAC (ACC, PN Braulio Carrillo), Asociación Costa Rica por Siempre, ICE (CNFL en etapa siguiente)",
+    "año": 2025,
+    "cantidad": 4,
+    "estado": "en instalación (primera etapa 2025)",
+    "lat": 10.161615,
+    "lng": -83.937807,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Geocodificado (Photon/OSM: puesto Quebrada González)",
+    "fuente": "https://www.minae.go.cr/noticias/2025/DECI%20303%20SE%20COLOCAN%20DE%20PASOS%20DE%20FAUNA%20AEREOS%20EN%20RUTA%C2%A0NACIONAL%C2%A032.aspx",
+    "notas": "Primer paso colocado desde agosto 2025; primera etapa contempla 4 pasos tipo escalera vertical; luego más desde río Sucio hasta túnel Zurquí."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.842727,
+     10.267995
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 32 ampliación · 2 pasos inferiores (Tramo I)",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 32 (Braulio Carrillo–Limón), Tramo I: cruce Ruta 4 (PK 48+200)–Pococí (PK 67+800)",
+    "provincia": "Heredia/Limón",
+    "especies_objetivo": "Fauna terrestre (mamíferos medianos, reptiles, anfibios) — obras de drenaje adaptadas como pasos mixtos",
+    "responsable": "CONAVI – Unidad Ejecutora Ruta Nacional 32 (contratista CHEC)",
+    "año": "2020-2025",
+    "cantidad": 2,
+    "estado": "construidos/adaptados (estado individual no confirmado)",
+    "lat": 10.267995,
+    "lng": -83.842727,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Punto medio entre Río Frío, Sarapiquí y Guápiles (Photon/OSM); no se georreferenció cada estación",
+    "fuente": "https://surcosdigital.com/wp-content/uploads/2020/05/730-UE-DRA-RN32-010-2020-0730-563.pdf ; estado: https://delfino.cr/2025/11/solo-2-de-20-pasos-de-fauna-aereos-en-ruta-32-informe-de-conavi-a-la-sala-confirma-rezago",
+    "notas": "Estaciones del oficio CONAVI 2020: K54+774, K60+129. SINAC (dic-2020) cuestionó que fueran pasos reales (drenajes). Informe CONAVI a la Sala IV (nov-2025): 29 de 31 pasos inferiores construidos y 2 de 20 aéreos (6 en construcción). Faltan adaptaciones (pasarelas internas, mallas)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.738227,
+     10.213012
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 32 ampliación · 7 pasos inferiores (Tramo II)",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 32 (Braulio Carrillo–Limón), Tramo II: Pococí (PK 67+800)–Guácimo (PK 84+340)",
+    "provincia": "Limón",
+    "especies_objetivo": "Fauna terrestre (mamíferos medianos, reptiles, anfibios) — obras de drenaje adaptadas como pasos mixtos",
+    "responsable": "CONAVI – Unidad Ejecutora Ruta Nacional 32 (contratista CHEC)",
+    "año": "2020-2025",
+    "cantidad": 7,
+    "estado": "construidos/adaptados (estado individual no confirmado)",
+    "lat": 10.213012,
+    "lng": -83.738227,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Punto medio entre Guápiles y Guácimo (Photon/OSM); no se georreferenció cada estación",
+    "fuente": "https://surcosdigital.com/wp-content/uploads/2020/05/730-UE-DRA-RN32-010-2020-0730-563.pdf ; estado: https://delfino.cr/2025/11/solo-2-de-20-pasos-de-fauna-aereos-en-ruta-32-informe-de-conavi-a-la-sala-confirma-rezago",
+    "notas": "Estaciones del oficio CONAVI 2020: K69+288, K71+679, K74+306, K74+535, K78+565, K81+400, K81+767. SINAC (dic-2020) cuestionó que fueran pasos reales (drenajes). Informe CONAVI a la Sala IV (nov-2025): 29 de 31 pasos inferiores construidos y 2 de 20 aéreos (6 en construcción). Faltan adaptaciones (pasarelas internas, mallas)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.583324,
+     10.179974
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 32 ampliación · 9 pasos inferiores (Tramo III)",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 32 (Braulio Carrillo–Limón), Tramo III: Guácimo (PK 84+340)–Siquirres (PK 110+400)",
+    "provincia": "Limón",
+    "especies_objetivo": "Fauna terrestre (mamíferos medianos, reptiles, anfibios) — obras de drenaje adaptadas como pasos mixtos",
+    "responsable": "CONAVI – Unidad Ejecutora Ruta Nacional 32 (contratista CHEC)",
+    "año": "2020-2025",
+    "cantidad": 9,
+    "estado": "construidos/adaptados (estado individual no confirmado)",
+    "lat": 10.179974,
+    "lng": -83.583324,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Punto medio entre Guácimo y Siquirres (Photon/OSM); no se georreferenció cada estación",
+    "fuente": "https://surcosdigital.com/wp-content/uploads/2020/05/730-UE-DRA-RN32-010-2020-0730-563.pdf ; estado: https://delfino.cr/2025/11/solo-2-de-20-pasos-de-fauna-aereos-en-ruta-32-informe-de-conavi-a-la-sala-confirma-rezago",
+    "notas": "Estaciones del oficio CONAVI 2020: K85+577, K86+598, K88+984, K89+850, K91+122, K102+297, K102+847, K104+087, K108+901. SINAC (dic-2020) cuestionó que fueran pasos reales (drenajes). Informe CONAVI a la Sala IV (nov-2025): 29 de 31 pasos inferiores construidos y 2 de 20 aéreos (6 en construcción). Faltan adaptaciones (pasarelas internas, mallas)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.410527,
+     10.079555
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 32 ampliación · 7 pasos inferiores (Tramo IV)",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 32 (Braulio Carrillo–Limón), Tramo IV: Siquirres (PK 110+400)–Matina (PK 135+200)",
+    "provincia": "Limón",
+    "especies_objetivo": "Fauna terrestre (mamíferos medianos, reptiles, anfibios) — obras de drenaje adaptadas como pasos mixtos",
+    "responsable": "CONAVI – Unidad Ejecutora Ruta Nacional 32 (contratista CHEC)",
+    "año": "2020-2025",
+    "cantidad": 7,
+    "estado": "construidos/adaptados (estado individual no confirmado)",
+    "lat": 10.079555,
+    "lng": -83.410527,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Punto medio entre Siquirres y Matina (Photon/OSM); no se georreferenció cada estación",
+    "fuente": "https://surcosdigital.com/wp-content/uploads/2020/05/730-UE-DRA-RN32-010-2020-0730-563.pdf ; estado: https://delfino.cr/2025/11/solo-2-de-20-pasos-de-fauna-aereos-en-ruta-32-informe-de-conavi-a-la-sala-confirma-rezago",
+    "notas": "Estaciones del oficio CONAVI 2020: K112+717, K113+566, K118+278, K118+755, K121+610, K135+459, K137+765. SINAC (dic-2020) cuestionó que fueran pasos reales (drenajes). Informe CONAVI a la Sala IV (nov-2025): 29 de 31 pasos inferiores construidos y 2 de 20 aéreos (6 en construcción). Faltan adaptaciones (pasarelas internas, mallas)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.237362,
+     10.461551
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 4 Bajos de Chilamate–Vuelta Kooper · pasos inferiores y aéreos",
+    "tipo_paso": "subterráneo + aéreo-dosel",
+    "ruta_o_lugar": "Ruta Nacional 4, sección Bajos de Chilamate–Vuelta de Kooper (27 km)",
+    "provincia": "Heredia/Alajuela",
+    "especies_objetivo": "Fauna terrestre y arborícola (corredor San Juan–La Selva)",
+    "responsable": "MOPT/CONAVI (PROGAS); pasos elevados instalados por Selectrica; monitoreo Panthera",
+    "año": "2014-2017",
+    "cantidad": null,
+    "estado": "existente",
+    "lat": 10.461551,
+    "lng": -84.237362,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Punto medio entre Bajos de Chilamate y Vuelta de Kooper (Photon/OSM)",
+    "fuente": "https://repositorio.catie.ac.cr/bitstream/handle/11554/7083/Identificacion_y_caracterizacion_de_cruces.pdf?isAllowed=y&sequence=1",
+    "notas": "Número de estructuras no confirmado en fuentes abiertas. Selectrica indica que sus pasos elevados se instalaron desde 2014 en Chilamate–Vuelta Kooper (https://selectrica.net/paso-fauna-limonal/); evaluados por Araya-Jiménez (2019) y Acosta Cordero (UCR, 2021)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.284498,
+     10.513094
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Cañas–Liberia · pasos inferiores",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Ruta Nacional 1 (Interamericana Norte), sección Cañas–Liberia",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Fauna terrestre del bosque seco",
+    "responsable": "MOPT/CONAVI",
+    "año": "~2016",
+    "cantidad": null,
+    "estado": "existente",
+    "lat": 10.513094,
+    "lng": -85.284498,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Punto representativo: Bagaces, sobre la sección (Photon/OSM)",
+    "fuente": "https://repositorio.catie.ac.cr/bitstream/handle/11554/7083/Identificacion_y_caracterizacion_de_cruces.pdf?isAllowed=y&sequence=1",
+    "notas": "Número y ubicación exacta no disponibles; evaluados en tesis UCR (Acosta Cordero 2021, https://hdl.handle.net/10669/98292)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.86288,
+     10.123598
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 1 Barranca–Limonal · 45 pasos terrestres y aéreos (en construcción)",
+    "tipo_paso": "subterráneo + aéreo-dosel",
+    "ruta_o_lugar": "Ruta Nacional 1, sección Barranca–Limonal (49 km)",
+    "provincia": "Puntarenas/Guanacaste",
+    "especies_objetivo": "Fauna terrestre y arborícola",
+    "responsable": "MOPT (financiamiento BID)",
+    "año": "2026-2027 (previsto)",
+    "cantidad": 45,
+    "estado": "en construcción (20% avance general, 2026)",
+    "lat": 10.123598,
+    "lng": -84.86288,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Punto medio entre Barranca y Limonal (Photon/OSM)",
+    "fuente": "https://www.mopt.go.cr/index.php/noticias/2026/ampliacion-y-rehabilitacion-de-barranca-limonal-alcanza-un-20-de-avance",
+    "notas": "Proyectados; no confirmados como terminados."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.61505,
+     10.03771
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 415 Paso del Jaguar · 2 pasos aéreos ICE (Qda. La Hermosa y Qda. La Linda)",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Ruta Nacional 415 (Turrialba–Siquirres), Subcorredor Biológico Barbilla–Destierro",
+    "provincia": "Cartago/Limón",
+    "especies_objetivo": "Mamíferos arborícolas",
+    "responsable": "ICE (Proyecto Hidroeléctrico Reventazón); monitoreo Panthera Costa Rica",
+    "año": "~2014",
+    "cantidad": 2,
+    "estado": "uno caído en 2015 (no reinstalado según informe)",
+    "lat": 10.03771,
+    "lng": -83.61505,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Punto medio del tramo de 15 km estudiado en Ruta 415 (coordenadas de Araya-Gamboa et al. 2015, https://revistas.ucr.ac.cr/index.php/rvial/article/view/3549)",
+    "fuente": "http://pantheracostarica.org/wp-content/uploads/docs/Panthera_Actividad_1_ProgramaMonitoreo_Informe_4FINALv1_CR-T1086.pdf",
+    "notas": "El paso de Qda. La Hermosa perdió un árbol de soporte en jun-2015."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.084182,
+     9.999318
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Ruta 257 Moín · pasos de fauna (monitoreo Panthera)",
+    "tipo_paso": "subterráneo + aéreo-dosel",
+    "ruta_o_lugar": "Ruta Nacional 257 (acceso a Terminal de Contenedores de Moín)",
+    "provincia": "Limón",
+    "especies_objetivo": "Felinos silvestres y presas; fauna arborícola",
+    "responsable": "MOPT (PROGAS) / APM Terminals; monitoreo Panthera Costa Rica",
+    "año": "~2018",
+    "cantidad": null,
+    "estado": "existente (según Panthera)",
+    "lat": 9.999318,
+    "lng": -83.084182,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Geocodificado Moín (Photon/OSM)",
+    "fuente": "https://pantheracostarica.org/nuestros-proyectos/caminos-amigables-con-los-felinos/",
+    "notas": "Tipo y número de estructuras no detallados en la fuente abierta."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.360328,
+     10.760256
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Proyecto Geotérmico Las Pailas II (ICE) · paso inferior de fauna",
+    "tipo_paso": "subterráneo",
+    "ruta_o_lugar": "Proyecto Las Pailas II, Liberia (faldas del Rincón de la Vieja)",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Manigordo, conejo de monte, zorro de cuatro ojos, zorro pelón",
+    "responsable": "ICE",
+    "año": null,
+    "cantidad": null,
+    "estado": "existente",
+    "lat": 10.760256,
+    "lng": -85.360328,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Geocodificado Las Pailas (Photon/OSM)",
+    "fuente": "https://www.nacion.com/ciencia/medio-ambiente/pasos-de-fauna-en-playa-grande-protegeran-a-mas/AP337WCVO5DQVJ4OEWYKWIB72M/story/",
+    "notas": "Mencionado en pie de foto de La Nación (2023)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.154759,
+     9.408569
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Manuel Antonio–Quepos · puentes de cuerda para monos (KSTR)",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Carretera Quepos–Manuel Antonio y calles laterales",
+    "provincia": "Puntarenas",
+    "especies_objetivo": "Mono tití (Saimiri oerstedii citrinellus), congo, carablanca, perezosos, martilla, zorros, puercoespín, ardilla (11 especies)",
+    "responsable": "Kids Saving the Rainforest (KSTR) con ICE",
+    "año": 2000,
+    "cantidad": 75,
+    "estado": "existente",
+    "lat": 9.408569,
+    "lng": -84.154759,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Geocodificado Manuel Antonio (Photon/OSM)",
+    "fuente": "https://www.scielo.sa.cr/scielo.php?pid=S0034-77442021000301138&script=sci_arttext&tlng=en",
+    "notas": "75 puentes en el área de estudio (Rev. Biol. Trop. 2021), la mayoría de 2001-2002; National Geographic (2016) habla de >130 instalados desde 2000: https://blog.education.nationalgeographic.org/2016/05/18/monkey-bridges-for-everyone/"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -82.775088,
+     9.649654
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Caribe Sur (Cahuita–Manzanillo) · 15 pasos aéreos de fauna (JRC)",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Carretera Cahuita–Puerto Viejo–Manzanillo",
+    "provincia": "Limón",
+    "especies_objetivo": "Mono congo, carablanca, perezosos y otros arborícolas",
+    "responsable": "Jaguar Rescue Center con ICE y MINAE",
+    "año": "desde 2017",
+    "cantidad": 15,
+    "estado": "existente",
+    "lat": 9.649654,
+    "lng": -82.775088,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Geocodificado Puerto Viejo de Talamanca (Photon/OSM)",
+    "fuente": "http://www.jaguarrescue.foundation/",
+    "notas": "Contador del sitio JRC: 15 'aerial wildlife road bridges'; también aislamiento de líneas y transformadores."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.627902,
+     9.978366
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Nosara · puentes para monos (Nosara Monkey Bridge Project)",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Nosara, Nicoya",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Mono congo (Alouatta palliata) y otros arborícolas",
+    "responsable": "Nosara Monkey Bridge Project / Sibu Wildlife Sanctuary / Wildlife Conservation Association",
+    "año": "2020s",
+    "cantidad": 141,
+    "estado": "existente",
+    "lat": 9.978366,
+    "lng": -85.627902,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Geocodificado Nosara (Photon/OSM)",
+    "fuente": "https://planetforward.org/story/nosara-monkey-bridge",
+    "notas": "Más de 141 puentes a enero 2026."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.839951,
+     10.298412
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Tamarindo–Langosta · puentes para monos (SalveMonos / The Clean Wave)",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Playa Tamarindo y Langosta, Santa Cruz",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Mono congo (Alouatta palliata)",
+    "responsable": "Asociación SalveMonos y Fundación The Clean Wave",
+    "año": "2004–2023",
+    "cantidad": 25,
+    "estado": "existente (7 requieren reparación)",
+    "lat": 10.298412,
+    "lng": -85.839951,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Geocodificado Tamarindo (Photon/OSM)",
+    "fuente": "https://www.thecleanwave.org/monkey-bridges/",
+    "notas": "The Clean Wave reporta 25 puentes en el área; La Nación (2023) cita 15 nuevos en Tamarindo. SalveMonos suma >400 puentes en Guanacaste (https://salvemonos.org/)."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.847022,
+     10.334627
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Playa Grande · 20 pasos aéreos (SalveMonos / The Clean Wave)",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Playa Grande, Santa Cruz",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Mono congo y fauna del bosque seco",
+    "responsable": "Asociación SalveMonos y Fundación The Clean Wave",
+    "año": 2023,
+    "cantidad": 20,
+    "estado": "proyectado/recaudación (2023); instalación no confirmada",
+    "lat": 10.334627,
+    "lng": -85.847022,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Geocodificado Playa Grande (Photon/OSM)",
+    "fuente": "https://delfino.cr/2023/10/organizaciones-buscan-evitar-electrocuciones-y-atropellos-de-monos-con-20-nuevos-pasos-de-fauna-en-santa-cruz",
+    "notas": "Pasos de 30 m cada uno."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.692262,
+     10.557995
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Playas del Coco, Ocotal y Hermosa · pasos aéreos (SalveMonos)",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Playas del Coco, Ocotal y Playa Hermosa, Carrillo",
+    "provincia": "Guanacaste",
+    "especies_objetivo": "Mono congo",
+    "responsable": "Asociación SalveMonos (sedes Playa Hermosa, Ocotal, Coco)",
+    "año": "2010–2021",
+    "cantidad": null,
+    "estado": "existente",
+    "lat": 10.557995,
+    "lng": -85.692262,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Geocodificado Playas del Coco (Photon/OSM)",
+    "fuente": "https://www.nacion.com/el-pais/servicios/pasos-de-fauna-trataran-de-salvar-a-monos-de-morir/ZLJVQLKDKRFFBC2GVAFY5KTQXI/story/",
+    "notas": "En 2021 SalveMonos instaló 21 pasos aéreos y dio mantenimiento a otros 40 en Coco, Ocotal y Hermosa."
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.458448,
+     8.533789
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "tipo": "Paso de fauna",
+    "nombre": "Península de Osa y Corredor AmistOsa · 35 puentes arbóreos (Conservación Osa)",
+    "tipo_paso": "aéreo-dosel",
+    "ruta_o_lugar": "Caminos de lastre de la península de Osa y Corredor Biológico AmistOsa",
+    "provincia": "Puntarenas",
+    "especies_objetivo": "Zorro de balsa (Caluromys derbianus), martilla, carablanca, mono tití, mono araña, perezosos, puercoespín (≥13–19 especies)",
+    "responsable": "Conservación Osa (Osa Conservation) con SINAC",
+    "año": "2020–2025",
+    "cantidad": 35,
+    "estado": "existente",
+    "lat": 8.533789,
+    "lng": -83.458448,
+    "coord_precision": "aproximada",
+    "metodo_coord": "Punto representativo Puerto Jiménez (Photon/OSM); ubicaciones individuales no publicadas",
+    "fuente": "https://osaconservation.org/wp-content/uploads/2026/08/Arboreal-Bridges-Report-May-2026.pdf",
+    "notas": "5 diseños (cuerda simple, doble, triple, escalera, malla). La página de base de datos de Osa Conservation menciona 36."
+   }
+  }
+ ]
+}
