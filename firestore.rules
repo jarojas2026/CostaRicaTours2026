@@ -144,6 +144,11 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    match /jarvis_plans/{planId} {
+      allow read: if isOwner() && isValidId(planId);
+      allow create, update, delete: if false;
+    }
+
     match /agent_approvals/{approvalId} {
       allow read: if isOwner() && isValidId(approvalId);
       allow create, update, delete: if false;
