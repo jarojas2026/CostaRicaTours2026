@@ -22,6 +22,10 @@ export type ActionClass =
   | 'payment'
   | 'refund'
   | 'payout'
+  | 'customer_message'
+  | 'mass_message'
+  | 'price_change'
+  | 'publication'
   | 'legal_or_policy_change'
   | 'identity_merge'
   | 'delete';
@@ -33,7 +37,18 @@ const SAFE_BY_LEVEL: Record<AutonomyLevel, ActionClass[]> = {
   3: ['observe', 'recommend', 'notify', 'prepare', 'reserve', 'change_booking']
 };
 
-const ALWAYS_HUMAN: ActionClass[] = ['payment', 'refund', 'payout', 'legal_or_policy_change', 'identity_merge', 'delete'];
+const ALWAYS_HUMAN: ActionClass[] = [
+  'payment',
+  'refund',
+  'payout',
+  'customer_message',
+  'mass_message',
+  'price_change',
+  'publication',
+  'legal_or_policy_change',
+  'identity_merge',
+  'delete'
+];
 
 export function canAutoExecute(level: AutonomyLevel, action: ActionClass): boolean {
   return SAFE_BY_LEVEL[level].includes(action) && !ALWAYS_HUMAN.includes(action);
