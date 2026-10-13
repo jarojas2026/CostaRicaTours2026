@@ -1576,3 +1576,21 @@ La regla comercial `consulta pública → agente IA → evaluación de contexto 
 - **Fuera de alcance:** enlaces de compartir comprobantes o atención que aparecen **después** de una compra/reserva o de asistencia dentro de IA; esos flujos requieren revisión diferenciada, no se deben bloquear ciegamente. Correos `mailto:` públicos, políticas de consentimiento y UX completa siguen bajo auditoría.
 
 **Importante:** un clic abre una solicitud atendida por el flujo actual; no afirmar que existe proveedor confirmado, cobro procesado, inventario reservado ni comunicación humana recibida sin evidencia del servicio transaccional. Mantener ES/EN y la escalación cuando corresponda.
+
+
+---
+
+## 40. Oficina Digital de Agentes — Fase 1: contratos y bitácora (2026-10-12)
+
+La primera fase de la **Oficina Digital de Agentes** agrega únicamente el plano de datos y la bitácora auditable. No activa todavía JARVIS autónomo, heartbeat, controles de apagado ni el plano isométrico.
+
+- `shared/agentOfficeTypes.ts`: contratos estrictos para estados (`idle`, `working`, `waiting_approval`, `blocked`, `paused`, `revoked`, `no_signal`), autonomía 0–3, oficinas, telemetría, `agentRuns` y steps.
+- `backend/agentRegistryService.ts`: materializa en `agents` las identidades que **ya existen** en `agentKnowledgeFabric.ts`. Una identidad nueva sin asignación explícita de oficina hace fallar la sincronización en vez de ser colocada de forma ficticia.
+- Todo agente nuevo se crea conservadoramente con `autonomyLevel: 0`, `status: no_signal`, `currentTask: null`, `lastHeartbeatAt: null`, `usageToday: null`, `model: null` y `allowedTools: []`. Cero actividad o coste no se presenta como telemetría medida cuando no existe evidencia.
+- Las nueve oficinas objetivo ya tienen contrato ES/EN. Marketing Internacional, Finanzas y Sala de JARVIS pueden permanecer vacías hasta que exista un agente real para ocuparlas; no se crean empleados sintéticos solo para llenar el plano.
+- `backend/agentRunLedgerService.ts`: crea ejecuciones con ciclo monotónico, steps secuenciales y resultados resumidos. Se guarda `decisionSummary` auditable; **no se persiste chain-of-thought privado**.
+- Los steps son append-only desde el servicio y no pueden añadirse a una ejecución terminal. El documento raíz mantiene únicamente la proyección de estado y el último número de step.
+- `firestore.rules`: `agents`, `agentRuns` y `agentRuns/{runId}/steps` quedan legibles solo para administración autenticada y **sin escrituras desde el navegador**. El backend autorizado usa Firebase Admin.
+- Esta fase no cambia reservas, pagos, disponibilidad, proveedores, precios ni mensajería y no crea un segundo sistema de agentes.
+
+**Siguiente fase:** instrumentar `operationalEventBus`, heartbeat de 15 segundos y proyección de `no_signal` después de 60 segundos sin latido, manteniendo como desconocido cualquier estado sin telemetría verificable.
