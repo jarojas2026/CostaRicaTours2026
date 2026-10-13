@@ -2,6 +2,15 @@
 
 Plataforma full-stack de venta, asesoría, planificación y operación de servicios turísticos en Costa Rica.
 
+### JARVIS — inteligencia turística y segunda mano del propietario (12 octubre 2026)
+
+Se añadió un **núcleo consultivo** en `backend/jarvisTourismAdvisory.ts` y se integró en `backend/tourismIntelligenceEngine.ts`. Incorpora conocimiento bilingüe sobre geografía real, presas de la GAM, carreteras rurales y accesos 4x4, clima, traslados entre polos turísticos, fauna, ballenas, aves, caminatas nocturnas, SINAC y verificación de fuentes. Su informe `buildJarvisOwnerBrief()` es **solo consultivo**, no ejecuta pagos, reservas ni notificaciones.
+
+**Arquitectura de destino:** rol supervisor dentro del backend privado existente (Cloud Run / Node / TypeScript), con Firestore y el panel administrativo actual; no crear un segundo motor de reservas ni exponer privilegios al frontend. **No afirmar que JARVIS ya esté desplegado o tenga autonomía operativa:** este cambio establece la base de conocimiento y pruebas, no el servicio final.
+
+Guía técnica, inventario de fuentes oficiales y fases de implantación: **[`docs/jarvis-owner-tourism-intelligence.md`](docs/jarvis-owner-tourism-intelligence.md)**. La duración real de un traslado, la apertura de un parque, el estado de una ruta, los cupos y la observación de fauna requieren datos vivos o confirmación del proveedor; nunca se infieren como hechos confirmados.
+
+
 Portal de proveedores: las respuestas se presentan exitosas solo tras guardar el pedido y se distinguen de la notificación al viajero y de la liquidación financiera. Ver alcance vigente en [`docs/estado-real-del-sistema.md`](docs/estado-real-del-sistema.md).
 
 Actualización incremental del Agent Desk (1 de octubre de 2026): consultas WhatsApp unificadas con grupo y recogida, estados operativos desconocidos diferenciados de cero, errores de acceso visibles y consultas con tiempo límite sin reintentos automáticos. Ver alcance y pendientes reales en [`docs/estado-real-del-sistema.md`](docs/estado-real-del-sistema.md). Estos controles no equivalen a una reserva confirmada ni activan telefonía.
