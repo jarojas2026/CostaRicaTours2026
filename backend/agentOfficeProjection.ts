@@ -63,7 +63,7 @@ function localizedMission(value: Identity['mission']): string {
 function validHeartbeat(value: unknown, now: number): { at: string; timestamp: number; fresh: boolean } | null {
   if (typeof value !== 'string') return null;
   const timestamp = Date.parse(value);
-  if (!Number.isFinite(timestamp) || !Number.isFinite(now) || timestamp > now + 60_000) return null;
+  if (!Number.isFinite(timestamp) || !Number.isFinite(now) || timestamp > now) return null;
   return {
     at: new Date(timestamp).toISOString(),
     timestamp,
