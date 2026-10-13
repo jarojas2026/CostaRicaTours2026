@@ -30,7 +30,7 @@ import type {
 } from '../shared/ownerApprovalTypes';
 
 const COLLECTION = 'jarvis_plans';
-const MAX_RETRIES = 2;
+export const JARVIS_MAX_RETRIES = 2;
 
 type TaskRule = {
   id: string;
@@ -278,7 +278,7 @@ async function queueRun(input: {
   const agentId = input.delegation.assignedAgentId;
   if (!agentId) throw new Error('La delegación no tiene agente asignado.');
 
-  await assertAgentExecutionAuthorized(agentId);
+  const authorization = await assertAgentExecutionAuthorized(agentId);
   const run = await createAgentRun({
     requestedBy: {
       kind: 'owner',
@@ -303,6 +303,8 @@ async function queueRun(input: {
       objective: input.delegation.objective,
       actionClass: input.delegation.actionClass,
       approvalId: input.approvalId || null,
+      approvalResourceRef: input.approvalId ? `jarvis:${input.planId}:${input.delegation.id}` : null,
+      authorizationEpoch: authorization.authorizationEpoch,
       retryCount: input.delegation.retryCount,
     },
   });
@@ -489,7 +491,7 @@ async function retryFailedTask(input: {
     return { ...input.task, status: 'escalated', lastError: 'missing_assigned_agent' };
   }
 
-  if (input.task.retryCount >= MAX_RETRIES) {
+  if (input.task.retryCount >= JARVIS_MAX_RETRIES) {
     await sendAgentMessage({
       conversationId: input.plan.id,
       fromAgent: 'jarvis',
