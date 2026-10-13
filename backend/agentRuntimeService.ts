@@ -121,7 +121,9 @@ export async function recordAgentStepEvent(input: {
   runId: string;
   sequence: number;
   status: string;
+  expectedAuthorizationEpoch?: number;
 }): Promise<void> {
+  await assertAgentExecutionAuthorized(input.agentId, input.expectedAuthorizationEpoch);
   await emitAgentOperationalEvent({
     type: 'agent.step',
     agentId: input.agentId,
@@ -137,7 +139,9 @@ export async function markAgentWaitingApproval(input: {
   agentId: string;
   runId: string;
   now?: Date;
+  expectedAuthorizationEpoch?: number;
 }): Promise<void> {
+  await assertAgentExecutionAuthorized(input.agentId, input.expectedAuthorizationEpoch);
   const { ref, data } = await loadAgentOrThrow(input.agentId);
   assertRuntimeStatus(data.status);
   if (!data.currentTask || data.currentTask.runId !== input.runId) {
