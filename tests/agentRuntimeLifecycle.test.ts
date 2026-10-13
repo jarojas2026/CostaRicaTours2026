@@ -35,7 +35,6 @@ test('operational event bus exposes the required agent lifecycle events', () => 
 test('invalid or future heartbeat timestamps are not considered fresh', () => {
   const now = new Date('2026-10-12T18:00:00.000Z');
   assert.equal(isHeartbeatFresh('not-a-date', now), false);
-  // Runtime helper clamps future age to zero, while the office projection
-  // separately rejects future timestamps before displaying them.
-  assert.equal(heartbeatAgeMs('2026-10-12T18:00:05.000Z', now), 0);
+  assert.equal(heartbeatAgeMs('2026-10-12T18:00:05.000Z', now), null);
+  assert.equal(isHeartbeatFresh('2026-10-12T18:00:05.000Z', now), false);
 });
