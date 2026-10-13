@@ -122,6 +122,7 @@ import { buildTripJourney, adaptTravelerJourney, getTravelerJourney } from './ba
 import { observeJourneyState, guardianReplanJourney } from './backend/journeyVerificationService';
 import { processProviderInboxOnce } from './backend/providerInboxAgent';
 import { getAdminControlCenterSnapshot } from './backend/adminControlCenterService';
+import { syncAgentRegistryFromKnowledgeFabric } from './backend/agentRegistryService';
 import { evaluateDigitalCityRegistration } from './backend/digitalCityRegistrationPolicy';
 import { getPlatformControls, updatePlatformControls } from './backend/platformControlService';
 import { runAdminAICommand, listAdminAICommands, approveAdminAICommand, rejectAdminAICommand } from './backend/adminAICommandService';
@@ -3031,6 +3032,7 @@ async function startServer() {
   }
 
   hydrateSkillGenome().catch(err => console.warn('Skill Genome hydration skipped:', err));
+  syncAgentRegistryFromKnowledgeFabric().catch(err => console.warn('Agent registry bootstrap skipped:', err));
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor Full-Stack corriendo en http://0.0.0.0:${PORT}`);
     console.log(`🧠 Motor de IA nativo listo: Gemini/Vertex + Claude + automatización Node.js/Firestore.`);
