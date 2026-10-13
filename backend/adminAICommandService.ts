@@ -15,7 +15,7 @@ function sanitize(params: { prompt: string; mode: string; actor: any }): AdminAI
   const prompt = String(params.prompt || '').trim().slice(0, 8000);
   const mode = String(params.mode || 'review').trim().slice(0, 80);
   if (!prompt) throw new Error('El comando IA no puede estar vacío.');
-  if (!params.actor || params.actor.role !== 'admin') throw new Error('Se requiere identidad administrativa.');
+  if (!params.actor || !['owner', 'admin'].includes(String(params.actor.role || ''))) throw new Error('Se requiere identidad administrativa.');
   const now = new Date().toISOString();
   return { id: `cmd_${crypto.randomUUID()}`, prompt, mode,
     actor: { email: params.actor.email || null, role: params.actor.role || null },
@@ -38,7 +38,7 @@ export async function runAdminAICommand(params: { prompt: string; mode: string; 
 }
 async function resolveCommand(commandId: string, actor: any, resolution: 'approved' | 'rejected', reason?: string) {
   const db = getFirestoreDb(); if (!db) throw new Error('Firestore no disponible.');
-  if (!actor || actor.role !== 'admin') throw new Error('Se requiere identidad administrativa.');
+  if (!actor || actor.role !== 'owner') throw new Error('Se requiere autorización del owner.');
   const id = String(commandId || '').trim().slice(0, 160);
   if (!id) throw new Error('commandId es obligatorio.');
   const ref = db.collection(COLLECTION).doc(id), now = new Date().toISOString();
