@@ -135,35 +135,36 @@ export async function syncAgentRegistryFromKnowledgeFabric(): Promise<{
   if (!db) throw new Error('Firestore no disponible: no se puede sincronizar el registro de agentes.');
 
   const collection = db.collection(COLLECTION);
-  const existingSnapshot = await collection.get();
-  const existing = new Set(existingSnapshot.docs.map((doc) => doc.id));
-  const now = new Date();
-  const seeds = buildAgentRegistrySeed(now);
-  const batch = db.batch();
-  let created = 0;
-  let updated = 0;
+  const seeds = buildAgentRegistrySeed(new Date());
 
-  for (const seed of seeds) {
+  const outcomes = await Promise.all(seeds.map(async (seed) => db.runTransaction(async (transaction) => {
     const ref = collection.doc(seed.id);
-    if (existing.has(seed.id)) {
-      batch.set(ref, {
-        id: seed.id,
-        name: seed.name,
-        office: seed.office,
-        mission: seed.mission,
-        permissions: seed.permissions,
-        version: seed.version,
-        updatedAt: seed.updatedAt,
-      }, { merge: true });
-      updated += 1;
-    } else {
-      batch.create(ref, seed);
-      created += 1;
+    const snapshot = await transaction.get(ref);
+    if (!snapshot.exists) {
+      transaction.create(ref, seed);
+      return 'created' as const;
     }
-  }
 
-  await batch.commit();
-  return { created, updated, total: seeds.length };
+    const current = snapshot.data() as Partial<AgentRecord>;
+    if (Number(current.version || 0) >= seed.version) return 'unchanged' as const;
+
+    transaction.set(ref, {
+      id: seed.id,
+      name: seed.name,
+      office: seed.office,
+      mission: seed.mission,
+      permissions: seed.permissions,
+      version: seed.version,
+      updatedAt: seed.updatedAt,
+    }, { merge: true });
+    return 'updated' as const;
+  })));
+
+  return {
+    created: outcomes.filter((outcome) => outcome === 'created').length,
+    updated: outcomes.filter((outcome) => outcome === 'updated').length,
+    total: seeds.length,
+  };
 }
 
 export async function listRegisteredAgents(): Promise<AgentRecord[]> {
