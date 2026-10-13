@@ -1,5 +1,5 @@
 import type { ActionClass } from '../backend/autonomyPolicy';
-import type { OwnerApprovalAction } from './ownerApprovalTypes';
+import type { GovernanceActor, OwnerApprovalAction } from './ownerApprovalTypes';
 
 export type JarvisTaskStatus =
   | 'blocked_autonomy'
@@ -30,6 +30,7 @@ export type JarvisDelegation = {
 export type JarvisPlanRecord = {
   id: string;
   commandId: string;
+  requestedBy: GovernanceActor;
   ownerOrder: string;
   language: 'es' | 'en';
   understood: string;
