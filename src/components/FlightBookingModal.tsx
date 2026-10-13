@@ -171,15 +171,15 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
       <div className="bg-white border border-slate-200/90 rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden my-4 animate-in fade-in zoom-in-95 duration-200 text-slate-800">
         
         {/* Modal Header Bar */}
-        <div className="bg-slate-900 text-white p-5 sm:p-6 flex items-center justify-between border-b border-slate-800 relative overflow-hidden">
+        <div className="bg-slate-900 text-white p-4 sm:p-6 flex items-start sm:items-center justify-between gap-3 border-b border-slate-800 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
           
-          <div className="flex items-center gap-3.5 relative z-10">
+          <div className="flex min-w-0 items-start sm:items-center gap-3 relative z-10">
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-slate-950 flex items-center justify-center font-black shadow-lg shadow-emerald-950/40">
               <Plane className="w-6 h-6" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
                   {flight.airline} • {flight.flightNumber}
                 </span>
@@ -224,7 +224,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
 
             {/* Requested Flight Summary */}
             <div className="bg-slate-900 text-white p-5 rounded-2xl border border-slate-800 text-left shadow-xl relative overflow-hidden">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-800 pb-3 mb-3">
                 <div>
                   <span className="text-[10px] uppercase font-bold text-emerald-400 block">Aerolínea & Vuelo solicitado</span>
                   <span className="text-sm font-extrabold text-white">{flight.airline} ({flight.flightNumber})</span>
@@ -235,7 +235,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-4 py-2">
+              <div className="grid grid-cols-[auto_minmax(2.5rem,1fr)_auto] items-center gap-2 sm:gap-4 py-2">
                 <div>
                   <span className="text-2xl font-black text-emerald-400">{flight.originAirportCode}</span>
                   <p className="text-xs text-slate-300">{getLangText(flight.originCity, language)}</p>
@@ -254,7 +254,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                 </div>
               </div>
 
-              <div className="border-t border-slate-800 pt-3 mt-3 flex items-center justify-between text-xs text-slate-300">
+              <div className="border-t border-slate-800 pt-3 mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-300">
                 <div>
                   <span className="text-[10px] uppercase text-slate-400 block">Pasajero</span>
                   <span className="font-bold text-white">{fullName}</span>
@@ -280,15 +280,15 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
         ) : (
           <>
             {/* Flight Route Summary Bar */}
-            <div className="bg-slate-50 p-4 sm:p-5 border-b border-slate-200">
-              <div className="flex items-center justify-between gap-4">
+            <div className="bg-slate-50 p-3 sm:p-5 border-b border-slate-200">
+              <div className="grid grid-cols-[auto_minmax(2.5rem,1fr)_auto] items-center gap-2 sm:gap-4">
                 <div className="text-left">
                   <span className="text-2xl font-extrabold text-slate-900">{flight.originAirportCode}</span>
                   <p className="text-xs text-slate-600 font-medium">{getLangText(flight.originCity, language)}</p>
                   <span className="text-[11px] text-emerald-600 font-mono font-bold">{flight.departureTime}</span>
                 </div>
 
-                <div className="flex-1 flex flex-col items-center px-4">
+                <div className="min-w-0 flex flex-col items-center px-1 sm:px-4">
                   <span className="text-[10px] text-slate-500 font-semibold mb-1 flex items-center gap-1">
                     <Clock className="w-3 h-3 text-emerald-600" />
                     {flight.duration} ({flight.stops === 0 ? (language === 'es' ? 'Directo' : 'Direct') : `${flight.stops} stop`})
@@ -310,7 +310,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
             </div>
 
             {/* Booking Request Form */}
-            <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5 max-h-[62vh] overflow-y-auto">
+            <form onSubmit={handleSubmit} className="min-w-0 p-4 sm:p-6 space-y-5 max-h-[62dvh] overflow-y-auto overscroll-contain">
               
               {/* Flight Date, Passengers & Cabin */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

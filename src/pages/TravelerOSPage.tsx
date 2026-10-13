@@ -203,9 +203,9 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
   ];
 
   return (
-    <main className="min-h-screen bg-[#041711] text-stone-100 px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <section className="relative overflow-hidden rounded-[2.5rem] border border-emerald-400/20 bg-gradient-to-br from-[#0a2a1d] via-[#071d15] to-[#041711] p-6 sm:p-9">
+    <main className="w-full min-w-0 max-w-full min-h-screen overflow-x-clip bg-[#041711] text-stone-100 px-3 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <div className="w-full min-w-0 max-w-7xl mx-auto space-y-6">
+        <section className="w-full min-w-0 relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border border-emerald-400/20 bg-gradient-to-br from-[#0a2a1d] via-[#071d15] to-[#041711] p-6 sm:p-9">
           <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-emerald-400/10 blur-3xl pointer-events-none" />
           <div className="relative flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div className="max-w-3xl">
@@ -251,7 +251,7 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
 
         <div className="grid lg:grid-cols-[1.35fr_0.65fr] gap-6">
           <div className="space-y-6">
-            <section className="rounded-[2rem] border border-white/10 bg-[#071c14] p-5 sm:p-7">
+            <section className="w-full min-w-0 rounded-[2rem] border border-white/10 bg-[#071c14] p-4 sm:p-7">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 text-emerald-300 text-xs font-black uppercase tracking-[0.18em]"><Navigation size={15}/>{es ? 'Mi viaje' : 'My trip'}</div>
@@ -272,12 +272,12 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
             </section>
 
             <section className="rounded-[2rem] border border-white/10 bg-[#071c14] p-5 sm:p-7">
-              <div className="flex items-center justify-between gap-3">
-                <div>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
                   <div className="flex items-center gap-2 text-amber-300 text-xs font-black uppercase tracking-[0.18em]"><ClipboardCheck size={15}/>{es ? 'Panel diario' : 'Daily board'}</div>
                   <h2 className="mt-1 text-2xl font-black text-white">{es ? 'Pendientes del viaje' : 'Travel checklist'}</h2>
                 </div>
-                <button type="button" onClick={resetTasks} className="inline-flex items-center gap-2 text-xs font-bold text-stone-400 hover:text-white"><RefreshCw size={14}/>{es ? 'Reiniciar' : 'Reset'}</button>
+                <button type="button" onClick={resetTasks} className="shrink-0 inline-flex items-center gap-1.5 text-xs font-bold text-stone-400 hover:text-white"><RefreshCw size={14}/>{es ? 'Reiniciar' : 'Reset'}</button>
               </div>
               <div className="mt-5 h-2 rounded-full bg-black/30 overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} className="h-full bg-emerald-400 rounded-full" /></div>
               <div className="mt-2 text-[11px] text-stone-500">{completed}/{tasks.length} {es ? 'tareas completadas' : 'tasks completed'}</div>
@@ -293,9 +293,9 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
 
             <section className="rounded-[2rem] border border-white/10 bg-[#071c14] p-5 sm:p-7">
               <div className="flex items-center gap-2 text-sky-300 text-xs font-black uppercase tracking-[0.18em]"><StickyNote size={15}/>{es ? 'Memoria del viajero' : 'Traveler memory'}</div>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 grid grid-cols-[minmax(0,1fr)_44px] gap-2">
                 <input value={noteDraft} onChange={e=>setNoteDraft(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addNote()} className="flex-1 rounded-2xl bg-black/20 border border-white/10 px-4 py-3 text-white outline-none focus:border-sky-300" placeholder={es ? 'Guarda una idea, dirección, restaurante o pendiente…' : 'Save an idea, address, restaurant or task…'} />
-                <button type="button" onClick={addNote} className="w-12 rounded-2xl bg-sky-300 text-stone-950 flex items-center justify-center"><Plus size={18}/></button>
+                <button type="button" onClick={addNote} className="w-11 min-w-0 rounded-2xl bg-sky-300 text-stone-950 flex items-center justify-center"><Plus size={18}/></button>
               </div>
               <textarea value={trip.note} onChange={e=>setTrip(p=>({...p,note:e.target.value}))} rows={6} className="mt-3 w-full rounded-2xl bg-black/20 border border-white/10 px-4 py-3 text-sm leading-relaxed text-stone-200 outline-none focus:border-sky-300" placeholder={es ? 'Tus notas se guardan localmente en este dispositivo.' : 'Your notes are saved locally on this device.'} />
             </section>
@@ -314,7 +314,7 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
                     ? 'No se pudo verificar el tipo de cambio. No mostramos una conversión estimada; confirma el total en CRC al solicitar tu cotización.'
                     : 'The exchange rate could not be verified. We do not show an estimate; confirm the CRC total when requesting your quote.')}
               </p>}
-              <div className="mt-3 flex items-center justify-between text-[11px] text-stone-500"><span>1 USD = {crcRate > 0 ? crcRate.toFixed(2) : '—'} CRC</span><button type="button" onClick={refreshRate} aria-label={es ? 'Actualizar tipo de cambio' : 'Refresh exchange rate'} className="inline-flex items-center gap-1.5 text-emerald-300 hover:text-white">{rateStatus==='loading'?<RefreshCw size={13} className="animate-spin"/>:<RefreshCw size={13}/>} {rateStatus==='live'?(es?'Actualizado':'Updated'):rateStatus==='fallback'?(es?'Reintentar':'Retry'):(es?'Actualizar':'Refresh')}</button></div>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-stone-500"><span>1 USD = {crcRate > 0 ? crcRate.toFixed(2) : '—'} CRC</span><button type="button" onClick={refreshRate} aria-label={es ? 'Actualizar tipo de cambio' : 'Refresh exchange rate'} className="inline-flex items-center gap-1.5 text-emerald-300 hover:text-white">{rateStatus==='loading'?<RefreshCw size={13} className="animate-spin"/>:<RefreshCw size={13}/>} {rateStatus==='live'?(es?'Actualizado':'Updated'):rateStatus==='fallback'?(es?'Reintentar':'Retry'):(es?'Actualizar':'Refresh')}</button></div>
             </section>
 
             <section className="rounded-[2rem] border border-white/10 bg-[#071c14] p-5 sm:p-6">
@@ -329,7 +329,7 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
               <div className="mt-2 text-2xl font-black text-white">{trip.budgetUSD > 0 ? `${spentUSD.toFixed(2)} / ${trip.budgetUSD.toFixed(2)}` : (es ? 'Añade un presupuesto en tu plan' : 'Add a budget to your plan')}</div>
               {trip.budgetUSD > 0 && <div className="mt-4 h-2 rounded-full bg-black/30 overflow-hidden"><motion.div initial={{width:0}} animate={{width:`${budgetProgress}%`}} className="h-full bg-cyan-300 rounded-full"/></div>}
               {trip.budgetUSD > 0 && <div className="mt-2 text-[11px] text-stone-500">{es ? `Disponible: ${remainingBudget.toFixed(2)} · ${budgetProgress}% usado` : `Remaining: ${remainingBudget.toFixed(2)} · ${budgetProgress}% used`}</div>}
-              <div className="mt-4 grid grid-cols-[1fr_90px_auto] gap-2">
+              <div className="mt-4 grid grid-cols-[minmax(0,1fr)_72px_36px] sm:grid-cols-[minmax(0,1fr)_90px_auto] gap-2">
                 <input value={expenseDraft} onChange={e=>setExpenseDraft(e.target.value)} className="min-w-0 rounded-xl bg-black/20 border border-white/10 px-3 py-2 text-xs text-white outline-none focus:border-cyan-300" placeholder={es ? 'Gasto' : 'Expense'} />
                 <input inputMode="decimal" value={expenseAmountDraft} onChange={e=>setExpenseAmountDraft(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addExpense()} className="w-full rounded-xl bg-black/20 border border-white/10 px-3 py-2 text-xs text-white outline-none focus:border-cyan-300" placeholder="USD" />
                 <button type="button" onClick={addExpense} className="rounded-xl bg-cyan-300 text-stone-950 px-3 font-black text-xs">+</button>

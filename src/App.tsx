@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useLayoutEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
@@ -86,9 +86,16 @@ export default function App() {
     setSelectedRegion(filters.region);
   }, [location.pathname, location.search]);
 
-  // Keep SPA navigation feeling native: every route starts at the top.
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' });
+  // Route changes use the browser viewport as the single scroll container.
+  // This fixes the prior nested app-shell scroll where a new page could open
+  // below the visible area while window.scrollTo() appeared to do nothing.
+  useLayoutEffect(() => {
+    if (location.hash) return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById('main-content')?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [location.pathname]);
 
   // Modals state
@@ -280,6 +287,8 @@ export default function App() {
   // Filter labels for breadcrumbs
   const getActiveTabLabel = () => {
     switch(activeTab) {
+      case 'ciudad': return `🏙️ ${language === 'es' ? 'Ciudad Digital' : 'Digital City'}`;
+      case 'participar': return `🤝 ${language === 'es' ? 'Participar en la Ciudad Digital' : 'Join the Digital City'}`;
       case 'tours': return `🧭 ${language === 'es' ? 'Catálogo de Tours y Aventuras' : 'Tours & Adventures Catalog'}`;
       case 'destinations': return `📍 ${language === 'es' ? 'Destinos de Costa Rica' : 'Costa Rica Destinations'}`;
       case 'activities': return `🧗 ${language === 'es' ? 'Actividades & Experiencias' : 'Activities & Experiences'}`;
@@ -287,18 +296,21 @@ export default function App() {
       case 'about': return `🌿 ${language === 'es' ? 'Sobre Nosotros' : 'About Us'}`;
       case 'flights': return `✈️ ${language === 'es' ? 'Rastreador en Vivo de Vuelos' : 'Live Flight Radar'}`;
       case 'ai': return `🤖 ${language === 'es' ? 'Asistente Turístico IA' : 'AI Concierge'}`;
+      case 'trip': return `🧳 ${language === 'es' ? 'Mi viaje' : 'My Trip'}`;
       case 'itinerary': return `✨ ${language === 'es' ? 'Planificador Inteligente' : 'AI Trip Planner'}`;
       case 'culture': return `🇨🇷 ${language === 'es' ? 'Rincón Tico: Cultura' : 'Tico Culture'}`;
       case 'tools': return `🚐 ${language === 'es' ? 'Transporte & Guía' : 'Transport & Guide'}`;
       case 'workspace': return `✉️ 📅 Google Workspace`;
       case 'counter': return `🛎️ ${language === 'es' ? 'Mostrador Digital Full Stack' : 'Full-Stack Digital Counter'}`;
+      case 'provider': return `🤝 ${language === 'es' ? 'Portal de Proveedores' : 'Provider Portal'}`;
+      case 'ops': return `⚙️ ${language === 'es' ? 'Centro Operativo' : 'Operations Center'}`;
       case 'admin': return `🛡️ ${language === 'es' ? 'Centro de Control Administrativo' : 'Executive Control Center'}`;
       default: return '';
     }
   };
 
   return (
-    <div className="min-h-screen max-h-screen overflow-y-auto bg-[#041711] text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950 relative pb-16 lg:pb-0">
+    <div className="min-h-[100dvh] w-full min-w-0 overflow-x-clip bg-[#041711] text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950 relative pb-16 lg:pb-0">
       {intakeOpen && (
         <div className="fixed inset-0 z-[10050] bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-label={language === 'es' ? 'Atención inteligente' : 'AI customer care'}>
           <div className="w-full max-w-xl max-h-[90dvh] overflow-y-auto rounded-3xl border border-emerald-400/25 bg-[#041711] shadow-2xl">
@@ -354,7 +366,7 @@ export default function App() {
         onOpenFormsManager={() => setIsFormsManagerModalOpen(true)}
       />
 
-      <main className="flex-1 relative z-10 isolate flex flex-col">
+      <main id="main-content" tabIndex={-1} className="flex-1 w-full min-w-0 relative z-10 isolate flex flex-col outline-none">
         {/* Breadcrumbs for sub-pages */}
         {activeTab !== 'home' && activeTab !== 'map' && !location.pathname.startsWith('/tour/') && (
           <div className="bg-[#02130c]/90 backdrop-blur-md border-b border-emerald-500/20 py-2 px-4 sm:px-6 lg:px-8">
@@ -368,14 +380,14 @@ export default function App() {
                   <span>{language === 'es' ? 'Inicio' : 'Home'}</span>
                 </button>
                 <ChevronRight className="w-3.5 h-3.5 text-emerald-500/40 shrink-0" />
-                <span className="font-bold text-amber-400 truncate flex items-center gap-1.5">
+                <span className="font-bold text-amber-400 min-w-0 flex items-center gap-1.5 text-[11px] sm:text-xs leading-tight">
                   {getActiveTabLabel()}
                 </span>
               </div>
 
               <button
                 onClick={() => navigate('/')}
-                className="flex items-center gap-1.5 text-[11px] font-bold bg-[#041910] hover:bg-[#07261b] text-emerald-200 hover:text-white px-3 py-1 rounded-full border border-emerald-500/30 transition-all cursor-pointer shrink-0 shadow-sm"
+                className="hidden sm:flex items-center gap-1.5 text-[11px] font-bold bg-[#041910] hover:bg-[#07261b] text-emerald-200 hover:text-white px-3 py-1 rounded-full border border-emerald-500/30 transition-all cursor-pointer shrink-0 shadow-sm"
               >
                 <ArrowLeft className="w-3 h-3 text-amber-400" />
                 <span className="hidden sm:inline">{language === 'es' ? 'Volver al Inicio' : 'Back to Home'}</span>
@@ -385,11 +397,12 @@ export default function App() {
           </div>
         )}
 
-        {activeTab !== 'counter' && activeTab !== 'ai' && !activeTab.startsWith('admin') && activeTab !== 'provider' && (
-          <div className="pt-4 sm:pt-5">
+        {activeTab !== 'home' && activeTab !== 'counter' && activeTab !== 'ai' && !activeTab.startsWith('admin') && activeTab !== 'provider' && (
+          <div className="pt-3 sm:pt-4">
             <TravelerCommandBar
               language={language}
               activeTab={activeTab}
+              compact
               onNavigate={(path) => navigate(path)}
               onOpenTripBuilder={() => setIsCustomFunnelOpen(true)}
             />

@@ -11,13 +11,15 @@ interface TravelerCommandBarProps {
   activeTab: string;
   onNavigate: (path: string) => void;
   onOpenTripBuilder: () => void;
+  compact?: boolean;
 }
 
 export const TravelerCommandBar: React.FC<TravelerCommandBarProps> = ({
   language,
   activeTab,
   onNavigate,
-  onOpenTripBuilder
+  onOpenTripBuilder,
+  compact = false
 }) => {
   const es = language === 'es';
   const actions = [
@@ -70,6 +72,41 @@ export const TravelerCommandBar: React.FC<TravelerCommandBarProps> = ({
       accent: 'cyan'
     }
   ];
+
+  if (compact) {
+    const compactActions = actions.filter((item) => ['explore', 'map', 'planner', 'trip'].includes(item.id));
+    return (
+      <nav
+        aria-label={es ? 'Navegación rápida del viaje' : 'Quick trip navigation'}
+        className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8 relative z-30"
+      >
+        <div className="rounded-2xl border border-emerald-500/15 bg-[#061a12]/95 p-2 shadow-lg">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            {compactActions.map((item) => {
+              const Icon = item.icon;
+              const active = (item.id === 'explore' && activeTab === 'tours') ||
+                (item.id === 'map' && activeTab === 'map') ||
+                (item.id === 'trip' && activeTab === 'trip');
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={item.action}
+                  aria-current={active ? 'page' : undefined}
+                  className={`min-w-0 min-h-[44px] rounded-xl px-2.5 py-2 flex items-center gap-2 text-left transition-colors ${active ? 'bg-emerald-400/15 text-emerald-100 ring-1 ring-inset ring-emerald-400/35' : 'text-stone-300 hover:bg-white/5 hover:text-white'}`}
+                >
+                  <span className="w-8 h-8 shrink-0 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+                    <Icon size={16} className="text-emerald-300" />
+                  </span>
+                  <span className="min-w-0 text-[11px] sm:text-xs font-black leading-tight">{item.title}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 relative z-30">

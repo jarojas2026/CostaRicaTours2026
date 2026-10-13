@@ -35,6 +35,10 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
 
   if (comparedTours.length === 0) return null;
 
+  const comparisonGridStyle = {
+    '--comparison-count': comparedTours.length,
+  } as React.CSSProperties;
+
   return (
     <div 
       onClick={onClose}
@@ -46,8 +50,8 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
       >
         
         {/* Header */}
-        <div className="bg-stone-50 p-5 sm:p-6 border-b-2 border-black/10 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="bg-stone-50 p-4 sm:p-6 border-b-2 border-black/10 flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="w-10 h-10 bg-orange-500 text-neutral-900 rounded-2xl flex items-center justify-center font-black shadow-lg">
               <Scale className="w-5 h-5" />
             </div>
@@ -75,10 +79,10 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
 
         {/* Side-by-Side Comparison Table Container */}
         <div className="p-4 sm:p-6 overflow-x-auto">
-          <div className="min-w-[600px] grid grid-cols-1 divide-y divide-neutral-800">
+          <div className="min-w-0 grid grid-cols-1 divide-y divide-neutral-800">
             
             {/* Tour Headers Row */}
-            <div className={`grid grid-cols-${comparedTours.length + 1} gap-4 pb-4 items-stretch`}>
+            <div style={comparisonGridStyle} className={`comparison-row gap-4 pb-4 items-stretch`}>
               <div className="font-black text-xs uppercase text-[#FF8C00] flex items-end pb-2">
                 {language === 'es' ? 'Excursión' : 'Excursion'}
               </div>
@@ -138,7 +142,7 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
             </div>
 
             {/* Price Row */}
-            <div className={`grid grid-cols-${comparedTours.length + 1} gap-4 py-3 text-xs items-center`}>
+            <div style={comparisonGridStyle} className={`comparison-row gap-4 py-3 text-xs items-center`}>
               <div className="font-bold text-[#A7F3D0]">
                 💰 {language === 'es' ? 'Precio por persona' : 'Price per person'}
               </div>
@@ -155,7 +159,7 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
             </div>
 
             {/* Duration & Difficulty Row */}
-            <div className={`grid grid-cols-${comparedTours.length + 1} gap-4 py-3 text-xs items-center`}>
+            <div style={comparisonGridStyle} className={`comparison-row gap-4 py-3 text-xs items-center`}>
               <div className="font-bold text-[#A7F3D0]">
                 ⏱️ {language === 'es' ? 'Duración y Nivel' : 'Duration & Difficulty'}
               </div>
@@ -172,7 +176,7 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
             </div>
 
             {/* Customer Rating Row */}
-            <div className={`grid grid-cols-${comparedTours.length + 1} gap-4 py-3 text-xs items-center`}>
+            <div style={comparisonGridStyle} className={`comparison-row gap-4 py-3 text-xs items-center`}>
               <div className="font-bold text-[#A7F3D0]">
                 ⭐ {language === 'es' ? 'Calificación' : 'Customer Rating'}
               </div>
@@ -188,7 +192,7 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
             </div>
 
             {/* Inclusions Highlights Row */}
-            <div className={`grid grid-cols-${comparedTours.length + 1} gap-4 py-3 text-xs items-start`}>
+            <div style={comparisonGridStyle} className={`comparison-row gap-4 py-3 text-xs items-start`}>
               <div className="font-bold text-[#A7F3D0]">
                 📋 {language === 'es' ? 'Servicios Incluidos' : 'Included Services'}
               </div>
@@ -208,7 +212,7 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
             </div>
 
             {/* Hotel Pickup Row */}
-            <div className={`grid grid-cols-${comparedTours.length + 1} gap-4 py-3 text-xs items-start`}>
+            <div style={comparisonGridStyle} className={`comparison-row gap-4 py-3 text-xs items-start`}>
               <div className="font-bold text-[#A7F3D0]">
                 🏨 {language === 'es' ? 'Pick-up en Hotel' : 'Hotel Pickup'}
               </div>
@@ -223,7 +227,7 @@ export const TourComparisonModal: React.FC<TourComparisonModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="bg-stone-50 p-4 sm:p-5 border-t border-black/10 flex items-center justify-between">
+        <div className="bg-stone-50 p-4 sm:p-5 border-t border-black/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <button
             type="button"
             onClick={() => {
