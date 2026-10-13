@@ -21,6 +21,10 @@ interface PoiProps {
   web?: string;
   horario?: string;
   direccion?: string;
+  reserva?: string;
+  aprox?: boolean;
+  fuente?: string;
+  detalles?: { es: string; en: string; v: string }[];
 }
 
 interface PoiFeature {
@@ -112,14 +116,20 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
       if (p.direccion) rows.push(`<div>📍 ${escapeHtml(p.direccion)}</div>`);
       if (p.telefono) rows.push(`<div>📞 <a href="tel:${escapeHtml(p.telefono.replace(/[^+\d]/g, ''))}">${escapeHtml(p.telefono)}</a></div>`);
       if (p.horario) rows.push(`<div>🕒 ${escapeHtml(p.horario)}</div>`);
+      (p.detalles || []).forEach((d) => {
+        rows.push(`<div><strong>${escapeHtml(isEs ? d.es : d.en)}:</strong> ${escapeHtml(d.v)}</div>`);
+      });
+      const booking = safeUrl(p.reserva);
+      if (booking) rows.push(`<div style="margin-top:4px;"><a href="${escapeHtml(booking)}" target="_blank" rel="noopener noreferrer" style="font-weight:800;">🎟️ ${isEs ? 'Reservar entrada oficial' : 'Book official entry'}</a></div>`);
+      if (p.aprox) rows.push(`<div style="opacity:.7;font-size:10px;">⚠️ ${isEs ? 'Ubicación aproximada' : 'Approximate location'}</div>`);
       if (web) rows.push(`<div>🌐 <a href="${escapeHtml(web)}" target="_blank" rel="noopener noreferrer">${isEs ? 'Sitio web' : 'Website'}</a></div>`);
       rows.push(`<div><a href="${directions}" target="_blank" rel="noopener noreferrer">🧭 ${isEs ? 'Cómo llegar' : 'Directions'}</a></div>`);
       return `
-        <div style="min-width:180px;max-width:240px;line-height:1.35;font-size:12px;">
+        <div style="min-width:200px;max-width:280px;max-height:320px;overflow-y:auto;line-height:1.35;font-size:12px;">
           <div style="font-size:10px;font-weight:800;color:${group?.color || '#10b981'};text-transform:uppercase;">${group?.emoji || ''} ${type}</div>
           <div style="font-weight:800;font-size:13px;margin:2px 0 6px;">${name}</div>
           ${rows.join('')}
-          <div style="margin-top:6px;font-size:9px;opacity:.6;">© OpenStreetMap (ODbL)</div>
+          <div style="margin-top:6px;font-size:9px;opacity:.6;">${escapeHtml(group?.attribution || '© OpenStreetMap (ODbL)')}</div>
         </div>`;
     },
     [language, isEs]
@@ -262,8 +272,8 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
           </ul>
           <p className="mt-3 text-[10px] leading-snug text-emerald-200/60">
             {isEs
-              ? 'Datos: © colaboradores de OpenStreetMap (ODbL). Verifique horarios y teléfonos antes de viajar.'
-              : 'Data: © OpenStreetMap contributors (ODbL). Check hours and phone numbers before you travel.'}
+              ? 'Datos: © colaboradores de OpenStreetMap (ODbL), SINAC, CCSS, MCJ, MOPT/CONAVI y fuentes oficiales de cada proyecto. Verifique horarios, tarifas y teléfonos antes de viajar.'
+              : 'Data: © OpenStreetMap contributors (ODbL), SINAC, CCSS, MCJ, MOPT/CONAVI and each project\'s official sources. Check hours, fees and phone numbers before you travel.'}
           </p>
         </div>
       )}
