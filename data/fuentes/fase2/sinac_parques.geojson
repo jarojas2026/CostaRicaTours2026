@@ -1,0 +1,2188 @@
+{
+ "type": "FeatureCollection",
+ "name": "sinac_parques",
+ "metadata": {
+  "fuente_principal": "SINAC páginas oficiales por área (https://www.sinac.go.cr/ES/ac/...) y https://www.sinac.go.cr/ES/Paginas/map.aspx; Decreto Ejecutivo 38295-MINAE",
+  "nota_tarifas": "tarifa_iva_incluido=true: monto con IVA 13% tal como lo publica SINAC; false: monto base del decreto (+IVA); null: no indicado.",
+  "gratis": "24 de agosto gratis para todos (Decreto 16847-MAG-MEP); tercer miércoles de cada mes gratis para nacionales y residentes (Decreto 38295-MINAE), según FAQ https://serviciosenlinea.sinac.go.cr/",
+  "fecha_consulta": "2026-10-12",
+  "sin_coordenadas": [
+   "Parque Internacional La Amistad — Sector Santa María (Pejibaye)",
+   "Parque Nacional Tortuguero — Sector Jalova"
+  ]
+ },
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.2364,
+     10.18572
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-volcan-poas#1",
+    "nombre": "Parque Nacional Volcán Poás",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Cráter (Poasito)",
+    "area_conservacion": "ACCVC (Cordillera Volcánica Central)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 16.95,
+    "tarifa_iva_incluido": true,
+    "horario": "Todos los días 8:00–16:00, último ingreso 14:00, incluye feriados",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2482-1226 / 2482-1227; 2482-1211",
+    "sectores_entradas": "Sector Cráter (Poasito)",
+    "notas": "Entrada solo mediante sistema de reservaciones en línea (SICORE).",
+    "fuente": "https://www.sinac.go.cr/ES/ac/accvc/pnvp/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.18572,
+    "lng": -84.2364,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Estación de Guardaparques PN Volcán Poás' (ranger_station)",
+    "coord_precision": "entrada/puesto"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.84766,
+     9.98145
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-volcan-irazu#1",
+    "nombre": "Parque Nacional Volcán Irazú",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Cráteres",
+    "area_conservacion": "ACCVC (Cordillera Volcánica Central)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 16.95,
+    "tarifa_iva_incluido": true,
+    "horario": "Todos los días 8:00–16:00; último ingreso Cráteres 14:00, Prusia 13:00; incluye feriados",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2200-5025 / 2200-4422 / 2551-0396",
+    "sectores_entradas": "Sector Cráteres; Sector Prusia",
+    "notas": "Cráteres y Prusia: entradas solo en línea. Parqueo aparte (Cráteres ₡2.500 livianos; Prusia ₡3.000).",
+    "fuente": "https://www.sinac.go.cr/ES/ac/accvc/pnvi/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.98145,
+    "lng": -83.84766,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Volcán Irazú' (volcano)",
+    "coord_precision": "cráter (aprox. sector)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.88156,
+     9.95369
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-volcan-irazu#2",
+    "nombre": "Parque Nacional Volcán Irazú",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Prusia",
+    "area_conservacion": "ACCVC (Cordillera Volcánica Central)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 16.95,
+    "tarifa_iva_incluido": true,
+    "horario": "Todos los días 8:00–16:00; último ingreso Cráteres 14:00, Prusia 13:00; incluye feriados",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2200-5025 / 2200-4422 / 2551-0396",
+    "sectores_entradas": "Sector Cráteres; Sector Prusia",
+    "notas": "Cráteres y Prusia: entradas solo en línea. Parqueo aparte (Cráteres ₡2.500 livianos; Prusia ₡3.000).",
+    "fuente": "https://www.sinac.go.cr/ES/ac/accvc/pnvi/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.95369,
+    "lng": -83.88156,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Parque Nacional Volcán Irazu, Sector Prusia'",
+    "coord_precision": "sector"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.76315,
+     10.01932
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-volcan-turrialba#1",
+    "nombre": "Parque Nacional Volcán Turrialba",
+    "tipo": "Parque Nacional",
+    "sector": "Ingreso La Silvia / Volcán Turrialba",
+    "area_conservacion": "ACCVC (Cordillera Volcánica Central)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 13.56,
+    "tarifa_iva_incluido": true,
+    "horario": "Época seca (dic–abr) 5:00–10:00; época lluviosa (may–nov) 6:00–10:00",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí (por teléfono 8704-2432)",
+    "url_reserva": "",
+    "telefono": "8704-2432",
+    "sectores_entradas": "Ingreso La Silvia / Volcán Turrialba",
+    "notas": "Reserva por teléfono; pago en caseta solo con tarjeta. Sin facilidades para el visitante. (La página map.aspx de SINAC aún lo muestra cerrado por erupciones 2014-2015; la página propia del parque publica horario vigente.)",
+    "fuente": "https://www.sinac.go.cr/ES/ac/accvc/pnvt/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.01932,
+    "lng": -83.76315,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Volcán Turrialba' (volcano)",
+    "coord_precision": "cima volcán (no entrada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.93781,
+     10.16161
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-braulio-carrillo#1",
+    "nombre": "Parque Nacional Braulio Carrillo",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Quebrada González",
+    "area_conservacion": "ACCVC (Cordillera Volcánica Central)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 13.56,
+    "tarifa_iva_incluido": true,
+    "horario": "Todos los días 8:00–15:30, incluye feriados",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2206-5577 / 2206-5500",
+    "sectores_entradas": "Sector Quebrada González; Sector Volcán Barva",
+    "notas": "El tiquete de ingreso se debe comprar en línea. Acampar solo en Sector Volcán Barva (₡5.000/persona/noche).",
+    "fuente": "https://www.sinac.go.cr/ES/ac/accvc/pnbc/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.16161,
+    "lng": -83.93781,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'PN Braulio Carrillo - Puesto Quebrada González' (ranger_station)",
+    "coord_precision": "entrada/puesto"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.12534,
+     10.13015
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-braulio-carrillo#2",
+    "nombre": "Parque Nacional Braulio Carrillo",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Volcán Barva",
+    "area_conservacion": "ACCVC (Cordillera Volcánica Central)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 13.56,
+    "tarifa_iva_incluido": true,
+    "horario": "Todos los días 8:00–15:30, incluye feriados",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2206-5577 / 2206-5500",
+    "sectores_entradas": "Sector Quebrada González; Sector Volcán Barva",
+    "notas": "El tiquete de ingreso se debe comprar en línea. Acampar solo en Sector Volcán Barva (₡5.000/persona/noche).",
+    "fuente": "https://www.sinac.go.cr/ES/ac/accvc/pnbc/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.13015,
+    "lng": -84.12534,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'PN Braulio Carrillo - Puesto Volcán Barva' (ranger_station)",
+    "coord_precision": "entrada/puesto"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.78427,
+     9.76073
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-tapanti#1",
+    "nombre": "Parque Nacional Tapantí - Macizo de la Muerte",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Tapantí (Purisil, Orosi)",
+    "area_conservacion": "ACCVC (Cordillera Volcánica Central)",
+    "tarifa_nacional_crc": 800,
+    "tarifa_extranjero_usd": 10,
+    "tarifa_iva_incluido": false,
+    "horario": "Lunes a domingo 8:00–16:00, incluye feriados",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2206-5615",
+    "sectores_entradas": "Sector Tapantí (Purisil, Orosi)",
+    "notas": "Entradas solo mediante sistema en línea. Tarifa publicada sin indicar IVA.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/accvc/pntpmm/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.76073,
+    "lng": -83.78427,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Entrada Parque Nacional Tapanti' (ticket)",
+    "coord_precision": "entrada"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.82223,
+     9.58493
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-los-quetzales#1",
+    "nombre": "Parque Nacional Los Quetzales",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Ojo de Agua (km 76)",
+    "area_conservacion": "ACCVC (Cordillera Volcánica Central)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 11.3,
+    "tarifa_iva_incluido": true,
+    "horario": "Todos los días 8:00–16:00, último ingreso 14:00",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2514-0403 / 2206-5020",
+    "sectores_entradas": "Sector Ojo de Agua (km 76)",
+    "notas": "Entradas únicamente en línea. Entrada km 76 Interamericana Sur, Ojo de Agua de Dota.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/accvc/pnlq/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.58493,
+    "lng": -83.82223,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): límite 'Parque Nacional Los Quetzales' (centroide)",
+    "coord_precision": "centroide del área"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.37811,
+     9.71165
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-la-cangreja#1",
+    "nombre": "Parque Nacional La Cangreja",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Mastatal",
+    "area_conservacion": "ACCVC (Cordillera Volcánica Central)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 11.3,
+    "tarifa_iva_incluido": true,
+    "horario": "Todos los días 8:00–16:00 (último ingreso 14:00)",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "",
+    "url_reserva": "",
+    "telefono": "2200-9909",
+    "sectores_entradas": "Sector Mastatal",
+    "notas": "",
+    "fuente": "https://www.sinac.go.cr/ES/ac/accvc/pnlc/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.71165,
+    "lng": -84.37811,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): límite 'Parque Nacional la Cangreja' (centroide)",
+    "coord_precision": "centroide del área"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.69033,
+     9.97227
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "mn-guayabo#1",
+    "nombre": "Monumento Nacional Guayabo",
+    "tipo": "Monumento Nacional",
+    "sector": "Sector Guayabo (Santa Teresita, Turrialba)",
+    "area_conservacion": "ACCVC (Cordillera Volcánica Central)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 5.65,
+    "tarifa_iva_incluido": true,
+    "horario": "Todos los días 8:00–15:30, incluye feriados",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "",
+    "url_reserva": "",
+    "telefono": "8534-1063",
+    "sectores_entradas": "Sector Guayabo (Santa Teresita, Turrialba)",
+    "notas": "Sitio arqueológico. Acampar $2.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/accvc/mng/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.97227,
+    "lng": -83.69033,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Monumento Nacional Guayabo' (archaeological_site)",
+    "coord_precision": "sitio"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.25913,
+     10.13194
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "rf-grecia-bosque-del-nino#1",
+    "nombre": "Reserva Forestal Grecia (Sector Bosque del Niño)",
+    "tipo": "Reserva Forestal",
+    "sector": "Sector Bosque del Niño",
+    "area_conservacion": "ACCVC (Cordillera Volcánica Central)",
+    "tarifa_nacional_crc": 678,
+    "tarifa_extranjero_usd": 5.65,
+    "tarifa_iva_incluido": true,
+    "horario": "Lunes a domingo 8:00–15:30, incluye feriados",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "",
+    "url_reserva": "",
+    "telefono": "",
+    "sectores_entradas": "Sector Bosque del Niño",
+    "notas": "",
+    "fuente": "https://www.sinac.go.cr/ES/ac/accvc/rfgrec/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.13194,
+    "lng": -84.25913,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Calle Bosque del Niño'",
+    "coord_precision": "calle de acceso (aprox.)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.62869,
+     10.22259
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "rb-alberto-brenes#1",
+    "nombre": "Reserva Biológica Alberto Manuel Brenes",
+    "tipo": "Reserva Biológica",
+    "sector": "Puesto Cedral / Estación Rodolfo Ortiz",
+    "area_conservacion": "ACCVC (Cordillera Volcánica Central)",
+    "tarifa_nacional_crc": null,
+    "tarifa_extranjero_usd": null,
+    "tarifa_iva_incluido": null,
+    "horario": "Ingreso muy restringido: solo investigadores y estudiantes con fines pedagógicos",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí (coordinación previa)",
+    "url_reserva": "",
+    "telefono": "2445-3511 / 2445-4927",
+    "sectores_entradas": "Puesto Cedral / Estación Rodolfo Ortiz",
+    "notas": "No abierta a turismo general.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/accvc/rbamb/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.22259,
+    "lng": -84.62869,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Reserva Biológica Alberto Manuel Brenes' (nature_reserve)",
+    "coord_precision": "centroide del área"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.7373,
+     10.46099
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-volcan-arenal#1",
+    "nombre": "Parque Nacional Volcán Arenal",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Volcán Arenal (El Silencio)",
+    "area_conservacion": "ACAHN (Arenal Huetar Norte)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 16.95,
+    "tarifa_iva_incluido": true,
+    "horario": "Todos los días 8:00–16:00",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "",
+    "url_reserva": "",
+    "telefono": "2200-4192",
+    "sectores_entradas": "Sector Volcán Arenal (El Silencio)",
+    "notas": "",
+    "fuente": "https://www.sinac.go.cr/ES/ac/ACAHN/pnva/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.46099,
+    "lng": -84.7373,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Entrada Parque Nacional Volcán Arenal'",
+    "coord_precision": "entrada"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.78652,
+     10.89231
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "rnvs-cano-negro#1",
+    "nombre": "Refugio Nacional de Vida Silvestre Mixto Caño Negro",
+    "tipo": "Refugio Nacional de Vida Silvestre",
+    "sector": "Sector Caño Negro (Los Chiles)",
+    "area_conservacion": "ACAHN (Arenal Huetar Norte)",
+    "tarifa_nacional_crc": 904,
+    "tarifa_extranjero_usd": 5.65,
+    "tarifa_iva_incluido": true,
+    "horario": "Todos los días 8:00–16:00",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "",
+    "url_reserva": "",
+    "telefono": "2471-1309",
+    "sectores_entradas": "Sector Caño Negro (Los Chiles)",
+    "notas": "",
+    "fuente": "https://www.sinac.go.cr/ES/ac/ACAHN/rnvscn/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.89231,
+    "lng": -84.78652,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Caño Negro' (village)",
+    "coord_precision": "poblado"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.32524,
+     10.28574
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-juan-castro-blanco#1",
+    "nombre": "Parque Nacional Juan Castro Blanco",
+    "tipo": "Parque Nacional",
+    "sector": "Parque Nacional Juan Castro Blanco",
+    "area_conservacion": "ACAHN (Arenal Huetar Norte)",
+    "tarifa_nacional_crc": 800,
+    "tarifa_extranjero_usd": 10,
+    "tarifa_iva_incluido": false,
+    "horario": "Actualmente no se recibe visitación turística",
+    "dias_cerrado": "Cerrado a visitación turística",
+    "cupo_diario": "",
+    "requiere_reserva": "",
+    "url_reserva": "",
+    "telefono": "",
+    "sectores_entradas": "Parque Nacional Juan Castro Blanco",
+    "notas": "Tarifa del decreto (base sin IVA).",
+    "fuente": "https://www.sinac.go.cr/ES/Paginas/map.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.28574,
+    "lng": -84.32524,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): límite 'Parque Nacional Juan Castro Blanco' (centroide)",
+    "coord_precision": "centroide del área"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.98698,
+     10.71544
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-volcan-tenorio#1",
+    "nombre": "Parque Nacional Volcán Tenorio",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Puesto El Pilón (Río Celeste)",
+    "area_conservacion": "ACAT (Arenal Tempisque)",
+    "tarifa_nacional_crc": 904,
+    "tarifa_extranjero_usd": 13.56,
+    "tarifa_iva_incluido": true,
+    "horario": "Todos los días; ingreso 8:00–14:00, permanencia hasta 16:00",
+    "dias_cerrado": "",
+    "cupo_diario": "1200 personas/día (máx. 500 simultáneas en sendero)",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2206-5369",
+    "sectores_entradas": "Sector Puesto El Pilón (Río Celeste)",
+    "notas": "Compra de entradas únicamente en el sitio web oficial. Río Celeste.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acat/pnvt/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.71544,
+    "lng": -84.98698,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Puesto El Pilón'",
+    "coord_precision": "entrada/puesto"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.3504,
+     10.34765
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-palo-verde#1",
+    "nombre": "Parque Nacional Palo Verde",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Palo Verde (Hacienda / centro administrativo)",
+    "area_conservacion": "ACAT (Arenal Tempisque)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 13.56,
+    "tarifa_iva_incluido": true,
+    "horario": "Lunes a domingo 8:00–16:00",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "",
+    "url_reserva": "",
+    "telefono": "2206-5965 / 2680-6596",
+    "sectores_entradas": "Sector Palo Verde (Hacienda / centro administrativo)",
+    "notas": "Pago únicamente con tarjeta.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acat/pnpv/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.34765,
+    "lng": -85.3504,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Estación Palo Verde - SINAC' (ranger_station)",
+    "coord_precision": "estación/centro administrativo"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.34976,
+     10.77339
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-rincon-de-la-vieja#1",
+    "nombre": "Parque Nacional Rincón de la Vieja",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Las Pailas",
+    "area_conservacion": "ACG (Guanacaste)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 16.95,
+    "tarifa_iva_incluido": true,
+    "horario": "Pailas: martes a domingo 8:00–15:00. Santa María: jueves a lunes 8:00–15:30 (página indica 'Actualmente cerrado')",
+    "dias_cerrado": "Pailas: lunes. Santa María: martes y miércoles (actualmente cerrado)",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2666-5051 ext. 209/210",
+    "sectores_entradas": "Sector Las Pailas; Sector Santa María",
+    "notas": "Entrada únicamente por sistema de cobro y reserva en línea.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acg/pnrv/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.77339,
+    "lng": -85.34976,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Estación de Guardaparques - Las Pailas'",
+    "coord_precision": "entrada/puesto"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.30754,
+     10.75788
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-rincon-de-la-vieja#2",
+    "nombre": "Parque Nacional Rincón de la Vieja",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Santa María",
+    "area_conservacion": "ACG (Guanacaste)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 16.95,
+    "tarifa_iva_incluido": true,
+    "horario": "Pailas: martes a domingo 8:00–15:00. Santa María: jueves a lunes 8:00–15:30 (página indica 'Actualmente cerrado')",
+    "dias_cerrado": "Pailas: lunes. Santa María: martes y miércoles (actualmente cerrado)",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2666-5051 ext. 209/210",
+    "sectores_entradas": "Sector Las Pailas; Sector Santa María",
+    "notas": "Entrada únicamente por sistema de cobro y reserva en línea.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acg/pnrv/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.75788,
+    "lng": -85.30754,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Hacienda Santa María' (farm)",
+    "coord_precision": "sector (aprox.)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.61246,
+     10.8339
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-santa-rosa#1",
+    "nombre": "Parque Nacional Santa Rosa",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Santa Rosa (Casona)",
+    "area_conservacion": "ACG (Guanacaste)",
+    "tarifa_nacional_crc": 1243,
+    "tarifa_extranjero_usd": 16.95,
+    "tarifa_iva_incluido": true,
+    "horario": "Miércoles a lunes 8:00–15:30 (previa reservación); Museo La Casona igual",
+    "dias_cerrado": "Martes",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://reservaciones.acguanacaste.ac.cr/",
+    "telefono": "2666-5051",
+    "sectores_entradas": "Sector Santa Rosa (Casona); Sector Murciélago",
+    "notas": "Sectores: Santa Rosa/La Casona, Playa Naranjo (4x4), Murciélago, Marino.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acg/pnsr/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.8339,
+    "lng": -85.61246,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Museo Histórico Casona de Santa Rosa'",
+    "coord_precision": "Casona/registro"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.72991,
+     10.90081
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-santa-rosa#2",
+    "nombre": "Parque Nacional Santa Rosa",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Murciélago",
+    "area_conservacion": "ACG (Guanacaste)",
+    "tarifa_nacional_crc": 1243,
+    "tarifa_extranjero_usd": 16.95,
+    "tarifa_iva_incluido": true,
+    "horario": "Miércoles a lunes 8:00–15:30 (previa reservación); Museo La Casona igual",
+    "dias_cerrado": "Martes",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://reservaciones.acguanacaste.ac.cr/",
+    "telefono": "2666-5051",
+    "sectores_entradas": "Sector Santa Rosa (Casona); Sector Murciélago",
+    "notas": "Sectores: Santa Rosa/La Casona, Playa Naranjo (4x4), Murciélago, Marino.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acg/pnsr/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.90081,
+    "lng": -85.72991,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Parque Nacional Santa Rosa - Sector Murciélago' (ranger_station)",
+    "coord_precision": "entrada/puesto"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.49565,
+     10.95703
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-guanacaste#1",
+    "nombre": "Parque Nacional Guanacaste",
+    "tipo": "Parque Nacional",
+    "sector": "Estación Biológica Maritza",
+    "area_conservacion": "ACG (Guanacaste)",
+    "tarifa_nacional_crc": 1100,
+    "tarifa_extranjero_usd": 15,
+    "tarifa_iva_incluido": false,
+    "horario": "Visita coordinada desde Sector Santa Rosa (Centro de Estaciones Biológicas ACG)",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí (coordinación previa)",
+    "url_reserva": "",
+    "telefono": "2666-5051 ext. 118",
+    "sectores_entradas": "Estación Biológica Maritza",
+    "notas": "Visitación principalmente de investigadores y estudiantes (Estación Maritza).",
+    "fuente": "https://www.sinac.go.cr/ES/Paginas/map.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.95703,
+    "lng": -85.49565,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'PN Guanacaste - Estación La Maritza' (ranger_station)",
+    "coord_precision": "estación"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.67949,
+     10.96678
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "rnvs-bahia-junquillal#1",
+    "nombre": "Refugio Nacional de Vida Silvestre Bahía Junquillal",
+    "tipo": "Refugio Nacional de Vida Silvestre",
+    "sector": "Sector Bahía Junquillal",
+    "area_conservacion": "ACG (Guanacaste)",
+    "tarifa_nacional_crc": 2260,
+    "tarifa_extranjero_usd": 13.56,
+    "tarifa_iva_incluido": null,
+    "horario": "Miércoles a lunes 8:00–18:00",
+    "dias_cerrado": "Martes",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://reservaciones.acguanacaste.ac.cr/es/junquillal",
+    "telefono": "+506 6133 0349 (WhatsApp)",
+    "sectores_entradas": "Sector Bahía Junquillal",
+    "notas": "Administrado con Aso Junquillal.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acg/rnvsbj/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.96678,
+    "lng": -85.67949,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): límite 'Refugio de Vida Silvestre Bahía Junquillal'",
+    "coord_precision": "centroide del área"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.37215,
+     10.17601
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-barra-honda#1",
+    "nombre": "Parque Nacional Barra Honda",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Cerro Barra Honda (Santa Ana de Nicoya)",
+    "area_conservacion": "ACT (Tempisque)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 13.56,
+    "tarifa_iva_incluido": true,
+    "horario": "Administrativo 8:00–16:00; cavernas y senderos 8:00–13:00",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "",
+    "url_reserva": "",
+    "telefono": "2659-1551; WhatsApp 8539-1010 / 8721-2444",
+    "sectores_entradas": "Sector Cerro Barra Honda (Santa Ana de Nicoya)",
+    "notas": "Cavernas requieren guía autorizado (no incluido).",
+    "fuente": "https://www.sinac.go.cr/ES/ac/act/pnbh2/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.17601,
+    "lng": -85.37215,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Parque Nacional Barra Honda Camping' (camp_site)",
+    "coord_precision": "zona de uso público (aprox.)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.59398,
+     10.17287
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-diria#1",
+    "nombre": "Parque Nacional Diriá",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Arado (Santa Cruz)",
+    "area_conservacion": "ACT (Tempisque)",
+    "tarifa_nacional_crc": 600,
+    "tarifa_extranjero_usd": 6,
+    "tarifa_iva_incluido": null,
+    "horario": "Todos los días 8:00–15:00 (map.aspx)",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "",
+    "url_reserva": "",
+    "telefono": "8358-4742",
+    "sectores_entradas": "Sector Arado (Santa Cruz)",
+    "notas": "Página propia: Nacionales ₡600/día, extranjeros $6/día; map.aspx: ₡1.000/$5. Datos inconsistentes.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/act/pndiria/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.17287,
+    "lng": -85.59398,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Casona Parque Nacional Diriá' (ranger_station)",
+    "coord_precision": "puesto"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.84702,
+     10.33463
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-marino-las-baulas#1",
+    "nombre": "Parque Nacional Marino Las Baulas de Guanacaste",
+    "tipo": "Parque Nacional Marino",
+    "sector": "Caseta 1 Playa Grande (oficinas MINAE)",
+    "area_conservacion": "ACT (Tempisque)",
+    "tarifa_nacional_crc": 1600,
+    "tarifa_extranjero_usd": 12,
+    "tarifa_iva_incluido": false,
+    "horario": "Todos los días 6:00–18:00 (oct–feb estadía en playa hasta 17:00)",
+    "dias_cerrado": "",
+    "cupo_diario": "120 personas (60 por caseta) en playa",
+    "requiere_reserva": "no (visita al estero con guías locales)",
+    "url_reserva": "",
+    "telefono": "2653-0470 / 2653-2233",
+    "sectores_entradas": "Caseta 1 Playa Grande (oficinas MINAE)",
+    "notas": "Tarifa tomada de map.aspx (base). Dos casetas: #1 oficinas MINAE, #2 estero Tamarindo.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/act/pnmlb/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.33463,
+    "lng": -85.84702,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Playa Grande' (hamlet)",
+    "coord_precision": "poblado (aprox.)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.67826,
+     9.96901
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "rnvs-ostional#1",
+    "nombre": "Refugio Nacional de Vida Silvestre Ostional",
+    "tipo": "Refugio Nacional de Vida Silvestre",
+    "sector": "Sector Playa Ostional",
+    "area_conservacion": "ACT (Tempisque)",
+    "tarifa_nacional_crc": 1808,
+    "tarifa_extranjero_usd": 13.56,
+    "tarifa_iva_incluido": true,
+    "horario": "Lunes a domingo 5:00–21:00",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "",
+    "url_reserva": "",
+    "telefono": "2682-0400",
+    "sectores_entradas": "Sector Playa Ostional",
+    "notas": "Durante arribadas, ingreso obligatorio con guía local (no incluido).",
+    "fuente": "https://www.sinac.go.cr/ES/ac/act/rnvso/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.96901,
+    "lng": -85.67826,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Refugio de Vida Silvestre Ostional' (nature_reserve)",
+    "coord_precision": "área"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.80554,
+     10.4015
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "rnvs-conchal#1",
+    "nombre": "Refugio Nacional de Vida Silvestre Mixto Conchal",
+    "tipo": "Refugio Nacional de Vida Silvestre",
+    "sector": "Refugio Conchal",
+    "area_conservacion": "ACT (Tempisque)",
+    "tarifa_nacional_crc": 2000,
+    "tarifa_extranjero_usd": 10,
+    "tarifa_iva_incluido": null,
+    "horario": "Lunes, miércoles y viernes 8:00–12:00",
+    "dias_cerrado": "Martes, jueves, sábado y domingo",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "",
+    "telefono": "2654-3067",
+    "sectores_entradas": "Refugio Conchal",
+    "notas": "Administración mixta Reserva Conchal + ACT; reservas refugionatural@reservaconchal.com.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/act/rnvsc/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.4015,
+    "lng": -85.80554,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Playa Conchal' (beach)",
+    "coord_precision": "playa (aprox.)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.10657,
+     9.56273
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "rna-cabo-blanco#1",
+    "nombre": "Reserva Natural Absoluta Cabo Blanco",
+    "tipo": "Reserva Natural Absoluta",
+    "sector": "Sector Cabuya",
+    "area_conservacion": "ACT (Tempisque)",
+    "tarifa_nacional_crc": 1600,
+    "tarifa_extranjero_usd": 12,
+    "tarifa_iva_incluido": false,
+    "horario": "Miércoles a domingo 8:00–16:00",
+    "dias_cerrado": "Lunes y martes",
+    "cupo_diario": "",
+    "requiere_reserva": "",
+    "url_reserva": "",
+    "telefono": "",
+    "sectores_entradas": "Sector Cabuya",
+    "notas": "Sin página SINAC propia localizada; dato de tabla SINAC 2018 + Decreto 38295 (base sin IVA).",
+    "fuente": "https://www.sinac.go.cr/ES/transprncia/rendcuent/27%20reas%20Silvestres%20Protegidas/Tarifas%20Ingreso%20ASP.pdf",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.56273,
+    "lng": -85.10657,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): límite 'Reserva Natural Absoluta Cabo Blanco' (centroide)",
+    "coord_precision": "centroide del área"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.4339,
+     9.8601
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "rnvs-camaronal#1",
+    "nombre": "Refugio Nacional de Vida Silvestre Camaronal",
+    "tipo": "Refugio Nacional de Vida Silvestre",
+    "sector": "Playa Camaronal",
+    "area_conservacion": "ACT (Tempisque)",
+    "tarifa_nacional_crc": 1600,
+    "tarifa_extranjero_usd": 10,
+    "tarifa_iva_incluido": false,
+    "horario": "",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "",
+    "url_reserva": "",
+    "telefono": "",
+    "sectores_entradas": "Playa Camaronal",
+    "notas": "Solo tarifa del Decreto 38295 (2014); horario no localizado.",
+    "fuente": "http://isladelcoco.go.cr/wp-content/uploads/2018/06/Decreto-Tarifas-ASP-No.-38295.pdf",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.8601,
+    "lng": -85.4339,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Playa Camaronal' (beach)",
+    "coord_precision": "playa"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.13583333,
+     9.37555556
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-manuel-antonio#1",
+    "nombre": "Parque Nacional Manuel Antonio",
+    "tipo": "Parque Nacional",
+    "sector": "Entrada principal (Manuel Antonio)",
+    "area_conservacion": "ACOPAC (Pacífico Central)",
+    "tarifa_nacional_crc": 1808,
+    "tarifa_extranjero_usd": 18.08,
+    "tarifa_iva_incluido": true,
+    "horario": "Miércoles a lunes 7:00–15:00",
+    "dias_cerrado": "Martes",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2777-5185",
+    "sectores_entradas": "Entrada principal (Manuel Antonio)",
+    "notas": "Entradas solo en línea (SICORE); máximo 6 entradas por transacción. Sin parqueo propio.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acopac/pnma/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.37555556,
+    "lng": -84.13583333,
+    "coord_fuente": "Wikipedia (es) coordenadas del artículo 'Parque nacional Manuel Antonio'",
+    "coord_precision": "punto del artículo (no entrada exacta)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.60227,
+     9.79314
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-carara#1",
+    "nombre": "Parque Nacional Carara",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Quebrada Bonita (ruta 34)",
+    "area_conservacion": "ACOPAC (Pacífico Central)",
+    "tarifa_nacional_crc": 1000,
+    "tarifa_extranjero_usd": 10,
+    "tarifa_iva_incluido": false,
+    "horario": "Todos los días: 7:00–16:00 (dic–abr), 8:00–16:00 (may–nov)",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2637-1054 / 2637-1081",
+    "sectores_entradas": "Sector Quebrada Bonita (ruta 34)",
+    "notas": "Tarifa publicada como ¢1.000 + IVA y $10 + IVA. Horario de map.aspx.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acopac/pnc/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.79314,
+    "lng": -84.60227,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Parque Nacional Carara' (tourism attraction)",
+    "coord_precision": "entrada (aprox.)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.90822,
+     9.94247
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-isla-san-lucas#1",
+    "nombre": "Parque Nacional Isla San Lucas",
+    "tipo": "Parque Nacional",
+    "sector": "Isla San Lucas (muelle)",
+    "area_conservacion": "ACOPAC (Pacífico Central)",
+    "tarifa_nacional_crc": 1000,
+    "tarifa_extranjero_usd": null,
+    "tarifa_iva_incluido": null,
+    "horario": "Lunes a domingo 8:30–15:30",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2200-4051",
+    "sectores_entradas": "Isla San Lucas (muelle)",
+    "notas": "Página solo publica tarifas en colones; Decreto 38295 (como Refugio) fijaba $12 no residentes. Acceso en bote desde Puntarenas.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acopac/pnisl/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.94247,
+    "lng": -84.90822,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Isla San Lucas' (island)",
+    "coord_precision": "isla"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.4856,
+     8.44859
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-corcovado#1",
+    "nombre": "Parque Nacional Corcovado",
+    "tipo": "Parque Nacional",
+    "sector": "Sector La Leona",
+    "area_conservacion": "ACOSA (Osa)",
+    "tarifa_nacional_crc": 1808,
+    "tarifa_extranjero_usd": 16.95,
+    "tarifa_iva_incluido": true,
+    "horario": "Lunes a domingo 7:00–15:00",
+    "dias_cerrado": "Sector Sirena cierra todo octubre (tabla SINAC 2018)",
+    "cupo_diario": "",
+    "requiere_reserva": "sí (obligatoria, por correo acosa.reservaciones@sinac.go.cr; pago por comprobante bancario)",
+    "url_reserva": "",
+    "telefono": "2775-1210 / 8817-9544; 2735-5036",
+    "sectores_entradas": "Sector La Leona; Sector Sirena; Sector San Pedrillo; Sector Los Patos; Sector Los Planes; Sector El Tigre",
+    "notas": "Seis sectores habilitados. Senderos La Leona–Sirena y Los Patos–Sirena requieren guía. El Tigre se reserva con Asociación Dos Brazos (corcovadoeltigre@gmail.com).",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acosa/pnc/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 8.44859,
+    "lng": -83.4856,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'La Leona' (hamlet)",
+    "coord_precision": "sector (aprox.)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.58919,
+     8.48048
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-corcovado#2",
+    "nombre": "Parque Nacional Corcovado",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Sirena",
+    "area_conservacion": "ACOSA (Osa)",
+    "tarifa_nacional_crc": 1808,
+    "tarifa_extranjero_usd": 16.95,
+    "tarifa_iva_incluido": true,
+    "horario": "Lunes a domingo 7:00–15:00",
+    "dias_cerrado": "Sector Sirena cierra todo octubre (tabla SINAC 2018)",
+    "cupo_diario": "",
+    "requiere_reserva": "sí (obligatoria, por correo acosa.reservaciones@sinac.go.cr; pago por comprobante bancario)",
+    "url_reserva": "",
+    "telefono": "2775-1210 / 8817-9544; 2735-5036",
+    "sectores_entradas": "Sector La Leona; Sector Sirena; Sector San Pedrillo; Sector Los Patos; Sector Los Planes; Sector El Tigre",
+    "notas": "Seis sectores habilitados. Senderos La Leona–Sirena y Los Patos–Sirena requieren guía. El Tigre se reserva con Asociación Dos Brazos (corcovadoeltigre@gmail.com).",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acosa/pnc/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 8.48048,
+    "lng": -83.58919,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Estación de Guardaparques Sirena'",
+    "coord_precision": "estación"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.73442,
+     8.62077
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-corcovado#3",
+    "nombre": "Parque Nacional Corcovado",
+    "tipo": "Parque Nacional",
+    "sector": "Sector San Pedrillo",
+    "area_conservacion": "ACOSA (Osa)",
+    "tarifa_nacional_crc": 1808,
+    "tarifa_extranjero_usd": 16.95,
+    "tarifa_iva_incluido": true,
+    "horario": "Lunes a domingo 7:00–15:00",
+    "dias_cerrado": "Sector Sirena cierra todo octubre (tabla SINAC 2018)",
+    "cupo_diario": "",
+    "requiere_reserva": "sí (obligatoria, por correo acosa.reservaciones@sinac.go.cr; pago por comprobante bancario)",
+    "url_reserva": "",
+    "telefono": "2775-1210 / 8817-9544; 2735-5036",
+    "sectores_entradas": "Sector La Leona; Sector Sirena; Sector San Pedrillo; Sector Los Patos; Sector Los Planes; Sector El Tigre",
+    "notas": "Seis sectores habilitados. Senderos La Leona–Sirena y Los Patos–Sirena requieren guía. El Tigre se reserva con Asociación Dos Brazos (corcovadoeltigre@gmail.com).",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acosa/pnc/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 8.62077,
+    "lng": -83.73442,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'San Pedrillo' (hamlet)",
+    "coord_precision": "sector (aprox.)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.50827,
+     8.57285
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-corcovado#4",
+    "nombre": "Parque Nacional Corcovado",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Los Patos",
+    "area_conservacion": "ACOSA (Osa)",
+    "tarifa_nacional_crc": 1808,
+    "tarifa_extranjero_usd": 16.95,
+    "tarifa_iva_incluido": true,
+    "horario": "Lunes a domingo 7:00–15:00",
+    "dias_cerrado": "Sector Sirena cierra todo octubre (tabla SINAC 2018)",
+    "cupo_diario": "",
+    "requiere_reserva": "sí (obligatoria, por correo acosa.reservaciones@sinac.go.cr; pago por comprobante bancario)",
+    "url_reserva": "",
+    "telefono": "2775-1210 / 8817-9544; 2735-5036",
+    "sectores_entradas": "Sector La Leona; Sector Sirena; Sector San Pedrillo; Sector Los Patos; Sector Los Planes; Sector El Tigre",
+    "notas": "Seis sectores habilitados. Senderos La Leona–Sirena y Los Patos–Sirena requieren guía. El Tigre se reserva con Asociación Dos Brazos (corcovadoeltigre@gmail.com).",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acosa/pnc/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 8.57285,
+    "lng": -83.50827,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Estación de Guardaparques Los Patos'",
+    "coord_precision": "estación"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.73463,
+     8.6208
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-corcovado#5",
+    "nombre": "Parque Nacional Corcovado",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Los Planes",
+    "area_conservacion": "ACOSA (Osa)",
+    "tarifa_nacional_crc": 1808,
+    "tarifa_extranjero_usd": 16.95,
+    "tarifa_iva_incluido": true,
+    "horario": "Lunes a domingo 7:00–15:00",
+    "dias_cerrado": "Sector Sirena cierra todo octubre (tabla SINAC 2018)",
+    "cupo_diario": "",
+    "requiere_reserva": "sí (obligatoria, por correo acosa.reservaciones@sinac.go.cr; pago por comprobante bancario)",
+    "url_reserva": "",
+    "telefono": "2775-1210 / 8817-9544; 2735-5036",
+    "sectores_entradas": "Sector La Leona; Sector Sirena; Sector San Pedrillo; Sector Los Patos; Sector Los Planes; Sector El Tigre",
+    "notas": "Seis sectores habilitados. Senderos La Leona–Sirena y Los Patos–Sirena requieren guía. El Tigre se reserva con Asociación Dos Brazos (corcovadoeltigre@gmail.com).",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acosa/pnc/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 8.6208,
+    "lng": -83.73463,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Estación Los Planes' (ranger_station)",
+    "coord_precision": "estación"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.40292,
+     8.52737
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-corcovado#6",
+    "nombre": "Parque Nacional Corcovado",
+    "tipo": "Parque Nacional",
+    "sector": "Sector El Tigre",
+    "area_conservacion": "ACOSA (Osa)",
+    "tarifa_nacional_crc": 1808,
+    "tarifa_extranjero_usd": 16.95,
+    "tarifa_iva_incluido": true,
+    "horario": "Lunes a domingo 7:00–15:00",
+    "dias_cerrado": "Sector Sirena cierra todo octubre (tabla SINAC 2018)",
+    "cupo_diario": "",
+    "requiere_reserva": "sí (obligatoria, por correo acosa.reservaciones@sinac.go.cr; pago por comprobante bancario)",
+    "url_reserva": "",
+    "telefono": "2775-1210 / 8817-9544; 2735-5036",
+    "sectores_entradas": "Sector La Leona; Sector Sirena; Sector San Pedrillo; Sector Los Patos; Sector Los Planes; Sector El Tigre",
+    "notas": "Seis sectores habilitados. Senderos La Leona–Sirena y Los Patos–Sirena requieren guía. El Tigre se reserva con Asociación Dos Brazos (corcovadoeltigre@gmail.com).",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acosa/pnc/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 8.52737,
+    "lng": -83.40292,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Dos Brazos' (hamlet)",
+    "coord_precision": "poblado de acceso"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.88578,
+     8.71018
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "rb-isla-del-cano#1",
+    "nombre": "Reserva Biológica Isla del Caño",
+    "tipo": "Reserva Biológica",
+    "sector": "Isla del Caño",
+    "area_conservacion": "ACOSA (Osa)",
+    "tarifa_nacional_crc": 1808,
+    "tarifa_extranjero_usd": 16.95,
+    "tarifa_iva_incluido": true,
+    "horario": "Visita 8:00–15:00",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí (reserva y pago previo por correo reservaciones.pnc@sinac.go.cr)",
+    "url_reserva": "",
+    "telefono": "",
+    "sectores_entradas": "Isla del Caño",
+    "notas": "Acceso solo marítimo desde Bahía Drake, Uvita o Sierpe. Buceo $4,52.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acosa/Paginas/IsladelCa%c3%b1o.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 8.71018,
+    "lng": -83.88578,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Reserva Biológica Isla del Caño' (ranger_station)",
+    "coord_precision": "estación"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.76133,
+     9.14689
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-marino-ballena#1",
+    "nombre": "Parque Nacional Marino Ballena",
+    "tipo": "Parque Nacional Marino",
+    "sector": "Sector Uvita",
+    "area_conservacion": "ACOSA (Osa)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 6.78,
+    "tarifa_iva_incluido": true,
+    "horario": "Todos los días: Uvita 7:00–17:00; Colonia 7:00–18:00; Ballena 8:00–16:00; Piñuela 8:00–16:00",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "no (tiquete en puestos oficiales)",
+    "url_reserva": "",
+    "telefono": "2786-5392 / 2786-6534",
+    "sectores_entradas": "Sector Uvita; Sector Colonia; Sector Ballena; Sector Piñuela",
+    "notas": "Tiquete válido todo el día.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acosa/pnmb/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.14689,
+    "lng": -83.76133,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Punta Ballenas' (attraction, Punta Uvita)",
+    "coord_precision": "sector (aprox.)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.75709,
+     9.15482
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-marino-ballena#2",
+    "nombre": "Parque Nacional Marino Ballena",
+    "tipo": "Parque Nacional Marino",
+    "sector": "Sector Colonia",
+    "area_conservacion": "ACOSA (Osa)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 6.78,
+    "tarifa_iva_incluido": true,
+    "horario": "Todos los días: Uvita 7:00–17:00; Colonia 7:00–18:00; Ballena 8:00–16:00; Piñuela 8:00–16:00",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "no (tiquete en puestos oficiales)",
+    "url_reserva": "",
+    "telefono": "2786-5392 / 2786-6534",
+    "sectores_entradas": "Sector Uvita; Sector Colonia; Sector Ballena; Sector Piñuela",
+    "notas": "Tiquete válido todo el día.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acosa/pnmb/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.15482,
+    "lng": -83.75709,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Playa Colonia' (beach)",
+    "coord_precision": "playa"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.7046,
+     9.11752
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-marino-ballena#3",
+    "nombre": "Parque Nacional Marino Ballena",
+    "tipo": "Parque Nacional Marino",
+    "sector": "Sector Ballena",
+    "area_conservacion": "ACOSA (Osa)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 6.78,
+    "tarifa_iva_incluido": true,
+    "horario": "Todos los días: Uvita 7:00–17:00; Colonia 7:00–18:00; Ballena 8:00–16:00; Piñuela 8:00–16:00",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "no (tiquete en puestos oficiales)",
+    "url_reserva": "",
+    "telefono": "2786-5392 / 2786-6534",
+    "sectores_entradas": "Sector Uvita; Sector Colonia; Sector Ballena; Sector Piñuela",
+    "notas": "Tiquete válido todo el día.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acosa/pnmb/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.11752,
+    "lng": -83.7046,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Playa Ballena' (beach)",
+    "coord_precision": "playa"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.68642,
+     9.09969
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-marino-ballena#4",
+    "nombre": "Parque Nacional Marino Ballena",
+    "tipo": "Parque Nacional Marino",
+    "sector": "Sector Piñuela",
+    "area_conservacion": "ACOSA (Osa)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 6.78,
+    "tarifa_iva_incluido": true,
+    "horario": "Todos los días: Uvita 7:00–17:00; Colonia 7:00–18:00; Ballena 8:00–16:00; Piñuela 8:00–16:00",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "no (tiquete en puestos oficiales)",
+    "url_reserva": "",
+    "telefono": "2786-5392 / 2786-6534",
+    "sectores_entradas": "Sector Uvita; Sector Colonia; Sector Ballena; Sector Piñuela",
+    "notas": "Tiquete válido todo el día.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acosa/pnmb/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.09969,
+    "lng": -83.68642,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Playa Piñuela' (beach)",
+    "coord_precision": "playa"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.18505,
+     8.7084
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-piedras-blancas#1",
+    "nombre": "Parque Nacional Piedras Blancas",
+    "tipo": "Parque Nacional",
+    "sector": "Sector El Bonito (La Gamba)",
+    "area_conservacion": "ACOSA (Osa)",
+    "tarifa_nacional_crc": 800,
+    "tarifa_extranjero_usd": 10,
+    "tarifa_iva_incluido": false,
+    "horario": "Lunes a domingo 8:00–16:00",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "",
+    "url_reserva": "",
+    "telefono": "2775-1210 / 2775-1538",
+    "sectores_entradas": "Sector El Bonito (La Gamba)",
+    "notas": "Tarifa publicada ¢800 + IVA / $10 + IVA.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acosa/pnpb/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 8.7084,
+    "lng": -83.18505,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'PN Piedras Blancas - Centro Operativo La Gamba'",
+    "coord_precision": "centro operativo"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.20005,
+     8.64968
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "rnfs-golfito#1",
+    "nombre": "Refugio Nacional de Fauna Silvestre Golfito",
+    "tipo": "Refugio Nacional de Vida Silvestre",
+    "sector": "Centro Operativo El Naranjal",
+    "area_conservacion": "ACOSA (Osa)",
+    "tarifa_nacional_crc": 904,
+    "tarifa_extranjero_usd": 11.3,
+    "tarifa_iva_incluido": true,
+    "horario": "Lunes a domingo y feriados 8:00–15:00",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "",
+    "url_reserva": "",
+    "telefono": "",
+    "sectores_entradas": "Centro Operativo El Naranjal",
+    "notas": "Pago en casetilla solo con tarjeta. Centro Operativo El Naranjal.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acosa/rnfsg/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 8.64968,
+    "lng": -83.20005,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): límite 'Refugio de Vida Silvestre Golfito'",
+    "coord_precision": "centroide del área"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.59542,
+     9.46626
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-chirripo#1",
+    "nombre": "Parque Nacional Chirripó",
+    "tipo": "Parque Nacional",
+    "sector": "Sector San Gerardo de Rivas",
+    "area_conservacion": "ACLAP (La Amistad Pacífico)",
+    "tarifa_nacional_crc": 4520,
+    "tarifa_extranjero_usd": 20.34,
+    "tarifa_iva_incluido": true,
+    "horario": "Ingreso al parque todos los días 3:00–10:00; registro previo en oficina (8:00–12:00 y 13:00–16:00)",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí (exclusivamente bajo reservación previa en línea)",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2742-5083 (reservaciones) / 2742-5084 (información); 2742-5348",
+    "sectores_entradas": "Sector San Gerardo de Rivas; Sector Herradura; Sector San Jerónimo",
+    "notas": "SICORE incluye sectores San Gerardo, Herradura y San Jerónimo (MINAE 2025). Máx. 4 entradas por transacción. Acampar (Albergue Urán) $6,78.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/aclap/pnch/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.46626,
+    "lng": -83.59542,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Iglesia de San Gerardo' (San Gerardo de Rivas)",
+    "coord_precision": "poblado de acceso"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.61209,
+     9.48219
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-chirripo#2",
+    "nombre": "Parque Nacional Chirripó",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Herradura",
+    "area_conservacion": "ACLAP (La Amistad Pacífico)",
+    "tarifa_nacional_crc": 4520,
+    "tarifa_extranjero_usd": 20.34,
+    "tarifa_iva_incluido": true,
+    "horario": "Ingreso al parque todos los días 3:00–10:00; registro previo en oficina (8:00–12:00 y 13:00–16:00)",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí (exclusivamente bajo reservación previa en línea)",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2742-5083 (reservaciones) / 2742-5084 (información); 2742-5348",
+    "sectores_entradas": "Sector San Gerardo de Rivas; Sector Herradura; Sector San Jerónimo",
+    "notas": "SICORE incluye sectores San Gerardo, Herradura y San Jerónimo (MINAE 2025). Máx. 4 entradas por transacción. Acampar (Albergue Urán) $6,78.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/aclap/pnch/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.48219,
+    "lng": -83.61209,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Herradura' (hamlet)",
+    "coord_precision": "poblado de acceso"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.50566,
+     9.341
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-chirripo#3",
+    "nombre": "Parque Nacional Chirripó",
+    "tipo": "Parque Nacional",
+    "sector": "Sector San Jerónimo",
+    "area_conservacion": "ACLAP (La Amistad Pacífico)",
+    "tarifa_nacional_crc": 4520,
+    "tarifa_extranjero_usd": 20.34,
+    "tarifa_iva_incluido": true,
+    "horario": "Ingreso al parque todos los días 3:00–10:00; registro previo en oficina (8:00–12:00 y 13:00–16:00)",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí (exclusivamente bajo reservación previa en línea)",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2742-5083 (reservaciones) / 2742-5084 (información); 2742-5348",
+    "sectores_entradas": "Sector San Gerardo de Rivas; Sector Herradura; Sector San Jerónimo",
+    "notas": "SICORE incluye sectores San Gerardo, Herradura y San Jerónimo (MINAE 2025). Máx. 4 entradas por transacción. Acampar (Albergue Urán) $6,78.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/aclap/pnch/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.341,
+    "lng": -83.50566,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'San Jerónimo' (hamlet)",
+    "coord_precision": "poblado de acceso"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.01415,
+     9.00991
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pila#1",
+    "nombre": "Parque Internacional La Amistad",
+    "tipo": "Parque Internacional",
+    "sector": "Sector Altamira (Biolley)",
+    "area_conservacion": "ACLAP (La Amistad Pacífico)",
+    "tarifa_nacional_crc": 800,
+    "tarifa_extranjero_usd": 10,
+    "tarifa_iva_incluido": false,
+    "horario": "Todos los días 8:00–16:00",
+    "dias_cerrado": "",
+    "cupo_diario": "Senderos con capacidad de carga (p. ej. 9–28 visitantes/día según sendero)",
+    "requiere_reserva": "sí (reservación previa)",
+    "url_reserva": "",
+    "telefono": "2200-5355 / 2200-5675",
+    "sectores_entradas": "Sector Altamira (Biolley); Sector Tres Colinas; Sector Pittier; Sector Santa María (Pejibaye)",
+    "notas": "Tarifas publicadas + IVA. reservaciones.pila@sinac.go.cr. Varios senderos requieren guía local.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/aclap/pila/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.00991,
+    "lng": -83.01415,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Altamira' (hamlet, Biolley)",
+    "coord_precision": "poblado de acceso"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.06731,
+     9.12096
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pila#2",
+    "nombre": "Parque Internacional La Amistad",
+    "tipo": "Parque Internacional",
+    "sector": "Sector Tres Colinas",
+    "area_conservacion": "ACLAP (La Amistad Pacífico)",
+    "tarifa_nacional_crc": 800,
+    "tarifa_extranjero_usd": 10,
+    "tarifa_iva_incluido": false,
+    "horario": "Todos los días 8:00–16:00",
+    "dias_cerrado": "",
+    "cupo_diario": "Senderos con capacidad de carga (p. ej. 9–28 visitantes/día según sendero)",
+    "requiere_reserva": "sí (reservación previa)",
+    "url_reserva": "",
+    "telefono": "2200-5355 / 2200-5675",
+    "sectores_entradas": "Sector Altamira (Biolley); Sector Tres Colinas; Sector Pittier; Sector Santa María (Pejibaye)",
+    "notas": "Tarifas publicadas + IVA. reservaciones.pila@sinac.go.cr. Varios senderos requieren guía local.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/aclap/pila/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.12096,
+    "lng": -83.06731,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Tres Colinas' (hamlet)",
+    "coord_precision": "poblado de acceso"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -82.95913,
+     9.02332
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pila#3",
+    "nombre": "Parque Internacional La Amistad",
+    "tipo": "Parque Internacional",
+    "sector": "Sector Pittier",
+    "area_conservacion": "ACLAP (La Amistad Pacífico)",
+    "tarifa_nacional_crc": 800,
+    "tarifa_extranjero_usd": 10,
+    "tarifa_iva_incluido": false,
+    "horario": "Todos los días 8:00–16:00",
+    "dias_cerrado": "",
+    "cupo_diario": "Senderos con capacidad de carga (p. ej. 9–28 visitantes/día según sendero)",
+    "requiere_reserva": "sí (reservación previa)",
+    "url_reserva": "",
+    "telefono": "2200-5355 / 2200-5675",
+    "sectores_entradas": "Sector Altamira (Biolley); Sector Tres Colinas; Sector Pittier; Sector Santa María (Pejibaye)",
+    "notas": "Tarifas publicadas + IVA. reservaciones.pila@sinac.go.cr. Varios senderos requieren guía local.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/aclap/pila/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.02332,
+    "lng": -82.95913,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Estación Pittier' (ranger_station)",
+    "coord_precision": "estación"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -82.83877,
+     9.73619
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-cahuita#1",
+    "nombre": "Parque Nacional Cahuita",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Playa Blanca (Kelly Creek)",
+    "area_conservacion": "ACLAC (La Amistad Caribe)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 5.65,
+    "tarifa_iva_incluido": true,
+    "horario": "Playa Blanca y Puerto Vargas: todos los días 8:00–16:00",
+    "dias_cerrado": "Puerto Vargas: primer lunes de cada mes (map.aspx)",
+    "cupo_diario": "",
+    "requiere_reserva": "",
+    "url_reserva": "",
+    "telefono": "2755-0302 / 2755-0461",
+    "sectores_entradas": "Sector Playa Blanca (Kelly Creek); Sector Puerto Vargas",
+    "notas": "Sector Playa Blanca: contribución voluntaria en efectivo; tarifa aplica en Puerto Vargas.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/aclac/pnc/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.73619,
+    "lng": -82.83877,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Oficina Parque Nacional Cahuita' (ranger_station)",
+    "coord_precision": "entrada/oficina"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -82.8111,
+     9.73647
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-cahuita#2",
+    "nombre": "Parque Nacional Cahuita",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Puerto Vargas",
+    "area_conservacion": "ACLAC (La Amistad Caribe)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 5.65,
+    "tarifa_iva_incluido": true,
+    "horario": "Playa Blanca y Puerto Vargas: todos los días 8:00–16:00",
+    "dias_cerrado": "Puerto Vargas: primer lunes de cada mes (map.aspx)",
+    "cupo_diario": "",
+    "requiere_reserva": "",
+    "url_reserva": "",
+    "telefono": "2755-0302 / 2755-0461",
+    "sectores_entradas": "Sector Playa Blanca (Kelly Creek); Sector Puerto Vargas",
+    "notas": "Sector Playa Blanca: contribución voluntaria en efectivo; tarifa aplica en Puerto Vargas.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/aclac/pnc/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.73647,
+    "lng": -82.8111,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Puerto Vargas'",
+    "coord_precision": "sector (aprox.)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.45405,
+     9.98171
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-barbilla#1",
+    "nombre": "Parque Nacional Barbilla",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Las Brisas de Pacuarito",
+    "area_conservacion": "ACLAC (La Amistad Caribe)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 5.65,
+    "tarifa_iva_incluido": true,
+    "horario": "8:00–16:00; para recorrido llegar 8:00–12:00",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí (para caminata Río Dantas, tel. 2200-5224, con guía local)",
+    "url_reserva": "",
+    "telefono": "2200-5224",
+    "sectores_entradas": "Sector Las Brisas de Pacuarito",
+    "notas": "Sector Las Brisas de Pacuarito.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/aclac/pnb/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.98171,
+    "lng": -83.45405,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Guardaparques - Parque Nacional Barbilla' (ranger_station)",
+    "coord_precision": "estación"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -82.65721,
+     9.63167
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "rnvs-gandoca-manzanillo#1",
+    "nombre": "Refugio Nacional de Vida Silvestre Gandoca-Manzanillo",
+    "tipo": "Refugio Nacional de Vida Silvestre",
+    "sector": "Sector Manzanillo",
+    "area_conservacion": "ACLAC (La Amistad Caribe)",
+    "tarifa_nacional_crc": 0,
+    "tarifa_extranjero_usd": 0,
+    "tarifa_iva_incluido": null,
+    "horario": "Lunes a domingo 8:00–16:00",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "no",
+    "url_reserva": "",
+    "telefono": "2759-9001",
+    "sectores_entradas": "Sector Manzanillo; Sector Gandoca",
+    "notas": "No hay cobro de ingreso.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/aclac/rnvsgm/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.63167,
+    "lng": -82.65721,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Manzanillo' (hamlet)",
+    "coord_precision": "poblado"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -82.61147,
+     9.5852
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "rnvs-gandoca-manzanillo#2",
+    "nombre": "Refugio Nacional de Vida Silvestre Gandoca-Manzanillo",
+    "tipo": "Refugio Nacional de Vida Silvestre",
+    "sector": "Sector Gandoca",
+    "area_conservacion": "ACLAC (La Amistad Caribe)",
+    "tarifa_nacional_crc": 0,
+    "tarifa_extranjero_usd": 0,
+    "tarifa_iva_incluido": null,
+    "horario": "Lunes a domingo 8:00–16:00",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "no",
+    "url_reserva": "",
+    "telefono": "2759-9001",
+    "sectores_entradas": "Sector Manzanillo; Sector Gandoca",
+    "notas": "No hay cobro de ingreso.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/aclac/rnvsgm/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.5852,
+    "lng": -82.61147,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Gandoca' (hamlet)",
+    "coord_precision": "poblado"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.0245,
+     9.67295
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "rb-hitoy-cerere#1",
+    "nombre": "Reserva Biológica Hitoy Cerere",
+    "tipo": "Reserva Biológica",
+    "sector": "Puesto Hitoy Cerere (Valle La Estrella)",
+    "area_conservacion": "ACLAC (La Amistad Caribe)",
+    "tarifa_nacional_crc": 1000,
+    "tarifa_extranjero_usd": 5,
+    "tarifa_iva_incluido": false,
+    "horario": "Todos los días 8:00–16:00 (tabla SINAC 2018)",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "",
+    "url_reserva": "",
+    "telefono": "",
+    "sectores_entradas": "Puesto Hitoy Cerere (Valle La Estrella)",
+    "notas": "Sin página SINAC propia localizada; tarifa Decreto 38295 base.",
+    "fuente": "https://www.sinac.go.cr/ES/transprncia/rendcuent/27%20reas%20Silvestres%20Protegidas/Tarifas%20Ingreso%20ASP.pdf",
+    "fecha_dato": "2026-10-12",
+    "lat": 9.67295,
+    "lng": -83.0245,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Estación de Guardaparques - Hitoy Cerere'",
+    "coord_precision": "estación"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.50442,
+     10.53783
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-tortuguero#1",
+    "nombre": "Parque Nacional Tortuguero",
+    "tipo": "Parque Nacional",
+    "sector": "Sector Cuatro Esquinas",
+    "area_conservacion": "ACTo (Tortuguero)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 16.95,
+    "tarifa_iva_incluido": true,
+    "horario": "Todos los días 6:00–12:00 y 13:00–16:00; venta de tiquetes 6:00–15:30",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2709-8086",
+    "sectores_entradas": "Sector Cuatro Esquinas; Sector Jalova; Sendero Cerro Tortuguero",
+    "notas": "Compra por sistema de reservaciones. Sendero Cerro Tortuguero (RNVS Barra del Colorado): ₡565 / $2,26, 8:00–15:30.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acto/pnt/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.53783,
+    "lng": -83.50442,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Puesto Cuatro Esquinas Parque Nacional de Tortuguero'",
+    "coord_precision": "entrada/puesto"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.52424,
+     10.58513
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-tortuguero#3",
+    "nombre": "Parque Nacional Tortuguero",
+    "tipo": "Parque Nacional",
+    "sector": "Sendero Cerro Tortuguero",
+    "area_conservacion": "ACTo (Tortuguero)",
+    "tarifa_nacional_crc": 1130,
+    "tarifa_extranjero_usd": 16.95,
+    "tarifa_iva_incluido": true,
+    "horario": "Todos los días 6:00–12:00 y 13:00–16:00; venta de tiquetes 6:00–15:30",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí",
+    "url_reserva": "https://serviciosenlinea.sinac.go.cr/",
+    "telefono": "2709-8086",
+    "sectores_entradas": "Sector Cuatro Esquinas; Sector Jalova; Sendero Cerro Tortuguero",
+    "notas": "Compra por sistema de reservaciones. Sendero Cerro Tortuguero (RNVS Barra del Colorado): ₡565 / $2,26, 8:00–15:30.",
+    "fuente": "https://www.sinac.go.cr/ES/ac/acto/pnt/Paginas/default.aspx",
+    "fecha_dato": "2026-10-12",
+    "lat": 10.58513,
+    "lng": -83.52424,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Cerro Tortuguero Jetty'",
+    "coord_precision": "muelle de acceso"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -87.05675,
+     5.54345
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-isla-del-coco#1",
+    "nombre": "Parque Nacional Isla del Coco",
+    "tipo": "Parque Nacional",
+    "sector": "Bahía Wafer",
+    "area_conservacion": "ACMC (Marina Coco)",
+    "tarifa_nacional_crc": null,
+    "tarifa_extranjero_usd": 50,
+    "tarifa_iva_incluido": false,
+    "horario": "08:00–17:00 (map.aspx)",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí (solicitud de ingreso aprobada por ACMC)",
+    "url_reserva": "https://isladelcoco.go.cr/documentos/",
+    "telefono": "2291-1215",
+    "sectores_entradas": "Bahía Wafer; Bahía Chatham",
+    "notas": "Tarifa por día: no residentes $50, residentes $25 (en USD, no en colones). Buceo $20/día. Acceso solo por barco (~36 h desde Puntarenas).",
+    "fuente": "https://isladelcoco.go.cr/programas/",
+    "fecha_dato": "2026-10-12",
+    "lat": 5.54345,
+    "lng": -87.05675,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Estación de Guardaparques Base Wafer'",
+    "coord_precision": "estación",
+    "tarifa_residente_usd": 25
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -87.04326,
+     5.54791
+    ]
+   },
+   "properties": {
+    "grupo": "naturaleza",
+    "id": "pn-isla-del-coco#2",
+    "nombre": "Parque Nacional Isla del Coco",
+    "tipo": "Parque Nacional",
+    "sector": "Bahía Chatham",
+    "area_conservacion": "ACMC (Marina Coco)",
+    "tarifa_nacional_crc": null,
+    "tarifa_extranjero_usd": 50,
+    "tarifa_iva_incluido": false,
+    "horario": "08:00–17:00 (map.aspx)",
+    "dias_cerrado": "",
+    "cupo_diario": "",
+    "requiere_reserva": "sí (solicitud de ingreso aprobada por ACMC)",
+    "url_reserva": "https://isladelcoco.go.cr/documentos/",
+    "telefono": "2291-1215",
+    "sectores_entradas": "Bahía Wafer; Bahía Chatham",
+    "notas": "Tarifa por día: no residentes $50, residentes $25 (en USD, no en colones). Buceo $20/día. Acceso solo por barco (~36 h desde Puntarenas).",
+    "fuente": "https://isladelcoco.go.cr/programas/",
+    "fecha_dato": "2026-10-12",
+    "lat": 5.54791,
+    "lng": -87.04326,
+    "coord_fuente": "OSM vía Photon (photon.komoot.io): 'Estación de Guardaparques Base Chatham'",
+    "coord_precision": "estación",
+    "tarifa_residente_usd": 25
+   }
+  }
+ ]
+}
