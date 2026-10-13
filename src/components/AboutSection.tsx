@@ -42,11 +42,11 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ language }) => {
   ];
 
   return (
-    <section className="py-24 px-4 max-w-7xl mx-auto overflow-hidden">
+    <section className="w-full min-w-0 py-16 sm:py-24 px-4 max-w-7xl mx-auto overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-24">
         <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          whileInView={{ opacity: 1, x: 0 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
           <h2 className="text-emerald-500 font-black uppercase tracking-[0.3em] text-sm mb-4">{language === 'es' ? 'Sobre Nosotros' : 'About Us'}</h2>
