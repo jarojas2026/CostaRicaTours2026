@@ -42,6 +42,11 @@ export type AgentCurrentTask = {
   startedAt: string;
 };
 
+export type AgentGovernanceControl = {
+  source: 'owner' | 'global';
+  reason: string | null;
+};
+
 export type AgentDailyUsage = {
   dayKey: string;
   inputTokens: number;
@@ -60,6 +65,9 @@ export type AgentRecord = {
   allowedTools: string[];
   permissions: AgentPermissionProfile;
   autonomyLevel: AgentAutonomyLevel;
+  authorizationEpoch: number;
+  governanceUpdatedAt: string | null;
+  governanceControl: AgentGovernanceControl | null;
   status: AgentStatus;
   currentTask: AgentCurrentTask | null;
   lastHeartbeatAt: string | null;

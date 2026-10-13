@@ -1611,3 +1611,23 @@ La telemetría de la Oficina Digital se apoya en el registro `agents` de la Fase
 - Las pruebas cubren el umbral exacto de 60 segundos, heartbeat de 15 segundos, eventos requeridos, pérdida de señal, timestamps futuros y preservación de estados de gobierno.
 
 **Límite de esta fase:** los servicios existentes todavía deben envolver sus ejecuciones con el runtime para que aparezcan como `working`. Si un flujo no está instrumentado, la interfaz seguirá mostrando `no_signal` en lugar de inventar actividad.
+
+
+---
+
+## 42. Oficina Digital de Agentes — Fase 3: gobernanza del owner (2026-10-12)
+
+La Fase 3 introduce una autoridad explícita de propietario sin convertir el navegador en fuente de verdad ni ampliar la autonomía comercial de los agentes.
+
+- `authMiddleware.ts` reconoce el rol `owner` mediante custom claim (`role=owner` o `owner=true`) o el correo exacto configurado en `OWNER_EMAIL`. La llave heredada `X-Operator-Key` conserva únicamente rol `operator` y nunca puede convertirse en owner.
+- `agentGovernanceService.ts` implementa autonomía por agente, pausa, revocación, restauración y apagado/reanudación global. Toda mutación requiere owner y queda registrada en `agent_audit_log`.
+- Cada agente tiene un `authorizationEpoch`. Cualquier cambio de autonomía, pausa, revocación o apagado incrementa esa generación. Una ejecución que conserve una generación antigua deja de renovar heartbeat y no puede continuar publicando nuevos steps instrumentados.
+- `agentCancellationRegistry.ts` permite cancelar inmediatamente con `AbortController` las ejecuciones instrumentadas en la instancia actual. En sistemas distribuidos la barrera autoritativa es Firestore + `authorizationEpoch`; no se afirma que una API externa ya enviada pueda deshacacerse de forma mágica.
+- El apagado global persiste en `agent_governance/global`. Al activarlo, agentes no revocados pasan a `paused`; al reanudar, únicamente los pausados por el apagado global regresan a `no_signal`. Las revocaciones individuales se conservan.
+- `ownerApprovalService.ts` añade una cola one-shot para `payment`, `refund`, `payout`, `customer_message`, `mass_message`, `price_change` y `publication`. Aprobar no ejecuta la acción: genera una autorización consumible una sola vez por la acción y el recurso exactos.
+- `autonomyPolicy.ts` marca esas siete clases como siempre humanas en niveles 0–3.
+- Firestore mantiene Default Deny: aprobaciones y auditoría son de lectura owner-only y todas las escrituras del navegador están bloqueadas.
+- El endpoint genérico de `platform-controls` no puede modificar `agentsDisabled`; el kill switch solo existe en las rutas owner-only de la Oficina Digital.
+- Las decisiones pendientes de `adminAICommandService` pueden ser propuestas por admin/owner, pero aprobar o rechazar queda reservado al owner.
+
+**Límite de esta fase:** las operaciones heredadas de reservas, pagos y mensajería existentes no se reescriben ni se duplican. La barrera de gobernanza debe envolverse en cada nueva ejecución/JARVIS/tool-call; una integración antigua no instrumentada no debe presentarse como revocable en tiempo real.

@@ -7,7 +7,7 @@ import type {
 } from '../shared/agentOfficeTypes';
 
 const COLLECTION = 'agents';
-const REGISTRY_VERSION = 1;
+const REGISTRY_VERSION = 2;
 
 type AgentProfileMetadata = {
   name: LocalizedText;
@@ -108,6 +108,9 @@ export function buildAgentRegistrySeed(now = new Date()): AgentRecord[] {
         escalation: [...identity.escalation],
       },
       autonomyLevel: 0,
+      authorizationEpoch: 1,
+      governanceUpdatedAt: null,
+      governanceControl: null,
       status: 'no_signal',
       currentTask: null,
       lastHeartbeatAt: null,
@@ -154,6 +157,9 @@ export async function syncAgentRegistryFromKnowledgeFabric(): Promise<{
       office: seed.office,
       mission: seed.mission,
       permissions: seed.permissions,
+      authorizationEpoch: Number.isInteger(current.authorizationEpoch) ? current.authorizationEpoch : seed.authorizationEpoch,
+      governanceUpdatedAt: current.governanceUpdatedAt ?? seed.governanceUpdatedAt,
+      governanceControl: current.governanceControl ?? seed.governanceControl,
       version: seed.version,
       updatedAt: seed.updatedAt,
     }, { merge: true });

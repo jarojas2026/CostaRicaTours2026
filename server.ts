@@ -16,7 +16,7 @@ import rateLimit from 'express-rate-limit';
 import { createServer as createViteServer } from 'vite';
 import { initializeAutomationEngine, cleanupExpiredSoftHolds } from './backend/cronEngine';
 import { google } from 'googleapis';
-import { requireOperator } from './backend/authMiddleware';
+import { requireOperator, requireOwner } from './backend/authMiddleware';
 import { TOURS } from './src/data/toursData';
 import { checkoutQuote, checkoutOrigin } from './backend/commercePolicy';
 import { commerceAdminRouter } from './backend/commerceAdminRouter';
@@ -123,6 +123,8 @@ import { observeJourneyState, guardianReplanJourney } from './backend/journeyVer
 import { processProviderInboxOnce } from './backend/providerInboxAgent';
 import { getAdminControlCenterSnapshot } from './backend/adminControlCenterService';
 import { syncAgentRegistryFromKnowledgeFabric } from './backend/agentRegistryService';
+import { getGlobalAgentControl, listAgentGovernanceAudit, pauseAgent, resumeAgent, revokeAgent, restoreAgent, setAgentAutonomy, setGlobalAgentShutdown } from './backend/agentGovernanceService';
+import { listOwnerApprovals, approveOwnerApproval, rejectOwnerApproval } from './backend/ownerApprovalService';
 import { evaluateDigitalCityRegistration } from './backend/digitalCityRegistrationPolicy';
 import { getPlatformControls, updatePlatformControls } from './backend/platformControlService';
 import { runAdminAICommand, listAdminAICommands, approveAdminAICommand, rejectAdminAICommand } from './backend/adminAICommandService';
@@ -144,7 +146,12 @@ const requireAdmin = requireOperator;
 
 function adminAccessPayload(req: express.Request) {
   const access = (req as any).adminAccess || {};
-  return { role: access.role || (req as any).user?.role || null, email: access.email || (req as any).user?.email || null, scope: access.scope || 'operations' };
+  return {
+    uid: access.uid || (req as any).user?.uid || (req as any).user?.sub || null,
+    role: access.role || (req as any).user?.role || null,
+    email: access.email || (req as any).user?.email || null,
+    scope: access.scope || 'operations'
+  };
 }
 
 
@@ -492,18 +499,16 @@ app.post('/api/admin/ai-command', requireAdmin, async (req, res) => {
   }
 });
 
-app.post('/api/admin/ai-command/:commandId/approve', requireAdmin, async (req, res) => {
+app.post('/api/admin/ai-command/:commandId/approve', requireOwner, async (req, res) => {
   try {
-    if (adminAccessPayload(req).role !== 'admin') return res.status(403).json({ error: 'Solo un administrador puede aprobar cambios.' });
     return res.json(await approveAdminAICommand(String(req.params.commandId || ''), adminAccessPayload(req)));
   } catch (error: any) {
     return res.status(400).json({ error: error?.message || 'No se pudo aprobar la propuesta.' });
   }
 });
 
-app.post('/api/admin/ai-command/:commandId/reject', requireAdmin, async (req, res) => {
+app.post('/api/admin/ai-command/:commandId/reject', requireOwner, async (req, res) => {
   try {
-    if (adminAccessPayload(req).role !== 'admin') return res.status(403).json({ error: 'Solo un administrador puede rechazar cambios.' });
     return res.json(await rejectAdminAICommand(String(req.params.commandId || ''), adminAccessPayload(req), String(req.body?.reason || '')));
   } catch (error: any) {
     return res.status(400).json({ error: error?.message || 'No se pudo rechazar la propuesta.' });
@@ -518,6 +523,96 @@ app.get('/api/admin/platform-controls', requireAdmin, async (_req, res) => {
 app.patch('/api/admin/platform-controls', requireAdmin, async (req, res) => {
   try { return res.json(await updatePlatformControls(req.body || {})); }
   catch (error: any) { return res.status(400).json({ error: error?.message || 'No se pudieron guardar los parámetros.' }); }
+});
+
+app.get('/api/admin/agent-office/governance', requireAdmin, async (_req, res) => {
+  try { return res.json({ global: await getGlobalAgentControl() }); }
+  catch (error: any) { return res.status(500).json({ error: error?.message || 'No se pudo cargar la gobernanza de agentes.' }); }
+});
+
+app.get('/api/admin/agent-office/audit', requireOwner, async (_req, res) => {
+  try { return res.json({ audit: await listAgentGovernanceAudit(120) }); }
+  catch (error: any) { return res.status(500).json({ error: error?.message || 'No se pudo cargar la bitácora.' }); }
+});
+
+app.patch('/api/admin/agent-office/agents/:agentId/autonomy', requireOwner, async (req, res) => {
+  try {
+    const rawLevel = Number(req.body?.level);
+    if (![0, 1, 2, 3].includes(rawLevel)) return res.status(400).json({ error: 'Nivel de autonomía inválido.' });
+    return res.json(await setAgentAutonomy({
+      agentId: String(req.params.agentId || ''),
+      level: rawLevel as 0 | 1 | 2 | 3,
+      actor: adminAccessPayload(req),
+      reason: String(req.body?.reason || '')
+    }));
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || 'No se pudo cambiar la autonomía.' });
+  }
+});
+
+for (const [path, handler] of [
+  ['pause', pauseAgent],
+  ['resume', resumeAgent],
+  ['revoke', revokeAgent],
+  ['restore', restoreAgent]
+] as const) {
+  app.post(`/api/admin/agent-office/agents/:agentId/${path}`, requireOwner, async (req, res) => {
+    try {
+      return res.json(await handler({
+        agentId: String(req.params.agentId || ''),
+        actor: adminAccessPayload(req),
+        reason: String(req.body?.reason || '')
+      }));
+    } catch (error: any) {
+      return res.status(400).json({ error: error?.message || `No se pudo ejecutar ${path}.` });
+    }
+  });
+}
+
+app.post('/api/admin/agent-office/shutdown', requireOwner, async (req, res) => {
+  try {
+    return res.json(await setGlobalAgentShutdown({
+      disabled: true,
+      actor: adminAccessPayload(req),
+      reason: String(req.body?.reason || '')
+    }));
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || 'No se pudo apagar la fuerza de agentes.' });
+  }
+});
+
+app.post('/api/admin/agent-office/resume-all', requireOwner, async (req, res) => {
+  try {
+    return res.json(await setGlobalAgentShutdown({
+      disabled: false,
+      actor: adminAccessPayload(req),
+      reason: String(req.body?.reason || '')
+    }));
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || 'No se pudo reanudar la fuerza de agentes.' });
+  }
+});
+
+app.get('/api/admin/agent-office/approvals', requireOwner, async (_req, res) => {
+  try { return res.json({ approvals: await listOwnerApprovals({ limit: 100 }) }); }
+  catch (error: any) { return res.status(500).json({ error: error?.message || 'No se pudo cargar la cola de aprobaciones.' }); }
+});
+
+app.post('/api/admin/agent-office/approvals/:approvalId/approve', requireOwner, async (req, res) => {
+  try { return res.json(await approveOwnerApproval(String(req.params.approvalId || ''), adminAccessPayload(req))); }
+  catch (error: any) { return res.status(400).json({ error: error?.message || 'No se pudo aprobar la acción.' }); }
+});
+
+app.post('/api/admin/agent-office/approvals/:approvalId/reject', requireOwner, async (req, res) => {
+  try {
+    return res.json(await rejectOwnerApproval(
+      String(req.params.approvalId || ''),
+      adminAccessPayload(req),
+      String(req.body?.reason || '')
+    ));
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || 'No se pudo rechazar la acción.' });
+  }
 });
 
 // Read-only global city onboarding preflight. No users, listings or payments are created.

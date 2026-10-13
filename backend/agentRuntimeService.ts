@@ -1,6 +1,7 @@
 import { getFirestoreDb } from './bookingService';
 import type { DocumentReference } from 'firebase-admin/firestore';
 import { emitAgentOperationalEvent } from './operationalEventBus';
+import { assertAgentExecutionAuthorized, getAgentExecutionAuthorization } from './agentGovernanceService';
 import type { AgentRecord, AgentStatus } from '../shared/agentOfficeTypes';
 
 export const AGENT_HEARTBEAT_INTERVAL_MS = 15_000;
@@ -40,12 +41,13 @@ export async function startAgentExecutionRuntime(input: {
   runId: string;
   objective: string;
   now?: Date;
-}): Promise<void> {
+}): Promise<{ authorizationEpoch: number }> {
   const runId = String(input.runId || '').trim();
   const objective = String(input.objective || '').trim();
   if (!runId) throw new Error('runId es obligatorio.');
   if (!objective) throw new Error('objective es obligatorio.');
 
+  const authorization = await assertAgentExecutionAuthorized(input.agentId);
   const { ref, data } = await loadAgentOrThrow(input.agentId);
   assertRuntimeStatus(data.status);
   const timestamp = (input.now ?? new Date()).toISOString();
@@ -65,20 +67,25 @@ export async function startAgentExecutionRuntime(input: {
     type: 'agent.started',
     agentId: data.id,
     runId,
-    payload: { status: 'working' },
+    payload: { status: 'working', authorizationEpoch: authorization.authorizationEpoch },
   });
+  return { authorizationEpoch: authorization.authorizationEpoch || 1 };
 }
 
 export async function heartbeatAgentExecution(input: {
   agentId: string;
   runId: string;
   now?: Date;
+  expectedAuthorizationEpoch?: number;
 }): Promise<boolean> {
   const db = getFirestoreDb();
   if (!db) throw new Error('Firestore no disponible: no se puede registrar heartbeat.');
   const agentId = String(input.agentId || '').trim();
   const runId = String(input.runId || '').trim();
   if (!agentId || !runId) throw new Error('agentId y runId son obligatorios.');
+
+  const authorization = await getAgentExecutionAuthorization(agentId, input.expectedAuthorizationEpoch);
+  if (!authorization.allowed) return false;
 
   const ref = db.collection('agents').doc(agentId);
   const timestamp = (input.now ?? new Date()).toISOString();
@@ -114,7 +121,9 @@ export async function recordAgentStepEvent(input: {
   runId: string;
   sequence: number;
   status: string;
+  expectedAuthorizationEpoch?: number;
 }): Promise<void> {
+  await assertAgentExecutionAuthorized(input.agentId, input.expectedAuthorizationEpoch);
   await emitAgentOperationalEvent({
     type: 'agent.step',
     agentId: input.agentId,
@@ -130,7 +139,9 @@ export async function markAgentWaitingApproval(input: {
   agentId: string;
   runId: string;
   now?: Date;
+  expectedAuthorizationEpoch?: number;
 }): Promise<void> {
+  await assertAgentExecutionAuthorized(input.agentId, input.expectedAuthorizationEpoch);
   const { ref, data } = await loadAgentOrThrow(input.agentId);
   assertRuntimeStatus(data.status);
   if (!data.currentTask || data.currentTask.runId !== input.runId) {
@@ -209,6 +220,7 @@ export async function markAgentExecutionFailed(input: {
 export function createAgentHeartbeatLease(input: {
   agentId: string;
   runId: string;
+  expectedAuthorizationEpoch?: number;
   onError?: (error: unknown) => void;
 }): { stop: () => void } {
   let stopped = false;
@@ -218,6 +230,7 @@ export function createAgentHeartbeatLease(input: {
       const accepted = await heartbeatAgentExecution({
         agentId: input.agentId,
         runId: input.runId,
+        expectedAuthorizationEpoch: input.expectedAuthorizationEpoch,
       });
       if (!accepted) stopped = true;
     } catch (error) {

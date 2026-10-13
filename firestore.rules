@@ -14,8 +14,16 @@ service cloud.firestore {
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
 
+    function isOwner() {
+      return isSignedIn() && (
+        request.auth.token.role == 'owner' ||
+        request.auth.token.owner == true
+      );
+    }
+
     function isAdmin() {
       return isSignedIn() && (
+        isOwner() ||
         (request.auth.token.role == 'admin' || request.auth.token.admin == true) ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid))
       );
@@ -129,6 +137,21 @@ service cloud.firestore {
         allow read: if isAdmin() && isValidId(stepId);
         allow create, update, delete: if false;
       }
+    }
+
+    match /agent_governance/{controlId} {
+      allow read: if isAdmin() && isValidId(controlId);
+      allow create, update, delete: if false;
+    }
+
+    match /agent_approvals/{approvalId} {
+      allow read: if isOwner() && isValidId(approvalId);
+      allow create, update, delete: if false;
+    }
+
+    match /agent_audit_log/{auditId} {
+      allow read: if isOwner() && isValidId(auditId);
+      allow create, update, delete: if false;
     }
 
     match /agent_memory/{sessionId} {
