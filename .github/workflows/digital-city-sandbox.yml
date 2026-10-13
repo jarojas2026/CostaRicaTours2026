@@ -1,0 +1,45 @@
+name: Digital City isolated scenario sandbox
+
+on:
+  pull_request:
+    paths:
+      - 'tests/sandboxTourismScenarioEngine.ts'
+      - 'tests/digitalCitySandboxScenarios.test.ts'
+      - 'scripts/sandboxEmulatorSmoke.mjs'
+      - 'firebase.json'
+      - '.github/workflows/digital-city-sandbox.yml'
+      - 'backend/bookingStateMachine.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sandbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GCLOUD_PROJECT: demo-city-audit
+      GOOGLE_CLOUD_PROJECT: demo-city-audit
+      FIRESTORE_CONTRACT_TEST_OFFLINE: 'true'
+      NODE_ENV: test
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install locked project dependencies
+        run: npm ci --include=optional --legacy-peer-deps
+      - name: Install Firebase emulator CLI
+        run: npm install --no-save --package-lock=false firebase-tools
+      - name: Run 4860 isolated tourism scenarios
+        run: node --test-force-exit --import ./tests/offlineEnv.mjs --import tsx --test tests/digitalCitySandboxScenarios.test.ts
+      - name: Boot demo Auth and Firestore emulators and verify isolated persistence
+        run: npx firebase emulators:exec --only auth,firestore --project demo-city-audit 'node scripts/sandboxEmulatorSmoke.mjs'
