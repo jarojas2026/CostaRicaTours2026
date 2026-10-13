@@ -112,6 +112,25 @@ service cloud.firestore {
       allow create: if isSignedIn() && incoming().userId == request.auth.uid;
     }
 
+    // Digital Agent Office control-plane documents are server-owned.
+    // Firebase Admin is the only writer; browser clients can only observe them
+    // after passing the existing administrator gate. Phase 3 narrows sensitive
+    // governance mutations further to the owner role.
+    match /agents/{agentId} {
+      allow read: if isAdmin() && isValidId(agentId);
+      allow create, update, delete: if false;
+    }
+
+    match /agentRuns/{runId} {
+      allow read: if isAdmin() && isValidId(runId);
+      allow create, update, delete: if false;
+
+      match /steps/{stepId} {
+        allow read: if isAdmin() && isValidId(stepId);
+        allow create, update, delete: if false;
+      }
+    }
+
     match /agent_memory/{sessionId} {
       allow read, write: if isSignedIn() && request.auth.uid == sessionId;
     }
