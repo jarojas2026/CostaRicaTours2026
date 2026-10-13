@@ -62,7 +62,7 @@ export function buildAgentRun(input: {
     id: input.id || `run_${crypto.randomUUID()}`,
     requestedBy: cleanActor(input.requestedBy),
     objective: cleanText(input.objective, 8000, 'objective'),
-    agentId: cleanText(input.agentId, 160, 'agentId'),
+    agentId: cleanText(input.agentId, 128, 'agentId'),
     status: 'queued',
     createdAt: timestamp,
     updatedAt: timestamp,
@@ -99,9 +99,9 @@ export function buildAgentRunStep(input: {
   }
   return {
     id: input.id || `step_${String(input.sequence).padStart(6, '0')}_${crypto.randomUUID()}`,
-    runId: cleanText(input.runId, 180, 'runId'),
+    runId: cleanText(input.runId, 128, 'runId'),
     sequence: input.sequence,
-    agentId: cleanText(input.agentId, 160, 'agentId'),
+    agentId: cleanText(input.agentId, 128, 'agentId'),
     status: input.status,
     // Auditable summary only. Never store private chain-of-thought.
     decisionSummary: cleanText(input.decisionSummary, 4000, 'decisionSummary'),
@@ -195,7 +195,7 @@ export async function transitionAgentRun(input: {
   const db = getFirestoreDb();
   if (!db) throw new Error('Firestore no disponible: no se puede actualizar agentRun.');
 
-  const runId = cleanText(input.runId, 180, 'runId');
+  const runId = cleanText(input.runId, 128, 'runId');
   const runRef = db.collection(RUNS_COLLECTION).doc(runId);
   const now = input.now ?? new Date();
   const timestamp = now.toISOString();
