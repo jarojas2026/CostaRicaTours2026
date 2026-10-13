@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { CreditCard, Smartphone, CheckCircle, X, ShieldCheck, DollarSign, Clock, Calendar, Phone } from 'lucide-react';
 import { getUsdToCrcRate } from '../utils/currencies';
 
@@ -36,15 +36,8 @@ export const CostaRicaCheckout: React.FC<CostaRicaCheckoutProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [completedBookingId, setCompletedBookingId] = useState<string | null>(null);
-  const [secondsLeft, setSecondsLeft] = useState(900); // 15 minutos de reserva temporal garantizada
+  const [secondsLeft, setSecondsLeft] = useState(0); // No verified temporary hold exists
 
-  useEffect(() => {
-    if (completedBookingId) return;
-    const interval = setInterval(() => {
-      setSecondsLeft((prev) => (prev > 1 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [completedBookingId]);
 
   const formatTimer = (sec: number) => {
     const mins = Math.floor(sec / 60);
@@ -63,65 +56,10 @@ export const CostaRicaCheckout: React.FC<CostaRicaCheckoutProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    try {
-      const generatedId = `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
-      const payload = {
-        bookingId: generatedId,
-        tourId,
-        tourName: tourTitle,
-        date,
-        time: '08:00 AM',
-        adults,
-        children,
-        pickupHotel: pickupHotel || 'Recepción del Hotel',
-        customerName: name,
-        customerEmail: email,
-        customerPhone: phone,
-        currency,
-        totalUSD,
-        totalAmount: currency === 'USD' ? totalUSD : totalCRC,
-        paymentMethod: method === 'sinpe' ? 'sinpe_movil' : method,
-        sinpeReference: method === 'sinpe' ? sinpeRef : undefined,
-        status: method === 'sinpe' ? 'pendiente_pago' : 'confirmada',
-        paymentStatus: method === 'sinpe' ? 'pending' : 'completed'
-      };
-
-      const res = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || data.error || 'Error al procesar la reserva');
-      }
-
-      // Si es SINPE Móvil y el usuario ya ingresó el comprobante, notificar validación
-      if (method === 'sinpe' && sinpeRef.trim()) {
-        fetch('/api/sinpe/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            bookingId: generatedId,
-            sinpeReference: sinpeRef,
-            customerPhone: phone
-          })
-        }).catch(() => {});
-      }
-
-      setCompletedBookingId(generatedId);
-      if (onSuccess) onSuccess(generatedId);
-    } catch (err: any) {
-      console.error('Error al reservar:', err);
-      setError(err.message || 'Error al procesar la solicitud. Por favor intenta nuevamente.');
-    } finally {
-      setLoading(false);
-    }
+    // This legacy modal is not wired to an authenticated provider checkout.
+    // Never create synthetic booking IDs, claim payment completion, or submit
+    // a customer-selected amount as if it were a server-verified quotation.
+    setError('Este formulario antiguo no puede confirmar reservas ni pagos. Utiliza el proceso de reserva verificado del catálogo o solicita asistencia.');
   };
 
   return (
