@@ -21,6 +21,11 @@ const AGENT_PROFILE_METADATA: Readonly<Record<string, AgentProfileMetadata>> = {
     office: 'jarvis_room',
     missionEn: 'Receive owner orders, decompose and delegate them within policy, monitor outcomes and escalate when needed.',
   },
+  jarvis: {
+    name: { es: 'JARVIS', en: 'JARVIS' },
+    office: 'jarvis_room',
+    missionEn: 'Receive owner orders, decompose and delegate them within policy, monitor outcomes and escalate when needed.',
+  },
   concierge: {
     name: { es: 'Concierge', en: 'Concierge' },
     office: 'reception_sales',
