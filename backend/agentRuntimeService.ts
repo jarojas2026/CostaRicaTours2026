@@ -9,8 +9,8 @@ export const AGENT_NO_SIGNAL_AFTER_MS = 60_000;
 export function heartbeatAgeMs(lastHeartbeatAt: string | null | undefined, now = new Date()): number | null {
   if (!lastHeartbeatAt) return null;
   const timestamp = Date.parse(lastHeartbeatAt);
-  if (!Number.isFinite(timestamp)) return null;
-  return Math.max(0, now.getTime() - timestamp);
+  if (!Number.isFinite(timestamp) || timestamp > now.getTime()) return null;
+  return now.getTime() - timestamp;
 }
 
 export function isHeartbeatFresh(lastHeartbeatAt: string | null | undefined, now = new Date()): boolean {
