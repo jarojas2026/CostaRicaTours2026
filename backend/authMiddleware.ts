@@ -3,13 +3,11 @@ import crypto from 'crypto';
 import { getFirebaseAdminAuth } from './firebaseAdminRuntime';
 
 /**
- * Autenticación de operaciones:
- * 1) Firebase ID token (preferido en producción), con claim role=admin|operator.
- * 2) X-Operator-Key como compatibilidad controlada para herramientas servidor-a-servidor.
+ * Operational authentication.
  *
- * Admin policy: when ADMIN_ALLOWED_EMAILS is configured, admin/operator access is
- * restricted to that explicit allowlist. This keeps the dashboard private to the
- * owner and a small number of collaborators without changing public auth flows.
+ * owner    → final authority over agent governance and approvals
+ * admin    → administrative access without owner-only governance powers
+ * operator → operational access
  */
 export async function requireOperator(req: Request, res: Response, next: NextFunction) {
   const authorization = req.headers.authorization;
@@ -17,20 +15,46 @@ export async function requireOperator(req: Request, res: Response, next: NextFun
     try {
       const token = authorization.slice('Bearer '.length).trim();
       const decoded = await getFirebaseAdminAuth().verifyIdToken(token);
-      const role = decoded.role || decoded.adminRole || (decoded.email === process.env.ADMIN_EMAIL ? 'admin' : undefined);
+      const email = String(decoded.email || '').trim().toLowerCase();
+      const claimedRole = String(decoded.role || decoded.adminRole || '').trim().toLowerCase();
+      const ownerEmail = String(process.env.OWNER_EMAIL || '').trim().toLowerCase();
+      const adminEmail = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+
+      let role: 'owner' | 'admin' | 'operator' | undefined;
+      if (
+        decoded.owner === true
+        || claimedRole === 'owner'
+        || (ownerEmail && email === ownerEmail)
+      ) {
+        role = 'owner';
+      } else if (claimedRole === 'admin' || claimedRole === 'operator') {
+        role = claimedRole;
+      } else if (adminEmail && email === adminEmail) {
+        role = 'admin';
+      }
+
       const allowedEmails = String(process.env.ADMIN_ALLOWED_EMAILS || '')
         .split(',')
-        .map((email) => email.trim().toLowerCase())
+        .map((value) => value.trim().toLowerCase())
         .filter(Boolean);
-      const email = String(decoded.email || '').trim().toLowerCase();
-      const isPrivilegedRole = role === 'admin' || role === 'operator';
-      const isExplicitlyAllowed = allowedEmails.length === 0 || allowedEmails.includes(email);
-      if (isPrivilegedRole && isExplicitlyAllowed) {
+
+      const ownerExplicitlyAuthorized = role === 'owner' && (
+        decoded.owner === true
+        || claimedRole === 'owner'
+        || Boolean(ownerEmail && email === ownerEmail)
+      );
+      const collaboratorAuthorized = role !== 'owner' && (
+        allowedEmails.length === 0 || allowedEmails.includes(email)
+      );
+
+      if (role && (ownerExplicitlyAuthorized || collaboratorAuthorized)) {
         (req as any).user = decoded;
         (req as any).adminAccess = {
           role,
+          uid: String(decoded.uid || decoded.sub || '') || null,
           email: email || null,
-          scope: role === 'admin' ? 'full' : 'operations'
+          scope: role === 'owner' ? 'owner' : role === 'admin' ? 'full' : 'operations',
+          authMethod: 'firebase',
         };
         return next();
       }
@@ -56,8 +80,25 @@ export async function requireOperator(req: Request, res: Response, next: NextFun
     if (keyBuffer.length !== providedBuffer.length || !crypto.timingSafeEqual(keyBuffer, providedBuffer)) {
       return res.status(401).json({ error: 'No autorizado' });
     }
+    (req as any).adminAccess = {
+      role: 'operator',
+      uid: null,
+      email: null,
+      scope: 'operations',
+      authMethod: 'operator_key',
+    };
     return next();
   } catch {
     return res.status(401).json({ error: 'No autorizado' });
   }
+}
+
+export function requireOwner(req: Request, res: Response, next: NextFunction): void {
+  void requireOperator(req, res, () => {
+    if ((req as any).adminAccess?.role !== 'owner') {
+      res.status(403).json({ error: 'Esta acción requiere autorización del owner.' });
+      return;
+    }
+    next();
+  });
 }
