@@ -1,0 +1,75 @@
+name: Actualizar datos del mapa nacional
+
+# Regenera cada lunes las capas del mapa "Todo Costa Rica" desde sus fuentes abiertas
+# (extracto OpenStreetMap de Geofabrik + red de establecimientos CCSS), normaliza las
+# capas curadas de la fase 2, valida los datos con los tests de contrato y abre un PR
+# solo si algo cambió. Nunca escribe directo en main.
+on:
+  schedule:
+    - cron: "0 9 * * 1" # lunes 03:00 hora de Costa Rica
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: refresh-map-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Instalar dependencias
+        run: |
+          pip install osmium
+          npm ci --include=optional --legacy-peer-deps
+
+      - name: Descargar extracto OSM de Costa Rica (Geofabrik)
+        run: curl -fsSL -o costa-rica-latest.osm.pbf https://download.geofabrik.de/central-america/costa-rica-latest.osm.pbf
+
+      - name: Regenerar capas OSM
+        run: python3 scripts/mapa/export_osm_layers.py
+
+      - name: Actualizar red CCSS (conserva la versión anterior si la fuente falla)
+        run: python3 scripts/mapa/fetch_ccss.py || echo "::warning::CCSS no disponible; se mantiene la capa anterior"
+
+      - name: Normalizar capas oficiales (fase 2)
+        run: python3 scripts/mapa/normalize_fase2.py
+
+      - name: Validar datos del mapa
+        run: node --test-force-exit --import ./tests/offlineEnv.mjs --import tsx --test tests/nationalMapData.contract.test.ts
+
+      - name: Abrir PR si hay cambios
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          rm -f costa-rica-latest.osm.pbf
+          if git diff --quiet -- public/data/mapa data/fuentes; then
+            echo "Sin cambios en los datos."
+            exit 0
+          fi
+          BRANCH="chore/mapa-datos-$(date +%Y-%m-%d)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add public/data/mapa data/fuentes
+          git commit -m "chore(mapa): actualización semanal de capas $(date +%Y-%m-%d)"
+          git push origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" \
+            --title "chore(mapa): actualización semanal de capas $(date +%Y-%m-%d)" \
+            --body "Actualización automática desde OpenStreetMap (Geofabrik) y CCSS. Revisar el diff de conteos antes de fusionar." \
+            || echo "::warning::No se pudo abrir el PR automáticamente (permite a Actions crear PRs en Settings → Actions). La rama $BRANCH quedó publicada."
