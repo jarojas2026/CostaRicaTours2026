@@ -33,14 +33,24 @@ python3 scripts/export_osm_layers.py   # escribe public/data/mapa/*.geojson
 ```
 Recomendado: mensual.
 
-## Fase 2 — vacíos y fuente oficial para cada uno
-- Pasos de fauna: no existen en OSM → SINAC / MOPT (CONAVI) / iniciativas de pasos de fauna.
-- Proyectos de reforestación: FONAFIFO (Pago por Servicios Ambientales), SINAC.
-- Tarifas, cupos, horarios y reservas de parques nacionales: SINAC (campos `officialPriceUSD`, `dailyQuota`, `sinacBookingUrl` ya existen en `MapTourismService`).
-- Empresas con declaratoria turística y CST: ICT.
-- EBAIS y áreas de salud oficiales: CCSS.
-- Patrimonio histórico-arquitectónico declarado: Ministerio de Cultura y Juventud (Centro de Patrimonio).
-- Teléfonos/horarios faltantes: Google Places API (requiere clave y tiene costo por consulta; mantener la clave en el backend).
+## Fase 2 — capas oficiales (integradas, octubre 2026)
+| Capa | Puntos | Fuente |
+|---|---|---|
+| parques_sinac | 62 sectores de 42 áreas | Páginas oficiales SINAC; tarifas extranjero/nacional, horario, días cerrado, cupo, enlace de reserva (serviciosenlinea.sinac.go.cr) |
+| fauna | 48 pasos de fauna (~448 estructuras) + 38 corredores biológicos | MOPT/CONAVI, BID (osf.io/6fe83), SINAC 2008, ONG (KSTR, Jaguar Rescue, Osa Conservation…) |
+| reforestacion | 50 proyectos | Sitio de cada proyecto; 29 permiten visitar o participar |
+| patrimonio | 387 (378 inmuebles declarados + 9 UNESCO/arqueológicos) | Lista compilada del MCJ, UNESCO, Wikidata |
+| ccss | 1.888 (EBAIS, áreas de salud, hospitales) | CCSS SGIS (datos 2021) |
+
+Las fichas muestran "Ubicación aproximada" cuando el punto es de distrito, poblado o centroide.
+
+### Pendientes conocidos
+- Corredores: la capa vigente (54 corredores) está en SNIT `https://geos1pne.sirefor.go.cr/wfs` capa `PNE:corredoresbiologicos` (no respondió).
+- Pasos de fauna: no existe inventario nacional público con ubicaciones (MOPT reporta 98).
+- Patrimonio: el sitio oficial inmuebles.patrimonio.go.cr bloquea acceso automatizado; faltan declaratorias posteriores a 2021.
+- CCSS: datos de 2021; faltan teléfonos en ~1.000 puntos.
+- No usar sinac-cr.com: no es oficial.
+- Empresas con declaratoria ICT: sin registro público consultable.
 
 ## Fase 3 — de punto a servicio vendible
 Unir cada POI con operadores y servicios (tours, transporte, alimentación, hospedaje, guías, asesoría, entradas) para que el punto se pueda reservar desde la ficha (`MapServiceBookingModal`).
