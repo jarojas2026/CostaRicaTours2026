@@ -44,6 +44,15 @@
     min-height: 100dvh;
     overflow-x: clip;
   }
+
+  /* Route elements are flex children of the application shell. Explicitly
+     constrain them so auto margins/max-content sizing can never make a page
+     wider than the visual viewport. */
+  #main-content > * {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
   
   body {
     background-color: var(--color-jungle-950);
