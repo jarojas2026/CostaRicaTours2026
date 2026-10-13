@@ -56,6 +56,7 @@ import {
   estimateTravelTime 
 } from '../data/mapServicesData';
 import { MapServiceBookingModal } from './MapServiceBookingModal';
+import { NationalPoiLayer } from './NationalPoiLayer';
 
 const OFFLINE_CACHE_KEY = 'pura_vida_offline_map_tours_v3';
 const OFFLINE_REGIONS_KEY = 'pura_vida_offline_map_regions_v3';
@@ -207,6 +208,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
+  // Instancia reactiva del mapa para capas hijas (capas nacionales de POI)
+  const [leafletMapInstance, setLeafletMapInstance] = useState<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const geoJsonLayerRef = useRef<L.GeoJSON | null>(null);
@@ -507,6 +510,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     });
 
     leafletMapRef.current = map;
+    setLeafletMapInstance(map);
 
     const resizeTimer = setTimeout(() => {
       map.invalidateSize();
@@ -522,6 +526,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       clearTimeout(resizeTimer);
       map.remove();
       leafletMapRef.current = null;
+      setLeafletMapInstance(null);
       tileLayerRef.current = null;
       markersLayerRef.current = null;
       itineraryMarkersLayerRef.current = null;
@@ -1302,6 +1307,9 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             style={{ minHeight: '100%' }}
           />
         )}
+
+        {/* CAPAS NACIONALES: todo Costa Rica (OpenStreetMap, carga diferida) */}
+        {!useGoogleMapsMode && <NationalPoiLayer map={leafletMapInstance} language={language} />}
 
         {/* FLOATING NAVIGATION & ZOOM TOOLBOX (Right Side) */}
         <div className="absolute right-4 bottom-8 sm:bottom-12 z-30 flex flex-col gap-2 pointer-events-auto">
