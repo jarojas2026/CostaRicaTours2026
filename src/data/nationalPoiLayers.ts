@@ -3,7 +3,7 @@ import { Language } from '../types';
 /**
  * Capas nacionales de puntos de interés (POI) para el mapa de la Ciudad Digital.
  *
- * Fuente base: OpenStreetMap (© colaboradores de OpenStreetMap, licencia ODbL),
+ * Fuentes: OpenStreetMap (© colaboradores de OpenStreetMap, licencia ODbL),
  * extracto Geofabrik de Costa Rica. Archivos en /public/data/mapa/*.geojson,
  * generados con scripts/export_osm_layers.py. Se cargan bajo demanda (lazy)
  * cuando el usuario activa cada capa, para no penalizar la carga inicial.
@@ -17,7 +17,12 @@ export type NationalPoiGroupId =
   | 'naturaleza'
   | 'cultura'
   | 'atracciones'
-  | 'servicios';
+  | 'servicios'
+  | 'parques_sinac'
+  | 'fauna'
+  | 'reforestacion'
+  | 'patrimonio'
+  | 'ccss';
 
 export interface NationalPoiGroup {
   id: NationalPoiGroupId;
@@ -27,18 +32,25 @@ export interface NationalPoiGroup {
   file: string;
   /** Activa por defecto al abrir el panel */
   defaultOn: boolean;
+  /** Atribución de la fuente que se muestra en cada ficha */
+  attribution: string;
 }
 
 export const NATIONAL_POI_GROUPS: NationalPoiGroup[] = [
-  { id: 'naturaleza', label: { es: 'Parques, áreas protegidas y naturaleza', en: 'Parks, protected areas & nature' }, emoji: '🌳', color: '#10b981', file: '/data/mapa/naturaleza.geojson', defaultOn: true },
-  { id: 'emergencia', label: { es: 'Emergencias (Cruz Roja, bomberos, policía)', en: 'Emergency (Red Cross, fire, police)' }, emoji: '🚑', color: '#ef4444', file: '/data/mapa/emergencia.geojson', defaultOn: false },
-  { id: 'salud', label: { es: 'Salud (hospitales, EBAIS, farmacias)', en: 'Health (hospitals, clinics, pharmacies)' }, emoji: '🏥', color: '#f43f5e', file: '/data/mapa/salud.geojson', defaultOn: false },
-  { id: 'alimentacion', label: { es: 'Sodas, restaurantes y cafés', en: 'Sodas, restaurants & cafés' }, emoji: '🍽️', color: '#f59e0b', file: '/data/mapa/alimentacion.geojson', defaultOn: false },
-  { id: 'hospedaje', label: { es: 'Hospedaje (hoteles, cabinas, hostales, camping)', en: 'Lodging (hotels, cabins, hostels, camping)' }, emoji: '🛏️', color: '#8b5cf6', file: '/data/mapa/hospedaje.geojson', defaultOn: false },
-  { id: 'transporte', label: { es: 'Transporte (buses, terminales, aeropuertos)', en: 'Transport (buses, terminals, airports)' }, emoji: '🚌', color: '#0ea5e9', file: '/data/mapa/transporte.geojson', defaultOn: false },
-  { id: 'cultura', label: { es: 'Cultura (museos, teatros, sitios históricos)', en: 'Culture (museums, theatres, heritage)' }, emoji: '🏛️', color: '#d97706', file: '/data/mapa/cultura.geojson', defaultOn: false },
-  { id: 'atracciones', label: { es: 'Atracciones turísticas', en: 'Tourist attractions' }, emoji: '📸', color: '#14b8a6', file: '/data/mapa/atracciones.geojson', defaultOn: false },
-  { id: 'servicios', label: { es: 'Servicios (gasolineras, bancos, info turística)', en: 'Services (fuel, banks, tourist info)' }, emoji: '⛽', color: '#64748b', file: '/data/mapa/servicios.geojson', defaultOn: false },
+  { id: 'parques_sinac', label: { es: 'Parques nacionales SINAC: tarifas, horarios y reservas', en: 'SINAC national parks: fees, hours & booking' }, emoji: '🎟️', color: '#059669', file: '/data/mapa/parques_sinac.geojson', defaultOn: true, attribution: 'SINAC (sinac.go.cr)' },
+  { id: 'fauna', label: { es: 'Pasos de fauna y corredores biológicos', en: 'Wildlife crossings & biological corridors' }, emoji: '🐒', color: '#65a30d', file: '/data/mapa/fauna.geojson', defaultOn: false, attribution: 'MOPT/CONAVI, BID, SINAC, ONG locales' },
+  { id: 'reforestacion', label: { es: 'Proyectos de reforestación', en: 'Reforestation projects' }, emoji: '🌱', color: '#16a34a', file: '/data/mapa/reforestacion.geojson', defaultOn: false, attribution: 'Sitios oficiales de cada proyecto' },
+  { id: 'patrimonio', label: { es: 'Patrimonio histórico y sitios UNESCO', en: 'Historic heritage & UNESCO sites' }, emoji: '🏺', color: '#b45309', file: '/data/mapa/patrimonio.geojson', defaultOn: false, attribution: 'MCJ (lista compilada), UNESCO, Wikidata, © OpenStreetMap' },
+  { id: 'ccss', label: { es: 'Red oficial CCSS (EBAIS, áreas de salud, hospitales)', en: 'Public health network CCSS (clinics, hospitals)' }, emoji: '🩺', color: '#e11d48', file: '/data/mapa/ccss.geojson', defaultOn: false, attribution: 'CCSS – SGIS (datos 2021)' },
+  { id: 'naturaleza', label: { es: 'Parques, áreas protegidas y naturaleza', en: 'Parks, protected areas & nature' }, emoji: '🌳', color: '#10b981', file: '/data/mapa/naturaleza.geojson', defaultOn: false, attribution: '© OpenStreetMap (ODbL)' },
+  { id: 'emergencia', label: { es: 'Emergencias (Cruz Roja, bomberos, policía)', en: 'Emergency (Red Cross, fire, police)' }, emoji: '🚑', color: '#ef4444', file: '/data/mapa/emergencia.geojson', defaultOn: false, attribution: '© OpenStreetMap (ODbL)' },
+  { id: 'salud', label: { es: 'Salud (hospitales, EBAIS, farmacias)', en: 'Health (hospitals, clinics, pharmacies)' }, emoji: '🏥', color: '#f43f5e', file: '/data/mapa/salud.geojson', defaultOn: false, attribution: '© OpenStreetMap (ODbL)' },
+  { id: 'alimentacion', label: { es: 'Sodas, restaurantes y cafés', en: 'Sodas, restaurants & cafés' }, emoji: '🍽️', color: '#f59e0b', file: '/data/mapa/alimentacion.geojson', defaultOn: false, attribution: '© OpenStreetMap (ODbL)' },
+  { id: 'hospedaje', label: { es: 'Hospedaje (hoteles, cabinas, hostales, camping)', en: 'Lodging (hotels, cabins, hostels, camping)' }, emoji: '🛏️', color: '#8b5cf6', file: '/data/mapa/hospedaje.geojson', defaultOn: false, attribution: '© OpenStreetMap (ODbL)' },
+  { id: 'transporte', label: { es: 'Transporte (buses, terminales, aeropuertos)', en: 'Transport (buses, terminals, airports)' }, emoji: '🚌', color: '#0ea5e9', file: '/data/mapa/transporte.geojson', defaultOn: false, attribution: '© OpenStreetMap (ODbL)' },
+  { id: 'cultura', label: { es: 'Cultura (museos, teatros, sitios históricos)', en: 'Culture (museums, theatres, heritage)' }, emoji: '🏛️', color: '#d97706', file: '/data/mapa/cultura.geojson', defaultOn: false, attribution: '© OpenStreetMap (ODbL)' },
+  { id: 'atracciones', label: { es: 'Atracciones turísticas', en: 'Tourist attractions' }, emoji: '📸', color: '#14b8a6', file: '/data/mapa/atracciones.geojson', defaultOn: false, attribution: '© OpenStreetMap (ODbL)' },
+  { id: 'servicios', label: { es: 'Servicios (gasolineras, bancos, info turística)', en: 'Services (fuel, banks, tourist info)' }, emoji: '⛽', color: '#64748b', file: '/data/mapa/servicios.geojson', defaultOn: false, attribution: '© OpenStreetMap (ODbL)' },
 ];
 
 const TYPE_LABELS_EN: Record<string, string> = {
