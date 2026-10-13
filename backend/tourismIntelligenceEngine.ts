@@ -1,9 +1,12 @@
+import { JARVIS_TOURISM_ADVISORIES } from './jarvisTourismAdvisory';
+
 export const TOURISM_INTELLIGENCE_RULES = [
   'Priorizar la conectividad lógica entre regiones y evitar rutas redundantes.',
   'Verificar restricciones de edad, condición física y requisitos del operador antes de recomendar aventura.',
   'Separar conocimiento estable de condiciones vivas: clima, disponibilidad, horarios y cierres requieren verificación.',
   'Nunca convertir una estimación heurística en una promesa de disponibilidad, precio o seguridad.',
-  'Optimizar conjuntamente duración, aeropuerto, ritmo, intereses, presupuesto y carga de traslados.'
+  'Optimizar conjuntamente duración, aeropuerto, ritmo, intereses, presupuesto y carga de traslados.',
+  ...JARVIS_TOURISM_ADVISORIES.map(item => item.es)
 ];
 
 export function buildIntelligenceInsights(query: string): string[] {
