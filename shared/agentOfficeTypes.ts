@@ -60,6 +60,8 @@ export type AgentRecord = {
   allowedTools: string[];
   permissions: AgentPermissionProfile;
   autonomyLevel: AgentAutonomyLevel;
+  authorizationEpoch: number;
+  governanceUpdatedAt: string | null;
   status: AgentStatus;
   currentTask: AgentCurrentTask | null;
   lastHeartbeatAt: string | null;
