@@ -110,6 +110,7 @@ export function buildAgentRegistrySeed(now = new Date()): AgentRecord[] {
       autonomyLevel: 0,
       authorizationEpoch: 1,
       governanceUpdatedAt: null,
+      governanceControl: null,
       status: 'no_signal',
       currentTask: null,
       lastHeartbeatAt: null,
@@ -158,6 +159,7 @@ export async function syncAgentRegistryFromKnowledgeFabric(): Promise<{
       permissions: seed.permissions,
       authorizationEpoch: Number.isInteger(current.authorizationEpoch) ? current.authorizationEpoch : seed.authorizationEpoch,
       governanceUpdatedAt: current.governanceUpdatedAt ?? seed.governanceUpdatedAt,
+      governanceControl: current.governanceControl ?? seed.governanceControl,
       version: seed.version,
       updatedAt: seed.updatedAt,
     }, { merge: true });
