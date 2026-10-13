@@ -38,6 +38,7 @@ const report = {
   routes: [],
   interactions: [],
   summary: {},
+  findings: [],
 };
 const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
 
@@ -286,9 +287,26 @@ try {
   await browser.close();
 }
 
+// Actionable evidence, separate from the limited pass/fail gate. This is NOT a
+// claim that every control was exercised or that any real booking was created.
+for (const route of report.routes) {
+  const where = { route: route.route, device: route.device };
+  if (route.outcome === 'fail') report.findings.push({ severity: 'critical', kind: 'route-failed', ...where, evidence: route.fatal || 'HTTP ' + route.responseStatus, reproduce: 'Navigate to ' + BASE + route.route + ' using ' + route.device + ' viewport' });
+  if (route.jsErrors.length) report.findings.push({ severity: 'medium', kind: 'browser-errors', ...where, evidence: route.jsErrors, reproduce: 'Open browser console on ' + BASE + route.route });
+  if (route.invalidHrefs?.length) report.findings.push({ severity: 'medium', kind: 'invalid-links', ...where, evidence: route.invalidHrefs, reproduce: 'Inspect anchors on ' + BASE + route.route });
+  if (route.hasHorizontalOverflow) report.findings.push({ severity: 'medium', kind: 'horizontal-overflow', ...where, evidence: 'Document exceeds viewport width', reproduce: 'Open ' + BASE + route.route + ' at ' + route.device + ' viewport' });
+  if (route.scrollDistance > 50 && !route.reachedBottom) report.findings.push({ severity: 'medium', kind: 'scroll-unreachable', ...where, evidence: route.scrollContainer || 'document', reproduce: 'Scroll to the bottom of ' + BASE + route.route });
+}
+for (const action of report.interactions.filter(item => item.result === 'failed')) {
+  report.findings.push({ severity: 'high', kind: 'interaction-failed', label: action.label, route: action.atPath || 'unknown', evidence: action.error, reproduce: 'Repeat the safe interaction: ' + action.label });
+}
+
 report.finishedAt = new Date().toISOString();
 report.summary = {
   routesVisited: report.routes.length,
+  findingsCritical: report.findings.filter(x => x.severity === 'critical').length,
+  findingsHigh: report.findings.filter(x => x.severity === 'high').length,
+  findingsMedium: report.findings.filter(x => x.severity === 'medium').length,
   pagesFailed: report.routes.filter(x => x.outcome === 'fail').length,
   httpErrors: report.routes.filter(x => x.responseStatus !== null && x.responseStatus >= 400).length,
   scrollablePages: report.routes.filter(x => x.scrollDistance > 0).length,
@@ -311,6 +329,13 @@ const lines = [
   '> AI-first contact click checks return an explicitly labeled fixture inside Chromium; no real intake is dispatched.',
   '',
   '> This audit counts observable controls and exercises ONLY a limited set of safe interactions; it does NOT claim every button was clicked.',
+  '',
+  '## Prioritized findings',
+  '',
+  '| Severity | Device / route | Finding | Evidence | Reproduction |',
+  '|---|---|---|---|---|',
+  ...report.findings.map(x => '| ' + x.severity + ' | ' + [x.device || 'desktop', x.route].join(' / ').replaceAll('|','/') + ' | ' + x.kind + ' | ' + String(JSON.stringify(x.evidence) || '—').replaceAll('|','/').slice(0,180) + ' | ' + String(x.reproduce).replaceAll('|','/').slice(0,160) + ' |'),
+  ...(report.findings.length ? [] : ['| — | — | No findings recorded in sampled checks | — | — |']),
   '',
   '## Route matrix',
   '',
