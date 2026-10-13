@@ -287,6 +287,8 @@ export default function App() {
   // Filter labels for breadcrumbs
   const getActiveTabLabel = () => {
     switch(activeTab) {
+      case 'ciudad': return `🏙️ ${language === 'es' ? 'Ciudad Digital' : 'Digital City'}`;
+      case 'participar': return `🤝 ${language === 'es' ? 'Participar en la Ciudad Digital' : 'Join the Digital City'}`;
       case 'tours': return `🧭 ${language === 'es' ? 'Catálogo de Tours y Aventuras' : 'Tours & Adventures Catalog'}`;
       case 'destinations': return `📍 ${language === 'es' ? 'Destinos de Costa Rica' : 'Costa Rica Destinations'}`;
       case 'activities': return `🧗 ${language === 'es' ? 'Actividades & Experiencias' : 'Activities & Experiences'}`;
@@ -294,11 +296,14 @@ export default function App() {
       case 'about': return `🌿 ${language === 'es' ? 'Sobre Nosotros' : 'About Us'}`;
       case 'flights': return `✈️ ${language === 'es' ? 'Rastreador en Vivo de Vuelos' : 'Live Flight Radar'}`;
       case 'ai': return `🤖 ${language === 'es' ? 'Asistente Turístico IA' : 'AI Concierge'}`;
+      case 'trip': return `🧳 ${language === 'es' ? 'Mi viaje' : 'My Trip'}`;
       case 'itinerary': return `✨ ${language === 'es' ? 'Planificador Inteligente' : 'AI Trip Planner'}`;
       case 'culture': return `🇨🇷 ${language === 'es' ? 'Rincón Tico: Cultura' : 'Tico Culture'}`;
       case 'tools': return `🚐 ${language === 'es' ? 'Transporte & Guía' : 'Transport & Guide'}`;
       case 'workspace': return `✉️ 📅 Google Workspace`;
       case 'counter': return `🛎️ ${language === 'es' ? 'Mostrador Digital Full Stack' : 'Full-Stack Digital Counter'}`;
+      case 'provider': return `🤝 ${language === 'es' ? 'Portal de Proveedores' : 'Provider Portal'}`;
+      case 'ops': return `⚙️ ${language === 'es' ? 'Centro Operativo' : 'Operations Center'}`;
       case 'admin': return `🛡️ ${language === 'es' ? 'Centro de Control Administrativo' : 'Executive Control Center'}`;
       default: return '';
     }
