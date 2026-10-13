@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useLayoutEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
@@ -86,9 +86,16 @@ export default function App() {
     setSelectedRegion(filters.region);
   }, [location.pathname, location.search]);
 
-  // Keep SPA navigation feeling native: every route starts at the top.
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' });
+  // Route changes use the browser viewport as the single scroll container.
+  // This fixes the prior nested app-shell scroll where a new page could open
+  // below the visible area while window.scrollTo() appeared to do nothing.
+  useLayoutEffect(() => {
+    if (location.hash) return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById('main-content')?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [location.pathname]);
 
   // Modals state
@@ -298,7 +305,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen max-h-screen overflow-y-auto bg-[#041711] text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950 relative pb-16 lg:pb-0">
+    <div className="min-h-[100dvh] w-full min-w-0 overflow-x-clip bg-[#041711] text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950 relative pb-16 lg:pb-0">
       {intakeOpen && (
         <div className="fixed inset-0 z-[10050] bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-label={language === 'es' ? 'Atención inteligente' : 'AI customer care'}>
           <div className="w-full max-w-xl max-h-[90dvh] overflow-y-auto rounded-3xl border border-emerald-400/25 bg-[#041711] shadow-2xl">
@@ -354,7 +361,7 @@ export default function App() {
         onOpenFormsManager={() => setIsFormsManagerModalOpen(true)}
       />
 
-      <main className="flex-1 relative z-10 isolate flex flex-col">
+      <main id="main-content" tabIndex={-1} className="flex-1 w-full min-w-0 relative z-10 isolate flex flex-col outline-none">
         {/* Breadcrumbs for sub-pages */}
         {activeTab !== 'home' && activeTab !== 'map' && !location.pathname.startsWith('/tour/') && (
           <div className="bg-[#02130c]/90 backdrop-blur-md border-b border-emerald-500/20 py-2 px-4 sm:px-6 lg:px-8">
