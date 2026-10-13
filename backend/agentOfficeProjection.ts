@@ -105,7 +105,7 @@ export function projectAgentOffice(
     for (const event of events) {
       const id = typeof event.payload?.agentId === 'string' ? event.payload.agentId : '';
       const timestamp = typeof event.createdAt === 'string' ? Date.parse(event.createdAt) : NaN;
-      if (!validIds.has(id) || !Number.isFinite(timestamp) || !Number.isFinite(now) || timestamp > now + 60_000) continue;
+      if (!validIds.has(id) || !Number.isFinite(timestamp) || !Number.isFinite(now) || timestamp > now) continue;
       if (!latest.has(id) || timestamp > latest.get(id)!.timestamp) {
         latest.set(id, {
           type: typeof event.type === 'string' ? event.type.slice(0, 80) : 'event',
