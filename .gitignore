@@ -9,3 +9,9 @@ coverage/
 !.env.example
 *.tgz
 usr/
+
+# Playwright
+/playwright-report/
+/test-results/
+/blob-report/
+/playwright/.cache/

@@ -1155,6 +1155,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 {/* Tours */}
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, tours: !prev.tours }))}
+                  aria-pressed={layerFilters.tours}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
                     layerFilters.tours ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
                   }`}
@@ -1167,6 +1168,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 {/* Hotels */}
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, hotels: !prev.hotels }))}
+                  aria-pressed={layerFilters.hotels}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
                     layerFilters.hotels ? 'bg-amber-50 text-amber-700 border-amber-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
                   }`}
@@ -1179,6 +1181,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 {/* National Parks */}
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, parks: !prev.parks }))}
+                  aria-pressed={layerFilters.parks}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
                     layerFilters.parks ? 'bg-teal-50 text-teal-700 border-teal-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
                   }`}
@@ -1191,6 +1194,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 {/* Buses */}
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, buses: !prev.buses }))}
+                  aria-pressed={layerFilters.buses}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
                     layerFilters.buses ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
                   }`}
@@ -1203,6 +1207,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 {/* Trains */}
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, trains: !prev.trains }))}
+                  aria-pressed={layerFilters.trains}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
                     layerFilters.trains ? 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
                   }`}
@@ -1215,6 +1220,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 {/* Taxis & Shuttles */}
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, taxis: !prev.taxis }))}
+                  aria-pressed={layerFilters.taxis}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
                     layerFilters.taxis ? 'bg-orange-50 text-orange-700 border-orange-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
                   }`}
@@ -1227,6 +1233,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 {/* Commercial Airports */}
                 <button
                   onClick={() => setLayerFilters(prev => ({ ...prev, airports: !prev.airports }))}
+                  aria-pressed={layerFilters.airports}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
                     layerFilters.airports ? 'bg-purple-50 text-purple-700 border-purple-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
                   }`}
