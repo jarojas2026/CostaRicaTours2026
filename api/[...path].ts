@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
+import nodeCrypto from 'node:crypto';
 
 export type VercelRequest = IncomingMessage & {
   query: Record<string, string | string[]>;
@@ -96,6 +97,11 @@ const PRIVILEGED_PREFIXES = [
   '/api/providers',
   '/api/provider/status',
   '/api/operators/status',
+  '/api/payments/sinpe-verify',
+  '/api/sinpe/verify',
+  '/api/claude/audit-booking',
+  '/api/agents',
+  '/api/reservas/confirmar',
 ];
 
 const PAYMENT_CREATION_PATHS = new Set([
@@ -147,11 +153,86 @@ function isPrivilegedPath(pathname: string): boolean {
   return PRIVILEGED_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
-function hasApplicationAuth(req: VercelRequest): boolean {
-  const authorization = req.headers.authorization;
-  const bearer = typeof authorization === 'string' && authorization.startsWith('Bearer ') && authorization.length > 'Bearer '.length;
+// ---------------------------------------------------------------------------
+// Application credential verification at the edge (defense in depth; the
+// Cloud Run backend re-verifies every privileged route).
+// - Firebase ID tokens: RS256 signature against Google's securetoken JWKS,
+//   issuer/audience bound to the Firebase project, exp/iat/sub checked.
+// - Operator key: constant-time comparison with OPERATOR_API_KEY configured in
+//   this Vercel project. Without that variable the gateway fails closed for
+//   operator keys (Firebase sign-in remains available).
+// ---------------------------------------------------------------------------
+const FIREBASE_JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
+const DEFAULT_FIREBASE_PROJECT_ID = 'gen-lang-client-0782739149';
+let firebaseJwksCache: { keys: Map<string, nodeCrypto.KeyObject>; expiresAt: number } | null = null;
+
+function firebaseProjectId(): string {
+  return env('FIREBASE_PROJECT_ID') || env('VITE_FIREBASE_PROJECT_ID') || DEFAULT_FIREBASE_PROJECT_ID;
+}
+
+async function firebaseSigningKeys(): Promise<Map<string, nodeCrypto.KeyObject>> {
+  const now = Date.now();
+  if (firebaseJwksCache && firebaseJwksCache.expiresAt > now) return firebaseJwksCache.keys;
+  const response = await fetch(FIREBASE_JWKS_URL, { signal: AbortSignal.timeout(10_000) });
+  const payload = await response.json().catch(() => ({})) as any;
+  if (!response.ok || !Array.isArray(payload.keys)) throw new Error('firebase_jwks_unavailable');
+  const keys = new Map<string, nodeCrypto.KeyObject>();
+  for (const jwk of payload.keys) {
+    if (jwk?.kid && jwk?.kty === 'RSA') keys.set(String(jwk.kid), nodeCrypto.createPublicKey({ key: jwk, format: 'jwk' }));
+  }
+  firebaseJwksCache = { keys, expiresAt: now + 60 * 60_000 };
+  return keys;
+}
+
+function decodeJwtPart(part: string): any {
+  return JSON.parse(Buffer.from(part, 'base64url').toString('utf8'));
+}
+
+export async function verifyFirebaseIdTokenAtGateway(token: string): Promise<boolean> {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+    const header = decodeJwtPart(parts[0]);
+    const claims = decodeJwtPart(parts[1]);
+    if (header?.alg !== 'RS256' || !header?.kid) return false;
+    const key = (await firebaseSigningKeys()).get(String(header.kid));
+    if (!key) return false;
+    const signatureValid = nodeCrypto.verify(
+      'RSA-SHA256',
+      Buffer.from(`${parts[0]}.${parts[1]}`),
+      key,
+      Buffer.from(parts[2], 'base64url'),
+    );
+    if (!signatureValid) return false;
+    const projectId = firebaseProjectId();
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    return claims?.aud === projectId
+      && claims?.iss === `https://securetoken.google.com/${projectId}`
+      && typeof claims?.sub === 'string' && claims.sub.length > 0
+      && Number(claims?.exp) > nowSeconds
+      && Number(claims?.iat) <= nowSeconds + 300;
+  } catch {
+    return false;
+  }
+}
+
+function operatorKeyMatches(provided: string): boolean {
+  const configured = env('OPERATOR_API_KEY');
+  if (!configured || !provided) return false;
+  const a = Buffer.from(configured);
+  const b = Buffer.from(provided);
+  return a.length === b.length && nodeCrypto.timingSafeEqual(a, b);
+}
+
+async function hasApplicationAuth(req: VercelRequest): Promise<boolean> {
   const operatorKey = req.headers['x-operator-key'];
-  return bearer || (typeof operatorKey === 'string' && operatorKey.trim().length > 0);
+  if (typeof operatorKey === 'string' && operatorKey.trim() && operatorKeyMatches(operatorKey.trim())) return true;
+  const authorization = req.headers.authorization;
+  if (typeof authorization === 'string' && authorization.startsWith('Bearer ')) {
+    const token = authorization.slice('Bearer '.length).trim();
+    if (token) return verifyFirebaseIdTokenAtGateway(token);
+  }
+  return false;
 }
 
 function getRuntimeOidcToken(req: VercelRequest): string {
@@ -311,7 +392,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  if (isPrivilegedPath(pathname) && !hasApplicationAuth(req)) {
+  if (isPrivilegedPath(pathname) && !(await hasApplicationAuth(req))) {
     return res.status(401).json({
       success: false,
       error: 'application_auth_required',
