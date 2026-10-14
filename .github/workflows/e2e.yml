@@ -1,0 +1,62 @@
+name: E2E (Playwright)
+
+# Smoke e2e contra el build de producción servido con `vite preview`.
+# La red de /api/** y de terceros está simulada en tests/e2e/fixtures.ts:
+# no se usa backend, Firebase, Stripe ni claves reales.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: Playwright smoke (chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Descargar el código del repositorio
+        uses: actions/checkout@v7
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Instalar dependencias
+        run: npm ci --include=optional --legacy-peer-deps
+
+      - name: Instalar Chromium de Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Compilar el frontend
+        run: npx vite build
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+          GEMINI_API_KEY: "ci-dummy-key"
+          VITE_STRIPE_PUBLIC_KEY: "pk_test_dummy"
+          VITE_GOOGLE_MAPS_API_KEY: "dummy-key"
+
+      - name: Ejecutar e2e contra vite preview
+        run: npm run test:e2e
+        env:
+          CI: "true"
+
+      - name: Subir reporte de Playwright (solo si falla)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
