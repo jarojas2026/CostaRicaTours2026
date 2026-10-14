@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, CloudSun, Droplets, MapPin, Sparkles, Sun, Waves } from 'lucide-react';
 import { Language } from '../types';
-import { REGIONS } from '../data/toursData';
+import { REGIONS } from '../data/catalogMeta';
 
 interface DestinationPulseProps {
   language: Language;

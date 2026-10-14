@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import { CATEGORIES } from '../data/toursData';
+import { CATEGORIES } from '../data/catalogMeta';
 import { catalogSearchHref } from '../utils/catalogRouteFilters';
 import { Language } from '../types';
 import { Bus, CalendarDays, Circle, Coffee, Droplet, Flame, Footprints, Route, Sun, Trees, Waves, Zap, type LucideIcon } from 'lucide-react';

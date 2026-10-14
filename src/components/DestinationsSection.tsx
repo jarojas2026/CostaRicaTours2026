@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import { REGIONS } from '../data/toursData';
+import { REGIONS } from '../data/catalogMeta';
 import { catalogSearchHref } from '../utils/catalogRouteFilters';
 import { Language } from '../types';
 import { MapPin, ChevronRight } from 'lucide-react';

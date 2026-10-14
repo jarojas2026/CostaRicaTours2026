@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { ShieldCheck, MapPin, ArrowRight, MessageCircle } from 'lucide-react';
 import { Language, OperatorProfile } from '../types';
-import { OPERATORS } from '../data/toursData';
+import { OPERATORS } from '../data/catalogMeta';
 import { useNavigate } from 'react-router-dom';
 import { requestCustomerIntake } from '../utils/customerIntake';
 

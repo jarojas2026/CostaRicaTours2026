@@ -4,7 +4,7 @@ import {
   Leaf, ArrowRight, Loader2, ShieldCheck, Mail, User, Phone, Check, RefreshCw
 } from 'lucide-react';
 import { Tour } from '../types';
-import { TOURS } from '../data/toursData';
+import { useLocalTours } from '../hooks/useLocalTours';
 
 interface ClaudeItineraryModalProps {
   isOpen: boolean;
@@ -22,6 +22,7 @@ export const ClaudeItineraryModal: React.FC<ClaudeItineraryModalProps> = ({
   onSendToChat
 }) => {
   const isEn = language === 'en';
+  const TOURS = useLocalTours();
 
   const [days, setDays] = useState<number>(7);
   const [travelers, setTravelers] = useState<number>(2);

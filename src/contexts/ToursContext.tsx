@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Tour } from '../types';
-import { TOURS } from '../data/toursData';
+import { useLocalTours } from '../hooks/useLocalTours';
 
 interface ToursContextType {
   tours: Tour[];
@@ -12,17 +12,49 @@ interface ToursContextType {
   isFavorite: (tourId: string) => boolean;
 }
 
-const ToursContext = createContext<ToursContextType>({ 
-  tours: TOURS, 
-  loading: false,
+const ToursContext = createContext<ToursContextType>({
+  tours: [],
+  loading: true,
   favorites: [],
   toggleFavorite: () => {},
   isFavorite: () => false
 });
 
+/**
+ * Enriches Firestore tours with the local catalog. Match backend lookup by
+ * explicit remote identity; title matches only enrich presentation and must
+ * never select a different sale product.
+ */
+interface RemoteTourDoc {
+  tour: Tour;
+  docId: string;
+}
+
+function mergeRemoteTours(remoteDocs: readonly RemoteTourDoc[], localTours: readonly Tour[]): Tour[] {
+  return remoteDocs
+    .map(({ tour: remoteTour, docId }) => {
+      const canBook = remoteTour.catalogStatus === 'bookable' && Boolean(remoteTour.providerId?.trim());
+      const localTour = localTours.find((tour) =>
+        tour.id === remoteTour.id ||
+        tour.title.es === remoteTour.title?.es ||
+        tour.title.en === remoteTour.title?.en
+      );
+      return {
+        ...(localTour || {} as Tour),
+        ...remoteTour,
+        id: remoteTour.id || docId,
+        catalogStatus: canBook ? 'bookable' : 'inquiry',
+        isDemoData: !canBook
+      } satisfies Tour;
+    })
+    .sort((a, b) => (a.id || '').localeCompare(b.id || ''));
+}
+
 export const ToursProvider = ({ children }: { children: ReactNode }) => {
-  const [tours, setTours] = useState<Tour[]>(TOURS);
-  const [loading, setLoading] = useState(false);
+  // The ~180 kB local catalog is a lazily loaded chunk (src/data/loadTours.ts).
+  const localTours = useLocalTours();
+  // null = Firestore has not answered (or failed): fall back to the local catalog.
+  const [remoteTours, setRemoteTours] = useState<RemoteTourDoc[] | null>(null);
   const [favorites, setFavorites] = useState<string[]>(() => {
     const saved = localStorage.getItem('costa_rica_tours_favorites');
     return saved ? JSON.parse(saved) : [];
@@ -33,9 +65,9 @@ export const ToursProvider = ({ children }: { children: ReactNode }) => {
   }, [favorites]);
 
   const toggleFavorite = (tourId: string) => {
-    setFavorites(prev => 
-      prev.includes(tourId) 
-        ? prev.filter(id => id !== tourId) 
+    setFavorites(prev =>
+      prev.includes(tourId)
+        ? prev.filter(id => id !== tourId)
         : [...prev, tourId]
     );
   };
@@ -46,51 +78,32 @@ export const ToursProvider = ({ children }: { children: ReactNode }) => {
     try {
       const q = query(collection(db, 'tours'));
       const unsubscribe = onSnapshot(q, (snapshot) => {
-        const fetchedTours: Tour[] = [];
+        const fetchedTours: RemoteTourDoc[] = [];
         snapshot.forEach((doc) => {
-          const remoteTour = doc.data() as Tour;
-          const canBook = remoteTour.catalogStatus === 'bookable' && Boolean(remoteTour.providerId?.trim());
-          const localTour = TOURS.find((tour) =>
-            tour.id === remoteTour.id ||
-            tour.title.es === remoteTour.title?.es ||
-            tour.title.en === remoteTour.title?.en
-          );
-
-          // Match backend lookup by explicit remote identity. Title matches only
-          // enrich presentation; they must never select a different sale product.
-          fetchedTours.push({
-            ...(localTour || {} as Tour),
-            ...remoteTour,
-            id: remoteTour.id || doc.id,
-            catalogStatus: canBook ? 'bookable' : 'inquiry',
-            isDemoData: !canBook
-          });
+          fetchedTours.push({ tour: doc.data() as Tour, docId: doc.id });
         });
-        if (fetchedTours.length > 0) {
-          fetchedTours.sort((a, b) => (a.id || '').localeCompare(b.id || ''));
-          setTours(fetchedTours);
-        } else {
-          setTours(TOURS);
-        }
-        setLoading(false);
+        setRemoteTours(fetchedTours);
       }, (err) => {
         console.warn("Error fetching tours from Firestore, falling back to local dataset:", err);
-        setTours(TOURS);
-        setLoading(false);
+        setRemoteTours(null);
       });
 
       return () => unsubscribe();
     } catch (e) {
       console.warn("Firestore query failed:", e);
-      setTours(TOURS);
-      setLoading(false);
+      setRemoteTours(null);
     }
   }, []);
 
+  const tours = useMemo<Tour[]>(
+    () => remoteTours && remoteTours.length > 0 ? mergeRemoteTours(remoteTours, localTours) : [...localTours],
+    [remoteTours, localTours]
+  );
+
   return (
-    <ToursContext.Provider value={{ 
-      tours: tours.length > 0 ? tours : TOURS, 
-      loading,
+    <ToursContext.Provider value={{
+      tours,
+      loading: tours.length === 0,
       favorites,
       toggleFavorite,
       isFavorite

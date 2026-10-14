@@ -1,5 +1,5 @@
 import React from 'react';
-import { TOURIST_SERVICES, TouristService } from '../data/toursData';
+import { TOURIST_SERVICES, TouristService } from '../data/catalogMeta';
 import { Language, Currency } from '../types';
 import { Bus, Car, Hotel, UserCheck, Wifi, ArrowRight, ShieldCheck } from 'lucide-react';
 import { getLangText } from '../utils/i18n';
