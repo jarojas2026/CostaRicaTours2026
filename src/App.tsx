@@ -9,15 +9,12 @@ import { Tour, Language, Currency, TourCategory, TourRegion, BookingRequest } fr
 import { detectBrowserLanguage, getLangText, fetchExchangeRates } from './utils/i18n';
 import { Header } from './components/Header';
 import { TourDetailModal } from './components/TourDetailModal';
-import { InteractiveMap } from './components/InteractiveMap';
 import { BookingConfirmationModal } from './components/BookingConfirmationModal';
 import { MyBookingsModal } from './components/MyBookingsModal';
 import { Footer } from './components/Footer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 import { AmbientBackground } from './components/AmbientBackground';
 import { CookiesBanner } from './components/CookiesBanner';
-import { NationalTransportSection } from './components/NationalTransportSection';
-import { TicoCultureSection } from './components/TicoCultureSection';
 import { Home as HomePage } from './pages/Home';
 import { ToursPage } from './pages/ToursPage';
 import { TourDetailPage } from './pages/TourDetailPage';
@@ -33,11 +30,17 @@ import { Home, ChevronRight, ArrowLeft, Bot, MessageCircle, X, Loader2 } from 'l
 import { AdminRouteGuard } from './components/AdminRouteGuard';
 import { directWhatsAppUrl } from './utils/directWhatsApp';
 import { useSupportPanel } from './hooks/useSupportPanel';
-import { AdminControlCenterPage } from './pages/AdminControlCenterPage';
-import { ProviderPortalPage } from './pages/ProviderPortalPage';
 import { TravelerCommandBar } from './components/TravelerCommandBar';
 
 // Code-splitting via React.lazy to reduce initial JS bundle size
+// Route-level sections (map, transport, culture, admin, provider portal) are
+// loaded on demand so the index chunk stays under the 900 kB budget.
+const InteractiveMap = lazy(() => import('./components/InteractiveMap').then(m => ({ default: m.InteractiveMap })));
+const NationalTransportSection = lazy(() => import('./components/NationalTransportSection').then(m => ({ default: m.NationalTransportSection })));
+const TicoCultureSection = lazy(() => import('./components/TicoCultureSection').then(m => ({ default: m.TicoCultureSection })));
+const AdminControlCenterPage = lazy(() => import('./pages/AdminControlCenterPage').then(m => ({ default: m.AdminControlCenterPage })));
+const ProviderPortalPage = lazy(() => import('./pages/ProviderPortalPage').then(m => ({ default: m.ProviderPortalPage })));
+const RouteFallback = () => <div className="py-24 text-center text-emerald-300">Cargando…</div>;
 const ItineraryPlanner = lazy(() => import('./components/ItineraryPlanner').then(m => ({ default: m.ItineraryPlanner })));
 const CustomFunnelModal = lazy(() => import('./components/CustomFunnelModal').then(m => ({ default: m.CustomFunnelModal })));
 const TravelerToolkit = lazy(() => import('./components/TravelerToolkit').then(m => ({ default: m.TravelerToolkit })));
@@ -404,7 +407,7 @@ export default function App() {
 
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
-            <Route path="/provider/portal" element={<ProviderPortalPage />} />
+            <Route path="/provider/portal" element={<Suspense fallback={<RouteFallback />}><ProviderPortalPage /></Suspense>} />
             <Route path="/ciudad" element={<Suspense fallback={<div className="py-12 text-center text-amber-200">Cargando ciudad digital…</div>}><DigitalCityArchitecturePage language={language} /></Suspense>} />
             <Route path="/participar" element={<Suspense fallback={<div className="py-12 text-center text-amber-200">Cargando…</div>}><DigitalCityJoinPage language={language} onOpenPrivacy={() => { setLegalTab('privacidad'); setIsLegalModalOpen(true); }} /></Suspense>} />
 
@@ -477,6 +480,7 @@ export default function App() {
 
             <Route path="/map" element={
               <div className="w-full min-h-[calc(100vh-80px)]">
+                <Suspense fallback={<RouteFallback />}>
                 <InteractiveMap
                   language={language}
                   currency={currency}
@@ -492,6 +496,7 @@ export default function App() {
                   onOpenItineraryTab={() => setIsCustomFunnelOpen(true)}
                   onOpenLocalBusesModal={() => setIsLocalBusesOpen(true)}
                 />
+                </Suspense>
               </div>
             } />
 
@@ -541,7 +546,7 @@ export default function App() {
 
             <Route path="/blog" element={<div className="py-12"><BlogSection language={language} /></div>} />
             <Route path="/about" element={<div className="py-12"><AboutSection language={language} /></div>} />
-            <Route path="/culture" element={<TicoCultureSection language={language} onExploreTours={() => navigate('/tours')} />} />
+            <Route path="/culture" element={<Suspense fallback={<RouteFallback />}><TicoCultureSection language={language} onExploreTours={() => navigate('/tours')} /></Suspense>} />
             
             <Route path="/tools" element={
               <div className="space-y-12 py-8">
@@ -551,12 +556,12 @@ export default function App() {
                   onOpenTripBuilder={() => setIsCustomFunnelOpen(true)}
                   onOpenLocalBuses={() => setIsLocalBusesOpen(true)}
                 /></Suspense>
-                <NationalTransportSection
+                <Suspense fallback={<RouteFallback />}><NationalTransportSection
                   language={language}
                   currency={currency}
                   onOpenLocalBuses={() => setIsLocalBusesOpen(true)}
                   onOpenTripBuilder={() => setIsCustomFunnelOpen(true)}
-                />
+                /></Suspense>
               </div>
             } />
 
@@ -571,7 +576,7 @@ export default function App() {
             <Route path="/admin/ai-architecture" element={<AdminRouteGuard language={language === "es" ? "es" : "en"}><Suspense fallback={<div className="py-24 text-center text-violet-300">Cargando arquitectura IA...</div>}><AutonomousOperationsPage language={language} /></Suspense></AdminRouteGuard>} />
 
             <Route path="/admin" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
-              <AdminControlCenterPage language={language} />
+              <Suspense fallback={<RouteFallback />}><AdminControlCenterPage language={language} /></Suspense>
             </AdminRouteGuard>} />
 
             <Route path="/admin/email-operations" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
