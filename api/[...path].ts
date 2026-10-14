@@ -1,4 +1,4 @@
-import type { IncomingMessage, ServerResponse } from 'http';
+import type { IncomingHttpHeaders, IncomingMessage, ServerResponse } from 'http';
 import nodeCrypto from 'node:crypto';
 
 export type VercelRequest = IncomingMessage & {
@@ -216,6 +216,11 @@ export async function verifyFirebaseIdTokenAtGateway(token: string): Promise<boo
   }
 }
 
+function safeRequestHeaders(req: VercelRequest): IncomingHttpHeaders {
+  const candidate = (req as Partial<VercelRequest> | null | undefined)?.headers;
+  return candidate && typeof candidate === 'object' ? candidate : {};
+}
+
 function operatorKeyMatches(provided: string): boolean {
   const configured = env('OPERATOR_API_KEY');
   if (!configured || !provided) return false;
@@ -225,9 +230,10 @@ function operatorKeyMatches(provided: string): boolean {
 }
 
 async function hasApplicationAuth(req: VercelRequest): Promise<boolean> {
-  const operatorKey = req.headers['x-operator-key'];
+  const headers = safeRequestHeaders(req);
+  const operatorKey = headers['x-operator-key'];
   if (typeof operatorKey === 'string' && operatorKey.trim() && operatorKeyMatches(operatorKey.trim())) return true;
-  const authorization = req.headers.authorization;
+  const authorization = headers.authorization;
   if (typeof authorization === 'string' && authorization.startsWith('Bearer ')) {
     const token = authorization.slice('Bearer '.length).trim();
     if (token) return verifyFirebaseIdTokenAtGateway(token);
@@ -236,7 +242,7 @@ async function hasApplicationAuth(req: VercelRequest): Promise<boolean> {
 }
 
 function getRuntimeOidcToken(req: VercelRequest): string {
-  const requestToken = req.headers['x-vercel-oidc-token'];
+  const requestToken = safeRequestHeaders(req)['x-vercel-oidc-token'];
   const runtimeToken = typeof requestToken === 'string' ? requestToken.trim() : '';
   if (runtimeToken) return runtimeToken;
   return requireEnv('VERCEL_OIDC_TOKEN');
@@ -436,15 +442,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    const requestHeaders = safeRequestHeaders(req);
     const headers = new Headers();
-    for (const [name, value] of Object.entries(req.headers)) {
+    for (const [name, value] of Object.entries(requestHeaders)) {
       const lower = name.toLowerCase();
       if (HOP_BY_HOP.has(lower) || lower === 'x-vercel-oidc-token' || value === undefined) continue;
       headers.set(name, Array.isArray(value) ? value.join(',') : String(value));
     }
 
     headers.set('x-serverless-authorization', `Bearer ${cloudRunIdToken}`);
-    headers.set('x-forwarded-host', String(req.headers.host || ''));
+    headers.set('x-forwarded-host', String(requestHeaders.host || ''));
     headers.set('x-forwarded-proto', 'https');
     headers.set('x-crt-gateway', 'vercel-oidc-wif');
 
