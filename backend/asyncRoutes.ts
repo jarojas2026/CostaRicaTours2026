@@ -1,4 +1,5 @@
 import type { Express, NextFunction, Request, Response, Router } from 'express';
+import { captureServerException } from './observability/sentry';
 
 const ROUTE_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'all', 'use'] as const;
 
@@ -49,7 +50,10 @@ export function apiErrorHandler(err: any, req: Request, res: Response, next: Nex
   if (res.headersSent) return next(err);
   console.error(`[api-error] ${req.method} ${req.path}:`, err?.message || err);
   const status = Number(err?.status || err?.statusCode);
-  return res.status(status >= 400 && status < 600 ? status : 500).json({
+  const httpStatus = status >= 400 && status < 600 ? status : 500;
+  // Opt-in Sentry (SENTRY_DSN): only server faults, never client 4xx errors.
+  if (httpStatus >= 500) captureServerException(err, { method: req.method, path: req.path });
+  return res.status(httpStatus).json({
     success: false,
     error: 'internal_error',
     message: 'No se pudo completar la solicitud.',

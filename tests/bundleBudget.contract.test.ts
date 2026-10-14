@@ -32,3 +32,12 @@ test('index chunk stays under 900 kB when a build is present', (t) => {
     assert.ok(size < 900 * 1024, `${file} is ${Math.round(size / 1024)} kB`);
   }
 });
+
+test('opt-in Sentry SDK never lands in the eager chunks when a build is present', (t) => {
+  const assets = path.join(process.cwd(), 'dist', 'assets');
+  if (!fs.existsSync(assets)) return t.skip('no dist/ build in this run');
+  const eager = fs.readdirSync(assets).filter((file) => /^(index|vendor-react)-[\w-]+\.js$/.test(file));
+  for (const file of eager) {
+    assert.doesNotMatch(fs.readFileSync(path.join(assets, file), 'utf8'), /__SENTRY__/, `${file} bundles the Sentry SDK`);
+  }
+});

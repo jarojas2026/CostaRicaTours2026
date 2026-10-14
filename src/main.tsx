@@ -7,8 +7,11 @@ import { ToursProvider } from './contexts/ToursContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { RouteMetadata } from './components/RouteMetadata';
 import { installViteChunkRecovery } from './utils/viteChunkRecovery';
+import { initClientSentry } from './observability/sentry';
 
 installViteChunkRecovery(window);
+// Opt-in: no-op unless VITE_SENTRY_DSN is set; the SDK loads in its own chunk.
+void initClientSentry();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

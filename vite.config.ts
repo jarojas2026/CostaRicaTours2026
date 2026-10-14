@@ -145,6 +145,8 @@ export default defineConfig(() => {
             if (id.includes('jspdf') || id.includes('html2canvas')) return 'vendor-pdf';
             if (id.includes('motion') || id.includes('framer-motion')) return 'vendor-motion';
             if (id.includes('lucide-react')) return 'vendor-icons';
+            // Opt-in Sentry SDK: its own lazily loaded chunk (never in vendor-react / index).
+            if (id.includes('@sentry')) return 'vendor-sentry';
             if (id.includes('react-dom') || id.includes('react-router') || id.includes('/react/')) return 'vendor-react';
           },
         },

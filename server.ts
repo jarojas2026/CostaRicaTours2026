@@ -24,6 +24,7 @@ import { hydrateSkillGenome } from './backend/skillGenome';
 import { syncAgentRegistryFromKnowledgeFabric } from './backend/agentRegistryService';
 import { processPendingCustomerIntakeJobs } from './backend/customerIntakeGateway';
 import { createApp } from './backend/app';
+import { initServerSentry } from './backend/observability/sentry';
 
 const app = createApp();
 const PORT = Number(process.env.PORT) || 3000;
@@ -46,6 +47,10 @@ setInterval(async () => {
 // ==========================================
 
 async function startServer() {
+  // Opt-in error monitoring: no-op unless SENTRY_DSN is set.
+  if (await initServerSentry().catch((err) => { console.warn('Sentry init skipped:', err); return false; })) {
+    console.log('🛰️ Sentry activo para errores del servidor (sin PII).');
+  }
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: {
