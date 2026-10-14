@@ -6,7 +6,8 @@ import rawData from './operatorProspects.json';
  * IMPORTANTE: son prospectos, no operadores verificados ni aliados con contrato.
  * No deben mostrarse al cliente como "verificados" ni usarse para confirmar reservas
  * hasta que `partnershipStatus` sea `acuerdo_firmado` y `verification` sea `verificado_ict`.
- * Fuente editable: operators/*.csv del proyecto → operatorProspects.json.
+ * Fuente editable: operators/*.csv del proyecto → `python3 export_repo_json.py data/operators/operatorProspects.json`.
+ * Vive fuera de src/ a propósito: contiene contactos de terceros y no debe entrar al bundle público.
  */
 
 export type B2bProgram = 'publicado' | 'contactar' | 'no_visible';

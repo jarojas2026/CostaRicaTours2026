@@ -16,7 +16,7 @@ import rateLimit from 'express-rate-limit';
 import { createServer as createViteServer } from 'vite';
 import { initializeAutomationEngine, cleanupExpiredSoftHolds } from './backend/cronEngine';
 import { google } from 'googleapis';
-import { requireOperator, requireOwner, requireFirebaseUser, resolveOperatorAccess, verifyFirebaseUser } from './backend/authMiddleware';
+import { requireOperator, requireOwner, requireAdmin as requireAdminRole, requireFirebaseUser, resolveOperatorAccess, verifyFirebaseUser } from './backend/authMiddleware';
 import { installAsyncRouteSafety, apiErrorHandler } from './backend/asyncRoutes';
 import { issueChatSession, verifyChatSessionAccess, verifyBookingDocumentToken } from './backend/signedAccessTokens';
 import { TOURS } from './src/data/toursData';
@@ -147,7 +147,21 @@ installAsyncRouteSafety(app);
 const PORT = Number(process.env.PORT) || 3000;
 
 // Admin gate is defined before any route registration that uses it.
-const requireAdmin = requireOperator;
+// owner/admin only; operator role and OPERATOR_API_KEY use requireOperator.
+const requireAdmin = requireAdminRole;
+
+/**
+ * Batch/cron style admin routes also accept the internal job token used by
+ * Cloud Scheduler (X-CRT-Internal-Token = AGENT_INTERNAL_TOKEN).
+ */
+function requireAdminOrInternalJob(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const configured = process.env.AGENT_INTERNAL_TOKEN;
+  if (configured && typeof req.headers['x-crt-internal-token'] === 'string'
+    && hasInternalJobToken(req.headers as Record<string, string | string[] | undefined>, configured)) {
+    return next();
+  }
+  return requireAdmin(req, res, next);
+}
 
 function adminAccessPayload(req: express.Request) {
   const access = (req as any).adminAccess || {};
@@ -772,96 +786,10 @@ app.post('/api/ai/intelligence', (req, res) => {
   }
 });
 
-// ==========================================
- // 🧭 VIAJE COMPLETO: MEMORIA + CATÁLOGO + CLIMA + DISPONIBILIDAD + ITINERARIO + VENTAS
- // ==========================================
-app.post('/api/journey/build', async (req, res) => {
-  try {
-    const journey = await buildTripJourney({
-      sessionId: typeof req.body?.sessionId === 'string' ? req.body.sessionId : undefined,
-      query: typeof req.body?.query === 'string' ? req.body.query : '',
-      days: req.body?.days, travelers: req.body?.travelers,
-      adults: req.body?.adults, children: req.body?.children, profile: req.body?.profile,
-      pace: typeof req.body?.pace === 'string' ? req.body.pace : undefined,
-      budgetUSD: req.body?.budgetUSD === undefined ? undefined : Number(req.body.budgetUSD),
-      priorities: Array.isArray(req.body?.priorities) ? req.body.priorities.map(String).slice(0, 12) : undefined,
-      transportPreference: typeof req.body?.transportPreference === 'string' ? req.body.transportPreference : undefined,
-      lodgingPreference: typeof req.body?.lodgingPreference === 'string' ? req.body.lodgingPreference : undefined,
-      specialRequests: typeof req.body?.specialRequests === 'string' ? req.body.specialRequests.slice(0, 1200) : undefined,
-      regions: Array.isArray(req.body?.regions) ? req.body.regions.map(String).slice(0, 8) : undefined,
-      arrivalAirport: typeof req.body?.arrivalAirport === 'string' ? req.body.arrivalAirport : undefined,
-      departureAirport: typeof req.body?.departureAirport === 'string' ? req.body.departureAirport : undefined,
-      date: typeof req.body?.date === 'string' ? req.body.date : undefined,
-      time: typeof req.body?.time === 'string' ? req.body.time : undefined,
-      selectedTourIds: Array.isArray(req.body?.selectedTourIds) ? req.body.selectedTourIds.map(String).slice(0, 8) : undefined,
-      activities: Array.isArray(req.body?.activities) ? req.body.activities.map(String).slice(0, 12) : undefined,
-      language: req.body?.language === 'en' ? 'en' : 'es'
-    });
-    return res.json(journey);
-  } catch (error: any) {
-    return res.status(400).json({ error: error?.message || 'No se pudo construir el viaje.' });
-  }
-});
-
-app.get('/api/journey/:journeyId', async (req, res) => {
-  try {
-    const journey = await getTravelerJourney(String(req.params.journeyId || ''));
-    if (!journey) return res.status(404).json({ error: 'Viaje no encontrado.' });
-    return res.json(journey);
-  } catch (error: any) {
-    return res.status(500).json({ error: error?.message || 'No se pudo leer el viaje.' });
-  }
-});
-
-app.post('/api/journey/:journeyId/adapt', async (req, res) => {
-  try {
-    const journey = await adaptTravelerJourney(String(req.params.journeyId || ''), {
-      sessionId: typeof req.body?.sessionId === 'string' ? req.body.sessionId : undefined,
-      query: typeof req.body?.query === 'string' ? req.body.query : undefined,
-      days: req.body?.days, travelers: req.body?.travelers,
-      adults: req.body?.adults, children: req.body?.children, profile: req.body?.profile,
-      pace: typeof req.body?.pace === 'string' ? req.body.pace : undefined,
-      budgetUSD: req.body?.budgetUSD === undefined ? undefined : Number(req.body.budgetUSD),
-      priorities: Array.isArray(req.body?.priorities) ? req.body.priorities.map(String).slice(0, 12) : undefined,
-      transportPreference: typeof req.body?.transportPreference === 'string' ? req.body.transportPreference : undefined,
-      lodgingPreference: typeof req.body?.lodgingPreference === 'string' ? req.body.lodgingPreference : undefined,
-      specialRequests: typeof req.body?.specialRequests === 'string' ? req.body.specialRequests.slice(0, 1200) : undefined,
-      regions: Array.isArray(req.body?.regions) ? req.body.regions.map(String).slice(0, 8) : undefined,
-      arrivalAirport: typeof req.body?.arrivalAirport === 'string' ? req.body.arrivalAirport : undefined,
-      departureAirport: typeof req.body?.departureAirport === 'string' ? req.body.departureAirport : undefined,
-      date: typeof req.body?.date === 'string' ? req.body.date : undefined,
-      time: typeof req.body?.time === 'string' ? req.body.time : undefined,
-      selectedTourIds: Array.isArray(req.body?.selectedTourIds) ? req.body.selectedTourIds.map(String).slice(0, 8) : undefined,
-      activities: Array.isArray(req.body?.activities) ? req.body.activities.map(String).slice(0, 12) : undefined,
-      language: req.body?.language === 'en' ? 'en' : undefined
-    });
-    return res.json(journey);
-  } catch (error: any) {
-    return res.status(400).json({ error: error?.message || 'No se pudo adaptar el viaje.' });
-  }
-});
-
-// ==========================================
-// 🛎️ CENTRO EJECUTIVO ADMINISTRATIVO
-// ==========================================
-app.get('/api/admin/control-center', requireAdmin, async (_req, res) => {
-  try {
-    return res.json(await getAdminControlCenterSnapshot());
-  } catch (error: any) {
-    return res.status(500).json({ error: error?.message || 'No se pudo generar el centro de control.' });
-  }
-});
-
-// ==========================================
-// 📬 AGENTE INTERNO DE CORREO DE PROVEEDORES
-// ==========================================
-app.post('/api/internal/provider-inbox/sweep', requireAgentTool, async (_req, res) => {
-  try {
-    return res.json(await processProviderInboxOnce());
-  } catch (error: any) {
-    return res.status(500).json({ error: error?.message || 'No se pudo procesar la bandeja de proveedores.' });
-  }
-});
+// Duplicate registrations of /api/journey/build, /api/journey/:journeyId,
+// /api/journey/:journeyId/adapt, /api/admin/control-center and
+// /api/internal/provider-inbox/sweep were removed: Express always served the
+// first registration above, so the later copies were unreachable.
 
 // ==========================================
 // 💳 PASARELAS DE PAGO (STRIPE & PAYPAL)
@@ -2375,7 +2303,7 @@ app.post('/webhook/pagos-proveedores-batch', (_req, res) => {
 });
 
 // 4. Vigilancia y Escalamiento de Reservas Pendientes (Cron Trigger)
-app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], requireAdmin, async (req, res) => {
+app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], requireAdminOrInternalJob, async (req, res) => {
   try {
     const result = await executeSurveillanceAndEscalation();
     res.json(result);
@@ -2385,7 +2313,7 @@ app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], requir
 });
 
 // 5. Reporte Diario de Operación (Cron Trigger)
-app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], requireAdmin, async (req, res) => {
+app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], requireAdminOrInternalJob, async (req, res) => {
   try {
     const result = await executeDailyOperationReport();
     res.json(result);
@@ -2395,7 +2323,7 @@ app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], re
 });
 
 // 6. Solicitud de Reseña Post-Tour (Cron Trigger)
-app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], requireAdmin, async (req, res) => {
+app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], requireAdminOrInternalJob, async (req, res) => {
   try {
     const result = await executePostTourReviewRequests();
     res.json(result);
@@ -2405,7 +2333,7 @@ app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], requi
 });
 
 // 7. Recordatorio 24h Antes del Tour (Cron Trigger)
-app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], requireAdmin, async (req, res) => {
+app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], requireAdminOrInternalJob, async (req, res) => {
   try {
     const result = await executeTour24hReminders();
     res.json(result);
