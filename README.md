@@ -1669,3 +1669,20 @@ JARVIS ya existe como identidad real del registro de agentes y ocupa la `jarvis_
 - `POST /api/admin/jarvis/plans/:planId/reconcile`
 
 **Límite de esta fase:** JARVIS ya planifica, gobierna, encola, supervisa y reintenta tareas auditables. Los ejecutores especializados continúan siendo los servicios/agentes existentes; una tarea en cola no se marca como ejecutada hasta que uno de esos ejecutores la procese realmente.
+
+
+---
+
+## Navegación responsive y revelado de interacciones (2026-10-14)
+
+Se consolidó una capa de navegación responsive orientada a los problemas observados en teléfono, tablet y escritorio: contenido fuera del viewport, scroll horizontal global, paneles que bloquean el mapa y efectos de clic que aparecen fuera de la zona visible.
+
+- El viewport del navegador vuelve a ser el scroll principal; el shell React no encierra toda la aplicación en un scroll interno de `100vh`.
+- Cada cambio de ruta SPA vuelve arriba y enfoca `#main-content`, evitando que una nueva página parezca no haber abierto.
+- `src/index.css` impone límites fluidos a estructura, media, formularios y textos largos.
+- Comparaciones, vuelos, paneles de viaje y navegación rápida se adaptan a anchos estrechos.
+- El selector de capas nacionales del mapa tiene cierre visible **X**, soporte Escape y tamaño limitado por `dvh`.
+- `scripts/auditResponsiveNavigation.mjs` verifica 24 rutas en 7 viewports (168 observaciones), resize en vivo, rueda horizontal/vertical, enlaces GET seguros y contratos de interacción visible.
+- `.github/workflows/responsive-navigation-audit.yml` ejecuta esa auditoría en CI sin enviar formularios ni realizar mutaciones.
+
+Estándar de mantenimiento: [docs/responsive-navigation-operating-standard.md](docs/responsive-navigation-operating-standard.md).
