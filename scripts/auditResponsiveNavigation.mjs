@@ -42,6 +42,7 @@ const report={
   safety:'read-only; all non-GET requests blocked; no form submissions or external navigation',
   pages:[],
   safeLinks:[],
+  interactionChecks:[],
   resizeChecks:[],
   summary:{},
 };
@@ -190,6 +191,64 @@ async function safeLinkWalk(context,viewport){
   await page.close();
 }
 
+async function interactionCheck(context){
+  const page=await context.newPage();
+
+  // A route click made from deep in the previous page must reveal the new page
+  // immediately; users should not need to hunt vertically for the result.
+  await page.goto(BASE+'/',{waitUntil:'domcontentloaded',timeout:30000});
+  await page.waitForTimeout(500);
+  await page.evaluate(()=>window.scrollTo(0,Math.min(2400,document.documentElement.scrollHeight)));
+  const startY=await page.evaluate(()=>window.scrollY);
+  const tourLink=page.locator('a[href="/tours"]').filter({visible:true}).first();
+  if(await tourLink.count()){
+    await tourLink.scrollIntoViewIfNeeded();
+    await tourLink.click({timeout:5000});
+    await page.waitForURL(url=>url.pathname==='/tours',{timeout:10000});
+    await page.waitForTimeout(150);
+    const state=await page.evaluate(()=>({
+      scrollY:window.scrollY,
+      activeId:document.activeElement?.id||null,
+      mainTop:Math.round(document.getElementById('main-content')?.getBoundingClientRect().top||0),
+    }));
+    report.interactionChecks.push({
+      id:'route-click-reveals-destination',
+      pass:state.scrollY<40 && state.mainTop<180,
+      startY,
+      ...state,
+    });
+  } else {
+    report.interactionChecks.push({id:'route-click-reveals-destination',pass:false,error:'No visible /tours link found'});
+  }
+
+  // The national layers chooser is intentionally multi-select, but it must
+  // never trap the map behind an undismissable floating panel.
+  await page.goto(BASE+'/map',{waitUntil:'domcontentloaded',timeout:30000});
+  const toggle=page.locator('#national-poi-layers-toggle');
+  await toggle.waitFor({state:'visible',timeout:12000});
+  await toggle.click();
+  const panel=page.locator('#national-poi-layers-panel');
+  await panel.waitFor({state:'visible',timeout:5000});
+  const bounds=await panel.boundingBox();
+  const viewport=page.viewportSize();
+  const withinViewport=!!bounds && !!viewport &&
+    bounds.x>=-2 && bounds.y>=-2 &&
+    bounds.x+bounds.width<=viewport.width+2 &&
+    bounds.y<viewport.height;
+  const close=panel.locator('button').filter({has:page.locator('svg')}).first();
+  await close.click({timeout:5000});
+  await panel.waitFor({state:'hidden',timeout:5000});
+  report.interactionChecks.push({
+    id:'national-layers-open-visible-and-close',
+    pass:withinViewport,
+    withinViewport,
+    viewport,
+    bounds,
+  });
+
+  await page.close();
+}
+
 async function resizeCheck(context){
   const page=await context.newPage();
   await page.goto(BASE+'/tours',{waitUntil:'domcontentloaded',timeout:30000});
@@ -229,6 +288,11 @@ try{
     if(vp.id==='phone-360'||vp.id==='desktop-small') await safeLinkWalk(context,vp);
     await context.close();
   }
+  const interactionContext=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2,reducedMotion:'reduce'});
+  await guardContext(interactionContext);
+  await interactionCheck(interactionContext);
+  await interactionContext.close();
+
   const resizeContext=await browser.newContext({viewport:{width:1280,height:720},reducedMotion:'reduce'});
   await guardContext(resizeContext);
   await resizeCheck(resizeContext);
@@ -245,6 +309,8 @@ report.summary={
   overflowPages:overflowPages.length,
   fatalPages:fatalPages.length,
   safeLinkChecks:report.safeLinks.length,
+  interactionChecks:report.interactionChecks.length,
+  failedInteractionChecks:report.interactionChecks.filter(x=>!x.pass).length,
   resizeChecks:report.resizeChecks.length,
 };
 await writeFile(join(OUT,'report.json'),JSON.stringify(report,null,2));
@@ -255,11 +321,12 @@ await writeFile(join(OUT,'report.md'),[
   '- Pages with viewport overflow: **'+report.summary.overflowPages+'**',
   '- Fatal/HTTP failures: **'+report.summary.fatalPages+'**',
   '- Safe internal link checks: **'+report.summary.safeLinkChecks+'**',
+  '- Interaction reveal checks: **'+report.summary.interactionChecks+'** (failed: '+report.summary.failedInteractionChecks+')',
   '- Live resize checks: **'+report.summary.resizeChecks+'**','',
   '## Overflow findings','',
   ...overflowPages.map(x=>'### '+x.device+' '+x.route+'\nOverflow: '+(x.documentOverflowPx||0)+'px\n'+(x.overflow||[]).map(o=>'- '+o.path+' ['+o.left+','+o.right+'] '+o.text).join('\n')),
 ].join('\n'));
 process.stdout.write('RESPONSIVE_RESULT '+JSON.stringify(report.summary)+'\n');
-if(report.summary.routeObservations!==report.summary.expectedRouteObservations||fatalPages.length||overflowPages.length){
+if(report.summary.routeObservations!==report.summary.expectedRouteObservations||fatalPages.length||overflowPages.length||report.summary.failedInteractionChecks){
   process.exitCode=1;
 }
