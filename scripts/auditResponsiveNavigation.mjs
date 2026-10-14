@@ -205,7 +205,7 @@ async function interactionCheck(context){
     await tourLink.scrollIntoViewIfNeeded();
     await tourLink.click({timeout:5000});
     await page.waitForURL(url=>url.pathname==='/tours',{timeout:10000});
-    await page.waitForTimeout(150);
+    await page.waitForTimeout(500);
     const state=await page.evaluate(()=>({
       scrollY:window.scrollY,
       activeId:document.activeElement?.id||null,
