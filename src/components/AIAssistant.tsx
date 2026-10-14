@@ -352,26 +352,24 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     e.preventDefault();
     if (!inChatBookingTour || !inChatDate || !inChatName || !inChatEmail) return;
     setIsSubmittingInChatBooking(true);
-    const genId = `CR-PV-${Math.floor(100000 + Math.random() * 900000)}`;
     const totalUSD = inChatBookingTour.priceUSD * inChatAdults;
     const rate = getUsdToCrcRate();
     const totalCRC = rate > 0 ? Math.round(totalUSD * rate) : 0;
 
+    // The client never chooses the booking id, status or payment state: the
+    // server creates the request and decides its lifecycle.
     const payload: any = {
-      bookingId: genId,
       tourId: inChatBookingTour.id,
       tourName: getLangText(inChatBookingTour.title, language),
       date: inChatDate,
-      time: inChatBookingTour.departureTimes?.[0] || '08:00 AM',
+      time: inChatBookingTour.departureTimes?.[0],
       adults: inChatAdults,
       children: 0,
-      pickupHotel: 'Recepción del Hotel / En coordinación WhatsApp',
+      pickupHotel: 'Por coordinar',
       totalUSD,
       totalCRC,
       paymentMethod: inChatPaymentMethod,
-      customer: { fullName: inChatName, email: inChatEmail, phone: inChatPhone || '+506', country: 'CR' },
-      status: inChatPaymentMethod === 'sinpe_movil' ? 'pendiente_pago' : 'confirmada',
-      createdAt: new Date().toISOString()
+      customer: { fullName: inChatName, email: inChatEmail, phone: inChatPhone || '', country: 'CR' }
     };
 
     try {
@@ -385,8 +383,11 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           customerPhone: inChatPhone
         })
       });
-      const data = await res.json();
-      const confirmed = data.booking || payload;
+      const data = await res.json().catch(() => ({}));
+      const serverBooking = res.ok ? data?.booking : null;
+      if (!serverBooking?.bookingId) {
+        throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
+      }
       setInChatBookingTour(null);
 
       const successMsg: Message = {
@@ -394,14 +395,23 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         sender: 'assistant',
         agentId: activeAgentId,
         text: language === 'es'
-          ? `🎉 ¡Reserva Confirmada y Despachada!\n\nTu número de reserva oficial es: **${confirmed.bookingId}** para el tour **${confirmed.tourName}** el día **${confirmed.date}** (${confirmed.adults} adultos).\n\nHemos generado tu comprobante oficial y notificado al operador local.`
-          : `🎉 Booking Confirmed & Dispatched!\n\nYour official booking ID is: **${confirmed.bookingId}** for **${confirmed.tourName}** on **${confirmed.date}** (${confirmed.adults} adults).\n\nYour voucher is registered and the local operator has been notified.`,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        voucher: confirmed
+          ? `📝 Solicitud recibida, pendiente de confirmación.\n\nNúmero de solicitud: **${serverBooking.bookingId}** para **${serverBooking.tourName || payload.tourName}** el **${serverBooking.date || payload.date}** (${serverBooking.adults || payload.adults} adultos).\n\nTodavía no es una reserva confirmada: verificaremos disponibilidad con el operador y el pago antes de enviarte la confirmación.`
+          : `📝 Request received, pending confirmation.\n\nRequest number: **${serverBooking.bookingId}** for **${serverBooking.tourName || payload.tourName}** on **${serverBooking.date || payload.date}** (${serverBooking.adults || payload.adults} adults).\n\nThis is not a confirmed booking yet: we will verify availability with the operator and the payment before sending your confirmation.`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages((prev) => [...prev, successMsg]);
     } catch (err) {
       console.error(err);
+      const failureMsg: Message = {
+        id: `booking-failed-${Date.now()}`,
+        sender: 'assistant',
+        agentId: activeAgentId,
+        text: language === 'es'
+          ? 'No pudimos registrar tu solicitud. No se creó ninguna reserva ni se realizó ningún cobro. Intenta de nuevo o escríbenos por WhatsApp.'
+          : 'We could not register your request. No booking was created and nothing was charged. Please try again or message us on WhatsApp.',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages((prev) => [...prev, failureMsg]);
     } finally {
       setIsSubmittingInChatBooking(false);
     }
@@ -1034,7 +1044,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                               RESERVA #{msg.voucher.bookingId}
                             </span>
                             <span className="bg-emerald-950 text-emerald-300 text-[9px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/40">
-                              ✓ {msg.voucher.status === 'pendiente_pago' ? (language === 'es' ? 'Pendiente Pago' : 'Pending Payment') : (language === 'es' ? 'Confirmada' : 'Confirmed')}
+                              {msg.voucher.status === 'confirmada' || msg.voucher.status === 'confirmed' ? (language === 'es' ? '✓ Confirmada' : '✓ Confirmed') : msg.voucher.status === 'pendiente_pago' ? (language === 'es' ? 'Pendiente de pago' : 'Pending payment') : (language === 'es' ? 'Pendiente de confirmación' : 'Pending confirmation')}
                             </span>
                           </div>
 
@@ -1061,7 +1071,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                             </a>
 
                             <a
-                              href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`🇨🇷 Tour Costa Rica: ${msg.voucher.tourName}`)}&dates=${(msg.voucher.date || '').replace(/-/g, '')}T140000Z/${(msg.voucher.date || '').replace(/-/g, '')}T180000Z&details=${encodeURIComponent(`Reserva Oficial #${msg.voucher.bookingId}\nTour: ${msg.voucher.tourName}\nPasajeros: ${msg.voucher.adults} Adultos`)}&location=${encodeURIComponent(msg.voucher.pickupHotel || 'Costa Rica')}`}
+                              href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`🇨🇷 Tour Costa Rica: ${msg.voucher.tourName}`)}&dates=${(msg.voucher.date || '').replace(/-/g, '')}T140000Z/${(msg.voucher.date || '').replace(/-/g, '')}T180000Z&details=${encodeURIComponent(`Solicitud #${msg.voucher.bookingId}\nTour: ${msg.voucher.tourName}\nPasajeros: ${msg.voucher.adults} Adultos`)}&location=${encodeURIComponent(msg.voucher.pickupHotel || 'Costa Rica')}`}
                               target="_blank"
                               rel="noreferrer"
                               className="bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-[10px] py-1.5 px-2 rounded-lg flex items-center justify-center gap-1 border border-amber-400/40"

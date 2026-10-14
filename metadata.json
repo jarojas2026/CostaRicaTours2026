@@ -1,6 +1,10 @@
 {
   "name": "Costa Rica Tours",
-  "description": "Plataforma oficial de reservas costaricatours.es para tours, transporte, naturaleza y experiencias auténticas en Costa Rica con garantía de tarifa oficial y soporte local 24/7.",
-  "requestFramePermissions": ["microphone"],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "description": "Plataforma de reservas costaricatours.es para tours, transporte, naturaleza y experiencias auténticas en Costa Rica. Tarifas de referencia, sujetas a confirmación con cada proveedor; atención por WhatsApp y correo.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

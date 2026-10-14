@@ -68,7 +68,7 @@ export const MASTER_OPERATORS_REGISTRY: Record<string, {
 }> = {
   'alsama-tours-cr': {
     id: 'alsama-tours-cr',
-    name: 'Alsama Tours CR • Operaciones Directas & Transporte Oficial',
+    name: 'Alsama Tours CR (proveedor de referencia, sujeto a confirmación)',
     email: PROVIDER_DEV_EMAIL,
     officialEmail: 'operaciones@alsamatourscr.com',
     phone: '+506 8795-9148',
@@ -1366,7 +1366,7 @@ export async function executeTour24hReminders(): Promise<{
                   <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 14px; margin-bottom: 20px;">
                     <h4 style="margin: 0 0 4px 0; font-size: 13px; color: #065f46;">💡 Recomendación Operativa:</h4>
                     <p style="margin: 0; font-size: 12px; color: #047857;">
-                      Por favor estar en el lobby 10 minutos antes de la hora acordada. El transporte oficial porta distintivo de <strong>Costa Rica Tours / Alsama Tours CR</strong>.
+                      Por favor estar en el lobby 10 minutos antes de la hora acordada. Los datos del transporte se confirman con el proveedor antes del servicio.
                     </p>
                   </div>
 
@@ -1730,6 +1730,14 @@ export async function executePostSaleVipLoyalty(): Promise<{
 
   if (!bookingsCol) return result;
 
+  // No discount code is ever invented: e-mails go out only when the owner has
+  // configured a real, redeemable code (VIP_PROMO_CODE) in the checkout system.
+  const configuredVipCode = String(process.env.VIP_PROMO_CODE || '').trim();
+  if (!configuredVipCode) {
+    console.log('🎁 [FIDELIZACIÓN] VIP_PROMO_CODE no configurado; no se envían cupones.');
+    return result;
+  }
+
   try {
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() - 3);
@@ -1748,7 +1756,7 @@ export async function executePostSaleVipLoyalty(): Promise<{
         const customerEmail = b.customerEmail || b.customer?.email;
         const customerName = b.customerName || b.customer?.name || 'Apreciado Viajero';
         const tourName = b.tourName || 'Costa Rica';
-        const vipCode = `PURAVIDA15-${bookingId.slice(-6).toUpperCase()}`;
+        const vipCode = configuredVipCode;
 
         if (customerEmail && customerEmail.includes('@')) {
           await sendEmail({

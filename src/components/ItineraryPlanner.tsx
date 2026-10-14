@@ -242,7 +242,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
           <p className="text-sm sm:text-base text-stone-300 max-w-2xl mx-auto leading-relaxed">
             {isEn
               ? 'Connect Arenal volcanoes, Monteverde misty cloud forests, and Manuel Antonio beaches with verified private transfers and certified SINAC naturalist guides.'
-              : 'Conecta volcanes imponentes, el bosque nuboso y playas paradisíacas con traslados privados coordinados de Alsama Tours CR y cupos SINAC garantizados.'
+              : 'Conecta volcanes imponentes, el bosque nuboso y playas paradisíacas con traslados privados que solicitamos a proveedores locales (p. ej. Alsama Tours CR) y entradas SINAC sujetas a disponibilidad.'
             }
           </p>
         </div>

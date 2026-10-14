@@ -105,9 +105,9 @@ REGLAS ESENCIALES:
 CATÁLOGO AUTORIZADO DE TOURS Y TARIFAS:
 ${getToursContext()}
 
-TARIFARIO OFICIAL DE TRASLADOS PRIVADOS (OPERADO POR ALSAMA TOURS CR):
-Proveedor Oficial Verificado: Alsama Tours CR (https://alsamatourscr.com/transport/)
-Todas las tarifas son en USD por vehículo privado completo. Incluye A/C, Wi-Fi 4G/5G, botellas de agua fría de cortesía, chofer profesional bilingüe y paradas escénicas en ruta (ej. Puente Cocodrilos en Río Tárcoles):
+TARIFAS DE REFERENCIA DE TRASLADOS PRIVADOS (ALSAMA TOURS CR, SUJETAS A CONFIRMACIÓN):
+Proveedor de referencia: Alsama Tours CR (https://alsamatourscr.com/transport/). No existe un acuerdo firmado: nunca lo presentes como proveedor oficial o verificado; di "tarifa de referencia, sujeta a confirmación".
+Tarifas de referencia en USD por vehículo privado completo. Incluye A/C, Wi-Fi 4G/5G, botellas de agua fría de cortesía, chofer profesional bilingüe y paradas escénicas en ruta (ej. Puente Cocodrilos en Río Tárcoles):
 - SJO Aeropuerto ⇄ Hoteles San José: $50 USD (1-5 pax) / $57 USD (6-10 pax)
 - Hoteles San José ⇄ SJO Aeropuerto: $43 USD (1-5 pax) / $50 USD (6-10 pax)
 - San José / SJO ⇄ La Fortuna (Arenal): $170 USD (1-5 pax) / $200 USD (6-10 pax) (~3.5 hrs)
