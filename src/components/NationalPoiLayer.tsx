@@ -269,7 +269,7 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
           id="national-poi-layers-panel"
           role="region"
           aria-label={isEs ? 'Selector de capas nacionales' : 'National layers selector'}
-          className="mt-2 w-80 max-w-[calc(100vw-1rem)] sm:max-w-[92vw] max-h-[min(60dvh,32rem)] overflow-y-auto overscroll-contain rounded-2xl bg-[#041711]/97 border border-emerald-500/30 p-3 text-emerald-50 shadow-2xl"
+          className="absolute bottom-full left-0 mb-2 w-80 max-w-[calc(100vw-1rem)] sm:max-w-[92vw] max-h-[min(60dvh,32rem)] overflow-y-auto overscroll-contain rounded-2xl bg-[#041711]/97 border border-emerald-500/30 p-3 text-emerald-50 shadow-2xl"
         >
           <div className="sticky top-0 z-10 -mx-1 -mt-1 mb-2 flex items-center justify-between gap-2 rounded-xl bg-[#041711]/98 px-1 py-1">
             <div className="min-w-0">
