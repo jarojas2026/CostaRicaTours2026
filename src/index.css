@@ -43,6 +43,9 @@
   #root {
     min-height: 100dvh;
     overflow-x: clip;
+    /* Route transitions replace large sections of DOM. Disable browser scroll
+       anchoring so the outgoing page cannot pull the new route back down. */
+    overflow-anchor: none;
   }
 
   #main-content > * {
