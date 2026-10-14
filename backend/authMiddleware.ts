@@ -25,6 +25,9 @@ export async function resolveOperatorAccess(req: Request): Promise<OperatorAcces
       const token = authorization.slice('Bearer '.length).trim();
       const decoded = await getFirebaseAdminAuth().verifyIdToken(token);
       const email = String(decoded.email || '').trim().toLowerCase();
+      // E-mail based grants (OWNER_EMAIL, ADMIN_EMAIL, ADMIN_ALLOWED_EMAILS)
+      // only count when Firebase verified that the caller controls the e-mail.
+      const emailVerified = decoded.email_verified === true;
       const claimedRole = String(decoded.role || decoded.adminRole || '').trim().toLowerCase();
       const ownerEmail = String(process.env.OWNER_EMAIL || '').trim().toLowerCase();
       const adminEmail = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
@@ -33,12 +36,12 @@ export async function resolveOperatorAccess(req: Request): Promise<OperatorAcces
       if (
         decoded.owner === true
         || claimedRole === 'owner'
-        || (ownerEmail && email === ownerEmail)
+        || (emailVerified && ownerEmail && email === ownerEmail)
       ) {
         role = 'owner';
       } else if (claimedRole === 'admin' || claimedRole === 'operator') {
         role = claimedRole;
-      } else if (adminEmail && email === adminEmail) {
+      } else if (emailVerified && adminEmail && email === adminEmail) {
         role = 'admin';
       }
 
@@ -50,10 +53,10 @@ export async function resolveOperatorAccess(req: Request): Promise<OperatorAcces
       const ownerExplicitlyAuthorized = role === 'owner' && (
         decoded.owner === true
         || claimedRole === 'owner'
-        || Boolean(ownerEmail && email === ownerEmail)
+        || Boolean(emailVerified && ownerEmail && email === ownerEmail)
       );
       const collaboratorAuthorized = role !== 'owner' && (
-        allowedEmails.length === 0 || allowedEmails.includes(email)
+        allowedEmails.length === 0 || (emailVerified && allowedEmails.includes(email))
       );
 
       if (role && (ownerExplicitlyAuthorized || collaboratorAuthorized)) {
@@ -137,6 +140,22 @@ export async function requireFirebaseUser(req: Request, res: Response, next: Nex
   }
   (req as any).user = decoded;
   return next();
+}
+
+/**
+ * Administrative routes: owner or admin role only. The shared OPERATOR_API_KEY
+ * and the `operator` role keep access to requireOperator routes (bookings,
+ * SINPE review, booking actions) but no longer to administrative ones.
+ */
+export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+  void requireOperator(req, res, () => {
+    const role = (req as any).adminAccess?.role;
+    if (role !== 'owner' && role !== 'admin') {
+      res.status(403).json({ error: 'Esta acción requiere rol de administrador.' });
+      return;
+    }
+    next();
+  });
 }
 
 export function requireOwner(req: Request, res: Response, next: NextFunction): void {
