@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { Tour, Language, Currency, BookingRequest } from '../types';
 import { getLangText, formatCurrency } from '../utils/i18n';
-import { OPERATORS } from '../data/toursData';
+import { OPERATORS } from '../data/catalogMeta';
 import { useTours } from '../contexts/ToursContext';
 import { getUsdToCrcRate } from '../utils/currencies';
 import { LazyImage } from '../components/LazyImage';

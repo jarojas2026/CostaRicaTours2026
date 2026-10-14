@@ -4,7 +4,7 @@ import { Tour, TourCategory, TourRegion, Language, Currency } from '../types';
 import { TourCard } from './TourCard';
 import { LazyImage } from './LazyImage';
 import { TourComparisonModal } from './TourComparisonModal';
-import { CATEGORIES, REGIONS } from '../data/toursData';
+import { CATEGORIES, REGIONS } from '../data/catalogMeta';
 import { formatCurrency, getLangText } from '../utils/i18n';
 import { isBookableTour, normalizeCatalogSearch } from '../utils/tourListing';
 import { motion, AnimatePresence } from 'motion/react';

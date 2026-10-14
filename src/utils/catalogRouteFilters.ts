@@ -1,4 +1,4 @@
-import { CATEGORIES, REGIONS } from '../data/toursData';
+import { CATEGORIES, REGIONS } from '../data/catalogMeta';
 import type { TourCategory, TourRegion } from '../types';
 
 /** Route query is the source of truth while /tours is open. */

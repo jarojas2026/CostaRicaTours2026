@@ -10,7 +10,7 @@ import {
 import { Tour, Language, Currency, BookingRequest } from '../types';
 import { getLangText } from '../utils/i18n';
 import { getUsdToCrcRate } from '../utils/currencies';
-import { OPERATORS } from '../data/toursData';
+import { OPERATORS } from '../data/catalogMeta';
 import { LazyImage } from './LazyImage';
 import { isBookableTour } from '../utils/tourListing';
 
