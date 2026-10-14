@@ -301,6 +301,10 @@ try{
   await browser.close();
 }
 
+for(const check of report.interactionChecks){
+  process.stdout.write('RESPONSIVE_INTERACTION '+JSON.stringify(check)+'\\n');
+}
+
 const overflowPages=report.pages.filter(x=>(x.documentOverflowPx||0)>4||x.tooWideControls?.length||x.overflow?.length);
 const fatalPages=report.pages.filter(x=>x.outcome==='fatal'||(x.http!==undefined&&x.http!==null&&x.http>=400));
 report.summary={
