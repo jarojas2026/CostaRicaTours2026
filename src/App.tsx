@@ -93,13 +93,35 @@ export default function App() {
   // Keep route transitions visible and predictable. The browser viewport is
   // the canonical scroll surface; nested app-shell scrolling made clicks look
   // inert when newly rendered content opened below the current visual area.
+  useEffect(() => {
+    const previous = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'manual';
+    return () => { window.history.scrollRestoration = previous; };
+  }, []);
+
   useLayoutEffect(() => {
     if (location.hash) return;
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    const resetViewport = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      const scrollingElement = document.scrollingElement;
+      if (scrollingElement) {
+        scrollingElement.scrollTop = 0;
+        scrollingElement.scrollLeft = 0;
+      }
+    };
+
+    resetViewport();
     const frame = window.requestAnimationFrame(() => {
+      resetViewport();
       document.getElementById('main-content')?.focus({ preventScroll: true });
     });
-    return () => window.cancelAnimationFrame(frame);
+    // A short post-paint reset prevents browser scroll anchoring/lazy route
+    // content from restoring the previous page position after the route swap.
+    const timeout = window.setTimeout(resetViewport, 120);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timeout);
+    };
   }, [location.pathname]);
 
   // Modals state
