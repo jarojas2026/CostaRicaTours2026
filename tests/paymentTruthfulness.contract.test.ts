@@ -4,6 +4,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { paypalOrderMatchesBooking, stripeSessionMatchesBooking } from '../backend/bookingService';
 import { executeNotificarProveedor, executePostTourNPS, executeSyncCalendar, executeSolicitudSoporte, executeGenericAutomation } from '../backend/nativeAutomationEngine';
+import { readServerSource } from '../scripts/lib/serverSource';
 
 const read = (file: string) => fs.readFileSync(path.join(process.cwd(), file), 'utf8');
 const expected = { bookingId: 'CR-PV-1111', totalUSD: 150 };
@@ -59,7 +60,7 @@ test('unimplemented automations answer pending_manual instead of fake success', 
 });
 
 test('legacy catch-alls and agent tools do not invent results', () => {
-  const server = read('server.ts');
+  const server = readServerSource();
   assert.match(server, /app\.post\('\/api\/workflows\/:action'[\s\S]{0,80}res\.status\(501\)/);
   assert.match(server, /app\.post\('\/api\/gemini\/:action'[\s\S]{0,80}res\.status\(501\)/);
   assert.doesNotMatch(server, /\['07:00', '08:30', '13:30'\]/);

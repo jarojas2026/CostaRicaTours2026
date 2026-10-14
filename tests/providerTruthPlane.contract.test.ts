@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
+import { readServerSource } from '../scripts/lib/serverSource';
 
 const read = (file: string) => fs.readFileSync(path.join(process.cwd(), file), 'utf8');
 
@@ -19,13 +20,13 @@ test('provider dispatch fails closed instead of assigning static fallback operat
 });
 
 test('provider coordination receives the booking provider and tour identity', () => {
-  const server = read('server.ts');
+  const server = readServerSource();
   const native = read('backend/nativeWorkflows.ts');
   assert.match(native, /providerId/);
   assert.match(native, /tourId/);
   assert.equal(server.includes('Object.values(MASTER_OPERATORS_REGISTRY)'), false);
   assert.match(server, /sourceOfTruth: 'firestore'/);
-  assert.match(server, /executeAutomatedProviderPayouts \} from '\.\/backend\/providerPayoutService'/);
+  assert.match(server, /executeAutomatedProviderPayouts \} from '(?:\.\/backend|\.\.)\/providerPayoutService'/);
   assert.match(server, /app\.post\('\/api\/payouts\/run-batch', requireAdmin/);
   assert.match(server, /app\.post\('\/webhook\/pagos-proveedores-batch'[\s\S]*status\(410\)/);
 });
@@ -39,7 +40,7 @@ test('provider status only becomes notified after successful delivery', () => {
 
 test('provider public actions require a signed portal capability and do not auto-confirm the booking', () => {
   const native = read('backend/nativeWorkflows.ts');
-  const server = read('server.ts');
+  const server = readServerSource();
   const start = native.indexOf('export async function handleProviderActionResponse');
   const end = native.indexOf('export async function executeAutonomousProviderFallback', start);
   assert.ok(start >= 0 && end > start, 'provider handler not found');

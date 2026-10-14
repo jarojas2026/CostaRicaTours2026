@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
+import { readServerSource } from '../scripts/lib/serverSource';
 
 const read = (file: string) => fs.readFileSync(path.join(process.cwd(), file), 'utf8');
 
@@ -13,13 +14,13 @@ test('requireAdmin is owner/admin only and e-mail grants require email_verified'
   assert.match(auth, /emailVerified && ownerEmail && email === ownerEmail/);
   assert.match(auth, /emailVerified && adminEmail && email === adminEmail/);
   assert.match(auth, /emailVerified && allowedEmails\.includes\(email\)/);
-  const server = read('server.ts');
+  const server = readServerSource();
   assert.doesNotMatch(server, /const requireAdmin = requireOperator;/);
   assert.match(server, /const requireAdmin = requireAdminRole;/);
 });
 
 test('server.ts has no duplicate method+path registrations', () => {
-  const server = read('server.ts');
+  const server = readServerSource();
   const seen = new Map<string, number>();
   server.split('\n').forEach((line, index) => {
     const match: RegExpExecArray | null = /^app\.(get|post|put|patch|delete|all)\((\[[^\]]*\]|'[^']*')/.exec(line);

@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { readServerSource } from '../scripts/lib/serverSource';
 
 const root = process.cwd();
 const gateway = fs.readFileSync(path.join(root, 'api/gateway.ts'), 'utf8');
-const server = fs.readFileSync(path.join(root, 'server.ts'), 'utf8');
+const server = readServerSource();
 
 test('legacy itinerary booking cannot publicly claim a confirmed reservation', () => {
   assert.match(gateway, /forwardedPath === 'itinerary\/book'/);

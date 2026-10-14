@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { voiceRoutingPolicy, requestsHuman } from '../backend/voiceRoutingPolicy';
+import { readServerSource } from '../scripts/lib/serverSource';
 
 test('voice readiness fails closed and never exposes the authentication token', () => {
   assert.equal(voiceRoutingPolicy({}).ready, false);
@@ -24,7 +25,7 @@ test('voice transfer accepts only unique international phone numbers and explici
 });
 
 test('every voice callback is signature guarded before routes and status errors request retry', () => {
-  const server = readFileSync(new URL('../server.ts', import.meta.url), 'utf8');
+  const server = readServerSource();
   const guard = server.indexOf("app.use(['/api/voice/incoming', '/api/voice/respond', '/api/voice/human-transfer', '/api/voice/status']");
   assert.ok(guard > 0);
   const guardBody = server.slice(guard, server.indexOf("app.get('/api/voice/config'", guard));

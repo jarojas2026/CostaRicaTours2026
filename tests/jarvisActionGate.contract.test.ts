@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
+import { readServerSource } from '../scripts/lib/serverSource';
 
 const gate = fs.readFileSync(path.join(process.cwd(), 'backend/agentActionGate.ts'), 'utf8');
-const server = fs.readFileSync(path.join(process.cwd(), 'server.ts'), 'utf8');
+const server = readServerSource();
 const cron = fs.readFileSync(path.join(process.cwd(), 'backend/cronEngine.ts'), 'utf8');
 const rules = fs.readFileSync(path.join(process.cwd(), 'firestore.rules'), 'utf8');
 const adminCommands = fs.readFileSync(path.join(process.cwd(), 'backend/adminAICommandService.ts'), 'utf8');

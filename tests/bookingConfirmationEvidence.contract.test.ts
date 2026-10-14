@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { readServerSource } from '../scripts/lib/serverSource';
 
 const bookingService = readFileSync(new URL('../backend/bookingService.ts', import.meta.url), 'utf8');
-const server = readFileSync(new URL('../server.ts', import.meta.url), 'utf8');
+const server = readServerSource();
 const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
 
 test('legacy customer approval route cannot stand in for provider confirmation', () => {

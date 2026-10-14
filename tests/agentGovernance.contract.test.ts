@@ -9,6 +9,7 @@ import {
   registerAgentAbortController,
 } from '../backend/agentCancellationRegistry';
 import { buildAgentRegistrySeed } from '../backend/agentRegistryService';
+import { readServerSource } from '../scripts/lib/serverSource';
 
 test('money, outbound customer messaging, pricing and publication always require a human', () => {
   for (const level of [0, 1, 2, 3] as const) {
@@ -54,7 +55,7 @@ test('local revocation aborts every registered in-flight execution for an agent'
 });
 
 test('server exposes governance mutations only through requireOwner', () => {
-  const server = fs.readFileSync(path.join(process.cwd(), 'server.ts'), 'utf8');
+  const server = readServerSource();
   for (const route of [
     "agents/:agentId/autonomy', requireOwner",
     "agent-office/shutdown', requireOwner",

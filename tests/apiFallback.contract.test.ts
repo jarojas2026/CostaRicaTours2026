@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
+import { readServerSource } from '../scripts/lib/serverSource';
 
 test('unregistered API paths return a bilingual JSON 404 before the SPA fallback', () => {
-  const source = fs.readFileSync(path.join(process.cwd(), 'server.ts'), 'utf8');
+  const source = readServerSource();
   const apiFallback = source.indexOf("app.use('/api', (req, res) => {");
   const serverStart = source.indexOf('async function startServer()');
   const spaFallback = source.indexOf("app.get('*', (req, res) => {");

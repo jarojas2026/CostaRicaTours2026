@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { readServerSource } from './lib/serverSource';
 
 type Finding = { severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'INFO'; id: string; message: string };
 
@@ -79,7 +80,7 @@ for (const relative of ['backend', 'src', 'public', 'agent']) {
   }
 }
 
-const server = read('server.ts');
+const server = readServerSource(root);
 const bookingService = read('backend/bookingService.ts');
 const reservationLifecycle = read('backend/reservationLifecycleOrchestrator.ts');
 if (!/createInFlightLimiter/.test(server) || !/apiAdmission/.test(server) || !/aiAdmission/.test(server)) {

@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { readServerSource } from '../scripts/lib/serverSource';
 
-const server = readFileSync(new URL('../server.ts', import.meta.url), 'utf8');
+const server = readServerSource();
 
 test('signed payment webhook HTTP bridge is registered on the canonical Express server', () => {
   assert.match(server, /paymentWebhookHttpService/);

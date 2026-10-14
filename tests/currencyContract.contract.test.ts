@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { readServerSource } from '../scripts/lib/serverSource';
 
 const root = process.cwd();
 const client = fs.readFileSync(path.join(root, 'src/utils/currencies.ts'), 'utf8');
-const server = fs.readFileSync(path.join(root, 'server.ts'), 'utf8');
+const server = readServerSource();
 
 test('server publishes the canonical USD to CRC field', () => {
   assert.match(server, /usdToCrc:\s*configuredRate/);
