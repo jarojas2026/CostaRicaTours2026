@@ -37,7 +37,7 @@ test('booking document links are bound to exactly one booking', () => {
 
 test('async route rejections are forwarded to next(err) instead of crashing the process', async () => {
   const failure = new Error('boom');
-  const handler = wrapAsyncHandler(async () => { throw failure; });
+  const handler = wrapAsyncHandler(async (_req: any, _res: any, _next: any) => { throw failure; });
   const received = await new Promise<unknown>((resolve) => {
     handler({} as any, {} as any, resolve as any);
   });
