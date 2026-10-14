@@ -415,7 +415,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                     {itinerary.totalDays || daysCount} {isEn ? 'Days Route' : 'Días de Ruta'}
                   </span>
                   <span className="text-xs font-bold text-stone-500">
-                    {itinerary.modelUsed || 'Costa Rica Tours Engine'}
+                    {isEn ? 'AI draft · confirm with an advisor' : 'Borrador IA · confirma con un asesor'}
                   </span>
                 </div>
                 {itinerary.estimatedBudgetUSD && (
@@ -591,7 +591,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
             <button
               onClick={() => setIsBookingModalOpen(false)}
               className="absolute top-5 right-5 text-stone-400 hover:text-stone-600 p-1.5 rounded-full hover:bg-stone-100 transition"
-              aria-label="Cerrar"
+              aria-label={language === 'es' ? 'Cerrar' : 'Close'}
             >
               <X className="w-5 h-5" />
             </button>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Sparkles, MapPin, Compass, ShieldCheck, ChevronRight, ChevronLeft, ArrowRight } from 'lucide-react';
-import { formatCurrency } from '../utils/i18n';
+import { ReferencePrice } from './ReferencePrice';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language, TourRegion, TourCategory, Currency } from '../types';
 import { UI_TRANSLATIONS } from '../utils/i18n';
@@ -31,7 +31,7 @@ const HERO_SLIDES = [
     titleEn: "Whale Watching in Marino Ballena",
     desc: "Vive el espectáculo natural más grande del océano en Uvita. Observa ballenas jorobadas y delfines en el emblemático Parque Nacional Marino Ballena.",
     descEn: "Experience the ocean's greatest natural show in Uvita. Watch humpback whales and dolphins in the iconic Marino Ballena National Park.",
-    price: "$85"
+    referencePriceUSD: 85
   },
   {
     id: 2,
@@ -42,7 +42,7 @@ const HERO_SLIDES = [
     titleEn: "Arenal Volcano & Hot Springs",
     desc: "Descubre el majestuoso Volcán Arenal. Sumérgete en exclusivas aguas termales y siente la energía pura de la selva tropical de Costa Rica.",
     descEn: "Discover the majestic Arenal Volcano. Immerse yourself in exclusive hot springs and feel the pure energy of the Costa Rican rainforest.",
-    price: "$125"
+    referencePriceUSD: 125
   },
   {
     id: 3,
@@ -53,7 +53,7 @@ const HERO_SLIDES = [
     titleEn: "Monteverde: Hanging Bridges",
     desc: "Siente la magia de caminar sobre el dosel de la selva nubosa en puentes colgantes rodeado de quetzales y orquídeas exóticas.",
     descEn: "Experience the magic of walking over the cloud forest canopy on suspension bridges surrounded by quetzals and exotic orchids.",
-    price: "$110"
+    referencePriceUSD: 110
   }
 ];
 
@@ -292,14 +292,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                       {language === 'es' ? slide.desc : slide.descEn}
                     </p>
                     <div className="flex items-center justify-between border-t border-white/20 pt-4">
-                      <div className="flex flex-col">
-                         <span className="text-xs text-stone-300 font-medium">{language === 'es' ? 'Desde' : 'From'}</span>
-                         <span className="text-2xl font-black text-amber-400">
-                           {formatCurrency(Number(slide.price.replace(/[^0-9]/g, '')) || 0, currency)}
-                         </span>
-                      </div>
-                      <span className="btn-primary px-5 py-2.5 text-xs">
-                        <span>{language === 'es' ? 'Ver Detalles' : 'View Details'}</span>
+                      <ReferencePrice
+                        amountUSD={slide.referencePriceUSD}
+                        currency={currency}
+                        language={language}
+                      />
+                      <span className="btn-primary px-5 py-2.5 text-xs shrink-0">
+                        <span>{language === 'es' ? 'Consultar cotización' : 'Request a quote'}</span>
                         <ArrowRight className="w-4 h-4" />
                       </span>
                     </div>
@@ -315,7 +314,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
                 }}
                 className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 bg-black/70 hover:bg-black/90 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all shadow-lg border border-white/20 z-20 cursor-pointer"
-                aria-label="Slide anterior"
+                aria-label={language === 'es' ? 'Diapositiva anterior' : 'Previous slide'}
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
@@ -326,7 +325,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
                 }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 bg-black/70 hover:bg-black/90 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all shadow-lg border border-white/20 z-20 cursor-pointer"
-                aria-label="Slide siguiente"
+                aria-label={language === 'es' ? 'Diapositiva siguiente' : 'Next slide'}
               >
                 <ChevronRight className="w-6 h-6" />
               </button>

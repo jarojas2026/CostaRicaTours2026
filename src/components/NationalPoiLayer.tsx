@@ -38,6 +38,9 @@ interface NationalPoiLayerProps {
   language: Language;
 }
 
+/** Window event other map controls dispatch to open this layer panel. */
+export const OPEN_NATIONAL_LAYERS_EVENT = 'crt:open-national-layers';
+
 const CLUSTER_UNTIL_ZOOM = 13; // por debajo de este zoom se agrupa
 const CLUSTER_CELL_PX = 64;
 const MAX_POINTS_RENDERED = 5000;
@@ -69,6 +72,13 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
   const [query, setQuery] = useState('');
   const layerRef = useRef<L.LayerGroup | null>(null);
   const rendererRef = useRef<L.Canvas | null>(null);
+
+  // Other controls (e.g. the main "Layers" bar) can open this panel.
+  useEffect(() => {
+    const open = () => setIsOpen(true);
+    window.addEventListener(OPEN_NATIONAL_LAYERS_EVENT, open);
+    return () => window.removeEventListener(OPEN_NATIONAL_LAYERS_EVENT, open);
+  }, []);
 
   // Carga diferida de cada capa activada
   useEffect(() => {
@@ -120,7 +130,7 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
         rows.push(`<div><strong>${escapeHtml(isEs ? d.es : d.en)}:</strong> ${escapeHtml(d.v)}</div>`);
       });
       const booking = safeUrl(p.reserva);
-      if (booking) rows.push(`<div style="margin-top:4px;"><a href="${escapeHtml(booking)}" target="_blank" rel="noopener noreferrer" style="font-weight:800;">🎟️ ${isEs ? 'Reservar entrada oficial' : 'Book official entry'}</a></div>`);
+      if (booking) rows.push(`<div style="margin-top:4px;"><a href="${escapeHtml(booking)}" target="_blank" rel="noopener noreferrer" style="font-weight:800;">🎟️ ${isEs ? 'Comprar entrada en el sitio oficial del SINAC' : 'Buy your ticket on the official SINAC website'}</a><div style="font-size:10px;opacity:.75;">${isEs ? 'La tarifa se paga directamente al SINAC.' : 'The fee is paid directly to SINAC.'}</div></div>`);
       if (p.aprox) rows.push(`<div style="opacity:.7;font-size:10px;">⚠️ ${isEs ? 'Ubicación aproximada' : 'Approximate location'}</div>`);
       if (web) rows.push(`<div>🌐 <a href="${escapeHtml(web)}" target="_blank" rel="noopener noreferrer">${isEs ? 'Sitio web' : 'Website'}</a></div>`);
       rows.push(`<div><a href="${directions}" target="_blank" rel="noopener noreferrer">🧭 ${isEs ? 'Cómo llegar' : 'Directions'}</a></div>`);
@@ -229,12 +239,15 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
       <button
         type="button"
         id="national-poi-layers-toggle"
-        aria-label={isEs ? 'Capas de todo Costa Rica' : 'All Costa Rica layers'}
+        aria-label={isEs ? 'Capas nacionales de Costa Rica (salud CCSS, parques SINAC, fauna, patrimonio y más)' : 'Costa Rica national layers (CCSS health, SINAC parks, wildlife, heritage and more)'}
         aria-expanded={isOpen}
         onClick={() => setIsOpen((v) => !v)}
         className="flex items-center gap-2 rounded-full bg-[#051c14]/95 border border-emerald-500/40 px-4 py-2 text-sm font-bold text-emerald-50 shadow-lg hover:border-amber-400 active:scale-95 transition"
       >
-        🗺️ {isEs ? 'Todo Costa Rica' : 'All of Costa Rica'}
+        🗺️ {isEs ? 'Capas nacionales' : 'National layers'}
+        <span className="hidden sm:inline text-[11px] font-semibold text-emerald-200/80">
+          {isEs ? 'CCSS · SINAC · fauna · patrimonio' : 'CCSS · SINAC · wildlife · heritage'}
+        </span>
         {totalLoaded > 0 && <span className="rounded-full bg-amber-500 px-2 text-xs text-[#041711]">{totalLoaded.toLocaleString(isEs ? 'es-CR' : 'en-US')}</span>}
       </button>
 
@@ -248,6 +261,9 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
             aria-label={isEs ? 'Buscar puntos en el mapa' : 'Search map points'}
             className="mb-3 w-full rounded-lg bg-[#051c14] border border-emerald-700/60 px-3 py-2 text-sm placeholder:text-emerald-200/50 focus:outline-none focus:border-amber-400"
           />
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-amber-300">
+            {isEs ? `${NATIONAL_POI_GROUPS.length} capas nacionales` : `${NATIONAL_POI_GROUPS.length} national layers`}
+          </p>
           <ul className="space-y-1">
             {NATIONAL_POI_GROUPS.map((g) => {
               const count = loaded[g.id]?.length;

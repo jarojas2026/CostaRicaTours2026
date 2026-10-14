@@ -16,6 +16,7 @@ import { AI_AGENTS, getAIAgentById } from '../data/aiAgentsData';
 import { ClaudeItineraryModal } from './ClaudeItineraryModal';
 import { getUsdToCrcRate, formatCrc } from '../utils/currencies';
 import { useChatAnalytics } from '../hooks/useChatAnalytics';
+import { buildTripInquiryHandoff, type TripInquiryHandoff } from '../utils/tripRequestParser';
 import { chatSessionHeaders, clearStoredChatSession, readStoredChatSession, requestChatSession, type ChatSessionCredentials } from '../utils/chatSession';
 
 interface AIAssistantProps {
@@ -35,6 +36,8 @@ interface Message {
   time: string;
   modelUsed?: string;
   recommendedTours?: Tour[];
+  /** Client-side acknowledgement + WhatsApp hand-off for concrete trip inquiries. */
+  inquiryHandoff?: TripInquiryHandoff;
   quickActions?: Array<{ label: string; action: string; data?: any }>;
   voucher?: any;
   sources?: Array<{ uri: string; title: string }>;
@@ -555,9 +558,14 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         }
       }
 
+      // Concrete inquiries (activity/place + people/date/price) always get an
+      // explicit acknowledgement and a prefilled WhatsApp hand-off.
+      const inquiryHandoff = buildTripInquiryHandoff(query, language, TOURS);
+      const handoffTour = inquiryHandoff?.tourId ? TOURS.find(t => t.id === inquiryHandoff.tourId) : undefined;
+
       // Find relevant tour matches in query or reply for smart UI recommendation card
       const combinedText = (query + ' ' + (data.reply || '')).toLowerCase();
-      const matchedTours = explicitRecommendedTours || TOURS.filter(t => 
+      const matchedTours = explicitRecommendedTours || (handoffTour ? [handoffTour] : null) || TOURS.filter(t => 
         combinedText.includes(t.title.es.toLowerCase()) ||
         (t.title.en && combinedText.includes(t.title.en.toLowerCase())) ||
         (combinedText.includes('arenal') && t.region === 'arenal') ||
@@ -576,6 +584,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         modelUsed: data.modelUsed || (aiEngine === 'claude' ? 'Claude 3.5 Sonnet' : 'Gemini 3.5 Flash'),
         recommendedTours: matchedTours.length > 0 ? matchedTours : undefined,
+        inquiryHandoff,
         quickActions: data.quickActions || undefined,
         voucher: data.voucher || data.voucherPreview || undefined,
         sources: data.sources || undefined,
@@ -595,6 +604,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
             ? '¡Pura Vida! Disculpa, hubo una interrupción breve en la comunicación. Por favor intenta preguntarme nuevamente.'
             : 'Pura Vida! Apologies, brief communication interruption. Please ask again.',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          inquiryHandoff: buildTripInquiryHandoff(query, language, TOURS),
         },
       ]);
     } finally {
@@ -996,14 +1006,13 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
                       <div className="flex items-center justify-between text-[9px] opacity-80 mt-1.5 font-bold">
                         <div className="flex items-center gap-2">
-                          {msg.modelUsed && (
-                            <span className={`px-2 py-0.5 rounded text-[8px] tracking-wide font-black uppercase flex items-center gap-1 ${
-                              msg.modelUsed.toLowerCase().includes('claude')
-                                ? 'bg-amber-400/20 text-amber-300 border border-amber-400/50'
-                                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
-                            }`}>
-                              <span>{msg.modelUsed.toLowerCase().includes('claude') ? '🧠' : '⚡'}</span>
-                              <span>{msg.modelUsed}</span>
+                          {msg.sender === 'assistant' && msg.modelUsed && (
+                            <span
+                              className="px-2 py-0.5 rounded text-[8px] tracking-wide font-black uppercase flex items-center gap-1 bg-emerald-500/15 text-emerald-200 border border-emerald-400/30"
+                              title={language === 'es' ? 'Respuesta generada por IA. Verifica siempre precio y cupo con un asesor.' : 'AI-generated answer. Always confirm price and availability with an advisor.'}
+                            >
+                              <Sparkles className="w-2.5 h-2.5" aria-hidden="true" />
+                              <span>{language === 'es' ? 'Respuesta IA · verifica con un asesor' : 'AI answer · confirm with an advisor'}</span>
                             </span>
                           )}
 
@@ -1110,6 +1119,40 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                       )}
                     </div>
 
+                    {/* Inquiry acknowledgement + WhatsApp hand-off */}
+                    {msg.inquiryHandoff && (
+                      <div className="bg-[#03150d] p-3.5 rounded-2xl border border-emerald-400/40 space-y-2.5 shadow-xl text-xs" data-inquiry-handoff="true">
+                        <div className="text-[10px] font-black uppercase tracking-wider text-emerald-300">
+                          {language === 'es' ? 'Entendí tu solicitud así' : 'Here is what I understood'}
+                        </div>
+                        <ul className="space-y-1 text-stone-200">
+                          {msg.inquiryHandoff.understood.map(line => (
+                            <li key={line} className="flex gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" aria-hidden="true" /><span>{line}</span></li>
+                          ))}
+                        </ul>
+                        {msg.inquiryHandoff.referenceLine && (
+                          <div className="rounded-xl border border-amber-400/40 bg-amber-500/10 p-2.5">
+                            <div className="text-[10px] font-black uppercase tracking-wider text-amber-300">
+                              {language === 'es' ? 'Precio de referencia del catálogo' : 'Catalog reference price'}
+                            </div>
+                            <div className="font-bold text-white">{msg.inquiryHandoff.referenceLine}</div>
+                          </div>
+                        )}
+                        <p className="text-stone-300 leading-relaxed">{msg.inquiryHandoff.operatorNote}</p>
+                        <a
+                          href={msg.inquiryHandoff.whatsappUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          data-human-handoff="true"
+                          onClick={() => trackChatEvent({ action: 'tool_executed', label: 'whatsapp_handoff' })}
+                          className="w-full rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-stone-950 font-black py-2.5 flex items-center justify-center gap-2 transition-colors"
+                        >
+                          <Phone className="w-4 h-4" aria-hidden="true" />
+                          {language === 'es' ? 'Confirmar por WhatsApp con estos datos' : 'Confirm on WhatsApp with these details'}
+                        </a>
+                      </div>
+                    )}
+
                     {/* Recommended Tours Widget if present */}
                     {msg.recommendedTours && msg.recommendedTours.length > 0 && (
                       <div className="bg-[#03150d] p-3 rounded-2xl border border-amber-400/40 space-y-2 shadow-xl">
@@ -1137,7 +1180,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                                     {getLangText(t.title, language)}
                                   </span>
                                   <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="text-[10px] text-amber-400 font-black">${t.priceUSD} USD</span>
+                                    <span className="text-[10px] text-amber-400 font-black" title={language === 'es' ? 'Precio de referencia, sujeto a confirmación' : 'Reference price, subject to confirmation'}>{language === 'es' ? `Ref. US$${t.priceUSD}` : `Ref. US$${t.priceUSD}`}</span>
                                     <span className="text-[9px] text-emerald-200/80 font-semibold bg-[#020e08] px-1.5 py-0.5 rounded border border-emerald-500/30 flex items-center gap-0.5">
                                       <Clock className="w-2.5 h-2.5 text-amber-400" />
                                       {t.durationHours ? `${t.durationHours} hrs` : (t.durationLabel ? getLangText(t.durationLabel, language) : '4 hrs')}
@@ -1301,7 +1344,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                     ? 'bg-red-500/20 text-red-400 border-red-500/50 animate-pulse' 
                     : 'bg-[#051c14] border-emerald-500/30 text-amber-400 hover:bg-[#0a2e21]'
                 }`}
-                title={isRecording ? 'Detener grabación' : 'Grabar audio por voz'}
+                title={isRecording ? (language === 'es' ? 'Detener grabación' : 'Stop recording') : (language === 'es' ? 'Grabar audio por voz' : 'Record voice message')}
+                aria-label={isRecording ? (language === 'es' ? 'Detener grabación' : 'Stop recording') : (language === 'es' ? 'Grabar audio por voz' : 'Record voice message')}
               >
                 {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </button>

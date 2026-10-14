@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Tour, Language, Currency } from '../types';
-import { getLangText, formatCurrency, UI_TRANSLATIONS } from '../utils/i18n';
+import { getLangText, UI_TRANSLATIONS } from '../utils/i18n';
 
 import { LazyImage } from './LazyImage';
+import { ReferencePrice } from './ReferencePrice';
 import { Star, Clock, MapPin, Shield, ArrowRight, ExternalLink, X, Compass, Navigation, Heart, Scale, Check } from 'lucide-react';
 import { isBookableTour } from '../utils/tourListing';
 
@@ -50,8 +51,6 @@ export const TourCard: React.FC<TourCardProps> = ({
     };
   }, [showMiniMap]);
 
-  // Convert USD to selected currency
-  const formattedPrice = formatCurrency(tour.priceUSD, currency);
   const isBookable = isBookableTour(tour);
   const hasVerifiedRating = isBookable && tour.reviewsVerified === true && tour.reviewsCount > 0;
 
@@ -187,17 +186,12 @@ export const TourCard: React.FC<TourCardProps> = ({
           {/* Footer: Clear Price & Primary Action */}
           <div className="flex items-center justify-between pt-4 mt-4 border-t border-emerald-500/20">
             <div className="space-y-0.5">
-              <div className="flex items-baseline gap-1">
-                <span className={`${isBookable ? 'text-2xl' : 'text-sm'} font-black text-amber-400 tracking-tight`}>
-                  {isBookable ? formattedPrice : (language === 'es' ? 'Tarifa por confirmar' : 'Price to be confirmed')}
+              <ReferencePrice amountUSD={tour.priceUSD} currency={currency} language={language} />
+              {!isBookable && (
+                <span className="text-[10px] text-stone-400 font-medium block">
+                  {language === 'es' ? 'Operador aún no confirmado' : 'Operator not confirmed yet'}
                 </span>
-                {isBookable && <span className="text-xs font-bold text-stone-300">{currency}</span>}
-              </div>
-              <span className="text-[10px] text-stone-400 font-medium block">
-                {isBookable
-                  ? (language === 'es' ? 'Por persona · confirma el total antes del pago' : 'Per person · confirm the total before payment')
-                  : (language === 'es' ? 'Operador y cupo no vinculados aún' : 'Provider and inventory not linked yet')}
-              </span>
+              )}
             </div>
 
             <button 

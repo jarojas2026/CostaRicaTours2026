@@ -312,7 +312,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
         <button
           onClick={onClose}
           className="w-10 h-10 absolute top-4 right-4 sm:top-6 sm:right-6 z-30 bg-stone-900/90 hover:bg-amber-500 text-stone-300 hover:text-stone-950 rounded-full flex items-center justify-center border border-white/20 hover:border-amber-400 transition-colors shadow-lg cursor-pointer"
-          aria-label="Cerrar modal"
+          aria-label={language === 'es' ? 'Cerrar' : 'Close'}
           title="Cerrar (Esc)"
         >
           <X className="w-5 h-5 stroke-[2.5]" />

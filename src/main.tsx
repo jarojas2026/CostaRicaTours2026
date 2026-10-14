@@ -5,7 +5,6 @@ import App from './App.tsx';
 import './index.css';
 import { ToursProvider } from './contexts/ToursContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { RouteMetadata } from './components/RouteMetadata';
 import { installViteChunkRecovery } from './utils/viteChunkRecovery';
 import { initClientSentry } from './observability/sentry';
 
@@ -18,7 +17,6 @@ createRoot(document.getElementById('root')!).render(
     <ErrorBoundary>
       <ToursProvider>
         <BrowserRouter>
-          <RouteMetadata />
           <App />
         </BrowserRouter>
       </ToursProvider>

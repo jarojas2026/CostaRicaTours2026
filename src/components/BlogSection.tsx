@@ -1,59 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Language } from '../types';
+import { BLOG_POSTS } from '../data/blogPosts';
 import { Calendar, User, ArrowRight } from 'lucide-react';
 
 interface BlogSectionProps {
   language: Language;
 }
 
-const POSTS = [
-  {
-    id: '1',
-    title: {
-      es: '10 mejores lugares para visitar en Costa Rica en 2026',
-      en: '10 best places to visit in Costa Rica in 2026'
-    },
-    excerpt: {
-      es: 'Desde el Volcán Arenal hasta las playas vírgenes de Corcovado, esta es nuestra guía definitiva.',
-      en: 'From Arenal Volcano to the pristine beaches of Corcovado, this is our ultimate guide.'
-    },
-    image: 'https://images.unsplash.com/photo-1518132715369-0f866418858f?auto=format&fit=crop&q=80',
-    date: 'Sep 12, 2025',
-    author: 'Daniel Rojas'
-  },
-  {
-    id: '2',
-    title: {
-      es: 'Guía Completa: Cuándo ver ballenas en Marino Ballena',
-      en: 'Complete Guide: When to see whales in Marino Ballena'
-    },
-    excerpt: {
-      es: 'Las ballenas jorobadas visitan nuestras costas dos veces al año. Te contamos las mejores fechas.',
-      en: 'Humpback whales visit our shores twice a year. We tell you the best dates.'
-    },
-    image: 'https://images.unsplash.com/photo-1549488344-1f9b8d2bd1f3?auto=format&fit=crop&q=80',
-    date: 'Aug 28, 2025',
-    author: 'Maria Jimenez'
-  },
-  {
-    id: '3',
-    title: {
-      es: 'Cómo planificar un viaje sostenible a Costa Rica',
-      en: 'How to plan a sustainable trip to Costa Rica'
-    },
-    excerpt: {
-      es: 'Consejos prácticos para reducir tu huella mientras disfrutas de la biodiversidad más rica del mundo.',
-      en: 'Practical tips to reduce your footprint while enjoying the world’s richest biodiversity.'
-    },
-    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&q=80',
-    date: 'Aug 15, 2025',
-    author: 'Elena Gomez'
-  }
-];
-
 export const BlogSection: React.FC<BlogSectionProps> = ({ language }) => {
-  const [selected,setSelected]=useState<(typeof POSTS)[number]|null>(null);
+  const lang = language === 'es' ? 'es' : 'en';
   return (
     <section className="py-20 px-4 max-w-7xl mx-auto">
       <div className="text-center mb-16">
@@ -62,15 +19,15 @@ export const BlogSection: React.FC<BlogSectionProps> = ({ language }) => {
         </h2>
         <p className="text-stone-400 max-w-2xl mx-auto text-lg">
           {language === 'es' 
-            ? 'Consejos expertos, guías de viaje y secretos locales para tu próxima aventura.' 
-            : 'Expert tips, travel guides, and local secrets for your next adventure.'}
+            ? 'Guías de viaje con fuentes oficiales para planificar tu próxima aventura.'
+            : 'Travel guides based on official sources to plan your next adventure.'}
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {POSTS.map((post, index) => (
+        {BLOG_POSTS.map((post, index) => (
           <motion.article
-            key={post.id}
+            key={post.slug}
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -80,7 +37,7 @@ export const BlogSection: React.FC<BlogSectionProps> = ({ language }) => {
             <div className="relative h-64 overflow-hidden">
               <img 
                 src={post.image} 
-                alt={(post.title as any)[language] || post.title.en}
+                alt={post.imageAlt[lang]}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 referrerPolicy="no-referrer"
               />
@@ -93,33 +50,34 @@ export const BlogSection: React.FC<BlogSectionProps> = ({ language }) => {
               <div className="flex items-center gap-4 text-stone-500 text-xs mb-4">
                 <div className="flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5" />
-                  {post.date}
+                  {post.date[lang]}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5" />
-                  {post.author}
+                  {post.author[lang]}
                 </div>
               </div>
 
               <h3 className="text-xl font-bold text-white mb-3 group-hover:text-emerald-400 transition-colors line-clamp-2">
-                {(post.title as any)[language] || post.title.en}
+                <Link to={`/blog/${post.slug}`} className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+                  {post.title[lang]}
+                </Link>
               </h3>
               
               <p className="text-stone-400 text-sm line-clamp-3 mb-6">
-                {(post.excerpt as any)[language] || post.excerpt.en}
+                {post.excerpt[lang]}
               </p>
 
               <div className="mt-auto pt-6 border-t border-white/5">
-                <button type="button" onClick={()=>setSelected(post)} className="flex items-center gap-2 text-emerald-400 text-sm font-black hover:gap-3 transition-all">
-                  {language === 'es' ? 'Leer artículo' : 'Read more'}
+                <Link to={`/blog/${post.slug}`} className="flex items-center gap-2 text-emerald-400 text-sm font-black hover:gap-3 transition-all" aria-label={`${lang === 'es' ? 'Leer artículo' : 'Read article'}: ${post.title[lang]}`}>
+                  {lang === 'es' ? 'Leer artículo' : 'Read article'}
                   <ArrowRight className="w-4 h-4" />
-                </button>
+                </Link>
               </div>
             </div>
           </motion.article>
         ))}
       </div>
-      {selected && <div className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm p-4 flex items-center justify-center" onClick={()=>setSelected(null)}><article className="max-w-3xl w-full max-h-[85vh] overflow-y-auto rounded-3xl bg-[#07140f] border border-emerald-400/20 p-7 shadow-2xl" onClick={e=>e.stopPropagation()}><div className="text-[10px] uppercase tracking-widest text-emerald-300 font-black">{selected.date} · {selected.author}</div><h3 className="mt-3 text-3xl font-black text-white">{(selected.title as any)[language] || selected.title.en}</h3><p className="mt-4 text-stone-300 leading-7">{(selected.excerpt as any)[language] || selected.excerpt.en}</p><div className="mt-6 rounded-2xl bg-black/20 p-5 text-sm leading-7 text-stone-300">{language === "es" ? "Contenido editorial de muestra. Esta vista está preparada para ampliar cada artículo con contenido completo, fuentes y recomendaciones de reserva." : "Editorial preview. This view is ready to be expanded with full article content, sources and booking recommendations."}</div><button type="button" onClick={()=>setSelected(null)} className="mt-6 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-black text-stone-950">{language === "es" ? "Cerrar" : "Close"}</button></article></div>}
     </section>
   );
 };

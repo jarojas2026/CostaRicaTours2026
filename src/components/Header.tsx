@@ -216,7 +216,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             <div className="hidden min-[1680px]:flex items-center gap-2 text-xs font-bold text-amber-400 shrink-0">
               <ShieldCheck className="w-4 h-4 text-amber-400" />
-              <span>{language === 'es' ? 'Disponibilidad verificada al reservar' : 'Availability checked when booking'}</span>
+              <span>{language === 'es' ? 'Cupo y precio se confirman antes de pagar' : 'Availability and price confirmed before payment'}</span>
             </div>
 
           </div>
@@ -437,7 +437,7 @@ export const Header: React.FC<HeaderProps> = ({
                 aria-label={language === 'es' ? 'Ver favoritos' : 'View favorites'}
               >
                 <Heart className="w-4 h-4 fill-rose-500" />
-                <span className="sr-only">Favoritos</span>
+                <span className="sr-only">{language === 'es' ? 'Favoritos' : 'Favorites'}</span>
               </button>
 
               <button
@@ -552,7 +552,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => setIsMobileDrawerOpen(false)}
                     className="p-1.5 rounded-xl bg-[#03140d] text-emerald-300 hover:text-white border border-emerald-500/30 cursor-pointer"
-                    aria-label="Cerrar Menú"
+                    aria-label={language === 'es' ? 'Cerrar menú' : 'Close menu'}
                   >
                     <X className="w-4 h-4" />
                   </button>

@@ -80,10 +80,6 @@ export const DestinationsSection: React.FC<DestinationsSectionProps> = ({ langua
               </div>
             </div>
             
-            {/* Tag */}
-            <div className="absolute top-6 right-6 px-4 py-2 bg-stone-950/60 backdrop-blur-md rounded-full border border-white/10 text-[10px] font-black text-emerald-400 uppercase tracking-widest">
-              {language === 'es' ? 'Popular' : 'Trending'}
-            </div>
           </motion.button>
         ))}
       </div>

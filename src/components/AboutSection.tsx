@@ -60,7 +60,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ language }) => {
           </p>
           <div className="flex flex-wrap gap-8">
             <div>
-              <div className="text-4xl font-black text-emerald-400 mb-1">6</div>
+              <div className="text-4xl font-black text-emerald-400 mb-1">2</div>
               <div className="text-stone-500 text-xs uppercase font-bold tracking-widest">{language === 'es' ? 'Idiomas' : 'Languages'}</div>
             </div>
             <div>
@@ -68,8 +68,8 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ language }) => {
               <div className="text-stone-500 text-xs uppercase font-bold tracking-widest">{language === 'es' ? 'Asistente de Viaje' : 'Travel Assistant'}</div>
             </div>
             <div>
-              <div className="text-4xl font-black text-emerald-400 mb-1">LIVE</div>
-              <div className="text-stone-500 text-xs uppercase font-bold tracking-widest">{language === 'es' ? 'Verificación cuando aplica' : 'Verification when needed'}</div>
+              <div className="text-4xl font-black text-emerald-400 mb-1">1º</div>
+              <div className="text-stone-500 text-xs uppercase font-bold tracking-widest">{language === 'es' ? 'Confirmar, luego pagar' : 'Confirm first, then pay'}</div>
             </div>
           </div>
         </motion.div>

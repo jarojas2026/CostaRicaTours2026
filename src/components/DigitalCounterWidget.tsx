@@ -97,7 +97,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
           action: 'whale_season'
         },
         {
-          label: isEs ? '📅 Cotizar Cupo en Vivo' : '📅 Live Quote & Availability',
+          label: isEs ? '📅 Solicitar cotización y cupo' : '📅 Request quote & availability',
           action: 'open_calculator'
         },
         {
@@ -135,14 +135,14 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
   const suggestions = useMemo(() => isEs ? [
     '¿Cuándo es la temporada de ballenas en Uvita?',
     '¿Qué incluye el tour al Volcán Arenal?',
-    '¿Cómo funciona la cancelación 24h antes?',
-    'Tours con ALSAMA Tours en Marino Ballena',
+    '¿Cómo funciona la cancelación?',
+    'Tours de avistamiento de ballenas en Marino Ballena',
     '¿Tienen traslados desde San José (SJO)?'
   ] : [
     'When is whale watching season in Uvita?',
     'What does the Arenal Volcano tour include?',
-    'How does 24h prior cancellation work?',
-    'Tours with ALSAMA Tours in Marino Ballena',
+    'How does cancellation work?',
+    'Whale watching tours in Marino Ballena',
     'Do you have transfers from San Jose (SJO)?'
   ], [isEs]);
 
@@ -346,9 +346,9 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping shrink-0" />
               <div className="flex-1 text-stone-200">
                 <span className="font-black text-amber-300 mr-1">
-                  {isEs ? 'Mostrador 24/7:' : 'Desk 24/7:'}
+                  {isEs ? 'Mostrador digital:' : 'Digital desk:'}
                 </span>
-                {isEs ? 'Cotiza cupo en vivo con operadores' : 'Instant live quote with operators'}
+                {isEs ? 'Solicita una cotización; confirmamos antes de pagar' : 'Request a quote; we confirm before payment'}
               </div>
               <button
                 onClick={() => {
@@ -362,7 +362,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
               <button
                 onClick={() => setShowTeaser(false)}
                 className="text-stone-400 hover:text-white p-1 rounded-lg hover:bg-white/10"
-                aria-label="Cerrar aviso"
+                aria-label={language === 'es' ? 'Cerrar aviso' : 'Close notice'}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -376,8 +376,8 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(true)}
           className="group flex items-center gap-2.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 hover:from-amber-300 hover:to-amber-400 text-stone-950 font-black p-2 sm:p-3 lg:px-5 lg:py-3.5 rounded-full shadow-[0_10px_30px_rgba(245,158,11,0.4)] border-2 border-stone-950 cursor-pointer transition-all"
-          aria-label={isEs ? 'Abrir Mostrador Digital de Reservas 24/7' : 'Open 24/7 Digital Booking Counter'}
-          title={isEs ? 'Mostrador Digital: Cotización y Disponibilidad 24/7' : 'Digital Counter: 24/7 Live Rates & Availability'}
+          aria-label={isEs ? 'Abrir mostrador digital de cotizaciones' : 'Open digital quote counter'}
+          title={isEs ? 'Mostrador digital: solicita una cotización; operador, precio y cupo se confirman antes de pagar' : 'Digital counter: request a quote; operator, price and availability are confirmed before payment'}
         >
           <div className="relative shrink-0">
             <div className="w-8 h-8 rounded-full bg-stone-950 text-amber-400 flex items-center justify-center shadow-inner">
@@ -391,7 +391,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
               {isEs ? 'Mostrador Digital' : 'Digital Counter'}
             </span>
             <span className="text-xs font-black text-stone-950 block">
-              {isEs ? 'Cotizar & Cupos en Vivo' : 'Live Quote & Seats'}
+              {isEs ? 'Solicitar cotización' : 'Request a quote'}
             </span>
           </div>
         </motion.button>
@@ -416,16 +416,16 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-wide">
-                        {isEs ? 'Mostrador Digital de Reservas' : 'Digital Booking Desk'}
+                        {isEs ? 'Mostrador Digital de Cotizaciones' : 'Digital Quote Desk'}
                       </h3>
                       <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">
-                        24/7 Oficial
+                        {isEs ? 'Consultas' : 'Inquiries'}
                       </span>
                     </div>
                     <p className="text-xs text-stone-400">
                       {isEs 
-                        ? 'Asistencia Directa • Cupos en Vivo • Operadores Certificados' 
-                        : 'Direct Assistance • Live Seats • Certified Operators'}
+                        ? 'Cotización • Operador, precio y cupo se confirman antes de pagar'
+                        : 'Quote • Operator, price and availability confirmed before payment'}
                     </p>
                   </div>
                 </div>
@@ -433,7 +433,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                 <button
                   onClick={() => setIsOpen(false)}
                   className="p-2 rounded-xl bg-stone-900/80 hover:bg-stone-800 text-stone-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
-                  aria-label="Cerrar Mostrador"
+                  aria-label={isEs ? 'Cerrar mostrador' : 'Close desk'}
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -462,7 +462,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                   }`}
                 >
                   <Calendar className="w-4 h-4 shrink-0" />
-                  <span>{isEs ? 'Cotizador & Cupos' : 'Live Quote & Seats'}</span>
+                  <span>{isEs ? 'Cotizador & Cupos' : 'Quote & Availability'}</span>
                 </button>
 
                 <button
@@ -940,26 +940,17 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                     </div>
                   </div>
 
-                  {/* Operadores Locales Oficiales */}
-                  <div className="bg-[#041910] p-4 rounded-2xl border border-emerald-500/30 space-y-3">
+                  {/* Estado honesto de operadores */}
+                  <div className="bg-[#041910] p-4 rounded-2xl border border-emerald-500/30 space-y-2">
                     <h4 className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-2">
                       <Layers className="w-4 h-4" />
-                      <span>{isEs ? 'Operadores Certificados Conectados' : 'Connected Certified Operators'}</span>
+                      <span>{isEs ? 'Operadores' : 'Operators'}</span>
                     </h4>
-                    <ul className="space-y-2 text-xs text-stone-300">
-                      <li className="flex items-start gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                        <span><strong>ALSAMA Tours:</strong> Especialistas en Marino Ballena, Uvita, Osa y Corcovado.</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                        <span><strong>Expediciones Tropicales:</strong> Volcanes, rafting y aventuras en todo Costa Rica.</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                        <span><strong>Base Central:</strong> Pérez Zeledón, San José, Costa Rica. Soporte 24/7.</span>
-                      </li>
-                    </ul>
+                    <p className="text-xs text-stone-300 leading-relaxed">
+                      {isEs
+                        ? 'Todavía no publicamos operadores vinculados. Para cada consulta identificamos y confirmamos por escrito el operador, el precio final y el cupo antes de cualquier pago. Base: Pérez Zeledón, San José, Costa Rica.'
+                        : 'We do not list linked operators yet. For each inquiry we identify and confirm the operator, final price and availability in writing before any payment. Based in Pérez Zeledón, San José, Costa Rica.'}
+                    </p>
                   </div>
                 </div>
               )}
@@ -978,7 +969,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                   className="bg-[#25D366] hover:bg-[#20ba59] text-stone-950 font-black px-4 py-2 rounded-xl text-xs uppercase flex items-center gap-2 shadow-md transition-colors"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  <span>WhatsApp 24/7 (+506)</span>
+                  <span>WhatsApp (+506)</span>
                 </a>
               </div>
             </motion.div>
