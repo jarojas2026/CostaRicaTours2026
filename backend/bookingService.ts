@@ -234,11 +234,49 @@ export async function checkTourAvailability(
 /**
  * Verificación de pago del servidor. Un pago verificado avanza a `paid`; la
  * confirmación final requiere evidencia operativa del proveedor.
+ *
+ * The provider record must belong to the expected booking (Stripe
+ * metadata.bookingId / client_reference_id, PayPal purchase_units[].custom_id)
+ * and match its amount and currency (USD). A paid session for another booking
+ * or a cheaper amount is never accepted.
  */
+export interface ExpectedPayment {
+  bookingId: string;
+  totalUSD: number;
+}
+
+function amountMatchesCents(actualCents: unknown, expectedUSD: number): boolean {
+  const expectedCents = Math.round(Number(expectedUSD) * 100);
+  return Number.isFinite(expectedCents) && expectedCents > 0 && Number(actualCents) === expectedCents;
+}
+
+export function stripeSessionMatchesBooking(session: any, expected: ExpectedPayment): boolean {
+  const reference = String(session?.metadata?.bookingId || session?.client_reference_id || '').trim();
+  return Boolean(expected.bookingId)
+    && reference === expected.bookingId
+    && session?.payment_status === 'paid'
+    && String(session?.currency || '').toLowerCase() === 'usd'
+    && amountMatchesCents(session?.amount_total, expected.totalUSD);
+}
+
+export function paypalOrderMatchesBooking(order: any, expected: ExpectedPayment): boolean {
+  if (order?.status !== 'COMPLETED' || !expected.bookingId) return false;
+  const units = Array.isArray(order?.purchase_units) ? order.purchase_units : [];
+  const unit = units.find((candidate: any) => String(candidate?.custom_id || '').trim() === expected.bookingId);
+  if (!unit) return false;
+  const currency = String(unit?.amount?.currency_code || '').toUpperCase();
+  const valueCents = Math.round(Number(unit?.amount?.value) * 100);
+  return currency === 'USD' && amountMatchesCents(valueCents, expected.totalUSD);
+}
+
 export async function verifyPaymentServerSide(
   paymentMethod: string,
-  details: { paypalOrderId?: string; stripeSessionId?: string }
-): Promise<{ verified: boolean; status: 'paid' | 'pendiente_pago'; paymentStatus: 'completed' | 'pending'; meta?: any }> {
+  details: { paypalOrderId?: string; stripeSessionId?: string },
+  expected: ExpectedPayment
+): Promise<{ verified: boolean; status: 'paid' | 'pendiente_pago'; paymentStatus: 'completed' | 'pending'; meta?: any; reason?: string }> {
+  const pending = (reason: string) => ({ verified: false as const, status: 'pendiente_pago' as const, paymentStatus: 'pending' as const, reason });
+  if (!expected?.bookingId || !(Number(expected.totalUSD) > 0)) return pending('expected_booking_and_amount_required');
+
   if (paymentMethod === 'paypal' && details.paypalOrderId) {
     try {
       const paypalClientId = process.env.PAYPAL_CLIENT_ID;
@@ -259,18 +297,19 @@ export async function verifyPaymentServerSide(
         const authData = await authRes.json();
 
         if (authData.access_token) {
-          const orderRes = await fetch(`${baseUrl}/v2/checkout/orders/${details.paypalOrderId}`, {
+          const orderRes = await fetch(`${baseUrl}/v2/checkout/orders/${encodeURIComponent(details.paypalOrderId)}`, {
             headers: { Authorization: `Bearer ${authData.access_token}` }
           });
           const orderData = await orderRes.json();
-          if (orderData.status === 'COMPLETED') {
+          if (paypalOrderMatchesBooking(orderData, expected)) {
             return {
               verified: true,
               status: 'paid',
               paymentStatus: 'completed',
-              meta: { paypalStatus: orderData.status, payer: orderData.payer }
+              meta: { paypalStatus: orderData.status, paypalOrderId: orderData.id }
             };
           }
+          return pending('paypal_order_mismatch_or_incomplete');
         }
       } else {
         console.warn('⚠️ Credenciales de PayPal no configuradas en backend. Marcando como pendiente.');
@@ -285,7 +324,7 @@ export async function verifyPaymentServerSide(
       const stripe = getStripe();
       if (stripe) {
         const session = await stripe.checkout.sessions.retrieve(details.stripeSessionId);
-        if (session.payment_status === 'paid') {
+        if (stripeSessionMatchesBooking(session, expected)) {
           return {
             verified: true,
             status: 'paid',
@@ -293,13 +332,14 @@ export async function verifyPaymentServerSide(
             meta: { stripePaymentIntent: session.payment_intent }
           };
         }
+        return pending('stripe_session_mismatch_or_unpaid');
       }
     } catch (err) {
       console.error('Error verificando sesión de Stripe:', err);
     }
   }
 
-  return { verified: false, status: 'pendiente_pago', paymentStatus: 'pending' };
+  return pending('payment_not_verified');
 }
 
 export async function generateOperationalInsights(booking: any) {
