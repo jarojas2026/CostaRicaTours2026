@@ -2,6 +2,7 @@ import { getFirestoreDb, getBookingsCollection, updateBookingStatus } from './bo
 import { sendEmail, sendAdministrativeAlert, sendOperationalNotification, sendWhatsAppMessage } from './notificationService';
 import { logAutomationExecution } from './nativeAutomationEngine';
 import { generateBookingPDFBuffer } from './pdfService';
+import { bookingDocumentToken } from './signedAccessTokens';
 import { createProviderPortalToken, providerPortalConfigured } from './providerPortalService';
 
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || '';
@@ -804,8 +805,10 @@ export async function executeCustomerBookingConfirmation(
   const tourTime = String(booking.time || '08:00 AM');
   const pickupHotel = String(booking.pickupHotel || 'No especificado');
   const totalUSD = Number(booking.totalUSD || booking.totalAmount || 0);
-  const downloadPdfUrl = `${APP_URL}/api/bookings/${bookingId}/download-pdf`;
-  const viewVoucherUrl = `${APP_URL}/api/bookings/${bookingId}/pdf`;
+  // Booking documents are private; the e-mailed link carries a capability bound to this booking only.
+  const documentToken = encodeURIComponent(bookingDocumentToken(String(bookingId)));
+  const downloadPdfUrl = `${APP_URL}/api/bookings/${encodeURIComponent(String(bookingId))}/download-pdf?token=${documentToken}`;
+  const viewVoucherUrl = `${APP_URL}/api/bookings/${encodeURIComponent(String(bookingId))}/pdf?token=${documentToken}`;
   const confirmationUrl = `${APP_URL}/api/bookings/${bookingId}/customer-confirm?action=approve`;
 
   let pdfBuffer: Buffer | null = null;
@@ -919,8 +922,10 @@ export async function executeCustomerProformaConfirmation(payload: {
   const totalUSD = Number(payload.totalUSD) || 0;
   const specialRequests = payload.specialRequests || 'Ninguna registrada';
 
-  const downloadPdfUrl = `${APP_URL}/api/bookings/${bookingId}/download-pdf`;
-  const viewVoucherUrl = `${APP_URL}/api/bookings/${bookingId}/pdf`;
+  // Booking documents are private; the e-mailed link carries a capability bound to this booking only.
+  const documentToken = encodeURIComponent(bookingDocumentToken(String(bookingId)));
+  const downloadPdfUrl = `${APP_URL}/api/bookings/${encodeURIComponent(String(bookingId))}/download-pdf?token=${documentToken}`;
+  const viewVoucherUrl = `${APP_URL}/api/bookings/${encodeURIComponent(String(bookingId))}/pdf?token=${documentToken}`;
   const approvalUrl = `${APP_URL}/api/bookings/${bookingId}/customer-confirm?action=approve`;
   const whatsappMessageText = `🌿 Costa Rica Tours — Reserva #${bookingId}\\n\\nTour: ${tourName}\\nFecha: ${startDate} ${time}\\nPasajeros: ${adults + children}\\n\\nComprobante: ${downloadPdfUrl}`;
 
