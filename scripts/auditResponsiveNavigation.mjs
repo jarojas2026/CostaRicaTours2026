@@ -235,7 +235,7 @@ async function interactionCheck(context){
     bounds.x>=-2 && bounds.y>=-2 &&
     bounds.x+bounds.width<=viewport.width+2 &&
     bounds.y<viewport.height;
-  const close=panel.locator('button').filter({has:page.locator('svg')}).first();
+  const close=panel.getByRole('button',{name:/Cerrar selector de capas|Close layers selector/i});
   await close.click({timeout:5000});
   await panel.waitFor({state:'hidden',timeout:5000});
   report.interactionChecks.push({
@@ -324,7 +324,10 @@ await writeFile(join(OUT,'report.md'),[
   '- Interaction reveal checks: **'+report.summary.interactionChecks+'** (failed: '+report.summary.failedInteractionChecks+')',
   '- Live resize checks: **'+report.summary.resizeChecks+'**','',
   '## Overflow findings','',
-  ...overflowPages.map(x=>'### '+x.device+' '+x.route+'\nOverflow: '+(x.documentOverflowPx||0)+'px\n'+(x.overflow||[]).map(o=>'- '+o.path+' ['+o.left+','+o.right+'] '+o.text).join('\n')),
+  ...overflowPages.map(x=>'### '+x.device+' '+x.route+'\nOverflow: '+(x.documentOverflowPx||0)+'px\n'+[
+    ...(x.overflow||[]).map(o=>'- element '+o.path+' ['+o.left+','+o.right+'] '+o.text),
+    ...(x.tooWideControls||[]).map(o=>'- control '+o.path+' width='+o.width+'px')
+  ].join('\n')),
 ].join('\n'));
 process.stdout.write('RESPONSIVE_RESULT '+JSON.stringify(report.summary)+'\n');
 if(report.summary.routeObservations!==report.summary.expectedRouteObservations||fatalPages.length||overflowPages.length||report.summary.failedInteractionChecks){
