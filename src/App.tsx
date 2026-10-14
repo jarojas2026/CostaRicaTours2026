@@ -117,7 +117,7 @@ export default function App() {
     });
     // A short post-paint reset prevents browser scroll anchoring/lazy route
     // content from restoring the previous page position after the route swap.
-    const timeout = window.setTimeout(resetViewport, 120);
+    const timeout = window.setTimeout(resetViewport, 360);
     return () => {
       window.cancelAnimationFrame(frame);
       window.clearTimeout(timeout);
