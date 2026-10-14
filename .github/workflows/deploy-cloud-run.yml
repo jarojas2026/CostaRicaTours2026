@@ -23,9 +23,15 @@ permissions:
   contents: read
   id-token: write
 
+# Cada ejecución de "Build & Type Check" (incluidas las de Pull Requests)
+# dispara este workflow_run. En esos eventos github.ref/head_sha apuntan a
+# main, así que el grupo se separa por la rama que originó el build: las
+# ejecuciones de ramas de PR (que el `if` del job salta) quedan en su propio
+# grupo y ya no cancelan el despliegue real de main. Para main no se cancela
+# nada en curso: los despliegues se encolan y se ejecutan en orden.
 concurrency:
-  group: production-cloud-run-deploy
-  cancel-in-progress: true
+  group: production-cloud-run-deploy-${{ github.event.workflow_run.head_branch || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   deploy:
