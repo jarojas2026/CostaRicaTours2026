@@ -4,7 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { CATEGORIES } from '../data/toursData';
 import { catalogSearchHref } from '../utils/catalogRouteFilters';
 import { Language } from '../types';
-import * as Icons from 'lucide-react';
+import { Bus, CalendarDays, Circle, Coffee, Droplet, Flame, Footprints, Route, Sun, Trees, Waves, Zap, type LucideIcon } from 'lucide-react';
+
+// Explicit icon map: `import * as Icons` pulled the entire lucide set (~900 kB)
+// into the main bundle. Add new category icons here.
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  Bus, CalendarDays, Coffee, Droplet, Flame, Footprints, Route, Sun, Trees, Waves, Zap,
+};
 
 interface CategoriesSectionProps {
   language: Language;
@@ -30,7 +36,7 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ language, 
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
         {CATEGORIES.map((category, index) => {
-          const IconComponent = (Icons as any)[category.iconName] || Icons.Circle;
+          const IconComponent = CATEGORY_ICONS[category.iconName] || Circle;
           
           return (
             <motion.button
