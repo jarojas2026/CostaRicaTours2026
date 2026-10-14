@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Language } from '../types';
-import { MessageSquare, Mail, Phone, MapPin, Send, Instagram, Facebook, Twitter } from 'lucide-react';
+import { MessageSquare, Mail, Phone, MapPin, Send } from 'lucide-react';
 import { requestCustomerIntake } from '../utils/customerIntake';
 
 interface ContactSectionProps {
@@ -74,13 +74,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ language }) => {
             </div>
           </div>
 
-          <div className="mt-12 flex gap-4">
-            {[Instagram, Facebook, Twitter].map((Icon, i) => (
-              <button type="button" key={i} title={language === "es" ? "Red social pendiente de configurar" : "Social profile pending configuration"} onClick={() => setStatus(language === "es" ? "Este canal social aún no está configurado." : "This social channel is not configured yet.")} className="w-10 h-10 rounded-full bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-emerald-400 hover:border-emerald-500/50 transition-all">
-                <Icon className="w-5 h-5" />
-              </button>
-            ))}
-          </div>
+          {/* Social profile icons stay hidden until real public profiles exist. */}
         </div>
 
         <motion.div

@@ -1,3 +1,4 @@
+import { ReferencePrice } from './ReferencePrice';
 import React, { useState, useEffect, useRef } from 'react';
 import { createBookingAttempt, requirePaymentUrl } from '../utils/bookingAttempt';
 import { bookingInquiry } from '../utils/bookingInquiry';
@@ -714,6 +715,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                       ? 'Esta ficha es una referencia para explorar Costa Rica. El operador, la tarifa actual y los cupos no están conectados a inventario verificado, así que no acepta reservas ni pagos desde aquí.'
                       : 'This listing is a reference for exploring Costa Rica. The operator, current price and availability are not connected to verified inventory, so booking and payment are not enabled here.'}
                   </p>
+                  <ReferencePrice amountUSD={tour.priceUSD} currency={currency} language={language} className="mt-4" />
                   <a href={whatsappInquiryUrl} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-black text-stone-950 hover:bg-[#20ba59]">
                     <MessageCircle className="w-4 h-4" />
                     {language === 'es' ? 'Preguntar por opciones verificables' : 'Ask for verifiable options'}

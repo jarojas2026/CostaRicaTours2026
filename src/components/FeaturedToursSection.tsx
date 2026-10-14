@@ -53,15 +53,15 @@ export const FeaturedToursSection: React.FC<FeaturedToursSectionProps> = ({
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs font-black uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>{isEs ? 'Experiencias 100% Verificadas en Costa Rica' : '100% Verified Costa Rica Experiences'}</span>
+            <span>{isEs ? 'Experiencias seleccionadas en Costa Rica' : 'Selected Costa Rica experiences'}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
             {isEs ? 'Tours y Actividades Destacadas' : 'Featured Tours & Activities'}
           </h2>
           <p className="text-stone-300 text-sm sm:text-base max-w-2xl leading-relaxed">
             {isEs 
-              ? 'Reserva experiencias inolvidables operadas por empresas locales certificadas. Consulta disponibilidad en tiempo real y asistencia 24/7.' 
-              : 'Book unforgettable experiences operated by certified local companies. Real-time availability checks and 24/7 concierge support.'}
+              ? 'Cotiza por WhatsApp o con el asistente. Confirmamos operador, precio y cupo antes de cualquier pago; una cotización no es una reserva confirmada.'
+              : 'Request a quote on WhatsApp or with the assistant. We confirm the operator, price and availability before any payment; a quote is not a confirmed booking.'}
           </p>
         </div>
 

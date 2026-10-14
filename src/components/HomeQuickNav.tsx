@@ -4,7 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Compass, Map, Sparkles, Bus, Coffee, ArrowRight, ShieldCheck, CheckCircle2, Clock, Flame, Users, Bot, Plane } from 'lucide-react';
 import { Language, Currency, Tour } from '../types';
 import { useTours } from '../contexts/ToursContext';
-import { getLangText, formatCurrency } from '../utils/i18n';
+import { getLangText } from '../utils/i18n';
+import { ReferencePrice } from './ReferencePrice';
 
 interface HomeQuickNavProps {
   language: Language;
@@ -243,9 +244,13 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
                   </div>
 
                   <div className="absolute top-3 right-3">
-                    <span className="bg-orange-500 text-white text-[11px] font-black uppercase px-3 py-1 rounded-full shadow-lg">
-                      {formatCurrency(tour.priceUSD, currency)}
-                    </span>
+                    <ReferencePrice
+                      variant="compact"
+                      amountUSD={tour.priceUSD}
+                      currency={currency}
+                      language={language}
+                      className="bg-orange-500 text-white text-[11px] font-black px-3 py-1 rounded-full shadow-lg"
+                    />
                   </div>
 
                   <div className="absolute bottom-3 left-3 right-3 text-xs font-bold text-emerald-100/90 flex items-center gap-3">
@@ -271,7 +276,7 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
                   <div className="pt-3 border-t border-emerald-500/25 flex items-center justify-between">
                     <div className="text-[11px] text-teal-300 font-bold flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
-                      <span>{tico ? 'Cupo se verifica al solicitar' : 'Availability checked on request'}</span>
+                      <span>{tico ? 'Referencia · sujeto a confirmación' : 'Reference · subject to confirmation'}</span>
                     </div>
 
                     <span className="text-xs font-black text-orange-400 group-hover:underline flex items-center gap-1">
@@ -294,8 +299,8 @@ export const HomeQuickNav: React.FC<HomeQuickNavProps> = ({
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Disponibilidad verificada' : 'Availability checked'}</h4>
-              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Consultamos cupo antes de afirmar disponibilidad' : 'We check capacity before claiming availability'}</p>
+              <h4 className="text-xs font-black text-white uppercase tracking-tight">{tico ? 'Cupo por confirmar' : 'Availability to confirm'}</h4>
+              <p className="text-[11px] text-stone-300 leading-tight mt-0.5">{tico ? 'Confirmamos cupo con el operador antes de cualquier pago' : 'We confirm availability with the operator before any payment'}</p>
             </div>
           </div>
 

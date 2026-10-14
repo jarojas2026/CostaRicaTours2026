@@ -1,3 +1,4 @@
+import { ReferencePrice } from '../components/ReferencePrice';
 import React, { useState, useEffect, useRef } from 'react';
 import { createBookingAttempt, requirePaymentUrl } from '../utils/bookingAttempt';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -459,8 +460,7 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                       {language === 'es' ? 'El proveedor debe confirmar disponibilidad y precio final antes de habilitar el pago.' : 'The provider must confirm availability and the final price before payment is enabled.'}
                     </p>
                   </> : <>
-                    <div className="text-stone-500 text-xs font-black uppercase tracking-widest mb-2">{language === 'es' ? 'Tarifa no verificada' : 'Unverified price'}</div>
-                    <div className="text-2xl font-black text-amber-300">{language === 'es' ? 'Consultar precio' : 'Ask for current price'}</div>
+                    <ReferencePrice amountUSD={tour.priceUSD} currency={currency} language={language} />
                     <p className="mt-2 text-[11px] leading-relaxed text-stone-400">
                       {language === 'es' ? 'Esta ficha aún no tiene proveedor, tarifa ni cupos vinculados. No admite reserva ni pago en línea.' : 'This listing has no linked provider, price or inventory yet. Online booking and payment are not available.'}
                     </p>

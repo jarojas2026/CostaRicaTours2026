@@ -11,6 +11,7 @@ import { FeaturedToursSection } from '../components/FeaturedToursSection';
 import { ServicesSection } from '../components/ServicesSection';
 import { OperatorsSection } from '../components/OperatorsSection';
 import { HomeTrustSections } from '../components/HomeTrustSections';
+import { OperationalTrustNotice } from '../components/OperationalTrustNotice';
 import { AboutSection } from '../components/AboutSection';
 import { BlogSection } from '../components/BlogSection';
 import { ContactSection } from '../components/ContactSection';
@@ -74,6 +75,9 @@ export const Home: React.FC<HomeProps> = ({
           onOpenCustomFunnel={() => setIsCustomFunnelOpen(true)}
         />
       </div>
+
+      {/* Honest operational verification message: the first trust signal after the hero. */}
+      <OperationalTrustNotice language={language} />
 
       {/* Connected city masterplan entrance: complements the travel-first navigation. */}
       <DigitalCityGateway language={language} />

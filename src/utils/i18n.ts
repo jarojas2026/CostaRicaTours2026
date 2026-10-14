@@ -10,11 +10,9 @@ export interface LanguageInfo {
 export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
   { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
   { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
-  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪' },
-  { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷' },
-  { code: 'zh', name: 'Chinese', nativeName: '中文', flag: '🇨🇳' },
-  { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵' },
 ];
+// DE/FR/ZH/JA stay out of the selector until the UI is fully translated.
+// The Language type keeps them so partial translation tables still compile.
 
 /**
   Detects the user's browser language on initial app load
@@ -31,11 +29,9 @@ export function detectBrowserLanguage(): Language {
     const lower = langStr.toLowerCase();
 
     if (lower.startsWith('es')) return 'es';
-    if (lower.startsWith('de')) return 'de';
-    if (lower.startsWith('fr')) return 'fr';
-    if (lower.startsWith('zh')) return 'zh';
-    if (lower.startsWith('ja')) return 'ja';
     if (lower.startsWith('en')) return 'en';
+    // Untranslated languages fall back to English (the international default).
+    if (/^(de|fr|zh|ja)/.test(lower)) return 'en';
   }
 
   // Default fallback for Costa Rica tourism portal

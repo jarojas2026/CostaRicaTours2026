@@ -6,10 +6,9 @@ import { Phone, MapPin, Mail, ShieldCheck, Heart, Globe, Sparkles, MessageCircle
 
 interface FooterProps {
   language: Language;
-  onOpenLegal?: (tab: 'terminos' | 'cancelacion' | 'privacidad' | 'escnna') => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
+export const Footer: React.FC<FooterProps> = ({ language }) => {
   const isEs = language === 'es';
   return (
     <footer className="bg-[#041711] text-emerald-100/80 border-t-4 border-emerald-500/40 mt-12">
@@ -190,15 +189,14 @@ export const Footer: React.FC<FooterProps> = ({ language, onOpenLegal }) => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold">
-            <button onClick={() => onOpenLegal?.('terminos')} className="hover:underline text-teal-400 hover:text-white transition-colors">{language === 'es' ? 'Términos y Condiciones' : 'Terms & Conditions'}</button>
-            <span className="text-stone-800">|</span>
-            <button onClick={() => onOpenLegal?.('cancelacion')} className="hover:underline text-teal-400 hover:text-white transition-colors">{language === 'es' ? 'Política de Cancelación' : 'Cancellation Policy'}</button>
-            <span className="text-stone-800">|</span>
-            <button onClick={() => onOpenLegal?.('privacidad')} className="hover:underline text-teal-400 hover:text-white transition-colors">{language === 'es' ? 'Privacidad y Datos (MEIC)' : 'Privacy (MEIC)'}</button>
-            <span className="text-stone-800">|</span>
-            <button onClick={() => onOpenLegal?.('escnna')} className="hover:underline text-teal-400 hover:text-white transition-colors">Normas SINAC & ESCNNA</button>
-            <span className="text-stone-800">|</span>
-            
+            <Link to="/terms" className="hover:underline text-teal-400 hover:text-white transition-colors">{isEs ? 'Términos y Condiciones' : 'Terms & Conditions'}</Link>
+            <span className="text-stone-800" aria-hidden="true">|</span>
+            <Link to="/cancellation" className="hover:underline text-teal-400 hover:text-white transition-colors">{isEs ? 'Política de Cancelación' : 'Cancellation Policy'}</Link>
+            <span className="text-stone-800" aria-hidden="true">|</span>
+            <Link to="/privacy" className="hover:underline text-teal-400 hover:text-white transition-colors">{isEs ? 'Privacidad y Datos' : 'Privacy & Data'}</Link>
+            <span className="text-stone-800" aria-hidden="true">|</span>
+            <Link to="/sinac-escnna" className="hover:underline text-teal-400 hover:text-white transition-colors">{isEs ? 'Normas SINAC & ESCNNA' : 'SINAC Rules & ESCNNA'}</Link>
+
           </div>
         </div>
       </div>

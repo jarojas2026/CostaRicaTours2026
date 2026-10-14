@@ -350,7 +350,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 className="bg-emerald-950/70 hover:bg-emerald-900/80 text-stone-100 text-xs font-bold pl-7 pr-3 py-2 rounded-full border border-emerald-500/30 focus:outline-none focus:border-amber-400 cursor-pointer appearance-none transition-colors"
                 aria-label={language === 'es' ? 'Ordenar tours' : 'Sort tours'}
               >
-                <option value="popular">🔥 {language === 'es' ? 'Populares' : 'Popular'}</option>
+                <option value="popular">{language === 'es' ? 'Destacados' : 'Featured'}</option>
                 {hasVerifiedRatings && <option value="rating">⭐ {language === 'es' ? 'Calificación verificada' : 'Verified rating'}</option>}
                 {hasBookableOffers && <option value="price_asc">💲 {language === 'es' ? 'Precio: Menor' : 'Price: Low'}</option>}
                 {hasBookableOffers && <option value="price_desc">💎 {language === 'es' ? 'Precio: Mayor' : 'Price: High'}</option>}

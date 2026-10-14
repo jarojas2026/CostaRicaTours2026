@@ -151,7 +151,7 @@ export const ClaudeItineraryModal: React.FC<ClaudeItineraryModalProps> = ({
           </button>
           <div className="flex items-center gap-2 text-amber-200 text-xs font-black uppercase tracking-wider mb-1">
             <Sparkles className="w-4 h-4 text-amber-300" />
-            <span>Anthropic Claude 3.5 Sonnet • Google Cloud Vertex AI</span>
+            <span>{isEn ? 'AI-generated draft · confirm with an advisor' : 'Borrador generado por IA · confirma con un asesor'}</span>
           </div>
           <h2 className="text-2xl font-black text-white">
             {isEn ? 'AI Custom Itinerary Planner' : 'Planificador Experto de Itinerarios'}
@@ -310,12 +310,12 @@ export const ClaudeItineraryModal: React.FC<ClaudeItineraryModalProps> = ({
                 {isLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>{isEn ? 'Designing Itinerary with Claude 3.5 Sonnet...' : 'Diseñando Itinerario con Claude 3.5 Sonnet...'}</span>
+                    <span>{isEn ? 'Designing your itinerary...' : 'Diseñando tu itinerario...'}</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5" />
-                    <span>{isEn ? 'Generate Master Itinerary with Claude' : 'Generar Itinerario Maestro con Claude'}</span>
+                    <span>{isEn ? 'Generate itinerary draft' : 'Generar borrador de itinerario'}</span>
                   </>
                 )}
               </button>
@@ -326,7 +326,7 @@ export const ClaudeItineraryModal: React.FC<ClaudeItineraryModalProps> = ({
               <div className="bg-amber-50/80 border border-amber-200/80 p-5 rounded-2xl">
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full">
-                    {resultItinerary.modelUsed || 'Claude 3.5 Sonnet'}
+                    {isEn ? 'AI draft · not a booking' : 'Borrador IA · no es una reserva'}
                   </span>
                   <span className="text-xs font-bold text-amber-800 flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5" />
@@ -481,7 +481,7 @@ export const ClaudeItineraryModal: React.FC<ClaudeItineraryModalProps> = ({
             <button
               onClick={() => setIsBookingModalOpen(false)}
               className="absolute top-4 right-4 text-stone-400 hover:text-stone-600 p-1.5 rounded-full hover:bg-stone-100 transition"
-              aria-label="Cerrar"
+              aria-label={language === 'es' ? 'Cerrar' : 'Close'}
             >
               <X className="w-5 h-5" />
             </button>

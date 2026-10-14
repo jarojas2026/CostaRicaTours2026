@@ -215,7 +215,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
             onClick={onClose}
             className="w-10 h-10 rounded-full bg-stone-900/90 hover:bg-amber-500 text-stone-300 hover:text-stone-950 border border-white/20 hover:border-amber-400 flex items-center justify-center transition-all cursor-pointer shadow-lg"
             title="Cerrar"
-            aria-label="Cerrar modal"
+            aria-label={language === 'es' ? 'Cerrar' : 'Close'}
           >
             <X className="w-5 h-5 stroke-[2.5]" />
           </button>

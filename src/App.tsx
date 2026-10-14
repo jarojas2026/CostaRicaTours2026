@@ -23,7 +23,7 @@ import { CategoriesSection } from './components/CategoriesSection';
 import { BlogSection } from './components/BlogSection';
 import { AboutSection } from './components/AboutSection';
 import { BottomNav } from './components/BottomNav';
-import { SEOHead } from './components/SEOHead';
+import { RouteMetadata } from './components/RouteMetadata';
 import { OfflineBanner } from './components/OfflineBanner';
 import { DigitalCounterWidget } from './components/DigitalCounterWidget';
 import { Home, ChevronRight, ArrowLeft, Bot, MessageCircle, X, Loader2 } from 'lucide-react';
@@ -44,7 +44,6 @@ const RouteFallback = () => <div className="py-24 text-center text-emerald-300">
 const ItineraryPlanner = lazy(() => import('./components/ItineraryPlanner').then(m => ({ default: m.ItineraryPlanner })));
 const CustomFunnelModal = lazy(() => import('./components/CustomFunnelModal').then(m => ({ default: m.CustomFunnelModal })));
 const TravelerToolkit = lazy(() => import('./components/TravelerToolkit').then(m => ({ default: m.TravelerToolkit })));
-const LegalModal = lazy(() => import('./components/LegalModal').then(m => ({ default: m.LegalModal })));
 const LocalBusesModal = lazy(() => import('./components/LocalBusesModal').then(m => ({ default: m.LocalBusesModal })));
 const FormsManagerModal = lazy(() => import('./components/FormsManagerModal').then(m => ({ default: m.FormsManagerModal })));
 const TravelerOSPage = lazy(() => import('./pages/TravelerOSPage').then(m => ({ default: m.TravelerOSPage })));
@@ -57,6 +56,8 @@ const AutonomousOperationsPage = lazy(() => import('./pages/AutonomousOperations
 const EmailOperationsPage = lazy(() => import('./pages/EmailOperationsPage').then(m => ({ default: m.default })));
 const DigitalCityJoinPage = lazy(() => import('./pages/DigitalCityJoinPage').then(m => ({ default: m.DigitalCityJoinPage })));
 const DigitalCityArchitecturePage = lazy(() => import('./pages/DigitalCityArchitecturePage').then(m => ({ default: m.DigitalCityArchitecturePage })));
+const LegalPage = lazy(() => import('./pages/LegalPage').then(m => ({ default: m.LegalPage })));
+const BlogArticlePage = lazy(() => import('./pages/BlogArticlePage').then(m => ({ default: m.BlogArticlePage })));
 
 
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
@@ -102,8 +103,6 @@ export default function App() {
   const [isCustomFunnelOpen, setIsCustomFunnelOpen] = useState(false);
   const [isLocalBusesOpen, setIsLocalBusesOpen] = useState(false);
   const [isFormsManagerModalOpen, setIsFormsManagerModalOpen] = useState(false);
-  const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
-  const [legalTab, setLegalTab] = useState<'terminos' | 'cancelacion' | 'privacidad' | 'escnna'>('terminos');
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
   const [intakeOpen, setIntakeOpen] = useState(false);
   const [intakeLoading, setIntakeLoading] = useState(false);
@@ -340,7 +339,7 @@ export default function App() {
         </div>
       )}
 
-      <SEOHead language={language} />
+      <RouteMetadata language={language} />
       <OfflineBanner language={language} />
       <AmbientBackground />
       
@@ -409,7 +408,7 @@ export default function App() {
           <Routes location={location} key={location.pathname}>
             <Route path="/provider/portal" element={<Suspense fallback={<RouteFallback />}><ProviderPortalPage /></Suspense>} />
             <Route path="/ciudad" element={<Suspense fallback={<div className="py-12 text-center text-amber-200">Cargando ciudad digital…</div>}><DigitalCityArchitecturePage language={language} /></Suspense>} />
-            <Route path="/participar" element={<Suspense fallback={<div className="py-12 text-center text-amber-200">Cargando…</div>}><DigitalCityJoinPage language={language} onOpenPrivacy={() => { setLegalTab('privacidad'); setIsLegalModalOpen(true); }} /></Suspense>} />
+            <Route path="/participar" element={<Suspense fallback={<div className="py-12 text-center text-amber-200">Cargando…</div>}><DigitalCityJoinPage language={language} onOpenPrivacy={() => navigate('/privacy')} /></Suspense>} />
 
             <Route path="/" element={
               <HomePage
@@ -545,6 +544,11 @@ export default function App() {
             } />
 
             <Route path="/blog" element={<div className="py-12"><BlogSection language={language} /></div>} />
+            <Route path="/blog/:slug" element={<Suspense fallback={<RouteFallback />}><BlogArticlePage language={language} /></Suspense>} />
+            <Route path="/terms" element={<Suspense fallback={<RouteFallback />}><LegalPage pageId="terms" language={language} /></Suspense>} />
+            <Route path="/cancellation" element={<Suspense fallback={<RouteFallback />}><LegalPage pageId="cancellation" language={language} /></Suspense>} />
+            <Route path="/privacy" element={<Suspense fallback={<RouteFallback />}><LegalPage pageId="privacy" language={language} /></Suspense>} />
+            <Route path="/sinac-escnna" element={<Suspense fallback={<RouteFallback />}><LegalPage pageId="sinac-escnna" language={language} /></Suspense>} />
             <Route path="/about" element={<div className="py-12"><AboutSection language={language} /></div>} />
             <Route path="/culture" element={<Suspense fallback={<RouteFallback />}><TicoCultureSection language={language} onExploreTours={() => navigate('/tours')} /></Suspense>} />
             
@@ -687,12 +691,6 @@ export default function App() {
         language={language}
       /></Suspense>}
 
-      {isLegalModalOpen && <Suspense fallback={null}><LegalModal
-        initialTab={legalTab}
-        isOpen={isLegalModalOpen}
-        onClose={() => setIsLegalModalOpen(false)}
-        language={language}
-      /></Suspense>}
 
       {isAdminDashboardOpen && (
         <Suspense fallback={null}>
@@ -721,7 +719,7 @@ export default function App() {
           />
         </>
       )}
-      <Footer language={language} onOpenLegal={tab => { setLegalTab(tab); setIsLegalModalOpen(true); }} />
+      <Footer language={language} />
       <CookiesBanner language={language} />
     </div>
   );

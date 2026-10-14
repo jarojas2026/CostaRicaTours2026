@@ -54,7 +54,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ language }) 
               <button 
                 onClick={() => setShowGuide(false)}
                 className="absolute top-4 right-4 p-2 text-emerald-400 hover:text-white rounded-full bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/30 transition-colors"
-                aria-label="Cerrar guía"
+                aria-label={language === 'es' ? 'Cerrar guía' : 'Close guide'}
               >
                 <X className="w-4 h-4" />
               </button>
