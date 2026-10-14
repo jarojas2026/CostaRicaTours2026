@@ -7,12 +7,21 @@ export interface TravelerIdentityInput {
   sessionId?: string;
   channel?: string;
   name?: string;
+  /**
+   * Set ONLY by server code for channels whose transport proves the contact:
+   * e.g. WhatsApp inbound (Meta-signed webhook, `from` is the real number).
+   * Web forms, e-mail headers and caller ID are spoofable and stay unverified.
+   */
+  verifiedPhone?: boolean;
+  verifiedEmail?: boolean;
 }
 
 export interface TravelerIdentity {
   canonicalId: string;
   sessionId: string;
   matchedBy: 'phone' | 'email' | 'session' | 'new';
+  /** Unverified contact data matched an existing traveler; nothing was linked. */
+  verificationPending?: boolean;
   identityConflict?: boolean;
   conflictingCanonicalIds?: string[];
 }
@@ -48,10 +57,21 @@ export async function resolveTravelerIdentity(input: TravelerIdentityInput): Pro
     return { canonicalId: sessionId, sessionId, matchedBy: fallbackSession ? 'session' : 'new' };
   }
 
+  // Only transport-verified contact data may link to (and reveal) an existing
+  // traveler. Unverified phone/e-mail never match, never overwrite contact data
+  // and never create alias documents; they are recorded as pending verification.
   const aliases = [
-    phone ? { kind: 'phone' as const, value: phone } : null,
-    email ? { kind: 'email' as const, value: email } : null
+    phone && input.verifiedPhone === true ? { kind: 'phone' as const, value: phone } : null,
+    email && input.verifiedEmail === true ? { kind: 'email' as const, value: email } : null
   ].filter(Boolean) as Array<{ kind: 'phone' | 'email'; value: string }>;
+  const unverifiedAliases = [
+    phone && input.verifiedPhone !== true ? { kind: 'phone' as const, value: phone } : null,
+    email && input.verifiedEmail !== true ? { kind: 'email' as const, value: email } : null
+  ].filter(Boolean) as Array<{ kind: 'phone' | 'email'; value: string }>;
+  const unverifiedAliasRefs = unverifiedAliases.map(alias => ({
+    ...alias,
+    ref: db.collection('traveler_identity_aliases').doc(aliasKey(alias.kind, alias.value))
+  }));
 
   const aliasRefs = aliases.map(alias => ({
     ...alias,
@@ -62,9 +82,12 @@ export async function resolveTravelerIdentity(input: TravelerIdentityInput): Pro
   let canonicalId = '';
   let identityConflict = false;
   let conflictingCanonicalIds: string[] = [];
+  let verificationPending = false;
 
   await db.runTransaction(async (tx: any) => {
     const snapshots = await Promise.all(aliasRefs.map(alias => tx.get(alias.ref)));
+    const unverifiedSnapshots = await Promise.all(unverifiedAliasRefs.map(alias => tx.get(alias.ref)));
+    verificationPending = unverifiedSnapshots.some((snapshot: any) => snapshot.exists && snapshot.data()?.canonicalId);
     const matchedIds = snapshots
       .filter((snapshot: any) => snapshot.exists && snapshot.data()?.canonicalId)
       .map((snapshot: any) => String(snapshot.data().canonicalId));
@@ -100,16 +123,52 @@ export async function resolveTravelerIdentity(input: TravelerIdentityInput): Pro
     } else if (!canonicalId) canonicalId = newCanonicalId();
 
     const now = new Date().toISOString();
+    const isNewIdentity = matchedBy === 'new';
     const canonicalRef = db.collection('traveler_identities').doc(canonicalId);
-    tx.set(canonicalRef, {
+    const identityUpdate: Record<string, unknown> = {
       canonicalId,
-      name: input.name || null,
-      phone: phone || null,
-      email: email || null,
       lastChannel: input.channel || null,
       lastSeenAt: now,
       updatedAt: now
-    }, { merge: true });
+    };
+    // Existing travelers keep their stored name/contact unless the new value
+    // arrives through a verified channel. New identities record what was
+    // offered, flagged as unverified.
+    if (isNewIdentity) {
+      identityUpdate.name = input.name || null;
+      identityUpdate.phone = phone || null;
+      identityUpdate.email = email || null;
+      identityUpdate.contactVerification = {
+        phone: phone ? input.verifiedPhone === true : null,
+        email: email ? input.verifiedEmail === true : null
+      };
+      identityUpdate.createdAt = now;
+    } else {
+      if (phone && input.verifiedPhone === true) identityUpdate.phone = phone;
+      if (email && input.verifiedEmail === true) identityUpdate.email = email;
+    }
+    tx.set(canonicalRef, identityUpdate, { merge: true });
+
+    if (verificationPending) {
+      const pendingRef = db.collection('traveler_identity_pending_links').doc(crypto.randomBytes(12).toString('hex'));
+      tx.set(pendingRef, {
+        newCanonicalId: canonicalId,
+        unverifiedAliases: unverifiedAliases.map(alias => ({ kind: alias.kind, valueHash: aliasKey(alias.kind, alias.value) })),
+        channel: input.channel || null,
+        status: 'pending_verification',
+        createdAt: now
+      });
+    }
+
+    // Browser sessions get their own alias so the same random web session id
+    // keeps one traveler context without trusting any contact claim.
+    if (isNewIdentity && fallbackSession && !identityConflict) {
+      aliasRefs.push({
+        kind: 'email',
+        value: `session:${fallbackSession}`,
+        ref: db.collection('traveler_identity_aliases').doc(aliasKey('email', `session:${fallbackSession}`))
+      });
+    }
 
     if (identityConflict) return;
 
@@ -126,6 +185,7 @@ export async function resolveTravelerIdentity(input: TravelerIdentityInput): Pro
     canonicalId,
     sessionId: canonicalId,
     matchedBy,
+    ...(verificationPending ? { verificationPending: true } : {}),
     ...(identityConflict ? { identityConflict: true, conflictingCanonicalIds } : {})
   };
 }
