@@ -300,74 +300,53 @@ export async function executeConfirmacionReserva(body: any) {
   const start = Date.now();
   const reservationId = String(body.idReserva || body.bookingId || '').trim();
   if (!reservationId) throw new Error('bookingId es obligatorio.');
-  const db = (await import('./bookingService')).getFirestoreDb();
   const booking = await (await import('./bookingService')).getBookingById(reservationId);
   if (!booking) throw new Error('Reserva no encontrada.');
-  const paymentMethod = String(body.paymentMethod || booking.paymentMethod || '').toLowerCase();
+  const paymentMethod = String(booking.paymentMethod || body.paymentMethod || '').toLowerCase();
+  // Payment references come from the stored booking first; the server then
+  // proves the provider record belongs to THIS booking with the right amount.
   const paymentDetails = {
-    paypalOrderId: body.paypalOrderId || booking.paypalOrderId || booking.paymentDetails?.paypalOrderId,
-    stripeSessionId: body.stripeSessionId || booking.stripeSessionId || booking.paymentDetails?.stripeSessionId
+    paypalOrderId: booking.paypalOrderId || booking.paymentDetails?.paypalOrderId || body.paypalOrderId,
+    stripeSessionId: booking.stripeSessionId || booking.paymentDetails?.stripeSessionId || body.stripeSessionId
   };
-  const verification = await verifyPaymentServerSide(paymentMethod, paymentDetails);
+  const verification = await verifyPaymentServerSide(paymentMethod, paymentDetails, {
+    bookingId: String(booking.bookingId || booking.id || reservationId),
+    totalUSD: Number(booking.totalUSD)
+  });
   if (!verification.verified) {
     return {
       exito: false,
       estado: 'pendiente_pago',
       idReserva: reservationId,
-      mensaje: 'La reserva no puede confirmarse: el pago no ha sido verificado por el servidor.'
+      mensaje: 'La reserva no puede confirmarse: el pago no ha sido verificado por el servidor para esta reserva y monto.'
     };
   }
-  const tour = booking.tourName || body.tourName || body.nombreTour;
-  const tourDate = booking.date || body.date || body.fecha;
-  const tourTime = booking.time || body.time || body.hora;
-  const hotel = booking.pickupHotel || body.pickupHotel || body.hotelRecogida || '';
-  const clientData = booking.customer || { name: booking.customerName, email: booking.customerEmail, phone: booking.customerPhone };
-  const total = Number(booking.totalUSD || body.totalUSD || body.montoUSD);
-  if (!tour || !tourDate || !tourTime || !clientData?.email || !Number.isFinite(total)) throw new Error('Datos de reserva incompletos.');
-  if (db) await updateBookingStatus(reservationId, {
+  const update = await updateBookingStatus(reservationId, {
     status: 'confirmada',
     paymentStatus: 'completed'
   });
+  if (!update.success) {
+    logAutomationExecution('CONFIRMACION_RESERVA', Date.now() - start, 'error', `No se pudo confirmar ${reservationId}: ${update.error || 'transición rechazada'}`);
+    return {
+      exito: false,
+      estado: booking.status || 'desconocido',
+      idReserva: reservationId,
+      error: update.error || 'transition_rejected',
+      mensaje: 'El pago está verificado pero la reserva NO fue confirmada (la transición de estado fue rechazada). Requiere revisión del equipo.'
+    };
+  }
 
-  const qrValidationCode = `CRT-QR-${reservationId}-${crypto.randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`;
-  const voucherUrl = `https://costaricatours.cr/vouchers/${reservationId}.pdf`;
-
-  const whatsAppPreview = `¡Pura Vida ${clientData.name || 'Viajero'}! 🇨🇷🌿\nTu reserva para *${tour}* el *${tourDate}* a las *${tourTime}* está *100% CONFIRMADA*.\n\n📍 *Punto de recogida:* ${hotel}\n📄 *Voucher Oficial:* ${voucherUrl}\n🔐 *Código QR:* \`${qrValidationCode}\`\n\n¿Deseas alguna recomendación sobre qué llevar? ¡Estamos a tu servicio!`;
-
-  // Disparar despacho al proveedor en código
-  executeNotificarProveedor({
-    bookingId: reservationId,
-    tourName: tour,
-    date: tourDate,
-    time: tourTime,
-    pickupHotel: hotel,
-    customer: clientData
-  }).catch(() => {});
-
-  const duration = Date.now() - start;
-  logAutomationExecution(
-    'CONFIRMACION_RESERVA',
-    duration,
-    'success',
-    `Voucher QR y confirmación emitida para ${reservationId} (${clientData.name})`
-  );
-
+  logAutomationExecution('CONFIRMACION_RESERVA', Date.now() - start, 'success', `Reserva ${reservationId} confirmada tras verificar pago en servidor.`);
   return {
     exito: true,
-    voucherEmitido: true,
+    estado: 'confirmada',
     idReserva: reservationId,
-    voucherUrl,
-    qrValidationCode,
-    notificacionesDespachadas: ['whatsapp_business_api', 'email_voucher_pdf', 'google_calendar_sync'],
-    whatsAppPreview,
-    calendarSync: {
-      eventoCreado: true,
-      titulo: `🇨🇷 Tour: ${tour}`,
-      inicio: `${tourDate}T${tourTime.includes('AM') ? '06:30:00' : '14:00:00'}-06:00`,
-      ubicacion: hotel
-    },
+    // No voucher, QR, calendar event or notification is produced here; those
+    // belong to the provider-confirmation workflow and are reported there.
+    voucherEmitido: false,
+    notificacionesDespachadas: [],
     motor: 'código_nativo_node',
-    mensaje: 'Voucher digital emitido con código QR y notificaciones multicanal despachadas con éxito.'
+    mensaje: 'Pago verificado y reserva confirmada en el sistema. El voucher y las notificaciones se emiten por el flujo operativo y no se han enviado desde este endpoint.'
   };
 }
 
@@ -478,80 +457,43 @@ export async function executeSolicitudItinerario(body: any) {
 }
 
 // =========================================================================
-// 6. GESTOR DE SOPORTE & CONCIERGE URGENTE (process.env.SINPE_SUPPORT_PHONE || 'configured by operator')
+// 6. GESTOR DE SOPORTE (sin ticketing automático: respuesta honesta)
 // =========================================================================
-export async function executeSolicitudSoporte(body: any) {
-  const start = Date.now();
-  const ticketId = `TCK-CR-${Math.floor(100000 + Math.random() * 900000)}`;
-  const reasonText = body.motivo || body.mensaje || 'Consulta operativa sobre recogida o itinerario';
-  const lowerReason = reasonText.toLowerCase();
-
-  let detectedPriority: 'alta' | 'media' | 'baja' = body.prioridad || 'media';
-  if (
-    lowerReason.includes('urgente') ||
-    lowerReason.includes('médic') ||
-    lowerReason.includes('perdid') ||
-    lowerReason.includes('emergencia') ||
-    lowerReason.includes('cancel')
-  ) {
-    detectedPriority = 'alta';
-  }
-
-  const userName = body.usuario || 'Viajero en Tránsito';
-  const bookingRef = body.reservaAsociada || 'No especificada';
-  const waText = encodeURIComponent(
-    `Hola Costa Rica Tours, requiero asistencia para el ticket ${ticketId} (Reserva: ${bookingRef}): ${reasonText}`
-  );
-  const emergencyPhone = (process.env.EMERGENCY_CONTACT_PHONE || '').replace(/\D/g, '');
-  const whatsappDirectUrl = emergencyPhone ? `https://wa.me/${emergencyPhone}?text=${waText}` : '';
-
-  const duration = Date.now() - start;
-  logAutomationExecution(
-    'SOLICITUD_SOPORTE',
-    duration,
-    'success',
-    `Ticket ${ticketId} creado [Prioridad: ${detectedPriority.toUpperCase()}] para ${userName}`
-  );
-
+/** Honest response for automations that are not wired to a real integration yet. */
+export function pendingManualAutomation(trigger: string, extra: Record<string, unknown> = {}) {
+  logAutomationExecution(trigger, 0, 'warning', `${trigger}: integración no implementada; requiere gestión manual.`);
   return {
-    exito: true,
-    ticketId,
-    prioridad: detectedPriority,
-    tiempoRespuestaEstimado: detectedPriority === 'alta' ? '< 3 minutos' : '< 15 minutos',
-    canalEscalado: detectedPriority === 'alta' ? 'linea_directa_urgencias' : 'soporte_operativo_local',
-    whatsappDirecto: whatsappDirectUrl,
+    exito: false,
+    estado: 'pending_manual' as const,
+    implementado: false,
+    trigger,
     motor: 'código_nativo_node',
-    mensaje: 'Ticket registrado y escalado inmediatamente al equipo de soporte humano en Costa Rica.'
+    mensaje: 'Esta automatización todavía no está conectada a un servicio real. No se envió ninguna notificación ni se modificó ningún sistema externo; requiere gestión manual del equipo.',
+    ...extra
   };
+}
+
+export async function executeSolicitudSoporte(body: any) {
+  const reasonText = String(body.motivo || body.mensaje || '').slice(0, 1000);
+  const bookingRef = String(body.reservaAsociada || '').slice(0, 80);
+  const emergencyPhone = (process.env.EMERGENCY_CONTACT_PHONE || '').replace(/\D/g, '');
+  const waText = encodeURIComponent(`Hola Costa Rica Tours, requiero asistencia${bookingRef ? ` (Reserva: ${bookingRef})` : ''}: ${reasonText}`);
+  return pendingManualAutomation('SOLICITUD_SOPORTE', {
+    ticketCreado: false,
+    whatsappDirecto: emergencyPhone ? `https://wa.me/${emergencyPhone}?text=${waText}` : '',
+    mensaje: 'No se creó un ticket automático. Para asistencia escríbenos directamente por WhatsApp; un miembro del equipo responderá.'
+  });
 }
 
 // =========================================================================
 // 7. NOTIFICAR PROVEEDOR / OPERADOR LOCAL
 // =========================================================================
 export async function executeNotificarProveedor(body: any) {
-  const start = Date.now();
-  const bookingId = body.bookingId || body.idReserva || 'CRT-PROV';
-  const tourName = body.tourName || 'Tour Oficial';
-  const provider = body.providerInfo || { name: 'Alsama Tours CR / Operaciones Directas' };
-
-  console.log(`🚐 [AUTOMATIZACIÓN NATIVA] Despachando logística a proveedor local: ${provider.name} para reserva ${bookingId}`);
-
-  const duration = Date.now() - start;
-  logAutomationExecution(
-    'NOTIFICAR_PROVEEDOR',
-    duration,
-    'success',
-    `Proveedor ${provider.name || 'Local'} notificado para reserva ${bookingId} (${tourName})`
-  );
-
-  return {
-    exito: true,
-    bookingId,
-    notificado: true,
-    proveedor: provider.name,
-    timestamp: new Date().toISOString(),
-    mensaje: 'Notificación de proveedor despachada en tiempo real mediante código backend.'
-  };
+  return pendingManualAutomation('NOTIFICAR_PROVEEDOR', {
+    bookingId: String(body?.bookingId || body?.idReserva || '') || null,
+    notificado: false,
+    mensaje: 'El proveedor NO fue notificado automáticamente. Use el portal seguro del proveedor / coordinación de proveedores para despachar la solicitud.'
+  });
 }
 
 // =========================================================================
@@ -628,38 +570,39 @@ export async function executeEvaluarAntifraude(body: any) {
 // =========================================================================
 export async function executeAIOpsAction(body: any) {
   const start = Date.now();
-  const opAction = body.action || body.accion || 'confirmar_recogida';
-  const reservationId = body.idReserva || body.bookingId || 'CRT-2026-8819';
-  const guideName = body.operador || body.operatorName || 'Guía Juan Carlos Rodríguez';
-  const pickupTime = body.horaEstimada || body.estimatedTime || '07:30 AM';
+  const opAction = String(body.action || body.accion || '').trim();
+  const reservationId = String(body.idReserva || body.bookingId || '').trim();
+  const guideName = String(body.operador || body.operatorName || '').trim();
+  const pickupTime = String(body.horaEstimada || body.estimatedTime || '').trim();
+  if (!opAction || !reservationId) {
+    return { exito: false, error: 'action_and_booking_required', mensaje: 'Se requieren action y bookingId.' };
+  }
 
-  await updateBookingStatus(reservationId, {
+  const update = await updateBookingStatus(reservationId, {
     estadoOperativo: opAction,
-    operadorAsignado: guideName,
-    horaRecogidaEstimada: pickupTime,
-    notasOperador: body.notas || body.notes || 'Confirmado sin novedades'
-  }).catch(() => {});
+    ...(guideName ? { operadorAsignado: guideName } : {}),
+    ...(pickupTime ? { horaRecogidaEstimada: pickupTime } : {}),
+    ...(body.notas || body.notes ? { notasOperador: String(body.notas || body.notes).slice(0, 1000) } : {})
+  }).catch((error: any) => ({ success: false, error: error?.message || 'update_failed' }));
 
-  const aiNotification = `✅ *RECOGIDA CONFIRMADA EN SISTEMA*\n━━━━━━━━━━━━━━━━━━━━━━━━\n📍 *Reserva:* \`${reservationId}\`\n👤 *Guía Asignado:* ${guideName}\n⏰ *Hora Estimada:* ${pickupTime}\n🚐 *Unidad Móvil:* Toyota HiAce 2024 (Placa: SJ-8924)\n🌱 *Estatus:* Pasajeros contactados y listos en lobby.`;
-
-  const duration = Date.now() - start;
   logAutomationExecution(
     'ACCION_PANEL_AI',
-    duration,
-    'success',
-    `Acción operativa '${opAction}' ejecutada por ${guideName} para ${reservationId}`
+    Date.now() - start,
+    update.success ? 'success' : 'error',
+    `Acción operativa '${opAction}' para ${reservationId}: ${update.success ? 'registrada' : 'no registrada'}`
   );
 
   return {
-    exito: true,
+    exito: Boolean(update.success),
     bookingId: reservationId,
-    accionEjecutada: opAction,
-    operador: guideName,
-    nuevoEstado: 'recogida_confirmada_por_guia',
-    aiNotification,
+    accionEjecutada: update.success ? opAction : null,
+    operador: guideName || null,
+    error: update.success ? undefined : (update as any).error,
     timestamp: new Date().toISOString(),
     motor: 'código_nativo_node',
-    mensaje: 'Acción operativa ejecutada y estado actualizado en Firestore nativamente.'
+    mensaje: update.success
+      ? 'Acción operativa registrada en la reserva. No se envió ninguna notificación automática.'
+      : 'La acción operativa NO se registró.'
   };
 }
 
@@ -667,66 +610,22 @@ export async function executeAIOpsAction(body: any) {
 // 10. SINCRONIZACIÓN CON GOOGLE CALENDAR
 // =========================================================================
 export async function executeSyncCalendar(body: any) {
-  const start = Date.now();
-  const reservationId = body.bookingId || body.idReserva || 'CRT-2026-8819';
-  const tour = body.tourName || body.nombreTour || 'Volcán Arenal & Termales Tabacón';
-  const tourDate = body.date || body.fecha || '2026-11-20';
-  const tourTime = body.time || body.hora || '07:30 AM';
-  const hotel = body.pickupHotel || body.hotelRecogida || 'Lobby Hotel Los Lagos, La Fortuna';
-  const client = body.clientName || 'Carlos Montero';
-
-  const eventId = `cal_cr_${Math.random().toString(36).substring(2, 12)}`;
-  const eventLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-    `🇨🇷 Tour: ${tour} (${client})`
-  )}&dates=${tourDate.replace(/-/g, '')}T073000Z/${tourDate.replace(/-/g, '')}T160000Z&details=${encodeURIComponent(
-    `Reserva ${reservationId} - Recogida en: ${hotel}`
-  )}&location=${encodeURIComponent(hotel)}`;
-
-  const duration = Date.now() - start;
-  logAutomationExecution('SYNC_CALENDAR', duration, 'success', `Evento de calendario generado para reserva ${reservationId}`);
-
-  return {
-    exito: true,
-    calendarEventId: eventId,
-    titulo: `🇨🇷 Tour: ${tour} (${client})`,
-    fechaInicio: `${tourDate}T${tourTime.includes('AM') ? '07:30:00' : '13:30:00'}-06:00`,
-    ubicacion: hotel,
-    htmlLink: eventLink,
-    notificacionesProgramadas: ['24h_antes_alerta_guia', '2h_antes_notificacion_chofer_waze'],
-    motor: 'código_nativo_node',
-    mensaje: 'Evento sincronizado exitosamente en Google Calendar de guías y operadores locales.'
-  };
+  return pendingManualAutomation('SYNC_CALENDAR', {
+    bookingId: String(body?.bookingId || body?.idReserva || '') || null,
+    eventoCreado: false,
+    mensaje: 'No existe sincronización automática con el calendario de guías. Ningún evento fue creado.'
+  });
 }
 
 // =========================================================================
-// 11. ENCUESTA POST-TOUR NPS & REPUTATION BOOSTER
+// 11. ENCUESTA POST-TOUR NPS
 // =========================================================================
 export async function executePostTourNPS(body: any) {
-  const start = Date.now();
-  const reservationId = body.bookingId || body.idReserva || 'CRT-2026-8819';
-  const tour = body.tourName || 'Arenal Volcano & Hot Springs';
-  const name = body.customerName || 'Carlos Montero';
-  const phone = body.customerPhone || process.env.SINPE_SUPPORT_PHONE || '';
-  const promoCode = `PURAVIDA15-${Math.floor(1000 + Math.random() * 9000)}`;
-
-  const duration = Date.now() - start;
-  logAutomationExecution('POST_TOUR_NPS', duration, 'success', `Encuesta NPS y cupón ${promoCode} generado para ${name}`);
-
-  return {
-    exito: true,
-    encuestaDespachada: true,
-    bookingId: reservationId,
-    cliente: name,
-    promoCode,
-    canal: 'whatsapp_business_api',
-    plantilla: 'cr_post_tour_satisfaction_v2',
-    enlacesResenas: {
-      tripadvisor: 'https://tripadvisor.com/review/costa-rica-tours',
-      googleMaps: 'https://g.page/r/costa-rica-tours/review'
-    },
-    motor: 'código_nativo_node',
-    mensaje: 'Encuesta post-tour NPS programada y cupón de agradecimiento generado.'
-  };
+  return pendingManualAutomation('POST_TOUR_NPS', {
+    bookingId: String(body?.bookingId || body?.idReserva || '') || null,
+    encuestaDespachada: false,
+    mensaje: 'La encuesta post-tour NO fue enviada: no hay plantilla de WhatsApp/email conectada para NPS. No se generó ningún código promocional.'
+  });
 }
 
 // =========================================================================
@@ -989,7 +888,7 @@ export async function executeAutonomousMultiDayPlanner(body: any) {
       nivelPresupuesto: params.presupuestoNivel || 'confort_premium'
     },
     transporteOficial: {
-      proveedor: 'Alsama Tours CR (Verificado CST)',
+      proveedor: 'Alsama Tours CR (referencia, sujeto a confirmación)',
       tipoVehiculo: totalPax <= 5 ? 'Van Ejecutiva A/C con Wi-Fi' : 'Microbús Familiar A/C',
       incluye: ['Chofer profesional bilingüe', 'Wi-Fi 4G/5G a bordo', 'Botellas de agua fría', 'Parada escénica Río Tárcoles', 'Seguro MOPT/ICT']
     },
@@ -1068,7 +967,7 @@ export async function executeDynamicPricingYieldOptimizer(body: any) {
     precioNormalComboUSD: 145 + 170, // 315
     precioComboOptimizadoUSD: 275,
     ahorroTotalUSD: 40,
-    proveedorTransporte: 'Alsama Tours CR (CST Certificado)'
+    proveedorTransporte: 'Alsama Tours CR (referencia, sujeto a confirmación)'
   };
 
   const duration = Date.now() - start;
@@ -1298,7 +1197,7 @@ export async function executeAutonomousFlightGuardDispatch(body: any) {
       cartelDigital: `Bienvenido a Costa Rica: ${pasajero.nombre}`,
       puntoEncuentro: 'Salida Exterior Terminal SJO (Frente a Restaurante Malinche)',
       horaLlegadaAjustadaChofer: nuevaHoraSalidaTerminal,
-      costoAdicionalPorEspera: '$0 USD (Garantía Oficial Alsama Tours)'
+      costoAdicionalPorEspera: 'Sujeto a confirmación del proveedor'
     },
     notificacionesDespachadas: {
       choferWhatsApp: 'DESPACHADO_CON_NUEVA_HORA',
@@ -1365,24 +1264,9 @@ export async function executeAutonomousCrisisSentimentEscalation(body: any) {
 // =========================================================================
 // 19. AUTOMATIZACIÓN GENÉRICA NATIVA
 // =========================================================================
-export async function executeGenericAutomation(triggerName: string, body: any = {}) {
-  const start = Date.now();
-  const duration = Date.now() - start;
-  logAutomationExecution(
-    triggerName,
-    duration,
-    'success',
-    `Evento ${triggerName} procesado en código nativo`,
-    body
-  );
-  return {
-    exito: true,
-    mensaje: `Automatización ${triggerName} procesada exitosamente con código nativo en servidor Node.js/Express.`,
-    trigger: triggerName,
-    motor: 'código_nativo_node',
-    datos: body,
-    timestamp: new Date().toISOString()
-  };
+export async function executeGenericAutomation(triggerName: string, _body: any = {}) {
+  // Generic webhook triggers have no real integration behind them.
+  return pendingManualAutomation(triggerName);
 }
 
 // =========================================================================
