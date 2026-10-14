@@ -8,6 +8,12 @@ import { ProviderCommunicationHub } from './ProviderCommunicationHub';
 import { AiInsightsPanel } from './AiInsightsPanel';
 import { auth } from '../firebase';
 
+/** Admin-only backend routes (/api/agents/*) require the operator's Firebase ID token. */
+async function adminAuthHeaders(): Promise<Record<string, string>> {
+  const token = await auth.currentUser?.getIdToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 
 interface AdminDashboardProps {
   isOpen: boolean;
@@ -44,7 +50,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
       // Step 1: Triage Agent
       const resTriage = await fetch('/api/agents/triage', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await adminAuthHeaders()) },
         body: JSON.stringify({ rawMessage: simEmail })
       });
       const triageData = await resTriage.json();
@@ -55,7 +61,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
       // Step 2: Processor Agent
       const resProcessor = await fetch('/api/agents/processor', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await adminAuthHeaders()) },
         body: JSON.stringify({ rawMessage: simEmail, intent: triageData.intent, extractedData: triageData.extractedData })
       });
       const processorData = await resProcessor.json();
@@ -696,7 +702,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                   <button onClick={async () => {
                       const res = await fetch('/api/agents/log_exception', {
                         method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
+                        headers: { 'Content-Type': 'application/json', ...(await adminAuthHeaders()) },
                         body: JSON.stringify({ agentName: 'OperationsAgent', errorContext: 'Timeout from local provider or unreadable format', rawData: 'El compa dijo q tal vez alas 3 o4' })
                       });
                     }} 
@@ -707,7 +713,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                 </div>
                 
                 <button onClick={async () => {
-                    const res = await fetch('/api/agents/supervisor', { method: 'POST' });
+                    const res = await fetch('/api/agents/supervisor', { method: 'POST', headers: await adminAuthHeaders() });
                     const data = await res.json();
                     alert("Análisis del Supervisor:\n\n" + JSON.stringify(data, null, 2));
                   }}
