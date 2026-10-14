@@ -19,6 +19,10 @@ test('sensitive operational route families require application auth at the Verce
     assert.ok(source.includes(`'${prefix}'`), `Missing privileged gateway prefix: ${prefix}`);
   }
 
-  assert.match(source, /isPrivilegedPath\(pathname\) && !hasApplicationAuth\(req\)/);
+  assert.match(source, /isPrivilegedPath\(pathname\) && !\(await hasApplicationAuth\(req\)\)/);
+  // Presence of a header is not authentication: tokens are verified.
+  assert.match(source, /verifyFirebaseIdTokenAtGateway/);
+  assert.match(source, /nodeCrypto\.verify\(/);
+  assert.match(source, /timingSafeEqual/);
   assert.match(source, /application_auth_required/);
 });

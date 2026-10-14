@@ -9,7 +9,16 @@ import { getFirebaseAdminAuth } from './firebaseAdminRuntime';
  * admin    → administrative access without owner-only governance powers
  * operator → operational access
  */
-export async function requireOperator(req: Request, res: Response, next: NextFunction) {
+export type OperatorAccessResult =
+  | { ok: true; access: Record<string, any>; user?: any }
+  | { ok: false; status: number; error: string };
+
+/**
+ * Evaluates operational credentials without writing a response, so routes that
+ * accept several kinds of authorization (owner of a booking OR operations) can
+ * reuse exactly the same rules as requireOperator.
+ */
+export async function resolveOperatorAccess(req: Request): Promise<OperatorAccessResult> {
   const authorization = req.headers.authorization;
   if (authorization?.startsWith('Bearer ')) {
     try {
@@ -48,49 +57,86 @@ export async function requireOperator(req: Request, res: Response, next: NextFun
       );
 
       if (role && (ownerExplicitlyAuthorized || collaboratorAuthorized)) {
-        (req as any).user = decoded;
-        (req as any).adminAccess = {
-          role,
-          uid: String(decoded.uid || decoded.sub || '') || null,
-          email: email || null,
-          scope: role === 'owner' ? 'owner' : role === 'admin' ? 'full' : 'operations',
-          authMethod: 'firebase',
+        return {
+          ok: true,
+          user: decoded,
+          access: {
+            role,
+            uid: String(decoded.uid || decoded.sub || '') || null,
+            email: email || null,
+            scope: role === 'owner' ? 'owner' : role === 'admin' ? 'full' : 'operations',
+            authMethod: 'firebase',
+          },
         };
-        return next();
       }
-      return res.status(403).json({ error: 'Permisos insuficientes' });
+      return { ok: false, status: 403, error: 'Permisos insuficientes' };
     } catch {
-      return res.status(401).json({ error: 'Token de autenticación inválido o expirado' });
+      return { ok: false, status: 401, error: 'Token de autenticación inválido o expirado' };
     }
   }
 
   const operatorKey = process.env.OPERATOR_API_KEY;
   if (!operatorKey) {
-    return res.status(503).json({ error: 'OPERATOR_API_KEY no configurada en el servidor' });
+    return { ok: false, status: 503, error: 'OPERATOR_API_KEY no configurada en el servidor' };
   }
 
   const providedKey = req.headers['x-operator-key'];
   if (!providedKey || typeof providedKey !== 'string') {
-    return res.status(401).json({ error: 'No autorizado' });
+    return { ok: false, status: 401, error: 'No autorizado' };
   }
 
   try {
     const keyBuffer = Buffer.from(operatorKey);
     const providedBuffer = Buffer.from(providedKey);
     if (keyBuffer.length !== providedBuffer.length || !crypto.timingSafeEqual(keyBuffer, providedBuffer)) {
-      return res.status(401).json({ error: 'No autorizado' });
+      return { ok: false, status: 401, error: 'No autorizado' };
     }
-    (req as any).adminAccess = {
-      role: 'operator',
-      uid: null,
-      email: null,
-      scope: 'operations',
-      authMethod: 'operator_key',
+    return {
+      ok: true,
+      access: {
+        role: 'operator',
+        uid: null,
+        email: null,
+        scope: 'operations',
+        authMethod: 'operator_key',
+      },
     };
-    return next();
   } catch {
-    return res.status(401).json({ error: 'No autorizado' });
+    return { ok: false, status: 401, error: 'No autorizado' };
   }
+}
+
+export async function requireOperator(req: Request, res: Response, next: NextFunction) {
+  const result = await resolveOperatorAccess(req);
+  if (!result.ok) {
+    return res.status(result.status).json({ error: result.error });
+  }
+  if (result.user) (req as any).user = result.user;
+  (req as any).adminAccess = result.access;
+  return next();
+}
+
+/**
+ * Any signed-in Firebase user (customer). Used for actions that must be bound
+ * to the caller's own uid, never to a uid supplied in the request body.
+ */
+export async function verifyFirebaseUser(req: Request): Promise<any | null> {
+  const authorization = req.headers.authorization;
+  if (!authorization?.startsWith('Bearer ')) return null;
+  try {
+    return await getFirebaseAdminAuth().verifyIdToken(authorization.slice('Bearer '.length).trim());
+  } catch {
+    return null;
+  }
+}
+
+export async function requireFirebaseUser(req: Request, res: Response, next: NextFunction) {
+  const decoded = await verifyFirebaseUser(req);
+  if (!decoded?.uid) {
+    return res.status(401).json({ error: 'Se requiere una sesión autenticada.' });
+  }
+  (req as any).user = decoded;
+  return next();
 }
 
 export function requireOwner(req: Request, res: Response, next: NextFunction): void {
