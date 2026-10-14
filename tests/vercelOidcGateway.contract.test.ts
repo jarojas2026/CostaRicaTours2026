@@ -57,6 +57,7 @@ test('private gateway authenticates runtime requests and preserves user auth', a
     includeUserAuth?: boolean;
     expectedAudience?: string;
     userToken?: string;
+    omitHeaders?: boolean;
   } = {}) {
     const {
       headers = {},
@@ -65,6 +66,7 @@ test('private gateway authenticates runtime requests and preserves user auth', a
       includeUserAuth = true,
       expectedAudience = process.env.GCP_WIF_AUDIENCE || '',
       userToken = TEST_USER_TOKEN,
+      omitHeaders = false,
     } = options;
 
     now += 60 * 60_000;
@@ -106,7 +108,12 @@ test('private gateway authenticates runtime requests and preserves user auth', a
     const requestHeaders: Record<string, string> = { host: 'app.example.invalid', ...headers };
     if (includeUserAuth) requestHeaders.authorization = `Bearer ${userToken}`;
 
-    await handler({ method: 'GET', url: path, headers: requestHeaders } as VercelRequest, res);
+    const request = {
+      method: 'GET',
+      url: path,
+      headers: omitHeaders ? undefined : requestHeaders,
+    } as unknown as VercelRequest;
+    await handler(request, res);
     return { status, payload, calls, responseHeaders };
   }
 
@@ -128,6 +135,30 @@ test('private gateway authenticates runtime requests and preserves user auth', a
     await t.test('local environment fallback remains supported', async () => {
       process.env.VERCEL_OIDC_TOKEN = 'test-local-oidc';
       assert.equal((await invoke({ expectedToken: 'test-local-oidc' })).status, 403);
+    });
+
+    await t.test('missing runtime headers fall back safely instead of throwing', async () => {
+      process.env.VERCEL_OIDC_TOKEN = 'test-no-headers-oidc';
+      const result = await invoke({
+        includeUserAuth: false,
+        omitHeaders: true,
+        path: '/api/health',
+        expectedToken: 'test-no-headers-oidc',
+      });
+      assert.equal(result.status, 403);
+      assert.equal(result.calls, 3);
+    });
+
+    await t.test('privileged request with missing headers fails closed before upstream calls', async () => {
+      delete process.env.VERCEL_OIDC_TOKEN;
+      const result = await invoke({
+        includeUserAuth: false,
+        omitHeaders: true,
+        path: '/api/admin/access-policy',
+      });
+      assert.equal(result.status, 401);
+      assert.equal(result.payload.error, 'application_auth_required');
+      assert.equal(result.calls, 0);
     });
 
     await t.test('missing identity fails closed without upstream requests', async () => {
