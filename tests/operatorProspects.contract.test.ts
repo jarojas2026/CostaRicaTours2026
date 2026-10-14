@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
-import { validateOperatorProspects } from '../src/data/operators/operatorProspects.ts';
+import { validateOperatorProspects } from '../data/operators/operatorProspects.ts';
 
-const data = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'src', 'data', 'operators', 'operatorProspects.json'), 'utf8'));
+const data = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'operators', 'operatorProspects.json'), 'utf8'));
 
 test('operator prospects dataset is valid and fully sourced', () => {
   assert.deepEqual(validateOperatorProspects(data), []);
