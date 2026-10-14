@@ -31,6 +31,7 @@ service cloud.firestore {
 
     function isValidUser(data) {
       return data.keys().hasAll(['userId', 'createdAt'])
+        && data.keys().hasOnly(['userId', 'createdAt', 'email', 'displayName'])
         && data.userId == request.auth.uid
         && data.userId is string && data.userId.size() <= 128
         && (data.createdAt == request.time || data.createdAt == existing().createdAt)
@@ -38,35 +39,14 @@ service cloud.firestore {
         && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 256));
     }
 
-    function isValidBooking(data) {
-      return data.keys().hasAll(['tourId', 'date', 'adults', 'totalUSD', 'createdAt'])
-        && (!('userId' in data) || (data.userId is string && data.userId.size() <= 128))
-        && data.tourId is string && data.tourId.size() <= 128
-        && data.date is string && data.date.size() <= 64
-        && data.adults is number
-        && data.totalUSD is number
-        && (data.createdAt == request.time || data.createdAt == existing().createdAt)
-        && (!('bookingId' in data) || (data.bookingId is string && data.bookingId.size() <= 128))
-        && (!('tourName' in data) || (data.tourName is string && data.tourName.size() <= 256))
-        && (!('time' in data) || (data.time is string && data.time.size() <= 64))
-        && (!('children' in data) || (data.children is number))
-        && (!('pickupHotel' in data) || (data.pickupHotel is string && data.pickupHotel.size() <= 256))
-        && (!('specialRequests' in data) || (data.specialRequests is string && data.specialRequests.size() <= 2048))
-        && (!('totalCRC' in data) || (data.totalCRC is number))
-        && (!('customerName' in data) || (data.customerName is string && data.customerName.size() <= 256))
-        && (!('customerEmail' in data) || (data.customerEmail is string && data.customerEmail.size() <= 256))
-        && (!('customerPhone' in data) || (data.customerPhone is string && data.customerPhone.size() <= 64))
-        && (!('customerCountry' in data) || (data.customerCountry is string && data.customerCountry.size() <= 128))
-        && (!('sinpeReference' in data) || (data.sinpeReference is string && data.sinpeReference.size() <= 128))
-        && (!('currency' in data) || (data.currency in ['USD', 'CRC']))
-        && (!('paymentMethod' in data) || (data.paymentMethod is string && data.paymentMethod.size() <= 64))
-        && (!('paymentStatus' in data) || (data.paymentStatus in ['pending', 'completed', 'failed']))
-        && (!('totalAmount' in data) || (data.totalAmount is number))
-        && (!('status' in data) || (data.status in ['pending', 'confirmed', 'cancelled', 'confirmada', 'pendiente_pago', 'cancelada']));
-    }
+    // isValidBooking was removed: the bookings ledger is written only by the
+    // backend (Firebase Admin) and by admins, so a client-side shape validator
+    // was dead code that suggested browser writes were allowed.
 
     function isValidReview(data) {
-      return data.keys().hasAll(['bookingId', 'rating', 'comment', 'createdAt'])
+      return data.keys().hasAll(['bookingId', 'userId', 'rating', 'comment', 'createdAt'])
+        && data.keys().hasOnly(['bookingId', 'userId', 'rating', 'comment', 'createdAt', 'tourId', 'authorName'])
+        && data.userId == request.auth.uid
         && data.bookingId is string && data.bookingId.size() <= 128
         && data.rating is number && data.rating >= 1 && data.rating <= 5
         && data.comment is string && data.comment.size() <= 2048
@@ -106,7 +86,12 @@ service cloud.firestore {
 
     match /reviews/{reviewId} {
       allow read: if true;
-      allow create: if isSignedIn() && isValidReview(incoming());
+      // Only the traveler who owns the referenced booking may review it.
+      allow create: if isSignedIn()
+        && isValidReview(incoming())
+        && isValidId(incoming().bookingId)
+        && exists(/databases/$(database)/documents/bookings/$(incoming().bookingId))
+        && get(/databases/$(database)/documents/bookings/$(incoming().bookingId)).data.userId == request.auth.uid;
       allow update, delete: if isAdmin();
     }
 
@@ -116,7 +101,11 @@ service cloud.firestore {
     }
 
     match /chat_sessions/{sessionId} {
-      allow read, write: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow read, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      // userId is immutable: a session can never be re-assigned to another user.
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && incoming().userId == resource.data.userId;
       allow create: if isSignedIn() && incoming().userId == request.auth.uid;
     }
 
