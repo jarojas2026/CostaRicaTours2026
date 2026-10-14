@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
+import { X } from 'lucide-react';
 import { Language } from '../types';
 import { NATIONAL_POI_GROUPS, NationalPoiGroupId, getPoiTypeLabel } from '../data/nationalPoiLayers';
 
@@ -79,6 +80,17 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
     window.addEventListener(OPEN_NATIONAL_LAYERS_EVENT, open);
     return () => window.removeEventListener(OPEN_NATIONAL_LAYERS_EVENT, open);
   }, []);
+
+  // The layer chooser floats above the map, so it must always have a clear
+  // dismissal path. Escape mirrors the visible X control for keyboard users.
+  useEffect(() => {
+    if (!isOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [isOpen]);
 
   // Carga diferida de cada capa activada
   useEffect(() => {
@@ -235,12 +247,13 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
   const totalLoaded = activeFeatures.length;
 
   return (
-    <div className="absolute left-4 bottom-20 z-30 pointer-events-auto max-w-[92vw]">
+    <div className="absolute left-2 sm:left-4 bottom-20 z-30 pointer-events-auto max-w-[calc(100vw-1rem)] sm:max-w-[92vw]">
       <button
         type="button"
         id="national-poi-layers-toggle"
         aria-label={isEs ? 'Capas nacionales de Costa Rica (salud CCSS, parques SINAC, fauna, patrimonio y más)' : 'Costa Rica national layers (CCSS health, SINAC parks, wildlife, heritage and more)'}
         aria-expanded={isOpen}
+        aria-controls="national-poi-layers-panel"
         onClick={() => setIsOpen((v) => !v)}
         className="flex items-center gap-2 rounded-full bg-[#051c14]/95 border border-emerald-500/40 px-4 py-2 text-sm font-bold text-emerald-50 shadow-lg hover:border-amber-400 active:scale-95 transition"
       >
@@ -252,7 +265,31 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
       </button>
 
       {isOpen && (
-        <div className="mt-2 w-80 max-w-[92vw] max-h-[60vh] overflow-y-auto rounded-2xl bg-[#041711]/97 border border-emerald-500/30 p-3 text-emerald-50 shadow-2xl">
+        <div
+          id="national-poi-layers-panel"
+          role="region"
+          aria-label={isEs ? 'Selector de capas nacionales' : 'National layers selector'}
+          className="mt-2 w-80 max-w-[calc(100vw-1rem)] sm:max-w-[92vw] max-h-[min(60dvh,32rem)] overflow-y-auto overscroll-contain rounded-2xl bg-[#041711]/97 border border-emerald-500/30 p-3 text-emerald-50 shadow-2xl"
+        >
+          <div className="sticky top-0 z-10 -mx-1 -mt-1 mb-2 flex items-center justify-between gap-2 rounded-xl bg-[#041711]/98 px-1 py-1">
+            <div className="min-w-0">
+              <p className="text-[11px] font-black uppercase tracking-wider text-amber-300">
+                {isEs ? `${NATIONAL_POI_GROUPS.length} capas nacionales` : `${NATIONAL_POI_GROUPS.length} national layers`}
+              </p>
+              <p className="text-[10px] text-emerald-200/60">
+                {isEs ? 'Seleccione varias capas y cierre este panel para explorar el mapa.' : 'Select multiple layers, then close this panel to explore the map.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              aria-label={isEs ? 'Cerrar selector de capas' : 'Close layers selector'}
+              title={isEs ? 'Cerrar capas' : 'Close layers'}
+              className="min-h-[44px] min-w-[44px] shrink-0 rounded-full border border-emerald-500/30 bg-emerald-950/80 text-emerald-100 hover:border-amber-400 hover:text-amber-200 flex items-center justify-center transition"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
           <input
             type="search"
             value={query}
@@ -261,9 +298,6 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
             aria-label={isEs ? 'Buscar puntos en el mapa' : 'Search map points'}
             className="mb-3 w-full rounded-lg bg-[#051c14] border border-emerald-700/60 px-3 py-2 text-sm placeholder:text-emerald-200/50 focus:outline-none focus:border-amber-400"
           />
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-amber-300">
-            {isEs ? `${NATIONAL_POI_GROUPS.length} capas nacionales` : `${NATIONAL_POI_GROUPS.length} national layers`}
-          </p>
           <ul className="space-y-1">
             {NATIONAL_POI_GROUPS.map((g) => {
               const count = loaded[g.id]?.length;
