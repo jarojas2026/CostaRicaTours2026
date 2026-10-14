@@ -357,7 +357,17 @@ function ownerEmail(): string {
   return clean(process.env.ADMIN_ALERT_EMAIL || process.env.SUPPORT_EMAIL || 'jarojas800@gmail.com', 200);
 }
 
-export async function processCustomerIntake(payload: CustomerIntakePayload) {
+/**
+ * Channel trust is decided by server code only (never by payload.source):
+ * the public HTTP route passes nothing, the signed WhatsApp webhook marks the
+ * sender phone as verified when it enqueues the job.
+ */
+export interface CustomerIntakeTrust {
+  verifiedPhone?: boolean;
+  verifiedEmail?: boolean;
+}
+
+export async function processCustomerIntake(payload: CustomerIntakePayload, trust: CustomerIntakeTrust = {}) {
   const startedAt = Date.now();
   const message = clean(payload.message, 4000);
   const language = payload.language === 'en' ? 'en' : 'es';
@@ -371,7 +381,9 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
     email: payload.customer?.email,
     sessionId: requestedSessionId,
     channel: source,
-    name: payload.customer?.name
+    name: payload.customer?.name,
+    verifiedPhone: trust.verifiedPhone === true,
+    verifiedEmail: trust.verifiedEmail === true
   });
   const sessionId = identity.sessionId;
   const triage = await runTriage(message);
@@ -478,7 +490,10 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
     intakeId,
     sessionId,
     source,
-    identity: { canonicalId: identity.canonicalId, matchedBy: identity.matchedBy },
+    identity: {
+      matchedBy: identity.matchedBy,
+      ...(identity.verificationPending ? { verificationPending: true } : {})
+    },
     triage: { intent, confidence, extractedData },
     decision: { autonomous: !escalation.escalated, escalated: escalation.escalated, reason: escalation.reason },
     customer: {
@@ -504,7 +519,7 @@ export async function processCustomerIntake(payload: CustomerIntakePayload) {
 
 export async function enqueueCustomerIntakeJob(
   payload: CustomerIntakePayload,
-  options: { replyToWhatsApp?: string; messageId?: string } = {}
+  options: { replyToWhatsApp?: string; messageId?: string; trust?: CustomerIntakeTrust } = {}
 ): Promise<{ jobId: string }> {
   const db = getFirestoreDb();
   if (!db) throw new Error('Firestore no está disponible para persistir la cola de Customer Intake.');
@@ -514,6 +529,7 @@ export async function enqueueCustomerIntakeJob(
     payload,
     replyToWhatsApp: clean(options.replyToWhatsApp, 40).replace(/[^0-9]/g, '') || null,
     messageId: clean(options.messageId, 180) || null,
+    trust: { verifiedPhone: options.trust?.verifiedPhone === true, verifiedEmail: options.trust?.verifiedEmail === true },
     status: 'queued',
     attempts: 0,
     createdAt: new Date().toISOString(),
@@ -562,7 +578,7 @@ export async function processCustomerIntakeJob(jobId: string): Promise<any> {
         operatorNotification: claim.result.operatorNotification
       };
     } else {
-      result = await processCustomerIntake(claim.payload || {});
+      result = await processCustomerIntake(claim.payload || {}, claim.trust || {});
       await ref.set({
         result: {
           intakeId: result.intakeId,
