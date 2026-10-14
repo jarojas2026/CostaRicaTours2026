@@ -168,9 +168,9 @@ Eres el asistente inteligente oficial de Costa Rica Tours, especialista en turis
 --- TOURS Y TARIFAS AUTORIZADAS ---
 ${getToursKnowledgeBase()}
 
---- TRASLADOS PRIVADOS OFICIALES (ALSAMA TOURS CR) ---
-Proveedor Oficial Verificado: Alsama Tours CR (https://alsamatourscr.com/transport/)
-Todas las tarifas son en USD por vehículo completo privado (no por persona). Incluyen A/C, Wi-Fi 4G/5G a bordo, botellas de agua de cortesía, chofer profesional bilingüe y paradas escénicas en ruta (ej. Puente de los Cocodrilos en Río Tárcoles):
+--- TRASLADOS PRIVADOS: TARIFAS DE REFERENCIA (ALSAMA TOURS CR) ---
+Proveedor de referencia: Alsama Tours CR (https://alsamatourscr.com/transport/). No existe un acuerdo firmado: presenta estas tarifas siempre como "tarifa de referencia, sujeta a confirmación" y nunca como proveedor oficial o verificado.
+Tarifas de referencia en USD por vehículo completo privado (no por persona). Incluyen A/C, Wi-Fi 4G/5G a bordo, botellas de agua de cortesía, chofer profesional bilingüe y paradas escénicas en ruta (ej. Puente de los Cocodrilos en Río Tárcoles):
 • Aeropuerto SJO ⇄ Hoteles en San José (Centro / Escazú / Sabana): $50 USD (1-5 pax) / $57 USD (6-10 pax)
 • Hoteles San José ⇄ Aeropuerto SJO: $43 USD (1-5 pax) / $50 USD (6-10 pax)
 • San José / Aeropuerto SJO ⇄ La Fortuna (Volcán Arenal): $170 USD (1-5 pax) / $200 USD (6-10 pax) (~3.5 hrs)
@@ -206,8 +206,8 @@ function getKnowledgeBaseReply(message: string, isEn: boolean) {
   ) {
     return {
       reply: isEn
-        ? `🚐 **Official Private Transfers • Alsama Tours CR**\n\nWe provide verified private door-to-door transportation operated by **Alsama Tours CR** (https://alsamatourscr.com/transport/):\n\n• **San José / SJO Airport ⇄ Arenal (La Fortuna)**: $170 USD (1-5 pax) | $200 USD (6-10 pax)\n• **San José / SJO Airport ⇄ Jacó Beach**: $143 USD (1-5 pax) | $170 USD (6-10 pax)\n• **San José / SJO Airport ⇄ Manuel Antonio**: $186 USD (1-5 pax) | $214 USD (6-10 pax)\n• **San José / SJO Airport ⇄ Monteverde**: $186 USD (1-5 pax) | $214 USD (6-10 pax)\n• **SJO Airport ⇄ San José City Hotels**: $50 USD (1-5 pax) | $57 USD (6-10 pax)\n• **San José Hotels ⇄ SJO Airport**: $43 USD (1-5 pax) | $50 USD (6-10 pax)\n• **Arenal ⇄ Manuel Antonio**: $260 USD (1-5 pax) | $300 USD (6-10 pax)\n• **Arenal ⇄ Monteverde**: $160 USD (1-5 pax) | $190 USD (6-10 pax)\n\n✨ **Includes**: Executive modern van with AC, on-board 4G/5G Wi-Fi, complimentary cold bottled water, professional bilingual driver, scenic stops (like the Tárcoles River Crocodile Bridge), and full traveler insurance.\n\n¿Would you like me to help you book a private transfer or calculate a custom route?`
-        : `🚐 **Traslados Privados Oficiales • Alsama Tours CR**\n\nContamos con servicio oficial de transporte privado puerta a puerta operado por nuestro proveedor verificado **Alsama Tours CR** (https://alsamatourscr.com/transport/):\n\n• **San José / Aeropuerto SJO ⇄ Arenal (La Fortuna)**: $170 USD (1-5 personas) | $200 USD (6-10 personas)\n• **San José / Aeropuerto SJO ⇄ Jacó / Playa Hermosa**: $143 USD (1-5 personas) | $170 USD (6-10 personas)\n• **San José / Aeropuerto SJO ⇄ Manuel Antonio / Quepos**: $186 USD (1-5 personas) | $214 USD (6-10 personas)\n• **San José / Aeropuerto SJO ⇄ Monteverde**: $186 USD (1-5 personas) | $214 USD (6-10 personas)\n• **Aeropuerto SJO ⇄ Hoteles en San José**: $50 USD (1-5 personas) | $57 USD (6-10 personas)\n• **Hoteles en San José ⇄ Aeropuerto SJO**: $43 USD (1-5 personas) | $50 USD (6-10 personas)\n• **Arenal ⇄ Manuel Antonio**: $260 USD (1-5 personas) | $300 USD (6-10 personas)\n• **Arenal ⇄ Monteverde**: $160 USD (1-5 personas) | $190 USD (6-10 personas)\n\n✨ **Incluye**: Van ejecutiva moderna con aire acondicionado, Wi-Fi 4G/5G a bordo, botellas de agua fría de cortesía, chofer profesional bilingüe, paradas escénicas en ruta (ej. Puente de los Cocodrilos en Tárcoles) y seguro MOPT/ICT.\n\n¿Te gustaría coordinar la reserva de tu traslado privado o consultar por alguna otra ruta?`,
+        ? `🚐 **Private Transfers • Reference rates (Alsama Tours CR)**\n\nWe can request private door-to-door transportation from **Alsama Tours CR** (https://alsamatourscr.com/transport/). Reference rates, subject to confirmation:\n\n• **San José / SJO Airport ⇄ Arenal (La Fortuna)**: $170 USD (1-5 pax) | $200 USD (6-10 pax)\n• **San José / SJO Airport ⇄ Jacó Beach**: $143 USD (1-5 pax) | $170 USD (6-10 pax)\n• **San José / SJO Airport ⇄ Manuel Antonio**: $186 USD (1-5 pax) | $214 USD (6-10 pax)\n• **San José / SJO Airport ⇄ Monteverde**: $186 USD (1-5 pax) | $214 USD (6-10 pax)\n• **SJO Airport ⇄ San José City Hotels**: $50 USD (1-5 pax) | $57 USD (6-10 pax)\n• **San José Hotels ⇄ SJO Airport**: $43 USD (1-5 pax) | $50 USD (6-10 pax)\n• **Arenal ⇄ Manuel Antonio**: $260 USD (1-5 pax) | $300 USD (6-10 pax)\n• **Arenal ⇄ Monteverde**: $160 USD (1-5 pax) | $190 USD (6-10 pax)\n\n✨ **Includes**: Executive modern van with AC, on-board 4G/5G Wi-Fi, complimentary cold bottled water, professional bilingual driver, scenic stops (like the Tárcoles River Crocodile Bridge), and full traveler insurance.\n\n¿Would you like me to help you book a private transfer or calculate a custom route?`
+        : `🚐 **Traslados Privados • Tarifas de referencia (Alsama Tours CR)**\n\nPodemos solicitar transporte privado puerta a puerta a **Alsama Tours CR** (https://alsamatourscr.com/transport/). Tarifas de referencia, sujetas a confirmación:\n\n• **San José / Aeropuerto SJO ⇄ Arenal (La Fortuna)**: $170 USD (1-5 personas) | $200 USD (6-10 personas)\n• **San José / Aeropuerto SJO ⇄ Jacó / Playa Hermosa**: $143 USD (1-5 personas) | $170 USD (6-10 personas)\n• **San José / Aeropuerto SJO ⇄ Manuel Antonio / Quepos**: $186 USD (1-5 personas) | $214 USD (6-10 personas)\n• **San José / Aeropuerto SJO ⇄ Monteverde**: $186 USD (1-5 personas) | $214 USD (6-10 personas)\n• **Aeropuerto SJO ⇄ Hoteles en San José**: $50 USD (1-5 personas) | $57 USD (6-10 personas)\n• **Hoteles en San José ⇄ Aeropuerto SJO**: $43 USD (1-5 personas) | $50 USD (6-10 personas)\n• **Arenal ⇄ Manuel Antonio**: $260 USD (1-5 personas) | $300 USD (6-10 personas)\n• **Arenal ⇄ Monteverde**: $160 USD (1-5 personas) | $190 USD (6-10 personas)\n\n✨ **Incluye**: Van ejecutiva moderna con aire acondicionado, Wi-Fi 4G/5G a bordo, botellas de agua fría de cortesía, chofer profesional bilingüe, paradas escénicas en ruta (ej. Puente de los Cocodrilos en Tárcoles) y seguro MOPT/ICT.\n\n¿Te gustaría coordinar la reserva de tu traslado privado o consultar por alguna otra ruta?`,
       quickActions: [
         { label: isEn ? '🚐 View Transport Rates' : '🚐 Ver Tarifario de Transporte', action: 'send_message', data: { message: isEn ? 'Show transport' : 'Ver transporte' } },
         { label: isEn ? '💬 WhatsApp Booking' : '💬 Reservar por WhatsApp', action: 'direct_whatsapp' }
@@ -780,14 +780,14 @@ export async function runCounterAgent(
       reply: isEn
         ? `🚨 **URGENT FRONT-DESK SAFETY PROTOCOL: EMERGENCY ESCALATION**\n\n` +
           `1. **Immediate Attention**: We have detected a critical safety or medical emergency from the counter desk.\n` +
-          `2. **Protocol Engaged**: National Emergency Services (9-1-1) and our Senior Field Operations Unit have been alerted.\n` +
+          `2. **Important**: This chat does NOT contact emergency services. Call **9-1-1** yourself now if anyone is at risk.\n` +
           `3. **Immediate Action**: Please call **9-1-1** or our 24/7 Direct Emergency Line at **${emergencyContact}** immediately.\n` +
           `4. A Costa Rica Tours supervisor is tracking this in real time.`
         : `🚨 **PROTOCOLO DE SEGURIDAD EN MOSTRADOR: ESCALACIÓN INMEDIATA DE EMERGENCIA**\n\n` +
           `1. **Atención prioritaria**: Hemos detectado un incidente médico o reporte de seguridad crítica en el mostrador.\n` +
-          `2. **Protocolo activado**: La Central de Incidentes 24/7 y los Servicios Nacionales de Emergencia (9-1-1) han sido notificados.\n` +
+          `2. **Importante**: este chat NO contacta a los servicios de emergencia. Llama tú mismo al **9-1-1** ahora si alguien está en riesgo.\n` +
           `3. **Acción inmediata**: Comunícate de inmediato al **9-1-1** o a nuestra Línea Directa 24/7 al **${emergencyContact}**.\n` +
-          `4. Un supervisor oficial de Costa Rica Tours está dando seguimiento inmediato a este caso.`,
+          `4. El caso quedó registrado para el equipo de Costa Rica Tours; el tiempo de respuesta humana puede variar.`,
       agentId: 'counter_agent',
       agentName: 'Sofía • Counter Agent & Mostrador',
       agentCategory: 'SERVICIO',
@@ -930,96 +930,11 @@ export async function runCounterAgent(
   // Extraer email
   const extractedCustomerEmail = emailMatch ? emailMatch[0] : context?.customerEmail || null;
 
-  // CASO A: EL USUARIO APORTA DATOS PARA EJECUTAR LA RESERVA DIRECTAMENTE
-  if (hasBookingIntent && matchedTour && extractedDate && (extractedCustomerName || extractedCustomerEmail)) {
-    try {
-      const availCheck = await checkTourAvailability(matchedTour.id, extractedDate, '08:00 AM', numPax);
-      const totalUSD = matchedTour.priceUSD * numPax;
-      const rate = Number(process.env.USD_TO_CRC_RATE) || 0;
-      const totalCRC = rate > 0 ? Math.round(totalUSD * rate) : 0;
-      const generatedBookingId = `CRT-PV-${Math.floor(100000 + Math.random() * 900000)}`;
-      const customerName = extractedCustomerName || 'Viajero Distinguido';
-      const customerEmail = extractedCustomerEmail || 'cliente@costaricatours.cr';
-
-      // Persistencia real en base de datos Firestore
-      await createBooking({
-        bookingId: generatedBookingId,
-        tourId: matchedTour.id,
-        tourName: matchedTour.title.es,
-        date: extractedDate,
-        time: matchedTour.departureTimes?.[0] || '08:00 AM',
-        adults: numPax,
-        children: 0,
-        customerName,
-        customerEmail,
-        customerPhone: '+506 Mostrador Virtual',
-        totalUSD,
-        totalCRC,
-        paymentMethod: 'agent_counter_booking',
-        status: 'confirmada',
-        paymentStatus: 'pending',
-        notes: 'Reserva ejecutada directamente por Sofía (Counter Agent)'
-      });
-
-      const confirmedVoucher = {
-        bookingId: generatedBookingId,
-        tourId: matchedTour.id,
-        tourName: matchedTour.title.es,
-        date: extractedDate,
-        time: matchedTour.departureTimes?.[0] || '08:00 AM',
-        adults: numPax,
-        totalUSD,
-        totalCRC,
-        customerName,
-        customerEmail,
-        status: 'confirmada',
-        inclusions: matchedTour.inclusions?.es?.slice(0, 3) || ['Guía naturalista certificado', 'Transporte y entradas']
-      };
-
-      const replySuccess = isEn
-        ? `🎉 **RESERVATION EXECUTED & CONFIRMED AT FRONT DESK!**\n\n` +
-          `¡Pura Vida, ${customerName}! I have processed and secured your official booking in our central system:\n\n` +
-          `• **Official Booking Code**: \`${generatedBookingId}\`\n` +
-          `• **Experience**: **${matchedTour.title.en || matchedTour.title.es}**\n` +
-          `• **Date**: ${extractedDate} at ${matchedTour.departureTimes?.[0] || '08:00 AM'}\n` +
-          `• **Travelers**: ${numPax} passenger(s)\n` +
-          `• **Total Guaranteed Price**: **$${totalUSD} USD** (approx. ₡${totalCRC.toLocaleString('es-CR')} CRC, taxes included)\n` +
-          `• **Live Availability Status**: ✅ ${availCheck.remainingSeats} seats locked in our active manifest\n` +
-          `• **Digital QR Voucher**: Dispatched to \`${customerEmail}\` and displayed on your screen right now.\n\n` +
-          `🎒 **What to bring**: ${matchedTour.whatToBring?.en?.slice(0, 3).join(', ') || 'Comfortable clothing, closed shoes, rain poncho'}.\n` +
-          `📜 **Cancellation Guarantee**: 100% full refund up to 72 hours prior to service.\n\n` +
-          `¿Would you like me to coordinate your private pickup with Alsama Tours CR or provide travel tips for the area?`
-        : `🎉 **¡RESERVA EJECUTADA Y CONFIRMADA EN MOSTRADOR!**\n\n` +
-          `¡Pura Vida, ${customerName}! He formalizado y emitido tu reserva oficial en nuestro sistema central de mostrador:\n\n` +
-          `• **Código Oficial de Reserva**: \`${generatedBookingId}\`\n` +
-          `• **Excursión**: **${matchedTour.title.es}**\n` +
-          `• **Fecha**: ${extractedDate} a las ${matchedTour.departureTimes?.[0] || '08:00 AM'}\n` +
-          `• **Viajeros**: ${numPax} persona(s)\n` +
-          `• **Tarifa Total Garantizada**: **$${totalUSD} USD** (aprox. ₡${totalCRC.toLocaleString('es-CR')} CRC con IVA 13% incluido)\n` +
-          `• **Disponibilidad Verificada**: ✅ Cupos asegurados en vivo (${availCheck.remainingSeats} libres en el bus del operador)\n` +
-          `• **Voucher Digital QR**: Generado y despachado a \`${customerEmail}\`.\n\n` +
-          `🎒 **Qué llevar**: ${matchedTour.whatToBring?.es?.slice(0, 3).join(', ') || 'Ropa cómoda, calzado cerrado para senderos, repelente y capa liviana'}.\n` +
-          `📜 **Garantía Oficial**: 100% de reembolso hasta 72 horas antes del tour.\n\n` +
-          `¿Deseas que coordinemos tu traslado privado de recogida con Alsama Tours CR o tienes alguna consulta de vestimenta o itinerario?`;
-
-      return {
-        reply: replySuccess,
-        agentId: 'counter_agent',
-        agentName: 'Sofía • Counter Agent & Mostrador',
-        agentCategory: 'RESERVAS',
-        escalation: { escalated: false, level: 'none' },
-        voucherPreview: confirmedVoucher,
-        recommendedTours: [matchedTour],
-        quickActions: [
-          { label: isEn ? '📄 View Digital Voucher' : '📄 Ver Voucher QR', action: 'book', data: { tourId: matchedTour.id } },
-          { label: isEn ? '🚐 Coordinate Alsama Transfer' : '🚐 Coordinar Traslado Alsama', action: 'send_message', data: { message: isEn ? 'Private transfer quote' : 'Cotizar traslado privado' } },
-          { label: isEn ? '💬 WhatsApp Desk' : '💬 WhatsApp Mostrador', action: 'direct_whatsapp' }
-        ]
-      };
-    } catch (err: any) {
-      console.error('Error al ejecutar reserva en Counter Agent:', err);
-    }
-  }
+  // CASO A (retirado): el Counter Agent ya no crea reservas "confirmadas" ni
+  // afirma vouchers QR enviados. createBooking rechaza 'agent_counter_booking';
+  // la solicitud sigue el flujo canónico (formulario → proveedor → pago).
+  void extractedCustomerName;
+  void extractedCustomerEmail;
 
   // CASO B: INTENCIÓN DE RESERVA O COTIZACIÓN PERO FALTAN DATOS
   if (hasBookingIntent || lower.includes('cotiz') || lower.includes('disponib') || lower.includes('cuanto') || lower.includes('precio')) {
@@ -1034,34 +949,34 @@ export async function runCounterAgent(
     const crcEs = totalCRC > 0 ? ` (~₡${totalCRC.toLocaleString('es-CR')} CRC con IVA 13% y entradas SINAC incluidas)` : ' (con IVA 13% y entradas SINAC incluidas)';
 
     const replyQuote = isEn
-      ? `🛎️ **Front-Desk Counter • Live Availability & Instant Quote**\n\n` +
-        `¡Pura Vida! As your front-desk specialist, here is the official real-time breakdown for **${selectedTour.title.en || selectedTour.title.es}**:\n\n` +
+      ? `🛎️ **Front-Desk Counter • Availability & Reference Quote**\n\n` +
+        `¡Pura Vida! As your front-desk specialist, here is the reference breakdown for **${selectedTour.title.en || selectedTour.title.es}**:\n\n` +
         `• **Target Date**: ${targetDate}\n` +
-        `• **Verified Seats**: ${availCheck.available ? `✅ Yes, ${availCheck.remainingSeats} spots available right now` : '⚠️ Limited spots'}\n` +
+        `• **Availability**: ${availCheck.available ? `✅ ${availCheck.remainingSeats} spots registered (final confirmation by the operator)` : '⚠️ Not verified — subject to operator confirmation'}\n` +
         `• **Price per adult**: $${unitUSD} USD\n` +
         `• **Total (${numPax} pax)**: **$${totalUSD} USD**${crcEn}\n` +
         `• **Includes**: ${selectedTour.inclusions?.en?.slice(0, 3).join(', ') || 'Certified naturalist guide, park permits, transport'}\n` +
         `• **Duration**: ${selectedTour.durationLabel?.en || `${selectedTour.durationHours} hours`}\n\n` +
-        `⚡ **To execute and confirm your booking right now in this chat, please provide**:\n` +
+        `⚡ **To send a booking request, please provide**:\n` +
         `1. 📅 Your exact date (if different from ${targetDate})\n` +
         `2. 👥 Exact traveler count (adults & children)\n` +
         `3. 👤 Full name of the lead traveler\n` +
-        `4. 📧 Email address for the digital QR voucher\n\n` +
-        `Or simply click below to open the instant 1-click checkout card!`
-      : `🛎️ **Mostrador de Reservas • Disponibilidad y Cotización Oficial en Vivo**\n\n` +
-        `¡Pura Vida! Como tu Counter Agent en mostrador, este es el desglose oficial en tiempo real para **${selectedTour.title.es}**:\n\n` +
+        `4. 📧 Email address for updates\n\n` +
+        `Or click below to open the booking form. Your booking is confirmed only after operator availability and payment are verified.`
+      : `🛎️ **Mostrador de Reservas • Disponibilidad y Cotización de Referencia**\n\n` +
+        `¡Pura Vida! Como tu Counter Agent en mostrador, este es el desglose de referencia para **${selectedTour.title.es}**:\n\n` +
         `• **Fecha consultada**: ${targetDate}\n` +
-        `• **Cupos verificados en tiempo real**: ${availCheck.available ? `✅ Sí, ${availCheck.remainingSeats} espacios disponibles en el sistema` : '⚠️ Cupos sujetos a confirmación'}\n` +
+        `• **Disponibilidad**: ${availCheck.available ? `✅ ${availCheck.remainingSeats} espacios registrados (confirmación final del operador)` : '⚠️ No verificada — sujeta a confirmación del operador'}\n` +
         `• **Tarifa por adulto**: $${unitUSD} USD\n` +
         `• **Total para ${numPax} personas**: **$${totalUSD} USD**${crcEs}\n` +
         `• **Incluye**: ${selectedTour.inclusions?.es?.slice(0, 3).join(', ') || 'Guía naturalista certificado, tiquetes oficiales, transporte'}\n` +
         `• **Duración**: ${selectedTour.durationLabel?.es || `${selectedTour.durationHours} horas`}\n\n` +
-        `⚡ **Para ejecutar y confirmar tu reserva en este instante aquí en el chat, solo facilítame**:\n` +
+        `⚡ **Para enviar una solicitud de reserva, facilítame**:\n` +
         `1. 📅 Fecha exacta deseada (si difiere de ${targetDate})\n` +
         `2. 👥 Cantidad de viajeros (adultos y niños)\n` +
         `3. 👤 Nombre completo del titular\n` +
-        `4. 📧 Correo electrónico donde emitir tu voucher digital QR\n\n` +
-        `¡O si prefieres, puedes pulsar el botón de abajo para confirmar en 1 clic!`;
+        `4. 📧 Correo electrónico para enviarte actualizaciones\n\n` +
+        `O pulsa el botón de abajo para abrir el formulario. La reserva se confirma solo después de verificar disponibilidad con el operador y el pago.`;
 
     return {
       reply: replyQuote,
@@ -1071,7 +986,7 @@ export async function runCounterAgent(
       escalation: { escalated: false, level: 'none' },
       recommendedTours: [selectedTour],
       quickActions: [
-        { label: isEn ? '📅 Open 1-Click Booking' : '📅 Reservar en 1 Clic', action: 'book', data: { tourId: selectedTour.id } },
+        { label: isEn ? '📅 Open booking form' : '📅 Abrir formulario de reserva', action: 'book', data: { tourId: selectedTour.id } },
         { label: isEn ? '💬 WhatsApp Booking Desk' : '💬 Reservar por WhatsApp', action: 'direct_whatsapp' }
       ]
     };
@@ -1096,9 +1011,9 @@ DATOS ESPECÍFICOS DE NUESTRA EMPRESA:
   * Entre 48 y 72 horas antes: 50% de reembolso.
   * Menos de 48 horas: No reembolsable (según políticas de los operadores locales).
 - Contacto de soporte: Correo info@costaricatours.es, Teléfono / WhatsApp oficial (${emergencyContact}).
-- Horario de atención: 24/7 en vivo.
+- Horario de atención: respondemos por WhatsApp y correo; el tiempo de respuesta humana puede variar (no prometas atención 24/7).
 
-CONOCIMIENTO OPERATIVO Y TRASLADOS ALSAMA TOURS CR:
+TRASLADOS ALSAMA TOURS CR — TARIFAS DE REFERENCIA, SUJETAS A CONFIRMACIÓN (sin acuerdo firmado):
 - SJO Aeropuerto ⇄ Hoteles San José: $50 USD (1-5 pax)
 - SJO ⇄ La Fortuna / Volcán Arenal: $170 USD (1-5 pax) (~3.5h)
 - SJO ⇄ Manuel Antonio / Quepos: $186 USD (1-5 pax) (~3h)
@@ -1202,12 +1117,12 @@ export async function runCustomerServiceAgent(
           `1. **Situation Acknowledged**: We have detected a medical or safety report concerning your experience in Costa Rica.\n` +
           `2. **Concrete Action**: Your case has been escalated immediately to our Emergency Operations Dispatch team and field logistics coordinators.\n` +
           `3. **Resolution Time**: Immediate. Our senior response unit is active 24/7.\n` +
-          `4. **Next Clear Step**: Please contact our **24/7 Emergency Line directly at ${emergencyContact}** or dial **9-1-1** if you require immediate ambulance or police intervention. A Costa Rica Tours field supervisor is monitoring this right now.`
+          `4. **Next Clear Step**: Please contact our **24/7 Emergency Line directly at ${emergencyContact}** or dial **9-1-1** if you require immediate ambulance or police intervention.`
         : `🚨 **PROTOCOLO DE SEGURIDAD ACTIVADO: ESCALACIÓN INMEDIATA A LOGÍSTICA**\n\n` +
           `1. **Reconocimiento del problema**: Hemos identificado un reporte de seguridad o incidente físico relacionado con tu experiencia en Costa Rica.\n` +
           `2. **Acción concreta**: Tu caso ha sido escalado de manera inmediata al equipo de Despacho de Operaciones de Emergencia y supervisores de terreno.\n` +
           `3. **Tiempo de resolución**: Inmediato. Nuestra unidad de contingencia opera 24/7.\n` +
-          `4. **Siguiente paso claro**: Por favor comunícate de inmediato a nuestra **Línea de Emergencia 24/7 al ${emergencyContact}** o marca al **9-1-1** si requieres auxilio médico o paramédico urgente. Un supervisor oficial de Costa Rica Tours está atendiendo este caso en este instante.`,
+          `4. **Siguiente paso claro**: Por favor comunícate de inmediato a nuestra **Línea de Emergencia 24/7 al ${emergencyContact}** o marca al **9-1-1** si requieres auxilio médico o paramédico urgente.`,
       agentId: 'customer_service',
       agentName: 'Martín • Servicio al Cliente',
       agentCategory: 'SERVICIO',
@@ -1645,12 +1560,12 @@ export async function runLogisticsAgent(
       reply: isEn
         ? `🚨 **OPERATIONAL PROTOCOL 01: IMMEDIATE EMERGENCY ESCALATION**\n\n` +
           `1. **Severity Assessment**: **CRITICAL EMERGENCY** (Log ID: \`${opsItem.id}\`).\n` +
-          `2. **Escalation Protocol**: Operational safety protocol is engaged. National Emergency Services (9-1-1) and our 24/7 Field Incident Response team have been alerted.\n` +
+          `2. **Important**: This chat does NOT contact emergency services. Call **9-1-1** yourself now if anyone is at risk.\n` +
           `3. **Immediate Action**: If someone is injured or in physical danger, immediately call **9-1-1** or our Direct Operations Hotline at **${emergencyContact}**.\n` +
           `4. **Daily Operations Log**: Incident has been permanently recorded in today's active operational manifest.`
         : `🚨 **PROTOCOLO OPERATIVO 01: ESCALACIÓN INMEDIATA DE EMERGENCIA**\n\n` +
           `1. **Evaluación de severidad**: **EMERGENCIA CRÍTICA** (Registro Operativo: \`${opsItem.id}\`).\n` +
-          `2. **Protocolo de escalamiento**: La seguridad de los viajeros es la prioridad absoluta. Se ha activado la cadena de comando con la Central de Despacho 24/7 y el 9-1-1.\n` +
+          `2. **Importante**: este chat NO contacta a los servicios de emergencia. Llama tú mismo al **9-1-1** ahora si alguien está en riesgo.\n` +
           `3. **Acción inmediata requerida**: Comunícate de inmediato a la Línea de Emergencia de Costa Rica Tours al **${emergencyContact}** o marca **9-1-1** si hay personas lesionadas o riesgo inminente.\n` +
           `4. **Registro de operaciones**: Incidente asentado de forma obligatoria en la bitácora diaria de terreno.`,
       agentId: 'logistics',
@@ -1691,7 +1606,7 @@ export async function runLogisticsAgent(
   const replyText = isEn
     ? `🚐 **Logistics & Operations • Live Field Dispatch**\n\n` +
       `1. **Severity Assessment**: **Normal Operational Coordination** (Ops Ref: \`${opsLogEntry.id}\`).\n` +
-      `2. **Verified Transport & Route Status (Alsama Tours CR)**:\n` +
+      `2. **Transport reference info (Alsama Tours CR, subject to confirmation)**:\n` +
       `• **Private Vehicles**: Mercedes-Benz Sprinter & Toyota HiAce equipped with AC, 4G/5G Wi-Fi, and certified bilingual drivers.\n` +
       `• **Route 32 (Braulio Carrillo - Caribbean)**: Open with caution. Normal driving time San José ⇄ Guápiles/Tortuguero (~3 hrs).\n` +
       `• **Route 27 & Costanera (Pacific)**: Fully operational. SJO ⇄ Jacó (1h 45m), Manuel Antonio (~3h).\n` +
@@ -1700,8 +1615,8 @@ export async function runLogisticsAgent(
       `4. **Daily Log Recorded**: Action logged into the centralized daily operations report. How can I assist with your transport schedule?`
     : `🚐 **Agente de Logística • Operaciones en Terreno en Tiempo Real**\n\n` +
       `1. **Evaluación de severidad**: **Coordinación Operativa Normal** (Ref: \`${opsLogEntry.id}\`).\n` +
-      `2. **Estado de Rutas y Traslados Oficiales (Alsama Tours CR)**:\n` +
-      `• **Flota Privada Oficial**: Vans ejecutivas con aire acondicionado, Wi-Fi 4G/5G a bordo, chofer profesional y pólizas MOPT/ICT.\n` +
+      `2. **Información de referencia de traslados (Alsama Tours CR, sujeta a confirmación)**:\n` +
+      `• **Flota privada (referencia)**: Vans ejecutivas con aire acondicionado, Wi-Fi 4G/5G a bordo, chofer profesional y pólizas MOPT/ICT.\n` +
       `• **Ruta 32 (Braulio Carrillo hacia el Caribe)**: Tránsito fluido. Tiempo estimado San José ⇄ Guápiles/Caribe (~3 a 4.5 hrs).\n` +
       `• **Ruta 27 y Costanera Sur (Pacífico)**: Tránsito normal. SJO ⇄ Jacó (1h 45m), Manuel Antonio (~3h).\n` +
       `• **Ruta hacia La Fortuna (Arenal)**: Conexión despejada vía San Ramón/Naranjo (~3.5 hrs desde el aeropuerto SJO).\n\n` +
