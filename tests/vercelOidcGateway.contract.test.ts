@@ -1,7 +1,33 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import crypto from 'node:crypto';
 import handler from '../api/[...path]';
+
+const FIREBASE_TEST_PROJECT = 'gen-lang-client-0782739149';
+const { privateKey: firebaseTestKey, publicKey: firebaseTestPublicKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+const firebaseTestJwk = { ...(firebaseTestPublicKey.export({ format: 'jwk' }) as Record<string, unknown>), kid: 'test-kid', alg: 'RS256', use: 'sig' };
+
+function signFirebaseTestToken(overrides: Record<string, unknown> = {}, key = firebaseTestKey): string {
+  const realNowSeconds = Math.floor(Date.now() / 1000);
+  const header = Buffer.from(JSON.stringify({ alg: 'RS256', kid: 'test-kid', typ: 'JWT' })).toString('base64url');
+  const claims = Buffer.from(JSON.stringify({
+    aud: FIREBASE_TEST_PROJECT,
+    iss: `https://securetoken.google.com/${FIREBASE_TEST_PROJECT}`,
+    sub: 'test-user-uid',
+    iat: realNowSeconds - 10,
+    exp: realNowSeconds + 60 * 60 * 24 * 30,
+    ...overrides,
+  })).toString('base64url');
+  const signature = crypto.sign('RSA-SHA256', Buffer.from(`${header}.${claims}`), key).toString('base64url');
+  return `${header}.${claims}.${signature}`;
+}
+
+const TEST_USER_TOKEN = signFirebaseTestToken();
+
+function isJwksRequest(input: unknown): boolean {
+  return String(input).startsWith('https://www.googleapis.com/service_accounts/v1/jwk/');
+}
 
 test('private gateway authenticates runtime requests and preserves user auth', async (t) => {
   const names = [
@@ -30,6 +56,7 @@ test('private gateway authenticates runtime requests and preserves user auth', a
     path?: string;
     includeUserAuth?: boolean;
     expectedAudience?: string;
+    userToken?: string;
   } = {}) {
     const {
       headers = {},
@@ -37,11 +64,13 @@ test('private gateway authenticates runtime requests and preserves user auth', a
       path = '/api/admin/access-policy',
       includeUserAuth = true,
       expectedAudience = process.env.GCP_WIF_AUDIENCE || '',
+      userToken = TEST_USER_TOKEN,
     } = options;
 
     now += 60 * 60_000;
     let calls = 0;
     globalThis.fetch = (async (input: any, init?: RequestInit) => {
+      if (isJwksRequest(input)) return Response.json({ keys: [firebaseTestJwk] });
       calls += 1;
       if (calls === 1) {
         assert.equal(String(input), 'https://sts.googleapis.com/v1/token');
@@ -58,7 +87,7 @@ test('private gateway authenticates runtime requests and preserves user auth', a
       assert.equal(calls, 3);
       assert.equal(String(input), `https://backend.example.invalid${path}`);
       const forwarded = new Headers(init?.headers);
-      if (includeUserAuth) assert.equal(forwarded.get('authorization'), 'Bearer test-user-id');
+      if (includeUserAuth) assert.equal(forwarded.get('authorization'), `Bearer ${userToken}`);
       assert.equal(forwarded.get('x-serverless-authorization'), 'Bearer test-cloud-run-id');
       assert.equal(forwarded.has('x-vercel-oidc-token'), false);
       return Response.json({ allowed: false }, { status: 403 });
@@ -75,7 +104,7 @@ test('private gateway authenticates runtime requests and preserves user auth', a
     } as unknown as VercelResponse;
 
     const requestHeaders: Record<string, string> = { host: 'app.example.invalid', ...headers };
-    if (includeUserAuth) requestHeaders.authorization = 'Bearer test-user-id';
+    if (includeUserAuth) requestHeaders.authorization = `Bearer ${userToken}`;
 
     await handler({ method: 'GET', url: path, headers: requestHeaders } as VercelRequest, res);
     return { status, payload, calls, responseHeaders };
@@ -126,6 +155,41 @@ test('private gateway authenticates runtime requests and preserves user auth', a
         assert.equal(result.status, 401, path);
         assert.equal(result.payload.error, 'application_auth_required', path);
         assert.equal(result.calls, 0, path);
+      }
+    });
+
+    await t.test('privileged routes reject forged, foreign or expired bearer tokens and unknown operator keys', async () => {
+      delete process.env.VERCEL_OIDC_TOKEN;
+      const { privateKey: attackerKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+      const forged = [
+        'not-a-jwt',
+        signFirebaseTestToken({}, attackerKey),
+        signFirebaseTestToken({ aud: 'another-project' }),
+        signFirebaseTestToken({ iss: 'https://securetoken.google.com/another-project' }),
+        signFirebaseTestToken({ exp: Math.floor(Date.now() / 1000) - 60 }),
+      ];
+      for (const userToken of forged) {
+        const result = await invoke({ path: '/api/automations/multi-day-planner', userToken });
+        assert.equal(result.status, 401);
+        assert.equal(result.payload.error, 'application_auth_required');
+        assert.equal(result.calls, 0);
+      }
+      const previousOperatorKey = process.env.OPERATOR_API_KEY;
+      try {
+        delete process.env.OPERATOR_API_KEY;
+        const unconfigured = await invoke({ includeUserAuth: false, path: '/api/fcm/send', headers: { 'x-operator-key': 'anything' } });
+        assert.equal(unconfigured.status, 401);
+        process.env.OPERATOR_API_KEY = 'test-operator-key';
+        const wrong = await invoke({ includeUserAuth: false, path: '/api/fcm/send', headers: { 'x-operator-key': 'test-operator-kez' } });
+        assert.equal(wrong.status, 401);
+        assert.equal(wrong.calls, 0);
+        process.env.VERCEL_OIDC_TOKEN = 'test-operator-oidc';
+        const right = await invoke({ includeUserAuth: false, path: '/api/fcm/send', headers: { 'x-operator-key': 'test-operator-key' }, expectedToken: 'test-operator-oidc' });
+        assert.equal(right.status, 403);
+        assert.equal(right.calls, 3);
+      } finally {
+        if (previousOperatorKey === undefined) delete process.env.OPERATOR_API_KEY;
+        else process.env.OPERATOR_API_KEY = previousOperatorKey;
       }
     });
 
