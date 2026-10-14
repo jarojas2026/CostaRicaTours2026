@@ -485,7 +485,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                     </div>
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-teal-400 flex-shrink-0" />
-                      <span>{language === 'es' ? 'Tarifa Oficial: $54 - $65 USD / persona' : 'Official Rate: $54 - $65 USD / person'}</span>
+                      <span>{language === 'es' ? 'Tarifa de referencia, sujeta a confirmación: $54 - $65 USD / persona' : 'Reference rate, subject to confirmation: $54 - $65 USD / person'}</span>
                     </div>
                   </div>
                 </div>
@@ -536,7 +536,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                     </div>
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-teal-400 flex-shrink-0" />
-                      <span>{language === 'es' ? 'Tarifa Oficial: $58 - $70 USD / persona' : 'Official Rate: $58 - $70 USD / person'}</span>
+                      <span>{language === 'es' ? 'Tarifa de referencia, sujeta a confirmación: $58 - $70 USD / persona' : 'Reference rate, subject to confirmation: $58 - $70 USD / person'}</span>
                     </div>
                   </div>
                 </div>
@@ -1002,12 +1002,12 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
             <div className="bg-[#0E351F]/60 p-5 rounded-2xl border border-stone-200/50">
               <h4 className="text-teal-300 font-bold mb-2 flex items-center gap-2 text-sm uppercase">
                 <ShieldCheck className="w-4 h-4 text-orange-300" />
-                {language === 'es' ? '¿Cómo se garantiza la reserva?' : 'How is booking guaranteed?'}
+                {language === 'es' ? '¿Cómo se confirma la reserva?' : 'How is a booking confirmed?'}
               </h4>
               <p className="text-stone-900 text-xs leading-relaxed">
                 {language === 'es' 
-                  ? 'Emitimos vouchers oficiales de Costa Rica Tours con confirmación inmediata, código QR de verificación, póliza de seguro y asistencia 24/7 en español e inglés.' 
-                  : 'We issue official Costa Rica Tours vouchers with instant confirmation, verification QR code, insurance coverage, and 24/7 bilingual travel assistance.'}
+                  ? 'Tu solicitud se confirma solo después de verificar disponibilidad con el proveedor y el pago; entonces recibes el comprobante. Las tarifas mostradas son de referencia, sujetas a confirmación.' 
+                  : 'Your request is confirmed only after provider availability and payment are verified; then you receive the voucher. Displayed rates are reference rates, subject to confirmation.'}
               </p>
             </div>
           </div>
