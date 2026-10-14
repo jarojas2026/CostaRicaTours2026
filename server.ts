@@ -1271,9 +1271,25 @@ app.get('/api/bookings', requireOperator, async (req, res) => {
 });
 
 // Actualizar una reserva - Protegido con requireOperator
+// Only operational fields are editable here. Price, payment state, customer
+// identity and provider evidence (providerStatus/providerConfirmedAt gate
+// payment creation) change only through their verified workflows.
+const BOOKING_PATCH_ALLOWED_FIELDS = new Set([
+  'status', 'date', 'time', 'pickupHotel', 'specialRequests', 'cancellationReason',
+  'assignedGuide', 'assignedVehicle', 'voucherUrl', 'voucherCode', 'adminNotes',
+  'notasOperador', 'estadoOperativo', 'operadorAsignado', 'horaRecogidaEstimada'
+]);
+
 app.patch('/api/bookings/:id', requireOperator, async (req, res) => {
   try {
-    const result = await updateBookingStatus(req.params.id, req.body);
+    const body = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {};
+    const rejected = Object.keys(body).filter(key => !BOOKING_PATCH_ALLOWED_FIELDS.has(key));
+    if (rejected.length) {
+      return res.status(400).json({ success: false, error: 'fields_not_editable', fields: rejected });
+    }
+    const updates = Object.fromEntries(Object.entries(body).filter(([key]) => BOOKING_PATCH_ALLOWED_FIELDS.has(key)));
+    if (!Object.keys(updates).length) return res.status(400).json({ success: false, error: 'no_editable_fields' });
+    const result = await updateBookingStatus(req.params.id, updates);
     if (!result.success) {
       return res.status(404).json(result);
     }
@@ -1975,8 +1991,8 @@ app.post('/webhook/evento-analitica', async (req, res) => {
 // 7. Soporte al Cliente, Escalación Multicanal & Concierge Urgente
 app.post(['/webhook/solicitud-soporte', '/api/soporte/crear-ticket'], async (req, res) => {
   try {
-    const result = await executeSolicitudSoporte(req.body);
-    res.json(result);
+    const result: any = await executeSolicitudSoporte(req.body);
+    res.status(result?.estado === 'pending_manual' ? 202 : 200).json(result);
   } catch (error: any) {
     res.status(500).json({ exito: false, error: error.message });
   }
@@ -1985,8 +2001,8 @@ app.post(['/webhook/solicitud-soporte', '/api/soporte/crear-ticket'], async (req
 // 8. Coordinación y Notificación en Tiempo Real a Proveedores y Operadores Locales
 app.post(['/webhook/notificar-proveedor', '/api/operadores/notificar'], requireAdmin, async (req, res) => {
   try {
-    const result = await executeNotificarProveedor(req.body);
-    res.json(result);
+    const result: any = await executeNotificarProveedor(req.body);
+    res.status(result?.estado === 'pending_manual' ? 202 : 200).json(result);
   } catch (error: any) {
     res.status(500).json({ exito: false, error: error.message });
   }
@@ -2015,8 +2031,8 @@ app.post(['/webhook/panel-control-ops', '/api/ops/action'], requireAdmin, async 
 // 12. Sincronización Automática con Google Calendar
 app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], requireAdmin, async (req, res) => {
   try {
-    const result = await executeSyncCalendar(req.body);
-    res.json(result);
+    const result: any = await executeSyncCalendar(req.body);
+    res.status(result?.estado === 'pending_manual' ? 202 : 200).json(result);
   } catch (error: any) {
     res.status(500).json({ exito: false, error: error.message });
   }
@@ -2025,8 +2041,8 @@ app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], requireAdmin
 // 13. Encuesta de Satisfacción Post-Tour & Recolección NPS WhatsApp
 app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], requireAdmin, async (req, res) => {
   try {
-    const result = await executePostTourNPS(req.body);
-    res.json(result);
+    const result: any = await executePostTourNPS(req.body);
+    res.status(result?.estado === 'pending_manual' ? 202 : 200).json(result);
   } catch (error: any) {
     res.status(500).json({ exito: false, error: error.message });
   }
@@ -2129,8 +2145,8 @@ app.post(additionalWebhooks, requireAdmin, async (req, res) => {
   try {
     const endpoint = req.path;
     const triggerName = endpoint.replace('/webhook/', '').toUpperCase().replace(/-/g, '_');
-    const result = await executeGenericAutomation(triggerName, req.body);
-    res.json(result);
+    const result: any = await executeGenericAutomation(triggerName, req.body);
+    res.status(result?.estado === 'pending_manual' ? 202 : 200).json(result);
   } catch (error: any) {
     res.status(500).json({ exito: false, error: error.message });
   }
@@ -2905,12 +2921,14 @@ app.post('/api/gemini/grounded-search', async (req, res) => {
 });
 
 // Compatibilidad de rutas generales
+// Legacy catch-alls used to answer success for anything. They now say plainly
+// that the action is not implemented, so no client shows invented results.
 app.post('/api/workflows/:action', (req, res) => {
-  res.json({ success: true, message: `Workflow ${req.params.action} procesado con éxito` });
+  res.status(501).json({ success: false, status: 'not_implemented', error: 'workflow_not_implemented', action: req.params.action });
 });
 
 app.post('/api/gemini/:action', (req, res) => {
-  res.json({ success: true, text: `Respuesta de Gemini para ${req.params.action}` });
+  res.status(501).json({ success: false, status: 'not_implemented', error: 'gemini_action_not_implemented', action: req.params.action });
 });
 
 // Conversational memory is only reachable with a server-minted session id plus
@@ -2991,23 +3009,21 @@ app.post(['/api/agent/tools/check_calendar_availability', '/api/agent/check-avai
       Number(party_size)
     );
 
-    // Formatear respuesta estructurada para el ciclo ReAct del agente
-    const availableSlots = availabilityResult.available ? ['07:00', '08:30', '13:30'] : ['14:00'];
-    const blockedSlots = availabilityResult.available ? ['10:30'] : ['07:00', '08:30', '10:30'];
-
+    // Only report what the inventory actually returned. Time slots are not
+    // invented: the departure time is confirmed by the provider afterwards.
     res.json({
       success: true,
       available: availabilityResult.available,
       target_date,
-      service_duration_minutes: service_duration_minutes || 180,
-      total_seats_remaining: availabilityResult.remainingSeats || 12,
-      max_capacity: availabilityResult.maxCapacity || 20,
-      available_slots: availableSlots,
-      blocked_slots: blockedSlots,
-      closest_alternatives: availableSlots.slice(0, 2),
+      service_duration_minutes: Number(service_duration_minutes) || null,
+      total_seats_remaining: availabilityResult.available ? availabilityResult.remainingSeats ?? null : 0,
+      max_capacity: availabilityResult.maxCapacity ?? null,
+      available_slots: [],
+      slots_status: 'pending_provider_confirmation',
+      reason: availabilityResult.available ? undefined : (availabilityResult.reason || 'sin_disponibilidad_verificada'),
       message: availabilityResult.available
-        ? `Horarios disponibles encontrados para el ${target_date} con ${availabilityResult.remainingSeats} cupos libres.`
-        : `Sin cupos exactos para ese horario (${availabilityResult.reason || 'capacidad agotada'}), se sugieren fechas alternativas.`
+        ? `Hay cupo registrado para el ${target_date}${availabilityResult.remainingSeats != null ? ` (${availabilityResult.remainingSeats} cupos)` : ''}. El horario exacto se confirma con el proveedor.`
+        : `No hay disponibilidad verificada para el ${target_date} (${availabilityResult.reason || 'sin confirmar'}). No se sugieren horarios inventados.`
     });
   } catch (err: any) {
     console.error('Error en tool check_calendar_availability:', err);
@@ -3048,13 +3064,36 @@ app.post(['/api/agent/tools/create_booking_and_notify', '/api/agent/create-booki
       });
     }
     const calculatedUSD = authoritativeTotal;
-    const bookingDate = appointment_datetime.split('T')[0] || new Date().toISOString().split('T')[0];
+    const [bookingDate, rawTime] = String(appointment_datetime).split('T');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(bookingDate || '')) {
+      return res.status(400).json({ success: false, error: 'appointment_datetime debe incluir fecha YYYY-MM-DD.' });
+    }
+    const requestedHHMM = /^\d{2}:\d{2}/.test(rawTime || '') ? String(rawTime).slice(0, 5) : '';
+    // Map the requested HH:MM to a real catalog departure (e.g. "08:00 AM").
+    const catalogTour: any = TOURS.find((item: any) => item.id === tour_id);
+    const bookingTime = (catalogTour?.departureTimes || []).find((departure: string) => {
+      const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i.exec(String(departure).trim());
+      if (!match) return false;
+      let hours = Number(match[1]) % 12;
+      if ((match[3] || '').toUpperCase() === 'PM') hours += 12;
+      if (!match[3]) hours = Number(match[1]);
+      return `${String(hours).padStart(2, '0')}:${match[2]}` === requestedHHMM;
+    }) as string | undefined;
+    if (!bookingTime) {
+      return res.status(409).json({
+        success: false,
+        error: 'departure_time_not_in_catalog',
+        available_departures: catalogTour?.departureTimes || [],
+        message: 'appointment_datetime debe incluir una hora (HH:MM) que coincida con una salida del catálogo del tour.'
+      });
+    }
 
     // Invocar el ciclo de vida de reserva nativa
     const initialHold: any = await executeInicioReserva({
       tourId: tour_id || 'tour-autonomo-2026',
-      tourName: service_type || 'Experiencia Oficial Costa Rica Tours',
+      tourName: service_type || 'Experiencia Costa Rica Tours',
       date: bookingDate,
+      time: bookingTime,
       adults: Number(party_size) || 1,
       children: 0,
       totalUSD: calculatedUSD,
@@ -3071,7 +3110,10 @@ app.post(['/api/agent/tools/create_booking_and_notify', '/api/agent/create-booki
       success: true,
       booking_id: bookingId,
       customer_name,
-      tour_name: service_type || 'Experiencia Oficial Costa Rica Tours',
+      tour_name: service_type || 'Experiencia Costa Rica Tours',
+      time: bookingTime,
+      voucher_issued: false,
+      notifications_sent: [],
       appointment_datetime,
       status: 'pending_payment',
       party_size: Number(party_size),
