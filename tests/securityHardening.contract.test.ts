@@ -9,6 +9,7 @@ import {
   verifyChatSessionAccess,
 } from '../backend/signedAccessTokens';
 import { wrapAsyncHandler } from '../backend/asyncRoutes';
+import { readServerSource } from '../scripts/lib/serverSource';
 
 const read = (file: string) => fs.readFileSync(path.join(process.cwd(), file), 'utf8');
 
@@ -47,7 +48,7 @@ test('async route rejections are forwarded to next(err) instead of crashing the 
 });
 
 test('server installs async safety, an API error handler and a stricter LLM limiter before admin routers', () => {
-  const server = read('server.ts');
+  const server = readServerSource();
   assert.match(server, /installAsyncRouteSafety\(app\)/);
   assert.match(server, /app\.use\(apiErrorHandler\)/);
   assert.match(server, /const llmLimiter = rateLimit\(/);
@@ -60,7 +61,7 @@ test('server installs async safety, an API error handler and a stricter LLM limi
 });
 
 test('chat history routes and concierge memory require chat-session proof', () => {
-  const server = read('server.ts');
+  const server = readServerSource();
   assert.match(server, /app\.get\('\/api\/chat\/history', requireChatSession\('query'\)/);
   assert.match(server, /app\.post\('\/api\/chat\/history', requireChatSession\('body'\)/);
   assert.match(server, /app\.delete\('\/api\/chat\/history', requireChatSession\('either'\)/);
@@ -71,7 +72,7 @@ test('chat history routes and concierge memory require chat-session proof', () =
 });
 
 test('operational, cron, notification and automation routes require server-side auth', () => {
-  const server = read('server.ts');
+  const server = readServerSource();
   const guarded: Array<[string, string]> = [
     ["'/api/fcm/send'", 'requireAdmin'],
     ["'/api/fcm/register'", 'requireFirebaseUser'],
@@ -104,7 +105,7 @@ test('operational, cron, notification and automation routes require server-side 
 });
 
 test('booking documents and provider status are no longer public and never scan every booking', () => {
-  const server = read('server.ts');
+  const server = readServerSource();
   assert.match(server, /async function loadAuthorizedBookingDocument/);
   assert.match(server, /verifyBookingDocumentToken\(bookingId, req\.query\.token\)/);
   assert.match(server, /user\.email_verified === true/);
@@ -127,7 +128,7 @@ test('unverified phone or e-mail never links to, reveals or overwrites an existi
   const intake = read('backend/customerIntakeGateway.ts');
   assert.match(intake, /verifiedPhone: trust\.verifiedPhone === true/);
   assert.doesNotMatch(intake, /identity: \{ canonicalId: identity\.canonicalId/);
-  const server = read('server.ts');
+  const server = readServerSource();
   // Only the Meta-signed WhatsApp webhook marks the phone as verified.
   assert.match(server, /trust: \{ verifiedPhone: true \}/);
   assert.match(server, /\^web_\[A-Za-z0-9-\]\{8,80\}\$/);

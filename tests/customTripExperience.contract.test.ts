@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { readServerSource } from '../scripts/lib/serverSource';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 
@@ -86,7 +87,7 @@ test('customer-facing intake renders markdown and preserves the active journey r
 });
 test('legacy itinerary planner cannot fabricate a confirmed multi-day booking', () => {
   const planner = read('src/components/ItineraryPlanner.tsx');
-  const server = read('server.ts');
+  const server = readServerSource();
   assert.match(planner, /requestCustomerIntake/);
   assert.match(planner, /Start Verification & Quote/);
   assert.match(planner, /Iniciar Verificación y Cotización/);

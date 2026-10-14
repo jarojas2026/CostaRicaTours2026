@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { readServerSource } from '../scripts/lib/serverSource';
 import {
   buildVoiceCallStatusUpdate,
   buildVoiceTransferStatusUpdate,
@@ -115,7 +116,7 @@ test('English recovery does not offer an unconfigured human line', async () => {
 });
 
 test('signed inbound and speech route failures return actionable recovery TwiML', () => {
-  const server = readFileSync(new URL('../server.ts', import.meta.url), 'utf8');
+  const server = readServerSource();
   for (const [route, end] of [['incoming', 'respond'], ['respond', 'human-transfer']]) {
     const handler = server.slice(server.indexOf(`app.post('/api/voice/${route}'`), server.indexOf(`app.post('/api/voice/${end}'`));
     assert.match(handler, /verifyVoiceSignature/);
@@ -133,9 +134,10 @@ test('failed human transfer returns the traveler to voice assistance; successful
 });
 
 test('human-transfer and call-status webhooks authenticate before updating call state', () => {
-  const server = readFileSync(new URL('../server.ts', import.meta.url), 'utf8');
+  const server = readServerSource();
   const transfer = server.slice(server.indexOf("app.post('/api/voice/human-transfer'"), server.indexOf("app.get('/api/voice/calls/:callId'"));
-  const status = server.slice(server.indexOf("app.post('/api/voice/status'"), server.indexOf("app.get('/api/weather/destinations'"));
+  const statusStart = server.indexOf("app.post('/api/voice/status'");
+  const status = server.slice(statusStart, server.indexOf('\napp.', statusStart + 1));
   assert.match(transfer, /verifyVoiceSignature/);
   assert.match(transfer, /callback\.origin === publicOrigin && callback\.pathname === '\/api\/voice\/respond'/);
   assert.match(status, /verifyVoiceSignature/);

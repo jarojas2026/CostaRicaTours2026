@@ -1,4 +1,4 @@
-import type { Express, NextFunction, Request, Response } from 'express';
+import type { Express, NextFunction, Request, Response, Router } from 'express';
 
 const ROUTE_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'all', 'use'] as const;
 
@@ -34,7 +34,7 @@ function wrapArgs(args: any[]): any[] {
     : typeof arg === 'function' ? wrapAsyncHandler(arg) : arg);
 }
 
-export function installAsyncRouteSafety(app: Express): void {
+export function installAsyncRouteSafety(app: Express | Router): void {
   for (const method of ROUTE_METHODS) {
     const original = (app as any)[method].bind(app);
     (app as any)[method] = (...args: any[]) => {
