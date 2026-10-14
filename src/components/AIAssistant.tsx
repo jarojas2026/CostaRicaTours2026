@@ -16,6 +16,7 @@ import { AI_AGENTS, getAIAgentById } from '../data/aiAgentsData';
 import { ClaudeItineraryModal } from './ClaudeItineraryModal';
 import { getUsdToCrcRate, formatCrc } from '../utils/currencies';
 import { useChatAnalytics } from '../hooks/useChatAnalytics';
+import { chatSessionHeaders, clearStoredChatSession, readStoredChatSession, requestChatSession, type ChatSessionCredentials } from '../utils/chatSession';
 
 interface AIAssistantProps {
   language: Language;
@@ -68,14 +69,17 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'booking' | 'nature_adventure' | 'logistics_food' | 'specialized'>('all');
   const currentAgent = getAIAgentById(activeAgentId);
 
-  const [chatSessionId] = useState(() => {
-    let sid = localStorage.getItem('chatSessionId');
-    if (!sid) {
-      sid = 'session_' + Math.random().toString(36).substring(2, 15);
-      localStorage.setItem('chatSessionId', sid);
-    }
-    return sid;
-  });
+  // Server-minted session id + HMAC token: memory is never addressable by a guessable id.
+  const [chatSession, setChatSession] = useState<ChatSessionCredentials | null>(() => readStoredChatSession());
+  const chatSessionId = chatSession?.sessionId || '';
+  useEffect(() => {
+    if (chatSession) return;
+    let cancelled = false;
+    requestChatSession().then((credentials) => {
+      if (!cancelled && credentials) setChatSession(credentials);
+    });
+    return () => { cancelled = true; };
+  }, [chatSession]);
 
   useEffect(() => {
     trackChatEvent({ action: 'chat_opened', label: activeAgentId, metadata: { sessionId: chatSessionId } });
@@ -181,10 +185,19 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
   // Load chat history from Firestore scoped to active agent
   useEffect(() => {
-    const scopedSessionId = `${chatSessionId}_${activeAgentId}`;
-    fetch(`/api/chat/history?sessionId=${scopedSessionId}`)
-      .then((res) => res.json())
-      .then((data) => {
+    if (!chatSession) return;
+    const scopedSessionId = `${chatSession.sessionId}_${activeAgentId}`;
+    fetch(`/api/chat/history?sessionId=${encodeURIComponent(scopedSessionId)}`, { headers: chatSessionHeaders(chatSession) })
+      .then((res) => {
+        if (res.status === 401) {
+          // Token no longer valid (e.g. rotated secret): start a fresh session once.
+          clearStoredChatSession();
+          setChatSession(null);
+          return {};
+        }
+        return res.json();
+      })
+      .then((data: any) => {
         if (data.history && data.history.length > 0) {
           setMessagesByAgent((prev) => ({
             ...prev,
@@ -193,20 +206,20 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         }
       })
       .catch((err) => console.error('Failed to load agent history:', err));
-  }, [chatSessionId, activeAgentId]);
+  }, [chatSession, activeAgentId]);
 
   // Sync active agent history to backend when messages change (if more than welcome msg)
   useEffect(() => {
     const currentMsgs = messagesByAgent[activeAgentId];
-    if (currentMsgs && currentMsgs.length > 1) {
-      const scopedSessionId = `${chatSessionId}_${activeAgentId}`;
+    if (chatSession && currentMsgs && currentMsgs.length > 1) {
+      const scopedSessionId = `${chatSession.sessionId}_${activeAgentId}`;
       fetch('/api/chat/history', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...chatSessionHeaders(chatSession) },
         body: JSON.stringify({ sessionId: scopedSessionId, history: currentMsgs }),
       }).catch((err) => console.error('Failed to sync agent history:', err));
     }
-  }, [messagesByAgent, activeAgentId, chatSessionId]);
+  }, [messagesByAgent, activeAgentId, chatSession]);
 
   useEffect(() => {
     scrollToBottom();
@@ -292,8 +305,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
-    const scopedSessionId = `${chatSessionId}_${activeAgentId}`;
-    fetch(`/api/chat/history?sessionId=${scopedSessionId}`, { method: 'DELETE' }).catch(console.error);
+    if (chatSession) {
+      const scopedSessionId = `${chatSession.sessionId}_${activeAgentId}`;
+      fetch(`/api/chat/history?sessionId=${encodeURIComponent(scopedSessionId)}`, { method: 'DELETE', headers: chatSessionHeaders(chatSession) }).catch(console.error);
+    }
     try {
       localStorage.removeItem(`chat_history_${activeAgentId}`);
     } catch (e) {}
@@ -472,7 +487,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...chatSessionHeaders(chatSession) },
         body: JSON.stringify({
           message: query,
           history: historyPayload,
