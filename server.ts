@@ -16,7 +16,9 @@ import rateLimit from 'express-rate-limit';
 import { createServer as createViteServer } from 'vite';
 import { initializeAutomationEngine, cleanupExpiredSoftHolds } from './backend/cronEngine';
 import { google } from 'googleapis';
-import { requireOperator, requireOwner } from './backend/authMiddleware';
+import { requireOperator, requireOwner, requireFirebaseUser, resolveOperatorAccess, verifyFirebaseUser } from './backend/authMiddleware';
+import { installAsyncRouteSafety, apiErrorHandler } from './backend/asyncRoutes';
+import { issueChatSession, verifyChatSessionAccess, verifyBookingDocumentToken } from './backend/signedAccessTokens';
 import { TOURS } from './src/data/toursData';
 import { checkoutQuote, checkoutOrigin } from './backend/commercePolicy';
 import { commerceAdminRouter } from './backend/commerceAdminRouter';
@@ -140,6 +142,8 @@ import { createInFlightLimiter } from './backend/admissionControl';
 import { performGroundedSearch } from './backend/groundedSearchService';
 
 const app = express();
+// Every async handler registered below forwards rejections to next(err).
+installAsyncRouteSafety(app);
 const PORT = Number(process.env.PORT) || 3000;
 
 // Admin gate is defined before any route registration that uses it.
@@ -175,9 +179,6 @@ function requireAgentTool(req: express.Request, res: express.Response, next: exp
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '256kb', verify: (req, _res, buf) => { (req as any).rawBody = Buffer.from(buf); } }));
 app.use(express.urlencoded({ extended: true, limit: '32kb', parameterLimit: 100 }));
-app.use('/api/admin/commerce', commerceAdminRouter);
-app.use('/api/admin/knowledge', knowledgeCityRouter);
-
 // ==========================================
 // 🛡️ RATE LIMITING MIDDLEWARES
 // ==========================================
@@ -219,6 +220,18 @@ const aiAdmission = createInFlightLimiter(20, 3);
 const bookingAdmission = createInFlightLimiter(30, 2);
 
 app.use('/api/', generalApiLimiter, apiAdmission.middleware);
+// Stricter per-IP budget for routes that spend LLM / model tokens.
+const llmLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: Number(process.env.LLM_RATE_LIMIT_PER_MINUTE || 20),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Límite de solicitudes de IA excedido. Por favor espere un momento.' }
+});
+app.use(['/api/agents', '/api/agent/counter', '/api/claude', '/api/gemini', '/api/massive', '/api/ai', '/api/ml', '/api/counter/ask'], llmLimiter);
+// Admin routers are mounted after the global limiter so they share its budget.
+app.use('/api/admin/commerce', commerceAdminRouter);
+app.use('/api/admin/knowledge', knowledgeCityRouter);
 app.use('/api/digital-city/applications', digitalCityApplicationRouter);
 
 // Signed payment webhooks. Stripe uses the byte-exact rawBody captured by
@@ -231,10 +244,13 @@ app.post('/api/webhooks/paypal', handlePayPalWebhook);
 // Health check endpoint
 app.post('/api/customer-intake', chatLimiter, intakeAdmission.middleware, async (req, res) => {
   try {
+    // Public web intake never trusts channel-prefixed session ids (wa_, voice_,
+    // trav_...) or unverified contact data to link to an existing traveler.
+    const requestedSessionId = String(req.body?.sessionId || '').trim();
     const result = await processCustomerIntake({
       message: req.body?.message || req.body?.mensaje,
       language: req.body?.language || req.body?.idioma,
-      sessionId: req.body?.sessionId,
+      sessionId: /^web_[A-Za-z0-9-]{8,80}$/.test(requestedSessionId) ? requestedSessionId : undefined,
       source: req.body?.source || 'web',
       context: req.body?.context,
       customer: req.body?.customer
@@ -336,7 +352,7 @@ app.post('/api/webhooks/whatsapp', async (req, res) => {
             source: 'whatsapp:inbound',
             context: { channel: 'whatsapp', messageId, waId: from, mediaType: mediaOnly ? messageType : undefined, requiresHumanMediaReview: mediaOnly },
             customer: { name: profileName, phone: from }
-          }, { replyToWhatsApp: from, messageId });
+          }, { replyToWhatsApp: from, messageId, trust: { verifiedPhone: true } });
           queued.push(job.jobId);
         } catch (error) {
           await releaseWhatsAppInboundMessage(messageId);
@@ -1267,41 +1283,81 @@ app.patch('/api/bookings/:id', requireOperator, async (req, res) => {
   }
 });
 
-// Generar e imprimir Vale Oficial / Itinerario Web de Reserva
+/**
+ * Booking documents are private: the caller must be operations/admin, the
+ * signed-in traveler whose verified e-mail matches the booking, or hold the
+ * signed link (?token=) that was e-mailed for exactly this booking.
+ */
+async function loadAuthorizedBookingDocument(req: express.Request, res: express.Response): Promise<any | null> {
+  const bookingId = String(req.params.id || '').trim();
+  if (!bookingId || bookingId.length > 120) {
+    res.status(400).json({ error: 'ID de reserva inválido' });
+    return null;
+  }
+  const signedLink = verifyBookingDocumentToken(bookingId, req.query.token);
+  let authorized = signedLink;
+  let travelerEmail = '';
+  if (!authorized) {
+    const operator = await resolveOperatorAccess(req);
+    authorized = operator.ok;
+    if (!authorized) {
+      const user = await verifyFirebaseUser(req);
+      if (user?.email && user.email_verified === true) travelerEmail = String(user.email).trim().toLowerCase();
+    }
+  }
+  if (!authorized && !travelerEmail) {
+    res.status(401).json({ error: 'No autorizado' });
+    return null;
+  }
+  const booking = await getBookingById(bookingId);
+  if (!booking) {
+    res.status(404).json({ error: 'Reserva no encontrada' });
+    return null;
+  }
+  if (!authorized) {
+    const bookingEmail = String(booking.customer?.email || booking.customerEmail || '').trim().toLowerCase();
+    if (!bookingEmail || bookingEmail !== travelerEmail) {
+      // Same answer as a missing booking: never confirm that an id exists.
+      res.status(404).json({ error: 'Reserva no encontrada' });
+      return null;
+    }
+  }
+  return booking;
+}
+
+// Generar e imprimir Vale / Itinerario Web de Reserva
 app.get('/api/bookings/:id/pdf', async (req, res) => {
   try {
-    const bookingId = req.params.id;
-    const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
-
+    const booking = await loadAuthorizedBookingDocument(req, res);
+    if (!booking) return;
     const html = generateBookingPrintableHTML(booking as any);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'private, no-store');
     res.send(html);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'No se pudo generar el documento' });
   }
 });
 
-// Descarga directa binaria del Vale Oficial e Itinerario en PDF
+// Descarga directa binaria del Vale e Itinerario en PDF
 app.get('/api/bookings/:id/download-pdf', async (req, res) => {
   try {
-    const bookingId = req.params.id;
-    const allBookings = await getAllBookings();
-    const booking = allBookings.find((b: any) => b.bookingId === bookingId || b.id === bookingId);
-    if (!booking) return res.status(404).json({ error: 'Reserva no encontrada' });
-
+    const booking = await loadAuthorizedBookingDocument(req, res);
+    if (!booking) return;
+    const bookingId = String(booking.bookingId || booking.id).replace(/[^A-Za-z0-9_-]/g, '');
     const pdfBuffer = await generateBookingPDFBuffer(booking as any);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="CostaRicaTours-Voucher-${bookingId}.pdf"`);
     res.setHeader('Content-Length', pdfBuffer.length);
+    res.setHeader('Cache-Control', 'private, no-store');
     res.end(pdfBuffer);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'No se pudo generar el documento' });
   }
 });
 
 // Despacho de Proforma e Itinerario con Notificación Email (PDF Adjunto) y WhatsApp
-app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confirmation'], async (req, res) => {
+app.post(['/api/proformas/send-confirmation', '/api/bookings/send-proforma-confirmation'], requireAdmin, async (req, res) => {
   try {
     const result = await executeCustomerProformaConfirmation(req.body);
     res.json(result);
@@ -1859,7 +1915,7 @@ app.post(['/api/native/autonomous-booking-flow', '/api/native/flujo-autonomo'], 
 });
 
 // 1. Asistente Inteligente & Chat Oficial (Gemini 2.5 Flash + Base Oficial)
-app.post(['/webhook/chat-consulta', '/api/chat', '/api/chat-consulta'], async (req, res) => {
+app.post(['/webhook/chat-consulta', '/api/chat', '/api/chat-consulta'], llmLimiter, async (req, res) => {
   try {
     const result = await executeChatInquiry(req.body);
     res.json(result);
@@ -1882,7 +1938,7 @@ app.post('/api/reservas/inicio', async (req, res) => {
 });
 
 // 3. Solicitud de Pago & Conciliación Criptográfica HMAC
-app.post('/api/pagos/solicitud', async (req, res) => {
+app.post('/api/pagos/solicitud', requireAdmin, async (req, res) => {
   try {
     const result = await executeSolicitudPago(req.body);
     res.json(result);
@@ -1892,7 +1948,7 @@ app.post('/api/pagos/solicitud', async (req, res) => {
 });
 
 // 4. Confirmación de Reserva, Voucher Digital QR & Notificaciones Multicanal
-app.post('/api/reservas/confirmar', async (req, res) => {
+app.post('/api/reservas/confirmar', requireAdmin, async (req, res) => {
   try {
     const result = await executeConfirmacionReserva(req.body);
     res.json(result);
@@ -1927,7 +1983,7 @@ app.post(['/webhook/solicitud-soporte', '/api/soporte/crear-ticket'], async (req
 });
 
 // 8. Coordinación y Notificación en Tiempo Real a Proveedores y Operadores Locales
-app.post(['/webhook/notificar-proveedor', '/api/operadores/notificar'], async (req, res) => {
+app.post(['/webhook/notificar-proveedor', '/api/operadores/notificar'], requireAdmin, async (req, res) => {
   try {
     const result = await executeNotificarProveedor(req.body);
     res.json(result);
@@ -1957,7 +2013,7 @@ app.post(['/webhook/panel-control-ops', '/api/ops/action'], requireAdmin, async 
 });
 
 // 12. Sincronización Automática con Google Calendar
-app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], async (req, res) => {
+app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], requireAdmin, async (req, res) => {
   try {
     const result = await executeSyncCalendar(req.body);
     res.json(result);
@@ -1967,7 +2023,7 @@ app.post(['/webhook/sync-calendar', '/api/calendario/sincronizar'], async (req, 
 });
 
 // 13. Encuesta de Satisfacción Post-Tour & Recolección NPS WhatsApp
-app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], async (req, res) => {
+app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], requireAdmin, async (req, res) => {
   try {
     const result = await executePostTourNPS(req.body);
     res.json(result);
@@ -1977,7 +2033,7 @@ app.post(['/webhook/post-tour-nps', '/api/nps/despachar'], async (req, res) => {
 });
 
 // 14. Reporte Semanal de Rendimiento, Conversión y Volumen
-app.post(['/webhook/reporte-semanal-conversion', '/api/reportes/semanal'], async (req, res) => {
+app.post(['/webhook/reporte-semanal-conversion', '/api/reportes/semanal'], requireAdmin, async (req, res) => {
   try {
     const result = await executeReporteSemanalConversion();
     res.json(result);
@@ -1991,7 +2047,7 @@ app.post(['/webhook/reporte-semanal-conversion', '/api/reportes/semanal'], async
 // ==========================================
 
 // WF-COMPLEX-01: Orquestador Autónomo de Itinerarios Multidía (SINAC/IMN/Alsama)
-app.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-planner'], async (req, res) => {
+app.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-planner'], requireAdmin, async (req, res) => {
   try {
     const result = await executeAutonomousMultiDayPlanner(req.body);
     res.json(result);
@@ -2001,7 +2057,7 @@ app.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-p
 });
 
 // WF-COMPLEX-02: Motor Predictivo de Dynamic Pricing & Yield Management
-app.post(['/webhook/predictive-dynamic-pricing', '/api/automations/dynamic-pricing'], async (req, res) => {
+app.post(['/webhook/predictive-dynamic-pricing', '/api/automations/dynamic-pricing'], requireAdmin, async (req, res) => {
   try {
     const result = await executeDynamicPricingYieldOptimizer(req.body);
     res.json(result);
@@ -2011,7 +2067,7 @@ app.post(['/webhook/predictive-dynamic-pricing', '/api/automations/dynamic-prici
 });
 
 // WF-COMPLEX-03: Matriz Predictiva de Contingencias Climáticas & Re-enrutamiento
-app.post(['/webhook/weather-contingency-rerouting', '/api/automations/weather-contingency'], async (req, res) => {
+app.post(['/webhook/weather-contingency-rerouting', '/api/automations/weather-contingency'], requireAdmin, async (req, res) => {
   try {
     const result = await executeEmergencyContingencyRerouting(req.body);
     res.json(result);
@@ -2021,7 +2077,7 @@ app.post(['/webhook/weather-contingency-rerouting', '/api/automations/weather-co
 });
 
 // WF-COMPLEX-04: Facturación Electrónica DGT Hacienda v4.3 & Liquidación Operadores
-app.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-invoicing'], async (req, res) => {
+app.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-invoicing'], requireAdmin, async (req, res) => {
   try {
     const result = await executeDGTElectronicInvoicingSettlement(req.body);
     res.json(result);
@@ -2031,7 +2087,7 @@ app.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-
 });
 
 // WF-COMPLEX-05: Flight Guard Predictivo en Tiempo Real & Despacho Alsama
-app.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-guard'], async (req, res) => {
+app.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-guard'], requireAdmin, async (req, res) => {
   try {
     const result = await executeAutonomousFlightGuardDispatch(req.body);
     res.json(result);
@@ -2041,7 +2097,7 @@ app.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-
 });
 
 // WF-COMPLEX-06: Asistente Autónomo con Análisis de Sentimiento & Escalamiento
-app.post(['/webhook/crisis-sentiment-escalation', '/api/automations/crisis-sentiment'], async (req, res) => {
+app.post(['/webhook/crisis-sentiment-escalation', '/api/automations/crisis-sentiment'], requireAdmin, async (req, res) => {
   try {
     const result = await executeAutonomousCrisisSentimentEscalation(req.body);
     res.json(result);
@@ -2069,7 +2125,7 @@ const additionalWebhooks = [
   '/webhook/supervisor'
 ];
 
-app.post(additionalWebhooks, async (req, res) => {
+app.post(additionalWebhooks, requireAdmin, async (req, res) => {
   try {
     const endpoint = req.path;
     const triggerName = endpoint.replace('/webhook/', '').toUpperCase().replace(/-/g, '_');
@@ -2225,14 +2281,31 @@ app.get(['/api/provider/catalog', '/api/operators/catalog'], (_req, res) => {
 });
 
 // 1.3 Consulta de Estado de Despacho del Proveedor para una Reserva
+// Full detail requires operations/admin. The Vercel zero-trust gateway reads
+// provider evidence through Cloud Run IAM (x-crt-gateway marker set by the
+// gateway itself, never forwarded from a browser) and only receives the
+// minimal evidence fields it needs to gate payment creation.
 app.get(['/api/provider/status/:bookingId', '/api/operators/status/:bookingId'], async (req, res) => {
   try {
-    const bookingId = req.params.bookingId;
-    const allBookings = await getAllBookings();
-    const found = allBookings.find((b: any) => (b.bookingId === bookingId || b.id === bookingId));
+    const bookingId = String(req.params.bookingId || '').trim();
+    const gatewayEvidenceCall = req.headers['x-crt-gateway'] === 'vercel-oidc-wif-provider-evidence';
+    const operator = gatewayEvidenceCall ? null : await resolveOperatorAccess(req);
+    if (!gatewayEvidenceCall && !operator?.ok) {
+      return res.status(operator?.status || 401).json({ success: false, error: operator?.error || 'No autorizado' });
+    }
 
+    const found = bookingId ? await getBookingById(bookingId) : null;
     if (!found) {
-      return res.status(404).json({ success: false, error: `Reserva #${bookingId} no encontrada.` });
+      return res.status(404).json({ success: false, error: 'Reserva no encontrada.' });
+    }
+
+    if (gatewayEvidenceCall) {
+      return res.json({
+        success: true,
+        bookingId,
+        providerStatus: found.providerStatus || 'pending',
+        providerConfirmedAt: found.providerConfirmedAt || null
+      });
     }
 
     res.json({
@@ -2240,7 +2313,7 @@ app.get(['/api/provider/status/:bookingId', '/api/operators/status/:bookingId'],
       bookingId,
       status: found.status,
       providerId: found.providerId || null,
-      providerName: found.providerName || found.providerInfo?.name || 'Alsama Tours CR',
+      providerName: found.providerName || found.providerInfo?.name || null,
       providerStatus: found.providerStatus || 'pending',
       assignedGuide: found.assignedGuide || 'Por asignar',
       assignedVehicle: found.assignedVehicle || 'Por asignar',
@@ -2251,7 +2324,7 @@ app.get(['/api/provider/status/:bookingId', '/api/operators/status/:bookingId'],
       time: found.time
     });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: 'No se pudo consultar el estado del proveedor.' });
   }
 });
 
@@ -2286,7 +2359,7 @@ app.post('/webhook/pagos-proveedores-batch', (_req, res) => {
 });
 
 // 4. Vigilancia y Escalamiento de Reservas Pendientes (Cron Trigger)
-app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], async (req, res) => {
+app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], requireAdmin, async (req, res) => {
   try {
     const result = await executeSurveillanceAndEscalation();
     res.json(result);
@@ -2296,7 +2369,7 @@ app.post(['/api/surveillance/run-check', '/webhook/vigilancia-reservas'], async 
 });
 
 // 5. Reporte Diario de Operación (Cron Trigger)
-app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], async (req, res) => {
+app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], requireAdmin, async (req, res) => {
   try {
     const result = await executeDailyOperationReport();
     res.json(result);
@@ -2306,7 +2379,7 @@ app.post(['/api/reports/run-daily-ops', '/webhook/reporte-diario-operacion'], as
 });
 
 // 6. Solicitud de Reseña Post-Tour (Cron Trigger)
-app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], async (req, res) => {
+app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], requireAdmin, async (req, res) => {
   try {
     const result = await executePostTourReviewRequests();
     res.json(result);
@@ -2316,7 +2389,7 @@ app.post(['/api/reviews/run-request-batch', '/webhook/solicitud-resenas'], async
 });
 
 // 7. Recordatorio 24h Antes del Tour (Cron Trigger)
-app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], async (req, res) => {
+app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], requireAdmin, async (req, res) => {
   try {
     const result = await executeTour24hReminders();
     res.json(result);
@@ -2326,7 +2399,19 @@ app.post(['/api/reminders/run-24h', '/webhook/recordatorio-24h'], async (req, re
 });
 
 // 8. Verificación y Conciliación Autónoma de Pagos SINPE Móvil (Webhook & API)
-app.post(['/webhook/cr-tours-sinpe-verify', '/webhook/sinpe-verify', '/api/payments/sinpe-verify', '/api/sinpe/verify'], async (req, res) => {
+// /api/sinpe/verify is registered earlier with requireOperator; the public
+// /api/payments/sinpe-verify alias now requires the same operator auth. The
+// /webhook/* aliases keep their shared-secret (x-webhook-secret) contract.
+app.post('/api/payments/sinpe-verify', requireOperator, async (req, res) => {
+  try {
+    const result = await executeSinpeVerification(req.body, req.headers['x-webhook-secret'] as string);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+app.post(['/webhook/cr-tours-sinpe-verify', '/webhook/sinpe-verify'], async (req, res) => {
   try {
     const authHeader = req.headers['x-webhook-secret'] as string;
     const result = await executeSinpeVerification(req.body, authHeader);
@@ -2352,6 +2437,10 @@ app.get(['/api/metrics/throughput', '/api/massive/status'], (req, res) => {
 app.post(['/api/massive/batch-inquiries', '/api/massive/process-batch'], async (req, res) => {
   try {
     const inquiries = Array.isArray(req.body?.inquiries) ? req.body.inquiries : [req.body];
+    const maxBatch = Number(process.env.MASSIVE_BATCH_MAX || 10);
+    if (inquiries.length > maxBatch) {
+      return res.status(413).json({ success: false, error: 'batch_too_large', maxBatch });
+    }
     const results = await Promise.allSettled(
       inquiries.map((inquiry: any) =>
         massiveEngine.enqueue(
@@ -2417,28 +2506,28 @@ app.post('/api/ops/booking-action', requireOperator, async (req, res) => {
 // 🤖 AGENTES DEL ENJAMBRE (TRIAGE, PROCESADOR, SUPERVISOR)
 // ==========================================
 
-app.post('/api/agents/triage', async (req, res) => {
+app.post('/api/agents/triage', requireAdmin, async (req, res) => {
   const result = await runTriage(req.body.rawMessage || '');
   res.json(result);
 });
 
-app.post('/api/agents/processor', async (req, res) => {
+app.post('/api/agents/processor', requireAdmin, async (req, res) => {
   const { rawMessage, intent, extractedData } = req.body;
   const result = await runProcessor(rawMessage || '', intent || '', extractedData || {});
   res.json(result);
 });
 
-app.post('/api/agents/contingency', async (req, res) => {
+app.post('/api/agents/contingency', requireAdmin, async (req, res) => {
   const result = await runContingency(req.body);
   res.json(result);
 });
 
-app.post('/api/agents/supervisor', async (req, res) => {
+app.post('/api/agents/supervisor', requireAdmin, async (req, res) => {
   const result = await runSupervisor();
   res.json(result);
 });
 
-app.post('/api/agents/log_exception', (req, res) => {
+app.post('/api/agents/log_exception', requireAdmin, (req, res) => {
   const { agentName, errorContext, rawData } = req.body;
   logException(agentName || 'UnknownAgent', errorContext || 'Error', rawData);
   res.json({ success: true });
@@ -2448,7 +2537,9 @@ app.post('/api/gemini/concierge', async (req, res) => {
   try {
     const { message, language, history, agentId, context, engine, sessionId } = req.body;
     const userMsg = message || '';
-    const memorySessionId = String(sessionId || context?.sessionId || '');
+    const requestedMemorySession = String(sessionId || context?.sessionId || '');
+    // Memory is only read/written for a session the caller proves it owns.
+    const memorySessionId = verifyChatSessionAccess(requestedMemorySession, chatSessionTokenFrom(req)) ? requestedMemorySession : '';
     const lang = (language || 'es') as 'es' | 'en';
     
     // Si se especifica o prefiere motor Claude 3.5 Sonnet
@@ -2786,7 +2877,7 @@ app.post('/api/itinerary/book', async (_req, res) => {
 });
 
 // 4. Auditoría operativa y antifraude de reserva con Claude
-app.post('/api/claude/audit-booking', async (req, res) => {
+app.post('/api/claude/audit-booking', requireAdmin, async (req, res) => {
   try {
     const booking = req.body.booking || req.body;
     const auditResult = await analyzeOperationalRiskWithClaude(booking);
@@ -2822,32 +2913,56 @@ app.post('/api/gemini/:action', (req, res) => {
   res.json({ success: true, text: `Respuesta de Gemini para ${req.params.action}` });
 });
 
-app.get('/api/chat/history', async (req, res) => {
+// Conversational memory is only reachable with a server-minted session id plus
+// its HMAC token (x-chat-session-token). Unknown or guessed ids are rejected.
+function chatSessionTokenFrom(req: express.Request): string {
+  const header = req.headers['x-chat-session-token'];
+  return typeof header === 'string' ? header : '';
+}
+
+function requireChatSession(source: 'query' | 'body' | 'either') {
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const sessionId = String(
+      source === 'query' ? req.query.sessionId || ''
+        : source === 'body' ? req.body?.sessionId || ''
+          : req.query.sessionId || req.body?.sessionId || ''
+    ).trim();
+    if (!sessionId) return res.status(400).json({ error: 'sessionId es requerido' });
+    if (!verifyChatSessionAccess(sessionId, chatSessionTokenFrom(req))) {
+      return res.status(401).json({ error: 'chat_session_unauthorized', message: 'Sesión de chat no autorizada.' });
+    }
+    (req as any).chatSessionId = sessionId;
+    next();
+  };
+}
+
+app.post('/api/chat/session', chatLimiter, (_req, res) => {
+  res.status(201).json({ success: true, ...issueChatSession() });
+});
+
+app.get('/api/chat/history', requireChatSession('query'), async (req, res) => {
   try {
     const { getOperationalMemory } = await import('./backend/memoryService');
-    const sessionId = String(req.query.sessionId || '');
-    if (!sessionId) return res.status(400).json({ error: 'sessionId es requerido' });
+    const sessionId = String((req as any).chatSessionId);
     const memory = await getOperationalMemory(sessionId);
     res.json({ history: memory.turns, memory: { summary: memory.summary, facts: memory.facts, preferences: memory.preferences, activeGoals: memory.activeGoals, decisions: memory.decisions, lastAgent: memory.lastAgent, lastUpdatedAt: memory.lastUpdatedAt }});
   } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo cargar la memoria' }); }
 });
 
-app.post('/api/chat/history', async (req, res) => {
+app.post('/api/chat/history', requireChatSession('body'), async (req, res) => {
   try {
     const { saveChatHistory } = await import('./backend/memoryService');
-    const sessionId = String(req.body?.sessionId || '');
-    if (!sessionId || !Array.isArray(req.body?.history)) return res.status(400).json({ error: 'sessionId e history son requeridos' });
-    const memory = await saveChatHistory(sessionId, req.body.history);
+    const sessionId = String((req as any).chatSessionId);
+    if (!Array.isArray(req.body?.history)) return res.status(400).json({ error: 'sessionId e history son requeridos' });
+    const memory = await saveChatHistory(sessionId, req.body.history.slice(-100));
     res.json({ success: true, memory: { summary: memory.summary, facts: memory.facts, preferences: memory.preferences, activeGoals: memory.activeGoals, decisions: memory.decisions, lastAgent: memory.lastAgent, lastUpdatedAt: memory.lastUpdatedAt }});
   } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo guardar la memoria' }); }
 });
 
-app.delete('/api/chat/history', async (req, res) => {
+app.delete('/api/chat/history', requireChatSession('either'), async (req, res) => {
   try {
     const { clearOperationalMemory } = await import('./backend/memoryService');
-    const sessionId = String(req.query.sessionId || req.body?.sessionId || '');
-    if (!sessionId) return res.status(400).json({ error: 'sessionId es requerido' });
-    await clearOperationalMemory(sessionId);
+    await clearOperationalMemory(String((req as any).chatSessionId));
     res.json({ success: true });
   } catch (err) { res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo borrar la memoria' }); }
 });
@@ -3106,20 +3221,23 @@ app.get('/api/agent/tools/manifest', requireAgentTool, (req, res) => {
 // ==========================================
 // 📱 FIREBASE CLOUD MESSAGING (FCM) ENDPOINTS
 // ==========================================
-app.post('/api/fcm/register', async (req, res) => {
+app.post('/api/fcm/register', requireFirebaseUser, async (req, res) => {
   try {
-    const { userId, token, deviceInfo } = req.body;
-    if (!userId || !token) {
-      return res.status(400).json({ success: false, error: 'userId y token requeridos' });
+    const { token, deviceInfo } = req.body || {};
+    // The device token is always bound to the authenticated uid; a userId in
+    // the body is ignored so nobody can subscribe to another user's pushes.
+    const userId = String((req as any).user?.uid || '');
+    if (!userId || !token || typeof token !== 'string') {
+      return res.status(400).json({ success: false, error: 'token requerido' });
     }
-    const result = await registerFcmToken(userId, token, deviceInfo);
+    const result = await registerFcmToken(userId, token, typeof deviceInfo === 'string' ? deviceInfo.slice(0, 200) : undefined);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-app.post('/api/fcm/send', async (req, res) => {
+app.post('/api/fcm/send', requireAdmin, async (req, res) => {
   try {
     const { userId, title, body, data } = req.body;
     if (!userId || !title || !body) {
@@ -3141,6 +3259,10 @@ app.use('/api', (req, res) => {
     message: 'Ruta de API no encontrada. / API route not found.',
   });
 });
+
+// Async handler rejections (see installAsyncRouteSafety) end here instead of
+// crashing the process or leaking stack traces.
+app.use(apiErrorHandler);
 
 // ==========================================
 // 🚀 MIDDLEWARE VITE (FULL-STACK SPA + BACKEND)
