@@ -22,8 +22,17 @@ export function createApp(): Express {
   installAsyncRouteSafety(app);
 
   app.set('trust proxy', 1);
+  // Express 5 defaults to the "simple" query parser; keep Express 4's qs
+  // parsing (nested keys such as filters[region]=...) for existing clients.
+  app.set('query parser', 'extended');
   app.use(express.json({ limit: '256kb', verify: (req, _res, buf) => { (req as RawBodyRequest).rawBody = Buffer.from(buf); } }));
   app.use(express.urlencoded({ extended: true, limit: '32kb', parameterLimit: 100 }));
+  // Express 5 leaves req.body undefined when no parser matched (Express 4 set
+  // {}). Handlers destructure req.body directly, so keep the old contract.
+  app.use(function defaultEmptyBody(req, _res, next) {
+    if (req.body === undefined) req.body = {};
+    next();
+  });
 
   app.use('/api/', generalApiLimiter, apiAdmission.middleware);
   // Stricter per-IP budget for routes that spend LLM / model tokens.

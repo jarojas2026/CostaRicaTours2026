@@ -1,13 +1,12 @@
-USE /^\/?(?=\/|$)/i query
-USE /^\/?(?=\/|$)/i expressInit
-USE /^\/?(?=\/|$)/i wrapped
-USE /^\/?(?=\/|$)/i wrapped
-USE /^\/api\/?(?=\/|$)/i wrapped
-USE /^\/api\/?(?=\/|$)/i wrapped
-USE /^\/api\/agents\/?(?=\/|$)|^\/api\/agent\/counter\/?(?=\/|$)|^\/api\/claude\/?(?=\/|$)|^\/api\/gemini\/?(?=\/|$)|^\/api\/massive\/?(?=\/|$)|^\/api\/ai\/?(?=\/|$)|^\/api\/ml\/?(?=\/|$)|^\/api\/counter\/ask\/?(?=\/|$)/i wrapped
-USE /^\/api\/admin\/commerce\/?(?=\/|$)/i router
-USE /^\/api\/admin\/knowledge\/?(?=\/|$)/i router
-USE /^\/api\/digital-city\/applications\/?(?=\/|$)/i router
+USE / wrapped
+USE / wrapped
+USE / wrapped
+USE /api/ wrapped
+USE /api/ wrapped
+USE [/api/agents, /api/agent/counter, /api/claude, /api/gemini, /api/massive, /api/ai, /api/ml, /api/counter/ask] wrapped
+USE /api/admin/commerce router
+USE /api/admin/knowledge router
+USE /api/digital-city/applications router
 ROUTE POST /api/webhooks/stripe (1)
 ROUTE POST /api/webhooks/paypal (1)
 ROUTE POST /api/customer-intake (3)
@@ -81,7 +80,7 @@ ROUTE POST /api/counter/ask (2)
 ROUTE GET /api/counter/operations (2)
 ROUTE GET /api/counter/autopilot (2)
 ROUTE POST /api/counter/organize (2)
-USE /^\/api\/voice\/incoming\/?(?=\/|$)|^\/api\/voice\/respond\/?(?=\/|$)|^\/api\/voice\/human-transfer\/?(?=\/|$)|^\/api\/voice\/status\/?(?=\/|$)/i wrapped
+USE [/api/voice/incoming, /api/voice/respond, /api/voice/human-transfer, /api/voice/status] wrapped
 ROUTE GET /api/voice/config (2)
 ROUTE POST /api/voice/incoming (1)
 ROUTE POST /api/voice/respond (1)
@@ -202,5 +201,5 @@ ROUTE GET /api/admin/leads (2)
 ROUTE GET /api/admin/leads/:id (2)
 ROUTE PATCH /api/admin/leads/:id/status (2)
 ROUTE POST /api/internal/leads/digest (1)
-USE /^\/api\/?(?=\/|$)/i wrapped
-USE /^\/?(?=\/|$)/i apiErrorHandler
+USE /api wrapped
+USE / apiErrorHandler
