@@ -260,7 +260,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-black uppercase text-teal-300 flex items-center gap-1.5">
                             <Users className="w-3.5 h-3.5" />
-                            1 a 5 Pasajeros
+                            {language === 'es' ? '1 a 5 pasajeros' : '1 to 5 passengers'}
                           </span>
                           {groupSize === '1-5' && <Check className="w-4 h-4 text-teal-400" />}
                         </div>
@@ -279,7 +279,7 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-black uppercase text-amber-300 flex items-center gap-1.5">
                             <Users className="w-3.5 h-3.5" />
-                            6 a 10 Pasajeros
+                            {language === 'es' ? '6 a 10 pasajeros' : '6 to 10 passengers'}
                           </span>
                           {groupSize === '6-10' && <Check className="w-4 h-4 text-amber-400" />}
                         </div>

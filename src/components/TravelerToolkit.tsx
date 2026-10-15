@@ -750,7 +750,7 @@ export const TravelerToolkit: React.FC<TravelerToolkitProps> = ({
 
                 <div className="pt-2 border-t border-neutral-200 flex items-center justify-between text-sm">
                   <span className="font-bold text-neutral-600">{isEs ? 'Equivalente en Colones (₡):' : 'Equivalent in Colones (₡):'}</span>
-                  <span className="font-black text-xl text-teal-600">₡{calcCrc.toLocaleString()}</span>
+                  <span className="font-black text-xl text-teal-600">{exchangeRate > 0 ? `₡${Math.round(calcCrc).toLocaleString('es-CR')}` : (isEs ? 'Tipo de cambio no disponible' : 'Exchange rate unavailable')}</span>
                 </div>
               </div>
             </div>

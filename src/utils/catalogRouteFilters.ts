@@ -34,8 +34,10 @@ export function readCatalogRouteFilters(params: URLSearchParams): CatalogRouteFi
 export function patchCatalogRouteFilters(params: URLSearchParams, changes: Partial<CatalogRouteFilters>) {
   const next = new URLSearchParams(params);
   if ('q' in changes) {
-    const value = (changes.q || '').trim().slice(0, 250);
-    if (value) next.set('q', value); else next.delete('q');
+    // No recortar espacios aquí: se escribe en cada tecla y "Caño " perdería el espacio
+    // antes de que el usuario escriba "Negro". El filtro normaliza al comparar.
+    const value = (changes.q || '').slice(0, 250);
+    if (value.trim()) next.set('q', value); else next.delete('q');
   }
   if ('category' in changes) {
     if (changes.category && changes.category !== 'all' && categoryIds.has(changes.category)) next.set('category', changes.category);

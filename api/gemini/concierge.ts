@@ -17,6 +17,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const input = req.body && typeof req.body === 'object' ? req.body : {};
   const proxyReq = {
     ...req,
+    // IncomingMessage.headers/method pueden ser getters del prototipo: el spread los pierde en Vercel
+    // y el gateway respondía 503 backend_gateway_unavailable (igual que se corrigió en api/ai/chat.ts).
+    headers: req.headers,
+    method: req.method,
     url: '/api/gemini/concierge',
     body: {
       message: String(input.message || ''),

@@ -20,35 +20,8 @@ const ToursContext = createContext<ToursContextType>({
   isFavorite: () => false
 });
 
-/**
- * Enriches Firestore tours with the local catalog. Match backend lookup by
- * explicit remote identity; title matches only enrich presentation and must
- * never select a different sale product.
- */
-interface RemoteTourDoc {
-  tour: Tour;
-  docId: string;
-}
+import { mergeRemoteTours, type RemoteTourDoc } from '../utils/mergeRemoteTours';
 
-function mergeRemoteTours(remoteDocs: readonly RemoteTourDoc[], localTours: readonly Tour[]): Tour[] {
-  return remoteDocs
-    .map(({ tour: remoteTour, docId }) => {
-      const canBook = remoteTour.catalogStatus === 'bookable' && Boolean(remoteTour.providerId?.trim());
-      const localTour = localTours.find((tour) =>
-        tour.id === remoteTour.id ||
-        tour.title.es === remoteTour.title?.es ||
-        tour.title.en === remoteTour.title?.en
-      );
-      return {
-        ...(localTour || {} as Tour),
-        ...remoteTour,
-        id: remoteTour.id || docId,
-        catalogStatus: canBook ? 'bookable' : 'inquiry',
-        isDemoData: !canBook
-      } satisfies Tour;
-    })
-    .sort((a, b) => (a.id || '').localeCompare(b.id || ''));
-}
 
 export const ToursProvider = ({ children }: { children: ReactNode }) => {
   // The ~180 kB local catalog is a lazily loaded chunk (src/data/loadTours.ts).
