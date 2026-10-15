@@ -17,6 +17,45 @@ import { createAlert } from '../alertService';
 import { executeCustomerProformaConfirmation } from '../nativeWorkflows';
 import { emitOperationalEvent } from '../operationalEventBus';
 import { createRouter, requireAdmin, bookingAdmission } from './shared';
+import { captureLeadInBackground } from '../leadPipeline';
+import { TOURS } from '../../src/data/toursData';
+
+/** Solicitud de reserva (creada pendiente o rechazada por falta de operador verificado) → lead. */
+function captureBookingLead(body: any, result: any) {
+  const tourId = String(body?.tourId || '').slice(0, 120);
+  const tour = TOURS.find(t => t.id === tourId);
+  const adults = Number(body?.adults) || 0;
+  const children = Number(body?.children) || 0;
+  const people = adults + children;
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(body?.date || '')) ? String(body.date) : undefined;
+  const customer = body?.customer && typeof body.customer === 'object' ? body.customer : {};
+  captureLeadInBackground({
+    source: 'booking_request',
+    language: body?.language,
+    request: {
+      tourId: tour?.id || (tourId || undefined),
+      tourTitle: tour ? tour.title.es : (typeof body?.tourName === 'string' ? body.tourName.slice(0, 160) : undefined),
+      region: tour?.region,
+      people: people > 0 ? people : undefined,
+      adults: adults || undefined,
+      children: children || undefined,
+      date,
+      month: date ? Number(date.slice(5, 7)) : undefined,
+    },
+    referenceQuote: tour && tour.priceUSD > 0 && people > 0
+      ? { unitPriceUSD: tour.priceUSD, totalUSD: tour.priceUSD * people, line: `US$${tour.priceUSD} × ${people} = US$${tour.priceUSD * people} (referencia, sujeto a confirmación)`, subjectToConfirmation: true }
+      : undefined,
+    bookingId: result?.booking?.bookingId,
+    bookingOutcome: result?.conflict ? String(result?.error || 'conflict') : String(result?.booking?.status || 'created'),
+    consent: body?.consent === true || body?.privacyConsent === true,
+    contact: {
+      name: customer.fullName || customer.name || body?.customerName,
+      email: customer.email || body?.customerEmail,
+      phone: customer.phone || body?.customerPhone,
+    },
+    message: typeof body?.specialRequests === 'string' ? body.specialRequests : undefined,
+  });
+}
 
 /** SLA interno y sincronización de calendario. */
 export const slaCalendarRouter = createRouter();
@@ -112,6 +151,8 @@ bookingsRouter.post('/api/bookings', bookingAdmission.middleware, async (req, re
   try {
     const idempotencyKey = req.headers['idempotency-key'];
     const result = await createBooking({ ...req.body, idempotencyKey });
+    // Toda solicitud (pendiente de pago o pendiente de operador) entra al pipeline de leads.
+    if (!(result as any)?.booking || (result as any).booking.status !== 'paid') captureBookingLead(req.body, result);
     if (!result.conflict) {
       void emitOperationalEvent({
         type: 'booking.created',

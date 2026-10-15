@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 /**
  * Agentes de IA y sus herramientas internas.
  *
@@ -17,6 +18,7 @@ import { handleProviderActionResponse } from '../nativeWorkflows';
 import { executeSinpeVerification } from '../sinpeService';
 import { buildSkillEvolutionReport, selectEvolvedSkill, recordSkillOutcome, proposeSkillUpgrade } from '../skillEvolutionEngine';
 import { createRouter, chatSessionTokenFrom, requireAdmin, requireAgentTool } from './shared';
+import { captureLeadInBackground } from '../leadPipeline';
 import { understandConciergeMessage, deterministicConciergeReply, type ConciergeUnderstanding } from '../conciergeUnderstanding';
 
 /** Structured, deterministic fields attached to every concierge response. */
@@ -81,6 +83,18 @@ agentsRouter.post('/api/gemini/concierge', async (req, res) => {
     // Memory is only read/written for a session the caller proves it owns.
     const memorySessionId = verifyChatSessionAccess(requestedMemorySession, chatSessionTokenFrom(req)) ? requestedMemorySession : '';
     const lang = (language || 'es') as 'es' | 'en';
+
+    // Pipeline de leads: una consulta concreta crea/actualiza un lead sin datos
+    // personales (el chat no recoge consentimiento). Nunca bloquea la respuesta.
+    if (understanding?.isConcreteInquiry) {
+      captureLeadInBackground({
+        source: 'sofia',
+        understanding,
+        message: userMsg,
+        sessionId: requestedMemorySession ? crypto.createHash('sha256').update(requestedMemorySession).digest('hex').slice(0, 32) : undefined,
+        consent: false,
+      });
+    }
     
     // Si se especifica o prefiere motor Claude 3.5 Sonnet
     if (engine === 'claude') {

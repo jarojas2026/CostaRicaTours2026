@@ -18,6 +18,7 @@ import { nativeWorkflowsRouter, legacyWebhooksRouter, operationalJobsRouter } fr
 import { agentsRouter, agentToolsRouter } from './agents';
 import { chatRouter } from './chat';
 import { fcmRouter } from './fcm';
+import { leadsRouter } from './leads';
 
 export const domainRouters: readonly Router[] = [
   paymentWebhooksRouter,
@@ -49,4 +50,5 @@ export const domainRouters: readonly Router[] = [
   chatRouter,
   agentToolsRouter,
   fcmRouter,
+  leadsRouter,
 ];

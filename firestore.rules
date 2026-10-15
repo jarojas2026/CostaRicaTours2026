@@ -84,6 +84,18 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Pipeline de leads (contiene datos de clientes con consentimiento, Ley 8968).
+    // Escrito por el backend (Firebase Admin). Lectura solo admin/operador;
+    // escritura desde el navegador solo admin. Sin lectura pública.
+    function isOperatorRole() {
+      return isSignedIn() && request.auth.token.role == 'operator';
+    }
+
+    match /leads/{leadId} {
+      allow read: if isAdmin() || isOperatorRole();
+      allow create, update, delete: if isAdmin();
+    }
+
     match /reviews/{reviewId} {
       allow read: if true;
       // Only the traveler who owns the referenced booking may review it.

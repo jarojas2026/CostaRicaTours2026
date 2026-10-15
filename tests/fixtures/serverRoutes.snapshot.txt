@@ -198,5 +198,9 @@ ROUTE POST [/api/agent/tools/verify_sinpe_payment, /api/agent/verify-sinpe] (2)
 ROUTE GET /api/agent/tools/manifest (2)
 ROUTE POST /api/fcm/register (2)
 ROUTE POST /api/fcm/send (2)
+ROUTE GET /api/admin/leads (2)
+ROUTE GET /api/admin/leads/:id (2)
+ROUTE PATCH /api/admin/leads/:id/status (2)
+ROUTE POST /api/internal/leads/digest (1)
 USE /^\/api\/?(?=\/|$)/i wrapped
 USE /^\/?(?=\/|$)/i apiErrorHandler
