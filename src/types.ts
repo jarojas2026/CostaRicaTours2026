@@ -119,6 +119,14 @@ export interface Tour {
   instantConfirmation?: boolean;
   bestPriceGuaranteed?: boolean;
   verifiedBadge?: Localized<string>;
+  /** Página del operador donde se leyó el producto y su precio publicado. */
+  sourceUrl?: string;
+  /** Origen del precio mostrado; 'publicado_por_operador' = tomado de la web del operador, no es cotización. */
+  priceSource?: 'publicado_por_operador';
+  /** Fecha (YYYY-MM-DD) en que se revisó el precio publicado. */
+  priceCheckedAt?: string;
+  /** Motivo por el que priceUSD es 0 (sin precio publicado, precio por bote/grupo). */
+  priceNote?: string;
 }
 
 export interface OperatorProfile {
