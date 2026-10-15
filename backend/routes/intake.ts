@@ -12,6 +12,9 @@ import { processCustomerIntake, enqueueCustomerIntakeJob, processPendingCustomer
 import { getFirestoreDb } from '../bookingService';
 import { withDistributedAutomationLock } from '../cronEngine';
 import { createRouter, chatLimiter, intakeAdmission } from './shared';
+import { captureLeadInBackground } from '../leadPipeline';
+import { understandConciergeMessage } from '../conciergeUnderstanding';
+import { TOURS } from '../../src/data/toursData';
 
 /** Customer intake y webhooks de WhatsApp. */
 export const customerIntakeRouter = createRouter();
@@ -30,6 +33,21 @@ customerIntakeRouter.post('/api/customer-intake', chatLimiter, intakeAdmission.m
       context: req.body?.context,
       customer: req.body?.customer
     });
+    // Formulario de contacto → lead. Los datos de contacto solo se guardan con
+    // consentimiento expreso (Ley 8968): body.consent === true.
+    const intakeMessage = String(req.body?.message || req.body?.mensaje || '');
+    if (intakeMessage.trim()) {
+      captureLeadInBackground({
+        source: 'contact_form',
+        understanding: understandConciergeMessage(intakeMessage, TOURS, { requestedLanguage: req.body?.language || req.body?.idioma }),
+        message: intakeMessage,
+        sessionId: /^web_[A-Za-z0-9-]{8,80}$/.test(requestedSessionId) ? requestedSessionId : undefined,
+        consent: req.body?.consent === true || req.body?.privacyConsent === true,
+        contact: req.body?.customer && typeof req.body.customer === 'object'
+          ? { name: req.body.customer.name || req.body.customer.fullName, email: req.body.customer.email, phone: req.body.customer.phone || req.body.customer.whatsapp }
+          : null,
+      });
+    }
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ success: false, error: error?.message || 'No se pudo procesar la solicitud.' });

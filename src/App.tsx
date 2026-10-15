@@ -54,6 +54,7 @@ const GoogleWorkspaceHub = lazy(() => import('./components/GoogleWorkspaceHub').
 const CounterDeskPage = lazy(() => import('./pages/CounterDeskPage').then(m => ({ default: m.CounterDeskPage })));
 const AutonomousOperationsPage = lazy(() => import('./pages/AutonomousOperationsPage').then(m => ({ default: m.default })));
 const EmailOperationsPage = lazy(() => import('./pages/EmailOperationsPage').then(m => ({ default: m.default })));
+const LeadsPipelinePage = lazy(() => import('./pages/LeadsPipelinePage').then(m => ({ default: m.LeadsPipelinePage })));
 const DigitalCityJoinPage = lazy(() => import('./pages/DigitalCityJoinPage').then(m => ({ default: m.DigitalCityJoinPage })));
 const DigitalCityArchitecturePage = lazy(() => import('./pages/DigitalCityArchitecturePage').then(m => ({ default: m.DigitalCityArchitecturePage })));
 const LegalPage = lazy(() => import('./pages/LegalPage').then(m => ({ default: m.LegalPage })));
@@ -581,6 +582,10 @@ export default function App() {
 
             <Route path="/admin" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
               <Suspense fallback={<RouteFallback />}><AdminControlCenterPage language={language} /></Suspense>
+            </AdminRouteGuard>} />
+
+            <Route path="/admin/leads" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>
+              <Suspense fallback={<RouteFallback />}><LeadsPipelinePage language={language} /></Suspense>
             </AdminRouteGuard>} />
 
             <Route path="/admin/email-operations" element={<AdminRouteGuard language={language === 'es' ? 'es' : 'en'}>

@@ -1,0 +1,98 @@
+name: Resumen diario de leads
+
+# Llama una vez al día al endpoint protegido POST /api/internal/leads/digest del
+# Cloud Run privado (ID token por OIDC + X-Operator-Key = OPERATOR_API_KEY).
+# El backend solo registra el resumen (dry-run) salvo que Cloud Run tenga
+# LEADS_DIGEST_ENABLED=true; en ese caso deja una alerta interna para Jose.
+# Si el secreto OPERATOR_API_KEY no existe en GitHub, el job se salta sin fallar.
+on:
+  schedule:
+    - cron: "0 13 * * *" # 07:00 hora de Costa Rica
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: leads-digest
+  cancel-in-progress: false
+
+env:
+  SERVICE_NAME: costa-rica-tours
+  REGION: us-central1
+  PROJECT_ID: gen-lang-client-0782739149
+  GCP_WIF_PROVIDER: projects/937250723434/locations/global/workloadIdentityPools/github-actions/providers/github
+  GCP_SERVICE_ACCOUNT: github-deployer@gen-lang-client-0782739149.iam.gserviceaccount.com
+
+jobs:
+  digest:
+    name: Resumen de leads por estado y sin respuesta >24h
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Comprobar configuración
+        id: config
+        shell: bash
+        env:
+          OPERATOR_API_KEY: ${{ secrets.OPERATOR_API_KEY }}
+        run: |
+          if [ -z "$OPERATOR_API_KEY" ]; then
+            echo "::notice::OPERATOR_API_KEY no está configurado en los secretos de GitHub; se omite el resumen."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Autenticar con Google Cloud — GitHub OIDC keyless
+        if: steps.config.outputs.enabled == 'true'
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: Configurar gcloud CLI
+        if: steps.config.outputs.enabled == 'true'
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Resolver URL del servicio
+        if: steps.config.outputs.enabled == 'true'
+        id: cloud_run_service
+        shell: bash
+        run: |
+          set -euo pipefail
+          SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
+          echo "url=$SERVICE_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Obtener ID token para invocar Cloud Run privado
+        if: steps.config.outputs.enabled == 'true'
+        id: cloud_run_id_token
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: id_token
+          id_token_audience: ${{ steps.cloud_run_service.outputs.url }}
+          id_token_include_email: true
+          create_credentials_file: false
+          export_environment_variables: false
+
+      - name: Ejecutar resumen
+        if: steps.config.outputs.enabled == 'true'
+        shell: bash
+        env:
+          CLOUD_RUN_ID_TOKEN: ${{ steps.cloud_run_id_token.outputs.id_token }}
+          OPERATOR_API_KEY: ${{ secrets.OPERATOR_API_KEY }}
+          SERVICE_URL: ${{ steps.cloud_run_service.outputs.url }}
+        run: |
+          set -euo pipefail
+          RESPONSE="$(curl --fail --silent --show-error --retry 3 --retry-delay 5 --retry-all-errors \
+            -X POST "$SERVICE_URL/api/internal/leads/digest" \
+            -H "Authorization: Bearer $CLOUD_RUN_ID_TOKEN" \
+            -H "X-Operator-Key: $OPERATOR_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}')"
+          # Solo conteos en el log del job (sin datos de clientes).
+          printf '%s' "$RESPONSE" | jq '{dryRun, delivered, total: .digest.total, byStatus: .digest.byStatus, stale: (.digest.stale | length)}'

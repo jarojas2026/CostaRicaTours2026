@@ -120,3 +120,14 @@ test('Sofía prefers the server extraction: understood lines, reference quote an
   await expect(page.getByText(/Reserva Confirmada/)).toHaveCount(0);
   expectNoConsoleErrors(consoleProblems);
 });
+
+test('leads pipeline admin route is guarded and never lists leads anonymously', async ({ page, consoleProblems }) => {
+  await mockApi(page);
+  const leadRequests: string[] = [];
+  page.on('request', request => { if (new URL(request.url()).pathname.startsWith('/api/admin/leads')) leadRequests.push(request.url()); });
+  await page.goto('/admin/leads');
+  await expect(page.getByRole('heading', { name: 'Administración' })).toBeVisible();
+  await expect(page.locator('[data-leads-pipeline="true"]')).toHaveCount(0);
+  expect(leadRequests).toHaveLength(0);
+  expectNoConsoleErrors(consoleProblems);
+});
