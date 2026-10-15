@@ -174,7 +174,8 @@ export async function rememberTurn(
   updated.summary = deriveSummary(updated);
 
   if (db) {
-    await db.collection('agent_memory').doc(sessionId).set(updated, { merge: true });
+    // Firestore rechaza `undefined` (p. ej. lastAgent o agentId ausentes): se eliminan antes de guardar.
+    await db.collection('agent_memory').doc(sessionId).set(JSON.parse(JSON.stringify(updated)), { merge: true });
   }
   // Embedding is best-effort; the canonical memory above is never blocked by AI availability.
   void indexSemanticMemory({
