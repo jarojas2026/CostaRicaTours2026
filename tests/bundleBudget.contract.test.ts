@@ -17,10 +17,14 @@ test('no namespace import of lucide-react (pulls the whole icon set into a chunk
 
 test('heavy route sections are lazy-loaded from App.tsx', () => {
   const app = read('src/App.tsx');
-  for (const name of ['InteractiveMap', 'NationalTransportSection', 'TicoCultureSection', 'AdminControlCenterPage', 'ProviderPortalPage']) {
+  for (const name of ['InteractiveMap', 'NationalTransportSection', 'TicoCultureSection', 'AdminControlCenterPage', 'ProviderPortalPage', 'ToursPage', 'TourDetailPage', 'TourDetailModal', 'BookingConfirmationModal', 'MyBookingsModal', 'DestinationsSection', 'CategoriesSection', 'BlogSection', 'AboutSection']) {
     assert.match(app, new RegExp(`const ${name} = lazy\\(`), name);
     assert.doesNotMatch(app, new RegExp(`import \\{ ${name} \\} from`), name);
   }
+});
+
+test('react-markdown is only reached through lazy chunks', () => {
+  assert.doesNotMatch(read('src/App.tsx'), /from 'react-markdown'/);
 });
 
 test('index chunk stays under 650 kB when a build is present', (t) => {

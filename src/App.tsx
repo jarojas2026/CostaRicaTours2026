@@ -1,27 +1,17 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import ReactMarkdown from 'react-markdown';
 import { REGIONS } from './data/catalogMeta';
 import { catalogSearchHref, readCatalogRouteFilters } from './utils/catalogRouteFilters';
 import { useTours } from './contexts/ToursContext';
 import { Tour, Language, Currency, TourCategory, TourRegion, BookingRequest } from './types';
 import { detectBrowserLanguage, getLangText, fetchExchangeRates } from './utils/i18n';
 import { Header } from './components/Header';
-import { TourDetailModal } from './components/TourDetailModal';
-import { BookingConfirmationModal } from './components/BookingConfirmationModal';
-import { MyBookingsModal } from './components/MyBookingsModal';
 import { Footer } from './components/Footer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 import { AmbientBackground } from './components/AmbientBackground';
 import { CookiesBanner } from './components/CookiesBanner';
 import { Home as HomePage } from './pages/Home';
-import { ToursPage } from './pages/ToursPage';
-import { TourDetailPage } from './pages/TourDetailPage';
-import { DestinationsSection } from './components/DestinationsSection';
-import { CategoriesSection } from './components/CategoriesSection';
-import { BlogSection } from './components/BlogSection';
-import { AboutSection } from './components/AboutSection';
 import { BottomNav } from './components/BottomNav';
 import { RouteMetadata } from './components/RouteMetadata';
 import { OfflineBanner } from './components/OfflineBanner';
@@ -58,6 +48,17 @@ const LeadsPipelinePage = lazy(() => import('./pages/LeadsPipelinePage').then(m 
 const DigitalCityJoinPage = lazy(() => import('./pages/DigitalCityJoinPage').then(m => ({ default: m.DigitalCityJoinPage })));
 const DigitalCityArchitecturePage = lazy(() => import('./pages/DigitalCityArchitecturePage').then(m => ({ default: m.DigitalCityArchitecturePage })));
 const LegalPage = lazy(() => import('./pages/LegalPage').then(m => ({ default: m.LegalPage })));
+const TourDetailModal = lazy(() => import('./components/TourDetailModal').then(m => ({ default: m.TourDetailModal })));
+const BookingConfirmationModal = lazy(() => import('./components/BookingConfirmationModal').then(m => ({ default: m.BookingConfirmationModal })));
+const MyBookingsModal = lazy(() => import('./components/MyBookingsModal').then(m => ({ default: m.MyBookingsModal })));
+const ToursPage = lazy(() => import('./pages/ToursPage').then(m => ({ default: m.ToursPage })));
+const TourDetailPage = lazy(() => import('./pages/TourDetailPage').then(m => ({ default: m.TourDetailPage })));
+const DestinationsSection = lazy(() => import('./components/DestinationsSection').then(m => ({ default: m.DestinationsSection })));
+const CategoriesSection = lazy(() => import('./components/CategoriesSection').then(m => ({ default: m.CategoriesSection })));
+const BlogSection = lazy(() => import('./components/BlogSection').then(m => ({ default: m.BlogSection })));
+const AboutSection = lazy(() => import('./components/AboutSection').then(m => ({ default: m.AboutSection })));
+// Customer-intake markdown renderer (react-markdown + micromark ≈ 100 kB) loads on first reply.
+const IntakeReplyMarkdown = lazy(() => import('./components/IntakeReplyMarkdown'));
 const BlogArticlePage = lazy(() => import('./pages/BlogArticlePage').then(m => ({ default: m.BlogArticlePage })));
 
 
@@ -313,19 +314,9 @@ export default function App() {
               <div className="rounded-2xl bg-black/20 border border-white/5 p-4 text-xs text-stone-400"><span className="font-bold text-stone-200">{language === 'es' ? 'Solicitud:' : 'Request:'}</span> {intakeMessage || (language === 'es' ? 'Solicitud recibida' : 'Request received')}</div>
               <div className="rounded-2xl bg-emerald-400/5 border border-emerald-400/15 p-5 min-h-[100px]">
                 {intakeLoading ? <div className="flex items-center gap-3 text-emerald-200 text-sm"><Loader2 className="animate-spin" size={18}/>{language === 'es' ? 'Los agentes están analizando tu solicitud, disponibilidad y contexto...' : 'Our agents are analyzing your request, availability and context...'}</div> : (
-                  <ReactMarkdown
-                    components={{
-                      h2: ({ children }) => <h2 className="text-base font-black text-white mb-3">{children}</h2>,
-                      h3: ({ children }) => <h3 className="text-sm font-black text-emerald-200 mt-4 mb-1.5">{children}</h3>,
-                      p: ({ children }) => <p className="text-sm leading-relaxed text-stone-100 mb-2.5">{children}</p>,
-                      strong: ({ children }) => <strong className="font-black text-white">{children}</strong>,
-                      ul: ({ children }) => <ul className="list-disc pl-5 space-y-1 text-sm text-stone-100 mb-3">{children}</ul>,
-                      ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1 text-sm text-stone-100 mb-3">{children}</ol>,
-                      a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer" className="text-emerald-300 underline underline-offset-2 break-all">{children}</a>
-                    }}
-                  >
-                    {intakeReply}
-                  </ReactMarkdown>
+                  <Suspense fallback={<p className="text-sm leading-relaxed text-stone-100 whitespace-pre-line">{intakeReply}</p>}>
+                    <IntakeReplyMarkdown>{intakeReply}</IntakeReplyMarkdown>
+                  </Suspense>
                 )}
               </div>
               {!intakeLoading && intakeEscalated && (
@@ -427,7 +418,7 @@ export default function App() {
             } />
 
             <Route path="/tours" element={
-              <ToursPage
+              <Suspense fallback={<RouteFallback />}><ToursPage
                 language={language}
                 currency={currency}
                 searchQuery={searchQuery}
@@ -437,11 +428,11 @@ export default function App() {
                 selectedRegion={selectedRegion}
                 setSelectedRegion={setSelectedRegion}
                 onSelectTour={setSelectedTour}
-              />
+              /></Suspense>
             } />
 
             <Route path="/tour/:id" element={
-              <TourDetailPage language={language} currency={currency} onBookingSuccess={handleBookingSuccess} />
+              <Suspense fallback={<RouteFallback />}><TourDetailPage language={language} currency={currency} onBookingSuccess={handleBookingSuccess} /></Suspense>
             } />
 
             <Route path="/destinations" element={
@@ -451,6 +442,7 @@ export default function App() {
                     {language === 'es' ? 'Destinos de Costa Rica' : 'Costa Rica Destinations'}
                   </h2>
                 </div>
+                <Suspense fallback={<RouteFallback />}>
                 <DestinationsSection 
                   language={language}
                   onSelectRegion={(regionId) => {
@@ -458,6 +450,7 @@ export default function App() {
                     navigate(catalogSearchHref({ region: regionId as TourRegion }));
                   }}
                 />
+                </Suspense>
               </div>
             } />
 
@@ -468,6 +461,7 @@ export default function App() {
                     {language === 'es' ? 'Actividades & Aventuras' : 'Activities & Adventures'}
                   </h2>
                 </div>
+                <Suspense fallback={<RouteFallback />}>
                 <CategoriesSection 
                   language={language} 
                   onSelectCategory={(catId) => {
@@ -475,6 +469,7 @@ export default function App() {
                     navigate(catalogSearchHref({ category: catId as TourCategory }));
                   }}
                 />
+                </Suspense>
               </div>
             } />
 
@@ -544,13 +539,13 @@ export default function App() {
               </div>
             } />
 
-            <Route path="/blog" element={<div className="py-12"><BlogSection language={language} /></div>} />
+            <Route path="/blog" element={<div className="py-12"><Suspense fallback={<RouteFallback />}><BlogSection language={language} /></Suspense></div>} />
             <Route path="/blog/:slug" element={<Suspense fallback={<RouteFallback />}><BlogArticlePage language={language} /></Suspense>} />
             <Route path="/terms" element={<Suspense fallback={<RouteFallback />}><LegalPage pageId="terms" language={language} /></Suspense>} />
             <Route path="/cancellation" element={<Suspense fallback={<RouteFallback />}><LegalPage pageId="cancellation" language={language} /></Suspense>} />
             <Route path="/privacy" element={<Suspense fallback={<RouteFallback />}><LegalPage pageId="privacy" language={language} /></Suspense>} />
             <Route path="/sinac-escnna" element={<Suspense fallback={<RouteFallback />}><LegalPage pageId="sinac-escnna" language={language} /></Suspense>} />
-            <Route path="/about" element={<div className="py-12"><AboutSection language={language} /></div>} />
+            <Route path="/about" element={<div className="py-12"><Suspense fallback={<RouteFallback />}><AboutSection language={language} /></Suspense></div>} />
             <Route path="/culture" element={<Suspense fallback={<RouteFallback />}><TicoCultureSection language={language} onExploreTours={() => navigate('/tours')} /></Suspense>} />
             
             <Route path="/tools" element={
@@ -634,6 +629,7 @@ export default function App() {
 
       {/* Tour Detail Modal */}
       {selectedTour && (
+        <Suspense fallback={null}>
         <TourDetailModal
           tour={selectedTour}
           isOpen={!!selectedTour}
@@ -647,10 +643,12 @@ export default function App() {
           }}
           onBookingSuccess={handleBookingSuccess}
         />
+        </Suspense>
       )}
 
       {/* Booking Confirmation Voucher Modal */}
       {recentBooking && (
+        <Suspense fallback={null}>
         <BookingConfirmationModal
           booking={recentBooking}
           isOpen={!!recentBooking}
@@ -658,10 +656,12 @@ export default function App() {
           currency={currency}
           onClose={() => setRecentBooking(null)}
         />
+        </Suspense>
       )}
 
       {/* My Bookings List Drawer/Modal */}
       {isBookingsModalOpen && (
+        <Suspense fallback={null}>
         <MyBookingsModal
           bookings={myBookings}
           language={language}
@@ -672,6 +672,7 @@ export default function App() {
             setRecentBooking(b);
           }}
         />
+        </Suspense>
       )}
 
       {/* Custom Travel Package Builder Modal */}

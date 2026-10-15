@@ -79,8 +79,12 @@ test('journey agent tools accept the same rich traveler context as the custom-tr
 test('customer-facing intake renders markdown and preserves the active journey reference', () => {
   const app = read('src/App.tsx');
   const intakeUtil = read('src/utils/customerIntake.ts');
-  assert.match(app, /import ReactMarkdown from 'react-markdown'/);
-  assert.match(app, /<ReactMarkdown/);
+  // The markdown renderer is lazy-loaded so react-markdown stays out of the index chunk.
+  const markdown = read('src/components/IntakeReplyMarkdown.tsx');
+  assert.match(app, /const IntakeReplyMarkdown = lazy\(\(\) => import\('\.\/components\/IntakeReplyMarkdown'\)\)/);
+  assert.match(app, /<IntakeReplyMarkdown>\{intakeReply\}<\/IntakeReplyMarkdown>/);
+  assert.match(markdown, /import ReactMarkdown from 'react-markdown'/);
+  assert.match(markdown, /<ReactMarkdown/);
   assert.match(app, /crt_active_journey/);
   assert.match(intakeUtil, /journeyId\?: string/);
   assert.match(intakeUtil, /workflow\?: unknown/);
