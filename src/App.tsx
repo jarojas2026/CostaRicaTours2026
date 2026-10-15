@@ -118,9 +118,25 @@ export default function App() {
     // A short post-paint reset prevents browser scroll anchoring/lazy route
     // content from restoring the previous page position after the route swap.
     const timeout = window.setTimeout(resetViewport, 360);
+    // Deferred route content can change layout after the initial reset.
+    // Observe the main landmark briefly, without overriding later user scrolling.
+    let userScrolled = false;
+    const markUserScroll = () => { userScrolled = true; };
+    window.addEventListener('wheel', markUserScroll, { passive: true, once: true });
+    window.addEventListener('touchmove', markUserScroll, { passive: true, once: true });
+    const observer = new ResizeObserver(() => {
+      if (!userScrolled && window.scrollY > 0) resetViewport();
+    });
+    const main = document.getElementById('main-content');
+    if (main) observer.observe(main);
+    const stopObserving = window.setTimeout(() => observer.disconnect(), 1200);
     return () => {
       window.cancelAnimationFrame(frame);
       window.clearTimeout(timeout);
+      window.clearTimeout(stopObserving);
+      observer.disconnect();
+      window.removeEventListener('wheel', markUserScroll);
+      window.removeEventListener('touchmove', markUserScroll);
     };
   }, [location.pathname]);
 
