@@ -6,6 +6,7 @@
  * Backend: puede importarlo directamente (o vía ./toursData).
  */
 import type { Tour } from '../types';
+import { OPERATOR_TOURS } from './operatorTours';
 
 export const TOURS: Tour[] = [
   {
@@ -2974,5 +2975,8 @@ for (const tour of TOURS) {
   tour.image = override[0];
   tour.gallery = [override[0], override[1]];
 }
+
+// Tours reales de operadores (consulta), investigados el 2026-10-14. Ver ./operatorTours.ts.
+TOURS.push(...OPERATOR_TOURS);
 
 export const TOURS_DATA = TOURS;
