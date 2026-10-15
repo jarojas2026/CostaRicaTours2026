@@ -10,6 +10,7 @@ import { getDestinationWeather } from './weatherPulseService';
 import { checkTourAvailability, findBookingByCodeOrEmail, createBooking } from './bookingService';
 import { observeProviderSla } from './providerCommunicationService';
 import { getOperationalMemory, retrieveRelevantMemory } from './memoryService';
+import { findGuides, findNearestServices, getParkInfo, searchOperatorTours } from './nationalKnowledgeService';
 import {
   COMPANY_FACTS,
   compareTours,
@@ -137,6 +138,22 @@ export const AGENT_TOOL_REGISTRY = {
   next_best_action: {
     description: 'Recommend the next operational or sales step from verified journey state without executing it.',
     sideEffect: false
+  },
+  search_operator_tours: {
+    description: 'Search real operator tours with operator-published prices (budget, operator, region). Always say the price is published by the operator and availability must be confirmed.',
+    sideEffect: false
+  },
+  find_guides: {
+    description: 'Find ICT-accredited tour guides by zone, language and specialty (official ICT list). Never shares personal phone numbers.',
+    sideEffect: false
+  },
+  park_info: {
+    description: 'Official SINAC park/protected-area info: hours, foreign/resident fees, phone and official booking link.',
+    sideEffect: false
+  },
+  nearest_services: {
+    description: 'Nearest hospitals/CCSS clinics, police/fire/Red Cross, pharmacies, transport, lodging or food to a coordinate in Costa Rica.',
+    sideEffect: false
   }
 } as const;
 
@@ -145,12 +162,31 @@ export async function executeAgentTool(
   args: Record<string, any>
 ): Promise<any> {
   switch (name) {
+    case 'search_operator_tours':
+      return searchOperatorTours({
+        query: args.query ? String(args.query) : undefined,
+        region: args.region ? String(args.region) : undefined,
+        operator: args.operator ? String(args.operator) : undefined,
+        maxPriceUSD: args.maxPriceUSD !== undefined ? Number(args.maxPriceUSD) : undefined,
+        limit: args.limit !== undefined ? Number(args.limit) : undefined,
+      });
+    case 'find_guides':
+      return findGuides({
+        region: args.region ? String(args.region) : undefined,
+        language: args.language ? String(args.language) : undefined,
+        specialty: args.specialty ? String(args.specialty) : undefined,
+        limit: args.limit !== undefined ? Number(args.limit) : undefined,
+      });
+    case 'park_info':
+      return getParkInfo(String(args.query || ''), args.limit !== undefined ? Number(args.limit) : 3);
+    case 'nearest_services':
+      return findNearestServices(Number(args.lat), Number(args.lng), String(args.kind || 'emergencia'), args.limit !== undefined ? Number(args.limit) : 5, args.type ? String(args.type) : undefined);
     case 'search_tours': {
       const q = String(args.query || '').toLowerCase().trim();
       const region = String(args.region || '').toLowerCase().trim();
       const category = String(args.category || '').toLowerCase().trim();
       return TOURS.filter((t) => {
-        const hay = [t.id, t.title.es, t.title.en, t.region, t.category].join(' ').toLowerCase();
+        const hay = [t.id, t.title.es, t.title.en, t.region, t.category, t.operatorName ?? '', t.location?.placeName ?? ''].join(' ').toLowerCase();
         return (!q || hay.includes(q)) &&
           (!region || t.region.toLowerCase() === region || hay.includes(region)) &&
           (!category || t.category.toLowerCase() === category || hay.includes(category));
@@ -162,7 +198,11 @@ export async function executeAgentTool(
         category: t.category,
         priceUSD: t.priceUSD,
         duration: t.durationLabel?.es || t.durationHours,
-        maxGroupSize: t.maxGroupSize
+        maxGroupSize: t.maxGroupSize,
+        catalogStatus: t.catalogStatus ?? 'bookable',
+        operator: t.operatorName ?? null,
+        priceStatus: t.priceSource === 'publicado_por_operador' ? (t.priceUSD > 0 ? 'publicado_por_operador' : 'consulta_requerida') : 'tarifa_de_referencia',
+        sourceUrl: t.sourceUrl ?? null
       }));
     }
     case 'get_tour_media': {
@@ -815,6 +855,58 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
       type: 'OBJECT',
       properties: { regionId: { type: 'STRING', description: 'Destination region id such as arenal, monteverde, guanacaste, manuel_antonio, caribe_sur or osa' } },
       required: ['regionId']
+    }
+  }
+  ,
+  {
+    name: 'search_operator_tours',
+    description: 'Search real Costa Rica operator tours with operator-published prices. Filter by text, region, operator and max budget in USD. Present prices as published by the operator, never as confirmed availability.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        query: { type: 'STRING', description: 'Keywords, e.g. "rafting", "chocolate", "caño negro"' },
+        region: { type: 'STRING', description: 'Region or place, e.g. arenal, osa, sarapiqui, guanacaste' },
+        operator: { type: 'STRING', description: 'Operator name' },
+        maxPriceUSD: { type: 'NUMBER', description: 'Maximum adult price in USD' },
+        limit: { type: 'NUMBER', description: 'Max results (1-15)' }
+      }
+    }
+  },
+  {
+    name: 'find_guides',
+    description: 'Find ICT-accredited tour guides by zone, language (e.g. German, French, Japanese) and specialty (naturalista, aguas rápidas, buceo...). Returns names, languages and ICT credentials plus association contacts; never personal phones.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        region: { type: 'STRING', description: 'Zone, e.g. Osa, Tortuguero, Arenal, Caribe Sur, Monteverde, Guanacaste' },
+        language: { type: 'STRING', description: 'Language the guide speaks' },
+        specialty: { type: 'STRING', description: 'Guide specialty' },
+        limit: { type: 'NUMBER', description: 'Max guides (1-20)' }
+      }
+    }
+  },
+  {
+    name: 'park_info',
+    description: 'Official SINAC info for a national park or protected area: hours, foreign and resident fees, phone and official booking link.',
+    parameters: {
+      type: 'OBJECT',
+      properties: { query: { type: 'STRING', description: 'Park name, e.g. Poás, Manuel Antonio, Corcovado, Chirripó' } },
+      required: ['query']
+    }
+  },
+  {
+    name: 'nearest_services',
+    description: 'Nearest services to a coordinate in Costa Rica: kind = hospital (CCSS), farmacia, emergencia (police/fire/Red Cross), transporte, hospedaje or comida. Always remind 911 for emergencies.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        lat: { type: 'NUMBER', description: 'Latitude' },
+        lng: { type: 'NUMBER', description: 'Longitude' },
+        kind: { type: 'STRING', description: 'hospital | farmacia | emergencia | transporte | hospedaje | comida' },
+        type: { type: 'STRING', description: 'Optional subtype filter, e.g. Hospital, Policía, Bomberos' },
+        limit: { type: 'NUMBER', description: 'Max results (1-10)' }
+      },
+      required: ['lat', 'lng']
     }
   }
 ];
