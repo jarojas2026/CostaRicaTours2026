@@ -4,6 +4,7 @@ import { getLangText, UI_TRANSLATIONS } from '../utils/i18n';
 
 import { LazyImage } from './LazyImage';
 import { ReferencePrice } from './ReferencePrice';
+import { OperatorPriceSource } from './OperatorPriceSource';
 import { Star, Clock, MapPin, Shield, ArrowRight, ExternalLink, X, Compass, Navigation, Heart, Scale, Check } from 'lucide-react';
 import { isBookableTour } from '../utils/tourListing';
 
@@ -187,11 +188,13 @@ export const TourCard: React.FC<TourCardProps> = ({
           <div className="flex items-center justify-between pt-4 mt-4 border-t border-emerald-500/20">
             <div className="space-y-0.5">
               <ReferencePrice amountUSD={tour.priceUSD} currency={currency} language={language} />
-              {!isBookable && (
+              {!isBookable && (tour.priceSource === 'publicado_por_operador' ? (
+                <OperatorPriceSource tour={tour} language={language} variant="compact" />
+              ) : (
                 <span className="text-[10px] text-stone-400 font-medium block">
                   {language === 'es' ? 'Operador aún no confirmado' : 'Operator not confirmed yet'}
                 </span>
-              )}
+              ))}
             </div>
 
             <button 
