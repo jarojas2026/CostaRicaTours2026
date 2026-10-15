@@ -36,6 +36,6 @@ test('acceptance writes both documents in a transaction and fails on persistence
 test('WhatsApp fallback preserves family details without claiming payment or confirmation', () => {
   const message = bookingInquiry({ language: 'es', tour: 'Bosque & playa', date: '2026-12-10', adults: 2, children: 2, pickup: 'Por definir' });
   assert.match(message, /Adultos: 2\nNiños: 2/);
-  assert.match(message, /comprobar si ya existe/);
+  assert.match(message, /ya enviaste esta solicitud/);
   assert.match(message, /no confirma reserva ni pago/);
 });
