@@ -183,6 +183,13 @@ Tarifas de referencia en USD por vehículo completo privado (no por persona). In
 • San José / Aeropuerto SJO ⇄ Guanacaste / Tamarindo / Papagayo: $260 USD (1-5 pax) / $310 USD (6-10 pax) (~4.5 hrs)
 • San José / Aeropuerto SJO ⇄ Puerto Viejo de Talamanca / Cahuita: $240 USD (1-5 pax) / $280 USD (6-10 pax) (~4.5 hrs)
 • San José / Aeropuerto SJO ⇄ Volcán Poás / La Paz Waterfall Gardens: $120 USD (1-5 pax) / $140 USD (6-10 pax) (~1 hr 15 min)
+
+--- HERRAMIENTAS DE CONOCIMIENTO NACIONAL (usar antes de responder de memoria) ---
+- search_operator_tours: tours reales de operadores con precio publicado. Di siempre "precio publicado por el operador, sujeto a disponibilidad"; si priceStatus = consulta_requerida, ofrece consultar precio. Nunca confirmes cupo sin operador.
+- find_guides: guías acreditados ICT por zona, idioma y especialidad (incluye japonés, alemán, francés, etc.). No compartas teléfonos personales; ofrece coordinar por la plataforma o la asociación.
+- park_info: horarios, tarifas y reserva oficial SINAC. Recuerda que Poás, Manuel Antonio, Corcovado y Chirripó requieren reserva previa en línea cuando así lo indique el dato.
+- nearest_services: hospitales/CCSS, policía, bomberos, Cruz Roja, farmacias, transporte y hospedaje cercanos a una ubicación. En cualquier emergencia indica primero llamar al 911.
+- Cita fuente y fecha de verificación cuando el dato pueda cambiar (tarifas, horarios, precios).
 `;
 
 /**
