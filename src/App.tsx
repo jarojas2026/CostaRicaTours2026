@@ -117,26 +117,29 @@ export default function App() {
     });
     // A short post-paint reset prevents browser scroll anchoring/lazy route
     // content from restoring the previous page position after the route swap.
-    const timeout = window.setTimeout(resetViewport, 360);
-    // Deferred route content can change layout after the initial reset.
-    // Observe the main landmark briefly, without overriding later user scrolling.
+    // Route transitions may restore scroll without resizing the main landmark.
+    // Check briefly after navigation, but never override intentional user input.
     let userScrolled = false;
     const markUserScroll = () => { userScrolled = true; };
-    window.addEventListener('wheel', markUserScroll, { passive: true, once: true });
-    window.addEventListener('touchmove', markUserScroll, { passive: true, once: true });
-    const observer = new ResizeObserver(() => {
-      if (!userScrolled && window.scrollY > 0) resetViewport();
-    });
-    const main = document.getElementById('main-content');
-    if (main) observer.observe(main);
-    const stopObserving = window.setTimeout(() => observer.disconnect(), 1200);
+    window.addEventListener('wheel', markUserScroll, { passive: true });
+    window.addEventListener('touchmove', markUserScroll, { passive: true });
+    window.addEventListener('pointerdown', markUserScroll, { passive: true });
+    window.addEventListener('keydown', markUserScroll);
+    const startedAt = performance.now();
+    let settleFrame = 0;
+    const settleViewport = () => {
+      if (userScrolled || performance.now() - startedAt >= 1800) return;
+      if (window.scrollY > 0) resetViewport();
+      settleFrame = window.requestAnimationFrame(settleViewport);
+    };
+    settleFrame = window.requestAnimationFrame(settleViewport);
     return () => {
       window.cancelAnimationFrame(frame);
-      window.clearTimeout(timeout);
-      window.clearTimeout(stopObserving);
-      observer.disconnect();
+      window.cancelAnimationFrame(settleFrame);
       window.removeEventListener('wheel', markUserScroll);
       window.removeEventListener('touchmove', markUserScroll);
+      window.removeEventListener('pointerdown', markUserScroll);
+      window.removeEventListener('keydown', markUserScroll);
     };
   }, [location.pathname]);
 
