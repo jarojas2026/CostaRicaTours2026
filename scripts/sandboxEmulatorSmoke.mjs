@@ -17,7 +17,7 @@ const payload = { fields: { marker: { stringValue: 'SIMULATED_ONLY_NOT_A_RESERVA
 const write = await fetch(base + '/audit_sandbox?documentId=' + id, {
   method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload)
 });
-assert.equal(write.status, 200, 'Firestore emulator should accept a sandbox document: ' + await write.text());
+assert.equal(write.status, 200, 'Firestore emulator should accept a sandbox document' );
 const read = await fetch(base + '/audit_sandbox/' + id);
 assert.equal(read.status, 200);
 const doc = await read.json();
@@ -28,7 +28,7 @@ const signup = await fetch('http://' + auth + '/identitytoolkit.googleapis.com/v
   method: 'POST', headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ email: 'sandbox-tourist@example.invalid', password: 'test-password-123', returnSecureToken: true })
 });
-assert.equal(signup.status, 200, 'Auth emulator should create a test-only identity: ' + await signup.text());
+assert.equal(signup.status, 200, 'Auth emulator should create a test-only identity');
 const identity = await signup.json();
 assert.ok(identity.localId);
 process.stdout.write('SANDBOX_OK demo project, local Auth and Firestore, simulated data only\\n');
