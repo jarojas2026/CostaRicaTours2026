@@ -1,3 +1,4 @@
+import { knowledgeToolReply } from '../knowledgeReplies';
 import crypto from 'crypto';
 /**
  * Agentes de IA y sus herramientas internas.
@@ -139,16 +140,22 @@ agentsRouter.post('/api/gemini/concierge', async (req, res) => {
     // No model answered (no AI key / knowledge-base fallback): a concrete
     // inquiry gets the deterministic summary instead of a generic text.
     const modelAnswered = Boolean(assistantResult.modelUsed);
+    // Sin modelo: primero las herramientas verificables (emergencias, guías ICT, parques SINAC, tours por presupuesto).
+    const toolReply = modelAnswered ? undefined : knowledgeToolReply(userMsg, lang);
     res.json({
-      reply: !modelAnswered && deterministicReply ? deterministicReply : assistantResult.reply,
+      reply: toolReply ?? (!modelAnswered && deterministicReply ? deterministicReply : assistantResult.reply),
       quickActions: assistantResult.quickActions,
       success: true,
-      source: assistantResult.modelUsed || (deterministicReply ? 'deterministic_extraction' : 'gemini_fallback'),
+      source: assistantResult.modelUsed || (toolReply ? 'knowledge_tools' : deterministicReply ? 'deterministic_extraction' : 'gemini_fallback'),
       modelUsed: assistantResult.modelUsed,
       sources: assistantResult.sources || [],
       ...structured
     });
   } catch (err: any) {
+    const toolReply = knowledgeToolReply(String(req.body?.message || ''), req.body?.language === 'en' ? 'en' : 'es');
+    if (toolReply) {
+      return res.json({ reply: toolReply, success: true, source: 'knowledge_tools', aiAvailable: false, ...structured });
+    }
     if (deterministicReply) {
       return res.json({
         reply: deterministicReply,
