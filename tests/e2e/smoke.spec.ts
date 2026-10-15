@@ -89,3 +89,34 @@ test('in-chat booking request shows "pendiente de confirmación" (mocked network
   expect(payload).not.toHaveProperty('bookingId');
   expectNoConsoleErrors(consoleProblems);
 });
+
+test('Sofía prefers the server extraction: understood lines, reference quote and WhatsApp hand-off', async ({ page, consoleProblems }) => {
+  const whatsappMessage = 'Hola, quiero cotizar esta experiencia:\n• Experiencia: rafting en Pacuare\n• Personas: 2\n• Presupuesto: US$300 total';
+  await mockApi(page, {
+    conciergeExtra: {
+      understood: { language: 'es', activity: 'rafting', tourId: 'pacuare-rafting', people: 2, month: 12, region: 'pacuare', asksPrice: true },
+      quote: { kind: 'reference', subjectToConfirmation: true, operatorConfirmed: false, tourId: 'pacuare-rafting', unitPriceUSD: 110, people: 2, totalUSD: 220, line: 'US$110 × 2 personas = US$220 (referencia, sujeto a confirmación)' },
+      inquiryHandoff: {
+        source: 'server',
+        understood: ['Experiencia: rafting en Pacuare', 'Personas: 2', 'Fecha: 2026-12-15', 'Presupuesto: US$300 total'],
+        tourId: 'pacuare-rafting',
+        referenceLine: 'US$110 × 2 personas = US$220 (referencia, sujeto a confirmación)',
+        operatorNote: 'El operador todavía no está confirmado para esta experiencia.',
+        whatsappMessage,
+        whatsappUrl: `https://wa.me/50687959148?text=${encodeURIComponent(whatsappMessage)}`,
+      },
+    },
+  });
+  await page.goto('/ai');
+  await page.getByPlaceholder(/Pregunta a/).fill('rafting Pacuare 2 personas 15 de diciembre presupuesto US$300');
+  await page.getByRole('button', { name: /enviar/i }).click();
+  const card = page.locator('[data-inquiry-handoff="true"]').last();
+  await expect(card).toBeVisible();
+  await expect(card.getByText('Presupuesto: US$300 total')).toBeVisible();
+  await expect(card.getByText('Fecha: 2026-12-15')).toBeVisible();
+  await expect(card.getByText(/US\$220 \(referencia, sujeto a confirmación\)/)).toBeVisible();
+  const link = card.locator('a[data-human-handoff="true"]');
+  await expect(link).toHaveAttribute('href', /^https:\/\/wa\.me\/50687959148\?text=/);
+  await expect(page.getByText(/Reserva Confirmada/)).toHaveCount(0);
+  expectNoConsoleErrors(consoleProblems);
+});

@@ -16,7 +16,7 @@ import { AI_AGENTS, getAIAgentById } from '../data/aiAgentsData';
 import { ClaudeItineraryModal } from './ClaudeItineraryModal';
 import { getUsdToCrcRate, formatCrc } from '../utils/currencies';
 import { useChatAnalytics } from '../hooks/useChatAnalytics';
-import { buildTripInquiryHandoff, type TripInquiryHandoff } from '../utils/tripRequestParser';
+import { buildTripInquiryHandoff, serverInquiryHandoff, type TripInquiryHandoff } from '../utils/tripRequestParser';
 import { chatSessionHeaders, clearStoredChatSession, readStoredChatSession, requestChatSession, type ChatSessionCredentials } from '../utils/chatSession';
 
 interface AIAssistantProps {
@@ -559,8 +559,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       }
 
       // Concrete inquiries (activity/place + people/date/price) always get an
-      // explicit acknowledgement and a prefilled WhatsApp hand-off.
-      const inquiryHandoff = buildTripInquiryHandoff(query, language, TOURS);
+      // explicit acknowledgement and a prefilled WhatsApp hand-off. The server
+      // extraction (catalog-wide, dates, budget) wins; the client parser is the
+      // fallback when the server did not return a well-formed hand-off.
+      const inquiryHandoff = serverInquiryHandoff(data) || buildTripInquiryHandoff(query, language, TOURS);
       const handoffTour = inquiryHandoff?.tourId ? TOURS.find(t => t.id === inquiryHandoff.tourId) : undefined;
 
       // Find relevant tour matches in query or reply for smart UI recommendation card
