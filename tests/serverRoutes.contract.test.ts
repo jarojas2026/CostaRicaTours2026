@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
-import { createApp } from '../backend/app';
+// routeInventory must load before backend/app: it records Express 5 mount paths.
 import { formatRouteEntry, listRegisteredRoutes } from './helpers/routeInventory';
+import { createApp } from '../backend/app';
 
 const snapshotPath = path.join(process.cwd(), 'tests', 'fixtures', 'serverRoutes.snapshot.txt');
 
@@ -36,6 +37,6 @@ test('global middleware, API 404 and error handler wrap the domain routers', () 
   const firstRoute = layers.findIndex((line) => line.startsWith('ROUTE '));
   const lastRoute = layers.findLastIndex((line) => line.startsWith('ROUTE '));
   assert.ok(layers.slice(0, firstRoute).some((line) => line.includes('commerce')), 'admin routers before domain routes');
-  assert.match(layers[lastRoute + 1], /^USE \/\^\\\/api/, 'API 404 right after the last route');
-  assert.equal(layers.at(-1), 'USE /^\\/?(?=\\/|$)/i apiErrorHandler');
+  assert.match(layers[lastRoute + 1], /^USE \/api /, 'API 404 right after the last route');
+  assert.equal(layers.at(-1), 'USE / apiErrorHandler');
 });

@@ -1,5 +1,5 @@
 import { METHODS } from 'node:http';
-import type { Express } from 'express';
+import express, { type Express } from 'express';
 
 /** One registered Express layer, flattened across routers mounted at "/". */
 export interface RouteEntry {
@@ -7,24 +7,48 @@ export interface RouteEntry {
   kind: 'ROUTE' | 'USE';
   /** Upper-case HTTP methods (`ALL` for .all()); empty for USE layers. */
   methods: string[];
-  /** Route path(s) as registered, or the mount regexp for USE layers. */
+  /** Route path(s) as registered, or the mount path(s) for USE layers. */
   path: string;
   /** Number of handlers on a route, or the middleware function name for USE layers. */
   handlers: number | string;
 }
 
+type MountPath = string | RegExp | Array<string | RegExp>;
+
 interface ExpressLayer {
   name: string;
-  regexp: RegExp & { fast_slash?: boolean };
+  /** Set by the instrumentation below: Express 5 layers do not keep their path. */
+  __mountPath?: MountPath;
   handle: { stack?: ExpressLayer[] } & ((...args: unknown[]) => unknown);
   route?: {
-    path: string | RegExp | Array<string | RegExp>;
+    path: MountPath;
     methods: Record<string, boolean>;
     stack: unknown[];
   };
 }
 
-function describePath(path: string | RegExp | Array<string | RegExp>): string {
+/**
+ * Express 5 (router 2.x) compiles mount paths into closures, so a USE layer no
+ * longer exposes the path it was mounted at. Record it at registration time.
+ * This module must be imported before backend/app (domain routers register
+ * their middleware at import time).
+ */
+const routerProto = (express.Router as unknown as { prototype: Record<string, any> }).prototype;
+if (!routerProto.__crtInventoryPatched) {
+  const originalUse = routerProto.use;
+  routerProto.use = function patchedUse(this: { stack: ExpressLayer[] }, ...args: unknown[]) {
+    const before = this.stack.length;
+    let probe: unknown = args[0];
+    while (Array.isArray(probe) && probe.length) probe = probe[0];
+    const mountPath = (typeof probe === 'function' ? '/' : args[0]) as MountPath;
+    const result = originalUse.apply(this, args);
+    for (const layer of this.stack.slice(before)) layer.__mountPath = mountPath;
+    return result;
+  };
+  routerProto.__crtInventoryPatched = true;
+}
+
+function describePath(path: MountPath): string {
   return Array.isArray(path) ? `[${path.map(String).join(', ')}]` : String(path);
 }
 
@@ -50,17 +74,17 @@ function walk(stack: ExpressLayer[], out: RouteEntry[]): void {
     }
     // Domain routers are mounted at "/": flatten them so the inventory reflects
     // the order in which Express actually evaluates every layer.
-    if (layer.name === 'router' && layer.regexp.fast_slash && Array.isArray(layer.handle.stack)) {
+    if (layer.name === 'router' && layer.__mountPath === '/' && Array.isArray(layer.handle.stack)) {
       walk(layer.handle.stack, out);
       continue;
     }
-    out.push({ kind: 'USE', methods: [], path: String(layer.regexp), handlers: layer.name });
+    out.push({ kind: 'USE', methods: [], path: describePath(layer.__mountPath ?? '?'), handlers: layer.name });
   }
 }
 
-/** Lists every layer registered on an Express 4 app, in evaluation order. */
+/** Lists every layer registered on an Express 5 app, in evaluation order. */
 export function listRegisteredRoutes(app: Express): RouteEntry[] {
-  const router = (app as unknown as { _router?: { stack: ExpressLayer[] } })._router;
+  const router = (app as unknown as { router?: { stack: ExpressLayer[] } }).router;
   if (!router) return [];
   const out: RouteEntry[] = [];
   walk(router.stack, out);

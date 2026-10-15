@@ -8,7 +8,7 @@ test('unregistered API paths return a bilingual JSON 404 before the SPA fallback
   const source = readServerSource();
   const apiFallback = source.indexOf("app.use('/api', (req, res) => {");
   const serverStart = source.indexOf('async function startServer()');
-  const spaFallback = source.indexOf("app.get('*', (req, res) => {");
+  const spaFallback = source.indexOf("app.get('/{*splat}', (req, res) => {");
 
   assert.notEqual(apiFallback, -1, 'Missing the API not-found middleware');
   assert.notEqual(serverStart, -1, 'Missing the server startup boundary');

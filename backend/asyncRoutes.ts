@@ -4,9 +4,11 @@ import { captureServerException } from './observability/sentry';
 const ROUTE_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'all', 'use'] as const;
 
 /**
- * Express 4 does not forward rejected promises from async handlers to the error
- * pipeline; an unhandled rejection can terminate the Node process. This wraps
- * every route handler registered on the app so rejections become next(err).
+ * Wraps every route handler so sync throws and async rejections become
+ * next(err) exactly once. Express 5 also forwards a *returned* rejected promise,
+ * so the wrapper deliberately returns undefined: returning the promise would
+ * make Express call next(err) a second time (double error handling, and the
+ * final handler destroys the socket once headers were sent).
  * Error handlers (4 arguments) and `app.get('setting')` lookups are untouched.
  */
 export function wrapAsyncHandler<T extends (...args: any[]) => any>(handler: T): T {
@@ -20,9 +22,10 @@ export function wrapAsyncHandler<T extends (...args: any[]) => any>(handler: T):
       if (result && typeof (result as Promise<unknown>).catch === 'function') {
         (result as Promise<unknown>).catch(next);
       }
-      return result;
+      return undefined;
     } catch (error) {
-      return next(error);
+      next(error);
+      return undefined;
     }
   } as unknown as T;
   (wrapped as any).__crtAsyncWrapped = true;
