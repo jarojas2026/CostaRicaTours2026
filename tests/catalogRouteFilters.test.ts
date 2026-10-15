@@ -72,3 +72,11 @@ test('editing a search term preserves other filters and removing it does not era
   assert.equal(cleared.get('favorites'), '1');
   assert.equal(original.get('q'), 'old', 'original params are immutable');
 });
+
+test('typing a multi-word query keeps the space between words', () => {
+  const afterSpace = patchCatalogRouteFilters(new URLSearchParams(), { q: 'Caño ' });
+  assert.equal(readCatalogRouteFilters(afterSpace).q, 'Caño ');
+  const full = patchCatalogRouteFilters(afterSpace, { q: 'Caño Negro' });
+  assert.equal(readCatalogRouteFilters(full).q, 'Caño Negro');
+  assert.equal(patchCatalogRouteFilters(full, { q: '   ' }).has('q'), false);
+});
