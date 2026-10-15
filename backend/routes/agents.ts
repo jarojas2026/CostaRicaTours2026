@@ -17,6 +17,18 @@ import { handleProviderActionResponse } from '../nativeWorkflows';
 import { executeSinpeVerification } from '../sinpeService';
 import { buildSkillEvolutionReport, selectEvolvedSkill, recordSkillOutcome, proposeSkillUpgrade } from '../skillEvolutionEngine';
 import { createRouter, chatSessionTokenFrom, requireAdmin, requireAgentTool } from './shared';
+import { understandConciergeMessage, deterministicConciergeReply, type ConciergeUnderstanding } from '../conciergeUnderstanding';
+
+/** Structured, deterministic fields attached to every concierge response. */
+function conciergeStructuredFields(u: ConciergeUnderstanding | null) {
+  if (!u) return {};
+  return {
+    understood: u.understood,
+    isConcreteInquiry: u.isConcreteInquiry,
+    ...(u.quote ? { quote: u.quote } : {}),
+    ...(u.inquiryHandoff ? { inquiryHandoff: u.inquiryHandoff } : {}),
+  };
+}
 
 /** Agentes, concierge, counter y skills. */
 export const agentsRouter = createRouter();
@@ -53,6 +65,15 @@ agentsRouter.post('/api/agents/log_exception', requireAdmin, (req, res) => {
 });
 
 agentsRouter.post('/api/gemini/concierge', async (req, res) => {
+  // Deterministic understanding runs first and never depends on the AI model.
+  let understanding: ConciergeUnderstanding | null = null;
+  try {
+    understanding = understandConciergeMessage(String(req.body?.message || ''), TOURS, { requestedLanguage: req.body?.language });
+  } catch (extractErr: any) {
+    console.warn('Concierge understanding failed:', extractErr?.message);
+  }
+  const structured = conciergeStructuredFields(understanding);
+  const deterministicReply = understanding ? deterministicConciergeReply(understanding) : undefined;
   try {
     const { message, language, history, agentId, context, engine, sessionId } = req.body;
     const userMsg = message || '';
@@ -70,7 +91,8 @@ agentsRouter.post('/api/gemini/concierge', async (req, res) => {
           quickActions: claudeResult.quickActions || [],
           success: true,
           source: 'claude_vertex',
-          modelUsed: claudeResult.modelUsed
+          modelUsed: claudeResult.modelUsed,
+          ...structured
         });
       } catch (claudeErr: any) {
         console.warn('Fallback de Claude a Gemini:', claudeErr.message);
@@ -88,7 +110,8 @@ agentsRouter.post('/api/gemini/concierge', async (req, res) => {
         agentId: counterResult.agentId,
         agentName: counterResult.agentName,
         success: true,
-        source: counterResult.modelUsed || 'counter_agent'
+        source: counterResult.modelUsed || 'counter_agent',
+        ...structured
       });
     }
 
@@ -99,19 +122,33 @@ agentsRouter.post('/api/gemini/concierge', async (req, res) => {
       await rememberTurn(memorySessionId, { role: 'user', text: userMsg }, { agentId: assistantResult.agentId || agentId });
       await rememberTurn(memorySessionId, { role: 'assistant', text: assistantResult.reply }, { agentId: assistantResult.agentId || agentId });
     }
+    // No model answered (no AI key / knowledge-base fallback): a concrete
+    // inquiry gets the deterministic summary instead of a generic text.
+    const modelAnswered = Boolean(assistantResult.modelUsed);
     res.json({
-      reply: assistantResult.reply,
+      reply: !modelAnswered && deterministicReply ? deterministicReply : assistantResult.reply,
       quickActions: assistantResult.quickActions,
       success: true,
-      source: assistantResult.modelUsed || 'gemini_fallback',
+      source: assistantResult.modelUsed || (deterministicReply ? 'deterministic_extraction' : 'gemini_fallback'),
       modelUsed: assistantResult.modelUsed,
-      sources: assistantResult.sources || []
+      sources: assistantResult.sources || [],
+      ...structured
     });
   } catch (err: any) {
+    if (deterministicReply) {
+      return res.json({
+        reply: deterministicReply,
+        success: true,
+        source: 'deterministic_extraction',
+        aiAvailable: false,
+        ...structured
+      });
+    }
     res.json({
       reply: '¡Pura Vida! Ocurrió un inconveniente temporal al conectar con el motor de IA. Por favor intenta de nuevo o escríbenos a nuestro WhatsApp oficial.',
       success: false,
-      error: err.message
+      error: err.message,
+      ...structured
     });
   }
 });

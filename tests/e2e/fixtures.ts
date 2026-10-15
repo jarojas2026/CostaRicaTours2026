@@ -13,6 +13,8 @@ export const MOCK_BOOKING_ID = 'CRT-E2E-0001';
 export interface MockApiOptions {
   /** Tour id offered by the mocked concierge as an in-chat booking quick action. */
   bookableTourId?: string;
+  /** Extra fields merged into the mocked concierge response (e.g. a server inquiryHandoff). */
+  conciergeExtra?: Record<string, unknown>;
 }
 
 interface ConsoleProblem {
@@ -46,6 +48,7 @@ export async function mockApi(page: Page, options: MockApiOptions = {}): Promise
         quickActions: options.bookableTourId
           ? [{ label: 'Solicitar reserva', action: 'book', data: { tourId: options.bookableTourId } }]
           : [],
+        ...(options.conciergeExtra || {}),
       });
     }
     if (pathname === '/api/bookings' && method === 'POST') {

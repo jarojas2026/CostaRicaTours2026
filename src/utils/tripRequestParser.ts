@@ -192,3 +192,39 @@ export function buildTripInquiryHandoff<T extends CatalogTourLike>(
     whatsappUrl: directWhatsAppUrl(whatsappMessage),
   };
 }
+
+const WHATSAPP_PREFIX = 'https://wa.me/50687959148?text=';
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.length > 0 && value.length <= 12 && value.every(item => typeof item === 'string' && item.length <= 300);
+
+/**
+ * Accepts the structured hand-off computed by /api/gemini/concierge (server
+ * extraction) when it is well formed and points to the official WhatsApp
+ * number; otherwise returns undefined so the caller keeps the client parser.
+ */
+export function serverInquiryHandoff(data: unknown): TripInquiryHandoff | undefined {
+  const payload = data as { inquiryHandoff?: any; understood?: any } | null;
+  const h = payload?.inquiryHandoff;
+  if (!h || typeof h !== 'object') return undefined;
+  if (!isStringArray(h.understood)) return undefined;
+  if (typeof h.operatorNote !== 'string' || typeof h.whatsappMessage !== 'string') return undefined;
+  if (typeof h.whatsappUrl !== 'string' || !h.whatsappUrl.startsWith(WHATSAPP_PREFIX)) return undefined;
+  if (h.referenceLine !== undefined && (typeof h.referenceLine !== 'string' || !/(referencia|reference)/i.test(h.referenceLine))) return undefined;
+  const u = payload?.understood && typeof payload.understood === 'object' ? payload.understood : {};
+  return {
+    parsed: {
+      activity: typeof u.activity === 'string' ? u.activity : undefined,
+      place: typeof u.region === 'string' ? u.region : undefined,
+      people: typeof u.people === 'number' ? u.people : undefined,
+      month: typeof u.month === 'number' ? u.month : undefined,
+      asksPrice: Boolean(u.asksPrice),
+    },
+    understood: h.understood,
+    tourId: typeof h.tourId === 'string' ? h.tourId : undefined,
+    tourTitle: typeof h.tourTitle === 'string' ? h.tourTitle : undefined,
+    referenceLine: typeof h.referenceLine === 'string' ? h.referenceLine : undefined,
+    operatorNote: h.operatorNote,
+    whatsappMessage: h.whatsappMessage,
+    whatsappUrl: h.whatsappUrl,
+  };
+}
