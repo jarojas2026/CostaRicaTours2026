@@ -146,8 +146,9 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
         tour.category === 'canopy' ? 'zipline tirolesa canopy aventura adventure' : '',
         tour.category === 'rafting' ? 'rafting whitewater aguas bravas río river' : ''
       ];
-      const haystack = normalizeCatalogSearch([...localizedValues, tour.location.placeName, tour.region, tour.category, ...synonyms].join(' '));
-      if (!haystack.includes(q)) return false;
+      const haystack = normalizeCatalogSearch([...localizedValues, tour.location.placeName, tour.operatorName ?? '', tour.region, tour.category, ...synonyms].join(' '));
+      // Todas las palabras deben aparecer (en cualquier orden): "negro caño" también encuentra Caño Negro.
+      if (!q.split(/\s+/).filter(Boolean).every((word) => haystack.includes(word))) return false;
     }
 
     // Category Filter
@@ -1082,8 +1083,8 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
           </h3>
           <p className="text-xs text-orange-400 max-w-md mx-auto leading-relaxed">
             {language === 'es'
-              ? 'Intenta borrar algunos filtros o expandir la búsqueda de precio y región para explorar más opciones.'
-              : 'Try clearing some filters or expanding your price range to discover more excursions.'}
+              ? (searchQuery.trim() ? 'Prueba con otra palabra (por ejemplo, el lugar o el operador) o borra los filtros.' : 'Intenta borrar algunos filtros o ampliar el precio y la región para ver más opciones.')
+              : (searchQuery.trim() ? 'Try another word (for example the place or the operator) or clear the filters.' : 'Try clearing some filters or widening the price and region to see more options.')}
           </p>
           <button
             type="button"
