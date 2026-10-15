@@ -1,4 +1,5 @@
 import { ReferencePrice } from '../components/ReferencePrice';
+import { OperatorPriceSource } from '../components/OperatorPriceSource';
 import React, { useState, useEffect, useRef } from 'react';
 import { createBookingAttempt, requirePaymentUrl } from '../utils/bookingAttempt';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -461,6 +462,7 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                     </p>
                   </> : <>
                     <ReferencePrice amountUSD={tour.priceUSD} currency={currency} language={language} />
+                    <OperatorPriceSource tour={tour} language={language} className="mt-2" />
                     <p className="mt-2 text-[11px] leading-relaxed text-stone-400">
                       {language === 'es' ? 'Esta ficha aún no tiene proveedor, tarifa ni cupos vinculados. No admite reserva ni pago en línea.' : 'This listing has no linked provider, price or inventory yet. Online booking and payment are not available.'}
                     </p>
