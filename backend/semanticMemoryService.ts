@@ -4,8 +4,9 @@
  */
 import { GoogleGenAI } from '@google/genai';
 import { randomUUID } from 'crypto';
+import { getEmbeddingModel } from './aiConfig';
 
-const EMBEDDING_MODEL = process.env.GEMINI_EMBEDDING_MODEL || 'gemini-embedding-001';
+const EMBEDDING_MODEL = getEmbeddingModel();
 const MAX_DIMENSIONS = 3072;
 
 function cosineSimilarity(a: number[], b: number[]): number {
