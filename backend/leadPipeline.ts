@@ -22,10 +22,13 @@ import crypto from 'crypto';
 import { getFirestoreDb } from './bookingService';
 import { OPERATOR_PROSPECTS, type OperatorProspect } from '../data/operators/operatorProspects';
 import type { ConciergeUnderstanding, ConciergeLanguage } from './conciergeUnderstanding';
+import type { Tour } from '../src/types';
+import { publishedTourPrice } from '../src/utils/tourPublication';
+import { isoDateOrUndefined, type TourQuoteLeadPayload } from '../shared/tourQuoteRequest';
 
 export const LEAD_STATUSES = ['nuevo', 'cotizando', 'esperando_operador', 'confirmado_por_escrito', 'pagado', 'cancelado'] as const;
 export type LeadStatus = typeof LEAD_STATUSES[number];
-export type LeadSource = 'sofia' | 'contact_form' | 'booking_request';
+export type LeadSource = 'sofia' | 'contact_form' | 'booking_request' | 'tour_page';
 
 const TRANSITIONS: Record<LeadStatus, readonly LeadStatus[]> = {
   nuevo: ['cotizando', 'cancelado'],
@@ -358,6 +361,38 @@ export function buildLeadRecord(input: LeadInput, now: Date = new Date()): LeadR
   return record;
 }
 
+/**
+ * Solicitud de cotización desde /tour/:id → LeadInput. Requiere un payload ya
+ * validado (consentimiento incluido) y el tour resuelto en el catálogo. La
+ * referencia de precio solo sale de la tarifa publicada por el operador.
+ */
+export function buildTourPageLeadInput(payload: TourQuoteLeadPayload, tour: Tour): LeadInput {
+  const people = payload.request.people;
+  const date = isoDateOrUndefined(payload.request.approxDate);
+  const price = publishedTourPrice(tour);
+  const title = payload.language === 'en' ? (tour.title.en || tour.title.es) : tour.title.es;
+  const messageParts = [
+    payload.request.approxDate && !date ? `Fecha aproximada: ${payload.request.approxDate}` : '',
+    payload.message || '',
+  ].filter(Boolean);
+  return {
+    source: 'tour_page',
+    language: payload.language,
+    consent: payload.consent === true,
+    contact: { name: payload.customer.name, email: payload.customer.email },
+    request: { tourId: tour.id, tourTitle: title, region: tour.region, people, ...(date ? { date } : {}) },
+    ...(messageParts.length ? { message: messageParts.join(' · ') } : {}),
+    ...(price !== undefined ? {
+      referenceQuote: {
+        unitPriceUSD: price,
+        totalUSD: price * people,
+        line: `Tarifa publicada por ${tour.operatorName || 'el operador'}: US$${price} por persona (revisada ${tour.priceCheckedAt}), sujeta a confirmación.`,
+        subjectToConfirmation: true as const,
+      },
+    } : {}),
+  };
+}
+
 /** Fusiona una consulta repetida en el lead abierto existente. */
 export function mergeLead(existing: LeadRecord, incoming: LeadRecord): LeadRecord {
   const sources = Array.from(new Set([...existing.sources, ...incoming.sources])) as LeadSource[];
@@ -562,23 +597,35 @@ export function buildLeadDigest(leads: readonly LeadRecord[], now: Date = new Da
  */
 export function captureLeadInBackground(input: LeadInput): void {
   if (process.env.LEADS_PIPELINE_ENABLED === 'false') return;
-  void captureLead(input)
-    .then(async ({ lead, created }) => {
-      if (!created || process.env.LEADS_NOTIFY === 'false' || process.env.NODE_ENV === 'test') return;
-      const { createAlert } = await import('./alertService');
-      await createAlert({
-        source: 'Pipeline de leads',
-        severity: 'info',
-        title: `Nuevo lead (${lead.firstSource}): ${leadSummary(lead)}`.slice(0, 140),
-        message: [
-          `Lead ${lead.id} en estado "nuevo".`,
-          leadSummary(lead),
-          lead.referenceQuote ? `Referencia: ${lead.referenceQuote.line}` : 'Sin precio de referencia.',
-          `Operadores candidatos (prospectos sin contrato): ${lead.operatorCandidates.map(c => c.name).join(', ') || 'ninguno'}`,
-          'Los borradores de cotización están guardados en el lead; no se envió nada a ningún operador.',
-        ].join('\n'),
-        metadata: { leadId: lead.id, consent: lead.consent.dataProcessing },
-      });
-    })
+  void captureLeadAndNotify(input)
     .catch(err => console.warn('[leads] captura fallida (la respuesta al cliente no se ve afectada):', err?.message || err));
+}
+
+/**
+ * Igual que captureLeadInBackground pero esperando el guardado (lo usa la
+ * solicitud de cotización de /tour/:id para responder solo cuando quedó
+ * registrada). El aviso interno nunca rompe la respuesta.
+ */
+export async function captureLeadAndNotify(input: LeadInput): Promise<CaptureResult> {
+  const result = await captureLead(input);
+  void notifyNewLead(result).catch(err => console.warn('[leads] aviso fallido:', err?.message || err));
+  return result;
+}
+
+async function notifyNewLead({ lead, created }: CaptureResult): Promise<void> {
+  if (!created || process.env.LEADS_NOTIFY === 'false' || process.env.NODE_ENV === 'test') return;
+  const { createAlert } = await import('./alertService');
+  await createAlert({
+    source: 'Pipeline de leads',
+    severity: 'info',
+    title: `Nuevo lead (${lead.firstSource}): ${leadSummary(lead)}`.slice(0, 140),
+    message: [
+      `Lead ${lead.id} en estado "nuevo".`,
+      leadSummary(lead),
+      lead.referenceQuote ? `Referencia: ${lead.referenceQuote.line}` : 'Sin precio de referencia.',
+      `Operadores candidatos (prospectos sin contrato): ${lead.operatorCandidates.map(c => c.name).join(', ') || 'ninguno'}`,
+      'Los borradores de cotización están guardados en el lead; no se envió nada a ningún operador.',
+    ].join('\n'),
+    metadata: { leadId: lead.id, consent: lead.consent.dataProcessing },
+  });
 }
