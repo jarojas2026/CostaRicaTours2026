@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 env:
   PROJECT_ID: gen-lang-client-0782739149
@@ -34,7 +35,9 @@ jobs:
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v3
         with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+          # Keyless GitHub OIDC (WIF); the former JSON key was revoked on 2026-10-15.
+          workload_identity_provider: projects/937250723434/locations/global/workloadIdentityPools/github-actions/providers/github
+          service_account: github-deployer@gen-lang-client-0782739149.iam.gserviceaccount.com
 
       - name: Configure gcloud
         uses: google-github-actions/setup-gcloud@v3
