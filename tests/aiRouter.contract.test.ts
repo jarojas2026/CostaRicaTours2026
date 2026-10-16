@@ -128,7 +128,7 @@ test('PII redaction: emails, phones and document numbers; keeps prices, dates an
   assert.match(out, /\$95/);
   assert.match(out, /2026-10-15/);
   assert.match(out, /CRT-ABC123/);
-  const contents = [{ role: 'model', parts: [{ functionCall: { name: 'lookup_booking', args: { email: 'x@y.com' } }, thoughtSignature: 'c2lnMTIzNDU2Nzg5MDEyMw==' }] },
+  const contents: any[] = [{ role: 'model', parts: [{ functionCall: { name: 'lookup_booking', args: { email: 'x@y.com' } }, thoughtSignature: 'c2lnMTIzNDU2Nzg5MDEyMw==' }] },
     { role: 'user', parts: [{ functionResponse: { id: 'c1', name: 'lookup_booking', response: { result: { email: 'x@y.com', phone: '88887777' } } } }] }];
   const red = redactContents(contents) as any;
   assert.equal(red[0].parts[0].thoughtSignature, contents[0].parts[0].thoughtSignature);
