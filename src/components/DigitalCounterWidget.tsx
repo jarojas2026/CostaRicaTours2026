@@ -324,8 +324,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
     const term = tourSearchTerm.toLowerCase();
     return TOURS.filter(t => 
       getLangText(t.title, language).toLowerCase().includes(term) ||
-      (t.region && t.region.toLowerCase().includes(term)) ||
-      ((t.operatorName || t.operatorId) && (t.operatorName || t.operatorId)!.toLowerCase().includes(term))
+      (t.region && t.region.toLowerCase().includes(term))
     );
   }, [TOURS, tourSearchTerm, language]);
 
@@ -653,9 +652,9 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
                         <Sparkles className="w-4 h-4" />
                         <span>{isEs ? 'Cotizador estimado & consulta de cupos registrados' : 'Estimated quote & recorded seat check'}</span>
                       </h4>
-                      {(selectedTour?.operatorName || selectedTour?.operatorId) && (
+                      {selectedTour && (
                         <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-600/40 px-2 py-0.5 rounded-lg">
-                          {isEs ? 'Operado por: ' : 'Operated by: '} {selectedTour.operatorName || selectedTour.operatorId}
+                          {isEs ? 'Operador local por confirmar' : 'Local operator to be confirmed'}
                         </span>
                       )}
                     </div>
