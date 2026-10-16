@@ -5,6 +5,7 @@
  */
 import { TOURS } from '../src/data/toursData';
 import { findGuides, findNearestServices, getParkInfo, loadLayer } from './nationalKnowledgeService';
+import { OPERATOR_IDENTITY_NOTE, SUPPLIER_POLICY } from '../src/utils/operatorPrivacy';
 
 const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
@@ -103,11 +104,10 @@ function guidesReply(message: string, es: boolean): string | undefined {
       : `I can't find ICT guides${langLabel ? ` speaking ${langLabel}` : ''}${zone ? ` in ${zone}` : ''} in the official list. We can look in nearby areas.`;
   }
   const lines = [es
-    ? `Hay ${r.totalMatches} guías acreditados por el ICT${langLabel ? ` que hablan ${langLabel}` : ''}${zone ? ` en la zona de ${zone}` : ''}. Algunos:`
-    : `There are ${r.totalMatches} ICT-accredited guides${langLabel ? ` speaking ${langLabel}` : ''}${zone ? ` in the ${zone} area` : ''}. Some of them:`];
-  for (const g of r.guides) lines.push(`• ${g.name} — ${g.languages.join(', ')}${g.specialties.length ? ` · ${g.specialties.slice(0, 2).join(', ')}` : ''}`);
-  if (r.associations.length) lines.push((es ? 'Asociación de guías: ' : 'Guide association: ') + r.associations.slice(0, 2).map((a) => `${a.name} (${a.zone})`).join(', '));
-  lines.push(es ? 'Te coordinamos el guía por WhatsApp; la disponibilidad y la tarifa se confirman con el guía.' : 'We can arrange the guide via WhatsApp; availability and rate are confirmed with the guide.');
+    ? `Hay ${r.totalMatches} guías acreditados por el ICT${langLabel ? ` que hablan ${langLabel}` : ''}${zone ? ` en la zona de ${zone}` : ''} en el listado oficial.`
+    : `There are ${r.totalMatches} ICT-accredited guides${langLabel ? ` speaking ${langLabel}` : ''}${zone ? ` in the ${zone} area` : ''} in the official list.`];
+  // Sin nombres ni contactos de guías o asociaciones: Costa Rica Tours coordina el guía.
+  lines.push(es ? 'Pídenos la cotización y te coordinamos el guía; la disponibilidad y la tarifa se confirman antes de reservar.' : 'Ask us for a quote and we will arrange the guide; availability and rate are confirmed before booking.');
   lines.push(es ? `Fuente: listado oficial ICT (${r.asOf}).` : `Source: official ICT list (${r.asOf}).`);
   return lines.join('\n');
 }
@@ -147,15 +147,15 @@ function toursReply(message: string, es: boolean): string | undefined {
   const lines: string[] = [];
   if (!priced.length) {
     lines.push(es ? `Tengo ${pool.length} opciones${budget ? `, pero ninguna con precio publicado de hasta $${budget}` : ''}. Algunas:` : `I have ${pool.length} options${budget ? `, but none with a published price up to $${budget}` : ''}. Some:`);
-    for (const t of pool.slice(0, 3)) lines.push(`• ${es ? t.title.es : t.title.en}${t.priceUSD > 0 ? ` — US$${t.priceUSD}` : ''}${t.operatorName ? ` (${t.operatorName})` : ''}`);
+    for (const t of pool.slice(0, 3)) lines.push(`• ${es ? t.title.es : t.title.en}${t.priceUSD > 0 ? ` — US$${t.priceUSD}` : ''}`);
   } else {
     lines.push(es ? `Estas son ${Math.min(priced.length, 4)} opciones${budget ? ` de hasta $${budget}` : ''}, de menor a mayor precio:` : `Here are ${Math.min(priced.length, 4)} options${budget ? ` up to $${budget}` : ''}, cheapest first:`);
     for (const t of priced.slice(0, 4)) {
       const where = t.location?.placeName ? `, ${t.location.placeName}` : '';
-      lines.push(`• ${es ? t.title.es : t.title.en} — US$${t.priceUSD}${t.operatorName ? ` · ${t.operatorName}` : ''}${where}`);
+      lines.push(`• ${es ? t.title.es : t.title.en} — US$${t.priceUSD}${where}`);
     }
   }
-  lines.push(es ? 'Son precios publicados por el operador o tarifas de referencia: confirmamos fecha y disponibilidad antes de cualquier pago.' : 'These are operator-published or reference prices: we confirm date and availability before any payment.');
+  lines.push(es ? 'Son precios de referencia, sujetos a confirmación: pídenos la cotización y confirmamos fecha y disponibilidad antes de cualquier pago.' : 'These are reference prices, subject to confirmation: ask us for a quote and we confirm date and availability before any payment.');
   return lines.join('\n');
 }
 
@@ -167,9 +167,18 @@ function bookingReply(message: string, es: boolean): string | undefined {
     : 'Happy to arrange it. To request the booking I need: the tour, the date, how many adults and children, and your pickup location. It is only confirmed once the operator confirms in writing; nothing is charged before that.';
 }
 
+/** Preguntas sobre proveedores: respuesta veraz, sin nombres ni contactos (decisión del negocio). */
+export function supplierReply(message: string, es: boolean): string | undefined {
+  const m = norm(message);
+  if (!/(operador|proveedor|empresa (que|del tour)|quien (opera|hace|da|realiza) el tour|que empresa|operator|supplier|provider|which company|who (runs|operates))/.test(m)) return undefined;
+  return es
+    ? `${SUPPLIER_POLICY.es} ${OPERATOR_IDENTITY_NOTE.es} Si me dices el tour, la fecha y cuántas personas, te preparo la cotización.`
+    : `${SUPPLIER_POLICY.en} ${OPERATOR_IDENTITY_NOTE.en} Tell me the tour, the date and how many people, and I will prepare your quote.`;
+}
+
 /** Devuelve una respuesta verificable o undefined si la consulta no encaja en ninguna herramienta. */
 export function knowledgeToolReply(message: string, language: 'es' | 'en'): string | undefined {
   const es = language !== 'en';
   void loadLayer; // capas cargadas bajo demanda por las herramientas
-  return emergencyReply(message, es) ?? guidesReply(message, es) ?? parkReply(message, es) ?? toursReply(message, es) ?? bookingReply(message, es);
+  return emergencyReply(message, es) ?? supplierReply(message, es) ?? guidesReply(message, es) ?? parkReply(message, es) ?? toursReply(message, es) ?? bookingReply(message, es);
 }
