@@ -1,5 +1,7 @@
 /** Passive, instance-local observations. Reading health never invokes a paid model. */
-export type AiFailure = 'configuration_missing' | 'authentication' | 'permission' | 'quota' | 'model_unavailable' | 'timeout' | 'provider_error';
+import { isClaudeConfigured, isGeminiConfigured } from './aiConfig';
+
+export type AiFailure = 'configuration_missing' | 'billing' | 'authentication' | 'permission' | 'quota' | 'model_unavailable' | 'timeout' | 'provider_error';
 type Observation = { at: number; failure: AiFailure | null };
 const observations = new Map<string, Observation>();
 const FRESH_MS = 5 * 60_000;
@@ -8,6 +10,8 @@ export function classifyAiFailure(error: unknown): AiFailure {
   const e = error as { status?: number; code?: number; message?: string };
   const status = Number(e?.status || e?.code);
   const message = String(e?.message || '');
+  // Billing first: Gemini reports depleted prepayment credits as 429 RESOURCE_EXHAUSTED.
+  if (status === 402 || /prepayment credits are depleted|billing/i.test(message)) return 'billing';
   if (status === 401 || /API_KEY_INVALID|API key not valid|invalid_grant/i.test(message)) return 'authentication';
   if (status === 403) return 'permission';
   if (status === 429) return 'quota';
@@ -28,14 +32,9 @@ export function recordAiObservation(provider: 'gemini' | 'claude', failure: AiFa
 }
 
 export function getAiHealth(env: NodeJS.ProcessEnv = process.env, now = Date.now()) {
-  const vertex = env.GOOGLE_GENAI_USE_VERTEXAI?.toLowerCase() === 'true';
-  const key = env.GEMINI_API_KEY?.trim();
-  const geminiConfigured = vertex
-    ? Boolean((env.GOOGLE_CLOUD_PROJECT || env.GCP_PROJECT) && (env.GOOGLE_CLOUD_LOCATION || env.VERTEX_AI_REGION))
-    : Boolean(key && !key.startsWith('AQ.') && key.length >= 20);
   const configured = {
-    gemini: geminiConfigured,
-    claude: Boolean(env.ANTHROPIC_VERTEX_MODEL && (env.ANTHROPIC_VERTEX_PROJECT_ID || env.GCP_PROJECT || env.GOOGLE_CLOUD_PROJECT)),
+    gemini: isGeminiConfigured(env),
+    claude: isClaudeConfigured(env),
   };
   const providers = Object.entries(configured).map(([provider, ready]) => {
     const last = observations.get(provider);
@@ -49,9 +48,22 @@ export function getAiHealth(env: NodeJS.ProcessEnv = process.env, now = Date.now
   });
   return {
     status: providers.some(p => p.status === 'available') ? 'available'
-      : providers.some(p => p.status === 'unknown') ? 'unknown' : 'degraded',
+      : providers.some(p => p.status === 'unknown') ? 'unknown'
+        : providers.every(p => p.status === 'unconfigured') ? 'unconfigured' : 'degraded',
     scope: 'instance_observations',
     maxAgeSeconds: FRESH_MS / 1000,
     providers,
   };
 }
+
+/**
+ * HTTP status for /api/health/ai: 200 for available, unknown and unconfigured (the
+ * status travels in the body); 503 only when every configured provider is degraded.
+ */
+export function aiHealthHttpStatus(providers: Array<{ status: string }>) {
+  const configured = providers.filter(p => p.status !== 'unconfigured');
+  return configured.length > 0 && configured.every(p => p.status === 'degraded') ? 503 : 200;
+}
+
+/** Test helper: forget instance-local observations. */
+export function resetAiObservations() { observations.clear(); }

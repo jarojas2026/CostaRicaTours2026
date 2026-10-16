@@ -1,5 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { getFirestoreDb } from './bookingService';
+import { guardedGeminiGenerate } from './aiRouter';
+import { getLightModel } from './aiConfig';
 
 let aiClient: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI | null {
@@ -77,10 +79,10 @@ En los últimos 45 días (hace 45 días a hoy) tuvo ${stats.period2Count} reserv
 La tendencia general parece estar ${trendDirection}.
 Sugiere brevemente una acción de negocio (ej. "subir precio 10%", "promocionar más", "sin cambios"). Responde de forma concisa.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+      const response = await guardedGeminiGenerate('forecast', {
+        model: getLightModel(),
         contents: prompt
-      });
+      }, { client: ai, containsPii: false });
 
       forecasts.push({
         tourId,

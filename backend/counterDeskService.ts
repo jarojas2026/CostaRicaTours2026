@@ -5,6 +5,8 @@ import { getNativeEngineStatus } from './nativeAutomationEngine';
 import { processChatInquiry } from './aiAssistantService';
 import { getOperationalMemory, rememberTurn } from './memoryService';
 import type { Language } from '../src/types';
+import { guardedGeminiGenerate } from './aiRouter';
+import { getLightModel } from './aiConfig';
 
 export type CounterDeskAskInput = {
   message: string;
@@ -191,7 +193,7 @@ export async function organizeCounterDesk() {
     JSON.stringify(snapshot).slice(0, 60000)
   ].join('\n\n');
 
-  const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+  const response = await guardedGeminiGenerate('counter_desk', { model: getLightModel(), contents: prompt }, { client: ai, containsPii: true });
   const raw = response.text || '{}';
   let parsed: any;
   try {
@@ -204,7 +206,7 @@ export async function organizeCounterDesk() {
     success: true,
     generatedAt: new Date().toISOString(),
     mode: 'ai_supervisor',
-    ai: { enabled: true, model: 'gemini-2.5-flash' },
+    ai: { enabled: true, model: getLightModel() },
     ...parsed,
     snapshot
   };

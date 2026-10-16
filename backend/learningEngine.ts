@@ -1,5 +1,7 @@
 import { getFirestoreDb } from './bookingService';
 import { GoogleGenAI } from '@google/genai';
+import { guardedGeminiGenerate } from './aiRouter';
+import { getLightModel } from './aiConfig';
 
 export type LearningEvent = {
   sessionId?: string;
@@ -45,11 +47,11 @@ export async function runLearningReflection(limit = 40) {
 
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   const prompt = `Analiza estos ejemplos operativos de un sistema de agentes turísticos. No inventes hechos. Devuelve JSON con lessons (máximo 8), failurePatterns (máximo 8), recommendedGuardrails (máximo 8) y highValueExamples (máximo 5). Las lecciones deben ser accionables, verificables y no contener PII innecesaria.\n\n${JSON.stringify(examples).slice(0, 50000)}`;
-  const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+  const response = await guardedGeminiGenerate('learning', { model: getLightModel(), contents: prompt }, { client: ai, containsPii: true });
   const text = response.text || '{}';
   let parsed: any = {};
   try { parsed = JSON.parse(text.replace(/^\`\`\`json\s*|\s*\`\`\`$/g, '')); } catch { parsed = { lessons: [text.slice(0, 1500)] }; }
   const db = getFirestoreDb();
-  if (db) await db.collection('ai_learning_lessons').add({ ...parsed, examples: examples.length, createdAt: new Date().toISOString(), model: 'gemini-2.5-flash' });
+  if (db) await db.collection('ai_learning_lessons').add({ ...parsed, examples: examples.length, createdAt: new Date().toISOString(), model: getLightModel() });
   return { learned: true, examples: examples.length, ...parsed };
 }

@@ -1,5 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { createAlert, getMailTransporter } from './alertService';
+import { guardedGeminiGenerate } from './aiRouter';
+import { getLightModel } from './aiConfig';
 
 let aiClient: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI | null {
@@ -41,10 +43,10 @@ export async function sendOperationalNotification(
 
   if (ai) {
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+      const response = await guardedGeminiGenerate('notification', {
+        model: getLightModel(),
         contents: `Analiza esta alerta operativa del sistema de reservas de Costa Rica Tours y genera una recomendación ejecutiva breve en español (máximo 2 oraciones):\n${cleanText}`
-      });
+      }, { client: ai, containsPii: true });
       if (response.text) {
         aiSummary = response.text.trim();
       }

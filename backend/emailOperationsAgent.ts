@@ -9,6 +9,8 @@ import { sendEmail } from './notificationService';
 import { emitOperationalEvent } from './operationalEventBus';
 import { executeBusinessGoal } from './businessGoalOrchestrator';
 import { extractCustomerTravelRequirements } from './customerRequirementExtractor';
+import { guardedGeminiGenerate } from './aiRouter';
+import { getLightModel } from './aiConfig';
 
 type MailProvider = 'gmail' | 'outlook';
 type MailMessage = {
@@ -88,8 +90,8 @@ async function classifyMail(subject: string, body: string, from: string): Promis
   if (process.env.GEMINI_API_KEY) {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+      const response = await guardedGeminiGenerate('email', {
+        model: getLightModel(),
         contents: [
           'Clasifica un correo entrante para una agencia de viajes de Costa Rica.',
           'Devuelve SOLO JSON: {"kind":"customer_request|provider_response|internal|spam|unknown","confidence":0..1,"intent":"...","shouldAct":true|false,"reason":"..."}.',
@@ -98,7 +100,7 @@ async function classifyMail(subject: string, body: string, from: string): Promis
           'Nunca inventes entidades ni confirmaciones. Si hay duda, shouldAct=false.',
           input
         ].join('\n')
-      });
+      }, { client: ai, containsPii: true });
       const raw = (response.text || '').trim().replace(/^```json\s*|\s*```$/gi, '');
       const parsed = JSON.parse(raw);
       if (['customer_request', 'provider_response', 'internal', 'spam', 'unknown'].includes(parsed.kind)) {

@@ -1,5 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { TOURS } from '../src/data/toursData';
+import { guardedGeminiGenerate } from './aiRouter';
+import { getLightModel } from './aiConfig';
 
 let aiClient: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI | null {
@@ -22,8 +24,8 @@ export async function getPhotoRecommendations(base64Image: string) {
 
     const base64Data = base64Image.replace(/^data:image\/(png|jpeg|jpg);base64,/, '');
     
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+    const response = await guardedGeminiGenerate('photo', {
+      model: getLightModel(),
       contents: [
         prompt,
         { inlineData: { data: base64Data, mimeType: 'image/jpeg' } }
@@ -31,7 +33,7 @@ export async function getPhotoRecommendations(base64Image: string) {
       config: {
         responseMimeType: 'application/json'
       }
-    });
+    }, { client: ai, containsPii: false });
 
     const resultText = response.text || '{}';
     let keywords: string[] = [];

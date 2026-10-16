@@ -5,6 +5,7 @@
 
 import { AnthropicVertex } from '@anthropic-ai/vertex-sdk';
 import { TOURS } from '../src/data/toursData';
+import { getClaudeModel } from './aiConfig';
 
 let claudeClient: AnthropicVertex | null = null;
 let clientInitializationError: string | null = null;
@@ -59,7 +60,7 @@ export function getClaudeStatus(): { available: boolean; model: string; region: 
     process.env.ANTHROPIC_VERTEX_REGION ||
     process.env.CLOUD_ML_REGION ||
     'us-east5';
-  const model = process.env.ANTHROPIC_VERTEX_MODEL || 'claude-3-5-sonnet-v2@20241022';
+  const model = getClaudeModel();
 
   return {
     available: !clientInitializationError,
@@ -132,7 +133,7 @@ export async function generateClaudeChatResponse(
 ): Promise<{ reply: string; modelUsed: string; success: boolean; quickActions?: Array<{ label: string; action: string; data?: any }> }> {
   const client = getClaudeClient();
   const isEn = language === 'en';
-  const modelName = process.env.ANTHROPIC_VERTEX_MODEL || 'claude-3-5-sonnet-v2@20241022';
+  const modelName = getClaudeModel();
 
   if (!client) {
     throw new Error('Claude Vertex AI client not initialized');
@@ -227,7 +228,7 @@ export async function generateClaudeItinerary(params: {
   modelUsed: string;
 }> {
   const client = getClaudeClient();
-  const modelName = process.env.ANTHROPIC_VERTEX_MODEL || 'claude-3-5-sonnet-v2@20241022';
+  const modelName = getClaudeModel();
 
   if (!client) {
     throw new Error('Claude Vertex AI client not available for itinerary planning');
@@ -297,7 +298,7 @@ export async function analyzeOperationalRiskWithClaude(booking: any): Promise<{
   logisticsInstructions: string[];
 }> {
   const client = getClaudeClient();
-  const modelName = process.env.ANTHROPIC_VERTEX_MODEL || 'claude-3-5-sonnet-v2@20241022';
+  const modelName = getClaudeModel();
 
   if (!client) {
     const total = Number(booking.totalUSD || 0);

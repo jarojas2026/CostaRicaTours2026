@@ -8,7 +8,9 @@ const emergencyContact = process.env.EMERGENCY_CONTACT_PHONE || '911';
 const emergencyContactLabel = process.env.EMERGENCY_CONTACT_PHONE ? `${emergencyContact} / 911` : '911';
 
 import { getGeminiClient as getAI, getConciergeModel } from './geminiRuntime';
-import { classifyAiFailure, recordAiObservation } from './aiHealth';
+import { recordAiObservation } from './aiHealth';
+import { getAiConfig, getLightModel, providerOrder } from './aiConfig';
+import { callProvider, guardedGeminiGenerate, isBreakerOpen, redactPii, runGenerative } from './aiRouter';
 import { knowledgeToolReply } from './knowledgeReplies';
 import { TOURS } from '../src/data/toursData';
 import { generateClaudeChatResponse, getClaudeClient } from './claudeService';
@@ -217,12 +219,18 @@ export async function processChatInquiry(
     else if (email) { const booking = await executeAgentTool('lookup_booking', { email }); if (booking) liveToolContext += '\nRESERVA VERIFICADA:\n' + JSON.stringify(booking); }
   } catch (toolErr) { console.warn('Agent tool context unavailable:', toolErr); }
 
+  // Router de proveedores: preferencia (AI_PROVIDER), costo cero, PII y circuit breaker.
+  const aiCfg = getAiConfig();
+  const usableProviders = providerOrder();
+  const piiSafe = (text: string) => (aiCfg.allowExternalPii ? text : redactPii(text));
+
   // Si se solicita o prefiere Claude en Vertex AI
-  if (engine === 'claude' || (engine === 'auto' && process.env.ANTHROPIC_VERTEX_MODEL)) {
+  if (engine === 'claude' || (engine === 'auto' && usableProviders[0] === 'claude')) {
     try {
-      const claudeRes = await generateClaudeChatResponse(message, language, history as any);
+      const claudeRes = await callProvider('claude', 'concierge', () => generateClaudeChatResponse(
+        piiSafe(message), language, history.map((h) => ({ ...h, text: piiSafe(String(h.text || '')) })) as any
+      ));
       if (claudeRes && claudeRes.reply) {
-        recordAiObservation('claude', null);
         return {
           reply: claudeRes.reply,
           quickActions: claudeRes.quickActions || [],
@@ -230,8 +238,8 @@ export async function processChatInquiry(
           agentId: requestedAgentId
         };
       }
-    } catch (claudeErr) {
-      recordAiObservation('claude', classifyAiFailure(claudeErr));
+    } catch {
+      // callProvider ya registró la observación y, si corresponde, abrió el breaker.
     }
   }
 
@@ -240,48 +248,44 @@ export async function processChatInquiry(
     const formattedHistory = history.map((h) => `${h.role === 'user' ? 'Usuario' : 'Asistente'}: ${h.text}`).join('\n');
     const prompt = `${formattedHistory ? `HISTORIAL DE LA CONVERSACIÓN:\n${formattedHistory}\n\n` : ''}${liveToolContext ? `CONTEXTO OPERATIVO VERIFICADO:\n${liveToolContext}\n\n` : ''}CONSULTA ACTUAL DEL USUARIO:\n${message}`;
 
-    const ai = getAI();
-    if (!ai) {
+    if (!getAI()) {
       recordAiObservation('gemini', 'configuration_missing');
       return getKnowledgeBaseReply(message, isEn);
     }
+    if (!usableProviders.includes('gemini')) return getKnowledgeBaseReply(message, isEn);
 
+    // Search grounding solo si su breaker está cerrado; si no, se omite con elegancia.
     let needsGrounding = false;
-    try {
+    if (!isBreakerOpen('gemini:search')) {
       const classifierPrompt = `Does the following user query require up-to-date, real-time information from the internet (e.g. current weather, today's events, road closures, current exchange rates, park status, ferry timetables)? 
 User query: "${message}"
 Reply ONLY with "YES" or "NO".`;
-      const classRes = await ai.models.generateContent({
+      const classRes = await runGenerative({
+        task: 'concierge_classifier',
+        provider: 'gemini',
         model: getConciergeModel(),
         contents: classifierPrompt,
-        config: { temperature: 0 }
+        config: { temperature: 0 },
+        containsPii: true
       });
-      needsGrounding = classRes.text?.trim().toUpperCase().includes('YES') || false;
-    } catch(e: any) {
-      if (e?.message?.includes('API key not valid') || e?.message?.includes('API_KEY_INVALID')) {
-        recordAiObservation('gemini', 'authentication');
-        return getKnowledgeBaseReply(message, isEn);
-      }
-      needsGrounding = false;
+      needsGrounding = classRes.provider === 'gemini' && classRes.text.toUpperCase().includes('YES');
     }
 
-    const config: any = {
+    const buildTools = () => needsGrounding
+      ? [{ googleSearch: {} }, { functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }]
+      : [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }];
+    const buildConfig = (): any => ({
       systemInstruction: SYSTEM_INSTRUCTION,
       temperature: 0.7,
-      tools: [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }]
-    };
-
-    // El asistente combina búsqueda web en vivo (Search Grounding) con
-    // herramientas internas del negocio utilizando gemini-3.5-flash.
-    if (needsGrounding) {
-      config.tools = [{ googleSearch: {} }, { functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }];
-      config.toolConfig = { includeServerSideToolInvocations: true };
-    }
+      // El asistente combina búsqueda web en vivo (Search Grounding) con herramientas internas del negocio.
+      ...(needsGrounding ? { toolConfig: { includeServerSideToolInvocations: true } } : {})
+    });
 
     let currentContents: any[] = [{ role: 'user', parts: [{ text: prompt }] }];
     let reply = '';
     let toolRounds = 0;
     let lastResponse: any = null;
+    let modelUsed = getConciergeModel();
 
     // Bucle agentic: intención -> herramienta -> observación -> nuevo razonamiento.
     // El límite es gobernable desde el Centro de Control, con 3 como valor seguro por defecto.
@@ -291,13 +295,23 @@ Reply ONLY with "YES" or "NO".`;
       Math.min(10, Number(platformControls?.values?.max_agent_tool_rounds || platformControls?.max_agent_tool_rounds) || 3)
     );
     while (toolRounds < maxToolRounds) {
-      const response = await ai.models.generateContent({
+      const result = await runGenerative({
+        task: 'concierge',
+        provider: 'gemini',
         model: getConciergeModel(),
         contents: currentContents,
-        config
+        tools: buildTools(),
+        config: buildConfig(),
+        containsPii: true
       });
+      if (result.provider === 'none') {
+        // Grounding no disponible: un único reintento sin googleSearch, conservando las herramientas.
+        if (needsGrounding) { needsGrounding = false; continue; }
+        return getKnowledgeBaseReply(message, isEn);
+      }
+      const response = result.response;
+      modelUsed = result.model;
       lastResponse = response;
-      recordAiObservation('gemini', null);
 
       const calls = response.functionCalls || [];
       if (!calls.length) {
@@ -385,11 +399,12 @@ Reply ONLY with "YES" or "NO".`;
       reply,
       quickActions,
       agentId: requestedAgentId,
-      modelUsed: getConciergeModel(),
+      modelUsed,
       sources: sources.length > 0 ? sources : undefined
     };
   } catch (error: any) {
-    recordAiObservation('gemini', classifyAiFailure(error));
+    // Los fallos del proveedor ya se registran en aiRouter; aquí solo errores locales (herramientas, contexto).
+    console.warn('Concierge fallback:', error?.name || 'error');
     return getKnowledgeBaseReply(message, isEn);
   }
 }
@@ -468,8 +483,8 @@ export async function runRouterAgent(message: string, context?: any): Promise<Ro
   try {
     const ai = getAI();
     if (ai) {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+      const response = await guardedGeminiGenerate('internal', {
+        model: getLightModel(),
         contents: `Analiza este mensaje de cliente o viajero de Costa Rica Tours:\n"${message}"\nContexto previo: ${JSON.stringify(context || {})}`,
         config: {
           systemInstruction: `Eres el Agente Enrutador oficial de Costa Rica Tours.
@@ -498,7 +513,7 @@ Devuelve estrictamente un objeto JSON con este esquema:
 }`,
           responseMimeType: 'application/json'
         }
-      });
+      }, { client: ai, containsPii: true });
 
       const parsed = JSON.parse(response.text || '{}');
       if (parsed.categoria && ['SERVICIO', 'RESERVAS', 'INFORMACION', 'LOGISTICA'].includes(parsed.categoria)) {
@@ -911,14 +926,14 @@ REGLAS OBLIGATORIAS DE RESPUESTA:
 5. REGLA DE RESUMEN EN 1 ORACIÓN: Al finalizar una reserva o al entregar información importante sobre un tour/traslado, SIEMPRE concluye con un resumen de exactamente 1 oración que sintetice lo acordado.
 6. IDIOMA: Responde en el idioma del viajero (${isEn ? 'English' : 'Español'}).`;
 
-      const aiResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+      const aiResponse = await guardedGeminiGenerate('counter_desk', {
+        model: getLightModel(),
         contents: `${formattedHistory ? `HISTORIAL:\n${formattedHistory}\n\n` : ''}CONSULTA DEL VIAJERO EN MOSTRADOR:\n"${message}"`,
         config: {
           systemInstruction: counterSystemInstruction,
           temperature: 0.6
         }
-      });
+      }, { client: ai, containsPii: true });
 
       const replyText = aiResponse.text?.trim();
       if (replyText) {
@@ -933,7 +948,7 @@ REGLAS OBLIGATORIAS DE RESPUESTA:
             { label: isEn ? '🎟️ View Recommended Tours' : '🎟️ Ver Tours Recomendados', action: 'send_message', data: { message: isEn ? 'Show tours' : 'Ver tours' } },
             { label: isEn ? '💬 Speak with Sofía on WhatsApp' : '💬 Hablar con Sofía por WhatsApp', action: 'direct_whatsapp' }
           ],
-          modelUsed: 'gemini-2.5-flash'
+          modelUsed: getLightModel()
         };
       }
     }
@@ -1581,15 +1596,15 @@ export async function runTriage(rawMessage: string) {
   try {
     const ai = getAI();
     if (!ai) throw new Error('Gemini API key no configurada');
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+    const response = await guardedGeminiGenerate('internal', {
+      model: getLightModel(),
       contents: `Analiza este mensaje de cliente de turismo en Costa Rica: "${rawMessage}". Extrae intención y datos estructurados.`,
       config: {
         systemInstruction:
           'Eres el Agente Triage. Devuelve un JSON con: intent (booking_inquiry, pricing, modification, cancellation, support), confidence (número 0 a 1), extractedData: { tourName, passengers, targetDate, language, budget, contact }',
         responseMimeType: 'application/json'
       }
-    });
+    }, { client: ai, containsPii: true });
     return JSON.parse(response.text || '{}');
   } catch {
     const lower = rawMessage.toLowerCase();
@@ -1614,15 +1629,15 @@ export async function runProcessor(rawMessage: string, intent: string, extracted
     const ai = getAI();
     if (!ai) throw new Error('Gemini API key no configurada');
     const prompt = `Mensaje: "${rawMessage}", Intención: ${intent}, Datos: ${JSON.stringify(extractedData)}. Genera las acciones necesarias y una respuesta cordial en formato JSON.`;
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+    const response = await guardedGeminiGenerate('internal', {
+      model: getLightModel(),
       contents: prompt,
       config: {
         systemInstruction:
           'Eres el Agente Procesador de Ventas de Costa Rica Tours. Genera un JSON con: draftResponse (string con saludo, viñetas y llamado a la acción), databaseActions (array de strings con acciones de CRM sugeridas), priority (high, medium, low).',
         responseMimeType: 'application/json'
       }
-    });
+    }, { client: ai, containsPii: true });
     return JSON.parse(response.text || '{}');
   } catch {
     return {

@@ -1,5 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { getFirestoreDb } from './bookingService';
+import { guardedGeminiGenerate } from './aiRouter';
+import { getLightModel } from './aiConfig';
 
 let aiClient: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI | null {
@@ -32,13 +34,13 @@ Responde ÚNICAMENTE en formato JSON con la siguiente estructura:
   "justification": "tu justificación breve aquí"
 }`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+    const response = await guardedGeminiGenerate('fraud', {
+      model: getLightModel(),
       contents: prompt,
       config: {
         responseMimeType: 'application/json'
       }
-    });
+    }, { client: ai, containsPii: true });
 
     const resultText = response.text || '{}';
     try {

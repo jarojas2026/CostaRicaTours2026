@@ -1,24 +1,5 @@
-import { GoogleGenAI } from '@google/genai';
-
-let aiClient: GoogleGenAI | null = null;
-
-function getAI(): GoogleGenAI | null {
-  const key = process.env.GEMINI_API_KEY?.trim();
-  if (!key || key.startsWith('AQ.') || key.length < 20) {
-    return null;
-  }
-  if (!aiClient) {
-    aiClient = new GoogleGenAI({
-      apiKey: key,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build'
-        }
-      }
-    });
-  }
-  return aiClient;
-}
+import { runGenerative } from './aiRouter';
+import { getConciergeModel } from './aiConfig';
 
 export interface GroundedSearchResult {
   success: boolean;
@@ -59,7 +40,9 @@ Rules:
 - Include verified operational advice.`;
 
 /**
- * Realiza una búsqueda de información turística en tiempo real en Costa Rica utilizando Google Search Grounding y gemini-3.5-flash.
+ * Realiza una búsqueda de información turística en tiempo real en Costa Rica utilizando Google Search Grounding (modelo de aiConfig).
+ * Si el proveedor o la búsqueda no están disponibles (sin configuración, breaker abierto,
+ * grounding no habilitado) se degrada con elegancia sin lanzar errores.
  */
 export async function performGroundedSearch(
   query: string,
@@ -71,12 +54,20 @@ export async function performGroundedSearch(
       success: false,
       answer: language === 'es' ? 'Por favor ingresa una consulta válida.' : 'Please enter a valid search query.',
       sources: [],
-      modelUsed: 'gemini-3.5-flash'
+      modelUsed: getConciergeModel()
     };
   }
 
-  const ai = getAI();
-  if (!ai) {
+  const systemInstruction = language === 'es' ? SYSTEM_INSTRUCTION_ES : SYSTEM_INSTRUCTION_EN;
+  const result = await runGenerative({
+    task: 'grounded_search',
+    provider: 'gemini',
+    contents: cleanQuery,
+    tools: [{ googleSearch: {} }],
+    config: { systemInstruction, temperature: 0.2 },
+    containsPii: true
+  });
+  if (result.provider === 'none' && (result.reason === 'configuration_missing' || result.reason === 'no_provider_configured')) {
     return {
       success: false,
       answer:
@@ -89,16 +80,8 @@ export async function performGroundedSearch(
   }
 
   try {
-    const systemInstruction = language === 'es' ? SYSTEM_INSTRUCTION_ES : SYSTEM_INSTRUCTION_EN;
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
-      contents: cleanQuery,
-      config: {
-        systemInstruction,
-        temperature: 0.2,
-        tools: [{ googleSearch: {} }]
-      }
-    });
+    if (result.provider !== 'gemini') throw new Error(`grounded_search_unavailable:${result.provider === 'none' ? result.reason : result.provider}`);
+    const response = result.response;
 
     const answer = response.text?.trim() || (language === 'es' ? 'No se pudo obtener información detallada.' : 'No detailed information could be retrieved.');
     
@@ -131,10 +114,10 @@ export async function performGroundedSearch(
       answer,
       sources,
       searchQueries,
-      modelUsed: 'gemini-3.5-flash'
+      modelUsed: result.model
     };
   } catch (error: any) {
-    console.error('Error al ejecutar Google Search Grounding con gemini-3.5-flash:', error);
+    console.warn('Google Search Grounding no disponible:', error?.message || 'error');
     return {
       success: false,
       answer:
@@ -145,7 +128,7 @@ export async function performGroundedSearch(
         { uri: 'https://servir.sinac.go.cr', title: 'SINAC Oficial Costa Rica' },
         { uri: 'https://www.ict.go.cr', title: 'Instituto Costarricense de Turismo' }
       ],
-      modelUsed: 'gemini-3.5-flash-fallback'
+      modelUsed: 'grounding-fallback'
     };
   }
 }
