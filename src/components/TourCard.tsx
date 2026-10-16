@@ -1,3 +1,5 @@
+import { Link, useNavigate } from 'react-router-dom';
+import { publishedTourPrice } from '../utils/tourPublication';
 import React, { useState, useEffect } from 'react';
 import { Tour, Language, Currency } from '../types';
 import { getLangText, UI_TRANSLATIONS } from '../utils/i18n';
@@ -31,6 +33,7 @@ export const TourCard: React.FC<TourCardProps> = ({
   onToggleCompare,
   viewMode = 'grid'
 }) => {
+  const navigate = useNavigate();
   const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
   const [showMiniMap, setShowMiniMap] = useState(false);
 
@@ -66,7 +69,7 @@ export const TourCard: React.FC<TourCardProps> = ({
   return (
     <>
       <div 
-        onClick={() => onSelectTour(tour)}
+        onClick={() => navigate(`/tour/${encodeURIComponent(tour.id)}`)}
         className={`relative modern-card flex overflow-hidden ${
           viewMode === 'list' ? 'flex-col lg:flex-row' : 'flex-col h-full'
         } group cursor-pointer`}
@@ -187,7 +190,7 @@ export const TourCard: React.FC<TourCardProps> = ({
           {/* Footer: Clear Price & Primary Action */}
           <div className="flex items-center justify-between pt-4 mt-4 border-t border-emerald-500/20">
             <div className="space-y-0.5">
-              <ReferencePrice amountUSD={tour.priceUSD} currency={currency} language={language} />
+              <ReferencePrice amountUSD={publishedTourPrice(tour)} currency={currency} language={language} />
               {!isBookable && (tour.priceSource === 'publicado_por_operador' ? (
                 <OperatorPriceSource tour={tour} language={language} variant="compact" />
               ) : (
@@ -197,17 +200,14 @@ export const TourCard: React.FC<TourCardProps> = ({
               ))}
             </div>
 
-            <button 
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelectTour(tour);
-              }}
+            <Link
+              to={`/tour/${encodeURIComponent(tour.id)}`}
+              onClick={(e) => e.stopPropagation()}
               className="bg-[#f59e0b] hover:bg-[#d97706] text-stone-950 font-bold px-4 py-2.5 rounded-full flex items-center justify-center gap-1.5 text-xs tracking-wide transition-all duration-200 group-hover:scale-105 cursor-pointer"
             >
               <span>{t('checkDetails')}</span>
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </Link>
           </div>
         </div>
       </div>

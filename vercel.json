@@ -90,7 +90,7 @@
     },
     {
       "source": "/tour/:id",
-      "destination": "/index.html"
+      "destination": "/tour/:id/index.html"
     },
     {
       "source": "/terms",

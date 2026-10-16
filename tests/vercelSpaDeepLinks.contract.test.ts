@@ -9,6 +9,7 @@ const rewrites: Array<{ source: string; destination: string }> = config.rewrites
 
 const hasDirectEntry = (path: string): boolean =>
   path === '/' ||
+  (path === '/tour/:id' && rewrites.some(rule => rule.source === path && rule.destination === '/tour/:id/index.html')) ||
   rewrites.some(rule =>
     rule.destination === '/index.html' &&
     (rule.source === path ||
@@ -33,5 +34,5 @@ test('SPA routing does not interfere with reserved API gateway URLs', () => {
   const api = rewrites.find(rule => rule.source.startsWith('/api/'));
   assert.ok(api, 'API gateway rewrite remains configured');
   assert.ok(api.destination.startsWith('/api/'));
-  assert.ok(rewrites.find(rule => rule.source === '/tour/:id' && rule.destination === '/index.html'));
+  assert.ok(rewrites.find(rule => rule.source === '/tour/:id' && rule.destination === '/tour/:id/index.html'));
 });

@@ -4,7 +4,7 @@ const TOUR_ID = 'arenal-hot-springs';
 
 test.beforeEach(async ({ page }) => {
   // Essential-only consent, as if the visitor clicked "Rechazar", so the banner does not cover the flows.
-  await page.addInitScript(() => window.localStorage.setItem('cookie-consent', 'essential'));
+  await page.addInitScript(() => { if (window === window.top) window.localStorage.setItem('cookie-consent', 'essential'); });
 });
 
 test('home loads with the main heading and navigation', async ({ page, consoleProblems }) => {
@@ -21,15 +21,15 @@ test('catalog lists tours and opens a tour detail', async ({ page, consoleProble
   const firstCard = page.locator('.modern-card').filter({ has: page.locator('h3') }).first();
   await expect(firstCard).toBeVisible();
   const title = (await firstCard.locator('h3').first().innerText()).trim();
-  await firstCard.getByRole('button', { name: 'Consultar' }).click();
-  await expect(page.getByRole('heading', { level: 2, name: title })).toBeVisible();
+  await firstCard.getByRole('link', { name: 'Consultar' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
   expectNoConsoleErrors(consoleProblems);
 });
 
 test('tour detail page renders from a deep link', async ({ page, consoleProblems }) => {
   await mockApi(page);
   await page.goto(`/tour/${TOUR_ID}`);
-  await expect(page).toHaveURL(new RegExp(`/tour/${TOUR_ID}$`));
+  await expect(page).toHaveURL(new RegExp(`/tour/${TOUR_ID}/?$`));
   await expect(page.getByRole('heading', { level: 1 })).toContainText(/Arenal/);
   expectNoConsoleErrors(consoleProblems);
 });

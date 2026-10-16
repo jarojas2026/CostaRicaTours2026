@@ -1,3 +1,4 @@
+import { useTours } from '../contexts/ToursContext';
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import type { Language } from '../types';
@@ -159,10 +160,26 @@ function upsertCanonical(url: string) {
 /** Per-route, per-language document title + meta description. */
 export function RouteMetadata({ language }: { language: Language }) {
   const { pathname } = useLocation();
+  const { tours } = useTours();
 
   useEffect(() => {
-    const { title, description } = resolveRouteMeta(pathname, language);
-    const canonicalUrl = `${SITE_ORIGIN}${pathname === '/' ? '/' : pathname.replace(/\/$/, '')}`;
+    const id = pathname.startsWith('/tour/') ? pathname.slice(6).replace(/\/$/, '') : '';
+    const tour = tours.find(t => t.id === id || t.slug === id);
+    const lang = language === 'es' ? 'es' : 'en';
+    const { title, description } = tour
+      ? { title: `${tour.title[lang] || tour.title.es} | ${BRAND}`, description: (tour.description[lang] || tour.description.es).slice(0, 160) }
+      : resolveRouteMeta(pathname, language);
+    const canonicalUrl = `${SITE_ORIGIN}${tour ? '/tour/' + encodeURIComponent(tour.id) : pathname === '/' ? '/' : pathname.replace(/\/$/, '')}`;
+
+    const oldSchema = document.getElementById('tour-schema');
+    oldSchema?.remove();
+    if (tour) {
+      const schema = document.createElement('script');
+      schema.id = 'tour-schema';
+      schema.type = 'application/ld+json';
+      schema.textContent = JSON.stringify({ '@context': 'https://schema.org', '@type': 'TouristTrip', name: tour.title[lang], description, url: canonicalUrl, inLanguage: lang });
+      document.head.appendChild(schema);
+    }
 
     document.title = title;
     document.documentElement.lang = language === 'es' ? 'es' : 'en';
@@ -173,7 +190,7 @@ export function RouteMetadata({ language }: { language: Language }) {
     upsertMeta('meta[name="twitter:title"]', { name: 'twitter:title' }, title);
     upsertMeta('meta[name="twitter:description"]', { name: 'twitter:description' }, description);
     upsertCanonical(canonicalUrl);
-  }, [pathname, language]);
+  }, [pathname, language, tours]);
 
   return null;
 }

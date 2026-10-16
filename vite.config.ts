@@ -1,3 +1,4 @@
+import { tourPrerender } from './scripts/tourPrerender';
 import { VitePWA } from 'vite-plugin-pwa';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
@@ -6,7 +7,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss(), VitePWA({
+    plugins: [react(), tailwindcss(), tourPrerender(), VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable-512x512.png'],
       manifest: {
@@ -43,12 +44,13 @@ export default defineConfig(() => {
       workbox: {
         maximumFileSizeToCacheInBytes: 5000000,
         cleanupOutdatedCaches: true,
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: [/^\/api\//, /^\/tour\//],
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,jpg,jpeg}'],
         // Lazy operational/admin surfaces are fetched only when requested.
         // Keeping them out of install-time precache reduces PWA cold-start bytes
         // without removing any capability from the application.
         globIgnores: [
+          'tour/**/*.html',
           '**/AdminDashboard-*.js',
           '**/AutonomousOperationsPage-*.js',
           '**/EmailOperationsPage-*.js',
