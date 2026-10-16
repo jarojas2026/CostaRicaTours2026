@@ -2,7 +2,8 @@ import { ReferencePrice } from '../components/ReferencePrice';
 import { OperatorPriceSource } from '../components/OperatorPriceSource';
 import React, { useState, useEffect, useRef } from 'react';
 import { createBookingAttempt, requirePaymentUrl } from '../utils/bookingAttempt';
-import { useParams, useNavigate } from 'react-router-dom';
+import { publishedTourPrice, similarTours } from '../utils/tourPublication';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   Clock, MapPin, ShieldCheck, Calendar, Users,
   ChevronRight, Lock, Sparkles, Check, Info,
@@ -26,12 +27,12 @@ interface TourDetailPageProps {
 
 type ProviderCheckState = 'idle' | 'checking' | 'confirmed' | 'pending' | 'unavailable';
 
-export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, currency, onBookingSuccess }) => {
+const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, onBookingSuccess }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { tours: TOURS, loading } = useTours();
 
-  const [tour, setTour] = useState<Tour | null>(() => TOURS.find(t => t.id === id || t.slug === id) || null);
+  const tour = TOURS.find(t => t.id === id || t.slug === id) || null;
   const [selectedDate, setSelectedDate] = useState('');
   const [dateInput, setDateInput] = useState('');
   const [adults, setAdults] = useState(2);
@@ -45,6 +46,7 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
   const [pendingBookingId, setPendingBookingId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [fullName, setFullName] = useState('');
+  const [consent, setConsent] = useState(false);
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [sinpeRef, setSinpeRef] = useState('');
@@ -58,14 +60,6 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
   );
 
   useEffect(() => {
-    if (TOURS.length > 0) {
-      const foundTour = TOURS.find(t => t.id === id || t.slug === id);
-      if (foundTour) setTour(foundTour);
-      else if (!loading) navigate('/tours');
-    }
-  }, [id, TOURS, loading, navigate]);
-
-  useEffect(() => {
     if (!pendingBookingId) {
       setAvailabilityState('idle');
       setProviderCheckState('idle');
@@ -74,13 +68,15 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
     setErrorMessage(null);
   }, [selectedDate, adults, children, tour?.id, pendingBookingId]);
 
-  if (loading || !tour) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-950">
         <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
       </div>
     );
   }
+
+  if (!tour) return <main className="min-h-screen bg-stone-950 px-6 pt-32 text-white"><h1>{language === 'es' ? 'Tour no encontrado' : 'Tour not found'}</h1><Link to="/tours" className="underline">{language === 'es' ? 'Explorar tours' : 'Explore tours'}</Link></main>;
 
   const totalUSD = (tour.priceUSD * adults) + (tour.priceUSD * 0.7 * children);
   const crcRate = getUsdToCrcRate();
@@ -205,6 +201,11 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
     if (submitting.current) return;
     setErrorMessage(null);
     setStatusMessage(null);
+
+    if (!consent) {
+      setErrorMessage(language === 'es' ? 'Autoriza el uso de tus datos para gestionar esta solicitud.' : 'Authorize use of your data to manage this request.');
+      return;
+    }
 
     if (!selectedDate || !fullName.trim() || !email.trim() || !phone.trim()) {
       setErrorMessage(language === 'es' ? 'Completa fecha, nombre, correo y teléfono/WhatsApp para continuar.' : 'Complete date, name, email and phone/WhatsApp to continue.');
@@ -426,6 +427,16 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
               </div>
             </div>
 
+            <section aria-label={language === 'es' ? 'Ubicación y tours similares' : 'Location and similar tours'} className="space-y-6">
+              <h2 className="text-2xl font-bold text-white">{language === 'es' ? 'Ubicación de referencia' : 'Reference location'}</h2>
+              <p className="text-stone-300">{tour.location.placeName} · {language === 'es' ? 'El punto de recogida se confirma con el operador.' : 'The pickup point is confirmed with the operator.'}</p>
+              {Number.isFinite(tour.location.lat) && Number.isFinite(tour.location.lng) && tour.location.lat !== 0 && (
+                <iframe title={language === 'es' ? 'Mapa de ubicación del tour' : 'Tour location map'} loading="lazy" referrerPolicy="no-referrer" className="w-full h-64 rounded-2xl border-0" src={`https://maps.google.com/maps?q=${tour.location.lat},${tour.location.lng}&z=10&output=embed`} />
+              )}
+              <h2 className="text-2xl font-bold text-white">{language === 'es' ? 'Tours similares' : 'Similar tours'}</h2>
+              <ul className="space-y-3">{similarTours(tour, TOURS).map(related => <li key={related.id}><Link className="text-emerald-300 underline" to={`/tour/${encodeURIComponent(related.id)}`}>{getLangText(related.title, language)}</Link></li>)}</ul>
+            </section>
+
             {tour.itinerarySteps && tour.itinerarySteps.length > 0 && (
               <div className="space-y-8">
                 <h3 className="text-2xl font-black text-white uppercase tracking-wider">{language === 'es' ? 'Itinerario' : 'Itinerary'}</h3>
@@ -454,17 +465,17 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                   {isBookable ? <>
                     <div className="text-stone-500 text-xs font-black uppercase tracking-widest mb-2">{language === 'es' ? 'Precio de catálogo · por confirmar' : 'Catalog price · confirm before booking'}</div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-4xl sm:text-5xl font-black text-emerald-400">{formatCurrency(totalUSD, currency)}</span>
-                      <span className="text-stone-400 text-xs font-bold uppercase">{currency} / total</span>
+                      <span className="text-4xl sm:text-5xl font-black text-emerald-400">{publishedTourPrice(tour) === undefined ? (language === 'es' ? 'Consultar precio' : 'Ask for price') : formatCurrency(publishedTourPrice(tour)!, currency)}</span>
+                      <span className="text-stone-400 text-xs font-bold uppercase">{currency} / {language === 'es' ? 'precio publicado' : 'published price'}</span>
                     </div>
                     <p className="mt-2 text-[11px] leading-relaxed text-stone-500">
                       {language === 'es' ? 'El proveedor debe confirmar disponibilidad y precio final antes de habilitar el pago.' : 'The provider must confirm availability and the final price before payment is enabled.'}
                     </p>
                   </> : <>
-                    <ReferencePrice amountUSD={tour.priceUSD} currency={currency} language={language} />
+                    <ReferencePrice amountUSD={publishedTourPrice(tour)} currency={currency} language={language} />
                     <OperatorPriceSource tour={tour} language={language} className="mt-2" />
                     <p className="mt-2 text-[11px] leading-relaxed text-stone-400">
-                      {language === 'es' ? 'Esta ficha aún no tiene proveedor, tarifa ni cupos vinculados. No admite reserva ni pago en línea.' : 'This listing has no linked provider, price or inventory yet. Online booking and payment are not available.'}
+                      {language === 'es' ? 'La publicación del operador no confirma cupos ni un acuerdo comercial. Consulta disponibilidad y precio final antes de pagar.' : 'An operator listing does not confirm inventory or a commercial agreement. Check availability and the final price before paying.'}
                     </p>
                   </>}
                 </div>
@@ -540,6 +551,11 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                     <textarea disabled={requestLocked} placeholder={language === 'es' ? 'Solicitudes especiales (opcional)' : 'Special requests (optional)'} value={specialRequests} onChange={e => setSpecialRequests(e.target.value)} className="w-full min-h-20 bg-stone-950/50 border border-white/10 rounded-2xl px-5 py-3.5 text-white placeholder-stone-600 focus:outline-none focus:border-emerald-500 resize-y disabled:opacity-60" />
                   </div>
 
+                  <label className="flex items-start gap-3 text-sm text-stone-300">
+                    <input type="checkbox" checked={consent} disabled={requestLocked} onChange={e => setConsent(e.target.checked)} className="mt-1" />
+                    <span>{language === 'es' ? 'Autorizo el uso de mi nombre, correo y teléfono para gestionar esta solicitud, conforme a la Ley 8968.' : 'I authorize use of my name, email and phone to manage this request under Costa Rica Law 8968.'} <Link to="/privacy" className="underline">{language === 'es' ? 'Privacidad' : 'Privacy'}</Link></span>
+                  </label>
+
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] ml-4">{language === 'es' ? 'Forma de continuar' : 'How to continue'}</label>
                     <select disabled={requestLocked} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value as any)} className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-5 py-3.5 text-white focus:outline-none focus:border-emerald-500 disabled:opacity-60">
@@ -591,7 +607,7 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
                     </p>
                     <button type="button" onClick={requestTourAssistance} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 font-black text-stone-950 hover:bg-[#20ba59]">
                       <MessageCircle className="w-4 h-4" />
-                      {language === 'es' ? 'Consultar opciones con IA' : 'Ask AI about available options'}
+                      {language === 'es' ? 'Consultar disponibilidad' : 'Check availability'}
                     </button>
                   </div>
                 )}
@@ -620,6 +636,11 @@ export const TourDetailPage: React.FC<TourDetailPageProps> = ({ language, curren
       </div>
     </div>
   );
+};
+
+export const TourDetailPage: React.FC<TourDetailPageProps> = (props) => {
+  const { id } = useParams();
+  return <TourDetailContent key={id} {...props} />;
 };
 
 export default TourDetailPage;
