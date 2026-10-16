@@ -11,7 +11,7 @@ import {
 import { Tour, Language, Currency, BookingRequest } from '../types';
 import { getLangText } from '../utils/i18n';
 import { getUsdToCrcRate } from '../utils/currencies';
-import { OPERATORS } from '../data/catalogMeta';
+import { neutralOperatorLabel } from '../utils/operatorPrivacy';
 import { LazyImage } from './LazyImage';
 import { isBookableTour } from '../utils/tourListing';
 
@@ -75,7 +75,6 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
     ? tour.gallery 
     : [tour.image || 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85'];
 
-  const operator = tour.operatorId ? OPERATORS.find(op => op.id === tour.operatorId) : null;
   const isBookable = isBookableTour(tour);
   const hasVerifiedRating = isBookable && tour.reviewsVerified === true && tour.reviewsCount > 0;
   const modalTitle = getLangText(tour.title, language, 'Tour de Costa Rica');
@@ -440,17 +439,16 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                 </div>
               )}
 
-              {operator?.verifiedBadge && isBookable && (
+              {isBookable && (
                 <div className="p-4 bg-[#03150e] border border-emerald-500/20 rounded-2xl flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
                     <ShieldCheck className="w-5 h-5 text-emerald-400" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">
-                      {language === 'es' ? 'Operador Local Verificado' : 'Verified Local Operator'}
+                      {language === 'es' ? 'Operador' : 'Operator'}
                     </div>
-                    <div className="text-sm font-black text-white truncate">{operator.name}</div>
-                    <div className="text-xs text-stone-400 truncate">{operator.location}</div>
+                    <div className="text-sm font-black text-white">{neutralOperatorLabel(tour)[language === 'es' ? 'es' : 'en']}</div>
                   </div>
                 </div>
               )}
@@ -713,8 +711,8 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-stone-300">
                     {language === 'es'
-                      ? 'Esta ficha es una referencia para explorar Costa Rica. El operador, la tarifa actual y los cupos no están conectados a inventario verificado, así que no acepta reservas ni pagos desde aquí.'
-                      : 'This listing is a reference for exploring Costa Rica. The operator, current price and availability are not connected to verified inventory, so booking and payment are not enabled here.'}
+                      ? 'Esta ficha es una referencia para explorar Costa Rica. La tarifa actual y los cupos no están conectados a inventario verificado, así que no acepta reservas ni pagos desde aquí.'
+                      : 'This listing is a reference for exploring Costa Rica. The current price and availability are not connected to verified inventory, so booking and payment are not enabled here.'}
                   </p>
                   <ReferencePrice amountUSD={tour.priceUSD} currency={currency} language={language} className="mt-4" />
                     <OperatorPriceSource tour={tour} language={language} className="mt-2" />
