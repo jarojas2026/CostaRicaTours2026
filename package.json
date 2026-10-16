@@ -13,6 +13,7 @@
     "audit:security:prod": "npm audit --omit=dev --audit-level=high",
     "audit:whatsapp": "tsx scripts/auditCustomerWhatsAppRouting.ts",
     "audit:system": "tsx scripts/auditSystem.ts",
+    "sitemap": "tsx scripts/generateSitemap.ts",
     "check:release": "npm run audit:security:prod && node scripts/securityFixtureAudit.mjs && npm run audit:whatsapp && npm run test:contracts && node --max-old-space-size=4096 node_modules/typescript/bin/tsc --noEmit && npm run build",
     "ops:scheduler:plan": "tsx scripts/configureOperationalScheduler.ts",
     "ops:scheduler:apply": "tsx scripts/configureOperationalScheduler.ts --apply"

@@ -1,5 +1,6 @@
-import { ReferencePrice } from '../components/ReferencePrice';
-import { OperatorPriceSource } from '../components/OperatorPriceSource';
+import { TourFacts } from '../components/TourFacts';
+import { TourQuoteRequestForm } from '../components/TourQuoteRequestForm';
+import { resolveTour, tourAllowsPayment, TOUR_COMMERCIAL_STATUS } from '../utils/tourResolver';
 import React, { useState, useEffect, useRef } from 'react';
 import { createBookingAttempt, requirePaymentUrl } from '../utils/bookingAttempt';
 import { publishedTourPrice, similarTours } from '../utils/tourPublication';
@@ -16,7 +17,6 @@ import { useTours } from '../contexts/ToursContext';
 import { getUsdToCrcRate } from '../utils/currencies';
 import { LazyImage } from '../components/LazyImage';
 import { useTourMedia } from '../hooks/useTourMedia';
-import { isBookableTour } from '../utils/tourListing';
 import { requestCustomerIntake } from '../utils/customerIntake';
 
 interface TourDetailPageProps {
@@ -32,7 +32,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
   const navigate = useNavigate();
   const { tours: TOURS, loading } = useTours();
 
-  const tour = TOURS.find(t => t.id === id || t.slug === id) || null;
+  const tour = resolveTour(id, TOURS)?.tour ?? null;
   const [selectedDate, setSelectedDate] = useState('');
   const [dateInput, setDateInput] = useState('');
   const [adults, setAdults] = useState(2);
@@ -76,7 +76,14 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
     );
   }
 
-  if (!tour) return <main className="min-h-screen bg-stone-950 px-6 pt-32 text-white"><h1>{language === 'es' ? 'Tour no encontrado' : 'Tour not found'}</h1><Link to="/tours" className="underline">{language === 'es' ? 'Explorar tours' : 'Explore tours'}</Link></main>;
+  if (!tour) return (
+    <main data-testid="tour-not-found" className="min-h-screen bg-stone-950 px-6 pt-32 text-center text-white">
+      <p className="text-6xl font-black text-emerald-400">404</p>
+      <h1 className="mt-4 text-3xl font-black">{language === 'es' ? 'Tour no encontrado' : 'Tour not found'}</h1>
+      <p className="mx-auto mt-3 max-w-md text-stone-400">{language === 'es' ? 'Este tour no existe o ya no está en el catálogo.' : 'This tour does not exist or is no longer in the catalog.'}</p>
+      <Link to="/tours" className="mt-6 inline-block rounded-2xl bg-emerald-500 px-6 py-3 font-black text-stone-950">{language === 'es' ? 'Explorar tours' : 'Explore tours'}</Link>
+    </main>
+  );
 
   const totalUSD = (tour.priceUSD * adults) + (tour.priceUSD * 0.7 * children);
   const crcRate = getUsdToCrcRate();
@@ -84,7 +91,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
   const bookingTime = tour.departureTimes?.[0] || '08:00 AM';
   const passengers = adults + children;
   const requestLocked = Boolean(pendingBookingId);
-  const isBookable = isBookableTour(tour);
+  const isBookable = tourAllowsPayment(tour);
   const inquiryMessage = language === 'es'
     ? `Quiero consultar opciones verificables para ${getLangText(tour.title, language)}. Fecha tentativa: ${selectedDate || 'por definir'}. Grupo: ${passengers} personas.`
     : `I would like to ask about verifiable options for ${getLangText(tour.title, language)}. Tentative date: ${selectedDate || 'to be decided'}. Group: ${passengers} people.`;
@@ -390,6 +397,8 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
               </div>
             </div>
 
+            <TourFacts tour={tour} language={language} currency={currency} />
+
             <div className="prose prose-invert prose-stone max-w-none">
               <h3 className="text-2xl font-black text-white uppercase tracking-wider mb-6">{language === 'es' ? 'Sobre esta experiencia' : 'About this experience'}</h3>
               <p className="text-stone-400 text-lg leading-relaxed">{getLangText(tour.description, language)}</p>
@@ -472,8 +481,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
                       {language === 'es' ? 'El proveedor debe confirmar disponibilidad y precio final antes de habilitar el pago.' : 'The provider must confirm availability and the final price before payment is enabled.'}
                     </p>
                   </> : <>
-                    <ReferencePrice amountUSD={publishedTourPrice(tour)} currency={currency} language={language} />
-                    <OperatorPriceSource tour={tour} language={language} className="mt-2" />
+                    <div className="text-[10px] font-black uppercase tracking-widest text-amber-300">{TOUR_COMMERCIAL_STATUS[language === 'es' ? 'es' : 'en']}</div>
                     <p className="mt-2 text-[11px] leading-relaxed text-stone-400">
                       {language === 'es' ? 'La publicación del operador no confirma cupos ni un acuerdo comercial. Consulta disponibilidad y precio final antes de pagar.' : 'An operator listing does not confirm inventory or a commercial agreement. Check availability and the final price before paying.'}
                     </p>
@@ -599,13 +607,9 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
                     <div className="flex flex-col items-center gap-1"><Smartphone size={16} className="text-emerald-500/60" /><span className="text-[8px] font-black text-stone-600 uppercase tracking-widest">{language === 'es' ? 'Pago después' : 'Payment after'}</span></div>
                   </div>
                 </form> : (
-                  <div className="space-y-4 rounded-2xl border border-amber-500/25 bg-amber-950/20 p-4">
-                    <p className="text-sm leading-relaxed text-stone-200">
-                      {language === 'es'
-                        ? 'Podemos usar esta ficha como punto de partida, pero primero hay que confirmar un operador real, la tarifa vigente, los permisos de acceso y los cupos de tu fecha.'
-                        : 'Use this listing as a starting point; first we need to confirm a real operator, current price, access requirements and availability for your date.'}
-                    </p>
-                    <button type="button" onClick={requestTourAssistance} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 font-black text-stone-950 hover:bg-[#20ba59]">
+                  <div className="space-y-4">
+                    <TourQuoteRequestForm tourId={tour.id} language={language} />
+                    <button type="button" onClick={requestTourAssistance} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#25D366]/50 px-4 py-3 font-bold text-[#25D366] hover:bg-[#25D366]/10">
                       <MessageCircle className="w-4 h-4" />
                       {language === 'es' ? 'Consultar disponibilidad' : 'Check availability'}
                     </button>
