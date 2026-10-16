@@ -1,20 +1,20 @@
 import { test, expect, mockApi, expectNoConsoleErrors } from './fixtures';
-import catalog from '../../src/data/operatorTours.json' with { type: 'json' };
+import catalog from '../../src/data/catalogTours.json' with { type: 'json' };
 
 const tour = catalog.tours.find(t => t.priceUSD > 0)!;
 
 for (const language of ['es', 'en'] as const) {
   test.describe(`tour detail ${language}`, () => {
     test.use({ locale: language === 'es' ? 'es-CR' : 'en-US' });
-    test('source, map, related link, reload and inquiry CTA', async ({ page, consoleProblems }, testInfo) => {
+    test('no operator source, map, related link, reload and inquiry CTA', async ({ page, consoleProblems }, testInfo) => {
       await page.addInitScript(() => { if (window === window.top) localStorage.setItem('cookie-consent', 'essential'); });
       await mockApi(page);
       await page.goto(`/tour/${tour.id}`);
       const title = language === 'es' ? tour.titleEs : tour.titleEn;
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(title);
       await expect(page).toHaveTitle(`${title} | Costa Rica Tours`);
-      await expect(page.getByRole('link', { name: language === 'es' ? 'fuente' : 'source', exact: true })).toHaveAttribute('href', tour.sourceUrl);
-      await expect(page.getByText(language === 'es' ? `Revisado el ${catalog.priceCheckedAt}` : `Checked on ${catalog.priceCheckedAt}`)).toBeVisible();
+      await expect(page.getByRole('link', { name: language === 'es' ? 'fuente' : 'source', exact: true })).toHaveCount(0);
+      await expect(page.getByText(language === 'es' ? `Revisado por nuestro equipo el ${catalog.reviewedAt}` : `Reviewed by our team on ${catalog.reviewedAt}`)).toBeVisible();
       await expect(page.getByRole('button', { name: language === 'es' ? 'Consultar disponibilidad' : 'Check availability', exact: true })).toBeVisible();
       await expect(page.locator('iframe[title]')).toHaveCount(1);
       await page.reload();
@@ -39,6 +39,7 @@ test('prerender exposes real catalog text without JavaScript', async ({ browser,
   await page.goto(`${baseURL}/tour/${tour.id}/index.html`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(tour.titleEs);
   await expect(page.locator('section[lang="en"]')).toContainText(tour.titleEn);
-  await expect(page.getByRole('link', { name: 'Fuente del operador' })).toHaveAttribute('href', tour.sourceUrl);
+  await expect(page.getByRole('link', { name: 'Fuente del operador' })).toHaveCount(0);
+  await expect(page.locator('section[lang="es"]')).toContainText('Operador local seleccionado por Costa Rica Tours');
   await context.close();
 });
