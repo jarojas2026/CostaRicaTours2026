@@ -83,7 +83,8 @@ export interface Tour {
   tourType?: 'private' | 'group';
   maxGroupSize?: number;
   ageMinimum?: number;
-  // ID y nombre del operador local que ejecuta el tour
+  // ID y nombre del operador local que ejecuta el tour. Nunca se muestran al cliente
+  // antes de reservar (decisión del negocio); el catálogo público no los incluye.
   operatorId?: string;
   providerId?: string;
   operatorName?: string;
@@ -119,12 +120,17 @@ export interface Tour {
   instantConfirmation?: boolean;
   bestPriceGuaranteed?: boolean;
   verifiedBadge?: Localized<string>;
-  /** Página del operador donde se leyó el producto y su precio publicado. */
+  /**
+   * SOLO SERVIDOR/ADMIN. Nunca debe venir en el catálogo público (ver tests/publicOperatorPrivacy).
+   * La fuente del precio vive en un archivo interno del servidor.
+   */
   sourceUrl?: string;
-  /** Origen del precio mostrado; 'publicado_por_operador' = tomado de la web del operador, no es cotización. */
-  priceSource?: 'publicado_por_operador';
-  /** Fecha (YYYY-MM-DD) en que se revisó el precio publicado. */
+  /** Origen del precio mostrado; 'precio_referencia' = precio de referencia revisado por el equipo, sujeto a confirmación. */
+  priceSource?: 'precio_referencia';
+  /** Fecha (YYYY-MM-DD) en que el equipo revisó el precio de referencia. */
   priceCheckedAt?: string;
+  /** true solo cuando el equipo verificó la declaratoria turística ICT del operador de este tour. */
+  operatorIctVerified?: boolean;
   /** Motivo por el que priceUSD es 0 (sin precio publicado, precio por bote/grupo). */
   priceNote?: string;
 }
