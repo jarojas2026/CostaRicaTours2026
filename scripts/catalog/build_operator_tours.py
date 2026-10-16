@@ -46,6 +46,8 @@ for path in sorted(SRC.glob('*.csv')):
             if not url.startswith('https://'):
                 skipped.append({'id': slug, 'reason': 'sin url_fuente'}); continue
             notas = (r.get('notas') or '').strip()
+            if notas.upper().startswith('RETIRAR'):
+                skipped.append({'id': slug, 'reason': 'retirado: ' + notas[:80]}); continue
             price = num(r.get('precio_usd_adulto'))
             price_note = None
             if price is None or price <= 0:
