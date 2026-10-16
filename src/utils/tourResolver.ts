@@ -23,7 +23,7 @@ export function resolveTour(rawId: string | undefined, tours: readonly Tour[]): 
   if (!TOUR_PATH_ID_RE.test(id)) return null;
   const tour = tours.find(t => t.id === id) || tours.find(t => t.slug === id);
   if (!tour) return null;
-  return { tour, kind: tour.catalogStatus === 'inquiry' && tour.priceSource === 'publicado_por_operador' ? 'operator' : 'curated' };
+  return { tour, kind: tour.catalogStatus === 'inquiry' && tour.priceSource === 'precio_referencia' ? 'operator' : 'curated' };
 }
 
 export interface TourPriceLabel {
@@ -32,14 +32,14 @@ export interface TourPriceLabel {
 }
 
 /**
- * Precio que se puede mostrar en la ficha: solo la tarifa publicada por el
- * operador con fuente https y fecha de revisión; si no, "Consultar precio".
+ * Precio que se puede mostrar en la ficha: solo el precio de referencia con
+ * fecha de revisión; si no, "Consultar precio". Nunca se cita al proveedor.
  */
 export function tourReferencePrice(tour: Tour): TourPriceLabel {
   const amountUSD = publishedTourPrice(tour);
   return amountUSD === undefined
     ? { label: { es: 'Consultar precio', en: 'Ask for price' } }
-    : { amountUSD, label: { es: 'Tarifa publicada por el operador, sujeta a confirmación', en: 'Rate published by the operator, subject to confirmation' } };
+    : { amountUSD, label: { es: 'Precio de referencia, sujeto a confirmación', en: 'Reference price, subject to confirmation' } };
 }
 
 /** Estado comercial: nunca se afirma disponibilidad desde la ficha. */
@@ -50,8 +50,7 @@ export function tourAllowsPayment(tour: Tour): boolean {
   return tour.catalogStatus !== 'inquiry' && isBookableTour(tour);
 }
 
-/** Fuente pública del tour (solo https) con su fecha de revisión. */
-export function tourSource(tour: Tour): { url: string; checkedAt?: string } | null {
-  if (!/^https:\/\//i.test(tour.sourceUrl || '')) return null;
-  return { url: tour.sourceUrl!, ...(tour.priceCheckedAt ? { checkedAt: tour.priceCheckedAt } : {}) };
+/** Fecha en que el equipo revisó el precio de referencia (sin enlaces al proveedor). */
+export function tourReviewDate(tour: Tour): string | undefined {
+  return /^\d{4}-\d{2}-\d{2}$/.test(tour.priceCheckedAt || '') ? tour.priceCheckedAt : undefined;
 }
