@@ -1475,7 +1475,7 @@ export async function executeWeatherMonitoringAlerts(): Promise<{
       if (isSensitiveZone) {
         const customerEmail = b.customerEmail || b.customer?.email;
         const customerName = b.customerName || b.customer?.name || 'Estimado Viajero';
-        const operatorName = b.operator || 'Alsama Tours CR';
+        const operatorName = b.operator || 'tu operador local';
 
         if (customerEmail && customerEmail.includes('@')) {
           await sendEmail({
