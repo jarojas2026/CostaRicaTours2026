@@ -13,7 +13,7 @@ test('configuration is not proof of a functioning model; observations expire', (
   assert.equal(getAiHealth(env, now + 300_001).status, 'unknown');
   recordAiObservation('gemini', 'quota', now);
   assert.equal(getAiHealth(env, now).status, 'degraded');
-  assert.equal(getAiHealth({}, now).status, 'degraded');
+  assert.equal(getAiHealth({}, now).status, 'unconfigured');
   assert.doesNotMatch(JSON.stringify(getAiHealth(env, now)), /test-key/);
 });
 
