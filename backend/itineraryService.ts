@@ -1,5 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { TOURS } from '../src/data/toursData';
+import { guardedGeminiGenerate } from './aiRouter';
+import { getLightModel } from './aiConfig';
 
 export interface ItineraryParams {
   days: number;
@@ -399,8 +401,8 @@ Reglas obligatorias:
 }`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+    const response = await guardedGeminiGenerate('itinerary', {
+      model: getLightModel(),
       contents: prompt,
       config: {
         systemInstruction: `Eres el Diseñador Experto de Itinerarios Oficial de Costa Rica Tours.
@@ -410,7 +412,7 @@ Devuelve SIEMPRE JSON estructurado estricto conforme al esquema solicitado.`,
         responseMimeType: 'application/json',
         temperature: 0.7
       }
-    });
+    }, { client: ai, containsPii: true });
 
     const text = response.text?.trim();
     if (!text) {
