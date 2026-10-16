@@ -49,7 +49,7 @@ export const FlightTrackerGadget: React.FC<FlightTrackerGadgetProps> = ({
   });
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden text-slate-100">
+    <div className="w-full min-w-0 max-w-full bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden text-slate-100">
       
       {/* Glow Effects */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -57,7 +57,7 @@ export const FlightTrackerGadget: React.FC<FlightTrackerGadgetProps> = ({
 
       {/* Header Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10 border-b border-slate-800 pb-6">
-        <div>
+        <div className="min-w-0">
           {standalone && onBack && (
             <button
               onClick={onBack}
@@ -73,14 +73,14 @@ export const FlightTrackerGadget: React.FC<FlightTrackerGadgetProps> = ({
             <span>{language === 'es' ? 'Rastreador de Vuelos a Costa Rica' : 'Costa Rica Flight Tracker'}</span>
           </div>
 
-          <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 flex-wrap">
+          <h3 className="max-w-full text-xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-x-2 gap-y-1 flex-wrap leading-tight">
             <span>{language === 'es' ? 'Vuelos a Costa Rica desde' : 'Flights to Costa Rica from'}</span>
             <span className="text-emerald-400">
               {selectedCountry.flag} {selectedCountry.name[language === 'es' ? 'es' : 'en']}
             </span>
           </h3>
 
-          <p className="text-xs sm:text-sm text-slate-400 max-w-2xl mt-1.5">
+          <p className="max-w-full text-xs sm:text-sm text-slate-400 sm:max-w-2xl mt-1.5 leading-relaxed">
             {language === 'es'
               ? 'Conexiones directas y con escala hacia los aeropuertos internacionales de San José (SJO) y Liberia Guanacaste (LIR). Reserva tu vuelo con asistencia receptiva y chofer oficial.'
               : 'Direct and connecting routes to San Jose (SJO) and Liberia Guanacaste (LIR) international airports. Book your flight package with official airport reception & driver.'}
@@ -256,7 +256,7 @@ export const FlightTrackerGadget: React.FC<FlightTrackerGadgetProps> = ({
               </div>
 
               {/* Times Timeline */}
-              <div className="flex items-center justify-between sm:justify-center gap-4 sm:gap-6 bg-slate-900/90 p-3 sm:p-4 rounded-xl border border-slate-700/60 min-w-[270px]">
+              <div className="w-full min-w-0 sm:w-auto flex items-center justify-between sm:justify-center gap-3 sm:gap-6 bg-slate-900/90 p-3 sm:p-4 rounded-xl border border-slate-700/60 sm:min-w-[270px]">
                 <div className="text-left">
                   <span className="text-xl sm:text-2xl font-black text-emerald-400 font-mono block">
                     {route.departureTime}

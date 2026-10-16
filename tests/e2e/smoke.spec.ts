@@ -11,7 +11,8 @@ test('home loads with the main heading and navigation', async ({ page, consolePr
   await mockApi(page);
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toContainText(/costa rica/i);
-  await expect(page.getByRole('button', { name: 'Explorar experiencias' })).toBeVisible();
+  const catalogLink = page.locator('a[href="/tours"]').filter({ hasText: /Catálogo de Tours|Tours & Adventures|Explorar catálogo|Explore catalog/i }).first();
+  await expect(catalogLink).toBeVisible();
   expectNoConsoleErrors(consoleProblems);
 });
 
@@ -51,7 +52,9 @@ test('map page loads and toggles a layer', async ({ page, consoleProblems }) => 
 test('AI assistant opens and answers through the concierge API', async ({ page, consoleProblems }) => {
   await mockApi(page);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Preguntar a la IA' }).first().click();
+  const assistantLink = page.locator('a[href="/ai"]').filter({ hasText: /Asistente de Viaje|Travel Assistant|Hablar con el asistente|Chat with the assistant/i }).first();
+  await expect(assistantLink).toBeVisible();
+  await assistantLink.click();
   await expect(page).toHaveURL(/\/ai$/);
   const input = page.getByPlaceholder(/Pregunta a/);
   await expect(input).toBeVisible();

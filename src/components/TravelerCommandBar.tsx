@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import {
   Sparkles, Compass, Map, CalendarDays, ArrowRight,
   Plane, ShieldCheck, WandSparkles, BriefcaseBusiness
@@ -11,15 +11,18 @@ interface TravelerCommandBarProps {
   activeTab: string;
   onNavigate: (path: string) => void;
   onOpenTripBuilder: () => void;
+  compact?: boolean;
 }
 
 export const TravelerCommandBar: React.FC<TravelerCommandBarProps> = ({
   language,
   activeTab,
   onNavigate,
-  onOpenTripBuilder
+  onOpenTripBuilder,
+  compact = false
 }) => {
   const es = language === 'es';
+  const prefersReducedMotion = useReducedMotion();
   const actions = [
     {
       id: 'explore',
@@ -71,6 +74,41 @@ export const TravelerCommandBar: React.FC<TravelerCommandBarProps> = ({
     }
   ];
 
+  if (compact) {
+    const compactActions = actions.filter((item) => ['explore', 'map', 'planner', 'trip'].includes(item.id));
+    return (
+      <nav
+        aria-label={es ? 'Navegación rápida del viaje' : 'Quick trip navigation'}
+        className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8 relative z-30"
+      >
+        <div className="rounded-2xl border border-emerald-500/15 bg-[#061a12]/95 p-2 shadow-lg">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            {compactActions.map((item) => {
+              const Icon = item.icon;
+              const active = (item.id === 'explore' && activeTab === 'tours') ||
+                (item.id === 'map' && activeTab === 'map') ||
+                (item.id === 'trip' && activeTab === 'trip');
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={item.action}
+                  aria-current={active ? 'page' : undefined}
+                  className={`min-w-0 min-h-[44px] rounded-xl px-2.5 py-2 flex items-center gap-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 transition-colors ${active ? 'bg-emerald-400/15 text-emerald-100 ring-1 ring-inset ring-emerald-400/35' : 'text-stone-300 hover:bg-white/5 hover:text-white'}`}
+                >
+                  <span className="w-8 h-8 shrink-0 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+                    <Icon size={16} className="text-emerald-300" />
+                  </span>
+                  <span className="min-w-0 text-[11px] sm:text-xs font-black leading-tight">{item.title}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
   return (
     <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 relative z-30">
       <div className="rounded-[2rem] border border-white/10 bg-[#071d15]/90 backdrop-blur-2xl shadow-2xl shadow-black/20 overflow-hidden">
@@ -102,10 +140,11 @@ export const TravelerCommandBar: React.FC<TravelerCommandBarProps> = ({
               <motion.button
                 key={item.id}
                 type="button"
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.985 }}
+                whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                whileTap={prefersReducedMotion ? undefined : { scale: 0.985 }}
                 onClick={item.action}
-                className={`group text-left p-4 sm:p-5 bg-[#061a12] hover:bg-[#0a261b] transition-all ${active ? 'ring-1 ring-inset ring-emerald-400/50 bg-emerald-950/30' : ''}`}
+                aria-current={active ? 'page' : undefined}
+                className={`group min-h-[44px] text-left p-4 sm:p-5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-emerald-300 bg-[#061a12] hover:bg-[#0a261b] transition-all ${active ? 'ring-1 ring-inset ring-emerald-400/50 bg-emerald-950/30' : ''}`}
                 aria-label={item.title}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -129,7 +168,7 @@ export const TravelerCommandBar: React.FC<TravelerCommandBarProps> = ({
           <button
             type="button"
             onClick={() => onNavigate('/itinerary')}
-            className="inline-flex items-center gap-2 text-[11px] font-black text-amber-300 hover:text-amber-200 transition-colors"
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-lg text-[11px] font-black text-amber-300 hover:text-amber-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 transition-colors"
           >
             {es ? 'Abrir planificador avanzado' : 'Open advanced planner'}
             <ArrowRight size={14} />

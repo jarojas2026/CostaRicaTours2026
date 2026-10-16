@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useLayoutEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { REGIONS } from './data/catalogMeta';
@@ -92,9 +92,57 @@ export default function App() {
     setSelectedRegion(filters.region);
   }, [location.pathname, location.search]);
 
-  // Keep SPA navigation feeling native: every route starts at the top.
+  // Keep route transitions visible and predictable. The browser viewport is
+  // the canonical scroll surface; nested app-shell scrolling made clicks look
+  // inert when newly rendered content opened below the current visual area.
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' });
+    const previous = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'manual';
+    return () => { window.history.scrollRestoration = previous; };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (location.hash) return;
+    const resetViewport = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      const scrollingElement = document.scrollingElement;
+      if (scrollingElement) {
+        scrollingElement.scrollTop = 0;
+        scrollingElement.scrollLeft = 0;
+      }
+    };
+
+    resetViewport();
+    const frame = window.requestAnimationFrame(() => {
+      resetViewport();
+      document.getElementById('main-content')?.focus({ preventScroll: true });
+    });
+    // A short post-paint reset prevents browser scroll anchoring/lazy route
+    // content from restoring the previous page position after the route swap.
+    // Route transitions may restore scroll without resizing the main landmark.
+    // Check briefly after navigation, but never override intentional user input.
+    let userScrolled = false;
+    const markUserScroll = () => { userScrolled = true; };
+    window.addEventListener('wheel', markUserScroll, { passive: true });
+    window.addEventListener('touchmove', markUserScroll, { passive: true });
+    window.addEventListener('pointerdown', markUserScroll, { passive: true });
+    window.addEventListener('keydown', markUserScroll);
+    const startedAt = performance.now();
+    let settleFrame = 0;
+    const settleViewport = () => {
+      if (userScrolled || performance.now() - startedAt >= 1800) return;
+      if (window.scrollY > 0) resetViewport();
+      settleFrame = window.requestAnimationFrame(settleViewport);
+    };
+    settleFrame = window.requestAnimationFrame(settleViewport);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(settleFrame);
+      window.removeEventListener('wheel', markUserScroll);
+      window.removeEventListener('touchmove', markUserScroll);
+      window.removeEventListener('pointerdown', markUserScroll);
+      window.removeEventListener('keydown', markUserScroll);
+    };
   }, [location.pathname]);
 
   // Modals state
@@ -284,6 +332,8 @@ export default function App() {
   // Filter labels for breadcrumbs
   const getActiveTabLabel = () => {
     switch(activeTab) {
+      case 'ciudad': return `🏙️ ${language === 'es' ? 'Ciudad Digital' : 'Digital City'}`;
+      case 'participar': return `🤝 ${language === 'es' ? 'Participar en la Ciudad Digital' : 'Join the Digital City'}`;
       case 'tours': return `🧭 ${language === 'es' ? 'Catálogo de Tours y Aventuras' : 'Tours & Adventures Catalog'}`;
       case 'destinations': return `📍 ${language === 'es' ? 'Destinos de Costa Rica' : 'Costa Rica Destinations'}`;
       case 'activities': return `🧗 ${language === 'es' ? 'Actividades & Experiencias' : 'Activities & Experiences'}`;
@@ -291,18 +341,21 @@ export default function App() {
       case 'about': return `🌿 ${language === 'es' ? 'Sobre Nosotros' : 'About Us'}`;
       case 'flights': return `✈️ ${language === 'es' ? 'Rastreador en Vivo de Vuelos' : 'Live Flight Radar'}`;
       case 'ai': return `🤖 ${language === 'es' ? 'Asistente Turístico IA' : 'AI Concierge'}`;
+      case 'trip': return `🧳 ${language === 'es' ? 'Mi viaje' : 'My Trip'}`;
       case 'itinerary': return `✨ ${language === 'es' ? 'Planificador Inteligente' : 'AI Trip Planner'}`;
       case 'culture': return `🇨🇷 ${language === 'es' ? 'Rincón Tico: Cultura' : 'Tico Culture'}`;
       case 'tools': return `🚐 ${language === 'es' ? 'Transporte & Guía' : 'Transport & Guide'}`;
       case 'workspace': return `✉️ 📅 Google Workspace`;
       case 'counter': return `🛎️ ${language === 'es' ? 'Mostrador Digital Full Stack' : 'Full-Stack Digital Counter'}`;
+      case 'provider': return `🤝 ${language === 'es' ? 'Portal de Proveedores' : 'Provider Portal'}`;
+      case 'ops': return `⚙️ ${language === 'es' ? 'Centro Operativo' : 'Operations Center'}`;
       case 'admin': return `🛡️ ${language === 'es' ? 'Centro de Control Administrativo' : 'Executive Control Center'}`;
       default: return '';
     }
   };
 
   return (
-    <div className="min-h-screen max-h-screen overflow-y-auto bg-[#041711] text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950 relative pb-16 lg:pb-0">
+    <div className="min-h-[100dvh] w-full min-w-0 overflow-x-clip bg-[#041711] text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950 relative pb-16 lg:pb-0">
       {intakeOpen && (
         <div className="fixed inset-0 z-[10050] bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-label={language === 'es' ? 'Atención inteligente' : 'AI customer care'}>
           <div className="w-full max-w-xl max-h-[90dvh] overflow-y-auto rounded-3xl border border-emerald-400/25 bg-[#041711] shadow-2xl">
@@ -348,7 +401,7 @@ export default function App() {
         onOpenFormsManager={() => setIsFormsManagerModalOpen(true)}
       />
 
-      <main className="flex-1 relative z-10 isolate flex flex-col">
+      <main id="main-content" tabIndex={-1} className="flex-1 w-full min-w-0 relative z-10 isolate flex flex-col outline-none">
         {/* Breadcrumbs for sub-pages */}
         {activeTab !== 'home' && activeTab !== 'map' && !location.pathname.startsWith('/tour/') && (
           <div className="bg-[#02130c]/90 backdrop-blur-md border-b border-emerald-500/20 py-2 px-4 sm:px-6 lg:px-8">
@@ -362,14 +415,14 @@ export default function App() {
                   <span>{language === 'es' ? 'Inicio' : 'Home'}</span>
                 </button>
                 <ChevronRight className="w-3.5 h-3.5 text-emerald-500/40 shrink-0" />
-                <span className="font-bold text-amber-400 truncate flex items-center gap-1.5">
+                <span className="font-bold text-amber-400 min-w-0 flex items-center gap-1.5 text-[11px] sm:text-xs leading-tight">
                   {getActiveTabLabel()}
                 </span>
               </div>
 
               <button
                 onClick={() => navigate('/')}
-                className="flex items-center gap-1.5 text-[11px] font-bold bg-[#041910] hover:bg-[#07261b] text-emerald-200 hover:text-white px-3 py-1 rounded-full border border-emerald-500/30 transition-all cursor-pointer shrink-0 shadow-sm"
+                className="hidden sm:flex items-center gap-1.5 text-[11px] font-bold bg-[#041910] hover:bg-[#07261b] text-emerald-200 hover:text-white px-3 py-1 rounded-full border border-emerald-500/30 transition-all cursor-pointer shrink-0 shadow-sm"
               >
                 <ArrowLeft className="w-3 h-3 text-amber-400" />
                 <span className="hidden sm:inline">{language === 'es' ? 'Volver al Inicio' : 'Back to Home'}</span>
@@ -379,11 +432,12 @@ export default function App() {
           </div>
         )}
 
-        {activeTab !== 'counter' && activeTab !== 'ai' && !activeTab.startsWith('admin') && activeTab !== 'provider' && (
-          <div className="pt-4 sm:pt-5">
+        {activeTab !== 'home' && activeTab !== 'counter' && activeTab !== 'ai' && !activeTab.startsWith('admin') && activeTab !== 'provider' && (
+          <div className="pt-3 sm:pt-4">
             <TravelerCommandBar
               language={language}
               activeTab={activeTab}
+              compact
               onNavigate={(path) => navigate(path)}
               onOpenTripBuilder={() => setIsCustomFunnelOpen(true)}
             />

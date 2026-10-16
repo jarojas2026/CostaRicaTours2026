@@ -20,16 +20,38 @@
   }
   
   html {
-    scrollbar-gutter: stable;
+    scrollbar-gutter: auto;
+    overflow-x: clip;
+  }
+
+  @media (min-width: 768px) {
+    html {
+      scrollbar-gutter: stable;
+    }
   }
 
   html, body, #root {
     width: 100%;
+    max-width: 100%;
     min-width: 0;
     min-height: 100%;
-    height: 100%;
+    height: auto;
     margin: 0;
     padding: 0;
+  }
+
+  #root {
+    min-height: 100dvh;
+    overflow-x: clip;
+    /* Route transitions replace large sections of DOM. Disable browser scroll
+       anchoring so the outgoing page cannot pull the new route back down. */
+    overflow-anchor: none;
+  }
+
+  #main-content > * {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
   }
   
   body {
@@ -44,6 +66,29 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
     letter-spacing: -0.02em;
+  }
+
+  main, section, article, aside, nav, header, footer, form, fieldset {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  img, picture, video, iframe {
+    max-width: 100%;
+    height: auto;
+  }
+
+  input, select, textarea {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  :where(h1, h2, h3, h4, h5, h6, p, li, label, a, button, td, th, pre, code) {
+    overflow-wrap: anywhere;
+  }
+
+  :where([id]) {
+    scroll-margin-top: 5.5rem;
   }
 }
 
@@ -177,7 +222,34 @@
 
 .modal-scrollable {
   overflow-y: auto;
+  overscroll-behavior: contain;
   scrollbar-width: thin;
+}
+
+.comparison-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .comparison-row {
+    grid-template-columns: minmax(8rem, .8fr) repeat(var(--comparison-count, 1), minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 639px) {
+  [role="dialog"] {
+    align-items: flex-start;
+  }
+
+  [role="dialog"] > * {
+    max-width: calc(100vw - 0.75rem);
+  }
+
+  .modal-panel {
+    border-radius: 1rem;
+    padding: 1rem;
+  }
 }
 
 @keyframes pulseGlow {

@@ -97,7 +97,7 @@ export const ToursPage: React.FC<ToursPageProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-12"
+      className="pt-8 sm:pt-12 pb-20 px-4 sm:px-6 lg:px-8 w-full min-w-0 max-w-7xl mx-auto space-y-8 sm:space-y-12"
     >
       {onlyFavorites && (
         <section aria-label={language === 'es' ? 'Tus favoritos' : 'Your favorites'}>

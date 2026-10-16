@@ -1255,7 +1255,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                   className="flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all shrink-0 border bg-amber-50 text-amber-800 border-amber-300 shadow-sm hover:bg-amber-100"
                 >
                   <span>🗺️</span>
-                  <span>{language === 'es' ? 'Más capas: salud CCSS, SINAC, fauna, patrimonio…' : 'More layers: CCSS health, SINAC, wildlife, heritage…'}</span>
+                  <span className="sm:hidden">{language === 'es' ? 'Más capas' : 'More layers'}</span>
+                  <span className="hidden sm:inline">{language === 'es' ? 'Más capas: salud CCSS, SINAC, fauna, patrimonio…' : 'More layers: CCSS health, SINAC, wildlife, heritage…'}</span>
                 </button>
               </div>
 
