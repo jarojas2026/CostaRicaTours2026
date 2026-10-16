@@ -12,8 +12,8 @@ export const TOURS: Tour[] = [
   {
     id: 'sjo-3-in-1-combo',
     title: {
-      es: 'Combo 3-en-1: Volcán Poás, Doka Coffee & Cataratas La Paz',
-      en: '3-in-1 Combo: Poás Volcano, Doka Coffee Estate & La Paz Waterfalls'
+      es: 'Combo 3-en-1: Volcán Poás, tour de café & Cataratas La Paz',
+      en: '3-in-1 Combo: Poás Volcano, Coffee Estate & La Paz Waterfalls'
     },
     subtitle: {
       es: 'El tour de 1 día más popular desde San José',
@@ -40,8 +40,8 @@ export const TOURS: Tour[] = [
     maxGroupSize: 15,
     freeCancellation: true,
     description: {
-      es: 'Aprovecha al máximo tu estadía en San José con este increíble Combo de 1 Día. Primero visitaremos las plantaciones de café Doka Estate para desayunar y hacer el tour del café. Luego subiremos al cráter principal del Volcán Poás (uno de los cráteres tipo géiser más grandes del mundo). Terminamos en los espectaculares Jardines de la Catarata La Paz, donde almorzaremos un buffet típico y caminaremos por el aviario, mariposario y las cataratas mágicas. Salida desde San José.',
-      en: 'Maximize your stay in San Jose with this incredible 1-Day Combo. First, we visit Doka Estate coffee plantations for breakfast and the coffee tour. Then we ascend to the main crater of Poás Volcano (one of the largest geyser-type craters in the world). We finish at the spectacular La Paz Waterfall Gardens, where we will have a traditional buffet lunch and walk through the aviary, butterfly observatory, and magical waterfalls. Departs from San Jose.'
+      es: 'Aprovecha al máximo tu estadía en San José con este increíble Combo de 1 Día. Primero visitaremos plantaciones de café de una hacienda local para desayunar y hacer el tour del café. Luego subiremos al cráter principal del Volcán Poás (uno de los cráteres tipo géiser más grandes del mundo). Terminamos en los espectaculares Jardines de la Catarata La Paz, donde almorzaremos un buffet típico y caminaremos por el aviario, mariposario y las cataratas mágicas. Salida desde San José.',
+      en: 'Maximize your stay in San Jose with this incredible 1-Day Combo. First, we visit coffee plantations at a local estate for breakfast and the coffee tour. Then we ascend to the main crater of Poás Volcano (one of the largest geyser-type craters in the world). We finish at the spectacular La Paz Waterfall Gardens, where we will have a traditional buffet lunch and walk through the aviary, butterfly observatory, and magical waterfalls. Departs from San Jose.'
     },
     highlights: {
       es: ['Tour guiado de café', 'Entrada al Parque Nacional Volcán Poás', 'Santuario de Vida Silvestre La Paz', 'Desayuno y almuerzo buffet incluidos', 'Transporte desde tu hotel en San José'],
@@ -436,7 +436,7 @@ export const TOURS: Tour[] = [
     },
     pickupHotels: [
       'Pavo Real Lodge Tortuguero',
-      'Mawamba Lodge',
+      'Lodges en Tortuguero',
       'Laguna Lodge',
       'Hoteles en San José (Salida 05:30 AM)'
     ],
@@ -805,10 +805,10 @@ export const TOURS: Tour[] = [
     }
   },
   {
-    id: 'mistico-hanging-bridges',
+    id: 'arenal-hanging-bridges-walk',
     title: {
-      es: 'Santuario de Puentes Colgantes Místico Arenal',
-      en: 'Místico Arenal Hanging Bridges Guided Canopy Walk'
+      es: 'Santuario de Puentes Colgantes de Arenal',
+      en: 'Arenal Hanging Bridges Guided Canopy Walk'
     },
     subtitle: {
       es: 'Cruza 16 puentes sobre las copas de los árboles con vista al Volcán Arenal',
@@ -832,8 +832,8 @@ export const TOURS: Tour[] = [
     bestseller: false,
     ecoCert: true,
     description: {
-      es: 'Místico Park es uno de los santuarios ecológicos más impresionantes de Costa Rica. Camina por un sendero de 3.2 km atravesando 16 puentes (6 de ellos suspendidos a más de 45 metros de altura) que te ofrecen una perspectiva ojo a ojo con las aves, perezosos, monos aulladores y orquídeas salvajes, con una vista panorámica majestuosa al Volcán Arenal.',
-      en: 'Místico Park offers one of Costa Rica’s most breathtaking canopy walks. Meander along a 2-mile paved nature loop across 16 bridges (6 hanging high in the canopy up to 148ft above the forest floor). Enjoy eye-level encounters with sloths, howler monkeys, toucans, and wild orchids with iconic volcano vistas.'
+      es: 'Este parque es uno de los santuarios ecológicos más impresionantes de Costa Rica. Camina por un sendero de 3.2 km atravesando 16 puentes (6 de ellos suspendidos a más de 45 metros de altura) que te ofrecen una perspectiva ojo a ojo con las aves, perezosos, monos aulladores y orquídeas salvajes, con una vista panorámica majestuosa al Volcán Arenal.',
+      en: 'This park offers one of Costa Rica’s most breathtaking canopy walks. Meander along a 2-mile paved nature loop across 16 bridges (6 hanging high in the canopy up to 148ft above the forest floor). Enjoy eye-level encounters with sloths, howler monkeys, toucans, and wild orchids with iconic volcano vistas.'
     },
     highlights: {
       es: [
@@ -850,8 +850,8 @@ export const TOURS: Tour[] = [
       ]
     },
     inclusions: {
-      es: ['Entrada autorizada a Místico Park', 'Guía naturalista bilingüe experimentado', 'Transporte ida y vuelta desde hoteles en La Fortuna'],
-      en: ['Official entry ticket to Místico Park', 'Certified bilingual naturalist guide', 'Roundtrip hotel pickup in La Fortuna']
+      es: ['Entrada autorizada al parque de puentes colgantes', 'Guía naturalista bilingüe experimentado', 'Transporte ida y vuelta desde hoteles en La Fortuna'],
+      en: ['Official hanging bridges park entry ticket', 'Certified bilingual naturalist guide', 'Roundtrip hotel pickup in La Fortuna']
     },
     exclusions: {
       es: ['Almuerzo', 'Propinas'],
@@ -868,7 +868,7 @@ export const TOURS: Tour[] = [
     location: {
       lat: 10.4355,
       lng: -84.7552,
-      placeName: 'Místico Park, La Fortuna, Costa Rica'
+      placeName: 'La Fortuna, Costa Rica'
     }
   },
   {
@@ -941,10 +941,10 @@ export const TOURS: Tour[] = [
     }
   },
   {
-    id: 'poas-volcano-doka-waterfall',
+    id: 'poas-volcano-coffee-waterfall',
     title: {
-      es: 'Combo 3 en 1: Volcán Poás, Hacienda de Café Doka y Cataratas La Paz',
-      en: '3-in-1 Combo: Poás Volcano Crater, Doka Coffee Estate & La Paz Waterfalls'
+      es: 'Combo 3 en 1: Volcán Poás, hacienda cafetalera y Cataratas La Paz',
+      en: '3-in-1 Combo: Poás Volcano Crater, Coffee Estate & La Paz Waterfalls'
     },
     subtitle: {
       es: 'Visita uno de los cráteres volcánicos activos más impresionantes de Costa Rica (2,708m), prueba café gourmet y camina entre cataratas y mariposas',
@@ -970,28 +970,28 @@ export const TOURS: Tour[] = [
     tourType: "group",
     ecoCert: true,
     description: {
-      es: 'Disfruta de tres atracciones icónicas de Costa Rica en un solo día desde San José. Explora la galardonada Hacienda Doka para aprender el secreto del café de exportación. Admira el impresionante cráter activo del Volcán Poás con su laguna sulfurosa de color turquesa. Finaliza almorzando buffet en La Paz Waterfall Gardens, rodeado de 5 majestuosas cataratas, aviario y santuario de felinos.',
-      en: 'Combine three Costa Rica staples in one full-day tour from San Jose. Tour the historic Doka Coffee Estate to learn traditional roasting secrets. Peer into the active crater of Poás Volcano with its vibrant turquoise sulfur lagoon. Enjoy a gourmet buffet at La Paz Waterfall Gardens with 5 dramatic waterfalls, sloth exhibit, and tropical bird observatory.'
+      es: 'Disfruta de tres atracciones icónicas de Costa Rica en un solo día desde San José. Explora una galardonada hacienda cafetalera para aprender el secreto del café de exportación. Admira el impresionante cráter activo del Volcán Poás con su laguna sulfurosa de color turquesa. Finaliza almorzando buffet en La Paz Waterfall Gardens, rodeado de 5 majestuosas cataratas, aviario y santuario de felinos.',
+      en: 'Combine three Costa Rica staples in one full-day tour from San Jose. Tour a historic coffee estate to learn traditional roasting secrets. Peer into the active crater of Poás Volcano with its vibrant turquoise sulfur lagoon. Enjoy a gourmet buffet at La Paz Waterfall Gardens with 5 dramatic waterfalls, sloth exhibit, and tropical bird observatory.'
     },
     highlights: {
       es: [
         'Cráter activo del Volcán Poás y mirador de la Laguna Botos',
-        'Degustación de café orgánico recién tostado en Hacienda Doka',
+        'Degustación de café orgánico recién tostado en la hacienda cafetalera',
         'Caminata pavimentada por 5 espectaculares cataratas en La Paz',
         'Almuerzo buffet tradicional costarricense incluido',
         'Santuario de tucanes, colibríes, ranas y mariposas'
       ],
       en: [
         'View the massive active crater & turquoise acid lake at Poás Volcano',
-        'Freshly roasted gourmet coffee tasting at historic Doka Estate',
+        'Freshly roasted gourmet coffee tasting at a historic coffee estate',
         'Paved rainforest walking trails past 5 thunderous waterfalls',
         'Sumptuous traditional Costa Rican lunch buffet included',
         'Rescued wildlife sanctuary with sloths, toucans & hummingbird gardens'
       ]
     },
     inclusions: {
-      es: ['Transporte ida y vuelta desde hoteles en San José, Alajuela y Heredia', 'Entradas autorizadas a Poás, Doka y La Paz Gardens', 'Desayuno típico y almuerzo buffet gourmet', 'Guía bilingüe experimentado'],
-      en: ['Roundtrip hotel pickup in San José, Alajuela & Heredia', 'Official entry tickets to Poás, Doka & La Paz Gardens', 'Traditional breakfast and gourmet buffet lunch', 'Bilingual certified naturalist guide']
+      es: ['Transporte ida y vuelta desde hoteles en San José, Alajuela y Heredia', 'Entradas autorizadas a Poás, hacienda cafetalera y La Paz Gardens', 'Desayuno típico y almuerzo buffet gourmet', 'Guía bilingüe experimentado'],
+      en: ['Roundtrip hotel pickup in San José, Alajuela & Heredia', 'Official entry tickets to Poás, coffee estate & La Paz Gardens', 'Traditional breakfast and gourmet buffet lunch', 'Bilingual certified naturalist guide']
     },
     exclusions: {
       es: ['Propinas opcionales', 'Compras de café en grano en la tienda'],
@@ -1783,10 +1783,10 @@ export const TOURS: Tour[] = [
     bestPriceGuaranteed: true
   },
   {
-    id: 'arenal-pure-trek-canyoning',
+    id: 'arenal-waterfall-canyoning',
     title: {
-      es: 'Rapel en Cataratas & Cañonismo Pure Trek La Fortuna',
-      en: 'Pure Trek Waterfall Rappel & Canyon Adventure'
+      es: 'Rapel en Cataratas & Cañonismo en La Fortuna',
+      en: 'La Fortuna Waterfall Rappel & Canyon Adventure'
     },
     subtitle: {
       es: 'Desciende 4 cascadas en el cañón de la selva tropical con almuerzo típico',
@@ -1821,8 +1821,8 @@ export const TOURS: Tour[] = [
       en: ['4 waterfall rappels up to 165ft', 'Monkey Drop zip-and-rappel combo', 'Certified Petzl top safety equipment', 'Organic Costa Rican lunch included', 'La Fortuna hotel transport']
     },
     inclusions: {
-      es: ['Transporte A/C ida y vuelta', 'Guías bilingües experimentados Pure Trek', 'Cascos, arneses y guantes profesionales', 'Almuerzo casero completo', 'Toallas limpias'],
-      en: ['Roundtrip A/C transportation', 'Pure Trek certified bilingual guides', 'Professional harnesses, helmets & gloves', 'Full homemade buffet lunch', 'Clean towels']
+      es: ['Transporte A/C ida y vuelta', 'Guías bilingües experimentados', 'Cascos, arneses y guantes profesionales', 'Almuerzo casero completo', 'Toallas limpias'],
+      en: ['Roundtrip A/C transportation', 'Certified bilingual guides', 'Professional harnesses, helmets & gloves', 'Full homemade buffet lunch', 'Clean towels']
     },
     exclusions: {
       es: ['Fotografías profesionales del tour (opcional)', 'Propinas'],
@@ -1834,12 +1834,12 @@ export const TOURS: Tour[] = [
     },
     pickupHotels: ['The Springs Resort', 'Tabacón Resort', 'Nayara Resorts', 'Baldi Hot Springs', 'Hoteles en La Fortuna'],
     departureTimes: ['07:30 AM', '11:30 AM'],
-    location: { lat: 10.4500, lng: -84.6600, placeName: 'Cañón Pure Trek, La Fortuna, San Carlos, Costa Rica' },
+    location: { lat: 10.4500, lng: -84.6600, placeName: 'La Fortuna, San Carlos, Costa Rica' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
   {
-    id: 'arenal-wave-balsa-rafting',
+    id: 'arenal-balsa-river-rafting',
     title: {
       es: 'Rafting Río Balsa Clase II-III en La Fortuna',
       en: 'Balsa River Whitewater Rafting Class II-III'
@@ -1894,10 +1894,10 @@ export const TOURS: Tour[] = [
     bestPriceGuaranteed: true
   },
   {
-    id: 'arenal-sky-trek-tram-combo',
+    id: 'arenal-tram-zipline-bridges-combo',
     title: {
-      es: 'Sky Adventures Ultimate: Sky Tram, Sky Trek & Sky Walk',
-      en: 'Sky Adventures Ultimate: Aerial Tram, Zipline & Hanging Bridges'
+      es: 'Arenal Ultimate: teleférico, canopy y puentes colgantes',
+      en: 'Arenal Ultimate: Aerial Tram, Zipline & Hanging Bridges'
     },
     subtitle: {
       es: 'Vistas panorámicas del lago y volcán Arenal con cables de hasta 70 km/h',
@@ -1923,16 +1923,16 @@ export const TOURS: Tour[] = [
     maxGroupSize: 15,
     freeCancellation: true,
     description: {
-      es: 'La experiencia de canopy más avanzada de Costa Rica con tecnología de frenado automático y cables de acero ultralargos. Asciende en el teleférico Sky Tram sobre el dosel de la selva hasta la plataforma de observación más alta con vistas insuperables al Volcán Arenal y el Lago. Desciende volando en 7 tirolesas de alta velocidad (Sky Trek) y recorre 3 km de puentes colgantes inmersos en la biodiversidad (Sky Walk).',
-      en: 'Costa Rica’s most advanced zipline experience with auto-braking systems and mega cables. Ride the Sky Tram aerial gondola above the canopy to the highest observation deck facing Arenal Volcano and Lake. Fly down 7 high-speed Sky Trek cables (reaching speeds up to 45 mph) and explore 2 miles of guided suspension canopy bridges (Sky Walk).'
+      es: 'La experiencia de canopy más avanzada de Costa Rica con tecnología de frenado automático y cables de acero ultralargos. Asciende en el teleférico sobre el dosel de la selva hasta la plataforma de observación más alta con vistas insuperables al Volcán Arenal y el Lago. Desciende volando en 7 tirolesas de alta velocidad y recorre 3 km de puentes colgantes inmersos en la biodiversidad.',
+      en: 'Costa Rica’s most advanced zipline experience with auto-braking systems and mega cables. Ride the aerial gondola above the canopy to the highest observation deck facing Arenal Volcano and Lake. Fly down 7 high-speed zipline cables (reaching speeds up to 45 mph) and explore 2 miles of guided suspension canopy bridges.'
     },
     highlights: {
-      es: ['Teleférico Sky Tram panorámico', '7 cables de tirolesa Sky Trek ultralargas', 'Puentes colgantes Sky Walk en selva virgen', 'Vistas directas al Lago Arenal y Volcán', 'Sistema de frenado magnético de última generación'],
-      en: ['Scenic Sky Tram aerial gondola ride', '7 high-speed Sky Trek mega cables', 'Sky Walk hanging suspension bridges trail', 'Direct panoramic views of Lake Arenal & Volcano', 'Top-tier magnetic auto-braking system']
+      es: ['Teleférico panorámico', '7 cables de tirolesa ultralargas', 'Puentes colgantes en selva virgen', 'Vistas directas al Lago Arenal y Volcán', 'Sistema de frenado magnético de última generación'],
+      en: ['Scenic aerial gondola ride', '7 high-speed mega zipline cables', 'Hanging suspension bridges trail', 'Direct panoramic views of Lake Arenal & Volcano', 'Top-tier magnetic auto-braking system']
     },
     inclusions: {
-      es: ['Transporte A/C ida y vuelta', 'Boleto Sky Tram, Sky Trek y Sky Walk', 'Guías bilingües experimentados', 'Equipo de máxima seguridad'],
-      en: ['Roundtrip A/C transport', 'Sky Tram, Sky Trek & Sky Walk tickets', 'Certified bilingual guides', 'Top safety harness and gear']
+      es: ['Transporte A/C ida y vuelta', 'Boleto de teleférico, canopy y puentes colgantes', 'Guías bilingües experimentados', 'Equipo de máxima seguridad'],
+      en: ['Roundtrip A/C transport', 'Aerial tram, zipline & hanging bridges tickets', 'Certified bilingual guides', 'Top safety harness and gear']
     },
     exclusions: {
       es: ['Almuerzo en restaurante Sky (disponible a la carta)', 'Propinas'],
@@ -1944,15 +1944,15 @@ export const TOURS: Tour[] = [
     },
     pickupHotels: ['Hoteles en La Fortuna y zona volcánica de Arenal'],
     departureTimes: ['08:00 AM', '10:30 AM', '01:00 PM'],
-    location: { lat: 10.4350, lng: -84.7100, placeName: 'Sky Adventures Arenal Park, El Castillo, Alajuela, Costa Rica' },
+    location: { lat: 10.4350, lng: -84.7100, placeName: 'El Castillo, Alajuela, Costa Rica' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
   {
-    id: 'guanacaste-guachipelin-combo',
+    id: 'guanacaste-rincon-adventure-combo',
     title: {
-      es: 'Mega Combo Aventura Hacienda Guachipelín',
-      en: 'Hacienda Guachipelín One-Day Adventure Mega Pass'
+      es: 'Mega Combo Aventura Rincón de la Vieja',
+      en: 'Rincón de la Vieja One-Day Adventure Mega Pass'
     },
     subtitle: {
       es: 'Canopy en cañón, tubing en Río Negro, cabalgata y termales de barro volcánico',
@@ -2000,15 +2000,15 @@ export const TOURS: Tour[] = [
     },
     pickupHotels: ['Hoteles en Tamarindo, Conchal, Flamingo, Playas del Coco, Papagayo y Liberia'],
     departureTimes: ['07:00 AM'],
-    location: { lat: 10.7500, lng: -85.3800, placeName: 'Hacienda Guachipelín, Rincón de la Vieja, Guanacaste, Costa Rica' },
+    location: { lat: 10.7500, lng: -85.3800, placeName: 'Rincón de la Vieja, Guanacaste, Costa Rica' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
   {
-    id: 'guanacaste-diamante-adventure',
+    id: 'guanacaste-ocean-view-adventure',
     title: {
-      es: 'Diamante Eco Adventure Pass & Santuario Animal',
-      en: 'Diamante Eco Adventure Ocean-View Pass & Animal Sanctuary'
+      es: 'Pase de aventura frente al mar & santuario animal en Guanacaste',
+      en: 'Guanacaste Ocean-View Adventure Pass & Animal Sanctuary'
     },
     subtitle: {
       es: 'Tirolesa Superman con vista al Pacífico y santuario de rescate de jaguares y perezosos',
@@ -2033,8 +2033,8 @@ export const TOURS: Tour[] = [
     maxGroupSize: 20,
     freeCancellation: true,
     description: {
-      es: 'Ubicado frente a las costas del Golfo de Papagayo, Diamante Eco Adventure ofrece la famosa tirolesa Superman de casi 1 milla de longitud con vista directa al océano Pacífico, el salto libre QuickJump y acceso al santuario de rescate animal más grande y moderno de Costa Rica donde podrás ver jaguares, pumas, perezosos, tucanes y monos rescatados.',
-      en: 'Located on the ocean bluffs of Papagayo Gulf, Diamante Eco Adventure features the famous nearly 1-mile dual Superman zipline with direct Pacific Ocean views, the QuickJump freefall, and access to Costa Rica\'s largest animal sanctuary housing rescued jaguars, pumas, sloths, toucans, monkeys, and crocodiles.'
+      es: 'Ubicado frente a las costas del Golfo de Papagayo, este parque de aventura ofrece la famosa tirolesa Superman de casi 1 milla de longitud con vista directa al océano Pacífico, el salto libre QuickJump y acceso al santuario de rescate animal más grande y moderno de Costa Rica donde podrás ver jaguares, pumas, perezosos, tucanes y monos rescatados.',
+      en: 'Located on the ocean bluffs of Papagayo Gulf, this adventure park features the famous nearly 1-mile dual Superman zipline with direct Pacific Ocean views, the QuickJump freefall, and access to Costa Rica\'s largest animal sanctuary housing rescued jaguars, pumas, sloths, toucans, monkeys, and crocodiles.'
     },
     highlights: {
       es: ['Tirolesa Superman con vista frontal al mar', 'Santuario de rescate de jaguares y fauna', 'Aviario y mariposario inmersivo', 'Almuerzo buffet frente al mar', 'Acceso a la playa privada de Diamante'],
@@ -2054,15 +2054,15 @@ export const TOURS: Tour[] = [
     },
     pickupHotels: ['Hoteles en Golfo de Papagayo, Playas del Coco, Hermosa, Tamarindo y Conchal'],
     departureTimes: ['08:30 AM'],
-    location: { lat: 10.5800, lng: -85.6700, placeName: 'Diamante Eco Adventure Park, Matapalo, Guanacaste, Costa Rica' },
+    location: { lat: 10.5800, lng: -85.6700, placeName: 'Matapalo, Guanacaste, Costa Rica' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
   {
-    id: 'guanacaste-marlin-del-rey-sunset',
+    id: 'guanacaste-sunset-catamaran',
     title: {
-      es: 'Catamarán al Atardecer Marlín del Rey & Snorkel',
-      en: 'Marlin del Rey Sunset Sailing & Snorkel Catamaran'
+      es: 'Catamarán al Atardecer & Snorkel en Guanacaste',
+      en: 'Guanacaste Sunset Sailing & Snorkel Catamaran'
     },
     subtitle: {
       es: 'Navegación por playas vírgenes con barra libre abierta, bocadillos y snorkel',
@@ -2089,8 +2089,8 @@ export const TOURS: Tour[] = [
     maxGroupSize: 40,
     freeCancellation: true,
     description: {
-      es: 'Zarpa desde Playa Tamarindo o Playas del Coco a bordo del espacioso catamarán Marlín del Rey de 66 pies. Fondearemos en una bahía tranquila y apartada para hacer snorkel entre peces tropicales, remar en kayak o relajarse en las colchonetas flotantes. En el camino de regreso, disfruta de la barra libre ilimitada y la música mientras contemplas uno de los atardeceres dorados más famosos del planeta.',
-      en: 'Set sail from Tamarindo or Playas del Coco aboard the premier 66-foot Marlin del Rey catamaran. Anchor in a secluded cove to snorkel with tropical fish and sea turtles, paddleboard, or lounge on floating mats. On the sail back, enjoy an open bar, delicious appetizers, and music as the sun sets in a blaze of gold and crimson over the Pacific.'
+      es: 'Zarpa desde Playa Tamarindo o Playas del Coco a bordo de un espacioso catamarán de 66 pies. Fondearemos en una bahía tranquila y apartada para hacer snorkel entre peces tropicales, remar en kayak o relajarse en las colchonetas flotantes. En el camino de regreso, disfruta de la barra libre ilimitada y la música mientras contemplas uno de los atardeceres dorados más famosos del planeta.',
+      en: 'Set sail from Tamarindo or Playas del Coco aboard a premier 66-foot catamaran. Anchor in a secluded cove to snorkel with tropical fish and sea turtles, paddleboard, or lounge on floating mats. On the sail back, enjoy an open bar, delicious appetizers, and music as the sun sets in a blaze of gold and crimson over the Pacific.'
     },
     highlights: {
       es: ['Catamarán de 66 pies con red lounge frontal', 'Barra libre ilimitada (cervezas, cócteles, vino)', 'Snorkel guiado con equipo incluido', 'Comida caliente tipo buffet a bordo', 'Atardecer inolvidable en el Pacífico'],
@@ -2115,10 +2115,10 @@ export const TOURS: Tour[] = [
     bestPriceGuaranteed: true
   },
   {
-    id: 'monteverde-selvatura-all-in-one',
+    id: 'monteverde-all-in-one-park',
     title: {
-      es: 'Selvatura Park All-in-One: Canopy, Puentes & Santuario de Perezosos',
-      en: 'Selvatura Park All-in-One: Zipline Canopy, Hanging Bridges & Sloth Sanctuary'
+      es: 'Monteverde Todo en Uno: Canopy, Puentes & Santuario de Perezosos',
+      en: 'Monteverde All-in-One: Zipline Canopy, Hanging Bridges & Sloth Sanctuary'
     },
     subtitle: {
       es: 'El parque más grande dentro del dosel del bosque nuboso virgen',
@@ -2145,16 +2145,16 @@ export const TOURS: Tour[] = [
     maxGroupSize: 15,
     freeCancellation: true,
     description: {
-      es: 'Selvatura Park es el único parque de conservación y aventura construido 100% dentro del bosque nuboso primario de Monteverde. Este paquete Todo Incluido te permite recorrer 13 cables de tirolesa (incluyendo el vuelo Superman y Tarzan Swing), cruzar 8 impresionantes puentes colgantes suspendidos entre las nubes y visitar el santuario de perezosos y el mariposario más grande del continente.',
-      en: 'Selvatura Park is the only conservation and adventure park built 100% inside the primary cloud forest of Monteverde. This All-in-One package includes 13 zipline cables (featuring the Superman cable & Tarzan Swing), 8 massive hanging bridges soaring through the mist, the sloth sanctuary, and one of the largest live butterfly gardens in the Americas.'
+      es: 'Es el único parque de conservación y aventura construido 100% dentro del bosque nuboso primario de Monteverde. Este paquete Todo Incluido te permite recorrer 13 cables de tirolesa (incluyendo el vuelo Superman y Tarzan Swing), cruzar 8 impresionantes puentes colgantes suspendidos entre las nubes y visitar el santuario de perezosos y el mariposario más grande del continente.',
+      en: 'This is the only conservation and adventure park built 100% inside the primary cloud forest of Monteverde. This All-in-One package includes 13 zipline cables (featuring the Superman cable & Tarzan Swing), 8 massive hanging bridges soaring through the mist, the sloth sanctuary, and one of the largest live butterfly gardens in the Americas.'
     },
     highlights: {
       es: ['13 cables de canopy dentro del bosque nuboso', '8 puentes colgantes panorámicos (3 km de senderos)', 'Santuario de rescate de perezosos de dos y tres dedos', 'Jardín de mariposas tropicales vivas', 'Almuerzo buffet en restaurante El Sapo'],
       en: ['13 zipline cables in pristine cloud forest', '8 massive hanging bridges spanning 1.9 miles', 'Dedicated sloth sanctuary rescue exhibit', 'Giant walk-through butterfly biopark', 'Full lunch at El Sapo Restaurant']
     },
     inclusions: {
-      es: ['Transporte A/C ida y vuelta desde hoteles en Monteverde/Santa Elena', 'Entrada completa a las 4 atracciones de Selvatura', 'Guías naturalistas bilingües experimentados', 'Almuerzo buffet completo', 'Equipo de canopy'],
-      en: ['Roundtrip A/C hotel transport in Monteverde', 'All-inclusive entry to all 4 Selvatura exhibits', 'Certified bilingual naturalist guides', 'Full buffet lunch', 'Zipline safety equipment']
+      es: ['Transporte A/C ida y vuelta desde hoteles en Monteverde/Santa Elena', 'Entrada completa a las 4 atracciones del parque', 'Guías naturalistas bilingües experimentados', 'Almuerzo buffet completo', 'Equipo de canopy'],
+      en: ['Roundtrip A/C hotel transport in Monteverde', 'All-inclusive entry to all 4 park exhibits', 'Certified bilingual naturalist guides', 'Full buffet lunch', 'Zipline safety equipment']
     },
     exclusions: {
       es: ['Fotografías del tour', 'Propinas'],
@@ -2166,15 +2166,15 @@ export const TOURS: Tour[] = [
     },
     pickupHotels: ['Todos los hoteles y eco-lodges de Santa Elena y Monteverde'],
     departureTimes: ['08:30 AM', '11:00 AM', '01:00 PM'],
-    location: { lat: 10.3300, lng: -84.7900, placeName: 'Selvatura Park, Santa Elena, Monteverde, Puntarenas, Costa Rica' },
+    location: { lat: 10.3300, lng: -84.7900, placeName: 'Santa Elena, Monteverde, Puntarenas, Costa Rica' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
   {
-    id: 'monteverde-100-aventura-extreme',
+    id: 'monteverde-superman-zipline',
     title: {
-      es: '100% Aventura: Mega Tirolesa Superman & Tarzán Swing',
-      en: '100% Aventura: Mega Superman Zipline & Giant Tarzan Swing'
+      es: 'Monteverde: Mega Tirolesa Superman & Tarzán Swing',
+      en: 'Monteverde: Mega Superman Zipline & Giant Tarzan Swing'
     },
     subtitle: {
       es: 'El cable de tirolesa más largo de Latinoamérica (1.5 km) y salto libre',
@@ -2199,8 +2199,8 @@ export const TOURS: Tour[] = [
     maxGroupSize: 15,
     freeCancellation: true,
     description: {
-      es: 'Para los amantes de la adrenalina pura. 100% Aventura cuenta con 10 cables de tirolesa, incluyendo el cable Superman de 1,590 metros de largo (casi 1 milla de vuelo en posición horizontal sobre cañones y bosque nuboso), un cable subterráneo en túnel y el famoso Mega Tarzan Swing con caída libre de 45 metros de altura.',
-      en: 'Designed for pure adrenaline seekers. 100% Aventura features 10 zipline cables, headlined by the 5,220-foot (1,590 meters) Superman cable—flying face-forward over pristine cloud forest valleys—plus a subterranean tunnel cable and the heart-stopping Mega Tarzan Swing with a 150-foot freefall drop.'
+      es: 'Para los amantes de la adrenalina pura. El parque cuenta con 10 cables de tirolesa, incluyendo el cable Superman de 1,590 metros de largo (casi 1 milla de vuelo en posición horizontal sobre cañones y bosque nuboso), un cable subterráneo en túnel y el famoso Mega Tarzan Swing con caída libre de 45 metros de altura.',
+      en: 'Designed for pure adrenaline seekers. The park features 10 zipline cables, headlined by the 5,220-foot (1,590 meters) Superman cable—flying face-forward over pristine cloud forest valleys—plus a subterranean tunnel cable and the heart-stopping Mega Tarzan Swing with a 150-foot freefall drop.'
     },
     highlights: {
       es: ['Cable Superman de 1.5 km sobre el cañón', 'Mega Tarzan Swing con caída libre de 45m', '10 cables de tirolesas de alta velocidad', 'Vistas panorámicas del Golfo de Nicoya en días despejados', 'Guías expertos en seguridad en alturas'],
@@ -2220,7 +2220,7 @@ export const TOURS: Tour[] = [
     },
     pickupHotels: ['Hoteles en Monteverde y Santa Elena'],
     departureTimes: ['08:00 AM', '11:00 AM', '01:00 PM', '03:00 PM'],
-    location: { lat: 10.3150, lng: -84.8200, placeName: '100% Aventura Park, Monteverde, Costa Rica' },
+    location: { lat: 10.3150, lng: -84.8200, placeName: 'Monteverde, Costa Rica' },
     instantConfirmation: true,
     bestPriceGuaranteed: true
   },
@@ -2279,10 +2279,10 @@ export const TOURS: Tour[] = [
     bestPriceGuaranteed: true
   },
   {
-    id: 'manuel-antonio-ocean-king-catamaran',
+    id: 'manuel-antonio-mega-catamaran',
     title: {
-      es: 'Mega Catamarán Ocean King con Toboganes & Snorkel',
-      en: 'Ocean King Luxury Mega Catamaran with Water Slides & Snorkel'
+      es: 'Mega Catamarán con Toboganes & Snorkel en Manuel Antonio',
+      en: 'Manuel Antonio Luxury Mega Catamaran with Water Slides & Snorkel'
     },
     subtitle: {
       es: 'Paseo escénico por el Parque Manuel Antonio con jacuzzi, comida y bebidas',
@@ -2309,8 +2309,8 @@ export const TOURS: Tour[] = [
     maxGroupSize: 50,
     freeCancellation: true,
     description: {
-      es: 'Navega en el catamarán más grande y lujoso de Centroamérica (100 pies). El Ocean King cuenta con 2 jacuzzis a bordo, 2 toboganes gigantes de agua directo al mar, trampolines de sol, barra libre ilimitada de cócteles y almuerzo preparado por chef a bordo. Fondeamos en la hermosa Bahía Biesanz para practicar snorkel rodeado de peces tropicales.',
-      en: 'Cruise on the largest and most luxurious catamaran in Central America (100 feet). The Ocean King features 2 on-board jacuzzis, 2 massive curved water slides splashing into the ocean, tanning trampolines, unlimited open bar cocktails, and a freshly prepared lunch by an on-board chef. Anchors at scenic Biesanz Bay for snorkeling.'
+      es: 'Navega en el catamarán más grande y lujoso de Centroamérica (100 pies). El catamarán cuenta con 2 jacuzzis a bordo, 2 toboganes gigantes de agua directo al mar, trampolines de sol, barra libre ilimitada de cócteles y almuerzo preparado por chef a bordo. Fondeamos en la hermosa Bahía Biesanz para practicar snorkel rodeado de peces tropicales.',
+      en: 'Cruise on the largest and most luxurious catamaran in Central America (100 feet). The catamaran features 2 on-board jacuzzis, 2 massive curved water slides splashing into the ocean, tanning trampolines, unlimited open bar cocktails, and a freshly prepared lunch by an on-board chef. Anchors at scenic Biesanz Bay for snorkeling.'
     },
     highlights: {
       es: ['Catamarán de 100 pies con 2 jacuzzis y 2 toboganes al mar', 'Barra libre ilimitada (cócteles tropicales, cerveza, jugos)', 'Snorkel en la hermosa Bahía Biesanz', 'Almuerzo completo preparado a bordo', 'Avistamiento regular de delfines y ballenas'],
@@ -2383,7 +2383,7 @@ export const TOURS: Tour[] = [
       es: ['Traje de baño puesto', 'Protector solar ecológico', 'Toalla', 'Sombrero y lentes de sol', 'Cámara con zoom'],
       en: ['Swimsuit on', 'Eco-friendly sunscreen', 'Beach towel', 'Hat and sunglasses', 'Camera with zoom lens']
     },
-    pickupHotels: ['Punto de salida autorizada en Bahía Aventuras, Uvita'],
+    pickupHotels: ['Punto de salida autorizado en Uvita'],
     departureTimes: ['08:30 AM', '01:00 PM'],
     location: { lat: 9.1550, lng: -83.7450, placeName: 'Parque Nacional Marino Ballena, Uvita, Osa, Costa Rica' },
     instantConfirmation: true,
@@ -2438,7 +2438,7 @@ export const TOURS: Tour[] = [
       es: ['Traje de baño puesto', 'Toalla', 'Bloqueador solar biodegradable', 'Gafas de sol', 'Cámara submarina GoPro'],
       en: ['Swimsuit on', 'Towel', 'Reef-safe biodegradable sunscreen', 'Sunglasses', 'Underwater GoPro camera']
     },
-    pickupHotels: ['Bahía Aventuras en Uvita o Playa Drake'],
+    pickupHotels: ['Punto de salida en Uvita o Playa Drake'],
     departureTimes: ['07:30 AM'],
     location: { lat: 8.7050, lng: -83.8800, placeName: 'Reserva Biológica Isla del Caño, Osa, Puntarenas, Costa Rica' },
     instantConfirmation: true,
@@ -2501,7 +2501,7 @@ export const TOURS: Tour[] = [
     bestPriceGuaranteed: true
   },
   {
-    id: 'tortuguero-mawamba-3d2n',
+    id: 'tortuguero-lodge-3d2n',
     title: {
       es: 'Paquete Todo Incluido 3D/2N Canales de Tortuguero',
       en: 'All-Inclusive 3D/2N Tortuguero Canals & Jungle Expedition'
@@ -2730,10 +2730,10 @@ export const TOURS: Tour[] = [
     verifiedBadge: { es: 'Costa Rica Tours - Verificado', en: 'Costa Rica Tours - Verified' }
   },
   {
-    id: 'bay-island-sunset-cruise',
+    id: 'puntarenas-sunset-dinner-cruise',
     providerId: 'bay-island-cruises',
     title: {
-      es: 'Crucero al Atardecer y Cena Tropical en Catamarán (Bay Island Cruises)',
+      es: 'Crucero al Atardecer y Cena Tropical en Catamarán',
       en: 'Bay Island Sunset Dinner Catamaran Cruise'
     },
     subtitle: {
@@ -2761,8 +2761,8 @@ export const TOURS: Tour[] = [
     maxGroupSize: 45,
     freeCancellation: true,
     description: {
-      es: 'Disfruta de la magia del atardecer en el Golfo de Nicoya a bordo del catamarán de lujo operado por Bay Island Cruises. Salida por la tarde desde Puntarenas tras cómodo traslado desde San José, navegación entre islas con barra abierta de cócteles tropicales, cena buffet servida bajo las estrellas y música ambiental para vivir una experiencia inolvidable.',
-      en: 'Experience the magic of the Pacific sunset in the Gulf of Nicoya aboard Bay Island Cruises signature luxury catamaran. Afternoon departure from Puntarenas with open tropical bar, delicious dinner under the stars, and music as the sun dips below the horizon.'
+      es: 'Disfruta de la magia del atardecer en el Golfo de Nicoya a bordo de un catamarán de lujo. Salida por la tarde desde Puntarenas tras cómodo traslado desde San José, navegación entre islas con barra abierta de cócteles tropicales, cena buffet servida bajo las estrellas y música ambiental para vivir una experiencia inolvidable.',
+      en: 'Experience the magic of the Pacific sunset in the Gulf of Nicoya aboard a signature luxury catamaran. Afternoon departure from Puntarenas with open tropical bar, delicious dinner under the stars, and music as the sun dips below the horizon.'
     },
     highlights: {
       es: ['Espectacular puesta de sol en el Golfo de Nicoya', 'Barra abierta con cócteles tropicales y refrescos', 'Cena buffet caliente a bordo', 'Música en vivo y ambiente festivo o romántico'],
@@ -2793,10 +2793,10 @@ export const TOURS: Tour[] = [
     bestPriceGuaranteed: true
   },
   {
-    id: 'doka-grecia-sarchi-tour',
+    id: 'coffee-grecia-sarchi-tour',
     title: {
-      es: 'Tour Doka Coffee Estate, Ciudad de Grecia y Cuna Artesanal de Sarchí',
-      en: 'Doka Coffee Estate, Grecia Church & Sarchí Artisan Village'
+      es: 'Tour de Café, Ciudad de Grecia y Cuna Artesanal de Sarchí',
+      en: 'Coffee Estate, Grecia Church & Sarchí Artisan Village'
     },
     subtitle: {
       es: 'El tour cultural más auténtico: café de altura, la famosa iglesia metálica y carretas típicas',
@@ -2823,16 +2823,16 @@ export const TOURS: Tour[] = [
     maxGroupSize: 20,
     freeCancellation: true,
     description: {
-      es: 'Conoce las tradiciones vivas del Valle Central. Comenzamos en la prestigiosa finca Doka Coffee Estate en las faldas del Volcán Poás, conociendo el proceso completo del café de semilla a taza y catación profesional. Luego visitamos la pintoresca ciudad de Grecia con su emblemática Iglesia metálica roja traída de Bélgica en el siglo XIX. Concluimos en Sarchí, cuna de los artesanos de Costa Rica, donde verás el taller de pintura tradicional de la famosa Carreta Típica (Patrimonio Cultural de la Humanidad por la UNESCO).',
-      en: 'Explore the living traditions and craftsmanship of Costa Rica’s Central Valley. Begin at Doka Coffee Estate on the fertile slopes of Poás Volcano to learn the seed-to-cup harvesting and roasting methods with a professional coffee tasting. Continue to the charming town of Grecia to see its unique red metal church imported from Belgium. Finish in Sarchí, the cradle of Costa Rican artisans, watching master craftsmen paint the world-renowned traditional oxcarts (UNESCO Intangible Cultural Heritage).'
+      es: 'Conoce las tradiciones vivas del Valle Central. Comenzamos en una prestigiosa finca cafetalera en las faldas del Volcán Poás, conociendo el proceso completo del café de semilla a taza y catación profesional. Luego visitamos la pintoresca ciudad de Grecia con su emblemática Iglesia metálica roja traída de Bélgica en el siglo XIX. Concluimos en Sarchí, cuna de los artesanos de Costa Rica, donde verás el taller de pintura tradicional de la famosa Carreta Típica (Patrimonio Cultural de la Humanidad por la UNESCO).',
+      en: 'Explore the living traditions and craftsmanship of Costa Rica’s Central Valley. Begin at a coffee estate on the fertile slopes of Poás Volcano to learn the seed-to-cup harvesting and roasting methods with a professional coffee tasting. Continue to the charming town of Grecia to see its unique red metal church imported from Belgium. Finish in Sarchí, the cradle of Costa Rican artisans, watching master craftsmen paint the world-renowned traditional oxcarts (UNESCO Intangible Cultural Heritage).'
     },
     highlights: {
-      es: ['Tour integral del café en Doka Estate con catación guiada', 'Visita a la famosa Iglesia de Metal de Grecia (Nuestra Señora de Las Mercedes)', 'Taller artesanal de carretas típicas de Sarchí y la carreta más grande del mundo', 'Almuerzo buffet tradicional costarricense incluido', 'Oportunidad de comprar recuerdos auténticos directamente de los artesanos'],
-      en: ['Full bean-to-cup coffee tour at Doka Estate with cupping session', 'Visit to the historic all-metal church in Grecia', 'Live painting demonstrations at Sarchí traditional oxcart factory', 'Delicious authentic Costa Rican buffet lunch included', 'Time to shop handcrafted souvenirs directly from master artisans']
+      es: ['Tour integral del café en finca cafetalera con catación guiada', 'Visita a la famosa Iglesia de Metal de Grecia (Nuestra Señora de Las Mercedes)', 'Taller artesanal de carretas típicas de Sarchí y la carreta más grande del mundo', 'Almuerzo buffet tradicional costarricense incluido', 'Oportunidad de comprar recuerdos auténticos directamente de los artesanos'],
+      en: ['Full bean-to-cup coffee tour at a coffee estate with cupping session', 'Visit to the historic all-metal church in Grecia', 'Live painting demonstrations at Sarchí traditional oxcart factory', 'Delicious authentic Costa Rican buffet lunch included', 'Time to shop handcrafted souvenirs directly from master artisans']
     },
     inclusions: {
-      es: ['Transporte turístico ida y vuelta desde San José', 'Guía profesional bilingüe', 'Entrada y tour guiado en Doka Coffee Estate', 'Almuerzo buffet típico costarricense', 'Visitas a Grecia y talleres de Sarchí'],
-      en: ['Roundtrip transportation from San José hotels', 'Certified bilingual tour guide', 'Doka Coffee Estate tour & coffee tasting', 'Traditional Costa Rican buffet lunch', 'Grecia and Sarchí artisan workshop tours']
+      es: ['Transporte turístico ida y vuelta desde San José', 'Guía profesional bilingüe', 'Entrada y tour guiado en finca cafetalera', 'Almuerzo buffet típico costarricense', 'Visitas a Grecia y talleres de Sarchí'],
+      en: ['Roundtrip transportation from San José hotels', 'Certified bilingual tour guide', 'Coffee estate tour & tasting', 'Traditional Costa Rican buffet lunch', 'Grecia and Sarchí artisan workshop tours']
     },
     exclusions: {
       es: ['Compras personales', 'Propinas voluntarias'],
@@ -2849,7 +2849,7 @@ export const TOURS: Tour[] = [
     location: {
       lat: 10.0894,
       lng: -84.3122,
-      placeName: 'Doka Estate / Grecia / Sarchí, Alajuela, Costa Rica'
+      placeName: 'Sabanilla / Grecia / Sarchí, Alajuela, Costa Rica'
     },
     instantConfirmation: true,
     bestPriceGuaranteed: true
@@ -2857,7 +2857,7 @@ export const TOURS: Tour[] = [
   {
     id: 'sarapiqui-boat-rainforest-sjo',
     title: {
-      es: 'Safari en Bote Río Sarapiquí, Reserva Selva Verde y Teleférico del Bosque Lluvioso',
+      es: 'Safari en Bote Río Sarapiquí, Reserva Privada y Teleférico del Bosque Lluvioso',
       en: 'Sarapiquí River Boat Wildlife Safari & Rainforest Aerial Tram'
     },
     subtitle: {
@@ -2885,12 +2885,12 @@ export const TOURS: Tour[] = [
     maxGroupSize: 16,
     freeCancellation: true,
     description: {
-      es: 'Atraviesa la majestuosa Cordillera Central pasando por el Parque Nacional Braulio Carrillo hacia las tierras bajas del Caribe en Sarapiquí. Abordaremos una lancha techada para un safari fluvial de 2 horas por el Río Sarapiquí buscando caimanes, nutrias, perezosos, iguanas y garzas tigre. Después de un almuerzo buffet campesino, caminaremos por la reserva privada Selva Verde y subiremos al emocionante Teleférico del Bosque Lluvioso para flotar entre las copas de los árboles gigantes.',
-      en: 'Drive through the breathtaking primary rainforest of Braulio Carrillo National Park toward the lush Caribbean lowlands of Sarapiquí. Board a covered riverboat for a 2-hour wildlife safari down the Sarapiquí River, spotting caimans, river otters, sloths, iguanas, and exotic toucans. After a hearty farm-to-table lunch, take a guided nature walk through Selva Verde private reserve and glide through the tree canopy on the famous Rainforest Aerial Tram.'
+      es: 'Atraviesa la majestuosa Cordillera Central pasando por el Parque Nacional Braulio Carrillo hacia las tierras bajas del Caribe en Sarapiquí. Abordaremos una lancha techada para un safari fluvial de 2 horas por el Río Sarapiquí buscando caimanes, nutrias, perezosos, iguanas y garzas tigre. Después de un almuerzo buffet campesino, caminaremos por una reserva privada y subiremos al emocionante Teleférico del Bosque Lluvioso para flotar entre las copas de los árboles gigantes.',
+      en: 'Drive through the breathtaking primary rainforest of Braulio Carrillo National Park toward the lush Caribbean lowlands of Sarapiquí. Board a covered riverboat for a 2-hour wildlife safari down the Sarapiquí River, spotting caimans, river otters, sloths, iguanas, and exotic toucans. After a hearty farm-to-table lunch, take a guided nature walk through a private reserve and glide through the tree canopy on the famous Rainforest Aerial Tram.'
     },
     highlights: {
-      es: ['Safari en lancha por el Río Sarapiquí observando fauna acuática y selva virgen', 'Paseo panorámico por el Parque Nacional Braulio Carrillo', 'Caminata guiada en senderos de la Reserva Privada Selva Verde', 'Vuelo en góndola en el Teleférico del Bosque Lluvioso del Atlántico', 'Almuerzo buffet campestre con ingredientes frescos locales'],
-      en: ['2-hour covered boat safari along Sarapiquí River with expert spotter', 'Scenic drive through Braulio Carrillo National Park', 'Guided nature walk at Selva Verde Private Rainforest Reserve', 'Aerial tram gondola ride through pristine rainforest canopy', 'Farm-to-table Costa Rican buffet lunch included']
+      es: ['Safari en lancha por el Río Sarapiquí observando fauna acuática y selva virgen', 'Paseo panorámico por el Parque Nacional Braulio Carrillo', 'Caminata guiada en senderos de una Reserva Privada', 'Vuelo en góndola en el Teleférico del Bosque Lluvioso del Atlántico', 'Almuerzo buffet campestre con ingredientes frescos locales'],
+      en: ['2-hour covered boat safari along Sarapiquí River with expert spotter', 'Scenic drive through Braulio Carrillo National Park', 'Guided nature walk at a Private Rainforest Reserve', 'Aerial tram gondola ride through pristine rainforest canopy', 'Farm-to-table Costa Rican buffet lunch included']
     },
     inclusions: {
       es: ['Transporte ida y vuelta desde hoteles en San José', 'Paseo en lancha de 2 horas en Río Sarapiquí', 'Entrada al Teleférico del Bosque Lluvioso', 'Almuerzo completo buffet campesino', 'Guía naturalista bilingüe experimentado'],
@@ -2933,9 +2933,9 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
   'coffee-chocolate-tour': ["https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712251769863-9b64ed58b5b9?auto=format&fit=crop&w=1200&q=85"],
   'rio-celeste-waterfall': ["https://images.unsplash.com/photo-1711882569452-967be6941ddd?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1711882569452-967be6941ddd?auto=format&fit=crop&w=1200&q=85"],
   'night-jungle-walk': ["https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85"],
-  'mistico-hanging-bridges': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
+  'arenal-hanging-bridges-walk': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
   'cano-island-snorkeling': ["https://images.unsplash.com/photo-1714328003874-e730ff96fdd5?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85"],
-  'poas-volcano-doka-waterfall': ["https://images.unsplash.com/photo-1620658927695-c33df6fb8130?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1200&q=85"],
+  'poas-volcano-coffee-waterfall': ["https://images.unsplash.com/photo-1620658927695-c33df6fb8130?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1200&q=85"],
   'corcovado-sirena-expedition': ["https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85"],
   'rincon-de-la-vieja-canopy-mud': ["https://images.unsplash.com/photo-1523295973995-bd4218f07a32?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1523295973995-bd4218f07a32?auto=format&fit=crop&w=1200&q=85"],
   'sloth-territory-la-fortuna': ["https://images.unsplash.com/photo-1742857235280-8633fa7b5992?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1742909622958-751052a5cce1?auto=format&fit=crop&w=1200&q=85"],
@@ -2947,25 +2947,25 @@ const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
   'san-jose-city-gold-museum': ["https://images.unsplash.com/photo-1643400811908-ed46db6c8066?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1643400811908-ed46db6c8066?auto=format&fit=crop&w=1200&q=85"],
   'bribri-indigenous-cultural': ["https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85"],
   'sjo-irazu-orosi-lankester': ["https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85"],
-  'arenal-pure-trek-canyoning': ["https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85"],
-  'arenal-wave-balsa-rafting': ["https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85"],
-  'arenal-sky-trek-tram-combo': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
-  'guanacaste-guachipelin-combo': ["https://images.unsplash.com/photo-1523295973995-bd4218f07a32?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1523295973995-bd4218f07a32?auto=format&fit=crop&w=1200&q=85"],
-  'guanacaste-diamante-adventure': ["https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85"],
-  'guanacaste-marlin-del-rey-sunset': ["https://images.unsplash.com/photo-1636657795425-0db7a2b0528a?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1636657795425-0db7a2b0528a?auto=format&fit=crop&w=1200&q=85"],
-  'monteverde-selvatura-all-in-one': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
-  'monteverde-100-aventura-extreme': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
+  'arenal-waterfall-canyoning': ["https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85"],
+  'arenal-balsa-river-rafting': ["https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85"],
+  'arenal-tram-zipline-bridges-combo': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
+  'guanacaste-rincon-adventure-combo': ["https://images.unsplash.com/photo-1523295973995-bd4218f07a32?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1523295973995-bd4218f07a32?auto=format&fit=crop&w=1200&q=85"],
+  'guanacaste-ocean-view-adventure': ["https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85"],
+  'guanacaste-sunset-catamaran': ["https://images.unsplash.com/photo-1636657795425-0db7a2b0528a?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1636657795425-0db7a2b0528a?auto=format&fit=crop&w=1200&q=85"],
+  'monteverde-all-in-one-park': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
+  'monteverde-superman-zipline': ["https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
   'manuel-antonio-damas-mangrove': ["https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85"],
-  'manuel-antonio-ocean-king-catamaran': ["https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1519793043130-c584f53c3277?auto=format&fit=crop&w=1200&q=85"],
+  'manuel-antonio-mega-catamaran': ["https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1519793043130-c584f53c3277?auto=format&fit=crop&w=1200&q=85"],
   'uvita-whale-watching-combo': ["https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1714328003874-e730ff96fdd5?auto=format&fit=crop&w=1200&q=85"],
   'uvita-cano-island-snorkel': ["https://images.unsplash.com/photo-1714328003874-e730ff96fdd5?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85"],
   'osa-corcovado-sirena-day': ["https://images.unsplash.com/photo-1723144455080-6ba5b5f6b527?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85"],
-  'tortuguero-mawamba-3d2n': ["https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85"],
+  'tortuguero-lodge-3d2n': ["https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85"],
   'caribe-cahuita-snorkeling-hike': ["https://images.unsplash.com/photo-1774166488273-bc77b3906e1a?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1727719494784-1865317344d9?auto=format&fit=crop&w=1200&q=85"],
   'circuit-classic-costa-rica-5d': ["https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85"],
   'irazu-cartago-orosi-tour': ["https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85"],
-  'bay-island-sunset-cruise': ["https://images.unsplash.com/photo-1519793043130-c584f53c3277?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1519793043130-c584f53c3277?auto=format&fit=crop&w=1200&q=85"],
-  'doka-grecia-sarchi-tour': ["https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1200&q=85"],
+  'puntarenas-sunset-dinner-cruise': ["https://images.unsplash.com/photo-1519793043130-c584f53c3277?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1519793043130-c584f53c3277?auto=format&fit=crop&w=1200&q=85"],
+  'coffee-grecia-sarchi-tour': ["https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1200&q=85"],
   'sarapiqui-boat-rainforest-sjo': ["https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85"],
 };
 
