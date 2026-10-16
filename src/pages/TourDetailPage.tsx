@@ -611,7 +611,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
                     <TourQuoteRequestForm tourId={tour.id} language={language} />
                     <button type="button" onClick={requestTourAssistance} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#25D366]/50 px-4 py-3 font-bold text-[#25D366] hover:bg-[#25D366]/10">
                       <MessageCircle className="w-4 h-4" />
-                      {language === 'es' ? 'Consultar disponibilidad por WhatsApp' : 'Check availability on WhatsApp'}
+                      {language === 'es' ? 'Consultar disponibilidad' : 'Check availability'}
                     </button>
                   </div>
                 )}
