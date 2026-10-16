@@ -1,8 +1,7 @@
 import type { Tour } from '../types';
 
 export function publishedTourPrice(tour: Tour): number | undefined {
-  return tour.priceSource === 'publicado_por_operador'
-    && /^https:\/\//i.test(tour.sourceUrl || '')
+  return tour.priceSource === 'precio_referencia'
     && /^\d{4}-\d{2}-\d{2}$/.test(tour.priceCheckedAt || '')
     && Number.isFinite(tour.priceUSD) && tour.priceUSD > 0
     ? tour.priceUSD : undefined;
