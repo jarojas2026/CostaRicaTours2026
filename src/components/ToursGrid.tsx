@@ -146,7 +146,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
         tour.category === 'canopy' ? 'zipline tirolesa canopy aventura adventure' : '',
         tour.category === 'rafting' ? 'rafting whitewater aguas bravas río river' : ''
       ];
-      const haystack = normalizeCatalogSearch([...localizedValues, tour.location.placeName, tour.operatorName ?? '', tour.region, tour.category, ...synonyms].join(' '));
+      const haystack = normalizeCatalogSearch([...localizedValues, tour.location.placeName, tour.region, tour.category, ...synonyms].join(' '));
       // Todas las palabras deben aparecer (en cualquier orden): "negro caño" también encuentra Caño Negro.
       if (!q.split(/\s+/).filter(Boolean).every((word) => haystack.includes(word))) return false;
     }
