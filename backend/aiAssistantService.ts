@@ -7,7 +7,9 @@ import { COSTA_RICA_REGION_PLAYBOOK, buildCostaRicaTourismKnowledgePrompt } from
 const emergencyContact = process.env.EMERGENCY_CONTACT_PHONE || '911';
 const emergencyContactLabel = process.env.EMERGENCY_CONTACT_PHONE ? `${emergencyContact} / 911` : '911';
 
-import { GoogleGenAI } from '@google/genai';
+import { getGeminiClient as getAI, getConciergeModel } from './geminiRuntime';
+import { classifyAiFailure, recordAiObservation } from './aiHealth';
+import { knowledgeToolReply } from './knowledgeReplies';
 import { TOURS } from '../src/data/toursData';
 import { generateClaudeChatResponse, getClaudeClient } from './claudeService';
 import {
@@ -19,27 +21,6 @@ import {
 } from './bookingService';
 import { GEMINI_FUNCTION_DECLARATIONS, executeAgentTool } from './agentTools';
 import { getPlatformControls } from './platformControlService';
-
-let aiClient: GoogleGenAI | null = null;
-function getAI(): GoogleGenAI | null {
-  const key = process.env.GEMINI_API_KEY?.trim();
-  // Claves válidas de Google Cloud / AI Studio comienzan con AIza... y tienen >= 25 caracteres.
-  // Tokens de sesión como AQ. no son claves API válidas para generativelanguage.googleapis.com.
-  if (!key || key.startsWith('AQ.') || key.length < 20) {
-    return null;
-  }
-  if (!aiClient) {
-    aiClient = new GoogleGenAI({
-      apiKey: key,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build'
-        }
-      }
-    });
-  }
-  return aiClient;
-}
 
 // Registro en memoria de excepciones para diagnóstico del Supervisor
 const exceptionLogs: Array<{
@@ -196,119 +177,11 @@ Tarifas de referencia en USD por vehículo completo privado (no por persona). In
  * Procesa una consulta de chat del usuario con el Asistente Oficial
  */
 function getKnowledgeBaseReply(message: string, isEn: boolean) {
-  const lower = message.toLowerCase();
-
-  // Consulta sobre Transporte, Traslados Privados o Alsama Tours CR
-  if (
-    lower.includes('transporte') ||
-    lower.includes('transport') ||
-    lower.includes('transfer') ||
-    lower.includes('traslado') ||
-    lower.includes('alsama') ||
-    lower.includes('shuttle') ||
-    lower.includes('aeropuerto') ||
-    lower.includes('airport') ||
-    lower.includes('jaco') ||
-    lower.includes('jacó')
-  ) {
-    return {
-      reply: isEn
-        ? `🚐 **Private Transfers • Reference rates (Alsama Tours CR)**\n\nWe can request private door-to-door transportation from **Alsama Tours CR** (https://alsamatourscr.com/transport/). Reference rates, subject to confirmation:\n\n• **San José / SJO Airport ⇄ Arenal (La Fortuna)**: $170 USD (1-5 pax) | $200 USD (6-10 pax)\n• **San José / SJO Airport ⇄ Jacó Beach**: $143 USD (1-5 pax) | $170 USD (6-10 pax)\n• **San José / SJO Airport ⇄ Manuel Antonio**: $186 USD (1-5 pax) | $214 USD (6-10 pax)\n• **San José / SJO Airport ⇄ Monteverde**: $186 USD (1-5 pax) | $214 USD (6-10 pax)\n• **SJO Airport ⇄ San José City Hotels**: $50 USD (1-5 pax) | $57 USD (6-10 pax)\n• **San José Hotels ⇄ SJO Airport**: $43 USD (1-5 pax) | $50 USD (6-10 pax)\n• **Arenal ⇄ Manuel Antonio**: $260 USD (1-5 pax) | $300 USD (6-10 pax)\n• **Arenal ⇄ Monteverde**: $160 USD (1-5 pax) | $190 USD (6-10 pax)\n\n✨ **Includes**: Executive modern van with AC, on-board 4G/5G Wi-Fi, complimentary cold bottled water, professional bilingual driver, scenic stops (like the Tárcoles River Crocodile Bridge), and full traveler insurance.\n\n¿Would you like me to help you book a private transfer or calculate a custom route?`
-        : `🚐 **Traslados Privados • Tarifas de referencia (Alsama Tours CR)**\n\nPodemos solicitar transporte privado puerta a puerta a **Alsama Tours CR** (https://alsamatourscr.com/transport/). Tarifas de referencia, sujetas a confirmación:\n\n• **San José / Aeropuerto SJO ⇄ Arenal (La Fortuna)**: $170 USD (1-5 personas) | $200 USD (6-10 personas)\n• **San José / Aeropuerto SJO ⇄ Jacó / Playa Hermosa**: $143 USD (1-5 personas) | $170 USD (6-10 personas)\n• **San José / Aeropuerto SJO ⇄ Manuel Antonio / Quepos**: $186 USD (1-5 personas) | $214 USD (6-10 personas)\n• **San José / Aeropuerto SJO ⇄ Monteverde**: $186 USD (1-5 personas) | $214 USD (6-10 personas)\n• **Aeropuerto SJO ⇄ Hoteles en San José**: $50 USD (1-5 personas) | $57 USD (6-10 personas)\n• **Hoteles en San José ⇄ Aeropuerto SJO**: $43 USD (1-5 personas) | $50 USD (6-10 personas)\n• **Arenal ⇄ Manuel Antonio**: $260 USD (1-5 personas) | $300 USD (6-10 personas)\n• **Arenal ⇄ Monteverde**: $160 USD (1-5 personas) | $190 USD (6-10 personas)\n\n✨ **Incluye**: Van ejecutiva moderna con aire acondicionado, Wi-Fi 4G/5G a bordo, botellas de agua fría de cortesía, chofer profesional bilingüe, paradas escénicas en ruta (ej. Puente de los Cocodrilos en Tárcoles) y seguro MOPT/ICT.\n\n¿Te gustaría coordinar la reserva de tu traslado privado o consultar por alguna otra ruta?`,
-      quickActions: [
-        { label: isEn ? '🚐 View Transport Rates' : '🚐 Ver Tarifario de Transporte', action: 'send_message', data: { message: isEn ? 'Show transport' : 'Ver transporte' } },
-        { label: isEn ? '💬 WhatsApp Booking' : '💬 Reservar por WhatsApp', action: 'direct_whatsapp' }
-      ]
-    };
-  }
-
-  if (lower.includes('arenal') || lower.includes('volcan') || lower.includes('volcano') || lower.includes('tabacon')) {
-    return {
-      reply: isEn
-        ? `🌋 **Arenal Volcano & Tabacón Natural Hot Springs**\n\n• **Price**: $145 USD per adult / $95 per child (under 11)\n• **Duration**: Full Day (~12 hours)\n• **Includes**: Certified naturalist guide, roundtrip AC transport, hot springs pass, and buffet dinner.\n• **Recommendations**: Swimsuit, insect repellent, comfortable walking shoes, and a light jacket.\n\n¿Would you like me to help you book this tour or do you have any questions?`
-        : `🌋 **Tour al Volcán Arenal y Termales Naturales Tabacón**\n\n• **Tarifa**: $145 USD por adulto / $95 por niño (menores de 11 años)\n• **Duración**: Día completo (~12 horas)\n• **Incluye**: Guía naturalista certificado, transporte ida y vuelta con A/C, entrada a las aguas termales y cena buffet.\n• **Recomendaciones**: Traje de baño, repelente de insectos, calzado cómodo para caminar y abrigo liviano.\n\n¿Te gustaría que te ayude a coordinar tu reserva o tienes alguna duda adicional?`,
-      quickActions: [
-        { label: isEn ? '📅 Book Tour' : '📅 Reservar este Tour', action: 'book', data: { tourId: 'arenal-volcano-hot-springs' } },
-        { label: isEn ? '💬 Direct WhatsApp' : '💬 WhatsApp Directo', action: 'direct_whatsapp' }
-      ]
-    };
-  }
-
-  if (lower.includes('manuel antonio') || lower.includes('playa') || lower.includes('beach')) {
-    return {
-      reply: isEn
-        ? `🏖️ **Manuel Antonio National Park Nature Tour**\n\n• **Price**: $95 USD per adult / $70 per child\n• **Duration**: Full Day (~10 hours)\n• **Includes**: Certified bilingual guide with spotting scope, park entry tickets, transport, and beach time.\n• **Wildlife**: Sloths, white-faced monkeys, toucans, and iguanas.\n\n¿Would you like to book your spots or check available dates?`
-        : `🏖️ **Excursión al Parque Nacional Manuel Antonio y Playas**\n\n• **Tarifa**: $95 USD por adulto / $70 por niño\n• **Duración**: Día completo (~10 horas)\n• **Incluye**: Guía certificado con telescopio de alta gama, tiquetes oficiales de ingreso al parque, transporte y tiempo libre en la playa.\n• **Fauna destacada**: Perezosos de 2 y 3 dedos, monos cariblancos, tucanes e iguanas.\n\n¿Te gustaría asegurar tus espacios o consultar fechas disponibles?`,
-      quickActions: [
-        { label: isEn ? '📅 Book Now' : '📅 Reservar Ahora', action: 'book', data: { tourId: 'manuel-antonio-national-park' } },
-        { label: isEn ? '💬 Direct WhatsApp' : '💬 WhatsApp Directo', action: 'direct_whatsapp' }
-      ]
-    };
-  }
-
-  if (lower.includes('canopy') || lower.includes('zipline') || lower.includes('tirolesa') || lower.includes('monteverde')) {
-    return {
-      reply: isEn
-        ? `🌲 **Monteverde Cloud Forest & Extreme Canopy Zipline**\n\n• **Price**: $110 USD per adult / $85 per child\n• **Duration**: ~6 hours\n• **Includes**: 15 cables, Superman flight, Tarzan swing, hanging bridges, certified equipment, and safety briefing.\n• **Requirements**: Minimum age 6 years; comfortable athletic clothing and closed-toe shoes.\n\n¿Would you like me to reserve this adventure for you?`
-        : `🌲 **Canopy Extremo y Puentes Colgantes en Monteverde**\n\n• **Tarifa**: $110 USD por adulto / $85 por niño\n• **Duración**: ~6 horas\n• **Incluye**: 15 cables de tirolesa, vuelo Superman, salto Tarzán, puentes colgantes, equipo certificado y charla de seguridad.\n• **Requisitos**: Edad mínima 6 años, ropa deportiva cómoda y calzado cerrado.\n\n¿Te gustaría que te reserve esta aventura o tienes alguna consulta?`,
-      quickActions: [
-        { label: isEn ? '📅 Book Adventure' : '📅 Reservar Aventura', action: 'book', data: { tourId: 'monteverde-canopy-extreme' } },
-        { label: isEn ? '💬 Direct WhatsApp' : '💬 WhatsApp Directo', action: 'direct_whatsapp' }
-      ]
-    };
-  }
-
-  if (lower.includes('precio') || lower.includes('tarifa') || lower.includes('rate') || lower.includes('cost')) {
-    const priceTours = TOURS.slice(0, 8);
-    const priceLines = priceTours.map((tour) => {
-      const title = isEn ? (tour.title.en || tour.title.es) : tour.title.es;
-      const duration = tour.durationLabel?.[isEn ? 'en' : 'es'] || (tour.durationHours ? `${tour.durationHours} h` : '');
-      return `• **${title}**: ${tour.priceUSD} USD${duration ? ` · ${duration}` : ''}`;
-    }).join('\\n');
-    return {
-      reply: isEn
-        ? `💵 **Current catalog prices**\\n\\n${priceLines}\\n\\nThese are catalog reference prices; final totals and availability are confirmed during the reservation flow.`
-        : `💵 **Precios actuales del catálogo**\\n\\n${priceLines}\\n\\nSon precios de referencia del catálogo; el total final y la disponibilidad se confirman durante la reserva.`,
-      quickActions: [
-        { label: isEn ? '📅 Check availability' : '📅 Consultar disponibilidad', action: 'availability' },
-        { label: isEn ? '💬 Speak with Advisor' : '💬 Hablar con Asesor', action: 'direct_whatsapp' }
-      ]
-    };
-  }
-
-  if (lower.includes('itinerari') || lower.includes('itinerary') || lower.includes('plan de viaje') || lower.includes('ruta de viaje')) {
-    return {
-      reply: isEn
-        ? `🧭 **Custom Pura Vida Multi-Day Itineraries (3 to 14 Days)**\n\nWe connect Costa Rica's best highlights with certified door-to-door private transfers (Alsama Tours CR) and SINAC park entries:\n\n• **Day 1**: Arrival SJO ➔ Private transfer to Arenal ➔ Mineral Hot Springs & Dinner\n• **Day 2**: 1968 Arenal Volcano Lava Trails & La Fortuna Waterfall Swim\n• **Day 3**: Lake Arenal scenic crossing ➔ Monteverde Cloud Forest Hanging Bridges\n• **Day 4**: Superman Canopy Zipline ➔ Transfer to Manuel Antonio Pacific Coast\n• **Day 5**: Manuel Antonio National Park Guided Wildlife Safari & White Sand Beach\n\n✨ **Includes**: Eco-lodges with CST certification, private AC vans with Wi-Fi, and bilingual certified guides.\n\n¿Would you like to open our AI Itinerary Planner to customize days, budget and style, or book this package?`
-        : `🧭 **Itinerarios Personalizados Multidía Pura Vida (3 a 14 Días)**\n\nConectamos los mejores destinos de Costa Rica con logística coordinada puerta a puerta por **Alsama Tours CR** y guías naturalistas bilingües:\n\n• **Día 1**: Llegada SJO ➔ Traslado privado a La Fortuna ➔ Aguas Termales y Cena Buffet\n• **Día 2**: Senderos de Lava 1968 Volcán Arenal & Catarata La Fortuna\n• **Día 3**: Cruce lacustre Lago Arenal ➔ Puentes Colgantes en Bosque Nuboso de Monteverde\n• **Día 4**: Canopy Extremo Tirolesa ➔ Traslado a Playas de Manuel Antonio\n• **Día 5**: Parque Nacional Manuel Antonio, avistamiento de perezosos y playa paradisíaca\n\n✨ **Incluye**: Alojamiento en eco-lodges sostenibles CST, traslados ejecutivos con Wi-Fi y entradas oficiales SINAC.\n\n¿Te gustaría abrir el Diseñador Inteligente de Itinerarios para personalizar días, presupuesto y compañía, o coordinar la reserva directa?`,
-      quickActions: [
-        { label: isEn ? '🧭 Open Itinerary Planner' : '🧭 Abrir Planificador de Itinerarios', action: 'open_itinerary_planner' },
-        { label: isEn ? '📅 Reserve Itinerary' : '📅 Reservar Itinerario', action: 'book_itinerary' },
-        { label: isEn ? '💬 Direct WhatsApp' : '💬 WhatsApp Directo', action: 'direct_whatsapp' }
-      ]
-    };
-  }
-
-  if (lower.includes('reserv') || lower.includes('book')) {
-    return {
-      reply: isEn
-        ? `📝 **Tour Reservation Request**\n\nTo complete your booking, please provide:\n• Desired tour name\n• Date & preferred time\n• Number of adults & children\n• Full name & email address\n• Pickup hotel or special requests\n\nWe will confirm your seats and send secure checkout links immediately. What tour are you interested in?`
-        : `📝 **Solicitud de Reserva de Tour**\n\nPara ayudarte con tu reserva paso a paso, por favor indícame:\n• Nombre del tour deseado\n• Fecha y horario preferido\n• Cantidad de personas (adultos y niños)\n• Nombre completo y correo electrónico\n• Hotel de recogida o requerimiento especial\n\nTe confirmaremos la disponibilidad y los pasos de pago de inmediato. ¿Qué tour te gustaría reservar?`,
-      quickActions: [
-        { label: isEn ? '📅 Open Booking Form' : '📅 Abrir Formulario', action: 'book' },
-        { label: isEn ? '💬 Direct WhatsApp' : '💬 WhatsApp Directo', action: 'direct_whatsapp' }
-      ]
-    };
-  }
-
   return {
-    reply: isEn
-      ? `🇨🇷 ¡Pura Vida! Welcome to Costa Rica Tours. We are official providers of excursions, rainforest adventures, and transport across Costa Rica.\n\n• **Direct Booking**: Instant confirmation with no hidden fees\n• **Certified Naturalists**: Bilingual guides certified by ICT\n• **Flexible Policy**: Free cancellations up to 24h prior\n\n¿How can I help you plan your journey today?`
-      : `🇨🇷 ¡Pura Vida! Bienvenido a Costa Rica Tours. Somos especialistas en excursiones oficiales, parques nacionales y aventuras auténticas en Costa Rica.\n\n• **Reserva Directa**: Confirmación inmediata sin cargos sorpresa\n• **Guías Oficiales**: Naturalistas certificados por el ICT\n• **Políticas Claras**: Cancelación flexible hasta 24 horas antes\n\n¿En qué podemos asesorarte hoy para tus vacaciones?`,
-    quickActions: [
-      { label: isEn ? '🔍 Explore Tours' : '🔍 Ver Excursiones', action: 'send_message', data: { message: isEn ? 'Show tours' : 'Ver excursiones' } },
-      { label: isEn ? '💬 Direct WhatsApp' : '💬 WhatsApp Directo', action: 'direct_whatsapp' }
-    ]
+    reply: knowledgeToolReply(message, isEn ? 'en' : 'es') || (isEn
+      ? 'I can help you explore Costa Rica. The AI model is temporarily unavailable. Prices and availability require operator verification before any payment. Which destination and dates interest you?'
+      : 'Puedo ayudarte a explorar Costa Rica. El modelo de IA no está disponible temporalmente. Los precios y cupos requieren verificación del operador antes de cualquier pago. ¿Qué destino y fechas te interesan?'),
+    quickActions: [{ label: isEn ? 'Explore tours' : 'Explorar tours', action: 'send_message', data: { message: isEn ? 'Show tours' : 'Ver tours' } }]
   };
 }
 
@@ -349,6 +222,7 @@ export async function processChatInquiry(
     try {
       const claudeRes = await generateClaudeChatResponse(message, language, history as any);
       if (claudeRes && claudeRes.reply) {
+        recordAiObservation('claude', null);
         return {
           reply: claudeRes.reply,
           quickActions: claudeRes.quickActions || [],
@@ -357,7 +231,7 @@ export async function processChatInquiry(
         };
       }
     } catch (claudeErr) {
-      console.warn('⚠️ Fallback de Claude a Gemini / Base local:', claudeErr);
+      recordAiObservation('claude', classifyAiFailure(claudeErr));
     }
   }
 
@@ -368,6 +242,7 @@ export async function processChatInquiry(
 
     const ai = getAI();
     if (!ai) {
+      recordAiObservation('gemini', 'configuration_missing');
       return getKnowledgeBaseReply(message, isEn);
     }
 
@@ -377,13 +252,14 @@ export async function processChatInquiry(
 User query: "${message}"
 Reply ONLY with "YES" or "NO".`;
       const classRes = await ai.models.generateContent({
-        model: 'gemini-3.5-flash',
+        model: getConciergeModel(),
         contents: classifierPrompt,
         config: { temperature: 0 }
       });
       needsGrounding = classRes.text?.trim().toUpperCase().includes('YES') || false;
     } catch(e: any) {
       if (e?.message?.includes('API key not valid') || e?.message?.includes('API_KEY_INVALID')) {
+        recordAiObservation('gemini', 'authentication');
         return getKnowledgeBaseReply(message, isEn);
       }
       needsGrounding = false;
@@ -416,11 +292,12 @@ Reply ONLY with "YES" or "NO".`;
     );
     while (toolRounds < maxToolRounds) {
       const response = await ai.models.generateContent({
-        model: 'gemini-3.5-flash',
+        model: getConciergeModel(),
         contents: currentContents,
         config
       });
       lastResponse = response;
+      recordAiObservation('gemini', null);
 
       const calls = response.functionCalls || [];
       if (!calls.length) {
@@ -508,15 +385,11 @@ Reply ONLY with "YES" or "NO".`;
       reply,
       quickActions,
       agentId: requestedAgentId,
-      modelUsed: 'gemini-3.5-flash',
+      modelUsed: getConciergeModel(),
       sources: sources.length > 0 ? sources : undefined
     };
   } catch (error: any) {
-    if (error?.message?.includes('API key not valid') || error?.message?.includes('API_KEY_INVALID')) {
-      console.warn('⚠️ Gemini API key no válida o inactiva en este entorno; activando base de conocimiento oficial de Costa Rica Tours.');
-    } else {
-      console.warn('Fallback a base de conocimiento oficial:', error?.message || error);
-    }
+    recordAiObservation('gemini', classifyAiFailure(error));
     return getKnowledgeBaseReply(message, isEn);
   }
 }
