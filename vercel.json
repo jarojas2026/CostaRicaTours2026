@@ -3,6 +3,2808 @@
   "version": 2,
   "buildCommand": "npm run build",
   "ignoreCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then exit 1; else echo 'Skipping automatic preview build; GitHub CI is authoritative for feature branches.'; exit 0; fi",
+  "redirects": [
+    {
+      "source": "/tour/arenal-pure-trek-canyoning",
+      "destination": "/tour/arenal-waterfall-canyoning",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/arenal-sky-trek-tram-combo",
+      "destination": "/tour/arenal-tram-zipline-bridges-combo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/arenal-wave-balsa-rafting",
+      "destination": "/tour/arenal-balsa-river-rafting",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/bay-island-sunset-cruise",
+      "destination": "/tour/puntarenas-sunset-dinner-cruise",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/doka-grecia-sarchi-tour",
+      "destination": "/tour/coffee-grecia-sarchi-tour",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/guanacaste-diamante-adventure",
+      "destination": "/tour/guanacaste-ocean-view-adventure",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/guanacaste-guachipelin-combo",
+      "destination": "/tour/guanacaste-rincon-adventure-combo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/guanacaste-marlin-del-rey-sunset",
+      "destination": "/tour/guanacaste-sunset-catamaran",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/manuel-antonio-ocean-king-catamaran",
+      "destination": "/tour/manuel-antonio-mega-catamaran",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/mistico-hanging-bridges",
+      "destination": "/tour/arenal-hanging-bridges-walk",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/monteverde-100-aventura-extreme",
+      "destination": "/tour/monteverde-superman-zipline",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/monteverde-selvatura-all-in-one",
+      "destination": "/tour/monteverde-all-in-one-park",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-acomuita-tour-tsirutami-shiroles",
+      "destination": "/tour/tour-tsirutami-chocolate-de-las-mujeres-bribri-en-shiroles",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-alto-uren-atec",
+      "destination": "/tour/alta-talamanca-visita-a-alto-uren",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-amigosdelrio-adr-adventure-park",
+      "destination": "/tour/adr-adventure-park-cataratas-canopy-y-rappel",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-amigosdelrio-mangrove-kayak",
+      "destination": "/tour/kayak-en-manglares-de-isla-damas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-amigosdelrio-ocean-kayak",
+      "destination": "/tour/kayak-de-mar-en-manuel-antonio",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-amigosdelrio-rafting-chorro",
+      "destination": "/tour/rafting-seccion-el-chorro-rio-naranjo-clase-iv-v",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-amigosdelrio-rafting-naranjo",
+      "destination": "/tour/rafting-rio-naranjo-clase-iii-iv",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-amigosdelrio-rafting-savegre",
+      "destination": "/tour/rafting-rio-savegre-clase-ii-iii",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-amubri-yorkin-caminata-atec",
+      "destination": "/tour/alta-talamanca-caminata-amubriyorkin",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-apacoop-dos-cosechas",
+      "destination": "/tour/experiencia-dos-cosechas-aguacate-y-cafe-en-los-santos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-aquiares-aves",
+      "destination": "/tour/observacion-de-aves-en-aquiares",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-aquiares-cabalgata",
+      "destination": "/tour/cabalgata-por-la-hacienda-aquiares",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-aquiares-dia-completo",
+      "destination": "/tour/dia-completo-the-aquiares-way",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-aquiares-taste-coffee-tour",
+      "destination": "/tour/a-taste-of-aquiares-tour-de-cafe",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ara-manzanillo-macaw-visit",
+      "destination": "/tour/visita-a-proyecto-de-lapa-verde-en-manzanillo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-arenaloasis-bird-watching",
+      "destination": "/tour/observacion-de-aves-en-arenal-oasis",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-arenaloasis-butterfly-garden",
+      "destination": "/tour/mariposario-domo-geodesico-de-arenal-oasis",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-arenaloasis-frog-night-walk",
+      "destination": "/tour/caminata-nocturna-de-ranas-en-arenal-oasis",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-arenaloasis-sloth-tour",
+      "destination": "/tour/tour-de-perezosos-en-arenal-oasis",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-asis-full-day",
+      "destination": "/tour/dia-completo-en-javillos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-asis-sloth-tour",
+      "destination": "/tour/tour-de-perezosos-en-javillos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-asis-wildlife-tour",
+      "destination": "/tour/tour-de-vida-silvestre-en-javillos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-asis-wildlife-volunteer",
+      "destination": "/tour/tour-de-vida-silvestre-voluntariado-en-javillos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-atec-aves-kekoldi",
+      "destination": "/tour/observacion-de-aves-en-el-territorio-kekoldi",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-atec-finca-adela-watsi",
+      "destination": "/tour/finca-adela-plantas-medicinales-y-chocolate-bribri",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-atv-2h-vista-los-suenos",
+      "destination": "/tour/cuadraciclo-2-h-selva-y-cataratas-vista-los-suenos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-atv-cataratas-almuerzo-adventure-tours",
+      "destination": "/tour/cuadraciclo-4-h-a-catarata-con-almuerzo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-atv-cataratas-montetours",
+      "destination": "/tour/cuadraciclo-a-cataratas-en-manuel-antonio",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-atv-jaco-adventures",
+      "destination": "/tour/aventura-en-cuadraciclo-desde-jaco",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-atv-jungla-cataratas-jaco-experience",
+      "destination": "/tour/cuadraciclo-jungla-y-cataratas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-atv-kings-of-jaco",
+      "destination": "/tour/tour-en-cuadraciclo-en-jaco",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-atv-rainmaker-jade-tours",
+      "destination": "/tour/cuadraciclo-y-cataratas-en-rainmaker",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-aventura-puentes-colgantes-monteverde",
+      "destination": "/tour/puentes-colgantes",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-aventuras-naturales-yorkin-cultural",
+      "destination": "/tour/tour-cultural-bribri-en-yorkin",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-aventuras-sarapiqui-rafting-la-virgen",
+      "destination": "/tour/rafting-iiiii-rio-sarapiqui-seccion-la-virgen",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-aves-fotografia-tarcoles-jcs",
+      "destination": "/tour/tour-de-aves-y-fotografia-en-el-tarcoles",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-bahiaav-combo-ballenas",
+      "destination": "/tour/combo-ballenas-y-delfines-en-marino-ballena",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-bahiaav-corcovado",
+      "destination": "/tour/caminata-en-corcovado-desde-uvita-san-pedrillo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-bahiaav-manglar-terraba",
+      "destination": "/tour/manglar-terrabasierpe-en-bote",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-bahiaav-nocturno-uvita",
+      "destination": "/tour/tour-nocturno-de-vida-silvestre-en-uvita",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ballenaav-caminata-marino-ballena",
+      "destination": "/tour/caminata-en-el-pn-marino-ballena",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ballenaav-combo-marino-ballena",
+      "destination": "/tour/combo-pn-marino-ballena-ballenas-delfines-cuevas-snorkel",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ballenaav-corcovado-cano",
+      "destination": "/tour/combinado-corcovado-isla-del-cano-desde-uvita",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ballenaav-kayak-marino-ballena",
+      "destination": "/tour/kayak-en-el-pn-marino-ballena",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ballenaav-manglar-terraba",
+      "destination": "/tour/manglar-terrabasierpe-bote-o-kayak",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ballenaav-nauyaca",
+      "destination": "/tour/caminata-guiada-a-cataratas-nauyaca-desde-uvita",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ballenaav-pesca-medio-dia",
+      "destination": "/tour/pesca-deportiva-medio-dia-en-uvita",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ballenaav-san-pedrillo",
+      "destination": "/tour/caminata-en-estacion-san-pedrillo-corcovado-desde-uvita",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ballenaav-snorkel-cano",
+      "destination": "/tour/snorkel-en-isla-del-cano-desde-uvita",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-barrio-bird-artist",
+      "destination": "/tour/artist-bird-arte-urbano-en-san-jose",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-barrio-bird-birds-nest",
+      "destination": "/tour/the-bird-s-nest-caminata-por-san-jose",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-barrio-bird-glam",
+      "destination": "/tour/glam-bird-cafe-e-influencia-europea",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-barrio-bird-saturday",
+      "destination": "/tour/saturday-favorites-feria-comida-e-historia",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-baru-aves",
+      "destination": "/tour/observacion-de-aves-en-dominical",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-baru-aves-bosque-larga",
+      "destination": "/tour/caminata-de-aves-en-bosque-lluvioso-version-larga",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-baru-caminata-chilamate",
+      "destination": "/tour/caminata-al-chilamate",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-baru-canopy-tucan",
+      "destination": "/tour/canopy-vuelo-del-tucan",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-baru-senderos-autoguiados",
+      "destination": "/tour/senderos-autoguiados",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-baru-tour-nocturno",
+      "destination": "/tour/tour-nocturno-en-dominical",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-baru-wildlife",
+      "destination": "/tour/tour-de-vida-silvestre-en-dominical",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-bat-jungle-monteverde",
+      "destination": "/tour/exhibicion-de-murcielagos-en-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-batsu-birdwatching-guiado",
+      "destination": "/tour/tour-guiado-de-observacion-de-aves-en-san-gerardo-de-dota",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-batsu-entrada-fotografia",
+      "destination": "/tour/entrada-a-jardin-de-aves-para-fotografia-en-san-gerardo-de-dota",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-batsu-quetzal-tour",
+      "destination": "/tour/tour-del-quetzal",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-bicicleta-tropical-explornatura",
+      "destination": "/tour/tour-en-bicicleta-por-plantaciones-de-turrialba",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-bijaguanature-garza-agami",
+      "destination": "/tour/tour-de-la-garza-agami",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-bijaguanature-heliconias-puentes",
+      "destination": "/tour/puentes-colgantes-de-heliconias-pajareo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-bijaguanature-nature-tour-familiar",
+      "destination": "/tour/tour-de-naturaleza-familiar-en-bijagua",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-bijaguanature-tapir-valley-pajareo",
+      "destination": "/tour/pajareo-medio-dia-en-tapir-valley",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-blue-falls-costa-rica-entrada",
+      "destination": "/tour/cataratas-azules-de-bajos-del-toro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-bluedream-kitesurf-bahia-salinas",
+      "destination": "/tour/clases-de-kitesurf-en-bahia-salinas-blue-dream",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-blueriver-santa-rosa-junquillal-atardecer",
+      "destination": "/tour/santa-rosa-junquillal-y-atardecer-en-bahia-santa-elena",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-bogarin-guided-tour",
+      "destination": "/tour/tour-guiado-sendero-bogarin-perezosos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-bogarin-night-walk",
+      "destination": "/tour/caminata-nocturna-sendero-bogarin",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-boruca-demostraciones-autoguiado",
+      "destination": "/tour/visita-autoguiada-a-boruca-tejido-y-mascaras",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-bosque-cativera-gandoca-atec",
+      "destination": "/tour/bosque-cativera-en-gandoca",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-bote-manglar-damas-iguana",
+      "destination": "/tour/tour-en-bote-por-el-manglar-de-isla-damas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-bote-monos-manglar-manptours",
+      "destination": "/tour/tour-en-bote-monos-del-manglar-en-isla-damas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-britt-classic-coffee-tour",
+      "destination": "/tour/tour-clasico-de-cafe-en-heredia",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-britt-coffee-adventure",
+      "destination": "/tour/tour-de-cafe-en-heredia-aventura",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-britt-coffee-waterfalls",
+      "destination": "/tour/tour-de-cafe-en-heredia-la-paz-waterfall-gardens",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-buenavista-12in1-day-pass",
+      "destination": "/tour/day-pass-eco-aventura-12-en-1-buena-vista",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-buenavista-cultural-tour",
+      "destination": "/tour/tour-cultural-buena-vista-trapiche-cafe-ceramica-guaitil",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-buenavista-horseback",
+      "destination": "/tour/cabalgata-en-canas-dulces-rincon-de-la-vieja",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-buenavista-hot-springs-3-waterfalls",
+      "destination": "/tour/caminata-a-aguas-termales-y-3-cataratas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-buenavista-jungle-waterslide",
+      "destination": "/tour/tobogan-de-agua-la-selva",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-buenavista-las-pavas-canopy",
+      "destination": "/tour/canopy-las-pavas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-buenavista-night-tour",
+      "destination": "/tour/tour-nocturno-de-vida-silvestre-buena-vista",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cabalgata-playa-tarcoles",
+      "destination": "/tour/cabalgata-por-la-playa-de-tarcoles",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cabalgata-tocori-iguana",
+      "destination": "/tour/cabalgata-a-las-cataratas-tocori",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cabalgata-vista-los-suenos",
+      "destination": "/tour/cabalgata-en-la-selva-a-pozas-naturales",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-caboblancotravelers-bioluminescence",
+      "destination": "/tour/bioluminiscencia-en-bote-desde-montezuma",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-caboblancotravelers-tortuga",
+      "destination": "/tour/isla-tortuga-con-snorkel",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-caboblancotravelers-tortuga-scuba",
+      "destination": "/tour/isla-tortuga-buceo-2-tanques",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cafe-monteverde-farm-tour",
+      "destination": "/tour/tour-de-finca-y-tostaduria",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cafe-turrialba-explornatura",
+      "destination": "/tour/tour-de-cafe-en-turrialba",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cafecristina-coffee-tour",
+      "destination": "/tour/tour-de-cafe-organico-en-finca-cristina",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cahuita-snorkel-caminata-exploradores",
+      "destination": "/tour/snorkel-y-caminata-en-el-parque-nacional-cahuita",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-caminata-nocturna-manptours",
+      "destination": "/tour/caminata-nocturna-en-la-selva-manuel-antonio",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-caminata-nocturna-quepos-iguana",
+      "destination": "/tour/caminata-nocturna-en-el-bosque-tropical",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-canonegroexp-aves-cano-negro",
+      "destination": "/tour/pajareo-en-bote-en-humedal-cano-negro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-canonegroexp-aves-medio-queso",
+      "destination": "/tour/pajareo-en-humedal-medio-queso",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-canonegroexp-bote-ecologico",
+      "destination": "/tour/tour-ecologico-en-bote-por-cano-negro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-canonegroexp-caminata-bosque",
+      "destination": "/tour/caminata-por-el-bosque-de-cano-negro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-canonegroexp-caminata-nocturna",
+      "destination": "/tour/caminata-nocturna-en-cano-negro-arenal",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-canonegroexp-costumbres-naturaleza",
+      "destination": "/tour/costumbres-y-naturaleza-de-cano-negro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-canopy-san-luis-expediciones",
+      "destination": "/tour/canopy-san-luis-san-ramon",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-canopy-vista-los-suenos",
+      "destination": "/tour/canopy-vista-los-suenos-10-cables",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-canyoning-canopy-explornatura",
+      "destination": "/tour/canyoning-y-canopy-en-turrialba",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-canyoning-pavones-iriria",
+      "destination": "/tour/canyoning-en-pavones-de-turrialba",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-canyoning-vista-los-suenos",
+      "destination": "/tour/canyoning-en-vista-los-suenos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-carara-birdwatching-iguana",
+      "destination": "/tour/observacion-de-aves-en-el-parque-nacional-carara",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-carara-caminata-crocodile-man",
+      "destination": "/tour/caminata-guiada-parque-nacional-carara",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-carrillotours-barra-honda",
+      "destination": "/tour/cavernas-de-barra-honda-desde-samara",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-carrillotours-guaitil-pottery",
+      "destination": "/tour/tour-de-ceramica-y-cultura-en-guaitil",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-catamaran-snorkel-iguana",
+      "destination": "/tour/catamaran-y-snorkel-en-manuel-antonio",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-catamaranma-sunset-sail",
+      "destination": "/tour/velero-al-atardecer-en-manuel-antonio",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-catarata-del-toro-combo-blue-falls",
+      "destination": "/tour/combo-catarata-del-toro-blue-falls",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-catarata-del-toro-entrada",
+      "destination": "/tour/catarata-del-toro-entrada-y-senderos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cataratas-portalon-iguana",
+      "destination": "/tour/tour-de-cataratas-portalon-escaleras-esmeralda-y-pavon",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cataratas-saltos-paddle9",
+      "destination": "/tour/tour-de-cataratas-y-saltos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-catie-plantaciones-explornatura",
+      "destination": "/tour/tour-de-plantaciones-tropicales-en-catie",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cavernas-venado-tour",
+      "destination": "/tour/tour-cavernas-del-venado",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cerro-ena-3d2n",
+      "destination": "/tour/cerro-ena-3-dias-2-noches",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-chirripo-3d2n",
+      "destination": "/tour/cerro-chirripo-3-dias-2-noches",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-chirripo-express-1-dia",
+      "destination": "/tour/chirripo-express-en-1-dia",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-chocolate-vista-los-suenos",
+      "destination": "/tour/experiencia-de-chocolate",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-chontales-arcilla-paddle9",
+      "destination": "/tour/catarata-eco-chontales-y-arcilla-azul",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cocodrilos-buhos-jcs",
+      "destination": "/tour/cocodrilos-observacion-de-buhos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cocodrilos-carara-jcs",
+      "destination": "/tour/cocodrilos-parque-nacional-carara",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cocos-island-aggressor-isla-del-coco",
+      "destination": "/tour/buceo-vivo-a-bordo-isla-del-coco-barco-b",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-colorado-rincon-volcano-hike",
+      "destination": "/tour/caminata-volcan-rincon-de-la-vieja-termales",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-combo-catarata-chocolate-plantas-atec",
+      "destination": "/tour/combo-catarata-chocolate-y-plantas-medicinales",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-combo-poas-doka-lapaz-expediciones",
+      "destination": "/tour/combo-volcan-poas-tour-de-cafe-y-la-paz-waterfall-gardens",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-coopedota-tour-cafe",
+      "destination": "/tour/tour-de-cafe-coopedota-pura-vidota",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-copa-aves-drake",
+      "destination": "/tour/tour-de-observacion-de-aves-en-drake",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-copa-buceo-cano",
+      "destination": "/tour/buceo-en-isla-del-cano-desde-drake",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-copa-caminata-fauna",
+      "destination": "/tour/caminata-guiada-de-fauna-en-bahia-drake",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-copa-corcovado-sirena",
+      "destination": "/tour/corcovado-sirena-en-lancha-desde-drake",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-copa-delfines-ballenas",
+      "destination": "/tour/avistamiento-de-delfines-y-ballenas-en-drake",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-copa-manglar-sierpe",
+      "destination": "/tour/manglar-de-sierpe-en-bote-desde-drake",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-copa-nocturno-drake",
+      "destination": "/tour/tour-nocturno-en-la-selva-de-drake",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-copa-rio-claro",
+      "destination": "/tour/rio-claro-caminata-canoa-y-cataratas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-copa-sendero-la-danta",
+      "destination": "/tour/caminata-sendero-la-danta-con-almuerzo-tico",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-copa-snorkel-cano",
+      "destination": "/tour/snorkel-en-isla-del-cano",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-costaolas-santa-teresa-surf",
+      "destination": "/tour/clase-privada-de-surf-en-santa-teresa",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-costaricanadv-ruta-uran-chirripo",
+      "destination": "/tour/ruta-uran-al-chirripo-3d-2n",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-costaricarios-canyoning-turrialba",
+      "destination": "/tour/canyoning-en-reserva-privada-de-turrialba",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-costaricarios-duckies-pejibaye",
+      "destination": "/tour/kayak-inflable-duckies-en-el-rio-pejibaye",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-costaricarios-mtb-irazu-turrialba",
+      "destination": "/tour/descenso-en-bicicleta-del-irazu-a-turrialba",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-crbestchocolate-aves",
+      "destination": "/tour/observacion-de-aves-en-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-crbestchocolate-caminata-nocturna",
+      "destination": "/tour/caminata-nocturna-en-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-crbestchocolate-tour-chocolate",
+      "destination": "/tour/tour-de-chocolate-de-la-mazorca-a-la-barra",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-crbestchocolate-tour-ranas",
+      "destination": "/tour/tour-de-ranas-en-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-crds-ballenas-uvita",
+      "destination": "/tour/avistamiento-de-ballenas-y-delfines-en-uvita",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-crds-buceo-cano",
+      "destination": "/tour/buceo-en-isla-del-cano-desde-uvita",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-crds-buceo-marino-ballena",
+      "destination": "/tour/buceo-en-el-pn-marino-ballena",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-crds-discover-scuba",
+      "destination": "/tour/discover-scuba-diving-padi-en-uvita",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-crds-snorkel-cano",
+      "destination": "/tour/snorkel-en-isla-del-cano-desde-uvita-cr-dive-and-surf",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-crds-snorkel-marino-ballena",
+      "destination": "/tour/snorkel-en-el-pn-marino-ballena",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-crds-surf-uvita",
+      "destination": "/tour/clases-de-surf-en-uvita",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-crocodile-bridge-boat-tour",
+      "destination": "/tour/tour-en-bote-del-puente-de-los-cocodrilos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-crocodile-man-tour",
+      "destination": "/tour/tour-de-cocodrilos-en-el-rio-tarcoles",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cuajiniquil-tours-snorkel-santa-elena",
+      "destination": "/tour/snorkel-en-bahia-santa-elena",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-curi-cancha-autoguiada",
+      "destination": "/tour/caminata-autoguiada",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-curi-cancha-caminata-nocturna",
+      "destination": "/tour/caminata-nocturna",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-curi-cancha-historia-natural",
+      "destination": "/tour/historia-natural",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-curi-cancha-observacion-aves",
+      "destination": "/tour/observacion-de-aves",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cwt-aves-rio-tigre",
+      "destination": "/tour/observacion-de-aves-en-el-rio-tigre",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cwt-delfines-golfo-dulce",
+      "destination": "/tour/avistamiento-de-delfines-y-ballenas-en-golfo-dulce",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cwt-la-leona-1-dia",
+      "destination": "/tour/corcovado-1-dia-por-la-leona",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cwt-leona-sirena-2d1n",
+      "destination": "/tour/travesia-la-leona-sirena-2d-1n",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cwt-sirena-2d1n-bote",
+      "destination": "/tour/sirena-overnight-en-lancha-2d-1n",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cwt-sirena-dia",
+      "destination": "/tour/estacion-sirena-dia-completo-desde-puerto-jimenez",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cwt-tour-nocturno-osa",
+      "destination": "/tour/tour-nocturno-en-la-peninsula-de-osa",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-danaus-daylight-wildlife",
+      "destination": "/tour/tour-diurno-de-vida-silvestre-perezosos-y-mariposas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-dantica-aves-cataratas-savegre",
+      "destination": "/tour/observacion-de-aves-y-cataratas-del-rio-savegre",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-dantica-aves-san-gerardo-larga",
+      "destination": "/tour/observacion-de-aves-en-san-gerardo-version-larga",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-dantica-cabalgata-cataratas",
+      "destination": "/tour/cabalgata-a-las-cataratas-de-san-gerardo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-dantica-paramo-pn-los-quetzales",
+      "destination": "/tour/tour-al-paramo-del-parque-nacional-los-quetzales",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-dantica-quetzal-tour",
+      "destination": "/tour/tour-del-quetzal-en-san-gerardo-de-dota-dantica",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-dantica-reserva-flora-fauna",
+      "destination": "/tour/caminata-guiada-de-flora-y-fauna-en-la-reserva-dantica",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-deepblue-papagayo-2tank",
+      "destination": "/tour/buceo-2-tanques-golfo-de-papagayo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-desafio-arenal-combo-volcan-puentes-catarata",
+      "destination": "/tour/combo-arenal-volcan-puentes-colgantes-catarata-la-fortuna",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-desafio-cooking-class",
+      "destination": "/tour/clase-de-cocina-cocina-como-un-local",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-desafio-extreme-hike-arenal-monteverde",
+      "destination": "/tour/caminata-extrema-arenalmonteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-desafio-gravity-falls",
+      "destination": "/tour/saltos-en-cataratas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-desafio-kayak-sup-lago-arenal",
+      "destination": "/tour/kayak-o-sup-en-el-lago-arenal",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-desafio-lost-canyon-canyoning",
+      "destination": "/tour/canyoning-en-canon-privado-de-la-fortuna",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-desafio-mambo-combo-canyoning-rafting",
+      "destination": "/tour/combo-canyoning-rafting-rio-balsa",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-desafio-mtb-tumbas-lago-arenal",
+      "destination": "/tour/ciclismo-de-montana-a-tumbas-lago-arenal",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-desafio-puentes-colgantes-mistico-guiado",
+      "destination": "/tour/caminata-guiada-por-puentes-colgantes-de-arenal",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-desafio-rafting-rio-balsa-ii-iii",
+      "destination": "/tour/rafting-rio-balsa-clase-iiiii",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-desafio-rafting-sarapiqui-iii-iv-desde-fortuna",
+      "destination": "/tour/rafting-rio-sarapiqui-clase-iiiiv-desde-la-fortuna",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-desafio-rafting-tenorio-conexion-guanacaste",
+      "destination": "/tour/conexion-de-aventura-la-fortunaguanacaste-con-rafting-rio-tenorio-iiiiv",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-desafio-safari-float-penas-blancas",
+      "destination": "/tour/safari-float-rio-penas-blancas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-desafio-safari-float-sarapiqui",
+      "destination": "/tour/safari-float-rio-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-desafio-taxi-bote-taxi-fortuna-monteverde",
+      "destination": "/tour/traslado-taxi-bote-taxi-la-fortunamonteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-diamante-animal-sanctuary",
+      "destination": "/tour/santuario-de-animales-diamante",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-diamante-atv",
+      "destination": "/tour/tour-en-cuadraciclo-diamante",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-diamante-horseback",
+      "destination": "/tour/cabalgata-diamante",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-diamante-superman-zipline",
+      "destination": "/tour/zipline-superman-diamante",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-dispatch-nosara-group-surf",
+      "destination": "/tour/clase-de-surf-en-grupo-playa-guiones",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-doka-coffee-tour",
+      "destination": "/tour/tour-de-cafe-en-sabanilla-de-alajuela",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-doka-grecia-sarchi-expediciones",
+      "destination": "/tour/tour-de-cafe-grecia-y-sarchi-fabrica-de-carretas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-doka-poas-expediciones",
+      "destination": "/tour/tour-de-cafe-y-volcan-poas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-doka-poas-hacienda-doka",
+      "destination": "/tour/tour-de-cafe-volcan-poas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-dolphintourssamara-seafari",
+      "destination": "/tour/tour-de-delfines-samara",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-donemilio-tour-cafe",
+      "destination": "/tour/tour-de-cafe-en-finca-familiar",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-donemilio-tour-cafe-almuerzo",
+      "destination": "/tour/tour-de-cafe-con-almuerzo-tipico",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-donlucas-coffee-tour-tarrazu",
+      "destination": "/tour/coffee-tour-en-tarrazu",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-dsa-kayak-manglar",
+      "destination": "/tour/kayak-en-manglar-desde-dominical",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-dsa-rafting-chorro",
+      "destination": "/tour/rafting-en-el-rio-chorro-clase-iv",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-dsa-rafting-guabo",
+      "destination": "/tour/rafting-en-el-rio-guabo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-dsa-rafting-savegre",
+      "destination": "/tour/rafting-en-el-rio-savegre-dominical",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-dsa-surf-intermedio",
+      "destination": "/tour/clases-de-surf-intermedio-en-dominical",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-dsa-surf-principiantes",
+      "destination": "/tour/clases-de-surf-para-principiantes-en-dominical",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-dsa-tubing",
+      "destination": "/tour/tubing-y-flotada-por-rio",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ecodestiny-aves-reserva-lagarta",
+      "destination": "/tour/observacion-de-aves-en-la-reserva-lagarta",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ecodestiny-cafe-zaragoza",
+      "destination": "/tour/tour-de-cafe-en-zaragoza-finca-teosinte",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ecodestiny-catarata-mala-noche",
+      "destination": "/tour/caminata-a-la-catarata-mala-noche",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ecodestiny-eboat-rio-nosara",
+      "destination": "/tour/bote-electrico-por-los-rios-nosara-y-montana",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ecodestiny-snorkel-san-juanillo",
+      "destination": "/tour/snorkel-de-playa-en-san-juanillo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ecoglide-birdwatching",
+      "destination": "/tour/observacion-de-aves-ecoglide",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ecoglide-canopy-tarzan",
+      "destination": "/tour/canopy-con-tarzan-swing-ecoglide",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ecoglide-night-walk",
+      "destination": "/tour/caminata-nocturna-en-el-arenal-ecoglide",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-el-trapiche-tour",
+      "destination": "/tour/tour-el-trapiche-cafe-chocolate-y-cana",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-elviejo-palo-verde-river-cruise",
+      "destination": "/tour/crucero-rio-tempisque-hacienda-el-viejo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-esquinas-aves-madrugada",
+      "destination": "/tour/pajareo-temprano-en-esquinas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-esquinas-caminata-aves-fauna",
+      "destination": "/tour/caminata-de-aves-y-fauna-en-esquinas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-esquinas-caminata-nocturna",
+      "destination": "/tour/caminata-nocturna-en-esquinas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-esquinas-delfines-golfo-dulce",
+      "destination": "/tour/tour-de-delfines-y-fauna-en-golfo-dulce",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-esquinas-manglar-rio-coto",
+      "destination": "/tour/tour-en-bote-por-manglares-del-rio-coto",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-esquipulas-birdwatching-iguana",
+      "destination": "/tour/observacion-de-aves-en-esquipulas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-excitement-twin-volcanoes-mtb",
+      "destination": "/tour/descenso-en-bicicleta-entre-volcanes-irazu-y-turrialba",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-expedicionestropicales-rincon-hike",
+      "destination": "/tour/caminata-guiada-rincon-de-la-vieja-con-transporte",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-experiencia-indigena-chocolate-exploradores",
+      "destination": "/tour/experiencia-indigena-y-tour-de-chocolate",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-exploracr-ballenas-uvita",
+      "destination": "/tour/avistamiento-de-ballenas-en-marino-ballena",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-exploracr-canopy-valle-general",
+      "destination": "/tour/canopy-en-el-valle-del-general",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-exploracr-cuadras-valle-general",
+      "destination": "/tour/tour-en-cuadraciclo-por-el-valle-del-general",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-exploracr-parapente-dominical",
+      "destination": "/tour/vuelo-tandem-en-parapente-en-dominical",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-exploracr-parapente-rivas",
+      "destination": "/tour/vuelo-tandem-en-parapente-en-rivas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-exploracr-rafting-savegre",
+      "destination": "/tour/rafting-en-el-rio-savegre-desde-san-isidro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-exploreturrialba-rafting-pacuare",
+      "destination": "/tour/rafting-en-el-rio-pacuare-desde-turrialba",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-exptropicales-santa-rosa-liberia",
+      "destination": "/tour/parque-nacional-santa-rosa-y-ciudad-de-liberia",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-fincaverde-parque-tenorio-rio-celeste",
+      "destination": "/tour/dia-en-parque-nacional-tenorio-rio-celeste-con-guia-local",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-fincaverde-puentes-heliconias",
+      "destination": "/tour/puentes-colgantes-de-heliconias-y-tour-de-finca",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-fincaverde-tour-nocturno",
+      "destination": "/tour/tour-nocturno-en-bijagua-de-upala",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-fishpotrero-boomerang-half-day",
+      "destination": "/tour/pesca-costera-en-panga-desde-potrero",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-flamingosportfishing-half-day",
+      "destination": "/tour/pesca-deportiva-medio-dia-flamingo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-goexplore-ostional-turtles",
+      "destination": "/tour/avistamiento-de-tortugas-en-ostional-desde-nosara",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-gopavones-panga-matapalo-surf",
+      "destination": "/tour/panga-a-matapalo-para-surfear-desde-pavones",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-greentours-santa-rosa-cultura",
+      "destination": "/tour/parque-nacional-santa-rosa-naturaleza-cultura-y-pozas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-guachipelin-canyon-canopy",
+      "destination": "/tour/canopy-en-canon",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-guachipelin-canyon-half-day",
+      "destination": "/tour/medio-dia-canon-termales",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-guachipelin-guanacaste-waterfall-day",
+      "destination": "/tour/tour-de-cataratas-de-guanacaste",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-guachipelin-horseback-half-day",
+      "destination": "/tour/cabalgata-medio-dia-a-catarata-oropendola",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-guachipelin-nature-pass",
+      "destination": "/tour/pase-natural-de-un-dia-rincon-de-la-vieja",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-guachipelin-rio-negro-tubing",
+      "destination": "/tour/tubing-en-rio-negro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-guachipelin-river-adventure-half-day",
+      "destination": "/tour/aventura-de-rio-medio-dia",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-guachipelin-waterfall-canyoning",
+      "destination": "/tour/canyoning-en-cataratas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-guachipelin-waterfall-canyoning-half-day",
+      "destination": "/tour/canyoning-termales-medio-dia",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-guayabo-explornatura",
+      "destination": "/tour/monumento-nacional-guayabo-sitio-arqueologico",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-haciendaorosi-coffee-tour",
+      "destination": "/tour/coffee-tour-adventure-granja-en-valle-de-orosi",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-hermosaboattrips-witchs-rock-lesson",
+      "destination": "/tour/clase-de-surf-en-witch-s-rock-desde-playa-hermosa",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-hikingguanacaste-barra-honda-blue-zone",
+      "destination": "/tour/cavernas-barra-honda-y-zona-azul",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-iguanasurf-catalinas-snorkel",
+      "destination": "/tour/snorkel-en-islas-catalinas-desde-tamarindo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-iguanasurf-estuary-boat",
+      "destination": "/tour/tour-en-bote-por-el-estero-de-tamarindo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-iguanasurf-group-surf-lesson",
+      "destination": "/tour/clase-de-surf-grupal-tamarindo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-iguanasurf-sunset-catamaran",
+      "destination": "/tour/catamaran-al-atardecer-tamarindo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-iguanasurf-turtle-tour",
+      "destination": "/tour/tour-nocturno-de-tortugas-desde-tamarindo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-iguanasurf-witchs-rock",
+      "destination": "/tour/viaje-en-bote-a-witch-s-rock-y-ollie-s-point",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-interbus-itinerario-caribe-fortuna-tamarindo",
+      "destination": "/tour/itinerario-shuttle-san-josecaribela-fortunatamarindosan-jose",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-interbus-itinerario-fortuna-manuel-antonio",
+      "destination": "/tour/itinerario-shuttle-san-josela-fortunamanuel-antoniosan-jose",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-interbus-itinerario-fortuna-monteverde-coco",
+      "destination": "/tour/itinerario-shuttle-san-josela-fortunamonteverdeplayas-del-cocosan-jose",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-interbus-itinerario-manuel-antonio-monteverde",
+      "destination": "/tour/itinerario-shuttle-san-josemanuel-antoniomonteverdesan-jose",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-irazu-medio-dia-expediciones",
+      "destination": "/tour/volcan-irazu-medio-dia",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-irazu-orosi-lankester-expediciones",
+      "destination": "/tour/volcan-irazu-valle-de-orosi-y-jardin-lankester",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-irazu-termales-orosi-expediciones",
+      "destination": "/tour/volcan-irazu-y-aguas-termales-en-orosi",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-isla-tortuga-costacat",
+      "destination": "/tour/isla-tortuga-todo-incluido-desde-los-suenos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-isla-tortuga-jaco-bayisland",
+      "destination": "/tour/crucero-a-isla-tortuga-desde-jaco",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-isla-tortuga-lancha-puntarenas",
+      "destination": "/tour/isla-tortuga-en-lancha-rapida-desde-puntarenas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-isla-tortuga-puntarenas-bayisland",
+      "destination": "/tour/crucero-a-isla-tortuga-desde-puntarenas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-jackadventures-palo-verde-safari",
+      "destination": "/tour/safari-en-bote-palo-verde-con-transporte",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-jaguar-rescue-tour-privado",
+      "destination": "/tour/centro-de-rescate-de-fauna-en-playa-chiquita-tour-privado",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-jaguar-rescue-tour-publico",
+      "destination": "/tour/centro-de-rescate-de-fauna-en-playa-chiquita-tour-publico",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-katonga-restaurante-flotante-mawamba",
+      "destination": "/tour/katonga-restaurante-flotante-por-los-canales",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-kaya-nosara-boat-tour",
+      "destination": "/tour/tour-en-bote-por-la-costa-de-nosara-kaya",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-kayak-manglar-damas-iguana",
+      "destination": "/tour/kayak-en-el-manglar-de-isla-damas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-kayak-manglar-paddle9",
+      "destination": "/tour/kayak-en-manglares-de-quepos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-kayak-manuel-antonio-paddle9",
+      "destination": "/tour/kayak-por-la-costa-de-manuel-antonio",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-kayak-oceano-snorkel-iguana",
+      "destination": "/tour/kayak-en-el-mar-y-snorkel",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-kcr-kitesurf-playa-copal",
+      "destination": "/tour/clases-de-kitesurf-en-playa-copal",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-kingfisher-pesca",
+      "destination": "/tour/pesca-en-cano-negro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-kingfisher-tour-dia-cano-negro",
+      "destination": "/tour/dia-en-cano-negro-con-mariposario-y-almuerzo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-kingfisher-tour-ecologico",
+      "destination": "/tour/tour-ecologico-en-cano-negro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-kinkajou-night-walk",
+      "destination": "/tour/caminata-nocturna-de-fauna-en-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-la-paz-waterfall-gardens-expediciones",
+      "destination": "/tour/la-paz-waterfall-gardens-desde-san-jose",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-laguna-del-cuatro-mawamba",
+      "destination": "/tour/laguna-del-cuatro-tour-privado-en-bote-y-kayak",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-lasmercedes-coffee-tour-tarrazu",
+      "destination": "/tour/tour-de-cafe-en-finca-las-mercedes",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-legend-palo-verde-guaitil",
+      "destination": "/tour/safari-palo-verde-ceramica-guaitil",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-maexpeditions-night-tour",
+      "destination": "/tour/tour-nocturno-en-manuel-antonio",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-manzanillo-caminata-dia-atec",
+      "destination": "/tour/caminata-de-dia-completo-en-el-refugio-gandoca-manzanillo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-manzanillo-delfines-atec",
+      "destination": "/tour/avistamiento-de-delfines-en-manzanillo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-marinapezvela-whale-catamaran",
+      "destination": "/tour/catamaran-de-avistamiento-de-ballenas-desde-marina-pez-vela",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-marlindelrey-catamaran-coco",
+      "destination": "/tour/catamaran-a-vela-playas-del-coco",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-mbg-ballenas-delfines-golfo-dulce",
+      "destination": "/tour/avistamiento-de-ballenas-y-delfines-desde-golfito",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-mbg-isla-pelicano",
+      "destination": "/tour/tour-a-isla-pelicano-en-la-bahia-de-golfito",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-mirador-quetzales-tour",
+      "destination": "/tour/tour-del-quetzal-en-km-70-interamericana-sur",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-montanasagrada-aves",
+      "destination": "/tour/avistamiento-de-aves-en-pn-juan-castro-blanco",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-montanasagrada-caminata-guiada",
+      "destination": "/tour/caminata-guiada-diurna-en-bosque-nuboso",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-montanasagrada-caminata-nocturna",
+      "destination": "/tour/caminata-nocturna-guiada",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-montanasagrada-pase-dia-pozo-verde",
+      "destination": "/tour/pase-del-dia-a-la-laguna-pozo-verde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-monteverdetourscr-curu",
+      "destination": "/tour/refugio-curu-desde-montezuma-santa-teresa",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-monteverdetourscr-malpais-canopy",
+      "destination": "/tour/canopy-mal-pais-junto-a-cabo-blanco",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-mountaintop-jungle-night",
+      "destination": "/tour/jungle-night-tour-en-quepos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-mountaintop-sunrise-birding",
+      "destination": "/tour/observacion-de-aves-al-amanecer-en-quepos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-museo-oro-precolombino",
+      "destination": "/tour/museo-del-oro-precolombino",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-naiaquest-buceo-murcielago-adventure",
+      "destination": "/tour/buceo-con-tiburon-toro-en-islas-murcielago-adventure",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-naiaquest-islas-murcielago-no-buzo",
+      "destination": "/tour/expedicion-a-islas-murcielago-con-noche-a-bordo-sin-buceo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-namubak-experiencia-chirripo",
+      "destination": "/tour/experiencia-al-parque-nacional-chirripo-4-dias",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-natura-eco-park-plus",
+      "destination": "/tour/natura-plus-tour-guiado-del-parque",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-natura-monteverde-bajo-del-tigre-nocturna",
+      "destination": "/tour/caminata-nocturna-bajo-del-tigre",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-nauyaca-iguana",
+      "destination": "/tour/cataratas-nauyaca-desde-manuel-antonio",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-nauyaca-paddle9",
+      "destination": "/tour/dia-completo-a-las-cataratas-nauyaca",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-nauyaca-tarde-semiprivado",
+      "destination": "/tour/nauyaca-por-la-tarde-en-4x4-semiprivado",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-nauyaca-tour-4x4",
+      "destination": "/tour/cataratas-nauyaca-en-pick-up-4x4",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ncrss-clases-surf-guiones",
+      "destination": "/tour/clases-de-surf-en-playa-guiones",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-nighttourma-jungle-night",
+      "destination": "/tour/jungle-night-tour-en-manuel-antonio",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-northpacific-witchs-rock",
+      "destination": "/tour/surf-en-witch-s-rock-desde-playas-del-coco",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-okeanos-aggressor-ii-isla-del-coco",
+      "destination": "/tour/buceo-vivo-a-bordo-isla-del-coco-barco-a",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ollies-cabo-blanco-secret-beach-ride",
+      "destination": "/tour/cabalgata-a-playa-secreta-de-cabo-blanco",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-original-canopy-night-walk-combo",
+      "destination": "/tour/paquete-canopy-caminata-nocturna",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-original-canopy-tour-monteverde",
+      "destination": "/tour/canopy-clasico-en-santa-elena-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-orosi-lankester-expediciones",
+      "destination": "/tour/valle-de-orosi-y-jardin-botanico-lankester",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-osatourcr-agroturismo-cocina",
+      "destination": "/tour/agroturismo-y-cocina-tradicional",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-osatourcr-aves-palmar",
+      "destination": "/tour/observacion-de-aves-en-palmar-osa",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-osatourcr-boruca",
+      "destination": "/tour/tour-cultural-a-boruca-desde-palmar",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-osatourcr-caminata-catarata",
+      "destination": "/tour/caminata-a-cataratas-en-osa",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-osatourcr-caminata-marino-ballena",
+      "destination": "/tour/caminata-en-parque-nacional-marino-ballena",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-osatourcr-caminata-nocturna-uvita",
+      "destination": "/tour/caminata-nocturna-en-uvita",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-osatourcr-piedras-blancas",
+      "destination": "/tour/parque-nacional-piedras-blancas-por-el-rio-esquinas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-osatourcr-sitios-arqueologicos",
+      "destination": "/tour/sitios-arqueologicos-de-esferas-de-piedra",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-osawild-corcovado-standard",
+      "destination": "/tour/paquete-estandar-corcovado-sirena",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-osawild-corcovado-wild-trek",
+      "destination": "/tour/corcovado-wild-trek",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-osawild-finca-local",
+      "destination": "/tour/tour-de-finca-local-turismo-rural",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-osawild-kayak-manglares",
+      "destination": "/tour/kayak-en-los-manglares-de-puerto-jimenez",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ostional-arribada-local-guides",
+      "destination": "/tour/tour-de-arribada-en-ostional-guias-locales",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ots-la-selva-aves-madrugada",
+      "destination": "/tour/observacion-de-aves-al-amanecer-en-la-selva",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ots-la-selva-caminata-corta",
+      "destination": "/tour/caminata-guiada-corta-en-estacion-biologica-la-selva",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ots-la-selva-caminata-larga",
+      "destination": "/tour/caminata-guiada-larga-dia-completo-en-la-selva",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ots-la-selva-caminata-nocturna",
+      "destination": "/tour/caminata-nocturna-de-vida-silvestre-en-la-selva",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ots-las-cruces-aves",
+      "destination": "/tour/pajareo-temprano-en-las-cruces",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ots-las-cruces-caminata-corta",
+      "destination": "/tour/caminata-guiada-en-jardin-botanico-wilson-las-cruces",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ots-las-cruces-caminata-larga",
+      "destination": "/tour/caminata-larga-en-las-cruces-y-jardin-wilson",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ots-las-cruces-nocturna",
+      "destination": "/tour/caminata-nocturna-en-las-cruces",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pacheco-corcovado-sirena-dia",
+      "destination": "/tour/corcovado-sirena-dia-completo-desde-drake",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pacuare-1-dia-exploradores",
+      "destination": "/tour/rafting-rio-pacuare-1-dia",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pacuare-2-dias-exploradores",
+      "destination": "/tour/rafting-rio-pacuare-2-dias-con-noche-en-el-rio",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pacuare-lodge-canopy",
+      "destination": "/tour/canopy-junto-al-rio-pacuare",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pacuare-lodge-canyoning",
+      "destination": "/tour/canyoning-junto-al-rio-pacuare",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pacuare-lodge-experiencia-cabecar",
+      "destination": "/tour/experiencia-cultural-cabecar-en-el-pacuare",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pacuare-rafting-desde-sj-expediciones",
+      "destination": "/tour/rafting-rio-pacuare-iii-iv-desde-san-jose",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pacuare-rafting-explornatura",
+      "destination": "/tour/rafting-rio-pacuare-desde-turrialba",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-paloverdeboattours-boat",
+      "destination": "/tour/tour-en-bote-palo-verde-desde-ortega",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-papagayotours-santa-rosa-junquillal",
+      "destination": "/tour/caminata-en-santa-rosa-refugio-junquillal",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-paraisotropical-aves-cano-negro",
+      "destination": "/tour/observacion-de-aves-en-cano-negro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-paraisotropical-aves-medio-queso",
+      "destination": "/tour/observacion-de-aves-en-humedal-medio-queso",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-paraisotropical-bote-cano-negro",
+      "destination": "/tour/tour-en-bote-privado-por-cano-negro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-paraisotropical-bote-y-bosque",
+      "destination": "/tour/bote-y-caminata-de-bosque-en-cano-negro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-paraisotropical-caminata-nocturna",
+      "destination": "/tour/caminata-nocturna-en-cano-negro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-paraisotropical-dia-cano-negro-desde-bijagua",
+      "destination": "/tour/dia-en-cano-negro-desde-bijagua-rio-celeste",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-paraisotropical-finca-tortillas",
+      "destination": "/tour/finca-organica-y-tortillas-en-cano-negro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-paraisotropical-pesca-artesanal",
+      "destination": "/tour/pesca-artesanal-en-cano-negro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-paraisotropical-pesca-deportiva",
+      "destination": "/tour/pesca-deportiva-en-cano-negro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-paraisotropical-picnic-humedal",
+      "destination": "/tour/picnic-en-el-humedal-de-cano-negro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-patos-clase-surf-samara",
+      "destination": "/tour/clase-de-surf-en-playa-samara-pato-s",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-patos-kayak-sup-isla-chora",
+      "destination": "/tour/kayak-o-sup-a-isla-chora-con-snorkel-pato-s",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pavonesadv-catarata-viquillas",
+      "destination": "/tour/caminata-a-la-catarata-las-viquillas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pavonesadv-manglar-rio-coto",
+      "destination": "/tour/tour-en-bote-por-el-manglar-del-rio-coto",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pavonesadv-pozas-punta-banco",
+      "destination": "/tour/pozas-naturales-de-punta-banco",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pavonestours-ruta-amistad-conte-burica",
+      "destination": "/tour/tour-de-un-dia-al-territorio-ngabe-conte-burica-ruta-de-la-amistad",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pavonestours-ruta-ancestral-ngabe-3d",
+      "destination": "/tour/ruta-ancestral-ngabe-a-caballo-alto-conte-3-dias",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pavonestours-surf-golfo-dulce-dia",
+      "destination": "/tour/tour-de-surf-de-un-dia-por-el-golfo-dulce",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pesca-altamar-blue-horizon",
+      "destination": "/tour/pesca-en-altamar-dia-completo-monkeyshine-35",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pesca-altamar-dia-cowboy",
+      "destination": "/tour/pesca-en-altamar-dia-completo-en-quepos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pesca-altamar-gunslinger",
+      "destination": "/tour/pesca-en-altamar-dia-completo-gunslinger",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pesca-costera-gunslinger",
+      "destination": "/tour/pesca-costera-medio-dia-gunslinger",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pesca-costera-medio-dia-cowboy",
+      "destination": "/tour/pesca-costera-medio-dia-en-quepos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pesca-manglar-damas-iguana",
+      "destination": "/tour/pesca-en-el-manglar-de-isla-damas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pinahills-cabalgata-pavones",
+      "destination": "/tour/cabalgata-playa-y-montana-en-pavones",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pinahills-caminata-botanica",
+      "destination": "/tour/caminata-botanica-guiada-en-pavones",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pn-ma-grupal-manptours",
+      "destination": "/tour/caminata-grupal-diurna-pn-manuel-antonio-grupos-de-10",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pn-manuel-antonio-caminata-iguana",
+      "destination": "/tour/caminata-guiada-parque-nacional-manuel-antonio",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pn-manuel-antonio-deluxe-iguana",
+      "destination": "/tour/parque-nacional-manuel-antonio-deluxe",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pn-manuel-antonio-paddle9",
+      "destination": "/tour/tour-guiado-parque-nacional-manuel-antonio",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-poas-doka-grecia-sarchi-expediciones",
+      "destination": "/tour/volcan-poas-tour-de-cafe-grecia-y-sarchi",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-psycho-caminata-naturaleza",
+      "destination": "/tour/caminata-de-naturaleza-en-matapalo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-psycho-combo",
+      "destination": "/tour/combo-rappel-escalada-de-arbol-en-matapalo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-psycho-escalada-arbol",
+      "destination": "/tour/escalada-de-arbol-gigante-en-matapalo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-psycho-rappel-cataratas",
+      "destination": "/tour/rappel-en-cataratas-en-matapalo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-punta-quepos-caminata-iguana",
+      "destination": "/tour/caminata-con-vista-al-mar-en-punta-quepos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-punta-uva-kayak-caminata-exploradores",
+      "destination": "/tour/kayak-en-mar-y-rio-en-punta-uva-con-caminata",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-puretrek-canyoning-puentes-colgantes",
+      "destination": "/tour/canyoning-en-cataratas-puentes-colgantes",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-puretrek-canyoning-rafting",
+      "destination": "/tour/canyoning-en-cataratas-rafting",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-puretrek-rainforest-falls",
+      "destination": "/tour/rainforest-falls-rappel-32-m",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-raccoon-montezuma-waterfall-canopy",
+      "destination": "/tour/canopy-sobre-las-cataratas-de-montezuma",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rafting-naranjo-iguana",
+      "destination": "/tour/rafting-en-el-rio-naranjo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rafting-savegre-iguana",
+      "destination": "/tour/rafting-en-el-rio-savegre",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rainforest-chocolate-tour",
+      "destination": "/tour/tour-de-chocolate-en-la-fortuna",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rainmaker-caminata-iguana",
+      "destination": "/tour/caminata-en-la-reserva-rainmaker",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rcc-cabalgata",
+      "destination": "/tour/cabalgata-en-rio-celeste-con-almuerzo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rcc-caminata-nocturna",
+      "destination": "/tour/caminata-nocturna-en-rio-celeste",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rcc-cano-negro-safari",
+      "destination": "/tour/safari-en-bote-a-cano-negro-desde-rio-celeste",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rcc-canopy-privado",
+      "destination": "/tour/canopy-privado-en-rio-celeste",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rcc-catarata-rio-celeste-privado",
+      "destination": "/tour/caminata-privada-a-la-catarata-de-rio-celeste",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rcc-chocolate-organico",
+      "destination": "/tour/tour-privado-de-finca-de-chocolate-organico",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rcc-cultural-maleku",
+      "destination": "/tour/tour-cultural-indigena-maleku",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rcc-puentes-colgantes",
+      "destination": "/tour/puentes-colgantes-de-rio-celeste",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rcc-tubing-rio-celeste",
+      "destination": "/tour/tubing-privado-en-rio-celeste",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-refugio-monteverde-birdwatching",
+      "destination": "/tour/observacion-de-aves-en-el-refugio-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-refugio-monteverde-natural-history",
+      "destination": "/tour/tour-de-historia-natural-en-el-refugio-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-refugio-monteverde-night-tour",
+      "destination": "/tour/caminata-nocturna-en-el-refugio-de-vida-silvestre-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-refugio-monteverde-private-night",
+      "destination": "/tour/caminata-nocturna-privada-en-el-refugio-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-reserva-monteverde-caminata-nocturna",
+      "destination": "/tour/caminata-nocturna-reserva-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-reserva-monteverde-historia-natural",
+      "destination": "/tour/caminata-de-historia-natural-reserva-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-reserva-santa-elena-guiada",
+      "destination": "/tour/caminata-guiada-reserva-santa-elena",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-reventazon-el-carmen-exploradores",
+      "destination": "/tour/rafting-rio-reventazon-seccion-el-carmen",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-richcoast-bat-islands-bullsharks",
+      "destination": "/tour/buceo-con-tiburon-toro-en-islas-murcielago",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-richcoast-catalinas-mantas",
+      "destination": "/tour/buceo-en-islas-catalinas-mantarrayas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-richcoast-papagayo-sail",
+      "destination": "/tour/velero-o-catamaran-con-snorkel-en-golfo-de-papagayo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rio-celeste-aventuras-desde-fortuna",
+      "destination": "/tour/tour-rio-celeste-desde-la-fortuna",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rio-celeste-aventuras-tubing",
+      "destination": "/tour/tubing-en-el-rio-celeste",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-safari-cocodrilos-tarcoles-jcs",
+      "destination": "/tour/safari-de-cocodrilos-en-el-rio-tarcoles",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-samaraadventures-catamaran-seafari",
+      "destination": "/tour/catamaran-seafari-samara-delfines-y-snorkel",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-samaraadventures-kayak-chora",
+      "destination": "/tour/kayak-y-snorkel-a-isla-chora",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sambola-canoe-tour",
+      "destination": "/tour/tour-en-canoa-por-los-canales-de-tortuguero",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sambola-kayak-tour",
+      "destination": "/tour/tour-en-kayak-por-los-canales-de-tortuguero",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sambola-turtle-tour",
+      "destination": "/tour/tour-de-desove-de-tortugas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sarapiqui-expeditions-rafting-ii-iii",
+      "destination": "/tour/rafting-clase-iiiii-rio-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sarapiquitours-cabalgata",
+      "destination": "/tour/cabalgata-en-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sarapiquitours-canopy",
+      "destination": "/tour/canopy-de-9-cables-en-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sarapiquitours-chocolate",
+      "destination": "/tour/tour-de-chocolate-en-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sarapiquitours-hormigas",
+      "destination": "/tour/tour-de-hormigas-zompopas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sarapiquitours-rafting-rio-sarapiqui",
+      "destination": "/tour/rafting-en-el-rio-sarapiqui-clase-ii-iii",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sarapiquitours-sup",
+      "destination": "/tour/stand-up-paddle-en-rio-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sarapiquitours-tubing",
+      "destination": "/tour/tubing-en-el-rio-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-selva-verde-cabalgata",
+      "destination": "/tour/cabalgata-por-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-selva-verde-caminata-guiada",
+      "destination": "/tour/caminata-guiada-en-chilamate-de-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-selva-verde-caminata-nocturna",
+      "destination": "/tour/caminata-nocturna-en-chilamate-de-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-selva-verde-canopy",
+      "destination": "/tour/canopy-de-12-cables-sobre-el-rio-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-selva-verde-crucero-rio-sarapiqui",
+      "destination": "/tour/paseo-en-bote-por-el-rio-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-selva-verde-rafting-sarapiqui",
+      "destination": "/tour/rafting-en-el-rio-sarapiqui-clase-i-iii",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-selva-verde-sendero-almendro",
+      "destination": "/tour/caminata-del-sendero-del-almendro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-selvatura-canopy",
+      "destination": "/tour/canopy-en-bosque-nuboso-de-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-selvatura-habitat-perezosos",
+      "destination": "/tour/habitat-de-perezosos-en-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-selvatura-historia-natural",
+      "destination": "/tour/caminata-de-historia-natural-en-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-selvatura-mariposario",
+      "destination": "/tour/jardin-de-mariposas-en-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-selvatura-puentes-colgantes",
+      "destination": "/tour/puentes-colgantes-en-bosque-nuboso-de-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-selvatura-reptiles-anfibios",
+      "destination": "/tour/exhibicion-de-reptiles-y-anfibios-en-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sendero-jaguar-mawamba",
+      "destination": "/tour/caminata-guiada-por-el-sendero-del-jaguar",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sisisi-llanos-de-cortes",
+      "destination": "/tour/tour-a-la-catarata-llanos-de-cortes",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sj-city-tour-expediciones",
+      "destination": "/tour/san-jose-explorer-city-tour",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sky-adventures-arenal-aerial-tram",
+      "destination": "/tour/teleferico-arenal",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sky-adventures-arenal-sky-trek",
+      "destination": "/tour/canopy-en-el-castillo-arenal",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sky-adventures-arenal-sky-walk",
+      "destination": "/tour/puentes-colgantes-arenal",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-slothsanctuary-buttercup-tour",
+      "destination": "/tour/tour-buttercup-en-el-santuario-de-perezosos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-slothsanctuary-insiders-tour",
+      "destination": "/tour/insider-s-tour-del-santuario-de-perezosos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-smilinghorses-campesino-ride",
+      "destination": "/tour/cabalgata-campesina-en-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-smilinghorses-full-moon-ride",
+      "destination": "/tour/cabalgata-de-luna-llena-en-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-snorkel-delfines-gunslinger",
+      "destination": "/tour/snorkel-y-delfines-en-lancha-gunslinger",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-stibrawpa-yorkin-1-dia",
+      "destination": "/tour/tour-de-un-dia-a-yorkin",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-stibrawpa-yorkin-2-dias",
+      "destination": "/tour/tour-de-dos-dias-en-yorkin",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sup-cataratas-paddle9",
+      "destination": "/tour/paddleboard-cataratas-dia-completo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sup-costa-paddle9",
+      "destination": "/tour/paddleboard-por-la-costa-de-manuel-antonio",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sup-manglar-damas-paddle9",
+      "destination": "/tour/paddleboard-en-el-manglar-de-isla-damas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-surf-grupal-tortuga-surf-camp",
+      "destination": "/tour/clase-de-surf-grupal-en-jaco",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-surf-little-waves-jaco",
+      "destination": "/tour/clase-de-surf-en-playa-jaco",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-surf-secret-sauce-jaco",
+      "destination": "/tour/clase-de-surf-grupal-secret-sauce",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tamarindoadv-atv-expedition",
+      "destination": "/tour/atv-expedition-en-zona-de-playa-conchal",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tamarindoadv-la-leona-tubing",
+      "destination": "/tour/caminata-a-catarata-la-leona-y-tubing",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tamarindoadv-snorkel-catalinas",
+      "destination": "/tour/snorkel-en-islas-catalinas-desde-tamarindo-guanacaste",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tamarindoadv-sunset-catamaran",
+      "destination": "/tour/catamaran-al-atardecer-en-tamarindo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tamarindoadv-turtle-watching",
+      "destination": "/tour/tour-de-anidacion-de-tortugas-en-playa-minas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tamarindoadv-zipline",
+      "destination": "/tour/canopy-en-tamarindo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tapirvalley-pajareo-matutino",
+      "destination": "/tour/pajareo-matutino-en-tapir-valley",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tapirvalley-tour-nocturno",
+      "destination": "/tour/tour-nocturno-en-tapir-valley",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tenorio-adventure-hiking-rio-celeste",
+      "destination": "/tour/caminata-rio-celeste-volcan-tenorio",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-the-ark-jardin-guiado",
+      "destination": "/tour/tour-guiado-en-the-ark-herb-farm-green-ark",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-ticosriver-rafting-pejibaye",
+      "destination": "/tour/rafting-rio-pejibaye-tico-s-river",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tierracosta-kayak-rio-montana",
+      "destination": "/tour/kayak-o-sup-por-el-manglar-del-rio-montana",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tiquicia-noche-tica-expediciones",
+      "destination": "/tour/mirador-tiquicia-cena-y-noche-tica",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-titi-canopy-quepos-iguana",
+      "destination": "/tour/canopy-titi-cerca-de-quepos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-toroamarillo360-bittersweet-falls",
+      "destination": "/tour/ecotour-bittersweet-falls-canon-jurasico",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-toroamarillo360-crater-waterfall",
+      "destination": "/tour/ecotour-catarata-del-crater",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-toroamarillo360-golden-ecotour",
+      "destination": "/tour/ecotour-dorado-y-cueva-que-llora",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-toroamarillo360-hidden-treasure",
+      "destination": "/tour/ecotour-tesoro-escondido",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-toroamarillo360-pozo-azul",
+      "destination": "/tour/ecotour-rio-pozo-azul",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-toroamarillo360-silence-melody",
+      "destination": "/tour/ecotour-melodia-del-silencio",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-toroamarillo360-springs-paradise",
+      "destination": "/tour/ecotour-paraiso-de-manantiales",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tortuguero-1-dia-jungle-tom",
+      "destination": "/tour/tortuguero-en-1-dia-desde-san-jose",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tortuguero-2-dias-exploradores",
+      "destination": "/tour/expedicion-tortuguero-2-dias-1-noche",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tortuguero-2d1n-evergreen",
+      "destination": "/tour/paquete-evergreen-lodge-2-dias-1-noche",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tortuguero-2d1n-jungle-tom",
+      "destination": "/tour/tortuguero-2-dias-1-noche-jungle-tom",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tortuguero-3-dias-exploradores",
+      "destination": "/tour/expedicion-tortuguero-3-dias-2-noches",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tortuguero-pacuare-3-dias-exploradores",
+      "destination": "/tour/combo-3-dias-tortuguero-rafting-pacuare",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tortuguero-tour-bote-mawamba",
+      "destination": "/tour/tour-en-bote-por-los-canales-de-tortuguero",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tortugueropark-canoe-tour",
+      "destination": "/tour/tour-en-canoa-por-el-parque-nacional-tortuguero",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-toursparadise-tortuga-montezuma",
+      "destination": "/tour/isla-tortuga-desde-montezuma",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-travesias-apicultura-la-realeza",
+      "destination": "/tour/tour-de-apicultura-finca-la-realeza",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-travesias-cabalgata-aquiares",
+      "destination": "/tour/cabalgata-por-hacienda-cafetalera",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-travesias-guayabo-arqueologico",
+      "destination": "/tour/tour-al-monumento-nacional-guayabo",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-travesias-rafting-pejibaye",
+      "destination": "/tour/rafting-familiar-en-el-rio-pejibaye",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-treetopia-sky-trek",
+      "destination": "/tour/canopy-en-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-treetopia-sky-walk",
+      "destination": "/tour/puentes-colgantes-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-treetopia-tree-tram",
+      "destination": "/tour/teleferico-en-bosque-nuboso-de-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tri-combo-vista-los-suenos",
+      "destination": "/tour/tri-combo-canopy-cuadraciclo-y-cabalgata",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-trogon-paramo-buenavista",
+      "destination": "/tour/caminata-de-aves-y-paramo-en-cerro-buena-vista",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-trogon-quetzal-quest",
+      "destination": "/tour/quetzal-quest-en-san-gerardo-de-dota",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tuanis-cerro-oscuro-tobogan",
+      "destination": "/tour/caminata-cerro-oscuro-finca-el-tobogan",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tuanis-corcovado-la-leona",
+      "destination": "/tour/caminata-corcovado-sector-la-leona",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tuanis-corcovado-san-pedrillo",
+      "destination": "/tour/corcovado-sector-san-pedrillo-desde-bahia-drake",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tuanis-corcovado-sirena-dia",
+      "destination": "/tour/corcovado-estacion-sirena-desde-puerto-jimenez",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tuanis-piedras-blancas-el-bonito",
+      "destination": "/tour/parque-nacional-piedras-blancas-sector-el-bonito",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tuanis-refugio-golfito",
+      "destination": "/tour/refugio-de-vida-silvestre-golfito",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-tuanis-sirena-2d1n",
+      "destination": "/tour/pernoctacion-en-estacion-sirena-corcovado-2d-1n",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-turrialtico-duckies-pejibaye",
+      "destination": "/tour/duckies-en-el-rio-pejibaye-turrialtico",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-turrialtico-golden-bean-cafe",
+      "destination": "/tour/coffee-tour-en-atirro",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-turrialtours-mtb-turrialba",
+      "destination": "/tour/ciclismo-de-montana-por-turrialba",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-turrialtours-pacuare-1-dia",
+      "destination": "/tour/rafting-pacuare-1-dia",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-turrialtours-pacuare-2-dias",
+      "destination": "/tour/rafting-pacuare-2-dias-con-noche-en-lodge",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-turrialtours-tubing-pejibaye",
+      "destination": "/tour/tubing-en-el-rio-pejibaye",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-victours-aves-vida-tierra",
+      "destination": "/tour/observacion-de-aves-en-vida-tierra-eco-farm",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-victours-cabalgata-bijagual",
+      "destination": "/tour/cabalgata-a-la-catarata-de-bijagual",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-victours-carara-caminata",
+      "destination": "/tour/caminata-guiada-en-el-parque-nacional-carara-victours",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-victours-catarata-bijagual",
+      "destination": "/tour/caminata-a-la-catarata-de-bijagual",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-victours-tarcoles-aves-cocodrilos",
+      "destination": "/tour/aves-y-cocodrilos-en-el-rio-tarcoles-victours",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-volcan-turrialba-caminata-explornatura",
+      "destination": "/tour/caminata-al-volcan-turrialba",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-wakoo-ma-night-tour",
+      "destination": "/tour/tour-nocturno-en-reserva-sukia-manuel-antonio",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-wave-rafting-balsa-ii-iii",
+      "destination": "/tour/rafting-rio-balsa-clase-ii-iii",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-wave-rafting-sarapiqui",
+      "destination": "/tour/rafting-rio-sarapiqui-clase-iii-iv",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-wave-safari-float-penas-blancas",
+      "destination": "/tour/safari-float-en-el-rio-penas-blancas",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-wingnuts-caminata-bosque-seco",
+      "destination": "/tour/caminata-guiada-por-el-bosque-seco-wingnuts",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-wingnuts-canopy-10-cables",
+      "destination": "/tour/canopy-wingnuts-10-cables-y-rappel",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-wingnuts-super-combo-samara",
+      "destination": "/tour/super-combo-de-canopy-wingnuts-surf-aereo-superman",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-yorkin-pernocte-atec",
+      "destination": "/tour/territorio-indigena-de-alta-talamanca-noche-en-yorkin",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/poas-volcano-doka-waterfall",
+      "destination": "/tour/poas-volcano-coffee-waterfall",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/tortuguero-mawamba-3d2n",
+      "destination": "/tour/tortuguero-lodge-3d2n",
+      "statusCode": 301
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/:path((?!gateway$).*)",
