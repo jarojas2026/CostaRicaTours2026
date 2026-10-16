@@ -393,7 +393,7 @@ modelGatewayRouter.post('/api/claude/audit-booking', requireAdmin, async (req, r
   }
 });
 
-// Búsqueda e Inteligencia Turística en Vivo con Google Search Grounding (gemini-3.5-flash)
+// Búsqueda e Inteligencia Turística en Vivo con Google Search Grounding (modelo de aiConfig)
 modelGatewayRouter.post('/api/gemini/grounded-search', async (req, res) => {
   try {
     const { query, language } = req.body || {};
