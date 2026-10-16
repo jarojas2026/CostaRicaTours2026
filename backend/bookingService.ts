@@ -21,6 +21,8 @@ import { assertServiceDate, reservationQuote, slotAvailability } from './commerc
 import { getIdempotentResult, idempotencyDocId, normalizeIdempotencyKey, requestFingerprint } from './idempotencyService';
 import { assertBookingTransition, normalizeBookingLifecycle } from './bookingStateMachine';
 import { massiveEngine } from './massiveProcessingEngine';
+import { guardedGeminiGenerate } from './aiRouter';
+import { getLightModel } from './aiConfig';
 
 function resolveFirestoreDatabaseId(): string {
   if (process.env.FIRESTORE_DATABASE_ID) {
@@ -356,15 +358,15 @@ export async function generateOperationalInsights(booking: any) {
     
     Genera un JSON con automatedTags, riskAssessment e instrucciones paso a paso para el operador local.`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+    const response = await guardedGeminiGenerate('booking_insights', {
+      model: getLightModel(),
       contents: prompt,
       config: {
         systemInstruction:
           'Eres el Agente Operativo Automático de Costa Rica Tours. Genera solo un JSON válido con campos: automatedTags (array de strings), riskAssessment (string), y operationalInstructions (array de strings).',
         responseMimeType: 'application/json'
       }
-    });
+    }, { client: ai, containsPii: true });
 
     if (response.text) return JSON.parse(response.text);
   } catch (err) {
