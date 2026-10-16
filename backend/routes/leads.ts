@@ -65,7 +65,7 @@ leadsRouter.post('/api/leads/quote-request', chatLimiter, async (req, res) => {
   if (process.env.LEADS_PIPELINE_ENABLED === 'false') return res.status(503).json({ success: false, error: 'leads_disabled' });
   try {
     const { lead } = await captureLeadAndNotify(buildTourPageLeadInput(parsed.payload, tour));
-    res.status(202).json({ success: true, status: lead.status, message: parsed.payload.language === 'en' ? 'Request received, pending operator confirmation.' : 'Solicitud recibida, pendiente de confirmación del operador.' });
+    res.status(202).json({ success: true, status: lead.status, message: parsed.payload.language === 'en' ? 'Request received. We will send you a quote with confirmed availability and price before any payment.' : 'Solicitud recibida. Te enviaremos la cotización con disponibilidad y precio confirmados antes de cualquier pago.' });
   } catch (error: any) {
     console.warn('[leads] solicitud de cotización fallida:', error?.message || error);
     res.status(500).json({ success: false, error: 'lead_capture_failed' });
