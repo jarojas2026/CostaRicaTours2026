@@ -33,7 +33,7 @@ export const TourFacts: React.FC<Props> = ({ tour, language, currency }) => {
     [es ? 'Duración' : 'Duration', tour.duration || getLangText(tour.durationLabel, language) || tbc],
     [es ? 'Operador' : 'Operator', tour.operatorName || tbc],
     [es ? 'Fuente' : 'Source', source
-      ? <span><a href={source.url} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 underline decoration-emerald-500/50 hover:text-amber-300">{(() => { try { return new URL(source.url).hostname.replace(/^www\./, ''); } catch { return source.url; } })()}<ExternalLink className="h-3 w-3" /></a>{source.checkedAt && <span className="text-stone-400"> · {es ? 'revisado el' : 'checked on'} {source.checkedAt}</span>}</span>
+      ? <span><a href={source.url} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 underline decoration-emerald-500/50 hover:text-amber-300">{es ? 'fuente' : 'source'}<ExternalLink aria-hidden="true" className="h-3 w-3" /></a><span className="text-stone-400"> · {(() => { try { return new URL(source.url).hostname.replace(/^www\./, ''); } catch { return ''; } })()}</span>{source.checkedAt && <span className="block text-stone-400">{es ? `Revisado el ${source.checkedAt}` : `Checked on ${source.checkedAt}`}</span>}</span>
       : (es ? 'Catálogo interno' : 'Internal catalog')],
     [es ? 'Estado' : 'Status', TOUR_COMMERCIAL_STATUS[lang]],
   ];
