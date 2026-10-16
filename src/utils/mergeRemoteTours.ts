@@ -1,4 +1,5 @@
 import type { Tour } from '../types';
+import { stripOperatorFields } from './operatorPrivacy';
 
 /**
  * Enriches Firestore tours with the local catalog. Match backend lookup by
@@ -12,16 +13,26 @@ export interface RemoteTourDoc {
 
 export function mergeRemoteTours(remoteDocs: readonly RemoteTourDoc[], localTours: readonly Tour[]): Tour[] {
   const merged = remoteDocs
-    .map(({ tour: remoteTour, docId }) => {
+    .map(({ tour: rawRemoteTour, docId }) => {
+      // Nunca exponer datos del proveedor en el cliente (decisión del negocio).
+      const remoteTour = stripOperatorFields(rawRemoteTour);
       const canBook = remoteTour.catalogStatus === 'bookable' && Boolean(remoteTour.providerId?.trim());
       const localTour = localTours.find((tour) =>
         tour.id === remoteTour.id ||
         tour.title.es === remoteTour.title?.es ||
         tour.title.en === remoteTour.title?.en
       );
+      // El texto público (título, subtítulo, descripción, lugar) del catálogo local ya está
+      // depurado de nombres de operador; si hay ficha local, prevalece sobre el documento remoto.
+      const publicCopy = localTour ? {
+        title: localTour.title, subtitle: localTour.subtitle, description: localTour.description,
+        highlights: localTour.highlights, inclusions: localTour.inclusions,
+        location: localTour.location,
+      } : {};
       return {
         ...(localTour || {} as Tour),
         ...remoteTour,
+        ...publicCopy,
         id: remoteTour.id || docId,
         catalogStatus: canBook ? 'bookable' : 'inquiry',
         isDemoData: !canBook
