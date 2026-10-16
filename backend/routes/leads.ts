@@ -4,6 +4,8 @@
  * - GET  /api/admin/leads                 (requireOperator) lista, ?status=
  * - GET  /api/admin/leads/:id             (requireOperator) detalle con candidatos y borradores
  * - PATCH /api/admin/leads/:id/status     (requireOperator) máquina de estados con evidencia
+ * - POST /api/leads/quote-request        (público, rate-limit) solicitud de cotización desde
+ *   /tour/:id con source "tour_page"; exige consentimiento Ley 8968 y un tour del catálogo.
  * - POST /api/internal/leads/digest       (X-Operator-Key = OPERATOR_API_KEY) resumen diario;
  *   solo registra (dry-run) salvo LEADS_DIGEST_ENABLED=true.
  */
@@ -11,8 +13,10 @@
 import crypto from 'crypto';
 import type express from 'express';
 import { requireOperator } from '../authMiddleware';
-import { buildLeadDigest, getLead, isLeadStatus, listLeads, transitionLead, LEAD_STATUSES } from '../leadPipeline';
-import { createRouter, adminAccessPayload } from './shared';
+import { buildLeadDigest, buildTourPageLeadInput, captureLeadAndNotify, getLead, isLeadStatus, listLeads, transitionLead, LEAD_STATUSES } from '../leadPipeline';
+import { createRouter, adminAccessPayload, chatLimiter } from './shared';
+import { parseTourQuoteLeadPayload } from '../../shared/tourQuoteRequest';
+import { TOURS } from '../../src/data/toursData';
 
 export const leadsRouter = createRouter();
 
@@ -51,6 +55,21 @@ leadsRouter.patch('/api/admin/leads/:id/status', requireOperator, async (req, re
     return res.status(code).json({ success: false, error: result.error, message: result.message });
   }
   res.json({ success: true, lead: result.lead });
+});
+
+leadsRouter.post('/api/leads/quote-request', chatLimiter, async (req, res) => {
+  const parsed = parseTourQuoteLeadPayload(req.body);
+  if (!parsed.ok) return res.status(400).json({ success: false, error: parsed.error });
+  const tour = TOURS.find(t => t.id === parsed.payload.tourId);
+  if (!tour) return res.status(404).json({ success: false, error: 'tour_not_found' });
+  if (process.env.LEADS_PIPELINE_ENABLED === 'false') return res.status(503).json({ success: false, error: 'leads_disabled' });
+  try {
+    const { lead } = await captureLeadAndNotify(buildTourPageLeadInput(parsed.payload, tour));
+    res.status(202).json({ success: true, status: lead.status, message: parsed.payload.language === 'en' ? 'Request received, pending operator confirmation.' : 'Solicitud recibida, pendiente de confirmación del operador.' });
+  } catch (error: any) {
+    console.warn('[leads] solicitud de cotización fallida:', error?.message || error);
+    res.status(500).json({ success: false, error: 'lead_capture_failed' });
+  }
 });
 
 leadsRouter.post('/api/internal/leads/digest', async (req, res) => {
