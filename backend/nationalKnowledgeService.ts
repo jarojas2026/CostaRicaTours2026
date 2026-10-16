@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { TOURS } from '../src/data/toursData';
 import guidesIct from '../data/guides/guidesIct.json';
+import { SUPPLIER_POLICY } from '../src/utils/operatorPrivacy';
 
 type Feature = { geometry?: { coordinates?: [number, number] }; properties: Record<string, any> };
 
@@ -126,8 +127,29 @@ const LANG_ALIASES: Record<string, string> = {
   spanish: 'espanol', es: 'espanol', espanol: 'espanol',
 };
 
-/** Guías acreditados por el ICT, filtrados por zona, idioma y especialidad (sin contactos personales). */
+/**
+ * Guías acreditados por el ICT, filtrados por zona, idioma y especialidad.
+ * Respuesta para el cliente: solo conteos e idiomas, sin nombres, credenciales ni
+ * contactos de guías o asociaciones (son proveedores: no se revelan antes de reservar).
+ */
 export function findGuides(opts: { region?: string; language?: string; specialty?: string; limit?: number }) {
+  const internal = findGuidesInternal(opts);
+  const languages = [...new Set(internal.matches.flatMap((g) => g.l))].slice(0, 12);
+  const zones = [...new Set(internal.matches.flatMap((g) => g.r))].slice(0, 8);
+  return {
+    success: internal.totalMatches > 0,
+    totalMatches: internal.totalMatches,
+    languages,
+    zones,
+    contactPolicy: 'No compartir nombres ni contactos de guías o asociaciones. Costa Rica Tours coordina el guía al confirmar la reserva; disponibilidad y tarifa siempre por confirmar.',
+    supplierPolicy: SUPPLIER_POLICY.es,
+    source: internal.source,
+    asOf: internal.asOf,
+  };
+}
+
+/** Uso interno/admin: incluye nombres y asociaciones. No exponer en endpoints públicos. */
+export function findGuidesInternal(opts: { region?: string; language?: string; specialty?: string; limit?: number }) {
   const data = loadGuides();
   const region = norm(opts.region);
   const lang = LANG_ALIASES[norm(opts.language)] ?? norm(opts.language);
@@ -141,6 +163,7 @@ export function findGuides(opts: { region?: string; language?: string; specialty
   return {
     success: filtered.length > 0,
     totalMatches: filtered.length,
+    matches: filtered,
     guides: filtered.slice(0, limit).map((g) => ({ name: g.n, zones: g.r, specialties: g.s, languages: g.l, ictCredentials: g.c })),
     associations: data.associations.filter((a) => !region || norm(a.zone).includes(region) || a.zone === 'Nacional'),
     contactPolicy: 'No compartir teléfonos personales: coordinar el guía mediante la plataforma o la asociación. Disponibilidad y tarifa siempre por confirmar.',
@@ -149,17 +172,18 @@ export function findGuides(opts: { region?: string; language?: string; specialty
   };
 }
 
-/** Busca tours de operadores con precio publicado, filtrando por presupuesto y operador. */
-export function searchOperatorTours(opts: { query?: string; region?: string; maxPriceUSD?: number; operator?: string; limit?: number }) {
+/**
+ * Busca tours de consulta con precio de referencia, filtrando por presupuesto y región.
+ * Respuesta para el cliente: sin nombre, web, fuente ni contactos del operador.
+ */
+export function searchOperatorTours(opts: { query?: string; region?: string; maxPriceUSD?: number; limit?: number }) {
   const q = norm(opts.query);
   const region = norm(opts.region);
-  const op = norm(opts.operator);
   const max = Number(opts.maxPriceUSD);
-  const list = TOURS.filter((t) => t.priceSource === 'publicado_por_operador').filter((t) => {
-    const hay = norm([t.title.es, t.title.en, t.description.es, t.location.placeName, t.category, t.operatorName].join(' '));
+  const list = TOURS.filter((t) => t.priceSource === 'precio_referencia').filter((t) => {
+    const hay = norm([t.title.es, t.title.en, t.description.es, t.location.placeName, t.category].join(' '));
     return (!q || q.split(/\s+/).every((w) => hay.includes(w))) &&
       (!region || norm(t.region).includes(region) || norm(t.location.placeName).includes(region)) &&
-      (!op || norm(t.operatorName).includes(op)) &&
       (!Number.isFinite(max) || max <= 0 || (t.priceUSD > 0 && t.priceUSD <= max));
   });
   const limit = Math.min(Math.max(opts.limit ?? 8, 1), 15);
@@ -167,12 +191,13 @@ export function searchOperatorTours(opts: { query?: string; region?: string; max
     success: list.length > 0,
     totalMatches: list.length,
     tours: list.slice(0, limit).map((t) => ({
-      id: t.id, title: t.title.es, titleEn: t.title.en, operator: t.operatorName, place: t.location.placeName,
+      id: t.id, title: t.title.es, titleEn: t.title.en, place: t.location.placeName,
       region: t.region, category: t.category, priceUSD: t.priceUSD > 0 ? t.priceUSD : null,
       childPriceUSD: t.childPriceUSD ?? null, durationHours: t.durationHours || null,
-      priceStatus: t.priceUSD > 0 ? 'publicado_por_operador' : 'consulta_requerida',
-      priceCheckedAt: t.priceCheckedAt, sourceUrl: t.sourceUrl,
+      priceStatus: t.priceUSD > 0 ? 'precio_de_referencia' : 'consulta_requerida',
+      priceCheckedAt: t.priceCheckedAt,
     })),
-    rule: 'Precio publicado por el operador (no es cotización). Disponibilidad se confirma con el operador antes de cobrar.',
+    rule: 'Precio de referencia, sujeto a confirmación (no es cotización). No nombres al operador ni compartas sus contactos: ofrece la cotización de Costa Rica Tours. Disponibilidad y precio final se confirman antes de cobrar.',
+    supplierPolicy: SUPPLIER_POLICY.es,
   };
 }
