@@ -1,0 +1,7 @@
+{
+ "warning": "INTERNO: solo servidor/admin. Movido desde src/data/catalogMeta.ts (OPERATORS) para no exponer proveedores al cliente. Datos sin verificar.",
+ "operators": [
+  {"id": "alsama-tours", "name": "ALSAMA Tours", "location": "Uvita, Puntarenas", "region": "osa", "verifiedBadge": false, "contact": {"email": "info@alsamatourscr.com", "website": "https://alsamatourscr.com/"}, "notes": "Proveedor candidato para tours y transporte; relación comercial por confirmar."},
+  {"id": "expediciones-tropicales", "name": "Expediciones Tropicales", "location": "San José", "region": "sjo", "verifiedBadge": false, "contact": {"phone": "+506 2222 2222 (placeholder, no verificado)", "email": "info@tropicalexpeditions.com"}, "notes": "Perfil heredado con datos no verificados."}
+ ]
+}
