@@ -9,15 +9,29 @@ import { requireOperator } from '../authMiddleware';
 import { updateBookingStatus, getWeeklyConversionMetrics } from '../bookingService';
 import { massiveEngine } from '../massiveProcessingEngine';
 import { createRouter } from './shared';
-import { getAiHealth } from '../aiHealth';
+import { aiHealthHttpStatus, getAiHealth } from '../aiHealth';
+import { getBreakerStates } from '../aiRouter';
+import { getAiConfig, isBillingBlocked } from '../aiConfig';
 
 /** Health check. */
 export const healthRouter = createRouter();
 
 healthRouter.get('/api/health/ai', (_req, res) => {
   const health = getAiHealth();
+  const cfg = getAiConfig();
   res.setHeader('Cache-Control', 'no-store');
-  res.status(health.status === 'available' ? 200 : 503).json(health);
+  // 200 para available/unknown/unconfigured (status en el body); 503 solo si todos los configurados están degraded.
+  res.status(aiHealthHttpStatus(health.providers)).json({
+    ...health,
+    policy: {
+      provider: cfg.provider,
+      fallbackEnabled: cfg.fallbackEnabled,
+      maxCostUsd: cfg.maxCostUsd,
+      allowExternalPii: cfg.allowExternalPii,
+      billingBlocked: { gemini: isBillingBlocked('gemini'), claude: isBillingBlocked('claude') },
+    },
+    breakers: getBreakerStates(),
+  });
 });
 
 healthRouter.get('/api/health', (req, res) => {
