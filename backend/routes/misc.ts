@@ -9,9 +9,16 @@ import { requireOperator } from '../authMiddleware';
 import { updateBookingStatus, getWeeklyConversionMetrics } from '../bookingService';
 import { massiveEngine } from '../massiveProcessingEngine';
 import { createRouter } from './shared';
+import { getAiHealth } from '../aiHealth';
 
 /** Health check. */
 export const healthRouter = createRouter();
+
+healthRouter.get('/api/health/ai', (_req, res) => {
+  const health = getAiHealth();
+  res.setHeader('Cache-Control', 'no-store');
+  res.status(health.status === 'available' ? 200 : 503).json(health);
+});
 
 healthRouter.get('/api/health', (req, res) => {
   res.json({
