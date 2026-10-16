@@ -21,6 +21,7 @@
 import crypto from 'crypto';
 import { getFirestoreDb } from './bookingService';
 import { OPERATOR_PROSPECTS, type OperatorProspect } from '../data/operators/operatorProspects';
+import { operatorSourceForTour } from './operatorSourcesInternal';
 import type { ConciergeUnderstanding, ConciergeLanguage } from './conciergeUnderstanding';
 import type { Tour } from '../src/types';
 import { publishedTourPrice } from '../src/utils/tourPublication';
@@ -208,10 +209,23 @@ const ACTIVITY_TO_TOURS: Record<string, RegExp> = {
 export function matchOperatorCandidates(request: LeadRequest, operators: readonly OperatorProspect[] = OPERATOR_PROSPECTS.operators, limit = 3): OperatorCandidate[] {
   const regions = request.region ? REGION_TO_PROSPECT[request.region] || [] : [];
   const activityRe = request.activity ? ACTIVITY_TO_TOURS[request.activity] : undefined;
-  if (!regions.length && !activityRe) return [];
-  const scored: OperatorCandidate[] = [];
+  // Operador real del tour (archivo interno, solo servidor): va primero si el lead trae tourId.
+  const source = operatorSourceForTour(request.tourId);
+  const sourceCandidate: OperatorCandidate | undefined = source ? {
+    operatorId: source.contacts.prospectId || `src:${source.id}`,
+    name: source.operatorName,
+    region: request.region || '',
+    score: 10,
+    reasons: ['operador del tour solicitado (catálogo interno)'],
+    channels: { email: Boolean(source.contacts.email), whatsapp: Boolean(source.contacts.phoneWhatsapp), website: Boolean(source.contacts.website) },
+    verification: source.ictVerified ? 'verificado_ict' : 'prospecto_no_verificado',
+    partnershipStatus: 'sin_contacto',
+  } : undefined;
+  if (!regions.length && !activityRe) return sourceCandidate ? [sourceCandidate] : [];
+  const scored: OperatorCandidate[] = sourceCandidate ? [sourceCandidate] : [];
   for (const op of operators) {
     if (op.partnershipStatus === 'descartado') continue;
+    if (sourceCandidate && op.id === sourceCandidate.operatorId) continue;
     const reasons: string[] = [];
     let score = 0;
     const regionHit = regions.includes(op.region);
@@ -386,7 +400,7 @@ export function buildTourPageLeadInput(payload: TourQuoteLeadPayload, tour: Tour
       referenceQuote: {
         unitPriceUSD: price,
         totalUSD: price * people,
-        line: `Tarifa publicada por ${tour.operatorName || 'el operador'}: US$${price} por persona (revisada ${tour.priceCheckedAt}), sujeta a confirmación.`,
+        line: `Precio de referencia: US$${price} por persona (revisado ${tour.priceCheckedAt}), sujeto a confirmación.`,
         subjectToConfirmation: true as const,
       },
     } : {}),

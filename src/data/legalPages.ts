@@ -76,10 +76,12 @@ export const LEGAL_PAGES: Record<LegalPageId, LegalPageContent> = {
           es: [
             `Costa Rica Tours es un proyecto gestionado por ${LEGAL_CONTACT.controller} desde ${LEGAL_CONTACT.location}. Actuamos como intermediario: recibimos tu consulta, buscamos un operador local adecuado y te transmitimos su propuesta.`,
             'No somos el operador de los tours, traslados, hospedajes ni parques que aparecen en el sitio. El servicio lo presta el operador que se te identifique por escrito antes de pagar.',
+            'Trabajamos con operadores locales; verificamos su declaratoria turística del ICT antes de confirmar cada reserva. En el catálogo no publicamos el nombre ni los datos de contacto de los operadores: la identidad del operador se indica en la confirmación de la reserva, antes de cualquier pago.',
           ],
           en: [
             `Costa Rica Tours is a project run by ${LEGAL_CONTACT.controller} from ${LEGAL_CONTACT.location}. We act as an intermediary: we receive your inquiry, look for a suitable local operator and pass on its proposal.`,
             'We do not operate the tours, transfers, lodging or parks shown on the site. The service is provided by the operator identified to you in writing before any payment.',
+            'We work with local operators; we verify their ICT tourism declaration before confirming each booking. The catalog does not publish operators’ names or contact details: the operator’s identity is provided in the booking confirmation, before any payment.',
           ],
         },
       },

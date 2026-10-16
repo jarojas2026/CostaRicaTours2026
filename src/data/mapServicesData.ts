@@ -210,11 +210,11 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     canBeBooked: true
   },
   {
-    id: 'hotel-mawamba-lodge',
+    id: 'hotel-tortuguero-lodge',
     type: 'hotel',
     name: {
-      es: 'Mawamba Lodge Tortuguero',
-      en: 'Mawamba Lodge Tortuguero'
+      es: 'Lodge selva y canales de Tortuguero',
+      en: 'Tortuguero Jungle & Canals Lodge'
     },
     subtitle: {
       es: 'Entre los canales y el mar Caribe con jardines de mariposas y ranas',
@@ -289,8 +289,8 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     id: 'hotel-pacuare-lodge',
     type: 'hotel',
     name: {
-      es: 'Pacuare Lodge (Aventura en el Cañón)',
-      en: 'Pacuare Lodge (Canyon Wilderness)'
+      es: 'Lodge de aventura en el cañón del Pacuare',
+      en: 'Pacuare Canyon Wilderness Lodge'
     },
     subtitle: {
       es: 'Lodge de aventura mundial accesible exclusivamente en balsa de rafting',
@@ -1022,7 +1022,7 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       en: 'Central Park area, La Fortuna, San Carlos'
     },
     image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1000&q=80',
-    transportCompany: 'Interbus Costa Rica & RideCR Network',
+    transportCompany: 'Shuttle turístico compartido (operador local)',
     routesServed: {
       es: ['La Fortuna ➡️ Monteverde (Van-Boat-Van por el Lago Arenal): 8:00 AM & 2:00 PM ($35 USD / 3 hrs)', 'La Fortuna ➡️ Manuel Antonio: 7:30 AM & 1:30 PM ($59 USD / 4.5 hrs)', 'La Fortuna ➡️ San José / Aeropuerto SJO: 8:00 AM & 1:00 PM ($54 USD / 3.5 hrs)', 'La Fortuna ➡️ Tamarindo / Liberia: 8:00 AM ($57 USD / 4 hrs)'],
       en: ['La Fortuna ➡️ Monteverde (Van-Boat-Van across Lake Arenal): 8 AM & 2 PM ($35 USD / 3 hrs)', 'La Fortuna ➡️ Manuel Antonio: 7:30 AM & 1:30 PM ($59 USD / 4.5 hrs)', 'La Fortuna ➡️ SJO Airport: 8 AM & 1 PM ($54 USD / 3.5 hrs)', 'La Fortuna ➡️ Tamarindo / LIR: 8 AM ($57 USD / 4 hrs)']

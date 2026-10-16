@@ -65,7 +65,6 @@ function summarizeTour(t: Tour) {
     maxGroupSize: t.maxGroupSize ?? null,
     tourType: t.tourType ?? null,
     freeCancellation: t.freeCancellation ?? null,
-    operatorName: t.operatorName ?? null,
     isDemoData: t.isDemoData === true
   };
 }

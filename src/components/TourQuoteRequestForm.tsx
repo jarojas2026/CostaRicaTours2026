@@ -59,7 +59,7 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
   if (state === 'sent') {
     return (
       <div role="status" data-testid="tour-quote-success" className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-4 text-sm text-emerald-100">
-        {es ? 'Solicitud recibida, pendiente de confirmación del operador.' : 'Request received, pending operator confirmation.'}
+        {es ? 'Solicitud recibida. Te enviaremos la cotización con disponibilidad y precio confirmados antes de cualquier pago.' : 'Request received. We will send you a quote with confirmed availability and price before any payment.'}
       </div>
     );
   }
@@ -68,7 +68,7 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
   return (
     <form onSubmit={submit} noValidate aria-label={es ? 'Solicitar cotización' : 'Request a quote'} className="space-y-3">
       <h2 className="text-lg font-black text-white">{es ? 'Solicitar cotización' : 'Request a quote'}</h2>
-      <p className="text-xs text-stone-400">{es ? 'No es una reserva ni un cobro. Confirmamos operador, precio y cupo por escrito antes de cualquier pago.' : 'This is not a booking or a charge. We confirm operator, price and availability in writing before any payment.'}</p>
+      <p className="text-xs text-stone-400">{es ? 'No es una reserva ni un cobro. Confirmamos precio y cupo por escrito antes de cualquier pago; la identidad del operador se indica en la confirmación de la reserva.' : 'This is not a booking or a charge. We confirm price and availability in writing before any payment; the operator’s identity is provided in the booking confirmation.'}</p>
       <label className="block text-xs text-stone-300">{es ? 'Nombre' : 'Name'}
         <input required disabled={disabled} autoComplete="name" value={name} onChange={e => setName(e.target.value)} className={input} />
       </label>

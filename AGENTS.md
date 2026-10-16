@@ -103,3 +103,9 @@ Ver `docs/ciudad-digital-global-skills-2026.md` y `.agents/skills/global-city-on
 - Las skills deben seguir el formato Agent Skills `SKILL.md`, cargarse bajo demanda, especificar límites de herramientas y reutilizar `backend/agentTools.ts`; la existencia del archivo no otorga nuevas capacidades de ejecución.
 - Si un flujo reporta cupos o pagos sin verificar la respuesta transaccional, priorizar reparación y regresión antes de aumentar la autonomía o habilitar países nuevos. Issue #175 es bloqueo P0.
 - Conservar todas las reglas anteriores de protección, auditoría, compatibilidad, CI, idempotencia y autorización.
+
+## 12. Privacidad de proveedores (decisión del negocio)
+- El cliente no ve datos que identifiquen al operador antes de reservar: nombre, oficina/dirección, teléfonos, correo, WhatsApp, web, enlaces de fuente, logo. Ubicación, región, pin del mapa y punto de encuentro sí son visibles.
+- Catálogo público: `src/data/catalogTours.json` (sin campos de operador). Datos del operador: `data/internal/operatorTourSources.json` (solo servidor, vía `backend/operatorSourcesInternal.ts`). Ambos los genera `npm run catalog:build`.
+- Texto neutral: "Operador local seleccionado por Costa Rica Tours" (o "…con declaratoria turística verificada por nuestro equipo" solo si `operatorIctVerified`). Ante preguntas sobre proveedores: "Trabajamos con operadores locales; verificamos su declaratoria turística del ICT antes de confirmar cada reserva." Nunca afirmar que todos están certificados por el ICT.
+- `tests/publicOperatorPrivacy.contract.test.ts` y `scripts/auditOperatorPrivacy.mjs` (en `npm run build`) fallan si se filtra un operador.

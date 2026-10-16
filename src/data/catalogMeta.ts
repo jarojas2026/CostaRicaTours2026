@@ -136,57 +136,12 @@ export const CATEGORIES: CategoryInfo[] = [
   }
 ];
 
-export const OPERATORS: OperatorProfile[] = [
-  {
-    id: 'alsama-tours',
-    name: 'ALSAMA Tours',
-    slug: 'alsama-tours',
-    tagline: { es: 'Proveedor candidato para tours y transporte', en: 'Prospective tours and transport provider' },
-    description: {
-      es: 'Proveedor recomendado por Costa Rica Tours. Su web pública ofrece servicios turísticos en Costa Rica. La relación comercial, los servicios, tarifas, disponibilidad y condiciones aún deben confirmarse directamente.',
-      en: 'Recommended by Costa Rica Tours. Its public website offers travel services in Costa Rica. The commercial relationship, services, rates, availability and terms still need direct confirmation.'
-    },
-    location: 'Uvita, Puntarenas',
-    region: 'osa',
-    rating: 0,
-    reviewsCount: 0,
-    yearsExperience: 0,
-    verifiedBadge: false,
-    commissionRate: 0,
-    contact: {
-      phone: '',
-      whatsapp: '',
-      email: 'info@alsamatourscr.com',
-      website: 'https://alsamatourscr.com/'
-    },
-    specialties: { es: ['Transporte privado', 'Tours y servicios turísticos por confirmar'], en: ['Private transport', 'Tours and travel services to be confirmed'] },
-    cancellationPolicy: { es: 'Condiciones por confirmar directamente antes de reservar.', en: 'Terms must be confirmed directly before booking.' }
-  },
-  {
-    id: 'expediciones-tropicales',
-    name: 'Expediciones Tropicales',
-    slug: 'expediciones-tropicales',
-    tagline: { es: 'Líderes en tours de un día desde San José', en: 'Leaders in day tours from San Jose' },
-    description: {
-      es: 'Con más de 25 años de experiencia, ofrecemos los mejores combos de un día a los volcanes y parques nacionales más emblemáticos.',
-      en: 'With over 25 years of experience, we offer the best one-day combos to the most emblematic volcanoes and national parks.'
-    },
-    location: 'San José',
-    region: 'sjo',
-    rating: 4.8,
-    reviewsCount: 3200,
-    yearsExperience: 25,
-    verifiedBadge: false,
-    commissionRate: 0.20,
-    contact: {
-      phone: '+506 2222 2222',
-      whatsapp: '+506 2222 2222',
-      email: 'info@tropicalexpeditions.com'
-    },
-    specialties: { es: ['Volcanes', 'Cataratas', 'Combos'], en: ['Volcanoes', 'Waterfalls', 'Combos'] },
-    cancellationPolicy: { es: 'Cancelación gratuita hasta 48 horas antes.', en: 'Free cancellation up to 48 hours before.' }
-  }
-];
+/**
+ * Perfiles públicos de operadores: vacío a propósito. Decisión del negocio: el cliente no
+ * ve nombre, contacto ni web del operador antes de reservar. Los perfiles internos viven
+ * en un archivo interno del servidor (solo admin).
+ */
+export const OPERATORS: OperatorProfile[] = [];
 
 export const REGIONS: RegionInfo[] = [
   {

@@ -4,7 +4,7 @@ import { buildTripInquiryHandoff, parseTripRequest } from '../src/utils/tripRequ
 
 const tours = [
   { id: 'pacuare-rafting', title: { es: 'Rafting en el río Pacuare', en: 'Pacuare River Rafting' }, category: 'rafting', region: 'pacuare', priceUSD: 110 },
-  { id: 'arenal-wave-balsa-rafting', title: { es: 'Rafting río Balsa', en: 'Balsa River Rafting' }, category: 'rafting', region: 'arenal', priceUSD: 75 },
+  { id: 'arenal-balsa-river-rafting', title: { es: 'Rafting río Balsa', en: 'Balsa River Rafting' }, category: 'rafting', region: 'arenal', priceUSD: 75 },
 ];
 
 test('extracts activity, place, party size, month and price intent (ES)', () => {

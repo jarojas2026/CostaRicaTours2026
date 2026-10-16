@@ -12,14 +12,14 @@ test('new knowledge tools are registered and declared for the model', () => {
   }
 });
 
-test('find_guides filters by language and never exposes personal contacts', () => {
+test('find_guides filters by language and never exposes names or contacts', () => {
   const r = findGuides({ language: 'German', limit: 5 });
   assert.ok(r.totalMatches > 10);
-  for (const g of r.guides) {
-    assert.ok(g.languages.some((l) => /alem/i.test(l)));
-    assert.equal((g as any).phone, undefined);
-    assert.equal((g as any).email, undefined);
-  }
+  assert.ok(r.languages.some((l) => /alem/i.test(l)));
+  const json = JSON.stringify(r);
+  assert.equal('guides' in r, false);
+  assert.equal('associations' in r, false);
+  assert.doesNotMatch(json, /@|\+506|phone|email/i);
   assert.ok(findGuides({ region: 'Osa' }).totalMatches > 50);
 });
 
@@ -42,7 +42,8 @@ test('search_operator_tours respects budget and labels price status', () => {
   assert.ok(r.success);
   for (const t of r.tours) {
     assert.ok(t.priceUSD !== null && t.priceUSD <= 60);
-    assert.equal(t.priceStatus, 'publicado_por_operador');
-    assert.match(String(t.sourceUrl), /^https:\/\//);
+    assert.equal(t.priceStatus, 'precio_de_referencia');
+    assert.equal((t as any).sourceUrl, undefined);
+    assert.equal((t as any).operator, undefined);
   }
 });

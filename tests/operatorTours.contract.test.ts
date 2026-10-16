@@ -18,15 +18,16 @@ test('tour ids are unique across the whole catalog', () => {
   assert.equal(new Set(ids).size, ids.length);
 });
 
-test('every operator tour row is valid and sourced', () => {
+test('every catalog tour row is valid and has no operator fields', () => {
   for (const r of OPERATOR_TOUR_ROWS) {
     assert.ok(CATEGORIES.has(r.category), `${r.id} category ${r.category}`);
     assert.ok(REGIONS.has(r.region), `${r.id} region ${r.region}`);
     assert.ok(DIFFICULTY.has(r.difficulty), `${r.id} difficulty ${r.difficulty}`);
     assert.ok(Number.isFinite(r.priceUSD) && r.priceUSD >= 0, `${r.id} price`);
     assert.ok(r.lat >= 5.4 && r.lat <= 11.3 && r.lng >= -87.2 && r.lng <= -82.5, `${r.id} outside Costa Rica`);
-    assert.match(r.sourceUrl, /^https:\/\//, `${r.id} sourceUrl`);
-    assert.ok(r.titleEs && r.titleEn && r.operatorName, `${r.id} text`);
+    assert.equal((r as any).sourceUrl, undefined, `${r.id} must not carry sourceUrl`);
+    assert.equal((r as any).operatorName, undefined, `${r.id} must not carry operatorName`);
+    assert.ok(r.titleEs && r.titleEn, `${r.id} text`);
     if (r.priceUSD === 0) assert.ok(r.priceNote, `${r.id} zero price needs priceNote`);
   }
 });
@@ -37,6 +38,6 @@ test('operator tours never claim reviews, ratings or instant booking', () => {
     assert.equal(t.rating, 0);
     assert.equal(t.reviewsCount, 0);
     assert.equal(t.instantConfirmation, false);
-    assert.equal(t.priceSource, 'publicado_por_operador');
+    assert.equal(t.priceSource, 'precio_referencia');
   }
 });

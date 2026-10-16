@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Tour, Language, Currency, BookingRequest } from '../types';
 import { getLangText, formatCurrency } from '../utils/i18n';
-import { OPERATORS } from '../data/catalogMeta';
+import { neutralOperatorLabel, SUPPLIER_POLICY } from '../utils/operatorPrivacy';
 import { useTours } from '../contexts/ToursContext';
 import { getUsdToCrcRate } from '../utils/currencies';
 import { LazyImage } from '../components/LazyImage';
@@ -322,7 +322,6 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
     }
   };
 
-  const operator = tour.operatorId ? OPERATORS.find(op => op.id === tour.operatorId) : null;
   const gallery = mediaAssets.length > 0
     ? mediaAssets.map(asset => asset.url)
     : (Array.isArray(tour.gallery) && tour.gallery.length > 0 ? tour.gallery : [tour.image]);
@@ -483,20 +482,18 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
                   </> : <>
                     <div className="text-[10px] font-black uppercase tracking-widest text-amber-300">{TOUR_COMMERCIAL_STATUS[language === 'es' ? 'es' : 'en']}</div>
                     <p className="mt-2 text-[11px] leading-relaxed text-stone-400">
-                      {language === 'es' ? 'La publicación del operador no confirma cupos ni un acuerdo comercial. Consulta disponibilidad y precio final antes de pagar.' : 'An operator listing does not confirm inventory or a commercial agreement. Check availability and the final price before paying.'}
+                      {language === 'es' ? 'Esta ficha no confirma cupos. Solicita tu cotización: confirmamos disponibilidad y precio final antes de cualquier pago.' : 'This listing does not confirm availability. Request a quote: we confirm availability and the final price before any payment.'}
                     </p>
                   </>}
                 </div>
 
-                {operator?.verifiedBadge && isBookable && (
-                  <div className="mb-6 p-4 bg-stone-950/70 rounded-2xl border border-emerald-500/20 space-y-1">
-                    <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">
-                      {language === 'es' ? 'Operador asociado en catálogo' : 'Catalog operator reference'}
-                    </span>
-                    <div className="text-sm font-black text-white">{operator.name}</div>
-                    <div className="text-xs text-stone-400">{operator.location}</div>
-                  </div>
-                )}
+                <div className="mb-6 p-4 bg-stone-950/70 rounded-2xl border border-emerald-500/20 space-y-1" data-testid="tour-operator-neutral">
+                  <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">
+                    {language === 'es' ? 'Operador' : 'Operator'}
+                  </span>
+                  <div className="text-sm font-black text-white">{neutralOperatorLabel(tour)[language === 'es' ? 'es' : 'en']}</div>
+                  <div className="text-xs text-stone-400">{SUPPLIER_POLICY[language === 'es' ? 'es' : 'en']}</div>
+                </div>
 
                 {isBookable && <div className="grid grid-cols-3 gap-2 mb-5 text-[9px] font-black uppercase tracking-wide text-center">
                   <div className={`rounded-xl border px-2 py-2 ${pendingBookingId ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' : 'border-white/10 text-stone-500'}`}>{language === 'es' ? 'Solicitud' : 'Request'}</div>

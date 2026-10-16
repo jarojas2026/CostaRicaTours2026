@@ -191,11 +191,11 @@ export const TourCard: React.FC<TourCardProps> = ({
           <div className="flex items-center justify-between pt-4 mt-4 border-t border-emerald-500/20">
             <div className="space-y-0.5">
               <ReferencePrice amountUSD={publishedTourPrice(tour)} currency={currency} language={language} />
-              {!isBookable && (tour.priceSource === 'publicado_por_operador' ? (
+              {!isBookable && (tour.priceSource === 'precio_referencia' ? (
                 <OperatorPriceSource tour={tour} language={language} variant="compact" />
               ) : (
                 <span className="text-[10px] text-stone-400 font-medium block">
-                  {language === 'es' ? 'Operador aún no confirmado' : 'Operator not confirmed yet'}
+                  {language === 'es' ? 'Operador local por confirmar' : 'Local operator to be confirmed'}
                 </span>
               ))}
             </div>

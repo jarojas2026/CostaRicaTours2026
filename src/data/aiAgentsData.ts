@@ -1236,32 +1236,32 @@ export const AI_AGENTS: AIAgent[] = [
       es: [
         '¿El rafting en Río Pacuare es seguro para principiantes o se requiere experiencia?',
         '¿Cuáles son los mejores meses y mareas para surfear en Witch\'s Rock y Pavones?',
-        '¿Cuál es la diferencia entre Sky Trek Arenal y 100% Aventura en Monteverde?',
-        '¿En qué consiste el tour de Cañonismo y Rapel en cascadas de Pure Trek?'
+        '¿Cuál es la diferencia entre el canopy de Arenal y el de Monteverde?',
+        '¿En qué consiste el tour de cañonismo y rapel en cascadas de La Fortuna?'
       ],
       en: [
         'Is Pacuare River rafting safe for beginners or is prior experience required?',
         'What are the best months and tides for surfing Witch\'s Rock and Pavones?',
-        'What is the difference between Sky Trek Arenal and 100% Aventura Monteverde?',
-        'What does the Pure Trek Waterfall Canyoning tour include?'
+        'What is the difference between ziplining in Arenal and in Monteverde?',
+        'What does the La Fortuna waterfall canyoning tour include?'
       ],
       de: [
         'Ist Pacuare-Rafting für Anfänger sicher oder braucht man Erfahrung?',
         'Beste Monate und Gezeiten zum Surfen in Witch\'s Rock und Pavones?',
-        'Unterschied zwischen Sky Trek Arenal und 100% Aventura Monteverde?',
-        'Wie läuft die Pure Trek Wasserfall-Abseiltour ab?'
+        'Unterschied zwischen Ziplining in Arenal und in Monteverde?',
+        'Wie läuft die Wasserfall-Abseiltour in La Fortuna ab?'
       ],
       fr: [
         'Le rafting sur la rivière Pacuare est-il accessible aux débutants ?',
         'Quelles sont les meilleures périodes pour surfer à Witch\'s Rock et Pavones ?',
-        'Quelle est la différence entre Sky Trek Arenal et 100% Aventura ?',
-        'Que comprend l\'excursion de canyoning aux cascades Pure Trek ?'
+        'Quelle est la différence entre la tyrolienne à Arenal et à Monteverde ?',
+        'Que comprend l\'excursion de canyoning aux cascades de La Fortuna ?'
       ],
       zh: [
         '帕库阿雷河漂流适合没有经验的初学者吗？安全保障如何？',
         '在巫师岩（Witch\'s Rock）和帕沃内斯（Pavones）冲浪的最佳月份与潮汐？',
-        '阿雷纳尔 Sky Trek 与蒙特维多 100% Aventura 飞索有什么区别？',
-        'Pure Trek 瀑布速降与峡谷探险的具体流程和安全装备是怎样的？'
+        '阿雷纳尔与蒙特维多的飞索有什么区别？',
+        '拉福尔图纳瀑布速降与峡谷探险的具体流程和安全装备是怎样的？'
       ],
       ja: [
         'パクレ川のラフティングは初心者でも参加できますか？安全基準は？',

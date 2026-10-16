@@ -112,8 +112,14 @@ commerceAdminRouter.post('/:operation', async (req, res) => {
           rating: 0, reviewsCount: 0, reviewsVerified: false, ecoCert: false,
           highlights: { es: [], en: [] }, inclusions: { es: [], en: [] }, exclusions: { es: [], en: [] }, whatToBring: { es: [], en: [] },
           pickupHotels: [], departureTimes: [], location: { lat, lng, placeName },
-          providerId, operatorId: providerId, operatorName: provider.data()?.name || '',
-          catalogStatus: 'inquiry', isDemoData: false, inquirySourceUrl: sourceUrl,
+          // `tours` es de lectura pública: sin nombre ni enlace del proveedor (decisión del negocio).
+          providerId, operatorId: providerId,
+          catalogStatus: 'inquiry', isDemoData: false,
+          updatedAt: FieldValue.serverTimestamp()
+        });
+        // Datos del proveedor en una colección privada (reglas Default Deny; solo Admin SDK).
+        tx.create(db.collection('tour_private').doc(productId), {
+          productId, providerId, operatorName: provider.data()?.name || '', inquirySourceUrl: sourceUrl,
           updatedAt: FieldValue.serverTimestamp()
         });
         tx.create(auditRef, { ...audit, productId, providerId, sourceUrl });

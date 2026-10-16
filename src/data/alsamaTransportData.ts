@@ -32,16 +32,17 @@ export interface AlsamaTransportProviderInfo {
 
 export const ALSAMA_PROVIDER_INFO: AlsamaTransportProviderInfo = {
   id: 'alsama-tours-cr',
-  name: 'Alsama Tours CR',
+  // Identidad del operador oculta al cliente (decisión del negocio); ver el archivo interno de perfiles (solo servidor).
+  name: 'Operador local seleccionado por Costa Rica Tours',
   badge: {
-    es: 'Proveedor recomendado • Acuerdo por confirmar',
-    en: 'Recommended provider • Agreement to be confirmed'
+    es: 'Operador local • Por confirmar',
+    en: 'Local operator • To be confirmed'
   },
-  website: 'https://alsamatourscr.com/',
-  transportUrl: 'https://alsamatourscr.com/transport/',
+  website: '',
+  transportUrl: '',
   description: {
-    es: 'Proveedor recomendado por Costa Rica Tours. Consulta su sitio público; la relación comercial, los servicios, tarifas, disponibilidad y condiciones se confirman directamente antes de reservar.',
-    en: 'Recommended by Costa Rica Tours. Visit its public website; the commercial relationship, services, rates, availability and terms must be confirmed directly before booking.'
+    es: 'Trabajamos con operadores locales; verificamos su declaratoria turística del ICT antes de confirmar cada reserva. Servicios, tarifas y disponibilidad se confirman antes de reservar.',
+    en: 'We work with local operators; we verify their ICT tourism declaration before confirming each booking. Services, rates and availability are confirmed before booking.'
   },
   amenities: [],
   fleetTypes: [],

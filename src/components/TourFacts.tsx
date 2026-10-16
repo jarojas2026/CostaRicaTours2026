@@ -1,11 +1,11 @@
 import React from 'react';
-import { ExternalLink } from 'lucide-react';
 import type { Currency, Language, Tour } from '../types';
 import { CATEGORIES, REGIONS } from '../data/catalogMeta';
 import { getLangText } from '../utils/i18n';
 import { formatApproxConversion, formatUsdReference } from '../utils/referencePrice';
 import { useExchangeRate } from './ReferencePrice';
-import { TOUR_COMMERCIAL_STATUS, tourReferencePrice, tourSource } from '../utils/tourResolver';
+import { TOUR_COMMERCIAL_STATUS, tourReferencePrice, tourReviewDate } from '../utils/tourResolver';
+import { neutralOperatorLabel } from '../utils/operatorPrivacy';
 
 interface Props {
   tour: Tour;
@@ -14,8 +14,8 @@ interface Props {
 }
 
 /**
- * Ficha factual del tour: solo datos del catálogo y de la fuente del operador.
- * Sin ratings, reseñas, cupos ni contactos inventados.
+ * Ficha factual del tour: solo datos del catálogo público. Sin ratings, reseñas,
+ * cupos ni datos que identifiquen al operador (se revelan al confirmar la reserva).
  */
 export const TourFacts: React.FC<Props> = ({ tour, language, currency }) => {
   const es = language === 'es';
@@ -25,16 +25,14 @@ export const TourFacts: React.FC<Props> = ({ tour, language, currency }) => {
   const price = tourReferencePrice(tour);
   const rate = useExchangeRate(currency);
   const approx = price.amountUSD === undefined ? undefined : formatApproxConversion(price.amountUSD, currency, rate, language);
-  const source = tourSource(tour);
+  const reviewedAt = tourReviewDate(tour);
   const tbc = es ? 'Por confirmar' : 'To be confirmed';
   const rows: Array<[string, React.ReactNode]> = [
     [es ? 'Región' : 'Region', region ? getLangText(region.name, language) : (tour.location?.placeName || tbc)],
     [es ? 'Categoría' : 'Category', category ? getLangText(category.name, language) : tbc],
     [es ? 'Duración' : 'Duration', tour.duration || getLangText(tour.durationLabel, language) || tbc],
-    [es ? 'Operador' : 'Operator', tour.operatorName || tbc],
-    [es ? 'Fuente' : 'Source', source
-      ? <span><a href={source.url} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 underline decoration-emerald-500/50 hover:text-amber-300">{es ? 'fuente' : 'source'}<ExternalLink aria-hidden="true" className="h-3 w-3" /></a><span className="text-stone-400"> · {(() => { try { return new URL(source.url).hostname.replace(/^www\./, ''); } catch { return ''; } })()}</span>{source.checkedAt && <span className="block text-stone-400">{es ? `Revisado el ${source.checkedAt}` : `Checked on ${source.checkedAt}`}</span>}</span>
-      : (es ? 'Catálogo interno' : 'Internal catalog')],
+    [es ? 'Operador' : 'Operator', neutralOperatorLabel(tour)[lang]],
+    [es ? 'Revisión' : 'Reviewed', reviewedAt ? (es ? `Revisado por nuestro equipo el ${reviewedAt}` : `Reviewed by our team on ${reviewedAt}`) : (es ? 'Catálogo interno' : 'Internal catalog')],
     [es ? 'Estado' : 'Status', TOUR_COMMERCIAL_STATUS[lang]],
   ];
 

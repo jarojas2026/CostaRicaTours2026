@@ -799,7 +799,7 @@ export async function executeAutonomousMultiDayPlanner(body: any) {
       dia: 1,
       titulo: 'Llegada a Costa Rica & Traslado a La Fortuna',
       destino: 'La Fortuna / Arenal',
-      transporte: 'Traslado Privado Ejecutivo Alsama Tours CR (SJO ➔ Arenal ~3.5h con Wi-Fi y A/C)',
+      transporte: 'Traslado privado ejecutivo con operador local (SJO ➔ Arenal ~3.5h con Wi-Fi y A/C)',
       actividadTarde: 'Check-in y atardecer relajante en aguas termales naturales con vista al Volcán Arenal',
       sinacRequerido: false,
       comidas: 'Cena típica costarricense incluida'
@@ -826,7 +826,7 @@ export async function executeAutonomousMultiDayPlanner(body: any) {
       dia: 4,
       titulo: 'Travesía Panorámica a Monteverde (Bosque Nuboso)',
       destino: 'Monteverde',
-      transporte: 'Traslado privado interhotel Alsama Tours (bordeando Laguna de Arenal ~3.0h)',
+      transporte: 'Traslado privado interhotel con operador local (bordeando Laguna de Arenal ~3.0h)',
       actividadTarde: 'Caminata Nocturna de Vida Silvestre (tucanes, ranas de ojos rojos, kinkajous)',
       sinacRequerido: false
     },
@@ -835,7 +835,7 @@ export async function executeAutonomousMultiDayPlanner(body: any) {
       titulo: 'Canopy Zip-Line & Traslado a la Costa del Pacífico',
       destino: 'Monteverde ➔ Manuel Antonio',
       actividadManana: 'Tirolesa / Canopy sobre el dosel del Bosque Nuboso',
-      transporte: 'Traslado Privado Alsama Tours hacia Manuel Antonio con parada escénica en Puente Cocodrilos Río Tárcoles',
+      transporte: 'Traslado privado con operador local hacia Manuel Antonio con parada escénica en Puente Cocodrilos Río Tárcoles',
       actividadTarde: 'Llegada a las playas del Pacífico Central y atardecer en Manuel Antonio'
     },
     {

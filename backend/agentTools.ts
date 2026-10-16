@@ -140,11 +140,11 @@ export const AGENT_TOOL_REGISTRY = {
     sideEffect: false
   },
   search_operator_tours: {
-    description: 'Search real operator tours with operator-published prices (budget, operator, region). Always say the price is published by the operator and availability must be confirmed.',
+    description: 'Search catalog tours with reference prices (budget, region). Never name operators or share their contacts; say the price is a reference subject to confirmation and offer a quote from Costa Rica Tours.',
     sideEffect: false
   },
   find_guides: {
-    description: 'Find ICT-accredited tour guides by zone, language and specialty (official ICT list). Never shares personal phone numbers.',
+    description: 'Check availability of ICT-accredited guides by zone, language and specialty (official ICT list). Returns counts only, never names or contacts.',
     sideEffect: false
   },
   park_info: {
@@ -166,7 +166,6 @@ export async function executeAgentTool(
       return searchOperatorTours({
         query: args.query ? String(args.query) : undefined,
         region: args.region ? String(args.region) : undefined,
-        operator: args.operator ? String(args.operator) : undefined,
         maxPriceUSD: args.maxPriceUSD !== undefined ? Number(args.maxPriceUSD) : undefined,
         limit: args.limit !== undefined ? Number(args.limit) : undefined,
       });
@@ -186,7 +185,7 @@ export async function executeAgentTool(
       const region = String(args.region || '').toLowerCase().trim();
       const category = String(args.category || '').toLowerCase().trim();
       return TOURS.filter((t) => {
-        const hay = [t.id, t.title.es, t.title.en, t.region, t.category, t.operatorName ?? '', t.location?.placeName ?? ''].join(' ').toLowerCase();
+        const hay = [t.id, t.title.es, t.title.en, t.region, t.category, t.location?.placeName ?? ''].join(' ').toLowerCase();
         return (!q || hay.includes(q)) &&
           (!region || t.region.toLowerCase() === region || hay.includes(region)) &&
           (!category || t.category.toLowerCase() === category || hay.includes(category));
@@ -200,9 +199,8 @@ export async function executeAgentTool(
         duration: t.durationLabel?.es || t.durationHours,
         maxGroupSize: t.maxGroupSize,
         catalogStatus: t.catalogStatus ?? 'bookable',
-        operator: t.operatorName ?? null,
-        priceStatus: t.priceSource === 'publicado_por_operador' ? (t.priceUSD > 0 ? 'publicado_por_operador' : 'consulta_requerida') : 'tarifa_de_referencia',
-        sourceUrl: t.sourceUrl ?? null
+        // Sin datos del operador (decisión del negocio): se revelan en la confirmación de la reserva.
+        priceStatus: t.priceSource === 'precio_referencia' ? (t.priceUSD > 0 ? 'precio_de_referencia' : 'consulta_requerida') : 'tarifa_de_referencia'
       }));
     }
     case 'get_tour_media': {
@@ -860,13 +858,12 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
   ,
   {
     name: 'search_operator_tours',
-    description: 'Search real Costa Rica operator tours with operator-published prices. Filter by text, region, operator and max budget in USD. Present prices as published by the operator, never as confirmed availability.',
+    description: 'Search Costa Rica catalog tours with reference prices. Filter by text, region and max budget in USD. Present prices as reference prices subject to confirmation, never as confirmed availability. Never name operators or give their contacts; offer a quote from Costa Rica Tours.',
     parameters: {
       type: 'OBJECT',
       properties: {
         query: { type: 'STRING', description: 'Keywords, e.g. "rafting", "chocolate", "caño negro"' },
         region: { type: 'STRING', description: 'Region or place, e.g. arenal, osa, sarapiqui, guanacaste' },
-        operator: { type: 'STRING', description: 'Operator name' },
         maxPriceUSD: { type: 'NUMBER', description: 'Maximum adult price in USD' },
         limit: { type: 'NUMBER', description: 'Max results (1-15)' }
       }
@@ -874,7 +871,7 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
   },
   {
     name: 'find_guides',
-    description: 'Find ICT-accredited tour guides by zone, language (e.g. German, French, Japanese) and specialty (naturalista, aguas rápidas, buceo...). Returns names, languages and ICT credentials plus association contacts; never personal phones.',
+    description: 'Check whether ICT-accredited guides are available by zone, language (e.g. German, French, Japanese) and specialty (naturalista, aguas rápidas, buceo...). Returns counts and languages only, never names or contacts; Costa Rica Tours coordinates the guide.',
     parameters: {
       type: 'OBJECT',
       properties: {

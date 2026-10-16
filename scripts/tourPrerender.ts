@@ -2,26 +2,26 @@ import type { Plugin } from 'vite';
 import type { Tour } from '../src/types';
 import { TOURS } from '../src/data/toursCatalog';
 import { publishedTourPrice, similarTours } from '../src/utils/tourPublication';
+import { neutralOperatorLabel, OPERATOR_IDENTITY_NOTE, SUPPLIER_POLICY } from '../src/utils/operatorPrivacy';
 
 const origin = 'https://costaricatours2026.vercel.app';
 const escape = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 
-/** Static catalog snapshot; no inventory, payment claims, ratings or Offer markup. */
+/** Static catalog snapshot; no inventory, payment claims, ratings, Offer markup or operator identity. */
 export function renderTourHtml(template: string, tour: Tour, tours: readonly Tour[]) {
   const title = `${tour.title.es} | Costa Rica Tours`;
   const description = tour.description.es.slice(0, 160);
   const canonical = `${origin}/tour/${encodeURIComponent(tour.id)}`;
   const price = publishedTourPrice(tour);
-  const source = /^https:\/\//i.test(tour.sourceUrl || '') ? tour.sourceUrl : undefined;
   const sections = (['es', 'en'] as const).map(lang => {
     const es = lang === 'es';
     return `<section lang="${lang}"><${es ? 'h1' : 'h2'}>${escape(tour.title[lang] || tour.title.es)}</${es ? 'h1' : 'h2'}>
       <p>${escape(tour.description[lang] || tour.description.es)}</p>
-      <p>${es ? 'Operador' : 'Operator'}: ${escape(tour.operatorName || (es ? 'Por confirmar' : 'To be confirmed'))}</p>
-      <p>${price === undefined ? (es ? 'Consultar precio' : 'Ask for price') : `${es ? 'Precio publicado desde' : 'Published price from'} US$${price}`}</p>
-      ${source ? `<a href="${escape(source)}" rel="nofollow noopener">${es ? 'Fuente del operador' : 'Operator source'}</a>` : ''}
-      ${tour.priceCheckedAt ? `<p>${es ? 'Revisado el' : 'Checked on'} ${escape(tour.priceCheckedAt)}</p>` : ''}
-      <p>${es ? 'Disponibilidad y precio final sujetos a confirmación escrita del operador antes del pago.' : 'Availability and final price require written operator confirmation before payment.'}</p>
+      <p>${es ? 'Operador' : 'Operator'}: ${escape(neutralOperatorLabel(tour)[lang])}</p>
+      <p>${price === undefined ? (es ? 'Consultar precio' : 'Ask for price') : `${es ? 'Precio de referencia desde' : 'Reference price from'} US$${price} (${es ? 'sujeto a confirmación' : 'subject to confirmation'})`}</p>
+      ${tour.priceCheckedAt ? `<p>${es ? 'Revisado por nuestro equipo el' : 'Reviewed by our team on'} ${escape(tour.priceCheckedAt)}</p>` : ''}
+      <p>${escape(SUPPLIER_POLICY[lang])} ${escape(OPERATOR_IDENTITY_NOTE[lang])}</p>
+      <p>${es ? 'Disponibilidad y precio final se confirman por escrito antes del pago.' : 'Availability and final price are confirmed in writing before payment.'}</p>
       <a href="/ai">${es ? 'Consultar disponibilidad' : 'Check availability'}</a></section>`;
   }).join('');
   const related = similarTours(tour, tours).map(t => `<li><a href="/tour/${encodeURIComponent(t.id)}">${escape(t.title.es)}</a></li>`).join('');
