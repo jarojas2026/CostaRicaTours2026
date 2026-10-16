@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import test from 'node:test';
 import { TOURS } from '../src/data/toursData';
 import { OPERATOR_TOURS } from '../src/data/operatorTours';
-import { resolveTour, tourAllowsPayment, tourReferencePrice, tourSource, TOUR_COMMERCIAL_STATUS } from '../src/utils/tourResolver';
+import { resolveTour, tourAllowsPayment, tourReferencePrice, tourReviewDate, TOUR_COMMERCIAL_STATUS } from '../src/utils/tourResolver';
 import { buildTourQuoteLeadPayload, parseTourQuoteLeadPayload, TOUR_QUOTE_SOURCE } from '../shared/tourQuoteRequest';
 import { buildLeadRecord, buildTourPageLeadInput } from '../backend/leadPipeline';
 import { buildSitemapXml } from '../scripts/generateSitemap';
@@ -31,11 +31,13 @@ test('every catalog tour resolves to itself', () => {
   for (const tour of TOURS) assert.equal(resolveTour(tour.id, TOURS)?.tour.id, tour.id);
 });
 
-test('operator tours: labelled published rate, source with date, inquiry status, no payment', () => {
+test('operator tours: labelled reference price, review date, no operator source, inquiry status, no payment', () => {
   const price = tourReferencePrice(operatorTour);
   assert.equal(price.amountUSD, operatorTour.priceUSD);
-  assert.equal(price.label.es, 'Tarifa publicada por el operador, sujeta a confirmación');
-  assert.deepEqual(tourSource(operatorTour), { url: operatorTour.sourceUrl, checkedAt: operatorTour.priceCheckedAt });
+  assert.equal(price.label.es, 'Precio de referencia, sujeto a confirmación');
+  assert.equal(tourReviewDate(operatorTour), operatorTour.priceCheckedAt);
+  assert.equal(operatorTour.sourceUrl, undefined);
+  assert.equal(operatorTour.operatorName, undefined);
   assert.equal(TOUR_COMMERCIAL_STATUS.es, 'Consultar disponibilidad');
   for (const tour of OPERATOR_TOURS) {
     assert.equal(tourAllowsPayment(tour), false, tour.id);
@@ -100,7 +102,7 @@ test('quote form posts to the leads endpoint, links /privacy and shows the pendi
   const src = fs.readFileSync('src/components/TourQuoteRequestForm.tsx', 'utf8');
   assert.match(src, /TOUR_QUOTE_ENDPOINT/);
   assert.match(src, /to="\/privacy"/);
-  assert.match(src, /Solicitud recibida, pendiente de confirmación del operador/);
+  assert.match(src, /Solicitud recibida\. Te enviaremos la cotización/);
   assert.doesNotMatch(src, /stripe|paypal|checkout/i);
   const route = fs.readFileSync('backend/routes/leads.ts', 'utf8');
   assert.match(route, /leadsRouter\.post\('\/api\/leads\/quote-request', chatLimiter/);
