@@ -20,7 +20,5 @@ export function getGeminiClient() {
   return client ??= new GoogleGenAI(options);
 }
 
-export function getConciergeModel() {
-  // Preserve the current default; operators can select a model enabled in their project.
-  return process.env.GEMINI_MODEL?.trim() || 'gemini-3.5-flash';
-}
+// Model names live in aiConfig.ts (single source of truth); re-exported for existing imports.
+export { getConciergeModel } from './aiConfig';
