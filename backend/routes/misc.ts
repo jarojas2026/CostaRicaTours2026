@@ -28,7 +28,7 @@ healthRouter.get('/api/health/ai', (_req, res) => {
       fallbackEnabled: cfg.fallbackEnabled,
       maxCostUsd: cfg.maxCostUsd,
       allowExternalPii: cfg.allowExternalPii,
-      billingBlocked: { gemini: isBillingBlocked('gemini'), claude: isBillingBlocked('claude') },
+      billingBlocked: { gemini: isBillingBlocked('gemini'), claude: isBillingBlocked('claude'), openai_compat: isBillingBlocked('openai_compat') },
     },
     breakers: getBreakerStates(),
   });
