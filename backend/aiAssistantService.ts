@@ -245,6 +245,14 @@ export async function processChatInquiry(
   }
 
 
+  // Proveedor OpenAI-compatible (Groq gratis) cuando es el preferido o Gemini no está disponible.
+  if (engine !== 'claude' && engine !== 'gemini' && usableProviders.includes('openai_compat')
+    && (usableProviders[0] === 'openai_compat' || !usableProviders.includes('gemini'))) {
+    const { runCompatConcierge } = await import('./compatConcierge');
+    const compat = await runCompatConcierge({ message, isEn, history, liveToolContext, agentId: requestedAgentId });
+    if (compat) return compat;
+  }
+
   try {
     const formattedHistory = history.map((h) => `${h.role === 'user' ? 'Usuario' : 'Asistente'}: ${h.text}`).join('\n');
     const prompt = `${formattedHistory ? `HISTORIAL DE LA CONVERSACIÓN:\n${formattedHistory}\n\n` : ''}${liveToolContext ? `CONTEXTO OPERATIVO VERIFICADO:\n${liveToolContext}\n\n` : ''}CONSULTA ACTUAL DEL USUARIO:\n${message}`;
