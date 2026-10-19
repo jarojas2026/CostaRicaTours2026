@@ -46,6 +46,7 @@ test('el prompt protege la identidad del proveedor y prohíbe inventar', () => {
   const p = buildCompatSystemPrompt(false);
   assert.match(p, /Never reveal operator/);
   assert.match(p, /Never invent/);
+  assert.match(p, /ALWAYS call search_operator_tours/);
   assert.match(p, /responde en español/i);
 });
 
