@@ -17,6 +17,7 @@ import {
   type AiProviderName,
 } from './aiConfig';
 import { getGeminiClient } from './geminiRuntime';
+import { openAiCompatChat } from './openaiCompatClient';
 import { scrubText } from '../shared/observability/scrubPii';
 
 export type AiTask = 'concierge' | 'concierge_classifier' | 'grounded_search' | 'counter_desk' | 'forecast'
@@ -114,7 +115,7 @@ export function resetBreakers() { breakers.clear(); }
 
 /** Estado público del breaker: sin secretos ni PII. */
 export function getBreakerStates(now = Date.now()) {
-  const keys: BreakerKey[] = ['gemini', 'gemini:search', 'claude'];
+  const keys: BreakerKey[] = ['gemini', 'gemini:search', 'claude', 'openai_compat'];
   return keys.map(key => {
     const open = isOpen(key, now);
     const b = breakers.get(key);
@@ -232,6 +233,7 @@ export type RunGenerativeInput = {
 export type RunGenerativeResult =
   | { provider: 'gemini'; model: string; response: any; text: string; latencyMs: number }
   | { provider: 'claude'; model: string; response: any; text: string; latencyMs: number }
+  | { provider: 'openai_compat'; model: string; response: any; text: string; latencyMs: number }
   | { provider: 'none'; reason: string; failure?: AiFailure };
 
 function contentsToText(contents: any): string {
@@ -269,6 +271,16 @@ export async function runGenerative(input: RunGenerativeInput): Promise<RunGener
         const config = { ...(input.config || {}), ...(hasTools ? { tools: input.tools } : {}) };
         const response: any = await callProvider(key, input.task, signal => client.models.generateContent({ model, contents, config: { ...config, abortSignal: signal } }));
         return { provider: 'gemini', model, response, text: String(response?.text ?? '').trim(), latencyMs: Date.now() - started };
+      }
+      if (provider === 'openai_compat') {
+        const system = typeof input.config?.systemInstruction === 'string' ? input.config.systemInstruction : undefined;
+        const response: any = await callProvider('openai_compat', input.task, signal => openAiCompatChat({
+          messages: [...(system ? [{ role: 'system' as const, content: system }] : []), { role: 'user' as const, content: contentsToText(contents) }],
+          signal,
+        }));
+        const text = String(response?.choices?.[0]?.message?.content ?? '').trim();
+        if (!text) { last = { reason: 'empty_response' }; continue; }
+        return { provider: 'openai_compat', model: String(response?.model || ''), response, text, latencyMs: Date.now() - started };
       }
       const { getClaudeClient } = await import('./claudeService');
       const client = getClaudeClient();

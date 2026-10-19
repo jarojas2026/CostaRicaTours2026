@@ -24,9 +24,14 @@
  *                          tampoco existe, el modelo interno histórico.
  * - GEMINI_EMBEDDING_MODEL modelo de embeddings (memoria semántica).
  * - CLAUDE_MODEL / ANTHROPIC_VERTEX_MODEL  modelo de Claude en Vertex AI.
+ * - OPENAI_COMPAT_BASE_URL / OPENAI_COMPAT_API_KEY / OPENAI_COMPAT_MODEL  proveedor
+ *                          OpenAI-compatible (Groq gratis por defecto: https://api.groq.com/openai/v1).
+ * - OPENAI_COMPAT_REASONING_EFFORT  low | medium | high (por defecto low; con gpt-oss evita
+ *                          respuestas vacías por consumir el presupuesto en razonamiento).
+ * - OPENAI_COMPAT_MAX_TOKENS  por defecto 700 (acotado 100-4000).
  */
 
-export type AiProviderName = 'gemini' | 'claude';
+export type AiProviderName = 'gemini' | 'claude' | 'openai_compat';
 export type AiProviderPreference = 'auto' | AiProviderName | 'none';
 
 // Valores por defecto: se conservan exactamente los que ya usaba el código.
@@ -34,6 +39,7 @@ const DEFAULT_CONCIERGE_MODEL = 'gemini-3.5-flash';
 const DEFAULT_INTERNAL_MODEL = 'gemini-2.5-flash';
 const DEFAULT_EMBEDDING_MODEL = 'gemini-embedding-001';
 const DEFAULT_CLAUDE_MODEL = 'claude-3-5-sonnet-v2@20241022';
+const DEFAULT_OPENAI_COMPAT_MODEL = 'openai/gpt-oss-120b';
 
 type Env = NodeJS.ProcessEnv | Record<string, string | undefined>;
 
@@ -47,12 +53,12 @@ const bool = (value: string | undefined, fallback: boolean) => {
 
 export function getAiConfig(env: Env = process.env) {
   const rawProvider = str(env.AI_PROVIDER).toLowerCase();
-  const provider: AiProviderPreference = (['auto', 'gemini', 'claude', 'none'] as const).includes(rawProvider as AiProviderPreference)
+  const provider: AiProviderPreference = (['auto', 'gemini', 'claude', 'openai_compat', 'none'] as const).includes(rawProvider as AiProviderPreference)
     ? rawProvider as AiProviderPreference : 'auto';
   const cost = Number(str(env.AI_MAX_COST_USD) || '0');
   const timeout = Number(str(env.AI_REQUEST_TIMEOUT_MS) || '12000');
   const billableProviders = str(env.AI_BILLABLE_PROVIDERS).toLowerCase().split(',').map(s => s.trim())
-    .filter((p): p is AiProviderName => p === 'gemini' || p === 'claude');
+    .filter((p): p is AiProviderName => p === 'gemini' || p === 'claude' || p === 'openai_compat');
   return {
     provider,
     fallbackEnabled: bool(env.AI_FALLBACK_ENABLED, true),
@@ -99,7 +105,26 @@ export function isGeminiConfigured(env: Env = process.env) {
   return Boolean(key && !key.startsWith('AQ.') && key.length >= 20);
 }
 
+export function getOpenAiCompatConfig(env: Env = process.env) {
+  const effort = str(env.OPENAI_COMPAT_REASONING_EFFORT).toLowerCase();
+  const maxTokens = Number(str(env.OPENAI_COMPAT_MAX_TOKENS) || '700');
+  return {
+    baseUrl: str(env.OPENAI_COMPAT_BASE_URL).replace(/\/+$/, ''),
+    model: str(env.OPENAI_COMPAT_MODEL) || DEFAULT_OPENAI_COMPAT_MODEL,
+    reasoningEffort: (['low', 'medium', 'high'].includes(effort) ? effort : 'low') as 'low' | 'medium' | 'high',
+    maxTokens: Number.isFinite(maxTokens) ? Math.min(4000, Math.max(100, Math.round(maxTokens))) : 700,
+  };
+}
+
+/** Proveedor OpenAI-compatible (Groq/OpenRouter): URL https y clave presente. */
+export function isOpenAiCompatConfigured(env: Env = process.env) {
+  const url = str(env.OPENAI_COMPAT_BASE_URL);
+  const key = str(env.OPENAI_COMPAT_API_KEY);
+  return /^https:\/\/[^\s]+$/i.test(url) && key.length >= 20;
+}
+
 export function isProviderConfigured(provider: AiProviderName, env: Env = process.env) {
+  if (provider === 'openai_compat') return isOpenAiCompatConfigured(env);
   return provider === 'gemini' ? isGeminiConfigured(env) : isClaudeConfigured(env);
 }
 
@@ -112,9 +137,11 @@ export function isBillingBlocked(provider: AiProviderName, env: Env = process.en
 /** Orden de proveedores a intentar. auto/none conservan el orden histórico: Claude (si está configurado) y luego Gemini. */
 export function providerOrder(env: Env = process.env): AiProviderName[] {
   const cfg = getAiConfig(env);
-  const base: AiProviderName[] = cfg.provider === 'gemini' ? ['gemini', 'claude'] : ['claude', 'gemini'];
+  const base: AiProviderName[] = cfg.provider === 'gemini' ? ['gemini', 'claude', 'openai_compat']
+    : cfg.provider === 'openai_compat' ? ['openai_compat', 'claude', 'gemini'] : ['claude', 'gemini', 'openai_compat'];
   const usable = base.filter(p => isProviderConfigured(p, env) && !isBillingBlocked(p, env));
   if (cfg.fallbackEnabled) return usable;
   // Sin fallback: solo el proveedor preferido (o el primero disponible en auto/none).
-  return cfg.provider === 'gemini' || cfg.provider === 'claude' ? usable.filter(p => p === cfg.provider) : usable.slice(0, 1);
+  return cfg.provider === 'gemini' || cfg.provider === 'claude' || cfg.provider === 'openai_compat'
+    ? usable.filter(p => p === cfg.provider) : usable.slice(0, 1);
 }

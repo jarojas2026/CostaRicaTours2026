@@ -1,5 +1,5 @@
 /** Passive, instance-local observations. Reading health never invokes a paid model. */
-import { isClaudeConfigured, isGeminiConfigured } from './aiConfig';
+import { isClaudeConfigured, isGeminiConfigured, isOpenAiCompatConfigured, type AiProviderName } from './aiConfig';
 
 export type AiFailure = 'configuration_missing' | 'billing' | 'authentication' | 'permission' | 'quota' | 'model_unavailable' | 'timeout' | 'provider_error';
 type Observation = { at: number; failure: AiFailure | null };
@@ -20,7 +20,7 @@ export function classifyAiFailure(error: unknown): AiFailure {
   return 'provider_error';
 }
 
-export function recordAiObservation(provider: 'gemini' | 'claude', failure: AiFailure | null, now = Date.now()) {
+export function recordAiObservation(provider: AiProviderName, failure: AiFailure | null, now = Date.now()) {
   const previous = observations.get(provider);
   observations.set(provider, { at: now, failure });
   if (failure && (!previous || previous.failure !== failure || now - previous.at >= FRESH_MS)) {
@@ -35,6 +35,7 @@ export function getAiHealth(env: NodeJS.ProcessEnv = process.env, now = Date.now
   const configured = {
     gemini: isGeminiConfigured(env),
     claude: isClaudeConfigured(env),
+    openai_compat: isOpenAiCompatConfigured(env),
   };
   const providers = Object.entries(configured).map(([provider, ready]) => {
     const last = observations.get(provider);
