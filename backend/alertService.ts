@@ -146,7 +146,7 @@ async function dispatchAlertEmail(alert: AdminAlert): Promise<void> {
             ${providerHtml}
             ${metadataHtml}
             <div style="margin-top: 24px; text-align: center;">
-              <a href="${process.env.APP_URL || 'https://costaricatours.com'}" style="display: inline-block; background-color: #059669; color: #ffffff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold;">
+              <a href="${process.env.APP_URL || 'https://costaricatours2026.vercel.app'}" style="display: inline-block; background-color: #059669; color: #ffffff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold;">
                 Abrir Panel de Administración
               </a>
             </div>

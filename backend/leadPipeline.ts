@@ -623,7 +623,66 @@ export function captureLeadInBackground(input: LeadInput): void {
 export async function captureLeadAndNotify(input: LeadInput): Promise<CaptureResult> {
   const result = await captureLead(input);
   void notifyNewLead(result).catch(err => console.warn('[leads] aviso fallido:', err?.message || err));
+  void sendCustomerAck(result).catch(err => console.warn('[leads] acuse al cliente fallido:', err?.message || err));
   return result;
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch] as string));
+}
+
+/**
+ * Acuse de recibo al cliente (solo si dio consentimiento y dejó correo).
+ * Nunca incluye datos de operadores ni precios: solo confirma la recepción.
+ */
+export function buildCustomerAckEmail(lead: Pick<LeadRecord, 'id' | 'language' | 'contact' | 'request'>): { to: string; subject: string; html: string; text: string } | null {
+  const to = lead.contact?.email;
+  if (!to) return null;
+  const es = lead.language !== 'en';
+  const name = lead.contact?.name?.trim() || (es ? 'viajero' : 'traveler');
+  const tour = lead.request.tourTitle || (es ? 'tu experiencia en Costa Rica' : 'your Costa Rica experience');
+  const people = lead.request.people ? (es ? `${lead.request.people} persona(s)` : `${lead.request.people} traveler(s)`) : '';
+  const when = lead.request.date || (es ? 'fecha por definir' : 'date to be defined');
+  const ref = lead.id.slice(-8).toUpperCase();
+  const subject = es ? `Recibimos tu solicitud: ${tour}` : `We received your request: ${tour}`;
+  const lines = es
+    ? [
+        `Hola ${name}:`,
+        '',
+        `Gracias por escribirnos. Recibimos tu solicitud de cotización para "${tour}"${people ? ` (${people})` : ''}, ${when}.`,
+        'Vamos a confirmar disponibilidad y precio con nuestros operadores locales y te enviaremos la cotización antes de cualquier pago. No se ha hecho ningún cargo.',
+        'Trabajamos con operadores locales; verificamos su declaratoria turística del ICT antes de confirmar cada reserva.',
+        '',
+        `Referencia: ${ref}`,
+        'Si necesitas cambiar algo, responde a este correo.',
+        '',
+        'Costa Rica Tours',
+      ]
+    : [
+        `Hi ${name},`,
+        '',
+        `Thanks for reaching out. We received your quote request for "${tour}"${people ? ` (${people})` : ''}, ${when}.`,
+        "We'll confirm availability and price with our local operators and send you the quote before any payment. You have not been charged.",
+        'We work with local operators and verify their ICT tourism declaration before confirming each booking.',
+        '',
+        `Reference: ${ref}`,
+        'If anything changes, just reply to this email.',
+        '',
+        'Costa Rica Tours',
+      ];
+  const text = lines.join('\n');
+  const html = `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#0f172a">${lines.map(l => l ? `<p style="margin:0 0 8px">${escapeHtml(l)}</p>` : '').join('')}</div>`;
+  return { to, subject, html, text };
+}
+
+async function sendCustomerAck({ lead, created }: CaptureResult): Promise<void> {
+  if (!created || process.env.LEADS_CUSTOMER_ACK === 'false' || process.env.NODE_ENV === 'test') return;
+  if (!lead.consent?.dataProcessing) return;
+  const email = buildCustomerAckEmail(lead);
+  if (!email) return;
+  const { sendEmail } = await import('./notificationService');
+  const result = await sendEmail(email);
+  if (!result.success) console.warn('[leads] acuse al cliente no enviado:', result.error);
 }
 
 async function notifyNewLead({ lead, created }: CaptureResult): Promise<void> {
