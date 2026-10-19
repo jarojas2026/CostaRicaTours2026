@@ -13,7 +13,8 @@ import { healthRouter } from '../backend/routes/misc';
 
 const AI_ENV_KEYS = ['GEMINI_API_KEY', 'GOOGLE_GENAI_USE_VERTEXAI', 'ANTHROPIC_VERTEX_MODEL', 'CLAUDE_MODEL', 'ANTHROPIC_VERTEX_PROJECT_ID',
   'GCP_PROJECT', 'GOOGLE_CLOUD_PROJECT', 'AI_PROVIDER', 'AI_FALLBACK_ENABLED', 'AI_MAX_COST_USD', 'AI_BILLABLE_PROVIDERS',
-  'AI_ALLOW_EXTERNAL_PII', 'AI_REQUEST_TIMEOUT_MS', 'GEMINI_MODEL', 'GEMINI_MODEL_LIGHT'];
+  'AI_ALLOW_EXTERNAL_PII', 'AI_REQUEST_TIMEOUT_MS', 'GEMINI_MODEL', 'GEMINI_MODEL_LIGHT',
+  'OPENAI_COMPAT_BASE_URL', 'OPENAI_COMPAT_API_KEY', 'OPENAI_COMPAT_MODEL'];
 
 async function withEnv(env: Record<string, string>, run: () => Promise<void> | void) {
   const saved = Object.fromEntries(AI_ENV_KEYS.map(k => [k, process.env[k]]));
