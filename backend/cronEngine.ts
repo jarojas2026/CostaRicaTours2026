@@ -13,6 +13,7 @@ import { runReservationLifecycleSweep } from './reservationLifecycleOrchestrator
 import { processEmailOperationsOnce } from './emailOperationsAgent';
 import { runJarvisSupervisionSweep } from './jarvisOrchestrator';
 import { executeAutomatedProviderPayouts } from './providerPayoutService';
+import { executeProviderConfirmationReminders } from './providerReminderService';
 import {
   executeSurveillanceAndEscalation,
   executeDailyOperationReport,
@@ -135,6 +136,18 @@ export function initializeAutomationEngine() {
     } catch (error: any) {
       console.error('❌ Error ejecutando CRON_RECORDATORIO_24H_7AM:', error);
       logAutomationExecution('CRON_RECORDATORIO_24H_7AM', 0, 'error', `Fallo: ${error.message}`);
+    }
+  }, CR_TIMEZONE);
+
+  // 2b. CRON: RECORDATORIO A PROVEEDORES SIN CONFIRMAR (Cada 6 horas)
+  // Reemplaza el workflow n8n "Seguimiento a Proveedores (IA)".
+  cron.schedule('15 */6 * * *', async () => {
+    try {
+      const res = await withDistributedAutomationLock('provider-confirmation-reminders-6h', () => executeProviderConfirmationReminders());
+      if (res) logAutomationExecution('CRON_RECORDATORIO_PROVEEDORES_6H', 0, 'success', `Revisadas ${res.checked}, recordatorios ${res.reminded}, escaladas ${res.escalated}, sin email ${res.missingEmail}, errores ${res.errors}.`);
+    } catch (error: any) {
+      console.error('❌ Error ejecutando CRON_RECORDATORIO_PROVEEDORES_6H:', error);
+      logAutomationExecution('CRON_RECORDATORIO_PROVEEDORES_6H', 0, 'error', `Fallo: ${error.message}`);
     }
   }, CR_TIMEZONE);
 

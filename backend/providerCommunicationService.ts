@@ -15,7 +15,7 @@ import { acceptProviderOrder } from './providerAcceptance';
 
 export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || '';
 
-function resolveConfiguredProviderEmail(provider: TourProvider): string {
+export function resolveConfiguredProviderEmail(provider: TourProvider): string {
   const raw = process.env.PROVIDER_EMAILS_JSON;
   if (raw) {
     try {
@@ -57,7 +57,7 @@ export interface TourProvider {
 }
 
 /** La autorización operativa se obtiene de Firestore; el registro histórico sólo aporta metadata. */
-async function resolveOperationalProvider(providerId: string, tourId: string): Promise<TourProvider | null> {
+export async function resolveOperationalProvider(providerId: string, tourId: string): Promise<TourProvider | null> {
   const legacy = REGISTERED_PROVIDERS.find(provider => provider.id === providerId) || null;
   const db = getFirestoreDb();
   if (!db) {
