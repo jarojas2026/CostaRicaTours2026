@@ -736,7 +736,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         const nightly = getMapServiceUnitPriceUSD(srv);
         badgeContent = nightly === null ? (language === 'es' ? 'Consultar' : 'Ask') : `$${nightly}/n`;
       } else if (srv.type === 'national_park') {
-        badgeContent = srv.officialPriceUSD ? `SINAC $${srv.officialPriceUSD.toFixed(0)}` : 'SINAC';
+        badgeContent = 'SINAC';
       } else if (srv.type === 'airstrip' || srv.type === 'airport') {
         badgeContent = srv.flightCode?.split(' ')[0] || 'AÉREO';
       } else if (srv.type === 'bus_station') {
@@ -1758,7 +1758,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     </div>
                     <span className="block font-black text-lg text-white">{routeCalcResult.busHours}</span>
                     <span className="block text-[10px] text-blue-200/70">
-                      {language === 'es' ? 'Económico (~$5 - $12 USD)' : 'Budget (~$5 - $12 USD)'}
+                      {language === 'es' ? 'Económico · tarifa a consultar' : 'Budget · fare on request'}
                     </span>
                   </div>
 

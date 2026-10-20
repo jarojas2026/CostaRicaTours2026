@@ -3,8 +3,8 @@ import type { MapTourismService } from '../data/mapServicesData';
 /**
  * Precios de referencia de los servicios del mapa.
  *
- * Regla: nunca se inventa un precio. Si el servicio no trae un precio real (> 0),
- * se devuelve null: la UI muestra "Precio a consultar" / "Price on request",
+ * Regla: nunca se inventa un precio. Si el servicio no trae un precio real (> 0)
+ * con fuente verificable (priceSource: URL https + fecha de revisión), se devuelve null: la UI muestra "Precio a consultar" / "Price on request",
  * no calcula total y deriva a solicitud de cotización.
  */
 
@@ -19,7 +19,16 @@ const realPrice = (value: unknown): number | null => {
 };
 
 /** Precio unitario real del servicio (noche, entrada o pasaje) o null si no hay uno publicado. */
-export function getMapServiceUnitPriceUSD(service: Pick<MapTourismService, 'type' | 'pricePerNightUSD' | 'officialPriceUSD' | 'averageTicketUSD'>): number | null {
+type PricedService = Pick<MapTourismService, 'type' | 'pricePerNightUSD' | 'officialPriceUSD' | 'averageTicketUSD' | 'priceSource'>;
+
+/** true solo si el precio cita una página https y una fecha de revisión AAAA-MM-DD. */
+export function hasVerifiablePriceSource(service: Pick<MapTourismService, 'priceSource'>): boolean {
+  const src = service.priceSource;
+  return Boolean(src && /^https:\/\/\S+$/.test(String(src.url || '')) && /^\d{4}-\d{2}-\d{2}$/.test(String(src.checkedAt || '')));
+}
+
+export function getMapServiceUnitPriceUSD(service: PricedService): number | null {
+  if (!hasVerifiablePriceSource(service)) return null;
   switch (service.type) {
     case 'hotel':
       return realPrice(service.pricePerNightUSD);
@@ -44,7 +53,7 @@ export interface MapServiceEstimateInput {
 
 /** Total estimado (USD) solo cuando hay precio real; null = "Precio a consultar". */
 export function estimateMapServiceTotalUSD(
-  service: Pick<MapTourismService, 'type' | 'pricePerNightUSD' | 'officialPriceUSD' | 'averageTicketUSD'>,
+  service: PricedService,
   input: MapServiceEstimateInput
 ): number | null {
   const unit = getMapServiceUnitPriceUSD(service);
