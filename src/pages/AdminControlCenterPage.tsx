@@ -2,17 +2,18 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Activity, AlertTriangle, BookOpen, Bot, CheckCircle2, ChevronRight, Clock3, Database, ExternalLink,
-  Inbox, LayoutDashboard, Mail, RefreshCw, Settings, ShieldCheck, Store, Users, Wallet
+  Inbox, LayoutDashboard, Mail, RefreshCw, Settings, ShieldCheck, Store, Users, Wallet, Workflow
 } from 'lucide-react';
 import { Language } from '../types';
 import { auth } from '../firebase';
 import { CommerceOperationsPanel } from '../components/CommerceOperationsPanel';
 import { KnowledgeCityPanel } from '../components/KnowledgeCityPanel';
 import { AgentOfficeMap } from '../components/AgentOfficeMap';
+import { MissionControlPanel } from '../components/MissionControlPanel';
 import { DigitalCityRegistrationPreflight } from '../components/DigitalCityRegistrationPreflight';
 import { DigitalCityReviewQueue } from '../components/DigitalCityReviewQueue';
 
-type SectionId = 'resumen' | 'leads' | 'tours' | 'operadores' | 'ia' | 'contenido' | 'ajustes';
+type SectionId = 'resumen' | 'leads' | 'tours' | 'operadores' | 'ia' | 'misiones' | 'contenido' | 'ajustes';
 type LeadLite = { id: string; status: string; lastActivityAt?: string; createdAt?: string };
 
 const SECTIONS: { id: SectionId; icon: React.ComponentType<{ size?: number; className?: string }>; es: string; en: string }[] = [
@@ -21,6 +22,7 @@ const SECTIONS: { id: SectionId; icon: React.ComponentType<{ size?: number; clas
   { id: 'tours', icon: Store, es: 'Tours / Tienda', en: 'Tours / Store' },
   { id: 'operadores', icon: Users, es: 'Operadores', en: 'Operators' },
   { id: 'ia', icon: Bot, es: 'IA', en: 'AI' },
+  { id: 'misiones', icon: Workflow, es: 'Misiones', en: 'Missions' },
   { id: 'contenido', icon: BookOpen, es: 'Contenido', en: 'Content' },
   { id: 'ajustes', icon: Settings, es: 'Ajustes', en: 'Settings' }
 ];
@@ -206,6 +208,8 @@ export const AdminControlCenterPage: React.FC<{ language: Language }> = ({ langu
         </div>
         <DigitalCityReviewQueue language={language} />
       </div>;
+
+      case 'misiones': return <MissionControlPanel language={language} />;
 
       case 'ia': return <div className="space-y-6">
         <SectionTitle title={es ? 'Inteligencia artificial' : 'Artificial intelligence'} subtitle={es ? 'Estado global de los agentes y automatizaciones.' : 'Global status of agents and automations.'}
