@@ -1,10 +1,27 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, User } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut as firebaseSignOut, onAuthStateChanged, User, type UserCredential } from 'firebase/auth';
 import { initializeFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 import firebaseConfig from '../firebase-applet-config.json';
 
-export const app = initializeApp(firebaseConfig);
+// Firebase best practice: serve the auth handler from our own domain so the
+// Google consent screen shows costaricatours2026.vercel.app instead of the
+// *.firebaseapp.com project domain. vercel.json proxies /__/auth/* and
+// /__/firebase/* to the Firebase project. Only hosts that have that proxy are
+// allowlisted; everything else (localhost, previews) keeps the default domain.
+const PROXIED_AUTH_HOSTS = ['costaricatours2026.vercel.app'];
+
+export function resolveAuthDomain(fallback: string, host?: string | null): string {
+  const override = (import.meta as any).env?.VITE_FIREBASE_AUTH_DOMAIN as string | undefined;
+  if (override) return override;
+  const currentHost = host ?? (typeof window !== 'undefined' ? window.location.host : '');
+  return currentHost && PROXIED_AUTH_HOSTS.includes(currentHost) ? currentHost : fallback;
+}
+
+export const app = initializeApp({
+  ...firebaseConfig,
+  authDomain: resolveAuthDomain(firebaseConfig.authDomain),
+});
 export const analytics = typeof window !== 'undefined' ? isSupported().then(yes => yes ? getAnalytics(app) : null) : null;
 
 export const db = (firebaseConfig as any).firestoreDatabaseId
@@ -79,11 +96,37 @@ googleProvider.addScope('https://www.googleapis.com/auth/gmail.send');
 let cachedAccessToken: string | null = null;
 let isSigningIn = false;
 
+// Completes a signInWithRedirect fallback (popup blocked / COOP). Runs once.
+let redirectResultPromise: Promise<UserCredential | null> | null = null;
+const consumeRedirectResult = () => {
+  if (!redirectResultPromise) {
+    redirectResultPromise = getRedirectResult(auth)
+      .then(result => {
+        const token = result ? GoogleAuthProvider.credentialFromResult(result)?.accessToken : null;
+        if (token) cachedAccessToken = token;
+        return result;
+      })
+      .catch(error => {
+        console.error('Google redirect sign-in error', error);
+        return null;
+      });
+  }
+  return redirectResultPromise;
+};
+
+const POPUP_FALLBACK_CODES = new Set([
+  'auth/popup-blocked',
+  'auth/operation-not-supported-in-this-environment',
+  'auth/web-storage-unsupported',
+]);
+
 export const initAuth = (
   onAuthSuccess?: (user: User, token: string) => void,
   onAuthFailure?: () => void
 ) => {
+  consumeRedirectResult();
   return onAuthStateChanged(auth, async (user: User | null) => {
+    if (redirectResultPromise) await redirectResultPromise;
     if (user) {
       if (cachedAccessToken) {
         if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken);
@@ -110,6 +153,11 @@ export const signInWithGoogle = async (): Promise<{ user: User; accessToken: str
     cachedAccessToken = credential.accessToken;
     return { user: result.user, accessToken: cachedAccessToken };
   } catch (error: any) {
+    if (POPUP_FALLBACK_CODES.has(error?.code)) {
+      // Popup could not open (blocked or COOP-restricted): fall back to a full-page redirect.
+      await signInWithRedirect(auth, googleProvider);
+      return null;
+    }
     if (error?.code === 'auth/cancelled-popup-request' || error?.code === 'auth/popup-closed-by-user') {
       console.log('User cancelled sign-in popup.');
       return null;

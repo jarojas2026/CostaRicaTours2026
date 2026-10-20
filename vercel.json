@@ -2805,10 +2805,29 @@
       "statusCode": 301
     }
   ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin-allow-popups"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/:path((?!gateway$).*)",
       "destination": "/api/gateway?__crt_path=:path"
+    },
+    {
+      "source": "/__/auth/:path*",
+      "destination": "https://gen-lang-client-0782739149.firebaseapp.com/__/auth/:path*"
+    },
+    {
+      "source": "/__/firebase/:path*",
+      "destination": "https://gen-lang-client-0782739149.firebaseapp.com/__/firebase/:path*"
     },
     {
       "source": "/ai",
