@@ -30,8 +30,9 @@ export function renderTourHtml(template: string, tour: Tour, tours: readonly Tou
     .replace(/<title>[\s\S]*?<\/title>/i, `<title>${escape(title)}</title>`)
     .replace(/<meta\s+(?:name|property)="(?:description|og:title|og:description|og:url|twitter:title|twitter:description)"[^>]*>/gi, '')
     .replace(/<link\s+rel="canonical"[^>]*>/gi, '')
+    .replace(/<link\s+rel="alternate"\s+hreflang="[^"]*"[^>]*>\s*/gi, '')
     .replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/gi, '')
-    .replace('</head>', `<meta name="description" content="${escape(description)}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${canonical}"><link rel="canonical" href="${canonical}"><script id="tour-schema" type="application/ld+json">${schema}</script></head>`)
+    .replace('</head>', `<meta name="description" content="${escape(description)}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${canonical}"><link rel="canonical" href="${canonical}"><link rel="alternate" hreflang="es" href="${canonical}?lang=es"><link rel="alternate" hreflang="en" href="${canonical}?lang=en"><link rel="alternate" hreflang="x-default" href="${canonical}"><script id="tour-schema" type="application/ld+json">${schema}</script></head>`)
     .replace('<div id="root"></div>', `<div id="root"><main style="max-width:70rem;margin:3rem auto;padding:2rem"><a href="/tours">Tours</a>${sections}<h2>Tours similares / Similar tours</h2><ul>${related}</ul></main></div>`);
 }
 
@@ -56,6 +57,7 @@ export function renderNotFoundHtml(template: string, tours: readonly Tour[]) {
     .replace(/<meta\s+name="robots"[^>]*>/gi, '')
     .replace(/<link\s+rel="canonical"[^>]*>/gi, '')
     .replace(/<meta\s+property="og:url"[^>]*>/gi, '')
+    .replace(/<link\s+rel="alternate"\s+hreflang="[^"]*"[^>]*>\s*/gi, '')
     .replace('</head>', '<meta name="robots" content="noindex,follow"></head>')
     .replace('<div id="root"></div>', `<div id="root">${body}</div>`);
 }

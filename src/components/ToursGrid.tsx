@@ -5,6 +5,7 @@ import { TourCard } from './TourCard';
 import { LazyImage } from './LazyImage';
 import { TourComparisonModal } from './TourComparisonModal';
 import { CATEGORIES, REGIONS } from '../data/catalogMeta';
+import { createT, localeTag } from '../i18n';
 import { formatCurrency, getLangText } from '../utils/i18n';
 import { isBookableTour, normalizeCatalogSearch } from '../utils/tourListing';
 import { motion, AnimatePresence } from 'motion/react';
@@ -66,6 +67,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
   setViewMode = () => {}
 }) => {
   const navigate = useNavigate();
+  const t = createT(language);
   const tours = propTours || [];
   const availableRegions = REGIONS.filter((region) => tours.some((tour) => tour.region === region.id));
   const availableCategories = CATEGORIES.filter((category) => tours.some((tour) => tour.category === category.id));
@@ -79,11 +81,11 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
   const startVoiceSearch = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert(language === 'es' ? 'Tu navegador no soporta búsqueda por voz. Usa Chrome.' : 'Browser does not support voice search. Use Chrome.');
+      alert(t('toursGrid.browserDoesNotSupport'));
       return;
     }
     const recognition = new SpeechRecognition();
-    recognition.lang = language === 'es' ? 'es-CR' : 'en-US';
+    recognition.lang = localeTag(language);
     recognition.continuous = false;
     recognition.interimResults = false;
     
@@ -253,9 +255,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={
-                language === 'es'
-                  ? 'Buscar volcanes, playas, perezosos, rafting...'
-                  : 'Search volcanoes, beaches, sloths, rafting...'
+                t('toursGrid.searchVolcanoesBeachesSloths')
               }
               className="w-full bg-emerald-950/60 text-white text-xs sm:text-sm pl-10 pr-18 py-2.5 rounded-full border border-emerald-500/30 focus:outline-none focus:border-amber-400 focus:bg-emerald-950/90 transition-all placeholder:text-emerald-300/40 shadow-inner"
             />
@@ -264,7 +264,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 type="button"
                 onClick={() => setSearchQuery('')}
                 className="absolute right-10 top-1/2 -translate-y-1/2 text-stone-400 hover:text-white p-1"
-                aria-label={language === 'es' ? 'Borrar búsqueda' : 'Clear search'}
+                aria-label={t('toursGrid.clearSearch')}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -277,7 +277,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   ? 'bg-amber-400/20 text-amber-400 animate-pulse' 
                   : 'text-emerald-300/70 hover:text-amber-400 hover:bg-emerald-900/60'
               }`}
-              title={language === 'es' ? 'Búsqueda por voz' : 'Voice Search'}
+              title={t('toursGrid.voiceSearch')}
             >
               {isListening ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mic className="w-3.5 h-3.5" />}
             </button>
@@ -292,9 +292,9 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 value={selectedRegion}
                 onChange={(e) => setSelectedRegion(e.target.value as any)}
                 className="bg-emerald-950/70 hover:bg-emerald-900/80 text-stone-100 text-xs font-bold pl-7 pr-4 py-2 rounded-full border border-emerald-500/30 focus:outline-none focus:border-amber-400 cursor-pointer appearance-none transition-colors"
-                aria-label={language === 'es' ? 'Filtrar por región' : 'Filter by region'}
+                aria-label={t('toursGrid.filterRegion')}
               >
-                <option value="all">📍 {language === 'es' ? 'Todas las Regiones' : 'All Regions'}</option>
+                <option value="all">📍 {t('toursGrid.allRegions')}</option>
                 {availableRegions.map(reg => (
                   <option key={reg.id} value={reg.id}>
                     📍 {getLangText(reg.name, language).split('/')[0]}
@@ -314,10 +314,10 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   ? 'bg-amber-400 text-stone-950 border-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.35)]'
                   : 'bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-200/90 border-emerald-500/30'
               }`}
-              title={language === 'es' ? 'Controles deslizantes en tiempo real (precio, horas, rating)' : 'Real-time interactive sliders'}
+              title={t('toursGrid.realTimeInteractiveSliders')}
             >
               <Zap className={`w-3.5 h-3.5 ${isSliding ? 'animate-bounce text-stone-950' : ''}`} />
-              <span>{language === 'es' ? 'Sliders en Vivo' : 'Live Sliders'}</span>
+              <span>{t('toursGrid.liveSliders')}</span>
               {((hasBookableOffers && maxPrice < 500) || maxDurationHours < 14 || (hasVerifiedRatings && minRating > 0)) && (
                 <span className="w-2 h-2 rounded-full bg-emerald-950 animate-pulse"></span>
               )}
@@ -332,10 +332,10 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   ? 'bg-amber-400 text-stone-950 border-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.35)]'
                   : 'bg-emerald-900/60 hover:bg-emerald-800/80 text-emerald-100 hover:text-white border-emerald-500/30'
               }`}
-              title={language === 'es' ? 'Abrir filtros y preferencias' : 'Open filters and preferences'}
+              title={t('toursGrid.openFiltersPreferences')}
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>{language === 'es' ? 'Filtros' : 'Filters'}</span>
+              <span>{t('toursGrid.filters')}</span>
               {activeFiltersCount > 0 && (
                 <span className="bg-stone-950 text-amber-400 text-[10px] px-1.5 py-0.2 rounded-full font-black">
                   {activeFiltersCount}
@@ -349,13 +349,13 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="bg-emerald-950/70 hover:bg-emerald-900/80 text-stone-100 text-xs font-bold pl-7 pr-3 py-2 rounded-full border border-emerald-500/30 focus:outline-none focus:border-amber-400 cursor-pointer appearance-none transition-colors"
-                aria-label={language === 'es' ? 'Ordenar tours' : 'Sort tours'}
+                aria-label={t('toursGrid.sortTours')}
               >
-                <option value="popular">{language === 'es' ? 'Destacados' : 'Featured'}</option>
-                {hasVerifiedRatings && <option value="rating">⭐ {language === 'es' ? 'Calificación verificada' : 'Verified rating'}</option>}
-                {hasBookableOffers && <option value="price_asc">💲 {language === 'es' ? 'Precio: Menor' : 'Price: Low'}</option>}
-                {hasBookableOffers && <option value="price_desc">💎 {language === 'es' ? 'Precio: Mayor' : 'Price: High'}</option>}
-                <option value="duration">⏱️ {language === 'es' ? 'Duración' : 'Duration'}</option>
+                <option value="popular">{t('toursGrid.featured')}</option>
+                {hasVerifiedRatings && <option value="rating">⭐ {t('toursGrid.verifiedRating')}</option>}
+                {hasBookableOffers && <option value="price_asc">💲 {t('toursGrid.priceLow')}</option>}
+                {hasBookableOffers && <option value="price_desc">💎 {t('toursGrid.priceHigh')}</option>}
+                <option value="duration">⏱️ {t('toursGrid.duration')}</option>
               </select>
               <ArrowUpDown className="w-3.5 h-3.5 text-amber-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -368,7 +368,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 className={`p-1.5 rounded-full transition-colors ${
                   viewMode === 'grid' ? 'bg-amber-400 text-stone-950 font-black shadow-sm' : 'text-emerald-300/70 hover:text-white'
                 }`}
-                title={language === 'es' ? 'Vista Cuadrícula' : 'Grid View'}
+                title={t('toursGrid.gridView')}
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
               </button>
@@ -378,7 +378,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 className={`p-1.5 rounded-full transition-colors ${
                   viewMode === 'list' ? 'bg-amber-400 text-stone-950 font-black shadow-sm' : 'text-emerald-300/70 hover:text-white'
                 }`}
-                title={language === 'es' ? 'Vista Lista' : 'List View'}
+                title={t('toursGrid.listView')}
               >
                 <List className="w-3.5 h-3.5" />
               </button>
@@ -390,10 +390,10 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 type="button"
                 onClick={onOpenMap}
                 className="hidden sm:flex items-center gap-1 bg-emerald-950/70 hover:bg-emerald-900 text-emerald-300 hover:text-amber-300 px-3 py-2 rounded-full border border-emerald-500/30 text-xs font-bold transition-all"
-                title={language === 'es' ? 'Ver mapa interactivo' : 'View interactive map'}
+                title={t('toursGrid.viewInteractiveMap')}
               >
                 <Map className="w-3.5 h-3.5 text-teal-400" />
-                <span className="hidden lg:inline">{language === 'es' ? 'Mapa' : 'Map'}</span>
+                <span className="hidden lg:inline">{t('toursGrid.map')}</span>
               </button>
             )}
 
@@ -416,16 +416,16 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
                   </span>
                   <span className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                    <span>⚡ {language === 'es' ? 'Ajuste en Tiempo Real' : 'Real-Time Tuning'}</span>
+                    <span>⚡ {t('toursGrid.realTimeTuning')}</span>
                   </span>
                   <span className="text-[10px] text-emerald-300/70 bg-emerald-950/90 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                    {language === 'es' ? 'Se actualiza inmediatamente al deslizar' : 'Updates immediately as sliders move'}
+                    {t('toursGrid.updatesImmediatelyAsSliders')}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-3 text-xs">
                   <span className="text-emerald-200 font-bold">
-                    {language === 'es' ? `${processedTours.length} de ${tours.length} experiencias` : `${processedTours.length} of ${tours.length} experiences`}
+                    {t('toursGrid.countOfTotal', { processedToursLength: processedTours.length, toursLength: tours.length })}
                   </span>
                   {((hasBookableOffers && maxPrice < 500) || maxDurationHours < 14 || (hasVerifiedRatings && minRating > 0)) && (
                     <button
@@ -437,7 +437,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                       }}
                       className="text-stone-400 hover:text-amber-400 text-[11px] underline cursor-pointer transition-colors"
                     >
-                      {language === 'es' ? 'Restablecer sliders' : 'Reset sliders'}
+                      {t('toursGrid.resetSliders')}
                     </button>
                   )}
                 </div>
@@ -451,10 +451,10 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-stone-300 font-semibold flex items-center gap-1">
                       <span>💰</span>
-                      <span>{language === 'es' ? 'Precio Máx:' : 'Max Price:'}</span>
+                      <span>{t('toursGrid.maxPrice')}</span>
                     </span>
                     <span className="font-mono font-bold text-amber-300 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-500/30 text-[11px]">
-                      {maxPrice >= 500 ? (language === 'es' ? 'Sin límite' : 'No limit') : `${formatCurrency(maxPrice, currency)} (${maxPrice} USD)`}
+                      {maxPrice >= 500 ? (t('toursGrid.noLimit')) : `${formatCurrency(maxPrice, currency)} (${maxPrice} USD)`}
                     </span>
                   </div>
                   <input
@@ -469,7 +469,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                     onTouchEnd={() => setIsSliding(false)}
                     onChange={(e) => setMaxPrice(Number(e.target.value))}
                     className="w-full accent-amber-400 cursor-pointer h-1.5 bg-emerald-900/80 rounded-lg"
-                    aria-label={language === 'es' ? 'Filtrar por precio máximo' : 'Filter by max price'}
+                    aria-label={t('toursGrid.filterMaxPrice')}
                   />
                   <div className="flex justify-between text-[9px] text-stone-400 font-mono">
                     <span>$40</span>
@@ -484,12 +484,12 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-stone-300 font-semibold flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5 text-teal-400" />
-                      <span>{language === 'es' ? 'Duración Máx:' : 'Max Duration:'}</span>
+                      <span>{t('toursGrid.maxDuration')}</span>
                     </span>
                     <span className="font-mono font-bold text-teal-300 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-500/30 text-[11px]">
                       {maxDurationHours >= 14 
-                        ? (language === 'es' ? 'Cualquiera (1-14h)' : 'Any (1-14h)') 
-                        : `${maxDurationHours}h ${maxDurationHours <= 4 ? (language === 'es' ? '(Medio día)' : '(Half-day)') : (language === 'es' ? '(Día completo)' : '(Full-day)')}`}
+                        ? (t('toursGrid.any114h')) 
+                        : `${maxDurationHours}h ${maxDurationHours <= 4 ? (t('toursGrid.halfDay')) : (t('toursGrid.fullDay'))}`}
                     </span>
                   </div>
                   <input
@@ -504,7 +504,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                     onTouchEnd={() => setIsSliding(false)}
                     onChange={(e) => setMaxDurationHours(Number(e.target.value))}
                     className="w-full accent-teal-400 cursor-pointer h-1.5 bg-emerald-900/80 rounded-lg"
-                    aria-label={language === 'es' ? 'Filtrar por duración máxima' : 'Filter by max duration'}
+                    aria-label={t('toursGrid.filterMaxDuration')}
                   />
                   <div className="flex justify-between text-[9px] text-stone-400 font-mono">
                     <span>2h</span>
@@ -519,10 +519,10 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-stone-300 font-semibold flex items-center gap-1">
                       <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                      <span>{language === 'es' ? 'Calificación Mín:' : 'Min Rating:'}</span>
+                      <span>{t('toursGrid.minRating')}</span>
                     </span>
                     <span className="font-mono font-bold text-amber-300 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-500/30 text-[11px]">
-                      {minRating === 0 ? (language === 'es' ? 'Todas las notas' : 'All ratings') : `≥ ${minRating.toFixed(1)} ⭐`}
+                      {minRating === 0 ? (t('toursGrid.allRatings')) : `≥ ${minRating.toFixed(1)} ⭐`}
                     </span>
                   </div>
                   <input
@@ -537,7 +537,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                     onTouchEnd={() => setIsSliding(false)}
                     onChange={(e) => setMinRating(Number(e.target.value))}
                     className="w-full accent-amber-400 cursor-pointer h-1.5 bg-emerald-900/80 rounded-lg"
-                    aria-label={language === 'es' ? 'Filtrar por calificación mínima' : 'Filter by min rating'}
+                    aria-label={t('toursGrid.filterMinRating')}
                   />
                   <div className="flex justify-between text-[9px] text-stone-400 font-mono">
                     <span>0.0</span>
@@ -559,7 +559,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
             onClick={() => setSelectedCategory('all')}
             className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border shrink-0 ${selectedCategory === 'all' ? 'bg-amber-400 text-stone-950 border-amber-300 font-black shadow-sm' : 'bg-emerald-950/50 text-emerald-200/80 hover:text-white border-emerald-500/20 hover:border-emerald-500/40'}`}
           >
-            ✨ {language === 'es' ? 'Todas las actividades' : 'All activities'}
+            ✨ {t('toursGrid.allActivities')}
           </button>
           {availableCategories.map((category) => (
             <button
@@ -577,7 +577,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
         {activeFiltersCount > 0 && (
           <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-emerald-500/15 text-xs">
             <span className="font-bold text-stone-400 text-[11px] uppercase tracking-wider mr-1">
-              {language === 'es' ? 'Filtros:' : 'Active:'}
+              {t('toursGrid.active')}
             </span>
 
             {searchQuery && (
@@ -631,14 +631,14 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
 
             {freeCancellationOnly && (
               <span className="bg-emerald-950/80 text-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1 text-[11px] font-medium">
-                ✅ {language === 'es' ? 'Cancelación Gratis' : 'Free Cancellation'}
+                ✅ {t('toursGrid.freeCancellation')}
                 <X className="w-3 h-3 cursor-pointer text-stone-400 hover:text-white ml-0.5" onClick={() => setFreeCancellationOnly(false)} />
               </span>
             )}
 
             {ecoFriendlyOnly && (
               <span className="bg-emerald-950/80 text-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1 text-[11px] font-medium">
-                🌿 {language === 'es' ? 'Actividades de naturaleza' : 'Nature activities'}
+                🌿 {t('toursGrid.natureActivities')}
                 <X className="w-3 h-3 cursor-pointer text-stone-400 hover:text-white ml-0.5" onClick={() => setEcoFriendlyOnly(false)} />
               </span>
             )}
@@ -652,7 +652,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
 
             {favoritesOnly && (
               <span className="bg-emerald-950/80 text-rose-400 px-2.5 py-0.5 rounded-full border border-rose-500/30 flex items-center gap-1 text-[11px] font-medium">
-                ❤️ {language === 'es' ? 'Guardados' : 'Favorites'}
+                ❤️ {t('toursGrid.favorites')}
                 <X className="w-3 h-3 cursor-pointer text-stone-400 hover:text-white ml-0.5" onClick={() => setFavoritesOnly(false)} />
               </span>
             )}
@@ -663,7 +663,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               className="text-amber-400 hover:text-amber-300 font-black text-xs underline ml-auto flex items-center gap-1 cursor-pointer"
             >
               <RotateCcw className="w-3 h-3" />
-              <span>{language === 'es' ? 'Limpiar Todo' : 'Clear All'}</span>
+              <span>{t('toursGrid.clearAll')}</span>
             </button>
           </div>
         )}
@@ -681,7 +681,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
               exit={{ opacity: 0 }}
               onClick={() => setIsFiltersDrawerOpen(false)}
               className="fixed inset-0 bg-black/75 backdrop-blur-sm"
-              aria-label="Close filters backdrop"
+              aria-label={t('toursGrid.closeFiltersBackdrop')}
             />
 
             {/* Slide-out Panel */}
@@ -700,10 +700,10 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   </div>
                   <div>
                     <h3 className="font-black text-base text-white uppercase tracking-wider">
-                      {language === 'es' ? 'Filtros y Preferencias' : 'Filters & Preferences'}
+                      {t('toursGrid.filtersPreferences')}
                     </h3>
                     <p className="text-[11px] text-emerald-300/70">
-                      {processedTours.length} {language === 'es' ? 'fichas de experiencia' : 'experience listings'}
+                      {processedTours.length} {t('toursGrid.experienceListings')}
                     </p>
                   </div>
                 </div>
@@ -712,7 +712,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   type="button"
                   onClick={() => setIsFiltersDrawerOpen(false)}
                   className="w-8 h-8 rounded-full bg-emerald-950/80 hover:bg-emerald-900 text-stone-300 hover:text-white flex items-center justify-center border border-emerald-500/30 transition-colors cursor-pointer"
-                  aria-label={language === 'es' ? 'Cerrar filtros' : 'Close filters'}
+                  aria-label={t('toursGrid.closeFilters')}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -725,10 +725,10 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 <div className={`${hasBookableOffers ? '' : 'hidden'} space-y-3 bg-[#07241a]/60 p-4 rounded-2xl border border-emerald-500/20`}>
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
-                      <span>💰 {language === 'es' ? 'Presupuesto Máximo' : 'Max Budget'}</span>
+                      <span>💰 {t('toursGrid.maxBudget')}</span>
                     </label>
                     <span className="text-sm font-black text-white bg-emerald-950 px-2.5 py-1 rounded-full border border-emerald-500/40">
-                      {maxPrice >= 500 ? (language === 'es' ? 'Sin límite ($500+)' : 'No limit ($500+)') : `${formatCurrency(maxPrice, currency)} (${maxPrice} USD)`}
+                      {maxPrice >= 500 ? (t('toursGrid.noLimit500')) : `${formatCurrency(maxPrice, currency)} (${maxPrice} USD)`}
                     </span>
                   </div>
 
@@ -763,7 +763,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                             : 'bg-emerald-950/70 text-emerald-200/80 border-emerald-500/20 hover:border-emerald-500/40'
                         }`}
                       >
-                        {preset === 500 ? (language === 'es' ? 'Todos' : 'All') : `≤ $${preset}`}
+                        {preset === 500 ? (t('toursGrid.all')) : `≤ $${preset}`}
                       </button>
                     ))}
                   </div>
@@ -774,10 +774,10 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-teal-400" />
-                      <span>{language === 'es' ? 'Duración Máxima del Tour' : 'Max Tour Duration'}</span>
+                      <span>{t('toursGrid.maxTourDuration')}</span>
                     </label>
                     <span className="text-xs font-mono font-bold text-teal-300 bg-emerald-950 px-2.5 py-1 rounded-full border border-emerald-500/40">
-                      {maxDurationHours >= 14 ? (language === 'es' ? 'Cualquiera (1-14h)' : 'Any (1-14h)') : `≤ ${maxDurationHours} horas`}
+                      {maxDurationHours >= 14 ? (t('toursGrid.any114h')) : `≤ ${maxDurationHours} horas`}
                     </span>
                   </div>
 
@@ -804,10 +804,10 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
                       <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                      <span>{language === 'es' ? 'Calificación Mínima' : 'Minimum Rating'}</span>
+                      <span>{t('toursGrid.minimumRating')}</span>
                     </label>
                     <span className="text-xs font-mono font-bold text-amber-300 bg-emerald-950 px-2.5 py-1 rounded-full border border-emerald-500/40">
-                      {minRating === 0 ? (language === 'es' ? 'Todas' : 'All') : `≥ ${minRating.toFixed(1)} ⭐`}
+                      {minRating === 0 ? (t('toursGrid.allFeminine')) : `≥ ${minRating.toFixed(1)} ⭐`}
                     </span>
                   </div>
 
@@ -822,7 +822,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   />
 
                   <div className="flex justify-between text-[10px] text-stone-400 font-mono">
-                    <span>Cualquiera</span>
+                    <span>{t('toursGrid.ratingAny')}</span>
                     <span>4.0+ ⭐</span>
                     <span>4.5+ ⭐</span>
                     <span>4.8+ ⭐</span>
@@ -832,15 +832,15 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 {/* Section 2: Difficulty Level */}
                 <div className="space-y-3 bg-[#07241a]/60 p-4 rounded-2xl border border-emerald-500/20">
                   <label className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
-                    <span>⚡ {language === 'es' ? 'Nivel de Exigencia Física' : 'Physical Activity Level'}</span>
+                    <span>⚡ {t('toursGrid.physicalActivityLevel')}</span>
                   </label>
 
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { id: 'all', label: language === 'es' ? 'Cualquiera' : 'Any', icon: '✨' },
-                      { id: 'fácil', label: language === 'es' ? 'Fácil / Familiar' : 'Easy', icon: '🟢' },
-                      { id: 'moderado', label: language === 'es' ? 'Moderado' : 'Moderate', icon: '🟡' },
-                      { id: 'exigente', label: language === 'es' ? 'Exigente / Adrenalina' : 'Challenging', icon: '🔴' }
+                      { id: 'all', label: t('toursGrid.any'), icon: '✨' },
+                      { id: 'fácil', label: t('toursGrid.easy'), icon: '🟢' },
+                      { id: 'moderado', label: t('toursGrid.moderate'), icon: '🟡' },
+                      { id: 'exigente', label: t('toursGrid.challenging'), icon: '🔴' }
                     ].map((diff) => (
                       <button
                         key={diff.id}
@@ -862,7 +862,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 {/* Section 3: Value Add-ons & Confidence Seals */}
                 <div className="space-y-2.5 bg-[#07241a]/60 p-4 rounded-2xl border border-emerald-500/20">
                   <label className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5 mb-1">
-                    <span>🛡️ {language === 'es' ? 'Garantías y Tipos de Experiencia' : 'Guarantees & Preferences'}</span>
+                    <span>🛡️ {t('toursGrid.guaranteesPreferences')}</span>
                   </label>
 
                   {/* Free Cancellation Toggle */}
@@ -883,15 +883,15 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                       </div>
                       <div>
                         <div className="text-xs font-bold text-white">
-                          {language === 'es' ? 'Cancelación Gratis' : 'Free Cancellation'}
+                          {t('toursGrid.freeCancellation')}
                         </div>
                         <div className="text-[10px] text-emerald-300/70">
-                          {language === 'es' ? 'Condiciones publicadas por el proveedor' : 'Cancellation terms published by provider'}
+                          {t('toursGrid.cancellationTermsPublishedProvider')}
                         </div>
                       </div>
                     </div>
                     <span className={`text-[11px] font-black uppercase ${freeCancellationOnly ? 'text-emerald-300' : 'text-stone-500'}`}>
-                      {freeCancellationOnly ? (language === 'es' ? 'Activo' : 'On') : 'Off'}
+                      {freeCancellationOnly ? (t('toursGrid.on')) : 'Off'}
                     </span>
                   </button>
 
@@ -913,15 +913,15 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                       </div>
                       <div>
                         <div className="text-xs font-bold text-white">
-                          {language === 'es' ? 'Actividades de naturaleza' : 'Nature activities'}
+                          {t('toursGrid.natureActivities')}
                         </div>
                         <div className="text-[10px] text-emerald-300/70">
-                          {language === 'es' ? 'Filtro por actividad; no acredita una certificación' : 'Activity filter; not proof of certification'}
+                          {t('toursGrid.activityFilterNotProof')}
                         </div>
                       </div>
                     </div>
                     <span className={`text-[11px] font-black uppercase ${ecoFriendlyOnly ? 'text-emerald-300' : 'text-stone-500'}`}>
-                      {ecoFriendlyOnly ? (language === 'es' ? 'Activo' : 'On') : 'Off'}
+                      {ecoFriendlyOnly ? (t('toursGrid.on')) : 'Off'}
                     </span>
                   </button>
 
@@ -943,15 +943,15 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                       </div>
                       <div>
                         <div className="text-xs font-bold text-white">
-                          {language === 'es' ? 'Solo Bestsellers' : 'Bestsellers Only'}
+                          {t('toursGrid.bestsellersOnly')}
                         </div>
                         <div className="text-[10px] text-orange-300/70">
-                          {language === 'es' ? 'Sólo datos de popularidad verificados' : 'Verified popularity data only'}
+                          {t('toursGrid.verifiedPopularityDataOnly')}
                         </div>
                       </div>
                     </div>
                     <span className={`text-[11px] font-black uppercase ${bestsellerOnly ? 'text-orange-400' : 'text-stone-500'}`}>
-                      {bestsellerOnly ? (language === 'es' ? 'Activo' : 'On') : 'Off'}
+                      {bestsellerOnly ? (t('toursGrid.on')) : 'Off'}
                     </span>
                   </button>
 
@@ -973,7 +973,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                       </div>
                       <div>
                         <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                          <span>{language === 'es' ? 'Mis Favoritos Guardados' : 'My Saved Wishlist'}</span>
+                          <span>{t('toursGrid.mySavedWishlist')}</span>
                           {favorites.length > 0 && (
                             <span className="bg-rose-600 text-white text-[10px] px-1.5 py-0.2 rounded-full font-black">
                               {favorites.length}
@@ -981,12 +981,12 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                           )}
                         </div>
                         <div className="text-[10px] text-rose-300/70">
-                          {language === 'es' ? 'Ver tours guardados en tu dispositivo' : 'View tours saved on your device'}
+                          {t('toursGrid.viewToursSavedDevice')}
                         </div>
                       </div>
                     </div>
                     <span className={`text-[11px] font-black uppercase ${favoritesOnly ? 'text-rose-400' : 'text-stone-500'}`}>
-                      {favoritesOnly ? (language === 'es' ? 'Activo' : 'On') : 'Off'}
+                      {favoritesOnly ? (t('toursGrid.on')) : 'Off'}
                     </span>
                   </button>
 
@@ -995,7 +995,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 {/* Section 4: Region Selector in Drawer */}
                 <div className="space-y-3 bg-[#07241a]/60 p-4 rounded-2xl border border-emerald-500/20">
                   <label className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
-                    <span>📍 {language === 'es' ? 'Destino / Región' : 'Destination / Region'}</span>
+                    <span>📍 {t('toursGrid.destinationRegion')}</span>
                   </label>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
@@ -1008,7 +1008,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                           : 'bg-emerald-950/60 text-emerald-200/80 border-emerald-500/20 hover:border-emerald-500/40'
                       }`}
                     >
-                      📍 {language === 'es' ? 'Todas las Regiones' : 'All Regions'}
+                      📍 {t('toursGrid.allRegions')}
                     </button>
                     {availableRegions.map((reg) => (
                       <button
@@ -1039,7 +1039,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   className="flex items-center justify-center gap-1.5 text-stone-300 hover:text-amber-400 text-xs font-bold px-3 py-2.5 rounded-xl transition-colors cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>{language === 'es' ? 'Restablecer' : 'Reset'}</span>
+                  <span>{t('toursGrid.reset')}</span>
                 </button>
 
                 <button
@@ -1047,7 +1047,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   onClick={() => setIsFiltersDrawerOpen(false)}
                   className="flex-1 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer"
                 >
-                  {language === 'es' ? `Ver ${processedTours.length} experiencias` : `Show ${processedTours.length} experiences`}
+                  {t('toursGrid.showCount', { processedToursLength: processedTours.length })}
                 </button>
               </div>
 
@@ -1061,13 +1061,13 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
         <div className="flex items-center gap-2">
           <Compass className="w-5 h-5 text-orange-500" />
           <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-wider">
-            {language === 'es' ? 'Catálogo Completo de Tours' : 'Complete Tour Catalog'}
+            {t('toursGrid.completeTourCatalog')}
           </h2>
         </div>
 
         <div className="flex items-center gap-3">
           <span className="bg-emerald-950 text-amber-400 border border-emerald-500/30 px-3.5 py-1 rounded-full text-xs font-bold">
-            {processedTours.length} {language === 'es' ? 'experiencias en el catálogo' : 'catalog experiences'}
+            {processedTours.length} {t('toursGrid.catalogExperiences')}
           </span>
         </div>
       </div>
@@ -1077,21 +1077,17 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
         <div className="bg-[#07241a]/80 p-12 rounded-[2.5rem] border border-emerald-500/30 text-center space-y-4 text-stone-100">
           <div className="text-5xl">🌴</div>
           <h3 className="text-xl font-black text-orange-400 uppercase">
-            {language === 'es'
-              ? 'No hay tours que coincidan con tus criterios'
-              : 'No tours match your filter criteria'}
+            {t('toursGrid.noToursMatchFilter')}
           </h3>
           <p className="text-xs text-orange-400 max-w-md mx-auto leading-relaxed">
-            {language === 'es'
-              ? (searchQuery.trim() ? 'Prueba con otra palabra (por ejemplo, el lugar o el operador) o borra los filtros.' : 'Intenta borrar algunos filtros o ampliar el precio y la región para ver más opciones.')
-              : (searchQuery.trim() ? 'Try another word (for example the place or the operator) or clear the filters.' : 'Try clearing some filters or widening the price and region to see more options.')}
+            {searchQuery.trim() ? t('toursGrid.noResultsTryWord') : t('toursGrid.noResultsWiden')}
           </p>
           <button
             type="button"
             onClick={resetAllFilters}
             className="bg-teal-600 hover:bg-teal-600 text-white font-black text-xs uppercase px-6 py-2.5 rounded-full shadow-lg transition-colors"
           >
-            {language === 'es' ? 'Restablecer Todos los Filtros' : 'Reset All Filters'}
+            {t('toursGrid.resetAllFilters')}
           </button>
         </div>
       ) : (
@@ -1151,7 +1147,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
             onClick={() => setCurrentPage(p => p + 1)}
             className="bg-stone-50 hover:bg-stone-100 text-stone-900 font-bold px-8 py-3.5 rounded-full shadow-lg border border-stone-700 transition-transform active:scale-95 flex items-center gap-2"
           >
-            <span>{language === 'es' ? 'Cargar Más Tours' : 'Load More Tours'}</span>
+            <span>{t('toursGrid.loadMoreTours')}</span>
           </button>
         </div>
       )}
@@ -1162,7 +1158,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
           <div className="flex items-center gap-2">
             <Scale className="w-5 h-5 text-orange-500" />
             <span className="font-bold text-xs uppercase text-orange-400 hidden sm:inline">
-              {language === 'es' ? 'Comparando:' : 'Comparing:'}
+              {t('toursGrid.comparing')}
             </span>
           </div>
 
@@ -1186,7 +1182,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
             onClick={() => setShowCompareModal(true)}
             className="bg-teal-600 hover:bg-teal-600 text-white font-black text-xs uppercase px-4 py-2 rounded-full transition-colors flex items-center gap-1 shadow-md"
           >
-            <span>{language === 'es' ? 'Ver Tabla Comparativa' : 'Compare Now'}</span>
+            <span>{t('toursGrid.compareNow')}</span>
             <span className="bg-white/[0.03] backdrop-blur-3xl text-orange-400 text-[10px] px-1.5 py-0.2 rounded-full">
               {comparedTours.length}
             </span>

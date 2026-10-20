@@ -2,7 +2,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { publishedTourPrice } from '../utils/tourPublication';
 import React, { useState, useEffect } from 'react';
 import { Tour, Language, Currency } from '../types';
-import { getLangText, UI_TRANSLATIONS } from '../utils/i18n';
+import { getLangText } from '../utils/i18n';
+import { createT } from '../i18n';
 
 import { LazyImage } from './LazyImage';
 import { useExchangeRate } from './ReferencePrice';
@@ -36,7 +37,7 @@ export const TourCard: React.FC<TourCardProps> = ({
   viewMode = 'grid'
 }) => {
   const navigate = useNavigate();
-  const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
+  const t = createT(language);
   const [showMiniMap, setShowMiniMap] = useState(false);
 
   useEffect(() => {
@@ -95,17 +96,17 @@ export const TourCard: React.FC<TourCardProps> = ({
               {!isBookable ? (
                 <span className="inline-flex items-center gap-1.5 bg-stone-950/90 text-amber-200 text-xs font-bold px-3 py-1 rounded-full border border-amber-400/40 backdrop-blur-md shadow-md">
                   <Compass className="w-3.5 h-3.5" />
-                  <span>{language === 'es' ? 'Experiencia para consultar' : 'Experience to inquire about'}</span>
+                  <span>{t('tourCard.experienceInquireAbout')}</span>
                 </span>
               ) : tour.bestseller ? (
                 <span className="inline-flex items-center gap-1.5 bg-amber-400 text-stone-950 text-xs font-black px-3 py-1 rounded-full shadow-md">
                   <span>🔥</span>
-                  <span>{language === 'es' ? 'Más Popular' : 'Top Choice'}</span>
+                  <span>{t('tourCard.topChoice')}</span>
                 </span>
               ) : tour.freeCancellation ? (
                 <span className="inline-flex items-center gap-1 bg-emerald-950/90 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full border border-emerald-400/40 backdrop-blur-md shadow-md">
                   <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{language === 'es' ? 'Cancelación Gratis' : 'Free Cancel'}</span>
+                  <span>{t('tourCard.freeCancel')}</span>
                 </span>
               ) : null}
             </div>
@@ -123,8 +124,8 @@ export const TourCard: React.FC<TourCardProps> = ({
                       ? 'bg-rose-500 text-white scale-105'
                       : 'bg-black/60 hover:bg-black/80 text-white backdrop-blur-md border border-white/20'
                   }`}
-                  title={isFavorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}
-                  aria-label="Favorito"
+                  title={isFavorite ? t('tourCard.removeFavorite') : t('tourCard.saveFavorite')}
+                  aria-label={t('tourCard.favorite')}
                 >
                   <Heart className={`w-4 h-4 ${isFavorite ? 'fill-white' : ''}`} />
                 </button>
@@ -142,7 +143,7 @@ export const TourCard: React.FC<TourCardProps> = ({
                       : 'bg-black/60 hover:bg-black/80 text-white backdrop-blur-md border border-white/20'
                   }`}
                   title={t('compareTour')}
-                  aria-label="Comparar"
+                  aria-label={t('tourCard.compare')}
                 >
                   {isCompared ? <Check className="w-4 h-4" /> : <Scale className="w-4 h-4" />}
                 </button>
@@ -187,7 +188,7 @@ export const TourCard: React.FC<TourCardProps> = ({
             </button>
             {showRegion && (
               <span data-testid="tour-card-region" className="block text-[11px] font-semibold text-stone-400">
-                {language === 'es' ? 'Región' : 'Region'}: {regionText}
+                {t('tourCard.region')}: {regionText}
               </span>
             )}
             
@@ -208,20 +209,20 @@ export const TourCard: React.FC<TourCardProps> = ({
               <span data-testid="tour-card-price" className="flex flex-col" title={price.disclaimer}>
                 {price.usd ? (
                   <>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300">{language === 'es' ? 'Desde' : 'From'}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300">{t('tourCard.from')}</span>
                     <span className="text-xl font-black text-amber-400 leading-tight">{price.usd}</span>
                     {price.approx && <span className="text-[11px] font-semibold text-stone-300">{price.approx}</span>}
-                    <span className="text-[10px] text-stone-400 leading-snug">{language === 'es' ? 'Precio de referencia' : 'Reference price'}</span>
+                    <span className="text-[10px] text-stone-400 leading-snug">{t('tourCard.referencePrice')}</span>
                   </>
                 ) : (
-                  <span className="text-base font-black text-amber-400 leading-tight">{language === 'es' ? 'Consultar precio' : 'Ask for price'}</span>
+                  <span className="text-base font-black text-amber-400 leading-tight">{t('tourCard.askPrice')}</span>
                 )}
               </span>
               {!isBookable && (tour.priceSource === 'precio_referencia' ? (
                 <OperatorPriceSource tour={tour} language={language} variant="compact" />
               ) : (
                 <span className="text-[10px] text-stone-400 font-medium block">
-                  {language === 'es' ? 'Operador local por confirmar' : 'Local operator to be confirmed'}
+                  {t('tourCard.localOperatorConfirmed')}
                 </span>
               ))}
             </div>

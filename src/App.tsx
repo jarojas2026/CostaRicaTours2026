@@ -1,11 +1,12 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { REGIONS } from './data/catalogMeta';
 import { catalogSearchHref, readCatalogRouteFilters } from './utils/catalogRouteFilters';
 import { useTours } from './contexts/ToursContext';
 import { Tour, Language, Currency, TourCategory, TourRegion, BookingRequest } from './types';
-import { detectBrowserLanguage, getLangText, fetchExchangeRates } from './utils/i18n';
+import { getLangText, fetchExchangeRates } from './utils/i18n';
+import { getInitialCurrency, getInitialLanguage, rememberCurrency, rememberLanguage } from './i18n';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
@@ -71,8 +72,19 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const { tours: TOURS, loading: toursLoading } = useTours();
-  const [language, setLanguage] = useState<Language>(detectBrowserLanguage);
-  const [currency, setCurrency] = useState<Currency>('USD');
+  // First visit: language from navigator.languages (ES/EN) and currency from the
+  // browser region (CR→CRC, euro area→EUR, rest→USD). A choice made in the
+  // selectors is saved and wins on later visits.
+  const [language, setLanguageState] = useState<Language>(getInitialLanguage);
+  const [currency, setCurrencyState] = useState<Currency>(getInitialCurrency);
+  const setLanguage = useCallback((next: Language) => {
+    setLanguageState(next);
+    rememberLanguage(next);
+  }, []);
+  const setCurrency = useCallback((next: Currency) => {
+    setCurrencyState(next);
+    rememberCurrency(next);
+  }, []);
 
   // Active path for UI state
   const activeTab = location.pathname.split('/')[1] || 'home';
