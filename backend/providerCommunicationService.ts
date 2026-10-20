@@ -119,7 +119,11 @@ export interface ServiceOrder {
   payoutAmountUSD: number;
   payoutAmountCRC: number;
   platformFeeUSD: number;
-  status: 'dispatched' | 'confirmed' | 'in_progress' | 'completed' | 'reassigned' | 'rejected' | 'no_show';
+  status: 'dispatch_pending' | 'dispatched' | 'confirmed' | 'in_progress' | 'completed' | 'reassigned' | 'rejected' | 'no_show';
+  /** Submission accepted by an email transport does not mean the operator has read/accepted the order. */
+  deliveryStatus?: 'pending' | 'transport_accepted' | 'failed';
+  deliveryReceiptId?: string;
+  deliveryAttemptedAt?: string;
   dispatchedAt: string;
   confirmedAt?: string;
   slaDeadline: string;
@@ -322,17 +326,30 @@ export async function dispatchServiceOrder(params: {
   totalUSD: number;
   providerId?: string;
 }): Promise<ServiceOrder> {
-  const requestedProviderId = params.providerId || getBestProviderForTour(params.tourId).id;
   const db = getFirestoreDb();
+  if (!db) throw new Error('No se puede despachar sin Firestore persistente.');
   const existingSnapshot = db ? await db.collection('service_orders').where('bookingId', '==', params.bookingId).limit(10).get().catch(() => null) : null;
   const existingOrder = existingSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceOrder)).find(order => !['rejected', 'no_show'].includes(String(order.status)));
-  if (existingOrder) return existingOrder;
+  // A persisted order is not evidence that an email was submitted. Retry only
+  // pending/failed submissions with the SAME order ID; never fabricate a new order.
+  if (existingOrder && (existingOrder.deliveryStatus === 'transport_accepted' ||
+    ['confirmed', 'in_progress', 'completed', 'reassigned'].includes(existingOrder.status))) return existingOrder;
+  const requestedProviderId = existingOrder?.providerId || params.providerId || getBestProviderForTour(params.tourId).id;
   const provider = await resolveOperationalProvider(requestedProviderId, params.tourId);
   if (!provider) {
     throw new Error(`No hay un proveedor activo y verificado para el tour ${params.tourId}. La solicitud no se despacha hasta contar con un proveedor real.`);
   }
 
-  const orderId = `OS-CR-${params.bookingId}-${Date.now().toString().slice(-4)}`;
+  const providerEmail = resolveConfiguredProviderEmail(provider);
+  if (!providerEmail) {
+    await createAlert({ source: 'Comunicación con Proveedores', severity: 'warning',
+      title: 'Orden pendiente: email de proveedor no configurado',
+      message: `No se envió solicitud para la reserva ${params.bookingId}: falta correo operativo del proveedor verificado.`,
+      bookingId: params.bookingId, providerId: provider.id }).catch(() => {});
+    throw new Error('provider_email_not_configured');
+  }
+
+  const orderId = existingOrder?.id || `OS-CR-${params.bookingId}-${Date.now().toString().slice(-4)}`;
   const now = new Date();
   const slaDeadline = new Date(now.getTime() + provider.slaTargetMinutes * 60000).toISOString();
 
@@ -352,6 +369,7 @@ export async function dispatchServiceOrder(params: {
     : '';
 
   const order: ServiceOrder = {
+    ...(existingOrder || {}),
     id: orderId,
     bookingId: params.bookingId,
     tourId: params.tourId,
@@ -368,22 +386,20 @@ export async function dispatchServiceOrder(params: {
     payoutAmountUSD,
     payoutAmountCRC,
     platformFeeUSD,
-    status: 'dispatched',
-    dispatchedAt: now.toISOString(),
+    status: 'dispatch_pending',
+    deliveryStatus: 'pending',
+    deliveryAttemptedAt: now.toISOString(),
+    dispatchedAt: existingOrder?.dispatchedAt || now.toISOString(),
     slaDeadline,
     failoverAttempts: 0,
     providerPortalUrl
   };
 
-  serviceOrdersStore.set(orderId, order);
-  await persistServiceOrder(order).catch(err => console.warn('⚠️ No se pudo persistir la orden de servicio:', err));
+  // Persist the pending attempt before calling the external transport.
+  await persistServiceOrder(order);
 
-  const providerEmail = resolveConfiguredProviderEmail(provider);
-  console.log(`📡 [PROVEEDORES] Orden de servicio ${orderId} despachada a ${provider.name} (Email: ${providerEmail || 'no configurado'} | WhatsApp: ${provider.whatsapp}). SLA: ${provider.slaTargetMinutes}m.`);
-
-  // Enviar correo únicamente a la dirección oficial/configurada del proveedor.
-  if (providerEmail) {
-    sendEmail({
+  // Send only to the operational address of a verified provider; await its result.
+  const delivery = await sendEmail({
       to: providerEmail,
       subject: `📋 [ORDEN DE SERVICIO] ${orderId} - ${params.tourName} (${params.date})`,
       html: `
@@ -409,19 +425,25 @@ export async function dispatchServiceOrder(params: {
           </div>
         </div>
       `
-    }).catch(err => console.warn(`⚠️ Error enviando correo de orden de servicio a ${provider.email}:`, err));
+    });
+
+  if (!delivery.success) {
+    order.deliveryStatus = 'failed';
+    await persistServiceOrder(order);
+    serviceOrdersStore.set(orderId, order);
+    await createAlert({ source: 'Comunicación con Proveedores', severity: 'warning',
+      title: 'Orden pendiente: envío al proveedor fallido',
+      message: `No se aceptó el correo de la orden ${orderId} por el transporte configurado. Requiere reintento o intervención humana.`,
+      bookingId: params.bookingId, providerId: provider.id }).catch(() => {});
+    throw new Error('provider_email_submission_failed');
   }
 
-  if (!providerEmail) {
-    await createAlert({
-      source: 'Comunicación con Proveedores',
-      severity: 'warning',
-      title: 'Proveedor sin email configurado',
-      message: 'La orden ' + orderId + ' fue creada pero no se envió correo porque el proveedor no tiene un email operativo configurado en PROVIDER_EMAILS_JSON/PROVIDER_DEV_EMAIL.',
-      bookingId: params.bookingId,
-      providerId: provider.id
-    }).catch(() => {});
-  }
+  order.deliveryStatus = 'transport_accepted';
+  order.deliveryReceiptId = delivery.id;
+  order.status = 'dispatched';
+  await persistServiceOrder(order);
+  serviceOrdersStore.set(orderId, order);
+  console.log(`📡 [PROVEEDORES] Orden ${orderId}: solicitud aceptada por el transporte de correo; respuesta del proveedor pendiente.`);
 
   // Actualizar estado en reserva
   await updateBookingStatus(params.bookingId, {
