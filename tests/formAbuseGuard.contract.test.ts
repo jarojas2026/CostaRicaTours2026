@@ -95,3 +95,19 @@ test('public forms are guarded: quote-request, contact form (customer-intake) an
     assert.match(src, /formGuardFields\(startedAt, ?honeypot\)/, file);
   }
 });
+
+test('cotizaciones: además del límite corto hay tope diario de 20 por IP (rescatado de #286)', async () => {
+  const { QUOTE_DAILY_LIMIT, quoteRequestDailyGuard } = await import('../backend/formAbuseGuard');
+  assert.equal(QUOTE_DAILY_LIMIT.max, 20);
+  assert.equal(QUOTE_DAILY_LIMIT.windowMs, 24 * 60 * 60_000);
+  assert.equal(typeof quoteRequestDailyGuard.reset, 'function');
+  let now = 0;
+  const daily = createFormAbuseGuard({ name: 'tday', ...QUOTE_DAILY_LIMIT, now: () => now });
+  const req = { headers: {}, ip: '5.5.5.5', socket: {}, body: {} } as any;
+  const run = () => { let status = 200; let passed = false; const res: any = { setHeader() {}, status(c: number) { status = c; return res; }, json() { return res; } }; daily(req, res, () => { passed = true; }); return passed ? 200 : status; };
+  for (let i = 0; i < 20; i += 1) { now += 60 * 60_000 / 2; assert.equal(run(), 200); }
+  assert.equal(run(), 429);
+  now += 24 * 60 * 60_000;
+  assert.equal(run(), 200);
+  assert.match(fs.readFileSync('backend/routes/leads.ts', 'utf8'), /quoteRequestGuard, quoteRequestDailyGuard, async/);
+});

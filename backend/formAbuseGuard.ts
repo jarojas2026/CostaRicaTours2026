@@ -133,6 +133,9 @@ export function createFormAbuseGuard(options: FormAbuseGuardOptions): FormAbuseG
 
 /** Instancias compartidas (5 envíos / 10 min por IP y formulario). */
 export const quoteRequestGuard = createFormAbuseGuard({ name: 'quote-request' });
+/** Tope diario adicional para cotizaciones (rescatado de #286): 20 por día por IP. */
+export const QUOTE_DAILY_LIMIT = { windowMs: 24 * 60 * 60_000, max: 20 } as const;
+export const quoteRequestDailyGuard = createFormAbuseGuard({ name: 'quote-request-day', ...QUOTE_DAILY_LIMIT });
 export const contactFormGuard = createFormAbuseGuard({
   name: 'contact-form',
   appliesTo: req => String((req.body as any)?.source || '') === 'contact-form',
