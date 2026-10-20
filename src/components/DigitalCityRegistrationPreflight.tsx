@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Building2, Globe2, ShieldCheck, AlertTriangle, ClipboardCheck } from 'lucide-react';
 import { auth } from '../firebase';
+import { CountrySelect } from './CountrySelect';
 import type { Language } from '../types';
 import { DIGITAL_CITY_ENTITY_KINDS, type DigitalCityEntityKind } from '../../backend/digitalCityRegistrationPolicy';
 
@@ -29,7 +30,7 @@ const labelByKind: Record<DigitalCityEntityKind, { es: string; en: string }> = {
 
 const reasonLabels: Record<string, { es: string; en: string }> = {
   entity_kind_invalid: { es: 'Selecciona un tipo válido.', en: 'Choose a valid entity type.' },
-  country_code_invalid: { es: 'Introduce un código de país de dos letras.', en: 'Enter a two-letter country code.' },
+  country_code_invalid: { es: 'Selecciona un país válido.', en: 'Select a valid country.' },
   display_name_required: { es: 'Indica un nombre válido (máximo 160 caracteres).', en: 'Enter a valid name (maximum 160 characters).' },
   locality_required: { es: 'Indica la localidad (máximo 160 caracteres).', en: 'Enter a locality (maximum 160 characters).' },
   publication_consent_required: { es: 'Falta consentimiento para solicitar publicación.', en: 'Consent to request publication is missing.' },
@@ -90,9 +91,7 @@ export function DigitalCityRegistrationPreflight({ language }: { language: Langu
           {DIGITAL_CITY_ENTITY_KINDS.map(k => <option key={k} value={k}>{labelByKind[k][es ? 'es' : 'en']}</option>)}
         </select>
       </label>
-      <label className="text-stone-200">{es ? 'País (código de 2 letras)' : 'Country (two-letter code)'}
-        <input className="mt-1 w-full rounded-xl border border-white/20 bg-[#092b20] p-3 text-white" value={countryCode} onChange={e => setCountryCode(e.target.value.toUpperCase())} maxLength={2} placeholder="CR" required/>
-      </label>
+      <CountrySelect className="text-stone-200" label={es ? 'País' : 'Country'} language={language} value={countryCode} onChange={code => { setCountryCode(code); setResult(null); }} name="countryCode" required/>
       <label className="text-stone-200">{es ? 'Nombre propuesto' : 'Proposed name'}
         <input className="mt-1 w-full rounded-xl border border-white/20 bg-[#092b20] p-3 text-white" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={160} required/>
       </label>
