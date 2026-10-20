@@ -30,6 +30,7 @@ const InteractiveMap = lazy(() => import('./components/InteractiveMap').then(m =
 const NationalTransportSection = lazy(() => import('./components/NationalTransportSection').then(m => ({ default: m.NationalTransportSection })));
 const TicoCultureSection = lazy(() => import('./components/TicoCultureSection').then(m => ({ default: m.TicoCultureSection })));
 const AdminControlCenterPage = lazy(() => import('./pages/AdminControlCenterPage').then(m => ({ default: m.AdminControlCenterPage })));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 const ProviderPortalPage = lazy(() => import('./pages/ProviderPortalPage').then(m => ({ default: m.ProviderPortalPage })));
 const RouteFallback = () => <div className="py-24 text-center text-emerald-300">Cargando…</div>;
 const ItineraryPlanner = lazy(() => import('./components/ItineraryPlanner').then(m => ({ default: m.ItineraryPlanner })));
@@ -613,20 +614,7 @@ export default function App() {
               </div>
             } />
 
-            <Route path="*" element={
-              <div className="min-h-[60vh] flex items-center justify-center px-4 py-20">
-                <div className="max-w-xl text-center rounded-3xl border border-emerald-500/20 bg-[#061d15]/80 backdrop-blur-xl p-8 sm:p-12 shadow-2xl">
-                  <div className="mx-auto mb-5 w-16 h-16 rounded-2xl bg-amber-400/15 border border-amber-400/30 flex items-center justify-center text-amber-300 text-3xl">404</div>
-                  <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">{language === 'es' ? 'Esta ruta se perdió en la selva.' : 'This route got lost in the jungle.'}</h2>
-                  <p className="mt-3 text-stone-300">{language === 'es' ? 'Puedes explorar nuestros tours, pedir ayuda a la IA o volver al inicio.' : 'Explore our tours, ask the AI concierge, or return home.'}</p>
-                  <div className="mt-7 flex flex-wrap justify-center gap-3">
-                    <button onClick={() => navigate('/tours')} className="px-5 py-3 rounded-xl bg-emerald-400 text-stone-950 font-black hover:bg-emerald-300 transition">{language === 'es' ? 'Explorar tours' : 'Explore tours'}</button>
-                    <button onClick={() => navigate('/ai')} className="px-5 py-3 rounded-xl border border-emerald-400/30 bg-emerald-950/50 text-emerald-100 font-bold hover:bg-emerald-900/60 transition">{language === 'es' ? 'Hablar con IA' : 'Ask AI'}</button>
-                    <button onClick={() => navigate('/')} className="px-5 py-3 rounded-xl border border-white/10 bg-white/5 text-stone-200 font-bold hover:bg-white/10 transition">{language === 'es' ? 'Inicio' : 'Home'}</button>
-                  </div>
-                </div>
-              </div>
-            } />
+            <Route path="*" element={<Suspense fallback={<RouteFallback />}><NotFoundPage language={language} /></Suspense>} />
           </Routes>
         </AnimatePresence>
       </main>
