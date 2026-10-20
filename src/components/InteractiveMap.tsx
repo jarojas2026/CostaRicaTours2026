@@ -58,9 +58,9 @@ import {
 import { MapServiceBookingModal } from './MapServiceBookingModal';
 import { NationalPoiLayer, OPEN_NATIONAL_LAYERS_EVENT } from './NationalPoiLayer';
 import { groupByCoordinate } from '../utils/mapMarkerLayout';
+import { PRICE_ON_REQUEST, REFERENCE_PRICE_NOTE, getMapServiceUnitPriceUSD } from '../utils/mapServicePricing';
+import { PUBLIC_REQUEST_LABEL } from '../data/publicContactPolicy';
 
-/** Official SINAC online services portal (park tickets are sold and paid there). */
-const SINAC_OFFICIAL_BOOKING_URL = 'https://serviciosenlinea.sinac.go.cr';
 
 const OFFLINE_CACHE_KEY = 'pura_vida_offline_map_tours_v3';
 const OFFLINE_REGIONS_KEY = 'pura_vida_offline_map_regions_v3';
@@ -733,9 +733,10 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       let badgeContent = '';
       if (srv.type === 'hotel') {
-        badgeContent = `$${srv.pricePerNightUSD || 150}/n`;
+        const nightly = getMapServiceUnitPriceUSD(srv);
+        badgeContent = nightly === null ? (language === 'es' ? 'Consultar' : 'Ask') : `$${nightly}/n`;
       } else if (srv.type === 'national_park') {
-        badgeContent = `SINAC $${srv.officialPriceUSD?.toFixed(0)}`;
+        badgeContent = srv.officialPriceUSD ? `SINAC $${srv.officialPriceUSD.toFixed(0)}` : 'SINAC';
       } else if (srv.type === 'airstrip' || srv.type === 'airport') {
         badgeContent = srv.flightCode?.split(' ')[0] || 'AÉREO';
       } else if (srv.type === 'bus_station') {
@@ -2113,15 +2114,23 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               {/* Price / Fare Badge */}
               <div className="bg-black/70 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-emerald-500/40 text-right">
                 <span className="block text-[9px] font-bold text-emerald-300 uppercase tracking-widest leading-none mb-0.5">
-                  {selectedMapService.type === 'hotel' ? (language === 'es' ? 'Noche Desde' : 'Night From') : 
+                  {selectedMapService.type === 'hotel' ? (language === 'es' ? 'Noche desde (referencia)' : 'Night from (reference)') : 
                    selectedMapService.type === 'national_park' ? (language === 'es' ? 'Tarifa SINAC (se paga al SINAC)' : 'SINAC fee (paid to SINAC)') :
                    (language === 'es' ? 'Pasaje Promedio' : 'Avg Fare')}
                 </span>
                 <span className="block font-black text-white text-xl leading-none">
-                  {selectedMapService.type === 'hotel' ? formatCurrency(selectedMapService.pricePerNightUSD || 150, currency) :
-                   selectedMapService.type === 'national_park' ? (selectedMapService.officialPriceUSD ? `US$${selectedMapService.officialPriceUSD}` : (language === 'es' ? 'Ver sitio SINAC' : 'See SINAC site')) :
-                   formatCurrency(selectedMapService.averageTicketUSD || 10, currency)}
+                  {(() => {
+                    // Sin precio real publicado: "Precio a consultar" (nunca un valor inventado).
+                    const unit = getMapServiceUnitPriceUSD(selectedMapService);
+                    if (unit === null) return language === 'es' ? PRICE_ON_REQUEST.es : PRICE_ON_REQUEST.en;
+                    return selectedMapService.type === 'national_park' ? `US$${unit}` : formatCurrency(unit, currency);
+                  })()}
                 </span>
+                {getMapServiceUnitPriceUSD(selectedMapService) !== null && (
+                  <span className="block text-[9px] font-semibold text-amber-200/90 mt-0.5" data-testid="map-service-reference-price-note">
+                    {language === 'es' ? REFERENCE_PRICE_NOTE.es : REFERENCE_PRICE_NOTE.en}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -2182,20 +2191,23 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             <div className="mt-auto pt-4 space-y-2">
               {selectedMapService.type === 'national_park' ? (
                 <div className="space-y-2">
-                  <a
+                  <button
                     id="book-service-from-map-btn"
-                    href={selectedMapService.sinacBookingUrl || SINAC_OFFICIAL_BOOKING_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    type="button"
+                    data-public-request-cta="1"
+                    onClick={() => {
+                      setActiveBookingService(selectedMapService);
+                      setIsBookingModalOpen(true);
+                    }}
                     className="w-full bg-emerald-400 hover:bg-emerald-300 text-stone-950 font-black text-sm tracking-wide py-3.5 px-4 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 active:scale-98"
                   >
-                    <ExternalLink className="w-4 h-4" aria-hidden="true" />
-                    <span>{language === 'es' ? 'Comprar entrada en el sitio oficial del SINAC' : 'Buy your ticket on the official SINAC website'}</span>
-                  </a>
+                    <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+                    <span>{language === 'es' ? PUBLIC_REQUEST_LABEL.es : PUBLIC_REQUEST_LABEL.en}</span>
+                  </button>
                   <p className="text-[11px] leading-snug text-emerald-200/80">
                     {language === 'es'
-                      ? 'La tarifa de ingreso se paga directamente al SINAC en su sitio oficial. Costa Rica Tours no vende ni cobra entradas a parques nacionales. Tarifa de referencia; confirma el monto vigente en el sitio del SINAC.'
-                      : 'The entrance fee is paid directly to SINAC on its official website. Costa Rica Tours does not sell or charge park tickets. Reference fee; check the current amount on the SINAC site.'}
+                      ? 'Gestionamos su solicitud de ingreso. La tarifa de entrada la fija el SINAC; tarifa de referencia, confirmamos el monto vigente antes de cualquier pago.'
+                      : 'We handle your entry request. The entrance fee is set by SINAC; reference fee, we confirm the current amount before any payment.'}
                   </p>
                 </div>
               ) : (
@@ -2205,13 +2217,13 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                   setActiveBookingService(selectedMapService);
                   setIsBookingModalOpen(true);
                 }}
-                className="w-full bg-emerald-400 hover:bg-emerald-300 text-stone-950 font-black text-sm uppercase tracking-wide py-3.5 px-4 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 active:scale-98"
+                data-public-request-cta="1"
+                className="w-full bg-emerald-400 hover:bg-emerald-300 text-stone-950 font-black text-sm tracking-wide py-3.5 px-4 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 active:scale-98"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>
-                  {selectedMapService.type === 'hotel' ? (language === 'es' ? 'Reservar Estadía en Hotel' : 'Book Eco-Lodge Stay') :
-                   selectedMapService.type === 'airstrip' ? (language === 'es' ? 'Cotizar Vuelo en Avioneta' : 'Book Scenic Flight') :
-                   (language === 'es' ? 'Reservar Traslado / Tiquete' : 'Book Transfer / Ticket')}
+                  {selectedMapService.type === 'airstrip' ? (language === 'es' ? 'Cotizar Vuelo en Avioneta' : 'Request a Scenic Flight Quote') :
+                   (language === 'es' ? PUBLIC_REQUEST_LABEL.es : PUBLIC_REQUEST_LABEL.en)}
                 </span>
               </button>
               )}

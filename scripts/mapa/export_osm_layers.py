@@ -1,6 +1,7 @@
 # Genera public/data/mapa/*.geojson desde el extracto OSM de Costa Rica.
 # Uso: curl -LO https://download.geofabrik.de/central-america/costa-rica-latest.osm.pbf
 #      pip install osmium && python3 scripts/mapa/export_osm_layers.py
+# Después SIEMPRE: python3 scripts/catalog/strip_public_business_contacts.py (sin contactos de negocios en datos públicos).
 # Datos © colaboradores de OpenStreetMap, licencia ODbL (atribución obligatoria).
 import osmium, json, collections, os
 def cat(t):
