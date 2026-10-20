@@ -7,6 +7,9 @@ export interface CustomerIntakeRequest {
   sessionId?: string;
   customer?: { name?: string; email?: string; phone?: string };
   context?: Record<string, any>;
+  /** Antiabuso (shared/formAbuse): honeypot y marca de tiempo del formulario. */
+  website?: string;
+  formStartedAt?: number;
   onResult?: (result: CustomerIntakeResult) => void;
 }
 

@@ -15,12 +15,13 @@ import { createRouter, chatLimiter, intakeAdmission } from './shared';
 import { captureLeadInBackground } from '../leadPipeline';
 import { understandConciergeMessage } from '../conciergeUnderstanding';
 import { TOURS } from '../../src/data/toursData';
+import { contactFormGuard } from '../formAbuseGuard';
 
 /** Customer intake y webhooks de WhatsApp. */
 export const customerIntakeRouter = createRouter();
 
 // Health check endpoint
-customerIntakeRouter.post('/api/customer-intake', chatLimiter, intakeAdmission.middleware, async (req, res) => {
+customerIntakeRouter.post('/api/customer-intake', chatLimiter, contactFormGuard, intakeAdmission.middleware, async (req, res) => {
   try {
     // Public web intake never trusts channel-prefixed session ids (wa_, voice_,
     // trav_...) or unverified contact data to link to an existing traveler.

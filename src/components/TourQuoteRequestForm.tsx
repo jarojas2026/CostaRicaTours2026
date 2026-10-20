@@ -2,6 +2,8 @@ import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Language } from '../types';
 import { buildTourQuoteLeadPayload, TOUR_QUOTE_ENDPOINT, type TourQuoteError } from '../../shared/tourQuoteRequest';
+import { formGuardFields } from '../../shared/formAbuse';
+import { HoneypotField } from './HoneypotField';
 
 interface Props {
   tourId: string;
@@ -31,6 +33,8 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
   const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [error, setError] = useState<string | null>(null);
   const sending = useRef(false);
+  const [startedAt] = useState(() => Date.now());
+  const [honeypot, setHoneypot] = useState('');
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,8 +48,16 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
       const res = await fetch(TOUR_QUOTE_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(built.payload),
+        body: JSON.stringify({ ...built.payload, ...formGuardFields(startedAt, honeypot) }),
       });
+      if (res.status === 429 || res.status === 400) {
+        const body = await res.json().catch(() => ({}));
+        if (body?.code === 'rate_limited' || body?.code === 'too_fast') {
+          setState('idle');
+          setError(String(body.message));
+          return;
+        }
+      }
       if (!res.ok) throw new Error(String(res.status));
       setState('sent');
     } catch {
@@ -66,7 +78,8 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
 
   const disabled = state === 'sending';
   return (
-    <form onSubmit={submit} noValidate aria-label={es ? 'Solicitar cotización' : 'Request a quote'} className="space-y-3">
+    <form onSubmit={submit} noValidate aria-label={es ? 'Solicitar cotización' : 'Request a quote'} className="relative space-y-3">
+      <HoneypotField value={honeypot} onChange={setHoneypot} />
       <h2 className="text-lg font-black text-white">{es ? 'Solicitar cotización' : 'Request a quote'}</h2>
       <p className="text-xs text-stone-400">{es ? 'No es una reserva ni un cobro. Confirmamos precio y cupo por escrito antes de cualquier pago; la identidad del operador se indica en la confirmación de la reserva.' : 'This is not a booking or a charge. We confirm price and availability in writing before any payment; the operator’s identity is provided in the booking confirmation.'}</p>
       <label className="block text-xs text-stone-300">{es ? 'Nombre' : 'Name'}

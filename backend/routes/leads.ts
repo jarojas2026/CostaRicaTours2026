@@ -17,6 +17,7 @@ import { buildLeadDigest, buildTourPageLeadInput, captureLeadAndNotify, getLead,
 import { createRouter, adminAccessPayload, chatLimiter } from './shared';
 import { parseTourQuoteLeadPayload } from '../../shared/tourQuoteRequest';
 import { TOURS } from '../../src/data/toursData';
+import { quoteRequestGuard } from '../formAbuseGuard';
 
 export const leadsRouter = createRouter();
 
@@ -57,7 +58,7 @@ leadsRouter.patch('/api/admin/leads/:id/status', requireOperator, async (req, re
   res.json({ success: true, lead: result.lead });
 });
 
-leadsRouter.post('/api/leads/quote-request', chatLimiter, async (req, res) => {
+leadsRouter.post('/api/leads/quote-request', chatLimiter, quoteRequestGuard, async (req, res) => {
   const parsed = parseTourQuoteLeadPayload(req.body);
   if (!parsed.ok) return res.status(400).json({ success: false, error: parsed.error });
   const tour = TOURS.find(t => t.id === parsed.payload.tourId);
