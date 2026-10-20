@@ -12,7 +12,7 @@ import { createAlert } from './alertService';
 import { sendEmail } from './notificationService';
 import { createProviderPortalToken, providerPortalConfigured } from './providerPortalService';
 import { acceptProviderOrder } from './providerAcceptance';
-import { isValidCommissionRate } from './providerPayoutPolicy';
+import { calculateContractualSettlementUSD, isValidCommissionRate } from './providerPayoutPolicy';
 
 export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || '';
 
@@ -347,15 +347,11 @@ export async function dispatchServiceOrder(params: {
 
   // Fail closed if no explicit financial agreement is registered for this verified provider.
   // The payout service independently reads the same commissionRate from Firestore.
-  if (!isValidCommissionRate(provider.commissionRate)) {
-    throw new Error(`Proveedor ${provider.id} sin comisión contractual verificada; requiere revisión administrativa antes de despachar.`);
+  const settlement = calculateContractualSettlementUSD(params.totalUSD, provider.commissionRate);
+  if (!settlement) {
+    throw new Error(`Proveedor ${provider.id}: falta comisión contractual verificada o importe USD válido. Requiere revisión antes de despachar.`);
   }
-  if (!Number.isFinite(params.totalUSD) || params.totalUSD <= 0) {
-    throw new Error('Monto USD inválido; no se puede emitir una orden de servicio.');
-  }
-  const payoutAmountUSD = Number((params.totalUSD * (1 - provider.commissionRate)).toFixed(2));
-  const platformFeeUSD = Number((params.totalUSD - payoutAmountUSD).toFixed(2));
-  if (payoutAmountUSD <= 0) throw new Error('Liquidación contractual inválida; requiere revisión.');
+  const { payoutAmountUSD, platformFeeUSD } = settlement;
   const exchangeRate = Number(process.env.USD_TO_CRC_RATE);
   if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {
     throw new Error('USD_TO_CRC_RATE no está configurado; no se puede calcular la liquidación en CRC.');
