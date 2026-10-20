@@ -10,6 +10,15 @@
 export const TOUR_QUOTE_SOURCE = 'tour_page' as const;
 export const TOUR_QUOTE_ENDPOINT = '/api/leads/quote-request';
 
+/**
+ * Referencia corta y pública de una solicitud (p. ej. "CRT-1A2B3C4D") a partir del id del lead.
+ * El id ya es un hash: la referencia no contiene correo, nombre ni teléfono.
+ */
+export function leadPublicReference(leadId: unknown): string | null {
+  const raw = String(leadId ?? '').replace(/^lead_/, '').replace(/[^a-zA-Z0-9]/g, '');
+  return raw.length >= 6 ? `CRT-${raw.slice(0, 8).toUpperCase()}` : null;
+}
+
 export interface TourQuoteFormInput {
   tourId: string;
   name: string;
