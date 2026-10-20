@@ -203,6 +203,7 @@ ROUTE POST /api/admin/leads/triage (2)
 ROUTE GET /api/admin/leads/:id (2)
 ROUTE PATCH /api/admin/leads/:id/status (2)
 ROUTE POST /api/leads/quote-request (4)
+ROUTE POST /api/leads/map-service-request (4)
 ROUTE POST /api/internal/leads/digest (1)
 USE /api wrapped
 USE / apiErrorHandler
