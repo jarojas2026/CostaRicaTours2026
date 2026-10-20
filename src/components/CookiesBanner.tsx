@@ -1,13 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Language } from '../types';
-import { Cookie, X, Check, Settings, ShieldAlert } from 'lucide-react';
+import { Cookie, Check } from 'lucide-react';
 
 interface CookiesBannerProps {
   language: Language;
 }
 
+/** CSS variable with the space the banner occupies at the bottom of the viewport (0 when hidden). */
+export const COOKIE_BANNER_OFFSET_VAR = '--cookie-banner-h';
+
+/**
+ * Compact consent notice. It reserves its own height at the bottom of the page
+ * (body padding + CSS variable) so it never covers a form's submit button or a
+ * fixed call-to-action bar, which can offset itself with var(--cookie-banner-h).
+ */
 export const CookiesBanner: React.FC<CookiesBannerProps> = ({ language }) => {
   const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const es = language === 'es';
 
   useEffect(() => {
     const consent = localStorage.getItem('cookie-consent');
@@ -15,6 +26,29 @@ export const CookiesBanner: React.FC<CookiesBannerProps> = ({ language }) => {
       setIsVisible(true);
     }
   }, []);
+
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    const node = ref.current;
+    if (!isVisible || !node) return;
+    const previousPadding = body.style.paddingBottom;
+    const update = () => {
+      const offset = Math.max(0, Math.ceil(window.innerHeight - node.getBoundingClientRect().top));
+      root.style.setProperty(COOKIE_BANNER_OFFSET_VAR, `${offset}px`);
+      body.style.paddingBottom = `${offset}px`;
+    };
+    update();
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null;
+    observer?.observe(node);
+    window.addEventListener('resize', update);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', update);
+      root.style.removeProperty(COOKIE_BANNER_OFFSET_VAR);
+      body.style.paddingBottom = previousPadding;
+    };
+  }, [isVisible]);
 
   const handleAcceptAll = () => {
     localStorage.setItem('cookie-consent', 'all');
@@ -29,41 +63,38 @@ export const CookiesBanner: React.FC<CookiesBannerProps> = ({ language }) => {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[110] bg-white border-t border-orange-500/30 p-4 sm:p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-full duration-500">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        
-        <div className="flex items-start gap-4 max-w-3xl">
-          <div className="w-10 h-10 rounded-full bg-stone-100/50 border border-orange-500/30 flex items-center justify-center shrink-0 shadow-lg">
-            <Cookie className="w-5 h-5 text-orange-400" />
-          </div>
-          <div className="space-y-1.5">
-            <h3 className="text-white font-black uppercase tracking-wider text-sm">
-              {language === 'es' ? 'Privacidad y Cookies' : 'Privacy & Cookies'}
-            </h3>
-            <p className="text-stone-900/80 text-xs leading-relaxed">
-              {language === 'es' 
-                ? 'Usamos cookies para mejorar tu experiencia, analizar tráfico y personalizar contenido. Puedes aceptar todas, rechazar las no esenciales o personalizar tu elección. Más detalles en nuestra Política de Privacidad.'
-                : 'We use cookies to improve your experience, analyze traffic, and personalize content. You can accept all, reject non-essential ones, or customize your choice. More details in our Privacy Policy.'}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto shrink-0">
-          <button
-            onClick={handleReject}
-            className="px-5 py-2.5 rounded-xl border border-black/20 text-stone-700 hover:text-white hover:bg-white/5 font-bold text-xs uppercase tracking-wider transition-colors text-center"
-          >
-            {language === 'es' ? 'Rechazar' : 'Reject'}
-          </button>
-          
-          <button
-            onClick={handleAcceptAll}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-teal-600 hover:from-orange-500 hover:to-orange-500 text-white font-black text-xs uppercase tracking-wider shadow-lg hover:scale-105 transition-all text-center flex items-center justify-center gap-1.5"
-          >
-            <Check className="w-3.5 h-3.5" />
-            {language === 'es' ? 'Aceptar Todas' : 'Accept All'}
-          </button>
-        </div>
+    <div
+      ref={ref}
+      role="region"
+      aria-label={es ? 'Aviso de cookies' : 'Cookie notice'}
+      data-testid="cookies-banner"
+      className="fixed bottom-2 left-2 right-2 z-[110] rounded-2xl border border-orange-500/30 bg-white p-3 shadow-[0_8px_30px_rgba(0,0,0,0.35)] sm:bottom-4 sm:left-4 sm:right-auto sm:max-w-sm"
+    >
+      <div className="flex items-start gap-2.5">
+        <Cookie className="mt-0.5 h-4 w-4 shrink-0 text-orange-500" aria-hidden="true" />
+        <p className="text-[11px] leading-snug text-stone-700">
+          {es
+            ? 'Usamos cookies esenciales y, si aceptas, de análisis.'
+            : 'We use essential cookies and, if you accept, analytics cookies.'}{' '}
+          <Link to="/privacy" className="font-semibold underline">{es ? 'Privacidad' : 'Privacy'}</Link>
+        </p>
+      </div>
+      <div className="mt-2 flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={handleReject}
+          className="rounded-xl border border-black/20 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-stone-700 transition-colors hover:bg-stone-100"
+        >
+          {es ? 'Rechazar' : 'Reject'}
+        </button>
+        <button
+          type="button"
+          onClick={handleAcceptAll}
+          className="flex items-center gap-1 rounded-xl bg-teal-600 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-white transition-colors hover:bg-orange-500"
+        >
+          <Check className="h-3.5 w-3.5" aria-hidden="true" />
+          {es ? 'Aceptar todas' : 'Accept all'}
+        </button>
       </div>
     </div>
   );
