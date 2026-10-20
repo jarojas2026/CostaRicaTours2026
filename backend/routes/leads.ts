@@ -1,7 +1,8 @@
 /**
  * Pipeline de leads: vista admin/operador, cambio de estado y resumen diario.
  *
- * - GET  /api/admin/leads                 (requireOperator) lista, ?status=
+ * - GET  /api/admin/leads                 (requireOperator) lista, ?status= &priority= &triage=
+ * - POST /api/admin/leads/triage          (requireOperator) descartar/restaurar en bloque (reversible)
  * - GET  /api/admin/leads/:id             (requireOperator) detalle con candidatos y borradores
  * - PATCH /api/admin/leads/:id/status     (requireOperator) máquina de estados con evidencia
  * - POST /api/leads/quote-request        (público, rate-limit) solicitud de cotización desde
@@ -13,7 +14,8 @@
 import crypto from 'crypto';
 import type express from 'express';
 import { requireOperator } from '../authMiddleware';
-import { buildLeadDigest, buildTourPageLeadInput, captureLeadAndNotify, getLead, isLeadStatus, listLeads, transitionLead, LEAD_STATUSES } from '../leadPipeline';
+import { buildLeadDigest, buildTourPageLeadInput, captureLeadAndNotify, getLead, isLeadStatus, listLeads, transitionLead, triageLeads, LEAD_STATUSES } from '../leadPipeline';
+import { isLeadPriority, isLeadTriageState, LEAD_PRIORITIES, LEAD_TRIAGE_STATES } from '../leadTriage';
 import { createRouter, adminAccessPayload, chatLimiter } from './shared';
 import { parseTourQuoteLeadPayload } from '../../shared/tourQuoteRequest';
 import { TOURS } from '../../src/data/toursData';
@@ -32,8 +34,40 @@ function hasOperatorKey(req: express.Request): boolean {
 leadsRouter.get('/api/admin/leads', requireOperator, async (req, res) => {
   const status = req.query.status ? String(req.query.status) : undefined;
   if (status && !isLeadStatus(status)) return res.status(400).json({ success: false, error: `Estado inválido. Use: ${LEAD_STATUSES.join(', ')}` });
-  const leads = await listLeads({ status: status as any, limit: Number(req.query.limit) || 100 });
-  res.json({ success: true, statuses: LEAD_STATUSES, leads });
+  const priority = req.query.priority ? String(req.query.priority) : undefined;
+  if (priority && !isLeadPriority(priority)) return res.status(400).json({ success: false, error: `Prioridad inválida. Use: ${LEAD_PRIORITIES.join(', ')}` });
+  const triage = req.query.triage ? String(req.query.triage) : undefined;
+  if (triage && !isLeadTriageState(triage)) return res.status(400).json({ success: false, error: `Triaje inválido. Use: ${LEAD_TRIAGE_STATES.join(', ')}` });
+  const leads = await listLeads({ status: status as any, priority: priority as any, triage: triage as any, limit: Number(req.query.limit) || 100 });
+  res.json({ success: true, statuses: LEAD_STATUSES, priorities: LEAD_PRIORITIES, triageStates: LEAD_TRIAGE_STATES, leads });
+});
+
+leadsRouter.post('/api/admin/leads/triage', requireOperator, async (req, res) => {
+  const ids = Array.isArray(req.body?.ids) ? req.body.ids.filter((id: unknown) => typeof id === 'string') : [];
+  const action = req.body?.action;
+  if (!ids.length || ids.length > 100) return res.status(400).json({ success: false, error: 'ids_required', message: 'Envía de 1 a 100 ids.' });
+  if (action !== 'descartar' && action !== 'restaurar') return res.status(400).json({ success: false, error: 'invalid_action', message: 'action: descartar | restaurar' });
+  const access = adminAccessPayload(req);
+  const note = typeof req.body?.note === 'string' ? req.body.note.trim().slice(0, 200) : undefined;
+  const result = await triageLeads(ids, action === 'descartar' ? 'descartado' : 'activo', { by: String(access.email || access.uid || access.role || 'operator') }, note);
+  let alertsResolved = 0;
+  if (action === 'descartar' && result.updated.length) {
+    // Un lead descartado deja de pesar en "Riesgo operativo": se resuelven sus alertas abiertas.
+    try {
+      const { getAlerts, updateAlert } = await import('../alertService');
+      const discarded = new Set(result.updated.map(l => l.id));
+      const open = await getAlerts({ resolved: false });
+      for (const alert of open) {
+        if (alert.metadata && discarded.has(String((alert.metadata as any).leadId || ''))) {
+          const updated = await updateAlert(alert.id, { resolved: true });
+          if (updated.success) alertsResolved += 1;
+        }
+      }
+    } catch (error: any) {
+      console.warn('[leads] no se pudieron resolver alertas de leads descartados:', error?.message || error);
+    }
+  }
+  res.json({ success: true, updated: result.updated.map(l => ({ id: l.id, triage: l.triage })), notFound: result.notFound, alertsResolved });
 });
 
 leadsRouter.get('/api/admin/leads/:id', requireOperator, async (req, res) => {
