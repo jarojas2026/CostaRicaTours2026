@@ -504,7 +504,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
           </div>
 
           <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-6">
+            <div data-testid="tour-sidebar" className="space-y-6 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:overscroll-contain lg:rounded-[2.5rem]">
               <div id="tour-quote" ref={quoteRef} tabIndex={-1} className="scroll-mt-24 p-8 bg-stone-900 rounded-[2.5rem] border border-emerald-500/20 shadow-2xl shadow-emerald-500/10 focus:outline-none">
                 <div className="mb-8">
                   {isBookable ? <>
