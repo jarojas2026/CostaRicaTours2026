@@ -34,6 +34,12 @@ export function getClaudeClient(): AnthropicVertex | null {
       process.env.VERTEX_AI_REGION ||
       'us-east5';
 
+    // vertex-sdk >= 0.21 crea spans OpenTelemetry y propaga cabeceras de traza si hay un
+    // tracer global. Por defecto seguro: desactivado (prompts/respuestas no salen a trazas).
+    // Se puede activar explícitamente con ANTHROPIC_OPEN_TELEMETRY=true.
+    if (process.env.ANTHROPIC_OPEN_TELEMETRY === undefined) process.env.ANTHROPIC_OPEN_TELEMETRY = 'false';
+    if (process.env.ANTHROPIC_OPEN_TELEMETRY_PROPAGATION === undefined) process.env.ANTHROPIC_OPEN_TELEMETRY_PROPAGATION = 'false';
+
     claudeClient = new AnthropicVertex({
       projectId,
       region
