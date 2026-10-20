@@ -122,12 +122,10 @@ export async function performGroundedSearch(
       success: false,
       answer:
         language === 'es'
-          ? `Información de respaldo: Para trámites de Parques Nacionales ingrese al portal oficial SINAC (servirr.sinac.go.cr). Si consulta el ferry a Paquera, verifique el estado en Naviera Tambor o Coonatramar.`
-          : `Fallback notice: For National Park reservations please visit official SINAC (servirr.sinac.go.cr). For Paquera ferries, check Naviera Tambor or Coonatramar portals directly.`,
-      sources: [
-        { uri: 'https://servir.sinac.go.cr', title: 'SINAC Oficial Costa Rica' },
-        { uri: 'https://www.ict.go.cr', title: 'Instituto Costarricense de Turismo' }
-      ],
+          ? 'La consulta en vivo no está disponible en este momento. No he verificado horarios, tarifas, accesos ni cupos. Solicítenos la verificación y gestionamos el servicio por usted (parques, ferris, traslados) antes de cualquier pago.'
+          : 'Live lookup is unavailable right now. I have not verified schedules, fares, access or capacity. Ask us to verify it and we will handle the service for you (parks, ferries, transfers) before any payment.',
+      // Sin enlaces salientes a otros sitios turísticos: la plataforma gestiona la solicitud.
+      sources: [],
       modelUsed: 'grounding-fallback'
     };
   }

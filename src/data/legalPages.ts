@@ -301,7 +301,6 @@ export const LEGAL_PAGES: Record<LegalPageId, LegalPageContent> = {
           ],
         },
         links: [
-          { href: 'https://www.ict.go.cr/es/sostenibilidad/codigo-de-conducta.html', label: { es: 'Código de Conducta (ICT)', en: 'Code of Conduct (ICT)' } },
           { href: 'https://pani.go.cr/', label: { es: 'Patronato Nacional de la Infancia (PANI)', en: 'National Child Welfare Agency (PANI)' } },
         ],
       },
