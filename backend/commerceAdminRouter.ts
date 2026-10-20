@@ -11,7 +11,8 @@ import { voiceAgentDeskConfig } from './voiceAgentDeskService';
 export const commerceAdminRouter = Router();
 commerceAdminRouter.use(requireOperator);
 commerceAdminRouter.use((req, res, next) => {
-  if ((req as any).adminAccess?.role !== 'admin') return res.status(403).json({ error: 'Se requiere una cuenta administradora; una clave de operador no permite publicar ofertas.' });
+  const role = (req as any).adminAccess?.role;
+  if (role !== 'owner' && role !== 'admin') return res.status(403).json({ error: 'Se requiere rol de propietario o administrador; una clave de operador no permite publicar ofertas.' });
   next();
 });
 commerceAdminRouter.use(rateLimit({ windowMs: 60_000, limit: 30, standardHeaders: true, legacyHeaders: false }));
