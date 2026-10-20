@@ -22,6 +22,8 @@ test('service order only becomes dispatched after transport accepts the email', 
   assert.match(provider, /throw new Error\('provider_email_submission_failed'\)/);
   assert.match(provider, /throw new Error\('provider_email_not_configured'\)/);
   assert.match(provider, /existingOrder\?\.id \|\|/);
+  assert.match(provider, /deliveryStatus = 'failed'/);
+  assert.match(provider, /order\.status = 'dispatched'/);
 });
 
 test('unconfigured transport never reports simulated success and lifecycle only advances on return', () => {
