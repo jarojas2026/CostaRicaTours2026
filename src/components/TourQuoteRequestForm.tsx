@@ -79,7 +79,6 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
   const disabled = state === 'sending';
   return (
     <form onSubmit={submit} noValidate aria-label={es ? 'Solicitar cotización' : 'Request a quote'} className="relative space-y-3">
-      <HoneypotField value={honeypot} onChange={setHoneypot} />
       <h2 className="text-lg font-black text-white">{es ? 'Solicitar cotización' : 'Request a quote'}</h2>
       <p className="text-xs text-stone-400">{es ? 'No es una reserva ni un cobro. Confirmamos precio y cupo por escrito antes de cualquier pago; la identidad del operador se indica en la confirmación de la reserva.' : 'This is not a booking or a charge. We confirm price and availability in writing before any payment; the operator’s identity is provided in the booking confirmation.'}</p>
       <label className="block text-xs text-stone-300">{es ? 'Nombre' : 'Name'}
@@ -112,6 +111,8 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
       <button type="submit" disabled={disabled || !consent} className="w-full rounded-2xl bg-emerald-500 py-3 font-black text-stone-950 hover:bg-emerald-400 disabled:opacity-50">
         {disabled ? (es ? 'Enviando…' : 'Sending…') : (es ? 'Enviar solicitud' : 'Send request')}
       </button>
+      {/* Al final del formulario: el foco automático toma el primer campo real. */}
+      <HoneypotField value={honeypot} onChange={setHoneypot} />
     </form>
   );
 };
