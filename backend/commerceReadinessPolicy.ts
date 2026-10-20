@@ -42,7 +42,7 @@ export function assessCommercialReadiness(input: CommercialReadinessInput) {
 
   const blockers: string[] = [];
   if (verified.length === 0) blockers.push('verify_real_provider');
-  if (verified.length > operational.length) blockers.push('complete_provider_agreement_and_email');
+  if (verified.length > operational.length) blockers.push('complete_provider_rate_and_email');
   if (offers.length === 0) blockers.push('publish_contractual_offer');
   if (slots.length === 0) blockers.push('publish_future_inventory');
   if (!input.emailTransportConfigured) blockers.push('configure_real_email_transport');
@@ -64,7 +64,7 @@ export function assessCommercialReadiness(input: CommercialReadinessInput) {
     },
     counts: {
       verifiedActiveProvidersSample: verified.length,
-      providerProfilesWithAgreementAndEmailSample: operational.length,
+      providerProfilesWithRateAndEmailSample: operational.length,
       offerCandidatesSample: offers.length,
       datedSlotCandidatesSample: slots.length,
     },
