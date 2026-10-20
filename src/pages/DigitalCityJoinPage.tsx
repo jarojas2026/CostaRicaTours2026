@@ -4,6 +4,7 @@ import { Building2, ClipboardCheck, Globe2, ShieldCheck } from 'lucide-react';
 import { auth } from '../firebase';
 import { DIGITAL_CITY_ENTITY_KINDS, type DigitalCityEntityKind } from '../../backend/digitalCityRegistrationPolicy';
 import type { Language } from '../types';
+import { CountrySelect } from '../components/CountrySelect';
 
 type Mine = {
   id: string; kind: DigitalCityEntityKind; displayName: string; countryCode: string;
@@ -138,7 +139,7 @@ export function DigitalCityJoinPage({ language, onOpenPrivacy }: { language: Lan
         <label>{es ? 'Participante' : 'Participant'}<select value={kind} onChange={e => setKind(e.target.value as DigitalCityEntityKind)} disabled={editing !== null} className={inputClass}>
           {DIGITAL_CITY_ENTITY_KINDS.map(type => <option key={type} value={type}>{types[type][es ? 0 : 1]}</option>)}
         </select></label>
-        <label>{es ? 'Código del país' : 'Country code'}<input value={countryCode} onChange={e => setCountryCode(e.target.value.toUpperCase())} disabled={editing !== null} maxLength={2} placeholder="CR" className={inputClass} required/></label>
+        <CountrySelect label={es ? 'País' : 'Country'} language={language} value={countryCode} onChange={setCountryCode} disabled={editing !== null} name="countryCode" required/>
         <label>{es ? 'Nombre del participante o entidad' : 'Participant or entity name'}<input value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={160} className={inputClass} required/></label>
         <label>{es ? 'Localidad' : 'Locality'}<input value={locality} onChange={e => setLocality(e.target.value)} maxLength={160} className={inputClass} required/></label>
         <label className="sm:col-span-2">{es ? 'Fuente pública HTTPS (requerida para espacios públicos)' : 'Public HTTPS source (required for public places)'}<input type="url" value={officialSourceUrl} onChange={e => setOfficialSourceUrl(e.target.value)} maxLength={600} placeholder="https://" className={inputClass}/></label>
