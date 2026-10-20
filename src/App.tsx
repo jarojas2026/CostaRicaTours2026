@@ -16,7 +16,7 @@ import { BottomNav } from './components/BottomNav';
 import { RouteMetadata } from './components/RouteMetadata';
 import { OfflineBanner } from './components/OfflineBanner';
 import { DigitalCounterWidget } from './components/DigitalCounterWidget';
-import { Home, ChevronRight, ArrowLeft, Bot, MessageCircle, X, Loader2 } from 'lucide-react';
+import { Home, ChevronRight, Bot, MessageCircle, X, Loader2 } from 'lucide-react';
 import { AdminRouteGuard } from './components/AdminRouteGuard';
 import { directWhatsAppUrl } from './utils/directWhatsApp';
 import { useSupportPanel } from './hooks/useSupportPanel';
@@ -366,20 +366,12 @@ export default function App() {
                   {getActiveTabLabel()}
                 </span>
               </div>
-
-              <button
-                onClick={() => navigate('/')}
-                className="flex items-center gap-1.5 text-[11px] font-bold bg-[#041910] hover:bg-[#07261b] text-emerald-200 hover:text-white px-3 py-1 rounded-full border border-emerald-500/30 transition-all cursor-pointer shrink-0 shadow-sm"
-              >
-                <ArrowLeft className="w-3 h-3 text-amber-400" />
-                <span className="hidden sm:inline">{language === 'es' ? 'Volver al Inicio' : 'Back to Home'}</span>
-                <span className="sm:hidden">{language === 'es' ? 'Inicio' : 'Home'}</span>
-              </button>
             </div>
           </div>
         )}
 
-        {activeTab !== 'counter' && activeTab !== 'ai' && !activeTab.startsWith('admin') && activeTab !== 'provider' && (
+        {/* The "Smart travel hub" strip lives only on the home page. */}
+        {activeTab === 'home' && (
           <div className="pt-4 sm:pt-5">
             <TravelerCommandBar
               language={language}
