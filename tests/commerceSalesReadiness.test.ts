@@ -26,7 +26,7 @@ test('counts only real verified Firestore candidate profiles/offers/slots, never
   assert.equal(result.state, 'sample_needs_external_verification');
   assert.equal(result.coverage.totalsCertified, false);
   assert.ok(result.blockers.includes('review_followup_policy_and_consent'));
-  assert.doesNotMatch(result.disclaimer, /confirmed availability/i);
+  assert.match(result.disclaimer, /not provider-confirmed availability/i);
 });
 
 test('unverified provider, missing commission, expired or full slot are not sale-ready candidates', () => {
