@@ -1,4 +1,5 @@
 import { TourFacts } from '../components/TourFacts';
+import { NotFoundPage } from './NotFoundPage';
 import { TourQuoteRequestForm } from '../components/TourQuoteRequestForm';
 import { resolveTour, tourAllowsPayment, TOUR_COMMERCIAL_STATUS } from '../utils/tourResolver';
 import React, { useState, useEffect, useRef } from 'react';
@@ -88,14 +89,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
     );
   }
 
-  if (!tour) return (
-    <main data-testid="tour-not-found" className="min-h-screen bg-stone-950 px-6 pt-32 text-center text-white">
-      <p className="text-6xl font-black text-emerald-400">404</p>
-      <h1 className="mt-4 text-3xl font-black">{language === 'es' ? 'Tour no encontrado' : 'Tour not found'}</h1>
-      <p className="mx-auto mt-3 max-w-md text-stone-400">{language === 'es' ? 'Este tour no existe o ya no está en el catálogo.' : 'This tour does not exist or is no longer in the catalog.'}</p>
-      <Link to="/tours" className="mt-6 inline-block rounded-2xl bg-emerald-500 px-6 py-3 font-black text-stone-950">{language === 'es' ? 'Explorar tours' : 'Explore tours'}</Link>
-    </main>
-  );
+  if (!tour) return <NotFoundPage language={language} variant="tour" />;
 
   const totalUSD = (tour.priceUSD * adults) + (tour.priceUSD * 0.7 * children);
   const crcRate = getUsdToCrcRate();
