@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Language } from '../types';
-import { buildTourQuoteLeadPayload, TOUR_QUOTE_ENDPOINT, type TourQuoteError } from '../../shared/tourQuoteRequest';
+import { buildTourQuoteLeadPayload, QUOTE_HONEYPOT_FIELD, TOUR_QUOTE_ENDPOINT, type TourQuoteError } from '../../shared/tourQuoteRequest';
 
 interface Props {
   tourId: string;
@@ -31,6 +31,8 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
   const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [error, setError] = useState<string | null>(null);
   const sending = useRef(false);
+  const startedAt = useRef(Date.now());
+  const [trap, setTrap] = useState('');
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,8 +46,13 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
       const res = await fetch(TOUR_QUOTE_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(built.payload),
+        body: JSON.stringify({ ...built.payload, [QUOTE_HONEYPOT_FIELD]: trap, elapsedMs: Date.now() - startedAt.current }),
       });
+      if (res.status === 429) {
+        setState('idle');
+        setError(es ? 'Demasiadas solicitudes desde esta conexión. Inténtalo más tarde o escríbenos por WhatsApp.' : 'Too many requests from this connection. Try later or message us on WhatsApp.');
+        return;
+      }
       if (!res.ok) throw new Error(String(res.status));
       setState('sent');
     } catch {
@@ -69,6 +76,9 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
     <form onSubmit={submit} noValidate aria-label={es ? 'Solicitar cotización' : 'Request a quote'} className="space-y-3">
       <h2 className="text-lg font-black text-white">{es ? 'Solicitar cotización' : 'Request a quote'}</h2>
       <p className="text-xs text-stone-400">{es ? 'No es una reserva ni un cobro. Confirmamos precio y cupo por escrito antes de cualquier pago; la identidad del operador se indica en la confirmación de la reserva.' : 'This is not a booking or a charge. We confirm price and availability in writing before any payment; the operator’s identity is provided in the booking confirmation.'}</p>
+      <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: 1, height: 1, overflow: 'hidden' }}>
+        <label>Website<input tabIndex={-1} autoComplete="off" name={QUOTE_HONEYPOT_FIELD} value={trap} onChange={e => setTrap(e.target.value)} /></label>
+      </div>
       <label className="block text-xs text-stone-300">{es ? 'Nombre' : 'Name'}
         <input required disabled={disabled} autoComplete="name" value={name} onChange={e => setName(e.target.value)} className={input} />
       </label>

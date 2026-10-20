@@ -91,6 +91,33 @@ export const chatLimiter = rateLimit({
   message: { error: 'Límite de solicitudes de chat excedido. Por favor espere un momento.' }
 });
 
+/** IP real del cliente: Vercel fija x-vercel-forwarded-for / x-real-ip (Cloud Run solo es accesible vía Vercel por IAM). */
+export function clientIpKey(req: { headers: Record<string, any>; ip?: string }): string {
+  const first = (v: unknown) => String(Array.isArray(v) ? v[0] : v || '').split(',')[0].trim();
+  return first(req.headers['x-vercel-forwarded-for']) || first(req.headers['x-real-ip']) || req.ip || 'unknown';
+}
+
+/** Solicitudes de cotización públicas: 5 cada 15 min y 20 por día por IP. */
+const quoteLimitMessage = { success: false, error: 'rate_limited', message: 'Demasiadas solicitudes desde esta conexión. Intente más tarde o escríbanos por WhatsApp.' };
+export const quoteBurstLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: Number(process.env.QUOTE_RATE_LIMIT_15MIN || 5),
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => clientIpKey(req),
+  validate: false,
+  message: quoteLimitMessage,
+});
+export const quoteDailyLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  max: Number(process.env.QUOTE_RATE_LIMIT_DAY || 20),
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => clientIpKey(req),
+  validate: false,
+  message: quoteLimitMessage,
+});
+
 export const generalApiLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 120,

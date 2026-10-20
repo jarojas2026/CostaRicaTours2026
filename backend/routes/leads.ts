@@ -16,8 +16,8 @@ import type express from 'express';
 import { requireOperator } from '../authMiddleware';
 import { buildLeadDigest, buildTourPageLeadInput, captureLeadAndNotify, getLead, isLeadStatus, listLeads, transitionLead, triageLeads, LEAD_STATUSES } from '../leadPipeline';
 import { isLeadPriority, isLeadTriageState, LEAD_PRIORITIES, LEAD_TRIAGE_STATES } from '../leadTriage';
-import { createRouter, adminAccessPayload, chatLimiter } from './shared';
-import { parseTourQuoteLeadPayload } from '../../shared/tourQuoteRequest';
+import { createRouter, adminAccessPayload, quoteBurstLimiter, quoteDailyLimiter } from './shared';
+import { isLikelyBotSubmission, parseTourQuoteLeadPayload } from '../../shared/tourQuoteRequest';
 import { TOURS } from '../../src/data/toursData';
 
 export const leadsRouter = createRouter();
@@ -91,7 +91,12 @@ leadsRouter.patch('/api/admin/leads/:id/status', requireOperator, async (req, re
   res.json({ success: true, lead: result.lead });
 });
 
-leadsRouter.post('/api/leads/quote-request', chatLimiter, async (req, res) => {
+leadsRouter.post('/api/leads/quote-request', quoteBurstLimiter, quoteDailyLimiter, async (req, res) => {
+  if (isLikelyBotSubmission(req.body)) {
+    // Respuesta idéntica a la real para no dar pistas al bot; no se guarda ni se notifica.
+    console.warn('[leads] solicitud descartada por antiabuso (trampa o llenado demasiado rápido)');
+    return res.status(202).json({ success: true, status: 'nuevo', message: req.body?.language === 'en' ? 'Request received. We will send you a quote with confirmed availability and price before any payment.' : 'Solicitud recibida. Te enviaremos la cotización con disponibilidad y precio confirmados antes de cualquier pago.' });
+  }
   const parsed = parseTourQuoteLeadPayload(req.body);
   if (!parsed.ok) return res.status(400).json({ success: false, error: parsed.error });
   const tour = TOURS.find(t => t.id === parsed.payload.tourId);

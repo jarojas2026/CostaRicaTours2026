@@ -4,7 +4,7 @@ import test from 'node:test';
 import { TOURS } from '../src/data/toursData';
 import { OPERATOR_TOURS } from '../src/data/operatorTours';
 import { resolveTour, tourAllowsPayment, tourReferencePrice, tourReviewDate, TOUR_COMMERCIAL_STATUS } from '../src/utils/tourResolver';
-import { buildTourQuoteLeadPayload, parseTourQuoteLeadPayload, TOUR_QUOTE_SOURCE } from '../shared/tourQuoteRequest';
+import { buildTourQuoteLeadPayload, isLikelyBotSubmission, parseTourQuoteLeadPayload, TOUR_QUOTE_SOURCE } from '../shared/tourQuoteRequest';
 import { buildLeadRecord, buildTourPageLeadInput } from '../backend/leadPipeline';
 import { buildSitemapXml } from '../scripts/generateSitemap';
 
@@ -105,7 +105,7 @@ test('quote form posts to the leads endpoint, links /privacy and shows the pendi
   assert.match(src, /Solicitud recibida\. Te enviaremos la cotización/);
   assert.doesNotMatch(src, /stripe|paypal|checkout/i);
   const route = fs.readFileSync('backend/routes/leads.ts', 'utf8');
-  assert.match(route, /leadsRouter\.post\('\/api\/leads\/quote-request', chatLimiter/);
+  assert.match(route, /leadsRouter\.post\('\/api\/leads\/quote-request', quoteBurstLimiter, quoteDailyLimiter/);
 });
 
 test('public/sitemap.xml is generated and lists every /tour/:id', () => {
@@ -113,4 +113,11 @@ test('public/sitemap.xml is generated and lists every /tour/:id', () => {
   assert.equal(committed, buildSitemapXml(TOURS), 'run: npm run sitemap');
   for (const tour of TOURS) assert.ok(committed.includes(`/tour/${tour.id}</loc>`), tour.id);
   assert.match(fs.readFileSync('public/robots.txt', 'utf8'), /^Sitemap: https:\/\/costaricatours2026\.vercel\.app\/sitemap\.xml$/m);
+});
+
+test('antiabuso: trampa llena o envío demasiado rápido se descarta; humano normal pasa', () => {
+  assert.equal(isLikelyBotSubmission({ website: 'http://spam.example' }), true);
+  assert.equal(isLikelyBotSubmission({ website: '', elapsedMs: 800 }), true);
+  assert.equal(isLikelyBotSubmission({ website: '', elapsedMs: 9000 }), false);
+  assert.equal(isLikelyBotSubmission({}), false);
 });

@@ -97,3 +97,16 @@ export function parseTourQuoteLeadPayload(body: unknown):
 export function isoDateOrUndefined(value?: string): string | undefined {
   return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined;
 }
+
+/** Antiabuso sin captcha externo (gasto $0): campo trampa invisible y tiempo mínimo de llenado. */
+export const QUOTE_HONEYPOT_FIELD = 'website';
+export const QUOTE_MIN_FILL_MS = 2500;
+
+export function isLikelyBotSubmission(body: unknown): boolean {
+  const b = (body && typeof body === 'object' ? body : {}) as Record<string, any>;
+  const trap = b[QUOTE_HONEYPOT_FIELD];
+  if (typeof trap === 'string' && trap.trim() !== '') return true;
+  const elapsed = b.elapsedMs;
+  if (typeof elapsed === 'number' && Number.isFinite(elapsed) && elapsed >= 0 && elapsed < QUOTE_MIN_FILL_MS) return true;
+  return false;
+}
