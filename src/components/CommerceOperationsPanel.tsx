@@ -121,7 +121,7 @@ export function CommerceOperationsPanel({ language }: { language: Language }) {
           {field('email', es ? 'Correo operativo para confirmaciones' : 'Operations email for confirmations', 'email')}
           {field('phone', es ? 'Teléfono con código de país' : 'Phone with country code', 'tel', { placeholder: '+506…' })}
           {field('website', es ? 'Web oficial HTTPS' : 'Official HTTPS website', 'url', { placeholder: 'https://…' })}
-          {field('commissionPercent', es ? 'Comisión acordada (%)' : 'Agreed commission (%)', 'number', { min: 0, max: 100, step: 0.01 })}
+          {field('commissionPercent', es ? 'Comisión acordada (%)' : 'Agreed commission (%)', 'number', { min: 0, max: 99.99, step: 0.01 })}
           <p className="sm:col-span-2 text-xs text-stone-400">{es ? 'Los datos de contacto de proveedores viven solo en el servidor (archivo interno). Confirme acuerdo, tarifas y comisión con el proveedor; una web pública no prueba disponibilidad.' : 'Provider contact data lives only on the server (internal file). Confirm agreement, rates and commission with the provider; a public website does not prove availability.'}</p>
         </> : operation === 'product' ? <>
           {field('productId', es ? 'Código único de servicio' : 'Unique service code', 'text', { pattern: '[a-zA-Z0-9_-]+', maxLength: 160 })}
