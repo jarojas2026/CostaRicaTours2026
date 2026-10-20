@@ -12,6 +12,7 @@ import { createAlert } from './alertService';
 import { sendEmail } from './notificationService';
 import { createProviderPortalToken, providerPortalConfigured } from './providerPortalService';
 import { acceptProviderOrder } from './providerAcceptance';
+import { isValidCommissionRate } from './providerPayoutPolicy';
 
 export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || '';
 
@@ -40,6 +41,8 @@ export interface TourProvider {
   email: string;
   officialEmail?: string;
   verified?: boolean;
+  /** Explicit contractual commission from the verified Firestore provider profile only. */
+  commissionRate?: number;
   cstLevel: number; // Certificación para la Sostenibilidad Turística (1 a 5)
   insPolicyNumber: string;
   ictLicense: string;
@@ -82,6 +85,9 @@ export async function resolveOperationalProvider(providerId: string, tourId: str
       email: String(data.email || data.officialEmail || legacy?.email || legacy?.officialEmail || ''),
       officialEmail: String(data.officialEmail || data.emailOperativo || legacy?.officialEmail || ''),
       verified: true,
+      commissionRate: isValidCommissionRate(collectionName === 'operators' ? data.commissionRate : (data.comision ?? data.commissionRate))
+        ? (collectionName === 'operators' ? data.commissionRate : (data.comision ?? data.commissionRate)) as number
+        : undefined,
       cstLevel: Number(data.cstLevel || legacy?.cstLevel || 0),
       insPolicyNumber: String(data.insPolicyNumber || legacy?.insPolicyNumber || ''),
       ictLicense: String(data.ictLicense || legacy?.ictLicense || ''),
@@ -119,6 +125,9 @@ export interface ServiceOrder {
   payoutAmountUSD: number;
   payoutAmountCRC: number;
   platformFeeUSD: number;
+  /** Amounts derive from an explicitly verified Firestore agreement, never a default percentage. */
+  commissionRate?: number;
+  settlementSource?: 'verified_provider_profile';
   status: 'dispatched' | 'confirmed' | 'in_progress' | 'completed' | 'reassigned' | 'rejected' | 'no_show';
   dispatchedAt: string;
   confirmedAt?: string;
@@ -336,9 +345,17 @@ export async function dispatchServiceOrder(params: {
   const now = new Date();
   const slaDeadline = new Date(now.getTime() + provider.slaTargetMinutes * 60000).toISOString();
 
-  // Desglose de liquidación: 85% para el operador local, 15% comisión de plataforma
-  const payoutAmountUSD = Math.round(params.totalUSD * 0.85 * 100) / 100;
-  const platformFeeUSD = Math.round(params.totalUSD * 0.15 * 100) / 100;
+  // Fail closed if no explicit financial agreement is registered for this verified provider.
+  // The payout service independently reads the same commissionRate from Firestore.
+  if (!isValidCommissionRate(provider.commissionRate)) {
+    throw new Error(`Proveedor ${provider.id} sin comisión contractual verificada; requiere revisión administrativa antes de despachar.`);
+  }
+  if (!Number.isFinite(params.totalUSD) || params.totalUSD <= 0) {
+    throw new Error('Monto USD inválido; no se puede emitir una orden de servicio.');
+  }
+  const payoutAmountUSD = Number((params.totalUSD * (1 - provider.commissionRate)).toFixed(2));
+  const platformFeeUSD = Number((params.totalUSD - payoutAmountUSD).toFixed(2));
+  if (payoutAmountUSD <= 0) throw new Error('Liquidación contractual inválida; requiere revisión.');
   const exchangeRate = Number(process.env.USD_TO_CRC_RATE);
   if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {
     throw new Error('USD_TO_CRC_RATE no está configurado; no se puede calcular la liquidación en CRC.');
@@ -368,6 +385,8 @@ export async function dispatchServiceOrder(params: {
     payoutAmountUSD,
     payoutAmountCRC,
     platformFeeUSD,
+    commissionRate: provider.commissionRate,
+    settlementSource: 'verified_provider_profile',
     status: 'dispatched',
     dispatchedAt: now.toISOString(),
     slaDeadline,
