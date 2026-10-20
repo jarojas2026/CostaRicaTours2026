@@ -19,7 +19,6 @@ export type CommercialReadinessInput = {
 
 export function assessCommercialReadiness(input: CommercialReadinessInput) {
   const verified = input.providers.filter(p => p.verified === true && p.active === true);
-  const providerIds = new Set(verified.map(p => String(p.id || '')));
   const operational = verified.filter(p =>
     isValidCommissionRate(p.commissionRate) &&
     typeof p.email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email.trim())
