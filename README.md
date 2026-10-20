@@ -2,6 +2,10 @@
 
 Plataforma full-stack de venta, asesoría, planificación y operación de servicios turísticos en Costa Rica.
 
+### JARVIS PRIME · Mission Control verificable (PR de revisión, 20 octubre 2026)
+
+La nueva vista privada `/admin#misiones` propone leer `agentRuns`, aprobaciones y planes JARVIS desde fuentes actuales, sin simular trabajo ni crear otro motor de reservas. Es una **muestra limitada** y requiere owner; no demuestra que los workers estén ejecutando tareas ni que el PR esté desplegado. [Arquitectura, alcance, seguridad y verificación](docs/jarvis-mission-control.md).
+
 ### JARVIS — inteligencia turística y segunda mano del propietario (12 octubre 2026)
 
 Se añadió un **núcleo consultivo** en `backend/jarvisTourismAdvisory.ts` y se integró en `backend/tourismIntelligenceEngine.ts`. Incorpora conocimiento bilingüe sobre geografía real, presas de la GAM, carreteras rurales y accesos 4x4, clima, traslados entre polos turísticos, fauna, ballenas, aves, caminatas nocturnas, SINAC y verificación de fuentes. Su informe `buildJarvisOwnerBrief()` es **solo consultivo**, no ejecuta pagos, reservas ni notificaciones.
