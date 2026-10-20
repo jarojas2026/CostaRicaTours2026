@@ -39,7 +39,17 @@ export interface ConciergeUnderstood {
   region?: string;
   regionLabel?: string;
   budget?: { amount: number; currency: 'USD' | 'CRC'; per: 'total' | 'person' };
+  /** Duración del viaje ("3 días", "for 3 days"): nunca se confunde con personas. */
+  days?: number;
+  nights?: number;
   asksPrice: boolean;
+}
+
+export interface ConciergeSuggestion {
+  tourId: string;
+  title: string;
+  /** Precio de referencia del catálogo, marcado "referencia, sujeto a confirmación". */
+  referenceLine?: string;
 }
 
 export interface ConciergeReferenceQuote {
@@ -71,6 +81,8 @@ export interface ConciergeUnderstanding {
   /** True when the message names a subject (activity/place/tour) plus a detail (people/date/price/budget). */
   isConcreteInquiry: boolean;
   quote?: ConciergeReferenceQuote;
+  /** Ideas del catálogo para la zona cuando no hay una ficha única (p. ej. "¿qué hago en Uvita 3 días?"). */
+  suggestions?: ConciergeSuggestion[];
   inquiryHandoff?: ConciergeHandoff;
 }
 
@@ -155,6 +167,16 @@ function parseParty(text: string): { people?: number; adults?: number; children?
     if (n > 0 && n < 100) return { people: n };
   }
   return {};
+}
+
+function parseDuration(text: string): { days?: number; nights?: number } {
+  const days = text.match(new RegExp(`\\b${NUM}\\s*(dias?|days?)\\b`));
+  const nights = text.match(new RegExp(`\\b${NUM}\\s*(noches?|nights?)\\b`));
+  const ok = (n: number) => n > 0 && n <= 60;
+  const out: { days?: number; nights?: number } = {};
+  if (days && ok(toNumber(days[1]))) out.days = toNumber(days[1]);
+  if (nights && ok(toNumber(nights[1]))) out.nights = toNumber(nights[1]);
+  return out;
 }
 
 function nextOccurrenceYear(month: number, day: number, now: Date): number {
@@ -298,6 +320,7 @@ export function understandConciergeMessage<T extends CatalogTourLike>(
   const party = parseParty(text);
   const when = parseDate(text, now);
   const budget = parseBudget(text);
+  const duration = parseDuration(text);
   const tour = matchTour(activity?.key, place?.key, tours);
   const region = place?.region ?? tour?.region;
 
@@ -311,15 +334,32 @@ export function understandConciergeMessage<T extends CatalogTourLike>(
     ...(when.date ? { date: when.date } : {}),
     ...(region ? { region, regionLabel: REGION_LABELS[region] || region } : {}),
     ...(budget ? { budget } : {}),
+    ...duration,
   };
 
   const hasSubject = Boolean(activity || place || tour);
-  const hasDetail = understood.asksPrice || understood.people !== undefined || understood.month !== undefined || Boolean(budget);
+  const hasDetail = understood.asksPrice || understood.people !== undefined || understood.month !== undefined || Boolean(budget)
+    || understood.days !== undefined || understood.nights !== undefined;
   const isConcreteInquiry = hasSubject && hasDetail;
   const result: ConciergeUnderstanding = { understood, isConcreteInquiry };
   if (!isConcreteInquiry) return result;
 
   const es = language === 'es';
+  // Zona sin ficha única: proponer actividades reales del catálogo (máx. 3), con su precio de referencia.
+  if (!tour && region) {
+    const inRegion = tours.filter(t => t.region === region || (place?.tourKeywords?.test(normalize(t.id)) ?? false))
+      .filter(t => !activity || activity.tourKeywords.test(normalize(`${t.id} ${typeof t.title === 'string' ? t.title : `${t.title.es || ''} ${t.title.en || ''}`}`)) || activity.categories.includes(t.category));
+    const picks = inRegion.slice(0, 3);
+    if (picks.length) {
+      result.suggestions = picks.map(t => ({
+        tourId: t.id,
+        title: tourTitle(t, language),
+        ...(t.priceUSD > 0 ? { referenceLine: es
+          ? `${formatUsdReference(t.priceUSD)} por persona (referencia, sujeto a confirmación)`
+          : `${formatUsdReference(t.priceUSD)} per person (reference, subject to confirmation)` } : {}),
+      }));
+    }
+  }
   if (tour && tour.priceUSD > 0) {
     const people = understood.people;
     const totalUSD = people ? tour.priceUSD * people : undefined;
@@ -357,6 +397,13 @@ export function understandConciergeMessage<T extends CatalogTourLike>(
       ? ` (${understood.adults ?? 0} ${es ? 'adultos' : 'adults'}, ${understood.children ?? 0} ${es ? 'niños' : 'children'})`
       : '';
     lines.push(es ? `Personas: ${understood.people}${detail}` : `People: ${understood.people}${detail}`);
+  }
+  if (understood.days || understood.nights) {
+    const parts = [
+      understood.days ? (es ? `${understood.days} día${understood.days === 1 ? '' : 's'}` : `${understood.days} day${understood.days === 1 ? '' : 's'}`) : '',
+      understood.nights ? (es ? `${understood.nights} noche${understood.nights === 1 ? '' : 's'}` : `${understood.nights} night${understood.nights === 1 ? '' : 's'}`) : '',
+    ].filter(Boolean).join(es ? ' / ' : ' / ');
+    lines.push(es ? `Duración: ${parts}` : `Trip length: ${parts}`);
   }
   if (understood.date) lines.push(es ? `Fecha: ${understood.date}` : `Date: ${understood.date}`);
   else if (understood.monthName) lines.push(es ? `Fecha: ${understood.monthName} (día por definir)` : `Date: ${understood.monthName} (exact day to be defined)`);
@@ -404,7 +451,32 @@ export function deterministicConciergeReply(u: ConciergeUnderstanding): string |
       parts.push(es ? 'La referencia supera el presupuesto indicado; podemos buscar alternativas.' : 'The reference is above the budget you gave; we can look for alternatives.');
     }
   }
+  if (u.suggestions?.length) {
+    parts.push(es ? 'Ideas del catálogo para la zona:' : 'Catalog ideas for the area:');
+    for (const s of u.suggestions) parts.push(`• ${s.title}${s.referenceLine ? ` — ${s.referenceLine}` : ''}`);
+  }
   parts.push(u.inquiryHandoff.operatorNote);
   parts.push(es ? 'Usa el botón de WhatsApp para enviarnos estos datos y te respondemos con la confirmación por escrito.' : 'Use the WhatsApp button to send us these details and we will reply with a written confirmation.');
   return parts.join('\n');
+}
+
+const MONEY_RE = /(?:US\$|USD\s?|\$|₡|CRC\s?)\s?\d[\d.,]*|\d[\d.,]*\s?(?:USD|US\$|dólares|dolares|dollars|colones|CRC)\b/i;
+
+/**
+ * Un solo precio de referencia por respuesta: si el servidor tiene la referencia del catálogo
+ * para la ficha consultada, las frases del modelo que citan montos se reemplazan por esa
+ * única línea, marcada "referencia, sujeto a confirmación". Evita respuestas con dos precios
+ * distintos para el mismo tour (p. ej. US$83/adulto y US$75 × 2).
+ */
+export function enforceSingleReferencePrice(reply: string, u: ConciergeUnderstanding | null | undefined): string {
+  if (!reply || !u?.quote) return reply;
+  const es = u.understood.language === 'es';
+  const canonical = es ? `Precio de referencia: ${u.quote.line}.` : `Reference price: ${u.quote.line}.`;
+  const lines = reply.split('\n').map(line => {
+    if (!MONEY_RE.test(line)) return line;
+    const kept = line.split(/(?<=[.!?])[ \t]+/).filter(sentence => !MONEY_RE.test(sentence)).join(' ').trim();
+    return kept && !/^[-•*\s]*$/.test(kept) ? kept : null;
+  }).filter((line): line is string => line !== null);
+  const body = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  return body ? `${body}\n\n${canonical}` : canonical;
 }
