@@ -9,6 +9,7 @@ import path from 'path';
 import { requireOwner } from '../authMiddleware';
 import { processProviderInboxOnce } from '../providerInboxAgent';
 import { getAdminControlCenterSnapshot } from '../adminControlCenterService';
+import { getOwnerExecutiveBriefing } from '../ownerExecutiveBriefingService';
 import { getGlobalAgentControl, listAgentGovernanceAudit, pauseAgent, resumeAgent, revokeAgent, restoreAgent, setAgentAutonomy, setGlobalAgentShutdown } from '../agentGovernanceService';
 import { listOwnerApprovals, approveOwnerApproval, rejectOwnerApproval } from '../ownerApprovalService';
 import { getJarvisPlan, listJarvisPlans, reconcileJarvisPlan, runJarvisOwnerCommand } from '../jarvisOrchestrator';
@@ -224,6 +225,16 @@ adminRouter.post('/api/admin/digital-city/registration/preflight', requireAdmin,
     return res.status(result.status === 'invalid' ? 400 : 200).json(result);
   } catch {
     return res.status(400).json({ error: 'No se pudo evaluar la solicitud.' });
+  }
+});
+
+// Owner-only executive recommendations; read-only, no commands or side effects.
+adminRouter.get('/api/admin/owner-briefing', requireOwner, async (_req, res) => {
+  try {
+    res.setHeader('cache-control', 'private, no-store');
+    return res.json(await getOwnerExecutiveBriefing());
+  } catch {
+    return res.status(503).json({ error: 'Executive briefing unavailable.' });
   }
 });
 
