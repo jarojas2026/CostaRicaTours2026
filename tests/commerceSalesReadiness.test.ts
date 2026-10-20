@@ -62,5 +62,5 @@ test('route and UI label bounded samples and protect endpoint with existing admi
   assert.match(ui, /salesReadiness\.coverage\.truncatedOrUnknown/);
   assert.match(ui, /not supplier-confirmed availability/);
   assert.match(route, /commissionRate >= 1/);
-  assert.match(ui, /max: 99\\.99/);
+  assert.match(ui, /max: 99\.99/);
 });
