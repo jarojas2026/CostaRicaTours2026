@@ -125,6 +125,10 @@ export const es = {
   'tourCard.removeFavorite': "Quitar de favoritos",
   'tourCard.saveFavorite': "Guardar en favoritos",
   'tourCard.compare': "Comparar",
+  'tourCard.region': "Región",
+  'tourCard.from': "Desde",
+  'tourCard.referencePrice': "Precio de referencia",
+  'tourCard.askPrice': "Consultar precio",
 } as const;
 
 export type MessageKey = keyof typeof es;

@@ -127,4 +127,8 @@ export const en: Messages = {
   'tourCard.removeFavorite': "Remove from favorites",
   'tourCard.saveFavorite': "Save to favorites",
   'tourCard.compare': "Compare",
+  'tourCard.region': "Region",
+  'tourCard.from': "From",
+  'tourCard.referencePrice': "Reference price",
+  'tourCard.askPrice': "Ask for price",
 };

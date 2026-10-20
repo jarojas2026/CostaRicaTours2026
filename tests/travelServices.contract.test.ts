@@ -6,7 +6,8 @@ import test from 'node:test';
 const read = (file: string) => fs.readFileSync(path.join(process.cwd(), file), 'utf8');
 const services = read('src/components/ServicesSection.tsx');
 const home = read('src/pages/Home.tsx');
-const footer = read('src/components/Footer.tsx');
+// Footer text lives in the i18n catalogs (src/i18n/messages); check both.
+const footer = read('src/components/Footer.tsx') + read('src/i18n/messages/en.ts') + read('src/i18n/messages/es.ts');
 
 test('diverse services are reachable from home and connect to existing customer flows', () => {
   assert.match(home, /<ServicesSection/);

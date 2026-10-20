@@ -188,7 +188,7 @@ export const TourCard: React.FC<TourCardProps> = ({
             </button>
             {showRegion && (
               <span data-testid="tour-card-region" className="block text-[11px] font-semibold text-stone-400">
-                {language === 'es' ? 'Región' : 'Region'}: {regionText}
+                {t('tourCard.region')}: {regionText}
               </span>
             )}
             
@@ -209,13 +209,13 @@ export const TourCard: React.FC<TourCardProps> = ({
               <span data-testid="tour-card-price" className="flex flex-col" title={price.disclaimer}>
                 {price.usd ? (
                   <>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300">{language === 'es' ? 'Desde' : 'From'}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300">{t('tourCard.from')}</span>
                     <span className="text-xl font-black text-amber-400 leading-tight">{price.usd}</span>
                     {price.approx && <span className="text-[11px] font-semibold text-stone-300">{price.approx}</span>}
-                    <span className="text-[10px] text-stone-400 leading-snug">{language === 'es' ? 'Precio de referencia' : 'Reference price'}</span>
+                    <span className="text-[10px] text-stone-400 leading-snug">{t('tourCard.referencePrice')}</span>
                   </>
                 ) : (
-                  <span className="text-base font-black text-amber-400 leading-tight">{language === 'es' ? 'Consultar precio' : 'Ask for price'}</span>
+                  <span className="text-base font-black text-amber-400 leading-tight">{t('tourCard.askPrice')}</span>
                 )}
               </span>
               {!isBookable && (tour.priceSource === 'precio_referencia' ? (
