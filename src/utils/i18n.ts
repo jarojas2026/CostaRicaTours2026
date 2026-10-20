@@ -269,6 +269,7 @@ export const UI_TRANSLATIONS: Record<string, Record<Language, string>> = {
   groupTour: { es: 'Grupal (Con más compas)', en: 'Group', de: 'Gruppe', fr: 'Groupe', zh: '团体', ja: 'グループ' },
   compareTour: { es: 'Comparar tour', en: 'Compare tour', de: 'Tour vergleichen', fr: 'Comparer le tour', zh: '比较旅游', ja: 'ツアーを比較' },
   fromPrice: { es: 'Desde ', en: 'From ', de: 'Ab ', fr: 'À partir de ', zh: '起 ', ja: 'から ' },
+  viewTour: { es: 'Ver tour', en: 'View tour', de: 'Tour ansehen', fr: 'Voir le tour', zh: '查看行程', ja: 'ツアーを見る' },
   checkDetails: { es: 'Consultar', en: 'Check', de: 'Prüfen', fr: 'Vérifier', zh: '查看', ja: '確認する' },
   closeMap: { es: 'Cerrar mapa', en: 'Close map', de: 'Karte schließen', fr: 'Fermer la carte', zh: '关闭地图', ja: 'マップを閉じる' },
   close: { es: 'Cerrar', en: 'Close', de: 'Schließen', fr: 'Fermer', zh: '关闭', ja: '閉じる' },
