@@ -700,7 +700,8 @@ export default function App() {
         </Suspense>
       )}
 
-      <BottomNav language={language} activeTab={activeTab} />
+      {/* On tour details, the fixed booking CTA owns the mobile bottom safe-area. */}
+      {!location.pathname.startsWith('/tour/') && <BottomNav language={language} activeTab={activeTab} />}
       {activeTab !== 'ai' && (
         <>
           <DigitalCounterWidget 
