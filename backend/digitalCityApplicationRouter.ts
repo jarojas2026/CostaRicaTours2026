@@ -2,6 +2,7 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import rateLimit from 'express-rate-limit';
 import { getFirebaseAdminAuth } from './firebaseAdminRuntime';
 import { requireOperator } from './authMiddleware';
+import { participateGuard } from './formAbuseGuard';
 import {
   CityApplicationError, listCityApplicationsForReview, listMyCityApplications,
   submitCityApplication, triageCityApplication, resubmitCityApplication, withdrawCityApplication, type CityApplicationStatus
@@ -38,7 +39,7 @@ function failure(res: Response, error: unknown) {
 }
 
 // Applications are private drafts for moderation, not public directory entities.
-digitalCityApplicationRouter.post('/', intakeLimiter, requireVerifiedApplicant, async (req, res) => {
+digitalCityApplicationRouter.post('/', intakeLimiter, participateGuard, requireVerifiedApplicant, async (req, res) => {
   try {
     const data = await submitCityApplication(req.body || {}, (req as any).cityApplicantUid);
     return res.status(data.idempotent ? 200 : 201).json({

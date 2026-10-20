@@ -3,6 +3,8 @@ import { motion } from 'motion/react';
 import { Language } from '../types';
 import { MessageSquare, Mail, Phone, MapPin, Send } from 'lucide-react';
 import { requestCustomerIntake } from '../utils/customerIntake';
+import { formGuardFields } from '../../shared/formAbuse';
+import { HoneypotField } from './HoneypotField';
 
 interface ContactSectionProps {
   language: Language;
@@ -15,6 +17,8 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ language }) => {
   const [subject,setSubject]=useState('Consulta de disponibilidad');
   const [message,setMessage]=useState('');
   const [status,setStatus]=useState('');
+  const [startedAt]=useState(()=>Date.now());
+  const [honeypot,setHoneypot]=useState('');
   const submit=(e:React.FormEvent)=>{
     e.preventDefault();
     setStatus(language==='es'?'Enviando consulta…':'Sending your inquiry…');
@@ -23,6 +27,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ language }) => {
       message:text,
       language,
       source:'contact-form',
+      ...formGuardFields(startedAt,honeypot),
       customer:{name,email,phone},
       onResult: result => setStatus(result.ok
         ? (language==='es' ? `Consulta recibida.${result.intakeId ? ` Número de seguimiento: ${result.intakeId}` : ''}` : `Inquiry received.${result.intakeId ? ` Reference: ${result.intakeId}` : ''}`)
@@ -83,7 +88,8 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ language }) => {
           viewport={{ once: true }}
           className="bg-stone-900/50 p-8 md:p-12 rounded-[3rem] border border-white/5 shadow-2xl backdrop-blur-xl"
         >
-          <form className="space-y-6" onSubmit={submit}>
+          <form className="relative space-y-6" onSubmit={submit}>
+            <HoneypotField value={honeypot} onChange={setHoneypot} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label htmlFor="contact-name" className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-4">Nombre</label>
