@@ -7,6 +7,7 @@
 
 import { TOURS } from '../../src/data/toursData';
 import { createAlert } from '../alertService';
+import { isJunkLeadText } from '../leadTriage';
 import { processChatInquiry } from '../aiAssistantService';
 import { generateClaudeChatResponse, generateClaudeItinerary, analyzeOperationalRiskWithClaude, getClaudeStatus } from '../claudeService';
 import { generateGeminiItinerary } from '../itineraryService';
@@ -243,7 +244,9 @@ modelGatewayRouter.post('/api/gemini/booking/urgent', async (req, res) => {
     const assistantResult = await processChatInquiry(message || '', lang, history || []);
     
     // Escalación y seguimiento se registran en el motor nativo de alertas.
-    await createAlert({ source: 'AI Support', severity: 'critical', title: 'Solicitud urgente', message: message || 'Solicitud urgente recibida' });
+    // Texto basura ("hola urgente", "test") no cuenta como riesgo crítico.
+    const junk = isJunkLeadText(message);
+    await createAlert({ source: 'AI Support', severity: junk ? 'info' : 'critical', title: junk ? 'Solicitud urgente sin contenido (triaje: spam)' : 'Solicitud urgente', message: message || 'Solicitud urgente recibida', ...(junk ? { metadata: { triage: 'spam' } } : {}) });
 
     res.json({
       reply: `🚨 **[ATENCIÓN PRIORITARIA COSTA RICA TOURS]**\n\n${assistantResult.reply}`,

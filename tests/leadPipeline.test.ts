@@ -102,11 +102,14 @@ test('transitions require written evidence for confirmado_por_escrito/pagado and
 
 test('digest counts by status and lists open leads without response for more than 24h', async () => {
   __resetLeadMemoryForTests();
-  await captureLead({ source: 'sofia', understanding: pacuare(), sessionId: 'old' }, new Date(now.getTime() - 30 * 3600_000));
-  await captureLead({ source: 'sofia', understanding: pacuare(), sessionId: 'new' }, new Date(now.getTime() - 2 * 3600_000));
+  await captureLead({ source: 'sofia', understanding: pacuare(), sessionId: 'old', consent: true, contact: { email: 'old@cliente.cr' } }, new Date(now.getTime() - 30 * 3600_000));
+  await captureLead({ source: 'sofia', understanding: pacuare(), sessionId: 'new', consent: true, contact: { email: 'new@cliente.cr' } }, new Date(now.getTime() - 2 * 3600_000));
+  // Sin contacto: queda descartado por triaje y no cuenta como "sin respuesta".
+  await captureLead({ source: 'sofia', understanding: pacuare(), sessionId: 'ghost' }, new Date(now.getTime() - 40 * 3600_000));
   const digest = buildLeadDigest(await listLeads(), now);
-  assert.equal(digest.total, 2);
-  assert.equal(digest.byStatus.nuevo, 2);
+  assert.equal(digest.total, 3);
+  assert.equal(digest.byStatus.nuevo, 3);
+  assert.equal(digest.triagedOut, 1);
   assert.equal(digest.stale.length, 1);
   assert.equal(digest.stale[0].hoursWithoutResponse, 30);
   assert.match(digest.text, /Sin respuesta >24h \(1\)/);
