@@ -30,10 +30,11 @@ commerceAdminRouter.get('/', async (_req, res) => {
   const db = getFirestoreDb();
   if (!db) return res.status(503).json({ error: 'Catálogo no disponible.' });
   try {
+    const todayCR = costaRicaDateString();
     const [products, providers, slots] = await Promise.all([
       db.collection('tours').limit(500).get(),
       db.collection('operators').limit(500).get(),
-      db.collection('availability_slots').limit(500).get()
+      db.collection('availability_slots').where('date', '>=', todayCR).limit(500).get()
     ]);
     const catalog = new Map<string, any>(TOURS.map(tour => [tour.id, { id: tour.id, title: tour.title, catalogStatus: 'discovery' }]));
     products.docs.forEach(doc => {
@@ -45,7 +46,7 @@ commerceAdminRouter.get('/', async (_req, res) => {
       products: products.docs.map(doc => ({ id: doc.id, ...doc.data() })),
       providers: providers.docs.map(doc => ({ id: doc.id, ...doc.data() })),
       slots: slots.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-      todayCR: costaRicaDateString(), sampleLimit: 500,
+      todayCR, sampleLimit: 500,
       emailTransportConfigured: Boolean(process.env.RESEND_API_KEY || process.env.SENDGRID_API_KEY || (process.env.SMTP_USER && process.env.SMTP_PASS)),
       paypalCredentialsConfigured: Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_SECRET),
       stripeCredentialsConfigured: Boolean(process.env.STRIPE_SECRET_KEY),
