@@ -30,6 +30,7 @@ import {
   applyManualTriage, deriveLegacyTriage, isActionableTriage, triageNewLead,
   type LeadPriority, type LeadTriage, type LeadTriageState, type RecentLeadRef,
 } from './leadTriage';
+import { buildFollowUpDraft, followUpEmail, isAutoFollowUpEnabled, missingLeadData, type LeadFollowUp } from './leadFollowUp';
 
 export const LEAD_STATUSES = ['nuevo', 'cotizando', 'esperando_operador', 'confirmado_por_escrito', 'pagado', 'cancelado'] as const;
 export type LeadStatus = typeof LEAD_STATUSES[number];
@@ -133,6 +134,8 @@ export interface LeadRecord {
   reopenedAs?: string;
   /** Triaje automático (prioridad, spam/duplicado/descartado). Reversible desde /admin/leads. */
   triage?: LeadTriage;
+  /** Correo para completar fecha/pax. Borrador salvo LEAD_AUTOFOLLOWUP_ENABLED=true. */
+  followUp?: LeadFollowUp;
 }
 
 export interface LeadInput {
@@ -386,6 +389,11 @@ export function buildLeadRecord(input: LeadInput, now: Date = new Date(), recent
     request,
     message: typeof input.message === 'string' ? input.message : undefined,
   }, recent, now);
+  // Seguimiento para completar fecha/pax: solo con consentimiento, correo y lead activo.
+  if (consented && record.triage.state === 'activo') {
+    const followUp = buildFollowUpDraft(record, now);
+    if (followUp) record.followUp = followUp;
+  }
   return record;
 }
 
@@ -458,7 +466,15 @@ export function mergeLead(existing: LeadRecord, incoming: LeadRecord): LeadRecor
     messageSnippet: incoming.messageSnippet || existing.messageSnippet,
     operatorCandidates: existing.operatorCandidates.length ? existing.operatorCandidates : incoming.operatorCandidates,
     quoteRequestDrafts: existing.quoteRequestDrafts.length ? existing.quoteRequestDrafts : incoming.quoteRequestDrafts,
+    ...mergedFollowUp(existing, request),
   };
+}
+
+/** Si la nueva consulta ya trae los datos que faltaban, el borrador no enviado se retira. */
+function mergedFollowUp(existing: LeadRecord, request: LeadRequest): { followUp?: LeadFollowUp } {
+  if (!existing.followUp) return {};
+  if (existing.followUp.status === 'borrador_no_enviado' && !missingLeadData(request).length) return { followUp: undefined };
+  return { followUp: existing.followUp };
 }
 
 const isTerminal = (status: LeadStatus) => status === 'pagado' || status === 'cancelado';
@@ -723,8 +739,42 @@ export function captureLeadInBackground(input: LeadInput): void {
 export async function captureLeadAndNotify(input: LeadInput): Promise<CaptureResult> {
   const result = await captureLead(input);
   void notifyNewLead(result).catch(err => console.warn('[leads] aviso fallido:', err?.message || err));
-  void sendCustomerAck(result).catch(err => console.warn('[leads] acuse al cliente fallido:', err?.message || err));
+  if (shouldSendFollowUp(result)) {
+    // El seguimiento ya confirma la recepción: sustituye al acuse para no mandar dos correos.
+    void sendFollowUp(result.lead).catch(err => console.warn('[leads] seguimiento fallido:', err?.message || err));
+  } else {
+    void sendCustomerAck(result).catch(err => console.warn('[leads] acuse al cliente fallido:', err?.message || err));
+  }
   return result;
+}
+
+function shouldSendFollowUp({ lead, created }: CaptureResult): boolean {
+  return created && isAutoFollowUpEnabled() && process.env.NODE_ENV !== 'test'
+    && lead.followUp?.status === 'borrador_no_enviado' && lead.consent?.dataProcessing === true && isActionableLead(lead);
+}
+
+/** Guarda el resultado del envío del seguimiento en el lead. */
+export async function updateLeadFollowUp(id: string, followUp: LeadFollowUp): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) {
+    const lead = memoryLeads.get(id);
+    if (lead) memoryLeads.set(id, { ...lead, followUp });
+    return;
+  }
+  await db.collection('leads').doc(id).set({ followUp: stripUndefined(followUp) }, { merge: true });
+}
+
+async function sendFollowUp(lead: LeadRecord): Promise<void> {
+  const draft = lead.followUp;
+  const email = draft ? followUpEmail(draft) : null;
+  if (!draft || !email) return;
+  const { sendEmail } = await import('./notificationService');
+  const result = await sendEmail(email);
+  const at = new Date().toISOString();
+  await updateLeadFollowUp(lead.id, result.success
+    ? { ...draft, status: 'enviado', sentAt: at }
+    : { ...draft, status: 'envio_fallido', error: String(result.error || 'error').slice(0, 200) });
+  if (!result.success) console.warn('[leads] seguimiento no enviado:', result.error);
 }
 
 function escapeHtml(value: string): string {
