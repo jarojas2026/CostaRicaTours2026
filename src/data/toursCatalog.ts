@@ -2923,7 +2923,8 @@ export const TOURS: Tour[] = [
 // The catalog data remains unchanged; only the user-facing imagery is normalized here.
 const TOUR_IMAGE_OVERRIDES: Record<string, [string, string]> = {
   'sjo-3-in-1-combo': ["https://images.unsplash.com/photo-1712010596464-9f2a4e0d6489?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b?auto=format&fit=crop&w=1200&q=85"],
-  'arenal-hot-springs': ["https://images.unsplash.com/photo-1771223832335-c5c116e41bfd?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85"],
+  // Foto 1: Volcán Arenal (antes un spa genérico sin relación con Arenal). Foto 2: bosque de La Fortuna.
+  'arenal-hot-springs': ["https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
   'monteverde-canopy': ["https://images.unsplash.com/photo-1648172846433-ca73f0ee522c?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85"],
   'manuel-antonio-park': ["https://images.unsplash.com/photo-1580676875879-f20086f1e729?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1592501171458-4e131613f542?auto=format&fit=crop&w=1200&q=85"],
   'pacuare-rafting': ["https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85"],

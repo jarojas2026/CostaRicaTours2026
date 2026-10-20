@@ -31,6 +31,7 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
   const [message, setMessage] = useState('');
   const [consent, setConsent] = useState(false);
   const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [reference, setReference] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const sending = useRef(false);
   const [startedAt] = useState(() => Date.now());
@@ -59,6 +60,9 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
         }
       }
       if (!res.ok) throw new Error(String(res.status));
+      const body = await res.json().catch(() => ({}));
+      // Solo una referencia corta del servidor (sin datos personales) si viene en la respuesta.
+      setReference(typeof body?.reference === 'string' && /^CRT-[A-Z0-9]{6,8}$/.test(body.reference) ? body.reference : null);
       setState('sent');
     } catch {
       setState('idle');
@@ -72,6 +76,11 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
     return (
       <div role="status" data-testid="tour-quote-success" className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-4 text-sm text-emerald-100">
         {es ? 'Solicitud recibida. Te enviaremos la cotización con disponibilidad y precio confirmados antes de cualquier pago.' : 'Request received. We will send you a quote with confirmed availability and price before any payment.'}
+        {reference && (
+          <p className="mt-2 text-xs font-bold text-emerald-200" data-testid="tour-quote-reference">
+            {es ? 'Número de referencia: ' : 'Reference number: '}<span className="font-mono">{reference}</span>
+          </p>
+        )}
       </div>
     );
   }

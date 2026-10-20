@@ -16,6 +16,7 @@ import { Tour, Language, Currency, BookingRequest } from '../types';
 import { getLangText, formatCurrency } from '../utils/i18n';
 import { neutralOperatorLabel, SUPPLIER_POLICY } from '../utils/operatorPrivacy';
 import { useTours } from '../contexts/ToursContext';
+import { REGIONS } from '../data/catalogMeta';
 import { getUsdToCrcRate } from '../utils/currencies';
 import { LazyImage } from '../components/LazyImage';
 import { useTourMedia } from '../hooks/useTourMedia';
@@ -361,7 +362,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
           <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-stone-500">
             <span>Tours</span>
             <ChevronRight size={12} />
-            <span>{getLangText(tour.region, language as any)}</span>
+            <span>{(() => { const region = REGIONS.find((r) => r.id === tour.region); return region ? getLangText(region.name, language) : String(tour.region || '').replace(/_/g, ' ').replace(/\b\p{L}/gu, (c) => c.toUpperCase()); })()}</span>
             <ChevronRight size={12} />
             <span className="text-emerald-500">{getLangText(tour.title, language)}</span>
           </div>
