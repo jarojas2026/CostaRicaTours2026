@@ -139,7 +139,6 @@ export const BLOG_POSTS: BlogPost[] = [
       { href: 'https://www.sinac.go.cr', label: 'SINAC — Sistema Nacional de Áreas de Conservación' },
       { href: 'https://www.sinac.go.cr/en-us/ac/acosa/pnc/pages/default.aspx', label: 'SINAC — Parque Nacional Corcovado' },
       { href: 'https://ticotimes.net/2014/02/01/new-rule-requires-guides-to-accompany-visitors-in-corcovado-national-park', label: 'The Tico Times (2014) — Corcovado guide requirement' },
-      { href: 'https://www.visitcostarica.com', label: 'ICT — Visit Costa Rica' },
     ],
   },
   {
@@ -280,8 +279,6 @@ export const BLOG_POSTS: BlogPost[] = [
       },
     ],
     sources: [
-      { href: 'https://www.ict.go.cr/es/sostenibilidad/cst.html', label: 'ICT — Certificación para la Sostenibilidad Turística' },
-      { href: 'https://www.ict.go.cr/es/sostenibilidad/codigo-de-conducta.html', label: 'ICT — Código de Conducta' },
       { href: 'https://pani.go.cr/', label: 'PANI' },
       { href: 'https://www.sinac.go.cr', label: 'SINAC' },
     ],

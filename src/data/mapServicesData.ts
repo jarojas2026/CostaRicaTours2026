@@ -37,14 +37,12 @@ export interface MapTourismService {
   entryHours?: Localized<string>;
   closedDays?: Localized<string>;
   regulations?: Localized<string[]>;
-  sinacBookingUrl?: string;
   // Transport specifics
   transportCompany?: string;
   routesServed?: Localized<string[]>;
   averageTicketUSD?: number;
   averageTicketCRC?: number;
   departureFrequency?: Localized<string>;
-  phone?: string;
   flightCode?: string;
   flightTimeFromSJO?: string;
   runwayType?: string;
@@ -71,8 +69,8 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     region: 'arenal',
     coordinates: { lat: 10.4984, lng: -84.6934 },
     address: {
-      es: 'Carretera a La Fortuna, 6 km al oeste, Volcán Arenal',
-      en: 'Road to La Fortuna, 6 km west, Arenal Volcano'
+      es: 'Zona de La Fortuna, Volcán Arenal (ubicación aproximada)',
+      en: 'La Fortuna area, Arenal Volcano (approximate location)'
     },
     image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1000&q=80',
     rating: 4.9,
@@ -109,8 +107,8 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     region: 'monteverde',
     coordinates: { lat: 10.3125, lng: -84.8188 },
     address: {
-      es: 'Santa Elena de Monteverde, camino al Bosque Nuboso',
-      en: 'Santa Elena, Monteverde, Cloud Forest road'
+      es: 'Zona de Santa Elena, Monteverde (ubicación aproximada)',
+      en: 'Santa Elena area, Monteverde (approximate location)'
     },
     image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1000&q=80',
     rating: 4.8,
@@ -147,8 +145,8 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     region: 'manuel_antonio',
     coordinates: { lat: 9.4002, lng: -84.1568 },
     address: {
-      es: 'Playa Playitas, Manuel Antonio, Quepos',
-      en: 'Playitas Beach, Manuel Antonio, Quepos'
+      es: 'Zona de Manuel Antonio, Quepos (ubicación aproximada)',
+      en: 'Manuel Antonio area, Quepos (approximate location)'
     },
     image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1000&q=80',
     rating: 4.9,
@@ -185,8 +183,8 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     region: 'osa',
     coordinates: { lat: 8.4061, lng: -83.2981 },
     address: {
-      es: 'Cabo Matapalo, Península de Osa, Golfo Dulce',
-      en: 'Cabo Matapalo, Osa Peninsula, Golfo Dulce'
+      es: 'Península de Osa (ubicación aproximada)',
+      en: 'Osa Peninsula (approximate location)'
     },
     image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1000&q=80',
     rating: 4.9,
@@ -223,8 +221,8 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     region: 'tortuguero',
     coordinates: { lat: 10.5512, lng: -83.5098 },
     address: {
-      es: 'Canales de Tortuguero, acceso exclusivo en lancha',
-      en: 'Tortuguero Canals, boat-only access'
+      es: 'Zona de Tortuguero, acceso en lancha (ubicación aproximada)',
+      en: 'Tortuguero area, boat access (approximate location)'
     },
     image: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1000&q=80',
     rating: 4.7,
@@ -261,8 +259,8 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     region: 'caribe',
     coordinates: { lat: 9.6385, lng: -82.7214 },
     address: {
-      es: 'Playa Chiquita, Puerto Viejo de Talamanca, Limón',
-      en: 'Playa Chiquita, Puerto Viejo de Talamanca, Limon'
+      es: 'Zona de Puerto Viejo de Talamanca, Limón (ubicación aproximada)',
+      en: 'Puerto Viejo de Talamanca area, Limon (approximate location)'
     },
     image: 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1000&q=80',
     rating: 4.8,
@@ -299,8 +297,8 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     region: 'pacuare',
     coordinates: { lat: 9.8781, lng: -83.5241 },
     address: {
-      es: 'Cañón del Río Pacuare, Turrialba / Limón',
-      en: 'Pacuare River Canyon, Turrialba / Limon'
+      es: 'Zona del Río Pacuare, Turrialba / Limón (ubicación aproximada)',
+      en: 'Pacuare River area, Turrialba / Limon (approximate location)'
     },
     image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1000&q=80',
     rating: 5.0,
@@ -337,8 +335,8 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     region: 'san_jose',
     coordinates: { lat: 9.9327, lng: -84.0934 },
     address: {
-      es: 'Calle 30, Avenida 2 y 4, Barrio Don Bosco, San José',
-      en: 'Calle 30, Av 2 & 4, Barrio Don Bosco, San José'
+      es: 'San José centro (ubicación aproximada)',
+      en: 'Downtown San José (approximate location)'
     },
     image: 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1000&q=80',
     rating: 4.9,
@@ -411,7 +409,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
         'Never feed or approach wildlife closer than 2 meters'
       ]
     },
-    sinacBookingUrl: 'https://serviciosenlinea.sinac.go.cr',
     description: {
       es: 'Reconocido por Forbes como uno de los parques nacionales más bellos del mundo. Combina senderos accesibles de bosque tropical lluvioso habitados por perezosos y monos tití con playas de postal del Pacífico.',
       en: 'Voted by Forbes among the world’s most stunning national parks. Features accessible boardwalks winding through rainforest to postcard-perfect Pacific coves with sloths and squirrel monkeys.'
@@ -466,7 +463,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
         'Wear closed-toe trail shoes with grip for rough lava terrain'
       ]
     },
-    sinacBookingUrl: 'https://serviciosenlinea.sinac.go.cr',
     description: {
       es: 'Guarda el imponente cono perfecto de 1,633 metros. Podrás caminar sobre los campos de lava petrificada de la gran erupción de 1968 y contemplar vistas panorámicas del Lago Arenal.',
       en: 'Protects the iconic 1,633-meter volcano cone. Hike across jagged petrified lava flows from the historic 1968 event with panoramic vistas over Lake Arenal.'
@@ -521,7 +517,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
         'Not recommended for people with severe asthma due to sulfur emissions'
       ]
     },
-    sinacBookingUrl: 'https://serviciosenlinea.sinac.go.cr',
     description: {
       es: 'Cráter colosal de 1.5 km de diámetro y 300 metros de profundidad. Su laguna caliente de color azul turquesa emana columnas de vapor geotérmico en un paisaje casi lunar rodeado de bosque enano.',
       en: 'Colossal caldera 1.5 km across and 300 meters deep. Its turquoise mineral lake boils with steaming fumaroles surrounded by high-elevation dwarf cloud forest.'
@@ -576,7 +571,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
         'Only low-emission 4-stroke boat engines or non-motorized paddle canoes permitted'
       ]
     },
-    sinacBookingUrl: 'https://serviciosenlinea.sinac.go.cr',
     description: {
       es: 'Accesible únicamente por agua o aire. Una red de ríos y canales rodeados de selva densa donde conviven manatíes, caimanes, tucanes y jaguares, y la mayor colonia de anidación de tortuga verde del Caribe.',
       en: 'Accessible only by boat or aircraft. A wild network of inland canals and lagoons where green sea turtles, caimans, toucans, and river manatees thrive.'
@@ -631,7 +625,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
         'ID registration and prepaid permit required before boarding boat at Drake or Sierpe'
       ]
     },
-    sinacBookingUrl: 'https://serviciosenlinea.sinac.go.cr',
     description: {
       es: 'Bautizado por National Geographic como "el lugar con mayor intensidad biológica del planeta". Alberga todas las especies de felinos de América, dantas cruzando las playas y manadas de pecaríes.',
       en: 'Acclaimed by National Geographic as "the most biologically intense place on Earth." Shelters tapirs on the beach, four monkey species, scarlet macaws, and pristine ancient canopy.'
@@ -686,7 +679,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
         'Stick to elevated wooden boardwalks across delicate mossy highland soil'
       ]
     },
-    sinacBookingUrl: 'https://cloudforestmonteverde.com',
     description: {
       es: 'Ubicada sobre la división continental de aguas de Costa Rica. La niebla casi constante nutre más de 500 especies de orquídeas, helechos gigantes y el mítico Quetzal Resplandeciente.',
       en: 'Perched along Costa Rica’s continental divide. Near-constant moisture nourishes over 500 orchid species, tree ferns, and the resplendent quetzal.'
@@ -741,7 +733,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
         'Never touch live coral; use reef-safe biodegradable sunscreen only'
       ]
     },
-    sinacBookingUrl: 'https://serviciosenlinea.sinac.go.cr',
     description: {
       es: 'Un modelo ejemplar de comanejo comunitario entre el pueblo de Cahuita y el SINAC. El sendero bordea el mar turquesa bajo cocoteros con perezosos y monos a la vista.',
       en: 'A celebrated community co-managed park. The trail hugs the turquoise Caribbean under shade palms with sloths and white-faced capuchins resting overhead.'
@@ -770,8 +761,8 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     region: 'san_jose',
     coordinates: { lat: 9.9385, lng: -84.0847 },
     address: {
-      es: 'Calle 8, Avenidas 7 y 9, Barrio Paso de la Vaca, San José',
-      en: 'Calle 8, between Ave 7 & 9, Paso de la Vaca, San José'
+      es: 'San José centro (ubicación aproximada)',
+      en: 'Downtown San José (approximate location)'
     },
     image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1000&q=80',
     transportCompany: 'Autotransportes San José - San Carlos / Transmonteverde / Transportes Jacó / Alfaro',
@@ -785,7 +776,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Salidas diarias frecuentes desde las 5:00 AM hasta las 8:00 PM',
       en: 'Daily departures from 5:00 AM to 8:00 PM'
     },
-    phone: '+506 2255-4300',
     description: {
       es: 'Terminal moderna y techada de 3 niveles con salas de espera climatizadas, cajeros automáticos, zona de comidas, guardaequipajes y boleterías electrónicas para las principales rutas turísticas.',
       en: 'Modern multi-story enclosed transit hub featuring air-conditioned waiting halls, ATMs, luggage lockers, food court, and ticket booths for major tourist hubs.'
@@ -810,8 +800,8 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     region: 'san_jose',
     coordinates: { lat: 9.9409, lng: -84.0772 },
     address: {
-      es: 'Calle Central, Avenida 13, Barrio Tournón, San José',
-      en: 'Calle Central, Ave 13, Barrio Tournon, San José'
+      es: 'San José centro (ubicación aproximada)',
+      en: 'Downtown San José (approximate location)'
     },
     image: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&w=1000&q=80',
     transportCompany: 'Autotransportes MEPE & Grupo Caribeños',
@@ -825,7 +815,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Salidas cada 1 o 2 horas hacia el Caribe',
       en: 'Hourly to bi-hourly departures to the Caribbean coast'
     },
-    phone: '+506 2221-7990',
     description: {
       es: 'El punto neurálgico para viajar hacia las playas y selvas del Caribe costarricense. Cuenta con servicio expreso por la Ruta 32 cruzando el Parque Nacional Braulio Carrillo.',
       en: 'The prime departure hub for the Caribbean coast. Express coaches traverse Route 32 through Braulio Carrillo National Park’s rainforest pass.'
@@ -850,8 +839,8 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     region: 'san_jose',
     coordinates: { lat: 9.9238, lng: -84.0841 },
     address: {
-      es: 'Calle 5, Plaza Víquez, San José',
-      en: 'Calle 5, Plaza Viquez, San José'
+      es: 'San José centro (ubicación aproximada)',
+      en: 'Downtown San José (approximate location)'
     },
     image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1000&q=80',
     transportCompany: 'Empresa TRACOPA Ltda.',
@@ -865,7 +854,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Servicio directo continuo por Costanera Sur',
       en: 'Frequent direct service via Costanera Sur coastal highway'
     },
-    phone: '+506 2221-4214',
     description: {
       es: 'Terminal con autobuses ejecutivos con aire acondicionado que conectan San José con todas las playas del Pacífico Central y la remota Península de Osa.',
       en: 'Executive air-conditioned coaches linking the capital with Pacific surf beaches, national parks, and Osa Peninsula boat gateways.'
@@ -909,7 +897,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Lunes a Viernes en horas pico de mañana y tarde',
       en: 'Monday to Friday during morning and evening rush hours'
     },
-    phone: '+506 2233-1466',
     description: {
       es: 'Monumento arquitectónico neoclásico inaugurado en 1908. Hoy opera modernos trenes diésel de pasajeros que evitan el denso tráfico vial del Valle Central hacia Cartago y los campus universitarios.',
       en: 'Neoclassical architectural landmark dating to 1908. Operates modern passenger commuter trains bypassing heavy highway traffic between San José and Cartago.'
@@ -949,7 +936,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Lunes a Viernes en frecuencias laborales',
       en: 'Monday to Friday scheduled commuter runs'
     },
-    phone: '+506 2221-0777',
     description: {
       es: 'Terminal histórica donde partía el tren al puerto de Puntarenas. Actualmente conecta el centro financiero con las zonas corporativas y residenciales del oeste metropolitano.',
       en: 'Historic rail terminal once linking the capital to Puntarenas seaport. Now serving western business corridors and residential suburbs.'
@@ -993,7 +979,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Disponibilidad inmediata 24 horas al salir de aduana',
       en: 'Immediate 24/7 curb availability right outside customs'
     },
-    phone: '+506 2221-6865',
     description: {
       es: 'Única flotilla de taxis legalmente autorizada para recoger pasajeros dentro de la terminal aérea. Vehículos tipo sedán y microbuses con seguro de viajero y cobro con tarjeta o efectivo.',
       en: 'The only taxi fleet legally authorized for curbside pickup directly inside the airport grounds. Includes sedans and minivans with card payment.'
@@ -1033,7 +1018,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Salidas fijas 2 veces al día (Mañana y Tarde)',
       en: 'Scheduled twice-daily departures (Morning & Afternoon)'
     },
-    phone: '+506 2283-5573',
     description: {
       es: 'La forma más cómoda y recomendada para turistas. Te recogen directamente en la recepción de tu hotel y te llevan al siguiente destino con paradas de descanso en miradores y WiFi a bordo.',
       en: 'The most stress-free travel method for visitors. Pickups right at your hotel lobby with scenic stops and luggage handling.'

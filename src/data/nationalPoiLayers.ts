@@ -37,7 +37,7 @@ export interface NationalPoiGroup {
 }
 
 export const NATIONAL_POI_GROUPS: NationalPoiGroup[] = [
-  { id: 'parques_sinac', label: { es: 'Parques nacionales SINAC: tarifas, horarios y reservas', en: 'SINAC national parks: fees, hours & booking' }, emoji: '🎟️', color: '#059669', file: '/data/mapa/parques_sinac.geojson', defaultOn: true, attribution: 'SINAC (sinac.go.cr)' },
+  { id: 'parques_sinac', label: { es: 'Parques nacionales SINAC: tarifas, horarios y reservas', en: 'SINAC national parks: fees, hours & booking' }, emoji: '🎟️', color: '#059669', file: '/data/mapa/parques_sinac.geojson', defaultOn: true, attribution: 'SINAC' },
   { id: 'fauna', label: { es: 'Pasos de fauna y corredores biológicos', en: 'Wildlife crossings & biological corridors' }, emoji: '🐒', color: '#65a30d', file: '/data/mapa/fauna.geojson', defaultOn: false, attribution: 'MOPT/CONAVI, BID, SINAC, ONG locales' },
   { id: 'reforestacion', label: { es: 'Proyectos de reforestación', en: 'Reforestation projects' }, emoji: '🌱', color: '#16a34a', file: '/data/mapa/reforestacion.geojson', defaultOn: false, attribution: 'Sitios oficiales de cada proyecto' },
   { id: 'patrimonio', label: { es: 'Patrimonio histórico y sitios UNESCO', en: 'Historic heritage & UNESCO sites' }, emoji: '🏺', color: '#b45309', file: '/data/mapa/patrimonio.geojson', defaultOn: false, attribution: 'MCJ (lista compilada), UNESCO, Wikidata, © OpenStreetMap' },
