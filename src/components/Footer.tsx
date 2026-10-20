@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Language } from '../types';
 import { requestCustomerIntake } from '../utils/customerIntake';
+import { createT } from '../i18n';
 import { Phone, MapPin, Mail, ShieldCheck, Heart, Globe, Sparkles, MessageCircle, Lock, CreditCard, ChevronRight } from 'lucide-react';
 
 interface FooterProps {
@@ -9,7 +10,7 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ language }) => {
-  const isEs = language === 'es';
+  const t = createT(language);
   return (
     <footer className="bg-[#041711] text-emerald-100/80 border-t-4 border-emerald-500/40 mt-12">
       {/* Trust & Payment Bar */}
@@ -18,14 +19,12 @@ export const Footer: React.FC<FooterProps> = ({ language }) => {
           <div className="flex items-center gap-2">
             <Lock className="w-4 h-4 text-teal-400" />
             <span className="font-semibold text-[11px] sm:text-xs">
-              {language === 'es' ? 'Disponibilidad, precio final y condiciones se verifican antes de confirmar la reserva' : 'Availability, final price, and terms are checked before a booking is confirmed'}
+              {t('footer.availabilityFinalPriceTerms')}
             </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-teal-300">
-            <span>{language === 'es'
-              ? 'Opciones de pago sujetas a verificación en la cotización y el proceso de reserva.'
-              : 'Payment options are confirmed during quotation and checkout.'}</span>
+            <span>{t('footer.paymentOptionsConfirmedDuring')}</span>
           </div>
         </div>
       </div>
@@ -44,30 +43,26 @@ export const Footer: React.FC<FooterProps> = ({ language }) => {
                   Costa Rica <span className="text-orange-400">Tours</span>
                 </span>
                 <span className="text-[10px] font-black uppercase tracking-widest text-teal-400">
-                  {isEs ? 'Experiencias & Aventura' : 'Experiences & Adventure'}
+                  {t('footer.experiencesAdventure')}
                 </span>
               </div>
             </div>
             
             <p className="text-xs leading-relaxed text-stone-400">
-              {isEs 
-                ? 'Descubre experiencias y solicita una cotización. Proveedor, precio, disponibilidad, credenciales y condiciones se verifican antes de reservar.' 
-                : 'Discover experiences and request a quote. Provider, price, availability, credentials and terms are verified before booking.'}
+              {t('footer.discoverExperiencesRequestQuote')}
             </p>
 
             <div className="flex flex-col gap-3">
               <button
                 type="button"
                 onClick={() => requestCustomerIntake({
-                  message: isEs
-                    ? 'Quisiera hablar con Costa Rica Tours sobre opciones turísticas y recibir atención con verificación.'
-                    : 'I would like help with Costa Rica travel options and a verified inquiry.',
+                  message: t('footer.iWouldLikeHelp'),
                   language, source: 'footer:assistance'
                 })}
                 className="font-extrabold text-sm flex items-center gap-2 text-white hover:text-teal-300 transition-colors text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300"
               >
                 <MessageCircle className="w-5 h-5 text-[#25D366]" />
-                {isEs ? 'Consultar por IA · WhatsApp si se requiere' : 'Ask AI · WhatsApp if needed'}
+                {t('footer.askAiWhatsappNeeded')}
               </button>
               <a
                 href="mailto:jarojas800@gmail.com"
@@ -81,42 +76,42 @@ export const Footer: React.FC<FooterProps> = ({ language }) => {
 
           {/* Quick Links */}
           <div className="space-y-6">
-            <h4 className="text-white font-black uppercase tracking-widest text-xs">{isEs ? 'Explorar' : 'Explore'}</h4>
+            <h4 className="text-white font-black uppercase tracking-widest text-xs">{t('footer.explore')}</h4>
             <ul className="space-y-3 text-sm">
               <li>
                 <Link to="/tours" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
                   <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
-                  {isEs ? 'Todos los Tours' : 'All Tours'}
+                  {t('footer.allTours')}
                 </Link>
               </li>
               <li>
                 <Link to="/destinations" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
                   <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
-                  {isEs ? 'Destinos' : 'Destinations'}
+                  {t('footer.destinations')}
                 </Link>
               </li>
               <li>
                 <Link to="/ciudad" className="hover:text-amber-400 transition-colors flex items-center gap-2 group focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
                   <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
-                  {isEs ? 'Plano de la ciudad digital' : 'Digital city masterplan'}
+                  {t('footer.digitalCityMasterplan')}
                 </Link>
               </li>
               <li>
                 <Link to="/participar" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
                   <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
-                  {isEs ? 'Participar en la ciudad digital' : 'Join the digital city'}
+                  {t('footer.joinDigitalCity')}
                 </Link>
               </li>
               <li>
                 <Link to="/itinerary" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
                   <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
-                  {isEs ? 'Itinerario IA' : 'AI Itinerary'}
+                  {t('footer.aiItinerary')}
                 </Link>
               </li>
               <li>
                 <Link to="/blog" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
                   <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
-                  {isEs ? 'Blog de Viajes' : 'Travel Blog'}
+                  {t('footer.travelBlog')}
                 </Link>
               </li>
             </ul>
@@ -124,30 +119,30 @@ export const Footer: React.FC<FooterProps> = ({ language }) => {
 
           {/* Categories */}
           <div className="space-y-6">
-            <h4 className="text-white font-black uppercase tracking-widest text-xs">{isEs ? 'Categorías' : 'Categories'}</h4>
+            <h4 className="text-white font-black uppercase tracking-widest text-xs">{t('footer.categories')}</h4>
             <ul className="space-y-3 text-sm">
               <li>
                 <Link to="/tours?category=canopy" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
                   <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
-                  {isEs ? 'Aventura y canopy' : 'Adventure and ziplining'}
+                  {t('footer.adventureZiplining')}
                 </Link>
               </li>
               <li>
                 <Link to="/tours?category=wildlife" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
                   <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
-                  {isEs ? 'Vida Silvestre' : 'Wildlife'}
+                  {t('footer.wildlife')}
                 </Link>
               </li>
               <li>
                 <Link to="/tours?category=beaches" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
                   <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
-                  {isEs ? 'Playas' : 'Beaches'}
+                  {t('footer.beaches')}
                 </Link>
               </li>
               <li>
                 <Link to="/tours?category=volcanoes" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
                   <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
-                  {isEs ? 'Volcanes' : 'Volcanoes'}
+                  {t('footer.volcanoes')}
                 </Link>
               </li>
             </ul>
@@ -155,23 +150,23 @@ export const Footer: React.FC<FooterProps> = ({ language }) => {
 
           {/* Trust Badges */}
           <div className="space-y-6">
-            <h4 className="text-white font-black uppercase tracking-widest text-xs">{isEs ? 'Confianza' : 'Trust'}</h4>
+            <h4 className="text-white font-black uppercase tracking-widest text-xs">{t('footer.trust')}</h4>
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 bg-stone-900/50 rounded-xl border border-white/5 flex flex-col items-center text-center gap-1">
                 <ShieldCheck className="w-5 h-5 text-emerald-500" />
-                <span className="text-[10px] font-bold uppercase">{isEs ? 'Seguro' : 'Secure'}</span>
+                <span className="text-[10px] font-bold uppercase">{t('footer.secure')}</span>
               </div>
               <div className="p-3 bg-stone-900/50 rounded-xl border border-white/5 flex flex-col items-center text-center gap-1">
                 <Heart className="w-5 h-5 text-rose-500" />
-                <span className="text-[10px] font-bold uppercase">{isEs ? 'Pura Vida' : 'Pura Vida'}</span>
+                <span className="text-[10px] font-bold uppercase">{t('footer.puraVida')}</span>
               </div>
               <div className="p-3 bg-stone-900/50 rounded-xl border border-white/5 flex flex-col items-center text-center gap-1">
                 <Globe className="w-5 h-5 text-teal-400" />
-                <span className="text-[10px] font-bold uppercase">{isEs ? 'Global' : 'Global'}</span>
+                <span className="text-[10px] font-bold uppercase">{t('footer.global')}</span>
               </div>
               <div className="p-3 bg-stone-900/50 rounded-xl border border-white/5 flex flex-col items-center text-center gap-1">
                 <Sparkles className="w-5 h-5 text-amber-500" />
-                <span className="text-[10px] font-bold uppercase">{isEs ? 'Premium' : 'Premium'}</span>
+                <span className="text-[10px] font-bold uppercase">{t('footer.premium')}</span>
               </div>
             </div>
           </div>
@@ -184,18 +179,18 @@ export const Footer: React.FC<FooterProps> = ({ language }) => {
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-teal-400" />
             <span>
-              © {new Date().getFullYear()} Costa Rica Tours. {isEs ? 'Todos los derechos reservados.' : 'All rights reserved.'}
+              © {new Date().getFullYear()} Costa Rica Tours. {t('footer.allRightsReserved')}
             </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold">
-            <Link to="/terms" className="hover:underline text-teal-400 hover:text-white transition-colors">{isEs ? 'Términos y Condiciones' : 'Terms & Conditions'}</Link>
+            <Link to="/terms" className="hover:underline text-teal-400 hover:text-white transition-colors">{t('footer.termsConditions')}</Link>
             <span className="text-stone-800" aria-hidden="true">|</span>
-            <Link to="/cancellation" className="hover:underline text-teal-400 hover:text-white transition-colors">{isEs ? 'Política de Cancelación' : 'Cancellation Policy'}</Link>
+            <Link to="/cancellation" className="hover:underline text-teal-400 hover:text-white transition-colors">{t('footer.cancellationPolicy')}</Link>
             <span className="text-stone-800" aria-hidden="true">|</span>
-            <Link to="/privacy" className="hover:underline text-teal-400 hover:text-white transition-colors">{isEs ? 'Privacidad y Datos' : 'Privacy & Data'}</Link>
+            <Link to="/privacy" className="hover:underline text-teal-400 hover:text-white transition-colors">{t('footer.privacyData')}</Link>
             <span className="text-stone-800" aria-hidden="true">|</span>
-            <Link to="/sinac-escnna" className="hover:underline text-teal-400 hover:text-white transition-colors">{isEs ? 'Normas SINAC & ESCNNA' : 'SINAC Rules & ESCNNA'}</Link>
+            <Link to="/sinac-escnna" className="hover:underline text-teal-400 hover:text-white transition-colors">{t('footer.sinacRulesEscnna')}</Link>
 
           </div>
         </div>
