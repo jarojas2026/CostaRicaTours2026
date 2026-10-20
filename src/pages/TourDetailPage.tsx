@@ -19,6 +19,7 @@ import { useTours } from '../contexts/ToursContext';
 import { REGIONS } from '../data/catalogMeta';
 import { getUsdToCrcRate } from '../utils/currencies';
 import { LazyImage } from '../components/LazyImage';
+import { TourWeather } from '../components/TourWeather';
 import { useTourMedia } from '../hooks/useTourMedia';
 import { requestCustomerIntake } from '../utils/customerIntake';
 
@@ -466,6 +467,8 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
                 </ul>
               </div>
             </div>
+
+            <TourWeather lat={tour.location.lat} lng={tour.location.lng} language={language} />
 
             <section aria-label={language === 'es' ? 'Ubicación y tours similares' : 'Location and similar tours'} className="space-y-6">
               <h2 className="text-2xl font-bold text-white">{language === 'es' ? 'Ubicación de referencia' : 'Reference location'}</h2>
