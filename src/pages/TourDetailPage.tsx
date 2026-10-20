@@ -4,6 +4,7 @@ import { resolveTour, tourAllowsPayment, TOUR_COMMERCIAL_STATUS } from '../utils
 import React, { useState, useEffect, useRef } from 'react';
 import { createBookingAttempt, requirePaymentUrl } from '../utils/bookingAttempt';
 import { publishedTourPrice, similarTours } from '../utils/tourPublication';
+import { formatUsdReference } from '../utils/referencePrice';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   Clock, MapPin, ShieldCheck, Calendar, Users,
@@ -52,6 +53,8 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
   const [sinpeRef, setSinpeRef] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [quoteInView, setQuoteInView] = useState(false);
+  const quoteRef = useRef<HTMLDivElement>(null);
   const attempt = useRef(createBookingAttempt());
   const submitting = useRef(false);
   const { assets: mediaAssets, loading: mediaLoading, error: mediaError } = useTourMedia(
@@ -67,6 +70,15 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
     }
     setErrorMessage(null);
   }, [selectedDate, adults, children, tour?.id, pendingBookingId]);
+
+  // The mobile CTA bar hides while the quote form is on screen, so it never covers its submit button.
+  useEffect(() => {
+    const node = quoteRef.current;
+    if (!node || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(([entry]) => setQuoteInView(entry.isIntersecting), { threshold: 0.05 });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [tour?.id, loading]);
 
   if (loading) {
     return (
@@ -322,12 +334,27 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
     }
   };
 
+  const referencePrice = publishedTourPrice(tour);
+  const priceLabel = referencePrice === undefined
+    ? (language === 'es' ? 'Consultar disponibilidad' : 'Check availability')
+    : (language === 'es' ? `desde ${formatUsdReference(referencePrice)}` : `from ${formatUsdReference(referencePrice)}`);
+  const priceNote = referencePrice === undefined ? null : (language === 'es' ? 'sujeto a confirmación' : 'subject to confirmation');
+  const ctaLabel = language === 'es' ? 'Cotizar / Reservar' : 'Get a quote / Book';
+  const openQuoteForm = () => {
+    const node = quoteRef.current;
+    if (!node) return;
+    const reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    node.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    const field = node.querySelector<HTMLElement>('input:not([disabled]), select:not([disabled]), textarea:not([disabled])');
+    (field || node).focus({ preventScroll: true });
+  };
+
   const gallery = mediaAssets.length > 0
     ? mediaAssets.map(asset => asset.url)
     : (Array.isArray(tour.gallery) && tour.gallery.length > 0 ? tour.gallery : [tour.image]);
 
   return (
-    <div className="bg-stone-950 pt-20">
+    <div className="bg-stone-950 pt-20 pb-24 lg:pb-0">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center gap-4 mb-8">
           <button
@@ -379,6 +406,16 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
                 <span>{tour.location?.placeName || 'Costa Rica'}</span>
               </div>
               <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-tight">{getLangText(tour.title, language)}</h1>
+
+              <div data-testid="tour-cta" className="flex flex-col gap-3 rounded-[2rem] border border-emerald-500/30 bg-emerald-950/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div data-testid="tour-cta-price" className="text-2xl font-black text-emerald-300">{priceLabel}</div>
+                  {priceNote && <div className="text-xs font-semibold text-stone-400">{priceNote}</div>}
+                </div>
+                <button type="button" onClick={openQuoteForm} aria-controls="tour-quote" className="rounded-2xl bg-emerald-500 px-6 py-3 font-black text-stone-950 shadow-lg shadow-emerald-500/20 transition-colors hover:bg-emerald-400 focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300/60">
+                  {ctaLabel}
+                </button>
+              </div>
 
               <div className="flex flex-wrap gap-4">
                 <div className="px-5 py-3 bg-stone-900 rounded-2xl border border-white/5 flex items-center gap-3">
@@ -468,7 +505,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
 
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
-              <div className="p-8 bg-stone-900 rounded-[2.5rem] border border-emerald-500/20 shadow-2xl shadow-emerald-500/10">
+              <div id="tour-quote" ref={quoteRef} tabIndex={-1} className="scroll-mt-24 p-8 bg-stone-900 rounded-[2.5rem] border border-emerald-500/20 shadow-2xl shadow-emerald-500/10 focus:outline-none">
                 <div className="mb-8">
                   {isBookable ? <>
                     <div className="text-stone-500 text-xs font-black uppercase tracking-widest mb-2">{language === 'es' ? 'Precio de catálogo · por confirmar' : 'Catalog price · confirm before booking'}</div>
@@ -635,6 +672,24 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
           </div>
         </div>
       </div>
+
+      {!quoteInView && (
+        <div
+          data-testid="tour-cta-mobile"
+          className="fixed inset-x-0 z-[100] border-t border-emerald-500/30 bg-stone-950/95 px-4 py-3 backdrop-blur lg:hidden"
+          style={{ bottom: 'var(--cookie-banner-h, 0px)', paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+        >
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="truncate text-base font-black text-emerald-300">{priceLabel}</div>
+              {priceNote && <div className="text-[11px] text-stone-400">{priceNote}</div>}
+            </div>
+            <button type="button" onClick={openQuoteForm} aria-controls="tour-quote" className="shrink-0 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-stone-950 hover:bg-emerald-400">
+              {ctaLabel}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
