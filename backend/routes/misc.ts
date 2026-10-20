@@ -55,6 +55,20 @@ weatherRouter.get('/api/weather/destinations', async (_req, res) => {
   }
 });
 
+/** Pronóstico de 5 días para la ficha /tour/:id (Open-Meteo, caché 1 h). */
+weatherRouter.get('/api/weather/forecast', async (req, res) => {
+  const { parseCostaRicaCoords, getTourForecast } = await import('../tourWeatherForecast');
+  const coords = parseCostaRicaCoords(req.query.lat, req.query.lon);
+  if (!coords) return res.status(400).json({ success: false, error: 'invalid_coordinates' });
+  const forecast = await getTourForecast(coords.lat, coords.lon);
+  if (!forecast) {
+    res.setHeader('cache-control', 'no-store');
+    return res.status(503).json({ success: false, error: 'forecast_unavailable' });
+  }
+  res.setHeader('cache-control', 'public, max-age=900, s-maxage=1800');
+  return res.json({ success: true, ...forecast });
+});
+
 /** Métricas, procesamiento masivo y acciones de operación. */
 export const opsMetricsRouter = createRouter();
 
