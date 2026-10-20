@@ -1,4 +1,5 @@
 import { knowledgeToolReply } from '../knowledgeReplies';
+import { redactAssistantReplyMiddleware } from '../assistantContactRedaction';
 import crypto from 'crypto';
 /**
  * Agentes de IA y sus herramientas internas.
@@ -67,7 +68,7 @@ agentsRouter.post('/api/agents/log_exception', requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
-agentsRouter.post('/api/gemini/concierge', async (req, res) => {
+agentsRouter.post('/api/gemini/concierge', redactAssistantReplyMiddleware, async (req, res) => {
   // Deterministic understanding runs first and never depends on the AI model.
   let understanding: ConciergeUnderstanding | null = null;
   try {
@@ -177,7 +178,7 @@ agentsRouter.post('/api/gemini/concierge', async (req, res) => {
 });
 
 // Endpoint exclusivo del Counter Agent (Agente de Mostrador y Reservas)
-agentsRouter.post('/api/agent/counter', async (req, res) => {
+agentsRouter.post('/api/agent/counter', redactAssistantReplyMiddleware, async (req, res) => {
   try {
     const { message, language, history, context } = req.body;
     const userMsg = message || '';
