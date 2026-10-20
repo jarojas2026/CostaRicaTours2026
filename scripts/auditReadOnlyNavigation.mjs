@@ -374,4 +374,13 @@ const lines = [
 ];
 await writeFile(join(OUT,'report.md'), lines.join('\n'));
 process.stdout.write('AUDIT_SUMMARY ' + JSON.stringify(report.summary) + '\n');
+// Public CI logs expose only route/viewport/finding kind; detailed evidence and
+// screenshots remain in the private-to-workflow artifact. Never log PII/DOM text.
+process.stdout.write('AUDIT_FINDINGS_SAFE ' + JSON.stringify(report.findings.slice(0, 30).map(item => ({
+  severity: item.severity,
+  kind: item.kind,
+  route: String(item.route || '').slice(0, 90),
+  device: String(item.device || '').slice(0, 40),
+}))) + '\n');
+
 if (report.summary.pagesFailed || report.summary.interactionsFailed) process.exitCode = 1;
