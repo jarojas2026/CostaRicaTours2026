@@ -9,6 +9,7 @@ import path from 'path';
 import { requireOwner } from '../authMiddleware';
 import { processProviderInboxOnce } from '../providerInboxAgent';
 import { getAdminControlCenterSnapshot } from '../adminControlCenterService';
+import { getOwnerMissionControlSnapshot } from '../missionControlService';
 import { getGlobalAgentControl, listAgentGovernanceAudit, pauseAgent, resumeAgent, revokeAgent, restoreAgent, setAgentAutonomy, setGlobalAgentShutdown } from '../agentGovernanceService';
 import { listOwnerApprovals, approveOwnerApproval, rejectOwnerApproval } from '../ownerApprovalService';
 import { getJarvisPlan, listJarvisPlans, reconcileJarvisPlan, runJarvisOwnerCommand } from '../jarvisOrchestrator';
@@ -224,6 +225,15 @@ adminRouter.post('/api/admin/digital-city/registration/preflight', requireAdmin,
     return res.status(result.status === 'invalid' ? 400 : 200).json(result);
   } catch {
     return res.status(400).json({ error: 'No se pudo evaluar la solicitud.' });
+  }
+});
+
+// Owner-only, read-only view. Each dataset is explicitly a bounded sample.
+adminRouter.get('/api/admin/mission-control', requireOwner, async (_req, res) => {
+  try {
+    res.json(await getOwnerMissionControlSnapshot());
+  } catch {
+    res.status(503).json({ error: 'No se pudo consultar Mission Control.' });
   }
 });
 
