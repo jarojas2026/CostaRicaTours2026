@@ -9,7 +9,7 @@ USE /api/admin/knowledge router
 USE /api/digital-city/applications router
 ROUTE POST /api/webhooks/stripe (1)
 ROUTE POST /api/webhooks/paypal (1)
-ROUTE POST /api/customer-intake (3)
+ROUTE POST /api/customer-intake (4)
 ROUTE GET /api/webhooks/whatsapp (1)
 ROUTE POST /api/webhooks/whatsapp (1)
 ROUTE POST /api/internal/customer-intake/process (1)
@@ -201,7 +201,7 @@ ROUTE POST /api/fcm/send (2)
 ROUTE GET /api/admin/leads (2)
 ROUTE GET /api/admin/leads/:id (2)
 ROUTE PATCH /api/admin/leads/:id/status (2)
-ROUTE POST /api/leads/quote-request (2)
+ROUTE POST /api/leads/quote-request (3)
 ROUTE POST /api/internal/leads/digest (1)
 USE /api wrapped
 USE / apiErrorHandler
