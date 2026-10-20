@@ -64,7 +64,18 @@ interface Lead {
   operatorCandidates: Array<{ operatorId: string; name: string; region: string; reasons: string[] }>;
   quoteRequestDrafts: Array<{ operatorId: string; operatorName: string; language: 'es' | 'en'; subject: string; body: string }>;
   triage?: { state: TriageState; priority: Priority; reasons: string[]; auto: boolean; duplicateOf?: string };
+  followUp?: { status: 'borrador_no_enviado' | 'enviado' | 'envio_fallido'; language: 'es' | 'en'; missing: Array<'fecha' | 'pax'>; to?: string; subject: string; body: string; sentAt?: string; error?: string };
 }
+
+const FOLLOW_UP_STATUS: Record<NonNullable<Lead['followUp']>['status'], { es: string; en: string }> = {
+  borrador_no_enviado: { es: 'borrador, no enviado', en: 'draft, not sent' },
+  enviado: { es: 'enviado', en: 'sent' },
+  envio_fallido: { es: 'envío fallido', en: 'send failed' },
+};
+const MISSING_LABEL: Record<'fecha' | 'pax', { es: string; en: string }> = {
+  fecha: { es: 'fecha', en: 'date' },
+  pax: { es: 'pax', en: 'party size' },
+};
 
 export function LeadsPipelinePage({ language }: { language: Language }) {
   const es = language === 'es';
@@ -197,6 +208,7 @@ export function LeadsPipelinePage({ language }: { language: Language }) {
                   <div className="flex flex-wrap items-center gap-2 text-sm">
                     <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 font-bold text-emerald-200">{lead.status}</span>
                     {t && <span className={`rounded-full px-2 py-0.5 font-bold ${PRIORITY_CLASS[t.priority]}`}>{PRIORITY_LABEL[t.priority][es ? 'es' : 'en']}</span>}
+                    {lead.followUp && <span className="rounded-full bg-amber-500/15 px-2 py-0.5 font-bold text-amber-200">{es ? 'Falta' : 'Missing'}: {lead.followUp.missing.map(m => MISSING_LABEL[m][es ? 'es' : 'en']).join(' + ')}</span>}
                     {t && t.state !== 'activo' && <span className="rounded-full bg-stone-700 px-2 py-0.5 font-bold text-stone-200" title={t.reasons.map(r => REASON_LABEL[r]?.[es ? 'es' : 'en'] || r).join(', ')}>{TRIAGE_LABEL[t.state][es ? 'es' : 'en']}{t.reasons.length ? ` · ${t.reasons.map(r => REASON_LABEL[r]?.[es ? 'es' : 'en'] || r).join(', ')}` : ''}</span>}
                     {stale && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 font-bold text-amber-200">{es ? `sin respuesta ${hoursSince(lead.lastActivityAt)}h` : `no reply ${hoursSince(lead.lastActivityAt)}h`}</span>}
                     <span className="font-semibold">{r.tourTitle || r.activityLabel || r.regionLabel || (es ? 'Consulta general' : 'General inquiry')}</span>
@@ -217,6 +229,17 @@ export function LeadsPipelinePage({ language }: { language: Language }) {
                       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-stone-700 p-2 text-xs text-stone-300">
                         <span>{es ? 'Triaje' : 'Triage'}: {TRIAGE_LABEL[t.state][es ? 'es' : 'en']} ({t.auto ? (es ? 'automático' : 'automatic') : (es ? 'manual' : 'manual')}){t.duplicateOf ? ` · ${es ? 'duplicado de' : 'duplicate of'} ${t.duplicateOf}` : ''}</span>
                         <button type="button" disabled={busy} onClick={() => void bulkTriage('restaurar', [lead.id])} className="inline-flex items-center gap-1 rounded-lg border border-stone-600 px-2 py-1"><Undo2 className="w-3.5 h-3.5" aria-hidden="true" />{es ? 'Restaurar' : 'Restore'}</button>
+                      </div>
+                    )}
+                    {lead.followUp && (
+                      <div className="rounded-xl border border-amber-500/30 p-3" data-lead-followup="true">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <strong className="text-amber-100">{es ? 'Correo para completar datos' : 'Follow-up to complete details'} · {lead.followUp.language.toUpperCase()} · {FOLLOW_UP_STATUS[lead.followUp.status][es ? 'es' : 'en']}{lead.followUp.sentAt ? ` (${new Date(lead.followUp.sentAt).toLocaleString(es ? 'es-CR' : 'en-US')})` : ''}</strong>
+                          <button type="button" onClick={() => void navigator.clipboard?.writeText(`${lead.followUp!.subject}\n\n${lead.followUp!.body}`)} className="inline-flex items-center gap-1 text-xs text-emerald-300"><ClipboardCopy className="w-3.5 h-3.5" aria-hidden="true" />{es ? 'Copiar' : 'Copy'}</button>
+                        </div>
+                        {lead.followUp.to && <div className="text-xs text-stone-400 mt-1">{es ? 'Para' : 'To'}: {lead.followUp.to}</div>}
+                        <pre className="whitespace-pre-wrap text-xs text-stone-300 mt-1">{lead.followUp.subject}{'\n\n'}{lead.followUp.body}</pre>
+                        {lead.followUp.error && <p className="text-xs text-red-300 mt-1">{lead.followUp.error}</p>}
                       </div>
                     )}
                     <div>
