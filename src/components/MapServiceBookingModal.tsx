@@ -9,6 +9,17 @@ import { MapTourismService } from '../data/mapServicesData';
 import { formatCurrency, getLangText } from '../utils/i18n';
 import { getUsdToCrcRate } from '../utils/currencies';
 import { PRICE_ON_REQUEST, REFERENCE_PRICE_NOTE, estimateMapServiceTotalUSD } from '../utils/mapServicePricing';
+import { buildMapServiceQuoteLeadPayload, MAP_SERVICE_QUOTE_ENDPOINT, type MapServiceQuoteError } from '../../shared/mapServiceQuoteRequest';
+import { formGuardFields } from '../../shared/formAbuse';
+import { HoneypotField } from './HoneypotField';
+
+const QUOTE_ERRORS: Record<MapServiceQuoteError, { es: string; en: string }> = {
+  consent_required: { es: 'Debes aceptar el tratamiento de tus datos (Ley 8968) para enviar la solicitud.', en: 'You must accept the processing of your data (Law 8968) to send the request.' },
+  service_required: { es: 'No pudimos identificar el servicio.', en: 'We could not identify the service.' },
+  name_required: { es: 'Escribe tu nombre.', en: 'Enter your name.' },
+  email_invalid: { es: 'Escribe un correo válido.', en: 'Enter a valid email.' },
+  people_invalid: { es: 'Indica entre 1 y 60 personas.', en: 'Enter between 1 and 60 people.' },
+};
 
 interface MapServiceBookingModalProps {
   service: MapTourismService | null;
@@ -57,6 +68,9 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [confirmedBookingData, setConfirmedBookingData] = useState<any>(null);
   const [submissionError, setSubmissionError] = useState('');
+  const [consent, setConsent] = useState(false);
+  const [startedAt] = useState(() => Date.now());
+  const [honeypot, setHoneypot] = useState('');
 
   // Precio: solo con tarifa real publicada. Sin precio real → "Precio a consultar",
   // sin total calculado; la solicitud se envía como cotización.
@@ -106,63 +120,57 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
     }
   };
 
+  /**
+   * Los servicios del mapa no son tours del catálogo: la consulta va al flujo de
+   * leads (cotización, Ley 8968, antiabuso), nunca a /api/bookings.
+   */
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    if (isSubmitting || isConfirmed) return;
     setSubmissionError('');
-
-    const newBooking = {
-      tourId: service.id,
-      tourName: getLangText(service.name, language),
-      serviceType: service.type,
+    const lang = language === 'es' ? 'es' : 'en';
+    const details = service.type === 'national_park' && passportId ? `Pasaporte: ${passportId}`
+      : service.type === 'taxi_stand' ? `Tipo de transfer: ${transferType}`
+      : service.type === 'airstrip' ? `Ruta aérea: ${flightDirection}`
+      : '';
+    const built = buildMapServiceQuoteLeadPayload({
+      serviceId: service.id,
+      name: customerName,
+      email: customerEmail,
+      phone: customerPhone,
       date,
       checkOutDate: service.type === 'hotel' ? checkOutDate : undefined,
-      time: timeSlot,
       adults,
       children,
-      pickupHotel: service.address[language === 'es' ? 'es' : 'en'],
-      specialRequests: `${specialRequests ? specialRequests + ' | ' : ''}Detalles: ${
-        service.type === 'national_park' ? `Pasaporte: ${passportId}` : 
-        service.type === 'taxi_stand' ? `Tipo de transfer: ${transferType}` : 
-        service.type === 'airstrip' ? `Ruta aérea: ${flightDirection}` : ''
-      }`,
-      // Sin precio real no se envía total: el servidor cotiza.
-      ...(calculatedTotalUSD !== null ? { totalUSD: calculatedTotalUSD, totalCRC: calculatedTotalCRC } : {}),
-      customer: {
-        fullName: customerName,
-        email: customerEmail,
-        phone: customerPhone,
-        country: 'Costa Rica'
-      },
-      status: 'solicitada',
-      paymentStatus: 'pending',
-      createdAt: new Date().toISOString()
-    };
+      message: [specialRequests, details, timeSlot ? `Hora: ${timeSlot}` : ''].filter(Boolean).join(' | '),
+      consent,
+      language: lang,
+    });
+    if (!built.ok) { setSubmissionError(QUOTE_ERRORS[built.error][lang]); return; }
 
+    setIsSubmitting(true);
     try {
-      const bookingRes = await fetch('/api/bookings', {
+      const res = await fetch(MAP_SERVICE_QUOTE_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newBooking)
+        body: JSON.stringify({ ...built.payload, ...formGuardFields(startedAt, honeypot) }),
       });
-      const bookingResult = await bookingRes.json().catch(() => ({}));
-      if (!bookingRes.ok || bookingResult?.conflict || !bookingResult?.booking) {
-        throw new Error(bookingResult?.message || bookingResult?.error || 'No se pudo registrar la solicitud de reserva.');
+      const body = await res.json().catch(() => ({}));
+      if ((res.status === 429 || res.status === 400) && (body?.code === 'rate_limited' || body?.code === 'too_fast')) {
+        setSubmissionError(String(body.message));
+        return;
       }
-
-      const authoritativeBooking = bookingResult.booking;
-      setConfirmedBookingData(authoritativeBooking);
+      if (!res.ok || body?.success !== true) throw new Error(String(res.status));
+      const reference = typeof body?.reference === 'string' && /^CRT-[A-Z0-9]{6,8}$/.test(body.reference) ? body.reference : null;
+      const receipt = { reference, serviceId: service.id, status: body.status };
+      setConfirmedBookingData(receipt);
       setIsConfirmed(true);
-      if (onBookingSuccess) {
-        onBookingSuccess(authoritativeBooking);
-      }
+      onBookingSuccess?.(receipt);
     } catch (error: any) {
-      console.error('Error creating map service booking:', error);
-      setSubmissionError(
-        error?.message || (language === 'es'
-          ? 'No se pudo registrar la solicitud. Inténtalo nuevamente.'
-          : 'The request could not be registered. Please try again.')
-      );
+      console.warn('Map service quote request failed:', error?.message || error);
+      setSubmissionError(lang === 'es'
+        ? 'No pudimos enviar la solicitud en este momento. Inténtalo de nuevo en unos minutos.'
+        : 'We could not send the request right now. Please try again in a few minutes.');
     } finally {
       setIsSubmitting(false);
     }
@@ -213,7 +221,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
           {isConfirmed ? (
             /* Request Receipt Screen */
-            <div className="text-center py-6 space-y-4">
+            <div className="text-center py-6 space-y-4" role="status" data-testid="map-service-quote-success">
               <div className="w-16 h-16 rounded-full bg-emerald-500 text-stone-950 flex items-center justify-center mx-auto shadow-2xl ring-8 ring-emerald-500/20">
                 <Check className="w-8 h-8 stroke-[3]" />
               </div>
@@ -233,7 +241,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
               <div className="bg-emerald-950/60 border border-emerald-500/30 rounded-2xl p-4 text-left space-y-2 text-xs">
                 <div className="flex justify-between pb-2 border-b border-emerald-500/20">
                   <span className="text-emerald-300 font-bold">{language === 'es' ? 'Referencia:' : 'Reference:'}</span>
-                  <span className="font-mono font-bold text-white">{confirmedBookingData?.bookingId}</span>
+                  <span className="font-mono font-bold text-white" data-testid="map-service-quote-reference">{confirmedBookingData?.reference || (language === 'es' ? 'En proceso' : 'Pending')}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-emerald-300">{language === 'es' ? 'Servicio solicitado:' : 'Requested service:'}</span>
@@ -534,7 +542,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                     </label>
                     <input
                       type="tel"
-                      required
+                      autoComplete="tel"
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
                       placeholder="+506 8888-8888"
@@ -555,6 +563,16 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                   </div>
                 </div>
               </div>
+
+              <label className="flex items-start gap-3 text-xs text-emerald-200/90" data-testid="map-service-consent">
+                <input type="checkbox" required checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5" />
+                <span>
+                  {language === 'es'
+                    ? 'Autorizo el tratamiento de mi nombre, correo, teléfono y mensaje para gestionar esta cotización, conforme a la Ley 8968 de Protección de la Persona frente al Tratamiento de sus Datos Personales. No es una reserva ni un cobro.'
+                    : 'I authorize the processing of my name, email, phone and message to handle this quote, under Costa Rica Law 8968 on personal data protection. This is not a booking or a charge.'}{' '}
+                  <a href="/privacy" className="underline">{language === 'es' ? 'Política de privacidad' : 'Privacy policy'}</a>
+                </span>
+              </label>
 
               {submissionError && (
                 <div className="rounded-xl border border-red-400/30 bg-red-950/40 px-4 py-3 text-xs font-semibold text-red-200" role="alert">
@@ -593,7 +611,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !consent}
                   className="min-h-[44px] min-w-[44px] w-full sm:w-auto px-6 py-3.5 bg-emerald-400 hover:bg-emerald-300 text-stone-950 font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 active:scale-98 disabled:opacity-50"
                 >
                   {isSubmitting ? (
@@ -606,6 +624,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                   )}
                 </button>
               </div>
+              <HoneypotField value={honeypot} onChange={setHoneypot} />
             </form>
           )}
         </div>

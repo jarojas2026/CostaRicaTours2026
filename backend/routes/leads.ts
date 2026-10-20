@@ -7,6 +7,8 @@
  * - PATCH /api/admin/leads/:id/status     (requireOperator) máquina de estados con evidencia
  * - POST /api/leads/quote-request        (público, rate-limit) solicitud de cotización desde
  *   /tour/:id con source "tour_page"; exige consentimiento Ley 8968 y un tour del catálogo.
+ * - POST /api/leads/map-service-request (público, mismo antiabuso) consulta de un servicio del
+ *   mapa (hotel/parque/transporte) con source "map_service"; Ley 8968; nunca /api/bookings.
  * - POST /api/internal/leads/digest       (X-Operator-Key = OPERATOR_API_KEY) resumen diario;
  *   solo registra (dry-run) salvo LEADS_DIGEST_ENABLED=true.
  */
@@ -14,11 +16,13 @@
 import crypto from 'crypto';
 import type express from 'express';
 import { requireOperator } from '../authMiddleware';
-import { buildLeadDigest, buildTourPageLeadInput, captureLeadAndNotify, getLead, isLeadStatus, listLeads, transitionLead, triageLeads, LEAD_STATUSES } from '../leadPipeline';
+import { buildLeadDigest, buildMapServiceLeadInput, buildTourPageLeadInput, captureLeadAndNotify, getLead, isLeadStatus, listLeads, transitionLead, triageLeads, LEAD_STATUSES } from '../leadPipeline';
 import { isLeadPriority, isLeadTriageState, LEAD_PRIORITIES, LEAD_TRIAGE_STATES } from '../leadTriage';
 import { createRouter, adminAccessPayload, chatLimiter } from './shared';
 import { leadPublicReference, parseTourQuoteLeadPayload } from '../../shared/tourQuoteRequest';
 import { TOURS } from '../../src/data/toursData';
+import { MAP_TOURISM_SERVICES } from '../../src/data/mapServicesData';
+import { parseMapServiceQuoteLeadPayload } from '../../shared/mapServiceQuoteRequest';
 import { quoteRequestDailyGuard, quoteRequestGuard } from '../formAbuseGuard';
 
 export const leadsRouter = createRouter();
@@ -103,6 +107,21 @@ leadsRouter.post('/api/leads/quote-request', chatLimiter, quoteRequestGuard, quo
     res.status(202).json({ success: true, status: lead.status, reference: leadPublicReference(lead.id), message: parsed.payload.language === 'en' ? 'Request received. We will send you a quote with confirmed availability and price before any payment.' : 'Solicitud recibida. Te enviaremos la cotización con disponibilidad y precio confirmados antes de cualquier pago.' });
   } catch (error: any) {
     console.warn('[leads] solicitud de cotización fallida:', error?.message || error);
+    res.status(500).json({ success: false, error: 'lead_capture_failed' });
+  }
+});
+
+leadsRouter.post('/api/leads/map-service-request', chatLimiter, quoteRequestGuard, quoteRequestDailyGuard, async (req, res) => {
+  const parsed = parseMapServiceQuoteLeadPayload(req.body);
+  if (!parsed.ok) return res.status(400).json({ success: false, error: parsed.error });
+  const service = MAP_TOURISM_SERVICES.find(s => s.id === parsed.payload.serviceId);
+  if (!service) return res.status(404).json({ success: false, error: 'service_not_found' });
+  if (process.env.LEADS_PIPELINE_ENABLED === 'false') return res.status(503).json({ success: false, error: 'leads_disabled' });
+  try {
+    const { lead } = await captureLeadAndNotify(buildMapServiceLeadInput(parsed.payload, service));
+    res.status(202).json({ success: true, status: lead.status, reference: leadPublicReference(lead.id), message: parsed.payload.language === 'en' ? 'Request received. We will send you a quote with confirmed availability and price before any payment.' : 'Solicitud recibida. Te enviaremos la cotización con disponibilidad y precio confirmados antes de cualquier pago.' });
+  } catch (error: any) {
+    console.warn('[leads] consulta de servicio del mapa fallida:', error?.message || error);
     res.status(500).json({ success: false, error: 'lead_capture_failed' });
   }
 });

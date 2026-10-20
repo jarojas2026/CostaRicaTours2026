@@ -15,13 +15,20 @@ for (const [name, source] of [['flight', flight], ['map service', mapService]] a
     assert.doesNotMatch(source, /collection\s*\(\s*db\s*,\s*['"]bookings['"]\s*\)/);
   });
 
-  test(`${name} booking client requires an authoritative backend booking before success UI`, () => {
-    assert.match(source, /const bookingRes = await fetch\(['"]\/api\/bookings['"]/);
-    assert.match(source, /!bookingRes\.ok/);
-    assert.match(source, /!bookingResult\?\.booking/);
-    assert.match(source, /authoritativeBooking = bookingResult\.booking/);
-  });
 }
+
+test('flight booking client requires an authoritative backend booking before success UI', () => {
+  assert.match(flight, /const bookingRes = await fetch\(['"]\/api\/bookings['"]/);
+  assert.match(flight, /!bookingRes\.ok/);
+  assert.match(flight, /!bookingResult\?\.booking/);
+  assert.match(flight, /authoritativeBooking = bookingResult\.booking/);
+});
+
+test('map service client sends a quote lead (not /api/bookings) and shows success only on a server ack', () => {
+  assert.doesNotMatch(mapService, /fetch\(\s*['"]\/api\/bookings/);
+  assert.match(mapService, /fetch\(MAP_SERVICE_QUOTE_ENDPOINT/);
+  assert.match(mapService, /!res\.ok \|\| body\?\.success !== true/);
+});
 
 test('flight request never fabricates paid/confirmed state or a client PNR', () => {
   assert.match(flight, /paymentStatus:\s*['"]pending['"]/);
@@ -41,8 +48,7 @@ test('flight payment redirect fails closed when Stripe does not return a valid s
 });
 
 test('map service request never fabricates a confirmed booking on backend failure', () => {
-  assert.match(mapService, /status:\s*['"]solicitada['"]/);
-  assert.match(mapService, /paymentStatus:\s*['"]pending['"]/);
+  assert.doesNotMatch(mapService, /paymentStatus:/);
   assert.doesNotMatch(mapService, /status:\s*['"]confirmada['"]/);
   const catchBlock = mapService.match(/catch \(error: any\) \{([\s\S]*?)\n    \} finally/)?.[1] || '';
   assert.doesNotMatch(catchBlock, /setIsConfirmed\(true\)/);

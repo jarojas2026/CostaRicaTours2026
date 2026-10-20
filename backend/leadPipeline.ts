@@ -26,6 +26,7 @@ import type { ConciergeUnderstanding, ConciergeLanguage } from './conciergeUnder
 import type { Tour } from '../src/types';
 import { publishedTourPrice } from '../src/utils/tourPublication';
 import { isoDateOrUndefined, type TourQuoteLeadPayload } from '../shared/tourQuoteRequest';
+import type { MapServiceQuoteLeadPayload } from '../shared/mapServiceQuoteRequest';
 import {
   applyManualTriage, deriveLegacyTriage, isActionableTriage, triageNewLead,
   type LeadPriority, type LeadTriage, type LeadTriageState, type RecentLeadRef,
@@ -34,7 +35,7 @@ import { buildFollowUpDraft, followUpEmail, isAutoFollowUpEnabled, missingLeadDa
 
 export const LEAD_STATUSES = ['nuevo', 'cotizando', 'esperando_operador', 'confirmado_por_escrito', 'pagado', 'cancelado'] as const;
 export type LeadStatus = typeof LEAD_STATUSES[number];
-export type LeadSource = 'sofia' | 'contact_form' | 'booking_request' | 'tour_page';
+export type LeadSource = 'sofia' | 'contact_form' | 'booking_request' | 'tour_page' | 'map_service';
 
 const TRANSITIONS: Record<LeadStatus, readonly LeadStatus[]> = {
   nuevo: ['cotizando', 'cancelado'],
@@ -442,6 +443,28 @@ export function buildTourPageLeadInput(payload: TourQuoteLeadPayload, tour: Tour
         subjectToConfirmation: true as const,
       },
     } : {}),
+  };
+}
+
+/** Consulta de un servicio del mapa (hotel, parque, transporte): cotización sin precio inventado. */
+export function buildMapServiceLeadInput(
+  payload: MapServiceQuoteLeadPayload,
+  service: { id: string; type: string; region: string; name: { es: string; en?: string } },
+): LeadInput {
+  const { adults, children, date, checkOutDate } = payload.request;
+  const title = payload.language === 'en' ? (service.name.en || service.name.es) : service.name.es;
+  const messageParts = [
+    `Servicio del mapa (${service.type}): ${service.id}`,
+    checkOutDate ? `Salida: ${checkOutDate}` : '',
+    payload.message || '',
+  ].filter(Boolean);
+  return {
+    source: 'map_service',
+    language: payload.language,
+    consent: payload.consent === true,
+    contact: { name: payload.customer.name, email: payload.customer.email, ...(payload.customer.phone ? { phone: payload.customer.phone } : {}) },
+    request: { tourTitle: title, region: service.region, people: adults + children, adults, children, ...(date ? { date } : {}) },
+    message: messageParts.join(' · '),
   };
 }
 
