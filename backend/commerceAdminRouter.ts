@@ -87,7 +87,7 @@ commerceAdminRouter.post('/:operation', async (req, res) => {
       const site = new URL(website);
       if (site.protocol !== 'https:' || site.username || site.password) throw new Error('La web oficial debe usar HTTPS.');
       const commissionRate = Number(body.commissionPercent) / 100;
-      if (body.commissionPercent == null || body.commissionPercent === '' || !Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > 1) throw new Error('Indique la comisión pactada, entre 0 y 100%.');
+      if (body.commissionPercent == null || body.commissionPercent === '' || !Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate >= 1) throw new Error('Indique la comisión pactada, entre 0 y menos de 100%.');
       if (name.length < 3 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^\+[1-9]\d{7,14}$/.test(phone)) throw new Error('Indique nombre comercial, correo y teléfono internacional válidos.');
       const batch = db.batch();
       batch.set(db.collection('operators').doc(providerId), { name, email, phone, website: site.origin, commissionRate, activeTours: [], verified: true, active: true, status: 'active', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
