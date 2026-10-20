@@ -19,7 +19,7 @@ test('counts only real verified Firestore candidate profiles/offers/slots, never
   const result = assessCommercialReadiness(base);
   assert.deepEqual(result.counts, {
     verifiedActiveProvidersSample: 1,
-    providerProfilesWithAgreementAndEmailSample: 1,
+    providerProfilesWithRateAndEmailSample: 1,
     offerCandidatesSample: 1,
     datedSlotCandidatesSample: 1,
   });
@@ -37,10 +37,10 @@ test('unverified provider, missing commission, expired or full slot are not sale
     emailTransportConfigured: false,
   });
   assert.equal(result.counts.verifiedActiveProvidersSample, 1);
-  assert.equal(result.counts.providerProfilesWithAgreementAndEmailSample, 0);
+  assert.equal(result.counts.providerProfilesWithRateAndEmailSample, 0);
   assert.equal(result.counts.offerCandidatesSample, 0);
   assert.equal(result.counts.datedSlotCandidatesSample, 0);
-  assert.ok(result.blockers.includes('complete_provider_agreement_and_email'));
+  assert.ok(result.blockers.includes('complete_provider_rate_and_email'));
   assert.ok(result.blockers.includes('configure_real_email_transport'));
 });
 
@@ -57,7 +57,7 @@ test('route and UI label bounded samples and protect endpoint with existing admi
   const route = readFileSync('backend/commerceAdminRouter.ts', 'utf8');
   const ui = readFileSync('src/components/CommerceOperationsPanel.tsx', 'utf8');
   assert.match(route, /commerceAdminRouter\.use\(requireOperator\)/);
-  assert.match(route, /db\.collection\('availability_slots'\)\.limit\(500\)/);
+  assert.match(route, /db\.collection\('availability_slots'\)\.where\('date', '>=', todayCR\)\.limit\(500\)/);
   assert.match(route, /assessCommercialReadiness\(/);
   assert.match(ui, /salesReadiness\.coverage\.truncatedOrUnknown/);
   assert.match(ui, /not supplier-confirmed availability/);
