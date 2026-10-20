@@ -21,7 +21,7 @@ test('catalog lists tours and opens a tour detail', async ({ page, consoleProble
   const firstCard = page.locator('.modern-card').filter({ has: page.locator('h3') }).first();
   await expect(firstCard).toBeVisible();
   const title = (await firstCard.locator('h3').first().innerText()).trim();
-  await firstCard.getByRole('link', { name: 'Consultar' }).click();
+  await firstCard.getByRole('link', { name: 'Ver tour' }).click();
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
   expectNoConsoleErrors(consoleProblems);
 });
