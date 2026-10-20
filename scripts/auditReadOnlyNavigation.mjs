@@ -267,15 +267,14 @@ try {
     });
   }
 
-  await recordInteraction(desktop, 'footer privacy dialog open/close', '/', async page => {
-    const button = page.locator('footer button').filter({ hasText: /Privacidad y Datos|Privacy/ }).first();
-    await button.click({ timeout: 12_000 });
-    const dialogs = page.locator('[role="dialog"],[aria-modal="true"]');
-    await dialogs.first().waitFor({ timeout: 12_000 });
-    const count = await dialogs.count();
-    await page.keyboard.press('Escape');
-    await dialogs.first().waitFor({ state: 'hidden', timeout: 8_000 });
-    return { dialogCount: count, closedWithEscape: true };
+  await recordInteraction(desktop, 'footer privacy policy navigation', '/', async page => {
+    // The footer now routes to a dedicated privacy page, not a modal.
+    const link = page.locator('footer a[href="/privacy"]').first();
+    await link.click({ timeout: 12_000 });
+    await page.waitForURL('**/privacy', { timeout: 12_000, waitUntil: 'domcontentloaded' });
+    const content = (await page.locator('main').innerText()).trim();
+    if (content.length < 80) throw new Error('Privacy route has no useful policy content');
+    return { path: new URL(page.url()).pathname, policyVisible: true };
   });
   await recordInteraction(desktop, 'empty participate form validation (no submit)', '/participar', async page => {
     const forms = await page.locator('form').count();
