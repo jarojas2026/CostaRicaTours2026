@@ -9,13 +9,13 @@ type SalesReadiness = {
   source: 'firestore_bounded_sample';
   observedAt: string;
   coverage: { limitPerCollection: number; productsSampled: number; providersSampled: number; slotsSampled: number; truncatedOrUnknown: boolean; totalsCertified: false };
-  counts: { verifiedActiveProvidersSample: number; providerProfilesWithAgreementAndEmailSample: number; offerCandidatesSample: number; datedSlotCandidatesSample: number };
+  counts: { verifiedActiveProvidersSample: number; providerProfilesWithRateAndEmailSample: number; offerCandidatesSample: number; datedSlotCandidatesSample: number };
   configuration: { emailTransportConfigured: boolean; paymentCredentialsConfigured: boolean; leadAutoFollowUpEnabled: boolean };
   blockers: string[];
 };
 const READINESS_ACTIONS: Record<string, { es: string; en: string }> = {
   verify_real_provider: { es: 'Registrar y verificar un proveedor real.', en: 'Register and verify a real supplier.' },
-  complete_provider_agreement_and_email: { es: 'Completar comisión contractual y correo operativo de proveedores.', en: 'Complete provider commission agreements and operational email.' },
+  complete_provider_rate_and_email: { es: 'Verificar acuerdo y registrar comisión y correo operativo de proveedores.', en: 'Verify agreement and record provider commission rate and operational email.' },
   publish_contractual_offer: { es: 'Publicar al menos una oferta con tarifa y horarios verificados.', en: 'Publish at least one offer with verified price and departure times.' },
   publish_future_inventory: { es: 'Registrar cupos futuros reales para las ofertas publicadas.', en: 'Register real future capacity for published offers.' },
   configure_real_email_transport: { es: 'Configurar SMTP, Resend o SendGrid y probar entrega real.', en: 'Configure SMTP, Resend or SendGrid and test actual delivery.' },
@@ -94,7 +94,7 @@ export function CommerceOperationsPanel({ language }: { language: Language }) {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {([
           [es ? 'Proveedores activos verificados' : 'Verified active providers', data.salesReadiness.counts.verifiedActiveProvidersSample],
-          [es ? 'Proveedores con acuerdo y correo' : 'Providers with agreement and email', data.salesReadiness.counts.providerProfilesWithAgreementAndEmailSample],
+          [es ? 'Proveedores con tasa y correo' : 'Providers with rate and email', data.salesReadiness.counts.providerProfilesWithRateAndEmailSample],
           [es ? 'Ofertas candidatas' : 'Candidate offers', data.salesReadiness.counts.offerCandidatesSample],
           [es ? 'Cupos futuros candidatos' : 'Candidate future slots', data.salesReadiness.counts.datedSlotCandidatesSample],
         ] as Array<[string, number]>).map(([label, value]) => <div key={label} className="rounded-xl border border-white/10 p-3">
