@@ -31,10 +31,10 @@ for (const viewport of VIEWPORTS) {
     await expect(page.getByRole('heading', { level: 1 })).toContainText(/Arenal/i);
     await expectNoPageOverflow(page);
 
-    const isPhoneWidth = viewport.width < 640;
-    const cta = isPhoneWidth
-      ? page.getByTestId('tour-cta-mobile')
-      : page.getByTestId('tour-cta');
+    // Sticky CTA follows the lg (<1024px) breakpoint, including landscape phones.
+    // Detect the visible CTA rather than presuming width <640px.
+    const useSticky = await page.getByTestId('tour-cta-mobile').isVisible();
+    const cta = useSticky ? page.getByTestId('tour-cta-mobile') : page.getByTestId('tour-cta');
     await expect(cta).toBeVisible();
     await cta.getByRole('button', { name: /Cotizar \/ Reservar|Get a quote \/ Book/ }).click();
 
