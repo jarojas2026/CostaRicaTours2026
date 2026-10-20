@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  Bus, MapPin, Clock, DollarSign, Phone, Search, X, 
+  Bus, MapPin, Clock, DollarSign, Search, X, 
   ExternalLink, MessageCircle, AlertCircle, Sparkles, Navigation,
   ShieldCheck, Info, ArrowRight, CheckCircle2
 } from 'lucide-react';
@@ -27,7 +27,6 @@ export interface BusRoute {
   duration: { es: string; en: string };
   priceCRC: number;
   priceUSD: number;
-  phone: string;
   tips: { es: string; en: string };
   featured?: boolean;
 }
@@ -45,7 +44,6 @@ export const BUS_ROUTES: BusRoute[] = [
     duration: { es: '3.5 a 4 horas', en: '3.5 to 4 hours' },
     priceCRC: 3100,
     priceUSD: 6,
-    phone: '+506 2255-4300',
     tips: { 
       es: 'Se recomienda comprar el tiquete presencialmente en la Terminal 7-10 un día antes o llegar 1 hora antes de la salida.', 
       en: 'Buy tickets at Terminal 7-10 1 day ahead or arrive at least 1 hour prior to departure.' 
@@ -64,7 +62,6 @@ export const BUS_ROUTES: BusRoute[] = [
     duration: { es: '4.5 horas', en: '4.5 hours' },
     priceCRC: 3600,
     priceUSD: 7,
-    phone: '+506 2222-3854',
     tips: { 
       es: 'Ruta de montaña con vistas panorámicas increíbles. Cuenta con una parada intermedia en Sargento Loria.', 
       en: 'Scenic mountain route with a brief 15-min rest stop in Sargento Loria.' 
@@ -83,7 +80,6 @@ export const BUS_ROUTES: BusRoute[] = [
     duration: { es: '3.5 horas (Directo)', en: '3.5 hours (Direct)' },
     priceCRC: 5200,
     priceUSD: 10,
-    phone: '+506 2221-4214',
     tips: { 
       es: 'Asegúrate de pedir el bus "Directo por Pista" (más rápido) en lugar del "Colectivo por Puriscal" (que tarda 5h).', 
       en: 'Always ask for the "Directo por Pista" bus (faster) rather than "Colectivo por Puriscal".' 
@@ -102,7 +98,6 @@ export const BUS_ROUTES: BusRoute[] = [
     duration: { es: '4.5 a 5 horas', en: '4.5 to 5 hours' },
     priceCRC: 6800,
     priceUSD: 13,
-    phone: '+506 2257-8129',
     tips: { 
       es: 'Pasa por el Parque Nacional Braulio Carrillo y la parada de Limón antes de continuar a Cahuita y Puerto Viejo.', 
       en: 'Crosses Braulio Carrillo rainforest and stops briefly in Limón before Cahuita & Puerto Viejo.' 
@@ -121,7 +116,6 @@ export const BUS_ROUTES: BusRoute[] = [
     duration: { es: '2 horas', en: '2 hours' },
     priceCRC: 3000,
     priceUSD: 6,
-    phone: '+506 2223-1109',
     tips: { 
       es: 'La opción más rápida y económica para llegar a la costa del Pacífico desde la capital.', 
       en: 'Fastest and cheapest direct bus to the Pacific coast from San José.' 
@@ -139,7 +133,6 @@ export const BUS_ROUTES: BusRoute[] = [
     duration: { es: '5 a 5.5 horas', en: '5 to 5.5 hours' },
     priceCRC: 6500,
     priceUSD: 12.5,
-    phone: '+506 2222-2666',
     tips: { 
       es: 'Ideal para surfistas y turistas dirigiéndose a las playas doradas de Guanacaste.', 
       en: 'Ideal for surfers and travelers heading to Guanacaste golden beaches.' 
@@ -157,7 +150,6 @@ export const BUS_ROUTES: BusRoute[] = [
     duration: { es: '5.5 a 6 horas (Incluye cruce en Ferry Paquera)', en: '5.5 to 6 hours (Includes Paquera Ferry crossing)' },
     priceCRC: 8500,
     priceUSD: 16.5,
-    phone: '+506 2642-0219',
     tips: { 
       es: 'El tiquete cubre tanto el autobús como la travesía en el ferry de Paquera a través del Golfo de Nicoya.', 
       en: 'Ticket covers both the bus journey and the Paquera Ferry ride across Nicoya Gulf.' 
@@ -176,7 +168,6 @@ export const BUS_ROUTES: BusRoute[] = [
     duration: { es: '4 horas', en: '4 hours' },
     priceCRC: 4800,
     priceUSD: 9.5,
-    phone: '+506 2222-0610',
     tips: { 
       es: 'Conecta San José con la capital turística de Guanacaste y la frontera norte con Nicaragua.', 
       en: 'Connects San José with Guanacaste hub and northern Nicaragua border crossing.' 
@@ -194,7 +185,6 @@ export const BUS_ROUTES: BusRoute[] = [
     duration: { es: '35 a 45 minutos', en: '35 to 45 minutes' },
     priceCRC: 760,
     priceUSD: 1.5,
-    phone: '+506 2442-6900',
     tips: { 
       es: 'Bus de color rojo o anaranjado con rotulación "SJO Aeropuerto". Es la forma más barata de llegar al aeropuerto.', 
       en: 'Red or orange bus labeled "SJO Aeropuerto". The cheapest way to get to the airport.' 
@@ -213,7 +203,6 @@ export const BUS_ROUTES: BusRoute[] = [
     duration: { es: '1.5 horas a Guápiles / Cariari', en: '1.5 hours to Guápiles / Cariari' },
     priceCRC: 2100,
     priceUSD: 4,
-    phone: '+506 2222-0610',
     tips: { 
       es: 'Toma el bus a Cariari, y luego el bus local a La Pavona para tomar la lancha rápida hacia Tortuguero.', 
       en: 'Take bus to Cariari, then local bus to La Pavona dock for the Tortuguero water taxi.' 
@@ -231,7 +220,6 @@ export const BUS_ROUTES: BusRoute[] = [
     duration: { es: '7 a 8 horas', en: '7 to 8 hours' },
     priceCRC: 9500,
     priceUSD: 18.5,
-    phone: '+506 2221-4214',
     tips: { 
       es: 'Recorre todo el Pacífico Sur hasta la frontera con Panamá o desembarque en Sierpe para bote a Bahía Drake.', 
       en: 'Runs to southern border with Panama or drop off in Sierpe for Drake Bay boat connection.' 
@@ -467,11 +455,7 @@ export const LocalBusesModal: React.FC<LocalBusesModalProps> = ({
                         </div>
                       </div>
 
-                      {/* Phone Contact */}
-                      <div className="flex items-center gap-2 text-neutral-700">
-                        <Phone className="w-4 h-4 text-[#1E7B4A] flex-shrink-0" />
-                        <span className="font-bold">{route.phone}</span>
-                      </div>
+                      {/* Sin teléfonos de empresas (política pública): la consulta se gestiona con nosotros. */}
 
                     </div>
 

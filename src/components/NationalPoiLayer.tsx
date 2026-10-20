@@ -3,6 +3,8 @@ import L from 'leaflet';
 import { Language } from '../types';
 import { X } from 'lucide-react';
 import { NATIONAL_POI_GROUPS, NationalPoiGroupId, getPoiTypeLabel } from '../data/nationalPoiLayers';
+import { requestCustomerIntake } from '../utils/customerIntake';
+import { buildNationalPoiPopupHtml, escapeHtml, type PoiProps } from './nationalPoiPopup';
 import { clusterByGrid, groupByCoordinate, limitNearestToCenter, toLeafletLatLng } from '../utils/mapMarkerLayout';
 
 /**
@@ -13,21 +15,6 @@ import { clusterByGrid, groupByCoordinate, limitNearestToCenter, toLeafletLatLng
  *   y marcadores en canvas (L.canvas) a zoom alto, para manejar >20.000 puntos con fluidez.
  * - Solo dibuja lo que está dentro del área visible.
  */
-
-interface PoiProps {
-  id: string;
-  grupo: NationalPoiGroupId;
-  tipo: string;
-  nombre?: string;
-  telefono?: string;
-  web?: string;
-  horario?: string;
-  direccion?: string;
-  reserva?: string;
-  aprox?: boolean;
-  fuente?: string;
-  detalles?: { es: string; en: string; v: string }[];
-}
 
 interface PoiFeature {
   type: 'Feature';
@@ -49,20 +36,6 @@ const MAX_POINTS_RENDERED = 5000;
 const MAX_STACK_IN_POPUP = 10;
 
 const featureLatLng = (f: PoiFeature) => toLeafletLatLng(f.geometry.coordinates);
-
-const escapeHtml = (value: string): string =>
-  value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
-
-const safeUrl = (value?: string): string | null => {
-  if (!value) return null;
-  const url = value.startsWith('http') ? value : `https://${value}`;
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.toString() : null;
-  } catch {
-    return null;
-  }
-};
 
 const dataCache = new Map<NationalPoiGroupId, PoiFeature[]>();
 
@@ -131,33 +104,8 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
   }, [enabled, loaded, query]);
 
   const buildPopup = useCallback(
-    (p: PoiProps, lat: number, lng: number): string => {
-      const group = NATIONAL_POI_GROUPS.find((g) => g.id === p.grupo);
-      const name = escapeHtml(p.nombre || getPoiTypeLabel(p.tipo, language));
-      const type = escapeHtml(getPoiTypeLabel(p.tipo, language));
-      const web = safeUrl(p.web);
-      const directions = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-      const rows: string[] = [];
-      if (p.direccion) rows.push(`<div>📍 ${escapeHtml(p.direccion)}</div>`);
-      if (p.telefono) rows.push(`<div>📞 <a href="tel:${escapeHtml(p.telefono.replace(/[^+\d]/g, ''))}">${escapeHtml(p.telefono)}</a></div>`);
-      if (p.horario) rows.push(`<div>🕒 ${escapeHtml(p.horario)}</div>`);
-      (p.detalles || []).forEach((d) => {
-        rows.push(`<div><strong>${escapeHtml(isEs ? d.es : d.en)}:</strong> ${escapeHtml(d.v)}</div>`);
-      });
-      const booking = safeUrl(p.reserva);
-      if (booking) rows.push(`<div style="margin-top:4px;"><a href="${escapeHtml(booking)}" target="_blank" rel="noopener noreferrer" style="font-weight:800;">🎟️ ${isEs ? 'Comprar entrada en el sitio oficial del SINAC' : 'Buy your ticket on the official SINAC website'}</a><div style="font-size:10px;opacity:.75;">${isEs ? 'La tarifa se paga directamente al SINAC.' : 'The fee is paid directly to SINAC.'}</div></div>`);
-      if (p.aprox) rows.push(`<div style="opacity:.7;font-size:10px;">⚠️ ${isEs ? 'Ubicación aproximada' : 'Approximate location'}</div>`);
-      if (web) rows.push(`<div>🌐 <a href="${escapeHtml(web)}" target="_blank" rel="noopener noreferrer">${isEs ? 'Sitio web' : 'Website'}</a></div>`);
-      rows.push(`<div><a href="${directions}" target="_blank" rel="noopener noreferrer">🧭 ${isEs ? 'Cómo llegar' : 'Directions'}</a></div>`);
-      return `
-        <div style="min-width:200px;max-width:280px;max-height:320px;overflow-y:auto;line-height:1.35;font-size:12px;">
-          <div style="font-size:10px;font-weight:800;color:${group?.color || '#10b981'};text-transform:uppercase;">${group?.emoji || ''} ${type}</div>
-          <div style="font-weight:800;font-size:13px;margin:2px 0 6px;">${name}</div>
-          ${rows.join('')}
-          <div style="margin-top:6px;font-size:9px;opacity:.6;">${escapeHtml(group?.attribution || '© OpenStreetMap (ODbL)')}</div>
-        </div>`;
-    },
-    [language, isEs]
+    (p: PoiProps, lat: number, lng: number): string => buildNationalPoiPopupHtml(p, lat, lng, language),
+    [language]
   );
 
   const [renderInfo, setRenderInfo] = useState<{ shown: number; total: number; truncated: boolean }>({ shown: 0, total: 0, truncated: false });
@@ -267,6 +215,31 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
     };
   }, [map, redraw]);
 
+  // Botón "Solicitar / consultar con nosotros" de las fichas: abre el flujo de consulta
+  // existente (customer intake) en lugar de mostrar contactos del negocio. El href a /ai
+  // queda como respaldo si el evento no se puede despachar.
+  useEffect(() => {
+    if (!map) return;
+    const container = map.getContainer();
+    const onClick = (event: MouseEvent) => {
+      const cta = (event.target as HTMLElement | null)?.closest?.('[data-public-request-cta]') as HTMLElement | null;
+      if (!cta) return;
+      event.preventDefault();
+      const name = cta.dataset.poiName || '';
+      const type = cta.dataset.poiType || '';
+      requestCustomerIntake({
+        message: isEs
+          ? `Quisiera consultar o solicitar: ${name}${type ? ` (${type})` : ''}. ¿Pueden gestionarlo por mí?`
+          : `I would like to ask about or request: ${name}${type ? ` (${type})` : ''}. Can you handle it for me?`,
+        language,
+        source: `map:poi:${cta.dataset.poiGrupo || ''}`,
+        context: { poiId: cta.dataset.poiId, poiGroup: cta.dataset.poiGrupo },
+      });
+    };
+    container.addEventListener('click', onClick);
+    return () => container.removeEventListener('click', onClick);
+  }, [map, language, isEs]);
+
   // Limpieza cuando el mapa se destruye
   useEffect(() => {
     return () => {
@@ -362,8 +335,8 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
           </ul>
           <p className="mt-3 text-[10px] leading-snug text-emerald-200/60">
             {isEs
-              ? 'Datos: © colaboradores de OpenStreetMap (ODbL), SINAC, CCSS, MCJ, MOPT/CONAVI y fuentes oficiales de cada proyecto. Verifique horarios, tarifas y teléfonos antes de viajar.'
-              : 'Data: © OpenStreetMap contributors (ODbL), SINAC, CCSS, MCJ, MOPT/CONAVI and each project\'s official sources. Check hours, fees and phone numbers before you travel.'}
+              ? 'Datos: © colaboradores de OpenStreetMap (ODbL), SINAC, CCSS, MCJ, MOPT/CONAVI y fuentes oficiales de cada proyecto. Para horarios, tarifas o reservas, consúltenos y gestionamos su solicitud.'
+              : 'Data: © OpenStreetMap contributors (ODbL), SINAC, CCSS, MCJ, MOPT/CONAVI and each project\'s official sources. For hours, fees or bookings, ask us and we will handle your request.'}
           </p>
         </div>
       )}

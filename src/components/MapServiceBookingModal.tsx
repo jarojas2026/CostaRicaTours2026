@@ -8,6 +8,7 @@ import { Language, Currency } from '../types';
 import { MapTourismService } from '../data/mapServicesData';
 import { formatCurrency, getLangText } from '../utils/i18n';
 import { getUsdToCrcRate } from '../utils/currencies';
+import { PRICE_ON_REQUEST, REFERENCE_PRICE_NOTE, estimateMapServiceTotalUSD } from '../utils/mapServicePricing';
 
 interface MapServiceBookingModalProps {
   service: MapTourismService | null;
@@ -57,27 +58,14 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
   const [confirmedBookingData, setConfirmedBookingData] = useState<any>(null);
   const [submissionError, setSubmissionError] = useState('');
 
-  // Price calculations
-  let calculatedTotalUSD = 0;
-  if (service.type === 'hotel') {
-    const d1 = new Date(date).getTime();
-    const d2 = new Date(checkOutDate).getTime();
-    const nights = Math.max(1, Math.round((d2 - d1) / (1000 * 60 * 60 * 24)));
-    calculatedTotalUSD = (service.pricePerNightUSD || 150) * nights;
-  } else if (service.type === 'national_park') {
-    calculatedTotalUSD = (service.officialPriceUSD || 18) * adults + (service.officialPriceUSD ? service.officialPriceUSD * 0.5 : 9) * children;
-  } else if (service.type === 'airstrip' || service.type === 'airport') {
-    calculatedTotalUSD = (service.averageTicketUSD || 110) * (adults + children);
-  } else if (service.type === 'bus_station') {
-    calculatedTotalUSD = (service.averageTicketUSD || 8) * (adults + children);
-  } else if (service.type === 'taxi_stand') {
-    calculatedTotalUSD = transferType === 'private_van' ? 175 : (transferType === 'shared_shuttle' ? 49 * (adults + children) : 35);
-  } else {
-    calculatedTotalUSD = 50;
-  }
+  // Precio: solo con tarifa real publicada. Sin precio real → "Precio a consultar",
+  // sin total calculado; la solicitud se envía como cotización.
+  const calculatedTotalUSD = estimateMapServiceTotalUSD(service, { checkIn: date, checkOut: checkOutDate, adults, children });
+  const priceOnRequest = calculatedTotalUSD === null;
+  const priceOnRequestLabel = language === 'es' ? PRICE_ON_REQUEST.es : PRICE_ON_REQUEST.en;
 
   const crcRate = getUsdToCrcRate();
-  const calculatedTotalCRC = crcRate > 0 ? Math.round(calculatedTotalUSD * crcRate) : null;
+  const calculatedTotalCRC = calculatedTotalUSD !== null && crcRate > 0 ? Math.round(calculatedTotalUSD * crcRate) : null;
 
   const getServiceHeaderIcon = () => {
     switch (service.type) {
@@ -138,8 +126,8 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
         service.type === 'taxi_stand' ? `Tipo de transfer: ${transferType}` : 
         service.type === 'airstrip' ? `Ruta aérea: ${flightDirection}` : ''
       }`,
-      totalUSD: calculatedTotalUSD,
-      totalCRC: calculatedTotalCRC,
+      // Sin precio real no se envía total: el servidor cotiza.
+      ...(calculatedTotalUSD !== null ? { totalUSD: calculatedTotalUSD, totalCRC: calculatedTotalCRC } : {}),
       customer: {
         fullName: customerName,
         email: customerEmail,
@@ -261,7 +249,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                 </div>
                 <div className="flex justify-between pt-2 border-t border-emerald-500/20">
                   <span className="text-emerald-300 font-bold">{language === 'es' ? 'Total estimado:' : 'Estimated total:'}</span>
-                  <span className="font-black text-amber-300 text-sm">{formatCurrency(calculatedTotalUSD, currency)}{calculatedTotalCRC !== null ? ` (₡${calculatedTotalCRC.toLocaleString()})` : ''}</span>
+                  <span className="font-black text-amber-300 text-sm">{calculatedTotalUSD === null ? priceOnRequestLabel : `${formatCurrency(calculatedTotalUSD, currency)}${calculatedTotalCRC !== null ? ` (₡${calculatedTotalCRC.toLocaleString()})` : ''}`}</span>
                 </div>
               </div>
 
@@ -580,16 +568,26 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                   <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-400">
                     {language === 'es' ? 'Estimado informativo del servicio' : 'Informational service estimate'}
                   </span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-amber-300">
-                      {formatCurrency(calculatedTotalUSD, currency)}
-                    </span>
-                    <span className="text-xs font-mono text-emerald-400/80">
-                      (₡{(calculatedTotalCRC ?? 0).toLocaleString()})
-                    </span>
-                  </div>
+                  {calculatedTotalUSD === null ? (
+                    <div className="flex items-baseline gap-2" data-testid="map-service-price-on-request">
+                      <span className="text-2xl font-black text-amber-300">{priceOnRequestLabel}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-black text-amber-300">
+                        {formatCurrency(calculatedTotalUSD, currency)}
+                      </span>
+                      {calculatedTotalCRC !== null && (
+                        <span className="text-xs font-mono text-emerald-400/80">
+                          (₡{calculatedTotalCRC.toLocaleString()})
+                        </span>
+                      )}
+                    </div>
+                  )}
                   <span className="text-[10px] text-emerald-300/70">
-                    {language === 'es' ? 'El precio y la disponibilidad finales requieren verificación.' : 'Final price and availability require verification.'}
+                    {priceOnRequest
+                      ? (language === 'es' ? 'Le enviaremos una cotización con precio y disponibilidad confirmados.' : 'We will send you a quote with confirmed price and availability.')
+                      : `${language === 'es' ? REFERENCE_PRICE_NOTE.es : REFERENCE_PRICE_NOTE.en}. ${language === 'es' ? 'El precio y la disponibilidad finales requieren verificación.' : 'Final price and availability require verification.'}`}
                   </span>
                 </div>
 
@@ -603,7 +601,7 @@ export const MapServiceBookingModal: React.FC<MapServiceBookingModalProps> = ({
                   ) : (
                     <>
                       <CreditCard className="w-4 h-4" />
-                      <span>{language === 'es' ? 'Enviar Solicitud' : 'Submit Request'}</span>
+                      <span>{priceOnRequest ? (language === 'es' ? 'Solicitar cotización' : 'Request a quote') : (language === 'es' ? 'Enviar Solicitud' : 'Submit Request')}</span>
                     </>
                   )}
                 </button>
