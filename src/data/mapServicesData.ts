@@ -23,6 +23,11 @@ export interface MapTourismService {
   image: string;
   rating?: number;
   reviewsCount?: number;
+  /**
+   * Fuente verificable de cualquier precio de este servicio (página oficial y fecha de revisión).
+   * Sin priceSource no se muestra ningún precio: "Precio a consultar / Price on request".
+   */
+  priceSource?: { url: string; checkedAt: string };
   // Hotel specifics
   pricePerNightUSD?: number;
   pricePerNightCRC?: number;
@@ -75,8 +80,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1000&q=80',
     rating: 4.9,
     reviewsCount: 640,
-    pricePerNightUSD: 550,
-    pricePerNightCRC: 286000,
     stars: 5,
     cstCertificate: 'CST Nivel Elite (5 Hojas)',
     amenities: {
@@ -113,8 +116,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1000&q=80',
     rating: 4.8,
     reviewsCount: 420,
-    pricePerNightUSD: 240,
-    pricePerNightCRC: 124800,
     stars: 4,
     cstCertificate: 'CST Nivel 5 (Sostenible)',
     amenities: {
@@ -151,8 +152,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1000&q=80',
     rating: 4.9,
     reviewsCount: 510,
-    pricePerNightUSD: 390,
-    pricePerNightCRC: 202800,
     stars: 5,
     cstCertificate: 'CST 5 Hojas & Certificado Bandera Azul Ecológica',
     amenities: {
@@ -189,8 +188,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1000&q=80',
     rating: 4.9,
     reviewsCount: 380,
-    pricePerNightUSD: 620,
-    pricePerNightCRC: 322400,
     stars: 5,
     cstCertificate: 'CST Pionero 5 Hojas Máxima Distinción',
     amenities: {
@@ -227,8 +224,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1000&q=80',
     rating: 4.7,
     reviewsCount: 340,
-    pricePerNightUSD: 190,
-    pricePerNightCRC: 98800,
     stars: 4,
     cstCertificate: 'CST 4 Hojas',
     amenities: {
@@ -265,8 +260,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1000&q=80',
     rating: 4.8,
     reviewsCount: 290,
-    pricePerNightUSD: 360,
-    pricePerNightCRC: 187200,
     stars: 5,
     cstCertificate: 'CST Sostenible & Relais & Châteaux',
     amenities: {
@@ -303,8 +296,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1000&q=80',
     rating: 5.0,
     reviewsCount: 310,
-    pricePerNightUSD: 580,
-    pricePerNightCRC: 301600,
     stars: 5,
     cstCertificate: 'National Geographic Unique Lodges & CST 5 Hojas',
     amenities: {
@@ -341,8 +332,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1000&q=80',
     rating: 4.9,
     reviewsCount: 780,
-    pricePerNightUSD: 195,
-    pricePerNightCRC: 101400,
     stars: 4,
     cstCertificate: 'CST Nivel Sostenible',
     amenities: {
@@ -383,8 +372,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1518509562904-e7ef99cdcc86?auto=format&fit=crop&w=1000&q=80',
     rating: 4.8,
     reviewsCount: 1420,
-    officialPriceUSD: 18.08,
-    officialPriceCRC: 1808,
     sinacCode: 'PNMA-ACOPAC',
     dailyQuota: 3000,
     entryHours: {
@@ -439,8 +426,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1000&q=80',
     rating: 4.8,
     reviewsCount: 1180,
-    officialPriceUSD: 16.95,
-    officialPriceCRC: 1130,
     sinacCode: 'PNVA-ACAHN',
     dailyQuota: 2200,
     entryHours: {
@@ -493,8 +478,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80',
     rating: 4.7,
     reviewsCount: 960,
-    officialPriceUSD: 16.95,
-    officialPriceCRC: 1130,
     sinacCode: 'PNVP-ACC',
     dailyQuota: 1500,
     entryHours: {
@@ -547,8 +530,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=1000&q=80',
     rating: 4.9,
     reviewsCount: 880,
-    officialPriceUSD: 16.95,
-    officialPriceCRC: 1130,
     sinacCode: 'PNT-ACTO',
     dailyQuota: 2000,
     entryHours: {
@@ -601,8 +582,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1547036967-23d11aacaee0?auto=format&fit=crop&w=1000&q=80',
     rating: 5.0,
     reviewsCount: 750,
-    officialPriceUSD: 16.95,
-    officialPriceCRC: 1808,
     sinacCode: 'PNC-ACOSA',
     dailyQuota: 280,
     entryHours: {
@@ -655,8 +634,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1000&q=80',
     rating: 4.9,
     reviewsCount: 1650,
-    officialPriceUSD: 26.00,
-    officialPriceCRC: 13500,
     sinacCode: 'RBBNM-CCT',
     dailyQuota: 450,
     entryHours: {
@@ -709,13 +686,11 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=80',
     rating: 4.8,
     reviewsCount: 890,
-    officialPriceUSD: 5.65,
-    officialPriceCRC: 1000,
     sinacCode: 'PNC-ACLAC',
     dailyQuota: 1800,
     entryHours: {
-      es: '8:00 AM a 4:00 PM (Kelly Creek opera con donación voluntaria; Puerto Vargas $5.65)',
-      en: '8:00 AM to 4:00 PM (Kelly Creek by voluntary donation; Puerto Vargas $5.65)'
+      es: '8:00 AM a 4:00 PM (Kelly Creek opera con donación voluntaria; Puerto Vargas con tarifa SINAC)',
+      en: '8:00 AM to 4:00 PM (Kelly Creek by voluntary donation; Puerto Vargas with SINAC fee)'
     },
     closedDays: {
       es: 'Abierto todos los días',
@@ -767,11 +742,9 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1000&q=80',
     transportCompany: 'Autotransportes San José - San Carlos / Transmonteverde / Transportes Jacó / Alfaro',
     routesServed: {
-      es: ['La Fortuna (Arenal): 8:40 AM & 11:30 AM (₡3,100 / $6)', 'Monteverde: 6:30 AM & 2:30 PM (₡3,600 / $7)', 'Tamarindo / Nicoya: 7:30 AM & 3:30 PM (₡6,000 / $12)', 'Jacó Beach: Salidas cada 2 horas (₡2,800 / $5.50)'],
-      en: ['La Fortuna: 8:40 AM & 11:30 AM ($6 / ₡3,100)', 'Monteverde: 6:30 AM & 2:30 PM ($7 / ₡3,600)', 'Tamarindo: 7:30 AM & 3:30 PM ($12 / ₡6,000)', 'Jacó Beach: Departs every 2 hrs ($5.50 / ₡2,800)']
+      es: ['La Fortuna (Arenal): 8:40 AM & 11:30 AM', 'Monteverde: 6:30 AM & 2:30 PM', 'Tamarindo / Nicoya: 7:30 AM & 3:30 PM', 'Jacó Beach: Salidas cada 2 horas'],
+      en: ['La Fortuna: 8:40 AM & 11:30 AM', 'Monteverde: 6:30 AM & 2:30 PM', 'Tamarindo: 7:30 AM & 3:30 PM', 'Jacó Beach: Departs every 2 hrs']
     },
-    averageTicketUSD: 7,
-    averageTicketCRC: 3600,
     departureFrequency: {
       es: 'Salidas diarias frecuentes desde las 5:00 AM hasta las 8:00 PM',
       en: 'Daily departures from 5:00 AM to 8:00 PM'
@@ -806,11 +779,9 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&w=1000&q=80',
     transportCompany: 'Autotransportes MEPE & Grupo Caribeños',
     routesServed: {
-      es: ['Puerto Viejo de Talamanca / Cahuita: 6:00 AM, 8:00 AM, 10:00 AM, 12:00 PM, 2:00 PM, 4:00 PM (₡6,500 / $13)', 'Cariari / La Pavona (Lancha Tortuguero): 6:30 AM & 9:00 AM (₡2,100 / $4.20)', 'Limón Puerto Directo: Cada hora de 5:30 AM a 7:30 PM (₡4,200 / $8)'],
-      en: ['Puerto Viejo / Cahuita: 6 AM, 8 AM, 10 AM, 12 PM, 2 PM, 4 PM ($13 / ₡6,500)', 'Cariari / La Pavona (Tortuguero boat): 6:30 AM & 9:00 AM ($4.20 / ₡2,100)', 'Limón City Direct: Hourly from 5:30 AM to 7:30 PM ($8 / ₡4,200)']
+      es: ['Puerto Viejo de Talamanca / Cahuita: 6:00 AM, 8:00 AM, 10:00 AM, 12:00 PM, 2:00 PM, 4:00 PM', 'Cariari / La Pavona (Lancha Tortuguero): 6:30 AM & 9:00 AM', 'Limón Puerto Directo: Cada hora de 5:30 AM a 7:30 PM'],
+      en: ['Puerto Viejo / Cahuita: 6 AM, 8 AM, 10 AM, 12 PM, 2 PM, 4 PM', 'Cariari / La Pavona (Tortuguero boat): 6:30 AM & 9:00 AM', 'Limón City Direct: Hourly from 5:30 AM to 7:30 PM']
     },
-    averageTicketUSD: 11,
-    averageTicketCRC: 5700,
     departureFrequency: {
       es: 'Salidas cada 1 o 2 horas hacia el Caribe',
       en: 'Hourly to bi-hourly departures to the Caribbean coast'
@@ -845,11 +816,9 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1000&q=80',
     transportCompany: 'Empresa TRACOPA Ltda.',
     routesServed: {
-      es: ['Quepos / Manuel Antonio: Cada hora de 6:00 AM a 6:00 PM (₡5,200 / $10)', 'Uvita / Dominical: 6:00 AM, 9:00 AM, 2:30 PM (₡6,800 / $13.50)', 'Sierpe (Lancha a Drake y Corcovado): 5:00 AM & 8:30 AM (₡8,500 / $17)', 'Golfito / Puerto Jiménez: 6:30 AM & 12:00 PM (₡9,200 / $18)'],
-      en: ['Manuel Antonio / Quepos: Hourly 6 AM to 6 PM ($10 / ₡5,200)', 'Uvita / Dominical: 6 AM, 9 AM, 2:30 PM ($13.50 / ₡6,800)', 'Sierpe (Boat to Drake/Corcovado): 5 AM & 8:30 AM ($17 / ₡8,500)', 'Golfito / Puerto Jiménez: 6:30 AM & 12 PM ($18 / ₡9,200)']
+      es: ['Quepos / Manuel Antonio: Cada hora de 6:00 AM a 6:00 PM', 'Uvita / Dominical: 6:00 AM, 9:00 AM, 2:30 PM', 'Sierpe (Lancha a Drake y Corcovado): 5:00 AM & 8:30 AM', 'Golfito / Puerto Jiménez: 6:30 AM & 12:00 PM'],
+      en: ['Manuel Antonio / Quepos: Hourly 6 AM to 6 PM', 'Uvita / Dominical: 6 AM, 9 AM, 2:30 PM', 'Sierpe (Boat to Drake/Corcovado): 5 AM & 8:30 AM', 'Golfito / Puerto Jiménez: 6:30 AM & 12 PM']
     },
-    averageTicketUSD: 12,
-    averageTicketCRC: 6200,
     departureFrequency: {
       es: 'Servicio directo continuo por Costanera Sur',
       en: 'Frequent direct service via Costanera Sur coastal highway'
@@ -888,11 +857,9 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=1000&q=80',
     transportCompany: 'Instituto Costarricense de Ferrocarriles (INCOFER)',
     routesServed: {
-      es: ['San José ➡️ Cartago (Basílica): Horas pico mañana (5:30 - 8:30 AM) y tarde (3:30 - 7:30 PM) (₡600 / $1.20)', 'San José ➡️ UCR / Curridabat: Frecuencia cada 30 min en horas laborales (₡350 / $0.70)'],
-      en: ['San José ➡️ Cartago: Peak hours morning & afternoon ($1.20 / ₡600)', 'San José ➡️ UCR / Curridabat: Every 30 mins peak hours ($0.70 / ₡350)']
+      es: ['San José ➡️ Cartago (Basílica): Horas pico mañana (5:30 - 8:30 AM) y tarde (3:30 - 7:30 PM)', 'San José ➡️ UCR / Curridabat: Frecuencia cada 30 min en horas laborales'],
+      en: ['San José ➡️ Cartago: Peak hours morning & afternoon', 'San José ➡️ UCR / Curridabat: Every 30 mins peak hours']
     },
-    averageTicketUSD: 1.20,
-    averageTicketCRC: 600,
     departureFrequency: {
       es: 'Lunes a Viernes en horas pico de mañana y tarde',
       en: 'Monday to Friday during morning and evening rush hours'
@@ -927,11 +894,9 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=1000&q=80',
     transportCompany: 'INCOFER',
     routesServed: {
-      es: ['San José ➡️ San Antonio de Belén: 5:40 AM - 8:15 AM y 4:00 PM - 7:30 PM (₡450 / $0.90)', 'San José ➡️ Pavas: 6:00 AM a 6:30 PM (₡350 / $0.70)'],
-      en: ['San José ➡️ Belén: Morning & afternoon peak periods ($0.90 / ₡450)', 'San José ➡️ Pavas: 6 AM to 6:30 PM ($0.70 / ₡350)']
+      es: ['San José ➡️ San Antonio de Belén: 5:40 AM - 8:15 AM y 4:00 PM - 7:30 PM', 'San José ➡️ Pavas: 6:00 AM a 6:30 PM'],
+      en: ['San José ➡️ Belén: Morning & afternoon peak periods', 'San José ➡️ Pavas: 6 AM to 6:30 PM']
     },
-    averageTicketUSD: 0.90,
-    averageTicketCRC: 450,
     departureFrequency: {
       es: 'Lunes a Viernes en frecuencias laborales',
       en: 'Monday to Friday scheduled commuter runs'
@@ -970,11 +935,9 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=1000&q=80',
     transportCompany: 'Taxis Unidos Aeropuerto SJO',
     routesServed: {
-      es: ['SJO ➡️ San José Centro: $25 - $32 USD (₡14,000 - ₡17,000)', 'SJO ➡️ Escazú / Santa Ana: $28 - $35 USD', 'SJO ➡️ La Fortuna / Arenal: $135 - $160 USD', 'SJO ➡️ Manuel Antonio: $160 - $190 USD'],
-      en: ['SJO ➡️ Downtown San José: $25 - $32 USD', 'SJO ➡️ Escazú: $28 - $35 USD', 'SJO ➡️ Arenal / La Fortuna: $135 - $160 USD', 'SJO ➡️ Manuel Antonio: $160 - $190 USD']
+      es: ['SJO ➡️ San José Centro: tarifa a consultar', 'SJO ➡️ Escazú / Santa Ana: tarifa a consultar', 'SJO ➡️ La Fortuna / Arenal: tarifa a consultar', 'SJO ➡️ Manuel Antonio: tarifa a consultar'],
+      en: ['SJO ➡️ Downtown San José: fare on request', 'SJO ➡️ Escazú: fare on request', 'SJO ➡️ Arenal / La Fortuna: fare on request', 'SJO ➡️ Manuel Antonio: fare on request']
     },
-    averageTicketUSD: 30,
-    averageTicketCRC: 15600,
     departureFrequency: {
       es: 'Disponibilidad inmediata 24 horas al salir de aduana',
       en: 'Immediate 24/7 curb availability right outside customs'
@@ -1009,11 +972,9 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1000&q=80',
     transportCompany: 'Shuttle turístico compartido (operador local)',
     routesServed: {
-      es: ['La Fortuna ➡️ Monteverde (Van-Boat-Van por el Lago Arenal): 8:00 AM & 2:00 PM ($35 USD / 3 hrs)', 'La Fortuna ➡️ Manuel Antonio: 7:30 AM & 1:30 PM ($59 USD / 4.5 hrs)', 'La Fortuna ➡️ San José / Aeropuerto SJO: 8:00 AM & 1:00 PM ($54 USD / 3.5 hrs)', 'La Fortuna ➡️ Tamarindo / Liberia: 8:00 AM ($57 USD / 4 hrs)'],
-      en: ['La Fortuna ➡️ Monteverde (Van-Boat-Van across Lake Arenal): 8 AM & 2 PM ($35 USD / 3 hrs)', 'La Fortuna ➡️ Manuel Antonio: 7:30 AM & 1:30 PM ($59 USD / 4.5 hrs)', 'La Fortuna ➡️ SJO Airport: 8 AM & 1 PM ($54 USD / 3.5 hrs)', 'La Fortuna ➡️ Tamarindo / LIR: 8 AM ($57 USD / 4 hrs)']
+      es: ['La Fortuna ➡️ Monteverde (Van-Boat-Van por el Lago Arenal): 8:00 AM & 2:00 PM (3 hrs)', 'La Fortuna ➡️ Manuel Antonio: 7:30 AM & 1:30 PM (4.5 hrs)', 'La Fortuna ➡️ San José / Aeropuerto SJO: 8:00 AM & 1:00 PM (3.5 hrs)', 'La Fortuna ➡️ Tamarindo / Liberia: 8:00 AM (4 hrs)'],
+      en: ['La Fortuna ➡️ Monteverde (Van-Boat-Van across Lake Arenal): 8 AM & 2 PM (3 hrs)', 'La Fortuna ➡️ Manuel Antonio: 7:30 AM & 1:30 PM (4.5 hrs)', 'La Fortuna ➡️ SJO Airport: 8 AM & 1 PM (3.5 hrs)', 'La Fortuna ➡️ Tamarindo / LIR: 8 AM (4 hrs)']
     },
-    averageTicketUSD: 49,
-    averageTicketCRC: 25480,
     departureFrequency: {
       es: 'Salidas fijas 2 veces al día (Mañana y Tarde)',
       en: 'Scheduled twice-daily departures (Morning & Afternoon)'
@@ -1125,8 +1086,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     flightCode: 'FON / MRAN',
     flightTimeFromSJO: '25 minutos (vs 3.5 horas por tierra)',
     transportCompany: 'SANSA Regional & Costa Rica Green Airways (Cessna Caravan 208B EX)',
-    averageTicketUSD: 110,
-    averageTicketCRC: 57200,
     departureFrequency: {
       es: '2 a 3 vuelos diarios directos desde el Aeropuerto SJO',
       en: '2 to 3 scheduled daily flights direct from SJO'
@@ -1163,8 +1122,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     flightCode: 'XQP / MRQP',
     flightTimeFromSJO: '20 minutos (vs 3.5 horas por carretera)',
     transportCompany: 'SANSA & Green Airways',
-    averageTicketUSD: 98,
-    averageTicketCRC: 50960,
     departureFrequency: {
       es: '4 a 6 vuelos diarios desde SJO en temporada alta',
       en: '4 to 6 daily flights from SJO during peak travel season'
@@ -1201,8 +1158,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     flightCode: 'PJM / MRPJ',
     flightTimeFromSJO: '45 minutos (vs 7.5 a 8 horas por tierra)',
     transportCompany: 'SANSA & Vuelos Charter Privados',
-    averageTicketUSD: 145,
-    averageTicketCRC: 75400,
     departureFrequency: {
       es: '3 vuelos diarios programados',
       en: '3 scheduled daily flights'
@@ -1239,8 +1194,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     flightCode: 'TTQ / MRBT',
     flightTimeFromSJO: '35 minutos (vs 5 horas en combinación bus+lancha)',
     transportCompany: 'SANSA & Aerolíneas Charter',
-    averageTicketUSD: 125,
-    averageTicketCRC: 65000,
     departureFrequency: {
       es: 'Vuelos matutinos diarios (6:00 AM y 10:30 AM)',
       en: 'Daily morning departures (6:00 AM & 10:30 AM)'
@@ -1277,8 +1230,6 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     flightCode: 'TNO / MRTM',
     flightTimeFromSJO: '40 minutos (vs 4.5 horas de manejo)',
     transportCompany: 'SANSA Regional',
-    averageTicketUSD: 115,
-    averageTicketCRC: 59800,
     departureFrequency: {
       es: '2 a 4 vuelos diarios directos',
       en: '2 to 4 scheduled daily flights'
