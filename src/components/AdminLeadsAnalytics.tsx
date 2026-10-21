@@ -81,3 +81,23 @@ export function AdminLeadsAnalytics({ envelope, es }: { envelope: Envelope; es: 
     <div className={box}><h3 className="text-lg font-black text-white">{es ? 'Mapa de calor (día × hora, CR)' : 'Heatmap (day × hour, CR)'}</h3>{m.heatmap ? <Heatmap values={m.heatmap.values} es={es} /> : <p className="mt-2 text-sm text-stone-400">—</p>}</div>
   </div>;
 }
+
+/** Latencia p50/p95 y fallos por proveedor de IA (sección `ai` del snapshot). */
+export function AdminAiStatsCard({ envelope, es }: { envelope: Envelope; es: boolean }) {
+  const v = envelope?.value;
+  const providers = v?.byProvider ? Object.entries(v.byProvider as Record<string, any>) : [];
+  const open = Array.isArray(v?.breakers) ? v.breakers.filter((b: any) => b.state === 'open') : [];
+  return <div className={box}>
+    <h3 className="text-xl font-black text-white">{es ? 'Llamadas a IA (24 h)' : 'AI calls (24 h)'}</h3>
+    <p className="mt-1 text-sm text-stone-400">{envelope ? `${envelope.source} · ${envelope.state}` : '—'}{envelope?.note ? ' · ' + envelope.note : ''}</p>
+    <div className="mt-4 grid grid-cols-2 xl:grid-cols-4 gap-3">
+      {[[es ? 'Llamadas' : 'Calls', fmt(v?.total)], ['p50', fmt(v?.p50LatencyMs, ' ms')], ['p95', fmt(v?.p95LatencyMs, ' ms')], [es ? 'Fallos' : 'Failures', fmt(v?.failureRate, '%')]].map(([k, val]) =>
+        <div key={k} className="rounded-xl bg-black/25 p-3"><div className="text-2xl font-black text-white">{val}</div><div className="text-sm text-stone-400">{k}</div></div>)}
+    </div>
+    {providers.length > 0 && <table className="mt-4 w-full text-left text-sm text-stone-200">
+      <thead className="text-stone-400"><tr><th className="py-1">{es ? 'Proveedor' : 'Provider'}</th><th>{es ? 'Llamadas' : 'Calls'}</th><th>{es ? 'Fallos' : 'Failures'}</th><th>p50</th><th>p95</th></tr></thead>
+      <tbody>{providers.map(([name, b]) => <tr key={name} className="border-t border-white/10"><td className="py-1">{name}</td><td>{b.total}</td><td>{b.failures}{b.failures ? ` (${Object.entries(b.reasons || {}).map(([r, n]) => `${r}:${n}`).join(', ')})` : ''}</td><td>{fmt(b.p50LatencyMs, ' ms')}</td><td>{fmt(b.p95LatencyMs, ' ms')}</td></tr>)}</tbody>
+    </table>}
+    {open.length > 0 && <p className="mt-3 text-sm text-amber-200">{es ? 'Breaker abierto' : 'Breaker open'}: {open.map((b: any) => `${b.provider} (${b.reason})`).join(', ')}</p>}
+  </div>;
+}
