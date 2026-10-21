@@ -315,7 +315,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen max-h-screen overflow-y-auto bg-[#041711] text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950 relative pb-16 lg:pb-0">
+    <div className="h-full min-h-0 overflow-y-auto bg-[#041711] text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950 relative pb-16 lg:pb-0">
       {intakeOpen && (
         <div className="fixed inset-0 z-[10050] bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-label={language === 'es' ? 'Atención inteligente' : 'AI customer care'}>
           <div className="w-full max-w-xl max-h-[90dvh] overflow-y-auto rounded-3xl border border-emerald-400/25 bg-[#041711] shadow-2xl">
