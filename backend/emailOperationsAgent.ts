@@ -6,6 +6,7 @@ import { processChatInquiry, runTriage } from './aiAssistantService';
 import { resolveTravelerIdentity } from './travelerIdentityService';
 import { rememberTurn } from './memoryService';
 import { sendEmail } from './notificationService';
+import { sendEmailWithOutcome } from './emailDeliveryOutcome';
 import { emitOperationalEvent } from './operationalEventBus';
 import { executeBusinessGoal } from './businessGoalOrchestrator';
 import { extractCustomerTravelRequirements } from './customerRequirementExtractor';
@@ -285,13 +286,18 @@ async function processProviderResponseEmail(mail: MailMessage) {
   if (!result.success) throw new Error(result.message);
   const booking = await findBookingByCodeOrEmail(result.order.bookingId).catch(() => null);
   const customerEmail = booking?.customerEmail || booking?.customer?.email;
+  // #325: el resultado del envío se registra; nunca se asume entregado.
+  let customerNotification: { status: 'sent' | 'failed' | 'skipped_no_email'; attempts: number; error?: string } = { status: 'skipped_no_email', attempts: 0 };
   if (customerEmail && isEmail(String(customerEmail))) {
-    await sendEmail({
+    const delivery = await sendEmailWithOutcome({
       to: String(customerEmail),
       subject: action === 'confirm' ? 'Reserva confirmada • Costa Rica Tours' : 'Actualización de tu reserva • Costa Rica Tours',
       text: result.message,
       html: `<p>${result.message.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</p>`
-    }).catch(() => undefined);
+    });
+    customerNotification = delivery.success
+      ? { status: 'sent', attempts: delivery.attempts }
+      : { status: 'failed', attempts: delivery.attempts, error: delivery.error };
   }
   await markRead(mail);
   await recordEvent(mail, {
@@ -301,6 +307,8 @@ async function processProviderResponseEmail(mail: MailMessage) {
     confidence: .9,
     autonomous: true,
     resultMessage: result.message,
+    customerNotification,
+    customerNotified: customerNotification.status === 'sent',
     completedAt: new Date().toISOString()
   });
   await emitOperationalEvent({
@@ -309,7 +317,7 @@ async function processProviderResponseEmail(mail: MailMessage) {
     conversationId: result.order.bookingId,
     payload: { provider: mail.provider, messageId: mail.id, from: mail.from, orderId, action }
   }).catch(() => undefined);
-  return { status: 'completed', orderId, action };
+  return { status: 'completed', orderId, action, customerNotified: customerNotification.status === 'sent' };
 }
 
 async function processCustomerEmail(mail: MailMessage, classification: Classification) {

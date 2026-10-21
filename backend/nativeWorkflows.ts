@@ -1,5 +1,6 @@
 import { getFirestoreDb, getBookingsCollection, updateBookingStatus } from './bookingService';
 import { sendEmail, sendAdministrativeAlert, sendOperationalNotification, sendWhatsAppMessage } from './notificationService';
+import { sendEmailWithOutcome, emailFailurePatch, emailRetriesExhausted } from './emailDeliveryOutcome';
 import { logAutomationExecution } from './nativeAutomationEngine';
 import { generateBookingPDFBuffer } from './pdfService';
 import { bookingDocumentToken } from './signedAccessTokens';
@@ -1458,6 +1459,7 @@ export async function executeWeatherMonitoringAlerts(): Promise<{
       const notAlertedYet = b.weatherNoticeSent !== true;
 
       if (!isConfirmed || !notAlertedYet) continue;
+      if (emailRetriesExhausted(b.weatherNoticeDeliveryAttempts)) continue; // #325: reintento acotado
 
       const tourName = (b.tourName || '').toLowerCase();
       // Zonas de alta pluviosidad o aventura que requieren monitoreo meteorológico activo
@@ -1478,7 +1480,7 @@ export async function executeWeatherMonitoringAlerts(): Promise<{
         const operatorName = b.operator || 'tu operador local';
 
         if (customerEmail && customerEmail.includes('@')) {
-          await sendEmail({
+          const delivery = await sendEmailWithOutcome({
             to: customerEmail,
             subject: `🌿 Aviso Preventivo de Seguridad y Clima: Tu tour "${b.tourName}" de hoy`,
             html: `
@@ -1508,15 +1510,18 @@ export async function executeWeatherMonitoringAlerts(): Promise<{
               </div>
             `
           });
+          if (delivery.success) {
+            await updateBookingStatus(bookingId, {
+              weatherNoticeSent: true,
+              weatherNoticeSentAt: new Date().toISOString()
+            });
+            result.alertsSent++;
+            result.affectedBookings.push(bookingId);
+          } else {
+            // #325: fallo registrado, nunca se marca como enviado.
+            await updateBookingStatus(bookingId, emailFailurePatch('weatherNotice', b.weatherNoticeDeliveryAttempts, delivery));
+          }
         }
-
-        await updateBookingStatus(bookingId, {
-          weatherNoticeSent: true,
-          weatherNoticeSentAt: new Date().toISOString()
-        });
-
-        result.alertsSent++;
-        result.affectedBookings.push(bookingId);
       }
     }
 
@@ -1557,7 +1562,7 @@ export async function executeMorningConciergeTips(): Promise<{
       const isConfirmed = b.status === 'confirmada' || b.paymentStatus === 'completed';
       const notSent = b.morningConciergeSent !== true;
 
-      if (isConfirmed && notSent) {
+      if (isConfirmed && notSent && !emailRetriesExhausted(b.morningConciergeDeliveryAttempts)) {
         const customerEmail = b.customerEmail || b.customer?.email;
         const customerName = b.customerName || b.customer?.name || 'Viajero';
         const tourName = b.tourName || 'Experiencia Costa Rica';
@@ -1565,7 +1570,7 @@ export async function executeMorningConciergeTips(): Promise<{
         const pickupHotel = b.pickupHotel || 'Lobby de tu Hotel';
 
         if (customerEmail && customerEmail.includes('@')) {
-          await sendEmail({
+          const delivery = await sendEmailWithOutcome({
             to: customerEmail,
             subject: `🌅 ¡Buenos días ${customerName}! Hoy es tu gran día: ${tourName}`,
             html: `
@@ -1599,13 +1604,18 @@ export async function executeMorningConciergeTips(): Promise<{
             `
           });
 
-          await updateBookingStatus(bookingId, {
-            morningConciergeSent: true,
-            morningConciergeSentAt: new Date().toISOString()
-          });
+          if (delivery.success) {
+            await updateBookingStatus(bookingId, {
+              morningConciergeSent: true,
+              morningConciergeSentAt: new Date().toISOString()
+            });
 
-          result.tipsSent++;
-          result.sentBookings.push(bookingId);
+            result.tipsSent++;
+            result.sentBookings.push(bookingId);
+          } else {
+            // #325: fallo registrado, nunca se marca como enviado.
+            await updateBookingStatus(bookingId, emailFailurePatch('morningConcierge', b.morningConciergeDeliveryAttempts, delivery));
+          }
         }
       }
     }
@@ -1652,14 +1662,14 @@ export async function executePreSaleProspectRecovery(): Promise<{
       const createdTime = createdDate.getTime();
       const inWindow = createdTime >= twentyFourHoursAgo && createdTime <= twoHoursAgo;
 
-      if (isPending && notRecoveredYet && inWindow) {
+      if (isPending && notRecoveredYet && inWindow && !emailRetriesExhausted(b.preSaleRecoveryDeliveryAttempts)) {
         const customerEmail = b.customerEmail || b.customer?.email;
         const customerName = b.customerName || b.customer?.name || 'Viajero';
         const tourName = b.tourName || 'Experiencia en Costa Rica';
         const totalUSD = b.totalUSD || b.totalAmount || 0;
 
         if (customerEmail && customerEmail.includes('@')) {
-          await sendEmail({
+          const delivery = await sendEmailWithOutcome({
             to: customerEmail,
             subject: `🌿 ¿Tienes alguna duda con tu reserva para ${tourName}?`,
             html: `
@@ -1694,13 +1704,18 @@ export async function executePreSaleProspectRecovery(): Promise<{
             `
           });
 
-          await updateBookingStatus(bookingId, {
-            preSaleRecoverySent: true,
-            preSaleRecoverySentAt: new Date().toISOString()
-          });
+          if (delivery.success) {
+            await updateBookingStatus(bookingId, {
+              preSaleRecoverySent: true,
+              preSaleRecoverySentAt: new Date().toISOString()
+            });
 
-          result.recoveredSent++;
-          result.prospectsContacted.push(bookingId);
+            result.recoveredSent++;
+            result.prospectsContacted.push(bookingId);
+          } else {
+            // #325: fallo registrado, nunca se marca como enviado.
+            await updateBookingStatus(bookingId, emailFailurePatch('preSaleRecovery', b.preSaleRecoveryDeliveryAttempts, delivery));
+          }
         }
       }
     }
@@ -1752,14 +1767,14 @@ export async function executePostSaleVipLoyalty(): Promise<{
       const isConfirmed = b.status === 'confirmada' || b.paymentStatus === 'completed';
       const notRewardedYet = b.vipCouponSent !== true;
 
-      if (isConfirmed && notRewardedYet) {
+      if (isConfirmed && notRewardedYet && !emailRetriesExhausted(b.vipCouponDeliveryAttempts)) {
         const customerEmail = b.customerEmail || b.customer?.email;
         const customerName = b.customerName || b.customer?.name || 'Apreciado Viajero';
         const tourName = b.tourName || 'Costa Rica';
         const vipCode = configuredVipCode;
 
         if (customerEmail && customerEmail.includes('@')) {
-          await sendEmail({
+          const delivery = await sendEmailWithOutcome({
             to: customerEmail,
             subject: `🎁 15% OFF de Regalo VIP para tu próxima aventura en Costa Rica`,
             html: `
@@ -1796,14 +1811,19 @@ export async function executePostSaleVipLoyalty(): Promise<{
             `
           });
 
-          await updateBookingStatus(bookingId, {
-            vipCouponSent: true,
-            vipCouponCode: vipCode,
-            vipCouponSentAt: new Date().toISOString()
-          });
+          if (delivery.success) {
+            await updateBookingStatus(bookingId, {
+              vipCouponSent: true,
+              vipCouponCode: vipCode,
+              vipCouponSentAt: new Date().toISOString()
+            });
 
-          result.couponsSent++;
-          result.rewardedBookings.push(bookingId);
+            result.couponsSent++;
+            result.rewardedBookings.push(bookingId);
+          } else {
+            // #325: fallo registrado, nunca se marca como enviado.
+            await updateBookingStatus(bookingId, emailFailurePatch('vipCoupon', b.vipCouponDeliveryAttempts, delivery));
+          }
         }
       }
     }
