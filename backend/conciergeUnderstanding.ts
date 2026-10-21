@@ -477,6 +477,30 @@ export function enforceSingleReferencePrice(reply: string, u: ConciergeUnderstan
     const kept = line.split(/(?<=[.!?])[ \t]+/).filter(sentence => !MONEY_RE.test(sentence)).join(' ').trim();
     return kept && !/^[-•*\s]*$/.test(kept) ? kept : null;
   }).filter((line): line is string => line !== null);
-  const body = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  const body = stripEmptyMarkdownTables(lines.join('\n')).replace(/\n{3,}/g, '\n\n').trim();
   return body ? `${body}\n\n${canonical}` : canonical;
+}
+
+const TABLE_LINE_RE = /^\s*\|.*\|\s*$/;
+const TABLE_SEPARATOR_RE = /^\s*\|?(\s*:?-{3,}:?\s*\|)+\s*:?-{0,}:?\s*\|?\s*$/;
+
+/**
+ * Elimina tablas markdown que quedaron sin filas de datos (solo encabezado y/o
+ * separador), p. ej. tras quitar las filas con montos en enforceSingleReferencePrice.
+ */
+export function stripEmptyMarkdownTables(text: string): string {
+  const lines = text.split('\n');
+  const out: string[] = [];
+  for (let i = 0; i < lines.length;) {
+    if (!TABLE_LINE_RE.test(lines[i])) { out.push(lines[i]); i++; continue; }
+    let j = i;
+    while (j < lines.length && TABLE_LINE_RE.test(lines[j])) j++;
+    const block = lines.slice(i, j);
+    const sepIdx = block.findIndex(l => TABLE_SEPARATOR_RE.test(l));
+    const dataRows = sepIdx >= 0 ? block.slice(sepIdx + 1).filter(l => !TABLE_SEPARATOR_RE.test(l)) : block;
+    const isEmptyTable = sepIdx >= 0 && dataRows.length === 0;
+    if (!isEmptyTable) out.push(...block);
+    i = j;
+  }
+  return out.join('\n');
 }
