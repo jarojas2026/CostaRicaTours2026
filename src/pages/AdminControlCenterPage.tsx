@@ -11,7 +11,7 @@ import { KnowledgeCityPanel } from '../components/KnowledgeCityPanel';
 import { AgentOfficeMap } from '../components/AgentOfficeMap';
 import { DigitalCityRegistrationPreflight } from '../components/DigitalCityRegistrationPreflight';
 import { DigitalCityReviewQueue } from '../components/DigitalCityReviewQueue';
-import { AdminLeadsAnalytics, AdminAiStatsCard } from '../components/AdminLeadsAnalytics';
+import { AdminLeadsAnalytics, AdminAiStatsCard, AdminCronHeartbeatCard } from '../components/AdminLeadsAnalytics';
 
 type SectionId = 'resumen' | 'leads' | 'tours' | 'operadores' | 'ia' | 'contenido' | 'ajustes';
 type LeadLite = { id: string; status: string; lastActivityAt?: string; createdAt?: string };
@@ -220,6 +220,7 @@ export const AdminControlCenterPage: React.FC<{ language: Language }> = ({ langu
         <SectionTitle title={es ? 'Inteligencia artificial' : 'Artificial intelligence'} subtitle={es ? 'Estado global de los agentes y automatizaciones.' : 'Global status of agents and automations.'}
           action={<div className="flex flex-wrap gap-2"><Link to="/admin/ai-command" className="rounded-xl border border-white/15 px-4 py-2 text-base font-bold text-white hover:bg-white/5">{es ? 'Sala de mando IA' : 'AI command room'}</Link><Link to="/admin/email-operations" className="rounded-xl border border-white/15 px-4 py-2 text-base font-bold text-white hover:bg-white/5">{es ? 'Centro de correo' : 'Email center'}</Link></div>} />
         <AdminAiStatsCard envelope={data?.ai} es={es} />
+        <AdminCronHeartbeatCard envelope={data?.crons} es={es} />
         <div className="grid gap-6 lg:grid-cols-2">
           {supervisorCard}
           <Card>

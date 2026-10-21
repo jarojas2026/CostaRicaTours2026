@@ -8,11 +8,13 @@ import { listSkillVersions } from './skillGenome';
 import { getEmailOperationsSnapshot } from './emailOperationsAgent';
 import { projectAgentOffice } from './agentOfficeProjection';
 import { getAiCallStats, getBreakerStates } from './aiRouter';
+import { getCronHeartbeatEvidence } from './cronEngine';
 import { LEAD_STATUSES, OPEN_STATUSES, STALE_AFTER_MS, isActionableLead, isLeadStatus, leadTriageOf, listLeads, type LeadRecord, type LeadStatus } from './leadPipeline';
 const money=(v:any)=>Number.isFinite(Number(v))?Math.round(Number(v)*100)/100:0;
 export async function getAdminControlCenterSnapshot(){
  const leadsSection=await getLeadsEvidence();
  const aiSection=getAiEvidence();
+ const cronsSection=await getCronHeartbeatEvidence().catch(()=>({value:null,state:'unavailable' as const,source:'firestore:automation_locks.heartbeat',observedAt:new Date().toISOString(),note:'Heartbeats no disponibles.'}));
  const [bookings,alerts,conversion,selfDevelopment,providers]=await Promise.all([getAllBookings(),getAlerts({resolved:false}),getWeeklyConversionMetrics().catch(()=>null),getSelfDevelopmentOverview().catch(()=>null),getOperationalProviderOverview().catch(()=>({sourceOfTruth:'unavailable',totalProviders:0,activeProviders:0,activeOrdersCount:0,providers:[],recentServiceOrders:[],legacyDirectoryExcluded:true}))]);
  const now=Date.now();
  const confirmed=bookings.filter((b:any)=>['confirmada','confirmed','completada','completed'].includes(String(b.status||'').toLowerCase()));
@@ -51,7 +53,7 @@ export async function getAdminControlCenterSnapshot(){
   escalation:agent.permissions?.escalation||[],
   autonomyLevel:Number.isInteger(agent.autonomyLevel)?agent.autonomyLevel:null
  }));
- return{generatedAt:new Date().toISOString(),leads:leadsSection,ai:aiSection,agentOffice,business:{totalBookings:bookings.length,confirmedBookings:confirmed.length,pendingBookings:pending.length,failedOrCancelled:failed.length,upcoming72h:upcoming.length,// Deprecated field stays null: a confirmed booking is not evidence of cash collection.
+ return{generatedAt:new Date().toISOString(),leads:leadsSection,ai:aiSection,crons:cronsSection,agentOffice,business:{totalBookings:bookings.length,confirmedBookings:confirmed.length,pendingBookings:pending.length,failedOrCancelled:failed.length,upcoming72h:upcoming.length,// Deprecated field stays null: a confirmed booking is not evidence of cash collection.
     revenueUSD:null,confirmedBookingValueUSD:revenue,
     financialEvidence:{
       bookingValueSource:'getAllBookings',
