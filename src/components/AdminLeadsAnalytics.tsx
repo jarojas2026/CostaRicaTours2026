@@ -101,3 +101,28 @@ export function AdminAiStatsCard({ envelope, es }: { envelope: Envelope; es: boo
     {open.length > 0 && <p className="mt-3 text-sm text-amber-200">{es ? 'Breaker abierto' : 'Breaker open'}: {open.map((b: any) => `${b.provider} (${b.reason})`).join(', ')}</p>}
   </div>;
 }
+
+const HEALTH_STYLE: Record<string, string> = { ok: 'bg-emerald-500/20 text-emerald-200', warning: 'bg-amber-500/15 text-amber-200', failed: 'bg-rose-500/20 text-rose-200', overdue: 'bg-rose-500/20 text-rose-200', no_signal: 'bg-stone-500/20 text-stone-200' };
+const HEALTH_ES: Record<string, string> = { ok: 'OK', warning: 'Aviso', failed: 'Fallido', overdue: 'Atrasado', no_signal: 'Sin señal' };
+const HEALTH_EN: Record<string, string> = { ok: 'OK', warning: 'Warning', failed: 'Failed', overdue: 'Overdue', no_signal: 'No signal' };
+
+/** Heartbeat persistente de crons (sección `crons` del snapshot). */
+export function AdminCronHeartbeatCard({ envelope, es }: { envelope: Envelope; es: boolean }) {
+  const v = envelope?.value;
+  const labels = es ? HEALTH_ES : HEALTH_EN;
+  return <div className={box}>
+    <h3 className="text-xl font-black text-white">{es ? 'Procesos programados (heartbeat)' : 'Scheduled jobs (heartbeat)'}</h3>
+    <p className="mt-1 text-sm text-stone-400">{envelope ? `${envelope.source} · ${envelope.state}` : '—'}{envelope?.note ? ' · ' + envelope.note : ''}</p>
+    {v?.alerts?.length > 0 && <p role="alert" className="mt-3 text-sm font-bold text-rose-200">{es ? 'Alertas' : 'Alerts'}: {v.alerts.map((a: any) => `${a.jobId} (${a.kind})`).join(', ')}</p>}
+    {v?.jobs ? <table className="mt-4 w-full text-left text-sm text-stone-200">
+      <thead className="text-stone-400"><tr><th className="py-1">Job</th><th>{es ? 'Estado' : 'Health'}</th><th>{es ? 'Último run' : 'Last run'}</th><th>{es ? 'Duración' : 'Duration'}</th><th>Error</th></tr></thead>
+      <tbody>{v.jobs.map((j: any) => <tr key={j.id} className="border-t border-white/10 align-top">
+        <td className="py-1">{j.id}<div className="text-stone-500">{j.schedule}</div></td>
+        <td><span className={'rounded-full px-2 py-0.5 font-bold ' + (HEALTH_STYLE[j.health] || HEALTH_STYLE.no_signal)}>{labels[j.health] || j.health}</span></td>
+        <td>{j.lastFinishedAt ? new Date(j.lastFinishedAt).toLocaleString(es ? 'es-CR' : 'en-US') : '—'}</td>
+        <td>{fmt(j.lastDurationMs, ' ms')}</td>
+        <td className="max-w-[16rem] truncate" title={j.lastError || ''}>{j.lastError || '—'}</td>
+      </tr>)}</tbody>
+    </table> : <p className="mt-3 text-sm text-stone-400">—</p>}
+  </div>;
+}

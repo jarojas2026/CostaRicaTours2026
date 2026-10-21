@@ -3,6 +3,7 @@
  */
 
 import crypto from 'crypto';
+import { AsyncLocalStorage } from 'async_hooks';
 import { summarizeNativeAutomationEvents } from './automationStatusMetrics';
 import { 
   checkTourAvailability, 
@@ -36,6 +37,26 @@ export interface NativeAutomationLog {
 
 const executionHistory: NativeAutomationLog[] = [];
 
+// Resultado real de un job programado: los crons capturan sus propios errores y
+// solo los informan vía logAutomationExecution, así que el wrapper de heartbeat
+// (cronEngine.runTrackedCronJob) los recoge de este contexto asíncrono.
+export type AutomationOutcomeStatus = 'success' | 'warning' | 'error' | 'skipped';
+export interface AutomationOutcome { status?: AutomationOutcomeStatus; summary?: string }
+const outcomeContext = new AsyncLocalStorage<AutomationOutcome>();
+const OUTCOME_RANK: Record<AutomationOutcomeStatus, number> = { skipped: 0, success: 1, warning: 2, error: 3 };
+
+export function noteAutomationOutcome(status: AutomationOutcomeStatus, summary: string) {
+  const ctx = outcomeContext.getStore();
+  if (!ctx) return;
+  if (!ctx.status || OUTCOME_RANK[status] >= OUTCOME_RANK[ctx.status]) { ctx.status = status; ctx.summary = summary; }
+}
+
+export async function runWithAutomationOutcome<T>(fn: () => Promise<T> | T): Promise<{ result: T; outcome: AutomationOutcome }> {
+  const outcome: AutomationOutcome = {};
+  const result = await outcomeContext.run(outcome, () => Promise.resolve(fn()));
+  return { result, outcome };
+}
+
 export function logAutomationExecution(
   trigger: string,
   durationMs: number,
@@ -52,6 +73,7 @@ export function logAutomationExecution(
     summary,
     details
   };
+  noteAutomationOutcome(status, summary);
   executionHistory.unshift(entry);
   if (executionHistory.length > 200) {
     executionHistory.pop();
