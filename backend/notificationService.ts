@@ -250,18 +250,10 @@ export async function sendEmail(
     }
   }
 
-  // 4. Fallback: Log estructurado de despacho en consola
-  console.log(`✉️ [EMAIL TRANSACCIONAL REGISTRADO] (Para entrega física configure SMTP_USER/SMTP_PASS o RESEND_API_KEY/SENDGRID_API_KEY)`);
-  console.log(`   Para: ${payload.to}`);
-  console.log(`   Asunto: ${payload.subject}`);
-  console.log(`   Remitente: ${fromEmail}`);
-  if (payload.attachments && payload.attachments.length > 0) {
-    payload.attachments.forEach(att => {
-      const size = Buffer.isBuffer(att.content) ? att.content.length : att.content.length;
-      console.log(`   📎 Adjunto: ${att.filename} (${size} bytes, tipo: ${att.contentType || 'application/pdf'})`);
-    });
-  }
-  return { success: true, id: `sim-mail-${Date.now()}` };
+  // No transport means no delivery. Never report a simulated/log-only email as sent.
+  // The caller must retain the pending state and escalate or retry after SMTP/API setup.
+  console.warn('[EMAIL DELIVERY UNAVAILABLE] No configured email transport; message was not sent.');
+  return { success: false, error: 'email_transport_unconfigured' };
 }
 
 export interface WhatsAppMessagePayload {

@@ -41,7 +41,7 @@ const BASE_AGENT_IDENTITIES: AgentIdentity[] = [
     canRead: ['catalog', 'availability', 'memory', 'payments'], canWrite: ['booking', 'tasks'], escalation: ['supervisor', 'payment'],
     knowledge: [
       'Todo precio se cotiza en USD (moneda base real del catálogo); conversión a CRC es solo referencial, nunca la fuente de verdad de cobro.',
-      'Un "soft-hold" de cupo dura 15 minutos — si el cliente no completa el pago en ese tiempo, el cupo se libera automáticamente, avisa esto proactivamente.',
+      'No prometas duración, reserva de cupo ni liberación automática de un soft-hold sin evidencia de TTL real y liberación atómica del servicio de reservas. Un hold solicitado no es inventario del proveedor confirmado.',
       'Nunca confirmes una reserva como "confirmada" sin verificación real de pago del lado del servidor — el estado visible al cliente debe reflejar el estado real en Firestore, no lo que el cliente afirma haber pagado.'
     ]
   },
@@ -119,7 +119,7 @@ export async function buildAgentKnowledgeContext(input: {
     memory?.summary ? `MEMORIA DEL VIAJERO: ${memory.summary}` : '',
     memory?.relevantTurns?.length ? `CONTEXTO RELEVANTE: ${memory.relevantTurns.map(t => `${t.role}: ${t.text}`).join(' | ')}` : '',
     region ? `REGIÓN: ${region.name.es} / ${region.name.en}` : '',
-    weather ? `CLIMA ACTUAL: ${weather.temperatureC}°C, ${weather.labelEs}, lluvia ${weather.precipitationProbability}%, viento ${weather.windKmh} km/h, fuente ${weather.source}` : '',
+    weather?.source === 'open-meteo' ? `OBSERVACIÓN METEOROLÓGICA NO GARANTIZA SEGURIDAD: ${weather.temperatureC}°C, ${weather.labelEs}, lluvia ${weather.precipitationProbability}%, viento ${weather.windKmh} km/h, fuente ${weather.source}, observación local ${weather.observedAt}` : (input.regionId ? 'CLIMA NO DISPONIBLE: no inventes condiciones ni declares actividad segura. Verifica por herramienta y operador.' : ''),
     skillHints ? `SKILLS DISPONIBLES: ${skillHints}` : '',
     relevantTours.length ? `TOURS RELEVANTES: ${relevantTours.map(t => JSON.stringify({ id: t.id, title: t.title.es, priceUSD: t.priceUSD, region: t.region, category: t.category })).join(' | ')}` : ''
   ].filter(Boolean).join('\n');

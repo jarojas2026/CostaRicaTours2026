@@ -49,7 +49,14 @@ export const weatherRouter = createRouter();
 weatherRouter.get('/api/weather/destinations', async (_req, res) => {
   try {
     const { getDestinationWeather } = await import('../weatherPulseService');
-    res.json({ success: true, source: 'open-meteo', generatedAt: new Date().toISOString(), destinations: await getDestinationWeather() });
+    const destinations = await getDestinationWeather();
+    res.setHeader('cache-control', 'no-store');
+    res.json({
+      success: destinations.length > 0,
+      source: destinations.length > 0 ? 'open-meteo' : 'unavailable',
+      generatedAt: new Date().toISOString(),
+      destinations,
+    });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }

@@ -73,3 +73,18 @@ export function evaluatePayoutEligibility(
 export function isValidCommissionRate(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value < 1;
 }
+
+/**
+ * Computes service-order amounts only from a provider's explicitly verified
+ * contractual commission. Returns null instead of inventing a default rate.
+ * This is an estimate for the order, not evidence of a completed payout.
+ */
+export function calculateContractualSettlementUSD(
+  totalUSD: number,
+  commissionRate: unknown
+): { payoutAmountUSD: number; platformFeeUSD: number } | null {
+  if (!Number.isFinite(totalUSD) || totalUSD <= 0 || !isValidCommissionRate(commissionRate)) return null;
+  const payoutAmountUSD = Number((totalUSD * (1 - commissionRate)).toFixed(2));
+  if (!Number.isFinite(payoutAmountUSD) || payoutAmountUSD <= 0) return null;
+  return { payoutAmountUSD, platformFeeUSD: Number((totalUSD - payoutAmountUSD).toFixed(2)) };
+}
