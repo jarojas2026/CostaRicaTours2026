@@ -6,7 +6,7 @@ type ProviderOrder = {
   adults: number; children: number; pickupLocation: string; wazeUrl?: string;
   providerName: string; status: string; notes?: string; assignedGuide?: string;
   assignedVehicle?: string; slaDeadline?: string;
-  customer?: { name?: string; phone?: string; email?: string; dietaryRestrictions?: string; specialNeeds?: string };
+  customer?: { displayName?: string; language?: string; dietaryRestrictions?: string; specialNeeds?: string };
 };
 
 export const ProviderPortalPage: React.FC = () => {
@@ -82,14 +82,13 @@ export const ProviderPortalPage: React.FC = () => {
                 <Info icon={<CalendarDays />} label="Fecha y hora" value={order.date + ' · ' + order.time} />
                 <Info icon={<Users />} label="Pasajeros" value={order.adults + ' adultos · ' + order.children + ' niños'} />
                 <Info icon={<MapPin />} label="Pick-up" value={order.pickupLocation || 'Por definir'} />
-                <Info icon={<UserRound />} label="Cliente" value={order.customer?.name || 'Cliente'} />
+                <Info icon={<UserRound />} label="Cliente" value={(order.customer?.displayName || 'Cliente') + (order.customer?.language ? ' · ' + order.customer.language : '')} />
               </section>
 
               <div className="rounded-2xl bg-slate-950/50 border border-slate-800 p-4">
                 <div className="text-xs text-slate-500 uppercase font-black tracking-wider">Experiencia solicitada</div>
                 <div className="text-lg font-bold mt-1">{order.tourName}</div>
                 <div className="text-xs text-slate-400 mt-2">Reserva #{order.bookingId}</div>
-                {order.customer?.phone && <div className="text-xs text-slate-400 mt-1">Contacto operativo: {order.customer.phone}</div>}
                 {order.customer?.specialNeeds && <div className="mt-3 p-3 rounded-xl bg-amber-950/30 border border-amber-500/20 text-amber-100 text-sm"><b>Requerimiento especial:</b> {order.customer.specialNeeds}</div>}
                 {order.customer?.dietaryRestrictions && <div className="mt-2 p-3 rounded-xl bg-amber-950/30 border border-amber-500/20 text-amber-100 text-sm"><b>Restricción alimentaria:</b> {order.customer.dietaryRestrictions}</div>}
                 {order.wazeUrl && <a href={order.wazeUrl} target="_blank" rel="noreferrer" className="inline-flex mt-3 text-sm font-bold text-sky-300 hover:text-white">Abrir ubicación en Waze →</a>}
