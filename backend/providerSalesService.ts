@@ -9,8 +9,13 @@
  *   (`calculateContractualSettlementUSD`), etiquetado como estimado.
  * - Estado de liquidación según `evaluatePayoutEligibility` (solo lectura;
  *   este módulo nunca ejecuta pagos).
- * - Precio bruto al cliente: oculto salvo `PROVIDER_PORTAL_SHOW_GROSS=true`
- *   (decisión pendiente del dueño; por defecto solo neto + % de comisión).
+ * - Decisión del dueño (2026-10-20, #347): el proveedor NO debe poder deducir
+ *   el precio al cliente. Por defecto solo ve su **neto a recibir**:
+ *   - bruto (`grossUSD`) oculto salvo `PROVIDER_PORTAL_SHOW_GROSS=true`;
+ *   - % de comisión (`commissionRate`, `commissionRates`, `profileCommissionRate`)
+ *     y monto de comisión (`commissionUSD`) ocultos salvo
+ *     `PROVIDER_PORTAL_SHOW_COMMISSION=true`.
+ *   La comisión se sigue usando internamente para calcular neto y liquidación.
  */
 import { normalizeBookingLifecycle } from './bookingStateMachine';
 import type { ProviderContext } from './providerAuth';
@@ -29,6 +34,12 @@ export function providerPortalShowsGross(env: NodeJS.ProcessEnv = process.env): 
   return String(env.PROVIDER_PORTAL_SHOW_GROSS || '').trim().toLowerCase() === 'true';
 }
 
+export function providerPortalShowsCommission(env: NodeJS.ProcessEnv = process.env): boolean {
+  return String(env.PROVIDER_PORTAL_SHOW_COMMISSION || '').trim().toLowerCase() === 'true';
+}
+
+export type ProviderPortalVisibility = { showGross: boolean; showCommission: boolean };
+
 export type SettlementStatus = 'paid' | 'processing' | 'eligible' | 'pending_eligibility' | 'blocked';
 
 export interface ProviderSaleLine {
@@ -37,7 +48,7 @@ export interface ProviderSaleLine {
   period: string;
   tourId: string | null;
   tourName: string | null;
-  commissionRate: number | null;
+  commissionRate?: number | null;
   netUSD: number | null;
   netSource: 'payout_paid' | 'estimated' | 'unavailable';
   grossUSD?: number | null;
@@ -81,7 +92,7 @@ function settlementOf(booking: Record<string, any>, todayCR: string, hasRate: bo
 export function buildSaleLine(
   booking: Record<string, any>,
   profileRate: number | null,
-  options: { showGross: boolean; todayCR: string },
+  options: { showGross: boolean; showCommission?: boolean; todayCR: string },
 ): ProviderSaleLine {
   const rate = isValidCommissionRate(booking.commissionRate) ? booking.commissionRate : profileRate;
   const totalUSD = Number(booking.totalUSD);
@@ -101,14 +112,14 @@ export function buildSaleLine(
     period: String(booking.date).slice(0, 7),
     tourId: booking.tourId ? String(booking.tourId) : null,
     tourName: booking.tourName ? String(booking.tourName).slice(0, 160) : null,
-    commissionRate: isValidCommissionRate(rate) ? rate : null,
     netUSD,
     netSource,
     ...settlementOf(booking, options.todayCR, isValidCommissionRate(rate)),
   };
-  if (options.showGross) {
-    const gross = Number.isFinite(totalUSD) && totalUSD > 0 ? round2(totalUSD) : null;
-    line.grossUSD = gross;
+  const gross = Number.isFinite(totalUSD) && totalUSD > 0 ? round2(totalUSD) : null;
+  if (options.showGross) line.grossUSD = gross;
+  if (options.showCommission) {
+    line.commissionRate = isValidCommissionRate(rate) ? rate : null;
     line.commissionUSD = gross !== null && netUSD !== null ? round2(gross - netUSD) : null;
   }
   return line;
@@ -127,7 +138,7 @@ export function periodRange(months: number, todayCR: string): { from: string; to
   return { from: start.toISOString().slice(0, 7), to: end.toISOString().slice(0, 7) };
 }
 
-export function summarizeSales(lines: ProviderSaleLine[], showGross: boolean) {
+export function summarizeSales(lines: ProviderSaleLine[], showGross: boolean, showCommission = false) {
   const group = (keyOf: (l: ProviderSaleLine) => string) => {
     const map = new Map<string, ProviderSaleLine[]>();
     for (const line of lines) {
@@ -140,14 +151,17 @@ export function summarizeSales(lines: ProviderSaleLine[], showGross: boolean) {
     bookings: items.length,
     netUSD: sumKnown(items.map((l) => l.netUSD)),
     linesWithoutNet: items.filter((l) => l.netUSD === null).length,
-    ...(showGross ? { grossUSD: sumKnown(items.map((l) => l.grossUSD)), commissionUSD: sumKnown(items.map((l) => l.commissionUSD)) } : {}),
+    ...(showGross ? { grossUSD: sumKnown(items.map((l) => l.grossUSD)) } : {}),
+    ...(showCommission ? { commissionUSD: sumKnown(items.map((l) => l.commissionUSD)) } : {}),
   });
   const byMonth = [...group((l) => l.period)].sort(([a], [b]) => a.localeCompare(b)).map(([period, items]) => ({ period, ...agg(items) }));
   const byService = [...group((l) => l.tourId || 'sin_servicio')]
     .map(([tourId, items]) => ({ tourId: tourId === 'sin_servicio' ? null : tourId, tourName: items.find((l) => l.tourName)?.tourName || null, ...agg(items) }))
     .sort((a, b) => (b.netUSD ?? -1) - (a.netUSD ?? -1));
-  const rates = [...new Set(lines.map((l) => l.commissionRate).filter((r): r is number => r !== null))];
-  return { totals: agg(lines), byMonth, byService, commissionRates: rates };
+  const rates = showCommission
+    ? [...new Set(lines.map((l) => l.commissionRate).filter((r): r is number => typeof r === 'number'))]
+    : null;
+  return { totals: agg(lines), byMonth, byService, ...(rates ? { commissionRates: rates } : {}) };
 }
 
 export function summarizeSettlements(lines: ProviderSaleLine[]) {
@@ -166,7 +180,8 @@ export function summarizeSettlements(lines: ProviderSaleLine[]) {
     lines: items
       .sort((a, b) => a.serviceDate.localeCompare(b.serviceDate))
       .map(({ bookingRef, serviceDate, tourName, commissionRate, netUSD, netSource, settlementStatus, settlementReason, grossUSD }) => ({
-        bookingRef, serviceDate, tourName, commissionRate, netUSD, netSource, settlementStatus, settlementReason,
+        bookingRef, serviceDate, tourName, netUSD, netSource, settlementStatus, settlementReason,
+        ...(commissionRate !== undefined ? { commissionRate } : {}),
         ...(grossUSD !== undefined ? { grossUSD } : {}),
       })),
   }));
@@ -191,12 +206,13 @@ export async function loadProviderCommissionRate(db: any, providerId: string): P
 export async function loadProviderSaleLines(
   db: any,
   ctx: ProviderContext,
-  options: { months?: number; todayCR?: string; showGross?: boolean } = {},
+  options: { months?: number; todayCR?: string; showGross?: boolean; showCommission?: boolean } = {},
 ) {
   if (!db) throw new Error('firestore_unavailable');
   const months = Math.min(Math.max(Math.trunc(Number(options.months) || 12), 1), 24);
   const todayCR = options.todayCR || costaRicaDateString();
   const showGross = options.showGross ?? providerPortalShowsGross();
+  const showCommission = options.showCommission ?? providerPortalShowsCommission();
   const range = periodRange(months, todayCR);
   const [snap, profileRate] = await Promise.all([
     db.collection('bookings').where('providerId', '==', ctx.providerId).limit(MAX_SOURCE_BOOKINGS).get(),
@@ -210,7 +226,7 @@ export async function loadProviderSaleLines(
       const period = String(b.date).slice(0, 7);
       return period >= range.from && period <= range.to;
     });
-  const lines: ProviderSaleLine[] = bookings.map((b: any) => buildSaleLine(b, profileRate, { showGross, todayCR }));
+  const lines: ProviderSaleLine[] = bookings.map((b: any) => buildSaleLine(b, profileRate, { showGross, showCommission, todayCR }));
   return {
     lines,
     meta: {
@@ -220,8 +236,9 @@ export async function loadProviderSaleLines(
       sourceCount: lines.length,
       truncated: (snap.docs || []).length >= MAX_SOURCE_BOOKINGS,
       showGross,
-      profileCommissionRate: profileRate,
-      definition: 'Ventas con pago verificado (paymentStatus=completed), no canceladas ni reembolsadas, por fecha de servicio. Neto = payout pagado o estimado con la comisión registrada.',
+      showCommission,
+      ...(showCommission ? { profileCommissionRate: profileRate } : {}),
+      definition: 'Ventas con pago verificado (paymentStatus=completed), no canceladas ni reembolsadas, por fecha de servicio. Neto = lo que el proveedor recibe (payout pagado o estimado según lo pactado).',
     },
   };
 }

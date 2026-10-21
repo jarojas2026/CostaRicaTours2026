@@ -50,12 +50,12 @@ Etiquetas: `agente:libre`, `agente:hark`, `agente:gpt`, `en-curso`, `prioridad:P
 - **Integrar login #284** (authDomain propio + proxy `/__/auth`). Bloqueado por el límite de despliegues de Vercel; al integrar, autorizar el dominio en Firebase Auth y en el cliente OAuth.
 - **WhatsApp con tres modos**: Manual / Semiautomático (la IA redacta, el dueño aprueba) / Automático (el dueño observa y fiscaliza). Ver `docs/diseno/whatsapp-modos.md`.
 - **Portal de proveedores** con ventas, comisiones, liquidaciones y gráficos, aislado por proveedor. Ver `docs/diseno/portal-proveedores.md`.
+- **El proveedor ve solo su neto** en el portal: sin bruto, sin % ni monto de comisión (`PROVIDER_PORTAL_SHOW_GROSS=false`, `PROVIDER_PORTAL_SHOW_COMMISSION=false`). #347.
 - **Digital Desk / Agent Desk**: tour desk digital para hoteles + marca blanca para agencias, como **app separada**. Ver `docs/diseno/digital-desk.md`.
 
 ## 5. Decisiones PENDIENTES (no implementar hasta que el dueño decida)
 
 - Número de WhatsApp y método de pago en Meta.
-- El proveedor ve **neto** o **bruto** (+% de comisión) en su portal.
 - Nombre final del producto Digital Desk y hotel piloto.
 - Repositorio nuevo privado para Digital Desk.
 - #301 vs #305 (vs Centro de Mando): cuál es la vista de gerencia oficial.

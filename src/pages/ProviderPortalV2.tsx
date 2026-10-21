@@ -17,7 +17,7 @@ type Order = {
   customer?: { displayName?: string; language?: string; specialNeeds?: string; dietaryRestrictions?: string };
 };
 type Agg = { bookings: number; netUSD: number | null; linesWithoutNet: number; grossUSD?: number | null };
-type Sales = { meta: { showGross: boolean; computedAt: string; sourceCount: number; profileCommissionRate: number | null; definition: string }; totals: Agg; byMonth: Array<Agg & { period: string }>; byService: Array<Agg & { tourId: string | null; tourName: string | null }>; commissionRates: number[] };
+type Sales = { meta: { showGross: boolean; showCommission?: boolean; computedAt: string; sourceCount: number; profileCommissionRate?: number | null; definition: string }; totals: Agg; byMonth: Array<Agg & { period: string }>; byService: Array<Agg & { tourId: string | null; tourName: string | null }>; commissionRates?: number[] };
 type Settlements = { periods: Array<{ period: string; totals: Record<string, number | null>; lines: Array<{ bookingRef: string; serviceDate: string; tourName: string | null; netUSD: number | null; netSource: string; settlementStatus: string; settlementReason: string | null }> }> };
 
 const REJECT_REASONS: Array<[string, string]> = [['sin_cupo', 'Sin cupo'], ['clima', 'Clima'], ['mantenimiento', 'Mantenimiento'], ['otro', 'Otro (describa)']];
@@ -59,7 +59,7 @@ export const ProviderPortalV2: React.FC = () => {
   }
   if (!me) return <Shell>{error ? <Err text={error} /> : <Loader2 className="animate-spin w-8 h-8 text-emerald-400 mx-auto" />}<SignOut /></Shell>;
 
-  const tabs: Array<[typeof tab, string]> = [['orders', 'Solicitudes'], ...(me.providerRole !== 'staff' ? [['sales', 'Ventas y comisiones'] as [typeof tab, string]] : []), ...(me.providerRole === 'owner' ? [['settlements', 'Liquidaciones'] as [typeof tab, string]] : [])];
+  const tabs: Array<[typeof tab, string]> = [['orders', 'Solicitudes'], ...(me.providerRole !== 'staff' ? [['sales', 'Ventas'] as [typeof tab, string]] : []), ...(me.providerRole === 'owner' ? [['settlements', 'Liquidaciones'] as [typeof tab, string]] : [])];
   return (
     <Shell wide>
       <div className="flex flex-wrap items-center gap-2 mb-5">
@@ -140,16 +140,17 @@ function SalesTab({ api }: { api: (p: string) => Promise<any> }) {
   useEffect(() => { api('/api/provider/v2/sales?months=12').then(setSales).catch((e) => setError(e.message)); }, [api]);
   if (error) return <Err text={error} />;
   if (!sales) return <Loader2 className="animate-spin w-6 h-6 text-emerald-400" />;
-  const rates = sales.commissionRates.length ? sales.commissionRates.map(pct).join(', ') : 'No registrada';
+  // #347: el % de comisión solo llega si PROVIDER_PORTAL_SHOW_COMMISSION=true.
+  const rates = sales.meta.showCommission && sales.commissionRates ? (sales.commissionRates.length ? sales.commissionRates.map(pct).join(', ') : 'No registrada') : null;
   return (
     <section className="space-y-6">
       <div className="grid sm:grid-cols-3 gap-3">
-        <Tile label="Ventas (neto proveedor)" value={usd(sales.totals.netUSD)} />
+        <Tile label="Neto a recibir" value={usd(sales.totals.netUSD)} />
         <Tile label="Reservas con pago verificado" value={String(sales.totals.bookings)} />
-        <Tile label="Comisión pactada" value={rates} />
+        {rates !== null && <Tile label="Comisión pactada" value={rates} />}
         {sales.meta.showGross && <Tile label="Precio al cliente (bruto)" value={usd(sales.totals.grossUSD)} />}
       </div>
-      {sales.totals.linesWithoutNet > 0 && <p className="text-xs text-amber-200">{sales.totals.linesWithoutNet} reserva(s) sin neto: falta la comisión registrada.</p>}
+      {sales.totals.linesWithoutNet > 0 && <p className="text-xs text-amber-200">{sales.totals.linesWithoutNet} reserva(s) sin neto: faltan condiciones registradas; Costa Rica Tours lo está revisando.</p>}
       <MonthlyBarChart title="Neto por mes (fecha de servicio)" data={sales.byMonth.map((m) => ({ label: m.period, value: m.netUSD, hint: m.bookings + ' reservas' }))} />
       <HorizontalBarChart title="Neto por servicio" data={sales.byService.map((s) => ({ label: s.tourName || s.tourId || 'Servicio', value: s.netUSD, hint: s.bookings + ' reservas' }))} />
       <p className="text-xs text-slate-500">{sales.meta.definition} Calculado {new Date(sales.meta.computedAt).toLocaleString('es-CR')} · {sales.meta.sourceCount} reservas fuente. Montos no pagados son estimados.</p>
