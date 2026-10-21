@@ -272,3 +272,11 @@ Tests de contrato (siguiendo el patrón de `tests/permissionsAndRules.contract.t
 | **PR-9** | Equipo (invitaciones) y solicitudes de cambio de perfil vía `ownerApprovalService`. | Contrato: cambio de datos de pago requiere aprobación. |
 
 Orden sugerido: PR-1 primero (cierra la brecha legal), luego 2→5 (seguridad), 6→9 (valor visible). Gasto: $0 previsto.
+
+---
+
+## 13. Estado de implementación
+
+| Issue | Qué quedó | Archivos |
+|---|---|---|
+| #319 | Rol `provider` (claims `role/providerId/providerRole`), `requireProvider(rol)` con `checkRevoked` + membresía activa en `provider_members`, alta/baja admin auditada en `agent_audit_log`, acceso a datos acotado por tenant (404 si la orden es de otro proveedor), reglas Firestore `provider_*`, contratos A≠B. | `backend/providerAuth.ts`, `backend/providerTenantScope.ts`, `backend/providerAudit.ts`, `backend/routes/provider.ts`, `firestore.rules`, `tests/providerTenantIsolation.contract.test.ts` |
