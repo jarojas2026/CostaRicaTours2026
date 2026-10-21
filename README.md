@@ -2,6 +2,10 @@
 
 Plataforma full-stack de venta, asesoría, planificación y operación de servicios turísticos en Costa Rica.
 
+### JARVIS PRIME · Correctitud de métricas (PR de revisión, 20 octubre 2026)
+
+La especificación empresarial de JARVIS PRIME se implanta por incrementos sobre el sistema existente. La primera entrega propuesta elimina métricas de automatización ficticias y separa valor de reservas de cobros conciliados. **Esta rama está sujeta a revisión y CI; no afirmar que esté en producción.** [Cambios, límites, pruebas y rollback](docs/jarvis-prime-p0-metric-truth.md).
+
 ### JARVIS — inteligencia turística y segunda mano del propietario (12 octubre 2026)
 
 Se añadió un **núcleo consultivo** en `backend/jarvisTourismAdvisory.ts` y se integró en `backend/tourismIntelligenceEngine.ts`. Incorpora conocimiento bilingüe sobre geografía real, presas de la GAM, carreteras rurales y accesos 4x4, clima, traslados entre polos turísticos, fauna, ballenas, aves, caminatas nocturnas, SINAC y verificación de fuentes. Su informe `buildJarvisOwnerBrief()` es **solo consultivo**, no ejecuta pagos, reservas ni notificaciones.
