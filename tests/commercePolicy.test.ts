@@ -49,14 +49,14 @@ test('catalog resolves explicit IDs, fails closed on ambiguity and never uses lo
   assert.equal(await resolveCommerceTour(fake([doc, doc]), 'tour-1'), null);
   assert.equal((await resolveCommerceTour(fake([doc]), 'tour-1'))?.catalogDocumentId, 'imported');
 });
-test('booking and admin mutations retain transaction safety, audit and admin-only boundaries', () => {
+test('booking and owner/admin mutations retain transaction safety, audit and operator-key exclusion', () => {
   const booking = readFileSync('backend/bookingService.ts', 'utf8');
   const admin = readFileSync('backend/commerceAdminRouter.ts', 'utf8');
   assert.match(booking, /transaction\.create\(bookingRef/);
   assert.match(booking, /slotAvailability\(slotDoc\.data\(\)/);
   assert.match(booking, /const currentQuote = reservationQuote\(product/);
   assert.doesNotMatch(booking, /if \(cached\) return cached/);
-  assert.match(admin, /adminAccess\?\.role !== 'admin'/);
+  assert.match(admin, /role !== 'owner' && role !== 'admin'/);
   assert.match(admin, /tx\.create\(auditRef/);
   assert.match(admin, /bookedSeats > maxCapacity/);
 });

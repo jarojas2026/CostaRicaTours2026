@@ -103,13 +103,13 @@ async function checkRoute(context, route, device) {
         links: links.length, invalidHrefs: invalidHrefs.slice(0,12), forms, pageHeight,
         scrollContainer, scrollDistance, hasHorizontalOverflow, reachedBottom };
     });
-    if (['/', '/ciudad', '/participar', '/tours', '/ai'].includes(route) && device === 'desktop') {
-      await page.screenshot({ path: join(OUT, 'desktop-' + (route === '/' ? 'home' : route.slice(1).replaceAll('/','-')) + '-bottom.png'), fullPage: false });
+    if ((['/', '/ciudad', '/participar', '/tours', '/ai'].includes(route) && device === 'desktop') || (device !== 'desktop' && device !== 'mobile' && ['/', '/tour/arenal-hot-springs', '/map'].includes(route))) {
+      await page.screenshot({ path: join(OUT, device + '-' + (route === '/' ? 'home' : route.slice(1).replaceAll('/','-')) + '-bottom.png'), fullPage: false });
     }
   } catch (e) {
     fatal = String(e).slice(0,600);
   }
-  const item = { route, device, responseStatus, ...details, jsErrors: errors, fatal,
+  const item = { route, device, viewport: page.viewportSize(), responseStatus, ...details, jsErrors: errors, fatal,
     access: PROTECTED.has(route) ? 'requires-authenticated-testing' : 'public',
     outcome: fatal || responseStatus === null || responseStatus >= 400 || !details.bodyLength ? 'fail' : 'observed' };
   report.routes.push(item);
@@ -145,6 +145,24 @@ try {
   const mobile = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, deviceScaleFactor: 2, hasTouch: true, reducedMotion: 'reduce' });
   for (const path of ALL_ROUTES) await checkRoute(desktop, path, 'desktop');
   for (const path of MOBILE_ROUTES) await checkRoute(mobile, path, 'mobile');
+  // Extra read-only viewport matrix: browser emulation is not native iOS/Safari QA.
+  const DEVICE_MATRIX = [
+    { name: 'small-phone-320x568', viewport: { width: 320, height: 568 }, mobile: true },
+    { name: 'landscape-phone-844x390', viewport: { width: 844, height: 390 }, mobile: true },
+    { name: 'tablet-768x1024', viewport: { width: 768, height: 1024 }, mobile: true },
+    { name: 'laptop-1280x800', viewport: { width: 1280, height: 800 }, mobile: false },
+    { name: 'wide-desktop-1920x1080', viewport: { width: 1920, height: 1080 }, mobile: false },
+  ];
+  for (const config of DEVICE_MATRIX) {
+    const ctx = await browser.newContext({
+      viewport: config.viewport, isMobile: config.mobile, hasTouch: config.mobile,
+      deviceScaleFactor: config.mobile ? 2 : 1, reducedMotion: 'reduce'
+    });
+    try {
+      for (const path of ['/', '/tours', '/tour/arenal-hot-springs', '/map', '/ai'])
+        await checkRoute(ctx, path, config.name);
+    } finally { await ctx.close(); }
+  }
   // Navigate first-time pages with the consent banner present; afterward use
   // an explicit, least-privilege consent fixture for non-consent click tests.
   const consentContext = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
@@ -249,15 +267,14 @@ try {
     });
   }
 
-  await recordInteraction(desktop, 'footer privacy dialog open/close', '/', async page => {
-    const button = page.locator('footer button').filter({ hasText: /Privacidad y Datos|Privacy/ }).first();
-    await button.click({ timeout: 12_000 });
-    const dialogs = page.locator('[role="dialog"],[aria-modal="true"]');
-    await dialogs.first().waitFor({ timeout: 12_000 });
-    const count = await dialogs.count();
-    await page.keyboard.press('Escape');
-    await dialogs.first().waitFor({ state: 'hidden', timeout: 8_000 });
-    return { dialogCount: count, closedWithEscape: true };
+  await recordInteraction(desktop, 'footer privacy policy navigation', '/', async page => {
+    // The footer now routes to a dedicated privacy page, not a modal.
+    const link = page.locator('footer a[href="/privacy"]').first();
+    await link.click({ timeout: 12_000 });
+    await page.waitForURL('**/privacy', { timeout: 12_000, waitUntil: 'domcontentloaded' });
+    const content = (await page.locator('main').innerText()).trim();
+    if (content.length < 80) throw new Error('Privacy route has no useful policy content');
+    return { path: new URL(page.url()).pathname, policyVisible: true };
   });
   await recordInteraction(desktop, 'empty participate form validation (no submit)', '/participar', async page => {
     const forms = await page.locator('form').count();
@@ -304,6 +321,7 @@ for (const action of report.interactions.filter(item => item.result === 'failed'
 report.finishedAt = new Date().toISOString();
 report.summary = {
   routesVisited: report.routes.length,
+  viewportProfiles: [...new Set(report.routes.map(x => x.device))],
   findingsCritical: report.findings.filter(x => x.severity === 'critical').length,
   findingsHigh: report.findings.filter(x => x.severity === 'high').length,
   findingsMedium: report.findings.filter(x => x.severity === 'medium').length,
@@ -356,4 +374,13 @@ const lines = [
 ];
 await writeFile(join(OUT,'report.md'), lines.join('\n'));
 process.stdout.write('AUDIT_SUMMARY ' + JSON.stringify(report.summary) + '\n');
+// Public CI logs expose only route/viewport/finding kind; detailed evidence and
+// screenshots remain in the private-to-workflow artifact. Never log PII/DOM text.
+process.stdout.write('AUDIT_FINDINGS_SAFE ' + JSON.stringify(report.findings.slice(0, 30).map(item => ({
+  severity: item.severity,
+  kind: item.kind,
+  route: String(item.route || '').slice(0, 90),
+  device: String(item.device || '').slice(0, 40),
+}))) + '\n');
+
 if (report.summary.pagesFailed || report.summary.interactionsFailed) process.exitCode = 1;

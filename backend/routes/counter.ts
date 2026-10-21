@@ -5,6 +5,7 @@
  * orden de registro se conservan (ver tests/serverRoutes.contract.test.ts).
  */
 
+import { redactAssistantReplyMiddleware } from '../assistantContactRedaction';
 import { askCounterDesk, getCounterOperationsSnapshot, organizeCounterDesk } from '../counterDeskService';
 import { createRouter, requireAdmin, counterLimiter } from './shared';
 
@@ -16,7 +17,7 @@ export const counterRouter = createRouter();
 // ==========================================
 // Atención pública: usa el mismo conocimiento operativo del backend.
 // Operaciones internas: snapshot/organización protegidos por autenticación.
-counterRouter.post('/api/counter/ask', counterLimiter, async (req, res) => {
+counterRouter.post('/api/counter/ask', counterLimiter, redactAssistantReplyMiddleware, async (req, res) => {
   try {
     const result = await askCounterDesk({
       message: req.body?.message,

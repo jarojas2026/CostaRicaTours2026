@@ -2,10 +2,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { publishedTourPrice } from '../utils/tourPublication';
 import React, { useState, useEffect } from 'react';
 import { Tour, Language, Currency } from '../types';
-import { getLangText, UI_TRANSLATIONS } from '../utils/i18n';
+import { getLangText } from '../utils/i18n';
+import { createT } from '../i18n';
 
 import { LazyImage } from './LazyImage';
-import { ReferencePrice } from './ReferencePrice';
+import { useExchangeRate } from './ReferencePrice';
+import { referencePriceParts } from '../utils/referencePrice';
+import { REGIONS_DATA } from '../data/regionsData';
 import { OperatorPriceSource } from './OperatorPriceSource';
 import { Star, Clock, MapPin, Shield, ArrowRight, ExternalLink, X, Compass, Navigation, Heart, Scale, Check } from 'lucide-react';
 import { isBookableTour } from '../utils/tourListing';
@@ -34,7 +37,7 @@ export const TourCard: React.FC<TourCardProps> = ({
   viewMode = 'grid'
 }) => {
   const navigate = useNavigate();
-  const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
+  const t = createT(language);
   const [showMiniMap, setShowMiniMap] = useState(false);
 
   useEffect(() => {
@@ -65,6 +68,12 @@ export const TourCard: React.FC<TourCardProps> = ({
   const subtitleText = getLangText(tour.subtitle, language);
   const durationText = getLangText(tour.durationLabel, language);
   const inclusionsList = getLangText(tour.inclusions, language, []);
+  const rate = useExchangeRate(currency);
+  const price = referencePriceParts(publishedTourPrice(tour), currency, rate, language);
+  const placeText = tour.location.placeName.split(',')[0].trim();
+  const regionInfo = REGIONS_DATA.find(r => r.id === tour.region);
+  const regionText = regionInfo ? getLangText(regionInfo.name, language).split(' (')[0].trim() : '';
+  const showRegion = !!regionText && regionText.toLowerCase() !== placeText.toLowerCase();
 
   return (
     <>
@@ -75,8 +84,8 @@ export const TourCard: React.FC<TourCardProps> = ({
         } group cursor-pointer`}
       >
         {/* Image Container with Crisp Aspect Ratio */}
-        <div className={`relative overflow-hidden ${viewMode === 'list' ? 'shrink-0 w-full lg:w-[38%] h-56 lg:h-auto' : 'w-full aspect-[4/3] shrink-0'}`}>
-          <LazyImage src={tour.image} alt={titleText} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out" />
+        <div className={`relative overflow-hidden ${viewMode === 'list' ? 'shrink-0 w-full lg:w-[38%] h-56 lg:h-auto lg:min-h-[14rem]' : 'w-full aspect-[4/3] shrink-0'}`}>
+          <LazyImage src={tour.image} alt={titleText} width={800} height={600} decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out" />
           
           {/* Subtle Top & Bottom Gradient Shadows for Legibility */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/60 pointer-events-none" />
@@ -87,17 +96,17 @@ export const TourCard: React.FC<TourCardProps> = ({
               {!isBookable ? (
                 <span className="inline-flex items-center gap-1.5 bg-stone-950/90 text-amber-200 text-xs font-bold px-3 py-1 rounded-full border border-amber-400/40 backdrop-blur-md shadow-md">
                   <Compass className="w-3.5 h-3.5" />
-                  <span>{language === 'es' ? 'Experiencia para consultar' : 'Experience to inquire about'}</span>
+                  <span>{t('tourCard.experienceInquireAbout')}</span>
                 </span>
               ) : tour.bestseller ? (
                 <span className="inline-flex items-center gap-1.5 bg-amber-400 text-stone-950 text-xs font-black px-3 py-1 rounded-full shadow-md">
                   <span>🔥</span>
-                  <span>{language === 'es' ? 'Más Popular' : 'Top Choice'}</span>
+                  <span>{t('tourCard.topChoice')}</span>
                 </span>
               ) : tour.freeCancellation ? (
                 <span className="inline-flex items-center gap-1 bg-emerald-950/90 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full border border-emerald-400/40 backdrop-blur-md shadow-md">
                   <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{language === 'es' ? 'Cancelación Gratis' : 'Free Cancel'}</span>
+                  <span>{t('tourCard.freeCancel')}</span>
                 </span>
               ) : null}
             </div>
@@ -115,8 +124,8 @@ export const TourCard: React.FC<TourCardProps> = ({
                       ? 'bg-rose-500 text-white scale-105'
                       : 'bg-black/60 hover:bg-black/80 text-white backdrop-blur-md border border-white/20'
                   }`}
-                  title={isFavorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}
-                  aria-label="Favorito"
+                  title={isFavorite ? t('tourCard.removeFavorite') : t('tourCard.saveFavorite')}
+                  aria-label={t('tourCard.favorite')}
                 >
                   <Heart className={`w-4 h-4 ${isFavorite ? 'fill-white' : ''}`} />
                 </button>
@@ -134,7 +143,7 @@ export const TourCard: React.FC<TourCardProps> = ({
                       : 'bg-black/60 hover:bg-black/80 text-white backdrop-blur-md border border-white/20'
                   }`}
                   title={t('compareTour')}
-                  aria-label="Comparar"
+                  aria-label={t('tourCard.compare')}
                 >
                   {isCompared ? <Check className="w-4 h-4" /> : <Scale className="w-4 h-4" />}
                 </button>
@@ -152,10 +161,12 @@ export const TourCard: React.FC<TourCardProps> = ({
               </div>
             )}
 
-            <div className="inline-flex items-center gap-1 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/15 text-stone-200">
-              <Clock className="w-3.5 h-3.5 text-amber-400" />
-              <span>{durationText}</span>
-            </div>
+            {durationText && (
+              <div data-testid="tour-card-duration" className="inline-flex items-center gap-1 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/15 text-stone-200">
+                <Clock className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
+                <span>{durationText}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -173,8 +184,13 @@ export const TourCard: React.FC<TourCardProps> = ({
               className="inline-flex items-center gap-1.5 text-emerald-300 hover:text-amber-300 transition-colors text-xs font-bold uppercase tracking-wider group/loc text-left"
             >
               <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0 group-hover/loc:scale-110 transition-transform" />
-              <span className="underline decoration-emerald-500/40 underline-offset-2">{tour.location.placeName.split(',')[0]}</span>
+              <span className="underline decoration-emerald-500/40 underline-offset-2">{placeText}</span>
             </button>
+            {showRegion && (
+              <span data-testid="tour-card-region" className="block text-[11px] font-semibold text-stone-400">
+                {t('tourCard.region')}: {regionText}
+              </span>
+            )}
             
             {/* Tour Title */}
             <h3 className="font-bold text-lg sm:text-xl text-white leading-snug group-hover:text-amber-400 transition-colors">
@@ -190,12 +206,23 @@ export const TourCard: React.FC<TourCardProps> = ({
           {/* Footer: Clear Price & Primary Action */}
           <div className="flex items-center justify-between pt-4 mt-4 border-t border-emerald-500/20">
             <div className="space-y-0.5">
-              <ReferencePrice amountUSD={publishedTourPrice(tour)} currency={currency} language={language} />
+              <span data-testid="tour-card-price" className="flex flex-col" title={price.disclaimer}>
+                {price.usd ? (
+                  <>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300">{t('tourCard.from')}</span>
+                    <span className="text-xl font-black text-amber-400 leading-tight">{price.usd}</span>
+                    {price.approx && <span className="text-[11px] font-semibold text-stone-300">{price.approx}</span>}
+                    <span className="text-[10px] text-stone-400 leading-snug">{t('tourCard.referencePrice')}</span>
+                  </>
+                ) : (
+                  <span className="text-base font-black text-amber-400 leading-tight">{t('tourCard.askPrice')}</span>
+                )}
+              </span>
               {!isBookable && (tour.priceSource === 'precio_referencia' ? (
                 <OperatorPriceSource tour={tour} language={language} variant="compact" />
               ) : (
                 <span className="text-[10px] text-stone-400 font-medium block">
-                  {language === 'es' ? 'Operador local por confirmar' : 'Local operator to be confirmed'}
+                  {t('tourCard.localOperatorConfirmed')}
                 </span>
               ))}
             </div>
@@ -205,8 +232,8 @@ export const TourCard: React.FC<TourCardProps> = ({
               onClick={(e) => e.stopPropagation()}
               className="bg-[#f59e0b] hover:bg-[#d97706] text-stone-950 font-bold px-4 py-2.5 rounded-full flex items-center justify-center gap-1.5 text-xs tracking-wide transition-all duration-200 group-hover:scale-105 cursor-pointer"
             >
-              <span>{t('checkDetails')}</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>{t('viewTour')}</span>
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </Link>
           </div>
         </div>

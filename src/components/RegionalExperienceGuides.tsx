@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, ArrowUpRight, Compass, MessageCircle } from 'lucide-react';
+import { ArrowRight, Compass, MessageCircle } from 'lucide-react';
 import { Tour, TourRegion, Language } from '../types';
 import { REGIONAL_EXPERIENCE_GUIDES } from '../data/regionalExperienceGuides';
 import { requestCustomerIntake } from '../utils/customerIntake';
@@ -59,9 +59,6 @@ export const RegionalExperienceGuides: React.FC<RegionalExperienceGuidesProps> =
                     <MessageCircle size={14} /> {es ? 'Consultar esta región con IA' : 'Ask AI about this region'}
                   </button>
                 )}
-                <a href={guide.officialGuideUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] font-semibold text-stone-400 underline decoration-stone-600 underline-offset-2 hover:text-white">
-                  {es ? 'Guía oficial ICT' : 'Official ICT guide'} <ArrowUpRight size={12} />
-                </a>
               </div>
             </article>
           );

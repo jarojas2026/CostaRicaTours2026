@@ -30,9 +30,36 @@ export function renderTourHtml(template: string, tour: Tour, tours: readonly Tou
     .replace(/<title>[\s\S]*?<\/title>/i, `<title>${escape(title)}</title>`)
     .replace(/<meta\s+(?:name|property)="(?:description|og:title|og:description|og:url|twitter:title|twitter:description)"[^>]*>/gi, '')
     .replace(/<link\s+rel="canonical"[^>]*>/gi, '')
+    .replace(/<link\s+rel="alternate"\s+hreflang="[^"]*"[^>]*>\s*/gi, '')
     .replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/gi, '')
-    .replace('</head>', `<meta name="description" content="${escape(description)}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${canonical}"><link rel="canonical" href="${canonical}"><script id="tour-schema" type="application/ld+json">${schema}</script></head>`)
+    .replace('</head>', `<meta name="description" content="${escape(description)}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${canonical}"><link rel="canonical" href="${canonical}"><link rel="alternate" hreflang="es" href="${canonical}?lang=es"><link rel="alternate" hreflang="en" href="${canonical}?lang=en"><link rel="alternate" hreflang="x-default" href="${canonical}"><script id="tour-schema" type="application/ld+json">${schema}</script></head>`)
     .replace('<div id="root"></div>', `<div id="root"><main style="max-width:70rem;margin:3rem auto;padding:2rem"><a href="/tours">Tours</a>${sections}<h2>Tours similares / Similar tours</h2><ul>${related}</ul></main></div>`);
+}
+
+/**
+ * Static 404 shell served by Vercel (dist/404.html) with HTTP 404 for unknown routes and
+ * unknown /tour/:id. noindex; no canonical; the SPA boots on top and renders NotFoundPage.
+ */
+export function renderNotFoundHtml(template: string, tours: readonly Tour[]) {
+  const popular = [...tours]
+    .sort((a, b) => ((b.featured ? 1e9 : 0) + (b.rating || 0) * (b.reviewsCount || 0)) - ((a.featured ? 1e9 : 0) + (a.rating || 0) * (a.reviewsCount || 0)))
+    .slice(0, 4)
+    .map(t => `<li><a href="/tour/${encodeURIComponent(t.slug || t.id)}">${escape(t.title.es)}</a></li>`).join('');
+  const body = `<main style="max-width:44rem;margin:3rem auto;padding:2rem;font-family:system-ui,sans-serif;color:#e7e5e4">
+    <p style="font-size:3rem;font-weight:900;color:#34d399">404</p>
+    <section lang="es"><h1>Esta página no existe</h1><p>La dirección puede estar mal escrita o la página ya no está disponible.</p></section>
+    <section lang="en"><h2>This page does not exist</h2><p>The address may be mistyped or the page is no longer available.</p></section>
+    <form role="search" action="/tours" method="get"><label for="nf-q">Buscar tours / Search tours</label> <input id="nf-q" type="search" name="q" maxlength="250"> <button type="submit">Buscar / Search</button></form>
+    <nav><a href="/tours">Tours</a> · <a href="/destinations">Destinos / Destinations</a> · <a href="/ai">Asistente / Assistant</a> · <a href="/">Inicio / Home</a></nav>
+    <h2>Tours populares / Popular tours</h2><ul>${popular}</ul></main>`;
+  return template
+    .replace(/<title>[\s\S]*?<\/title>/i, '<title>Página no encontrada (404) | Costa Rica Tours</title>')
+    .replace(/<meta\s+name="robots"[^>]*>/gi, '')
+    .replace(/<link\s+rel="canonical"[^>]*>/gi, '')
+    .replace(/<meta\s+property="og:url"[^>]*>/gi, '')
+    .replace(/<link\s+rel="alternate"\s+hreflang="[^"]*"[^>]*>\s*/gi, '')
+    .replace('</head>', '<meta name="robots" content="noindex,follow"></head>')
+    .replace('<div id="root"></div>', `<div id="root">${body}</div>`);
 }
 
 export function tourPrerender(): Plugin {
@@ -53,6 +80,7 @@ export function tourPrerender(): Plugin {
             this.emitFile({ type: 'asset', fileName: `tour/${id}/index.html`, source: renderTourHtml(String(index.source), tour, TOURS) });
           }
         }
+        this.emitFile({ type: 'asset', fileName: '404.html', source: renderNotFoundHtml(String(index.source), TOURS) });
       },
     },
   };

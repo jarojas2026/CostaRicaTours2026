@@ -49,10 +49,31 @@ export const weatherRouter = createRouter();
 weatherRouter.get('/api/weather/destinations', async (_req, res) => {
   try {
     const { getDestinationWeather } = await import('../weatherPulseService');
-    res.json({ success: true, source: 'open-meteo', generatedAt: new Date().toISOString(), destinations: await getDestinationWeather() });
+    const destinations = await getDestinationWeather();
+    res.setHeader('cache-control', 'no-store');
+    res.json({
+      success: destinations.length > 0,
+      source: destinations.length > 0 ? 'open-meteo' : 'unavailable',
+      generatedAt: new Date().toISOString(),
+      destinations,
+    });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
+});
+
+/** Pronóstico de 5 días para la ficha /tour/:id (Open-Meteo, caché 1 h). */
+weatherRouter.get('/api/weather/forecast', async (req, res) => {
+  const { parseCostaRicaCoords, getTourForecast } = await import('../tourWeatherForecast');
+  const coords = parseCostaRicaCoords(req.query.lat, req.query.lon);
+  if (!coords) return res.status(400).json({ success: false, error: 'invalid_coordinates' });
+  const forecast = await getTourForecast(coords.lat, coords.lon);
+  if (!forecast) {
+    res.setHeader('cache-control', 'no-store');
+    return res.status(503).json({ success: false, error: 'forecast_unavailable' });
+  }
+  res.setHeader('cache-control', 'public, max-age=900, s-maxage=1800');
+  return res.json({ success: true, ...forecast });
 });
 
 /** Métricas, procesamiento masivo y acciones de operación. */

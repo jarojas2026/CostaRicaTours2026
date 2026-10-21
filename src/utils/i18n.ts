@@ -1,5 +1,8 @@
 import { Language, Currency } from '../types';
 
+import { LOCALES, ENABLED_LANGUAGES } from '../i18n/locales';
+import { detectLanguage } from '../i18n/detect';
+
 export interface LanguageInfo {
   code: Language;
   name: string;
@@ -7,35 +10,19 @@ export interface LanguageInfo {
   flag: string;
 }
 
-export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
-  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
-  { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
-];
-// DE/FR/ZH/JA stay out of the selector until the UI is fully translated.
-// The Language type keeps them so partial translation tables still compile.
+/** Languages shown in the selector: the enabled entries of src/i18n/locales.ts. */
+export const SUPPORTED_LANGUAGES: LanguageInfo[] = ENABLED_LANGUAGES.map(code => {
+  const { name, nativeName, flag } = LOCALES[code];
+  return { code, name, nativeName, flag };
+});
 
 /**
-  Detects the user's browser language on initial app load
+  Detects the user's browser language on initial app load: first enabled
+  language in navigator.languages (ES for Spanish), English for the rest.
+  Prefer getInitialLanguage() from src/i18n, which also honours the saved choice.
  */
 export function detectBrowserLanguage(): Language {
-  if (typeof navigator === 'undefined') return 'es';
-  
-  const browserLangs = navigator.languages && navigator.languages.length > 0
-    ? Array.from(navigator.languages)
-    : [navigator.language || ''];
-
-  for (const langStr of browserLangs) {
-    if (!langStr) continue;
-    const lower = langStr.toLowerCase();
-
-    if (lower.startsWith('es')) return 'es';
-    if (lower.startsWith('en')) return 'en';
-    // Untranslated languages fall back to English (the international default).
-    if (/^(de|fr|zh|ja)/.test(lower)) return 'en';
-  }
-
-  // Default fallback for Costa Rica tourism portal
-  return 'es';
+  return detectLanguage();
 }
 
 /**
@@ -282,6 +269,7 @@ export const UI_TRANSLATIONS: Record<string, Record<Language, string>> = {
   groupTour: { es: 'Grupal (Con más compas)', en: 'Group', de: 'Gruppe', fr: 'Groupe', zh: '团体', ja: 'グループ' },
   compareTour: { es: 'Comparar tour', en: 'Compare tour', de: 'Tour vergleichen', fr: 'Comparer le tour', zh: '比较旅游', ja: 'ツアーを比較' },
   fromPrice: { es: 'Desde ', en: 'From ', de: 'Ab ', fr: 'À partir de ', zh: '起 ', ja: 'から ' },
+  viewTour: { es: 'Ver tour', en: 'View tour', de: 'Tour ansehen', fr: 'Voir le tour', zh: '查看行程', ja: 'ツアーを見る' },
   checkDetails: { es: 'Consultar', en: 'Check', de: 'Prüfen', fr: 'Vérifier', zh: '查看', ja: '確認する' },
   closeMap: { es: 'Cerrar mapa', en: 'Close map', de: 'Karte schließen', fr: 'Fermer la carte', zh: '关闭地图', ja: 'マップを閉じる' },
   close: { es: 'Cerrar', en: 'Close', de: 'Schließen', fr: 'Fermer', zh: '关闭', ja: '閉じる' },

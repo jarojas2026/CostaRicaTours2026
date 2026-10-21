@@ -5,6 +5,7 @@
  */
 import { TOURS } from '../src/data/toursData';
 import { findGuides, findNearestServices, getParkInfo, loadLayer } from './nationalKnowledgeService';
+import { redactToolResultForClient } from './assistantContactRedaction';
 import { OPERATOR_IDENTITY_NOTE, SUPPLIER_POLICY } from '../src/utils/operatorPrivacy';
 
 const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -83,8 +84,9 @@ function emergencyReply(message: string, es: boolean): string | undefined {
     return lines.join('\n');
   }
   const pharmacy = /farmacia|pharmacy/.test(m);
-  const hospitals = pharmacy ? null : findNearestServices(town.lat, town.lng, 'hospital', 2, 'Hospital');
-  const clinics = findNearestServices(town.lat, town.lng, pharmacy ? 'farmacia' : 'hospital', 2, pharmacy ? undefined : 'Sede de Área');
+  // Farmacias son negocios: sin dirección exacta (redacción en servidor); CCSS/hospitales sí.
+  const hospitals = pharmacy ? null : redactToolResultForClient('nearest_services', findNearestServices(town.lat, town.lng, 'hospital', 2, 'Hospital')) as ReturnType<typeof findNearestServices>;
+  const clinics = redactToolResultForClient('nearest_services', findNearestServices(town.lat, town.lng, pharmacy ? 'farmacia' : 'hospital', 2, pharmacy ? undefined : 'Sede de Área')) as ReturnType<typeof findNearestServices>;
   const fmt = (r: any) => `• ${r.name} (${r.type}) — ${r.distanceKm} km${r.address ? `, ${r.address}` : ''}`;
   if (hospitals?.results?.length) lines.push(es ? `Hospitales CCSS más cercanos a ${town.label}:` : `Nearest public (CCSS) hospitals to ${town.label}:`, ...hospitals.results.map(fmt));
   if (clinics.results?.length) lines.push(pharmacy ? (es ? 'Farmacias cercanas:' : 'Nearby pharmacies:') : (es ? 'Áreas de salud cercanas:' : 'Nearby health centers:'), ...clinics.results.map(fmt));

@@ -26,10 +26,16 @@ import type { ConciergeUnderstanding, ConciergeLanguage } from './conciergeUnder
 import type { Tour } from '../src/types';
 import { publishedTourPrice } from '../src/utils/tourPublication';
 import { isoDateOrUndefined, type TourQuoteLeadPayload } from '../shared/tourQuoteRequest';
+import type { MapServiceQuoteLeadPayload } from '../shared/mapServiceQuoteRequest';
+import {
+  applyManualTriage, deriveLegacyTriage, isActionableTriage, triageNewLead,
+  type LeadPriority, type LeadTriage, type LeadTriageState, type RecentLeadRef,
+} from './leadTriage';
+import { buildFollowUpDraft, followUpEmail, isAutoFollowUpEnabled, missingLeadData, type LeadFollowUp } from './leadFollowUp';
 
 export const LEAD_STATUSES = ['nuevo', 'cotizando', 'esperando_operador', 'confirmado_por_escrito', 'pagado', 'cancelado'] as const;
 export type LeadStatus = typeof LEAD_STATUSES[number];
-export type LeadSource = 'sofia' | 'contact_form' | 'booking_request' | 'tour_page';
+export type LeadSource = 'sofia' | 'contact_form' | 'booking_request' | 'tour_page' | 'map_service';
 
 const TRANSITIONS: Record<LeadStatus, readonly LeadStatus[]> = {
   nuevo: ['cotizando', 'cancelado'],
@@ -127,6 +133,10 @@ export interface LeadRecord {
   quoteRequestDrafts: QuoteRequestDraft[];
   /** Si este lead terminó (pagado/cancelado) y el cliente volvió a consultar, id del lead nuevo. */
   reopenedAs?: string;
+  /** Triaje automático (prioridad, spam/duplicado/descartado). Reversible desde /admin/leads. */
+  triage?: LeadTriage;
+  /** Correo para completar fecha/pax. Borrador salvo LEAD_AUTOFOLLOWUP_ENABLED=true. */
+  followUp?: LeadFollowUp;
 }
 
 export interface LeadInput {
@@ -335,7 +345,7 @@ function requestFrom(input: LeadInput): LeadRequest {
   return Object.fromEntries(Object.entries(merged).filter(([, v]) => v !== undefined)) as LeadRequest;
 }
 
-export function buildLeadRecord(input: LeadInput, now: Date = new Date()): LeadRecord {
+export function buildLeadRecord(input: LeadInput, now: Date = new Date(), recent: readonly RecentLeadRef[] = []): LeadRecord {
   const at = now.toISOString();
   const language: ConciergeLanguage = input.understanding?.understood.language || (input.language === 'en' ? 'en' : 'es');
   const request = requestFrom(input);
@@ -372,7 +382,36 @@ export function buildLeadRecord(input: LeadInput, now: Date = new Date()): LeadR
   if (input.bookingId) record.bookingId = String(input.bookingId).slice(0, 80);
   if (input.bookingOutcome) record.bookingOutcome = String(input.bookingOutcome).slice(0, 80);
   if (input.message) record.messageSnippet = consented ? String(input.message).replace(/\s+/g, ' ').trim().slice(0, 280) : redactFreeText(input.message);
+  record.triage = triageNewLead({
+    id: record.id,
+    createdAt: at,
+    contact,
+    rawContact,
+    request,
+    message: typeof input.message === 'string' ? input.message : undefined,
+  }, recent, now);
+  // Seguimiento para completar fecha/pax: solo con consentimiento, correo y lead activo.
+  if (consented && record.triage.state === 'activo') {
+    const followUp = buildFollowUpDraft(record, now);
+    if (followUp) record.followUp = followUp;
+  }
   return record;
+}
+
+/** Triaje del lead (el guardado o, para leads anteriores al triaje, uno derivado). */
+export function leadTriageOf(lead: LeadRecord): LeadTriage {
+  return lead.triage || deriveLegacyTriage({
+    id: lead.id,
+    createdAt: lead.createdAt,
+    contact: lead.contact,
+    request: lead.request || {},
+    message: lead.messageSnippet,
+  });
+}
+
+/** Solo los leads activos cuentan para avisos, riesgo operativo y el resumen. */
+export function isActionableLead(lead: LeadRecord): boolean {
+  return isActionableTriage(leadTriageOf(lead));
 }
 
 /**
@@ -407,6 +446,28 @@ export function buildTourPageLeadInput(payload: TourQuoteLeadPayload, tour: Tour
   };
 }
 
+/** Consulta de un servicio del mapa (hotel, parque, transporte): cotización sin precio inventado. */
+export function buildMapServiceLeadInput(
+  payload: MapServiceQuoteLeadPayload,
+  service: { id: string; type: string; region: string; name: { es: string; en?: string } },
+): LeadInput {
+  const { adults, children, date, checkOutDate } = payload.request;
+  const title = payload.language === 'en' ? (service.name.en || service.name.es) : service.name.es;
+  const messageParts = [
+    `Servicio del mapa (${service.type}): ${service.id}`,
+    checkOutDate ? `Salida: ${checkOutDate}` : '',
+    payload.message || '',
+  ].filter(Boolean);
+  return {
+    source: 'map_service',
+    language: payload.language,
+    consent: payload.consent === true,
+    contact: { name: payload.customer.name, email: payload.customer.email, ...(payload.customer.phone ? { phone: payload.customer.phone } : {}) },
+    request: { tourTitle: title, region: service.region, people: adults + children, adults, children, ...(date ? { date } : {}) },
+    message: messageParts.join(' · '),
+  };
+}
+
 /** Fusiona una consulta repetida en el lead abierto existente. */
 export function mergeLead(existing: LeadRecord, incoming: LeadRecord): LeadRecord {
   const sources = Array.from(new Set([...existing.sources, ...incoming.sources])) as LeadSource[];
@@ -428,7 +489,15 @@ export function mergeLead(existing: LeadRecord, incoming: LeadRecord): LeadRecor
     messageSnippet: incoming.messageSnippet || existing.messageSnippet,
     operatorCandidates: existing.operatorCandidates.length ? existing.operatorCandidates : incoming.operatorCandidates,
     quoteRequestDrafts: existing.quoteRequestDrafts.length ? existing.quoteRequestDrafts : incoming.quoteRequestDrafts,
+    ...mergedFollowUp(existing, request),
   };
+}
+
+/** Si la nueva consulta ya trae los datos que faltaban, el borrador no enviado se retira. */
+function mergedFollowUp(existing: LeadRecord, request: LeadRequest): { followUp?: LeadFollowUp } {
+  if (!existing.followUp) return {};
+  if (existing.followUp.status === 'borrador_no_enviado' && !missingLeadData(request).length) return { followUp: undefined };
+  return { followUp: existing.followUp };
 }
 
 const isTerminal = (status: LeadStatus) => status === 'pagado' || status === 'cancelado';
@@ -451,9 +520,25 @@ export interface CaptureResult {
   storage: 'firestore' | 'memory';
 }
 
+/** Leads recientes del mismo correo (para detectar duplicados mismo correo + tour en 24 h). */
+async function recentLeadsForEmail(db: any, email: string | undefined): Promise<RecentLeadRef[]> {
+  if (!email) return [];
+  const toRef = (lead: LeadRecord): RecentLeadRef => ({ id: lead.id, createdAt: lead.createdAt, email: lead.contact?.email, tourId: lead.request?.tourId, triageState: lead.triage?.state });
+  if (!db) return Array.from(memoryLeads.values()).filter(l => l.contact?.email === email && !l.reopenedAs).map(toRef);
+  try {
+    const snap = await db.collection('leads').where('contact.email', '==', email).limit(50).get();
+    return snap.docs.map((doc: any) => toRef({ ...(doc.data() as LeadRecord), id: doc.id }));
+  } catch (err: any) {
+    console.warn('[leads] no se pudo revisar duplicados:', err?.message || err);
+    return [];
+  }
+}
+
 export async function captureLead(input: LeadInput, now: Date = new Date()): Promise<CaptureResult> {
-  const incoming = buildLeadRecord(input, now);
   const db = getFirestoreDb();
+  const consentedEmail = input.consent === true ? cleanContact(input.contact)?.email : undefined;
+  const recent = await recentLeadsForEmail(db, consentedEmail);
+  const incoming = buildLeadRecord(input, now, recent);
   const decide = (existing: LeadRecord | undefined): { lead: LeadRecord; created: boolean } => {
     if (!existing) return { lead: incoming, created: true };
     const fresh = now.getTime() - Date.parse(existing.lastInquiryAt || existing.createdAt) < DEDUPE_WINDOW_MS;
@@ -487,7 +572,7 @@ export async function captureLead(input: LeadInput, now: Date = new Date()): Pro
   return { ...result, storage: 'firestore' };
 }
 
-export async function listLeads(filter: { status?: LeadStatus; limit?: number } = {}): Promise<LeadRecord[]> {
+export async function listLeads(filter: { status?: LeadStatus; limit?: number; priority?: LeadPriority; triage?: LeadTriageState } = {}): Promise<LeadRecord[]> {
   const limit = Math.min(Math.max(Number(filter.limit) || 100, 1), 500);
   const db = getFirestoreDb();
   let leads: LeadRecord[];
@@ -495,14 +580,20 @@ export async function listLeads(filter: { status?: LeadStatus; limit?: number } 
     leads = Array.from(memoryLeads.values());
   } else {
     // Sin índices compuestos: filtro por estado O orden por fecha, el resto en memoria.
+    // Prioridad/triaje se filtran en memoria (los leads antiguos no tienen el campo).
+    const inMemoryFilter = Boolean(filter.priority || filter.triage);
     const query: any = filter.status
       ? db.collection('leads').where('status', '==', filter.status).limit(500)
-      : db.collection('leads').orderBy('updatedAt', 'desc').limit(limit);
+      : db.collection('leads').orderBy('updatedAt', 'desc').limit(inMemoryFilter ? 500 : limit);
     const snap = await query.get();
     leads = snap.docs.map((doc: any) => ({ ...(doc.data() as LeadRecord), id: doc.id }));
   }
+  // Punteros de reapertura (solo { reopenedAs }) no son leads que mostrar.
+  leads = leads.filter(lead => lead.status && lead.createdAt).map(lead => ({ ...lead, triage: leadTriageOf(lead) }));
   if (filter.status) leads = leads.filter(lead => lead.status === filter.status);
-  return leads.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, limit);
+  if (filter.priority) leads = leads.filter(lead => lead.triage?.priority === filter.priority);
+  if (filter.triage) leads = leads.filter(lead => lead.triage?.state === filter.triage);
+  return leads.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')).slice(0, limit);
 }
 
 export async function getLead(id: string): Promise<LeadRecord | null> {
@@ -510,7 +601,51 @@ export async function getLead(id: string): Promise<LeadRecord | null> {
   const db = getFirestoreDb();
   if (!db) return memoryLeads.get(id) || null;
   const snap = await db.collection('leads').doc(id).get();
-  return snap.exists ? ({ ...(snap.data() as LeadRecord), id }) : null;
+  if (!snap.exists) return null;
+  const lead = { ...(snap.data() as LeadRecord), id };
+  return { ...lead, triage: leadTriageOf(lead) };
+}
+
+/**
+ * Descartar o restaurar leads en bloque (reversible). No toca el estado
+ * comercial; guarda quién, cuándo y el motivo en triage.history.
+ */
+export async function triageLeads(
+  ids: readonly string[],
+  to: 'descartado' | 'activo',
+  actor: { by: string },
+  note?: string,
+  now: Date = new Date(),
+): Promise<{ updated: LeadRecord[]; notFound: string[] }> {
+  const updated: LeadRecord[] = [];
+  const notFound: string[] = [];
+  const unique = Array.from(new Set(ids)).filter(id => /^lead_[a-z0-9_]{8,64}$/.test(id)).slice(0, 100);
+  const apply = (lead: LeadRecord): LeadRecord => ({
+    ...lead,
+    triage: applyManualTriage(leadTriageOf(lead), to, actor.by, note, now),
+    updatedAt: now.toISOString(),
+  });
+  const db = getFirestoreDb();
+  for (const id of unique) {
+    if (!db) {
+      const lead = memoryLeads.get(id);
+      if (!lead || !lead.status) { notFound.push(id); continue; }
+      const next = apply(lead);
+      memoryLeads.set(id, next);
+      updated.push(next);
+      continue;
+    }
+    const result = await db.runTransaction(async (tx: any) => {
+      const ref = db.collection('leads').doc(id);
+      const snap = await tx.get(ref);
+      if (!snap.exists || !(snap.data() as LeadRecord).status) return null;
+      const next = apply({ ...(snap.data() as LeadRecord), id });
+      tx.set(ref, { triage: stripUndefined(next.triage), updatedAt: next.updatedAt }, { merge: true });
+      return next;
+    });
+    if (result) updated.push(result); else notFound.push(id);
+  }
+  return { updated, notFound };
 }
 
 export type TransitionError = 'not_found' | 'invalid_status' | 'invalid_transition' | 'evidence_required' | 'admin_required';
@@ -567,6 +702,8 @@ export interface LeadDigest {
   total: number;
   byStatus: Record<LeadStatus, number>;
   stale: Array<{ id: string; status: LeadStatus; hoursWithoutResponse: number; summary: string }>;
+  /** Leads fuera por triaje (no cuentan como sin respuesta). */
+  triagedOut: number;
   text: string;
 }
 
@@ -581,8 +718,9 @@ export function leadSummary(lead: LeadRecord): string {
 export function buildLeadDigest(leads: readonly LeadRecord[], now: Date = new Date()): LeadDigest {
   const byStatus = Object.fromEntries(LEAD_STATUSES.map(s => [s, 0])) as Record<LeadStatus, number>;
   for (const lead of leads) if (isLeadStatus(lead.status)) byStatus[lead.status] += 1;
+  const triagedOut = leads.filter(lead => !isActionableLead(lead)).length;
   const stale = leads
-    .filter(lead => OPEN_STATUSES.includes(lead.status) && now.getTime() - Date.parse(lead.lastActivityAt || lead.createdAt) > STALE_AFTER_MS)
+    .filter(lead => isActionableLead(lead) && OPEN_STATUSES.includes(lead.status) && now.getTime() - Date.parse(lead.lastActivityAt || lead.createdAt) > STALE_AFTER_MS)
     .map(lead => ({
       id: lead.id,
       status: lead.status,
@@ -594,10 +732,11 @@ export function buildLeadDigest(leads: readonly LeadRecord[], now: Date = new Da
     `Resumen diario de leads – ${now.toLocaleDateString('es-CR', { timeZone: 'America/Costa_Rica' })}`,
     `Total: ${leads.length}`,
     ...LEAD_STATUSES.map(s => `• ${s}: ${byStatus[s]}`),
+    `Descartados por triaje (spam/duplicado/sin contacto): ${triagedOut}`,
     stale.length ? `Sin respuesta >24h (${stale.length}):` : 'Sin leads abiertos sin respuesta >24h.',
     ...stale.slice(0, 20).map(s => `• ${s.id} [${s.status}] ${s.hoursWithoutResponse}h – ${s.summary}`),
   ];
-  return { generatedAt: now.toISOString(), total: leads.length, byStatus, stale, text: lines.join('\n') };
+  return { generatedAt: now.toISOString(), total: leads.length, byStatus, stale, triagedOut, text: lines.join('\n') };
 }
 
 // ---------------------------------------------------------------------------
@@ -623,8 +762,42 @@ export function captureLeadInBackground(input: LeadInput): void {
 export async function captureLeadAndNotify(input: LeadInput): Promise<CaptureResult> {
   const result = await captureLead(input);
   void notifyNewLead(result).catch(err => console.warn('[leads] aviso fallido:', err?.message || err));
-  void sendCustomerAck(result).catch(err => console.warn('[leads] acuse al cliente fallido:', err?.message || err));
+  if (shouldSendFollowUp(result)) {
+    // El seguimiento ya confirma la recepción: sustituye al acuse para no mandar dos correos.
+    void sendFollowUp(result.lead).catch(err => console.warn('[leads] seguimiento fallido:', err?.message || err));
+  } else {
+    void sendCustomerAck(result).catch(err => console.warn('[leads] acuse al cliente fallido:', err?.message || err));
+  }
   return result;
+}
+
+function shouldSendFollowUp({ lead, created }: CaptureResult): boolean {
+  return created && isAutoFollowUpEnabled() && process.env.NODE_ENV !== 'test'
+    && lead.followUp?.status === 'borrador_no_enviado' && lead.consent?.dataProcessing === true && isActionableLead(lead);
+}
+
+/** Guarda el resultado del envío del seguimiento en el lead. */
+export async function updateLeadFollowUp(id: string, followUp: LeadFollowUp): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) {
+    const lead = memoryLeads.get(id);
+    if (lead) memoryLeads.set(id, { ...lead, followUp });
+    return;
+  }
+  await db.collection('leads').doc(id).set({ followUp: stripUndefined(followUp) }, { merge: true });
+}
+
+async function sendFollowUp(lead: LeadRecord): Promise<void> {
+  const draft = lead.followUp;
+  const email = draft ? followUpEmail(draft) : null;
+  if (!draft || !email) return;
+  const { sendEmail } = await import('./notificationService');
+  const result = await sendEmail(email);
+  const at = new Date().toISOString();
+  await updateLeadFollowUp(lead.id, result.success
+    ? { ...draft, status: 'enviado', sentAt: at }
+    : { ...draft, status: 'envio_fallido', error: String(result.error || 'error').slice(0, 200) });
+  if (!result.success) console.warn('[leads] seguimiento no enviado:', result.error);
 }
 
 function escapeHtml(value: string): string {
@@ -678,6 +851,8 @@ export function buildCustomerAckEmail(lead: Pick<LeadRecord, 'id' | 'language' |
 async function sendCustomerAck({ lead, created }: CaptureResult): Promise<void> {
   if (!created || process.env.LEADS_CUSTOMER_ACK === 'false' || process.env.NODE_ENV === 'test') return;
   if (!lead.consent?.dataProcessing) return;
+  // Spam o duplicado de las últimas 24 h: no se repite el acuse.
+  if (!isActionableLead(lead)) return;
   const email = buildCustomerAckEmail(lead);
   if (!email) return;
   const { sendEmail } = await import('./notificationService');
@@ -687,11 +862,17 @@ async function sendCustomerAck({ lead, created }: CaptureResult): Promise<void> 
 
 async function notifyNewLead({ lead, created }: CaptureResult): Promise<void> {
   if (!created || process.env.LEADS_NOTIFY === 'false' || process.env.NODE_ENV === 'test') return;
+  const triage = leadTriageOf(lead);
+  if (!isActionableTriage(triage)) {
+    // Basura/duplicado/sin contacto: queda en /admin/leads, sin alerta ni riesgo operativo.
+    console.log(`[leads] ${lead.id} triaje=${triage.state} (${triage.reasons.join(',')}): sin alerta.`);
+    return;
+  }
   const { createAlert } = await import('./alertService');
   await createAlert({
     source: 'Pipeline de leads',
     severity: 'info',
-    title: `Nuevo lead (${lead.firstSource}): ${leadSummary(lead)}`.slice(0, 140),
+    title: `Nuevo lead [${triage.priority}] (${lead.firstSource}): ${leadSummary(lead)}`.slice(0, 140),
     message: [
       `Lead ${lead.id} en estado "nuevo".`,
       leadSummary(lead),
@@ -699,6 +880,6 @@ async function notifyNewLead({ lead, created }: CaptureResult): Promise<void> {
       `Operadores candidatos (prospectos sin contrato): ${lead.operatorCandidates.map(c => c.name).join(', ') || 'ninguno'}`,
       'Los borradores de cotización están guardados en el lead; no se envió nada a ningún operador.',
     ].join('\n'),
-    metadata: { leadId: lead.id, consent: lead.consent.dataProcessing },
+    metadata: { leadId: lead.id, consent: lead.consent.dataProcessing, priority: triage.priority },
   });
 }

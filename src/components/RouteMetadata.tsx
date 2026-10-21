@@ -2,6 +2,7 @@ import { useTours } from '../contexts/ToursContext';
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import type { Language } from '../types';
+import { ENABLED_LANGUAGES, LOCALES, htmlLang, languageFromQuery } from '../i18n';
 import { LEGAL_PAGES, LEGAL_PAGE_ORDER } from '../data/legalPages';
 import { findBlogPost } from '../data/blogPosts';
 
@@ -157,9 +158,33 @@ function upsertCanonical(url: string) {
   canonical.href = url;
 }
 
+/**
+ * hreflang alternates. The SPA serves every language on the same path; `?lang=`
+ * pins one (see src/i18n/detect.ts) and x-default lets the browser decide.
+ */
+function upsertAlternates(baseUrl: string) {
+  const wanted = [
+    ...ENABLED_LANGUAGES.map(code => ({ hreflang: htmlLang(code), href: `${baseUrl}?lang=${code}` })),
+    { hreflang: 'x-default', href: baseUrl },
+  ];
+  document.head.querySelectorAll<HTMLLinkElement>('link[rel="alternate"][hreflang]').forEach(link => {
+    if (!wanted.some(item => item.hreflang === link.hreflang)) link.remove();
+  });
+  for (const { hreflang, href } of wanted) {
+    let link = document.head.querySelector<HTMLLinkElement>(`link[rel="alternate"][hreflang="${hreflang}"]`);
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'alternate';
+      link.hreflang = hreflang;
+      document.head.appendChild(link);
+    }
+    link.href = href;
+  }
+}
+
 /** Per-route, per-language document title + meta description. */
 export function RouteMetadata({ language }: { language: Language }) {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const { tours } = useTours();
 
   useEffect(() => {
@@ -182,15 +207,20 @@ export function RouteMetadata({ language }: { language: Language }) {
     }
 
     document.title = title;
-    document.documentElement.lang = language === 'es' ? 'es' : 'en';
+    document.documentElement.lang = htmlLang(language);
+    upsertMeta('meta[property="og:locale"]', { property: 'og:locale' }, LOCALES[language]?.ogLocale ?? 'en_US');
+    const alternateLocale = ENABLED_LANGUAGES.find(code => code !== language);
+    if (alternateLocale) upsertMeta('meta[property="og:locale:alternate"]', { property: 'og:locale:alternate' }, LOCALES[alternateLocale].ogLocale);
     upsertMeta('meta[name="description"]', { name: 'description' }, description);
     upsertMeta('meta[property="og:title"]', { property: 'og:title' }, title);
     upsertMeta('meta[property="og:description"]', { property: 'og:description' }, description);
     upsertMeta('meta[property="og:url"]', { property: 'og:url' }, canonicalUrl);
     upsertMeta('meta[name="twitter:title"]', { name: 'twitter:title' }, title);
     upsertMeta('meta[name="twitter:description"]', { name: 'twitter:description' }, description);
-    upsertCanonical(canonicalUrl);
-  }, [pathname, language, tours]);
+    const pinnedLanguage = languageFromQuery(search);
+    upsertCanonical(pinnedLanguage ? `${canonicalUrl}?lang=${pinnedLanguage}` : canonicalUrl);
+    upsertAlternates(canonicalUrl);
+  }, [pathname, search, language, tours]);
 
   return null;
 }

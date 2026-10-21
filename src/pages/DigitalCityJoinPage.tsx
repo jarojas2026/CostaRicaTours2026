@@ -5,6 +5,8 @@ import { auth } from '../firebase';
 import { DIGITAL_CITY_ENTITY_KINDS, type DigitalCityEntityKind } from '../../backend/digitalCityRegistrationPolicy';
 import type { Language } from '../types';
 import { CountrySelect } from '../components/CountrySelect';
+import { HoneypotField } from '../components/HoneypotField';
+import { formGuardFields } from '../../shared/formAbuse';
 
 type Mine = {
   id: string; kind: DigitalCityEntityKind; displayName: string; countryCode: string;
@@ -34,6 +36,8 @@ export function DigitalCityJoinPage({ language, onOpenPrivacy }: { language: Lan
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [editing, setEditing] = useState<{ id: string; revision: number } | null>(null);
+  const [startedAt] = useState(() => Date.now());
+  const [honeypot, setHoneypot] = useState('');
 
   useEffect(() => onAuthStateChanged(auth, setUser), []);
 
@@ -75,7 +79,7 @@ export function DigitalCityJoinPage({ language, onOpenPrivacy }: { language: Lan
         method: editing ? 'PATCH' : 'POST',
         body: JSON.stringify({ kind, countryCode, displayName, locality,
           officialSourceUrl, consentToPublication, representsEntity,
-          ...(editing ? { expectedRevision: editing.revision } : {}) })
+          ...(editing ? { expectedRevision: editing.revision } : formGuardFields(startedAt, honeypot)) })
       });
       setSuccess(es
         ? (editing ? 'Corrección enviada de forma privada para nueva revisión.' : 'Solicitud privada recibida para revisión. No es un registro público ni permite vender.')
@@ -135,7 +139,8 @@ export function DigitalCityJoinPage({ language, onOpenPrivacy }: { language: Lan
       <h2 className="flex items-center gap-2 font-bold text-white"><Building2 size={18}/>{editing ? (es ? 'Corregir solicitud existente' : 'Correct an existing application') : (es ? 'Nueva solicitud' : 'New application')}</h2>
       {editing && <button type="button" onClick={() => { setEditing(null); setConsentToPublication(false); }} className="text-xs underline text-amber-200">{es ? 'Cancelar edición' : 'Cancel edit'}</button>}
       <p className="text-xs text-stone-400">{es ? 'Sesión identificada. Límite de 3 solicitudes nuevas por día. Los datos introducidos no demuestran representación legal.' : 'Signed in. Maximum 3 new applications per day. Submitted information does not prove legal representation.'}</p>
-      <form onSubmit={e => void submit(e)} className="grid gap-4 sm:grid-cols-2 text-xs">
+      <form onSubmit={e => void submit(e)} className="relative grid gap-4 sm:grid-cols-2 text-xs">
+        <HoneypotField value={honeypot} onChange={setHoneypot} />
         <label>{es ? 'Participante' : 'Participant'}<select value={kind} onChange={e => setKind(e.target.value as DigitalCityEntityKind)} disabled={editing !== null} className={inputClass}>
           {DIGITAL_CITY_ENTITY_KINDS.map(type => <option key={type} value={type}>{types[type][es ? 0 : 1]}</option>)}
         </select></label>

@@ -1,30 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  ShoppingBag, 
-  Globe, 
-  Sparkles, 
-  ChevronDown, 
-  Mail, 
-  MessageCircle, 
-  LogIn, 
-  LogOut, 
-  Bus, 
-  Menu, 
-  X, 
-  Compass, 
-  Map, 
+import React, { useState, useEffect, useRef, useId } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  ShoppingBag,
+  Globe,
+  Sparkles,
+  ChevronDown,
+  MessageCircle,
+  LogIn,
+  LogOut,
+  Bus,
+  Compass,
+  Map,
   MapPin,
-  Coffee, 
-  Bot, 
+  Coffee,
+  Bot,
   Clock,
   ShieldCheck,
   Plane,
   Palette,
   Home,
-  Calendar,
-  Activity,
-  Heart
+  Heart,
+  Mail,
+  User as UserIcon,
+  FileText,
+  Check
 } from 'lucide-react';
 import { Language, Currency } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -34,13 +33,15 @@ import { auth, signInWithGoogle, signOut } from '../firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { requestCustomerIntake } from '../utils/customerIntake';
 
+type HeaderTab = 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights' | 'workspace' | 'destinations' | 'activities' | 'about' | 'blog';
+
 interface HeaderProps {
   language: Language;
   setLanguage: (lang: Language) => void;
   currency: Currency;
   setCurrency: (curr: Currency) => void;
-  activeTab?: 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights' | 'workspace' | 'destinations' | 'activities' | 'about' | 'blog' | 'admin';
-  setActiveTab?: (tab: 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights' | 'workspace' | 'destinations' | 'activities' | 'about' | 'blog') => void;
+  activeTab?: HeaderTab | 'admin';
+  setActiveTab?: (tab: HeaderTab) => void;
   bookingsCount?: number;
   onOpenBookingList?: () => void;
   cartCount?: number;
@@ -53,6 +54,8 @@ interface HeaderProps {
   activeSection?: string;
   setActiveSection?: (sec: string) => void;
 }
+
+const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300';
 
 export const Header: React.FC<HeaderProps> = ({
   language,
@@ -72,19 +75,14 @@ export const Header: React.FC<HeaderProps> = ({
   setActiveSection
 }) => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
-  const [isCurrencyMenuOpen, setIsCurrencyMenuOpen] = useState(false);
+  const es = language === 'es';
   const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
-  
-
-  
-
-  
-
-
-  
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const menuPanelId = useId();
+  const menuTitleId = useId();
 
   const [currencyPrompt, setCurrencyPrompt] = useState<{
     isOpen: boolean;
@@ -97,25 +95,17 @@ export const Header: React.FC<HeaderProps> = ({
       case 'es': return 'CRC';
       case 'de':
       case 'fr': return 'EUR';
-      case 'en':
-      case 'zh':
-      case 'ja': return 'USD';
       default: return 'USD';
     }
   };
 
   const handleLanguageSelect = (langCode: Language) => {
-    setIsLangMenuOpen(false);
+    if (langCode === language) return;
     const suggested = getSuggestedCurrency(langCode);
+    setLanguage(langCode);
     if (suggested !== currency) {
-      setLanguage(langCode);
-      setCurrencyPrompt({
-        isOpen: true,
-        targetLang: langCode,
-        suggestedCurrency: suggested
-      });
-    } else {
-      setLanguage(langCode);
+      setIsMenuOpen(false);
+      setCurrencyPrompt({ isOpen: true, targetLang: langCode, suggestedCurrency: suggested });
     }
   };
 
@@ -126,695 +116,372 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const declineCurrencyChange = () => {
-    setCurrencyPrompt(null);
-  };
+  const declineCurrencyChange = () => setCurrencyPrompt(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => setUser(currentUser));
     return () => unsubscribe();
   }, []);
 
-  const [isScrolled, setIsScrolled] = useState(false);
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 25);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 25);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const currentLangInfo = SUPPORTED_LANGUAGES.find(l => l.code === language) || SUPPORTED_LANGUAGES[0];
+  // Close the compact menu on outside click and on Escape (focus returns to its button).
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const onPointerDown = (event: MouseEvent | TouchEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setIsMenuOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMenuOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('touchstart', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    const firstFocusable = document.getElementById(menuPanelId)?.querySelector<HTMLElement>('button, a, select');
+    firstFocusable?.focus();
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('touchstart', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isMenuOpen, menuPanelId]);
+
   const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
   const currentTab = activeTab || activeSection || 'home';
+  const count = bookingsCount !== undefined ? bookingsCount : (cartCount || 0);
 
-  const handleTabChange = (tab: string) => {
-    if (tab === 'home') navigate('/');
-    else navigate(`/${tab}`);
-    setIsMobileDrawerOpen(false);
+  const closeMenu = () => setIsMenuOpen(false);
+
+  const go = (path: string) => {
+    navigate(path);
+    closeMenu();
   };
 
   const handleOpenBookings = () => {
     if (onOpenBookingList) onOpenBookingList();
     else if (onOpenCart) onOpenCart();
-    setIsMobileDrawerOpen(false);
+    closeMenu();
   };
 
   const handleOpenItinerary = () => {
     if (setActiveTab) setActiveTab('itinerary');
     if (setActiveSection) setActiveSection('itinerary');
     if (onOpenItineraryPlanner) onOpenItineraryPlanner();
-    setIsMobileDrawerOpen(false);
+    else if (onOpenCustomFunnel) onOpenCustomFunnel();
+    closeMenu();
   };
 
-  const count = bookingsCount !== undefined ? bookingsCount : (cartCount || 0);
+  const handleQuote = () => {
+    closeMenu();
+    if (onOpenCustomFunnel) {
+      onOpenCustomFunnel();
+      return;
+    }
+    requestCustomerIntake({
+      message: es
+        ? 'Quisiera una cotización para tours en Costa Rica, con disponibilidad y precio verificados.'
+        : 'I would like a quote for Costa Rica tours, with verified availability and pricing.',
+      language, source: 'header:quote'
+    });
+  };
+
+  const primaryNav = [
+    { id: 'tours', to: '/tours', label: 'Tours', icon: Compass, match: ['tours', 'tour'] },
+    { id: 'destinations', to: '/destinations', label: es ? 'Destinos' : 'Destinations', icon: MapPin, match: ['destinations'] },
+    { id: 'map', to: '/map', label: es ? 'Mapa' : 'Map', icon: Map, match: ['map'] },
+    { id: 'ai', to: '/ai', label: es ? 'Asistente' : 'Assistant', icon: Bot, match: ['ai'] },
+  ];
+
+  const moreNav = [
+    { id: 'home', to: '/', label: es ? 'Inicio' : 'Home', icon: Home },
+    { id: 'activities', to: '/activities', label: es ? 'Actividades' : 'Activities', icon: Palette },
+    { id: 'blog', to: '/blog', label: 'Blog', icon: Mail },
+    { id: 'culture', to: '/culture', label: es ? 'Cultura tica' : 'Tico culture', icon: Coffee },
+    { id: 'flights', to: '/flights', label: es ? 'Vuelos' : 'Flights', icon: Plane },
+    { id: 'tools', to: '/tools', label: es ? 'Shuttles y guía' : 'Shuttles & guide', icon: Bus },
+  ];
+
+  const isActive = (match: string[]) => match.includes(String(currentTab));
+
+  const menuItemClass = `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-stone-100 hover:bg-white/5 transition-colors text-left cursor-pointer ${focusRing}`;
+  const sectionLabelClass = 'px-3 pt-3 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-400/90';
+
+  const avatarUrl = user ? (user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}`) : '';
 
   return (
     <>
-      <header id="main-header" className={`sticky top-0 z-[70] w-full max-w-full bg-[#031710]/95 backdrop-blur-xl border-b border-emerald-500/20 text-white shadow-xl transition-all duration-300 ${isScrolled ? 'shadow-emerald-950/40' : ''}`}>
-        
-        {/* Top Assistance & Trust Strip (Collapses smoothly on scroll to maximize visible screen) */}
-        <div className={`bg-[#010e08] text-xs px-3 sm:px-6 border-b border-emerald-500/15 text-stone-200 transition-all duration-300 overflow-hidden ${
-          isScrolled ? 'max-h-0 opacity-0 py-0 border-b-0 pointer-events-none' : 'max-h-12 opacity-100 py-1.5'
+      <header id="main-header" className={`sticky top-0 z-[70] w-full max-w-full bg-[#031710]/90 backdrop-blur-xl border-b border-white/10 text-white transition-shadow duration-300 ${isScrolled ? 'shadow-lg shadow-black/30' : ''}`}>
+
+        {/* Slim utility bar: one trust line + AI inquiry. Collapses on scroll. */}
+        <div className={`bg-[#010e08]/80 border-b border-white/5 text-stone-300 transition-all duration-300 overflow-hidden ${
+          isScrolled ? 'max-h-0 opacity-0 border-b-0 pointer-events-none' : 'max-h-10 opacity-100'
         }`}>
-          <div className="max-w-7xl mx-auto min-w-0 flex items-center justify-between gap-3 text-xs">
-            
-            <div className="flex items-center gap-3 whitespace-nowrap overflow-x-auto hide-scrollbar">
-              <span className="inline-flex items-center gap-1.5 bg-emerald-950/80 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/30 font-semibold text-[11px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>{language === 'es' ? '🇨🇷 Asistencia de viaje en Costa Rica' : '🇨🇷 Costa Rica travel assistance'}</span>
-              </span>
-
-              <span className="hidden sm:inline text-emerald-500/30">•</span>
-              
-              <button
-                type="button"
-                onClick={() => requestCustomerIntake({
-                  message: language === 'es'
-                    ? 'Quisiera consultar sobre tours y traslados en Costa Rica. ¿Qué opciones pueden verificar para mi viaje?'
-                    : 'I would like to ask about Costa Rica tours and transfers. What options can you verify for my trip?',
-                  language, source: 'header:assistance'
-                })}
-                className="hidden sm:inline-flex items-center gap-1.5 text-stone-200 hover:text-emerald-300 font-medium transition-colors text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300"
-              >
-                <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
-                <span>{language === 'es' ? 'Consulta por IA → WhatsApp' : 'AI inquiry → WhatsApp'}</span>
-              </button>
-
-              <span className="hidden lg:inline text-emerald-500/30">•</span>
-
-              <a
-                href="mailto:jarojas800@gmail.com"
-                className="hidden lg:inline-flex items-center gap-1.5 text-stone-300 hover:text-emerald-300 transition-colors text-xs"
-              >
-                <Mail className="w-3.5 h-3.5 text-emerald-400" />
-                <span>jarojas800@gmail.com</span>
-              </a>
-            </div>
-
-            <div className="hidden min-[1680px]:flex items-center gap-2 text-xs font-bold text-amber-400 shrink-0">
-              <ShieldCheck className="w-4 h-4 text-amber-400" />
-              <span>{language === 'es' ? 'Cupo y precio se confirman antes de pagar' : 'Availability and price confirmed before payment'}</span>
-            </div>
-
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-1 flex items-center justify-between gap-3 text-[11px]">
+            <span className="inline-flex items-center gap-1.5 min-w-0 truncate">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
+              <span className="truncate">{es ? 'Cupo y precio se confirman antes de pagar' : 'Availability and price confirmed before payment'}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => requestCustomerIntake({
+                message: es
+                  ? 'Quisiera consultar sobre tours y traslados en Costa Rica. ¿Qué opciones pueden verificar para mi viaje?'
+                  : 'I would like to ask about Costa Rica tours and transfers. What options can you verify for my trip?',
+                language, source: 'header:assistance'
+              })}
+              className={`hidden sm:inline-flex items-center gap-1.5 shrink-0 text-stone-300 hover:text-emerald-300 font-medium transition-colors rounded ${focusRing}`}
+            >
+              <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" aria-hidden="true" />
+              <span>{es ? 'Consulta por IA → WhatsApp' : 'AI inquiry → WhatsApp'}</span>
+            </button>
           </div>
         </div>
 
-        {/* Main Navigation Bar */}
-        <div className={`w-full max-w-7xl min-[1680px]:max-w-[1680px] min-w-0 mx-auto px-3 sm:px-6 lg:px-8 transition-all duration-300 flex items-center justify-between gap-2 lg:gap-4 ${
-          isScrolled ? 'py-2' : 'py-2.5'
-        }`}>
-          
-          {/* Brand Logo */}
-          <Link
-            to="/"
-            className="flex items-center gap-2.5 group text-left cursor-pointer shrink-0"
-          >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center text-stone-950 font-black shadow-md shadow-emerald-900/30 group-hover:scale-105 transition-transform">
+        {/* Main bar */}
+        <div className={`w-full max-w-7xl min-w-0 mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-2 lg:gap-6 transition-all duration-300 ${isScrolled ? 'py-2' : 'py-2.5'}`}>
+
+          <Link to="/" aria-label={es ? 'Costa Rica Tours, inicio' : 'Costa Rica Tours, home'} className={`flex items-center gap-2 group shrink-0 rounded-xl ${focusRing}`}>
+            <span className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-md shadow-emerald-900/30 group-hover:scale-105 transition-transform" aria-hidden="true">
               <Compass className="w-5 h-5 sm:w-6 sm:h-6 text-stone-950" />
-            </div>
-            <div className="whitespace-nowrap">
-              <div className="text-base sm:text-xl font-extrabold tracking-tight text-white flex items-center gap-1.5">
-                <span>Costa Rica</span>
-                <span className="text-amber-400">Tours</span>
-              </div>
-              <span className="text-[10px] tracking-wider uppercase font-semibold text-emerald-400 block">
-                {language === 'es' ? 'Tours y planificación' : 'Tours & trip planning'}
+            </span>
+            <span className="whitespace-nowrap leading-tight">
+              <span className="block text-[15px] sm:text-xl font-extrabold tracking-tight text-white">
+                Costa Rica <span className="text-amber-400">Tours</span>
               </span>
-            </div>
+              <span className="hidden sm:block text-[10px] tracking-wider uppercase font-semibold text-emerald-400">
+                {es ? 'Tours y planificación' : 'Tours & trip planning'}
+              </span>
+            </span>
           </Link>
 
-          {/* Unified High-Tech Desktop Navigation (Visible only when the full menu fits) */}
-          <nav className="hidden min-[1680px]:flex shrink-0 items-center gap-1 bg-[#010e08]/80 p-1.5 rounded-full border border-emerald-500/25 backdrop-blur-xl shadow-inner whitespace-nowrap">
-            <Link
-              to="/"
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                currentTab === 'home'
-                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
-                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
-              }`}
-            >
-              <Home className="w-4 h-4" />
-              <span>{language === 'es' ? 'Inicio' : 'Home'}</span>
-            </Link>
-
-            <Link
-              to="/tours"
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                currentTab === 'tours'
-                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
-                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
-              }`}
-            >
-              <Compass className="w-4 h-4" />
-              <span>{language === 'es' ? 'Tours' : 'Tours'}</span>
-            </Link>
-
-            <Link
-              to="/destinations"
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                currentTab === 'destinations'
-                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
-                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
-              }`}
-            >
-              <MapPin className="w-4 h-4" />
-              <span>{language === 'es' ? 'Destinos' : 'Destinations'}</span>
-            </Link>
-
-            <Link
-              to="/activities"
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                currentTab === 'activities'
-                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
-                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
-              }`}
-            >
-              <Palette className="w-4 h-4" />
-              <span>{language === 'es' ? 'Actividades' : 'Activities'}</span>
-            </Link>
-
-            <Link
-              to="/map"
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                currentTab === 'map'
-                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
-                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
-              }`}
-            >
-              <Map className="w-4 h-4" />
-              <span>{language === 'es' ? 'Mapa' : 'Map'}</span>
-            </Link>
-
-            <Link
-              to="/blog"
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                currentTab === 'blog'
-                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
-                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
-              }`}
-            >
-              <Mail className="w-4 h-4" />
-              <span>Blog</span>
-            </Link>
-
-            <Link
-              to="/ai"
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                currentTab === 'ai'
-                  ? 'bg-emerald-500 text-stone-950 font-extrabold shadow-sm'
-                  : 'text-stone-300 hover:text-white hover:bg-emerald-950/60'
-              }`}
-            >
-              <Bot className="w-4 h-4 text-amber-400" />
-              <span>{language === 'es' ? 'Asistente IA' : 'AI Concierge'}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            </Link>
+          {/* Primary navigation (tablet and up; on phones it lives in the menu and the bottom bar). */}
+          <nav aria-label={es ? 'Navegación principal' : 'Main navigation'} className="hidden md:flex items-center gap-1 min-w-0">
+            {primaryNav.map(({ id, to, label, icon: Icon, match }) => {
+              const active = isActive(match);
+              return (
+                <Link
+                  key={id}
+                  to={to}
+                  aria-current={active ? 'page' : undefined}
+                  className={`relative inline-flex items-center gap-1.5 px-3 lg:px-3.5 py-2 rounded-full text-sm font-semibold transition-colors whitespace-nowrap ${focusRing} ${
+                    active ? 'bg-white/10 text-white' : 'text-stone-300 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 ${id === 'ai' ? 'text-amber-400' : active ? 'text-emerald-300' : 'text-stone-400'}`} aria-hidden="true" />
+                  <span>{label}</span>
+                </Link>
+              );
+            })}
           </nav>
 
-          {/* Right Action Tools & Controls */}
-          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2 shrink-0">
-            <div className="hidden sm:block"><PWAInstallButton language={language} /></div>
-            
-            {/* Currency Selector */}
-            <div className="relative hidden sm:block">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0" ref={menuRef}>
+            <button
+              type="button"
+              onClick={handleQuote}
+              className={`inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-stone-950 font-extrabold text-sm px-3.5 sm:px-4 py-2 shadow-md shadow-orange-900/30 transition-colors whitespace-nowrap ${focusRing}`}
+            >
+              <FileText className="w-4 h-4" aria-hidden="true" />
+              <span>{es ? 'Cotizar' : 'Get a quote'}</span>
+            </button>
+
+            {/* Compact account menu, available at every width. */}
+            <div className="relative">
               <button
-                onClick={() => {
-                  setIsCurrencyMenuOpen(!isCurrencyMenuOpen);
-                  setIsLangMenuOpen(false);
-                }}
-                className="flex items-center gap-1 bg-emerald-950/70 hover:bg-emerald-900/80 px-2 sm:px-2.5 py-1.5 rounded-xl border border-emerald-500/40 text-[11px] font-bold text-stone-100 transition-all cursor-pointer"
-                title="Seleccionar Moneda / Currency"
+                ref={menuButtonRef}
+                type="button"
+                onClick={() => setIsMenuOpen(open => !open)}
+                aria-expanded={isMenuOpen}
+                aria-controls={menuPanelId}
+                aria-haspopup="dialog"
+                aria-label={es
+                  ? `Menú de cuenta y preferencias${count > 0 ? `, ${count} reservas` : ''}`
+                  : `Account and preferences menu${count > 0 ? `, ${count} bookings` : ''}`}
+                className={`relative flex items-center gap-1 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 pl-1 pr-1.5 sm:pr-2 py-1 transition-colors ${focusRing}`}
               >
-                <span className="font-mono text-orange-400 font-black">{currency}</span>
-                <ChevronDown className={`w-3 h-3 text-teal-300 transition-transform ${isCurrencyMenuOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isCurrencyMenuOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsCurrencyMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-44 max-h-60 overflow-y-auto bg-[#07241a] rounded-2xl shadow-2xl border border-emerald-500/40 z-50 text-stone-100 p-1.5 animate-fade-in modal-scrollable">
-                    <div className="px-2 py-1 text-[10px] font-black text-emerald-400 uppercase border-b border-emerald-500/30 mb-1">
-                      {language === 'es' ? 'Moneda de Pago' : 'Payment Currency'}
-                    </div>
-                    {CURRENCIES.map((curr) => (
-                      <button
-                        key={curr}
-                        onClick={() => {
-                          setCurrency(curr);
-                          setIsCurrencyMenuOpen(false);
-                        }}
-                        className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center justify-between ${
-                          currency === curr
-                            ? 'bg-orange-500 text-stone-950 font-black'
-                            : 'text-stone-200 hover:bg-emerald-900/60 hover:text-white'
-                        }`}
-                      >
-                        <span>{curr}</span>
-                        {curr === 'USD' && <span className="text-[10px] opacity-70">USD ($)</span>}
-                        {curr === 'CRC' && <span className="text-[10px] opacity-70">Colones (₡)</span>}
-                        {curr === 'EUR' && <span className="text-[10px] opacity-70">Euros (€)</span>}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Language Selector */}
-            <div className="relative hidden sm:block">
-              <button
-                onClick={() => {
-                  setIsLangMenuOpen(!isLangMenuOpen);
-                  setIsCurrencyMenuOpen(false);
-                }}
-                className="flex items-center gap-1 bg-emerald-950/70 hover:bg-emerald-900/80 px-2 sm:px-2.5 py-1.5 rounded-xl border border-emerald-500/40 text-[11px] font-bold text-stone-100 transition-all cursor-pointer"
-                title="Seleccionar Idioma / Language"
-              >
-                <span className="text-sm leading-none">{currentLangInfo.flag}</span>
-                <span className="font-mono text-stone-100 font-bold uppercase">{currentLangInfo.code}</span>
-                <ChevronDown className={`w-3 h-3 text-teal-300 transition-transform ${isLangMenuOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isLangMenuOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsLangMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-48 bg-[#07241a] rounded-2xl shadow-2xl border border-emerald-500/40 z-50 text-stone-100 p-1.5 animate-fade-in">
-                    <div className="px-2 py-1 text-[10px] font-black text-emerald-400 uppercase border-b border-emerald-500/30 mb-1">
-                      🌍 Idioma / Language
-                    </div>
-                    {SUPPORTED_LANGUAGES.map((langItem) => (
-                      <button
-                        key={langItem.code}
-                        onClick={() => handleLanguageSelect(langItem.code)}
-                        className={`w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold flex items-center justify-between transition-colors ${
-                          language === langItem.code
-                            ? 'bg-orange-500 text-stone-950 font-black'
-                            : 'text-stone-200 hover:bg-emerald-900/60 hover:text-white'
-                        }`}
-                      >
-                        <span className="flex items-center gap-2">
-                          <span className="text-base">{langItem.flag}</span>
-                          <span>{langItem.nativeName}</span>
-                        </span>
-                        <span className="text-[10px] font-mono opacity-70 uppercase">
-                          {langItem.code}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* My Bookings Button */}
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => navigate('/tours?favorites=1')}
-                className="relative hidden sm:flex items-center justify-center w-9 h-9 bg-emerald-950/70 hover:bg-emerald-900 text-rose-400 p-2 rounded-xl border border-emerald-500/40 transition-all hover:scale-105 cursor-pointer shadow-sm shrink-0"
-                aria-label={language === 'es' ? 'Ver favoritos' : 'View favorites'}
-              >
-                <Heart className="w-4 h-4 fill-rose-500" />
-                <span className="sr-only">{language === 'es' ? 'Favoritos' : 'Favorites'}</span>
-              </button>
-
-              <button
-                onClick={handleOpenBookings}
-                className="relative flex items-center gap-1.5 bg-emerald-900/80 hover:bg-emerald-800 text-white px-2.5 sm:px-3 py-1.5 rounded-xl font-bold text-xs border border-emerald-500/40 transition-all hover:scale-105 cursor-pointer shadow-sm shrink-0"
-                aria-label={language === 'es' ? 'Ver mis reservas' : 'View my bookings'}
-              >
-                <ShoppingBag className="w-3.5 h-3.5 text-orange-400" />
-                <span className="hidden md:inline text-[11px] font-black uppercase whitespace-nowrap">
-                  {language === 'es' ? 'Reservas' : 'Bookings'}
+                {user ? (
+                  <img src={avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <span className="w-7 h-7 rounded-full bg-emerald-900/80 flex items-center justify-center" aria-hidden="true">
+                    <UserIcon className="w-4 h-4 text-emerald-200" />
+                  </span>
+                )}
+                <span className="hidden sm:inline font-mono text-[11px] font-bold text-stone-300" aria-hidden="true">
+                  {language.toUpperCase()} · {currency}
                 </span>
+                <ChevronDown className={`w-3.5 h-3.5 text-stone-400 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
                 {count > 0 && (
-                  <span className="w-5 h-5 rounded-full bg-orange-500 text-stone-950 font-black text-[10px] flex items-center justify-center border-2 border-stone-950 shadow-sm animate-pulse">
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-orange-500 text-stone-950 font-black text-[10px] flex items-center justify-center border-2 border-[#031710]" aria-hidden="true">
                     {count}
                   </span>
                 )}
               </button>
-            </div>
 
-            {/* Google User Profile / Sign-in */}
-            {user ? (
-              <div className="flex items-center gap-1.5 shrink-0">
-                <img 
-                  src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}`} 
-                  alt="Avatar" 
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl object-cover border border-orange-400/50" 
-                  title={user.displayName || user.email || ''}
-                />
-                <button 
-                  onClick={signOut} 
-                  className="text-emerald-300/80 hover:text-rose-400 transition-colors p-1 cursor-pointer" 
-                  title={language === 'es' ? 'Cerrar Sesión' : 'Sign Out'}
+              {isMenuOpen && (
+                <div
+                  id={menuPanelId}
+                  role="dialog"
+                  aria-modal="false"
+                  aria-labelledby={menuTitleId}
+                  className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-5.5rem)] overflow-y-auto modal-scrollable rounded-2xl border border-white/10 bg-[#061f17] shadow-2xl shadow-black/50 p-2 z-[100] text-white animate-fade-in"
                 >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={signInWithGoogle}
-                className="hidden min-[1680px]:flex items-center gap-1 text-[11px] font-bold bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 px-2.5 py-1.5 rounded-xl border border-emerald-500/40 transition-colors shrink-0 cursor-pointer"
-              >
-                <LogIn className="w-3.5 h-3.5 text-amber-400" />
-                <span>{t('signIn')}</span>
-              </button>
-            )}
+                  <h2 id={menuTitleId} className="sr-only">{es ? 'Cuenta y preferencias' : 'Account and preferences'}</h2>
 
-            {/* Compact navigation remains available until the full menu fits comfortably. */}
-            <button
-              onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
-              className="min-[1680px]:hidden p-2 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 text-stone-100 border border-emerald-500/40 transition-colors cursor-pointer shrink-0"
-              aria-label={language === 'es' ? 'Abrir menú' : 'Open menu'}
-              aria-expanded={isMobileDrawerOpen}
-              aria-controls="main-navigation-drawer"
-            >
-              {isMobileDrawerOpen ? <X className="w-4 h-4 text-amber-400" /> : <Menu className="w-4 h-4 text-emerald-200" />}
-            </button>
-
-          </div>
-        </div>
-
-        {/* Practical Mobile & Tablet Navigation Drawer */}
-        {isMobileDrawerOpen && (
-          <>
-            <div
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[90] min-[1680px]:hidden"
-              onClick={() => setIsMobileDrawerOpen(false)}
-            />
-            
-            <div id="main-navigation-drawer" className="absolute top-full left-2 right-2 sm:left-4 sm:right-4 max-h-[calc(100dvh-6rem)] bg-[#061f17] border border-emerald-500/30 rounded-3xl z-[100] shadow-2xl p-4 sm:p-5 overflow-y-auto min-[1680px]:hidden space-y-4 animate-fade-in modal-scrollable text-white">
-              
-              {/* Drawer Header */}
-              <div className="flex items-center justify-between border-b border-emerald-500/20 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-white font-black text-sm">
-                    🇨🇷
-                  </div>
-                  <div>
-                    <span className="text-xs font-black text-white uppercase tracking-wider block">
-                      Costa Rica <span className="text-amber-400">Tours</span>
-                    </span>
-                    <span className="text-[8px] text-emerald-400 font-bold uppercase tracking-widest">
-                      {language === 'es' ? 'Tours y asistencia de viaje' : 'Tours & travel assistance'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
+                  {/* Account */}
                   {user ? (
-                    <div className="flex items-center gap-1.5 bg-[#03140d] px-2.5 py-1 rounded-xl border border-emerald-500/30">
-                      <img 
-                        src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}`} 
-                        alt={user.displayName || 'Avatar'} 
-                        className="w-5 h-5 rounded-full" 
-                      />
-                      <button onClick={signOut} className="text-rose-400 hover:text-rose-300 text-xs font-bold ml-1 cursor-pointer">
-                        Salir
-                      </button>
+                    <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5">
+                      <img src={avatarUrl} alt="" className="w-9 h-9 rounded-full object-cover" referrerPolicy="no-referrer" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold truncate">{user.displayName || (es ? 'Mi cuenta' : 'My account')}</p>
+                        {user.email && <p className="text-[11px] text-stone-400 truncate">{user.email}</p>}
+                      </div>
                     </div>
                   ) : (
                     <button
-                      onClick={() => {
-                        signInWithGoogle();
-                        setIsMobileDrawerOpen(false);
-                      }}
-                      className="flex items-center gap-1 text-[10px] font-black bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 px-2.5 py-1 rounded-xl border border-amber-400/30 uppercase cursor-pointer"
+                      type="button"
+                      onClick={() => { closeMenu(); signInWithGoogle(); }}
+                      className={`w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-stone-950 text-sm font-extrabold transition-colors ${focusRing}`}
                     >
-                      <LogIn className="w-3 h-3" />
+                      <LogIn className="w-4 h-4" aria-hidden="true" />
                       <span>{t('signIn')}</span>
                     </button>
                   )}
 
-                  <button
-                    onClick={() => setIsMobileDrawerOpen(false)}
-                    className="p-1.5 rounded-xl bg-[#03140d] text-emerald-300 hover:text-white border border-emerald-500/30 cursor-pointer"
-                    aria-label={language === 'es' ? 'Cerrar menú' : 'Close menu'}
-                  >
-                    <X className="w-4 h-4" />
+                  {/* Primary navigation for phones */}
+                  <div className="md:hidden">
+                    <p className={sectionLabelClass}>{es ? 'Explorar' : 'Explore'}</p>
+                    {primaryNav.map(({ id, to, label, icon: Icon, match }) => (
+                      <Link key={id} to={to} onClick={closeMenu} aria-current={isActive(match) ? 'page' : undefined} className={`${menuItemClass} ${isActive(match) ? 'bg-white/10' : ''}`}>
+                        <Icon className="w-4 h-4 text-emerald-300" aria-hidden="true" />
+                        <span>{label}</span>
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* My trip */}
+                  <p className={sectionLabelClass}>{es ? 'Mi viaje' : 'My trip'}</p>
+                  <button type="button" onClick={handleOpenBookings} className={menuItemClass}>
+                    <ShoppingBag className="w-4 h-4 text-orange-400" aria-hidden="true" />
+                    <span className="flex-1">{t('myBookings')}</span>
+                    {count > 0 && <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-orange-500 text-stone-950 text-[11px] font-black flex items-center justify-center">{count}</span>}
                   </button>
-                </div>
-              </div>
-
-              {/* Quick Trip Builder & Bookings Action Bar in Drawer */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => {
-                    handleOpenItinerary();
-                    setIsMobileDrawerOpen(false);
-                  }}
-                  className="flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 to-amber-600 text-stone-950 p-2.5 rounded-2xl font-black text-xs uppercase shadow-md cursor-pointer"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>{language === 'es' ? 'Armar Viaje' : 'Custom Trip'}</span>
-                </button>
-
-                <button
-                  onClick={handleOpenBookings}
-                  className="flex items-center justify-center gap-1.5 bg-emerald-950/80 text-stone-100 border border-emerald-500/30 p-2.5 rounded-2xl font-black text-xs uppercase border border-teal-600/50"
-                >
-                  <ShoppingBag className="w-3.5 h-3.5 text-orange-400" />
-                  <span>{language === 'es' ? 'Mis Reservas' : 'My Bookings'}</span>
-                  {count > 0 && (
-                    <span className="w-4 h-4 rounded-full bg-orange-500 text-stone-950 font-black text-[9px] flex items-center justify-center">
-                      {count}
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <label className="text-[10px] font-bold text-emerald-300">{language === 'es' ? 'Idioma' : 'Language'}
-                  <select value={language} onChange={(event) => handleLanguageSelect(event.target.value as Language)} className="mt-1 w-full rounded-xl border border-emerald-500/30 bg-[#03140d] px-2.5 py-2 text-xs text-white">
-                    {SUPPORTED_LANGUAGES.map((item) => <option key={item.code} value={item.code}>{item.flag} {item.nativeName}</option>)}
-                  </select>
-                </label>
-                <label className="text-[10px] font-bold text-emerald-300">{language === 'es' ? 'Moneda' : 'Currency'}
-                  <select value={currency} onChange={(event) => setCurrency(event.target.value)} className="mt-1 w-full rounded-xl border border-emerald-500/30 bg-[#03140d] px-2.5 py-2 text-xs text-white">
-                    {CURRENCIES.map((item) => <option key={item} value={item}>{item}</option>)}
-                  </select>
-                </label>
-              </div>
-
-              {/* Section 1: Tours & Destinos */}
-              <div className="space-y-1.5">
-                <span className="text-[9px] uppercase font-black tracking-widest text-emerald-400 px-1 block">
-                  {language === 'es' ? 'Experiencias & Destinos' : 'Experiences & Destinations'}
-                </span>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <button
-                    onClick={() => handleTabChange('home')}
-                    className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left ${
-                      currentTab === 'home' ? 'bg-amber-400 text-stone-950 font-black' : 'bg-[#041910] text-emerald-100 hover:bg-[#07261b] border border-emerald-500/25'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Home className="w-4 h-4 text-amber-400" />
-                      <span className="text-xs font-bold">{language === 'es' ? 'Inicio' : 'Home'}</span>
-                    </span>
-                    <span className="text-[9px] uppercase opacity-70">{language === 'es' ? 'Principal' : 'Main'}</span>
+                  <button type="button" onClick={() => go('/tours?favorites=1')} className={menuItemClass}>
+                    <Heart className="w-4 h-4 text-rose-400" aria-hidden="true" />
+                    <span>{es ? 'Favoritos' : 'Favorites'}</span>
+                  </button>
+                  <button type="button" onClick={handleOpenItinerary} className={menuItemClass}>
+                    <Sparkles className="w-4 h-4 text-amber-300" aria-hidden="true" />
+                    <span>{es ? 'Armar mi viaje' : 'Build my trip'}</span>
                   </button>
 
-                  <button
-                    onClick={() => handleTabChange('tours')}
-                    className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left ${
-                      currentTab === 'tours' ? 'bg-amber-400 text-stone-950 font-black' : 'bg-[#041910] text-emerald-100 hover:bg-[#07261b] border border-emerald-500/25'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Compass className="w-4 h-4 text-amber-400" />
-                      <span className="text-xs font-bold">{t('toursAndAdventures')}</span>
-                    </span>
-                    <span className="text-[9px] uppercase bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded-full font-black border border-amber-400/30">
-                      +20 Tours
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => handleTabChange('map')}
-                    className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left ${
-                      currentTab === 'map' ? 'bg-amber-400 text-stone-950 font-black' : 'bg-[#041910] text-emerald-100 hover:bg-[#07261b] border border-emerald-500/25'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Map className="w-4 h-4 text-emerald-400" />
-                      <span className="text-xs font-bold">{t('interactiveMap')}</span>
-                    </span>
-                    <span className="text-[9px] uppercase opacity-70">{language === 'es' ? 'Por Regiones' : 'By Region'}</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleTabChange('culture')}
-                    className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left ${
-                      currentTab === 'culture' ? 'bg-amber-400 text-stone-950 font-black' : 'bg-[#041910] text-emerald-100 hover:bg-[#07261b] border border-emerald-500/25'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Coffee className="w-4 h-4 text-amber-300" />
-                      <span className="text-xs font-bold">{language === 'es' ? 'Rincón Tico (Cultura)' : 'Tico Culture & Slang'}</span>
-                    </span>
-                    <span className="text-[9px] uppercase opacity-70">100% Tico</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Section 2: Inteligencia Artificial & Planificación */}
-              <div className="space-y-1.5 pt-2 border-t border-emerald-500/20">
-                <span className="text-[9px] uppercase font-black tracking-widest text-amber-400 px-1 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-amber-400" />
-                  {language === 'es' ? 'Asistente y planificación' : 'Assistant & trip planning'}
-                </span>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <button
-                    onClick={() => handleTabChange('ai')}
-                    className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left border ${
-                      currentTab === 'ai' 
-                        ? 'bg-amber-400 text-stone-950 font-black border-amber-300 shadow-md' 
-                        : 'bg-[#041910] border-emerald-500/25 text-emerald-100 hover:bg-[#07261b]'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Bot className="w-4 h-4 text-amber-400" />
-                      <span className="text-xs font-bold">{language === 'es' ? 'Asistente de viaje' : 'Travel assistant'}</span>
-                    </span>
-                    <span className="text-[9px] uppercase bg-amber-400 text-stone-950 px-2 py-0.5 rounded-full font-black">
-                      IA
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      handleOpenItinerary();
-                      setIsMobileDrawerOpen(false);
-                    }}
-                    className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left border ${
-                      currentTab === 'itinerary'
-                        ? 'bg-amber-400 text-stone-950 font-black border-amber-300 shadow-md'
-                        : 'bg-[#041910] border-emerald-500/25 text-emerald-100 hover:bg-[#07261b]'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-amber-300" />
-                      <span className="text-xs font-bold">{t('aiPlanner')}</span>
-                    </span>
-                    <span className="text-[9px] uppercase bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded-full font-bold">
-                      Gratis
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Section 3: Movilidad & Logística */}
-              <div className="space-y-1.5 pt-2 border-t border-emerald-500/20">
-                <span className="text-[9px] uppercase font-black tracking-widest text-emerald-400 px-1 block">
-                  {language === 'es' ? 'Transporte & Movilidad' : 'Transport & Logistics'}
-                </span>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <button
-                    onClick={() => handleTabChange('flights')}
-                    className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left border ${
-                      currentTab === 'flights' ? 'bg-amber-400 text-stone-950 font-black border-amber-300' : 'bg-[#041910] text-emerald-100 hover:bg-[#07261b] border border-emerald-500/25'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Plane className="w-4 h-4 text-amber-400" />
-                      <span className="text-xs font-bold">{language === 'es' ? 'Vuelos a Costa Rica' : 'Flights to CR'}</span>
-                    </span>
-                    <span className="text-[9px] uppercase bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded-full font-black">
-                      Buscar
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => handleTabChange('tools')}
-                    className={`flex items-center justify-between p-3 rounded-2xl transition-colors text-left ${
-                      currentTab === 'tools' ? 'bg-amber-400 text-stone-950 font-black' : 'bg-[#041910] text-emerald-100 hover:bg-[#07261b] border border-emerald-500/25'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Bus className="w-4 h-4 text-emerald-400" />
-                      <span className="text-xs font-bold">{language === 'es' ? 'Shuttles & Guía' : 'Shuttles & Guide'}</span>
-                    </span>
-                    <span className="text-[9px] uppercase opacity-70">Rutas</span>
-                  </button>
-
-                  {onOpenLocalBuses && (
-                    <button
-                      onClick={() => {
-                        onOpenLocalBuses();
-                        setIsMobileDrawerOpen(false);
-                      }}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-[#041910] text-emerald-100 hover:bg-[#07261b] transition-colors text-left border border-emerald-500/25"
+                  {/* Preferences */}
+                  <p className={sectionLabelClass}>{es ? 'Preferencias' : 'Preferences'}</p>
+                  <div className="px-3 py-1.5">
+                    <p id={`${menuPanelId}-lang`} className="flex items-center gap-1.5 text-xs font-semibold text-stone-300 mb-1.5">
+                      <Globe className="w-3.5 h-3.5 text-emerald-300" aria-hidden="true" />
+                      {es ? 'Idioma' : 'Language'}
+                    </p>
+                    <div role="group" aria-labelledby={`${menuPanelId}-lang`} className="grid grid-cols-2 gap-1.5">
+                      {SUPPORTED_LANGUAGES.map(item => {
+                        const selected = item.code === language;
+                        return (
+                          <button
+                            key={item.code}
+                            type="button"
+                            lang={item.code}
+                            aria-pressed={selected}
+                            onClick={() => handleLanguageSelect(item.code)}
+                            className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-bold border transition-colors ${focusRing} ${
+                              selected ? 'bg-emerald-500 text-stone-950 border-emerald-400' : 'bg-white/5 text-stone-200 border-white/10 hover:bg-white/10'
+                            }`}
+                          >
+                            {selected && <Check className="w-3.5 h-3.5" aria-hidden="true" />}
+                            <span>{item.nativeName}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <label className="block px-3 py-1.5 text-xs font-semibold text-stone-300">
+                    <span className="block mb-1.5">{es ? 'Moneda' : 'Currency'}</span>
+                    <select
+                      value={currency}
+                      onChange={(event) => setCurrency(event.target.value as Currency)}
+                      className={`w-full rounded-lg border border-white/10 bg-[#03140d] px-2.5 py-2 text-sm text-white ${focusRing}`}
                     >
-                      <span className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-amber-400" />
-                        <span className="text-xs font-bold">{t('localBuses')}</span>
-                      </span>
-                      <span className="text-[9px] uppercase opacity-70">Rutas</span>
+                      {CURRENCIES.map(item => <option key={item} value={item}>{item}</option>)}
+                    </select>
+                  </label>
+
+                  {/* More */}
+                  <p className={sectionLabelClass}>{es ? 'Más' : 'More'}</p>
+                  {moreNav.map(({ id, to, label, icon: Icon }) => (
+                    <Link key={id} to={to} onClick={closeMenu} aria-current={currentTab === id ? 'page' : undefined} className={menuItemClass}>
+                      <Icon className="w-4 h-4 text-stone-400" aria-hidden="true" />
+                      <span>{label}</span>
+                    </Link>
+                  ))}
+                  {onOpenLocalBuses && (
+                    <button type="button" onClick={() => { closeMenu(); onOpenLocalBuses(); }} className={menuItemClass}>
+                      <Clock className="w-4 h-4 text-stone-400" aria-hidden="true" />
+                      <span>{t('localBuses')}</span>
                     </button>
                   )}
+                  <div className="px-3 py-2">
+                    <PWAInstallButton language={language} />
+                  </div>
+
+                  {user && (
+                    <div className="border-t border-white/10 mt-1 pt-1">
+                      <button type="button" onClick={() => { closeMenu(); signOut(); }} className={`${menuItemClass} text-rose-300`}>
+                        <LogOut className="w-4 h-4" aria-hidden="true" />
+                        <span>{es ? 'Cerrar sesión' : 'Sign out'}</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              {/* WhatsApp Support in Drawer */}
-              <div className="pt-3 border-t border-emerald-500/20 space-y-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileDrawerOpen(false);
-                    requestCustomerIntake({
-                      message: language === 'es'
-                        ? 'Quisiera ayuda para reservar un tour, con disponibilidad y precio verificados.'
-                        : 'I need help booking a tour with verified availability and pricing.',
-                      language, source: 'header:mobile-assistance'
-                    });
-                  }}
-                  className="w-full flex items-center justify-center gap-2 bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] p-3 rounded-2xl font-black text-xs uppercase border border-[#25D366]/40 transition-colors"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>{language === 'es' ? 'Consulta con IA y asistencia' : 'AI assisted inquiry'}</span>
-                </button>
-              </div>
-
+              )}
             </div>
-          </>
-        )}
-
+          </div>
+        </div>
       </header>
 
       {/* Currency Change Modal */}
       {currencyPrompt?.isOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="currency-prompt-title">
           <div className="bg-[#07241a] rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl animate-fade-in border border-emerald-500/40 text-stone-100">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shrink-0">
-                <Globe className="w-6 h-6 text-amber-400" />
+                <Globe className="w-6 h-6 text-amber-400" aria-hidden="true" />
               </div>
-              <h3 className="text-lg sm:text-xl font-black uppercase text-white">
+              <h3 id="currency-prompt-title" className="text-lg sm:text-xl font-black uppercase text-white">
                 {t('suggestCurrencyChangeTitle')}
               </h3>
             </div>
-            
+
             <p className="text-sm text-stone-200 mb-6 font-medium leading-relaxed">
               {t('suggestCurrencyChangeDesc')} <strong className="font-black text-amber-400 text-base">{currencyPrompt.suggestedCurrency}</strong>?
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-3">
-              <button 
+              <button
+                type="button"
                 onClick={declineCurrencyChange}
-                className="flex-1 px-4 py-3 rounded-xl font-bold uppercase text-xs text-stone-300 bg-emerald-950/80 hover:bg-emerald-900 transition-colors border border-emerald-500/30 cursor-pointer"
+                className={`flex-1 px-4 py-3 rounded-xl font-bold uppercase text-xs text-stone-300 bg-emerald-950/80 hover:bg-emerald-900 transition-colors border border-emerald-500/30 cursor-pointer ${focusRing}`}
               >
                 {t('noKeepCurrent')}
               </button>
-              <button 
+              <button
+                type="button"
+                autoFocus
                 onClick={acceptCurrencyChange}
-                className="flex-1 px-4 py-3 rounded-xl font-black uppercase text-xs text-stone-950 bg-amber-400 hover:bg-amber-300 transition-colors shadow-lg shadow-amber-500/20 cursor-pointer"
+                className={`flex-1 px-4 py-3 rounded-xl font-black uppercase text-xs text-stone-950 bg-amber-400 hover:bg-amber-300 transition-colors shadow-lg shadow-amber-500/20 cursor-pointer ${focusRing}`}
               >
                 {t('yesChangeIt')}
               </button>

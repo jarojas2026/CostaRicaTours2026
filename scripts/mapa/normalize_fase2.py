@@ -1,5 +1,6 @@
 # Normaliza las fuentes curadas de data/fuentes/fase2 (+ CCSS) a public/data/mapa/*.geojson.
 # Uso: python3 scripts/mapa/fetch_ccss.py && python3 scripts/mapa/normalize_fase2.py
+# Después SIEMPRE: python3 scripts/catalog/strip_public_business_contacts.py (sin contactos de negocios en datos públicos).
 import json, os
 import sys, pathlib
 ROOT=pathlib.Path(__file__).resolve().parents[2]

@@ -2,6 +2,8 @@ import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Language } from '../types';
 import { buildTourQuoteLeadPayload, TOUR_QUOTE_ENDPOINT, type TourQuoteError } from '../../shared/tourQuoteRequest';
+import { formGuardFields } from '../../shared/formAbuse';
+import { HoneypotField } from './HoneypotField';
 
 interface Props {
   tourId: string;
@@ -29,8 +31,11 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
   const [message, setMessage] = useState('');
   const [consent, setConsent] = useState(false);
   const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [reference, setReference] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const sending = useRef(false);
+  const [startedAt] = useState(() => Date.now());
+  const [honeypot, setHoneypot] = useState('');
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,9 +49,20 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
       const res = await fetch(TOUR_QUOTE_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(built.payload),
+        body: JSON.stringify({ ...built.payload, ...formGuardFields(startedAt, honeypot) }),
       });
+      if (res.status === 429 || res.status === 400) {
+        const body = await res.json().catch(() => ({}));
+        if (body?.code === 'rate_limited' || body?.code === 'too_fast') {
+          setState('idle');
+          setError(String(body.message));
+          return;
+        }
+      }
       if (!res.ok) throw new Error(String(res.status));
+      const body = await res.json().catch(() => ({}));
+      // Solo una referencia corta del servidor (sin datos personales) si viene en la respuesta.
+      setReference(typeof body?.reference === 'string' && /^CRT-[A-Z0-9]{6,8}$/.test(body.reference) ? body.reference : null);
       setState('sent');
     } catch {
       setState('idle');
@@ -60,13 +76,18 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
     return (
       <div role="status" data-testid="tour-quote-success" className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-4 text-sm text-emerald-100">
         {es ? 'Solicitud recibida. Te enviaremos la cotización con disponibilidad y precio confirmados antes de cualquier pago.' : 'Request received. We will send you a quote with confirmed availability and price before any payment.'}
+        {reference && (
+          <p className="mt-2 text-xs font-bold text-emerald-200" data-testid="tour-quote-reference">
+            {es ? 'Número de referencia: ' : 'Reference number: '}<span className="font-mono">{reference}</span>
+          </p>
+        )}
       </div>
     );
   }
 
   const disabled = state === 'sending';
   return (
-    <form onSubmit={submit} noValidate aria-label={es ? 'Solicitar cotización' : 'Request a quote'} className="space-y-3">
+    <form onSubmit={submit} noValidate aria-label={es ? 'Solicitar cotización' : 'Request a quote'} className="relative space-y-3">
       <h2 className="text-lg font-black text-white">{es ? 'Solicitar cotización' : 'Request a quote'}</h2>
       <p className="text-xs text-stone-400">{es ? 'No es una reserva ni un cobro. Confirmamos precio y cupo por escrito antes de cualquier pago; la identidad del operador se indica en la confirmación de la reserva.' : 'This is not a booking or a charge. We confirm price and availability in writing before any payment; the operator’s identity is provided in the booking confirmation.'}</p>
       <label className="block text-xs text-stone-300">{es ? 'Nombre' : 'Name'}
@@ -99,6 +120,8 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
       <button type="submit" disabled={disabled || !consent} className="w-full rounded-2xl bg-emerald-500 py-3 font-black text-stone-950 hover:bg-emerald-400 disabled:opacity-50">
         {disabled ? (es ? 'Enviando…' : 'Sending…') : (es ? 'Enviar solicitud' : 'Send request')}
       </button>
+      {/* Al final del formulario: el foco automático toma el primer campo real. */}
+      <HoneypotField value={honeypot} onChange={setHoneypot} />
     </form>
   );
 };

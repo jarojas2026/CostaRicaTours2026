@@ -1,9 +1,11 @@
 import { TourFacts } from '../components/TourFacts';
+import { NotFoundPage } from './NotFoundPage';
 import { TourQuoteRequestForm } from '../components/TourQuoteRequestForm';
 import { resolveTour, tourAllowsPayment, TOUR_COMMERCIAL_STATUS } from '../utils/tourResolver';
 import React, { useState, useEffect, useRef } from 'react';
 import { createBookingAttempt, requirePaymentUrl } from '../utils/bookingAttempt';
 import { publishedTourPrice, similarTours } from '../utils/tourPublication';
+import { formatUsdReference } from '../utils/referencePrice';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   Clock, MapPin, ShieldCheck, Calendar, Users,
@@ -14,8 +16,10 @@ import { Tour, Language, Currency, BookingRequest } from '../types';
 import { getLangText, formatCurrency } from '../utils/i18n';
 import { neutralOperatorLabel, SUPPLIER_POLICY } from '../utils/operatorPrivacy';
 import { useTours } from '../contexts/ToursContext';
+import { REGIONS } from '../data/catalogMeta';
 import { getUsdToCrcRate } from '../utils/currencies';
 import { LazyImage } from '../components/LazyImage';
+import { TourWeather } from '../components/TourWeather';
 import { useTourMedia } from '../hooks/useTourMedia';
 import { requestCustomerIntake } from '../utils/customerIntake';
 
@@ -52,6 +56,8 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
   const [sinpeRef, setSinpeRef] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [quoteInView, setQuoteInView] = useState(false);
+  const quoteRef = useRef<HTMLDivElement>(null);
   const attempt = useRef(createBookingAttempt());
   const submitting = useRef(false);
   const { assets: mediaAssets, loading: mediaLoading, error: mediaError } = useTourMedia(
@@ -68,6 +74,15 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
     setErrorMessage(null);
   }, [selectedDate, adults, children, tour?.id, pendingBookingId]);
 
+  // The mobile CTA bar hides while the quote form is on screen, so it never covers its submit button.
+  useEffect(() => {
+    const node = quoteRef.current;
+    if (!node || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(([entry]) => setQuoteInView(entry.isIntersecting), { threshold: 0.05 });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [tour?.id, loading]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-950">
@@ -76,14 +91,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
     );
   }
 
-  if (!tour) return (
-    <main data-testid="tour-not-found" className="min-h-screen bg-stone-950 px-6 pt-32 text-center text-white">
-      <p className="text-6xl font-black text-emerald-400">404</p>
-      <h1 className="mt-4 text-3xl font-black">{language === 'es' ? 'Tour no encontrado' : 'Tour not found'}</h1>
-      <p className="mx-auto mt-3 max-w-md text-stone-400">{language === 'es' ? 'Este tour no existe o ya no está en el catálogo.' : 'This tour does not exist or is no longer in the catalog.'}</p>
-      <Link to="/tours" className="mt-6 inline-block rounded-2xl bg-emerald-500 px-6 py-3 font-black text-stone-950">{language === 'es' ? 'Explorar tours' : 'Explore tours'}</Link>
-    </main>
-  );
+  if (!tour) return <NotFoundPage language={language} variant="tour" />;
 
   const totalUSD = (tour.priceUSD * adults) + (tour.priceUSD * 0.7 * children);
   const crcRate = getUsdToCrcRate();
@@ -322,12 +330,27 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
     }
   };
 
+  const referencePrice = publishedTourPrice(tour);
+  const priceLabel = referencePrice === undefined
+    ? (language === 'es' ? 'Consultar disponibilidad' : 'Check availability')
+    : (language === 'es' ? `desde ${formatUsdReference(referencePrice)}` : `from ${formatUsdReference(referencePrice)}`);
+  const priceNote = referencePrice === undefined ? null : (language === 'es' ? 'sujeto a confirmación' : 'subject to confirmation');
+  const ctaLabel = language === 'es' ? 'Cotizar / Reservar' : 'Get a quote / Book';
+  const openQuoteForm = () => {
+    const node = quoteRef.current;
+    if (!node) return;
+    const reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    node.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    const field = node.querySelector<HTMLElement>('input:not([disabled]), select:not([disabled]), textarea:not([disabled])');
+    (field || node).focus({ preventScroll: true });
+  };
+
   const gallery = mediaAssets.length > 0
     ? mediaAssets.map(asset => asset.url)
     : (Array.isArray(tour.gallery) && tour.gallery.length > 0 ? tour.gallery : [tour.image]);
 
   return (
-    <div className="bg-stone-950 pt-20">
+    <div className="bg-stone-950 pt-20 pb-24 lg:pb-0">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center gap-4 mb-8">
           <button
@@ -340,7 +363,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
           <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-stone-500">
             <span>Tours</span>
             <ChevronRight size={12} />
-            <span>{getLangText(tour.region, language as any)}</span>
+            <span>{(() => { const region = REGIONS.find((r) => r.id === tour.region); return region ? getLangText(region.name, language) : String(tour.region || '').replace(/_/g, ' ').replace(/\b\p{L}/gu, (c) => c.toUpperCase()); })()}</span>
             <ChevronRight size={12} />
             <span className="text-emerald-500">{getLangText(tour.title, language)}</span>
           </div>
@@ -379,6 +402,16 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
                 <span>{tour.location?.placeName || 'Costa Rica'}</span>
               </div>
               <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-tight">{getLangText(tour.title, language)}</h1>
+
+              <div data-testid="tour-cta" className="flex flex-col gap-3 rounded-[2rem] border border-emerald-500/30 bg-emerald-950/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div data-testid="tour-cta-price" className="text-2xl font-black text-emerald-300">{priceLabel}</div>
+                  {priceNote && <div className="text-xs font-semibold text-stone-400">{priceNote}</div>}
+                </div>
+                <button type="button" onClick={openQuoteForm} aria-controls="tour-quote" className="rounded-2xl bg-emerald-500 px-6 py-3 font-black text-stone-950 shadow-lg shadow-emerald-500/20 transition-colors hover:bg-emerald-400 focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300/60">
+                  {ctaLabel}
+                </button>
+              </div>
 
               <div className="flex flex-wrap gap-4">
                 <div className="px-5 py-3 bg-stone-900 rounded-2xl border border-white/5 flex items-center gap-3">
@@ -435,6 +468,8 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
               </div>
             </div>
 
+            <TourWeather lat={tour.location.lat} lng={tour.location.lng} language={language} />
+
             <section aria-label={language === 'es' ? 'Ubicación y tours similares' : 'Location and similar tours'} className="space-y-6">
               <h2 className="text-2xl font-bold text-white">{language === 'es' ? 'Ubicación de referencia' : 'Reference location'}</h2>
               <p className="text-stone-300">{tour.location.placeName} · {language === 'es' ? 'El punto de recogida se confirma con el operador.' : 'The pickup point is confirmed with the operator.'}</p>
@@ -467,8 +502,8 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
           </div>
 
           <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-6">
-              <div className="p-8 bg-stone-900 rounded-[2.5rem] border border-emerald-500/20 shadow-2xl shadow-emerald-500/10">
+            <div data-testid="tour-sidebar" className="space-y-6 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:overscroll-contain lg:rounded-[2.5rem]">
+              <div id="tour-quote" ref={quoteRef} tabIndex={-1} className="scroll-mt-24 p-8 bg-stone-900 rounded-[2.5rem] border border-emerald-500/20 shadow-2xl shadow-emerald-500/10 focus:outline-none">
                 <div className="mb-8">
                   {isBookable ? <>
                     <div className="text-stone-500 text-xs font-black uppercase tracking-widest mb-2">{language === 'es' ? 'Precio de catálogo · por confirmar' : 'Catalog price · confirm before booking'}</div>
@@ -635,6 +670,25 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
           </div>
         </div>
       </div>
+
+      {!quoteInView && (
+        <div
+          data-testid="tour-cta-mobile"
+          className="fixed inset-x-3 z-[100] rounded-2xl border border-emerald-500/30 bg-stone-950/95 px-4 py-3 backdrop-blur lg:hidden"
+          // Sobre la barra de navegación inferior móvil (BottomNav: 56 px + 12 px de margen), que si no tapa el botón.
+          style={{ bottom: 'calc(var(--cookie-banner-h, 0px) + 4.5rem)' }}
+        >
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="truncate text-base font-black text-emerald-300">{priceLabel}</div>
+              {priceNote && <div className="text-[11px] text-stone-400">{priceNote}</div>}
+            </div>
+            <button type="button" onClick={openQuoteForm} aria-controls="tour-quote" className="shrink-0 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-stone-950 hover:bg-emerald-400">
+              {ctaLabel}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

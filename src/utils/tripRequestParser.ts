@@ -87,15 +87,19 @@ const NUMBER_WORDS: Record<string, number> = {
   cinco: 5, five: 5, seis: 6, six: 6, siete: 7, seven: 7, ocho: 8, eight: 8,
 };
 
+/** Unidades de duración: "para 3 días" / "for 3 days" es duración, no personas. */
+const DURATION_UNIT = '(?!\\s*(?:dias?|days?|noches?|nights?|semanas?|weeks?|horas?|hours?|hrs?|meses|months?|anos?|years?)\\b)';
+
 function parsePeople(text: string): number | undefined {
   const digit = text.match(/\b(\d{1,2})\s*(personas?|pax|adultos?|people|persons?|adults?|travell?ers|viajeros?)\b/)
-    || text.match(/\bpara\s+(\d{1,2})\b/) || text.match(/\bfor\s+(\d{1,2})\b/);
+    || text.match(new RegExp(`\\bpara\\s+(\\d{1,2})\\b${DURATION_UNIT}`)) || text.match(new RegExp(`\\bfor\\s+(\\d{1,2})\\b${DURATION_UNIT}`));
   if (digit) {
     const n = Number(digit[1]);
     return n > 0 && n < 100 ? n : undefined;
   }
   const word = text.match(/\b(un|una|uno|one|dos|two|tres|three|cuatro|four|cinco|five|seis|six|siete|seven|ocho|eight)\s*(personas?|adultos?|people|persons?|adults?|viajeros?)\b/)
-    || text.match(/\bpara\s+(dos|tres|cuatro|cinco|seis|siete|ocho)\b/) || text.match(/\bfor\s+(two|three|four|five|six|seven|eight)\b/);
+    || text.match(new RegExp(`\\bpara\\s+(dos|tres|cuatro|cinco|seis|siete|ocho)\\b${DURATION_UNIT}`))
+    || text.match(new RegExp(`\\bfor\\s+(two|three|four|five|six|seven|eight)\\b${DURATION_UNIT}`));
   if (word) return NUMBER_WORDS[word[1]];
   if (/\b(pareja|couple)\b/.test(text)) return 2;
   return undefined;

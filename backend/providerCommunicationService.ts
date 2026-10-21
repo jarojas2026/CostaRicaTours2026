@@ -12,6 +12,7 @@ import { createAlert } from './alertService';
 import { sendEmail } from './notificationService';
 import { createProviderPortalToken, providerPortalConfigured } from './providerPortalService';
 import { acceptProviderOrder } from './providerAcceptance';
+import { calculateContractualSettlementUSD, isValidCommissionRate } from './providerPayoutPolicy';
 
 export const PROVIDER_DEV_EMAIL = process.env.PROVIDER_DEV_EMAIL || '';
 
@@ -40,6 +41,8 @@ export interface TourProvider {
   email: string;
   officialEmail?: string;
   verified?: boolean;
+  /** Explicit contractual commission from the verified Firestore provider profile only. */
+  commissionRate?: number;
   cstLevel: number; // Certificación para la Sostenibilidad Turística (1 a 5)
   insPolicyNumber: string;
   ictLicense: string;
@@ -82,6 +85,9 @@ export async function resolveOperationalProvider(providerId: string, tourId: str
       email: String(data.email || data.officialEmail || legacy?.email || legacy?.officialEmail || ''),
       officialEmail: String(data.officialEmail || data.emailOperativo || legacy?.officialEmail || ''),
       verified: true,
+      commissionRate: isValidCommissionRate(collectionName === 'operators' ? data.commissionRate : (data.comision ?? data.commissionRate))
+        ? (collectionName === 'operators' ? data.commissionRate : (data.comision ?? data.commissionRate)) as number
+        : undefined,
       cstLevel: Number(data.cstLevel || legacy?.cstLevel || 0),
       insPolicyNumber: String(data.insPolicyNumber || legacy?.insPolicyNumber || ''),
       ictLicense: String(data.ictLicense || legacy?.ictLicense || ''),
@@ -119,7 +125,14 @@ export interface ServiceOrder {
   payoutAmountUSD: number;
   payoutAmountCRC: number;
   platformFeeUSD: number;
-  status: 'dispatched' | 'confirmed' | 'in_progress' | 'completed' | 'reassigned' | 'rejected' | 'no_show';
+  /** Amounts derive from an explicitly verified Firestore agreement, never a default percentage. */
+  commissionRate?: number;
+  settlementSource?: 'verified_provider_profile';
+  status: 'dispatch_pending' | 'dispatched' | 'confirmed' | 'in_progress' | 'completed' | 'reassigned' | 'rejected' | 'no_show';
+  /** Submission accepted by an email transport does not mean the operator has read/accepted the order. */
+  deliveryStatus?: 'pending' | 'transport_accepted' | 'failed';
+  deliveryReceiptId?: string;
+  deliveryAttemptedAt?: string;
   dispatchedAt: string;
   confirmedAt?: string;
   slaDeadline: string;
@@ -322,23 +335,40 @@ export async function dispatchServiceOrder(params: {
   totalUSD: number;
   providerId?: string;
 }): Promise<ServiceOrder> {
-  const requestedProviderId = params.providerId || getBestProviderForTour(params.tourId).id;
   const db = getFirestoreDb();
+  if (!db) throw new Error('No se puede despachar sin Firestore persistente.');
   const existingSnapshot = db ? await db.collection('service_orders').where('bookingId', '==', params.bookingId).limit(10).get().catch(() => null) : null;
   const existingOrder = existingSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceOrder)).find(order => !['rejected', 'no_show'].includes(String(order.status)));
-  if (existingOrder) return existingOrder;
+  // A persisted order is not evidence that an email was submitted. Retry only
+  // pending/failed submissions with the SAME order ID; never fabricate a new order.
+  if (existingOrder && (existingOrder.deliveryStatus === 'transport_accepted' ||
+    ['confirmed', 'in_progress', 'completed', 'reassigned'].includes(existingOrder.status))) return existingOrder;
+  const requestedProviderId = existingOrder?.providerId || params.providerId || getBestProviderForTour(params.tourId).id;
   const provider = await resolveOperationalProvider(requestedProviderId, params.tourId);
   if (!provider) {
     throw new Error(`No hay un proveedor activo y verificado para el tour ${params.tourId}. La solicitud no se despacha hasta contar con un proveedor real.`);
   }
 
-  const orderId = `OS-CR-${params.bookingId}-${Date.now().toString().slice(-4)}`;
+  const providerEmail = resolveConfiguredProviderEmail(provider);
+  if (!providerEmail) {
+    await createAlert({ source: 'Comunicación con Proveedores', severity: 'warning',
+      title: 'Orden pendiente: email de proveedor no configurado',
+      message: `No se envió solicitud para la reserva ${params.bookingId}: falta correo operativo del proveedor verificado.`,
+      bookingId: params.bookingId, providerId: provider.id }).catch(() => {});
+    throw new Error('provider_email_not_configured');
+  }
+
+  const orderId = existingOrder?.id || `OS-CR-${params.bookingId}-${Date.now().toString().slice(-4)}`;
   const now = new Date();
   const slaDeadline = new Date(now.getTime() + provider.slaTargetMinutes * 60000).toISOString();
 
-  // Desglose de liquidación: 85% para el operador local, 15% comisión de plataforma
-  const payoutAmountUSD = Math.round(params.totalUSD * 0.85 * 100) / 100;
-  const platformFeeUSD = Math.round(params.totalUSD * 0.15 * 100) / 100;
+  // Fail closed if no explicit financial agreement is registered for this verified provider.
+  // The payout service independently reads the same commissionRate from Firestore.
+  const settlement = calculateContractualSettlementUSD(params.totalUSD, provider.commissionRate);
+  if (!settlement) {
+    throw new Error(`Proveedor ${provider.id}: falta comisión contractual verificada o importe USD válido. Requiere revisión antes de despachar.`);
+  }
+  const { payoutAmountUSD, platformFeeUSD } = settlement;
   const exchangeRate = Number(process.env.USD_TO_CRC_RATE);
   if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {
     throw new Error('USD_TO_CRC_RATE no está configurado; no se puede calcular la liquidación en CRC.');
@@ -352,6 +382,7 @@ export async function dispatchServiceOrder(params: {
     : '';
 
   const order: ServiceOrder = {
+    ...(existingOrder || {}),
     id: orderId,
     bookingId: params.bookingId,
     tourId: params.tourId,
@@ -368,22 +399,22 @@ export async function dispatchServiceOrder(params: {
     payoutAmountUSD,
     payoutAmountCRC,
     platformFeeUSD,
-    status: 'dispatched',
-    dispatchedAt: now.toISOString(),
+    commissionRate: provider.commissionRate,
+    settlementSource: 'verified_provider_profile',
+    status: 'dispatch_pending',
+    deliveryStatus: 'pending',
+    deliveryAttemptedAt: now.toISOString(),
+    dispatchedAt: existingOrder?.dispatchedAt || now.toISOString(),
     slaDeadline,
     failoverAttempts: 0,
     providerPortalUrl
   };
 
-  serviceOrdersStore.set(orderId, order);
-  await persistServiceOrder(order).catch(err => console.warn('⚠️ No se pudo persistir la orden de servicio:', err));
+  // Persist the pending attempt before calling the external transport.
+  await persistServiceOrder(order);
 
-  const providerEmail = resolveConfiguredProviderEmail(provider);
-  console.log(`📡 [PROVEEDORES] Orden de servicio ${orderId} despachada a ${provider.name} (Email: ${providerEmail || 'no configurado'} | WhatsApp: ${provider.whatsapp}). SLA: ${provider.slaTargetMinutes}m.`);
-
-  // Enviar correo únicamente a la dirección oficial/configurada del proveedor.
-  if (providerEmail) {
-    sendEmail({
+  // Send only to the operational address of a verified provider; await its result.
+  const delivery = await sendEmail({
       to: providerEmail,
       subject: `📋 [ORDEN DE SERVICIO] ${orderId} - ${params.tourName} (${params.date})`,
       html: `
@@ -409,19 +440,25 @@ export async function dispatchServiceOrder(params: {
           </div>
         </div>
       `
-    }).catch(err => console.warn(`⚠️ Error enviando correo de orden de servicio a ${provider.email}:`, err));
+    });
+
+  if (!delivery.success) {
+    order.deliveryStatus = 'failed';
+    await persistServiceOrder(order);
+    serviceOrdersStore.set(orderId, order);
+    await createAlert({ source: 'Comunicación con Proveedores', severity: 'warning',
+      title: 'Orden pendiente: envío al proveedor fallido',
+      message: `No se aceptó el correo de la orden ${orderId} por el transporte configurado. Requiere reintento o intervención humana.`,
+      bookingId: params.bookingId, providerId: provider.id }).catch(() => {});
+    throw new Error('provider_email_submission_failed');
   }
 
-  if (!providerEmail) {
-    await createAlert({
-      source: 'Comunicación con Proveedores',
-      severity: 'warning',
-      title: 'Proveedor sin email configurado',
-      message: 'La orden ' + orderId + ' fue creada pero no se envió correo porque el proveedor no tiene un email operativo configurado en PROVIDER_EMAILS_JSON/PROVIDER_DEV_EMAIL.',
-      bookingId: params.bookingId,
-      providerId: provider.id
-    }).catch(() => {});
-  }
+  order.deliveryStatus = 'transport_accepted';
+  order.deliveryReceiptId = delivery.id;
+  order.status = 'dispatched';
+  await persistServiceOrder(order);
+  serviceOrdersStore.set(orderId, order);
+  console.log(`📡 [PROVEEDORES] Orden ${orderId}: solicitud aceptada por el transporte de correo; respuesta del proveedor pendiente.`);
 
   // Actualizar estado en reserva
   await updateBookingStatus(params.bookingId, {

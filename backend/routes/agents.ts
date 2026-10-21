@@ -1,4 +1,5 @@
 import { knowledgeToolReply } from '../knowledgeReplies';
+import { redactAssistantReplyMiddleware } from '../assistantContactRedaction';
 import crypto from 'crypto';
 /**
  * Agentes de IA y sus herramientas internas.
@@ -20,7 +21,7 @@ import { executeSinpeVerification } from '../sinpeService';
 import { buildSkillEvolutionReport, selectEvolvedSkill, recordSkillOutcome, proposeSkillUpgrade } from '../skillEvolutionEngine';
 import { createRouter, chatSessionTokenFrom, requireAdmin, requireAgentTool } from './shared';
 import { captureLeadInBackground } from '../leadPipeline';
-import { understandConciergeMessage, deterministicConciergeReply, type ConciergeUnderstanding } from '../conciergeUnderstanding';
+import { understandConciergeMessage, deterministicConciergeReply, enforceSingleReferencePrice, type ConciergeUnderstanding } from '../conciergeUnderstanding';
 
 /** Structured, deterministic fields attached to every concierge response. */
 function conciergeStructuredFields(u: ConciergeUnderstanding | null) {
@@ -67,7 +68,7 @@ agentsRouter.post('/api/agents/log_exception', requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
-agentsRouter.post('/api/gemini/concierge', async (req, res) => {
+agentsRouter.post('/api/gemini/concierge', redactAssistantReplyMiddleware, async (req, res) => {
   // Deterministic understanding runs first and never depends on the AI model.
   let understanding: ConciergeUnderstanding | null = null;
   try {
@@ -83,7 +84,9 @@ agentsRouter.post('/api/gemini/concierge', async (req, res) => {
     const requestedMemorySession = String(sessionId || context?.sessionId || '');
     // Memory is only read/written for a session the caller proves it owns.
     const memorySessionId = verifyChatSessionAccess(requestedMemorySession, chatSessionTokenFrom(req)) ? requestedMemorySession : '';
-    const lang = (language || 'es') as 'es' | 'en';
+    // Idioma del mensaje del usuario (detectado), con el idioma de la interfaz como respaldo:
+    // una pregunta en español se responde en español aunque la UI esté en inglés y viceversa.
+    const lang = (understanding?.understood.language || (language === 'en' ? 'en' : 'es')) as 'es' | 'en';
 
     // Pipeline de leads: una consulta concreta crea/actualiza un lead sin datos
     // personales (el chat no recoge consentimiento). Nunca bloquea la respuesta.
@@ -102,7 +105,7 @@ agentsRouter.post('/api/gemini/concierge', async (req, res) => {
       try {
         const claudeResult = await generateClaudeChatResponse(userMsg, lang, history || []);
         return res.json({
-          reply: claudeResult.reply,
+          reply: enforceSingleReferencePrice(claudeResult.reply, understanding),
           quickActions: claudeResult.quickActions || [],
           success: true,
           source: 'claude_vertex',
@@ -118,7 +121,7 @@ agentsRouter.post('/api/gemini/concierge', async (req, res) => {
     if (agentId === 'counter_agent') {
       const counterResult = await runCounterAgent(userMsg, {}, context || {}, lang, history || []);
       return res.json({
-        reply: counterResult.reply,
+        reply: enforceSingleReferencePrice(counterResult.reply, understanding),
         quickActions: counterResult.quickActions,
         recommendedTours: counterResult.recommendedTours,
         voucherPreview: counterResult.voucherPreview,
@@ -143,7 +146,7 @@ agentsRouter.post('/api/gemini/concierge', async (req, res) => {
     // Sin modelo: primero las herramientas verificables (emergencias, guías ICT, parques SINAC, tours por presupuesto).
     const toolReply = modelAnswered ? undefined : knowledgeToolReply(userMsg, lang);
     res.json({
-      reply: toolReply ?? (!modelAnswered && deterministicReply ? deterministicReply : assistantResult.reply),
+      reply: toolReply ?? (!modelAnswered && deterministicReply ? deterministicReply : enforceSingleReferencePrice(assistantResult.reply, understanding)),
       quickActions: assistantResult.quickActions,
       success: true,
       source: assistantResult.modelUsed || (toolReply ? 'knowledge_tools' : deterministicReply ? 'deterministic_extraction' : 'gemini_fallback'),
@@ -175,7 +178,7 @@ agentsRouter.post('/api/gemini/concierge', async (req, res) => {
 });
 
 // Endpoint exclusivo del Counter Agent (Agente de Mostrador y Reservas)
-agentsRouter.post('/api/agent/counter', async (req, res) => {
+agentsRouter.post('/api/agent/counter', redactAssistantReplyMiddleware, async (req, res) => {
   try {
     const { message, language, history, context } = req.body;
     const userMsg = message || '';

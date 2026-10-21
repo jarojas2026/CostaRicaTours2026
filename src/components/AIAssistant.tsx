@@ -16,6 +16,7 @@ import { AI_AGENTS, getAIAgentById } from '../data/aiAgentsData';
 import { ClaudeItineraryModal } from './ClaudeItineraryModal';
 import { getUsdToCrcRate, formatCrc } from '../utils/currencies';
 import { useChatAnalytics } from '../hooks/useChatAnalytics';
+import { useSpeechRecognition, speechSynthesisSupported } from '../hooks/useSpeechRecognition';
 import { buildTripInquiryHandoff, serverInquiryHandoff, type TripInquiryHandoff } from '../utils/tripRequestParser';
 import { chatSessionHeaders, clearStoredChatSession, readStoredChatSession, requestChatSession, type ChatSessionCredentials } from '../utils/chatSession';
 
@@ -142,7 +143,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const [thinkingMode, setThinkingMode] = useState(false);
   const [aiEngine, setAiEngine] = useState<'claude' | 'gemini'>('claude');
   const [isItineraryModalOpen, setIsItineraryModalOpen] = useState(false);
@@ -177,8 +177,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     window.speechSynthesis.speak(utterance);
   };
 
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -246,57 +244,13 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     reader.readAsDataURL(file);
   };
 
-  const handleMicClick = async () => {
-    if (isRecording) {
-      mediaRecorderRef.current?.stop();
-      setIsRecording(false);
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
-      };
-
-      mediaRecorder.onstop = async () => {
-        stream.getTracks().forEach((track) => track.stop());
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        
-        const reader = new FileReader();
-        reader.readAsDataURL(audioBlob);
-        reader.onloadend = async () => {
-          const base64Audio = (reader.result as string).split(',')[1];
-          setIsLoading(true);
-          try {
-            const res = await fetch('/api/gemini/transcribe-audio', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ audioBase64: base64Audio, language })
-            });
-            const data = await res.json();
-            if (data.text) {
-              setInputMessage((prev) => prev + (prev ? ' ' : '') + data.text);
-            }
-          } catch (e) {
-            console.error('Transcription error', e);
-          } finally {
-            setIsLoading(false);
-          }
-        };
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch (e) {
-      console.error('Microphone access denied', e);
-      alert('Cannot access microphone');
-    }
-  };
+  // Dictado por voz del navegador (Web Speech API): el texto se agrega al campo y el usuario decide enviarlo.
+  const speech = useSpeechRecognition(language, (text) => {
+    setInputMessage((prev) => prev + (prev ? ' ' : '') + text);
+  });
+  const isRecording = speech.listening;
+  const canSpeakAloud = speechSynthesisSupported();
+  const handleMicClick = () => speech.toggle();
 
   const handleClearHistory = () => {
     setMessages([
@@ -1018,9 +972,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                             </span>
                           )}
 
-                          {msg.sender === 'assistant' && (
+                          {msg.sender === 'assistant' && canSpeakAloud && (
                             <button
                               type="button"
+                              aria-label={playingMessageId === msg.id ? (language === 'es' ? 'Detener lectura en voz alta' : 'Stop reading aloud') : (language === 'es' ? 'Leer respuesta en voz alta' : 'Read answer aloud')}
                               onClick={() => handleToggleSpeak(msg.id, msg.text)}
                               title={playingMessageId === msg.id ? (language === 'es' ? 'Detener voz' : 'Stop voice') : (language === 'es' ? 'Escuchar en voz alta' : 'Listen aloud')}
                               className={`p-1 rounded-md text-[10px] transition-colors flex items-center gap-1 cursor-pointer ${
@@ -1337,20 +1292,22 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               >
                 <ImageIcon className="w-5 h-5" />
               </button>
-              <button
+              {speech.supported && <button
                 type="button"
+                data-testid="assistant-mic"
                 onClick={handleMicClick}
                 disabled={isLoading}
+                aria-pressed={isRecording}
                 className={`flex-shrink-0 w-[48px] h-[48px] flex items-center justify-center rounded-xl border transition-all cursor-pointer ${
                   isRecording 
                     ? 'bg-red-500/20 text-red-400 border-red-500/50 animate-pulse' 
                     : 'bg-[#051c14] border-emerald-500/30 text-amber-400 hover:bg-[#0a2e21]'
                 }`}
-                title={isRecording ? (language === 'es' ? 'Detener grabación' : 'Stop recording') : (language === 'es' ? 'Grabar audio por voz' : 'Record voice message')}
-                aria-label={isRecording ? (language === 'es' ? 'Detener grabación' : 'Stop recording') : (language === 'es' ? 'Grabar audio por voz' : 'Record voice message')}
+                title={isRecording ? (language === 'es' ? 'Detener dictado' : 'Stop dictation') : (language === 'es' ? 'Dictar por voz' : 'Dictate by voice')}
+                aria-label={isRecording ? (language === 'es' ? 'Detener dictado' : 'Stop dictation') : (language === 'es' ? 'Dictar por voz' : 'Dictate by voice')}
               >
                 {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-              </button>
+              </button>}
               <input type="text" value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} spellCheck="false" autoComplete="off" autoCorrect="off"
                 placeholder={
                   language === 'es'
