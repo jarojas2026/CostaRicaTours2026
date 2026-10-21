@@ -128,10 +128,17 @@ export const AdminControlCenterPage: React.FC<{ language: Language }> = ({ langu
     switch (section) {
       case 'resumen': return <div className="space-y-8">
         <SectionTitle title={es ? 'Resumen' : 'Overview'} subtitle={es ? 'Lo que necesita tu atención hoy.' : 'What needs your attention today.'} />
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          <Stat icon={Inbox} value={leadStats ? leadStats.nuevos : '—'} label={es ? 'Leads nuevos' : 'New leads'} hint={leadsError ? (es ? 'No se pudieron leer los leads' : 'Could not load leads') : leadStats ? `${leadStats.total} ${es ? 'en total' : 'total'}` : undefined} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+          <Stat icon={Inbox} value={leadStats ? leadStats.nuevos : '—'} label={es ? 'Leads nuevos' : 'New leads'} hint={leadsError ? (es ? 'No se pudieron leer los leads' : 'Could not load leads') : leadStats ? `${leadStats.total} ${es ? 'en muestra (máx. 200)' : 'sampled (max 200)'}` : undefined} />
           <Stat icon={Clock3} value={leadStats ? leadStats.porResponder : '—'} label={es ? 'Por responder' : 'Awaiting reply'} tone={leadStats?.atrasados ? 'text-amber-300' : 'text-white'} hint={leadStats ? (leadStats.atrasados ? `${leadStats.atrasados} ${es ? 'con más de 24 h sin actividad' : 'idle for over 24 h'}` : (es ? 'Ninguno atrasado' : 'None overdue')) : undefined} />
-          <Stat icon={Wallet} value={'$' + (b.revenueUSD || 0).toLocaleString(es ? 'es-CR' : 'en-US')} label={es ? 'Ventas confirmadas (USD)' : 'Confirmed sales (USD)'} hint={`${b.confirmedBookings || 0} ${es ? 'confirmadas' : 'confirmed'} · ${b.pendingBookings || 0} ${es ? 'pendientes' : 'pending'}`} />
+          <Stat icon={Wallet}
+            value={typeof b.confirmedBookingValueUSD === 'number' && Number.isFinite(b.confirmedBookingValueUSD) ? '$' + b.confirmedBookingValueUSD.toLocaleString(es ? 'es-CR' : 'en-US') : '—'}
+            label={es ? 'Valor de reservas registradas (USD)' : 'Recorded booking value (USD)'}
+            hint={es ? 'No equivale a dinero cobrado. Fuente no conciliada.' : 'Not collected cash. Source not reconciled.'} />
+          <Stat icon={Wallet}
+            value={typeof b.financialEvidence?.verifiedCollectionsUSD === 'number' ? '$' + b.financialEvidence.verifiedCollectionsUSD.toLocaleString(es ? 'es-CR' : 'en-US') : '—'}
+            label={es ? 'Cobros conciliados (USD)' : 'Reconciled collections (USD)'}
+            hint={es ? 'Sin fuente de conciliación conectada: N/D.' : 'No reconciliation source connected: N/A.'} />
           <Stat icon={AlertTriangle} value={alertCount} label={es ? 'Alertas reales' : 'Real alerts'} tone={a.critical ? 'text-rose-300' : alertCount ? 'text-amber-300' : 'text-emerald-300'} hint={`${a.critical || 0} ${es ? 'críticas' : 'critical'} · ${a.warning || 0} ${es ? 'avisos' : 'warnings'}`} />
         </div>
         <div className="grid gap-6 lg:grid-cols-3">
@@ -215,8 +222,14 @@ export const AdminControlCenterPage: React.FC<{ language: Language }> = ({ langu
           <Card>
             <div className="flex items-center gap-2"><Activity className="text-emerald-300" size={20} /><h3 className="text-xl font-black text-white">{es ? 'Automatización' : 'Automation'}</h3></div>
             <div className="mt-4 grid grid-cols-2 gap-3">
-              {[[es ? 'Ejecuciones' : 'Runs', auto.engine?.totalExecutions], [es ? 'Éxito' : 'Success', (auto.engine?.successRate || 0) + '%'], [es ? 'Latencia' : 'Latency', (auto.engine?.averageLatencyMs || 0) + ' ms'], [es ? 'Flujos activos' : 'Active workflows', auto.engine?.activeWorkflows]].map(([k, v]: any) => <div key={k} className="rounded-xl bg-black/25 p-3"><div className="text-xl font-black text-white">{v ?? 0}</div><div className="text-sm text-stone-400">{k}</div></div>)}
+              {[
+                [es ? 'Eventos locales retenidos' : 'Retained local events', auto.engine?.totalExecutions ?? '—'],
+                [es ? 'Éxito observado' : 'Observed success', auto.engine?.successRate == null ? '—' : auto.engine.successRate + '%'],
+                [es ? 'Duración reportada' : 'Reported duration', auto.engine?.averageReportedDurationMs == null ? '—' : auto.engine.averageReportedDurationMs + ' ms'],
+                [es ? 'Flujos activos verificados' : 'Verified active workflows', auto.engine?.activeWorkflows ?? '—'],
+              ].map(([k, v]: any) => <div key={k} className="rounded-xl bg-black/25 p-3"><div className="text-xl font-black text-white">{v}</div><div className="text-sm text-stone-400">{k}</div></div>)}
             </div>
+            <p className="mt-3 text-sm text-amber-200/80">{es ? 'Telemetría local: máximo 200 eventos en memoria por instancia; no representa el total global ni persiste tras reinicios.' : 'Local telemetry: up to 200 in-memory events per instance; not the global total and not durable across restarts.'}</p>
           </Card>
         </div>
         <details className="group rounded-2xl border border-white/10 bg-[#071d15] p-5">

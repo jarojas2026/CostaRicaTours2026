@@ -1,19 +1,9 @@
-/**
- * ⚡ MOTOR DE AUTOMATIZACIÓN NATIVO 100% EN CÓDIGO (Costa Rica Tours)
- * =========================================================================
- * Reemplaza por completo dependencias externas (automatización nativa, proxies, servicios no-code)
- * ejecutando el 100% de la lógica de negocio, webhooks, orquestación de agentes,
- * confirmación de reservas y conciliación directamente en Node.js y Firestore.
- * 
- * Ventajas:
- * - 0ms de latencia de red externa hacia servidores de terceros.
- * - Cero costo de suscripción mensual ($0).
- * - Cero caídas por falta de disponibilidad de plataformas no-code.
- * - Respuesta instantánea para el turista desde el primer clic.
- * =========================================================================
+/** Native automation engine. External APIs and process restarts can affect execution.
+ * Its in-memory health snapshot is not a global operational guarantee.
  */
 
 import crypto from 'crypto';
+import { summarizeNativeAutomationEvents } from './automationStatusMetrics';
 import { 
   checkTourAvailability, 
   createBooking, 
@@ -74,18 +64,25 @@ export function getNativeAutomationLogs(limit = 50): NativeAutomationLog[] {
 }
 
 export function getNativeEngineStatus() {
+  // Local bounded telemetry is NOT a durable/global workflow ledger.
+  const metrics = summarizeNativeAutomationEvents(executionHistory);
   return {
     engine: 'Native Code Engine (Node.js/Express + Firestore)',
-    mode: '100% Code-Based (Zero External Dependencies)',
-    activeWorkflows: 24,
+    mode: 'Native orchestration; external integrations as configured',
+    activeWorkflows: null as number | null, // No live workflow registry here.
     uptimeSeconds: Math.floor(process.uptime()),
-    totalExecutions: executionHistory.length,
-    successRate: executionHistory.length > 0 
-      ? Number(((executionHistory.filter(e => e.status === 'success').length / executionHistory.length) * 100).toFixed(1))
-      : 100,
-    averageLatencyMs: executionHistory.length > 0
-      ? Math.round(executionHistory.reduce((acc, curr) => acc + curr.durationMs, 0) / executionHistory.length)
-      : 2,
+    totalExecutions: metrics.observedEvents, // Retained local sample, not global total.
+    successRate: metrics.successRate,
+    averageLatencyMs: null as number | null, // No instrumented end-to-end latency.
+    averageReportedDurationMs: metrics.averageReportedDurationMs,
+    metricsScope: {
+      source: 'single_process_memory',
+      persisted: false,
+      maxRetainedEvents: 200,
+      eligibleOutcomes: metrics.eligibleOutcomes,
+      warningEvents: metrics.warningEvents,
+      coverage: 'bounded_sample',
+    },
     timestamp: new Date().toISOString()
   };
 }
