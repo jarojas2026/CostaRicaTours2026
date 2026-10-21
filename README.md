@@ -2,6 +2,8 @@
 
 Plataforma full-stack de venta, asesoría, planificación y operación de servicios turísticos en Costa Rica.
 
+> **Coordinación multiagente:** antes de trabajar en este repo, lee [`docs/COORDINACION-AGENTES.md`](docs/COORDINACION-AGENTES.md) (reglas fijas, carriles Hark/ChatGPT, cómo reclamar issues, decisiones del dueño y estado actual).
+
 ### JARVIS PRIME · Correctitud de métricas (PR de revisión, 20 octubre 2026)
 
 La especificación empresarial de JARVIS PRIME se implanta por incrementos sobre el sistema existente. La primera entrega propuesta elimina métricas de automatización ficticias y separa valor de reservas de cobros conciliados. **Esta rama está sujeta a revisión y CI; no afirmar que esté en producción.** [Cambios, límites, pruebas y rollback](docs/jarvis-prime-p0-metric-truth.md).
