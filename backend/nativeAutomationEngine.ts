@@ -1311,8 +1311,10 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
   // Admin convenience endpoint, not an alternative booking engine. Never infer
   // the tour/date/party/price/provider from an incomplete instruction.
   const tourId = String(payload.tourId || '').trim();
-  if (!tourId || !TOURS.some(tour => tour.id === tourId)) {
-    throw new Error('Seleccione un tour del catálogo por su identificador antes de crear una solicitud.');
+  // Verified Firestore commerce offers may be newer than the static discovery catalog.
+  // Validate the identifier shape; createBooking resolves the canonical Firestore offer.
+  if (!/^[a-zA-Z0-9_-]{1,160}$/.test(tourId)) {
+    throw new Error('Seleccione un identificador de oferta válido antes de crear una solicitud.');
   }
   const date = String(payload.date || '').trim();
   const time = String(payload.time || '').trim();
