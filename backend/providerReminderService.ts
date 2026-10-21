@@ -10,7 +10,7 @@
 import { getFirestoreDb } from './bookingService';
 import { sendEmail } from './notificationService';
 import { createAlert } from './alertService';
-import { resolveOperationalProvider, resolveConfiguredProviderEmail } from './providerCommunicationService';
+import { resolveOperationalProvider, resolveConfiguredProviderEmail, needsReassignmentNoticeRetry, retryReassignmentNotification } from './providerCommunicationService';
 
 export const REMINDER_INTERVAL_MS = 6 * 60 * 60 * 1000;
 export const MAX_PROVIDER_REMINDERS = 3;
@@ -57,9 +57,22 @@ ${portal}
 }
 
 export async function executeProviderConfirmationReminders(nowMs = Date.now()) {
-  const result = { checked: 0, reminded: 0, escalated: 0, missingEmail: 0, errors: 0, timestamp: new Date(nowMs).toISOString() };
+  const result = { checked: 0, reminded: 0, escalated: 0, missingEmail: 0, errors: 0, reassignmentNoticesRetried: 0, reassignmentNoticesFailed: 0, timestamp: new Date(nowMs).toISOString() };
   const db = getFirestoreDb();
   if (!db) return result;
+  // #348: reintento acotado del aviso a proveedores reasignados cuyo correo falló.
+  const reassigned = await db.collection('service_orders').where('status', '==', 'reassigned').limit(100).get().catch(() => ({ docs: [] as any[] }));
+  for (const doc of reassigned.docs) {
+    const order = { id: doc.id, ...(doc.data() as any) };
+    if (!needsReassignmentNoticeRetry(order)) continue;
+    try {
+      const { retried, outcome } = await retryReassignmentNotification(order);
+      if (!retried) continue;
+      if (outcome?.success) result.reassignmentNoticesRetried += 1; else result.reassignmentNoticesFailed += 1;
+    } catch {
+      result.reassignmentNoticesFailed += 1;
+    }
+  }
   const snap = await db.collection('service_orders').where('status', '==', 'dispatched').limit(200).get();
   for (const doc of snap.docs) {
     result.checked += 1;

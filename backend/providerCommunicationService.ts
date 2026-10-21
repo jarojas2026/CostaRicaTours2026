@@ -10,6 +10,7 @@
 import { getAllBookings, getFirestoreDb, updateBookingStatus } from './bookingService';
 import { createAlert } from './alertService';
 import { sendEmail } from './notificationService';
+import { sendEmailWithOutcome, emailFailurePatch, emailRetriesExhausted, type EmailDeliveryOutcome } from './emailDeliveryOutcome';
 import { createProviderPortalToken, providerPortalConfigured } from './providerPortalService';
 import { acceptProviderOrder } from './providerAcceptance';
 import { calculateContractualSettlementUSD, isValidCommissionRate } from './providerPayoutPolicy';
@@ -141,6 +142,13 @@ export interface ServiceOrder {
   assignedVehicle?: string;
   failoverAttempts: number;
   providerPortalUrl?: string;
+  /** #348: resultado real del aviso al proveedor alternativo tras una reasignación. */
+  reassignmentNoticeSent?: boolean;
+  reassignmentNoticeSentAt?: string;
+  reassignmentNoticeDeliveryStatus?: 'pending' | 'failed';
+  reassignmentNoticeDeliveryAttempts?: number;
+  reassignmentNoticeDeliveryError?: string;
+  reassignmentNoticeDeliveryFailedAt?: string;
 }
 
 // Directorio histórico de referencia. NO es fuente de verdad operativa: los proveedores deben existir y estar verificados explícitamente en Firestore.
@@ -516,7 +524,7 @@ export async function handleProviderAction(params: {
     return {
       success: true,
       order: failoverResult.reassignedOrder,
-      message: failoverResult.newProvider ? `Rechazo procesado. Sistema auto-reasignó la reserva a ${failoverResult.newProvider.name}.` : `Rechazo procesado. No existe proveedor alternativo verificado; la reserva requiere intervención humana.`
+      message: failoverResult.newProvider ? `Rechazo procesado. Sistema auto-reasignó la reserva a ${failoverResult.newProvider.name}${failoverResult.providerNotified ? '' : '; el aviso al nuevo proveedor no se pudo enviar y queda pendiente de reintento'}.` : `Rechazo procesado. No existe proveedor alternativo verificado; la reserva requiere intervención humana.`
     };
   }
 
@@ -592,6 +600,7 @@ export async function handleProviderAction(params: {
 async function triggerAutoFailoverReassignment(rejectedOrder: ServiceOrder): Promise<{
   reassignedOrder: ServiceOrder;
   newProvider: TourProvider;
+  providerNotified: boolean;
 }> {
   let alternateProvider: TourProvider | null = null;
   // Failover only to a verified, active operator that explicitly advertises
@@ -632,28 +641,105 @@ async function triggerAutoFailoverReassignment(rejectedOrder: ServiceOrder): Pro
     providerFailoverAt: new Date().toISOString()
   }).catch(() => {});
 
-  const alternateEmail = resolveConfiguredProviderEmail(alternateProvider);
-  if (alternateEmail) {
-    await sendEmail({
-      to: alternateEmail,
-      subject: `📋 [REASIGNACIÓN DE SERVICIO] ${rejectedOrder.id} - ${rejectedOrder.tourName}`,
-      html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:24px"><h2>Solicitud de servicio reasignada</h2><p>Orden: <strong>${rejectedOrder.id}</strong></p><p>Tour: <strong>${rejectedOrder.tourName}</strong></p><p>Fecha: <strong>${rejectedOrder.date}</strong> ${rejectedOrder.time || ''}</p><p>Pasajeros: ${rejectedOrder.adults} adultos, ${rejectedOrder.children} niños</p><p>Punto de recogida: ${rejectedOrder.pickupLocation}</p><p>Por favor responda a este correo indicando si puede atender la solicitud.</p></div>`
-    }).catch(() => {});
-  }
+  const notice = await notifyReassignedProvider(rejectedOrder, alternateProvider);
 
   await createAlert({
     source: 'Motor Autónomo de Reasignación de Operadores',
     severity: 'info',
     title: `Reasignación Automática de Proveedor #${rejectedOrder.bookingId}`,
-    message: `Reserva reasignada exitosamente a ${alternateProvider.name} tras rechazo o timeout del operador original.`,
+    message: notice.success
+      ? `Reserva reasignada a ${alternateProvider.name} tras rechazo o timeout del operador original; aviso aceptado por el transporte de correo (respuesta del proveedor pendiente).`
+      : `Reserva reasignada a ${alternateProvider.name}, pero el aviso al proveedor NO se envió (${notice.error || 'email_send_failed'}). Queda pendiente de reintento o intervención humana.`,
     bookingId: rejectedOrder.bookingId,
     providerId: alternateProvider.id
   }).catch(() => {});
 
   return {
     reassignedOrder: rejectedOrder,
-    newProvider: alternateProvider
+    newProvider: alternateProvider,
+    providerNotified: notice.success
   };
+}
+
+function buildReassignmentEmail(order: ServiceOrder) {
+  return {
+    subject: `📋 [REASIGNACIÓN DE SERVICIO] ${order.id} - ${order.tourName}`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:24px"><h2>Solicitud de servicio reasignada</h2><p>Orden: <strong>${order.id}</strong></p><p>Tour: <strong>${order.tourName}</strong></p><p>Fecha: <strong>${order.date}</strong> ${order.time || ''}</p><p>Pasajeros: ${order.adults} adultos, ${order.children} niños</p><p>Punto de recogida: ${order.pickupLocation}</p><p>Por favor responda a este correo indicando si puede atender la solicitud.</p></div>`,
+  };
+}
+
+type ReassignmentNoticeSender = (payload: { to: string; subject: string; html: string }) => Promise<EmailDeliveryOutcome>;
+
+/**
+ * #348: envía el aviso de reasignación y persiste el resultado REAL.
+ * Nunca marca como notificado si el transporte falló o no hay correo operativo
+ * (mismo patrón que #341/#325: reintento acotado, fallo registrado sin PII).
+ */
+export async function notifyReassignedProvider(
+  order: ServiceOrder,
+  provider: TourProvider,
+  deps: { send?: ReassignmentNoticeSender; persist?: (o: ServiceOrder) => Promise<unknown>; alert?: typeof createAlert } = {},
+): Promise<EmailDeliveryOutcome> {
+  const send = deps.send || ((payload) => sendEmailWithOutcome(payload));
+  const persist = deps.persist || persistServiceOrder;
+  const alert = deps.alert || createAlert;
+  const to = resolveConfiguredProviderEmail(provider);
+  const outcome: EmailDeliveryOutcome = to
+    ? await send({ to, ...buildReassignmentEmail(order) })
+    : { success: false, error: 'provider_email_unconfigured', attempts: 0 };
+
+  order.deliveryAttemptedAt = new Date().toISOString();
+  if (outcome.success) {
+    order.deliveryStatus = 'transport_accepted';
+    order.deliveryReceiptId = outcome.id;
+    order.reassignmentNoticeSent = true;
+    order.reassignmentNoticeSentAt = new Date().toISOString();
+    delete order.reassignmentNoticeDeliveryStatus;
+    delete order.reassignmentNoticeDeliveryError;
+    delete order.reassignmentNoticeDeliveryFailedAt;
+  } else {
+    order.deliveryStatus = 'failed';
+    order.reassignmentNoticeSent = false;
+    Object.assign(order, emailFailurePatch('reassignmentNotice', order.reassignmentNoticeDeliveryAttempts, outcome));
+  }
+  serviceOrdersStore.set(order.id, order);
+  await persist(order).catch(() => {});
+  if (!outcome.success) {
+    await alert({
+      source: 'Motor Autónomo de Reasignación de Operadores',
+      severity: 'warning',
+      title: `Aviso de reasignación no enviado - Orden ${order.id}`,
+      message: `El correo al proveedor reasignado no fue aceptado (${outcome.error || 'email_send_failed'}). La orden NO se considera notificada; se reintentará (máx. acotado) o requiere intervención humana.`,
+      bookingId: order.bookingId,
+      providerId: order.providerId,
+    }).catch(() => {});
+  }
+  await updateBookingStatus(order.bookingId, {
+    providerNotificationStatus: outcome.success ? 'transport_accepted' : 'failed',
+  }).catch(() => {});
+  return outcome;
+}
+
+/** ¿Una orden reasignada tiene un aviso pendiente de reintento? (pura, testeable) */
+export function needsReassignmentNoticeRetry(order: Partial<ServiceOrder>): boolean {
+  return order.status === 'reassigned'
+    && order.reassignmentNoticeSent !== true
+    && order.deliveryStatus !== 'transport_accepted'
+    && !emailRetriesExhausted(order.reassignmentNoticeDeliveryAttempts);
+}
+
+/**
+ * Reintento programado del aviso de reasignación (lo invoca el cron de
+ * recordatorios a proveedores). Acotado por MAX_EMAIL_DELIVERY_ATTEMPTS.
+ */
+export async function retryReassignmentNotification(
+  order: ServiceOrder,
+  deps: Parameters<typeof notifyReassignedProvider>[2] & { resolveProvider?: typeof resolveOperationalProvider } = {},
+): Promise<{ retried: boolean; outcome?: EmailDeliveryOutcome }> {
+  if (!needsReassignmentNoticeRetry(order)) return { retried: false };
+  const provider = await (deps.resolveProvider || resolveOperationalProvider)(order.providerId, order.tourId);
+  if (!provider) return { retried: false };
+  return { retried: true, outcome: await notifyReassignedProvider(order, provider, deps) };
 }
 
 /**
