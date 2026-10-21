@@ -1,18 +1,18 @@
 ---
 name: create_booking_and_notify
-description: Crea la reserva oficial en Firestore y Google Calendar, bloquea el cupo y despacha el correo de confirmación con voucher digital QR al cliente.
+description: Registra la solicitud de reserva y devuelve su estado real (pendiente de confirmación del operador y del pago). No emite voucher QR.
 ---
 
 # Habilidad: Creador de Citas y Reservas (Appointment & Booking Creator)
 
-Esta herramienta ejecuta la transacción de confirmación de reserva, aparta el inventario oficial de cupos en el calendario y emite las notificaciones multicanal (correo con voucher digital QR y notificación por WhatsApp).
+Esta herramienta registra la solicitud de reserva y devuelve su estado real. El agente solo comunica lo que la herramienta confirme (solicitud registrada, pendiente de confirmación del operador y del pago); nunca promete voucher QR ni confirmaciones no devueltas.
 
 ## Definición de Esquema JSON (Function Calling)
 
 ```json
 {
   "name": "create_booking_and_notify",
-  "description": "Crea el evento oficial en el calendario, registra la reserva en la base de datos y envía un correo electrónico de confirmación con voucher QR y detalles de la cita.",
+  "description": "Registra la solicitud de reserva y devuelve su estado real (pendiente de confirmación del operador y del pago). No emite voucher QR.",
   "parameters": {
     "type": "object",
     "properties": {
