@@ -49,6 +49,7 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const layerRef = useRef<L.LayerGroup | null>(null);
+  const drawerRef = useRef<HTMLDivElement | null>(null);
   const rendererRef = useRef<L.Canvas | null>(null);
 
   // Other controls (e.g. the main "Layers" bar) can open this panel.
@@ -64,8 +65,17 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setIsOpen(false);
     };
+    // Tocar fuera del cajón (p. ej. el mapa) lo cierra, para que nunca quede tapando el mapa en móvil.
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (target && drawerRef.current && !drawerRef.current.contains(target)) setIsOpen(false);
+    };
     window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
+    document.addEventListener('pointerdown', closeOnOutsidePointer, true);
+    return () => {
+      window.removeEventListener('keydown', closeOnEscape);
+      document.removeEventListener('pointerdown', closeOnOutsidePointer, true);
+    };
   }, [isOpen]);
 
   // Carga diferida de cada capa activada
@@ -254,7 +264,7 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
   const totalLoaded = activeFeatures.length;
 
   return (
-    <div className="absolute left-4 bottom-20 z-30 pointer-events-auto max-w-[92vw]">
+    <div ref={drawerRef} data-testid="national-poi-layers" className="absolute left-2 sm:left-4 bottom-20 z-30 pointer-events-auto max-w-[calc(100vw-1rem)] sm:max-w-[92vw]">
       <button
         type="button"
         id="national-poi-layers-toggle"
@@ -276,7 +286,7 @@ export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, languag
           id="national-poi-layers-panel"
           role="region"
           aria-label={isEs ? 'Selector de capas nacionales' : 'National layers selector'}
-          className="mt-2 w-80 max-w-[92vw] max-h-[60vh] overflow-y-auto overscroll-contain rounded-2xl bg-[#041711]/97 border border-emerald-500/30 p-3 text-emerald-50 shadow-2xl"
+          className="absolute bottom-full left-0 mb-2 w-[calc(100vw-1rem)] max-w-sm sm:w-80 sm:max-w-[92vw] max-h-[min(45dvh,22rem)] sm:max-h-[min(60dvh,32rem)] overflow-y-auto overscroll-contain touch-pan-y rounded-2xl bg-[#041711]/97 border border-emerald-500/30 p-3 text-emerald-50 shadow-2xl"
         >
           <div className="mb-2 flex items-center justify-between gap-2">
             <p className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
