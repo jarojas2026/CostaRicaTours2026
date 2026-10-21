@@ -109,3 +109,7 @@ Ver `docs/ciudad-digital-global-skills-2026.md` y `.agents/skills/global-city-on
 - Catálogo público: `src/data/catalogTours.json` (sin campos de operador). Datos del operador: `data/internal/operatorTourSources.json` (solo servidor, vía `backend/operatorSourcesInternal.ts`). Ambos los genera `npm run catalog:build`.
 - Texto neutral: "Operador local seleccionado por Costa Rica Tours" (o "…con declaratoria turística verificada por nuestro equipo" solo si `operatorIctVerified`). Ante preguntas sobre proveedores: "Trabajamos con operadores locales; verificamos su declaratoria turística del ICT antes de confirmar cada reserva." Nunca afirmar que todos están certificados por el ICT.
 - `tests/publicOperatorPrivacy.contract.test.ts` y `scripts/auditOperatorPrivacy.mjs` (en `npm run build`) fallan si se filtra un operador.
+
+## 14. Coordinación multiagente
+- Antes de empezar cualquier tarea, leer `docs/COORDINACION-AGENTES.md`: reglas fijas, carriles con dueño (Hark / ChatGPT), cómo reclamar un issue (asignarse + etiqueta `en-curso` + rama `hark/` o `gpt/` desde `origin/main`), decisiones del dueño y estado actual.
+- PR pequeño, squash con CI verde, nunca force-push a `main`.
