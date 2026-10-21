@@ -9,7 +9,7 @@ type WeatherPulse = {
   weatherCode: number;
   isDay: boolean;
   observedAt: string;
-  source: 'open-meteo' | 'fallback';
+  source: 'open-meteo';
 };
 
 const COORDS: Record<string, { lat: number; lon: number; name: string }> = {
@@ -20,15 +20,8 @@ const COORDS: Record<string, { lat: number; lon: number; name: string }> = {
   guanacaste: { lat: 10.566, lon: -85.700, name: 'Playa Hermosa / Guanacaste' }
 };
 
-const FALLBACKS: Record<string, Omit<WeatherPulse, 'regionId' | 'name' | 'observedAt' | 'source'>> = {
-  sjo: { temperatureC: 22, apparentTemperatureC: 22, humidity: 76, precipitationProbability: 35, windKmh: 8, weatherCode: 2, isDay: true },
-  caribe_sur: { temperatureC: 29, apparentTemperatureC: 32, humidity: 82, precipitationProbability: 45, windKmh: 10, weatherCode: 3, isDay: true },
-  manuel_antonio: { temperatureC: 30, apparentTemperatureC: 33, humidity: 84, precipitationProbability: 40, windKmh: 9, weatherCode: 2, isDay: true },
-  arenal: { temperatureC: 22, apparentTemperatureC: 23, humidity: 90, precipitationProbability: 55, windKmh: 7, weatherCode: 61, isDay: true },
-  guanacaste: { temperatureC: 31, apparentTemperatureC: 34, humidity: 68, precipitationProbability: 20, windKmh: 16, weatherCode: 1, isDay: true }
-};
-
-let cache: { expiresAt: number; data: WeatherPulse[] } | null = null;
+type VerifiedWeatherPulse = WeatherPulse & { labelEs: string; labelEn: string };
+let cache: { expiresAt: number; data: VerifiedWeatherPulse[] } | null = null;
 
 function weatherLabel(code: number, es = true): string {
   if (code === 0) return es ? 'Despejado' : 'Clear';
@@ -40,11 +33,14 @@ function weatherLabel(code: number, es = true): string {
   return es ? 'Variable' : 'Variable';
 }
 
-export async function getDestinationWeather(force = false): Promise<(WeatherPulse & { labelEs: string; labelEn: string })[]> {
-  if (!force && cache && cache.expiresAt > Date.now()) return cache.data as any;
+/** Only complete, source-verified Open-Meteo observations are returned.
+ * An upstream outage or incomplete record means `unknown`, never synthetic weather.
+ * Empty array is a supported result and must be presented as unavailable.
+ */
+export async function getDestinationWeather(force = false): Promise<VerifiedWeatherPulse[]> {
+  if (!force && cache && cache.expiresAt > Date.now()) return cache.data;
 
-  const results: WeatherPulse[] = await Promise.all(Object.entries(COORDS).map(async ([regionId, c]) => {
-    const fallback = FALLBACKS[regionId];
+  const results = await Promise.all(Object.entries(COORDS).map(async ([regionId, c]): Promise<VerifiedWeatherPulse | null> => {
     try {
       const url = new URL('https://api.open-meteo.com/v1/forecast');
       url.searchParams.set('latitude', String(c.lat));
@@ -53,30 +49,51 @@ export async function getDestinationWeather(force = false): Promise<(WeatherPuls
       url.searchParams.set('hourly', 'precipitation_probability');
       url.searchParams.set('forecast_days', '1');
       url.searchParams.set('timezone', 'America/Costa_Rica');
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`weather_http_${response.status}`);
+      const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!response.ok) throw new Error('weather_unavailable');
       const data: any = await response.json();
-      const current = data.current || {};
-      const hourly = data.hourly?.precipitation_probability || [];
+      const current = data?.current;
+      const hourlyTimes: unknown = data?.hourly?.time;
+      const hourlyProbabilities: unknown = data?.hourly?.precipitation_probability;
+
+      // The probability must refer to the current local hour, not midnight.
+      const localTime = typeof current?.time === 'string' ? current.time : '';
+      const observedHour = localTime.slice(0, 13);
+      if (!observedHour || !Array.isArray(hourlyTimes) || !Array.isArray(hourlyProbabilities)) {
+        return null;
+      }
+      const hourIndex = hourlyTimes.findIndex((hour: unknown) =>
+        typeof hour === 'string' && hour.slice(0, 13) === observedHour
+      );
+      if (hourIndex < 0) return null;
+      const measured = [
+        current.temperature_2m, current.apparent_temperature,
+        current.relative_humidity_2m, current.wind_speed_10m,
+        current.weather_code, hourlyProbabilities[hourIndex],
+      ];
+      if (!measured.every(value => typeof value === 'number' && Number.isFinite(value))) return null;
+      if (!Number.isFinite(Date.parse(localTime))) return null;
+      const [temperatureC, apparentTemperatureC, humidity, windKmh, weatherCode, precipitationProbability] = measured as number[];
+      const isDay = current.is_day;
+      if (isDay !== 0 && isDay !== 1) return null;
       return {
         regionId, name: c.name,
-        temperatureC: Number(current.temperature_2m ?? fallback.temperatureC),
-        apparentTemperatureC: Number(current.apparent_temperature ?? fallback.apparentTemperatureC),
-        humidity: Number(current.relative_humidity_2m ?? fallback.humidity),
-        precipitationProbability: Number(hourly[0] ?? fallback.precipitationProbability),
-        windKmh: Number(current.wind_speed_10m ?? fallback.windKmh),
-        weatherCode: Number(current.weather_code ?? fallback.weatherCode),
-        isDay: Boolean(current.is_day ?? 1),
-        observedAt: String(current.time || new Date().toISOString()),
-        source: 'open-meteo'
+        temperatureC, apparentTemperatureC, humidity, precipitationProbability,
+        windKmh, weatherCode, isDay: Boolean(isDay),
+        observedAt: localTime,
+        source: 'open-meteo',
+        labelEs: weatherLabel(weatherCode, true),
+        labelEn: weatherLabel(weatherCode, false),
       };
     } catch {
-      return { regionId, name: c.name, ...fallback, observedAt: new Date().toISOString(), source: 'fallback' };
+      return null;
     }
   }));
 
-  cache = { expiresAt: Date.now() + 10 * 60 * 1000, data: results };
-  return results.map(w => ({ ...w, labelEs: weatherLabel(w.weatherCode, true), labelEn: weatherLabel(w.weatherCode, false) })) as any;
+  const verified = results.filter((value): value is VerifiedWeatherPulse => value !== null);
+  // Cache observations, including source labels; never cache fabricated fallback numbers.
+  cache = { expiresAt: Date.now() + 10 * 60 * 1000, data: verified };
+  return verified;
 }
 
 export function getWeatherForRegion(regionId: string) {
