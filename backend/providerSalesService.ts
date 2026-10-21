@@ -158,10 +158,10 @@ export function summarizeSales(lines: ProviderSaleLine[], showGross: boolean, sh
   const byService = [...group((l) => l.tourId || 'sin_servicio')]
     .map(([tourId, items]) => ({ tourId: tourId === 'sin_servicio' ? null : tourId, tourName: items.find((l) => l.tourName)?.tourName || null, ...agg(items) }))
     .sort((a, b) => (b.netUSD ?? -1) - (a.netUSD ?? -1));
-  const base = { totals: agg(lines), byMonth, byService };
-  if (!showCommission) return base;
-  const rates = [...new Set(lines.map((l) => l.commissionRate).filter((r): r is number => typeof r === 'number'))];
-  return { ...base, commissionRates: rates };
+  const rates = showCommission
+    ? [...new Set(lines.map((l) => l.commissionRate).filter((r): r is number => typeof r === 'number'))]
+    : null;
+  return { totals: agg(lines), byMonth, byService, ...(rates ? { commissionRates: rates } : {}) };
 }
 
 export function summarizeSettlements(lines: ProviderSaleLine[]) {
