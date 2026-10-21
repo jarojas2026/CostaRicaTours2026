@@ -3,6 +3,7 @@
  * These tools call the application's existing domain services instead of duplicating logic.
  */
 import { TOURS } from '../src/data/toursData';
+import { redactToolResultForClient } from './assistantContactRedaction';
 import { assessTripFit, buildPackingList, buildRouteStrategy, getDestinationIntelligence, screenActivitySuitability, validateTripPlan, buildTravelerReasoning } from './tourismIntelligenceEngine';
 import { buildTripJourney, adaptTravelerJourney } from './travelJourneyOrchestrator';
 import { verifyJourneyAvailability, observeJourneyState, guardianReplanJourney } from './journeyVerificationService';
@@ -157,7 +158,20 @@ export const AGENT_TOOL_REGISTRY = {
   }
 } as const;
 
+/**
+ * Ejecuta una herramienta. Las de conocimiento público pasan por la redacción en servidor:
+ * sin teléfonos, WhatsApp, correos, webs ni direcciones exactas de negocios/proveedores
+ * (las emergencias oficiales y SINAC se conservan).
+ */
 export async function executeAgentTool(
+  name: keyof typeof AGENT_TOOL_REGISTRY,
+  args: Record<string, any>
+): Promise<any> {
+  const result = await executeAgentToolUnredacted(name, args);
+  return redactToolResultForClient(String(name), result);
+}
+
+async function executeAgentToolUnredacted(
   name: keyof typeof AGENT_TOOL_REGISTRY,
   args: Record<string, any>
 ): Promise<any> {
