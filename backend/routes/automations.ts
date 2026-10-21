@@ -143,8 +143,8 @@ nativeWorkflowsRouter.post('/api/native/workflows/loyalty', requireAdmin, async 
   }
 });
 
-// 🚀 PIPELINE 100% AUTÓNOMO (Sin intervención manual humana)
-// Procesa la consulta -> Bloquea cupo -> Crea reserva -> Notifica al proveedor -> Envía voucher digital QR al cliente
+// Ruta administrativa para registrar una solicitud verificada mediante createBooking.
+// Crear la solicitud NO confirma pago, respuesta del proveedor, envío de voucher ni tareas cron.
 nativeWorkflowsRouter.post(['/api/native/autonomous-booking-flow', '/api/native/flujo-autonomo'], requireAdmin, async (req, res) => {
   try {
     const result = await executeAutonomousFullBookingLifecycle(req.body);
