@@ -65,7 +65,7 @@ Reglas transversales:
 1. **Inicio** — tarjetas: solicitudes pendientes (con SLA restante), servicios de hoy/mañana, ventas del mes (USD neto), próxima liquidación, calificación promedio (n reseñas).
 2. **Solicitudes** — lista `dispatched/reassigned` con cuenta regresiva SLA (`slaDeadline` ya existe). Acciones: **Aceptar** (con guía/vehículo/notas) o **Rechazar** (motivo obligatorio de lista: sin cupo, clima, mantenimiento, otro). Rechazo dispara reasignación interna; el cliente no se entera de quién rechazó.
 3. **Órdenes** — calendario/listado de confirmadas, completadas, canceladas. Manifiesto por fecha (exportable a PDF/CSV, solo campos minimizados).
-4. **Ventas y comisiones** — por mes y por servicio: bruto (precio de venta CRT), comisión CRT, neto proveedor. Ver §6 para decisión sobre mostrar el bruto.
+4. **Ventas** — por mes y por servicio: **neto a recibir** por el proveedor. Bruto y comisión ocultos por decisión del dueño (ver §6).
 5. **Liquidaciones** — períodos, estado (`pending_eligibility`, `eligible`, `processing`, `paid`, `blocked` + motivo legible del `PayoutEligibilityReason`), detalle por línea con `bookingId` corto, comprobante (batchId PayPal enmascarado).
 6. **Calificaciones** — promedio, distribución 1–5, comentarios (sin apellido ni datos del viajero), solo reseñas válidas (§7).
 7. **Gráficos** — ventas por mes (barras), ventas por servicio (barras horizontales), embudo de conversión, calificación en el tiempo (línea). Cada gráfico con "Ver fuente" → lista de órdenes que lo componen.
@@ -97,9 +97,13 @@ Cambio obligatorio al endpoint actual: `GET /api/provider/portal` debe dejar de 
 ## 6. Comisiones, liquidaciones y precios
 
 - **Fuente única:** `bookings.totalUSD`, `operators.commissionRate` (o `proveedores.comision`), `bookings.payoutAmountUSD`, `bookings.payoutStatus`. El portal no recalcula; muestra lo que escribió `providerPayoutService`.
-- Para líneas aún no liquidadas, el portal muestra **"neto estimado"** con la misma fórmula (`totalUSD × (1 − commissionRate)`), etiquetado como estimado y con la `commissionRate` vigente.
-- **Decisión del dueño:** ¿el proveedor ve el precio de venta al cliente (bruto) y el % de comisión, o solo su **neto**? Recomendación: mostrar neto + % de comisión pactado (transparencia contractual) y **no** el bruto por línea si CRT aplica márgenes variables. Por validar contra los contratos.
-- **Implementado (#321):** bandera `PROVIDER_PORTAL_SHOW_GROSS` (por defecto `false`). Con `false` el portal muestra **solo neto + % de comisión pactada**; el bruto (`grossUSD`) y la comisión en USD no salen del servidor. Con `true` se añaden. Nota: con neto y % visibles el bruto es deducible aritméticamente; si el dueño quiere ocultarlo del todo, habría que ocultar también el %.
+- Para líneas aún no liquidadas, el portal muestra **"neto estimado"** calculado en servidor con la misma fórmula (`totalUSD × (1 − commissionRate)`), etiquetado como estimado. La comisión se usa internamente; no se envía al proveedor.
+- **Decisión del dueño (2026-10-20, #347):** el proveedor **no debe poder deducir el precio al cliente**. Ve solo su **neto a recibir**.
+- **Implementado (#321 + #347):** dos banderas, ambas `false` por defecto:
+  - `PROVIDER_PORTAL_SHOW_GROSS` → `grossUSD` (bruto).
+  - `PROVIDER_PORTAL_SHOW_COMMISSION` → `commissionRate`, `commissionRates`, `meta.profileCommissionRate` y `commissionUSD` (monto de comisión de la plataforma).
+  - Con ambas en `false` ningún campo que permita calcular el bruto sale del servidor (`/api/provider/v2/sales` y `/settlements`); la UI no muestra la ficha "Comisión pactada". Contrato: `tests/providerPortalNetOnly.contract.test.ts`.
+  - Activar cualquiera de las dos vuelve el bruto deducible (neto + % o neto + comisión USD); requiere decisión explícita del dueño.
 - Liquidación agrupada: `provider_settlements/{providerId_YYYYMM}` con líneas referenciando `bookingId`, generada por un job idempotente que solo lee el estado de payout existente.
 
 ---
@@ -248,7 +252,7 @@ Tests de contrato (siguiendo el patrón de `tests/permissionsAndRules.contract.t
 | # | Tema | Recomendación |
 |---|---|---|
 | D1 | `operators` vs `proveedores` (dos colecciones) | Elegir `operators` como canónica; `provider_profiles.sourceCollection` mientras se migra. |
-| D2 | ¿Proveedor ve bruto por línea? | Solo neto + % pactado. |
+| D2 | ¿Proveedor ve bruto por línea? | **Decidido 2026-10-20:** solo neto; sin bruto ni % ni comisión (#347). |
 | D3 | Contacto con el viajero | Siempre vía relay CRT. Excepción el día del tour: decisión del dueño. |
 | D4 | Retención de notas sensibles | 7 días post-servicio (por validar legalmente). |
 | D5 | Librería de gráficos | No hay ninguna en `package.json`. Recomiendo SVG propio (4 gráficos simples) para no inflar el bundle; alternativa `recharts`. |
@@ -283,3 +287,4 @@ Orden sugerido: PR-1 primero (cierra la brecha legal), luego 2→5 (seguridad), 
 | #319 | Rol `provider` (claims `role/providerId/providerRole`), `requireProvider(rol)` con `checkRevoked` + membresía activa en `provider_members`, alta/baja admin auditada en `agent_audit_log`, acceso a datos acotado por tenant (404 si la orden es de otro proveedor), reglas Firestore `provider_*`, contratos A≠B. | `backend/providerAuth.ts`, `backend/providerTenantScope.ts`, `backend/providerAudit.ts`, `backend/routes/provider.ts`, `firestore.rules`, `tests/providerTenantIsolation.contract.test.ts` |
 | #320 | `GET /api/provider/v2/orders?status=pending|confirmed|closed|all`, `GET …/orders/:orderId` (staff+, staff solo asignadas) y `POST …/orders/:orderId/accept|reject` (manager+). Aceptar reutiliza `handleProviderAction → acceptProviderOrder`; rechazar exige motivo (`sin_cupo`, `clima`, `mantenimiento`, `otro` + notas), dispara la reasignación existente y alerta al dueño; si no hay alternativo, la orden queda `rejected` con alerta crítica. Idempotente por decisión (orden+proveedor) con cerrojo en `idempotency_keys`; auditoría en `agent_audit_log`. El proveedor que rechaza no ve a quién se reasignó. UI del portal v2 se agrupa con #321 (límite de despliegues de Vercel). | `backend/providerOrderActions.ts`, `backend/routes/provider.ts`, `tests/providerOrderActions.contract.test.ts` |
 | #321 | `GET /api/provider/v2/sales?months=N` (manager+) y `GET /api/provider/v2/settlements?months=N` (solo owner), calculados en servidor desde `bookings` del tenant con pago verificado (no canceladas/reembolsadas) y la comisión registrada (#309); sin comisión → neto `null` y liquidación `blocked: commission_unavailable` (nunca un % por defecto). Neto = `payoutAmountUSD` pagado o estimado con `calculateContractualSettlementUSD`; estado de liquidación con `evaluatePayoutEligibility` (no paga nada). Bandera `PROVIDER_PORTAL_SHOW_GROSS=false`. UI v2 en `/provider/portal` sin token (sesión de proveedor): Solicitudes con aceptar/rechazar, Ventas con 2 gráficos SVG propios, Liquidaciones. El enlace con `?token=` sigue igual. | `backend/providerSalesService.ts`, `backend/routes/provider.ts`, `src/pages/ProviderPortalV2.tsx`, `src/components/provider/ProviderSvgCharts.tsx`, `src/pages/ProviderPortalPage.tsx`, `tests/providerSales.contract.test.ts` |
+| #347 | Decisión del dueño: el proveedor ve solo su neto. Nueva bandera `PROVIDER_PORTAL_SHOW_COMMISSION=false` junto a `PROVIDER_PORTAL_SHOW_GROSS=false`; con ambas en false no salen `grossUSD`, `commissionRate(s)`, `profileCommissionRate` ni `commissionUSD`. UI sin ficha de comisión. | `backend/providerSalesService.ts`, `backend/routes/provider.ts`, `src/pages/ProviderPortalV2.tsx`, `tests/providerPortalNetOnly.contract.test.ts` |
