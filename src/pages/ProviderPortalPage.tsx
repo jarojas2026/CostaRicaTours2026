@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, XCircle, Clock3, Car, UserRound, MapPin, CalendarDays, Users, Loader2, ShieldCheck, AlertTriangle } from 'lucide-react';
 
 type ProviderOrder = {
@@ -9,7 +9,16 @@ type ProviderOrder = {
   customer?: { displayName?: string; language?: string; dietaryRestrictions?: string; specialNeeds?: string };
 };
 
+const ProviderPortalV2 = lazy(() => import('./ProviderPortalV2').then(m => ({ default: m.ProviderPortalV2 })));
+
+/** Con ?token= → enlace mágico por orden (legado). Sin token → portal v2 con sesión de proveedor. */
 export const ProviderPortalPage: React.FC = () => {
+  const hasToken = useMemo(() => Boolean(new URLSearchParams(window.location.search).get('token')), []);
+  if (hasToken) return <ProviderTokenPortal />;
+  return <Suspense fallback={<div className="min-h-screen bg-[#041711]" />}><ProviderPortalV2 /></Suspense>;
+};
+
+const ProviderTokenPortal: React.FC = () => {
   const token = useMemo(() => new URLSearchParams(window.location.search).get('token') || '', []);
   const [order, setOrder] = useState<ProviderOrder | null>(null);
   const [loading, setLoading] = useState(true);

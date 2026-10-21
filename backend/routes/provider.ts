@@ -27,6 +27,7 @@ import {
 import { buildProviderAuditRecord, PROVIDER_AUDIT_COLLECTION } from '../providerAudit';
 import { listTenantServiceOrders, loadTenantServiceOrder } from '../providerTenantScope';
 import { defaultProviderOrderActionDeps, executeProviderOrderAction } from '../providerOrderActions';
+import { loadProviderSaleLines, summarizeSales, summarizeSettlements } from '../providerSalesService';
 import { getFirebaseAdminAuth } from '../firebaseAdminRuntime';
 
 /** Estado del motor nativo y acciones de proveedores. */
@@ -216,6 +217,24 @@ for (const decision of ['accept', 'reject'] as const) {
     return res.json({ success: true, replayed: result.replayed, ...result.result });
   });
 }
+
+/** Ventas y comisiones del proveedor (#321): manager+. Calculado en servidor. */
+providerPortalRouter.get('/api/provider/v2/sales', requireProvider('manager'), async (req, res) => {
+  const ctx = providerContextOf(req);
+  const db = getFirestoreDb();
+  if (!db) return res.status(503).json({ success: false, error: 'Portal de proveedores no disponible sin Firestore.' });
+  const { lines, meta } = await loadProviderSaleLines(db, ctx, { months: Number(req.query.months) || 12 });
+  return res.json({ success: true, meta, ...summarizeSales(lines, meta.showGross) });
+});
+
+/** Liquidaciones del proveedor (#321): solo owner. Solo lectura, no paga nada. */
+providerPortalRouter.get('/api/provider/v2/settlements', requireProvider('owner'), async (req, res) => {
+  const ctx = providerContextOf(req);
+  const db = getFirestoreDb();
+  if (!db) return res.status(503).json({ success: false, error: 'Portal de proveedores no disponible sin Firestore.' });
+  const { lines, meta } = await loadProviderSaleLines(db, ctx, { months: Number(req.query.months) || 12 });
+  return res.json({ success: true, meta, periods: summarizeSettlements(lines) });
+});
 
 /** Alta de miembro de proveedor (solo owner/admin de CRT). Auditado. */
 providerPortalRouter.post('/api/admin/providers/:providerId/members', requireAdmin, async (req, res) => {
