@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { OPERATOR_TOUR_ROWS, OPERATOR_TOURS } from '../src/data/operatorTours';
+import { OPERATOR_TOUR_ROWS, OPERATOR_TOURS, mapOperatorTour } from '../src/data/operatorTours';
 import { TOURS } from '../src/data/toursCatalog';
 
 const CATEGORIES = new Set(['volcanoes','wildlife','canopy','beaches','rafting','culture','multiday','combos','adventure','nature','hiking','waterfalls','rural','gastronomy','surf','snorkeling','diving','whale_watching','kayak','fishing','family','services']);
@@ -40,4 +40,15 @@ test('operator tours never claim reviews, ratings or instant booking', () => {
     assert.equal(t.instantConfirmation, false);
     assert.equal(t.priceSource, 'precio_referencia');
   }
+});
+
+// A 32-hour package can span two calendar days; rounding to one day is misleading.
+test('elapsed hours never become an inferred package day count', () => {
+  for (const hours of [24, 32, 48, 56, 72]) {
+    const tour = mapOperatorTour({ ...OPERATOR_TOUR_ROWS[0], durationHours: hours });
+    assert.deepEqual(tour.durationLabel, { es: `${hours} h`, en: `${hours} hrs` });
+    assert.equal(tour.durationHours, hours);
+  }
+  assert.deepEqual(mapOperatorTour({ ...OPERATOR_TOUR_ROWS[0], durationHours: 0 }).durationLabel,
+    { es: 'Duración por confirmar', en: 'Duration to be confirmed' });
 });

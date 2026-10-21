@@ -1543,22 +1543,23 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
           {/* Route Metrics Summary Card */}
           <div className="p-4 bg-emerald-950/40 border-b border-emerald-500/20">
+            <p className="mb-3 text-xs text-emerald-200/80">{language === 'es' ? 'Estimaciones desde distancias en línea recta. No verifican carreteras, tráfico, conexiones ni disponibilidad de transporte.' : 'Estimates from straight-line distances. Roads, traffic, connections and transport availability are not verified.'}</p>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-emerald-950/80 border border-emerald-500/20 p-2.5 rounded-xl">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-400/80">
-                  {language === 'es' ? 'Distancia' : 'Distance'}
+                  {language === 'es' ? 'Línea recta' : 'Straight line'}
                 </span>
                 <span className="font-black text-base text-white">{itineraryMetrics.totalKm} km</span>
               </div>
               <div className="bg-emerald-950/80 border border-emerald-500/20 p-2.5 rounded-xl">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-400/80">
-                  {language === 'es' ? 'En Auto / Bus' : 'Driving Time'}
+                  {language === 'es' ? 'Auto estimado' : 'Estimated drive'}
                 </span>
                 <span className="font-black text-base text-amber-300">{itineraryMetrics.driveHours}</span>
               </div>
               <div className="bg-emerald-950/80 border border-emerald-500/20 p-2.5 rounded-xl">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-400/80">
-                  {language === 'es' ? 'En Avioneta' : 'By Flight'}
+                  {language === 'es' ? 'Vuelo teórico' : 'Theoretical flight'}
                 </span>
                 <span className="font-black text-base text-sky-300">
                   {itineraryMetrics.flightMins || (language === 'es' ? 'N/A' : 'N/A')}
@@ -1693,7 +1694,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     {language === 'es' ? 'Calculadora de Rutas & Conectividad' : 'Route & Travel Times Calculator'}
                   </h3>
                   <p className="text-xs text-emerald-300">
-                    {language === 'es' ? 'Compara tiempos en bus público, auto/shuttle y avioneta' : 'Compare public bus, shuttle/drive, and flight times'}
+                    {language === 'es' ? 'Estimaciones teóricas; verifica la ruta y el servicio antes de viajar' : 'Theoretical estimates; verify the route and service before traveling'}
                   </p>
                 </div>
               </div>
@@ -1746,7 +1747,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             {routeCalcResult && (
               <div className="bg-emerald-950/60 border border-emerald-500/30 rounded-2xl p-4 space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20 text-xs">
-                  <span className="text-emerald-300 font-bold">{language === 'es' ? 'Distancia en Línea Directa / Terrestre:' : 'Estimated Distance:'}</span>
+                  <span className="text-emerald-300 font-bold">{language === 'es' ? 'Distancia en línea recta:' : 'Straight-line distance:'}</span>
                   <span className="font-black text-amber-300 text-sm">{routeCalcResult.distanceKm} km</span>
                 </div>
 
@@ -1759,7 +1760,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     </div>
                     <span className="block font-black text-lg text-white">{routeCalcResult.busHours}</span>
                     <span className="block text-[10px] text-blue-200/70">
-                      {language === 'es' ? 'Económico · tarifa a consultar' : 'Budget · fare on request'}
+                      {language === 'es' ? 'Ruta, horario y tarifa por confirmar' : 'Route, schedule and fare to be confirmed'}
                     </span>
                   </div>
 
@@ -1771,7 +1772,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     </div>
                     <span className="block font-black text-lg text-emerald-200">{routeCalcResult.driveHours}</span>
                     <span className="block text-[10px] text-emerald-300/70">
-                      {language === 'es' ? 'Recomendado 4x4 en montaña' : 'Scenic highway route'}
+                      {language === 'es' ? 'Sin ruta vial ni tráfico verificados' : 'Road route and traffic not verified'}
                     </span>
                   </div>
 
@@ -1779,13 +1780,13 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                   <div className="p-3 rounded-xl bg-sky-950/50 border border-sky-500/30 space-y-1">
                     <div className="flex items-center gap-1 text-xs text-sky-300 font-bold">
                       <Plane className="w-3.5 h-3.5" />
-                      <span>{language === 'es' ? 'Avioneta Sansa' : 'Scenic Flight'}</span>
+                      <span>{language === 'es' ? 'Vuelo teórico' : 'Theoretical flight'}</span>
                     </div>
                     <span className="block font-black text-lg text-sky-200">
                       {routeCalcResult.flightMins || 'N/A'}
                     </span>
                     <span className="block text-[10px] text-sky-200/70">
-                      {language === 'es' ? 'Ahorro de hasta 4 horas' : 'Saves up to 4+ hours'}
+                      {language === 'es' ? 'No confirma vuelos, aeropuertos ni horarios' : 'Does not confirm flights, airports or schedules'}
                     </span>
                   </div>
                 </div>
