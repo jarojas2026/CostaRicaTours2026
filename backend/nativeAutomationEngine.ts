@@ -1380,7 +1380,8 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
     'FLUJO_AUTONOMO_COMPLETO',
     duration,
     'success',
-    `¡Reserva ${bookingId} completada 100% autónoma! Cliente (${customerEmail}) y Proveedor (${booking.providerInfo?.name || 'Alsama Tours'}) notificados.`,
+    // #349: createBooking no envía voucher ni despacha al proveedor; no se afirma ninguna notificación.
+    `Reserva ${bookingId} creada por el flujo autónomo. Voucher y despacho al proveedor pendientes del ciclo de vida (pago verificado + confirmación del proveedor).`,
     {
       bookingId,
       totalUSD,
@@ -1400,7 +1401,8 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
       fecha: `${targetDate} ${targetTime}`,
       pasajeros: `${adults} adultos, ${children} niños`,
       totalUSD: `$${totalUSD} USD`,
-      estado: 'confirmada',
+      // #349: estado real persistido, no un 'confirmada' fijo.
+      estado: String(booking.status || booking.lifecycle || 'pendiente'),
       voucherUrl: `/?voucher=${bookingId}`,
       qrToken: `PASS-${bookingId.replace(/[^A-Z0-9]/gi, '')}`
     },
@@ -1409,13 +1411,19 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
       nombre: booking.providerInfo?.name || 'Costa Rica Tours - Operaciones Directas',
       email: process.env.PROVIDER_DEV_EMAIL || '',
       telefono: booking.providerInfo?.phone || process.env.PROVIDER_DEV_PHONE || '',
-      notificacionDespachada: true,
+      // #349: este flujo no despacha la orden; la despacha el ciclo de vida de la reserva.
+      notificacionDespachada: false,
+      estadoDespacho: 'pendiente_ciclo_de_vida',
       canal: 'Email Seguro + Native Operations Center'
     },
     clienteNotificado: {
       nombre: customerName,
       email: customerEmail,
-      voucherEnviado: true,
+      // #349: el voucher solo se envía en executeCustomerBookingConfirmation (ciclo de vida),
+      // tras pago verificado y confirmación del proveedor. createBooking no lo envía:
+      // en este punto ningún voucher salió: se refleja el resultado real, nunca un true fijo.
+      voucherEnviado: false,
+      estadoVoucher: 'pendiente_confirmacion_proveedor',
       canal: 'Email con Voucher QR interactivo'
     },
     automatizacionesProgramadas: [
