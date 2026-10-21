@@ -674,8 +674,9 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
       {!quoteInView && (
         <div
           data-testid="tour-cta-mobile"
-          className="fixed inset-x-0 z-[100] border-t border-emerald-500/30 bg-stone-950/95 px-4 py-3 backdrop-blur lg:hidden"
-          style={{ bottom: 'var(--cookie-banner-h, 0px)', paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+          className="fixed inset-x-3 z-[100] rounded-2xl border border-emerald-500/30 bg-stone-950/95 px-4 py-3 backdrop-blur lg:hidden"
+          // Sobre la barra de navegación inferior móvil (BottomNav: 56 px + 12 px de margen), que si no tapa el botón.
+          style={{ bottom: 'calc(var(--cookie-banner-h, 0px) + 4.5rem)' }}
         >
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
             <div className="min-w-0">
