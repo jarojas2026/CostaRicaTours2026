@@ -41,7 +41,7 @@ export const BLOG_POSTS: BlogPost[] = [
       es: 'Guía de 10 destinos de Costa Rica: Arenal, Monteverde, Manuel Antonio, Tortuguero, Corcovado, Marino Ballena, Poás, Rincón de la Vieja, Caribe Sur y Chirripó.',
       en: 'Guide to 10 Costa Rica destinations: Arenal, Monteverde, Manuel Antonio, Tortuguero, Corcovado, Marino Ballena, Poás, Rincón de la Vieja, South Caribbean and Chirripó.',
     },
-    image: 'https://images.unsplash.com/photo-1518132715369-0f866418858f?auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     imageAlt: { es: 'Paisaje de Costa Rica', en: 'Costa Rica landscape' },
     date: DATE,
     author: AUTHOR,
