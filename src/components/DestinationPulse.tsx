@@ -14,8 +14,6 @@ type PulseCard = {
   regionId: string;
   nameEs: string;
   nameEn: string;
-  tempC: number;
-  humidity: number;
   moodEs: string;
   moodEn: string;
   image: string;
@@ -33,16 +31,17 @@ type Weather = {
 };
 
 const PULSE_CARDS: PulseCard[] = [
-  { id: 'sjo', regionId: 'sjo', nameEs: 'San José', nameEn: 'San José', tempC: 22, humidity: 76, moodEs: 'Fresco de ciudad', moodEn: 'Fresh city air', image: REGIONS.find(r => r.id === 'sjo')?.image || '' },
-  { id: 'caribe', regionId: 'caribe_sur', nameEs: 'Cahuita', nameEn: 'Cahuita', tempC: 29, humidity: 82, moodEs: 'Calor caribeño', moodEn: 'Caribbean warmth', image: REGIONS.find(r => r.id === 'caribe_sur')?.image || '' },
-  { id: 'carara', regionId: 'manuel_antonio', nameEs: 'Parque Nacional Carara', nameEn: 'Carara National Park', tempC: 30, humidity: 84, moodEs: 'Sendero tropical', moodEn: 'Tropical trails', image: REGIONS.find(r => r.id === 'manuel_antonio')?.image || '' },
-  { id: 'celeste', regionId: 'arenal', nameEs: 'Río Celeste', nameEn: 'Rio Celeste', tempC: 22, humidity: 90, moodEs: 'Selva y cataratas', moodEn: 'Rainforest & waterfalls', image: REGIONS.find(r => r.id === 'arenal')?.image || '' },
-  { id: 'hermosa', regionId: 'guanacaste', nameEs: 'Playa Hermosa', nameEn: 'Playa Hermosa', tempC: 31, humidity: 68, moodEs: 'Brisa del Pacífico', moodEn: 'Pacific breeze', image: REGIONS.find(r => r.id === 'guanacaste')?.image || '' }
+  { id: 'sjo', regionId: 'sjo', nameEs: 'San José', nameEn: 'San José', moodEs: 'Fresco de ciudad', moodEn: 'Fresh city air', image: REGIONS.find(r => r.id === 'sjo')?.image || '' },
+  { id: 'caribe', regionId: 'caribe_sur', nameEs: 'Cahuita', nameEn: 'Cahuita', moodEs: 'Calor caribeño', moodEn: 'Caribbean warmth', image: REGIONS.find(r => r.id === 'caribe_sur')?.image || '' },
+  { id: 'carara', regionId: 'manuel_antonio', nameEs: 'Parque Nacional Carara', nameEn: 'Carara National Park', moodEs: 'Sendero tropical', moodEn: 'Tropical trails', image: REGIONS.find(r => r.id === 'manuel_antonio')?.image || '' },
+  { id: 'celeste', regionId: 'arenal', nameEs: 'Río Celeste', nameEn: 'Rio Celeste', moodEs: 'Selva y cataratas', moodEn: 'Rainforest & waterfalls', image: REGIONS.find(r => r.id === 'arenal')?.image || '' },
+  { id: 'hermosa', regionId: 'guanacaste', nameEs: 'Playa Hermosa', nameEn: 'Playa Hermosa', moodEs: 'Brisa del Pacífico', moodEn: 'Pacific breeze', image: REGIONS.find(r => r.id === 'guanacaste')?.image || '' }
 ];
 
 export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, onSelectRegion }) => {
   const [activeId, setActiveId] = useState(PULSE_CARDS[0].id);
   const [liveWeather, setLiveWeather] = useState<Record<string, Weather>>({});
+  const [weatherState, setWeatherState] = useState<'loading' | 'available' | 'unavailable'>('loading');
   const es = language === 'es';
 
   useEffect(() => {
@@ -51,10 +50,13 @@ export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, on
       .then(r => r.ok ? r.json() : Promise.reject(new Error('weather unavailable')))
       .then(data => {
         const next: Record<string, Weather> = {};
-        for (const item of data.destinations || []) next[item.regionId] = item;
+        for (const item of data.destinations || []) {
+          if (item.source === 'open-meteo' && Number.isFinite(item.temperatureC) && Number.isFinite(item.precipitationProbability)) next[item.regionId] = item;
+        }
         setLiveWeather(next);
+        setWeatherState(Object.keys(next).length ? 'available' : 'unavailable');
       })
-      .catch(() => {});
+      .catch(() => { if (!controller.signal.aborted) setWeatherState('unavailable'); });
     return () => controller.abort();
   }, []);
 
@@ -90,15 +92,15 @@ export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, on
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-sky-950/65">
               {es
-                ? 'Una vista rápida y visual de los destinos, con clima actualizado para ayudarte a decidir dónde vivir tu próxima aventura.'
-                : 'A quick visual view of destinations with updated weather to help you choose your next adventure.'}
+                ? 'Explora destinos con observaciones meteorológicas cuando están disponibles. Si falta la fuente, lo indicamos.'
+                : 'Explore destinations with weather observations when available. If the source fails, we show that clearly.'}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2 self-start rounded-full bg-white/65 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-sky-950/65 shadow-sm backdrop-blur sm:self-auto">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-            {Object.keys(liveWeather).length
-              ? (es ? 'Clima en vivo' : 'Live weather')
-              : (es ? 'Actualizando clima' : 'Updating weather')}
+            <span className={'h-2 w-2 rounded-full ' + (weatherState === 'available' ? 'bg-emerald-500' : weatherState === 'loading' ? 'animate-pulse bg-amber-500' : 'bg-stone-400')} />
+            {weatherState === 'available' ? (es ? 'Datos meteorológicos' : 'Weather observations')
+              : weatherState === 'loading' ? (es ? 'Consultando fuente' : 'Checking source')
+              : (es ? 'Clima no disponible' : 'Weather unavailable')}
           </div>
         </div>
 
@@ -116,13 +118,13 @@ export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, on
           {PULSE_CARDS.map((card, index) => {
             const selected = card.id === activeId;
             const weather = liveWeather[card.regionId];
-            const temp = Math.round(weather?.temperatureC ?? card.tempC);
-            const feels = Math.round(weather?.apparentTemperatureC ?? temp);
-            const humidity = Math.round(weather?.humidity ?? card.humidity);
-            const rain = Math.round(weather?.precipitationProbability ?? 0);
+            const temp = weather ? Math.round(weather.temperatureC) : null;
+            const feels = weather ? Math.round(weather.apparentTemperatureC) : null;
+            const humidity = weather ? Math.round(weather.humidity) : null;
+            const rain = weather ? Math.round(weather.precipitationProbability) : null;
             const condition = weather
               ? (es ? weather.labelEs : weather.labelEn)
-              : (es ? card.moodEs : card.moodEn);
+              : (es ? 'Clima no disponible' : 'Weather unavailable');
 
             return (
               <motion.button
@@ -171,14 +173,14 @@ export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, on
                       <div className="text-[9px] font-black uppercase tracking-wider text-white/60">
                         {es ? 'Sensación' : 'Feels like'}
                       </div>
-                      <div className="mt-1 text-sm font-bold text-white">{feels}°C</div>
+                      <div className="mt-1 text-sm font-bold text-white">{feels === null ? '—' : `${feels}°C`}</div>
                     </div>
                     <div className="text-right">
                       <div className="text-4xl font-black leading-none tracking-tight text-white drop-shadow sm:text-5xl">
-                        {temp}°
+                        {temp === null ? '—' : `${temp}°`}
                       </div>
                       <div className="mt-1 text-[9px] font-black uppercase tracking-wider text-white/70">
-                        {humidity}% · {rain}% {es ? 'lluvia' : 'rain'}
+                        {humidity === null || rain === null ? (es ? 'Datos no disponibles' : 'Data unavailable') : `${humidity}% · ${rain}% ${es ? 'lluvia' : 'rain'}`}
                       </div>
                     </div>
                     <ArrowRight className={'h-5 w-5 text-white/70 transition-transform ' + (selected ? 'translate-x-1 text-white' : 'group-hover:translate-x-1')} />
@@ -209,19 +211,19 @@ export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, on
             <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-sky-950/50">
               <CloudSun className="h-3.5 w-3.5" />{es ? 'Condición' : 'Condition'}
             </div>
-            <div className="mt-1 truncate text-sm font-bold text-sky-950">{liveWeather[active.regionId] ? (es ? liveWeather[active.regionId].labelEs : liveWeather[active.regionId].labelEn) : (es ? active.moodEs : active.moodEn)}</div>
+            <div className="mt-1 truncate text-sm font-bold text-sky-950">{liveWeather[active.regionId] ? (es ? liveWeather[active.regionId].labelEs : liveWeather[active.regionId].labelEn) : (es ? 'Clima no disponible' : 'Weather unavailable')}</div>
           </div>
           <div>
             <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-sky-950/50">
               <Droplets className="h-3.5 w-3.5" />{es ? 'Humedad' : 'Humidity'}
             </div>
-            <div className="mt-1 text-sm font-bold text-sky-950">{Math.round(liveWeather[active.regionId]?.humidity ?? active.humidity)}%</div>
+            <div className="mt-1 text-sm font-bold text-sky-950">{liveWeather[active.regionId] ? `${Math.round(liveWeather[active.regionId].humidity)}%` : '—'}</div>
           </div>
           <div>
             <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-sky-950/50">
               <Sun className="h-3.5 w-3.5" />{es ? 'Temperatura' : 'Temperature'}
             </div>
-            <div className="mt-1 text-sm font-bold text-sky-950">{Math.round(liveWeather[active.regionId]?.temperatureC ?? active.tempC)}°C</div>
+            <div className="mt-1 text-sm font-bold text-sky-950">{liveWeather[active.regionId] ? `${Math.round(liveWeather[active.regionId].temperatureC)}°C` : '—'}</div>
           </div>
           <div>
             <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-sky-950/50">
