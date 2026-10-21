@@ -7,6 +7,9 @@ import { resolveCommerceTour } from './commerceCatalog';
 import { assertServiceDate, reservationQuote } from './commercePolicy';
 import { TOURS } from '../src/data/toursData';
 import { voiceAgentDeskConfig } from './voiceAgentDeskService';
+import { assessCommercialReadiness } from './commerceReadinessPolicy';
+import { costaRicaDateString } from './providerPayoutPolicy';
+import { isAutoFollowUpEnabled } from './leadFollowUp';
 
 export const commerceAdminRouter = Router();
 commerceAdminRouter.use(requireOperator);
@@ -28,8 +31,11 @@ commerceAdminRouter.get('/', async (_req, res) => {
   const db = getFirestoreDb();
   if (!db) return res.status(503).json({ error: 'Catálogo no disponible.' });
   try {
-    const [products, providers] = await Promise.all([
-      db.collection('tours').limit(500).get(), db.collection('operators').limit(500).get()
+    const todayCR = costaRicaDateString();
+    const [products, providers, slots] = await Promise.all([
+      db.collection('tours').limit(500).get(),
+      db.collection('operators').limit(500).get(),
+      db.collection('availability_slots').where('date', '>=', todayCR).limit(500).get()
     ]);
     const catalog = new Map<string, any>(TOURS.map(tour => [tour.id, { id: tour.id, title: tour.title, catalogStatus: 'discovery' }]));
     products.docs.forEach(doc => {
@@ -37,12 +43,23 @@ commerceAdminRouter.get('/', async (_req, res) => {
       const key = product.id || doc.id;
       catalog.set(key, { id: key, title: product.title, catalogStatus: product.catalogStatus, providerId: product.providerId, priceUSD: product.priceUSD, departureTimes: product.departureTimes });
     });
+    const salesReadiness = assessCommercialReadiness({
+      products: products.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+      providers: providers.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+      slots: slots.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+      todayCR, sampleLimit: 500,
+      emailTransportConfigured: Boolean(process.env.RESEND_API_KEY || process.env.SENDGRID_API_KEY || (process.env.SMTP_USER && process.env.SMTP_PASS)),
+      paypalCredentialsConfigured: Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_SECRET),
+      stripeCredentialsConfigured: Boolean(process.env.STRIPE_SECRET_KEY),
+      leadAutoFollowUpEnabled: isAutoFollowUpEnabled(),
+    });
     res.json({
+      salesReadiness,
       products: [...catalog.values()],
       providers: providers.docs.map(doc => ({ id: doc.id, name: doc.data().name, website: doc.data().website, active: doc.data().active, verified: doc.data().verified })),
       payments: { paypalCredentialsConfigured: Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_SECRET), paypalMode: process.env.PAYPAL_MODE || 'sandbox', stripeCredentialsConfigured: Boolean(process.env.STRIPE_SECRET_KEY) },
       voice: voiceAgentDeskConfig(),
-      truncated: products.size === 500 || providers.size === 500
+      truncated: products.size === 500 || providers.size === 500 || slots.size === 500
     });
   } catch {
     res.status(503).json({ error: 'No se pudo consultar el catálogo operativo.' });
@@ -71,7 +88,7 @@ commerceAdminRouter.post('/:operation', async (req, res) => {
       const site = new URL(website);
       if (site.protocol !== 'https:' || site.username || site.password) throw new Error('La web oficial debe usar HTTPS.');
       const commissionRate = Number(body.commissionPercent) / 100;
-      if (body.commissionPercent == null || body.commissionPercent === '' || !Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > 1) throw new Error('Indique la comisión pactada, entre 0 y 100%.');
+      if (body.commissionPercent == null || body.commissionPercent === '' || !Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate >= 1) throw new Error('Indique la comisión pactada, entre 0 y menos de 100%.');
       if (name.length < 3 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^\+[1-9]\d{7,14}$/.test(phone)) throw new Error('Indique nombre comercial, correo y teléfono internacional válidos.');
       const batch = db.batch();
       batch.set(db.collection('operators').doc(providerId), { name, email, phone, website: site.origin, commissionRate, activeTours: [], verified: true, active: true, status: 'active', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
