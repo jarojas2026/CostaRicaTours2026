@@ -751,7 +751,7 @@ export async function runCounterAgent(
             `• **72+ hours prior**: 100% full refund guarantee or free date change.\n` +
             `• **48 - 72 hours prior**: 50% refund or reschedule subject to operator availability.\n` +
             `• **Under 48 hours**: Non-refundable under standard policy.\n\n` +
-            `¿Would you like me to request a date reschedule, resend your digital QR voucher, or connect you with our operations desk on WhatsApp?`
+            `¿Would you like me to request a date reschedule, resend your booking confirmation email, or connect you with our operations desk on WhatsApp?`
           : `🛎️ **Mostrador y Servicio al Cliente • Reserva Verificada**\n\n` +
             `¡Pura Vida! He localizado tu expediente oficial en tiempo real en nuestro sistema central de mostrador:\n\n` +
             `• **Código de Reserva**: \`${bCode}\`\n` +
@@ -764,7 +764,7 @@ export async function runCounterAgent(
             `• **Más de 72 horas antes**: 100% de reembolso garantizado o cambio de fecha sin costo.\n` +
             `• **De 48 a 72 horas antes**: 50% de reembolso o cambio sujeto a disponibilidad del operador local.\n` +
             `• **Menos de 48 horas**: No reembolsable bajo políticas estándar de operador.\n\n` +
-            `¿Deseas que solicitemos un cambio de fecha, reenviarte el voucher digital QR o conectarte con nuestra jefatura de operaciones por WhatsApp?`,
+            `¿Deseas que solicitemos un cambio de fecha, reenviarte el correo de confirmación de la reserva o conectarte con nuestra jefatura de operaciones por WhatsApp?`,
         agentId: 'counter_agent',
         agentName: 'Sofía • Counter Agent & Mostrador',
         agentCategory: 'SERVICIO',

@@ -530,7 +530,7 @@ agentToolsRouter.get('/api/agent/tools/manifest', requireAgentTool, (req, res) =
         name: 'create_booking_and_notify',
         endpoint: '/api/agent/tools/create_booking_and_notify',
         method: 'POST',
-        description: 'Crea la reserva oficial, despacha al proveedor local, agenda el evento y envía el voucher QR.'
+        description: 'Registra la solicitud de reserva y devuelve su estado real (pendiente de confirmación del operador y del pago). No emite voucher QR.'
       },
       {
         name: 'coordinate_provider_status',

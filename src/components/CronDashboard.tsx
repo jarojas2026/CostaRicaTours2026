@@ -153,7 +153,7 @@ export function CronDashboard({ language = 'es' }: { language?: 'es' | 'en' }) {
               Pipeline Autónomo Extremo a Extremo
             </h3>
             <p className="text-sm text-emerald-200/90 mt-1 max-w-2xl">
-              Cuando un turista consulta o reserva, el sistema: (1) Valida disponibilidad, (2) Crea la reserva en Firestore, (3) Notifica y coordina con el proveedor verificado, (4) Genera el Voucher QR digital y (5) Confirma al cliente por email en milisegundos.
+              Cuando un turista consulta o reserva, el sistema: (1) Valida disponibilidad, (2) Crea la reserva en Firestore, (3) Notifica y coordina con el proveedor verificado, (4) Registra el estado real de la solicitud y (5) Notifica al cliente por email cuando el envío se confirma.
             </p>
           </div>
           <button
@@ -191,7 +191,7 @@ export function CronDashboard({ language = 'es' }: { language?: 'es' | 'en' }) {
                   <div className="bg-white/10 rounded p-2.5 border border-white/10">
                     <span className="text-emerald-300 block font-semibold mb-0.5">Voucher Cliente</span>
                     <span className="text-white font-medium truncate block">{autonomousResult.clienteNotificado?.email}</span>
-                    <span className="text-emerald-300/80 text-[10px]">✓ Voucher QR despachado</span>
+                    <span className="text-emerald-300/80 text-[10px]">✓ Confirmación al cliente (si el correo se entregó)</span>
                   </div>
                   <div className="bg-white/10 rounded p-2.5 border border-white/10">
                     <span className="text-emerald-300 block font-semibold mb-0.5">Acciones Programadas</span>

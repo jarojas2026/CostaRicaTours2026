@@ -98,25 +98,25 @@ export const AI_AGENTS: AIAgent[] = [
       es: [
         '1. Cotización y verificación de cupos en tiempo real (USD y CRC)',
         '2. Captura y validación de datos del viajero',
-        '3. Ejecución directa de reserva y emisión de voucher digital QR',
+        '3. Registro de la solicitud de reserva y seguimiento hasta la confirmación del operador',
         '4. Asistencia post-venta: reprogramaciones, traslados y atención multicanal'
       ],
       en: [
         '1. Real-time availability check & price quote (USD & CRC)',
         '2. Traveler details capture & verification',
-        '3. Direct booking execution & digital QR voucher issuance',
+        '3. Booking request registration & follow-up until operator confirmation',
         '4. Post-sale customer care: reschedules, transfers & support'
       ],
       de: [
         '1. Live-Verfügbarkeitsprüfung & Angebot (USD & CRC)',
         '2. Erfassung der Reisedaten',
-        '3. Sofortige Buchungsausführung & QR-Voucher',
+        '3. Erfassung der Buchungsanfrage & Nachverfolgung bis zur Bestätigung',
         '4. Kundenservice & Umbuchungen'
       ],
       fr: [
         '1. Vérification en direct des places et devis (USD & CRC)',
         '2. Saisie des coordonnées voyageurs',
-        '3. Exécution directe et bon QR numérique',
+        '3. Enregistrement de la demande et suivi jusqu’à confirmation',
         '4. Suivi client et modifications'
       ],
       zh: [
@@ -128,7 +128,7 @@ export const AI_AGENTS: AIAgent[] = [
       ja: [
         '1. リアルタイムでの空席確認と見積提示（USD・CRC）',
         '2. 旅行者情報の入力と検証',
-        '3. 即時予約の成立とQRバウチャーの発行',
+        '3. 予約リクエストの登録と催行会社の確認までのフォロー',
         '4. アフターケア：日程変更・送迎手配・サポート'
       ]
     }
@@ -923,37 +923,37 @@ export const AI_AGENTS: AIAgent[] = [
       ja: '直前予約の手続き、公認催行会社との枠確保、安全なカード・送金決済、公式バウチャー発行を即時対応します。'
     },
     welcomeMessage: {
-      es: '¡Hola! 💳 Soy Andrés, especialista en reservas de costaricatours.es. Puedo verificar cupos para hoy o mañana, procesar pagos seguros con garantía de reembolso 48h y emitir tu voucher digital con código QR.',
-      en: 'Hello! 💳 I am Andres, booking specialist at costaricatours.es. I can verify seats for today or tomorrow, process secure payments with 48h refund guarantee, and issue your QR voucher.',
-      de: 'Hallo! 💳 Ich bin Andres, Buchungsspezialist bei costaricatours.es. Ich prüfe kurzfristige Plätze und stelle Ihren digitalen QR-Gutschein mit 48h-Stornogarantie aus.',
-      fr: 'Bonjour ! 💳 Je suis Andres, spécialiste réservations sur costaricatours.es. Je vérifie les disponibilités et génère votre voucher QR avec garantie 48h.',
+      es: '¡Hola! 💳 Soy Andrés, especialista en reservas de costaricatours.es. Puedo verificar cupos para hoy o mañana, procesar pagos seguros con garantía de reembolso 48h y darte seguimiento hasta que tu reserva quede confirmada.',
+      en: 'Hello! 💳 I am Andres, booking specialist at costaricatours.es. I can verify seats for today or tomorrow, process secure payments with 48h refund guarantee, and follow up until your booking is confirmed.',
+      de: 'Hallo! 💳 Ich bin Andres, Buchungsspezialist bei costaricatours.es. Ich prüfe kurzfristige Plätze und begleite Ihre Anfrage bis zur Bestätigung.',
+      fr: 'Bonjour ! 💳 Je suis Andres, spécialiste réservations sur costaricatours.es. Je vérifie les disponibilités et suis votre demande jusqu’à sa confirmation.',
       zh: '您好！💳 我是 costaricatours.es 预订专员 Andres。我可以为您查询今日或明天的加急名额，协助完成支付并生成带核销二维码的官方凭证。',
-      ja: 'こんにちは！💳 costaricatours.es 予約担当のアンドレスです。直前の空席確認、48時間前無料キャンセル付き決済、QRコード入りバウチャーの発行をサポートします。'
+      ja: 'こんにちは！💳 costaricatours.es 予約担当のアンドレスです。直前の空席確認、48時間前無料キャンセル付き決済、予約確定までのフォローをサポートします。'
     },
     workflowSteps: {
       es: [
         '1. Validación de fecha y cupos con operadores autorizados',
         '2. Confirmación de punto de recogida en hotel y horario',
         '3. Procesamiento seguro de pago (Tarjeta, PayPal, SINPE Móvil)',
-        '4. Emisión instantánea de voucher con QR y confirmación por WhatsApp'
+        '4. Confirmación por correo cuando el operador confirma'
       ],
       en: [
         '1. Date and live seat verification with official operators',
         '2. Hotel pickup location and schedule confirmation',
         '3. Secure checkout processing (Credit Card, PayPal, SINPE)',
-        '4. Instant digital voucher generation with QR & WhatsApp alert'
+        '4. Email confirmation once the operator confirms'
       ],
       de: [
         '1. Prüfung der Termine und Plätze beim offiziellen Anbieter',
         '2. Bestätigung von Hotelabholung und Uhrzeit',
         '3. Sichere Zahlungsabwicklung',
-        '4. Sofortiger Versand des QR-Vouchers und WhatsApp-Bestätigung'
+        '4. E-Mail-Bestätigung, sobald der Anbieter bestätigt'
       ],
       fr: [
         '1. Vérification des places avec les opérateurs officiels',
         '2. Confirmation du lieu de prise en charge et de l\'horaire',
         '3. Paiement sécurisé',
-        '4. Émission immédiate du voucher numérique avec QR code'
+        '4. Confirmation par e-mail dès que l’opérateur confirme'
       ],
       zh: [
         '1. 与官方地接社实时同步核实出发日期与剩余席位',
@@ -965,7 +965,7 @@ export const AI_AGENTS: AIAgent[] = [
         '1. 公式催行会社とのリアルタイム空席照会',
         '2. ホテル送迎場所と出発時刻の確定',
         '3. 安全な決済処理（各種クレジットカード、PayPal）',
-        '4. QRコード付き確定バウチャーの即時発行と通知'
+        '4. 催行会社の確認後にメールで確定通知'
       ]
     },
     suggestedQuestions: {
@@ -973,25 +973,25 @@ export const AI_AGENTS: AIAgent[] = [
         '¡Necesito una reserva de URGENCIA para mañana temprano!',
         '¿Cómo funciona la garantía de reembolso si cancelo 48 horas antes?',
         '¿Puedo pagar con SINPE Móvil o tarjeta internacional en colones/dólares?',
-        '¿Cómo recibo mi voucher con código QR para mostrar al guía?'
+        '¿Cómo sé que mi reserva quedó confirmada?'
       ],
       en: [
         'I need an URGENT booking for tomorrow morning!',
         'How does the 48-hour free cancellation refund guarantee work?',
         'Can I pay via international credit card or PayPal in USD?',
-        'How do I receive my QR voucher to show the tour guide?'
+        'How do I know my booking is confirmed?'
       ],
       de: [
         'Ich brauche eine DRINGENDE Buchung für morgen früh!',
         'Wie funktioniert die 48h-Geld-zurück-Garantie?',
         'Kann ich per Kreditkarte oder PayPal in USD bezahlen?',
-        'Wie erhalte ich meinen QR-Gutschein für den Guide?'
+        'Woran erkenne ich, dass meine Buchung bestätigt ist?'
       ],
       fr: [
         'J\'ai besoin d\'une réservation URGENTE pour demain matin !',
         'Comment fonctionne la garantie d\'annulation gratuite 48h ?',
         'Puis-je payer par carte internationale ou PayPal ?',
-        'Comment recevoir mon voucher QR à présenter au guide ?'
+        'Comment savoir si ma réservation est confirmée ?'
       ],
       zh: [
         '我急需预订明天早上的行程！',
@@ -1003,16 +1003,16 @@ export const AI_AGENTS: AIAgent[] = [
         '明日の朝出発のツアーを大至急予約したいです！',
         '48時間前までの無料キャンセル返金保証について教えてください',
         '国際クレジットカードやPayPalで支払えますか？',
-        'ガイドに提示するQRコードバウチャーはどのように届きますか？'
+        '予約が確定したかどうかはどうすれば分かりますか？'
       ]
     },
     specialtyTags: {
-      es: ['Cupos Urgentes', 'Cancelación 48h', 'Voucher con QR', 'Factura Electrónica'],
-      en: ['Urgent Seats', '48h Cancellation', 'QR Voucher', 'Official Invoicing'],
-      de: ['Kurzfristige Plätze', '48h-Storno', 'QR-Gutschein', 'E-Rechnung'],
-      fr: ['Places urgentes', 'Annulation 48h', 'Voucher QR', 'Facturation'],
+      es: ['Cupos Urgentes', 'Cancelación 48h', 'Confirmación por correo', 'Factura Electrónica'],
+      en: ['Urgent Seats', '48h Cancellation', 'Email Confirmation', 'Official Invoicing'],
+      de: ['Kurzfristige Plätze', '48h-Storno', 'E-Mail-Bestätigung', 'E-Rechnung'],
+      fr: ['Places urgentes', 'Annulation 48h', 'Confirmation e-mail', 'Facturation'],
       zh: ['加急席位', '48小时退改', '二维码凭证', '官方合规发票'],
-      ja: ['緊急手配', '48時間前無料取消', 'QRバウチャー', '公式領収証']
+      ja: ['緊急手配', '48時間前無料取消', 'メール確認', '公式領収証']
     }
   },
   {
