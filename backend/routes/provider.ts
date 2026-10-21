@@ -25,6 +25,8 @@ import {
   requireProvider,
 } from '../providerAuth';
 import { buildProviderAuditRecord, PROVIDER_AUDIT_COLLECTION } from '../providerAudit';
+import { listTenantServiceOrders, loadTenantServiceOrder } from '../providerTenantScope';
+import { defaultProviderOrderActionDeps, executeProviderOrderAction } from '../providerOrderActions';
 import { getFirebaseAdminAuth } from '../firebaseAdminRuntime';
 
 /** Estado del motor nativo y acciones de proveedores. */
@@ -169,6 +171,51 @@ providerPortalRouter.get('/api/provider/v2/me', requireProvider('staff'), (req, 
   const ctx = providerContextOf(req);
   res.json({ success: true, provider: { providerId: ctx.providerId, providerRole: ctx.providerRole, uid: ctx.uid } });
 });
+
+const PROVIDER_ORDER_STATUS_FILTERS: Record<string, string[] | undefined> = {
+  pending: ['dispatched', 'reassigned'],
+  confirmed: ['confirmed', 'in_progress'],
+  closed: ['completed', 'rejected', 'no_show'],
+  all: undefined,
+};
+
+/** Órdenes del proveedor (#320). staff solo ve las asignadas. */
+providerPortalRouter.get('/api/provider/v2/orders', requireProvider('staff'), async (req, res) => {
+  const ctx = providerContextOf(req);
+  const filter = String(req.query.status || 'pending');
+  if (!(filter in PROVIDER_ORDER_STATUS_FILTERS)) {
+    return res.status(400).json({ success: false, error: 'status debe ser pending, confirmed, closed o all.' });
+  }
+  const db = getFirestoreDb();
+  if (!db) return res.status(503).json({ success: false, error: 'Portal de proveedores no disponible sin Firestore.' });
+  const orders = await listTenantServiceOrders(db, ctx, { statuses: PROVIDER_ORDER_STATUS_FILTERS[filter] });
+  return res.json({ success: true, status: filter, orders });
+});
+
+providerPortalRouter.get('/api/provider/v2/orders/:orderId', requireProvider('staff'), async (req, res) => {
+  const ctx = providerContextOf(req);
+  const db = getFirestoreDb();
+  if (!db) return res.status(503).json({ success: false, error: 'Portal de proveedores no disponible sin Firestore.' });
+  const order = await loadTenantServiceOrder(db, ctx, String(req.params.orderId || ''));
+  if (!order) return res.status(404).json({ success: false, error: 'Orden no encontrada.' });
+  return res.json({ success: true, order });
+});
+
+for (const decision of ['accept', 'reject'] as const) {
+  providerPortalRouter.post(`/api/provider/v2/orders/:orderId/${decision}`, requireProvider('manager'), async (req, res) => {
+    const ctx = providerContextOf(req);
+    const result = await executeProviderOrderAction(getFirestoreDb(), ctx, {
+      orderId: String(req.params.orderId || ''),
+      action: decision,
+      reason: req.body?.reason,
+      notes: req.body?.notes,
+      assignedGuide: req.body?.assignedGuide,
+      assignedVehicle: req.body?.assignedVehicle,
+    }, await defaultProviderOrderActionDeps());
+    if (!result.ok) return res.status(result.status).json({ success: false, error: result.error });
+    return res.json({ success: true, replayed: result.replayed, ...result.result });
+  });
+}
 
 /** Alta de miembro de proveedor (solo owner/admin de CRT). Auditado. */
 providerPortalRouter.post('/api/admin/providers/:providerId/members', requireAdmin, async (req, res) => {
