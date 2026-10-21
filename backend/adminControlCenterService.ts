@@ -7,10 +7,12 @@ import { buildAgentRegistrySeed, listRegisteredAgents } from './agentRegistrySer
 import { listSkillVersions } from './skillGenome';
 import { getEmailOperationsSnapshot } from './emailOperationsAgent';
 import { projectAgentOffice } from './agentOfficeProjection';
+import { getAiCallStats, getBreakerStates } from './aiRouter';
 import { LEAD_STATUSES, OPEN_STATUSES, STALE_AFTER_MS, isActionableLead, isLeadStatus, leadTriageOf, listLeads, type LeadRecord, type LeadStatus } from './leadPipeline';
 const money=(v:any)=>Number.isFinite(Number(v))?Math.round(Number(v)*100)/100:0;
 export async function getAdminControlCenterSnapshot(){
  const leadsSection=await getLeadsEvidence();
+ const aiSection=getAiEvidence();
  const [bookings,alerts,conversion,selfDevelopment,providers]=await Promise.all([getAllBookings(),getAlerts({resolved:false}),getWeeklyConversionMetrics().catch(()=>null),getSelfDevelopmentOverview().catch(()=>null),getOperationalProviderOverview().catch(()=>({sourceOfTruth:'unavailable',totalProviders:0,activeProviders:0,activeOrdersCount:0,providers:[],recentServiceOrders:[],legacyDirectoryExcluded:true}))]);
  const now=Date.now();
  const confirmed=bookings.filter((b:any)=>['confirmada','confirmed','completada','completed'].includes(String(b.status||'').toLowerCase()));
@@ -49,7 +51,7 @@ export async function getAdminControlCenterSnapshot(){
   escalation:agent.permissions?.escalation||[],
   autonomyLevel:Number.isInteger(agent.autonomyLevel)?agent.autonomyLevel:null
  }));
- return{generatedAt:new Date().toISOString(),leads:leadsSection,agentOffice,business:{totalBookings:bookings.length,confirmedBookings:confirmed.length,pendingBookings:pending.length,failedOrCancelled:failed.length,upcoming72h:upcoming.length,// Deprecated field stays null: a confirmed booking is not evidence of cash collection.
+ return{generatedAt:new Date().toISOString(),leads:leadsSection,ai:aiSection,agentOffice,business:{totalBookings:bookings.length,confirmedBookings:confirmed.length,pendingBookings:pending.length,failedOrCancelled:failed.length,upcoming72h:upcoming.length,// Deprecated field stays null: a confirmed booking is not evidence of cash collection.
     revenueUSD:null,confirmedBookingValueUSD:revenue,
     financialEvidence:{
       bookingValueSource:'getAllBookings',
@@ -180,5 +182,28 @@ export async function getLeadsEvidence(now: Date = new Date()): Promise<Evidence
   } catch (error: any) {
     console.warn('[control-center] leads no disponibles:', error?.message || error);
     return { value: null, state: 'unavailable', source: 'firestore:leads', observedAt, note: 'No se pudieron leer los leads.' };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sección "ai": latencia p50/p95 y fallos por proveedor observados por aiRouter
+// en ESTA instancia (memoria acotada, 24 h). Sin muestras → value con nulls y
+// state 'unavailable'; nunca se inventa salud.
+// ---------------------------------------------------------------------------
+export type AiStats = ReturnType<typeof getAiCallStats> & { breakers: ReturnType<typeof getBreakerStates> };
+export function getAiEvidence(now: Date = new Date()): EvidenceEnvelope<AiStats> {
+  const observedAt = now.toISOString();
+  try {
+    const calls = getAiCallStats(now.getTime());
+    const value = { ...calls, breakers: getBreakerStates(now.getTime()) };
+    return {
+      value,
+      state: calls.total ? 'partial' : 'unavailable',
+      source: 'aiRouter:instance_memory',
+      observedAt,
+      note: calls.total ? 'Solo esta instancia, últimas 24 h, máx. ' + calls.sampleLimit + ' llamadas; no persiste tras reinicios.' : 'Sin llamadas de IA observadas en esta instancia en 24 h.',
+    };
+  } catch {
+    return { value: null, state: 'unavailable', source: 'aiRouter:instance_memory', observedAt, note: 'Estadística de IA no disponible.' };
   }
 }

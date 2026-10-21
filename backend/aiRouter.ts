@@ -124,6 +124,57 @@ export function getBreakerStates(now = Date.now()) {
 }
 
 // ---------------------------------------------------------------------------
+// Estadística pasiva de llamadas (por instancia, sin prompts ni datos). Ring
+// buffer acotado; se pierde al reiniciar. La consume el Centro de Control.
+// ---------------------------------------------------------------------------
+
+export type AiCallSample = { at: number; provider: string; ok: boolean; latencyMs: number; reason?: string };
+const AI_CALL_SAMPLES: AiCallSample[] = [];
+export const AI_CALL_SAMPLE_LIMIT = 500;
+
+export function recordAiCallSample(sample: AiCallSample) {
+  if (!Number.isFinite(sample.latencyMs) || sample.latencyMs < 0) return;
+  AI_CALL_SAMPLES.push({ at: sample.at, provider: String(sample.provider).slice(0, 40), ok: sample.ok, latencyMs: Math.round(sample.latencyMs), ...(sample.reason ? { reason: String(sample.reason).slice(0, 40) } : {}) });
+  if (AI_CALL_SAMPLES.length > AI_CALL_SAMPLE_LIMIT) AI_CALL_SAMPLES.splice(0, AI_CALL_SAMPLES.length - AI_CALL_SAMPLE_LIMIT);
+}
+
+export function resetAiCallSamples() { AI_CALL_SAMPLES.length = 0; }
+
+function pickPercentile(sorted: number[], p: number): number | null {
+  return sorted.length ? sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil(p * sorted.length) - 1))] : null;
+}
+
+/** p50/p95 de latencia (solo llamadas exitosas) y fallos por proveedor y motivo. Sin muestras → null. */
+export function getAiCallStats(now = Date.now(), windowMs = 24 * 60 * 60 * 1000) {
+  const recent = AI_CALL_SAMPLES.filter(s => now - s.at <= windowMs && s.at <= now);
+  const byProvider: Record<string, { total: number; failures: number; failureRate: number | null; p50LatencyMs: number | null; p95LatencyMs: number | null; reasons: Record<string, number> }> = {};
+  for (const s of recent) {
+    const b = byProvider[s.provider] || (byProvider[s.provider] = { total: 0, failures: 0, failureRate: null, p50LatencyMs: null, p95LatencyMs: null, reasons: {} });
+    b.total += 1;
+    if (!s.ok) { b.failures += 1; const r = s.reason || 'unknown'; b.reasons[r] = (b.reasons[r] || 0) + 1; }
+  }
+  for (const [provider, b] of Object.entries(byProvider)) {
+    const lat = recent.filter(s => s.provider === provider && s.ok).map(s => s.latencyMs).sort((x, y) => x - y);
+    b.failureRate = b.total ? Math.round((b.failures / b.total) * 1000) / 10 : null;
+    b.p50LatencyMs = pickPercentile(lat, 0.5);
+    b.p95LatencyMs = pickPercentile(lat, 0.95);
+  }
+  const ok = recent.filter(s => s.ok).map(s => s.latencyMs).sort((x, y) => x - y);
+  const failures = recent.length - ok.length;
+  return {
+    scope: 'instance' as const,
+    windowHours: windowMs / 3_600_000,
+    sampleLimit: AI_CALL_SAMPLE_LIMIT,
+    total: recent.length,
+    failures,
+    failureRate: recent.length ? Math.round((failures / recent.length) * 1000) / 10 : null,
+    p50LatencyMs: pickPercentile(ok, 0.5),
+    p95LatencyMs: pickPercentile(ok, 0.95),
+    byProvider,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Llamada protegida
 // ---------------------------------------------------------------------------
 
@@ -177,6 +228,7 @@ export async function callProvider<T>(
     try {
       const value = await withTimeout(fn, timeoutMs);
       recordAiObservation(provider, null);
+      recordAiCallSample({ at: Date.now(), provider: key, ok: true, latencyMs: now() - started });
       console.info(JSON.stringify({ event: 'ai_call', provider: key, task, ok: true, latencyMs: now() - started, attempt }));
       return value;
     } catch (error) {
@@ -185,6 +237,7 @@ export async function callProvider<T>(
       // salvo los que delatan una clave/proyecto inutilizable.
       const providerWide = key === provider || failure === 'billing' || failure === 'authentication';
       if (providerWide) recordAiObservation(provider, failure);
+      recordAiCallSample({ at: Date.now(), provider: key, ok: false, latencyMs: now() - started, reason: failure });
       console.warn(JSON.stringify({ event: 'ai_call', provider: key, task, ok: false, reason: failure, latencyMs: now() - started, attempt }));
       if (RETRYABLE.has(failure) && attempt === 0) continue;
       tripBreaker(key, failure, now());
