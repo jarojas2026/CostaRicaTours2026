@@ -160,6 +160,59 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Portal de proveedores (#319, docs/diseno/portal-proveedores.md §10).
+    // Aislamiento por tenant: el providerId sale SOLO del token firmado.
+    // Todas las colecciones provider_* las escribe solo el backend (Admin SDK).
+    // service_orders, bookings y leads NO tienen reglas para role == 'provider'
+    // (Default Deny); el portal lee vía API con la proyección minimizada.
+    function isProvider() {
+      return isSignedIn()
+        && request.auth.token.role == 'provider'
+        && request.auth.token.providerId is string
+        && request.auth.token.providerRole in ['owner', 'manager', 'staff'];
+    }
+    function myProvider() { return request.auth.token.providerId; }
+    function providerRole() { return request.auth.token.providerRole; }
+
+    match /provider_orders/{orderId} {
+      allow read: if isAdmin() || (isProvider()
+        && resource.data.providerId == myProvider()
+        && (providerRole() in ['owner', 'manager']
+            || resource.data.assignedStaffUid == request.auth.uid));
+      allow create, update, delete: if false;
+    }
+
+    match /provider_settlements/{settlementId} {
+      allow read: if isAdmin() || (isProvider()
+        && providerRole() == 'owner'
+        && resource.data.providerId == myProvider());
+      allow create, update, delete: if false;
+    }
+
+    match /provider_metrics_monthly/{metricId} {
+      allow read: if isAdmin() || (isProvider()
+        && providerRole() in ['owner', 'manager']
+        && resource.data.providerId == myProvider());
+      allow create, update, delete: if false;
+    }
+
+    match /provider_reviews/{reviewId} {
+      allow read: if isAdmin() || (isProvider() && resource.data.providerId == myProvider());
+      allow create, update, delete: if false;
+    }
+
+    match /provider_members/{memberUid} {
+      allow read: if isAdmin()
+        || (isProvider() && request.auth.uid == memberUid)
+        || (isProvider() && providerRole() == 'owner' && resource.data.providerId == myProvider());
+      allow create, update, delete: if false;
+    }
+
+    match /provider_profiles/{providerId} {
+      allow read: if isAdmin() || (isProvider() && providerId == myProvider());
+      allow create, update, delete: if false;
+    }
+
     match /agent_memory/{sessionId} {
       allow read, write: if isSignedIn() && request.auth.uid == sessionId;
     }

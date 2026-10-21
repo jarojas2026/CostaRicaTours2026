@@ -14,7 +14,18 @@ import { getProvidersOverview, handleProviderAction } from '../providerCommunica
 import { verifyProviderPortalToken } from '../providerPortalService';
 import { toProviderPortalOrder } from '../providerPortalView';
 import { getFirestoreDb } from '../bookingService';
-import { createRouter, requireAdmin } from './shared';
+import { createRouter, requireAdmin, adminAccessPayload } from './shared';
+import {
+  buildProviderClaims,
+  buildProviderMemberRecord,
+  isProviderRole,
+  isValidProviderId,
+  providerContextOf,
+  PROVIDER_MEMBERS_COLLECTION,
+  requireProvider,
+} from '../providerAuth';
+import { buildProviderAuditRecord, PROVIDER_AUDIT_COLLECTION } from '../providerAudit';
+import { getFirebaseAdminAuth } from '../firebaseAdminRuntime';
 
 /** Estado del motor nativo y acciones de proveedores. */
 export const providerOpsRouter = createRouter();
@@ -147,6 +158,85 @@ providerPortalRouter.post('/api/provider/portal/action', async (req, res) => {
     });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error?.message || 'No se pudo registrar la respuesta.' });
+  }
+});
+
+/**
+ * 1.16 Portal de proveedores v2 (#319): identidad por cuenta y tenant.
+ * El providerId sale del token verificado, nunca del body/query.
+ */
+providerPortalRouter.get('/api/provider/v2/me', requireProvider('staff'), (req, res) => {
+  const ctx = providerContextOf(req);
+  res.json({ success: true, provider: { providerId: ctx.providerId, providerRole: ctx.providerRole, uid: ctx.uid } });
+});
+
+/** Alta de miembro de proveedor (solo owner/admin de CRT). Auditado. */
+providerPortalRouter.post('/api/admin/providers/:providerId/members', requireAdmin, async (req, res) => {
+  const providerId = String(req.params.providerId || '');
+  const uid = String(req.body?.uid || '').trim();
+  const providerRole = String(req.body?.providerRole || '').trim();
+  if (!isValidProviderId(providerId)) return res.status(400).json({ success: false, error: 'providerId inválido.' });
+  if (!/^[A-Za-z0-9_-]{1,128}$/.test(uid)) return res.status(400).json({ success: false, error: 'uid inválido.' });
+  if (!isProviderRole(providerRole)) return res.status(400).json({ success: false, error: 'providerRole debe ser owner, manager o staff.' });
+  const db = getFirestoreDb();
+  if (!db) return res.status(503).json({ success: false, error: 'Firestore no disponible.' });
+  const actor = adminAccessPayload(req);
+  try {
+    const auth = getFirebaseAdminAuth();
+    const user = await auth.getUser(uid);
+    const claims = buildProviderClaims(user.customClaims, providerId, providerRole);
+    const member = buildProviderMemberRecord({ uid, providerId, providerRole, invitedBy: actor.uid });
+    const audit = buildProviderAuditRecord({
+      action: 'provider.member.granted', target: `${providerId}/${uid}`,
+      actor: { uid: actor.uid, email: null, role: String(actor.role || 'admin') },
+      before: null, after: { providerId, providerRole, status: 'active' },
+    });
+    const batch = db.batch();
+    batch.set(db.collection(PROVIDER_MEMBERS_COLLECTION).doc(uid), member);
+    batch.create(db.collection(PROVIDER_AUDIT_COLLECTION).doc(audit.id), audit);
+    await batch.commit();
+    await auth.setCustomUserClaims(uid, { ...(user.customClaims || {}), ...claims });
+    return res.json({ success: true, member: { uid, providerId, providerRole, status: 'active' } });
+  } catch (error: any) {
+    return res.status(409).json({ success: false, error: error?.message || 'No se pudo registrar el miembro.' });
+  }
+});
+
+/** Baja de miembro: revoca sesiones y claims. Auditado. */
+providerPortalRouter.delete('/api/admin/providers/:providerId/members/:uid', requireAdmin, async (req, res) => {
+  const providerId = String(req.params.providerId || '');
+  const uid = String(req.params.uid || '');
+  if (!isValidProviderId(providerId) || !/^[A-Za-z0-9_-]{1,128}$/.test(uid)) {
+    return res.status(400).json({ success: false, error: 'Parámetros inválidos.' });
+  }
+  const db = getFirestoreDb();
+  if (!db) return res.status(503).json({ success: false, error: 'Firestore no disponible.' });
+  const actor = adminAccessPayload(req);
+  try {
+    const ref = db.collection(PROVIDER_MEMBERS_COLLECTION).doc(uid);
+    const snap = await ref.get();
+    if (!snap.exists || snap.data()?.providerId !== providerId) {
+      return res.status(404).json({ success: false, error: 'Miembro no encontrado para este proveedor.' });
+    }
+    const now = new Date().toISOString();
+    const audit = buildProviderAuditRecord({
+      action: 'provider.member.revoked', target: `${providerId}/${uid}`,
+      actor: { uid: actor.uid, email: null, role: String(actor.role || 'admin') },
+      before: { status: snap.data()?.status || null, providerRole: snap.data()?.providerRole || null },
+      after: { status: 'revoked' }, now,
+    });
+    const batch = db.batch();
+    batch.update(ref, { status: 'revoked', updatedAt: now });
+    batch.create(db.collection(PROVIDER_AUDIT_COLLECTION).doc(audit.id), audit);
+    await batch.commit();
+    const auth = getFirebaseAdminAuth();
+    const user = await auth.getUser(uid);
+    const { role: _role, providerId: _pid, providerRole: _prole, ...rest } = (user.customClaims || {}) as Record<string, any>;
+    await auth.setCustomUserClaims(uid, rest);
+    await auth.revokeRefreshTokens(uid);
+    return res.json({ success: true, member: { uid, providerId, status: 'revoked' } });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error?.message || 'No se pudo revocar el miembro.' });
   }
 });
 
