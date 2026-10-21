@@ -11,6 +11,7 @@ import { KnowledgeCityPanel } from '../components/KnowledgeCityPanel';
 import { AgentOfficeMap } from '../components/AgentOfficeMap';
 import { DigitalCityRegistrationPreflight } from '../components/DigitalCityRegistrationPreflight';
 import { DigitalCityReviewQueue } from '../components/DigitalCityReviewQueue';
+import { AdminLeadsAnalytics } from '../components/AdminLeadsAnalytics';
 
 type SectionId = 'resumen' | 'leads' | 'tours' | 'operadores' | 'ia' | 'contenido' | 'ajustes';
 type LeadLite = { id: string; status: string; lastActivityAt?: string; createdAt?: string };
@@ -173,6 +174,7 @@ export const AdminControlCenterPage: React.FC<{ language: Language }> = ({ langu
             <div className="mt-1 text-sm text-stone-300">{s.replace(/_/g, ' ')}</div>
           </Card>)}
         </div>
+        <AdminLeadsAnalytics envelope={data?.leads} es={es} />
       </div>;
 
       case 'tours': return <div className="space-y-6">
