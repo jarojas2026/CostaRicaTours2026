@@ -55,3 +55,30 @@ test('concierge route answers in the detected language and enforces the single p
   assert.match(route, /const lang = \(understanding\?\.understood\.language/);
   assert.match(route, /enforceSingleReferencePrice\(assistantResult\.reply, understanding\)/);
 });
+
+test('single-price filter removes a markdown table left with only headers (rafting Arenal)', () => {
+  const u = understandConciergeMessage('precio rafting Arenal', TOURS as any, { now, requestedLanguage: 'es' });
+  assert.ok(u.quote, 'expected catalog reference quote');
+  const modelReply = [
+    'Opciones de rafting en Arenal:',
+    '',
+    '| Tour | Precio | Duración |',
+    '|------|:------:|---------:|',
+    '| Rafting Clase II-III | US$85 por persona | 4 h |',
+    '| Rafting Clase III-IV | $110 | 5 h |',
+    '',
+    'Incluye transporte desde La Fortuna.',
+  ].join('\n');
+  const out = enforceSingleReferencePrice(modelReply, u);
+  assert.doesNotMatch(out, /\|/, out);
+  assert.doesNotMatch(out, /---/, out);
+  assert.match(out, /Incluye transporte desde La Fortuna\./);
+  assert.match(out, /Precio de referencia:/);
+});
+
+test('tables that still have data rows are kept', async () => {
+  const { stripEmptyMarkdownTables } = await import('../backend/conciergeUnderstanding');
+  const kept = '| Día | Plan |\n|---|---|\n| 1 | Volcán |';
+  assert.equal(stripEmptyMarkdownTables(kept), kept);
+  assert.equal(stripEmptyMarkdownTables('Hola\n| A | B |\n| --- | --- |\nFin'), 'Hola\nFin');
+});
