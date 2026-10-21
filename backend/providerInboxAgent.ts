@@ -2,7 +2,8 @@ import { google } from 'googleapis';
 import { GoogleGenAI } from '@google/genai';
 import { getFirestoreDb, findBookingByCodeOrEmail } from './bookingService';
 import { handleProviderAction, REGISTERED_PROVIDERS } from './providerCommunicationService';
-import { sendEmail, sendWhatsAppMessage } from './notificationService';
+import { sendWhatsAppMessage } from './notificationService';
+import { sendEmailWithOutcome } from './emailDeliveryOutcome';
 import { emitOperationalEvent } from './operationalEventBus';
 import { guardedGeminiGenerate } from './aiRouter';
 import { getLightModel } from './aiConfig';
@@ -38,8 +39,10 @@ async function notifyCustomer(order:any,action:string,notes:string){
  const booking=await findBookingByCodeOrEmail(order.bookingId).catch(()=>null);const customer=booking?.customer||{};const email=booking?.customerEmail||customer.email;const phone=booking?.customerPhone||customer.phone;const name=booking?.customerName||customer.fullName||customer.name||'Viajero';
  const messages:Record<string,string>={confirm:'Hola '+name+'. El proveedor '+order.providerName+' confirmó la solicitud de '+order.tourName+' para '+order.date+'. Seguimos con el siguiente paso de tu reserva.',reject:'Hola '+name+'. '+order.providerName+' informó que no puede atender '+order.tourName+' para '+order.date+'. Conservamos tus preferencias y podemos buscar otra fecha, horario o experiencia similar.',delay:'Hola '+name+'. '+order.providerName+' todavía está revisando tu solicitud. Aún no la presentamos como confirmada y te avisaremos cuando exista una respuesta definitiva.',no_show:'Hola '+name+'. Recibimos un reporte operativo de no-show para '+order.tourName+'. Nuestro equipo está revisando el caso y te informará los próximos pasos.',complete:'Hola '+name+'. El proveedor reportó como completado el servicio '+order.tourName+'. Gracias por viajar con nosotros.'};
  const message=messages[action]||messages.delay;const suffix=notes?'\n\nNota operativa: '+notes:'';
- if(email&&/@/.test(email))await sendEmail({to:email,subject:action==='confirm'?'Solicitud confirmada • Costa Rica Tours':'Actualización de tu solicitud • Costa Rica Tours',html:'<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:24px"><h2>'+message+'</h2><p>'+suffix.replace(/\n/g,'<br>')+'</p><p>Seguimos contigo paso a paso. Pura Vida.</p></div>'}).catch(()=>undefined);
+ let emailDelivery:{status:'sent'|'failed'|'skipped_no_email';attempts:number;error?:string}={status:'skipped_no_email',attempts:0};
+ if(email&&/@/.test(email)){const d=await sendEmailWithOutcome({to:email,subject:action==='confirm'?'Solicitud confirmada • Costa Rica Tours':'Actualización de tu solicitud • Costa Rica Tours',html:'<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:24px"><h2>'+message+'</h2><p>'+suffix.replace(/\n/g,'<br>')+'</p><p>Seguimos contigo paso a paso. Pura Vida.</p></div>'});emailDelivery=d.success?{status:'sent',attempts:d.attempts}:{status:'failed',attempts:d.attempts,error:d.error};}
  if(phone)await sendWhatsAppMessage({toPhone:String(phone),customerName:name,message:message+suffix,bookingId:order.bookingId}).catch(()=>undefined);
+ return{customerEmail:emailDelivery};
 }
 export async function processProviderInboxOnce(){
  const client=await gmail();if(!client)return{enabled:false,processed:0,ignored:0,errors:0,reason:'Gmail OAuth no configurado.'};
@@ -47,9 +50,9 @@ export async function processProviderInboxOnce(){
  for(const item of messages){if(!item.id)continue;try{if(db&&(await db.collection('provider_inbox_events').doc(item.id).get()).exists)continue;const full=await client.users.messages.get({userId,id:item.id,format:'full'});const from=emailOf(header(full.data,'From')),subject=header(full.data,'Subject');const body=clean(parts(full.data.payload).join('\n')||full.data.snippet,12000);const orderId=(subject+'\n'+body).match(/OS-CR-[A-Z0-9-]+/i)?.[0]?.toUpperCase();
   if(!known.has(from)||!orderId){ignored++;if(db)await db.collection('provider_inbox_events').doc(item.id).set({messageId:item.id,from,subject,orderId:orderId||null,status:'ignored',processedAt:new Date().toISOString()});continue;}
   const result=await classify(subject,body);if(result.action==='unknown'||result.confidence<.65){ignored++;if(db)await db.collection('provider_inbox_events').doc(item.id).set({messageId:item.id,from,subject,orderId,status:'needs_human_review',classification:result,processedAt:new Date().toISOString()});continue;}
-  const actionResult=await handleProviderAction({orderId,action:result.action as any,notes:result.notes,operatorContact:from});if(!actionResult.success)throw new Error(actionResult.message);await notifyCustomer(actionResult.order,result.action,result.notes);
+  const actionResult=await handleProviderAction({orderId,action:result.action as any,notes:result.notes,operatorContact:from});if(!actionResult.success)throw new Error(actionResult.message);const notification=await notifyCustomer(actionResult.order,result.action,result.notes);
   await emitOperationalEvent({type:'provider.response.processed',source:'provider_inbox_agent',conversationId:actionResult.order.bookingId,payload:{orderId,action:result.action,confidence:result.confidence,from}}).catch(()=>undefined);
-  if(db)await db.collection('provider_inbox_events').doc(item.id).set({messageId:item.id,from,subject,orderId,status:'processed',classification:result,processedAt:new Date().toISOString()});
+  if(db)await db.collection('provider_inbox_events').doc(item.id).set({messageId:item.id,from,subject,orderId,status:'processed',classification:result,customerNotification:notification.customerEmail,customerNotified:notification.customerEmail.status==='sent',processedAt:new Date().toISOString()});
   await client.users.messages.modify({userId,id:item.id,requestBody:{removeLabelIds:['UNREAD']}}).catch(()=>undefined);processed++;
  }catch(error:any){errors++;if(db)await db.collection('provider_inbox_events').doc(item.id).set({messageId:item.id,status:'error',error:clean(error?.message,800),processedAt:new Date().toISOString()},{merge:true});}}
  return{enabled:true,processed,ignored,errors,scanned:messages.length,checkedAt:new Date().toISOString()};
