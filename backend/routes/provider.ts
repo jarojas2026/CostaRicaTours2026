@@ -12,6 +12,7 @@ import { executeCustomerBookingConfirmation } from '../nativeWorkflows';
 import { executeAutomatedProviderPayouts } from '../providerPayoutService';
 import { getProvidersOverview, handleProviderAction } from '../providerCommunicationService';
 import { verifyProviderPortalToken } from '../providerPortalService';
+import { toProviderPortalOrder } from '../providerPortalView';
 import { getFirestoreDb } from '../bookingService';
 import { createRouter, requireAdmin } from './shared';
 
@@ -86,26 +87,7 @@ providerPortalRouter.get('/api/provider/portal', async (req, res) => {
     return res.json({
       success: true,
       expiresAt: capability.exp,
-      order: {
-        id: order.id,
-        bookingId: order.bookingId,
-        tourId: order.tourId,
-        tourName: order.tourName,
-        providerId: order.providerId,
-        providerName: order.providerName,
-        date: order.date,
-        time: order.time,
-        adults: order.adults,
-        children: order.children,
-        pickupLocation: order.pickupLocation,
-        wazeUrl: order.wazeUrl,
-        customer: order.customer,
-        status: order.status,
-        notes: order.notes || '',
-        assignedGuide: order.assignedGuide || '',
-        assignedVehicle: order.assignedVehicle || '',
-        slaDeadline: order.slaDeadline
-      }
+      order: toProviderPortalOrder(order)
     });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error?.message || 'No se pudo cargar la solicitud.' });
