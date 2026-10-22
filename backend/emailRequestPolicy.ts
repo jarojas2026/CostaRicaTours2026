@@ -15,3 +15,26 @@ export function isSensitiveCustomerEmail(input: unknown): boolean {
   const partyChange = /(?:ahora|finalmente|en\s+realidad|instead|actually|now)\s+(?:somos|seremos|vamos\s+a\s+ser|we\s+are|we(?:'ll|\s+will)\s+be|there\s+are)\s+\d+/i;
   return sensitive.test(text) || partyChange.test(text);
 }
+
+
+/**
+ * Replies commonly quote our previous email, including an action menu.
+ * Only the newest message may drive an intent; quoted prompts cannot be
+ * interpreted as fresh cancellation or provider-confirmation commands.
+ * The raw provider message remains in Gmail/Outlook and can be reviewed there.
+ */
+export function newestEmailReply(input: unknown): string {
+  const lines = String(input ?? '').replace(/\r\n?/g, '\n').split('\n');
+  const fresh: string[] = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/^>/.test(trimmed) ||
+      /^on .{5,200} wrote:\s*$/i.test(trimmed) ||
+      /^el .{5,200} escribi[oó]:\s*$/i.test(trimmed) ||
+      /^-{2,}\s*(original message|mensaje original)\s*-*/i.test(trimmed) ||
+      /^from:\s+.+@.+$/i.test(trimmed) ||
+      /^de:\s+.+@.+$/i.test(trimmed)) break;
+    fresh.push(line);
+  }
+  return fresh.join('\n').trim().slice(0, 12000);
+}
