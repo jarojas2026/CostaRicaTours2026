@@ -2,7 +2,7 @@
   "version": 1,
   "reviewedAt": "2026-10-21",
   "policy": {
-    "description": "Fotos permitidas en tours, destinos y blog. Las de Wikimedia Commons llevan autor, licencia y URL verificadas vía API de Commons el 2026-10-21. Las de Unsplash están etiquetadas por revisión visual; su ubicación en Costa Rica no está verificada (inCostaRica=unverified).",
+    "description": "Fotos permitidas en tours, destinos y blog. Las de Wikimedia Commons llevan autor, licencia y URL verificadas vía API de Commons el 2026-10-21. Las de Unsplash están etiquetadas por revisión visual; su ubicación en Costa Rica no está verificada (inCostaRica=unverified). Las fotos de platos típicos (tag costa-rica-food) son de Commons, verificadas vía API el 2026-10-21.",
     "vetoedSubjectsForTours": [
       "castle",
       "outside-cr",
@@ -1206,6 +1206,128 @@
       "licenseUrl": "https://unsplash.com/license",
       "sourcePage": null,
       "credit": null
+    },
+    {
+      "key": "wm-food-gallo-pinto",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/54/Costa_Rican_Gallo_Pinto.jpg/1280px-Costa_Rican_Gallo_Pinto.jpg",
+      "source": "wikimedia-commons",
+      "place": "Gallo pinto con huevo, queso y tortilla — Zarcero, Alajuela",
+      "regions": [
+        "alajuela"
+      ],
+      "subjects": [
+        "costa-rica-food",
+        "gallo-pinto",
+        "breakfast",
+        "food"
+      ],
+      "inCostaRica": true,
+      "author": "Legendre17",
+      "license": "CC BY 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Costa_Rican_Gallo_Pinto.jpg",
+      "credit": "Foto: Legendre17 · CC BY 3.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-food-casado",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/81/Casado_meal_at_Cristal_soda_restaurant.jpg/1280px-Casado_meal_at_Cristal_soda_restaurant.jpg",
+      "source": "wikimedia-commons",
+      "place": "Casado en una soda del Mercado Central, San José",
+      "regions": [
+        "sjo"
+      ],
+      "subjects": [
+        "costa-rica-food",
+        "casado",
+        "lunch",
+        "food"
+      ],
+      "inCostaRica": true,
+      "author": "Spideog",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Casado_meal_at_Cristal_soda_restaurant.jpg",
+      "credit": "Foto: Spideog · CC BY-SA 4.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-food-rice-and-beans",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/8/87/Casado_de_rice_and_beans.png",
+      "source": "wikimedia-commons",
+      "place": "Casado con rice and beans — Puerto Viejo, Limón",
+      "regions": [
+        "caribe_sur"
+      ],
+      "subjects": [
+        "costa-rica-food",
+        "rice-and-beans",
+        "caribbean",
+        "food"
+      ],
+      "inCostaRica": true,
+      "author": "Aleat88",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Casado_de_rice_and_beans.png",
+      "credit": "Foto: Aleat88 · CC BY-SA 4.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-food-chifrijo",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/5/5f/Chifrijo.png",
+      "source": "wikimedia-commons",
+      "place": "Chifrijos con tortillas fritas — restaurante típico, San José",
+      "regions": [
+        "sjo"
+      ],
+      "subjects": [
+        "costa-rica-food",
+        "chifrijo",
+        "bocas",
+        "food"
+      ],
+      "inCostaRica": true,
+      "author": "Aleat88",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Chifrijo.png",
+      "credit": "Foto: Aleat88 · CC BY-SA 4.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-food-olla-de-carne",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/78/Olla_de_carne.jpg/1280px-Olla_de_carne.jpg",
+      "source": "wikimedia-commons",
+      "place": "Olla de carne, sopa típica costarricense",
+      "regions": [],
+      "subjects": [
+        "costa-rica-food",
+        "olla-de-carne",
+        "soup",
+        "food"
+      ],
+      "inCostaRica": true,
+      "author": "Rodtico21",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Olla_de_carne.jpg",
+      "credit": "Foto: Rodtico21 · CC BY-SA 3.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-food-chorreadas",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/6/64/Chorreadas_CR.png",
+      "source": "wikimedia-commons",
+      "place": "Chorreadas costarricenses con natilla y queso",
+      "regions": [],
+      "subjects": [
+        "costa-rica-food",
+        "chorreadas",
+        "corn",
+        "food"
+      ],
+      "inCostaRica": true,
+      "author": "Aleat88",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Chorreadas_CR.png",
+      "credit": "Foto: Aleat88 · CC BY-SA 4.0 · Wikimedia Commons"
     }
   ],
   "blocked": [
@@ -1366,6 +1488,54 @@
       "reason": "imagen eliminada (404)",
       "subjects": [
         "broken"
+      ]
+    },
+    {
+      "match": "photo-1546069901-ba9599a7e63c",
+      "reason": "bowl de ensalada genérico, no es gallo pinto",
+      "subjects": [
+        "food-foreign",
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1555939594-58d7cb561ad1",
+      "reason": "plato extranjero (no es casado tico)",
+      "subjects": [
+        "food-foreign",
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1512058564366-18510be2db19",
+      "reason": "bowl de arroz extranjero (no es rice and beans caribeño)",
+      "subjects": [
+        "food-foreign",
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1565299585323-38d6b0865b47",
+      "reason": "tacos mexicanos (no es chifrijo)",
+      "subjects": [
+        "food-foreign",
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1547592166-23ac45744acd",
+      "reason": "sopa extranjera (no es olla de carne)",
+      "subjects": [
+        "food-foreign",
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1528735602780-2552fd46c7af",
+      "reason": "plato extranjero (no son chorreadas)",
+      "subjects": [
+        "food-foreign",
+        "outside-cr"
       ]
     }
   ]

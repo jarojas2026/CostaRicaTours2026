@@ -119,3 +119,29 @@ test('ningún archivo de src referencia una foto vetada (castillo, spa, fuera de
   }
   assert.deepEqual(hits, []);
 });
+
+test('cultura tica / gastronomía: solo fotos reales de platos costarricenses (tag costa-rica-food) con crédito', () => {
+  const culture = fs.readFileSync('src/components/TicoCultureSection.tsx', 'utf8');
+  const block = culture.slice(culture.indexOf('const TICO_DISHES'), culture.indexOf('interface CoffeeRegion'));
+  assert.ok(block.length > 100, 'no se encontró TICO_DISHES');
+  const names = [...block.matchAll(/\n    name: '([^']+)'/g)].map(m => m[1]);
+  const keys = [...block.matchAll(/photoKey: '([^']+)'/g)].map(m => m[1]);
+  assert.ok(names.length >= 6, 'se esperaban al menos 6 platos');
+  assert.equal(keys.length, names.length, 'cada plato debe declarar photoKey del manifiesto');
+  assert.doesNotMatch(block, /https?:\/\//, 'los platos no deben llevar URLs sueltas; usar photoKey');
+  assert.equal(new Set(keys).size, keys.length, 'dos platos comparten foto');
+  for (const key of keys) {
+    const photo = PHOTOS.find(p => p.key === key);
+    assert.ok(photo, 'photoKey fuera del manifiesto: ' + key);
+    assert.ok(photo!.subjects.includes('costa-rica-food'), key + ' no tiene el tag costa-rica-food');
+    assert.equal(photo!.source, 'wikimedia-commons', key);
+    assert.equal(photo!.inCostaRica, true, key);
+    assert.ok(photo!.credit, key + ' sin crédito');
+  }
+  for (const p of PHOTOS.filter(p => p.subjects.includes('costa-rica-food'))) {
+    assert.equal(p.source, 'wikimedia-commons', p.key + ': costa-rica-food solo para fotos verificadas en Commons');
+  }
+  assert.match(culture, /<PhotoCredit src=\{photoSrc\(getPhoto\(dish\.photoKey\)/, 'la tarjeta debe mostrar el crédito');
+  const foreign = PHOTO_MANIFEST.blocked.filter(b => b.subjects.includes('food-foreign'));
+  assert.ok(foreign.length >= 6, 'las fotos viejas de comida extranjera deben quedar vetadas');
+});
