@@ -30,6 +30,7 @@ for (const language of ['es', 'en'] as const) {
         const form = page.getByRole('form', { name: es ? 'Solicitar cotización' : 'Request a quote' });
         await form.getByRole('textbox').first().fill('Catalog QA');
         await form.locator('input[type="email"]').fill('catalog@example.com');
+        await form.getByRole('spinbutton').fill('10');
         await form.locator('input[type="checkbox"]').first().check();
         await form.getByRole('button', { name: es ? 'Enviar solicitud' : 'Send request' }).click();
         await expect(page.getByTestId('tour-quote-reference')).toContainText('CRT-1A2B3C4D');
