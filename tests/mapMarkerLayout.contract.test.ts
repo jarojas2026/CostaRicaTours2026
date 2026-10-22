@@ -6,6 +6,7 @@ import {
   clusterByGrid,
   coordinateKey,
   groupByCoordinate,
+  groupMapPointsAtZoom,
   limitNearestToCenter,
   toLeafletLatLng,
   type LatLngTuple,
@@ -106,4 +107,43 @@ test('el mapa recalcula su tamaño con ResizeObserver (no solo con window.resize
   assert.match(src, /new ResizeObserver\(/);
   assert.match(src, /invalidateSize\(/);
   assert.match(src, /fullscreenchange/);
+});
+
+
+test('zoom-aware map groups nearby tours only at low zoom, without replacing source coordinates', () => {
+  const tours = [
+    { id: 'arenal1', ll: [10.4678, -84.6427] as LatLngTuple },
+    { id: 'arenal2', ll: [10.4700, -84.6410] as LatLngTuple },
+    { id: 'tamarindo', ll: [10.30, -85.84] as LatLngTuple }
+  ];
+  const before = tours.map(t => [...t.ll]);
+  const distant = groupMapPointsAtZoom(tours, tour => tour.ll, project(8), 8);
+  assert.equal(distant.length, 2, 'two near Arenal reference markers should be one cluster when zoomed out');
+  const nearGroup = distant.find(g => g.items.length === 2)!;
+  assert.equal(nearGroup.isCluster, true, 'centroid must not be presented as a precise place');
+  const close = groupMapPointsAtZoom(tours, tour => tour.ll, project(15), 15);
+  assert.equal(close.length, 3, 'zooming in must restore original separate references');
+  assert.equal(close.every(g => !g.isCluster), true);
+  assert.deepEqual(tours.map(t => t.ll), before, 'grouping cannot change stored geocoordinates');
+});
+
+test('identical zone reference points remain an accessible count at high zoom', () => {
+  const areas = [
+    { id: 'a', ll: [10.895, -84.785] as LatLngTuple },
+    { id: 'b', ll: [10.895, -84.785] as LatLngTuple }
+  ];
+  const highZoom = groupMapPointsAtZoom(areas, s => s.ll, project(16), 16);
+  assert.equal(highZoom.length, 1);
+  assert.equal(highZoom[0].items.length, 2);
+  assert.equal(highZoom[0].isCluster, false);
+});
+
+test('map draws zoom-dependent clusters for both tours and services and exposes zoom drilldown', () => {
+  const mapCode = fs.readFileSync('src/components/InteractiveMap.tsx', 'utf8');
+  assert.match(mapCode, /groupMapPointsAtZoom\(effectiveTours,/);
+  assert.match(mapCode, /groupMapPointsAtZoom\(effectiveServices,/);
+  assert.match(mapCode, /currency, currentZoom\]/);
+  assert.match(mapCode, /Zoom in to separate pins/);
+  assert.match(mapCode, /not the exact location of every service/i);
+  assert.match(mapCode, /new ResizeObserver\(/);
 });

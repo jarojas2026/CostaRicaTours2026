@@ -92,6 +92,31 @@ export function clusterByGrid<T>(
   });
 }
 
+
+/**
+ * Zoom-dependent presentation groups. A centroid represents a cluster, not the
+ * physical address of an attraction or business. At high zoom the individual
+ * coordinates return, while cards intentionally sharing the *same* zone
+ * reference stay grouped rather than becoming inaccessible stacked markers.
+ */
+export function groupMapPointsAtZoom<T>(
+  items: readonly T[],
+  getLatLng: (item: T) => LatLngTuple | null,
+  project: (lat: number, lng: number) => { x: number; y: number },
+  zoom: number,
+  cellPx = 64,
+): GridCluster<T>[] {
+  if (zoom <= 12) return clusterByGrid(items, getLatLng, project, cellPx);
+  return groupByCoordinate(items, getLatLng).map(group => ({
+    lat: group.lat,
+    lng: group.lng,
+    count: group.items.length,
+    items: group.items,
+    // A shared map reference is not an actual multi-operator exact address.
+    isCluster: false,
+  }));
+}
+
 /** Distancia aproximada (equirectangular) suficiente para ordenar por cercanía. */
 function approxDistance(a: LatLngTuple, b: LatLngTuple): number {
   const x = (b[1] - a[1]) * Math.cos(((a[0] + b[0]) / 2) * (Math.PI / 180));
