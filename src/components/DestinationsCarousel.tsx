@@ -4,6 +4,8 @@ import { Language, TourRegion } from '../types';
 import { motion, useScroll, useTransform } from 'motion/react';
 import { ChevronRight, ChevronLeft, MapPin } from 'lucide-react';
 import { LazyImage } from './LazyImage';
+import { PhotoCredit } from './PhotoCredit';
+import { destinationPhotoUrl } from '../data/photoCatalog';
 
 interface DestinationsCarouselProps {
   language: Language;
@@ -15,42 +17,42 @@ const destinations = [
     id: 'arenal' as TourRegion,
     name: { es: 'La Fortuna & Arenal', en: 'La Fortuna & Arenal' },
     desc: { es: 'Volcán majestuoso, aguas termales y la capital de la aventura.', en: 'Majestic volcano, hot springs, and the adventure capital.' },
-    img: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
+    img: destinationPhotoUrl('arenal'),
     color: 'from-amber-600/80 to-amber-900/90'
   },
   {
     id: 'manuel_antonio' as TourRegion,
     name: { es: 'Manuel Antonio', en: 'Manuel Antonio' },
     desc: { es: 'Playas de arena blanca y avistamiento de perezosos garantizado.', en: 'White sand beaches and guaranteed sloth sightings.' },
-    img: 'https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85',
+    img: destinationPhotoUrl('manuel_antonio'),
     color: 'from-teal-600/80 to-stone-900/90'
   },
   {
     id: 'guanacaste' as TourRegion,
     name: { es: 'Guanacaste (Tamarindo)', en: 'Guanacaste (Tamarindo)' },
     desc: { es: 'Cultura de surf, atardeceres dorados y resorts todo incluido.', en: 'Surf culture, golden sunsets, and all-inclusive resorts.' },
-    img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+    img: destinationPhotoUrl('guanacaste'),
     color: 'from-blue-600/80 to-blue-900/90'
   },
   {
     id: 'monteverde' as TourRegion,
     name: { es: 'Monteverde', en: 'Monteverde' },
     desc: { es: 'Bosque nuboso místico, puentes colgantes y biodiversidad única.', en: 'Mystical cloud forest, hanging bridges, and unique biodiversity.' },
-    img: '/src/assets/images/monteverde_canopy_1789327567266.jpg',
+    img: destinationPhotoUrl('monteverde'),
     color: 'from-green-700/80 to-green-950/90'
   },
   {
     id: 'caribe' as TourRegion,
     name: { es: 'Puerto Viejo (Caribe)', en: 'Puerto Viejo (Caribbean)' },
     desc: { es: 'Selva exhuberante, rica cultura afrocaribeña y playas tranquilas.', en: 'Lush jungle, rich Afro-Caribbean culture, and laid-back beaches.' },
-    img: 'https://images.unsplash.com/photo-1549880181-56a44cf4a9a1?auto=format&fit=crop&w=800&q=80',
+    img: destinationPhotoUrl('caribe'),
     color: 'from-teal-600/80 to-teal-900/90'
   },
   {
     id: 'tortuguero' as TourRegion,
     name: { es: 'Tortuguero', en: 'Tortuguero' },
     desc: { es: 'Canales navegables y anidación de tortugas. El "Amazonas" tico.', en: 'Navigable canals and turtle nesting. The Costa Rican "Amazon".' },
-    img: 'https://images.unsplash.com/photo-1605206969562-ab16ba5a9ce3?auto=format&fit=crop&w=800&q=80',
+    img: destinationPhotoUrl('tortuguero'),
     color: 'from-cyan-700/80 to-cyan-950/90'
   }
 ];
@@ -116,7 +118,8 @@ export const DestinationsCarousel: React.FC<DestinationsCarouselProps> = ({ lang
               {/* Background Image */}
               <LazyImage src={dest.img} alt={dest.name[language as keyof typeof dest.name] || dest.name.en} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
               
-              {/* Gradient Overlay */}
+              <PhotoCredit src={dest.img} linked={false} className="absolute top-3 right-4 z-10 max-w-[70%] text-right drop-shadow" />
+                            {/* Gradient Overlay */}
               <div className={`absolute inset-0 bg-gradient-to-t ${dest.color} opacity-80 mix-blend-multiply transition-opacity duration-300 group-hover:opacity-90`}></div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
 

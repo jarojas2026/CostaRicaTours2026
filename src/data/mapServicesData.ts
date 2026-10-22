@@ -1,3 +1,4 @@
+import { regionLandscapeUrl, safeImageUrl } from './photoCatalog';
 import { Localized } from '../types';
 
 export type MapServiceType = 
@@ -149,7 +150,7 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Zona de Manuel Antonio, Quepos (ubicación aproximada)',
       en: 'Manuel Antonio area, Quepos (approximate location)'
     },
-    image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1000&q=80',
+    image: regionLandscapeUrl('manuel_antonio'),
     rating: 4.9,
     reviewsCount: 510,
     stars: 5,
@@ -293,7 +294,7 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Zona del Río Pacuare, Turrialba / Limón (ubicación aproximada)',
       en: 'Pacuare River area, Turrialba / Limon (approximate location)'
     },
-    image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1000&q=80',
+    image: regionLandscapeUrl('pacuare'),
     rating: 5.0,
     reviewsCount: 310,
     stars: 5,
@@ -369,7 +370,7 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Entrada oficial El Espadilla Sur, Manuel Antonio, Puntarenas',
       en: 'Official Gate, South Espadilla, Manuel Antonio, Puntarenas'
     },
-    image: 'https://images.unsplash.com/photo-1518509562904-e7ef99cdcc86?auto=format&fit=crop&w=1000&q=80',
+    image: regionLandscapeUrl('manuel_antonio'),
     rating: 4.8,
     reviewsCount: 1420,
     sinacCode: 'PNMA-ACOPAC',
@@ -423,7 +424,7 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Puesto Principal Los Heliconias, La Fortuna de San Carlos',
       en: 'Heliconias Main Station, La Fortuna de San Carlos'
     },
-    image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1000&q=80',
+    image: regionLandscapeUrl('arenal'),
     rating: 4.8,
     reviewsCount: 1180,
     sinacCode: 'PNVA-ACAHN',
@@ -475,7 +476,7 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Cordillera Volcánica Central, Alajuela (a 50 min de SJO)',
       en: 'Central Volcanic Ridge, Alajuela (50 mins from SJO)'
     },
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80',
+    image: regionLandscapeUrl('san_jose'),
     rating: 4.7,
     reviewsCount: 960,
     sinacCode: 'PNVP-ACC',
@@ -527,7 +528,7 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Puesto Cuatro Esquinas, Tortuguero, Pococí, Limón',
       en: 'Cuatro Esquinas Ranger Station, Tortuguero, Limon'
     },
-    image: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=1000&q=80',
+    image: regionLandscapeUrl('tortuguero'),
     rating: 4.9,
     reviewsCount: 880,
     sinacCode: 'PNT-ACTO',
@@ -631,7 +632,7 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Final de la Carretera a Monteverde, Santa Elena, Puntarenas',
       en: 'End of Monteverde Road, Santa Elena, Puntarenas'
     },
-    image: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1000&q=80',
+    image: regionLandscapeUrl('monteverde'),
     rating: 4.9,
     reviewsCount: 1650,
     sinacCode: 'RBBNM-CCT',
@@ -854,7 +855,7 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Avenida 3, Calle 21, frente al Parque Nacional, San José',
       en: 'Ave 3, Calle 21, facing National Park, San José'
     },
-    image: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=1000&q=80',
+    image: regionLandscapeUrl('san_jose'),
     transportCompany: 'Instituto Costarricense de Ferrocarriles (INCOFER)',
     routesServed: {
       es: ['San José ➡️ Cartago (Basílica): Horas pico mañana (5:30 - 8:30 AM) y tarde (3:30 - 7:30 PM)', 'San José ➡️ UCR / Curridabat: Frecuencia cada 30 min en horas laborales'],
@@ -891,7 +892,7 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Avenida 20, Calle 2, Plaza González Víquez, San José',
       en: 'Ave 20, Calle 2, Plaza Gonzalez Viquez, San José'
     },
-    image: 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=1000&q=80',
+    image: regionLandscapeUrl('san_jose'),
     transportCompany: 'INCOFER',
     routesServed: {
       es: ['San José ➡️ San Antonio de Belén: 5:40 AM - 8:15 AM y 4:00 PM - 7:30 PM', 'San José ➡️ Pavas: 6:00 AM a 6:30 PM'],
@@ -932,7 +933,7 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Salida de llegadas internacionales, Aeropuerto SJO, Alajuela',
       en: 'International arrivals curbside, SJO Airport, Alajuela'
     },
-    image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=1000&q=80',
+    image: regionLandscapeUrl('san_jose'),
     transportCompany: 'Taxis Unidos Aeropuerto SJO',
     routesServed: {
       es: ['SJO ➡️ San José Centro: tarifa a consultar', 'SJO ➡️ Escazú / Santa Ana: tarifa a consultar', 'SJO ➡️ La Fortuna / Arenal: tarifa a consultar', 'SJO ➡️ Manuel Antonio: tarifa a consultar'],
@@ -1082,7 +1083,7 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'El Tanque, a 8 km al este de La Fortuna centro',
       en: 'El Tanque, 8 km east of downtown La Fortuna'
     },
-    image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1000&q=80',
+    image: regionLandscapeUrl('arenal'),
     flightCode: 'FON / MRAN',
     flightTimeFromSJO: '25 minutos (vs 3.5 horas por tierra)',
     transportCompany: 'SANSA Regional & Costa Rica Green Airways (Cessna Caravan 208B EX)',
@@ -1118,7 +1119,7 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'La Inmaculada, a 5 km de Quepos centro y 12 km de Manuel Antonio',
       en: 'La Inmaculada, 5 km from downtown Quepos, 12 km to park'
     },
-    image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1000&q=80',
+    image: regionLandscapeUrl('manuel_antonio'),
     flightCode: 'XQP / MRQP',
     flightTimeFromSJO: '20 minutos (vs 3.5 horas por carretera)',
     transportCompany: 'SANSA & Green Airways',
@@ -1154,7 +1155,7 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Puerto Jiménez, Península de Osa, Golfo Dulce',
       en: 'Puerto Jimenez, Osa Peninsula, Golfo Dulce'
     },
-    image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1000&q=80',
+    image: regionLandscapeUrl('osa'),
     flightCode: 'PJM / MRPJ',
     flightTimeFromSJO: '45 minutos (vs 7.5 a 8 horas por tierra)',
     transportCompany: 'SANSA & Vuelos Charter Privados',
@@ -1190,7 +1191,7 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Franja costera de Tortuguero, acceso directo a lanchas',
       en: 'Tortuguero coastal spit, immediate water taxi dock'
     },
-    image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1000&q=80',
+    image: regionLandscapeUrl('tortuguero'),
     flightCode: 'TTQ / MRBT',
     flightTimeFromSJO: '35 minutos (vs 5 horas en combinación bus+lancha)',
     transportCompany: 'SANSA & Aerolíneas Charter',
@@ -1226,7 +1227,7 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
       es: 'Villarreal, a 3 km de Playa Tamarindo, Guanacaste',
       en: 'Villarreal, 3 km from Tamarindo Beach, Guanacaste'
     },
-    image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1000&q=80',
+    image: regionLandscapeUrl('guanacaste'),
     flightCode: 'TNO / MRTM',
     flightTimeFromSJO: '40 minutos (vs 4.5 horas de manejo)',
     transportCompany: 'SANSA Regional',
@@ -1246,6 +1247,9 @@ export const MAP_TOURISM_SERVICES: MapTourismService[] = [
     canBeBooked: true
   }
 ];
+
+// Saneo: imágenes vetadas (fuera de Costa Rica, spa, rotas) → paisaje del destino. Ver photoCatalog.ts.
+for (const service of MAP_TOURISM_SERVICES) service.image = safeImageUrl(service.image, service.region);
 
 // Helper to calculate approximate distance in KM between two coordinates
 export function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {

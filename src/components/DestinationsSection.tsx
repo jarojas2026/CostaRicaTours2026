@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { REGIONS } from '../data/catalogMeta';
+import { PhotoCredit } from './PhotoCredit';
 import { catalogSearchHref } from '../utils/catalogRouteFilters';
 import { Language } from '../types';
 import { MapPin, ChevronRight } from 'lucide-react';
@@ -79,6 +80,7 @@ export const DestinationsSection: React.FC<DestinationsSectionProps> = ({ langua
                 <ChevronRight className="w-4 h-4" />
               </div>
             </div>
+            <PhotoCredit src={region.image} linked={false} className="absolute top-3 right-4 max-w-[70%] text-right drop-shadow" />
             
           </motion.button>
         ))}

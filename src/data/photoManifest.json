@@ -1,0 +1,1372 @@
+{
+  "version": 1,
+  "reviewedAt": "2026-10-21",
+  "policy": {
+    "description": "Fotos permitidas en tours, destinos y blog. Las de Wikimedia Commons llevan autor, licencia y URL verificadas vía API de Commons el 2026-10-21. Las de Unsplash están etiquetadas por revisión visual; su ubicación en Costa Rica no está verificada (inCostaRica=unverified).",
+    "vetoedSubjectsForTours": [
+      "castle",
+      "outside-cr",
+      "spa",
+      "massage",
+      "restaurant",
+      "savanna",
+      "city-foreign",
+      "wildlife-foreign",
+      "resort",
+      "broken",
+      "generic"
+    ],
+    "neutralKey": "wm-dota-cloud-forest"
+  },
+  "photos": [
+    {
+      "key": "wm-arenal-volcano",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/69/Arenal_volcano_%2870785p%29.jpg/1280px-Arenal_volcano_%2870785p%29.jpg",
+      "source": "wikimedia-commons",
+      "place": "Volcán Arenal, La Fortuna",
+      "regions": [
+        "arenal"
+      ],
+      "subjects": [
+        "volcano",
+        "landscape"
+      ],
+      "inCostaRica": true,
+      "author": "Rhododendrites",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Arenal_volcano_(70785p).jpg",
+      "credit": "Foto: Rhododendrites · CC BY-SA 4.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-arenal-volcano-forest",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7a/Arenal_Volcano_%2870602%29.jpg/1280px-Arenal_Volcano_%2870602%29.jpg",
+      "source": "wikimedia-commons",
+      "place": "Volcán Arenal desde el bosque",
+      "regions": [
+        "arenal"
+      ],
+      "subjects": [
+        "volcano",
+        "rainforest",
+        "hiking",
+        "landscape"
+      ],
+      "inCostaRica": true,
+      "author": "Rhododendrites",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Arenal_Volcano_(70602).jpg",
+      "credit": "Foto: Rhododendrites · CC BY-SA 4.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-monteverde-cloud-forest",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e3/Monteverde_bosque.jpg/1280px-Monteverde_bosque.jpg",
+      "source": "wikimedia-commons",
+      "place": "Bosque nuboso de Monteverde",
+      "regions": [
+        "monteverde"
+      ],
+      "subjects": [
+        "cloud-forest",
+        "rainforest",
+        "hiking",
+        "landscape"
+      ],
+      "inCostaRica": true,
+      "author": "Haakon S. Krohn",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Monteverde_bosque.jpg",
+      "credit": "Foto: Haakon S. Krohn · CC BY-SA 3.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-monteverde-reserve-trail",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/20/Monteverde_Reserve_Costa_Rica_02.jpg/1280px-Monteverde_Reserve_Costa_Rica_02.jpg",
+      "source": "wikimedia-commons",
+      "place": "Sendero de la Reserva de Monteverde",
+      "regions": [
+        "monteverde"
+      ],
+      "subjects": [
+        "cloud-forest",
+        "hiking",
+        "landscape",
+        "sustainability"
+      ],
+      "inCostaRica": true,
+      "author": "Cephas",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Monteverde_Reserve_Costa_Rica_02.jpg",
+      "credit": "Foto: Cephas · CC BY-SA 4.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-manuel-antonio-coast",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/43/Parque_Nacional_Manuel_Antonio_02.jpg/1280px-Parque_Nacional_Manuel_Antonio_02.jpg",
+      "source": "wikimedia-commons",
+      "place": "Parque Nacional Manuel Antonio",
+      "regions": [
+        "manuel_antonio"
+      ],
+      "subjects": [
+        "beach",
+        "coast",
+        "landscape"
+      ],
+      "inCostaRica": true,
+      "author": "Bernard Gagnon",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Parque_Nacional_Manuel_Antonio_02.jpg",
+      "credit": "Foto: Bernard Gagnon · CC0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-manuel-antonio-beach",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0a/Manuel_Antonio_National_Park.jpg/1280px-Manuel_Antonio_National_Park.jpg",
+      "source": "wikimedia-commons",
+      "place": "Playa del Parque Nacional Manuel Antonio",
+      "regions": [
+        "manuel_antonio"
+      ],
+      "subjects": [
+        "beach",
+        "coast",
+        "landscape"
+      ],
+      "inCostaRica": true,
+      "author": "RAMDOM X",
+      "license": "Public domain",
+      "licenseUrl": null,
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Manuel_Antonio_National_Park.jpg",
+      "credit": "Foto: RAMDOM X · Public domain · Wikimedia Commons"
+    },
+    {
+      "key": "wm-tortuguero-boat",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/03/Tortuguero_boat_trip.JPG/1280px-Tortuguero_boat_trip.JPG",
+      "source": "wikimedia-commons",
+      "place": "Canales de Tortuguero",
+      "regions": [
+        "tortuguero"
+      ],
+      "subjects": [
+        "river",
+        "canals",
+        "wildlife",
+        "landscape"
+      ],
+      "inCostaRica": true,
+      "author": "Lars0001",
+      "license": "Public domain",
+      "licenseUrl": null,
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Tortuguero_boat_trip.JPG",
+      "credit": "Foto: Lars0001 · Public domain · Wikimedia Commons"
+    },
+    {
+      "key": "wm-tortuguero-canal",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/91/A_Tortuguero_canal_-_Flickr_-_S._Rae.jpg/1280px-A_Tortuguero_canal_-_Flickr_-_S._Rae.jpg",
+      "source": "wikimedia-commons",
+      "place": "Canal de Tortuguero",
+      "regions": [
+        "tortuguero"
+      ],
+      "subjects": [
+        "river",
+        "canals",
+        "landscape"
+      ],
+      "inCostaRica": true,
+      "author": "S. Rae from Scotland, UK",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:A_Tortuguero_canal_-_Flickr_-_S._Rae.jpg",
+      "credit": "Foto: S. Rae from Scotland, UK · CC BY 2.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-tamarindo-beach",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/Tamarindo_beach-Guanacaste-Costa_Rica.jpg/1280px-Tamarindo_beach-Guanacaste-Costa_Rica.jpg",
+      "source": "wikimedia-commons",
+      "place": "Playa Tamarindo, Guanacaste",
+      "regions": [
+        "guanacaste"
+      ],
+      "subjects": [
+        "beach",
+        "coast",
+        "landscape"
+      ],
+      "inCostaRica": true,
+      "author": "Jarle Naustvik",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Tamarindo_beach-Guanacaste-Costa_Rica.jpg",
+      "credit": "Foto: Jarle Naustvik · CC BY 2.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-langosta-beach",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7a/Costa_Rica_Langosta_Beach_near_Tamarindo_0208.jpg/1280px-Costa_Rica_Langosta_Beach_near_Tamarindo_0208.jpg",
+      "source": "wikimedia-commons",
+      "place": "Playa Langosta, Guanacaste",
+      "regions": [
+        "guanacaste"
+      ],
+      "subjects": [
+        "beach",
+        "coast",
+        "landscape"
+      ],
+      "inCostaRica": true,
+      "author": "ImagePerson",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Costa_Rica_Langosta_Beach_near_Tamarindo_0208.jpg",
+      "credit": "Foto: ImagePerson · CC0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-corcovado-beach",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/56/Corcovado_National_Park%2C_Costa_RIca_02.jpg/1280px-Corcovado_National_Park%2C_Costa_RIca_02.jpg",
+      "source": "wikimedia-commons",
+      "place": "Parque Nacional Corcovado, Osa",
+      "regions": [
+        "osa"
+      ],
+      "subjects": [
+        "beach",
+        "rainforest",
+        "landscape"
+      ],
+      "inCostaRica": true,
+      "author": "Bernard Gagnon",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Corcovado_National_Park,_Costa_RIca_02.jpg",
+      "credit": "Foto: Bernard Gagnon · CC0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-corcovado-coati",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/df/White-nosed_coati_in_Costa_RIca.jpg/1280px-White-nosed_coati_in_Costa_RIca.jpg",
+      "source": "wikimedia-commons",
+      "place": "Pizote en Corcovado",
+      "regions": [
+        "osa"
+      ],
+      "subjects": [
+        "wildlife"
+      ],
+      "inCostaRica": true,
+      "author": "Bernard Gagnon",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:White-nosed_coati_in_Costa_RIca.jpg",
+      "credit": "Foto: Bernard Gagnon · CC0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-cahuita-park",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/11/Cahuita_national_park%2C_Costa_Rica.jpg/1280px-Cahuita_national_park%2C_Costa_Rica.jpg",
+      "source": "wikimedia-commons",
+      "place": "Parque Nacional Cahuita",
+      "regions": [
+        "caribe_sur"
+      ],
+      "subjects": [
+        "beach",
+        "rainforest",
+        "landscape"
+      ],
+      "inCostaRica": true,
+      "author": "Haakon S. Krohn",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Cahuita_national_park,_Costa_Rica.jpg",
+      "credit": "Foto: Haakon S. Krohn · CC BY-SA 3.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-cahuita-view",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6b/View_of_Cahuita_National_Park%2C_CR_%289901357883%29.jpg/1280px-View_of_Cahuita_National_Park%2C_CR_%289901357883%29.jpg",
+      "source": "wikimedia-commons",
+      "place": "Costa del Parque Nacional Cahuita",
+      "regions": [
+        "caribe_sur"
+      ],
+      "subjects": [
+        "beach",
+        "coast",
+        "landscape"
+      ],
+      "inCostaRica": true,
+      "author": "Pavel Kirillov from St.Petersburg, Russia",
+      "license": "CC BY-SA 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:View_of_Cahuita_National_Park,_CR_(9901357883).jpg",
+      "credit": "Foto: Pavel Kirillov from St.Petersburg, Russia · CC BY-SA 2.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-pacuare-valley",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/61/Camino_de_Costa_Rica_Ave_Sol_River_Sanctuary_Volc%C3%A1n_Turrialba_River_Pacuare.jpg/1280px-Camino_de_Costa_Rica_Ave_Sol_River_Sanctuary_Volc%C3%A1n_Turrialba_River_Pacuare.jpg",
+      "source": "wikimedia-commons",
+      "place": "Valle del río Pacuare",
+      "regions": [
+        "pacuare"
+      ],
+      "subjects": [
+        "river",
+        "rainforest",
+        "landscape"
+      ],
+      "inCostaRica": true,
+      "author": "Pigment-Ink",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Camino_de_Costa_Rica_Ave_Sol_River_Sanctuary_Volc%C3%A1n_Turrialba_River_Pacuare.jpg",
+      "credit": "Foto: Pigment-Ink · CC BY-SA 4.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-pacuare-river",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e4/Rio_Pacuare_Costa_Rica_002.JPG/1280px-Rio_Pacuare_Costa_Rica_002.JPG",
+      "source": "wikimedia-commons",
+      "place": "Río Pacuare",
+      "regions": [
+        "pacuare"
+      ],
+      "subjects": [
+        "river",
+        "landscape"
+      ],
+      "inCostaRica": true,
+      "author": "Grez",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Rio_Pacuare_Costa_Rica_002.JPG",
+      "credit": "Foto: Grez · CC BY-SA 3.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-dota-cloud-forest",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c9/San_Gerardo_de_Dota_1.jpg/1280px-San_Gerardo_de_Dota_1.jpg",
+      "source": "wikimedia-commons",
+      "place": "Bosque nuboso de San Gerardo de Dota (paisaje neutro de Costa Rica)",
+      "regions": [],
+      "subjects": [
+        "cloud-forest",
+        "landscape",
+        "neutral"
+      ],
+      "inCostaRica": true,
+      "author": "MongeNajera",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:San_Gerardo_de_Dota_1.jpg",
+      "credit": "Foto: MongeNajera · CC BY-SA 3.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-dota-valley",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ed/San_Gerardo_de_Dota_5.jpg/1280px-San_Gerardo_de_Dota_5.jpg",
+      "source": "wikimedia-commons",
+      "place": "Valle de San Gerardo de Dota",
+      "regions": [
+        "los_santos"
+      ],
+      "subjects": [
+        "cloud-forest",
+        "landscape",
+        "hiking"
+      ],
+      "inCostaRica": true,
+      "author": "MongeNajera",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:San_Gerardo_de_Dota_5.jpg",
+      "credit": "Foto: MongeNajera · CC BY-SA 3.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-marino-ballena",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/78/Parque_Natural_Marino_Ballena.jpg/1280px-Parque_Natural_Marino_Ballena.jpg",
+      "source": "wikimedia-commons",
+      "place": "Parque Nacional Marino Ballena, Uvita",
+      "regions": [
+        "uvita"
+      ],
+      "subjects": [
+        "beach",
+        "coast",
+        "landscape"
+      ],
+      "inCostaRica": true,
+      "author": "Mdelt",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Parque_Natural_Marino_Ballena.jpg",
+      "credit": "Foto: Mdelt · CC0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-zipline-canopy",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/67/Zip_Line_Canopy_Tour_Costa_Rica.jpg/1280px-Zip_Line_Canopy_Tour_Costa_Rica.jpg",
+      "source": "wikimedia-commons",
+      "place": "Canopy en Costa Rica",
+      "regions": [],
+      "subjects": [
+        "canopy",
+        "zipline",
+        "adventure"
+      ],
+      "inCostaRica": true,
+      "author": "Costaricapro",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Zip_Line_Canopy_Tour_Costa_Rica.jpg",
+      "credit": "Foto: Costaricapro · CC BY-SA 3.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-arenal-hanging-bridges",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e6/Hanging_bridges%2C_La_Fortuna.jpg/1280px-Hanging_bridges%2C_La_Fortuna.jpg",
+      "source": "wikimedia-commons",
+      "place": "Puentes colgantes, La Fortuna",
+      "regions": [
+        "arenal"
+      ],
+      "subjects": [
+        "hanging-bridges",
+        "rainforest",
+        "hiking"
+      ],
+      "inCostaRica": true,
+      "author": "Alanthebox",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Hanging_bridges,_La_Fortuna.jpg",
+      "credit": "Foto: Alanthebox · CC0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-coffee-plantation",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d6/Coffee_plantations_on_the_Camino_de_Costa_Rica.jpg/1280px-Coffee_plantations_on_the_Camino_de_Costa_Rica.jpg",
+      "source": "wikimedia-commons",
+      "place": "Cafetales en el Camino de Costa Rica",
+      "regions": [],
+      "subjects": [
+        "coffee",
+        "rural",
+        "culture",
+        "landscape"
+      ],
+      "inCostaRica": true,
+      "author": "Pigment-Ink",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Coffee_plantations_on_the_Camino_de_Costa_Rica.jpg",
+      "credit": "Foto: Pigment-Ink · CC BY-SA 4.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-quetzal",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/49/058_Male_Resplendent_quetzal_in_Los_Quetzales_National_Park_Photo_by_Giles_Laurent.jpg/1280px-058_Male_Resplendent_quetzal_in_Los_Quetzales_National_Park_Photo_by_Giles_Laurent.jpg",
+      "source": "wikimedia-commons",
+      "place": "Quetzal, Parque Nacional Los Quetzales",
+      "regions": [
+        "los_santos"
+      ],
+      "subjects": [
+        "birds",
+        "wildlife"
+      ],
+      "inCostaRica": true,
+      "author": "Giles Laurent",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:058_Male_Resplendent_quetzal_in_Los_Quetzales_National_Park_Photo_by_Giles_Laurent.jpg",
+      "credit": "Foto: Giles Laurent · CC BY-SA 4.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-sloth-three-toed",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e7/Brown-throated_three-toed_sloth_female.JPG/1280px-Brown-throated_three-toed_sloth_female.JPG",
+      "source": "wikimedia-commons",
+      "place": "Perezoso de tres dedos",
+      "regions": [],
+      "subjects": [
+        "sloth",
+        "wildlife"
+      ],
+      "inCostaRica": true,
+      "author": "Charles J. Sharp",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Brown-throated_three-toed_sloth_female.JPG",
+      "credit": "Foto: Charles J. Sharp · CC BY-SA 3.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-sloth-brown",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a1/Brown-headed_sloth_%2823844%29.jpg/1280px-Brown-headed_sloth_%2823844%29.jpg",
+      "source": "wikimedia-commons",
+      "place": "Perezoso",
+      "regions": [],
+      "subjects": [
+        "sloth",
+        "wildlife"
+      ],
+      "inCostaRica": true,
+      "author": "Rhododendrites",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Brown-headed_sloth_(23844).jpg",
+      "credit": "Foto: Rhododendrites · CC BY-SA 4.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-pacific-sunset",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4f/Pacific_Sunset_Costa_Rica_0359.jpg/1280px-Pacific_Sunset_Costa_Rica_0359.jpg",
+      "source": "wikimedia-commons",
+      "place": "Atardecer en el Pacífico de Costa Rica",
+      "regions": [],
+      "subjects": [
+        "sunset",
+        "coast",
+        "surf"
+      ],
+      "inCostaRica": true,
+      "author": "ImagePerson",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Pacific_Sunset_Costa_Rica_0359.jpg",
+      "credit": "Foto: ImagePerson · CC BY 4.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-humpback-breach",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/ba/001_Humpback_whale_breaching_in_Ballena_Marine_National_Park_Photo_by_Giles_Laurent.jpg/1280px-001_Humpback_whale_breaching_in_Ballena_Marine_National_Park_Photo_by_Giles_Laurent.jpg",
+      "source": "wikimedia-commons",
+      "place": "Ballena jorobada en el Parque Nacional Marino Ballena",
+      "regions": [
+        "uvita"
+      ],
+      "subjects": [
+        "whales",
+        "marine"
+      ],
+      "inCostaRica": true,
+      "author": "Giles Laurent",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:001_Humpback_whale_breaching_in_Ballena_Marine_National_Park_Photo_by_Giles_Laurent.jpg",
+      "credit": "Foto: Giles Laurent · CC BY-SA 4.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-humpback-tail",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3d/073_Humpback_whale_tail_in_Ballena_Marine_National_Park_Photo_by_Giles_Laurent.jpg/1280px-073_Humpback_whale_tail_in_Ballena_Marine_National_Park_Photo_by_Giles_Laurent.jpg",
+      "source": "wikimedia-commons",
+      "place": "Cola de ballena jorobada, Marino Ballena",
+      "regions": [
+        "uvita"
+      ],
+      "subjects": [
+        "whales",
+        "marine"
+      ],
+      "inCostaRica": true,
+      "author": "Giles Laurent",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:073_Humpback_whale_tail_in_Ballena_Marine_National_Park_Photo_by_Giles_Laurent.jpg",
+      "credit": "Foto: Giles Laurent · CC BY-SA 4.0 · Wikimedia Commons"
+    },
+    {
+      "key": "wm-arenal-hot-springs",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/57/Baldi_Hot_Springs%2C_Fortuna%2C_San_Carlos%2C_Costa_Rica.jpg/1280px-Baldi_Hot_Springs%2C_Fortuna%2C_San_Carlos%2C_Costa_Rica.jpg",
+      "source": "wikimedia-commons",
+      "place": "Aguas termales, La Fortuna",
+      "regions": [
+        "arenal"
+      ],
+      "subjects": [
+        "hot-springs"
+      ],
+      "inCostaRica": true,
+      "author": "John Menard from Phoenix, USA",
+      "license": "CC BY-SA 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Baldi_Hot_Springs,_Fortuna,_San_Carlos,_Costa_Rica.jpg",
+      "credit": "Foto: John Menard from Phoenix, USA · CC BY-SA 2.0 · Wikimedia Commons"
+    },
+    {
+      "key": "us-arenal-volcano",
+      "url": "https://images.unsplash.com/photo-1651261932254-fd342bc4d999",
+      "source": "unsplash",
+      "place": "Volcán Arenal (identificado visualmente)",
+      "regions": [
+        "arenal"
+      ],
+      "subjects": [
+        "volcano",
+        "landscape"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-hanging-bridge",
+      "url": "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020",
+      "source": "unsplash",
+      "place": "Puente colgante en bosque tropical",
+      "regions": [],
+      "subjects": [
+        "hanging-bridges",
+        "rainforest",
+        "hiking"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-zipline",
+      "url": "https://images.unsplash.com/photo-1648172846433-ca73f0ee522c",
+      "source": "unsplash",
+      "place": "Canopy/tirolesa en bosque tropical",
+      "regions": [],
+      "subjects": [
+        "canopy",
+        "zipline",
+        "adventure"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-rafting",
+      "url": "https://images.unsplash.com/photo-1685550903259-96799741df9e",
+      "source": "unsplash",
+      "place": "Rafting en río de aguas blancas",
+      "regions": [],
+      "subjects": [
+        "rafting",
+        "river",
+        "adventure"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-rafting-2",
+      "url": "https://images.unsplash.com/photo-1530866495561-507c9faab2ed",
+      "source": "unsplash",
+      "place": "Rafting en aguas blancas",
+      "regions": [],
+      "subjects": [
+        "rafting",
+        "river",
+        "adventure"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-turtle-hatchling",
+      "url": "https://images.unsplash.com/photo-1616563838466-520a4d28466e",
+      "source": "unsplash",
+      "place": "Tortuga recién nacida en la arena",
+      "regions": [],
+      "subjects": [
+        "turtles",
+        "beach"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-whale",
+      "url": "https://images.unsplash.com/photo-1712933342478-51b92117ca80",
+      "source": "unsplash",
+      "place": "Ballena en el océano",
+      "regions": [],
+      "subjects": [
+        "whales",
+        "marine"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-shore-aerial",
+      "url": "https://images.unsplash.com/photo-1714328003874-e730ff96fdd5",
+      "source": "unsplash",
+      "place": "Orilla de playa vista aérea",
+      "regions": [],
+      "subjects": [
+        "beach",
+        "snorkel",
+        "marine"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-reef-aerial",
+      "url": "https://images.unsplash.com/photo-1519793043130-c584f53c3277",
+      "source": "unsplash",
+      "place": "Arrecife y mar turquesa (vista aérea)",
+      "regions": [],
+      "subjects": [
+        "snorkel",
+        "marine",
+        "beach"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-tapir",
+      "url": "https://images.unsplash.com/photo-1723144455080-6ba5b5f6b527",
+      "source": "unsplash",
+      "place": "Danta (tapir)",
+      "regions": [],
+      "subjects": [
+        "wildlife",
+        "rainforest"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-rainforest-wildlife",
+      "url": "https://images.unsplash.com/photo-1727719494784-1865317344d9",
+      "source": "unsplash",
+      "place": "Fauna en el dosel del bosque",
+      "regions": [],
+      "subjects": [
+        "wildlife",
+        "rainforest"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-sloth",
+      "url": "https://images.unsplash.com/photo-1742857235280-8633fa7b5992",
+      "source": "unsplash",
+      "place": "Perezoso",
+      "regions": [],
+      "subjects": [
+        "sloth",
+        "wildlife"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-squirrel-monkey",
+      "url": "https://images.unsplash.com/photo-1742909622958-751052a5cce1",
+      "source": "unsplash",
+      "place": "Mono tití",
+      "regions": [],
+      "subjects": [
+        "monkeys",
+        "wildlife"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-pacific-beach",
+      "url": "https://images.unsplash.com/photo-1770848891773-9d866a56dd3d",
+      "source": "unsplash",
+      "place": "Playa del Pacífico",
+      "regions": [],
+      "subjects": [
+        "beach",
+        "coast"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-caribbean-coast",
+      "url": "https://images.unsplash.com/photo-1774166488273-bc77b3906e1a",
+      "source": "unsplash",
+      "place": "Costa caribeña con palmeras",
+      "regions": [
+        "caribe"
+      ],
+      "subjects": [
+        "beach",
+        "coast",
+        "landscape"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-coast-aerial",
+      "url": "https://images.unsplash.com/photo-1643400811908-ed46db6c8066",
+      "source": "unsplash",
+      "place": "Costa y bosque vista aérea",
+      "regions": [],
+      "subjects": [
+        "coast",
+        "rainforest",
+        "landscape"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-rocky-cove",
+      "url": "https://images.unsplash.com/photo-1580676875879-f20086f1e729",
+      "source": "unsplash",
+      "place": "Caleta rocosa con bosque",
+      "regions": [],
+      "subjects": [
+        "beach",
+        "coast",
+        "snorkel"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-coast-hills",
+      "url": "https://images.unsplash.com/photo-1592501171458-4e131613f542",
+      "source": "unsplash",
+      "place": "Costa con colinas verdes",
+      "regions": [],
+      "subjects": [
+        "coast",
+        "landscape"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-palm-beach",
+      "url": "https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f",
+      "source": "unsplash",
+      "place": "Playa con palmeras",
+      "regions": [],
+      "subjects": [
+        "beach"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-beach-footprints",
+      "url": "https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d",
+      "source": "unsplash",
+      "place": "Orilla de playa con huellas",
+      "regions": [],
+      "subjects": [
+        "beach"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-beach-sunset",
+      "url": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
+      "source": "unsplash",
+      "place": "Playa al atardecer",
+      "regions": [],
+      "subjects": [
+        "beach",
+        "sunset"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-coffee-cherries",
+      "url": "https://images.unsplash.com/photo-1576758597367-2840b9dc1a2b",
+      "source": "unsplash",
+      "place": "Granos de café en la planta",
+      "regions": [],
+      "subjects": [
+        "coffee",
+        "rural",
+        "culture"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-coffee-beans",
+      "url": "https://images.unsplash.com/photo-1712251769863-9b64ed58b5b9",
+      "source": "unsplash",
+      "place": "Café tostado",
+      "regions": [],
+      "subjects": [
+        "coffee",
+        "gastronomy"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-coffee-beans-2",
+      "url": "https://images.unsplash.com/photo-1447933601403-0c6688de566e",
+      "source": "unsplash",
+      "place": "Granos de café",
+      "regions": [],
+      "subjects": [
+        "coffee",
+        "gastronomy"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-turquoise-waterfall",
+      "url": "https://images.unsplash.com/photo-1620658927695-c33df6fb8130",
+      "source": "unsplash",
+      "place": "Catarata de aguas turquesa",
+      "regions": [],
+      "subjects": [
+        "waterfall",
+        "hiking"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-jungle-waterfall",
+      "url": "https://images.unsplash.com/photo-1523295973995-bd4218f07a32",
+      "source": "unsplash",
+      "place": "Catarata en la selva",
+      "regions": [],
+      "subjects": [
+        "waterfall",
+        "hiking"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-river-forest-aerial",
+      "url": "https://images.unsplash.com/photo-1711882569452-967be6941ddd",
+      "source": "unsplash",
+      "place": "Río entre bosque (vista aérea)",
+      "regions": [],
+      "subjects": [
+        "river",
+        "rainforest",
+        "waterfall",
+        "landscape"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-crater",
+      "url": "https://images.unsplash.com/photo-1712010596464-9f2a4e0d6489",
+      "source": "unsplash",
+      "place": "Cráter volcánico con nubes",
+      "regions": [
+        "sjo"
+      ],
+      "subjects": [
+        "volcano",
+        "landscape"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-surfer-sunset",
+      "url": "https://images.unsplash.com/photo-1636657795425-0db7a2b0528a",
+      "source": "unsplash",
+      "place": "Surfista al atardecer",
+      "regions": [],
+      "subjects": [
+        "surf",
+        "beach",
+        "sunset"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-san-jose-street",
+      "url": "https://images.unsplash.com/photo-1666606654560-3de1e3c59d32",
+      "source": "unsplash",
+      "place": "Calle de San José",
+      "regions": [
+        "sjo"
+      ],
+      "subjects": [
+        "city",
+        "culture"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-green-mountain",
+      "url": "https://images.unsplash.com/photo-1542224566-6e85f2e6772f",
+      "source": "unsplash",
+      "place": "Ladera verde de montaña",
+      "regions": [],
+      "subjects": [
+        "hiking",
+        "landscape"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-airplane",
+      "url": "https://images.unsplash.com/photo-1569154941061-e231b4725ef1",
+      "source": "unsplash",
+      "place": "Avión en pista",
+      "regions": [],
+      "subjects": [
+        "transport"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-airplane-wing",
+      "url": "https://images.unsplash.com/photo-1436491865332-7a61a109cc05",
+      "source": "unsplash",
+      "place": "Ala de avión",
+      "regions": [],
+      "subjects": [
+        "transport"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-bus-night",
+      "url": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957",
+      "source": "unsplash",
+      "place": "Bus de turismo",
+      "regions": [],
+      "subjects": [
+        "transport"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-bus",
+      "url": "https://images.unsplash.com/photo-1570125909232-eb263c188f7e",
+      "source": "unsplash",
+      "place": "Bus de turismo",
+      "regions": [],
+      "subjects": [
+        "transport"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    },
+    {
+      "key": "us-4x4",
+      "url": "https://images.unsplash.com/photo-1506015391300-4802dc74de2e",
+      "source": "unsplash",
+      "place": "Vehículo 4x4",
+      "regions": [],
+      "subjects": [
+        "transport"
+      ],
+      "inCostaRica": "unverified",
+      "author": null,
+      "license": "Unsplash License",
+      "licenseUrl": "https://unsplash.com/license",
+      "sourcePage": null,
+      "credit": null
+    }
+  ],
+  "blocked": [
+    {
+      "match": "photo-1518709268805-4e9042af9f23",
+      "reason": "castillo europeo",
+      "subjects": [
+        "castle",
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1540555700478-4be289fbecef",
+      "reason": "toallas de spa",
+      "subjects": [
+        "spa"
+      ]
+    },
+    {
+      "match": "photo-1516026672322-bc52d61a55d5",
+      "reason": "árbol de sabana africana",
+      "subjects": [
+        "savanna",
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1549488344-1f9b8d2bd1f3",
+      "reason": "interior de restaurante",
+      "subjects": [
+        "restaurant"
+      ]
+    },
+    {
+      "match": "photo-1540959733332-eab4deabeeaf",
+      "reason": "calle de Tokio",
+      "subjects": [
+        "city-foreign",
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1544979590-37e9b47eb705",
+      "reason": "leopardo (no existe en Costa Rica)",
+      "subjects": [
+        "wildlife-foreign",
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1544644181-1484b3fdfc62",
+      "reason": "templo de Bali",
+      "subjects": [
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1544735716-392fe2489ffa",
+      "reason": "Himalaya",
+      "subjects": [
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1506744038136-46273834b3fb",
+      "reason": "valle alpino",
+      "subjects": [
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1518509562904-e7ef99cdcc86",
+      "reason": "laguna de Filipinas",
+      "subjects": [
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1520250497591-112f2f40a3f4",
+      "reason": "resort con piscina (fuera de CR)",
+      "subjects": [
+        "outside-cr",
+        "resort"
+      ]
+    },
+    {
+      "match": "photo-1474487548417-781cb71495f3",
+      "reason": "tren de carga",
+      "subjects": [
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1500382017468-9049fed747ef",
+      "reason": "campo de trigo",
+      "subjects": [
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1515162816999-a0c47dc192f7",
+      "reason": "charco urbano",
+      "subjects": [
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1534447677768-be436bb09401",
+      "reason": "cielo nocturno genérico",
+      "subjects": [
+        "generic"
+      ]
+    },
+    {
+      "match": "photo-1432821596592-e2c18b78144f",
+      "reason": "máquina de escribir",
+      "subjects": [
+        "generic"
+      ]
+    },
+    {
+      "match": "photo-1448375240586-882707db888b",
+      "reason": "bosque de pinos",
+      "subjects": [
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1549317661-bd32c8ce0db2",
+      "reason": "calle europea",
+      "subjects": [
+        "outside-cr"
+      ]
+    },
+    {
+      "match": "photo-1549880181-56a44cf4a9a1",
+      "reason": "imagen eliminada (404)",
+      "subjects": [
+        "broken"
+      ]
+    },
+    {
+      "match": "photo-1605206969562-ab16ba5a9ce3",
+      "reason": "imagen eliminada (404)",
+      "subjects": [
+        "broken"
+      ]
+    },
+    {
+      "match": "photo-1585551756655-7ca9704ec576",
+      "reason": "imagen eliminada (404)",
+      "subjects": [
+        "broken"
+      ]
+    },
+    {
+      "match": "photo-1519046904884-53103b34b271",
+      "reason": "imagen eliminada (404)",
+      "subjects": [
+        "broken"
+      ]
+    }
+  ]
+}

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { NEUTRAL_PHOTO_URL } from '../data/photoCatalog';
 
 interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   containerClassName?: string;
   fallbackSrc?: string;
 }
 
-const DEFAULT_CR_FALLBACK = 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85';
+const DEFAULT_CR_FALLBACK = NEUTRAL_PHOTO_URL;
 
 export const LazyImage: React.FC<LazyImageProps> = ({ 
   src, 

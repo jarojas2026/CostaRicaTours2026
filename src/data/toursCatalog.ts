@@ -7,6 +7,7 @@
  */
 import type { Tour } from '../types';
 import { OPERATOR_TOURS } from './operatorTours';
+import { NEUTRAL_PHOTO_URL, sanitizeTourImages } from './photoCatalog';
 
 export const TOURS: Tour[] = [
   {
@@ -24,7 +25,7 @@ export const TOURS: Tour[] = [
     image: '/src/assets/images/poas_waterfall_1789327555369.jpg',
     gallery: [
       '/src/assets/images/poas_waterfall_1789327555369.jpg',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=1200&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 145,
     durationHours: 10,
@@ -87,7 +88,7 @@ export const TOURS: Tour[] = [
     image: '/src/assets/images/costa_rica_hero_1789327541732.jpg',
     gallery: [
       '/src/assets/images/costa_rica_hero_1789327541732.jpg',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=1200&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 125,
     durationHours: 10,
@@ -392,7 +393,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 95,
     durationHours: 8,
@@ -609,7 +610,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 45,
     durationHours: 2.5,
@@ -677,7 +678,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 98,
     durationHours: 7,
@@ -749,7 +750,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 52,
     durationHours: 2.5,
@@ -819,7 +820,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 72,
     durationHours: 3.5,
@@ -955,7 +956,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 115,
     durationHours: 9,
@@ -1103,7 +1104,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 135,
     durationHours: 8,
@@ -1179,7 +1180,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 49,
     durationHours: 3,
@@ -1319,9 +1320,9 @@ export const TOURS: Tour[] = [
     },
     category: 'wildlife',
     region: 'osa',
-    image: 'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=85',
+    image: NEUTRAL_PHOTO_URL,
     gallery: [
-      'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=85',
+      NEUTRAL_PHOTO_URL,
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 85,
@@ -1535,7 +1536,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 89,
     durationHours: 7,
@@ -1670,9 +1671,9 @@ export const TOURS: Tour[] = [
     },
     category: 'culture',
     region: 'caribe',
-    image: 'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=85',
+    image: NEUTRAL_PHOTO_URL,
     gallery: [
-      'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?auto=format&fit=crop&w=1200&q=85',
+      NEUTRAL_PHOTO_URL,
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=800&q=85'
     ],
     priceUSD: 75,
@@ -1742,7 +1743,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 127,
     durationHours: 9,
@@ -1797,7 +1798,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 119,
     durationHours: 4,
@@ -1853,7 +1854,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 75,
     durationHours: 5,
@@ -1908,7 +1909,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 145,
     durationHours: 6,
@@ -1963,7 +1964,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 129,
     durationHours: 8,
@@ -2515,7 +2516,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 390,
     durationHours: 72,
@@ -2624,7 +2625,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 780,
     durationHours: 120,
@@ -2681,7 +2682,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 115,
     durationHours: 8,
@@ -2742,10 +2743,10 @@ export const TOURS: Tour[] = [
     },
     category: 'beaches',
     region: 'sjo',
-    image: 'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=85',
+    image: NEUTRAL_PHOTO_URL,
     gallery: [
-      'https://images.unsplash.com/photo-1519046904884-53103b34b271?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL,
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 115,
     durationHours: 6,
@@ -2807,7 +2808,7 @@ export const TOURS: Tour[] = [
     image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
     gallery: [
       'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1544979590-37e9b47eb705?auto=format&fit=crop&w=800&q=85'
+      NEUTRAL_PHOTO_URL
     ],
     priceUSD: 75,
     durationHours: 6,
@@ -2979,5 +2980,8 @@ for (const tour of TOURS) {
 
 // Tours reales de operadores (consulta), investigados el 2026-10-14. Ver ./operatorTours.ts.
 TOURS.push(...OPERATOR_TOURS);
+
+// Saneo final: ninguna foto vetada (spa/castillo/fuera de CR/rota) ni ajena al destino. Ver photoCatalog.ts.
+for (const tour of TOURS) sanitizeTourImages(tour);
 
 export const TOURS_DATA = TOURS;
