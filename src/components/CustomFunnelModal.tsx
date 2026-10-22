@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Language, Currency } from '../types';
 import { leadPublicReference } from '../../shared/tourQuoteRequest';
+import { RequestFollowUpWhatsApp } from './RequestFollowUpWhatsApp';
 import type { CustomerIntakeResult } from '../utils/customerIntake';
 
 const CUSTOM_FUNNEL_DRAFT_KEY = 'costa_rica_custom_funnel_draft';
@@ -989,6 +990,7 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                         {language === 'es' ? 'Número de referencia: ' : 'Reference number: '}<span className="font-mono">{submitReference}</span>
                       </p>
                     )}
+                    <RequestFollowUpWhatsApp reference={submitReference} language={language === 'es' ? 'es' : 'en'} className="mt-2 inline-flex min-h-[44px] items-center rounded-full border border-emerald-400 bg-white px-4 py-2 font-bold text-emerald-800 hover:bg-emerald-100" />
                   </div>
                 )}
                 {submitState === 'error' && (
