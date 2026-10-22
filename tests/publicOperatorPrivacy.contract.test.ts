@@ -44,7 +44,7 @@ test('denylist is populated from the internal sources (names + domains)', () => 
 });
 
 test('public catalog JSON has only public fields', () => {
-  const allowed = new Set(['id', 'slug', 'titleEs', 'titleEn', 'category', 'region', 'placeName', 'lat', 'lng', 'priceUSD', 'childPriceUSD', 'durationHours', 'difficulty', 'descriptionEs', 'descriptionEn', 'includes', 'ageMinimum', 'priceNote', 'operatorIctVerified']);
+  const allowed = new Set(['id', 'slug', 'titleEs', 'titleEn', 'category', 'region', 'placeName', 'lat', 'lng', 'priceUSD', 'childPriceUSD', 'durationHours', 'difficulty', 'descriptionEs', 'descriptionEn', 'includes', 'ageMinimum', 'priceNote', 'operatorIctVerified', 'reviewedAt']);
   assert.deepEqual(Object.keys(publicCatalog).sort(), ['priceLabel', 'reviewedAt', 'tours']);
   assert.equal(publicCatalog.priceLabel.es, 'Precio de referencia, sujeto a confirmación');
   for (const row of publicCatalog.tours) {
