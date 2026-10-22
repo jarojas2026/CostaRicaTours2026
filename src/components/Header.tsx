@@ -32,6 +32,7 @@ import { CURRENCIES } from '../utils/currencies';
 import { auth, signInWithGoogle, signOut } from '../firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { requestCustomerIntake } from '../utils/customerIntake';
+import { whatsappInquiryUrl } from '../utils/directWhatsApp';
 
 type HeaderTab = 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights' | 'workspace' | 'destinations' | 'activities' | 'about' | 'blog';
 
@@ -219,7 +220,7 @@ export const Header: React.FC<HeaderProps> = ({
     <>
       <header id="main-header" className={`sticky top-0 z-[70] w-full max-w-full bg-[#031710]/90 backdrop-blur-xl border-b border-white/10 text-white transition-shadow duration-300 ${isScrolled ? 'shadow-lg shadow-black/30' : ''}`}>
 
-        {/* Slim utility bar: one trust line + AI inquiry. Collapses on scroll. */}
+        {/* Slim utility bar: trust line and optional direct contact. Collapses on scroll. */}
         <div className={`bg-[#010e08]/80 border-b border-white/5 text-stone-300 transition-all duration-300 overflow-hidden ${
           isScrolled ? 'max-h-0 opacity-0 border-b-0 pointer-events-none' : 'max-h-10 opacity-100'
         }`}>
@@ -228,19 +229,19 @@ export const Header: React.FC<HeaderProps> = ({
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
               <span className="truncate">{es ? 'Cupo y precio se confirman antes de pagar' : 'Availability and price confirmed before payment'}</span>
             </span>
-            <button
-              type="button"
-              onClick={() => requestCustomerIntake({
-                message: es
+            <a
+              href={whatsappInquiryUrl(es
                   ? 'Quisiera consultar sobre tours y traslados en Costa Rica. ¿Qué opciones pueden verificar para mi viaje?'
                   : 'I would like to ask about Costa Rica tours and transfers. What options can you verify for my trip?',
-                language, source: 'header:assistance'
-              })}
+                language)}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={es ? 'WhatsApp (abre en otra pestaña)' : 'WhatsApp (opens in a new tab)'}
               className={`hidden sm:inline-flex items-center gap-1.5 shrink-0 text-stone-300 hover:text-emerald-300 font-medium transition-colors rounded ${focusRing}`}
             >
               <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" aria-hidden="true" />
-              <span>{es ? 'Consulta por IA → WhatsApp' : 'AI inquiry → WhatsApp'}</span>
-            </button>
+              <span>WhatsApp</span>
+            </a>
           </div>
         </div>
 
