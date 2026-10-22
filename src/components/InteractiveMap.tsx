@@ -57,7 +57,7 @@ import {
 } from '../data/mapServicesData';
 import { MapServiceBookingModal } from './MapServiceBookingModal';
 import { NationalPoiLayer, OPEN_NATIONAL_LAYERS_EVENT } from './NationalPoiLayer';
-import { groupByCoordinate } from '../utils/mapMarkerLayout';
+import { groupMapPointsAtZoom } from '../utils/mapMarkerLayout';
 import { PRICE_ON_REQUEST, REFERENCE_PRICE_NOTE, getMapServiceUnitPriceUSD } from '../utils/mapServicePricing';
 import { PUBLIC_REQUEST_LABEL } from '../data/publicContactPolicy';
 
@@ -609,8 +609,18 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     // Muchos tours comparten la coordenada de referencia de su zona (p. ej. 17 en Caño Negro).
     // Apilados, solo el de arriba era clicable y parecían un único negocio: se agrupan en una
     // marca con conteo, marcada como ubicación aproximada de la zona.
-    const tourGroups = groupByCoordinate(effectiveTours, (tour) =>
-      tour.location?.lat && tour.location?.lng ? [tour.location.lat, tour.location.lng] : null
+    const map = leafletMapRef.current;
+    const zoom = map.getZoom();
+    // Use geographic world pixels, not screen-relative pixels; panning must
+    // not move the grouping centroid. On close zoom we keep original anchors.
+    const projectPoint = (lat: number, lng: number) => {
+      const point = map.project([lat, lng], zoom);
+      return { x: point.x, y: point.y };
+    };
+    const tourGroups = groupMapPointsAtZoom(effectiveTours, (tour) =>
+      Number.isFinite(tour.location?.lat) && Number.isFinite(tour.location?.lng)
+        ? [tour.location.lat, tour.location.lng] : null,
+      projectPoint, zoom
     );
     tourGroups.forEach((group) => {
       if (group.items.length > 1) {
@@ -641,9 +651,24 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         const note = document.createElement('div');
         note.style.cssText = 'font-size:10px;opacity:.7;margin-bottom:6px;';
         note.textContent = language === 'es'
-          ? `📍 ${zoneName} · ubicación aproximada (punto de referencia de la zona)`
-          : `📍 ${zoneName} · approximate location (area reference point)`;
+          ? group.isCluster
+            ? '📍 Agrupación de zonas cercanas; esta marca NO indica una ubicación exacta'
+            : `📍 ${zoneName} · ubicación aproximada (punto de referencia de la zona)`
+          : group.isCluster
+            ? '📍 Nearby areas grouped; this pin is NOT an exact location'
+            : `📍 ${zoneName} · approximate location (area reference point)`;
         popupEl.append(heading, note);
+        if (group.isCluster && zoom < 13) {
+          const zoomButton = document.createElement('button');
+          zoomButton.type = 'button';
+          zoomButton.textContent = language === 'es' ? '🔎 Acercar para separar marcas' : '🔎 Zoom in to separate pins';
+          zoomButton.style.cssText = 'display:block;width:100%;text-align:left;padding:5px 2px;margin-bottom:4px;color:#047857;font-weight:800;cursor:pointer;';
+          zoomButton.addEventListener('click', () => {
+            stackMarker.closePopup();
+            map.flyTo([group.lat, group.lng], Math.min(13, zoom + 2), { duration: 0.45 });
+          });
+          popupEl.append(zoomButton);
+        }
         groupTours.forEach((tour) => {
           const btn = document.createElement('button');
           btn.type = 'button';
@@ -658,7 +683,9 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         });
         stackMarker.bindPopup(popupEl, { maxWidth: 280 });
         stackMarker.bindTooltip(
-          language === 'es' ? `${groupTours.length} tours · ${zoneName} (ubicación aproximada)` : `${groupTours.length} tours · ${zoneName} (approximate location)`,
+          group.isCluster
+            ? (language === 'es' ? `${groupTours.length} tours cercanos · grupo aproximado` : `${groupTours.length} nearby tours · approximate cluster`)
+            : (language === 'es' ? `${groupTours.length} tours · ${zoneName} (ubicación aproximada)` : `${groupTours.length} tours · ${zoneName} (approximate location)`),
           { direction: 'top', offset: [0, -18], className: 'leaflet-tour-tooltip' }
         );
         stackMarker.addTo(markersLayerRef.current!);
@@ -727,7 +754,60 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     });
 
     // 2. Render Tourism Services Pins (Hotels, Parks, Buses, Trains, Taxis, Airstrips)
-    effectiveServices.forEach((srv) => {
+    // Keep each service's original geolocation; clusters are only UI groups.
+    const serviceGroups = groupMapPointsAtZoom(effectiveServices, srv =>
+      Number.isFinite(srv.coordinates?.lat) && Number.isFinite(srv.coordinates?.lng)
+        ? [srv.coordinates.lat, srv.coordinates.lng] : null,
+      projectPoint, zoom
+    );
+    serviceGroups.forEach(group => {
+      if (group.count > 1) {
+        const clusteredIcon = L.divIcon({
+          className: 'custom-srv-pin custom-service-stack',
+          html: `<div class="flex items-center justify-center w-8 h-8 bg-slate-50 text-slate-800 rounded-full border-2 border-dashed border-sky-600 shadow-sm"><span class="text-xs font-black">${group.count}</span></div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -16]
+        });
+        const marker = L.marker([group.lat, group.lng], { icon: clusteredIcon, zIndexOffset: 17 });
+        const popup = document.createElement('div');
+        popup.style.cssText = 'min-width:200px;max-width:270px;max-height:280px;overflow-y:auto;font-size:12px;line-height:1.3;';
+        const heading = document.createElement('strong');
+        heading.textContent = language === 'es' ? `${group.count} servicios en esta área` : `${group.count} services in this area`;
+        const explanation = document.createElement('p');
+        explanation.style.cssText = 'font-size:10px;opacity:.75;margin:5px 0;';
+        explanation.textContent = language === 'es'
+          ? 'Agrupación de referencia: no representa la ubicación exacta de todos los servicios.'
+          : 'Reference cluster: not the exact location of every service.';
+        popup.append(heading, explanation);
+        if (group.isCluster && zoom < 13) {
+          const zoomButton = document.createElement('button');
+          zoomButton.type = 'button';
+          zoomButton.textContent = language === 'es' ? '🔎 Acercar para separar marcas' : '🔎 Zoom in to separate pins';
+          zoomButton.style.cssText = 'display:block;padding:5px 2px;color:#047857;font-weight:800;cursor:pointer;';
+          zoomButton.addEventListener('click', () => {
+            marker.closePopup();
+            map.flyTo([group.lat, group.lng], Math.min(13, zoom + 2), { duration: 0.45 });
+          });
+          popup.append(zoomButton);
+        }
+        for (const srv of group.items) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.style.cssText = 'display:block;width:100%;text-align:left;padding:5px 2px;border-bottom:1px solid #eee;cursor:pointer;';
+          btn.textContent = `${getServiceIconAndColor(srv.type).emoji} ${getLangText(srv.name, language)}`;
+          btn.addEventListener('click', () => {
+            setSelectedMapService(srv);
+            setSelectedMapTour(null);
+            marker.closePopup();
+          });
+          popup.append(btn);
+        }
+        marker.bindPopup(popup, { maxWidth: 290 });
+        marker.addTo(markersLayerRef.current!);
+        return;
+      }
+      const srv = group.items[0];
       const isSelected = selectedMapService?.id === srv.id;
       const meta = getServiceIconAndColor(srv.type);
 
@@ -797,7 +877,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       marker.getElement()?.setAttribute('data-lat', String(srv.coordinates.lat));
       marker.getElement()?.setAttribute('data-lng', String(srv.coordinates.lng));
     });
-  }, [effectiveTours, effectiveServices, selectedMapTour, selectedMapService, language, currency]);
+  }, [effectiveTours, effectiveServices, selectedMapTour, selectedMapService, language, currency, currentZoom]);
 
   // =========================================================
   // ITINERARY POLYLINE & NUMBERED WAYPOINTS ON LEAFLET
