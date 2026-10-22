@@ -2851,6 +2851,14 @@
       "destination": "/api/gateway?__crt_path=:path"
     },
     {
+      "source": "/__/auth/:path*",
+      "destination": "https://gen-lang-client-0782739149.firebaseapp.com/__/auth/:path*"
+    },
+    {
+      "source": "/__/firebase/:path*",
+      "destination": "https://gen-lang-client-0782739149.firebaseapp.com/__/firebase/:path*"
+    },
+    {
       "source": "/ai",
       "destination": "/index.html"
     },
