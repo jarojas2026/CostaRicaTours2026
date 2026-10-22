@@ -84,3 +84,63 @@ test('custom funnel shows a visible error with retry when the API fails', async 
   await expect(page.getByTestId('funnel-submit-error').getByRole('button', { name: 'Reintentar' })).toBeVisible();
   await expect(page.getByTestId('funnel-submit-success')).toHaveCount(0);
 });
+
+
+test('custom funnel rejects a 200 response without a persisted intake reference', async ({ page }) => {
+  await mockApi(page);
+  // A transport-level success is not evidence of a recorded request.
+  // Override the catch-all mock: no live intake, payment or supplier is touched.
+  const requests: unknown[] = [];
+  await page.route('**/api/customer-intake', async route => {
+    requests.push(route.request().postDataJSON());
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, customer: { reply: 'Recibido.' } }),
+    });
+  });
+
+  await openFunnel(page);
+  await fillUntilStep4(page);
+  await page.locator('[data-funnel-field="customerName"]').fill('Viajero Prueba');
+  await page.locator('[data-funnel-field="customerEmail"]').fill('viajero@example.com');
+  await page.locator('[data-funnel-field="consent"]').check();
+  await page.getByTestId('funnel-submit').click();
+
+  await expect(page.getByTestId('funnel-submit-error')).toBeVisible();
+  await expect(page.getByTestId('funnel-submit-success')).toHaveCount(0);
+  await expect(page.getByTestId('funnel-submit-reference')).toHaveCount(0);
+  expect(requests).toHaveLength(1);
+});
+
+test('custom funnel prevents duplicate requests during a pending response', async ({ page }) => {
+  await mockApi(page);
+  const requests: unknown[] = [];
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/customer-intake', async route => {
+    requests.push(route.request().postDataJSON());
+    await gate;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ intakeId: 'INT-1a2b3c4d-0000-4000-8000-000000000000' }),
+    });
+  });
+
+  await openFunnel(page);
+  await fillUntilStep4(page);
+  await page.locator('[data-funnel-field="customerName"]').fill('Viajero Prueba');
+  await page.locator('[data-funnel-field="customerEmail"]').fill('viajero@example.com');
+  await page.locator('[data-funnel-field="consent"]').check();
+  const submit = page.getByTestId('funnel-submit');
+  await submit.click();
+  await expect(page.getByTestId('funnel-submit-loading')).toBeVisible();
+  await expect(submit).toBeDisabled();
+  // Programmatic activation on a disabled native button must not enqueue a second request.
+  await submit.evaluate((button: HTMLButtonElement) => button.click());
+  expect(requests).toHaveLength(1);
+  release();
+  await expect(page.getByTestId('funnel-submit-success')).toBeVisible();
+  expect(requests).toHaveLength(1);
+});
