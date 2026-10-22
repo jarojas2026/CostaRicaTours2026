@@ -1,4 +1,5 @@
 import { getAllBookings, getWeeklyConversionMetrics, getFirestoreDb } from './bookingService';
+import { getJourneyPipelineSample, JOURNEY_SAMPLE_LIMIT } from './journeyPipelineEvidence';
 import { getAlerts } from './alertService';
 import { getOperationalProviderOverview } from './operationalProviderRegistryService';
 import { getNativeEngineStatus, getNativeAutomationLogs } from './nativeAutomationEngine';
@@ -21,10 +22,15 @@ export async function getAdminControlCenterSnapshot(){
  const pending=bookings.filter((b:any)=>['pending','pendiente','pendiente_pago','hold'].includes(String(b.status||b.paymentStatus||'').toLowerCase()));
  const failed=bookings.filter((b:any)=>['rejected','rechazada','cancelled','cancelada','error'].includes(String(b.status||'').toLowerCase()));
  const upcoming=bookings.filter((b:any)=>{const t=new Date(String(b.date||'')+'T'+String(b.time||'00:00:00')).getTime();return Number.isFinite(t)&&t>=now&&t<=now+72*60*60*1000;});
- const revenue=confirmed.reduce((s:number,b:any)=>s+money(b.totalUSD),0),db=getFirestoreDb();let journeys:any[]=[],inbox:any[]=[],evaluations:any[]=[],memories:any[]=[];
- if(db){const [j,i,e,m]=await Promise.all([db.collection('traveler_journeys').orderBy('updatedAt','desc').limit(100).get().catch(()=>({docs:[]} as any)),db.collection('provider_inbox_events').orderBy('processedAt','desc').limit(30).get().catch(()=>({docs:[]} as any)),db.collection('ai_evaluations').orderBy('createdAt','desc').limit(30).get().catch(()=>({docs:[]} as any)),db.collection('agent_memory').limit(100).get().catch(()=>({docs:[]} as any))]);journeys=j.docs||[];inbox=i.docs||[];evaluations=e.docs||[];memories=m.docs||[];}
- const journeyData=journeys.map((d:any)=>({id:d.id,...d.data()})),pipeline={discovery:0,verification:0,readyToQuote:0,recovery:0,total:journeyData.length};
- journeyData.forEach((j:any)=>{const s=String(j.sales?.stage||j.status||'').toUpperCase();if(s==='DISCOVERY'||s==='PLANNING')pipeline.discovery++;else if(s==='VERIFICATION'||s==='VERIFICATION_COMPLETE')pipeline.verification++;else if(s==='READY_TO_QUOTE')pipeline.readyToQuote++;else if(s==='RECOVERY')pipeline.recovery++;});
+ const revenue=confirmed.reduce((s:number,b:any)=>s+money(b.totalUSD),0),db=getFirestoreDb();
+ const [journeySample,inboxSample,evaluationSample,memorySample]=await Promise.all([
+  getJourneyPipelineSample(db ? () => db.collection('traveler_journeys').orderBy('updatedAt','desc').limit(JOURNEY_SAMPLE_LIMIT).get() : null),
+  db ? db.collection('provider_inbox_events').orderBy('processedAt','desc').limit(30).get().catch(()=>({docs:[]})) : Promise.resolve({docs:[]}),
+  db ? db.collection('ai_evaluations').orderBy('createdAt','desc').limit(30).get().catch(()=>({docs:[]})) : Promise.resolve({docs:[]}),
+  db ? db.collection('agent_memory').limit(100).get().catch(()=>({docs:[]})) : Promise.resolve({docs:[]}),
+ ]);
+ const journeys=journeySample.documents,inbox=inboxSample.docs,evaluations=evaluationSample.docs,memories=memorySample.docs;
+ const journeyData=journeys.map((d:any)=>({id:d.id,...d.data()})),pipeline=journeySample.pipeline;
  const providerList=((providers as any).providers||[]).slice(0,30).map((p:any)=>({id:p.id,name:p.name,region:p.region,status:p.operationalStatus||'active',verified:p.verified===true,sourceCollection:p.sourceCollection,contactName:p.contactName,phone:p.phone,whatsapp:p.whatsapp,email:p.email,officialEmail:p.officialEmail,activeTours:p.activeTours||[],activeOrdersCount:p.activeOrdersCount,slaTargetMinutes:p.slaTargetMinutes,averageResponseMinutes:p.averageResponseMinutes,observedAcceptanceRate:p.observedAcceptanceRate,completedOrdersCount:p.completedOrdersCount,cstLevel:p.cstLevel,ictLicense:p.ictLicense,insPolicyNumber:p.insPolicyNumber}));
  // Agent status comes from the dedicated registry heartbeat, not from generic
  // event activity. Events are sampled only to expose the latest event type.
