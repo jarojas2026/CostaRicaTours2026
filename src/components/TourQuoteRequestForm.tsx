@@ -4,6 +4,8 @@ import type { Language } from '../types';
 import { buildTourQuoteLeadPayload, TOUR_QUOTE_ENDPOINT, type TourQuoteError } from '../../shared/tourQuoteRequest';
 import { formGuardFields } from '../../shared/formAbuse';
 import { HoneypotField } from './HoneypotField';
+import { RequestFollowUpWhatsApp } from './RequestFollowUpWhatsApp';
+import { isPublicRequestReference } from '../../shared/requestConfirmation';
 
 interface Props {
   tourId: string;
@@ -102,7 +104,7 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
       if (!res.ok) throw new Error(String(res.status));
       const body = await res.json().catch(() => ({}));
       // Solo una referencia corta del servidor (sin datos personales) si viene en la respuesta.
-      setReference(typeof body?.reference === 'string' && /^CRT-[A-Z0-9]{6,8}$/.test(body.reference) ? body.reference : null);
+      setReference(isPublicRequestReference(body?.reference) ? body.reference : null);
       setState('sent');
     } catch {
       setState('idle');
@@ -121,6 +123,7 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
             {es ? 'Número de referencia: ' : 'Reference number: '}<span className="font-mono">{reference}</span>
           </p>
         )}
+        <RequestFollowUpWhatsApp reference={reference} language={lang} />
       </div>
     );
   }
