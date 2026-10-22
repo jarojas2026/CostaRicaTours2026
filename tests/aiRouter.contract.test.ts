@@ -181,7 +181,7 @@ test('/api/health/ai answers 200 for unknown/unconfigured, 503 only when every c
       const text = await res.text();
       const body = JSON.parse(text);
       assert.equal(body.status, 'unknown');
-      assert.deepEqual(Object.keys(body).sort(), ['maxAgeSeconds', 'scope', 'status']);
+      assert.deepEqual(Object.keys(body).sort(), ['status']);
       assert.doesNotMatch(text, /providers|policy|breakers|billing|allowExternalPii|maxCostUsd|fallbackEnabled/);
       assert.doesNotMatch(text, /test-key|@/);
     } finally {
@@ -191,7 +191,7 @@ test('/api/health/ai answers 200 for unknown/unconfigured, 503 only when every c
   });
 });
 
-test('AI diagnostics require operational authentication and never cache responses', async () => {
+test('AI diagnostics require admin authentication and never cache responses', async () => {
   const previous = process.env.OPERATOR_API_KEY;
   process.env.OPERATOR_API_KEY = 'test-only-health-key';
   const app = express();
@@ -208,12 +208,11 @@ test('AI diagnostics require operational authentication and never cache response
       assert.equal(response.headers.get('cache-control'), 'no-store');
       assert.doesNotMatch(await response.text(), /providers|policy|breakers|billingBlocked/);
     }
+    // #379: el rol operator (OPERATOR_API_KEY compartida) ya no ve el diagnóstico; solo owner/admin.
     const response = await fetch(url, { headers: { 'x-operator-key': 'test-only-health-key' } });
+    assert.equal(response.status, 403);
     assert.equal(response.headers.get('cache-control'), 'no-store');
-    const body = await response.json();
-    assert.ok(Array.isArray(body.providers));
-    assert.ok(Array.isArray(body.breakers));
-    assert.equal(typeof body.policy.allowExternalPii, 'boolean');
+    assert.doesNotMatch(await response.text(), /providers|policy|breakers|billingBlocked/);
   } finally {
     if (previous === undefined) delete process.env.OPERATOR_API_KEY;
     else process.env.OPERATOR_API_KEY = previous;
