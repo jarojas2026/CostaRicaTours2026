@@ -8,7 +8,7 @@ async function fillQuoteForm(page: import('@playwright/test').Page) {
   await page.goto('/tour/' + tour.id);
   await page.getByTestId('tour-cta').getByRole('button', { name: 'Cotizar / Reservar' }).click();
   const form = page.getByRole('form', { name: 'Solicitar cotización' });
-  await form.getByLabel('Nombre').fill('Viajero Prueba');
+  await form.getByRole('textbox', { name: 'Nombre', exact: true }).fill('Viajero Prueba');
   await form.getByLabel('Correo electrónico').fill('viajero@example.com');
   await form.locator('input[type="checkbox"]').first().check();
   return form;
