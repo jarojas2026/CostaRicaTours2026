@@ -1,7 +1,8 @@
 import { google } from 'googleapis';
 import { GoogleGenAI } from '@google/genai';
 import { getFirestoreDb, findBookingByCodeOrEmail } from './bookingService';
-import { handleProviderAction, REGISTERED_PROVIDERS } from './providerCommunicationService';
+import { handleProviderAction, resolveOperationalProvider, resolveConfiguredProviderEmail } from './providerCommunicationService';
+import { isSensitiveCustomerEmail, looksLikeTravelRequest } from './emailRequestPolicy';
 import { processChatInquiry, runTriage } from './aiAssistantService';
 import { resolveTravelerIdentity } from './travelerIdentityService';
 import { rememberTurn } from './memoryService';
@@ -125,14 +126,14 @@ async function classifyMail(subject: string, body: string, from: string): Promis
   if (/os-cr-[a-z0-9-]+/i.test(s) || /confirmad|disponible|no hay cupo|rechaz|accepted|confirmed|available|unavailable/i.test(s)) {
     return { kind: 'provider_response', confidence: .78, intent: 'provider_response', shouldAct: false, reason: 'Patrones de respuesta operativa.' };
   }
-  if (/reserv|availability|disponib|tour|excurs|traslado|transfer|cotiz|price|precio|booking|viaje|itinerario/i.test(s)) {
+  if (looksLikeTravelRequest(s)) {
     return { kind: 'customer_request', confidence: .76, intent: 'travel_request', shouldAct: true, reason: 'Solicitud turística detectada.' };
   }
   return { kind: 'unknown', confidence: .45, intent: 'general_inquiry', shouldAct: false, reason: 'Evidencia insuficiente.' };
 }
 
 function riskyCustomerRequest(message: string) {
-  return /refund|reembolso|chargeback|fraud|estafa|demanda|lawyer|legal|emergency|emergencia|medical|médic|password|contraseña|credit card|tarjeta/i.test(message);
+  return isSensitiveCustomerEmail(message);
 }
 
 async function claimEvent(id: string, provider: MailProvider, from: string, subject: string): Promise<boolean | 'terminal'> {
@@ -262,18 +263,23 @@ async function markRead(mail: MailMessage) {
   });
 }
 
-async function processProviderResponseEmail(mail: MailMessage) {
-  const providers = new Set(REGISTERED_PROVIDERS.flatMap((p: any) => [p.officialEmail, p.email]).filter(Boolean).map((x: any) => String(x).toLowerCase()));
-  if (!providers.has(mail.from.toLowerCase())) {
-    await recordEvent(mail, { status: 'needs_human_review', reason: 'Remitente no coincide con un proveedor operativo conocido.' });
-    return { status: 'needs_human_review' };
-  }
+/** A quoted order number or claimed sender is not authorization to mutate a booking. */
+async function verifiedProviderOrderForEmail(mail: MailMessage): Promise<string | null> {
+  const orderId = `${mail.subject}\n${mail.text}`.match(/OS-CR-[A-Z0-9-]+/i)?.[0]?.toUpperCase();
+  const db = getFirestoreDb();
+  if (!orderId || !db) return null;
+  const snap = await db.collection('service_orders').doc(orderId).get();
+  if (!snap.exists) return null;
+  const order = snap.data() || {};
+  if (!order.providerId || !order.tourId) return null;
+  const provider = await resolveOperationalProvider(String(order.providerId), String(order.tourId));
+  if (!provider?.verified) return null;
+  const operationalEmail = emailOf(resolveConfiguredProviderEmail(provider));
+  return isEmail(operationalEmail) && operationalEmail === emailOf(mail.from) ? orderId : null;
+}
+
+async function processProviderResponseEmail(mail: MailMessage, orderId: string) {
   const source = `${mail.subject}\n${mail.text}`;
-  const orderId = source.match(/OS-CR-[A-Z0-9-]+/i)?.[0]?.toUpperCase();
-  if (!orderId) {
-    await recordEvent(mail, { status: 'needs_human_review', reason: 'No se encontró una orden operacional verificable.' });
-    return { status: 'needs_human_review' };
-  }
   let action: 'confirm' | 'reject' | 'delay' | 'no_show' | 'complete' | null = null;
   if (/no hay cupo|sin disponibilidad|no podemos|rechaz|declin|not available|unavailable/i.test(source)) action = 'reject';
   else if (/no show|no-show|no se presentó/i.test(source)) action = 'no_show';
@@ -343,7 +349,9 @@ async function processCustomerEmail(mail: MailMessage, classification: Classific
     sessionId: businessGoal.sessionId,
     channel: `email:${mail.provider}`
   });
-  const autonomous = !risk && confidence >= 0.72;
+  // A mailbox sender is not an authenticated booking owner. Email may answer
+  // safe questions, but cannot mutate bookings, payments, or reservations.
+  const autonomous = !risk && classification.shouldAct && confidence >= 0.72;
   const replyLanguage = requirements.language || (/[\u00C0-\u024F]/.test(mail.text) || /hola|reserva|precio|disponibilidad/i.test(mail.text) ? 'es' : 'en');
 
   const rawAssistant = await processChatInquiry(
@@ -352,7 +360,7 @@ async function processCustomerEmail(mail: MailMessage, classification: Classific
     [],
     'auto',
     identity.sessionId,
-    { allowMutations: autonomous }
+    { allowMutations: false }
   );
   // #377: el cliente nunca ve al proveedor en una respuesta por correo (la IA puede citarlo).
   const assistant = { ...rawAssistant, reply: redactProviderIdentityForCustomer(rawAssistant.reply, { language: replyLanguage }) };
@@ -451,16 +459,39 @@ export async function processEmailOperationsOnce() {
       if (!claimed) continue;
 
       const classification = await classifyMail(mail.subject, mail.text, mail.from);
-      if (classification.kind === 'spam' || classification.kind === 'internal' || classification.kind === 'unknown' || classification.confidence < 0.70) {
+      if (classification.kind === 'spam' || classification.kind === 'internal') {
         await recordEvent(mail, { status: 'ignored', classification, completedAt: new Date().toISOString() });
         await markRead(mail);
         results.push({ provider: mail.provider, id: mail.id, status: 'ignored', kind: classification.kind });
         continue;
       }
-
       if (classification.kind === 'provider_response') {
-        const result = await processProviderResponseEmail(mail);
-        results.push({ provider: mail.provider, id: mail.id, ...result });
+        // Verifying the sender against the assigned, active Firestore provider
+        // prevents a customer's “confirmado” from confirming a supplier order.
+        const verifiedOrderId = await verifiedProviderOrderForEmail(mail);
+        if (verifiedOrderId && process.env.EMAIL_VERIFIED_PROVIDER_ACTIONS_ENABLED === 'true') {
+          const result = await processProviderResponseEmail(mail, verifiedOrderId);
+          results.push({ provider: mail.provider, id: mail.id, ...result });
+          continue;
+        }
+        // Provider email is evidence to review, not an authenticated click in
+        // the signed provider portal. Old behavior can be explicitly opted into.
+        if (verifiedOrderId || !looksLikeTravelRequest(`${mail.subject}\n${mail.text}`)) {
+          await recordEvent(mail, { status: 'needs_human_review', classification,
+            reason: verifiedOrderId ? 'Responder desde el portal firmado del proveedor.' : 'Remitente/orden del proveedor sin verificación operativa.' });
+          results.push({ provider: mail.provider, id: mail.id, status: 'needs_human_review', kind: classification.kind });
+          continue;
+        }
+        classification.kind = 'customer_request';
+        classification.shouldAct = false;
+        classification.reason = 'Solicitud de viajero; términos ambiguos de aceptación operativa.';
+      }
+      if (classification.kind === 'unknown' || classification.confidence < 0.70) {
+        // Keep unclassified emails in the operational queue instead of silently
+        // marking them read. claimEvent prevents processing them repeatedly.
+        await recordEvent(mail, { status: 'needs_human_review', classification,
+          reason: 'Correo sin clasificación segura: requiere revisión de un operador.' });
+        results.push({ provider: mail.provider, id: mail.id, status: 'needs_human_review', kind: classification.kind });
         continue;
       }
 
