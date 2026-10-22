@@ -15,6 +15,8 @@ import { ArrowLeft,
   Flame 
 } from 'lucide-react';
 import { Language } from '../types';
+import { getPhoto, photoSrc } from '../data/photoCatalog';
+import { PhotoCredit } from './PhotoCredit';
 
 interface TicoCultureSectionProps {
   language: Language;
@@ -133,7 +135,7 @@ interface TraditionalDish {
   descEn: string;
   region: string;
   icon: string;
-  image: string;
+  photoKey: string;
 }
 
 const TICO_DISHES: TraditionalDish[] = [
@@ -145,7 +147,8 @@ const TICO_DISHES: TraditionalDish[] = [
     descEn: 'The heart and soul of Costa Rican mornings: rice and beans seasoned with sweet peppers, onions, cilantro, and savory Lizano sauce. Served with eggs, sweet plantains, sour cream (natilla), artisan cheese, and fresh coffee.',
     region: 'Toda Costa Rica (Valle Central / Guanacaste)',
     icon: '🍳',
-    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80'
+    /** Foto real del plato (Wikimedia Commons, tag costa-rica-food en photoManifest.json). */
+    photoKey: 'wm-food-gallo-pinto'
   },
   {
     name: 'Casado Costarricense',
@@ -155,7 +158,8 @@ const TICO_DISHES: TraditionalDish[] = [
     descEn: 'The hearty staple found across every local Soda: rice, slow-cooked black beans, caramelized sweet plantains, fresh cabbage slaw, vegetable picadillo, and your choice of fresh fish, tender beef, or grilled chicken.',
     region: 'Nacional / Sodas Locales',
     icon: '🥗',
-    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80'
+    /** Foto real del plato (Wikimedia Commons, tag costa-rica-food en photoManifest.json). */
+    photoKey: 'wm-food-casado'
   },
   {
     name: 'Rice and Beans Caribeño',
@@ -165,7 +169,8 @@ const TICO_DISHES: TraditionalDish[] = [
     descEn: 'The star dish of Limón and Puerto Viejo: fragrant rice and red beans simmered in fresh coconut milk, thyme, and panamanian peppers. Served with caramelized Caribbean chicken and golden crispy patacones.',
     region: 'Caribe Sur (Puerto Viejo, Cahuita, Limón)',
     icon: '🥥',
-    image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=600&q=80'
+    /** Foto real del plato (Wikimedia Commons, tag costa-rica-food en photoManifest.json). */
+    photoKey: 'wm-food-rice-and-beans'
   },
   {
     name: 'Chifrijo Tico',
@@ -175,7 +180,8 @@ const TICO_DISHES: TraditionalDish[] = [
     descEn: 'Invented in San José and now a nationwide culinary treasure: layers of warm rice, tender beans, crispy pork chicharrón, fresh pico de gallo chimichurri, avocado slices, and golden plantain chips.',
     region: 'San José & Bares Típicos',
     icon: '🥑',
-    image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=600&q=80'
+    /** Foto real del plato (Wikimedia Commons, tag costa-rica-food en photoManifest.json). */
+    photoKey: 'wm-food-chifrijo'
   },
   {
     name: 'Olla de Carne Campesina',
@@ -185,7 +191,8 @@ const TICO_DISHES: TraditionalDish[] = [
     descEn: 'A comforting weekend culinary ritual across Costa Rica: a rich, slow-simmered beef broth loaded with native root vegetables including yucca, green plantains, sweet corn, chayote squash, and sweet potatoes.',
     region: 'Valle Central & Cartago',
     icon: '🍲',
-    image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=600&q=80'
+    /** Foto real del plato (Wikimedia Commons, tag costa-rica-food en photoManifest.json). */
+    photoKey: 'wm-food-olla-de-carne'
   },
   {
     name: 'Chorreadas con Natilla',
@@ -195,7 +202,8 @@ const TICO_DISHES: TraditionalDish[] = [
     descEn: 'Heavenly golden griddle cakes made from freshly ground sweet corn, lightly crisped on a hot comal and served warm with farm-fresh natilla. The ultimate afternoon coffee pairing.',
     region: 'Guanacaste & Alajuela',
     icon: '🌽',
-    image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=600&q=80'
+    /** Foto real del plato (Wikimedia Commons, tag costa-rica-food en photoManifest.json). */
+    photoKey: 'wm-food-chorreadas'
   }
 ];
 
@@ -454,8 +462,9 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                 >
                   <div className="relative h-48 overflow-hidden">
                     <img 
-                      src={dish.image} 
+                      src={photoSrc(getPhoto(dish.photoKey), 800)} 
                       alt={dish.name}
+                      loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                     />
                     <div className="absolute top-3 left-3 bg-[#041710]/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-amber-400 border border-emerald-500/25 flex items-center gap-1.5">
@@ -463,6 +472,7 @@ export const TicoCultureSection: React.FC<TicoCultureSectionProps> = ({ language
                       <span>{dish.region}</span>
                     </div>
                   </div>
+                  <PhotoCredit src={photoSrc(getPhoto(dish.photoKey), 800)} className="px-6 pt-2" />
 
                   <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
                     <div className="space-y-1.5">
