@@ -32,6 +32,7 @@ import { useAvailableCurrencies } from '../hooks/useMoney';
 import { auth, signInWithGoogle, signOut } from '../firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { requestCustomerIntake } from '../utils/customerIntake';
+import { MY_SECTIONS, MyLabel, MyWordmark } from './MyBrand';
 
 type HeaderTab = 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights' | 'workspace' | 'destinations' | 'activities' | 'about' | 'blog';
 
@@ -248,13 +249,13 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Main bar */}
         <div className={`w-full max-w-7xl min-w-0 mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-2 lg:gap-6 transition-all duration-300 ${isScrolled ? 'py-2' : 'py-2.5'}`}>
 
-          <Link to="/" aria-label={es ? 'Costa Rica Tours, inicio' : 'Costa Rica Tours, home'} className={`flex items-center gap-2 group shrink-0 rounded-xl ${focusRing}`}>
+          <Link to="/" aria-label={es ? 'myCostaRicaTours · Costa Rica Tours, inicio' : 'myCostaRicaTours · Costa Rica Tours, home'} className={`flex items-center gap-2 group shrink-0 rounded-xl ${focusRing}`}>
             <span className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-md shadow-emerald-900/30 group-hover:scale-105 transition-transform" aria-hidden="true">
               <Compass className="w-5 h-5 sm:w-6 sm:h-6 text-stone-950" />
             </span>
             <span className="whitespace-nowrap leading-tight">
               <span className="block text-[15px] sm:text-xl font-extrabold tracking-tight text-white">
-                Costa Rica <span className="text-amber-400">Tours</span>
+                <MyWordmark />
               </span>
               <span className="hidden sm:block text-[10px] tracking-wider uppercase font-semibold text-emerald-400">
                 {es ? 'Tours y planificación' : 'Tours & trip planning'}
@@ -366,19 +367,27 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
 
                   {/* My trip */}
-                  <p className={sectionLabelClass}>{es ? 'Mi viaje' : 'My trip'}</p>
-                  <button type="button" onClick={handleOpenBookings} className={menuItemClass}>
+                  <p className={sectionLabelClass}>my<span className="text-white/80">CostaRicaTours</span></p>
+                  <button type="button" onClick={handleOpenBookings} className={`group ${menuItemClass}`}>
                     <ShoppingBag className="w-4 h-4 text-orange-400" aria-hidden="true" />
-                    <span className="flex-1">{t('myBookings')}</span>
+                    <span className="flex-1"><MyLabel section="bookings" /></span>
                     {count > 0 && <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-orange-500 text-stone-950 text-[11px] font-black flex items-center justify-center">{count}</span>}
                   </button>
                   <button type="button" onClick={() => go('/tours?favorites=1')} className={menuItemClass}>
                     <Heart className="w-4 h-4 text-rose-400" aria-hidden="true" />
                     <span>{es ? 'Favoritos' : 'Favorites'}</span>
                   </button>
-                  <button type="button" onClick={handleOpenItinerary} className={menuItemClass}>
+                  <button type="button" onClick={() => go(MY_SECTIONS.trip.to)} className={`group ${menuItemClass}`}>
+                    <Compass className="w-4 h-4 text-teal-300" aria-hidden="true" />
+                    <MyLabel section="trip" />
+                  </button>
+                  <button type="button" onClick={handleOpenItinerary} className={`group ${menuItemClass}`}>
                     <Sparkles className="w-4 h-4 text-amber-300" aria-hidden="true" />
-                    <span>{es ? 'Armar mi viaje' : 'Build my trip'}</span>
+                    <MyLabel section="planner" />
+                  </button>
+                  <button type="button" onClick={() => go(MY_SECTIONS.flights.to)} className={`group ${menuItemClass}`}>
+                    <Plane className="w-4 h-4 text-sky-300" aria-hidden="true" />
+                    <MyLabel section="flights" />
                   </button>
 
                   {/* Preferences */}
