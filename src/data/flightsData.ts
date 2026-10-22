@@ -170,6 +170,16 @@ export const ORIGIN_COUNTRIES: OriginCountryInfo[] = [
   },
 ];
 
+/**
+ * #397: horarios, duraciones y precios de FLIGHT_ROUTES son de REFERENCIA (sin
+ * fuente de aerolínea verificada). La UI debe mostrarlos con estas etiquetas.
+ */
+export const FLIGHT_REFERENCE_LABELS = {
+  price: { es: 'Precio de referencia / consultar', en: 'Reference price / ask us' },
+  schedule: { es: 'Horario de referencia: confirmar con la aerolínea', en: 'Reference schedule: confirm with the airline' },
+} as const;
+export const FLIGHT_ROUTES_ARE_REFERENCE = true;
+
 export const FLIGHT_ROUTES: FlightRoute[] = [
   // --- ESPAÑA (MAD / BCN) ---
   {
