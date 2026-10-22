@@ -43,7 +43,8 @@ test('[alta] el CTA de envío muestra loading y success (envío interceptado)', 
   for (const url of tours) {
     await page.goto(new URL(url).pathname);
     const form = page.getByRole('form', { name: /Solicitar cotización|Request a quote/ });
-    if (!(await form.count())) continue;
+    // La ficha carga diferida: esperar al formulario antes de descartar la URL.
+    if (!(await form.first().waitFor({ state: 'visible', timeout: 8000 }).then(() => true, () => false))) continue;
     await form.getByLabel(/^Nombre|^Name/).fill('QA Agent');
     await form.getByLabel(/Correo electrónico|Email/).fill('qa-agent@costaricatours.invalid');
     await form.locator('input[type="checkbox"]').first().check();
@@ -63,11 +64,14 @@ test('[media] moneda coherente en el catálogo', async ({ page }) => {
   // Sin networkidle: el sitio mantiene conexiones abiertas (mapas, analítica).
   await page.waitForTimeout(4000);
   const text = await page.locator('body').innerText({ timeout: 10_000 });
-  const usd = (text.match(/(US)?\$\s?\d/g) || []).length;
+  // Contrato de src/utils/money.ts (moneyView): USD es la referencia exacta; otra
+  // moneda solo aparece como conversión aproximada "≈ ₡…" y nunca dos a la vez.
   const crc = (text.match(/₡\s?\d/g) || []).length;
   const eur = (text.match(/€\s?\d/g) || []).length;
-  const kinds = [usd, crc, eur].filter(n => n > 0).length;
-  expect(kinds, `mezcla de monedas sin selector: USD=${usd} CRC=${crc} EUR=${eur}`).toBeLessThanOrEqual(1);
+  const nonUsdKinds = [crc, eur].filter(n => n > 0).length;
+  const notApprox = (text.match(/(^|[^≈\s])\s*[₡€]\s?\d/gm) || []).length;
+  expect(nonUsdKinds, `dos monedas convertidas a la vez: CRC=${crc} EUR=${eur}`).toBeLessThanOrEqual(1);
+  expect(notApprox, `montos convertidos sin "≈" (parecen exactos): ${notApprox}`).toBe(0);
 });
 
 test('[alta] el embudo "Cotizar" no avanza sin fecha (validación por paso)', async ({ page }) => {
