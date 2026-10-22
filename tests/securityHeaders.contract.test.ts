@@ -55,13 +55,30 @@ test('CSP compatible con lo que ya usa el sitio', () => {
   for (const host of ['checkout.stripe.com', 'www.paypal.com']) assert.ok(attempt.includes(host));
 });
 
-test('anti-clickjacking en todo excepto el widget embebible', () => {
-  const frame = rules.find(r => /frame-ancestors/.test(r.headers.map(h => h.value).join(' ')));
-  assert.ok(frame, 'regla frame-ancestors');
-  assert.equal(frame!.headers[0].value, "frame-ancestors 'self'");
-  const re = new RegExp(`^${frame!.source}$`);
-  for (const p of ['/', '/tours', '/admin', '/tour/x', '/provider/portal']) assert.match(p, re, p);
-  for (const p of ['/counter-widget.html', '/counter-widget.js', '/counter']) assert.doesNotMatch(p, re, p);
+/** Vercel no combina reglas con la misma clave: la última regla que coincide gana (#385). */
+function effectiveHeader(pathname: string, name: string): string {
+  let value = '';
+  for (const rule of rules) {
+    if (!new RegExp(`^${rule.source}$`).test(pathname)) continue;
+    const found = rule.headers.find(h => h.key.toLowerCase() === name.toLowerCase());
+    if (found) value = found.value;
+  }
+  return value;
+}
+
+test('CSP efectiva por ruta: completa en todas, anti-clickjacking salvo el widget embebible', () => {
+  for (const p of ['/', '/tours', '/admin', '/tour/x', '/provider/portal', '/counter-widget.html', '/counter-widget.js', '/counter']) {
+    const csp = directives(effectiveHeader(p, 'Content-Security-Policy'));
+    assert.deepEqual(csp.get('default-src'), ["'self'"], `${p}: CSP completa`);
+    assert.ok(csp.has('script-src') && csp.has('connect-src'), p);
+    const embeddable = /^\/counter(-widget\.(html|js))?$/.test(p);
+    if (embeddable) assert.ok(!csp.has('frame-ancestors'), `${p} embebible`);
+    else assert.deepEqual(csp.get('frame-ancestors'), ["'self'"], `${p} frame-ancestors`);
+  }
+  // Ninguna regla define solo una parte de la CSP (sobrescribiría la completa).
+  for (const rule of rules) for (const h of rule.headers.filter(x => /^content-security-policy$/i.test(x.key))) {
+    assert.match(h.value, /default-src 'self'/, rule.source);
+  }
 });
 
 test('vite preview aplica los mismos encabezados (el E2E ejercita la CSP real)', () => {
