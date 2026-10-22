@@ -2,6 +2,8 @@ import { Language, Currency } from '../types';
 
 import { LOCALES, ENABLED_LANGUAGES } from '../i18n/locales';
 import { detectLanguage } from '../i18n/detect';
+import { formatPrice } from './money';
+import { getRatesSnapshot, loadExchangeRates } from './exchangeRates';
 
 export interface LanguageInfo {
   code: Language;
@@ -312,39 +314,19 @@ export const UI_TRANSLATIONS: Record<string, Record<Language, string>> = {
 };
 
 
-export let EXCHANGE_RATES: Record<string, number> = {
-  USD: 1,
-  CRC: 0,
-  EUR: 0.92,
-  GBP: 0.78,
-  CAD: 1.36,
-};
-
-export async function fetchExchangeRates() {
-  try {
-    const response = await fetch('https://open.er-api.com/v6/latest/USD');
-    const data = await response.json();
-    if (data && data.rates) {
-      EXCHANGE_RATES = { ...EXCHANGE_RATES, ...data.rates };
-      window.dispatchEvent(new Event('exchangeRatesUpdated'));
-    }
-  } catch (error) {
-    console.error('Failed to fetch exchange rates', error);
-  }
+/**
+ * Tipos de cambio: solo tasas reales de `/api/currency/rates` (BCCR/BCE).
+ * Sin valores fijos embebidos. Ver utils/money.ts y utils/exchangeRates.ts.
+ */
+export function fetchExchangeRates() {
+  return loadExchangeRates();
 }
 
-export function formatCurrency(amountUSD: number, currency: Currency = 'USD'): string {
-  const rate = EXCHANGE_RATES[currency] || 1;
-  const amount = amountUSD * rate;
-  
-  try {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      maximumFractionDigits: 0
-    }).format(amount);
-  } catch (e) {
-    // Fallback if currency code is not supported by Intl
-    return `${currency} ${amount.toFixed(0)}`;
-  }
+/**
+ * Precio de catálogo (USD) en la moneda elegida: "≈ ₡57 193" o "US$125" si
+ * no hay tasa. Nunca un monto sin convertir con el símbolo de otra moneda.
+ */
+export function formatCurrency(amountUSD: number, currency: Currency = 'USD', language?: Language): string {
+  const lang = language || (typeof document !== 'undefined' && document.documentElement.lang?.startsWith('en') ? 'en' : 'es');
+  return formatPrice(amountUSD, currency, lang, getRatesSnapshot());
 }

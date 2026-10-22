@@ -18,6 +18,7 @@ import { neutralOperatorLabel, SUPPLIER_POLICY } from '../utils/operatorPrivacy'
 import { useTours } from '../contexts/ToursContext';
 import { REGIONS } from '../data/catalogMeta';
 import { getUsdToCrcRate } from '../utils/currencies';
+import { useMoney } from '../hooks/useMoney';
 import { LazyImage } from '../components/LazyImage';
 import { PhotoCredit } from '../components/PhotoCredit';
 import { TourWeather } from '../components/TourWeather';
@@ -33,6 +34,7 @@ interface TourDetailPageProps {
 type ProviderCheckState = 'idle' | 'checking' | 'confirmed' | 'pending' | 'unavailable';
 
 const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, onBookingSuccess }) => {
+  const money = useMoney(currency, language);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { tours: TOURS, loading } = useTours();
@@ -510,9 +512,12 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
                   {isBookable ? <>
                     <div className="text-stone-500 text-xs font-black uppercase tracking-widest mb-2">{language === 'es' ? 'Precio de catálogo · por confirmar' : 'Catalog price · confirm before booking'}</div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-4xl sm:text-5xl font-black text-emerald-400">{publishedTourPrice(tour) === undefined ? (language === 'es' ? 'Consultar precio' : 'Ask for price') : formatCurrency(publishedTourPrice(tour)!, currency)}</span>
-                      <span className="text-stone-400 text-xs font-bold uppercase">{currency} / {language === 'es' ? 'precio publicado' : 'published price'}</span>
+                      <span className="text-4xl sm:text-5xl font-black text-emerald-400">{publishedTourPrice(tour) === undefined ? (language === 'es' ? 'Consultar precio' : 'Ask for price') : money(publishedTourPrice(tour)!).primary}</span>
+                      <span className="text-stone-400 text-xs font-bold uppercase">{publishedTourPrice(tour) !== undefined && money(publishedTourPrice(tour)!).converted ? `${money(publishedTourPrice(tour)!).usd} / ` : 'USD / '}{language === 'es' ? 'precio publicado' : 'published price'}</span>
                     </div>
+                    {publishedTourPrice(tour) !== undefined && (money(publishedTourPrice(tour)!).note || money(publishedTourPrice(tour)!).notice) && (
+                      <p data-testid="rate-note" className="mt-1 text-[11px] text-stone-400">{money(publishedTourPrice(tour)!).note || money(publishedTourPrice(tour)!).notice}</p>
+                    )}
                     <p className="mt-2 text-[11px] leading-relaxed text-stone-500">
                       {language === 'es' ? 'El proveedor debe confirmar disponibilidad y precio final antes de habilitar el pago.' : 'The provider must confirm availability and the final price before payment is enabled.'}
                     </p>
