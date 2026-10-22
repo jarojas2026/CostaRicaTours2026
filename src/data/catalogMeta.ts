@@ -1,3 +1,4 @@
+import { destinationPhotoUrl } from './photoCatalog';
 /**
  * Metadatos livianos del catálogo (categorías, operadores, regiones, servicios
  * y reseñas). Se importan de forma estática en el bundle inicial.
@@ -149,7 +150,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'La Fortuna / Volcán Arenal', en: 'La Fortuna / Arenal Volcano' },
     tagline: { es: 'La Capital de la Aventura y Termales', en: 'The Adventure & Hot Springs Capital' },
     description: { es: 'Famoso por su volcán cónico casi perfecto y sus relajantes aguas termales.', en: 'Famous for its nearly perfect conical volcano and relaxing hot springs.' },
-    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('arenal'),
     coordinates: { x: 42, y: 38 }
   },
   {
@@ -157,7 +158,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Monteverde', en: 'Monteverde' },
     tagline: { es: 'Mágico Bosque Nuboso y Biodiversidad', en: 'Magical Cloud Forest & Biodiversity' },
     description: { es: 'Bosque nuboso, senderos y actividades de naturaleza; clima y observación de fauna varían.', en: 'Cloud forest, trails and nature activities; weather and wildlife sightings vary.' },
-    image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('monteverde'),
     coordinates: { x: 33, y: 44 }
   },
   {
@@ -165,7 +166,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Manuel Antonio', en: 'Manuel Antonio' },
     tagline: { es: 'Donde el Bosque Encuentra el Mar', en: 'Where Rainforest Meets Ocean' },
     description: { es: 'Costa y bosque tropical con opciones de senderismo y naturaleza; avistamientos no garantizados.', en: 'Coast and tropical forest with hiking and nature options; wildlife sightings are not guaranteed.' },
-    image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('manuel_antonio'),
     coordinates: { x: 50, y: 68 }
   },
   {
@@ -173,7 +174,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Río Pacuare / Turrialba', en: 'Pacuare River / Turrialba' },
     tagline: { es: 'Los Mejores Rápidos de Costa Rica', en: 'World-Class Whitewater Rafting' },
     description: { es: 'Rutas de río y rafting sujetas a nivel de agua, temporada, clima y operación local.', en: 'River and rafting trips depend on water levels, season, weather and local operation.' },
-    image: 'https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('pacuare'),
     coordinates: { x: 62, y: 52 }
   },
   {
@@ -181,7 +182,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Guanacaste / Tamarindo', en: 'Guanacaste / Tamarindo' },
     tagline: { es: 'Sol, Surf y Playas Doradas', en: 'Sunshine, Surf & Golden Beaches' },
     description: { es: 'Región extensa con playas, áreas protegidas y comunidades; clima y condiciones cambian por zona y temporada.', en: 'A large region with beaches, protected areas and communities; weather and conditions vary by area and season.' },
-    image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('guanacaste'),
     coordinates: { x: 18, y: 32 }
   },
   {
@@ -189,7 +190,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Tortuguero', en: 'Tortuguero' },
     tagline: { es: 'El Amazonas Costarricense y Tortugas Verdes', en: 'Costa Rican Amazon & Sea Turtles' },
     description: { es: 'Navega por canales remotos y observa el desove de las tortugas marinas.', en: 'Navigate remote canals and witness the nesting of sea turtles.' },
-    image: 'https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('tortuguero'),
     coordinates: { x: 70, y: 30 }
   },
   {
@@ -197,7 +198,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Uvita / Marino Ballena / Osa', en: 'Uvita / Marino Ballena / Osa' },
     tagline: { es: 'El Hogar de las Ballenas y Corcovado', en: 'Home of Whales & Corcovado' },
     description: { es: 'Uvita, Marino Ballena, Osa y Corcovado ofrecen entornos costeros y naturales con accesos y condiciones distintas.', en: 'Uvita, Marino Ballena, Osa and Corcovado offer coastal and natural areas with different access rules and conditions.' },
-    image: 'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('osa'),
     coordinates: { x: 58, y: 82 }
   },
   {
@@ -205,7 +206,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Puerto Viejo / Cahuita', en: 'Puerto Viejo / Cahuita' },
     tagline: { es: 'Ritmos Afrocaribeños y Playas de Ensueño', en: 'Afro-Caribbean Rhythms & Dreamy Beaches' },
     description: { es: 'Cultura vibrante, gastronomía caribeña y arrecifes de coral protegidos.', en: 'Vibrant culture, Caribbean gastronomy, and protected coral reefs.' },
-    image: 'https://images.unsplash.com/photo-1643400811908-ed46db6c8066?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('caribe_sur'),
     coordinates: { x: 85, y: 55 }
   },
   {
@@ -213,7 +214,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'San José / Valle Central', en: 'San Jose / Central Valley' },
     tagline: { es: 'Cultura, Volcanes y Café Premium', en: 'Culture, Volcanoes & Heritage Coffee' },
     description: { es: 'El corazón cultural de Costa Rica y punto de partida hacia volcanes activos.', en: 'The cultural heart of Costa Rica and starting point to active volcanoes.' },
-    image: 'https://images.unsplash.com/photo-1643400811908-ed46db6c8066?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('sjo'),
     coordinates: { x: 52, y: 50 }
   },
   {
@@ -221,7 +222,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Caribe Sur / Puerto Viejo', en: 'South Caribbean / Puerto Viejo' },
     tagline: { es: 'Ritmo Afrocaribeño, Arrecifes y Naturaleza', en: 'Afro-Caribbean Vibe, Reefs & Wildlife' },
     description: { es: 'Playas, cultura afrocaribeña y gastronomía local; algunas actividades marinas dependen del estado del mar.', en: 'Beaches, Afro-Caribbean culture and local food; some marine activities depend on sea conditions.' },
-    image: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('caribe'),
     coordinates: { x: 82, y: 62 }
   },
   {
@@ -229,7 +230,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Sarapiquí / Llanuras del Norte', en: 'Sarapiquí / Northern Plains' },
     tagline: { es: 'Ríos, bosque lluvioso y turismo rural', en: 'Rivers, rainforest & rural tourism' },
     description: { es: 'Una zona de ríos, áreas naturales, actividades de aventura y comunidades rurales.', en: 'A region of rivers, natural areas, adventure activities and rural communities.' },
-    image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('sarapiqui'),
     coordinates: { x: 68, y: 30 }
   },
   {
@@ -237,7 +238,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Pacífico Central / Carara', en: 'Central Pacific / Carara' },
     tagline: { es: 'Bosque de transición y esteros', en: 'Transitional forest & estuaries' },
     description: { es: 'Carara, Tárcoles y los manglares de la costa central; verifica accesos y condiciones.', en: 'Carara, Tárcoles and central-coast mangroves; check access and conditions.' },
-    image: 'https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('central_pacific'),
     coordinates: { x: 49, y: 66 }
   },
   {
@@ -245,7 +246,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Los Santos / Dota', en: 'Los Santos / Dota' },
     tagline: { es: 'Montaña, bosque y comunidades rurales', en: 'Mountains, forest & rural communities' },
     description: { es: 'Senderos de montaña y observación de aves, sujetos al clima y a condiciones locales.', en: 'Mountain trails and birdwatching, subject to weather and local conditions.' },
-    image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('los_santos'),
     coordinates: { x: 54, y: 67 }
   },
   {
@@ -253,7 +254,7 @@ export const REGIONS: RegionInfo[] = [
     name: { es: 'Golfito / Golfo Dulce', en: 'Golfito / Golfo Dulce' },
     tagline: { es: 'Mar, bosque y comunidades del sur', en: 'Ocean, forest & southern communities' },
     description: { es: 'Navegación y actividades marinas en el sur; confirma condiciones, permisos y operador.', en: 'Boating and marine activities in the south; confirm conditions, permits and operator.' },
-    image: 'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('golfito'),
     coordinates: { x: 55, y: 88 }
   }
 ];

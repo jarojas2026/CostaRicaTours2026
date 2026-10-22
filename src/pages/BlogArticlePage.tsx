@@ -1,4 +1,5 @@
 import React from 'react';
+import { PhotoCredit } from '../components/PhotoCredit';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, User, ExternalLink, MessageCircle } from 'lucide-react';
 import type { Language } from '../types';
@@ -35,9 +36,10 @@ export const BlogArticlePage: React.FC<BlogArticlePageProps> = ({ language }) =>
       <img
         src={post.image}
         alt={post.imageAlt[lang]}
-        className="mb-8 h-64 w-full rounded-3xl object-cover sm:h-80"
+        className="h-64 w-full rounded-3xl object-cover sm:h-80"
         referrerPolicy="no-referrer"
       />
+      <PhotoCredit src={post.image} className="mt-2 mb-8" />
       <header className="space-y-3">
         <h1 id="blog-article-title" className="text-3xl sm:text-4xl font-black tracking-tight text-white">{post.title[lang]}</h1>
         <div className="flex flex-wrap items-center gap-4 text-xs text-stone-400">

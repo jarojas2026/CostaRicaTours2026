@@ -1,3 +1,4 @@
+import { destinationPhotoUrl } from './photoCatalog';
 import { RegionInfo } from '../types';
 
 export const REGIONS_DATA: RegionInfo[] = [
@@ -12,7 +13,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'El destino más popular de Costa Rica, hogar del majestuoso Volcán Arenal.',
       en: 'Costa Rica\'s most popular destination, home to the majestic Arenal Volcano.'
     },
-    image: 'https://images.unsplash.com/photo-1651261932254-fd342bc4d999?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('arenal'),
     coordinates: { x: 42, y: 35 } // percentage on map
   },
   {
@@ -26,7 +27,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'Un santuario de biodiversidad envuelto en niebla y aventura.',
       en: 'A biodiversity sanctuary wrapped in mist and adventure.'
     },
-    image: 'https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1200&q=80',
+    image: destinationPhotoUrl('monteverde'),
     coordinates: { x: 32, y: 42 }
   },
   {
@@ -40,7 +41,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'El parque nacional más visitado, famoso por sus playas blancas y vida silvestre.',
       en: 'The most visited national park, famous for its white beaches and wildlife.'
     },
-    image: 'https://images.unsplash.com/photo-1509392671875-6ad9dd6ccf9d?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('manuel_antonio'),
     coordinates: { x: 48, y: 68 }
   },
   {
@@ -54,7 +55,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'Famoso por su clima soleado, playas hermosas y cultura sabanera.',
       en: 'Famous for its sunny weather, beautiful beaches, and sabanero culture.'
     },
-    image: 'https://images.unsplash.com/photo-1770848891773-9d866a56dd3d?auto=format&fit=crop&w=1200&q=80',
+    image: destinationPhotoUrl('guanacaste'),
     coordinates: { x: 18, y: 28 }
   },
   {
@@ -68,7 +69,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'Uno de los ríos más bellos del mundo para el rafting de aguas blancas.',
       en: 'One of the most beautiful rivers in the world for white water rafting.'
     },
-    image: 'https://images.unsplash.com/photo-1685550903259-96799741df9e?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('pacuare'),
     coordinates: { x: 62, y: 52 }
   },
   {
@@ -82,7 +83,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'Accesible solo por bote o avión, es el lugar principal de anidación de tortugas.',
       en: 'Accessible only by boat or plane, it is the main nesting site for turtles.'
     },
-    image: 'https://images.unsplash.com/photo-1616563838466-520a4d28466e?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('tortuguero'),
     coordinates: { x: 68, y: 28 }
   },
   {
@@ -96,7 +97,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'La capital vibrante rodeada de montañas y plantaciones de café.',
       en: 'The vibrant capital surrounded by mountains and coffee plantations.'
     },
-    image: 'https://images.unsplash.com/photo-1666606654560-3de1e3c59d32?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('san_jose'),
     coordinates: { x: 48, y: 48 }
   },
   {
@@ -110,7 +111,7 @@ export const REGIONS_DATA: RegionInfo[] = [
       es: 'El lugar biológicamente más intenso del mundo según National Geographic.',
       en: 'The most biologically intense place on Earth according to National Geographic.'
     },
-    image: 'https://images.unsplash.com/photo-1712933342478-51b92117ca80?auto=format&fit=crop&w=1200&q=85',
+    image: destinationPhotoUrl('osa'),
     coordinates: { x: 72, y: 88 }
   }
 ];

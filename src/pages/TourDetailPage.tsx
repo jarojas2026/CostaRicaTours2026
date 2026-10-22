@@ -19,6 +19,7 @@ import { useTours } from '../contexts/ToursContext';
 import { REGIONS } from '../data/catalogMeta';
 import { getUsdToCrcRate } from '../utils/currencies';
 import { LazyImage } from '../components/LazyImage';
+import { PhotoCredit } from '../components/PhotoCredit';
 import { TourWeather } from '../components/TourWeather';
 import { useTourMedia } from '../hooks/useTourMedia';
 import { requestCustomerIntake } from '../utils/customerIntake';
@@ -381,6 +382,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
               {mediaLoading && <div className="absolute top-4 left-4 px-3 py-2 rounded-full bg-stone-950/75 text-[10px] font-black uppercase tracking-widest text-stone-200 backdrop-blur-sm">{language === 'es' ? 'Cargando imágenes' : 'Loading images'}</div>}
               {mediaError && <div className="absolute top-4 left-4 px-3 py-2 rounded-full bg-amber-950/75 text-[10px] font-bold text-amber-200 backdrop-blur-sm">{language === 'es' ? 'Galería local disponible' : 'Local gallery available'}</div>}
               <div className="absolute inset-0 bg-gradient-to-t from-stone-950/60 via-transparent to-transparent" />
+              <PhotoCredit src={gallery[Math.min(activeImageIndex, gallery.length - 1)]} className="absolute top-4 right-4 max-w-[60%] rounded-full bg-stone-950/60 px-3 py-1 text-right text-stone-200 backdrop-blur-sm" />
 
               <div className="absolute bottom-6 left-6 right-6 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                 {gallery.map((img, idx) => (
