@@ -5,7 +5,8 @@
  * orden de registro se conservan (ver tests/serverRoutes.contract.test.ts).
  */
 
-import { requireOperator } from '../authMiddleware';
+import type { Request, Response } from 'express';
+import { requireOperator, requireAdmin, resolveOperatorAccess, type OperatorAccessResult } from '../authMiddleware';
 import { updateBookingStatus, getWeeklyConversionMetrics } from '../bookingService';
 import { massiveEngine } from '../massiveProcessingEngine';
 import { createRouter } from './shared';
@@ -16,27 +17,11 @@ import { getAiConfig, isBillingBlocked } from '../aiConfig';
 /** Health check. */
 export const healthRouter = createRouter();
 
-healthRouter.get('/api/health/ai', (_req, res) => {
-  const health = getAiHealth();
-  res.setHeader('Cache-Control', 'no-store');
-  // Passive observation only: no model call and no internal configuration.
-  res.status(aiHealthHttpStatus(health.providers)).json({
-    status: health.status,
-    scope: health.scope,
-    maxAgeSeconds: health.maxAgeSeconds,
-  });
-});
-
-// Keep diagnostic details available to authenticated operations, never public.
-healthRouter.get('/api/ops/ai-health', (_req, res, next) => {
-  res.setHeader('Cache-Control', 'no-store');
-  next();
-}, requireOperator, (_req, res) => {
+/** Detalle completo de salud IA (proveedores, política y breakers). Solo owner/admin. */
+function aiHealthDetail() {
   const health = getAiHealth();
   const cfg = getAiConfig();
-  res.setHeader('Cache-Control', 'no-store');
-  // 200 para available/unknown/unconfigured (status en el body); 503 solo si todos los configurados están degraded.
-  res.status(aiHealthHttpStatus(health.providers)).json({
+  return {
     ...health,
     policy: {
       provider: cfg.provider,
@@ -46,7 +31,43 @@ healthRouter.get('/api/ops/ai-health', (_req, res, next) => {
       billingBlocked: { gemini: isBillingBlocked('gemini'), claude: isBillingBlocked('claude'), openai_compat: isBillingBlocked('openai_compat') },
     },
     breakers: getBreakerStates(),
-  });
+  };
+}
+
+const isAdminAccess = (result: OperatorAccessResult) =>
+  result.ok && (result.access?.role === 'owner' || result.access?.role === 'admin');
+
+/**
+ * GET /api/health/ai (#379). Público: solo `{ status }`, sin alcance, proveedores ni
+ * política. Con credenciales de owner/admin válidas devuelve el detalle completo.
+ * Observación pasiva: nunca llama a un modelo.
+ */
+export function aiHealthHandler(resolveAccess: (req: Request) => Promise<OperatorAccessResult> = resolveOperatorAccess) {
+  return async (req: Request, res: Response) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Vary', 'Authorization, X-Operator-Key');
+    const health = getAiHealth();
+    const status = aiHealthHttpStatus(health.providers);
+    const hasCredentials = Boolean(req.headers.authorization || req.headers['x-operator-key']);
+    if (hasCredentials && isAdminAccess(await resolveAccess(req).catch(() => ({ ok: false, status: 401, error: '' }) as OperatorAccessResult))) {
+      res.status(status).json(aiHealthDetail());
+      return;
+    }
+    res.status(status).json({ status: health.status });
+  };
+}
+
+healthRouter.get('/api/health/ai', aiHealthHandler());
+
+// Diagnóstico completo: solo owner/admin autenticado (#379), nunca público ni para el rol operator.
+healthRouter.get('/api/ops/ai-health', (_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+}, requireAdmin, (_req, res) => {
+  const detail = aiHealthDetail();
+  res.setHeader('Cache-Control', 'no-store');
+  // 200 para available/unknown/unconfigured (status en el body); 503 solo si todos los configurados están degraded.
+  res.status(aiHealthHttpStatus(detail.providers)).json(detail);
 });
 
 healthRouter.get('/api/health', (req, res) => {
