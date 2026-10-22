@@ -2,7 +2,7 @@ import { google } from 'googleapis';
 import { GoogleGenAI } from '@google/genai';
 import { getFirestoreDb, findBookingByCodeOrEmail } from './bookingService';
 import { handleProviderAction, resolveOperationalProvider, resolveConfiguredProviderEmail } from './providerCommunicationService';
-import { isSensitiveCustomerEmail, looksLikeTravelRequest } from './emailRequestPolicy';
+import { isSensitiveCustomerEmail, looksLikeTravelRequest, newestEmailReply } from './emailRequestPolicy';
 import { customerEmailActionMenu, customerReviewAcknowledgement } from './customerEmailActionMenu';
 import { processChatInquiry, runTriage } from './aiAssistantService';
 import { resolveTravelerIdentity } from './travelerIdentityService';
@@ -476,6 +476,8 @@ export async function processEmailOperationsOnce() {
   for (const mail of messages) {
     try {
       if (!mail.id || !isEmail(mail.from)) continue;
+      // Strip previous outgoing menus and quoted signatures before intent detection.
+      mail.text = newestEmailReply(mail.text);
       const claimed = await claimEvent(mail.id, mail.provider, mail.from, mail.subject);
       if (claimed === 'terminal') {
         await recordEvent(mail, { status: 'needs_human_review', retryable: false, reason: 'Máximo de reintentos alcanzado.' });
