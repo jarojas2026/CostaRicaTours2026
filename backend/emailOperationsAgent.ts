@@ -126,7 +126,7 @@ async function classifyMail(subject: string, body: string, from: string): Promis
   if (/os-cr-[a-z0-9-]+/i.test(s) || /confirmad|disponible|no hay cupo|rechaz|accepted|confirmed|available|unavailable/i.test(s)) {
     return { kind: 'provider_response', confidence: .78, intent: 'provider_response', shouldAct: false, reason: 'Patrones de respuesta operativa.' };
   }
-  if (looksLikeTravelRequest(s)) {
+  if (looksLikeTravelRequest(s) || isSensitiveCustomerEmail(s)) {
     return { kind: 'customer_request', confidence: .76, intent: 'travel_request', shouldAct: true, reason: 'Solicitud turística detectada.' };
   }
   return { kind: 'unknown', confidence: .45, intent: 'general_inquiry', shouldAct: false, reason: 'Evidencia insuficiente.' };
@@ -138,7 +138,8 @@ function riskyCustomerRequest(message: string) {
 
 async function claimEvent(id: string, provider: MailProvider, from: string, subject: string): Promise<boolean | 'terminal'> {
   const db = getFirestoreDb();
-  if (!db) return true;
+  // Without durable Firestore idempotency, skip automated email handling.
+  if (!db) return false;
   const ref = db.collection('email_operation_events').doc((provider + '_' + id).replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 180));
   return db.runTransaction(async (tx: any) => {
     const snap = await tx.get(ref);
@@ -321,7 +322,7 @@ async function processProviderResponseEmail(mail: MailMessage, orderId: string) 
     type: 'provider.response.email.autonomous_completed',
     source: 'email_operations_agent',
     conversationId: result.order.bookingId,
-    payload: { provider: mail.provider, messageId: mail.id, from: mail.from, orderId, action }
+    payload: { provider: mail.provider, messageId: mail.id, orderId, action }
   }).catch(() => undefined);
   return { status: 'completed', orderId, action, customerNotified: customerNotification.status === 'sent' };
 }
@@ -426,7 +427,6 @@ async function processCustomerEmail(mail: MailMessage, classification: Classific
       provider: mail.provider,
       messageId: mail.id,
       threadId: mail.threadId || null,
-      from: mail.from,
       intent,
       confidence,
       goal: businessGoal.goal,
@@ -485,6 +485,14 @@ export async function processEmailOperationsOnce() {
         classification.kind = 'customer_request';
         classification.shouldAct = false;
         classification.reason = 'Solicitud de viajero; términos ambiguos de aceptación operativa.';
+      }
+      // Classify change/cancellation requests as customer service cases even
+      // when Gemini cannot identify a specific travel intent.
+      if (classification.kind === 'unknown' && isSensitiveCustomerEmail(`${mail.subject}\n${mail.text}`)) {
+        classification.kind = 'customer_request';
+        classification.confidence = 0.76;
+        classification.shouldAct = false;
+        classification.reason = 'Cambio o cancelación propuestos; requiere verificación.';
       }
       if (classification.kind === 'unknown' || classification.confidence < 0.70) {
         // Keep unclassified emails in the operational queue instead of silently
