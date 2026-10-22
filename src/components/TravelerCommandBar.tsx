@@ -5,6 +5,7 @@ import {
   Plane, ShieldCheck, WandSparkles, BriefcaseBusiness
 } from 'lucide-react';
 import type { Language } from '../types';
+import { MY_SECTIONS, MyLabel } from './MyBrand';
 
 interface TravelerCommandBarProps {
   language: Language;
@@ -40,7 +41,8 @@ export const TravelerCommandBar: React.FC<TravelerCommandBarProps> = ({
     {
       id: 'planner',
       icon: WandSparkles,
-      title: es ? 'Crear mi viaje' : 'Build my trip',
+      title: MY_SECTIONS.planner.label,
+      section: 'planner' as const,
       text: es ? 'Combina días, personas y experiencias' : 'Combine days, travelers and experiences',
       action: onOpenTripBuilder,
       accent: 'amber'
@@ -48,7 +50,8 @@ export const TravelerCommandBar: React.FC<TravelerCommandBarProps> = ({
     {
       id: 'trip',
       icon: BriefcaseBusiness,
-      title: es ? 'Mi viaje' : 'My trip',
+      title: MY_SECTIONS.trip.label,
+      section: 'trip' as const,
       text: es ? 'Checklist, presupuesto y notas' : 'Checklist, budget and notes',
       action: () => onNavigate('/trip'),
       accent: 'teal'
@@ -114,7 +117,7 @@ export const TravelerCommandBar: React.FC<TravelerCommandBarProps> = ({
                   </span>
                   <ArrowRight size={15} className="text-stone-600 group-hover:text-amber-300 group-hover:translate-x-1 transition-all" />
                 </div>
-                <div className="mt-4 text-sm font-black text-white">{item.title}</div>
+                <div className="mt-4 text-sm font-black text-white">{'section' in item && item.section ? <MyLabel section={item.section} /> : item.title}</div>
                 <div className="mt-1 text-[11px] leading-relaxed text-stone-500">{item.text}</div>
               </motion.button>
             );
