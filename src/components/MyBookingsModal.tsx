@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { BookingRequest, Language, Currency } from '../types';
 import { X, Ticket, Calendar, MapPin, Search, Compass, CheckCircle2, Loader2 } from 'lucide-react';
 
@@ -161,10 +160,6 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
             ? 'Una reserva solo aparece como confirmada después de la verificación de pago y la confirmación operativa del proveedor.'
             : 'A booking is shown as confirmed only after payment verification and the provider’s operational confirmation.'}
         </div>
-
-        <Link to="/admin" onClick={onClose} className="inline-flex rounded-xl border border-amber-400/40 px-4 py-3 text-sm font-bold text-amber-300">
-          {isEs ? 'Administración · Acceso del propietario' : 'Administration · Owner access'}
-        </Link>
 
         {bookings.length > 0 && (
           <div className="relative">
