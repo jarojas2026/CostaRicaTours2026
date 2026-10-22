@@ -14,7 +14,8 @@ import { getLangText, UI_TRANSLATIONS, formatCurrency } from '../utils/i18n';
 import { getEcoFactForTour, getEcoFactForRegion } from '../data/ecoFacts';
 import { AI_AGENTS, getAIAgentById } from '../data/aiAgentsData';
 import { ClaudeItineraryModal } from './ClaudeItineraryModal';
-import { getUsdToCrcRate, formatCrc } from '../utils/currencies';
+import { getUsdToCrcRate } from '../utils/currencies';
+import { useMoney } from '../hooks/useMoney';
 import { useChatAnalytics } from '../hooks/useChatAnalytics';
 import { useSpeechRecognition, speechSynthesisSupported } from '../hooks/useSpeechRecognition';
 import { buildTripInquiryHandoff, serverInquiryHandoff, type TripInquiryHandoff } from '../utils/tripRequestParser';
@@ -22,6 +23,8 @@ import { chatSessionHeaders, clearStoredChatSession, readStoredChatSession, requ
 
 interface AIAssistantProps {
   language: Language;
+  /** Moneda elegida en el sitio; los precios se convierten con la tasa real. */
+  currency?: string;
   onSelectTour: (tour: Tour) => void;
   userBookings?: BookingRequest[];
   onClose?: () => void;
@@ -59,12 +62,14 @@ interface Message {
 
 export const AIAssistant: React.FC<AIAssistantProps> = ({
   language,
+  currency = 'USD',
   onSelectTour,
   userBookings = [],
   onClose,
   onNavigateTab,
   onBack,
 }) => {
+  const money = useMoney(currency, language);
   const { tours: TOURS } = useTours();
   const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
   const { trackChatEvent } = useChatAnalytics();
@@ -873,7 +878,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
            <img src={foundTour.image} alt={foundTour.title.es} className="w-16 h-16 rounded-lg object-cover shadow-md border border-emerald-500/30" />
            <div className="flex-1">
              <h4 className="font-bold text-sm text-white leading-tight mb-1">{getLangText(foundTour.title, language)}</h4>
-             <span className="text-amber-400 font-black text-xs">{formatCurrency(foundTour.priceUSD, 'USD')}</span>
+             <span className="text-amber-400 font-black text-xs" title={money(foundTour.priceUSD).note || money(foundTour.priceUSD).notice}>{money(foundTour.priceUSD).primary}{money(foundTour.priceUSD).converted && <span className="ml-1 font-semibold text-stone-400">({money(foundTour.priceUSD).usd})</span>}</span>
            </div>
            <ArrowRight className="w-4 h-4 text-emerald-400" />
         </div>
@@ -1532,8 +1537,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               <div className="bg-[#020e08] p-3 rounded-xl border border-emerald-500/30 flex items-center justify-between text-xs">
                 <span className="text-stone-300 font-bold">{language === 'es' ? 'Total Calculado:' : 'Total Calculated:'}</span>
                 <span className="text-amber-400 font-black text-sm">
-                  ${(inChatBookingTour.priceUSD * inChatAdults).toFixed(2)} USD
-                  {getUsdToCrcRate() > 0 && ` (${formatCrc(inChatBookingTour.priceUSD * inChatAdults)} CRC)`}
+                  {(() => { const v = money(inChatBookingTour.priceUSD * inChatAdults); return v.converted ? `${v.primary} (${v.usd})` : v.usd; })()}
                 </span>
               </div>
 

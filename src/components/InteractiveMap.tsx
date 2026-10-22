@@ -47,6 +47,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { formatCurrency, getLangText } from '../utils/i18n';
+import { useMoney } from '../hooks/useMoney';
 import { APIProvider, Map as GoogleMap, AdvancedMarker, useMap as useGoogleMap } from '@vis.gl/react-google-maps';
 import { 
   MAP_TOURISM_SERVICES, 
@@ -210,6 +211,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   onOpenItineraryTab,
   onOpenLocalBusesModal
 }) => {
+  const money = useMoney(currency, language);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
   // Instancia reactiva del mapa para capas hijas (capas nacionales de POI)
@@ -1977,9 +1979,12 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 <span className="block text-[9px] font-bold text-emerald-300 uppercase tracking-widest leading-none mb-0.5">
                   {language === 'es' ? 'Desde' : 'From'}
                 </span>
-                <span className="block font-black text-white text-xl leading-none">
-                  {formatCurrency(selectedMapTour.priceUSD, currency)}
+                <span className="block font-black text-white text-xl leading-none" title={money(selectedMapTour.priceUSD).note || money(selectedMapTour.priceUSD).notice}>
+                  {money(selectedMapTour.priceUSD).primary}
                 </span>
+                {(money(selectedMapTour.priceUSD).note || money(selectedMapTour.priceUSD).notice) && (
+                  <span data-testid="rate-note" className="mt-1 block max-w-[12rem] text-[9px] leading-tight text-stone-300">{money(selectedMapTour.priceUSD).note || money(selectedMapTour.priceUSD).notice}</span>
+                )}
               </div>
             </div>
           </div>

@@ -505,6 +505,7 @@ export default function App() {
                 <Suspense fallback={<div className="py-24 text-center text-emerald-400">Cargando...</div>}>
                   <AIAssistant
                     language={language}
+                    currency={currency}
                     onSelectTour={(t) => navigate(`/tour/${t.id}`)}
                     userBookings={myBookings}
                   />
@@ -516,6 +517,7 @@ export default function App() {
               <Suspense fallback={<div className="py-24 text-center text-emerald-300">Cargando tu centro de viaje...</div>}>
                 <TravelerOSPage
                   language={language}
+                  currency={currency}
                   onOpenTripBuilder={() => setIsCustomFunnelOpen(true)}
                   onOpenBookings={() => setIsBookingsModalOpen(true)}
                   bookings={myBookings}

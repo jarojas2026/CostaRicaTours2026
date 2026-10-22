@@ -23,6 +23,7 @@ import {
 } from './bookingService';
 import { GEMINI_FUNCTION_DECLARATIONS, executeAgentTool } from './agentTools';
 import { getPlatformControls } from './platformControlService';
+import { getExchangeRates } from './exchangeRateService';
 
 // Registro en memoria de excepciones para diagnóstico del Supervisor
 const exceptionLogs: Array<{
@@ -1212,18 +1213,29 @@ export async function runBookingAgent(
     };
   }
 
-  // Detección de moneda solicitada (USD default, CRC, EUR, GBP)
+  // Detección de moneda solicitada (USD default, CRC, EUR, GBP). Las tasas salen
+  // de la fuente única (BCCR/BCE); si no hay tasa se muestra solo USD.
   let currencyLabel = 'USD';
-  let exchangeRate = 1.0;
-  if (lower.includes('colones') || lower.includes('crc') || lower.includes('₡')) {
-    currencyLabel = 'CRC';
-    exchangeRate = Number(process.env.USD_TO_CRC_RATE) || 0;
-  } else if (lower.includes('euro') || lower.includes('eur') || lower.includes('€')) {
-    currencyLabel = 'EUR';
-    exchangeRate = 0.92;
-  } else if (lower.includes('libras') || lower.includes('gbp') || lower.includes('£')) {
-    currencyLabel = 'GBP';
-    exchangeRate = 0.79;
+  if (lower.includes('colones') || lower.includes('crc') || lower.includes('₡')) currencyLabel = 'CRC';
+  else if (lower.includes('euro') || lower.includes('eur') || lower.includes('€')) currencyLabel = 'EUR';
+  else if (lower.includes('libras') || lower.includes('gbp') || lower.includes('£')) currencyLabel = 'GBP';
+  let exchangeRate = currencyLabel === 'USD' ? 1 : 0;
+  let rateNote = '';
+  if (currencyLabel !== 'USD') {
+    try {
+      const snapshot = await getExchangeRates();
+      const r = snapshot.rates[currencyLabel];
+      const src = snapshot.sources[currencyLabel];
+      if (r > 0 && src) {
+        exchangeRate = r;
+        rateNote = `Referencia en USD; tasa ${src.provider === 'BCCR' ? 'BCCR' : src.provider === 'BCE' ? 'BCE' : 'manual'} del ${src.rateDate}.`;
+      }
+    } catch { /* sin tasa: se muestra USD */ }
+    if (!(exchangeRate > 0)) {
+      rateNote = `Sin tipo de cambio disponible para ${currencyLabel}; se muestra USD.`;
+      currencyLabel = 'USD';
+      exchangeRate = 1;
+    }
   }
 
   // Identificar tours relevantes (máximo 2 a 3 sugerencias)
@@ -1258,11 +1270,9 @@ export async function runBookingAgent(
       // Verificación en tiempo real de disponibilidad
       const availCheck = await checkTourAvailability(tour.id, targetDate, '08:00 AM', detectedPax);
       const convertedPrice = Math.round(tour.priceUSD * exchangeRate);
-      const priceString = currencyLabel === 'CRC'
-        ? `₡${convertedPrice.toLocaleString('es-CR')} CRC (~$${tour.priceUSD} USD)`
-        : currencyLabel === 'USD'
-        ? `$${tour.priceUSD} USD`
-        : `${currencyLabel === 'EUR' ? '€' : '£'}${convertedPrice} ${currencyLabel} (~$${tour.priceUSD} USD)`;
+      const priceString = currencyLabel === 'USD'
+        ? `US$${tour.priceUSD}${rateNote ? ` (${rateNote})` : ''}`
+        : `≈ ${new Intl.NumberFormat(currencyLabel === 'CRC' ? 'es-CR' : 'en-US', { style: 'currency', currency: currencyLabel, maximumFractionDigits: 0 }).format(convertedPrice)} (US$${tour.priceUSD}; ${rateNote})`;
 
       const inclusions = tour.inclusions?.es?.slice(0, 3).join(', ') || 'Transporte, guía certificado y entradas';
       const whatToBring = tour.whatToBring?.es?.slice(0, 3).join(', ') || 'Ropa cómoda, calzado cerrado, repelente';
