@@ -103,12 +103,23 @@ export const TourQuoteRequestForm: React.FC<Props> = ({ tourId, language }) => {
       }
       if (!res.ok) throw new Error(String(res.status));
       const body = await res.json().catch(() => ({}));
-      // Solo una referencia corta del servidor (sin datos personales) si viene en la respuesta.
-      setReference(isPublicRequestReference(body?.reference) ? body.reference : null);
+      // HTTP 2xx alone does not prove a lead was recorded. Require the same
+      // public receipt issued by the persisted backend lead.
+      if (body?.success !== true || !isPublicRequestReference(body?.reference)) {
+        throw new Error('quote_receipt_not_verified');
+      }
+      setReference(body.reference);
       setState('sent');
-    } catch {
+    } catch (cause) {
       setState('idle');
-      setError(es ? 'No pudimos enviar la solicitud. Inténtalo de nuevo o escríbenos por WhatsApp.' : 'We could not send the request. Try again or message us on WhatsApp.');
+      const receiptMissing = cause instanceof Error && cause.message === 'quote_receipt_not_verified';
+      setError(receiptMissing
+        ? (es
+          ? 'No pudimos verificar la recepción de tu solicitud. No hay reserva confirmada; consulta con el equipo antes de enviarla de nuevo.'
+          : 'We could not verify receipt of your request. No booking is confirmed; contact our team before sending it again.')
+        : (es
+          ? 'No pudimos enviar la solicitud. Inténtalo de nuevo o escríbenos por WhatsApp.'
+          : 'We could not send the request. Try again or message us on WhatsApp.'));
     } finally {
       sending.current = false;
     }
