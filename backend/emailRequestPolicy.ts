@@ -5,7 +5,7 @@
  */
 export function looksLikeTravelRequest(input: unknown): boolean {
   const text = String(input ?? '');
-  return /reserv|availability|disponib|tour|excurs|traslado|transfer|cotiz|quote|price|precio|booking|viaje|travel|itinerario|hotel|lodging|alojamiento|pasajer|personas|travelers?|guests?|hu[eé]sped|servici|actividad|pregunt|consulta|somos\s+\d+/i.test(text);
+  return /reserv|availability|disponib|tour|excurs|traslado|transporte|transport|transfer|cotiz|quote|price|precio|booking|viaje|travel|itinerario|hotel|lodging|alojamiento|pasajer|personas|travelers?|guests?|hu[eé]sped|servici|actividad|pregunt|consulta|somos\s+\d+/i.test(text);
 }
 
 /** Customer email is *not* identity verification for a cancellation or change. */
