@@ -175,7 +175,7 @@ test('siembra: dry-run no escribe y es idempotente con --write', { skip: !fs.exi
   const snap = await store.get();
   const local = loadDenylist();
   assert.equal(snap.tourSources.length, docs.filter((d) => d.collection === INTERNAL_TOURS_COLLECTION).length);
-  assert.deepEqual(snap.denylist.names, local.names);
+  assert.deepEqual(snap.denylist.names, local?.names);
 });
 
 test('auditoría de privacidad sin data/internal: modo hash detecta lo mismo', () => {
@@ -191,7 +191,7 @@ test('auditoría de privacidad sin data/internal: modo hash detecta lo mismo', (
     assert.ok(!JSON.stringify(loaded).includes('Ficticia'), 'el archivo de hashes no contiene nombres');
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   const hashM = buildMatchers(null);
-  assert.equal(hashM.mode, 'hash');
+  assert.equal((hashM as { mode?: string }).mode, 'hash');
   const fakeHashM = hashMatchers(hashes);
   for (const text of ['Lo opera Operadora Ficticia.', 'Visita (Café Río (Uvita)) hoy', 'https://www.ficticia.example/tour']) {
     assert.ok(scanText(text, plainM).length > 0, `plain: ${text}`);
