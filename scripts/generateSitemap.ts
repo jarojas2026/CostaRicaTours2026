@@ -32,8 +32,21 @@ const STATIC_ROUTES: Array<[string, string, string]> = [
 ];
 
 const xmlEscape = (v: string) => v.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]!));
+/**
+ * hreflang (#381): la SPA sirve cada idioma en la misma ruta con `?lang=` (src/i18n/detect.ts,
+ * RouteMetadata.tsx). Cada <url> declara sus alternativas es/en y x-default (ruta sin parámetro),
+ * igual que el <head> de index.html y de las fichas /tour/:id prerenderizadas.
+ */
+export const SITEMAP_LANGUAGES = ['es', 'en'] as const;
+const alternates = (loc: string) => {
+  const href = xmlEscape(SITE_ORIGIN + loc);
+  return [
+    ...SITEMAP_LANGUAGES.map(lang => `<xhtml:link rel="alternate" hreflang="${lang}" href="${href}?lang=${lang}"/>`),
+    `<xhtml:link rel="alternate" hreflang="x-default" href="${href}"/>`,
+  ].join('');
+};
 const url = (loc: string, lastmod: string, changefreq: string, priority: string) =>
-  `  <url><loc>${xmlEscape(SITE_ORIGIN + loc)}</loc><lastmod>${lastmod}</lastmod><changefreq>${changefreq}</changefreq><priority>${priority}</priority></url>`;
+  `  <url><loc>${xmlEscape(SITE_ORIGIN + loc)}</loc><lastmod>${lastmod}</lastmod><changefreq>${changefreq}</changefreq><priority>${priority}</priority>${alternates(loc)}</url>`;
 
 export function tourSitemapPaths(tours: readonly Tour[]): string[] {
   const seen = new Set<string>();
@@ -56,7 +69,7 @@ export function buildSitemapXml(tours: readonly Tour[] = TOURS): string {
     const lastmod = /^\d{4}-\d{2}-\d{2}$/.test(tour.priceCheckedAt || '') ? tour.priceCheckedAt! : STATIC_LASTMOD;
     lines.push(url(p, lastmod, 'weekly', tour.catalogStatus === 'inquiry' ? '0.6' : '0.7'));
   }
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${lines.join('\n')}\n</urlset>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${lines.join('\n')}\n</urlset>\n`;
 }
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
