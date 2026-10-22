@@ -36,6 +36,12 @@ El fallback sin Gemini en `emailOperationsAgent.classifyMail()` interpreta palab
 
 **Propuesta técnica:** contrato `CustomerServiceRequest` vinculado al expediente (no reserva nueva), con `action = QUESTION | CHANGE_DATE | CHANGE_PARTY | ADD_SERVICE | SPECIAL_REQUIREMENT | CANCEL_REQUEST | COMPLAINT`, `status = received | identity_pending | awaiting_supplier | quote_revision | awaiting_customer_approval | approved | rejected | closed`, `idempotencyKey`, `correlationId`, actor autorizado, versión previa y cambio propuesto. Crear POST protegido por Firebase+propiedad del expediente (o sesión con reto/verificación adicional) con límites antiabuso; no exponer la identidad por un ID predecible. No crear estados finales en `bookings` hasta pasar la máquina existente y validación de precio/cupo, aprobación del viajero y política correspondiente. Cancelaciones, reembolsos y cobros siempre bajo puerta de control.
 
+### P0-4. PII en alertas/logs e interpolación HTML de correos
+
+Hallazgo revisado en `main`: `customerIntakeGateway.ts` incluye nombre/correo/teléfono y solicitud en alertas y metadatos; `emailOperationsAgent.ts` persiste from/to/subject en `email_operation_events`; `notificationService.ts` registra algunos destinatarios en logs SMTP. `providerCommunicationService.ts` inserta texto de pedido, cliente y punto de recogida directamente en HTML. Esto requiere límites de acceso, minimización, retención y escape HTML para campos no confiables. **No se ha constatado una fuga ni explotación real.**
+
+**Corrección propuesta:** proyecciones de alertas con ID/estado sin datos personales en métricas, detalle únicamente para roles autorizados, logs sin correos/teléfonos; función central segura de HTML/texto con tests de XSS-in-email (`<img>` convertido a texto), URLs verificadas y links privados fuera de telemetría. Evitar PII en comentarios de GitHub.
+
 ### P1-4. Emails de verdad interactivos, no botones decorativos
 
 `sendGmailReply` hoy responde `text/plain`; `providerCustomerNotice` da copys prudentes pero casi sin interacción. Proponer un **renderer de comunicación** ES/EN reutilizando `notificationService`, sin segundo motor. Correo responsive + versión texto, encabezado y referencia CRT, resumen editable, estado verdadero, “Siguiente paso” y una acción principal + enlaces secundarios a portal autenticado.
