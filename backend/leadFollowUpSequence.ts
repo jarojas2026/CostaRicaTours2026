@@ -162,7 +162,7 @@ export function advanceLeadFollowUpSequence(lead: SequenceLeadView, now: Date, c
   if (!isWithinBusinessHoursCR(now)) return null;
   const done = new Set(current.drafts.map(d => d.step));
   const added: SequenceDraft[] = [];
-  let temperature = current.temperature;
+  let temperature: LeadFollowUpSequence['temperature'] = current.temperature;
   for (const step of SEQUENCE_STEPS) {
     if (done.has(step) || stepDueAt(lead.createdAt, step).getTime() > now.getTime()) continue;
     if (step === 'ack_t0') {
