@@ -13,6 +13,7 @@ import { extractCustomerTravelRequirements } from './customerRequirementExtracto
 import { guardedGeminiGenerate } from './aiRouter';
 import { getLightModel } from './aiConfig';
 import { buildProviderCustomerNotice } from './providerCustomerNotice';
+import { redactProviderIdentityForCustomer } from './customerOutboundPrivacy';
 
 type MailProvider = 'gmail' | 'outlook';
 type MailMessage = {
@@ -343,15 +344,18 @@ async function processCustomerEmail(mail: MailMessage, classification: Classific
     channel: `email:${mail.provider}`
   });
   const autonomous = !risk && confidence >= 0.72;
+  const replyLanguage = requirements.language || (/[\u00C0-\u024F]/.test(mail.text) || /hola|reserva|precio|disponibilidad/i.test(mail.text) ? 'es' : 'en');
 
-  const assistant = await processChatInquiry(
+  const rawAssistant = await processChatInquiry(
     sourceMessage,
-    requirements.language || (/[\u00C0-\u024F]/.test(mail.text) || /hola|reserva|precio|disponibilidad/i.test(mail.text) ? 'es' : 'en'),
+    replyLanguage,
     [],
     'auto',
     identity.sessionId,
     { allowMutations: autonomous }
   );
+  // #377: el cliente nunca ve al proveedor en una respuesta por correo (la IA puede citarlo).
+  const assistant = { ...rawAssistant, reply: redactProviderIdentityForCustomer(rawAssistant.reply, { language: replyLanguage }) };
 
   await rememberTurn(identity.sessionId, { role: 'user', text: sourceMessage, agentId: 'email_operations_agent' }, { agentId: 'email_operations_agent', activeGoal: intent });
   await rememberTurn(identity.sessionId, { role: 'assistant', text: assistant.reply, agentId: assistant.agentId || 'concierge' }, { agentId: assistant.agentId || 'concierge', decision: autonomous ? 'email_autonomous' : 'email_review' });
@@ -378,7 +382,7 @@ async function processCustomerEmail(mail: MailMessage, classification: Classific
   const verificationNotice = businessGoal.pendingFacts.length
     ? `\n\nEstado de verificación: conservamos tus datos confirmados y estamos verificando ${businessGoal.pendingFacts.join(', ')}. No consideramos disponibilidad, tarifa final ni reserva como confirmadas hasta contar con evidencia operativa.`
     : '';
-  const reply = (assistant.reply.trim() || 'Recibimos tu solicitud y estamos verificando disponibilidad.') + verificationNotice;
+  const reply = redactProviderIdentityForCustomer((assistant.reply.trim() || 'Recibimos tu solicitud y estamos verificando disponibilidad.') + verificationNotice, { language: replyLanguage });
   if (mail.provider === 'gmail') {
     const client = await gmailClient();
     if (!client) throw new Error('Gmail no disponible para responder.');
