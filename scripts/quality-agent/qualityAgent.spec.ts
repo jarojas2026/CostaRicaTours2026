@@ -59,14 +59,37 @@ test('[alta] el CTA de envío muestra loading y success (envío interceptado)', 
 
 test('[media] moneda coherente en el catálogo', async ({ page }) => {
   test.info().annotations.push({ type: 'severity', description: 'media' });
-  await page.goto('/tours');
-  await page.waitForLoadState('networkidle').catch(() => {});
-  const text = await page.locator('main').innerText().catch(async () => page.locator('body').innerText());
+  await page.goto('/tours', { waitUntil: 'domcontentloaded' });
+  // Sin networkidle: el sitio mantiene conexiones abiertas (mapas, analítica).
+  await page.waitForTimeout(4000);
+  const text = await page.locator('body').innerText({ timeout: 10_000 });
   const usd = (text.match(/(US)?\$\s?\d/g) || []).length;
   const crc = (text.match(/₡\s?\d/g) || []).length;
   const eur = (text.match(/€\s?\d/g) || []).length;
   const kinds = [usd, crc, eur].filter(n => n > 0).length;
   expect(kinds, `mezcla de monedas sin selector: USD=${usd} CRC=${crc} EUR=${eur}`).toBeLessThanOrEqual(1);
+});
+
+test('[alta] el embudo "Cotizar" no avanza sin fecha (validación por paso)', async ({ page }) => {
+  test.info().annotations.push({ type: 'severity', description: 'alta' });
+  await page.addInitScript(() => { if (window === window.top) window.localStorage.setItem('cookie-consent', 'essential'); });
+  await page.goto('/');
+  await page.getByRole('button', { name: /^Cotizar$|^Get a quote$/ }).first().click();
+  const next = page.getByTestId('funnel-next');
+  await expect(next).toBeVisible();
+  await next.click();
+  await expect(page.getByTestId('funnel-error-startDate')).toBeVisible();
+  await expect(page.getByText(/Paso 1 de 4|Step 1 of 4/)).toBeVisible();
+});
+
+test('[media] las páginas legales cargan', async ({ page }) => {
+  test.info().annotations.push({ type: 'severity', description: 'media' });
+  for (const path of ['/privacy', '/terms']) {
+    const res = await page.goto(path, { waitUntil: 'domcontentloaded' });
+    expect(res?.status() ?? 0, `${path} responde`).toBeLessThan(400);
+    await expect(page.getByTestId('not-found-page')).toHaveCount(0);
+    await expect(page.locator('h1').first()).toBeVisible();
+  }
 });
 
 test('[alta] los deep-links de WhatsApp apuntan al número oficial', async ({ page }) => {
