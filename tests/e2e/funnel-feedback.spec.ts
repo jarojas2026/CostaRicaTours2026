@@ -54,9 +54,9 @@ test('custom funnel blocks empty steps and shows loading then success with a ref
   await expect(page.getByTestId('funnel-error-consent')).toBeVisible();
   expect(intakeBodies).toHaveLength(0);
 
-  await page.getByRole('textbox', { name: 'Nombre responsable' }).fill('Viajero Prueba');
-  await page.getByRole('textbox', { name: 'Email' }).fill('viajero@example.com');
-  await page.getByText(/Autorizo el tratamiento de mi nombre, correo, teléfono/).click();
+  await page.locator('[data-funnel-field="customerName"]').fill('Viajero Prueba');
+  await page.locator('[data-funnel-field="customerEmail"]').fill('viajero@example.com');
+  await page.locator('[data-funnel-field="consent"]').check();
   await page.getByTestId('funnel-submit').click();
 
   await expect(page.getByTestId('funnel-submit-loading')).toBeVisible();
@@ -75,9 +75,9 @@ test('custom funnel shows a visible error with retry when the API fails', async 
 
   await openFunnel(page);
   await fillUntilStep4(page);
-  await page.getByRole('textbox', { name: 'Nombre responsable' }).fill('Viajero Prueba');
-  await page.getByRole('textbox', { name: 'Email' }).fill('viajero@example.com');
-  await page.getByText(/Autorizo el tratamiento de mi nombre, correo, teléfono/).click();
+  await page.locator('[data-funnel-field="customerName"]').fill('Viajero Prueba');
+  await page.locator('[data-funnel-field="customerEmail"]').fill('viajero@example.com');
+  await page.locator('[data-funnel-field="consent"]').check();
   await page.getByTestId('funnel-submit').click();
 
   await expect(page.getByTestId('funnel-submit-error')).toBeVisible();
