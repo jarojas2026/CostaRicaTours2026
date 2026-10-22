@@ -23,7 +23,10 @@
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Costa Rica Tours — Tours, Naturaleza y Planificación de Viaje" />
     <meta property="og:description" content="Explora experiencias en Costa Rica, prepara tu itinerario y solicita disponibilidad con asistencia digital durante el proceso de reserva." />
-    <meta property="og:image" content="/pwa-512x512.png" />
+    <meta property="og:image" content="https://costaricatours2026.vercel.app/pwa-512x512.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content="Costa Rica Tours" />
     <meta property="og:locale" content="es_CR" />
     <meta property="og:locale:alternate" content="en_US" />
     <link rel="alternate" hreflang="es" href="https://costaricatours2026.vercel.app/?lang=es" />
@@ -31,41 +34,55 @@
     <link rel="alternate" hreflang="x-default" href="https://costaricatours2026.vercel.app/" />
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="Costa Rica Tours — Experiencias y Asistencia de Viaje" />
     <meta name="twitter:description" content="Tours, transporte, planificación y asistencia digital para viajar por Costa Rica." />
-    <meta name="twitter:image" content="/pwa-512x512.png" />
+    <meta name="twitter:image" content="https://costaricatours2026.vercel.app/pwa-512x512.png" />
+    <meta name="twitter:image:alt" content="Costa Rica Tours" />
 
     <!-- Schema.org JSON-LD for Modern Search & AI Discovery -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "TravelAgency",
-      "name": "Costa Rica Tours",
-      "url": "https://costaricatours2026.vercel.app/",
-      "logo": "https://costaricatours2026.vercel.app/pwa-512x512.png",
-      "description": "Plataforma de planificación y solicitudes de reserva para tours, transporte, naturaleza y experiencias en Costa Rica. La disponibilidad operativa se confirma durante el proceso de reserva.",
-      "currenciesAccepted": "USD, CRC",
-      "paymentAccepted": "Credit Card, PayPal, Stripe",
-      "priceRange": "$$$",
-      "areaServed": {
-        "@type": "Country",
-        "name": "Costa Rica"
-      },
-      "knowsAbout": [
-        "Volcán Arenal",
-        "Parque Nacional Manuel Antonio",
-        "Bosque Nuboso Monteverde",
-        "Canales de Tortuguero",
-        "Río Celeste",
-        "Ecoturismo en Costa Rica"
-      ],
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "telephone": "+506-8795-9148",
-        "contactType": "customer service",
-        "availableLanguage": ["Spanish", "English", "German", "French", "Chinese", "Japanese"]
-      }
+      "@graph": [
+        {
+          "@type": "TravelAgency",
+          "@id": "https://costaricatours2026.vercel.app/#organization",
+          "name": "Costa Rica Tours",
+          "url": "https://costaricatours2026.vercel.app/",
+          "logo": "https://costaricatours2026.vercel.app/pwa-512x512.png",
+          "image": "https://costaricatours2026.vercel.app/pwa-512x512.png",
+          "description": "Plataforma de planificación y solicitudes de reserva para tours, transporte, naturaleza y experiencias en Costa Rica. La disponibilidad operativa se confirma durante el proceso de reserva.",
+          "currenciesAccepted": "USD, CRC",
+          "paymentAccepted": "Credit Card, PayPal, Stripe",
+          "areaServed": {
+            "@type": "Country",
+            "name": "Costa Rica"
+          },
+          "knowsAbout": [
+            "Volcán Arenal",
+            "Parque Nacional Manuel Antonio",
+            "Bosque Nuboso Monteverde",
+            "Canales de Tortuguero",
+            "Río Celeste",
+            "Ecoturismo en Costa Rica"
+          ],
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+506-8795-9148",
+            "contactType": "customer service",
+            "availableLanguage": ["Spanish", "English"]
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://costaricatours2026.vercel.app/#website",
+          "name": "Costa Rica Tours",
+          "url": "https://costaricatours2026.vercel.app/",
+          "inLanguage": ["es", "en"],
+          "publisher": { "@id": "https://costaricatours2026.vercel.app/#organization" }
+        }
+      ]
     }
     </script>
 

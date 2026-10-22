@@ -5,5 +5,7 @@ Disallow: /operations
 Disallow: /api/
 Disallow: /operator
 Disallow: /provider
+Disallow: /ops
+Disallow: /workspace
 
 Sitemap: https://costaricatours2026.vercel.app/sitemap.xml
