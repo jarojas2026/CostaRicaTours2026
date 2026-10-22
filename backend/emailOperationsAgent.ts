@@ -3,6 +3,7 @@ import { GoogleGenAI } from '@google/genai';
 import { getFirestoreDb, findBookingByCodeOrEmail } from './bookingService';
 import { handleProviderAction, resolveOperationalProvider, resolveConfiguredProviderEmail } from './providerCommunicationService';
 import { isSensitiveCustomerEmail, looksLikeTravelRequest } from './emailRequestPolicy';
+import { customerEmailActionMenu, customerReviewAcknowledgement } from './customerEmailActionMenu';
 import { processChatInquiry, runTriage } from './aiAssistantService';
 import { resolveTravelerIdentity } from './travelerIdentityService';
 import { rememberTurn } from './memoryService';
@@ -385,13 +386,39 @@ async function processCustomerEmail(mail: MailMessage, classification: Classific
       reason: risk ? 'Solicitud sensible requiere revisión.' : 'Confianza insuficiente para mutación automática.',
       aiReply: assistant.reply.slice(0, 6000)
     });
-    return { status: 'needs_human_review', reply: assistant.reply, intent, confidence, risk, businessGoal };
+    // Fast and safe acknowledgement for date, party-size, extras and cancellation
+    // requests. Keep the event in the human queue and leave the mailbox unread.
+    // Neither the AI nor this email can amend a booking or approve a refund.
+    let reviewAcknowledgementSent = false;
+    if (risk) {
+      try {
+        const reviewReply = customerReviewAcknowledgement(replyLanguage);
+        if (mail.provider === 'gmail') {
+          const client = await gmailClient();
+          if (!client) throw new Error('gmail_transport_unavailable');
+          await sendGmailReply(client, mail, reviewReply);
+        } else {
+          const token = await outlookAccessToken();
+          if (!token) throw new Error('outlook_transport_unavailable');
+          await sendOutlookReply(token, mail, reviewReply);
+        }
+        reviewAcknowledgementSent = true;
+      } catch {
+        // Do not silently mark a pending request as served when outbound fails.
+      }
+      await recordEvent(mail, { reviewAcknowledgementSent });
+    }
+    return { status: 'needs_human_review', reply: assistant.reply, intent, confidence, risk, reviewAcknowledgementSent, businessGoal };
   }
 
   const verificationNotice = businessGoal.pendingFacts.length
     ? `\n\nEstado de verificación: conservamos tus datos confirmados y estamos verificando ${businessGoal.pendingFacts.join(', ')}. No consideramos disponibilidad, tarifa final ni reserva como confirmadas hasta contar con evidencia operativa.`
     : '';
-  const reply = redactProviderIdentityForCustomer((assistant.reply.trim() || 'Recibimos tu solicitud y estamos verificando disponibilidad.') + verificationNotice, { language: replyLanguage });
+  const reply = redactProviderIdentityForCustomer(
+    (assistant.reply.trim() || 'Recibimos tu solicitud y estamos verificando disponibilidad.') +
+    verificationNotice + '\n\n' + customerEmailActionMenu(replyLanguage),
+    { language: replyLanguage }
+  );
   if (mail.provider === 'gmail') {
     const client = await gmailClient();
     if (!client) throw new Error('Gmail no disponible para responder.');
