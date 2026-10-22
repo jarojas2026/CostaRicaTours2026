@@ -45,10 +45,7 @@ const DIFFICULTY_LABEL: Record<Tour['difficulty'], { es: string; en: string }> =
 
 const durationLabel = (h: number) => {
   if (!h) return { es: 'Duración por confirmar', en: 'Duration to be confirmed' };
-  if (h >= 24) {
-    const d = Math.round(h / 24);
-    return { es: `${d} día${d > 1 ? 's' : ''}`, en: `${d} day${d > 1 ? 's' : ''}` };
-  }
+  // Elapsed hours do not establish the number of calendar days in a package.
   const n = Number.isInteger(h) ? String(h) : h.toFixed(1);
   return { es: `${n} h`, en: `${n} hrs` };
 };
