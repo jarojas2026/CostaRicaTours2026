@@ -1,0 +1,47 @@
+name: QualityAgent (diario)
+
+# Auditoría diaria de solo lectura contra producción (#393).
+# Los envíos de formularios se interceptan en el navegador: no crea leads reales.
+# Si algo falla abre o actualiza un issue con severidad. Nunca hace merges.
+on:
+  schedule:
+    - cron: "0 14 * * *" # 08:00 America/Costa_Rica
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: quality-agent
+  cancel-in-progress: false
+
+jobs:
+  quality:
+    name: Playwright contra producción
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Instalar dependencias
+        run: npm ci --include=optional --legacy-peer-deps --ignore-scripts
+      - name: Instalar Chromium de Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Ejecutar verificaciones
+        id: qa
+        continue-on-error: true
+        run: npx playwright test -c scripts/quality-agent/playwright.config.ts
+        env:
+          QUALITY_BASE_URL: https://costaricatours2026.vercel.app
+      - name: Abrir o actualizar issue
+        if: always()
+        run: node scripts/quality-agent/report.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Marcar fallo si hubo hallazgos
+        if: steps.qa.outcome == 'failure'
+        run: exit 1
