@@ -197,6 +197,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'tours', to: '/tours', label: 'Tours', icon: Compass, match: ['tours', 'tour'] },
     { id: 'destinations', to: '/destinations', label: es ? 'Destinos' : 'Destinations', icon: MapPin, match: ['destinations'] },
     { id: 'map', to: '/map', label: es ? 'Mapa' : 'Map', icon: Map, match: ['map'] },
+    { id: 'flights', to: '/flights', label: es ? 'Vuelos' : 'Flights', icon: Plane, match: ['flights'] },
     { id: 'ai', to: '/ai', label: es ? 'Asistente' : 'Assistant', icon: Bot, match: ['ai'] },
   ];
 
@@ -205,7 +206,6 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'activities', to: '/activities', label: es ? 'Actividades' : 'Activities', icon: Palette },
     { id: 'blog', to: '/blog', label: 'Blog', icon: Mail },
     { id: 'culture', to: '/culture', label: es ? 'Cultura tica' : 'Tico culture', icon: Coffee },
-    { id: 'flights', to: '/flights', label: es ? 'Vuelos' : 'Flights', icon: Plane },
     { id: 'tools', to: '/tools', label: es ? 'Shuttles y guía' : 'Shuttles & guide', icon: Bus },
   ];
 

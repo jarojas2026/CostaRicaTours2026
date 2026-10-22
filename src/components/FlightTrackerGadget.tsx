@@ -5,7 +5,7 @@ import {
   Info, Compass, ChevronDown, Award, ExternalLink, Bot, HelpCircle, Shield, CreditCard
 } from 'lucide-react';
 import { FlightRoute, Language, Currency, BookingRequest } from '../types';
-import { FLIGHT_ROUTES, ORIGIN_COUNTRIES, OriginCountryInfo, detectUserOriginCountry } from '../data/flightsData';
+import { FLIGHT_REFERENCE_LABELS, FLIGHT_ROUTES, ORIGIN_COUNTRIES, OriginCountryInfo, detectUserOriginCountry } from '../data/flightsData';
 import { formatCurrency, getLangText } from '../utils/i18n';
 
 const FlightBookingModal = lazy(() => import('./FlightBookingModal').then(m => ({ default: m.FlightBookingModal })));
@@ -255,8 +255,8 @@ export const FlightTrackerGadget: React.FC<FlightTrackerGadgetProps> = ({
                 </div>
               </div>
 
-              {/* Times Timeline */}
-              <div className="flex items-center justify-between sm:justify-center gap-4 sm:gap-6 bg-slate-900/90 p-3 sm:p-4 rounded-xl border border-slate-700/60 min-w-[270px]">
+              {/* Times Timeline (horario de referencia) */}
+              <div title={FLIGHT_REFERENCE_LABELS.schedule[language === 'es' ? 'es' : 'en']} className="flex items-center justify-between sm:justify-center gap-4 sm:gap-6 bg-slate-900/90 p-3 sm:p-4 rounded-xl border border-slate-700/60 min-w-[270px]">
                 <div className="text-left">
                   <span className="text-xl sm:text-2xl font-black text-emerald-400 font-mono block">
                     {route.departureTime}
@@ -277,6 +277,9 @@ export const FlightTrackerGadget: React.FC<FlightTrackerGadgetProps> = ({
                   <div className="w-full h-0.5 bg-slate-700 relative flex items-center justify-center">
                     <Plane className="w-3.5 h-3.5 text-emerald-400 absolute" />
                   </div>
+                  <span data-testid="flight-reference-schedule" className="text-[9px] text-amber-300 font-semibold mt-1">
+                    {FLIGHT_REFERENCE_LABELS.schedule[language === 'es' ? 'es' : 'en']}
+                  </span>
                   <span className="text-[9px] text-slate-400 font-medium mt-1">
                     {route.stops === 0 ? (language === 'es' ? 'Directo' : 'Direct') : 'Con escala'}
                   </span>
@@ -299,7 +302,7 @@ export const FlightTrackerGadget: React.FC<FlightTrackerGadgetProps> = ({
               <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between gap-3 border-t lg:border-t-0 border-slate-700/60 pt-3 lg:pt-0">
                 <div className="text-left lg:text-right">
                   <span className="text-[10px] text-slate-400 font-medium block">
-                    {language === 'es' ? 'Desde (Tasas Incluidas)' : 'From (Taxes Included)'}
+                    <span data-testid="flight-reference-price">{FLIGHT_REFERENCE_LABELS.price[language === 'es' ? 'es' : 'en']}</span>
                   </span>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl font-black text-emerald-400">
