@@ -20,7 +20,7 @@ async function fillUntilStep4(page: Page) {
   await next.click();
   await expect(page.getByTestId('funnel-error-startDate')).toBeVisible();
   await expect(page.getByText(/Paso 1 de 4/)).toBeVisible();
-  await page.locator('input[type="date"]').fill('2027-03-15');
+  await page.locator('[data-funnel-field="startDate"]').fill('2027-03-15');
   await expect(page.getByTestId('funnel-error-startDate')).toHaveCount(0);
   await next.click();
   await expect(page.getByText(/Paso 2 de 4/)).toBeVisible();
