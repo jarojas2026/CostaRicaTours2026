@@ -7,6 +7,8 @@ for (const width of [320, 375, 768, 1024, 1366, 1920]) {
     test(`unobstructed contact navigation at ${width}px (${language})`, async ({ page, context, consoleProblems }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.addInitScript((lang) => {
+        // Sandboxed third-party map frames cannot access localStorage.
+        if (window !== window.top) return;
         localStorage.setItem('cookie-consent', 'essential');
         localStorage.setItem('crt_language', lang);
       }, language);
