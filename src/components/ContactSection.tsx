@@ -92,12 +92,12 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ language }) => {
             <HoneypotField value={honeypot} onChange={setHoneypot} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label htmlFor="contact-name" className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-4">Nombre</label>
+                <label htmlFor="contact-name" className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-4">{language === 'es' ? 'Nombre' : 'Name'}</label>
                 <input 
                   id="contact-name"
                   type="text" 
                   className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                  placeholder="Tu nombre" value={name} onChange={e=>setName(e.target.value)}
+                  placeholder={language === 'es' ? 'Tu nombre' : 'Your name'} value={name} onChange={e=>setName(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -107,7 +107,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ language }) => {
                   type="email" 
                   required={!phone.trim()}
                   className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                  placeholder="hola@ejemplo.com" value={email} onChange={e=>setEmail(e.target.value)}
+                  placeholder={language === 'es' ? 'hola@ejemplo.com' : 'hello@example.com'} value={email} onChange={e=>setEmail(e.target.value)}
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
@@ -126,17 +126,17 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ language }) => {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="contact-subject" className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-4">Asunto</label>
+              <label htmlFor="contact-subject" className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-4">{language === 'es' ? 'Asunto' : 'Subject'}</label>
               <select id="contact-subject" value={subject} onChange={e=>setSubject(e.target.value)} className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500 transition-colors appearance-none">
-                <option>{language === 'es' ? 'Consulta de disponibilidad' : 'Availability Check'}</option>
-                <option>{language === 'es' ? 'Cotización a medida' : 'Custom Quote'}</option>
-                <option>{language === 'es' ? 'Soporte técnico' : 'Technical Support'}</option>
-                <option>{language === 'es' ? 'Otros' : 'Other'}</option>
+                <option value="Consulta de disponibilidad">{language === 'es' ? 'Consulta de disponibilidad' : 'Availability Check'}</option>
+                <option value="Cotización a medida">{language === 'es' ? 'Cotización a medida' : 'Custom Quote'}</option>
+                <option value="Soporte técnico">{language === 'es' ? 'Soporte técnico' : 'Technical Support'}</option>
+                <option value="Otros">{language === 'es' ? 'Otros' : 'Other'}</option>
               </select>
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="contact-message" className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-4">Mensaje</label>
+              <label htmlFor="contact-message" className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-4">{language === 'es' ? 'Mensaje' : 'Message'}</label>
               <textarea 
                 id="contact-message"
                 rows={4}

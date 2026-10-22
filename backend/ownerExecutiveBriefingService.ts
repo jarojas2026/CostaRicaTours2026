@@ -25,7 +25,7 @@ type Input = {
   generatedAt?: unknown;
   alerts?: { critical?: unknown; unresolved?: unknown };
   business?: { pendingBookings?: unknown; confirmedBookings?: unknown };
-  journeyPipeline?: { total?: unknown; readyToQuote?: unknown; recovery?: unknown };
+  journeyPipeline?: { state?: unknown; source?: unknown; total?: unknown; readyToQuote?: unknown; recovery?: unknown };
   agentOffice?: { source?: unknown; registered?: unknown; recentlyObserved?: unknown; active?: unknown; noSignal?: unknown; waitingApproval?: unknown };
 };
 
@@ -40,8 +40,10 @@ function fact(path: string, value: unknown, quality: BriefingEvidence['quality']
 export function buildEvidenceBasedOwnerBriefing(input: Input) {
   const alerts = fact('alerts.critical', input.alerts?.critical, 'unverified');
   const pending = fact('business.pendingBookings', input.business?.pendingBookings, 'unverified');
-  const ready = fact('journeyPipeline.readyToQuote', input.journeyPipeline?.readyToQuote, 'sample');
-  const recovery = fact('journeyPipeline.recovery', input.journeyPipeline?.recovery, 'sample');
+  const journeysObserved = input.journeyPipeline?.state === 'sample'
+    && input.journeyPipeline?.source === 'firestore:traveler_journeys';
+  const ready = fact('journeyPipeline.readyToQuote', journeysObserved ? input.journeyPipeline?.readyToQuote : null, journeysObserved ? 'sample' : 'unavailable');
+  const recovery = fact('journeyPipeline.recovery', journeysObserved ? input.journeyPipeline?.recovery : null, journeysObserved ? 'sample' : 'unavailable');
   const officeReady = input.agentOffice?.source === 'firestore_agent_registry_and_events';
   const noSignal = fact('agentOffice.noSignal', officeReady ? input.agentOffice?.noSignal : null, officeReady ? 'sample' : 'unavailable');
   const working = fact('agentOffice.active', officeReady ? input.agentOffice?.active : null, officeReady ? 'sample' : 'unavailable');

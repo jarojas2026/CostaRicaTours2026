@@ -10,6 +10,7 @@
 ## Trust contract
 - `execution: 'none'`, each recommendation `execution:'proposal_only'`: **no actions have been executed**.
 - `uncertified_bounded_sources`: `getAllBookings` may fallback to memory and journey counters are bounded.
+- Journey metrics require `state: 'sample'` and `source: 'firestore:traveler_journeys'`. Missing Firestore or a failed query produces `null`/`unavailable`; a successful empty query produces sample counts of zero. Both the existing funnel and the executive briefing preserve this distinction.
 - Revenue and margin are explicitly UNKNOWN; value of confirmed bookings != collected cash.
 - `no_signal` means missing fresh heartbeat and cannot be interpreted as worker failure.
 - All actions affecting the company must pass existing `agentActionGate`, permissions, approval and domain services.
@@ -30,3 +31,4 @@ These are separate branches and need conflict review before merging; do not conf
 
 ## Rollback
 Revert this PR. No migration, no persistent business effect, no new agents created.
+

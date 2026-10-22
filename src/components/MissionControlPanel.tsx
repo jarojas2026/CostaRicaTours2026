@@ -9,15 +9,13 @@ type Status =
 type Run = {
   id: string;
   agentId: string;
-  objective: string;
   status: Status;
   createdAt: string | null;
   updatedAt: string | null;
   durationMs: number | null;
-  errorCode: string | null;
   lastStepSequence: number;
 };
-type Approval = { id: string; action: string; status: string; summary: string; createdAt: string | null };
+type Approval = { id: string; action: string; status: string; createdAt: string | null };
 type Plan = { id: string; status: string; delegatedTasks: number; awaitingApproval: number; createdAt: string | null };
 type MissionSnapshot = {
   generatedAt: string;
@@ -28,6 +26,27 @@ type MissionSnapshot = {
   runSample: null | { sampled: number; byStatus: Record<Status, number>; unfinishedInSample: number };
   approvals: Approval[];
   plans: Plan[];
+};
+
+const ACTION_LABELS: Record<string, { es: string; en: string }> = {
+  payment: { es: 'Pago', en: 'Payment' },
+  refund: { es: 'Reembolso', en: 'Refund' },
+  payout: { es: 'Liquidación a proveedor', en: 'Provider payout' },
+  customer_message: { es: 'Mensaje al cliente', en: 'Customer message' },
+  mass_message: { es: 'Mensaje masivo', en: 'Mass message' },
+  price_change: { es: 'Cambio de precio', en: 'Price change' },
+  publication: { es: 'Publicación', en: 'Publication' },
+};
+const OPERATION_STATUS_LABELS: Record<string, { es: string; en: string }> = {
+  pending: { es: 'Pendiente', en: 'Pending' },
+  approved: { es: 'Aprobada', en: 'Approved' },
+  rejected: { es: 'Rechazada', en: 'Rejected' },
+  consumed: { es: 'Utilizada', en: 'Used' },
+  planned: { es: 'Planificado', en: 'Planned' },
+  in_progress: { es: 'En curso', en: 'In progress' },
+  waiting_approval: { es: 'Esperando aprobación', en: 'Awaiting approval' },
+  completed: { es: 'Completado', en: 'Completed' },
+  needs_owner: { es: 'Requiere al propietario', en: 'Owner needed' },
 };
 
 function DateTime({ value, language }: { value: string | null; language: Language }) {
@@ -132,11 +151,9 @@ export function MissionControlPanel({ language }: { language: Language }) {
                     <span className="font-bold text-white">{run.agentId}</span>
                     <span className="text-amber-200">{statusLabel[run.status] || run.status}</span>
                   </div>
-                  <p className="mt-1 break-words text-sm text-stone-300">{run.objective || '—'}</p>
                   <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-400">
                     <span><Clock3 size={13} className="mr-1 inline" /><DateTime language={language} value={run.updatedAt} /></span>
                     <span>{es ? 'Pasos' : 'Steps'}: {run.lastStepSequence}</span>
-                    {run.errorCode && <span className="text-rose-200">{run.errorCode}</span>}
                   </div>
                 </li>)}
               </ul>}
@@ -150,8 +167,7 @@ export function MissionControlPanel({ language }: { language: Language }) {
                 ? <p className="mt-3 text-stone-300">{es ? 'Sin solicitudes registradas en la muestra.' : 'No requests in the sampled records.'}</p>
                 : <ul className="mt-3 max-h-60 space-y-2 overflow-auto">{snapshot.approvals.map(a =>
                   <li key={a.id} className="rounded-lg bg-black/20 p-3 text-sm">
-                    <span className="font-semibold text-white">{a.action}</span><span className="float-right text-amber-200">{a.status}</span>
-                    <p className="mt-1 break-words text-stone-300">{a.summary}</p>
+                    <span className="font-semibold text-white">{ACTION_LABELS[a.action]?.[es ? 'es' : 'en'] ?? (es ? 'Acción desconocida' : 'Unknown action')}</span><span className="float-right text-amber-200">{OPERATION_STATUS_LABELS[a.status]?.[es ? 'es' : 'en'] ?? (es ? 'Estado desconocido' : 'Unknown status')}</span>
                   </li>)}</ul>}
             <a href="/admin/ai-command" className="mt-3 inline-block text-sm font-semibold text-amber-300 hover:underline">
               {es ? 'Abrir sala de decisiones' : 'Open decisions room'}
@@ -163,7 +179,7 @@ export function MissionControlPanel({ language }: { language: Language }) {
               : snapshot.plans.length === 0 ? <p className="mt-3 text-stone-300">{es ? 'No hay planes registrados en la muestra.' : 'No recorded plans in sample.'}</p>
               : <ul className="mt-3 max-h-60 space-y-2 overflow-auto">{snapshot.plans.map(p =>
                 <li key={p.id} className="rounded-lg bg-black/20 p-3 text-sm">
-                  <div className="flex flex-wrap justify-between gap-2"><span className="font-bold text-white">{p.id.slice(0, 26)}</span><span className="text-amber-200">{p.status}</span></div>
+                  <div className="flex flex-wrap justify-between gap-2"><span className="font-bold text-white">{p.id.slice(0, 26)}</span><span className="text-amber-200">{OPERATION_STATUS_LABELS[p.status]?.[es ? 'es' : 'en'] ?? (es ? 'Estado desconocido' : 'Unknown status')}</span></div>
                   <div className="mt-1 text-stone-300">{p.delegatedTasks} {es ? 'delegaciones' : 'delegations'} · {p.awaitingApproval} {es ? 'aprobaciones solicitadas' : 'approval requests'}</div>
                 </li>)}</ul>}
           </div>
@@ -175,3 +191,4 @@ export function MissionControlPanel({ language }: { language: Language }) {
     </>}
   </section>;
 }
+

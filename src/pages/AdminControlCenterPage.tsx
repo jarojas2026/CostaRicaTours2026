@@ -190,9 +190,12 @@ export const AdminControlCenterPage: React.FC<{ language: Language }> = ({ langu
           <Stat icon={Activity} value={b.upcoming72h} label={es ? 'Próximas 72 h' : 'Next 72 h'} />
         </div>
         <Card>
-          <h3 className="text-xl font-black text-white">{es ? 'Embudo de viajeros' : 'Traveler funnel'} <span className="text-base font-normal text-stone-400">· {pipe.total || 0}</span></h3>
+          <h3 className="text-xl font-black text-white">{es ? 'Embudo de viajeros' : 'Traveler funnel'} <span className="text-base font-normal text-stone-400">· {pipe.total ?? '—'}</span></h3>
+          <p className="mt-2 text-sm text-stone-400">{pipe.state === 'sample'
+            ? (es ? 'Muestra de los últimos 100 expedientes; no es un total histórico.' : 'Sample of the latest 100 journeys; not a lifetime total.')
+            : (es ? 'Fuente de expedientes no disponible.' : 'Journey source unavailable.')}</p>
           <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[[es ? 'Descubrimiento' : 'Discovery', pipe.discovery], [es ? 'Verificación' : 'Verification', pipe.verification], [es ? 'Listo para cotizar' : 'Ready to quote', pipe.readyToQuote], [es ? 'Recuperación' : 'Recovery', pipe.recovery]].map(([k, v]: any) => <div key={k} className="rounded-xl bg-black/25 p-4"><div className="text-sm text-stone-300">{k}</div><div className="mt-1 text-2xl font-black text-white">{v || 0}</div></div>)}
+            {[[es ? 'Descubrimiento' : 'Discovery', pipe.discovery], [es ? 'Verificación' : 'Verification', pipe.verification], [es ? 'Listo para cotizar' : 'Ready to quote', pipe.readyToQuote], [es ? 'Recuperación' : 'Recovery', pipe.recovery]].map(([k, v]: any) => <div key={k} className="rounded-xl bg-black/25 p-4"><div className="text-sm text-stone-300">{k}</div><div className="mt-1 text-2xl font-black text-white">{v ?? '—'}</div></div>)}
           </div>
         </Card>
         <CommerceOperationsPanel language={language} />
@@ -307,3 +310,4 @@ export const AdminControlCenterPage: React.FC<{ language: Language }> = ({ langu
     </div>
   </div>;
 };
+

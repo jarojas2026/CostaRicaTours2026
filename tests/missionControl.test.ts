@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { summarizeMissionRunSample } from '../backend/missionControlService';
+import { projectMissionApproval, projectMissionRun, summarizeMissionRunSample } from '../backend/missionControlProjection';
 
 test('Mission Control status totals describe only the provided sample', () => {
   const result = summarizeMissionRunSample([
@@ -31,8 +31,34 @@ test('new Mission Control API is owner-protected, read-only and uses canonical l
   assert.match(service, /listOwnerApprovals/);
   assert.match(service, /listJarvisPlans/);
   assert.match(service, /Promise\.allSettled/);
-  assert.match(service, /scrubText/);
+  assert.match(service, /runs\.map\(projectMissionRun\)/);
+  assert.match(service, /approvalResult\.value\.map\(projectMissionApproval\)/);
   assert.match(service, /overallState: 'unavailable'/);
+});
+
+test('Mission Control excludes private objectives, approval summaries and error details', () => {
+  const secret = 'Private customer; passport TEST-123; credential=private-token';
+  const run = {
+    id: 'run-1', agentId: 'reservations', status: 'failed' as const,
+    createdAt: '2026-10-21T00:00:00.000Z', updatedAt: '2026-10-21T00:01:00.000Z',
+    durationMs: 60000, lastStepSequence: 3,
+    objective: secret, error: { code: secret, message: secret }, payload: { secret },
+  };
+  const approval = {
+    id: 'approval-1', action: 'create_booking', status: 'pending', createdAt: run.createdAt,
+    summary: secret, payload: { secret },
+  };
+  const projectedRun = projectMissionRun(run);
+  const projectedApproval = projectMissionApproval(approval);
+  assert.equal(projectedRun.status, 'failed');
+  assert.equal(projectedRun.lastStepSequence, 3);
+  assert.equal(projectedApproval.status, 'pending');
+  for (const value of [projectedRun, projectedApproval]) {
+    assert.ok(!JSON.stringify(value).includes(secret));
+    for (const key of ['objective', 'summary', 'error', 'errorCode', 'payload']) {
+      assert.equal(Object.hasOwn(value, key), false);
+    }
+  }
 });
 
 test('Mission Control UI does not fake aggregate results for missing sources', () => {
@@ -42,3 +68,4 @@ test('Mission Control UI does not fake aggregate results for missing sources', (
   assert.match(component, /bounded samples/);
   assert.match(component, /AbortController/);
 });
+

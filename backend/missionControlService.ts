@@ -6,53 +6,15 @@
 import { getFirestoreDb } from './bookingService';
 import { listOwnerApprovals } from './ownerApprovalService';
 import { listJarvisPlans } from './jarvisOrchestrator';
-import { scrubText } from '../shared/observability/scrubPii';
-import type { AgentRunRecord, AgentRunStatus } from '../shared/agentOfficeTypes';
+import { projectMissionRun, projectMissionApproval, safeMissionDate, summarizeMissionRunSample } from './missionControlProjection';
+import type { AgentRunRecord } from '../shared/agentOfficeTypes';
+export { summarizeMissionRunSample } from './missionControlProjection';
 
 export type MissionControlSourceState = 'observed' | 'unavailable';
 
 const MAX_RUNS = 60;
 const MAX_APPROVALS = 40;
 const MAX_PLANS = 30;
-
-function safeDate(value: unknown): string | null {
-  return typeof value === 'string' && Number.isFinite(Date.parse(value))
-    ? value : null;
-}
-
-function projectedRun(run: AgentRunRecord) {
-  return {
-    id: String(run.id || '').slice(0, 128),
-    agentId: String(run.agentId || '').slice(0, 128),
-    // Truncate and redact for an owner-facing overview; full objectives remain in the ledger.
-    objective: scrubText(String(run.objective || '').slice(0, 180)),
-    status: run.status,
-    createdAt: safeDate(run.createdAt),
-    updatedAt: safeDate(run.updatedAt),
-    durationMs: Number.isFinite(run.durationMs) ? run.durationMs : null,
-    errorCode: run.error?.code ? String(run.error.code).slice(0, 120) : null,
-    lastStepSequence: Number.isSafeInteger(run.lastStepSequence) ? run.lastStepSequence : 0,
-  };
-}
-
-export function summarizeMissionRunSample(runs: readonly Pick<AgentRunRecord, 'status'>[]) {
-  const known: AgentRunStatus[] = [
-    'queued', 'running', 'waiting_approval',
-    'completed', 'failed', 'cancelled', 'revoked',
-  ];
-  const byStatus = Object.fromEntries(known.map(status => [status, 0])) as Record<AgentRunStatus, number>;
-  for (const run of runs) {
-    if (Object.prototype.hasOwnProperty.call(byStatus, run.status)) {
-      byStatus[run.status] += 1;
-    }
-  }
-  return {
-    sampled: runs.length,
-    byStatus,
-    // This is a sample breakdown, not a system-wide success rate.
-    unfinishedInSample: byStatus.queued + byStatus.running + byStatus.waiting_approval,
-  };
-}
 
 export async function getOwnerMissionControlSnapshot() {
   const generatedAt = new Date().toISOString();
@@ -79,20 +41,14 @@ export async function getOwnerMissionControlSnapshot() {
     : [];
 
   const approvals = approvalResult.status === 'fulfilled'
-    ? approvalResult.value.map(value => ({
-      id: value.id,
-      action: value.action,
-      status: value.status,
-      summary: scrubText(String(value.summary || '').slice(0, 180)),
-      createdAt: safeDate(value.createdAt),
-    })) : [];
+    ? approvalResult.value.map(projectMissionApproval) : [];
 
   const plans = planResult.status === 'fulfilled'
     ? planResult.value.map(value => ({
       id: value.id,
       status: value.status,
-      createdAt: safeDate(value.createdAt),
-      updatedAt: safeDate(value.updatedAt),
+      createdAt: safeMissionDate(value.createdAt),
+      updatedAt: safeMissionDate(value.updatedAt),
       delegatedTasks: Array.isArray(value.delegations) ? value.delegations.length : 0,
       awaitingApproval: Array.isArray(value.approvalRequired) ? value.approvalRequired.length : 0,
     })) : [];
@@ -109,9 +65,10 @@ export async function getOwnerMissionControlSnapshot() {
       ? 'sample' as const : 'partial' as const,
     limits: { runs: MAX_RUNS, approvals: MAX_APPROVALS, plans: MAX_PLANS },
     sources,
-    runs: runs.map(projectedRun),
+    runs: runs.map(projectMissionRun),
     runSample: sources.runs === 'observed' ? summarizeMissionRunSample(runs) : null,
     approvals,
     plans,
   };
 }
+

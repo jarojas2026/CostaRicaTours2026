@@ -18,6 +18,21 @@ export const healthRouter = createRouter();
 
 healthRouter.get('/api/health/ai', (_req, res) => {
   const health = getAiHealth();
+  res.setHeader('Cache-Control', 'no-store');
+  // Passive observation only: no model call and no internal configuration.
+  res.status(aiHealthHttpStatus(health.providers)).json({
+    status: health.status,
+    scope: health.scope,
+    maxAgeSeconds: health.maxAgeSeconds,
+  });
+});
+
+// Keep diagnostic details available to authenticated operations, never public.
+healthRouter.get('/api/ops/ai-health', (_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+}, requireOperator, (_req, res) => {
+  const health = getAiHealth();
   const cfg = getAiConfig();
   res.setHeader('Cache-Control', 'no-store');
   // 200 para available/unknown/unconfigured (status en el body); 503 solo si todos los configurados están degraded.

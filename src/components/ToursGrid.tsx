@@ -777,7 +777,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                       <span>{t('toursGrid.maxTourDuration')}</span>
                     </label>
                     <span className="text-xs font-mono font-bold text-teal-300 bg-emerald-950 px-2.5 py-1 rounded-full border border-emerald-500/40">
-                      {maxDurationHours >= 14 ? (t('toursGrid.any114h')) : `≤ ${maxDurationHours} horas`}
+                      {maxDurationHours >= 14 ? (t('toursGrid.any114h')) : t('toursGrid.durationHoursLimit', { hours: maxDurationHours })}
                     </span>
                   </div>
 
@@ -792,10 +792,10 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                   />
 
                   <div className="flex justify-between text-[10px] text-stone-400 font-mono">
-                    <span>2h (Corto)</span>
-                    <span>5h (Medio)</span>
-                    <span>8h (Extenso)</span>
-                    <span>14h (Todo el día)</span>
+                    <span>{t('toursGrid.durationShort')}</span>
+                    <span>{t('toursGrid.durationMedium')}</span>
+                    <span>{t('toursGrid.durationLong')}</span>
+                    <span>{t('toursGrid.durationAllDay')}</span>
                   </div>
                 </div>
 

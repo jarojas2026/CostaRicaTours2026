@@ -12,6 +12,7 @@ import { executeBusinessGoal } from './businessGoalOrchestrator';
 import { extractCustomerTravelRequirements } from './customerRequirementExtractor';
 import { guardedGeminiGenerate } from './aiRouter';
 import { getLightModel } from './aiConfig';
+import { buildProviderCustomerNotice } from './providerCustomerNotice';
 
 type MailProvider = 'gmail' | 'outlook';
 type MailMessage = {
@@ -291,9 +292,7 @@ async function processProviderResponseEmail(mail: MailMessage) {
   if (customerEmail && isEmail(String(customerEmail))) {
     const delivery = await sendEmailWithOutcome({
       to: String(customerEmail),
-      subject: action === 'confirm' ? 'Reserva confirmada • Costa Rica Tours' : 'Actualización de tu reserva • Costa Rica Tours',
-      text: result.message,
-      html: `<p>${result.message.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</p>`
+      ...buildProviderCustomerNotice(action, booking?.language || booking?.customer?.language)
     });
     customerNotification = delivery.success
       ? { status: 'sent', attempts: delivery.attempts }

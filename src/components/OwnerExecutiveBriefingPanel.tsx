@@ -191,3 +191,4 @@ export function OwnerExecutiveBriefingPanel({ language }: { language: Language }
     </>}
   </section>;
 }
+

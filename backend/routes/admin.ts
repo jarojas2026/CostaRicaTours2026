@@ -289,3 +289,4 @@ operationsSweepRouter.post('/api/admin/email-operations/sweep', requireAdmin, as
   try { res.json({ success: true, result: await withDistributedAutomationLock('email-operations-1m', processEmailOperationsOnce) }); }
   catch (err: any) { res.status(500).json({ success: false, error: err.message || 'Email operations sweep error' }); }
 });
+

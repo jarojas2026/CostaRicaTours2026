@@ -18,7 +18,7 @@ test('critical alerts are prioritized with a concrete evidence path, without exe
   const brief = buildEvidenceBasedOwnerBriefing({
     alerts: { critical: 2 },
     business: { pendingBookings: 4 },
-    journeyPipeline: { readyToQuote: 3, recovery: 1 },
+    journeyPipeline: { state: 'sample', source: 'firestore:traveler_journeys', readyToQuote: 3, recovery: 1 },
     agentOffice: { source: 'firestore_agent_registry_and_events', registered: 5, active: 1, noSignal: 2, waitingApproval: 1 },
   });
   assert.equal(brief.recommendations[0].id, 'critical-alert-review');
@@ -53,4 +53,25 @@ test('owner-only private GET serves proposals, never mutates agents or bookings'
   assert.match(ui, /'\.\.\.'|proposal_only|Propuesta · no ejecutada/);
   assert.match(ui, /auth\.currentUser/);
   assert.match(adminPage, /case 'gerencia'/);
+});
+
+test('failed and missing journey provenance never become healthy zero counters', () => {
+  for (const journeyPipeline of [
+    { state: 'unavailable', source: 'firestore:traveler_journeys', readyToQuote: 0, recovery: 0 },
+    { readyToQuote: 0, recovery: 0 },
+    { state: 'sample', source: 'memory:journeys', readyToQuote: 2, recovery: 1 },
+  ]) {
+    const brief = buildEvidenceBasedOwnerBriefing({ journeyPipeline });
+    assert.deepEqual(brief.metrics.ready, { path: 'journeyPipeline.readyToQuote', value: null, quality: 'unavailable' });
+    assert.deepEqual(brief.metrics.recovery, { path: 'journeyPipeline.recovery', value: null, quality: 'unavailable' });
+    assert.ok(!brief.recommendations.some(item => ['quote-readiness-sample', 'journey-recovery-sample'].includes(item.id)));
+  }
+});
+
+test('a successfully read empty journey sample preserves measured zero counts', () => {
+  const brief = buildEvidenceBasedOwnerBriefing({
+    journeyPipeline: { state: 'sample', source: 'firestore:traveler_journeys', readyToQuote: 0, recovery: 0 },
+  });
+  assert.deepEqual(brief.metrics.ready, { path: 'journeyPipeline.readyToQuote', value: 0, quality: 'sample' });
+  assert.deepEqual(brief.metrics.recovery, { path: 'journeyPipeline.recovery', value: 0, quality: 'sample' });
 });
