@@ -9,10 +9,14 @@ import {
   WifiOff, Clock3, Plane, Users, Trash2
 } from 'lucide-react';
 import type { Language, BookingRequest } from '../types';
-import { fetchLiveExchangeRate, getUsdToCrcRate } from '../utils/currencies';
+import { loadExchangeRates } from '../utils/exchangeRates';
+import { formatAmount, formatUSD, rateFor, rateNote } from '../utils/money';
+import { useRates } from '../hooks/useMoney';
 
 interface TravelerOSPageProps {
   language: Language;
+  /** Moneda elegida; el conversor usa CRC cuando es USD. */
+  currency?: string;
   onOpenTripBuilder?: () => void;
   onOpenBookings?: () => void;
   bookings?: BookingRequest[];
@@ -57,6 +61,7 @@ const initialTrip: SavedTrip = {
 
 export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
   language,
+  currency = 'USD',
   onOpenTripBuilder,
   onOpenBookings,
   bookings = []
@@ -67,8 +72,11 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
   const [tasks, setTasks] = useState<Task[]>(defaultTasks);
   const [noteDraft, setNoteDraft] = useState('');
   const [usdAmount, setUsdAmount] = useState(100);
-  const [crcRate, setCrcRate] = useState(getUsdToCrcRate());
+  const rates = useRates();
   const [rateStatus, setRateStatus] = useState<'idle' | 'loading' | 'live' | 'fallback'>('idle');
+  // Conversor: USD → moneda elegida (CRC si la elegida es USD). Solo tasas reales.
+  const targetCurrency = currency !== 'USD' ? currency : 'CRC';
+  const targetRate = rateFor(targetCurrency, rates);
   const [isOnline, setIsOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine);
   const [saved, setSaved] = useState(false);
   const [spentUSD, setSpentUSD] = useState(0);
@@ -131,17 +139,13 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
     return Math.ceil((start.getTime() - new Date().getTime()) / 86400000);
   }, [trip.startDate]);
 
-  const crcValue = crcRate > 0 ? Math.round(usdAmount * crcRate) : 0;
+  const converted = targetRate ? formatAmount(usdAmount * targetRate, targetCurrency, language) : '';
+  const conversionNote = rateNote(targetCurrency, language, rates);
 
   const refreshRate = async () => {
     setRateStatus('loading');
-    const live = await fetchLiveExchangeRate();
-    if (live > 0) {
-      setCrcRate(live);
-      setRateStatus('live');
-    } else {
-      setRateStatus('fallback');
-    }
+    const live = rateFor(targetCurrency, await loadExchangeRates(true));
+    setRateStatus(live ? 'live' : 'fallback');
   };
 
   const toggleTask = (id: string) => {
@@ -304,17 +308,17 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
           <aside className="space-y-6">
             <section className="rounded-[2rem] border border-emerald-400/20 bg-gradient-to-br from-emerald-400/10 to-white/[0.02] p-5 sm:p-6">
               <div className="flex items-center gap-2 text-emerald-300 text-xs font-black uppercase tracking-[0.18em]"><WalletCards size={15}/>{es ? 'Conversor rápido' : 'Quick converter'}</div>
-              <div className="mt-2 text-2xl font-black text-white">{es ? 'USD → CRC' : 'USD → CRC'}</div>
+              <div className="mt-2 text-2xl font-black text-white">{`USD → ${targetCurrency}`}</div>
               <div className="mt-4"><input type="number" min={0} value={usdAmount} onChange={e=>setUsdAmount(Math.max(0,Number(e.target.value)||0))} className="w-full rounded-2xl bg-black/20 border border-white/10 px-4 py-3 text-white outline-none focus:border-emerald-300" /></div>
-              <div className="mt-3 rounded-2xl bg-black/20 p-4"><div className="text-xs text-stone-500">USD</div><div className="text-2xl font-black text-emerald-200">{usdAmount.toLocaleString('en-US',{style:'currency',currency:'USD'})}</div><div className="my-2 text-stone-700">↓</div><div className="text-xs text-stone-500">CRC</div><div className="text-2xl font-black text-white">{crcValue ? `₡${crcValue.toLocaleString('es-CR')}` : '—'}</div></div>
-              {crcRate <= 0 && <p role="status" aria-live="polite" className="mt-3 text-xs leading-relaxed text-amber-200/90">
+              <div className="mt-3 rounded-2xl bg-black/20 p-4"><div className="text-xs text-stone-500">USD</div><div data-testid="converter-usd" className="text-2xl font-black text-emerald-200">{formatUSD(usdAmount, 2)}</div><div className="my-2 text-stone-700">↓</div><div className="text-xs text-stone-500">{targetCurrency}</div><div data-testid="converter-result" className="text-2xl font-black text-white">{converted ? `≈ ${converted}` : '—'}</div>{conversionNote && <div className="mt-2 text-[11px] text-stone-400">{conversionNote}</div>}</div>
+              {!targetRate && <p role="status" aria-live="polite" className="mt-3 text-xs leading-relaxed text-amber-200/90">
                 {rateStatus === 'loading'
                   ? (es ? 'Consultando el tipo de cambio…' : 'Checking the exchange rate…')
                   : (es
-                    ? 'No se pudo verificar el tipo de cambio. No mostramos una conversión estimada; confirma el total en CRC al solicitar tu cotización.'
-                    : 'The exchange rate could not be verified. We do not show an estimate; confirm the CRC total when requesting your quote.')}
+                    ? `No se pudo verificar el tipo de cambio para ${targetCurrency}. No mostramos una conversión estimada; los precios se muestran en USD.`
+                    : `The ${targetCurrency} exchange rate could not be verified. We do not show an estimate; prices are shown in USD.`)}
               </p>}
-              <div className="mt-3 flex items-center justify-between text-[11px] text-stone-500"><span>1 USD = {crcRate > 0 ? crcRate.toFixed(2) : '—'} CRC</span><button type="button" onClick={refreshRate} aria-label={es ? 'Actualizar tipo de cambio' : 'Refresh exchange rate'} className="inline-flex items-center gap-1.5 text-emerald-300 hover:text-white">{rateStatus==='loading'?<RefreshCw size={13} className="animate-spin"/>:<RefreshCw size={13}/>} {rateStatus==='live'?(es?'Actualizado':'Updated'):rateStatus==='fallback'?(es?'Reintentar':'Retry'):(es?'Actualizar':'Refresh')}</button></div>
+              <div className="mt-3 flex items-center justify-between text-[11px] text-stone-500"><span>1 USD = {targetRate ? targetRate.toLocaleString(targetCurrency === 'CRC' || es ? 'es-CR' : 'en-US', { maximumFractionDigits: targetRate < 10 ? 4 : 2 }) : '—'} {targetCurrency}</span><button type="button" onClick={refreshRate} aria-label={es ? 'Actualizar tipo de cambio' : 'Refresh exchange rate'} className="inline-flex items-center gap-1.5 text-emerald-300 hover:text-white">{rateStatus==='loading'?<RefreshCw size={13} className="animate-spin"/>:<RefreshCw size={13}/>} {rateStatus==='live'?(es?'Actualizado':'Updated'):rateStatus==='fallback'?(es?'Reintentar':'Retry'):(es?'Actualizar':'Refresh')}</button></div>
             </section>
 
             <section className="rounded-[2rem] border border-white/10 bg-[#071c14] p-5 sm:p-6">

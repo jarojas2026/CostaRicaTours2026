@@ -2,8 +2,8 @@ import React from 'react';
 import type { Currency, Language, Tour } from '../types';
 import { CATEGORIES, REGIONS } from '../data/catalogMeta';
 import { getLangText } from '../utils/i18n';
-import { formatApproxConversion, formatUsdReference } from '../utils/referencePrice';
-import { useExchangeRate } from './ReferencePrice';
+import { formatUsdReference } from '../utils/referencePrice';
+import { useMoney } from '../hooks/useMoney';
 import { TOUR_COMMERCIAL_STATUS, tourReferencePrice, tourReviewDate } from '../utils/tourResolver';
 import { neutralOperatorLabel } from '../utils/operatorPrivacy';
 
@@ -23,8 +23,8 @@ export const TourFacts: React.FC<Props> = ({ tour, language, currency }) => {
   const region = REGIONS.find(r => r.id === tour.region);
   const category = CATEGORIES.find(c => c.id === tour.category);
   const price = tourReferencePrice(tour);
-  const rate = useExchangeRate(currency);
-  const approx = price.amountUSD === undefined ? undefined : formatApproxConversion(price.amountUSD, currency, rate, language);
+  const money = useMoney(currency, language);
+  const view = price.amountUSD === undefined ? undefined : money(price.amountUSD);
   const reviewedAt = tourReviewDate(tour);
   const tbc = es ? 'Por confirmar' : 'To be confirmed';
   const rows: Array<[string, React.ReactNode]> = [
@@ -41,8 +41,9 @@ export const TourFacts: React.FC<Props> = ({ tour, language, currency }) => {
       <div className="mb-4">
         <div className="text-[10px] font-black uppercase tracking-widest text-stone-400">{price.amountUSD === undefined ? (es ? 'Precio' : 'Price') : price.label[lang]}</div>
         <div className="text-3xl font-black text-amber-400">
-          {price.amountUSD === undefined ? price.label[lang] : <>{formatUsdReference(price.amountUSD)}{approx && <span className="ml-2 text-sm font-semibold text-stone-300">{approx}</span>}</>}
+          {price.amountUSD === undefined || !view ? price.label[lang] : <>{view.primary}{view.converted && <span className="ml-2 text-sm font-semibold text-stone-300">{formatUsdReference(price.amountUSD)}</span>}</>}
         </div>
+        {view && (view.note || view.notice) && <div data-testid="rate-note" className="mt-1 text-[11px] text-stone-400">{view.note || view.notice}</div>}
       </div>
       <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
         {rows.map(([label, value]) => (

@@ -28,7 +28,7 @@ import {
 import { Language, Currency } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
 import { SUPPORTED_LANGUAGES, UI_TRANSLATIONS } from '../utils/i18n';
-import { CURRENCIES } from '../utils/currencies';
+import { useAvailableCurrencies } from '../hooks/useMoney';
 import { auth, signInWithGoogle, signOut } from '../firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { requestCustomerIntake } from '../utils/customerIntake';
@@ -76,6 +76,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const navigate = useNavigate();
   const es = language === 'es';
+  const availableCurrencyList = useAvailableCurrencies();
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -415,7 +416,7 @@ export const Header: React.FC<HeaderProps> = ({
                       onChange={(event) => setCurrency(event.target.value as Currency)}
                       className={`w-full rounded-lg border border-white/10 bg-[#03140d] px-2.5 py-2 text-sm text-white ${focusRing}`}
                     >
-                      {CURRENCIES.map(item => <option key={item} value={item}>{item}</option>)}
+                      {(availableCurrencyList.includes(currency) ? availableCurrencyList : [...availableCurrencyList, currency]).map(item => <option key={item} value={item} disabled={!availableCurrencyList.includes(item)}>{item}{availableCurrencyList.includes(item) ? '' : (es ? ' (sin tasa)' : ' (no rate)')}</option>)}
                     </select>
                   </label>
 
