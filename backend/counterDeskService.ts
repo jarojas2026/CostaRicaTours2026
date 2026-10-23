@@ -48,7 +48,8 @@ export async function askCounterDesk(input: CounterDeskAskInput) {
     modelLanguage,
     history.map(t => ({ role: t.role, text: t.text })),
     'counter_agent',
-    sessionId || undefined
+    sessionId || undefined,
+    { voiceChannel: channel === 'voice' }
   );
 
   if (sessionId) {
