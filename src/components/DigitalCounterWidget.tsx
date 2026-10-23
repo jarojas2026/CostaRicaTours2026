@@ -302,7 +302,7 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
 
   const embedCodeSnippet = `<!-- Costa Rica Tours - Mostrador Digital & Cotizador Widget -->
 <div id="crt-counter-widget"></div>
-<script src="https://costaricatours.es/widget/counter.js" async></script>
+<script src="https://costaricatours2026.vercel.app/widget/counter.js" async></script>
 <script>
   window.CRTCounterConfig = {
     agency: "Costa Rica Tours",
