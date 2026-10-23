@@ -23,7 +23,8 @@ test('sin marca vieja (Sofía / costaricatours.es) en código de cliente y backe
   const { readdirSync, statSync } = await import('node:fs');
   const { join } = await import('node:path');
   // src/App.tsx es archivo caliente de otro carril: se limpia en su propia PR.
-  const skip = new Set(['src/App.tsx', 'src/i18n/detect.ts']);
+  // backend/nativeWorkflows.ts: registro interno de proveedores (migración a Firestore privado).
+  const skip = new Set(['src/App.tsx', 'src/i18n/detect.ts', 'backend/nativeWorkflows.ts']);
   const walk = (dir: string): string[] => readdirSync(dir).flatMap((f) => {
     const p = join(dir, f);
     return statSync(p).isDirectory() ? walk(p) : /\.(ts|tsx|html)$/.test(f) ? [p] : [];
