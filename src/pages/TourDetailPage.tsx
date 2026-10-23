@@ -5,7 +5,9 @@ import { resolveTour, tourAllowsPayment, TOUR_COMMERCIAL_STATUS } from '../utils
 import React, { useState, useEffect, useRef } from 'react';
 import { createBookingAttempt, requirePaymentUrl } from '../utils/bookingAttempt';
 import { publishedTourPrice, similarTours } from '../utils/tourPublication';
-import { formatUsdReference } from '../utils/referencePrice';
+import { referencePriceParts } from '../utils/referencePrice';
+import { Price, SubmitButton } from '../components/ui';
+import { rateFor } from '../utils/money';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   Clock, MapPin, ShieldCheck, Calendar, Users,
@@ -13,12 +15,12 @@ import {
   Phone, Smartphone, ArrowLeft, MessageCircle
 } from 'lucide-react';
 import { Tour, Language, Currency, BookingRequest } from '../types';
-import { getLangText, formatCurrency } from '../utils/i18n';
+import { getLangText } from '../utils/i18n';
 import { neutralOperatorLabel, SUPPLIER_POLICY } from '../utils/operatorPrivacy';
 import { useTours } from '../contexts/ToursContext';
 import { REGIONS } from '../data/catalogMeta';
 import { getUsdToCrcRate } from '../utils/currencies';
-import { useMoney } from '../hooks/useMoney';
+import { useRates } from '../hooks/useMoney';
 import { LazyImage } from '../components/LazyImage';
 import { PhotoCredit } from '../components/PhotoCredit';
 import { TourWeather } from '../components/TourWeather';
@@ -34,7 +36,9 @@ interface TourDetailPageProps {
 type ProviderCheckState = 'idle' | 'checking' | 'confirmed' | 'pending' | 'unavailable';
 
 const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, onBookingSuccess }) => {
-  const money = useMoney(currency, language);
+  // Tasa real de la moneda elegida; sin tasa válida <Price> muestra solo USD (nunca inventa CRC).
+  const rates = useRates();
+  const priceRate = rateFor(currency, rates);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { tours: TOURS, loading } = useTours();
@@ -337,7 +341,10 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
   const referencePrice = publishedTourPrice(tour);
   const priceLabel = referencePrice === undefined
     ? (language === 'es' ? 'Consultar disponibilidad' : 'Check availability')
-    : (language === 'es' ? `desde ${formatUsdReference(referencePrice)}` : `from ${formatUsdReference(referencePrice)}`);
+    // CTA: referencia en USD por diseño (la conversión se muestra en el bloque de precio).
+    : <>{language === 'es' ? 'desde ' : 'from '}<Price amountUSD={referencePrice} currency="USD" language={language} variant="inline" /></>;
+  const referenceParts = referencePrice === undefined ? undefined : referencePriceParts(referencePrice, currency, priceRate, language, rates);
+  const priceRateNote = referenceParts?.rateNote || referenceParts?.rateNotice;
   const priceNote = referencePrice === undefined ? null : (language === 'es' ? 'sujeto a confirmación' : 'subject to confirmation');
   const ctaLabel = language === 'es' ? 'Cotizar / Reservar' : 'Get a quote / Book';
   const openQuoteForm = () => {
@@ -364,7 +371,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
           >
             <ArrowLeft size={20} />
           </button>
-          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-stone-500">
+          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-stone-400">
             <span>Tours</span>
             <ChevronRight size={12} />
             <span>{(() => { const region = REGIONS.find((r) => r.id === tour.region); return region ? getLangText(region.name, language) : String(tour.region || '').replace(/_/g, ' ').replace(/\b\p{L}/gu, (c) => c.toUpperCase()); })()}</span>
@@ -511,13 +518,15 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
               <div id="tour-quote" ref={quoteRef} tabIndex={-1} className="scroll-mt-24 p-8 bg-stone-900 rounded-[2.5rem] border border-emerald-500/20 shadow-2xl shadow-emerald-500/10 focus:outline-none">
                 <div className="mb-8">
                   {isBookable ? <>
-                    <div className="text-stone-500 text-xs font-black uppercase tracking-widest mb-2">{language === 'es' ? 'Precio de catálogo · por confirmar' : 'Catalog price · confirm before booking'}</div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl sm:text-5xl font-black text-emerald-400">{publishedTourPrice(tour) === undefined ? (language === 'es' ? 'Consultar precio' : 'Ask for price') : money(publishedTourPrice(tour)!).primary}</span>
-                      <span className="text-stone-400 text-xs font-bold uppercase">{publishedTourPrice(tour) !== undefined && money(publishedTourPrice(tour)!).converted ? `${money(publishedTourPrice(tour)!).usd} / ` : 'USD / '}{language === 'es' ? 'precio publicado' : 'published price'}</span>
+                    <div className="text-stone-400 text-xs font-black uppercase tracking-widest mb-2">{language === 'es' ? 'Precio de catálogo · por confirmar' : 'Catalog price · confirm before booking'}</div>
+                    <div className="flex flex-col gap-1">
+                      {referencePrice === undefined
+                        ? <span className="text-4xl sm:text-5xl font-black text-emerald-400">{language === 'es' ? 'Consultar precio' : 'Ask for price'}</span>
+                        : <Price amountUSD={referencePrice} currency={currency} rate={priceRate} language={language} variant="inline" className="text-4xl sm:text-5xl font-black text-emerald-400 [&>span]:mt-1 [&>span]:block [&>span]:text-base" />}
+                      <span className="text-stone-400 text-xs font-bold uppercase">USD / {language === 'es' ? 'precio publicado' : 'published price'}</span>
                     </div>
-                    {publishedTourPrice(tour) !== undefined && (money(publishedTourPrice(tour)!).note || money(publishedTourPrice(tour)!).notice) && (
-                      <p data-testid="rate-note" className="mt-1 text-[11px] text-stone-400">{money(publishedTourPrice(tour)!).note || money(publishedTourPrice(tour)!).notice}</p>
+                    {priceRateNote && (
+                      <p data-testid="rate-note" className="mt-1 text-[11px] text-stone-400">{priceRateNote}</p>
                     )}
                     <p className="mt-2 text-[11px] leading-relaxed text-stone-500">
                       {language === 'es' ? 'El proveedor debe confirmar disponibilidad y precio final antes de habilitar el pago.' : 'The provider must confirm availability and the final price before payment is enabled.'}
@@ -579,11 +588,16 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
                     </div>
                   </div>
 
-                  <button type="button" onClick={checkAvailability} disabled={requestLocked || !selectedDate || availabilityState === 'checking'} className="w-full border border-emerald-500/40 bg-emerald-950/50 hover:bg-emerald-950 text-emerald-200 font-bold py-3 rounded-2xl disabled:opacity-50">
-                    {availabilityState === 'checking'
-                      ? (language === 'es' ? 'Validando capacidad…' : 'Checking capacity…')
-                      : (language === 'es' ? 'Validar capacidad preliminar' : 'Check preliminary capacity')}
-                  </button>
+                  <SubmitButton
+                    onClick={() => { void checkAvailability(); }}
+                    disabled={requestLocked || !selectedDate}
+                    state={availabilityState === 'checking' ? 'loading' : availabilityState === 'unavailable' ? 'error' : 'idle'}
+                    labels={{
+                      idle: language === 'es' ? 'Validar capacidad preliminar' : 'Check preliminary capacity',
+                      loading: language === 'es' ? 'Validando capacidad…' : 'Checking capacity…',
+                    }}
+                    className="w-full border border-emerald-500/40 bg-emerald-950/50 hover:bg-emerald-950 text-emerald-200"
+                  />
 
                   {availabilityState === 'available' && !pendingBookingId && (
                     <div className="rounded-2xl border border-amber-500/30 bg-amber-950/30 px-4 py-3 text-xs text-amber-100">
