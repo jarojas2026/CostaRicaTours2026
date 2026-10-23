@@ -18,9 +18,9 @@ import {
   FORM_GUARD_MESSAGES, FORM_MIN_FILL_MS, FORM_RATE_LIMIT, HONEYPOT_FIELD, STARTED_AT_FIELD,
   type FormGuardCode,
 } from '../shared/formAbuse';
+import { MemoryStateStore, getSharedStateStore, sharedStateConfig, type SharedStateStore } from './sharedStateStore';
 
 const GATEWAY_HEADER_VALUE = 'vercel-oidc-wif';
-const MAX_TRACKED_KEYS = 20_000;
 
 function header(req: Request, name: string): string {
   const value = req.headers[name];
@@ -75,38 +75,42 @@ export interface FormAbuseGuardOptions {
   /** Si devuelve false la petición pasa sin control (p. ej. /api/customer-intake que no viene del formulario de contacto). */
   appliesTo?: (req: Request) => boolean;
   now?: () => number;
+  /**
+   * Store de contadores (#422/#434). Por defecto: memoria propia de este guard
+   * (comportamiento idéntico al anterior, por instancia). Con
+   * SHARED_STATE_STORE=upstash configurado se usa el store compartido, que cae a
+   * memoria si Redis falla.
+   */
+  store?: SharedStateStore;
 }
 
-export type FormAbuseGuard = ((req: Request, res: Response, next: NextFunction) => unknown) & { reset: () => void };
+export type FormAbuseGuard = ((req: Request, res: Response, next: NextFunction) => Promise<unknown>) & { reset: () => void };
+
+function defaultStore(now: () => number): { store: SharedStateStore; owned: boolean } {
+  if (sharedStateConfig().kind === 'upstash') return { store: getSharedStateStore(), owned: false };
+  return { store: new MemoryStateStore(now), owned: true };
+}
 
 export function createFormAbuseGuard(options: FormAbuseGuardOptions): FormAbuseGuard {
   const windowMs = options.windowMs ?? FORM_RATE_LIMIT.windowMs;
   const max = options.max ?? FORM_RATE_LIMIT.max;
   const minFillMs = options.minFillMs ?? FORM_MIN_FILL_MS;
   const now = options.now ?? Date.now;
-  const hits = new Map<string, { count: number; resetAt: number }>();
+  let { store, owned } = options.store ? { store: options.store, owned: false } : defaultStore(now);
+  const usedKeys = new Set<string>();
 
-  const prune = (t: number) => {
-    for (const [key, entry] of hits) if (entry.resetAt <= t) hits.delete(key);
-    while (hits.size >= MAX_TRACKED_KEYS) hits.delete(hits.keys().next().value as string);
-  };
-
-  const guard = ((req: Request, res: Response, next: NextFunction) => {
+  const guard = (async (req: Request, res: Response, next: NextFunction) => {
     if (options.appliesTo && !options.appliesTo(req)) return next();
     const t = now();
-    const key = `${options.name}:${clientIpFromRequest(req)}`;
-    let entry = hits.get(key);
-    if (!entry || entry.resetAt <= t) {
-      if (hits.size >= MAX_TRACKED_KEYS) prune(t);
-      entry = { count: 0, resetAt: t + windowMs };
-      hits.set(key, entry);
-    }
-    if (entry.count >= max) {
+    const key = `form:${options.name}:${clientIpFromRequest(req)}`;
+    if (!owned && usedKeys.size < 1_000) usedKeys.add(key);
+    // incr siempre suma; el cupo se excede cuando count > max (equivale al antiguo count >= max antes de sumar).
+    const entry = await store.incr(key, windowMs);
+    if (entry.count > max) {
       const retryAfterSeconds = Math.max(1, Math.ceil((entry.resetAt - t) / 1000));
       res.setHeader('Retry-After', String(retryAfterSeconds));
       return reject(req, res, 429, 'rate_limited', { retryAfterSeconds });
     }
-    entry.count += 1;
 
     const body = (req.body && typeof req.body === 'object') ? req.body as Record<string, unknown> : {};
     const honeypot = body[HONEYPOT_FIELD];
@@ -127,7 +131,11 @@ export function createFormAbuseGuard(options: FormAbuseGuardOptions): FormAbuseG
     }
     return next();
   }) as FormAbuseGuard;
-  guard.reset = () => hits.clear();
+  guard.reset = () => {
+    if (owned) { store = new MemoryStateStore(now); return; }
+    for (const key of usedKeys) void store.reset(key);
+    usedKeys.clear();
+  };
   return guard;
 }
 

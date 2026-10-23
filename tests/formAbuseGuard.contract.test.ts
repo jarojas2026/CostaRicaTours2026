@@ -104,10 +104,41 @@ test('cotizaciones: además del límite corto hay tope diario de 20 por IP (resc
   let now = 0;
   const daily = createFormAbuseGuard({ name: 'tday', ...QUOTE_DAILY_LIMIT, now: () => now });
   const req = { headers: {}, ip: '5.5.5.5', socket: {}, body: {} } as any;
-  const run = () => { let status = 200; let passed = false; const res: any = { setHeader() {}, status(c: number) { status = c; return res; }, json() { return res; } }; daily(req, res, () => { passed = true; }); return passed ? 200 : status; };
-  for (let i = 0; i < 20; i += 1) { now += 60 * 60_000 / 2; assert.equal(run(), 200); }
-  assert.equal(run(), 429);
+  const run = async () => { let status = 200; let passed = false; const res: any = { setHeader() {}, status(c: number) { status = c; return res; }, json() { return res; } }; await daily(req, res, () => { passed = true; }); return passed ? 200 : status; };
+  for (let i = 0; i < 20; i += 1) { now += 60 * 60_000 / 2; assert.equal(await run(), 200); }
+  assert.equal(await run(), 429);
   now += 24 * 60 * 60_000;
-  assert.equal(run(), 200);
+  assert.equal(await run(), 200);
   assert.match(fs.readFileSync('backend/routes/leads.ts', 'utf8'), /quoteRequestGuard, quoteRequestDailyGuard, async/);
+});
+
+test('async guard uses the shared state store (#422/#434): injected store is shared across guard instances and reset clears it', async () => {
+  const { MemoryStateStore } = await import('../backend/sharedStateStore');
+  let now = 70_000_000;
+  const store = new MemoryStateStore(() => now);
+  const a = createFormAbuseGuard({ name: 'tshared', max: 2, now: () => now, store });
+  const b = createFormAbuseGuard({ name: 'tshared', max: 2, now: () => now, store }); // otra "instancia" con el mismo store
+  await withApp(a, async urlA => {
+    await withApp(b, async urlB => {
+      assert.equal((await post(urlA, {}, viaVercel('7.7.7.7'))).status, 202);
+      assert.equal((await post(urlB, {}, viaVercel('7.7.7.7'))).status, 202);
+      assert.equal((await post(urlA, {}, viaVercel('7.7.7.7'))).status, 429);
+      assert.equal((await post(urlB, {}, viaVercel('7.7.7.7'))).status, 429);
+      a.reset();
+      assert.equal((await post(urlB, {}, viaVercel('7.7.7.7'))).status, 202);
+    });
+  });
+});
+
+test('default store is per-guard memory (identical behavior) and the guard is async', async () => {
+  const src = fs.readFileSync('backend/formAbuseGuard.ts', 'utf8');
+  assert.match(src, /async \(req: Request, res: Response, next: NextFunction\)/);
+  assert.match(src, /new MemoryStateStore\(now\)/);
+  const guard = createFormAbuseGuard({ name: 'tdefault', max: 1, now: () => 1 });
+  await withApp(guard, async url => {
+    assert.equal((await post(url, {}, viaVercel('8.8.8.8'))).status, 202);
+    assert.equal((await post(url, {}, viaVercel('8.8.8.8'))).status, 429);
+    guard.reset();
+    assert.equal((await post(url, {}, viaVercel('8.8.8.8'))).status, 202);
+  });
 });
