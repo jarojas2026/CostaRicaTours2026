@@ -4,6 +4,7 @@ import { rememberTurn } from './memoryService';
 import { getFirestoreDb } from './bookingService';
 import { resolveTravelerIdentity } from './travelerIdentityService';
 import { voiceRoutingPolicy, requestsHuman } from './voiceRoutingPolicy';
+import { detectTransactionalIntent, voiceHandoffReply, voiceTransactionsAllowed } from './voiceHandoffPolicy';
 
 export type VoiceCallContext = {
   callId: string;
@@ -240,6 +241,10 @@ export async function handleVoiceTurn(input: {
       gatherWithSilenceCount(input.responseUrl, language, 0, prompt)
     ]);
   }
+
+  // Por voz no se reserva ni se paga (VOICE_TRANSACTIONS_BY_VOICE=false por defecto): se deriva por escrito.
+  const transactionalIntent = voiceTransactionsAllowed() ? 'other' : detectTransactionalIntent(textInput);
+  if (transactionalIntent !== 'other') return xml([gatherWithSilenceCount(input.responseUrl, language, 0, voiceHandoffReply(transactionalIntent, language))]);
 
   const identity = await resolveTravelerIdentity({
     phone: input.from,

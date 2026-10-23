@@ -21,12 +21,13 @@ al formulario de cotización o a un enlace de pago que genera una persona.
 - `detectTransactionalIntent()` (ES/EN) y `voiceHandoffReply()` → texto hablado que remite a
   `PUBLIC_BASE_URL/tour/<id>` o `/tours`. Nunca confirma, nunca nombra proveedores, no envía nada.
 
-## Cableado pendiente (lo hace el dueño del carril de voz)
-1. Donde `handleVoiceTurn` arma las herramientas del agente para `channel: 'voice'`:
-   `tools = filterVoiceTools(tools)`.
-2. Antes de llamar a la IA: si `detectTransactionalIntent(speech) !== 'other'`, responder con
-   `voiceHandoffReply(intent, language)` (y ofrecer tecla 0 si hay humano).
-3. Actualizar el paso 5 de `docs/portable-voice-agent-desk.md`.
+## Cableado (hecho en este PR, flags siguen OFF)
+1. `backend/aiAssistantService.ts` (`processChatInquiry`, opción `voiceChannel`): las declaraciones de
+   herramientas pasan por `filterVoiceTools()` y el ejecutor rechaza `isTransactionalTool()` en voz.
+   `backend/counterDeskService.ts` pasa `voiceChannel: channel === 'voice'`.
+2. `handleVoiceTurn`: si `detectTransactionalIntent(speech) !== 'other'`, responde con
+   `voiceHandoffReply(intent, language)` sin llamar a la IA.
+3. Paso 5 de `docs/portable-voice-agent-desk.md` corregido.
 
 ## Activar (requiere gasto: número y minutos del proveedor; autorización del dueño)
 Cloud Run / Secret Manager: `VOICE_AGENT_DESK_ENABLED=true`, `VOICE_PROVIDER_AUTH_TOKEN`,

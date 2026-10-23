@@ -22,6 +22,7 @@ import {
   getDailyOpsLogs
 } from './bookingService';
 import { GEMINI_FUNCTION_DECLARATIONS, executeAgentTool } from './agentTools';
+import { filterVoiceTools, isTransactionalTool, voiceTransactionsAllowed } from './voiceHandoffPolicy';
 import { getPlatformControls } from './platformControlService';
 import { getExchangeRates } from './exchangeRateService';
 
@@ -195,7 +196,7 @@ export async function processChatInquiry(
   history: Array<{ role: 'user' | 'assistant' | 'bot'; text: string }> = [],
   engine: 'auto' | 'claude' | 'gemini' | 'counter_agent' = 'auto',
   sessionId?: string,
-  options: { allowMutations?: boolean } = {}
+  options: { allowMutations?: boolean; voiceChannel?: boolean } = {}
 ): Promise<{ reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string; agentId?: string; sources?: Array<{ uri: string; title: string }> }> {
   const isEn = language === 'en';
   const requestedAgentId = engine === 'counter_agent' ? 'counter_agent' : 'concierge';
@@ -281,9 +282,11 @@ Reply ONLY with "YES" or "NO".`;
       needsGrounding = classRes.provider === 'gemini' && classRes.text.toUpperCase().includes('YES');
     }
 
+    // Canal voz: sin herramientas de reserva/pago mientras VOICE_TRANSACTIONS_BY_VOICE no sea true.
+    const functionDeclarations = options.voiceChannel ? filterVoiceTools(GEMINI_FUNCTION_DECLARATIONS as Array<{ name: string }>) : GEMINI_FUNCTION_DECLARATIONS;
     const buildTools = () => needsGrounding
-      ? [{ googleSearch: {} }, { functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }]
-      : [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }];
+      ? [{ googleSearch: {} }, { functionDeclarations }]
+      : [{ functionDeclarations }];
     const buildConfig = (): any => ({
       systemInstruction: SYSTEM_INSTRUCTION,
       temperature: 0.7,
@@ -340,6 +343,9 @@ Reply ONLY with "YES" or "NO".`;
       for (const call of calls.slice(0, 6)) {
         const toolName = call.name || 'unknown_tool';
         try {
+          if (options.voiceChannel && !voiceTransactionsAllowed() && isTransactionalTool(toolName)) {
+            throw new Error('Por voz no se reserva ni se paga: derive al formulario de cotización o a un enlace de pago generado por una persona.');
+          }
           if (options.allowMutations === false && mutationTools.has(toolName)) {
             throw new Error('Esta herramienta cambia el estado operativo y requiere una solicitud no escalada con autorización explícita.');
           }

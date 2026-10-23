@@ -40,3 +40,28 @@ test('module sends nothing by itself (no fetch, no mail)', () => {
   const src = readFileSync('backend/voiceHandoffPolicy.ts', 'utf8');
   assert.doesNotMatch(src, /fetch\(|sendEmail|sendMail|twilio\.|messages\.create/);
 });
+
+// Cableado: el bloqueo existe en los tres puntos (declaraciones, ejecutor y turno de voz).
+import { readFileSync as readSrc } from 'node:fs';
+
+test('cableado: handleVoiceTurn deriva intención de reserva/pago antes de llamar a la IA', () => {
+  const src = readSrc('backend/voiceAgentDeskService.ts', 'utf8');
+  const body = src.slice(src.indexOf('export async function handleVoiceTurn'));
+  const guard = body.indexOf('detectTransactionalIntent(textInput)');
+  const handoff = body.indexOf('voiceHandoffReply(transactionalIntent, language)');
+  const ai = body.indexOf('askCounterDesk(');
+  assert.ok(guard > -1 && handoff > guard && ai > handoff, 'el traspaso debe ir antes de askCounterDesk');
+});
+
+test('cableado: canal voz filtra herramientas y el ejecutor rechaza las transaccionales', () => {
+  const ai = readSrc('backend/aiAssistantService.ts', 'utf8');
+  assert.match(ai, /options\.voiceChannel \? filterVoiceTools\(GEMINI_FUNCTION_DECLARATIONS/);
+  assert.match(ai, /options\.voiceChannel && !voiceTransactionsAllowed\(\) && isTransactionalTool\(toolName\)/);
+  assert.match(readSrc('backend/counterDeskService.ts', 'utf8'), /voiceChannel: channel === 'voice'/);
+});
+
+test('doc: el paso 5 ya no permite create_reservation por voz', () => {
+  const doc = readSrc('docs/portable-voice-agent-desk.md', 'utf8');
+  assert.doesNotMatch(doc, /Only explicit customer confirmation can invoke `create_reservation`/);
+  assert.match(doc, /No bookings or payments by voice/);
+});
