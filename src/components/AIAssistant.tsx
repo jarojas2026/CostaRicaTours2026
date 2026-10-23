@@ -604,8 +604,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           </h2>
           <p className="text-sm sm:text-base text-emerald-100/70 max-w-3xl mx-auto leading-relaxed">
             {language === 'es'
-              ? 'Habla con Sofía en un solo chat. Puedes planear, buscar experiencias, consultar transporte o pedir ayuda con una reserva. El precio y la disponibilidad se confirman antes de cobrar.'
-              : 'Talk to Sofía in one chat. Plan a trip, find experiences, ask about transport, or get help with a booking. Price and availability are confirmed before payment.'
+              ? 'Habla con nuestro asistente en un solo chat. Puedes planear, buscar experiencias, consultar transporte o pedir ayuda con una reserva. El precio y la disponibilidad se confirman antes de cobrar.'
+              : 'Talk to our assistant in one chat. Plan a trip, find experiences, ask about transport, or get help with a booking. Price and availability are confirmed before payment.'
             }
           </p>
 
@@ -1583,7 +1583,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                   {language === 'es' ? 'Mostrador Digital: Código de Integración Web' : 'Digital Counter: Web Integration Code'}
                 </h3>
                 <p className="text-xs text-emerald-400 font-bold">
-                  {language === 'es' ? 'Incrusta a Sofía en cualquier sitio web o CMS' : 'Embed Sofia into any website or CMS'}
+                  {language === 'es' ? 'Incrusta el asistente en cualquier sitio web o CMS' : 'Embed the assistant into any website or CMS'}
                 </p>
               </div>
             </div>
@@ -1595,13 +1595,13 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
             </p>
 
             <div className="bg-[#020e08] p-3 rounded-xl border border-emerald-500/30 mb-4 relative font-mono text-[11px] text-emerald-300 break-all">
-              <code>{`<script src="https://costaricatours.es/counter-widget.js" data-endpoint="https://costaricatours.es/api/agent/counter" data-lang="${language}" data-color="#059669"></script>`}</code>
+              <code>{`<script src="${window.location.origin}/counter-widget.js" data-endpoint="${window.location.origin}/api/agent/counter" data-lang="${language}" data-color="#059669"></script>`}</code>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <button
                 onClick={() => {
-                  const code = `<script src="https://costaricatours.es/counter-widget.js" data-endpoint="https://costaricatours.es/api/agent/counter" data-lang="${language}" data-color="#059669"></script>`;
+                  const code = `<script src="${window.location.origin}/counter-widget.js" data-endpoint="${window.location.origin}/api/agent/counter" data-lang="${language}" data-color="#059669"></script>`;
                   navigator.clipboard.writeText(code);
                   setCopiedWidget(true);
                   setTimeout(() => setCopiedWidget(false), 3000);

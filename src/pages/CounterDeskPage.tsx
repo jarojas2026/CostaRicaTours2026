@@ -208,7 +208,7 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
         <div className="lg:col-span-2 rounded-3xl border border-emerald-500/20 bg-[#061d14] p-5">
           <div className="flex items-center gap-2 mb-4">
             <MessageCircle className="text-amber-300" size={18} />
-            <h2 className="font-black text-white">Sofía • Counter Agent</h2>
+            <h2 className="font-black text-white">Asistente de viajes • Counter Desk</h2>
             <span className="ml-auto text-[10px] rounded-full border border-emerald-400/30 px-2 py-1 text-emerald-300">FULL STACK</span>
           </div>
           <div className="min-h-40 rounded-2xl bg-black/20 border border-white/5 p-4 text-sm text-stone-200 whitespace-pre-wrap">
