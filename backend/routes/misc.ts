@@ -11,6 +11,7 @@ import { updateBookingStatus, getWeeklyConversionMetrics } from '../bookingServi
 import { massiveEngine } from '../massiveProcessingEngine';
 import { createRouter } from './shared';
 import { aiHealthHttpStatus, getAiHealth } from '../aiHealth';
+import { probeAiProviders } from '../aiHealthProbe';
 import { getBreakerStates } from '../aiRouter';
 import { getAiConfig, isBillingBlocked } from '../aiConfig';
 
@@ -40,12 +41,18 @@ const isAdminAccess = (result: OperatorAccessResult) =>
 /**
  * GET /api/health/ai (#379). Público: solo `{ status }`, sin alcance, proveedores ni
  * política. Con credenciales de owner/admin válidas devuelve el detalle completo.
- * Observación pasiva: nunca llama a un modelo.
+ * Nunca genera con un modelo: solo observación pasiva + sondeo gratuito del listado de modelos
+ * (backend/aiHealthProbe.ts, AI_HEALTH_PROBE_ENABLED=false lo apaga).
  */
-export function aiHealthHandler(resolveAccess: (req: Request) => Promise<OperatorAccessResult> = resolveOperatorAccess) {
+export function aiHealthHandler(
+  resolveAccess: (req: Request) => Promise<OperatorAccessResult> = resolveOperatorAccess,
+  probe: () => Promise<void> = () => probeAiProviders(),
+) {
   return async (req: Request, res: Response) => {
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('Vary', 'Authorization, X-Operator-Key');
+    // Sondeo a costo cero (listado de modelos) para no quedar en "unknown"; nunca lanza.
+    await probe().catch(() => undefined);
     const health = getAiHealth();
     const status = aiHealthHttpStatus(health.providers);
     const hasCredentials = Boolean(req.headers.authorization || req.headers['x-operator-key']);
@@ -164,7 +171,7 @@ opsMetricsRouter.all('/webhook/health-check', (req, res) => {
 // ==========================================
 // 📊 ANALÍTICA NATIVA Y ACCIONES DE RESERVA
 // ==========================================
-opsMetricsRouter.get('/api/analytics/conversion-report', async (req, res) => {
+opsMetricsRouter.get('/api/analytics/conversion-report', requireAdmin, async (req, res) => {
   try {
     const metrics = await getWeeklyConversionMetrics();
     res.json({ success: true, data: metrics, source: 'firestore-native' });
