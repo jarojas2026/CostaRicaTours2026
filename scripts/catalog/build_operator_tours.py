@@ -19,6 +19,7 @@ Incluye automáticamente cualquier CSV nuevo del directorio (tandas futuras).
 """
 import csv, json, re, sys, pathlib, unicodedata
 from urllib.parse import urlparse
+from source_validation import validate_dated_row
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SRC = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / 'data/fuentes/catalogo'
@@ -164,16 +165,22 @@ def domain(url):
 
 
 # ---------- lectura ----------
-raw, skipped, seen = [], [], set()
+raw, skipped, seen, products = [], [], set(), set()
 for path in sorted(SRC.glob('*.csv')):
     with open(path, newline='', encoding='utf-8') as fh:
         for r in csv.DictReader(fh):
+            try:
+                validate_dated_row(r)
+            except ValueError as error:
+                raise SystemExit(f"{path.name}: {r.get('id_slug', '?')}: {error}") from error
             slug = (r.get('id_slug') or '').strip()
             if not slug:
                 continue
             if slug in SKIP:
                 skipped.append({'id': slug, 'duplicate_of': SKIP[slug]}); continue
             if slug in seen:
+                if 'revisado_el' in r:
+                    raise SystemExit(f"{path.name}: duplicate id_slug: {slug}")
                 skipped.append({'id': slug, 'reason': 'id repetido'}); continue
             url = (r.get('url_fuente') or '').strip()
             if url.startswith('http://'):
@@ -188,6 +195,10 @@ for path in sorted(SRC.glob('*.csv')):
             if num(r.get('lat')) is None or num(r.get('lng')) is None:
                 skipped.append({'id': slug, 'reason': 'sin coordenadas'}); continue
             seen.add(slug)
+            product = (slugify(r['operador']), slugify(r['titulo_es']))
+            if 'revisado_el' in r and product in products:
+                raise SystemExit(f"{path.name}: duplicate product: {slug}")
+            products.add(product)
             raw.append((slug, url, notas, r))
 
 prospects = json.loads(PROSPECTS.read_text(encoding='utf-8'))['operators']
@@ -289,7 +300,8 @@ for slug, url, notas, r in raw:
     price = num(r.get('precio_usd_adulto'))
     price_note = None
     if price is None or price <= 0:
-        price, price_note = 0, 'sin_precio_publicado'
+        price = 0
+        price_note = 'precio_por_confirmar' if r.get('estado_precio') == 'por_confirmar' else 'sin_precio_publicado'
     elif GROUP_PRICE.search(notas):
         price_note = f'precio_por_grupo_o_bote:{price:g}'
         price = 0
@@ -309,13 +321,14 @@ for slug, url, notas, r in raw:
     if child is not None and price_note is None: item['childPriceUSD'] = round(child, 2)
     if age is not None: item['ageMinimum'] = int(age)
     if price_note: item['priceNote'] = price_note
+    if r.get('revisado_el'): item['reviewedAt'] = r['revisado_el']
     public_rows.append(item)
 
     nb = slugify(base_name(op))
     pr = next((p for p in prospects if slugify(base_name(p['name'])) == nb or (p.get('website') and domain(p['website']) == domain(url))), None)
     internal_rows.append({
         'id': nid, 'legacyId': 'op-' + slug, 'operatorName': op, 'sourceUrl': url,
-        'priceSource': 'publicado_por_operador', 'priceCheckedAt': PRICE_CHECKED_AT,
+        'priceSource': 'publicado_por_operador', 'priceCheckedAt': r.get('revisado_el') or PRICE_CHECKED_AT,
         'publicTitleEs': title_es, 'originalTitleEs': r['titulo_es'].strip(), 'originalPlaceName': place_raw,
         'notes': notas or None,
         'contacts': {
