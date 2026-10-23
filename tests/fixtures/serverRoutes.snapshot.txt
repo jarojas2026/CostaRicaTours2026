@@ -219,5 +219,7 @@ ROUTE PATCH /api/admin/leads/:id/status (2)
 ROUTE POST /api/leads/quote-request (4)
 ROUTE POST /api/leads/map-service-request (4)
 ROUTE POST /api/internal/leads/digest (1)
+ROUTE GET /api/voice/tts/status (2)
+ROUTE POST /api/voice/tts (2)
 USE /api wrapped
 USE / apiErrorHandler
