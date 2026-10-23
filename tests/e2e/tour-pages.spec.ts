@@ -15,7 +15,8 @@ for (const language of ['es', 'en'] as const) {
       await expect(page).toHaveTitle(`${title} | Costa Rica Tours`);
       await expect(page.getByRole('link', { name: language === 'es' ? 'fuente' : 'source', exact: true })).toHaveCount(0);
       await expect(page.getByText(language === 'es' ? `Revisado por nuestro equipo el ${catalog.reviewedAt}` : `Reviewed by our team on ${catalog.reviewedAt}`)).toBeVisible();
-      await expect(page.getByRole('button', { name: language === 'es' ? 'Consultar disponibilidad' : 'Check availability', exact: true })).toBeVisible();
+      await expect(page.locator('a[aria-describedby="tour-whatsapp-hint"]')).toHaveText(language === 'es' ? 'Consultar por WhatsApp' : 'Ask on WhatsApp');
+      await expect(page.getByRole('form', { name: language === 'es' ? 'Solicitar cotización' : 'Request a quote' })).toBeVisible();
       await expect(page.locator('iframe[title]')).toHaveCount(1);
       await page.reload();
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(title);
