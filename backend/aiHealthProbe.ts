@@ -13,7 +13,7 @@
  * - Tope de tiempo por proveedor; nunca registra claves, URLs con clave ni cuerpos.
  */
 import { getOpenAiCompatConfig, isGeminiConfigured, isOpenAiCompatConfigured, type AiProviderName } from './aiConfig';
-import { classifyAiFailure, recordAiObservation, type AiFailure } from './aiHealth';
+import { classifyAiFailure, hasFreshAiObservation, recordAiObservation, type AiFailure } from './aiHealth';
 
 type FetchLike = (url: string, init: { method: string; headers: Record<string, string>; signal: AbortSignal }) => Promise<{ ok: boolean; status: number }>;
 
@@ -54,7 +54,6 @@ export function probeTargets(env: NodeJS.ProcessEnv = process.env): ProbeTarget[
 async function probeOne(target: ProbeTarget, fetchImpl: FetchLike, timeoutMs: number) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  timer.unref?.();
   let failure: AiFailure | null = null;
   try {
     const res = await fetchImpl(target.url, { method: 'GET', headers: target.headers, signal: ctrl.signal });
@@ -76,7 +75,10 @@ export async function probeAiProviders(options: { env?: NodeJS.ProcessEnv; fetch
   if (!options.fetchImpl && !isAiHealthProbeEnabled(env)) return;
   if (inFlight) return inFlight;
   const now = options.now ?? Date.now();
-  const due = probeTargets(env).filter((t) => now - (lastProbeAt.get(t.provider) ?? 0) >= PROBE_INTERVAL_MS);
+  // Una observación real reciente (p. ej. un fallo de facturación al generar) manda: el
+  // sondeo solo rellena el hueco cuando no hay nada fresco, nunca pisa un fallo real.
+  const due = probeTargets(env).filter((t) => !hasFreshAiObservation(t.provider, now)
+    && now - (lastProbeAt.get(t.provider) ?? 0) >= PROBE_INTERVAL_MS);
   if (!due.length) return;
   for (const t of due) lastProbeAt.set(t.provider, now);
   const fetchImpl = options.fetchImpl || (globalThis.fetch as unknown as FetchLike);

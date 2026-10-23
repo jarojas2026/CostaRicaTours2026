@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getAiHealth, resetAiObservations } from '../backend/aiHealth';
+import { getAiHealth, recordAiObservation, resetAiObservations } from '../backend/aiHealth';
 import { isAiHealthProbeEnabled, probeAiProviders, probeTargets, resetAiHealthProbe, PROBE_INTERVAL_MS } from '../backend/aiHealthProbe';
 
 const KEY = 'test-key-never-a-real-key-0123456789';
@@ -51,8 +51,18 @@ test('como máximo un sondeo por intervalo', async () => {
   await probeAiProviders({ env, fetchImpl, now: 1_000_000 });
   await probeAiProviders({ env, fetchImpl, now: 1_000_000 + 1000 });
   assert.equal(n, 1);
+  resetAiObservations();
   await probeAiProviders({ env, fetchImpl, now: 1_000_000 + PROBE_INTERVAL_MS });
   assert.equal(n, 2);
+});
+
+test('no pisa una observación real reciente (fallo de facturación al generar)', async () => {
+  fresh();
+  recordAiObservation('gemini', 'billing');
+  let n = 0;
+  await probeAiProviders({ env, fetchImpl: async () => { n++; return { ok: true, status: 200 }; } });
+  assert.equal(n, 0);
+  assert.equal(getAiHealth(env).providers.find(p => p.provider === 'gemini')?.reason, 'billing');
 });
 
 test('sin proveedores configurados no hace nada', async () => {
