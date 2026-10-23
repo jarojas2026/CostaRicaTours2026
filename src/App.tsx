@@ -5,18 +5,16 @@ import { REGIONS } from './data/catalogMeta';
 import { catalogSearchHref, readCatalogRouteFilters } from './utils/catalogRouteFilters';
 import { useTours } from './contexts/ToursContext';
 import { Tour, Language, Currency, TourCategory, TourRegion, BookingRequest } from './types';
-import { getLangText, fetchExchangeRates } from './utils/i18n';
+import { fetchExchangeRates } from './utils/i18n';
 import { getInitialCurrency, getInitialLanguage, rememberCurrency, rememberLanguage } from './i18n';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
-import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 import { AmbientBackground } from './components/AmbientBackground';
 import { CookiesBanner } from './components/CookiesBanner';
 import { Home as HomePage } from './pages/Home';
 import { BottomNav } from './components/BottomNav';
 import { RouteMetadata } from './components/RouteMetadata';
 import { OfflineBanner } from './components/OfflineBanner';
-import { DigitalCounterWidget } from './components/DigitalCounterWidget';
 import { Home, ChevronRight, Bot, MessageCircle, X, Loader2 } from 'lucide-react';
 import { AdminRouteGuard } from './components/AdminRouteGuard';
 import { directWhatsAppUrl } from './utils/directWhatsApp';
@@ -273,26 +271,6 @@ export default function App() {
     setRecentBooking(booking);
     setMyBookings(prev => [booking, ...prev.filter(item => item.bookingId !== booking.bookingId)]);
   };
-
-  // Dynamic WhatsApp Message context
-  let whatsappMessage = undefined;
-  if (selectedTour) {
-    whatsappMessage = language === 'es' 
-      ? `Hola Costa Rica Tours (costaricatours.es), quisiera más información sobre el tour: ${getLangText(selectedTour.title, 'es')}`
-      : `Hello Costa Rica Tours (costaricatours.es), I would like more information about the tour: ${getLangText(selectedTour.title, 'en')}`;
-  } else if (activeTab === 'flights') {
-    whatsappMessage = language === 'es'
-      ? 'Hola Costa Rica Tours (costaricatours.es), quisiera consultar sobre vuelos internacionales y traslados desde el aeropuerto hacia mi hotel/tour.'
-      : 'Hello Costa Rica Tours (costaricatours.es), I would like to inquire about international flights and airport transfers to my hotel/tour.';
-  } else if (activeTab === 'itinerary') {
-    whatsappMessage = language === 'es'
-      ? 'Hola Costa Rica Tours (costaricatours.es), necesito ayuda para planear mi itinerario en Costa Rica.'
-      : 'Hello Costa Rica Tours (costaricatours.es), I need help planning my itinerary in Costa Rica.';
-  } else if (activeTab === 'culture') {
-    whatsappMessage = language === 'es'
-      ? 'Hola Costa Rica Tours (costaricatours.es), tengo una pregunta sobre tradiciones y recomendaciones locales en Costa Rica.'
-      : 'Hello Costa Rica Tours (costaricatours.es), I have a question about local traditions and tips in Costa Rica.';
-  }
 
   // Filter labels for breadcrumbs
   const getActiveTabLabel = () => {
@@ -704,22 +682,6 @@ export default function App() {
 
       {/* On tour details, the fixed booking CTA owns the mobile bottom safe-area. */}
       {!location.pathname.startsWith('/tour/') && <BottomNav language={language} activeTab={activeTab} />}
-      {activeTab !== 'ai' && !location.pathname.startsWith('/tour/') && (
-        <>
-          <DigitalCounterWidget 
-            language={language} 
-            currency={currency} 
-            selectedTour={selectedTour}
-            onSelectTour={(t) => navigate(`/tour/${t.id}`)} 
-          />
-          <FloatingWhatsApp 
-            language={language} 
-            initialMessage={whatsappMessage} 
-            onOpenAIAssistant={() => navigate('/ai')} 
-            onSelectTour={(t) => navigate(`/tour/${t.id}`)}
-          />
-        </>
-      )}
       <Footer language={language} />
       <CookiesBanner language={language} />
     </div>
