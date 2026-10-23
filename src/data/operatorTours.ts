@@ -33,6 +33,8 @@ export interface OperatorTourRow {
   includes: string[];
   ageMinimum?: number;
   priceNote?: string;
+  /** Review of this individual listing; older batches use the catalog fallback. */
+  reviewedAt?: string;
 }
 
 
@@ -91,7 +93,7 @@ export function mapOperatorTour(row: OperatorTourRow): Tour {
     instantConfirmation: false,
     bestPriceGuaranteed: false,
     priceSource: 'precio_referencia',
-    priceCheckedAt: data.reviewedAt,
+    priceCheckedAt: row.reviewedAt || data.reviewedAt,
     ...(row.priceNote ? { priceNote: row.priceNote } : {}),
   };
 }
