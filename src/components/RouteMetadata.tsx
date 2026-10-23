@@ -53,7 +53,7 @@ const STATIC_ROUTES: Record<string, RouteMeta> = {
     },
   },
   '/ai': {
-    title: { es: 'Asistente de viaje Sofía', en: 'Sofía travel assistant' },
+    title: { es: 'Asistente de viaje', en: 'Travel assistant' },
     description: {
       es: 'Planifica con el asistente de IA y continúa por WhatsApp con un asesor. Las respuestas de IA se verifican antes de reservar.',
       en: 'Plan with the AI assistant and continue on WhatsApp with an advisor. AI answers are verified before booking.',

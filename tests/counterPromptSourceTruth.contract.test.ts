@@ -18,3 +18,19 @@ test('conversation history no longer impersonates a named agent', () => {
   const source = readFileSync('backend/aiAssistantService.ts', 'utf8');
   assert.match(source, /h\.role === 'user' \? 'Viajero' : 'Asistente'/);
 });
+
+test('sin marca vieja (Sofía / costaricatours.es) en código de cliente y backend fuera de archivos calientes', async () => {
+  const { readdirSync, statSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  // src/App.tsx es archivo caliente de otro carril: se limpia en su propia PR.
+  // backend/nativeWorkflows.ts: registro interno de proveedores (migración a Firestore privado).
+  const skip = new Set(['src/App.tsx', 'src/i18n/detect.ts', 'backend/nativeWorkflows.ts']);
+  const walk = (dir: string): string[] => readdirSync(dir).flatMap((f) => {
+    const p = join(dir, f);
+    return statSync(p).isDirectory() ? walk(p) : /\.(ts|tsx|html)$/.test(f) ? [p] : [];
+  });
+  const offenders = [...walk('src'), ...walk('backend'), 'public/counter-widget.html']
+    .filter((p) => !skip.has(p.replace(/\\/g, '/')))
+    .filter((p) => /Sof[ií]a|ソフィア|costaricatours\.es/.test(readFileSync(p, 'utf8')));
+  assert.deepEqual(offenders, []);
+});
