@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { TOURS } from '../src/data/toursCatalog';
 
 /**
@@ -11,9 +11,13 @@ import { TOURS } from '../src/data/toursCatalog';
  */
 const readJson = (p: string) => JSON.parse(readFileSync(p, 'utf8'));
 const vercel = readJson('vercel.json');
-const internal = readJson('data/internal/operatorTourSources.json');
-const denylist = readJson('data/internal/operatorDenylist.json');
-const curated = readJson('data/internal/legacyCuratedTourIds.json') as Record<string, string>;
+// data/internal/ saldrá del repo (segunda PR): sin esos archivos, las pruebas que los
+// necesitan se omiten; la auditoría de nombres usa OPERATOR_DENYLIST_JSON o los hashes.
+const HAS_INTERNAL = existsSync('data/internal/operatorTourSources.json') && existsSync('data/internal/operatorDenylist.json') && existsSync('data/internal/legacyCuratedTourIds.json');
+const NO_INTERNAL = !HAS_INTERNAL && 'data/internal/ ausente (datos en Firestore)';
+const internal = HAS_INTERNAL ? readJson('data/internal/operatorTourSources.json') : { tours: [] };
+const denylist = HAS_INTERNAL ? readJson('data/internal/operatorDenylist.json') : { names: [], domains: [] };
+const curated = (HAS_INTERNAL ? readJson('data/internal/legacyCuratedTourIds.json') : {}) as Record<string, string>;
 const tourById = new Map(TOURS.map(t => [t.id, t]));
 const tourRedirects = (vercel.redirects as Array<{ source: string; destination: string; statusCode?: number }>)
   .filter(r => r.source.startsWith('/tour/'));
@@ -65,7 +69,7 @@ test('cada redirect de tour apunta a un tour existente o a una búsqueda, sin ca
   }
 });
 
-test('los destinos no revelan operadores en el id/slug', () => {
+test('los destinos no revelan operadores en el id/slug', { skip: NO_INTERNAL }, () => {
   const names: string[] = [
     ...(denylist.names ?? []), ...(denylist.aliases ?? []),
   ].map((n: string) => n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))
@@ -76,7 +80,7 @@ test('los destinos no revelan operadores en el id/slug', () => {
   }
 });
 
-test('redirects de tours de operadores: mismo producto (procedencia + región + título)', () => {
+test('redirects de tours de operadores: mismo producto (procedencia + región + título)', { skip: NO_INTERNAL }, () => {
   const byId = new Map<string, any>(internal.tours.map((t: any) => [t.id, t]));
   const curatedSources = new Set(Object.keys(curated));
   for (const r of tourRedirects) {
@@ -91,7 +95,7 @@ test('redirects de tours de operadores: mismo producto (procedencia + región + 
   }
 });
 
-test('redirects de tours curados renombrados: mismo producto revisado a mano', () => {
+test('redirects de tours curados renombrados: mismo producto revisado a mano', { skip: NO_INTERNAL }, () => {
   assert.deepEqual(Object.keys(curated).sort(), Object.keys(CURATED_REVIEWED).sort(),
     'añade cada renombre curado nuevo a CURATED_REVIEWED tras revisarlo');
   for (const [from, to] of Object.entries(curated)) {
