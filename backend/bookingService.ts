@@ -16,6 +16,7 @@ import {
 } from 'firebase-admin/firestore';
 import { GoogleGenAI } from '@google/genai';
 import Stripe from 'stripe';
+import { assertStripeTestMode } from './stripeModeGuard';
 import { resolveCommerceTour } from './commerceCatalog';
 import { assertServiceDate, reservationQuote, slotAvailability } from './commercePolicy';
 import { getIdempotentResult, idempotencyDocId, normalizeIdempotencyKey, requestFingerprint } from './idempotencyService';
@@ -127,6 +128,8 @@ export function getSlotKey(tourId: string, date: string, time: string): string {
 let stripeClient: Stripe | null = null;
 export function getStripe(): Stripe | null {
   if (!stripeClient && process.env.STRIPE_SECRET_KEY) {
+    // Stripe se queda en TEST hasta el lanzamiento: sk_live_/rk_live_ sin ALLOW_STRIPE_LIVE=true lanza.
+    assertStripeTestMode(process.env.STRIPE_SECRET_KEY);
     stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY);
   }
   return stripeClient;

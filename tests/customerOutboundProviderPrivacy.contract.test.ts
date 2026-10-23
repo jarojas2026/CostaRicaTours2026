@@ -16,16 +16,20 @@ import {
 import { buildInboxCustomerMessage } from '../backend/providerInboxAgent';
 import { buildProviderCustomerNotice } from '../backend/providerCustomerNotice';
 // @ts-ignore módulo .mjs con JSDoc
-import { buildMatchers, scanText } from '../scripts/lib/operatorPrivacyScan.mjs';
+import { buildMatchers, scanText, loadDenylist } from '../scripts/lib/operatorPrivacyScan.mjs';
 
 const root = process.cwd();
 const read = (p: string) => fs.readFileSync(path.join(root, p), 'utf8');
 const matchers = buildMatchers();
-const denylist = JSON.parse(read('data/internal/operatorDenylist.json')) as { names: string[]; domains: string[]; publicPlaceNames?: string[] };
+// data/internal/ saldrá del repo (segunda PR): sin esos archivos, las pruebas que los
+// necesitan se omiten; la auditoría de nombres usa OPERATOR_DENYLIST_JSON o los hashes.
+const LOCAL_DENYLIST = fs.existsSync(path.join(root, 'data/internal/operatorDenylist.json'));
+const denylist = (loadDenylist() ?? { names: [], domains: [], publicPlaceNames: [] }) as { names: string[]; domains: string[]; publicPlaceNames?: string[] };
+const NO_LOCAL = !LOCAL_DENYLIST && 'data/internal/operatorDenylist.json ausente (el backend lo lee de Firestore)';
 const CONTACT_LEAK = /(\+?506[\s-]?)?\b[2-8]\d{3}[\s-]?\d{4}\b|[a-z0-9._%+-]+@[a-z0-9-]+\.[a-z]{2,}|wa\.me|https?:\/\/(?!([a-z0-9-]+\.)*(go\.cr|costaricatours2026\.vercel\.app))/i;
 const leaks = (text: string) => scanText(text, matchers, { names: true, domains: true, fields: false }) as string[];
 
-test('redacta nombres del denylist interno, dominios y contactos del proveedor', () => {
+test('redacta nombres del denylist interno, dominios y contactos del proveedor', { skip: NO_LOCAL }, () => {
   const places = new Set((denylist.publicPlaceNames || []).map((n) => n.toLowerCase()));
   const sample = denylist.names.filter((n) => !places.has(n.toLowerCase()));
   assert.ok(sample.length >= 20, 'denylist poblado');
