@@ -283,10 +283,12 @@ Reply ONLY with "YES" or "NO".`;
     }
 
     // Canal voz: sin herramientas de reserva/pago mientras VOICE_TRANSACTIONS_BY_VOICE no sea true.
-    const functionDeclarations = options.voiceChannel ? filterVoiceTools(GEMINI_FUNCTION_DECLARATIONS as Array<{ name: string }>) : GEMINI_FUNCTION_DECLARATIONS;
+    const declarationTool: any = options.voiceChannel
+      ? { functionDeclarations: filterVoiceTools(GEMINI_FUNCTION_DECLARATIONS as Array<{ name: string }>) }
+      : { functionDeclarations: GEMINI_FUNCTION_DECLARATIONS };
     const buildTools = () => needsGrounding
-      ? [{ googleSearch: {} }, { functionDeclarations }]
-      : [{ functionDeclarations }];
+      ? [{ googleSearch: {} }, declarationTool]
+      : [declarationTool];
     const buildConfig = (): any => ({
       systemInstruction: SYSTEM_INSTRUCTION,
       temperature: 0.7,
