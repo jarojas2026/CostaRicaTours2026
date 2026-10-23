@@ -1,9 +1,9 @@
 # Bloqueo de Stripe en vivo (modo TEST hasta el lanzamiento)
 
-Estado: módulo listo, **sin cablear** (el cableado toca `backend/bookingService.ts`, que es de otro carril).
+Estado: **cableado** en `backend/bookingService.ts` → `getStripe()` (único punto que crea el cliente Stripe del backend; `routes/payments.ts` y `paymentWebhookService.ts` lo usan). `api/_paymentWebhookIngress.ts` crea su propio cliente solo para verificar firmas de webhook y no se tocó.
 
 - `backend/stripeModeGuard.ts`: `checkStripeMode()` / `assertStripeTestMode()`.
-  Si `STRIPE_SECRET_KEY` empieza por `sk_live_` y `ALLOW_STRIPE_LIVE` no es `true` → error `STRIPE_LIVE_BLOCKED`.
+  Si `STRIPE_SECRET_KEY` empieza por `sk_live_` o `rk_live_` y `ALLOW_STRIPE_LIVE` no es `true` → error `STRIPE_LIVE_BLOCKED`.
 - Tests: `tests/stripeModeGuard.contract.test.ts`.
 
 ## Cableado pendiente (1 línea, dueño del carril de pagos)
@@ -19,7 +19,7 @@ Cloud Run: `STRIPE_SECRET_KEY=sk_live_...` (Secret Manager) **y** `ALLOW_STRIPE_
 Volver a TEST: clave `sk_test_...` o quitar `ALLOW_STRIPE_LIVE`.
 
 ## Hueco conocido
-Las claves restringidas `rk_live_` no se bloquean todavía (el código usa `sk_`); añadir si se adoptan.
+Las claves restringidas `rk_live_` se bloquean igual que `sk_live_`.
 
 # Script de limpieza de leads de prueba (#331)
 `scripts/discardTestLeads.ts`: DRY-RUN por defecto; descarte reversible vía
