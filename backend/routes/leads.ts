@@ -5,6 +5,8 @@
  * - POST /api/admin/leads/triage          (requireOperator) descartar/restaurar en bloque (reversible)
  * - GET  /api/admin/leads/:id             (requireOperator) detalle con candidatos y borradores
  * - PATCH /api/admin/leads/:id/status     (requireOperator) máquina de estados con evidencia
+ * - POST /api/admin/leads/:id/payment-link (requireOwner) enlace de checkout Stripe TEST de la
+ *   reserva enlazada al lead (reutiliza createStripeCheckoutForBooking; no marca nada como pagado).
  * - POST /api/leads/quote-request        (público, rate-limit) solicitud de cotización desde
  *   /tour/:id con source "tour_page"; exige consentimiento Ley 8968 y un tour del catálogo.
  * - POST /api/leads/map-service-request (público, mismo antiabuso) consulta de un servicio del
@@ -15,7 +17,9 @@
 
 import crypto from 'crypto';
 import type express from 'express';
-import { requireOperator } from '../authMiddleware';
+import { requireOperator, requireOwner } from '../authMiddleware';
+import { createLeadPaymentLink } from '../leadPaymentLink';
+import { createStripeCheckoutForBooking } from './payments';
 import { buildLeadDigest, buildMapServiceLeadInput, buildTourPageLeadInput, captureLeadAndNotify, getLead, isLeadStatus, listLeads, transitionLead, triageLeads, LEAD_STATUSES } from '../leadPipeline';
 import { isLeadPriority, isLeadTriageState, LEAD_PRIORITIES, LEAD_TRIAGE_STATES } from '../leadTriage';
 import { createRouter, adminAccessPayload, chatLimiter } from './shared';
@@ -94,6 +98,11 @@ leadsRouter.patch('/api/admin/leads/:id/status', requireOperator, async (req, re
     return res.status(code).json({ success: false, error: result.error, message: result.message });
   }
   res.json({ success: true, lead: result.lead });
+});
+
+leadsRouter.post('/api/admin/leads/:id/payment-link', requireOwner, async (req, res) => {
+  const result = await createLeadPaymentLink(String(req.params.id), { getLead, createCheckout: createStripeCheckoutForBooking });
+  res.status(result.status).json(result.body);
 });
 
 leadsRouter.post('/api/leads/quote-request', chatLimiter, quoteRequestGuard, quoteRequestDailyGuard, async (req, res) => {

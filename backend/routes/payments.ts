@@ -30,21 +30,25 @@ export const checkoutRouter = createRouter();
 // 💳 PASARELAS DE PAGO (STRIPE & PAYPAL)
 // ==========================================
 
-checkoutRouter.post('/api/stripe/create-checkout-session', paymentLimiter, async (req, res) => {
+/**
+ * Checkout Stripe (TEST mientras ALLOW_STRIPE_LIVE !== 'true') para una reserva pendiente.
+ * Misma lógica que antes vivía dentro de POST /api/stripe/create-checkout-session; se exporta
+ * para reutilizarla desde POST /api/admin/leads/:id/payment-link sin duplicar la llamada a Stripe.
+ */
+export async function createStripeCheckoutForBooking(bookingId: unknown): Promise<{ status: number; body: any }> {
   try {
-    const { bookingId } = req.body;
     const booking = await getBookingById(String(bookingId || ''));
     if (!booking || booking.paymentStatus === 'completed') {
-      return res.status(409).json({ error: 'La reserva no existe o ya tiene un pago verificado.' });
+      return { status: 409, body: { error: 'La reserva no existe o ya tiene un pago verificado.' } };
     }
     let payment;
     try { payment = checkoutQuote(booking); }
-    catch (error: any) { return res.status(409).json({ error: error.message }); }
+    catch (error: any) { return { status: 409, body: { error: error.message } }; }
     const returnOrigin = checkoutOrigin();
     const stripe = getStripe();
     if (!stripe) {
       console.error('🔴 STRIPE_SECRET_KEY no configurada. Se rechaza el intento de pago.');
-      return res.status(503).json({ error: 'Pagos no disponibles: Stripe no está configurado en el servidor.' });
+      return { status: 503, body: { error: 'Pagos no disponibles: Stripe no está configurado en el servidor.' } };
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -66,11 +70,16 @@ checkoutRouter.post('/api/stripe/create-checkout-session', paymentLimiter, async
       cancel_url: `${returnOrigin}/?booking=canceled`,
       customer_email: booking.customerEmail || undefined
     });
-    res.json({ url: session.url, id: session.id });
+    return { status: 200, body: { url: session.url, id: session.id } };
   } catch (err: any) {
     console.error('Error en Stripe:', err);
-    res.status(500).json({ error: err.message });
+    return { status: 500, body: { error: err.message } };
   }
+}
+
+checkoutRouter.post('/api/stripe/create-checkout-session', paymentLimiter, async (req, res) => {
+  const result = await createStripeCheckoutForBooking(req.body?.bookingId);
+  res.status(result.status).json(result.body);
 });
 
 checkoutRouter.post('/api/paypal/create-order', paymentLimiter, async (req, res) => {
