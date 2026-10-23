@@ -263,7 +263,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
               {isEn ? 'Volcanoes & Hot Springs Dream' : 'Volcanes y Termales de Ensueño'}
             </h4>
             <p className="text-xs text-stone-400 line-clamp-2">
-              {isEn ? 'Arenal volcano trails, mineral thermal pools, and romantic relaxation.' : 'Arenal, aguas termales minerales de Baldi y relax total en pareja.'}
+              {isEn ? 'Arenal volcano trails, mineral thermal pools, and romantic relaxation.' : 'Arenal, aguas termales minerales y relax total en pareja.'}
             </p>
           </div>
 

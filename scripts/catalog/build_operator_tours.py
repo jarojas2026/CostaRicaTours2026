@@ -68,6 +68,7 @@ EXTRA_ALIASES = [
     'Trogón Lodge', 'Mountain Top Park', 'Proyecto Asís', 'Hacienda Barú', 'Copa de Árbol', 'Sambola',
     'Ara Manzanillo', 'Jaguar Rescue', 'Kinkajou', 'Bat Jungle', 'Original Canopy', 'Crocodile Man',
     'Don Lucas', 'Rainforest Chocolate',
+    'Baldi Hot Springs', 'Baldi Springs', 'Termales Baldi', 'Termales de Baldi', 'Aguas Termales Baldi', 'Aguas Termales de Baldi',
 ]
 # Alias que solo se quitan del texto del catálogo (también son topónimos: barrio
 # Guachipelín de Escazú, Boulevard Selva Verde): no entran al denylist global.

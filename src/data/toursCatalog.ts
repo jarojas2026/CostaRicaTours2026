@@ -76,8 +76,8 @@ export const TOURS: Tour[] = [
   {
     id: 'arenal-hot-springs',
     title: {
-      es: 'Combo Arenal: Caminata Volcánica, Catarata y Aguas Termales de Baldi',
-      en: 'Arenal Combo: Volcano Hike, Waterfall & Baldi Hot Springs'
+      es: 'Combo Arenal: Caminata Volcánica, Catarata y Aguas Termales',
+      en: 'Arenal Combo: Volcano Hike, Waterfall & Hot Springs'
     },
     subtitle: {
       es: 'Pase completo con almuerzo, cena buffet y transporte incluido',
@@ -123,8 +123,8 @@ export const TOURS: Tour[] = [
       ]
     },
     inclusions: {
-      es: ['Transporte ida y vuelta desde tu hotel en La Fortuna', 'Entrada al Parque Nacional Volcán Arenal', 'Entrada a Catarata La Fortuna', 'Pase de día y cena en Aguas Termales Baldi', 'Guía naturalista bilingüe', 'Agua embotellada y frutas'],
-      en: ['Roundtrip hotel transport in La Fortuna', 'Arenal Volcano NP entry fee', 'La Fortuna Waterfall entry fee', 'Day pass & buffet dinner at Baldi Hot Springs', 'Certified bilingual guide', 'Bottled water and fresh fruit']
+      es: ['Transporte ida y vuelta desde tu hotel en La Fortuna', 'Entrada al Parque Nacional Volcán Arenal', 'Entrada a Catarata La Fortuna', 'Pase de día y cena en aguas termales de La Fortuna', 'Guía naturalista bilingüe', 'Agua embotellada y frutas'],
+      en: ['Roundtrip hotel transport in La Fortuna', 'Arenal Volcano NP entry fee', 'La Fortuna Waterfall entry fee', 'Day pass & buffet dinner at a La Fortuna hot springs', 'Certified bilingual guide', 'Bottled water and fresh fruit']
     },
     exclusions: {
       es: ['Propinas para el guía y chofer', 'Tratamientos de Spa y masajes', 'Bebidas alcohólicas adicionales'],
@@ -1833,7 +1833,7 @@ export const TOURS: Tour[] = [
       es: ['Ropa cómoda que se pueda mojar', 'Zapatos cerrados de suela de goma o hiking', 'Ropa seca de cambio', 'Bolsa plástica para ropa mojada'],
       en: ['Clothes you don’t mind getting wet', 'Closed-toe shoes or trail runners', 'Dry change of clothes', 'Plastic bag for wet gear']
     },
-    pickupHotels: ['The Springs Resort', 'Tabacón Resort', 'Nayara Resorts', 'Baldi Hot Springs', 'Hoteles en La Fortuna'],
+    pickupHotels: ['The Springs Resort', 'Tabacón Resort', 'Nayara Resorts', 'Hoteles en La Fortuna'],
     departureTimes: ['07:30 AM', '11:30 AM'],
     location: { lat: 10.4500, lng: -84.6600, placeName: 'La Fortuna, San Carlos, Costa Rica' },
     instantConfirmation: true,
@@ -2641,16 +2641,16 @@ export const TOURS: Tour[] = [
     maxGroupSize: 12,
     freeCancellation: true,
     description: {
-      es: 'El itinerario definitivo para conocer lo mejor de Costa Rica en 5 días sin complicaciones logísticas. Día 1: Recogida en San José, traslado a La Fortuna, caminata en lava del Volcán Arenal y aguas termales de Baldi. Día 2: Traslado taxi-bote-taxi por el Lago Arenal hacia Monteverde y caminata en puentes colgantes. Día 3: Tirolesa Superman en bosque nuboso y traslado a Manuel Antonio. Día 4: Tour guiado en Parque Nacional Manuel Antonio y tarde libre en la playa. Día 5: Desayuno y traslado de regreso al Aeropuerto SJO.',
-      en: 'The definitive 5-day / 4-night Costa Rica highlights itinerary with seamless logistics. Day 1: San Jose pickup, transfer to Arenal Volcano lava trails & Baldi Hot Springs. Day 2: Scenic boat transfer across Lake Arenal to Monteverde Cloud Forest hanging bridges. Day 3: Monteverde Superman zipline canopy & transfer to Manuel Antonio beach. Day 4: Guided wildlife safari in Manuel Antonio National Park & beach relaxation. Day 5: Breakfast and private transfer back to SJO Airport.'
+      es: 'El itinerario definitivo para conocer lo mejor de Costa Rica en 5 días sin complicaciones logísticas. Día 1: Recogida en San José, traslado a La Fortuna, caminata en lava del Volcán Arenal y aguas termales. Día 2: Traslado taxi-bote-taxi por el Lago Arenal hacia Monteverde y caminata en puentes colgantes. Día 3: Tirolesa Superman en bosque nuboso y traslado a Manuel Antonio. Día 4: Tour guiado en Parque Nacional Manuel Antonio y tarde libre en la playa. Día 5: Desayuno y traslado de regreso al Aeropuerto SJO.',
+      en: 'The definitive 5-day / 4-night Costa Rica highlights itinerary with seamless logistics. Day 1: San Jose pickup, transfer to Arenal Volcano lava trails & hot springs. Day 2: Scenic boat transfer across Lake Arenal to Monteverde Cloud Forest hanging bridges. Day 3: Monteverde Superman zipline canopy & transfer to Manuel Antonio beach. Day 4: Guided wildlife safari in Manuel Antonio National Park & beach relaxation. Day 5: Breakfast and private transfer back to SJO Airport.'
     },
     highlights: {
-      es: ['Volcán Arenal y termales minerales de Baldi', 'Cruce escénico en bote por el Lago Arenal', 'Puentes colgantes y tirolesas en Monteverde', 'Parque Nacional Manuel Antonio y playas del Pacífico', 'Todos los traslados interurbanos coordinados con chofer'],
-      en: ['Arenal Volcano hike & Baldi mineral hot springs', 'Lake Arenal boat transfer crossing', 'Monteverde Cloud Forest canopy bridges & zipline', 'Manuel Antonio National Park guided wildlife safari', 'All door-to-door intercity hotel transfers included']
+      es: ['Volcán Arenal y aguas termales minerales', 'Cruce escénico en bote por el Lago Arenal', 'Puentes colgantes y tirolesas en Monteverde', 'Parque Nacional Manuel Antonio y playas del Pacífico', 'Todos los traslados interurbanos coordinados con chofer'],
+      en: ['Arenal Volcano hike & mineral hot springs', 'Lake Arenal boat transfer crossing', 'Monteverde Cloud Forest canopy bridges & zipline', 'Manuel Antonio National Park guided wildlife safari', 'All door-to-door intercity hotel transfers included']
     },
     inclusions: {
-      es: ['4 noches de hospedaje en hoteles 4 estrellas con desayuno', 'Todos los traslados terrestres y acuáticos privados entre destinos', 'Entradas a Volcán Arenal, Termales Baldi, Puentes Monteverde y Manuel Antonio', 'Guías bilingües autorizadas en cada tour', 'Asistencia local 24/7 de Costa Rica Tours'],
-      en: ['4 nights in top 4-star hotels with daily breakfast', 'All private door-to-door intercity & boat transfers', 'Entrance tickets to Arenal, Baldi Springs, Monteverde Bridges & Manuel Antonio', 'Certified bilingual guides on every tour', '24/7 dedicated local concierge assistance']
+      es: ['4 noches de hospedaje en hoteles 4 estrellas con desayuno', 'Todos los traslados terrestres y acuáticos privados entre destinos', 'Entradas a Volcán Arenal, aguas termales, Puentes Monteverde y Manuel Antonio', 'Guías bilingües autorizadas en cada tour', 'Asistencia local 24/7 de Costa Rica Tours'],
+      en: ['4 nights in top 4-star hotels with daily breakfast', 'All private door-to-door intercity & boat transfers', 'Entrance tickets to Arenal, hot springs, Monteverde Bridges & Manuel Antonio', 'Certified bilingual guides on every tour', '24/7 dedicated local concierge assistance']
     },
     exclusions: {
       es: ['Vuelos internacionales', 'Almuerzos y cenas no especificados', 'Propinas'],
