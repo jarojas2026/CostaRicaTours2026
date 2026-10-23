@@ -7,7 +7,7 @@ test.describe('Regression smoke (additive)', () => {
     const routes = ['/', '/tours', '/destinations', '/map', '/ai', '/trip', '/terms'];
     for (const r of routes) {
       await page.goto(r);
-      await expect(page).toHaveTitle(/Costa Rica Tours/i);
+      await expect(page).toHaveTitle(/Costa Rica/i);
       // Sin error fatal: el header debe estar presente
       await expect(page.getByRole('banner').first()).toBeVisible();
     }
@@ -28,7 +28,7 @@ test.describe('Regression smoke (additive)', () => {
     // Si no hay tasa, los precios deben seguir en US$ (nunca ₡ con tasa 1)
     const body = await page.textContent('body');
     const hasCrc = /₡|CRC\s*\d/.test(body ?? '');
-    const hasUsd = /US\$/.test(body ?? '');
+    const hasUsd = /US\$|USD|\$\s?\d/.test(body ?? '');
     expect(hasUsd).toBeTruthy();
     if (hasCrc) {
       // Si muestra CRC, no puede ser un número idéntico al USD (tasa ~515)

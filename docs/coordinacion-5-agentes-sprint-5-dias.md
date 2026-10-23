@@ -24,7 +24,7 @@
 | **Día 2** | #174/#175: E2E sandbox de pagos (Stripe) + cupos/idempotencia/reembolsos verde. |
 | **Día 3** | Onboarding 1 operador real (La Fortuna): tarifas, cupos, imágenes reales (#333), contrato firmado. |
 | **Día 4** | Flujo completo de compra en producción con tarjeta de prueba real → voucher PDF → liquidación T+2 simulada. #364 contacto unificado. |
-| **Día 5** | Tráfico pagado pequeño ($10–20/día) solo La Fortuna; medir tasa envío→pago; QualityAgent (#401) estable monitoreando. **Criterio de éxito: ≥1 reserva pagada y conciliada.** |
+| **Día 5** | ~~Tráfico pagado pequeño ($10–20/día)~~ NO autorizado (presupuesto $0) solo La Fortuna; medir tasa envío→pago; QualityAgent (#401) estable monitoreando. **Criterio de éxito: ≥1 reserva pagada y conciliada.** |
 
 ## 4. Definition of Done común (todo PR)
 - Pasa `npm run check:release` (lint + security + contracts + build).
