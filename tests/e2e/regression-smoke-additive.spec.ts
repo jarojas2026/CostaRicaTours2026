@@ -25,8 +25,11 @@ test.describe('Regression smoke (additive)', () => {
 
   test('currency selector does not show wrong CRC number when rate missing', async ({ page }) => {
     await page.goto('/tours');
+    // El catálogo se hidrata de forma asíncrona: esperar a que aparezca algún precio en USD
+    // antes de leer el texto (si no, la lectura inmediata da falsos rojos intermitentes).
+    await expect(page.locator('body')).toContainText(/US\$|USD|\$\s?\d/, { timeout: 20_000 });
     // Si no hay tasa, los precios deben seguir en US$ (nunca ₡ con tasa 1)
-    const body = await page.textContent('body');
+    const body = await page.locator('body').innerText();
     const hasCrc = /₡|CRC\s*\d/.test(body ?? '');
     const hasUsd = /US\$|USD|\$\s?\d/.test(body ?? '');
     expect(hasUsd).toBeTruthy();
