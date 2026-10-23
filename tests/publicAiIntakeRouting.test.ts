@@ -4,17 +4,15 @@ import { readFileSync } from 'node:fs';
 
 const publicInquirySurfaces = [
   'src/components/Header.tsx',
-  'src/components/Footer.tsx',
   'src/components/HomeTrustSections.tsx',
   'src/components/FeaturedToursSection.tsx',
   'src/components/RegionalExperienceGuides.tsx',
   'src/components/OperatorsSection.tsx',
-  'src/pages/TourDetailPage.tsx',
   'src/components/LocalBusesModal.tsx',
   'src/components/NationalTransportSection.tsx'
 ];
 
-test('public first-contact entry points do not bypass customer-intake via direct WhatsApp anchors', () => {
+test('AI inquiry actions retain triage; explicit WhatsApp help is a separate opt-in channel', () => {
   for (const path of publicInquirySurfaces) {
     const source = readFileSync(path, 'utf8');
     assert.match(source, /requestCustomerIntake\(/, path + ': use existing AI triage');

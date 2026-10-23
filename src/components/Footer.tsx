@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Language } from '../types';
-import { requestCustomerIntake } from '../utils/customerIntake';
+import { whatsappInquiryUrl } from '../utils/directWhatsApp';
 import { createT } from '../i18n';
 import { Phone, MapPin, Mail, ShieldCheck, Heart, Globe, Sparkles, MessageCircle, Lock, CreditCard, ChevronRight } from 'lucide-react';
 
@@ -53,17 +53,19 @@ export const Footer: React.FC<FooterProps> = ({ language }) => {
             </p>
 
             <div className="flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={() => requestCustomerIntake({
-                  message: t('footer.iWouldLikeHelp'),
-                  language, source: 'footer:assistance'
-                })}
+              <a
+                href={whatsappInquiryUrl(t('footer.iWouldLikeHelp'), language)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-describedby="footer-whatsapp-hint"
                 className="font-extrabold text-sm flex items-center gap-2 text-white hover:text-teal-300 transition-colors text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300"
               >
                 <MessageCircle className="w-5 h-5 text-[#25D366]" />
-                {t('footer.askAiWhatsappNeeded')}
-              </button>
+                {t('footer.contactWhatsapp')}
+              </a>
+              <p id="footer-whatsapp-hint" className="text-xs text-stone-300">
+                {t('footer.whatsappDraftHint')}
+              </p>
               <a
                 href="mailto:jarojas800@gmail.com"
                 className="font-extrabold text-xs flex items-center gap-2 text-white hover:text-teal-300 transition-colors"
