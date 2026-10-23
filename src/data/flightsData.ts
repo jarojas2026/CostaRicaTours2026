@@ -170,6 +170,16 @@ export const ORIGIN_COUNTRIES: OriginCountryInfo[] = [
   },
 ];
 
+/**
+ * #397: horarios, duraciones y precios de FLIGHT_ROUTES son de REFERENCIA (sin
+ * fuente de aerolínea verificada). La UI debe mostrarlos con estas etiquetas.
+ */
+export const FLIGHT_REFERENCE_LABELS = {
+  price: { es: 'Precio de referencia / consultar', en: 'Reference price / ask us' },
+  schedule: { es: 'Horario de referencia: confirmar con la aerolínea', en: 'Reference schedule: confirm with the airline' },
+} as const;
+export const FLIGHT_ROUTES_ARE_REFERENCE = true;
+
 export const FLIGHT_ROUTES: FlightRoute[] = [
   // --- ESPAÑA (MAD / BCN) ---
   {
@@ -246,7 +256,7 @@ export const FLIGHT_ROUTES: FlightRoute[] = [
     id: 'fl-av-bcn-sjo',
     airline: 'Avianca',
     airlineCode: 'AV',
-    airlineLogo: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=120&auto=format&fit=crop&q=80',
+    airlineLogo: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=120&auto=format&fit=crop&q=80',
     flightNumber: 'AV 019 + AV 690',
     aircraft: 'Boeing 787-8 Dreamliner',
     originCountry: 'España',
@@ -424,7 +434,7 @@ export const FLIGHT_ROUTES: FlightRoute[] = [
     id: 'fl-dl-891',
     airline: 'Delta Air Lines',
     airlineCode: 'DL',
-    airlineLogo: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=120&auto=format&fit=crop&q=80',
+    airlineLogo: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=120&auto=format&fit=crop&q=80',
     flightNumber: 'DL 891',
     aircraft: 'Boeing 757-200',
     originCountry: 'Estados Unidos',
@@ -459,7 +469,7 @@ export const FLIGHT_ROUTES: FlightRoute[] = [
     id: 'fl-b6-1793',
     airline: 'JetBlue Airways',
     airlineCode: 'B6',
-    airlineLogo: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=120&auto=format&fit=crop&q=80',
+    airlineLogo: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=120&auto=format&fit=crop&q=80',
     flightNumber: 'B6 1793',
     aircraft: 'Airbus A321neo',
     originCountry: 'Estados Unidos',
@@ -494,7 +504,7 @@ export const FLIGHT_ROUTES: FlightRoute[] = [
     id: 'fl-as-277',
     airline: 'Alaska Airlines',
     airlineCode: 'AS',
-    airlineLogo: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=120&auto=format&fit=crop&q=80',
+    airlineLogo: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=120&auto=format&fit=crop&q=80',
     flightNumber: 'AS 277',
     aircraft: 'Boeing 737 MAX 9',
     originCountry: 'Estados Unidos',
@@ -566,7 +576,7 @@ export const FLIGHT_ROUTES: FlightRoute[] = [
     id: 'fl-ws-2258-lir',
     airline: 'WestJet',
     airlineCode: 'WS',
-    airlineLogo: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=120&auto=format&fit=crop&q=80',
+    airlineLogo: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=120&auto=format&fit=crop&q=80',
     flightNumber: 'WS 2258',
     aircraft: 'Boeing 737-800',
     originCountry: 'Canadá',
@@ -603,7 +613,7 @@ export const FLIGHT_ROUTES: FlightRoute[] = [
     id: 'fl-am-656',
     airline: 'Aeroméxico',
     airlineCode: 'AM',
-    airlineLogo: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=120&auto=format&fit=crop&q=80',
+    airlineLogo: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=120&auto=format&fit=crop&q=80',
     flightNumber: 'AM 656',
     aircraft: 'Boeing 737 MAX 8',
     originCountry: 'México',
@@ -638,7 +648,7 @@ export const FLIGHT_ROUTES: FlightRoute[] = [
     id: 'fl-q6-4071',
     airline: 'Volaris Costa Rica',
     airlineCode: 'Q6',
-    airlineLogo: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=120&auto=format&fit=crop&q=80',
+    airlineLogo: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=120&auto=format&fit=crop&q=80',
     flightNumber: 'Q6 4071',
     aircraft: 'Airbus A320neo',
     originCountry: 'México',
@@ -675,7 +685,7 @@ export const FLIGHT_ROUTES: FlightRoute[] = [
     id: 'fl-av-692',
     airline: 'Avianca',
     airlineCode: 'AV',
-    airlineLogo: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=120&auto=format&fit=crop&q=80',
+    airlineLogo: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=120&auto=format&fit=crop&q=80',
     flightNumber: 'AV 692',
     aircraft: 'Airbus A320neo',
     originCountry: 'Colombia',
@@ -860,7 +870,7 @@ export const FLIGHT_ROUTES: FlightRoute[] = [
     id: 'fl-cm-162',
     airline: 'Copa Airlines',
     airlineCode: 'CM',
-    airlineLogo: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=120&auto=format&fit=crop&q=80',
+    airlineLogo: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=120&auto=format&fit=crop&q=80',
     flightNumber: 'CM 162',
     aircraft: 'Boeing 737-800',
     originCountry: 'Panamá',
@@ -897,7 +907,7 @@ export const FLIGHT_ROUTES: FlightRoute[] = [
     id: 'fl-la-2408',
     airline: 'LATAM Airlines',
     airlineCode: 'LA',
-    airlineLogo: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=120&auto=format&fit=crop&q=80',
+    airlineLogo: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=120&auto=format&fit=crop&q=80',
     flightNumber: 'LA 2408',
     aircraft: 'Airbus A320neo',
     originCountry: 'Perú',

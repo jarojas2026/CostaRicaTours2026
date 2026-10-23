@@ -65,6 +65,17 @@ export async function mockApi(page: Page, options: MockApiOptions = {}): Promise
         },
       }, 201);
     }
+    if (pathname === '/api/currency/rates') {
+      return json(route, {
+        base: 'USD',
+        rates: { USD: 1, CRC: 510, EUR: 0.92 },
+        sources: { CRC: { provider: 'BCCR', rateDate: '2026-10-21' }, EUR: { provider: 'BCE', rateDate: '2026-10-21' } },
+        available: ['USD', 'CRC', 'EUR'],
+        unavailable: [],
+        fetchedAt: new Date().toISOString(),
+        stale: false,
+      });
+    }
     if (pathname === '/api/currency/exchange-rate') {
       return json(route, { usdToCrc: 510, source: 'runtime-config', updatedAt: new Date().toISOString() });
     }

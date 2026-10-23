@@ -224,7 +224,7 @@ providerPortalRouter.get('/api/provider/v2/sales', requireProvider('manager'), a
   const db = getFirestoreDb();
   if (!db) return res.status(503).json({ success: false, error: 'Portal de proveedores no disponible sin Firestore.' });
   const { lines, meta } = await loadProviderSaleLines(db, ctx, { months: Number(req.query.months) || 12 });
-  return res.json({ success: true, meta, ...summarizeSales(lines, meta.showGross) });
+  return res.json({ success: true, meta, ...summarizeSales(lines, meta.showGross, meta.showCommission) });
 });
 
 /** Liquidaciones del proveedor (#321): solo owner. Solo lectura, no paga nada. */

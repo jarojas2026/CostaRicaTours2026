@@ -181,11 +181,42 @@ test('/api/health/ai answers 200 for unknown/unconfigured, 503 only when every c
       const text = await res.text();
       const body = JSON.parse(text);
       assert.equal(body.status, 'unknown');
-      assert.ok(Array.isArray(body.breakers));
+      assert.deepEqual(Object.keys(body).sort(), ['status']);
+      assert.doesNotMatch(text, /providers|policy|breakers|billing|allowExternalPii|maxCostUsd|fallbackEnabled/);
       assert.doesNotMatch(text, /test-key|@/);
     } finally {
       server.closeAllConnections();
       await new Promise((resolve) => server.close(resolve));
     }
   });
+});
+
+test('AI diagnostics require admin authentication and never cache responses', async () => {
+  const previous = process.env.OPERATOR_API_KEY;
+  process.env.OPERATOR_API_KEY = 'test-only-health-key';
+  const app = express();
+  app.use(healthRouter);
+  const server = app.listen(0, '127.0.0.1');
+  await new Promise<void>((resolve, reject) => { server.once('listening', resolve); server.once('error', reject); });
+  const { port } = server.address() as AddressInfo;
+  const url = `http://127.0.0.1:${port}/api/ops/ai-health`;
+  try {
+    const deniedHeaders: Record<string, string>[] = [{}, { 'x-operator-key': 'wrong-key' }];
+    for (const headers of deniedHeaders) {
+      const response = await fetch(url, { headers });
+      assert.equal(response.status, 401);
+      assert.equal(response.headers.get('cache-control'), 'no-store');
+      assert.doesNotMatch(await response.text(), /providers|policy|breakers|billingBlocked/);
+    }
+    // #379: el rol operator (OPERATOR_API_KEY compartida) ya no ve el diagnóstico; solo owner/admin.
+    const response = await fetch(url, { headers: { 'x-operator-key': 'test-only-health-key' } });
+    assert.equal(response.status, 403);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.doesNotMatch(await response.text(), /providers|policy|breakers|billingBlocked/);
+  } finally {
+    if (previous === undefined) delete process.env.OPERATOR_API_KEY;
+    else process.env.OPERATOR_API_KEY = previous;
+    server.closeAllConnections();
+    await new Promise<void>(resolve => server.close(() => resolve()));
+  }
 });

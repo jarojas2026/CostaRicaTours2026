@@ -6,7 +6,8 @@ import { getLangText } from '../utils/i18n';
 import { createT } from '../i18n';
 
 import { LazyImage } from './LazyImage';
-import { useExchangeRate } from './ReferencePrice';
+import { useRates } from '../hooks/useMoney';
+import { rateFor } from '../utils/money';
 import { referencePriceParts } from '../utils/referencePrice';
 import { REGIONS_DATA } from '../data/regionsData';
 import { OperatorPriceSource } from './OperatorPriceSource';
@@ -68,8 +69,8 @@ export const TourCard: React.FC<TourCardProps> = ({
   const subtitleText = getLangText(tour.subtitle, language);
   const durationText = getLangText(tour.durationLabel, language);
   const inclusionsList = getLangText(tour.inclusions, language, []);
-  const rate = useExchangeRate(currency);
-  const price = referencePriceParts(publishedTourPrice(tour), currency, rate, language);
+  const rates = useRates();
+  const price = referencePriceParts(publishedTourPrice(tour), currency, rateFor(currency, rates), language, rates);
   const placeText = tour.location.placeName.split(',')[0].trim();
   const regionInfo = REGIONS_DATA.find(r => r.id === tour.region);
   const regionText = regionInfo ? getLangText(regionInfo.name, language).split(' (')[0].trim() : '';
@@ -206,12 +207,13 @@ export const TourCard: React.FC<TourCardProps> = ({
           {/* Footer: Clear Price & Primary Action */}
           <div className="flex items-center justify-between pt-4 mt-4 border-t border-emerald-500/20">
             <div className="space-y-0.5">
-              <span data-testid="tour-card-price" className="flex flex-col" title={price.disclaimer}>
+              <span data-testid="tour-card-price" className="flex flex-col" title={[price.rateNote || price.rateNotice, price.disclaimer].filter(Boolean).join(' · ')}>
                 {price.usd ? (
                   <>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300">{t('tourCard.from')}</span>
-                    <span className="text-xl font-black text-amber-400 leading-tight">{price.usd}</span>
-                    {price.approx && <span className="text-[11px] font-semibold text-stone-300">{price.approx}</span>}
+                    <span className="text-xl font-black text-amber-400 leading-tight">{price.approx || price.usd}</span>
+                    {price.approx && <span className="text-[11px] font-semibold text-stone-300">{price.usd}</span>}
+                    {(price.rateNote || price.rateNotice) && <span data-testid="rate-note" className="text-[10px] text-stone-400 leading-snug">{price.rateNote || price.rateNotice}</span>}
                     <span className="text-[10px] text-stone-400 leading-snug">{t('tourCard.referencePrice')}</span>
                   </>
                 ) : (

@@ -47,6 +47,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { formatCurrency, getLangText } from '../utils/i18n';
+import { useMoney } from '../hooks/useMoney';
 import { APIProvider, Map as GoogleMap, AdvancedMarker, useMap as useGoogleMap } from '@vis.gl/react-google-maps';
 import { 
   MAP_TOURISM_SERVICES, 
@@ -57,7 +58,7 @@ import {
 } from '../data/mapServicesData';
 import { MapServiceBookingModal } from './MapServiceBookingModal';
 import { NationalPoiLayer, OPEN_NATIONAL_LAYERS_EVENT } from './NationalPoiLayer';
-import { groupByCoordinate } from '../utils/mapMarkerLayout';
+import { groupMapPointsAtZoom } from '../utils/mapMarkerLayout';
 import { PRICE_ON_REQUEST, REFERENCE_PRICE_NOTE, getMapServiceUnitPriceUSD } from '../utils/mapServicePricing';
 import { PUBLIC_REQUEST_LABEL } from '../data/publicContactPolicy';
 
@@ -210,6 +211,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   onOpenItineraryTab,
   onOpenLocalBusesModal
 }) => {
+  const money = useMoney(currency, language);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
   // Instancia reactiva del mapa para capas hijas (capas nacionales de POI)
@@ -609,8 +611,18 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     // Muchos tours comparten la coordenada de referencia de su zona (p. ej. 17 en Caño Negro).
     // Apilados, solo el de arriba era clicable y parecían un único negocio: se agrupan en una
     // marca con conteo, marcada como ubicación aproximada de la zona.
-    const tourGroups = groupByCoordinate(effectiveTours, (tour) =>
-      tour.location?.lat && tour.location?.lng ? [tour.location.lat, tour.location.lng] : null
+    const map = leafletMapRef.current;
+    const zoom = map.getZoom();
+    // Use geographic world pixels, not screen-relative pixels; panning must
+    // not move the grouping centroid. On close zoom we keep original anchors.
+    const projectPoint = (lat: number, lng: number) => {
+      const point = map.project([lat, lng], zoom);
+      return { x: point.x, y: point.y };
+    };
+    const tourGroups = groupMapPointsAtZoom(effectiveTours, (tour) =>
+      Number.isFinite(tour.location?.lat) && Number.isFinite(tour.location?.lng)
+        ? [tour.location.lat, tour.location.lng] : null,
+      projectPoint, zoom
     );
     tourGroups.forEach((group) => {
       if (group.items.length > 1) {
@@ -641,9 +653,24 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         const note = document.createElement('div');
         note.style.cssText = 'font-size:10px;opacity:.7;margin-bottom:6px;';
         note.textContent = language === 'es'
-          ? `📍 ${zoneName} · ubicación aproximada (punto de referencia de la zona)`
-          : `📍 ${zoneName} · approximate location (area reference point)`;
+          ? group.isCluster
+            ? '📍 Agrupación de zonas cercanas; esta marca NO indica una ubicación exacta'
+            : `📍 ${zoneName} · ubicación aproximada (punto de referencia de la zona)`
+          : group.isCluster
+            ? '📍 Nearby areas grouped; this pin is NOT an exact location'
+            : `📍 ${zoneName} · approximate location (area reference point)`;
         popupEl.append(heading, note);
+        if (group.isCluster && zoom < 13) {
+          const zoomButton = document.createElement('button');
+          zoomButton.type = 'button';
+          zoomButton.textContent = language === 'es' ? '🔎 Acercar para separar marcas' : '🔎 Zoom in to separate pins';
+          zoomButton.style.cssText = 'display:block;width:100%;text-align:left;padding:5px 2px;margin-bottom:4px;color:#047857;font-weight:800;cursor:pointer;';
+          zoomButton.addEventListener('click', () => {
+            stackMarker.closePopup();
+            map.flyTo([group.lat, group.lng], Math.min(13, zoom + 2), { duration: 0.45 });
+          });
+          popupEl.append(zoomButton);
+        }
         groupTours.forEach((tour) => {
           const btn = document.createElement('button');
           btn.type = 'button';
@@ -658,7 +685,9 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         });
         stackMarker.bindPopup(popupEl, { maxWidth: 280 });
         stackMarker.bindTooltip(
-          language === 'es' ? `${groupTours.length} tours · ${zoneName} (ubicación aproximada)` : `${groupTours.length} tours · ${zoneName} (approximate location)`,
+          group.isCluster
+            ? (language === 'es' ? `${groupTours.length} tours cercanos · grupo aproximado` : `${groupTours.length} nearby tours · approximate cluster`)
+            : (language === 'es' ? `${groupTours.length} tours · ${zoneName} (ubicación aproximada)` : `${groupTours.length} tours · ${zoneName} (approximate location)`),
           { direction: 'top', offset: [0, -18], className: 'leaflet-tour-tooltip' }
         );
         stackMarker.addTo(markersLayerRef.current!);
@@ -727,14 +756,67 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     });
 
     // 2. Render Tourism Services Pins (Hotels, Parks, Buses, Trains, Taxis, Airstrips)
-    effectiveServices.forEach((srv) => {
+    // Keep each service's original geolocation; clusters are only UI groups.
+    const serviceGroups = groupMapPointsAtZoom(effectiveServices, srv =>
+      Number.isFinite(srv.coordinates?.lat) && Number.isFinite(srv.coordinates?.lng)
+        ? [srv.coordinates.lat, srv.coordinates.lng] : null,
+      projectPoint, zoom
+    );
+    serviceGroups.forEach(group => {
+      if (group.count > 1) {
+        const clusteredIcon = L.divIcon({
+          className: 'custom-srv-pin custom-service-stack',
+          html: `<div class="flex items-center justify-center w-8 h-8 bg-slate-50 text-slate-800 rounded-full border-2 border-dashed border-sky-600 shadow-sm"><span class="text-xs font-black">${group.count}</span></div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -16]
+        });
+        const marker = L.marker([group.lat, group.lng], { icon: clusteredIcon, zIndexOffset: 17 });
+        const popup = document.createElement('div');
+        popup.style.cssText = 'min-width:200px;max-width:270px;max-height:280px;overflow-y:auto;font-size:12px;line-height:1.3;';
+        const heading = document.createElement('strong');
+        heading.textContent = language === 'es' ? `${group.count} servicios en esta área` : `${group.count} services in this area`;
+        const explanation = document.createElement('p');
+        explanation.style.cssText = 'font-size:10px;opacity:.75;margin:5px 0;';
+        explanation.textContent = language === 'es'
+          ? 'Agrupación de referencia: no representa la ubicación exacta de todos los servicios.'
+          : 'Reference cluster: not the exact location of every service.';
+        popup.append(heading, explanation);
+        if (group.isCluster && zoom < 13) {
+          const zoomButton = document.createElement('button');
+          zoomButton.type = 'button';
+          zoomButton.textContent = language === 'es' ? '🔎 Acercar para separar marcas' : '🔎 Zoom in to separate pins';
+          zoomButton.style.cssText = 'display:block;padding:5px 2px;color:#047857;font-weight:800;cursor:pointer;';
+          zoomButton.addEventListener('click', () => {
+            marker.closePopup();
+            map.flyTo([group.lat, group.lng], Math.min(13, zoom + 2), { duration: 0.45 });
+          });
+          popup.append(zoomButton);
+        }
+        for (const srv of group.items) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.style.cssText = 'display:block;width:100%;text-align:left;padding:5px 2px;border-bottom:1px solid #eee;cursor:pointer;';
+          btn.textContent = `${getServiceIconAndColor(srv.type).emoji} ${getLangText(srv.name, language)}`;
+          btn.addEventListener('click', () => {
+            setSelectedMapService(srv);
+            setSelectedMapTour(null);
+            marker.closePopup();
+          });
+          popup.append(btn);
+        }
+        marker.bindPopup(popup, { maxWidth: 290 });
+        marker.addTo(markersLayerRef.current!);
+        return;
+      }
+      const srv = group.items[0];
       const isSelected = selectedMapService?.id === srv.id;
       const meta = getServiceIconAndColor(srv.type);
 
       let badgeContent = '';
       if (srv.type === 'hotel') {
         const nightly = getMapServiceUnitPriceUSD(srv);
-        badgeContent = nightly === null ? (language === 'es' ? 'Consultar' : 'Ask') : `$${nightly}/n`;
+        badgeContent = nightly === null ? (language === 'es' ? 'Consultar' : 'Ask') : `${nightly}/n`;
       } else if (srv.type === 'national_park') {
         badgeContent = 'SINAC';
       } else if (srv.type === 'airstrip' || srv.type === 'airport') {
@@ -797,7 +879,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       marker.getElement()?.setAttribute('data-lat', String(srv.coordinates.lat));
       marker.getElement()?.setAttribute('data-lng', String(srv.coordinates.lng));
     });
-  }, [effectiveTours, effectiveServices, selectedMapTour, selectedMapService, language, currency]);
+  }, [effectiveTours, effectiveServices, selectedMapTour, selectedMapService, language, currency, currentZoom]);
 
   // =========================================================
   // ITINERARY POLYLINE & NUMBERED WAYPOINTS ON LEAFLET
@@ -1543,22 +1625,23 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
           {/* Route Metrics Summary Card */}
           <div className="p-4 bg-emerald-950/40 border-b border-emerald-500/20">
+            <p className="mb-3 text-xs text-emerald-200/80">{language === 'es' ? 'Estimaciones desde distancias en línea recta. No verifican carreteras, tráfico, conexiones ni disponibilidad de transporte.' : 'Estimates from straight-line distances. Roads, traffic, connections and transport availability are not verified.'}</p>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-emerald-950/80 border border-emerald-500/20 p-2.5 rounded-xl">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-400/80">
-                  {language === 'es' ? 'Distancia' : 'Distance'}
+                  {language === 'es' ? 'Línea recta' : 'Straight line'}
                 </span>
                 <span className="font-black text-base text-white">{itineraryMetrics.totalKm} km</span>
               </div>
               <div className="bg-emerald-950/80 border border-emerald-500/20 p-2.5 rounded-xl">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-400/80">
-                  {language === 'es' ? 'En Auto / Bus' : 'Driving Time'}
+                  {language === 'es' ? 'Auto estimado' : 'Estimated drive'}
                 </span>
                 <span className="font-black text-base text-amber-300">{itineraryMetrics.driveHours}</span>
               </div>
               <div className="bg-emerald-950/80 border border-emerald-500/20 p-2.5 rounded-xl">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-400/80">
-                  {language === 'es' ? 'En Avioneta' : 'By Flight'}
+                  {language === 'es' ? 'Vuelo teórico' : 'Theoretical flight'}
                 </span>
                 <span className="font-black text-base text-sky-300">
                   {itineraryMetrics.flightMins || (language === 'es' ? 'N/A' : 'N/A')}
@@ -1693,7 +1776,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     {language === 'es' ? 'Calculadora de Rutas & Conectividad' : 'Route & Travel Times Calculator'}
                   </h3>
                   <p className="text-xs text-emerald-300">
-                    {language === 'es' ? 'Compara tiempos en bus público, auto/shuttle y avioneta' : 'Compare public bus, shuttle/drive, and flight times'}
+                    {language === 'es' ? 'Estimaciones teóricas; verifica la ruta y el servicio antes de viajar' : 'Theoretical estimates; verify the route and service before traveling'}
                   </p>
                 </div>
               </div>
@@ -1746,7 +1829,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             {routeCalcResult && (
               <div className="bg-emerald-950/60 border border-emerald-500/30 rounded-2xl p-4 space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20 text-xs">
-                  <span className="text-emerald-300 font-bold">{language === 'es' ? 'Distancia en Línea Directa / Terrestre:' : 'Estimated Distance:'}</span>
+                  <span className="text-emerald-300 font-bold">{language === 'es' ? 'Distancia en línea recta:' : 'Straight-line distance:'}</span>
                   <span className="font-black text-amber-300 text-sm">{routeCalcResult.distanceKm} km</span>
                 </div>
 
@@ -1759,7 +1842,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     </div>
                     <span className="block font-black text-lg text-white">{routeCalcResult.busHours}</span>
                     <span className="block text-[10px] text-blue-200/70">
-                      {language === 'es' ? 'Económico · tarifa a consultar' : 'Budget · fare on request'}
+                      {language === 'es' ? 'Ruta, horario y tarifa por confirmar' : 'Route, schedule and fare to be confirmed'}
                     </span>
                   </div>
 
@@ -1771,7 +1854,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     </div>
                     <span className="block font-black text-lg text-emerald-200">{routeCalcResult.driveHours}</span>
                     <span className="block text-[10px] text-emerald-300/70">
-                      {language === 'es' ? 'Recomendado 4x4 en montaña' : 'Scenic highway route'}
+                      {language === 'es' ? 'Sin ruta vial ni tráfico verificados' : 'Road route and traffic not verified'}
                     </span>
                   </div>
 
@@ -1779,13 +1862,13 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                   <div className="p-3 rounded-xl bg-sky-950/50 border border-sky-500/30 space-y-1">
                     <div className="flex items-center gap-1 text-xs text-sky-300 font-bold">
                       <Plane className="w-3.5 h-3.5" />
-                      <span>{language === 'es' ? 'Avioneta Sansa' : 'Scenic Flight'}</span>
+                      <span>{language === 'es' ? 'Vuelo teórico' : 'Theoretical flight'}</span>
                     </div>
                     <span className="block font-black text-lg text-sky-200">
                       {routeCalcResult.flightMins || 'N/A'}
                     </span>
                     <span className="block text-[10px] text-sky-200/70">
-                      {language === 'es' ? 'Ahorro de hasta 4 horas' : 'Saves up to 4+ hours'}
+                      {language === 'es' ? 'No confirma vuelos, aeropuertos ni horarios' : 'Does not confirm flights, airports or schedules'}
                     </span>
                   </div>
                 </div>
@@ -1977,9 +2060,12 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 <span className="block text-[9px] font-bold text-emerald-300 uppercase tracking-widest leading-none mb-0.5">
                   {language === 'es' ? 'Desde' : 'From'}
                 </span>
-                <span className="block font-black text-white text-xl leading-none">
-                  {formatCurrency(selectedMapTour.priceUSD, currency)}
+                <span className="block font-black text-white text-xl leading-none" title={money(selectedMapTour.priceUSD).note || money(selectedMapTour.priceUSD).notice}>
+                  {money(selectedMapTour.priceUSD).primary}
                 </span>
+                {(money(selectedMapTour.priceUSD).note || money(selectedMapTour.priceUSD).notice) && (
+                  <span data-testid="rate-note" className="mt-1 block max-w-[12rem] text-[9px] leading-tight text-stone-300">{money(selectedMapTour.priceUSD).note || money(selectedMapTour.priceUSD).notice}</span>
+                )}
               </div>
             </div>
           </div>

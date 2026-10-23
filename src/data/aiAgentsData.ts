@@ -5,12 +5,12 @@ export const AI_AGENTS: AIAgent[] = [
     id: 'counter_agent',
     workflowCategory: 'booking',
     name: {
-      es: 'Sofía • Asistente de viajes',
-      en: 'Sofía • Travel assistant',
-      de: 'Sofía • Counter-Agentur & Schalter',
-      fr: 'Sofía • Agente de Comptoir & Accueil',
-      zh: 'Sofía • 前台柜台客服专员',
-      ja: 'ソフィア • カウンター＆予約デスク'
+      es: 'Asistente de viajes',
+      en: 'Travel assistant',
+      de: 'Reiseassistent',
+      fr: 'Assistant de voyage',
+      zh: '旅行助手',
+      ja: '旅行アシスタント'
     },
     role: {
       es: 'Ayuda para planear, consultar y reservar',
@@ -41,12 +41,12 @@ export const AI_AGENTS: AIAgent[] = [
       ja: '総合カウンターデスク専門員。リアルタイムでの予約実行、空き枠確認、決済案内、観光案内を即座に提供します。'
     },
     welcomeMessage: {
-      es: '¡Pura Vida! Soy Sofía, tu asistente para viajar por Costa Rica. Puedo ayudarte a comparar experiencias, planear una ruta o preparar una consulta. Confirmaremos precio y disponibilidad con el proveedor antes de cobrar. ¿Qué tienes en mente?',
-      en: 'Pura Vida! I am Sofía, your Costa Rica travel assistant. I can help compare experiences, plan a route or prepare an inquiry. We will confirm price and availability with the provider before payment. What do you have in mind?',
-      de: 'Pura Vida! Willkommen am Schalter von Costa Rica Tours. Ich bin Sofía, Ihre offizielle Counter-Agentin. Ich kann Buchungen sofort ausführen, Plätze prüfen und Ihnen bei allen Fragen helfen. Wie kann ich behilflich sein?',
-      fr: 'Pura Vida ! Bienvenue au comptoir de Costa Rica Tours. Je suis Sofía, votre agente officielle. Je peux exécuter vos réservations instantanément et répondre à toutes vos questions.',
-      zh: 'Pura Vida！欢迎光临 Costa Rica Tours 官方服务台。我是您的专属前台专员 Sofía。我可以为您即时执行预订、查验实时席位、查询现有订单，并以专家水准提供解答。今天您想了解或预订什么呢？',
-      ja: 'プラ・ビダ！コスタリカツアーズの受付デスクへようこそ。公式カウンターエージェントのソフィアです。即時予約の実行、空席の確認、既存予約の管理、現地観光のご案内を承ります。本日はどのようなご用件でしょうか？'
+      es: '¡Pura Vida! Soy tu asistente para viajar por Costa Rica. Puedo ayudarte a comparar experiencias, planear una ruta o preparar una consulta. Confirmaremos precio y disponibilidad con el proveedor antes de cobrar. ¿Qué tienes en mente?',
+      en: 'Pura Vida! I am your Costa Rica travel assistant. I can help compare experiences, plan a route or prepare an inquiry. We will confirm price and availability with the provider before payment. What do you have in mind?',
+      de: 'Pura Vida! Ich bin Ihr Reiseassistent für Costa Rica. Ich helfe beim Vergleichen von Erlebnissen, beim Planen einer Route oder beim Vorbereiten einer Anfrage. Preis und Verfügbarkeit bestätigen wir vor der Zahlung. Woran denken Sie?',
+      fr: 'Pura Vida ! Je suis votre assistant de voyage au Costa Rica. Je peux comparer des expériences, planifier un itinéraire ou préparer une demande. Le prix et la disponibilité sont confirmés avant le paiement. Qu’avez-vous en tête ?',
+      zh: 'Pura Vida！我是您的哥斯达黎加旅行助手。我可以帮您比较体验、规划路线或准备咨询。价格和名额会在付款前确认。您在考虑什么呢？',
+      ja: 'プラ・ビダ！コスタリカ旅行アシスタントです。体験の比較、ルートの計画、お問い合わせの準備をお手伝いします。料金と空き状況はお支払い前に確認します。どのようなご旅行をお考えですか？'
     },
     suggestedQuestions: {
       es: [
@@ -165,12 +165,12 @@ export const AI_AGENTS: AIAgent[] = [
     bgGradient: 'from-indigo-500/20 to-stone-900/40',
     borderColor: '#6366F1',
     description: {
-      es: 'Soporte general y resolución de problemas para cualquier duda o inconveniente con tu reserva en costaricatours.es.',
-      en: 'General support and issue resolution for any question or problem with your booking on costaricatours.es.',
-      de: 'Allgemeiner Support und Problemlösung bei Fragen oder Schwierigkeiten mit Ihrer Buchung auf costaricatours.es.',
-      fr: 'Support général et résolution de problèmes pour toute question sur votre réservation via costaricatours.es.',
-      zh: '为您在 costaricatours.es 上的预订提供一般支持和问题解决服务。',
-      ja: 'costaricatours.esでのご予約に関する一般的なサポートと問題解決を行います。'
+      es: 'Soporte general y resolución de problemas para cualquier duda o inconveniente con tu reserva.',
+      en: 'General support and issue resolution for any question or problem with your booking.',
+      de: 'Allgemeiner Support und Problemlösung bei Fragen oder Schwierigkeiten mit Ihrer Buchung.',
+      fr: 'Support général et résolution de problèmes pour toute question sur votre réservation.',
+      zh: '为您的预订提供一般支持和问题解决服务。',
+      ja: 'ご予約に関する一般的なサポートと問題解決を行います。'
     },
     welcomeMessage: {
       es: '¡Hola! Soy Martín. Estoy aquí para ayudarte con cualquier problema, queja o duda general que tengas sobre nuestros servicios. ¿En qué te puedo ayudar hoy?',
@@ -666,12 +666,12 @@ export const AI_AGENTS: AIAgent[] = [
     id: 'currency_budget',
     workflowCategory: 'planning_support',
     name: {
-      es: 'Sofía • Finanzas & Presupuestos',
-      en: 'Sofía • Finance & Budgets',
-      de: 'Sofía • Finanzen & Budgets',
-      fr: 'Sofía • Finances & Budgets',
-      zh: 'Sofía • 财务与预算',
-      ja: 'ソフィア • 財務と予算'
+      es: 'Finanzas & Presupuestos',
+      en: 'Finance & Budgets',
+      de: 'Finanzen & Budgets',
+      fr: 'Finances & Budgets',
+      zh: '财务与预算',
+      ja: '財務と予算'
     },
     role: {
       es: 'Tipo de Cambio, Propinas, Cajeros y Presupuestos',
@@ -783,11 +783,11 @@ export const AI_AGENTS: AIAgent[] = [
     bgGradient: 'from-[#14391F] to-[#1E4D2B]',
     borderColor: '#2D663B',
     description: {
-      es: 'Especialista en armar viajes inolvidables de 3 a 14 días conectando volcanes, playas, bosques nubosos y hoteles boutique en Costa Rica a través de costaricatours.es.',
-      en: 'Specialist in crafting 3 to 14-day dream vacations connecting volcanoes, beaches, cloud forests, and boutique eco-lodges via costaricatours.es.',
-      de: 'Spezialistin für 3- bis 14-tägige Traumreisen zu Vulkanen, Stränden und Öko-Boutique-Hotels in Costa Rica via costaricatours.es.',
-      fr: 'Spécialiste de la conception de voyages de 3 à 14 jours reliant volcans, plages et éco-lodges via costaricatours.es.',
-      zh: '专精于打造3至14天全景度假路线，无缝串联火山、海滩、云雾森林及精品生态酒店（基于 costaricatours.es 官方网络）。',
+      es: 'Especialista en armar viajes inolvidables de 3 a 14 días conectando volcanes, playas, bosques nubosos y hoteles boutique en Costa Rica.',
+      en: 'Specialist in crafting 3 to 14-day dream vacations connecting volcanoes, beaches, cloud forests, and boutique eco-lodges.',
+      de: 'Spezialistin für 3- bis 14-tägige Traumreisen zu Vulkanen, Stränden und Öko-Boutique-Hotels in Costa Rica.',
+      fr: 'Spécialiste de la conception de voyages de 3 à 14 jours reliant volcans, plages et éco-lodges.',
+      zh: '专精于打造3至14天全景度假路线，无缝串联火山、海滩、云雾森林及精品生态酒店。',
       ja: '火山、ビーチ、熱帯雨林、ブティックホテルを最適に結ぶ3日〜14日のフルオーダー旅程をご提案します。'
     },
     welcomeMessage: {
@@ -803,13 +803,13 @@ export const AI_AGENTS: AIAgent[] = [
         '1. Diagnóstico de estilo de viaje (Aventura, Relax, Familia, Parejas)',
         '2. Selección de regiones clave (Arenal, Monteverde, Manuel Antonio, Caribe)',
         '3. Optimización de tiempos de traslado para evitar cansancio',
-        '4. Entrega de propuesta con enlaces directos de reserva en costaricatours.es'
+        '4. Entrega de propuesta con enlaces directos de reserva'
       ],
       en: [
         '1. Travel style assessment (Adventure, Romance, Family, Wildlife)',
         '2. Key region selection (Arenal, Monteverde, Manuel Antonio, Caribbean)',
         '3. Transfer & drive-time route optimization',
-        '4. Complete proposal with direct costaricatours.es booking links'
+        '4. Complete proposal with direct booking request links'
       ],
       de: [
         '1. Analyse des Reisestils (Abenteuer, Entspannung, Familie, Natur)',
@@ -827,7 +827,7 @@ export const AI_AGENTS: AIAgent[] = [
         '1. 旅行偏好评估（户外探险、浪漫蜜月、亲子家庭、生态摄影）',
         '2. 核心目的地搭配（阿雷纳尔火山、蒙特维多、曼努埃尔安东尼奥）',
         '3. 行程车程与转场时间深度优化',
-        '4. 提供可在 costaricatours.es 一键预订的完整方案'
+        '4. 提供可在线申请的完整方案'
       ],
       ja: [
         '1. 旅行スタイルのヒアリング（アクティブ、癒やし、ファミリー、自然）',
@@ -923,12 +923,12 @@ export const AI_AGENTS: AIAgent[] = [
       ja: '直前予約の手続き、公認催行会社との枠確保、安全なカード・送金決済、公式バウチャー発行を即時対応します。'
     },
     welcomeMessage: {
-      es: '¡Hola! 💳 Soy Andrés, especialista en reservas de costaricatours.es. Puedo verificar cupos para hoy o mañana, procesar pagos seguros con garantía de reembolso 48h y darte seguimiento hasta que tu reserva quede confirmada.',
-      en: 'Hello! 💳 I am Andres, booking specialist at costaricatours.es. I can verify seats for today or tomorrow, process secure payments with 48h refund guarantee, and follow up until your booking is confirmed.',
-      de: 'Hallo! 💳 Ich bin Andres, Buchungsspezialist bei costaricatours.es. Ich prüfe kurzfristige Plätze und begleite Ihre Anfrage bis zur Bestätigung.',
-      fr: 'Bonjour ! 💳 Je suis Andres, spécialiste réservations sur costaricatours.es. Je vérifie les disponibilités et suis votre demande jusqu’à sa confirmation.',
-      zh: '您好！💳 我是 costaricatours.es 预订专员 Andres。我可以为您查询今日或明天的加急名额，协助完成支付并生成带核销二维码的官方凭证。',
-      ja: 'こんにちは！💳 costaricatours.es 予約担当のアンドレスです。直前の空席確認、48時間前無料キャンセル付き決済、予約確定までのフォローをサポートします。'
+      es: '¡Hola! 💳 Soy Andrés, especialista en reservas de Costa Rica Tours. Puedo verificar cupos para hoy o mañana, procesar pagos seguros con garantía de reembolso 48h y darte seguimiento hasta que tu reserva quede confirmada.',
+      en: 'Hello! 💳 I am Andres, booking specialist at Costa Rica Tours. I can verify seats for today or tomorrow, process secure payments with 48h refund guarantee, and follow up until your booking is confirmed.',
+      de: 'Hallo! 💳 Ich bin Andres, Buchungsspezialist bei Costa Rica Tours. Ich prüfe kurzfristige Plätze und begleite Ihre Anfrage bis zur Bestätigung.',
+      fr: 'Bonjour ! 💳 Je suis Andres, spécialiste réservations chez Costa Rica Tours. Je vérifie les disponibilités et suis votre demande jusqu’à sa confirmation.',
+      zh: '您好！💳 我是 Costa Rica Tours 预订专员 Andres。我可以为您查询今日或明天的加急名额，协助完成支付并生成带核销二维码的官方凭证。',
+      ja: 'こんにちは！💳 Costa Rica Tours 予約担当のアンドレスです。直前の空席確認、48時間前無料キャンセル付き決済、予約確定までのフォローをサポートします。'
     },
     workflowSteps: {
       es: [
@@ -1547,12 +1547,12 @@ export const AI_AGENTS: AIAgent[] = [
     id: 'budget_backpacker',
     workflowCategory: 'specialized',
     name: {
-      es: 'Sofía • Guía Mochilera & Ahorro Inteligente',
-      en: 'Sofia • Budget Backpacker & Smart Savings',
-      de: 'Sofia • Backpacker & Spartipps',
-      fr: 'Sofia • Guide Routard & Bons Plans',
-      zh: 'Sofia • 穷游背包客与高性价比向导',
-      ja: 'ソフィア • バックパッカー＆スマート節約ガイド'
+      es: 'Guía Mochilera & Ahorro Inteligente',
+      en: 'Budget Backpacker & Smart Savings',
+      de: 'Backpacker & Spartipps',
+      fr: 'Guide Routard & Bons Plans',
+      zh: '穷游背包客与高性价比向导',
+      ja: 'バックパッカー＆スマート節約ガイド'
     },
     role: {
       es: 'Buses Públicos, Hostels Verificados, Sodas Económicas & Entradas Low-Cost',
@@ -1583,12 +1583,12 @@ export const AI_AGENTS: AIAgent[] = [
       ja: 'コスパ良くコスタリカを旅する節約術のプロ。サンホセの長距離バスターミナル、キッチン付きホステル、無料の天然野天温泉情報をお届け。'
     },
     welcomeMessage: {
-      es: '¡Hola viajero! 🎒 Soy Sofía. Costa Rica tiene fama de cara, pero sabiendo usar buses públicos (¡viajes por $3-$8 USD!), comiendo en sodas y visitando pozas naturales, puedes recorrerla con presupuesto mochilero. ¿Cuál es tu límite diario?',
-      en: 'Hey traveler! 🎒 I am Sofia. Costa Rica can be expensive, but with public buses ($3-$8 rides!), market Sodas, and secret swimming holes, you can do it on a real budget. What is your daily target?',
-      de: 'Hallo Backpacker! 🎒 Ich bin Sofia. Mit öffentlichen Bussen für wenige Dollar, Mahlzeiten in Sodas und kostenlosen Naturspots reisen Sie günstig durch Costa Rica.',
-      fr: 'Salut voyageur ! 🎒 Je suis Sofia. Découvrez le Costa Rica sans vous ruiner grâce aux bus locaux, sodas de marché et coins de baignade gratuits.',
-      zh: '背包客朋友们好！🎒 我是省钱攻略向导 Sofia。很多人觉得哥斯达黎加消费高，但只要掌握长途公车（单程仅需3-8美元）、菜市场 Soda 和免费野溪温泉，就能以极低预算玩转全境。',
-      ja: 'バックパッカーの皆さん、こんにちは！🎒 節約アドバイザーのソフィアです。片道3〜8ドルのローカルバスや市場のソーダ、無料の秘境スポットを駆使して低予算でコスタリカを満喫しましょう。'
+      es: '¡Hola viajero! 🎒  Costa Rica tiene fama de cara, pero sabiendo usar buses públicos (¡viajes por $3-$8 USD!), comiendo en sodas y visitando pozas naturales, puedes recorrerla con presupuesto mochilero. ¿Cuál es tu límite diario?',
+      en: 'Hey traveler! 🎒  Costa Rica can be expensive, but with public buses ($3-$8 rides!), market Sodas, and secret swimming holes, you can do it on a real budget. What is your daily target?',
+      de: 'Hallo Backpacker! 🎒  Mit öffentlichen Bussen für wenige Dollar, Mahlzeiten in Sodas und kostenlosen Naturspots reisen Sie günstig durch Costa Rica.',
+      fr: 'Salut voyageur ! 🎒  Découvrez le Costa Rica sans vous ruiner grâce aux bus locaux, sodas de marché et coins de baignade gratuits.',
+      zh: '背包客朋友们好！🎒 我是省钱攻略向导。很多人觉得哥斯达黎加消费高，但只要掌握长途公车（单程仅需3-8美元）、菜市场 Soda 和免费野溪温泉，就能以极低预算玩转全境。',
+      ja: 'バックパッカーの皆さん、こんにちは！🎒 節約アドバイザーです。片道3〜8ドルのローカルバスや市場のソーダ、無料の秘境スポットを駆使して低予算でコスタリカを満喫しましょう。'
     },
     workflowSteps: {
       es: [

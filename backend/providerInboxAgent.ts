@@ -7,6 +7,8 @@ import { sendEmailWithOutcome } from './emailDeliveryOutcome';
 import { emitOperationalEvent } from './operationalEventBus';
 import { guardedGeminiGenerate } from './aiRouter';
 import { getLightModel } from './aiConfig';
+import { buildProviderCustomerNotice } from './providerCustomerNotice';
+import { redactProviderIdentityForCustomer } from './customerOutboundPrivacy';
 
 const clean=(v:unknown,max=5000)=>String(v??'').replace(/\s+/g,' ').trim().slice(0,max);
 const decode=(v='')=>Buffer.from(v.replace(/-/g,'+').replace(/_/g,'/'),'base64').toString('utf8');
@@ -35,13 +37,26 @@ async function classify(subject:string,body:string){
  if(/servicio completado|completed|completado/.test(s))return{action:'complete' as const,confidence:.80,notes:'Evidencia lingüística de servicio completado.'};
  return{action:'unknown' as const,confidence:0,notes:'Evidencia insuficiente.'};
 }
-async function notifyCustomer(order:any,action:string,notes:string){
- const booking=await findBookingByCodeOrEmail(order.bookingId).catch(()=>null);const customer=booking?.customer||{};const email=booking?.customerEmail||customer.email;const phone=booking?.customerPhone||customer.phone;const name=booking?.customerName||customer.fullName||customer.name||'Viajero';
- const messages:Record<string,string>={confirm:'Hola '+name+'. El proveedor '+order.providerName+' confirmó la solicitud de '+order.tourName+' para '+order.date+'. Seguimos con el siguiente paso de tu reserva.',reject:'Hola '+name+'. '+order.providerName+' informó que no puede atender '+order.tourName+' para '+order.date+'. Conservamos tus preferencias y podemos buscar otra fecha, horario o experiencia similar.',delay:'Hola '+name+'. '+order.providerName+' todavía está revisando tu solicitud. Aún no la presentamos como confirmada y te avisaremos cuando exista una respuesta definitiva.',no_show:'Hola '+name+'. Recibimos un reporte operativo de no-show para '+order.tourName+'. Nuestro equipo está revisando el caso y te informará los próximos pasos.',complete:'Hola '+name+'. El proveedor reportó como completado el servicio '+order.tourName+'. Gracias por viajar con nosotros.'};
- const message=messages[action]||messages.delay;const suffix=notes?'\n\nNota operativa: '+notes:'';
+/**
+ * #377: aviso al cliente tras la respuesta de un proveedor. La aceptación operativa NO es la
+ * confirmación de la reserva, así que el texto es neutral: sin nombre del proveedor y sin
+ * notas copiadas de su correo (pueden traer teléfonos, correos o firmas).
+ */
+export function buildInboxCustomerMessage(order:any,action:string,customerName:string,language:unknown){
+ const notice=buildProviderCustomerNotice(action,language);
+ const en=typeof language==='string'&&/^en(?:[-_]|$)/i.test(language);
+ const greeting=(en?'Hello ':'Hola ')+(clean(customerName,80)||(en?'traveler':'viajero'))+'.';
+ const ref=order?.bookingId?(en?' Booking: ':' Reserva: ')+clean(order.bookingId,60)+'.':'';
+ const text=redactProviderIdentityForCustomer(greeting+' '+notice.text+ref,{language,providerNames:[order?.providerName,order?.operatorName]});
+ const esc=(v:string)=>v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+ return{subject:notice.subject,text,html:'<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:24px"><p>'+esc(text)+'</p><p>'+(en?'We are with you every step of the way. Pura Vida.':'Seguimos contigo paso a paso. Pura Vida.')+'</p></div>'};
+}
+async function notifyCustomer(order:any,action:string,_notes:string){
+ const booking=await findBookingByCodeOrEmail(order.bookingId).catch(()=>null);const customer=booking?.customer||{};const email=booking?.customerEmail||customer.email;const phone=booking?.customerPhone||customer.phone;const name=booking?.customerName||customer.fullName||customer.name||'';
+ const msg=buildInboxCustomerMessage(order,action,name,booking?.language||customer.language);
  let emailDelivery:{status:'sent'|'failed'|'skipped_no_email';attempts:number;error?:string}={status:'skipped_no_email',attempts:0};
- if(email&&/@/.test(email)){const d=await sendEmailWithOutcome({to:email,subject:action==='confirm'?'Solicitud confirmada • Costa Rica Tours':'Actualización de tu solicitud • Costa Rica Tours',html:'<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:24px"><h2>'+message+'</h2><p>'+suffix.replace(/\n/g,'<br>')+'</p><p>Seguimos contigo paso a paso. Pura Vida.</p></div>'});emailDelivery=d.success?{status:'sent',attempts:d.attempts}:{status:'failed',attempts:d.attempts,error:d.error};}
- if(phone)await sendWhatsAppMessage({toPhone:String(phone),customerName:name,message:message+suffix,bookingId:order.bookingId}).catch(()=>undefined);
+ if(email&&/@/.test(email)){const d=await sendEmailWithOutcome({to:email,subject:msg.subject,text:msg.text,html:msg.html});emailDelivery=d.success?{status:'sent',attempts:d.attempts}:{status:'failed',attempts:d.attempts,error:d.error};}
+ if(phone)await sendWhatsAppMessage({toPhone:String(phone),customerName:name||'Viajero',message:msg.text,bookingId:order.bookingId}).catch(()=>undefined);
  return{customerEmail:emailDelivery};
 }
 export async function processProviderInboxOnce(){

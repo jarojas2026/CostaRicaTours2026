@@ -1,3 +1,4 @@
+import { getPhoto, photoSrc } from './photoCatalog';
 /**
  * Travel guide articles (ES/EN). Facts are kept to stable, sourced
  * information (SINAC, ICT); no prices or availability are promised.
@@ -155,7 +156,7 @@ export const BLOG_POSTS: BlogPost[] = [
       es: 'Temporadas de ballenas jorobadas en el Parque Nacional Marino Ballena: hemisferio norte (diciembre–abril) y sur (julio–noviembre), según el SINAC.',
       en: 'Humpback whale seasons in Marino Ballena National Park: northern population (December–April) and southern (July–November), according to SINAC.',
     },
-    image: 'https://images.unsplash.com/photo-1549488344-1f9b8d2bd1f3?auto=format&fit=crop&q=80',
+    image: photoSrc(getPhoto('wm-humpback-breach')),
     imageAlt: { es: 'Ballena jorobada en el océano', en: 'Humpback whale in the ocean' },
     date: DATE,
     author: AUTHOR,
@@ -226,7 +227,7 @@ export const BLOG_POSTS: BlogPost[] = [
       es: 'Consejos prácticos para viajar de forma sostenible en Costa Rica: CST del ICT, normas del SINAC, fauna, comunidades y protección de la niñez.',
       en: 'Practical tips for sustainable travel in Costa Rica: ICT’s CST certification, SINAC rules, wildlife, communities and child protection.',
     },
-    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&q=80',
+    image: photoSrc(getPhoto('wm-monteverde-reserve-trail')),
     imageAlt: { es: 'Bosque tropical en Costa Rica', en: 'Tropical forest in Costa Rica' },
     date: DATE,
     author: AUTHOR,

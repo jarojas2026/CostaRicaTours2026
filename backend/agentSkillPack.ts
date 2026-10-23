@@ -284,7 +284,7 @@ export const EXTRA_AGENT_KNOWLEDGE: Record<string, string[]> = {
     'Somos comercializadora: los tours los opera el proveedor local. No digas "nosotros operamos" salvo que la ficha lo indique.',
     'Aeropuertos: SJO (Juan Santamaría, San José) y LIR (Daniel Oduber Quirós, Liberia). Los traslados terrestres al Pacífico Sur son largos: planifica con margen y confirma tiempos con el proveedor.',
     'Base de la empresa: Pérez Zeledón, cerca de Dominical, Uvita (Marino Ballena) y cataratas: zona ideal para rutas del Pacífico Sur.',
-    'Cierra cada respuesta con un siguiente paso claro: ver el tour, verificar disponibilidad o hablar por WhatsApp.'
+    'Cierra cada respuesta con un siguiente paso dentro de la plataforma: ver el tour, registrar consulta o solicitar verificación; escalar a WhatsApp humano solo después del triaje IA y autorización aplicable.'
   ],
   triage: [
     'Emergencia médica o de seguridad en curso: indicar el 911 (emergencias en Costa Rica), escalar a un humano de inmediato y no continuar con la venta.',
@@ -292,12 +292,16 @@ export const EXTRA_AGENT_KNOWLEDGE: Record<string, string[]> = {
   ],
   booking: [
     'Antes de cotizar pide fecha, número de personas y edades de menores; verifica edad mínima y restricciones médicas del tour.',
+    'Un precio de referencia del catálogo no prueba tarifa final ni cupo: antes de cobrar exige oferta publicada, capacidad fechada y aceptación explícita del proveedor real.',
+    'Solicitud registrada, orden de servicio enviada, proveedor confirmado, pago verificado y voucher emitido son eventos diferentes; nunca adelantes el estado siguiente.',
     'Para totales usa la herramienta quote_price; el total final lo calcula el servidor al reservar.',
     'Si preguntan por reembolsos usa cancellation_policy y aclara que el detalle exacto lo confirma el equipo.'
   ],
   provider_liaison: [
     'La comisión comercial es información interna: nunca la reveles al viajero ni la incluyas en mensajes al cliente.',
-    'Antes de dar una salida por confirmada, obtén del proveedor por escrito: hora, punto de encuentro, cupo e idioma del guía.'
+    'Antes de dar una salida por confirmada, obtén del proveedor por escrito: hora, punto de encuentro, cupo e idioma del guía.',
+    'Una orden guardada en Firestore o un correo aceptado por SMTP/API NO significa que el proveedor lo recibió o aceptó. Registra acuse, respuesta y SLA por separado.',
+    'La comisión y liquidación deben provenir del acuerdo registrado del proveedor verificado; nunca asumas un reparto 85/15 ni un tipo de cambio CRC sin fuente vigente.'
   ],
   operations: [
     'Mareas y oleaje afectan tours costeros (Marino Ballena, Dominical): verifica condiciones con el proveedor el mismo día.',
@@ -306,7 +310,9 @@ export const EXTRA_AGENT_KNOWLEDGE: Record<string, string[]> = {
   ],
   supervisor: [
     'Audita que ninguna respuesta revele comisión, claves, tokens o datos personales de otros clientes.',
-    'Toda afirmación de "disponible" debe provenir de check_availability, no de suposiciones.'
+    'Toda afirmación de "disponible" debe provenir de check_availability y evidencia operativa vigente, no de suposiciones.',
+    'Una respuesta exitosa de una API de email puede ser solo aceptación del transporte; no prueba entrega final, lectura ni respuesta del proveedor.',
+    'Si el proveedor IA no está configurado o falla, declarar modo determinista y no fingir que JARVIS ejecutó herramientas o razonamiento generativo.'
   ],
   learning: [
     'Una pregunta frecuente sin respuesta se registra como brecha de conocimiento para revisión humana, nunca como un hecho.'
@@ -336,7 +342,10 @@ export const EXTENSION_AGENT_IDENTITIES: AgentIdentityExtension[] = [
       'El owner conserva la última palabra: nunca elevar autonomía ni aprobar una acción sensible por cuenta propia.',
       'No inventar disponibilidad, pagos, respuestas de proveedores, actividad de agentes ni telemetría.',
       'Reintentar una tarea fallida como máximo dos veces; después escalar al owner con evidencia y estado.',
-      'Delegar usando servicios y agentes existentes; no crear sistemas paralelos de reservas, pagos o mensajería.'
+      'Delegar usando servicios y agentes existentes; no crear sistemas paralelos de reservas, pagos o mensajería.',
+      'Para vender: revisar consentimiento y fecha/pax del lead, proveedor activo y contrato, oferta/cupo fechados, aceptación del operador, pago firmado y confirmación al cliente como verificaciones separadas.',
+      'No llamar ventas a reservas registradas ni a cotizaciones; dinero cobrado requiere conciliación de pasarela, y un estado queued no significa trabajo ejecutado.',
+      'Ante falta de correo, credenciales, contrato, cupo o modelo IA, crear propuesta de corrección y escalar con evidencia al owner, sin afirmar que se notificó a nadie.'
     ]
   },
   {
@@ -360,7 +369,7 @@ export const EXTENSION_AGENT_IDENTITIES: AgentIdentityExtension[] = [
     knowledge: [
       'Usa compare_tours cuando el viajero dude entre 2-4 opciones y resume la diferencia clave en una frase.',
       'Nunca uses urgencia falsa ("últimos cupos") sin un dato real de disponibilidad.',
-      'Ofrece hablar por WhatsApp con whatsapp_handoff cuando el viajero necesite trato humano o tenga un caso especial.'
+      'Prioriza la consulta IA y el expediente comercial; propone escalamiento humano por WhatsApp solo cuando el caso lo amerite y sin declarar un mensaje enviado por un simple enlace.'
     ]
   },
   {

@@ -24,6 +24,9 @@ import {
 } from './aiAssistantService';
 import { TOURS } from '../src/data/toursData';
 
+/** Origen público del sitio para enlaces de pase y facturas. */
+const publicSiteOrigin = () => (process.env.PUBLIC_BASE_URL || process.env.APP_URL || 'https://costaricatours2026.vercel.app').trim().replace(/\/+$/, '');
+
 // Registro de eventos y auditoría en memoria para monitoreo en vivo
 export interface NativeAutomationLog {
   id: string;
@@ -929,7 +932,7 @@ export async function executeAutonomousMultiDayPlanner(body: any) {
       equivalenteCRC: Math.round(totalUSD * getUsdToCrcRate()),
       beneficioAlsamaTransportBundle: 'Ahorro de $75 USD al combinar traslados con tours'
     },
-    enlaceCredencialDigital: `https://costaricatours.es/pass/${qrPassToken}`,
+    enlaceCredencialDigital: `${publicSiteOrigin()}/pass/${qrPassToken}`,
     timestamp: new Date().toISOString()
   };
 }
@@ -1166,8 +1169,8 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
       estadoLiquidacion: 'PROGRAMADA_DISPERSION_24H'
     },
     archivosGenerados: {
-      xmlFirmadoUrl: `https://costaricatours.es/facturas/xml/${clave50}.xml`,
-      pdfLegalUrl: `https://costaricatours.es/facturas/pdf/${clave50}.pdf`
+      xmlFirmadoUrl: `${publicSiteOrigin()}/facturas/xml/${clave50}.xml`,
+      pdfLegalUrl: `${publicSiteOrigin()}/facturas/pdf/${clave50}.pdf`
     },
     timestamp: new Date().toISOString()
   };
@@ -1304,126 +1307,95 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
   customerPhone?: string;
   pickupHotel?: string;
   specialRequests?: string;
+  idempotencyKey?: string;
 }) {
   const start = Date.now();
 
-  // 1. Identificar o asignar tour
-  let resolvedTour = TOURS.find((t) => t.id === payload.tourId);
-  if (!resolvedTour && payload.tourName) {
-    resolvedTour = TOURS.find((t) => t.title.es.toLowerCase().includes(payload.tourName!.toLowerCase()) || (t.title.en && t.title.en.toLowerCase().includes(payload.tourName!.toLowerCase())));
+  // Admin convenience endpoint, not an alternative booking engine. Never infer
+  // the tour/date/party/price/provider from an incomplete instruction.
+  const tourId = String(payload.tourId || '').trim();
+  // Verified Firestore commerce offers may be newer than the static discovery catalog.
+  // Validate the identifier shape; createBooking resolves the canonical Firestore offer.
+  if (!/^[a-zA-Z0-9_-]{1,160}$/.test(tourId)) {
+    throw new Error('Seleccione un identificador de oferta válido antes de crear una solicitud.');
   }
-  if (!resolvedTour) {
-    resolvedTour = TOURS[0]; // Arenal Volcano por defecto
+  const date = String(payload.date || '').trim();
+  const time = String(payload.time || '').trim();
+  if (!date || !time) throw new Error('Indique fecha y horario publicados para verificar disponibilidad.');
+  const adults = Number(payload.adults);
+  const children = Number(payload.children ?? 0);
+  if (!Number.isSafeInteger(adults) || adults < 1 || !Number.isSafeInteger(children) || children < 0 || adults + children > 200) {
+    throw new Error('Indique cantidades reales de pasajeros: al menos un adulto y máximo 200 viajeros.');
   }
 
-  // 2. Extraer o normalizar datos de pasajeros y fechas
-  const adults = Number(payload.adults) || 2;
-  const children = Number(payload.children) || 0;
-  const targetDate = payload.date || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  const targetTime = payload.time || '08:00 AM';
-  const customerName = payload.customerName || 'Viajero Costa Rica Tours';
-  const customerEmail = payload.customerEmail || process.env.ADMIN_EMAIL || 'reservas@costaricatours.cr';
-  const customerPhone = payload.customerPhone || process.env.SINPE_SUPPORT_PHONE || '';
-  const pickupHotel = payload.pickupHotel || (resolvedTour.pickupHotels ? resolvedTour.pickupHotels[0] : 'Recepción de Hotel en La Fortuna');
-  const specialRequests = payload.specialRequests || 'Solicitud de confirmación y coordinación 100% autónoma sin intervención humana';
+  const customerName = String(payload.customerName || '').trim();
+  const customerEmail = String(payload.customerEmail || '').trim();
+  const customerPhone = String(payload.customerPhone || '').trim();
+  if (!customerName || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(customerEmail)) {
+    throw new Error('Indique el nombre y correo auténticos del viajero; no se utilizarán contactos ficticios.');
+  }
 
-  const unitPrice = resolvedTour.priceUSD || 145;
-  const totalUSD = (adults * unitPrice) + (children * ((resolvedTour as any).childrenPriceUSD || Math.round(unitPrice * 0.65)));
-  const rate = Number(process.env.USD_TO_CRC_RATE) || 0;
-  const totalCRC = rate > 0 ? Math.round(totalUSD * rate) : 0;
-
-  // 3. Ejecutar creación oficial de reserva en Firestore
-  // Esto desencadena internamente en tiempo real:
-  // - Bloqueo de cupos en Firestore
-  // - Evaluación de riesgo antifraude
-  // - executeCustomerBookingConfirmation (Voucher digital con QR y email al cliente)
-  // - executeProviderRealtimeCoordination (Notificación y asignación inmediata al operador)
+  // Canonical booking service exclusively decides published tariff, provider,
+  // dated slot, idempotency and payment-pending status. Client-provided
+  // paymentStatus, price and provider identity are deliberately not passed.
   const bookingResult = await createBooking({
-    tourId: resolvedTour.id,
-    tourName: resolvedTour.title.es,
-    providerId: (resolvedTour as any).operatorId || 'alsama-tours-cr',
-    date: targetDate,
-    time: targetTime,
+    idempotencyKey: payload.idempotencyKey,
+    tourId,
+    date,
+    time,
     adults,
     children,
-    pickupHotel,
-    specialRequests,
-    totalUSD,
-    totalCRC,
+    pickupHotel: String(payload.pickupHotel || '').trim(),
+    specialRequests: String(payload.specialRequests || '').trim(),
     currency: 'USD',
     paymentMethod: 'credit_card',
-    paymentStatus: 'confirmed',
-    customer: {
-      name: customerName,
-      email: customerEmail,
-      phone: customerPhone
-    }
+    customer: { name: customerName, email: customerEmail, phone: customerPhone }
   });
 
   if (bookingResult.conflict || !bookingResult.booking) {
-    const duration = Date.now() - start;
-    logAutomationExecution(
-      'FLUJO_AUTONOMO_COMPLETO',
-      duration,
-      'error',
-      `Fallo en creación autónoma: ${bookingResult.error || 'conflicto de cupos'}`
-    );
-    throw new Error(bookingResult.message || 'No se pudo completar el flujo autónomo.');
+    logAutomationExecution('FLUJO_AUTONOMO_COMPLETO', Date.now() - start, 'error',
+      'Solicitud no creada: faltó evidencia de tarifa, cupos, proveedor o transacción.');
+    throw new Error(bookingResult.message || 'No se pudo verificar ni registrar la solicitud.');
   }
 
   const booking = bookingResult.booking as any;
-  const bookingId = booking.bookingId || booking.id;
+  const bookingId = String(booking.bookingId || booking.id || '');
   const duration = Date.now() - start;
-
-  // 4. Registrar evento en log de auditoría nativo
-  logAutomationExecution(
-    'FLUJO_AUTONOMO_COMPLETO',
-    duration,
-    'success',
-    `¡Reserva ${bookingId} completada 100% autónoma! Cliente (${customerEmail}) y Proveedor (${booking.providerInfo?.name || 'Alsama Tours'}) notificados.`,
-    {
-      bookingId,
-      totalUSD,
-      customerEmail,
-      providerId: booking.providerId,
-      status: booking.status
-    }
+  logAutomationExecution('FLUJO_AUTONOMO_COMPLETO', duration, 'success',
+    `Solicitud ${bookingId} registrada en el servicio canónico; pago, aceptación del proveedor y voucher siguen pendientes.`,
+    { bookingId, status: booking.status, idempotent: bookingResult.idempotent === true }
   );
 
   return {
     success: true,
-    modo: '100% Autónomo (Zero Human Intervention)',
+    // success = persisted request only; no claim of booking/payment completion.
+    modo: 'Solicitud registrada con verificación operativa pendiente',
     duracionMs: duration,
     reserva: {
       codigo: bookingId,
-      tour: resolvedTour.title.es,
-      fecha: `${targetDate} ${targetTime}`,
+      tour: String(booking.tourName || ''),
+      fecha: `${booking.date || date} ${booking.time || time}`,
       pasajeros: `${adults} adultos, ${children} niños`,
-      totalUSD: `$${totalUSD} USD`,
-      estado: 'confirmada',
-      voucherUrl: `/?voucher=${bookingId}`,
-      qrToken: `PASS-${bookingId.replace(/[^A-Z0-9]/gi, '')}`
+      totalUSD: typeof booking.totalUSD === 'number' ? `$${booking.totalUSD.toFixed(2)} USD` : null,
+      estado: String(booking.status || booking.lifecycle || 'pendiente_pago'),
+      voucherUrl: null,
+      qrToken: null
     },
     operadorAsignado: {
-      id: booking.providerInfo?.id || 'alsama-tours-cr',
-      nombre: booking.providerInfo?.name || 'Costa Rica Tours - Operaciones Directas',
-      email: process.env.PROVIDER_DEV_EMAIL || '',
-      telefono: booking.providerInfo?.phone || process.env.PROVIDER_DEV_PHONE || '',
-      notificacionDespachada: true,
-      canal: 'Email Seguro + Native Operations Center'
+      id: booking.providerId || null,
+      nombre: booking.providerInfo?.name || null,
+      notificacionDespachada: false,
+      estadoDespacho: 'pendiente_ciclo_de_vida'
     },
     clienteNotificado: {
       nombre: customerName,
       email: customerEmail,
-      voucherEnviado: true,
-      canal: 'Email con Voucher QR interactivo'
+      voucherEnviado: false,
+      estadoVoucher: 'pendiente_pago_y_confirmacion_proveedor'
     },
-    automatizacionesProgramadas: [
-      { trigger: 'CRON_RECORDATORIO_24H', tiempo: '24 horas antes del tour a las 7:00 AM CR' },
-      { trigger: 'CRON_VIGILANCIA_2H', tiempo: 'Monitoreo continuo de contingencias' },
-      { trigger: 'CRON_PAGOS_PROVEEDORES_6AM', tiempo: 'Liquidación al operador el día del tour' },
-      { trigger: 'CRON_RESENAS_POST_TOUR_5PM', tiempo: 'Encuesta NPS y fidelización post-tour' }
-    ],
+    // Jobs are scheduled by the existing lifecycle after verification;
+    // this endpoint itself has not scheduled any specific notification.
+    automatizacionesProgramadas: [],
     timestamp: new Date().toISOString()
   };
 }

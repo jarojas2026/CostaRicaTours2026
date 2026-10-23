@@ -4,9 +4,34 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
+import { readFileSync } from 'node:fs';
+
+/**
+ * Encabezados de seguridad de producción (vercel.json, regla global "/(.*)") aplicados
+ * también a `vite preview`, para que el E2E ejercite la misma CSP que Vercel (#383).
+ * En local (http://127.0.0.1) se omiten `upgrade-insecure-requests` y HSTS.
+ */
+function previewSecurityHeaders(): Record<string, string> {
+  try {
+    const vercel = JSON.parse(readFileSync(path.resolve(__dirname, 'vercel.json'), 'utf8'));
+    const rules: Array<{ source: string; headers: Array<{ key: string; value: string }> }> = vercel.headers || [];
+    const global = rules.find(rule => rule.source === '/(.*)');
+    const out: Record<string, string> = {};
+    for (const { key, value } of global?.headers || []) {
+      if (/^strict-transport-security$/i.test(key)) continue;
+      out[key] = /^content-security-policy$/i.test(key)
+        ? value.split(';').map(part => part.trim()).filter(part => part && part !== 'upgrade-insecure-requests').join('; ')
+        : value;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
 
 export default defineConfig(() => {
   return {
+    preview: { headers: previewSecurityHeaders() },
     plugins: [react(), tailwindcss(), tourPrerender(), VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable-512x512.png'],

@@ -417,6 +417,9 @@ export function initializeAutomationEngine() {
   // 10. CRON: AGENTE DE BANDEJA DE PROVEEDORES (Cada minuto)
   // Gmail OAuth es opcional: si no está configurado, el agente queda inactivo sin romper el resto del sistema.
   scheduleTracked('provider-inbox-1m', '* * * * *', async () => {
+    // Compatibilidad: el lector anterior permanece disponible, pero nunca
+    // corre a la vez que el agente omnicanal sobre la misma bandeja Gmail.
+    if (process.env.EMAIL_OPERATIONS_ENABLED !== 'false' || process.env.PROVIDER_INBOX_LEGACY_ENABLED !== 'true') return;
     try {
       const res = await withDistributedAutomationLock('provider-inbox-1m', processProviderInboxOnce);
       if (res?.enabled && (res.processed || res.errors)) {
@@ -448,6 +451,7 @@ export function initializeAutomationEngine() {
   // Revisa Gmail y Outlook, clasifica solicitudes, continúa reservas existentes
   // y responde automáticamente cuando la política de autonomía y la confianza lo permiten.
   scheduleTracked('email-operations-1m', '* * * * *', async () => {
+    if (process.env.EMAIL_OPERATIONS_ENABLED === 'false') return;
     try {
       const res = await withDistributedAutomationLock('email-operations-1m', processEmailOperationsOnce);
       if (res && (res.scanned || res.errors.length)) {

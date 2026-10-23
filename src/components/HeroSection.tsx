@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { NEUTRAL_PHOTO_URL } from '../data/photoCatalog';
 import { useNavigate } from 'react-router-dom';
 import { Search, Sparkles, MapPin, Compass, ShieldCheck, ChevronRight, ChevronLeft, ArrowRight } from 'lucide-react';
 import { ReferencePrice } from './ReferencePrice';
@@ -46,7 +47,7 @@ const HERO_SLIDES = [
   },
   {
     id: 3,
-    image: "https://images.unsplash.com/photo-1585551756655-7ca9704ec576?auto=format&fit=crop&w=1920&q=80",
+    image: "https://images.unsplash.com/photo-1683414903327-f5a2fcb37020?auto=format&fit=crop&w=1920&q=85",
     badge: "🌱 Bosque Nuboso",
     badgeEn: "🌱 Cloud Forest",
     title: "Monteverde: Puentes Colgantes",
@@ -277,7 +278,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     fetchPriority="high"
                     referrerPolicy="no-referrer"
                     onError={(e) => {
-                      e.currentTarget.src = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80';
+                      if (e.currentTarget.src !== NEUTRAL_PHOTO_URL) e.currentTarget.src = NEUTRAL_PHOTO_URL;
                     }}
                     className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                   />

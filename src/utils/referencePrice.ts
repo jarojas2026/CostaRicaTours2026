@@ -1,4 +1,5 @@
 import type { Currency, Language } from '../types';
+import { formatAmount, missingRateNotice, rateNote, type RatesSnapshot } from './money';
 
 /**
  * Reference (catalog) prices are not quotes. The catalog stores a USD
@@ -15,6 +16,10 @@ export interface ReferencePriceParts {
   headline: string;
   /** Short disclaimer shown under the headline. */
   disclaimer: string;
+  /** "Referencia en USD; tasa BCCR del …" when a conversion is shown. */
+  rateNote?: string;
+  /** Selected currency has no real rate: shown in USD. */
+  rateNotice?: string;
 }
 
 const isEs = (language: Language) => language === 'es';
@@ -35,17 +40,7 @@ export function formatApproxConversion(
   language: Language,
 ): string | undefined {
   if (currency === 'USD' || !rate || !Number.isFinite(rate) || rate <= 0) return undefined;
-  const amount = Math.round(amountUSD * rate);
-  let formatted: string;
-  try {
-    formatted = new Intl.NumberFormat(isEs(language) ? 'es-CR' : 'en-US', {
-      style: 'currency',
-      currency,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  } catch {
-    formatted = `${currency} ${amount.toLocaleString('en-US')}`;
-  }
+  const formatted = formatAmount(amountUSD * rate, currency, language);
   return isEs(language) ? `≈ ${formatted} aprox.` : `≈ ${formatted} approx.`;
 }
 
@@ -54,6 +49,7 @@ export function referencePriceParts(
   currency: Currency,
   rate: number | undefined,
   language: Language,
+  rates?: RatesSnapshot,
 ): ReferencePriceParts {
   const es = isEs(language);
   if (!amountUSD || !Number.isFinite(amountUSD) || amountUSD <= 0) {
@@ -66,9 +62,12 @@ export function referencePriceParts(
     };
   }
   const usd = formatUsdReference(amountUSD);
+  const approx = formatApproxConversion(amountUSD, currency, rate, language);
   return {
     usd,
-    approx: formatApproxConversion(amountUSD, currency, rate, language),
+    approx,
+    rateNote: approx && rates ? rateNote(currency, language, rates) : undefined,
+    rateNotice: currency !== 'USD' && !approx ? missingRateNotice(currency, language) : undefined,
     headline: es ? `Precio de referencia desde ${usd}` : `Reference price from ${usd}`,
     disclaimer: es
       ? 'Sujeto a confirmación de operador, fecha y cupo.'

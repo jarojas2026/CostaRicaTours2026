@@ -263,7 +263,7 @@ agentsRouter.get('/api/ai/tools', (req, res) => {
   });
 });
 
-agentsRouter.get('/api/agent/tools/functions', async (req, res) => {
+agentsRouter.get('/api/agent/tools/functions', requireAdmin, async (req, res) => {
   try {
     const { GEMINI_FUNCTION_DECLARATIONS } = await import('../agentTools');
     res.json({

@@ -7,6 +7,7 @@ import { rememberOrganizationalFlow } from './organizationalMemoryService';
 import { resolveTravelerIdentity } from './travelerIdentityService';
 import { adaptTravelerJourney, buildTripJourney } from './travelJourneyOrchestrator';
 import { executeBusinessGoal } from './businessGoalOrchestrator';
+import { redactProviderIdentityForCustomer } from './customerOutboundPrivacy';
 
 export interface CustomerIntakePayload {
   message?: string;
@@ -403,7 +404,8 @@ export async function processCustomerIntake(payload: CustomerIntakePayload, trus
   const assistant = extractedData.mediaType
     ? { reply: language === 'en' ? 'We received your media message. A human agent has been notified and will review it. You can also send the request as text for immediate AI assistance.' : 'Recibimos tu mensaje multimedia. Un agente humano ha sido notificado y lo revisará. También puedes enviar la solicitud por texto para recibir asistencia inmediata de la IA.', agentId: 'customer_intake_gateway' }
     : journeyAssistant || await processChatInquiry(message, language, [], 'auto', sessionId, { allowMutations: !escalation.escalated });
-  const reply = clean(assistant?.reply || 'Recibimos tu solicitud y estamos procesándola.', 8000);
+  // #377: la respuesta sale por WhatsApp/correo sin pasar por el middleware HTTP; nunca revela al proveedor.
+  const reply = redactProviderIdentityForCustomer(clean(assistant?.reply || 'Recibimos tu solicitud y estamos procesándola.', 8000), { language });
 
   // Sales/support knowledge pulse: record a minimal omnichannel signal, never
   // the customer's message, identity, private response or payment information.

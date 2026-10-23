@@ -3,6 +3,46 @@
   "version": 2,
   "buildCommand": "npm run build",
   "ignoreCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then exit 1; else echo 'Skipping automatic preview build; GitHub CI is authoritative for feature branches.'; exit 0; fi",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://maps.googleapis.com https://maps.gstatic.com https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://maps.gstatic.com https://*.sentry.io https://api.stripe.com https://*.tile.openstreetmap.org https://server.arcgisonline.com https://unpkg.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://apis.google.com https://www.google.com https://maps.google.com https://js.stripe.com https://hooks.stripe.com; worker-src 'self' blob:; manifest-src 'self'; form-action 'self' https://checkout.stripe.com https://www.paypal.com https://www.sandbox.paypal.com; frame-ancestors 'self'; upgrade-insecure-requests"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(self), microphone=(self), geolocation=(self), payment=(self), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), browsing-topics=()"
+        },
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin-allow-popups"
+        }
+      ]
+    },
+    {
+      "source": "/(counter-widget\\.html|counter-widget\\.js|counter)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://maps.googleapis.com https://maps.gstatic.com https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://maps.gstatic.com https://*.sentry.io https://api.stripe.com https://*.tile.openstreetmap.org https://server.arcgisonline.com https://unpkg.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://apis.google.com https://www.google.com https://maps.google.com https://js.stripe.com https://hooks.stripe.com; worker-src 'self' blob:; manifest-src 'self'; form-action 'self' https://checkout.stripe.com https://www.paypal.com https://www.sandbox.paypal.com; upgrade-insecure-requests"
+        }
+      ]
+    }
+  ],
   "redirects": [
     {
       "source": "/tour/arenal-pure-trek-canyoning",
@@ -2809,6 +2849,14 @@
     {
       "source": "/api/:path((?!gateway$).*)",
       "destination": "/api/gateway?__crt_path=:path"
+    },
+    {
+      "source": "/__/auth/:path*",
+      "destination": "https://gen-lang-client-0782739149.firebaseapp.com/__/auth/:path*"
+    },
+    {
+      "source": "/__/firebase/:path*",
+      "destination": "https://gen-lang-client-0782739149.firebaseapp.com/__/firebase/:path*"
     },
     {
       "source": "/ai",

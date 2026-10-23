@@ -35,7 +35,27 @@ jobs:
         run: npm ci --include=optional --legacy-peer-deps
 
       - name: Bloquear vulnerabilidades altas y críticas de producción
-        run: npm run audit:security:prod
+        # El endpoint de auditoría de npm a veces responde 4xx/5xx
+        # (p. ej. 503 en /-/npm/v1/security/audits/quick). Reintentamos y,
+        # si el REGISTRO sigue caído, solo dejamos un aviso; si npm audit
+        # encuentra vulnerabilidades altas/críticas, el paso SÍ falla.
+        run: |
+          for intento in 1 2 3; do
+            set +e
+            timeout 180 npm run audit:security:prod > /tmp/npm-audit.log 2>&1
+            code=$?
+            set -e
+            cat /tmp/npm-audit.log
+            if [ "$code" -eq 0 ]; then exit 0; fi
+            if [ "$code" -eq 124 ]; then echo "npm audit superó 180 s" >> /tmp/npm-audit.log; echo "ETIMEDOUT" >> /tmp/npm-audit.log; fi
+            if ! grep -qiE "audit endpoint returned an error|ENOAUDIT|Service Unavailable|ETIMEDOUT|ECONNRESET|ECONNREFUSED|EAI_AGAIN|code E5[0-9][0-9]|code E4[0-9][0-9]" /tmp/npm-audit.log; then
+              echo "::error::npm audit encontró vulnerabilidades altas o críticas de producción"
+              exit "$code"
+            fi
+            echo "Endpoint de auditoría de npm falló (intento $intento/3); reintentando…"
+            sleep 15
+          done
+          echo "::warning::El endpoint de auditoría de npm no respondió tras 3 intentos; auditoría omitida en esta ejecución"
 
       - name: Auditar fixtures y tokens mock
         run: node scripts/securityFixtureAudit.mjs

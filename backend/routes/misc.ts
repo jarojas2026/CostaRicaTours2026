@@ -5,23 +5,24 @@
  * orden de registro se conservan (ver tests/serverRoutes.contract.test.ts).
  */
 
-import { requireOperator } from '../authMiddleware';
+import type { Request, Response } from 'express';
+import { requireOperator, requireAdmin, resolveOperatorAccess, type OperatorAccessResult } from '../authMiddleware';
 import { updateBookingStatus, getWeeklyConversionMetrics } from '../bookingService';
 import { massiveEngine } from '../massiveProcessingEngine';
 import { createRouter } from './shared';
 import { aiHealthHttpStatus, getAiHealth } from '../aiHealth';
+import { probeAiProviders } from '../aiHealthProbe';
 import { getBreakerStates } from '../aiRouter';
 import { getAiConfig, isBillingBlocked } from '../aiConfig';
 
 /** Health check. */
 export const healthRouter = createRouter();
 
-healthRouter.get('/api/health/ai', (_req, res) => {
+/** Detalle completo de salud IA (proveedores, política y breakers). Solo owner/admin. */
+function aiHealthDetail() {
   const health = getAiHealth();
   const cfg = getAiConfig();
-  res.setHeader('Cache-Control', 'no-store');
-  // 200 para available/unknown/unconfigured (status en el body); 503 solo si todos los configurados están degraded.
-  res.status(aiHealthHttpStatus(health.providers)).json({
+  return {
     ...health,
     policy: {
       provider: cfg.provider,
@@ -31,7 +32,49 @@ healthRouter.get('/api/health/ai', (_req, res) => {
       billingBlocked: { gemini: isBillingBlocked('gemini'), claude: isBillingBlocked('claude'), openai_compat: isBillingBlocked('openai_compat') },
     },
     breakers: getBreakerStates(),
-  });
+  };
+}
+
+const isAdminAccess = (result: OperatorAccessResult) =>
+  result.ok && (result.access?.role === 'owner' || result.access?.role === 'admin');
+
+/**
+ * GET /api/health/ai (#379). Público: solo `{ status }`, sin alcance, proveedores ni
+ * política. Con credenciales de owner/admin válidas devuelve el detalle completo.
+ * Nunca genera con un modelo: solo observación pasiva + sondeo gratuito del listado de modelos
+ * (backend/aiHealthProbe.ts, AI_HEALTH_PROBE_ENABLED=false lo apaga).
+ */
+export function aiHealthHandler(
+  resolveAccess: (req: Request) => Promise<OperatorAccessResult> = resolveOperatorAccess,
+  probe: () => Promise<void> = () => probeAiProviders(),
+) {
+  return async (req: Request, res: Response) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Vary', 'Authorization, X-Operator-Key');
+    // Sondeo a costo cero (listado de modelos) para no quedar en "unknown"; nunca lanza.
+    await probe().catch(() => undefined);
+    const health = getAiHealth();
+    const status = aiHealthHttpStatus(health.providers);
+    const hasCredentials = Boolean(req.headers.authorization || req.headers['x-operator-key']);
+    if (hasCredentials && isAdminAccess(await resolveAccess(req).catch(() => ({ ok: false, status: 401, error: '' }) as OperatorAccessResult))) {
+      res.status(status).json(aiHealthDetail());
+      return;
+    }
+    res.status(status).json({ status: health.status });
+  };
+}
+
+healthRouter.get('/api/health/ai', aiHealthHandler());
+
+// Diagnóstico completo: solo owner/admin autenticado (#379), nunca público ni para el rol operator.
+healthRouter.get('/api/ops/ai-health', (_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+}, requireAdmin, (_req, res) => {
+  const detail = aiHealthDetail();
+  res.setHeader('Cache-Control', 'no-store');
+  // 200 para available/unknown/unconfigured (status en el body); 503 solo si todos los configurados están degraded.
+  res.status(aiHealthHttpStatus(detail.providers)).json(detail);
 });
 
 healthRouter.get('/api/health', (req, res) => {
@@ -128,7 +171,7 @@ opsMetricsRouter.all('/webhook/health-check', (req, res) => {
 // ==========================================
 // 📊 ANALÍTICA NATIVA Y ACCIONES DE RESERVA
 // ==========================================
-opsMetricsRouter.get('/api/analytics/conversion-report', async (req, res) => {
+opsMetricsRouter.get('/api/analytics/conversion-report', requireAdmin, async (req, res) => {
   try {
     const metrics = await getWeeklyConversionMetrics();
     res.json({ success: true, data: metrics, source: 'firestore-native' });

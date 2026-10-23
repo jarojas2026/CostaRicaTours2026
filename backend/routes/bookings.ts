@@ -11,7 +11,8 @@ import { google } from 'googleapis';
 import { requireOperator, resolveOperatorAccess, verifyFirebaseUser } from '../authMiddleware';
 import { verifyBookingDocumentToken } from '../signedAccessTokens';
 import { createBooking, getBookingById, getAllBookings, updateBookingStatus } from '../bookingService';
-import { generateBookingPDFBuffer, generateBookingPrintableHTML } from '../pdfService';
+import { generateBookingPrintableHTML } from '../pdfService';
+import { buildVoucherContent, generateVoucherPdf, voucherEligibility } from '../bookingVoucherService';
 import { massiveEngine } from '../massiveProcessingEngine';
 import { createAlert } from '../alertService';
 import { executeCustomerProformaConfirmation } from '../nativeWorkflows';
@@ -280,7 +281,14 @@ bookingsRouter.get('/api/bookings/:id/download-pdf', async (req, res) => {
     const booking = await loadAuthorizedBookingDocument(req, res);
     if (!booking) return;
     const bookingId = String(booking.bookingId || booking.id).replace(/[^A-Za-z0-9_-]/g, '');
-    const pdfBuffer = await generateBookingPDFBuffer(booking as any);
+    // #391: voucher solo con pago verificado por el servidor.
+    const content = buildVoucherContent(booking);
+    if (!content) {
+      const elig = voucherEligibility(booking);
+      res.status(409).json({ error: 'El comprobante está disponible cuando la reserva está pagada y verificada.', code: elig.ok ? 'no_disponible' : elig.reason });
+      return;
+    }
+    const pdfBuffer = await generateVoucherPdf(content);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="CostaRicaTours-Voucher-${bookingId}.pdf"`);
     res.setHeader('Content-Length', pdfBuffer.length);

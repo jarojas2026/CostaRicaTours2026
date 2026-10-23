@@ -14,7 +14,8 @@ import { getLangText, UI_TRANSLATIONS, formatCurrency } from '../utils/i18n';
 import { getEcoFactForTour, getEcoFactForRegion } from '../data/ecoFacts';
 import { AI_AGENTS, getAIAgentById } from '../data/aiAgentsData';
 import { ClaudeItineraryModal } from './ClaudeItineraryModal';
-import { getUsdToCrcRate, formatCrc } from '../utils/currencies';
+import { getUsdToCrcRate } from '../utils/currencies';
+import { useMoney } from '../hooks/useMoney';
 import { useChatAnalytics } from '../hooks/useChatAnalytics';
 import { useSpeechRecognition, speechSynthesisSupported } from '../hooks/useSpeechRecognition';
 import { buildTripInquiryHandoff, serverInquiryHandoff, type TripInquiryHandoff } from '../utils/tripRequestParser';
@@ -22,6 +23,8 @@ import { chatSessionHeaders, clearStoredChatSession, readStoredChatSession, requ
 
 interface AIAssistantProps {
   language: Language;
+  /** Moneda elegida en el sitio; los precios se convierten con la tasa real. */
+  currency?: string;
   onSelectTour: (tour: Tour) => void;
   userBookings?: BookingRequest[];
   onClose?: () => void;
@@ -59,12 +62,14 @@ interface Message {
 
 export const AIAssistant: React.FC<AIAssistantProps> = ({
   language,
+  currency = 'USD',
   onSelectTour,
   userBookings = [],
   onClose,
   onNavigateTab,
   onBack,
 }) => {
+  const money = useMoney(currency, language);
   const { tours: TOURS } = useTours();
   const t = (key: string) => UI_TRANSLATIONS[key]?.[language] || UI_TRANSLATIONS[key]?.['es'] || key;
   const { trackChatEvent } = useChatAnalytics();
@@ -599,8 +604,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           </h2>
           <p className="text-sm sm:text-base text-emerald-100/70 max-w-3xl mx-auto leading-relaxed">
             {language === 'es'
-              ? 'Habla con Sofía en un solo chat. Puedes planear, buscar experiencias, consultar transporte o pedir ayuda con una reserva. El precio y la disponibilidad se confirman antes de cobrar.'
-              : 'Talk to Sofía in one chat. Plan a trip, find experiences, ask about transport, or get help with a booking. Price and availability are confirmed before payment.'
+              ? 'Habla con nuestro asistente en un solo chat. Puedes planear, buscar experiencias, consultar transporte o pedir ayuda con una reserva. El precio y la disponibilidad se confirman antes de cobrar.'
+              : 'Talk to our assistant in one chat. Plan a trip, find experiences, ask about transport, or get help with a booking. Price and availability are confirmed before payment.'
             }
           </p>
 
@@ -873,7 +878,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
            <img src={foundTour.image} alt={foundTour.title.es} className="w-16 h-16 rounded-lg object-cover shadow-md border border-emerald-500/30" />
            <div className="flex-1">
              <h4 className="font-bold text-sm text-white leading-tight mb-1">{getLangText(foundTour.title, language)}</h4>
-             <span className="text-amber-400 font-black text-xs">{formatCurrency(foundTour.priceUSD, 'USD')}</span>
+             <span className="text-amber-400 font-black text-xs" title={money(foundTour.priceUSD).note || money(foundTour.priceUSD).notice}>{money(foundTour.priceUSD).primary}{money(foundTour.priceUSD).converted && <span className="ml-1 font-semibold text-stone-400">({money(foundTour.priceUSD).usd})</span>}</span>
            </div>
            <ArrowRight className="w-4 h-4 text-emerald-400" />
         </div>
@@ -1532,8 +1537,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               <div className="bg-[#020e08] p-3 rounded-xl border border-emerald-500/30 flex items-center justify-between text-xs">
                 <span className="text-stone-300 font-bold">{language === 'es' ? 'Total Calculado:' : 'Total Calculated:'}</span>
                 <span className="text-amber-400 font-black text-sm">
-                  ${(inChatBookingTour.priceUSD * inChatAdults).toFixed(2)} USD
-                  {getUsdToCrcRate() > 0 && ` (${formatCrc(inChatBookingTour.priceUSD * inChatAdults)} CRC)`}
+                  {(() => { const v = money(inChatBookingTour.priceUSD * inChatAdults); return v.converted ? `${v.primary} (${v.usd})` : v.usd; })()}
                 </span>
               </div>
 
@@ -1579,7 +1583,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                   {language === 'es' ? 'Mostrador Digital: Código de Integración Web' : 'Digital Counter: Web Integration Code'}
                 </h3>
                 <p className="text-xs text-emerald-400 font-bold">
-                  {language === 'es' ? 'Incrusta a Sofía en cualquier sitio web o CMS' : 'Embed Sofia into any website or CMS'}
+                  {language === 'es' ? 'Incrusta el asistente en cualquier sitio web o CMS' : 'Embed the assistant into any website or CMS'}
                 </p>
               </div>
             </div>
@@ -1591,13 +1595,13 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
             </p>
 
             <div className="bg-[#020e08] p-3 rounded-xl border border-emerald-500/30 mb-4 relative font-mono text-[11px] text-emerald-300 break-all">
-              <code>{`<script src="https://costaricatours.es/counter-widget.js" data-endpoint="https://costaricatours.es/api/agent/counter" data-lang="${language}" data-color="#059669"></script>`}</code>
+              <code>{`<script src="${window.location.origin}/counter-widget.js" data-endpoint="${window.location.origin}/api/agent/counter" data-lang="${language}" data-color="#059669"></script>`}</code>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <button
                 onClick={() => {
-                  const code = `<script src="https://costaricatours.es/counter-widget.js" data-endpoint="https://costaricatours.es/api/agent/counter" data-lang="${language}" data-color="#059669"></script>`;
+                  const code = `<script src="${window.location.origin}/counter-widget.js" data-endpoint="${window.location.origin}/api/agent/counter" data-lang="${language}" data-color="#059669"></script>`;
                   navigator.clipboard.writeText(code);
                   setCopiedWidget(true);
                   setTimeout(() => setCopiedWidget(false), 3000);

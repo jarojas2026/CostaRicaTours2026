@@ -44,7 +44,7 @@ test('A solo ve sus ventas; las de B (y pendientes/canceladas) no cuentan', asyn
   const { lines, meta } = await loadProviderSaleLines(db, A, { todayCR: TODAY, showGross: false, months: 12 });
   assert.deepEqual(lines.map((l) => l.bookingRef).sort(), ['AIDOUT', 'FUTURE', 'IGIBLE'].sort());
   assert.equal(meta.sourceCount, 3);
-  assert.equal(meta.profileCommissionRate, 0.2);
+  assert.equal('profileCommissionRate' in meta, false);
   assert.doesNotMatch(JSON.stringify(lines), /5000|Tour B|999|777/);
   const b = await loadProviderSaleLines(db, B, { todayCR: TODAY, showGross: false });
   assert.deepEqual(b.lines.map((l) => l.tourId), ['tb']);
@@ -58,7 +58,7 @@ test('neto: payout pagado real o estimado con la comisión registrada; bruto ocu
   assert.equal(byRef.AIDOUT.netSource, 'payout_paid');
   assert.equal(byRef.IGIBLE.netUSD, 80);
   assert.equal(byRef.IGIBLE.netSource, 'estimated');
-  assert.equal(byRef.IGIBLE.commissionRate, 0.2);
+  assert.equal('commissionRate' in byRef.IGIBLE, false);
   for (const line of lines) {
     assert.equal('grossUSD' in line, false);
     assert.equal('commissionUSD' in line, false);
@@ -71,17 +71,21 @@ test('neto: payout pagado real o estimado con la comisión registrada; bruto ocu
   assert.doesNotMatch(JSON.stringify(summary), /"grossUSD"|"commissionUSD"/);
 });
 
-test('con la bandera en true se expone bruto y comisión en USD', async () => {
+test('con las banderas en true se expone bruto, % y comisión en USD', async () => {
   const { db } = seed();
-  const { lines } = await loadProviderSaleLines(db, A, { todayCR: TODAY, showGross: true });
+  const { lines, meta } = await loadProviderSaleLines(db, A, { todayCR: TODAY, showGross: true, showCommission: true });
   const eligible = lines.find((l) => l.bookingRef === 'IGIBLE')!;
   assert.equal(eligible.grossUSD, 100);
   assert.equal(eligible.commissionUSD, 20);
-  assert.equal(summarizeSales(lines, true).totals.grossUSD, 350);
+  assert.equal(eligible.commissionRate, 0.2);
+  assert.equal(meta.profileCommissionRate, 0.2);
+  const summary = summarizeSales(lines, true, true);
+  assert.equal(summary.totals.grossUSD, 350);
+  assert.deepEqual(summary.commissionRates, [0.2]);
 });
 
 test('sin comisión registrada no se inventa %: neto null y liquidación bloqueada', () => {
-  const line = buildSaleLine({ id: 'bk_x', ...paidPast }, null, { showGross: false, todayCR: TODAY });
+  const line = buildSaleLine({ id: 'bk_x', ...paidPast }, null, { showGross: false, showCommission: true, todayCR: TODAY });
   assert.equal(line.commissionRate, null);
   assert.equal(line.netUSD, null);
   assert.equal(line.netSource, 'unavailable');

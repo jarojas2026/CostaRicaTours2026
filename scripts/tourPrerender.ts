@@ -25,14 +25,17 @@ export function renderTourHtml(template: string, tour: Tour, tours: readonly Tou
       <a href="/ai">${es ? 'Consultar disponibilidad' : 'Check availability'}</a></section>`;
   }).join('');
   const related = similarTours(tour, tours).map(t => `<li><a href="/tour/${encodeURIComponent(t.id)}">${escape(t.title.es)}</a></li>`).join('');
+  // OG/Twitter con imagen absoluta (#381). El JSON-LD se mantiene mínimo: sin Offer/precio,
+  // disponibilidad, reseñas, proveedor/operador ni URLs externas (contrato de privacidad).
+  const image = /^https:\/\//.test(tour.image || '') ? tour.image : `${origin}/pwa-512x512.png`;
   const schema = JSON.stringify({ '@context': 'https://schema.org', '@type': 'TouristTrip', name: tour.title.es, description, url: canonical, inLanguage: ['es', 'en'] }).replace(/</g, '\\u003c');
   return template
     .replace(/<title>[\s\S]*?<\/title>/i, `<title>${escape(title)}</title>`)
-    .replace(/<meta\s+(?:name|property)="(?:description|og:title|og:description|og:url|twitter:title|twitter:description)"[^>]*>/gi, '')
+    .replace(/<meta\s+(?:name|property)="(?:description|og:title|og:description|og:url|og:type|og:image(?::[a-z]+)?|twitter:card|twitter:title|twitter:description|twitter:image(?::[a-z]+)?)"[^>]*>/gi, '')
     .replace(/<link\s+rel="canonical"[^>]*>/gi, '')
     .replace(/<link\s+rel="alternate"\s+hreflang="[^"]*"[^>]*>\s*/gi, '')
     .replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/gi, '')
-    .replace('</head>', `<meta name="description" content="${escape(description)}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${canonical}"><link rel="canonical" href="${canonical}"><link rel="alternate" hreflang="es" href="${canonical}?lang=es"><link rel="alternate" hreflang="en" href="${canonical}?lang=en"><link rel="alternate" hreflang="x-default" href="${canonical}"><script id="tour-schema" type="application/ld+json">${schema}</script></head>`)
+    .replace('</head>', `<meta name="description" content="${escape(description)}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${canonical}"><meta property="og:type" content="website"><meta property="og:image" content="${escape(image)}"><meta property="og:image:alt" content="${escape(tour.title.es)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(title)}"><meta name="twitter:description" content="${escape(description)}"><meta name="twitter:image" content="${escape(image)}"><link rel="canonical" href="${canonical}"><link rel="alternate" hreflang="es" href="${canonical}?lang=es"><link rel="alternate" hreflang="en" href="${canonical}?lang=en"><link rel="alternate" hreflang="x-default" href="${canonical}"><script id="tour-schema" type="application/ld+json">${schema}</script></head>`)
     .replace('<div id="root"></div>', `<div id="root"><main style="max-width:70rem;margin:3rem auto;padding:2rem"><a href="/tours">Tours</a>${sections}<h2>Tours similares / Similar tours</h2><ul>${related}</ul></main></div>`);
 }
 

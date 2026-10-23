@@ -3,9 +3,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Check, ChevronRight, ChevronLeft, Sparkles, Send, Plane, Bus, 
   MapPin, Calendar, Users, Hotel, ShieldCheck, Compass, CheckCircle2,
-  DollarSign, MessageCircle, Info, RefreshCw, Save, WifiOff, Trash2
+  DollarSign, MessageCircle, Info, RefreshCw, Save, WifiOff, Trash2, Loader2, AlertTriangle
 } from 'lucide-react';
 import { Language, Currency } from '../types';
+import { leadPublicReference } from '../../shared/tourQuoteRequest';
+import { RequestFollowUpWhatsApp } from './RequestFollowUpWhatsApp';
+import type { CustomerIntakeResult } from '../utils/customerIntake';
 
 const CUSTOM_FUNNEL_DRAFT_KEY = 'costa_rica_custom_funnel_draft';
 
@@ -38,6 +41,19 @@ function normalizeSavedDestinations(value: unknown): string[] {
     const raw = String(item || '').trim();
     return LEGACY_DESTINATION_ALIASES[raw] || raw;
   }).filter(id => validIds.has(id as any))));
+}
+
+/** Tiempo máximo de espera de la confirmación del servidor antes de mostrar error. */
+export const CUSTOM_FUNNEL_SUBMIT_TIMEOUT_MS = 20_000;
+const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/;
+
+type FunnelField = 'startDate' | 'durationDays' | 'adults' | 'destinations' | 'customerName' | 'customerEmail' | 'consent';
+type FunnelErrors = Partial<Record<FunnelField, string>>;
+type SubmitState = 'idle' | 'loading' | 'success' | 'error';
+
+/** Referencia pública corta (CRT-XXXXXXXX) a partir del id de intake confirmado por el servidor. */
+function intakePublicReference(intakeId: unknown): string | null {
+  return leadPublicReference(String(intakeId ?? '').replace(/^INT-/i, ''));
 }
 
 interface CustomFunnelModalProps {
@@ -74,6 +90,22 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [formError, setFormError] = useState('');
+  const [consent, setConsent] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FunnelErrors>({});
+  const [submitState, setSubmitState] = useState<SubmitState>('idle');
+  const [submitReference, setSubmitReference] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState('');
+  const submitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
+  const modalBodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (submitTimerRef.current) clearTimeout(submitTimerRef.current);
+    };
+  }, []);
 
   // Step 2: Transport & Transfers
   const [transportType, setTransportType] = useState<'shuttle' | 'private' | 'rental' | 'flight'>('private');
@@ -116,7 +148,8 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
         if (saved) {
           const draft = JSON.parse(saved);
           if (draft) {
-            if (draft.step) setStep(draft.step);
+            // El consentimiento (Ley 8968) nunca se restaura: debe darse en esta sesión.
+            if (draft.step) setStep(Math.min(4, Math.max(1, Number(draft.step) || 1)));
             if (draft.arrivalAirport) setArrivalAirport(draft.arrivalAirport);
             if (draft.departureAirport) setDepartureAirport(draft.departureAirport);
             if (draft.startDate) setStartDate(draft.startDate);
@@ -234,6 +267,11 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
     setCustomerEmail('');
     setCustomerPhone('');
     setFormError('');
+    setConsent(false);
+    setFieldErrors({});
+    setSubmitState('idle');
+    setSubmitReference(null);
+    setSubmitError('');
     setHasRestoredDraft(false);
     setLastSavedTime(null);
   };
@@ -276,41 +314,107 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
       : `I need a custom ${durationDays}-day Costa Rica trip for ${travelers} travelers (${adults} adults, ${children} children). Start date: ${startDate || 'to be defined'}. Arrival: ${arrivalAirport}. Departure: ${departureAirport}. We want to visit: ${destinationText}. Pace: ${pace}. We prefer ${transportType} transport and ${stayStyle} lodging. ${budgetUSD ? `Declared group budget ceiling: $${budgetUSD} USD; use it as a constraint, not as a quoted price.` : ''} ${selectedPriorities.length ? `Priorities: ${selectedPriorities.join(', ')}.` : ''} ${specialRequests ? `Special needs or requests: ${specialRequests}.` : ''} Build a day-by-day route, optimize geography and transfers, use real catalog services when they fit, and clearly mark anything requiring verification. ${outcome}`;
   };
 
-  const handleGenerateItinerary = () => {
-    setFormError('');
-    const travelers = adults + children;
-    const emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim());
+  const es = language === 'es';
+  const hasContactData = Boolean(customerName.trim() || customerEmail.trim() || customerPhone.trim());
 
-    if (durationDays < 3 || durationDays > 21) {
-      setFormError(language === 'es' ? 'La duración debe estar entre 3 y 21 días.' : 'Trip duration must be between 3 and 21 days.');
-      return;
+  /** Errores del paso indicado; vacío = se puede avanzar. */
+  const stepErrors = (target: number): FunnelErrors => {
+    const errors: FunnelErrors = {};
+    if (target === 1) {
+      if (!startDate) errors.startDate = es ? 'Indica la fecha exacta de inicio del viaje.' : 'Enter the exact trip start date.';
+      if (!(durationDays >= 3 && durationDays <= 21)) errors.durationDays = es ? 'La duración debe estar entre 3 y 21 días.' : 'Trip duration must be between 3 and 21 days.';
+      if (!(adults >= 1)) errors.adults = es ? 'Debe viajar al menos un adulto.' : 'At least one adult traveler is required.';
     }
-    if (adults < 1 || travelers < 1) {
-      setFormError(language === 'es' ? 'Debe viajar al menos un adulto.' : 'At least one adult traveler is required.');
-      return;
+    if (target === 3 && !selectedDestinations.length) {
+      errors.destinations = es ? 'Selecciona al menos un destino para construir una ruta coherente.' : 'Select at least one destination to build a coherent route.';
     }
-    if (!selectedDestinations.length) {
-      setFormError(language === 'es' ? 'Selecciona al menos un destino para construir una ruta coherente.' : 'Select at least one destination to build a coherent route.');
-      return;
+    if (target === 4) {
+      if (requestQuote && customerName.trim().length < 2) errors.customerName = es ? 'Escribe el nombre del viajero responsable.' : 'Enter the lead traveler name.';
+      if ((requestQuote || customerEmail.trim()) && !EMAIL_RE.test(customerEmail.trim())) errors.customerEmail = es ? 'Escribe un correo válido.' : 'Enter a valid email.';
+      if ((requestQuote || hasContactData) && !consent) errors.consent = es ? 'Debes aceptar el tratamiento de tus datos (Ley 8968) para enviar la solicitud.' : 'You must accept the processing of your data (Law 8968) to send the request.';
     }
-    if (requestQuote && !startDate) {
-      setFormError(language === 'es' ? 'Indica una fecha exacta de inicio para verificar disponibilidad y cotizar.' : 'Provide an exact start date to verify availability and prepare a quote.');
-      return;
+    return errors;
+  };
+
+  const canProceed = (target: number) => Object.keys(stepErrors(target)).length === 0;
+
+  const focusFirstError = (errors: FunnelErrors) => {
+    const first = Object.keys(errors)[0];
+    if (!first) return;
+    requestAnimationFrame(() => {
+      const el = modalBodyRef.current?.querySelector<HTMLElement>(`[data-funnel-field="${first}"]`);
+      el?.focus();
+      el?.scrollIntoView?.({ block: 'center' });
+    });
+  };
+
+  const goNext = () => {
+    const errors = stepErrors(step);
+    setFieldErrors(errors);
+    if (!canProceed(step)) { focusFirstError(errors); return; }
+    setStep(step + 1);
+  };
+
+  const clearFieldError = (field: FunnelField) => {
+    if (fieldErrors[field]) setFieldErrors(prev => { const next = { ...prev }; delete next[field]; return next; });
+  };
+
+  const fieldError = (field: FunnelField) => fieldErrors[field]
+    ? <p id={`funnel-error-${field}`} role="alert" data-testid={`funnel-error-${field}`} className="mt-1 text-[11px] font-bold text-red-700">{fieldErrors[field]}</p>
+    : null;
+
+  const fieldA11y = (field: FunnelField) => ({
+    'data-funnel-field': field,
+    'aria-invalid': fieldErrors[field] ? true : undefined,
+    'aria-describedby': fieldErrors[field] ? `funnel-error-${field}` : undefined,
+  });
+
+  const handleGenerateItinerary = () => {
+    if (submitState === 'loading' || submitState === 'success') return;
+    setFormError('');
+    setSubmitError('');
+    // Revalida todos los pasos (un borrador restaurado puede saltar directo al paso 4).
+    for (const target of [1, 3, 4]) {
+      const errors = stepErrors(target);
+      if (Object.keys(errors).length) {
+        setFieldErrors(errors);
+        if (step !== target) setStep(target);
+        focusFirstError(errors);
+        return;
+      }
     }
-    if (requestQuote && !customerName.trim()) {
-      setFormError(language === 'es' ? 'Indica el nombre del viajero responsable para abrir la solicitud de cotización.' : 'Provide the lead traveler name to open the quote request.');
-      return;
-    }
-    if (requestQuote && !emailLooksValid) {
-      setFormError(language === 'es' ? 'Indica un correo válido para continuar la verificación de la cotización.' : 'Provide a valid email to continue quote verification.');
-      return;
-    }
+    setFieldErrors({});
+    const travelers = adults + children;
+
+    setSubmitState('loading');
+    setSubmitReference(null);
+    let settled = false;
+    const settle = (result: CustomerIntakeResult | null) => {
+      if (settled) return;
+      settled = true;
+      if (submitTimerRef.current) { clearTimeout(submitTimerRef.current); submitTimerRef.current = null; }
+      if (!mountedRef.current) return;
+      const reference = result?.ok ? intakePublicReference(result.intakeId) : null;
+      // Solo hay éxito con confirmación real del servidor (ok + id de intake).
+      if (result?.ok && reference) {
+        setSubmitReference(reference);
+        setSubmitState('success');
+        try { localStorage.removeItem(CUSTOM_FUNNEL_DRAFT_KEY); } catch { /* sin almacenamiento */ }
+        return;
+      }
+      setSubmitState('error');
+      setSubmitError(result === null
+        ? (es ? 'El servidor no respondió a tiempo. Tu solicitud no está confirmada; inténtalo de nuevo.' : 'The server did not respond in time. Your request is not confirmed; please try again.')
+        : (es ? 'No pudimos registrar tu solicitud. No se confirmó ninguna reserva ni cotización; inténtalo de nuevo.' : 'We could not register your request. No booking or quote was confirmed; please try again.'));
+    };
+    submitTimerRef.current = setTimeout(() => settle(null), CUSTOM_FUNNEL_SUBMIT_TIMEOUT_MS);
 
     const message = buildTripRequestMessage();
     requestCustomerIntake({
       message,
       language,
       source: 'custom-trip-funnel',
+      onResult: settle,
       customer: {
         name: customerName.trim() || undefined,
         email: customerEmail.trim() || undefined,
@@ -319,6 +423,7 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
       context: {
         page: window.location.pathname,
         requestKind: 'custom_multi_day_itinerary',
+        consent: consent ? { law: 'CR-8968', given: true } : undefined,
         existingJourneyId: localStorage.getItem('crt_active_journey') || undefined,
         journeyRequest: {
           startDate: startDate || undefined,
@@ -425,7 +530,7 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
         </div>
 
         {/* Modal Body Scrollable */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1">
+        <div ref={modalBodyRef} className="p-6 overflow-y-auto space-y-6 flex-1">
           
           {/* STEP 1: Arrival & Passengers */}
           {step === 1 && (
@@ -494,12 +599,14 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                     type="date"
                     value={startDate}
                     min={new Date().toISOString().split('T')[0]}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    onChange={(e) => { setStartDate(e.target.value); clearFieldError('startDate'); }}
+                    {...fieldA11y('startDate')}
                     className="w-full bg-white border border-neutral-300 rounded-xl px-3 py-2 text-sm font-bold text-neutral-800"
                   />
                   <p className="mt-1 text-[10px] text-neutral-500">
                     {language === 'es' ? 'Necesaria para verificar cupos y precios vivos.' : 'Required for live availability and price verification.'}
                   </p>
+                  {fieldError('startDate')}
                 </div>
                 <div>
                   <label className="text-xs font-bold text-neutral-700 block mb-1">
@@ -541,9 +648,11 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                     min="3"
                     max="21"
                     value={durationDays}
-                    onChange={(e) => setDurationDays(Number(e.target.value))}
+                    onChange={(e) => { setDurationDays(Number(e.target.value)); clearFieldError('durationDays'); }}
+                    {...fieldA11y('durationDays')}
                     className="w-full bg-white border border-neutral-300 rounded-xl px-3 py-2 text-sm font-bold text-neutral-800"
                   />
+                  {fieldError('durationDays')}
                 </div>
 
                 <div>
@@ -555,9 +664,11 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                     min="1"
                     max="20"
                     value={adults}
-                    onChange={(e) => setAdults(Number(e.target.value))}
+                    onChange={(e) => { setAdults(Number(e.target.value)); clearFieldError('adults'); }}
+                    {...fieldA11y('adults')}
                     className="w-full bg-white border border-neutral-300 rounded-xl px-3 py-2 text-sm font-bold text-neutral-800"
                   />
+                  {fieldError('adults')}
                 </div>
 
                 <div>
@@ -667,7 +778,9 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                   return (
                     <button
                       key={dest.id}
-                      onClick={() => toggleDestination(dest.id)}
+                      onClick={() => { toggleDestination(dest.id); clearFieldError('destinations'); }}
+                      aria-pressed={isSelected}
+                      {...(dest.id === DESTINATION_OPTIONS[0].id ? { 'data-funnel-field': 'destinations' } : {})}
                       className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
                         isSelected
                           ? 'bg-teal-600 text-stone-900 border-teal-600 shadow-sm'
@@ -680,6 +793,7 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                   );
                 })}
               </div>
+              {fieldError('destinations')}
 
               {/* Accommodation Style */}
               <div className="pt-2">
@@ -807,11 +921,13 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                     <label className="text-[10px] font-black uppercase tracking-wide text-neutral-600 block mb-1">
                       {language === 'es' ? 'Nombre responsable' : 'Lead traveler'}
                     </label>
-                    <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full bg-white border border-neutral-300 rounded-xl px-3 py-2 text-sm text-neutral-800" />
+                    <input aria-label={language === 'es' ? 'Nombre responsable' : 'Lead traveler'} autoComplete="name" value={customerName} onChange={(e) => { setCustomerName(e.target.value); clearFieldError('customerName'); }} {...fieldA11y('customerName')} className="w-full bg-white border border-neutral-300 rounded-xl px-3 py-2 text-sm text-neutral-800" />
+                    {fieldError('customerName')}
                   </div>
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wide text-neutral-600 block mb-1">Email</label>
-                    <input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} className="w-full bg-white border border-neutral-300 rounded-xl px-3 py-2 text-sm text-neutral-800" />
+                    <input aria-label="Email" type="email" autoComplete="email" value={customerEmail} onChange={(e) => { setCustomerEmail(e.target.value); clearFieldError('customerEmail'); }} {...fieldA11y('customerEmail')} className="w-full bg-white border border-neutral-300 rounded-xl px-3 py-2 text-sm text-neutral-800" />
+                    {fieldError('customerEmail')}
                   </div>
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wide text-neutral-600 block mb-1">
@@ -839,6 +955,52 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                     </span>
                   </span>
                 </label>
+
+                <div>
+                  <label className="flex items-start gap-3 rounded-xl border border-neutral-200 bg-white p-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={consent}
+                      onChange={(e) => { setConsent(e.target.checked); clearFieldError('consent'); }}
+                      {...fieldA11y('consent')}
+                      className="mt-0.5 w-5 h-5 accent-emerald-600"
+                    />
+                    <span className="text-[11px] leading-relaxed text-neutral-700">
+                      {language === 'es'
+                        ? 'Autorizo el tratamiento de mi nombre, correo, teléfono y datos del viaje para gestionar esta solicitud, conforme a la Ley 8968 de Protección de la Persona frente al Tratamiento de sus Datos Personales.'
+                        : 'I authorize the processing of my name, email, phone and trip details to handle this request, under Costa Rica Law 8968 on personal data protection.'}{' '}
+                      <a href="/privacy" className="underline">{language === 'es' ? 'Política de privacidad' : 'Privacy policy'}</a>
+                    </span>
+                  </label>
+                  {fieldError('consent')}
+                </div>
+
+                {submitState === 'loading' && (
+                  <div role="status" data-testid="funnel-submit-loading" className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700">
+                    <Loader2 className="w-4 h-4 animate-spin text-emerald-600" aria-hidden="true" />
+                    {language === 'es' ? 'Enviando tu solicitud…' : 'Sending your request…'}
+                  </div>
+                )}
+                {submitState === 'success' && (
+                  <div role="status" data-testid="funnel-submit-success" className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-3 text-xs text-emerald-900">
+                    <p className="font-black">{language === 'es' ? 'Solicitud recibida.' : 'Request received.'}</p>
+                    <p className="mt-1">{language === 'es' ? 'Te enviaremos la propuesta; disponibilidad y precio se confirman antes de cualquier pago.' : 'We will send you the proposal; availability and price are confirmed before any payment.'}</p>
+                    {submitReference && (
+                      <p className="mt-2 font-bold" data-testid="funnel-submit-reference">
+                        {language === 'es' ? 'Número de referencia: ' : 'Reference number: '}<span className="font-mono">{submitReference}</span>
+                      </p>
+                    )}
+                    <RequestFollowUpWhatsApp reference={submitReference} language={language === 'es' ? 'es' : 'en'} className="mt-2 inline-flex min-h-[44px] items-center rounded-full border border-emerald-400 bg-white px-4 py-2 font-bold text-emerald-800 hover:bg-emerald-100" />
+                  </div>
+                )}
+                {submitState === 'error' && (
+                  <div role="alert" data-testid="funnel-submit-error" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
+                    <span className="flex items-center gap-2"><AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />{submitError}</span>
+                    <button type="button" onClick={handleGenerateItinerary} className="min-h-[44px] rounded-full border border-red-300 bg-white px-4 py-1.5 text-red-700 hover:bg-red-100 flex items-center gap-1.5 cursor-pointer">
+                      <RefreshCw className="w-3.5 h-3.5" />{language === 'es' ? 'Reintentar' : 'Retry'}
+                    </button>
+                  </div>
+                )}
 
                 {formError && (
                   <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
@@ -898,7 +1060,8 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
 
           {step < 4 ? (
             <button
-              onClick={() => setStep(step + 1)}
+              onClick={goNext}
+              data-testid="funnel-next" 
               className="px-6 py-2.5 rounded-full bg-orange-500 hover:bg-teal-600 text-stone-900 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-orange-500/20 transition-all hover:scale-105 cursor-pointer ml-auto"
             >
               <span>{language === 'es' ? 'Siguiente Paso' : 'Next Step'}</span>
@@ -930,13 +1093,28 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
                 </button>
               )}
 
+              {submitState === 'success' ? (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="min-h-[44px] min-w-[44px] w-full sm:w-auto px-6 py-2.5 rounded-full bg-emerald-600 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>{language === 'es' ? 'Cerrar' : 'Close'}</span>
+                </button>
+              ) : (
               <button
+                type="button"
+                data-testid="funnel-submit"
                 onClick={handleGenerateItinerary}
-                className="min-h-[44px] min-w-[44px] w-full sm:w-auto px-6 py-2.5 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-stone-900 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 cursor-pointer"
+                disabled={submitState === 'loading'}
+                aria-busy={submitState === 'loading'}
+                className="min-h-[44px] min-w-[44px] w-full sm:w-auto px-6 py-2.5 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-stone-900 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 cursor-pointer disabled:opacity-60 disabled:cursor-wait disabled:hover:scale-100"
               >
-                <Sparkles className="w-4 h-4" />
-                <span>{requestQuote ? (language === 'es' ? 'Crear plan y verificar para cotizar' : 'Build plan & verify for quote') : (language === 'es' ? 'Crear itinerario' : 'Build itinerary')}</span>
+                {submitState === 'loading' ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Sparkles className="w-4 h-4" />}
+                <span>{submitState === 'loading' ? (language === 'es' ? 'Enviando…' : 'Sending…') : requestQuote ? (language === 'es' ? 'Crear plan y verificar para cotizar' : 'Build plan & verify for quote') : (language === 'es' ? 'Crear itinerario' : 'Build itinerary')}</span>
               </button>
+              )}
             </div>
           )}
         </div>

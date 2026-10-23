@@ -23,6 +23,7 @@ import {
 } from './bookingService';
 import { GEMINI_FUNCTION_DECLARATIONS, executeAgentTool } from './agentTools';
 import { getPlatformControls } from './platformControlService';
+import { getExchangeRates } from './exchangeRateService';
 
 // Registro en memoria de excepciones para diagnóstico del Supervisor
 const exceptionLogs: Array<{
@@ -638,7 +639,7 @@ Devuelve estrictamente un objeto JSON con este esquema:
 
 /**
  * 🌟 AGENTE DE MOSTRADOR Y RESERVAS (COUNTER AGENT)
- * Sofía • Counter Agent Oficial de Costa Rica Tours.
+ * Asistente de viajes (Counter Agent) de Costa Rica Tours.
  * Encargada de las labores de un agente de reservas y servicio al cliente la mayor parte del tiempo,
  * experta en el área y en turismo costarricense.
  * Puede:
@@ -693,7 +694,7 @@ export async function runCounterAgent(
           `3. **Acción inmediata**: Comunícate de inmediato al **9-1-1** o a nuestra Línea Directa 24/7 al **${emergencyContact}**.\n` +
           `4. El caso quedó registrado para el equipo de Costa Rica Tours; el tiempo de respuesta humana puede variar.`,
       agentId: 'counter_agent',
-      agentName: 'Sofía • Counter Agent & Mostrador',
+      agentName: 'Asistente de viajes • Costa Rica Tours',
       agentCategory: 'SERVICIO',
       escalation: {
         escalated: true,
@@ -766,7 +767,7 @@ export async function runCounterAgent(
             `• **Menos de 48 horas**: No reembolsable bajo políticas estándar de operador.\n\n` +
             `¿Deseas que solicitemos un cambio de fecha, reenviarte el correo de confirmación de la reserva o conectarte con nuestra jefatura de operaciones por WhatsApp?`,
         agentId: 'counter_agent',
-        agentName: 'Sofía • Counter Agent & Mostrador',
+        agentName: 'Asistente de viajes • Costa Rica Tours',
         agentCategory: 'SERVICIO',
         escalation: { escalated: false, level: 'none' },
         voucherPreview: existingBooking,
@@ -885,7 +886,7 @@ export async function runCounterAgent(
     return {
       reply: replyQuote,
       agentId: 'counter_agent',
-      agentName: 'Sofía • Counter Agent & Mostrador',
+      agentName: 'Asistente de viajes • Costa Rica Tours',
       agentCategory: 'RESERVAS',
       escalation: { escalated: false, level: 'none' },
       recommendedTours: [selectedTour],
@@ -900,40 +901,28 @@ export async function runCounterAgent(
   try {
     const ai = getAI();
     if (ai) {
-      const formattedHistory = history.map((h) => `${h.role === 'user' ? 'Viajero' : 'Sofía'}: ${h.text}`).join('\n');
-      const counterSystemInstruction = `Eres Sofía, la Counter Agent (Agente de Mostrador y Concierge Digital) oficial de Tours Costa Rica (costaricatours.es).
-Eres la voz, la cara y el conocimiento central del mostrador digital. Respondes con la misma precisión, calidez y sabiduría que un agente humano experto con años de trayectoria en turismo costarricense y reservas.
+      const formattedHistory = history.map((h) => `${h.role === 'user' ? 'Viajero' : 'Asistente'}: ${h.text}`).join('\n');
+      const counterSystemInstruction = `Eres el asistente de viajes de Costa Rica Tours. Atiendes solicitudes de tours, traslados e itinerarios en el idioma del viajero.
+No uses nombres de personas como identidad oficial del agente y no proporciones correos, teléfonos, identidades ni datos de contacto de proveedores sin autorización expresa del negocio.
 
-DATOS ESPECÍFICOS DE NUESTRA EMPRESA:
-- Nombre de la empresa: Tours Costa Rica
-- Servicios que ofrecemos: Hoteles, traslados privados terrestres (operados por Alsama Tours CR), tours de aventura y ecoturismo, paquetes y combos multiactividad.
-- Zonas donde operamos: Todo el país (Arenal/La Fortuna, Manuel Antonio/Quepos, Monteverde, Tortuguero, Guanacaste, San José, Caribe Sur, etc.).
-- Formas de pago aceptadas: Tarjetas de crédito/débito (Visa, Mastercard procesadas vía Stripe), transferencias por SINPE Móvil (${emergencyContact} / comprobante con hash), PayPal y liquidación en mostrador.
-- Políticas de cancelación propias:
-  * Pago antes del servicio: El servicio debe estar 100% pagado al menos 24 horas antes de la salida.
-  * Reembolsos: Más de 72 horas antes: 100% de reembolso garantizado.
-  * Entre 48 y 72 horas antes: 50% de reembolso.
-  * Menos de 48 horas: No reembolsable (según políticas de los operadores locales).
-- Contacto de soporte: Correo info@costaricatours.es, Teléfono / WhatsApp oficial (${emergencyContact}).
-- Horario de atención: respondemos por WhatsApp y correo; el tiempo de respuesta humana puede variar (no prometas atención 24/7).
+FUENTES DE VERDAD Y RESTRICCIONES:
+- Consulta el catálogo y las herramientas de turismo existentes antes de afirmar que un producto se ofrece o tiene tarifa vigente.
+- Nunca inventes cupos, horarios, operadores contratados, pagos, confirmaciones, garantías, certificaciones, políticas de reembolso ni tarifas de traslado.
+- Los precios en el catálogo pueden ser referencias, no ofertas finales verificadas. Si no existe precio validado para fecha, grupo y proveedor, indica "precio por confirmar".
+- Para disponibilidad y fecha usa el sistema de verificación de reservas y proveedores; una consulta recibida NO es una reserva confirmada.
+- Las condiciones exactas de pago, cancelación, modificación y reembolso se validan con el servicio, la política vigente y la orden del proveedor. No prometas porcentajes fijos ni devolución garantizada sin evidencia.
+- Las condiciones vivas (clima, rutas, parques, océano, estado de vuelos, cupos y transporte) requieren consulta con fuente actual. Nunca garantices avistamientos de fauna ni condiciones de seguridad.
+- No afirmes que has enviado correos, WhatsApp, solicitudes a operadores o vouchers sin recibir una confirmación estructurada del servicio competente.
+- Para ayuda comercial usa los canales oficiales configurados y el flujo de consulta de la plataforma; no inventes contactos. El 911 es exclusivamente para emergencias.
+- Mantén la privacidad del viajero y de los operadores y minimiza datos personales al consultar proveedores externos.
+- Si falta un dato crítico, pide exclusivamente el dato necesario y explica el siguiente paso comercial verificable.
 
-TRASLADOS ALSAMA TOURS CR — TARIFAS DE REFERENCIA, SUJETAS A CONFIRMACIÓN (sin acuerdo firmado):
-- SJO Aeropuerto ⇄ Hoteles San José: $50 USD (1-5 pax)
-- SJO ⇄ La Fortuna / Volcán Arenal: $170 USD (1-5 pax) (~3.5h)
-- SJO ⇄ Manuel Antonio / Quepos: $186 USD (1-5 pax) (~3h)
-- SJO ⇄ Jacó / Playa Hermosa: $143 USD (1-5 pax) (~1h 45m)
-- SJO ⇄ Monteverde: $186 USD (1-5 pax) (~3.5h)
-- SJO ⇄ Guanacaste / Tamarindo: $260 USD (1-5 pax) (~4.5h)
-- Parques Nacionales SINAC: Prohibido plástico de un solo uso, no tocar ni alimentar fauna silvestre, senderos demarcados.
-- Temporadas: Seca (Diciembre a Abril) y Verde (Mayo a Noviembre con mañanas soleadas). Caribe con mejor sol en Septiembre y Octubre.
-
-REGLAS OBLIGATORIAS DE RESPUESTA:
-1. TONO: Amable, profesional, cálido, claro y seguro de ti misma. Nunca suenes robótica. Explica como una asesora de hospitalidad "Pura Vida".
-2. VERACIDAD: Si no tienes un dato exacto, dilo con honestidad y señala cómo obtenerlo sin inventar números ni fechas.
-3. CONTEXTO: Recuerda y conserva las fechas, cantidad de personas, destinos y preferencias que el viajero ya indicó.
-4. ESTRUCTURA: Organiza respuestas extensas en viñetas limpias para facilitar su lectura en dispositivos móviles.
-5. REGLA DE RESUMEN EN 1 ORACIÓN: Al finalizar una reserva o al entregar información importante sobre un tour/traslado, SIEMPRE concluye con un resumen de exactamente 1 oración que sintetice lo acordado.
-6. IDIOMA: Responde en el idioma del viajero (${isEn ? 'English' : 'Español'}).`;
+REGLAS DE RESPUESTA:
+1. Tono profesional, cálido y claro; no simules experiencia humana ni acciones ejecutadas.
+2. Conserva fechas, cantidad de personas, regiones e intereses ya confirmados durante la conversación.
+3. Compara opciones usando diferencias sustentadas y ofrece cotización o verificación mediante herramientas actuales.
+4. No uses afirmaciones de certeza si solo existe conocimiento estable o contenido de referencia.
+5. Responde en ${isEn ? 'English' : 'Español'}; presenta pasos accionables y estados pendientes claramente.`;
 
       const aiResponse = await guardedGeminiGenerate('counter_desk', {
         model: getLightModel(),
@@ -949,13 +938,13 @@ REGLAS OBLIGATORIAS DE RESPUESTA:
         return {
           reply: replyText,
           agentId: 'counter_agent',
-          agentName: 'Sofía • Counter Agent & Mostrador',
+          agentName: 'Asistente de viajes • Costa Rica Tours',
           agentCategory: 'INFORMACION',
           escalation: { escalated: false, level: 'none' },
           recommendedTours: matchedTour ? [matchedTour] : TOURS.slice(0, 2),
           quickActions: [
             { label: isEn ? '🎟️ View Recommended Tours' : '🎟️ Ver Tours Recomendados', action: 'send_message', data: { message: isEn ? 'Show tours' : 'Ver tours' } },
-            { label: isEn ? '💬 Speak with Sofía on WhatsApp' : '💬 Hablar con Sofía por WhatsApp', action: 'direct_whatsapp' }
+            { label: isEn ? '💬 Continue on WhatsApp' : '💬 Continuar por WhatsApp', action: 'direct_whatsapp' }
           ],
           modelUsed: getLightModel()
         };
@@ -965,12 +954,12 @@ REGLAS OBLIGATORIAS DE RESPUESTA:
     console.warn('Fallback en Gemini Counter Agent:', err);
   }
 
-  // Fallback con base de conocimiento estructurada de Sofía
+  // Fallback con base de conocimiento estructurada del asistente
   const kbReply = getKnowledgeBaseReply(message, isEn);
   return {
-    reply: `🛎️ **Sofía • Counter Agent & Mostrador**\n\n${kbReply.reply}`,
+    reply: `🛎️ **Asistente de viajes • Costa Rica Tours**\n\n${kbReply.reply}`,
     agentId: 'counter_agent',
-    agentName: 'Sofía • Counter Agent & Mostrador',
+    agentName: 'Asistente de viajes • Costa Rica Tours',
     agentCategory: 'INFORMACION',
     escalation: { escalated: false, level: 'none' },
     quickActions: kbReply.quickActions || [
@@ -1212,18 +1201,29 @@ export async function runBookingAgent(
     };
   }
 
-  // Detección de moneda solicitada (USD default, CRC, EUR, GBP)
+  // Detección de moneda solicitada (USD default, CRC, EUR, GBP). Las tasas salen
+  // de la fuente única (BCCR/BCE); si no hay tasa se muestra solo USD.
   let currencyLabel = 'USD';
-  let exchangeRate = 1.0;
-  if (lower.includes('colones') || lower.includes('crc') || lower.includes('₡')) {
-    currencyLabel = 'CRC';
-    exchangeRate = Number(process.env.USD_TO_CRC_RATE) || 0;
-  } else if (lower.includes('euro') || lower.includes('eur') || lower.includes('€')) {
-    currencyLabel = 'EUR';
-    exchangeRate = 0.92;
-  } else if (lower.includes('libras') || lower.includes('gbp') || lower.includes('£')) {
-    currencyLabel = 'GBP';
-    exchangeRate = 0.79;
+  if (lower.includes('colones') || lower.includes('crc') || lower.includes('₡')) currencyLabel = 'CRC';
+  else if (lower.includes('euro') || lower.includes('eur') || lower.includes('€')) currencyLabel = 'EUR';
+  else if (lower.includes('libras') || lower.includes('gbp') || lower.includes('£')) currencyLabel = 'GBP';
+  let exchangeRate = currencyLabel === 'USD' ? 1 : 0;
+  let rateNote = '';
+  if (currencyLabel !== 'USD') {
+    try {
+      const snapshot = await getExchangeRates();
+      const r = snapshot.rates[currencyLabel];
+      const src = snapshot.sources[currencyLabel];
+      if (r > 0 && src) {
+        exchangeRate = r;
+        rateNote = `Referencia en USD; tasa ${src.provider === 'BCCR' ? 'BCCR' : src.provider === 'BCE' ? 'BCE' : 'manual'} del ${src.rateDate}.`;
+      }
+    } catch { /* sin tasa: se muestra USD */ }
+    if (!(exchangeRate > 0)) {
+      rateNote = `Sin tipo de cambio disponible para ${currencyLabel}; se muestra USD.`;
+      currencyLabel = 'USD';
+      exchangeRate = 1;
+    }
   }
 
   // Identificar tours relevantes (máximo 2 a 3 sugerencias)
@@ -1258,11 +1258,9 @@ export async function runBookingAgent(
       // Verificación en tiempo real de disponibilidad
       const availCheck = await checkTourAvailability(tour.id, targetDate, '08:00 AM', detectedPax);
       const convertedPrice = Math.round(tour.priceUSD * exchangeRate);
-      const priceString = currencyLabel === 'CRC'
-        ? `₡${convertedPrice.toLocaleString('es-CR')} CRC (~$${tour.priceUSD} USD)`
-        : currencyLabel === 'USD'
-        ? `$${tour.priceUSD} USD`
-        : `${currencyLabel === 'EUR' ? '€' : '£'}${convertedPrice} ${currencyLabel} (~$${tour.priceUSD} USD)`;
+      const priceString = currencyLabel === 'USD'
+        ? `US$${tour.priceUSD}${rateNote ? ` (${rateNote})` : ''}`
+        : `≈ ${new Intl.NumberFormat(currencyLabel === 'CRC' ? 'es-CR' : 'en-US', { style: 'currency', currency: currencyLabel, maximumFractionDigits: 0 }).format(convertedPrice)} (US$${tour.priceUSD}; ${rateNote})`;
 
       const inclusions = tour.inclusions?.es?.slice(0, 3).join(', ') || 'Transporte, guía certificado y entradas';
       const whatToBring = tour.whatToBring?.es?.slice(0, 3).join(', ') || 'Ropa cómoda, calzado cerrado, repelente';

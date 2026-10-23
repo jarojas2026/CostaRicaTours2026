@@ -4,8 +4,27 @@ import type { Language } from '../types';
 
 type Product = { id: string; title?: { es?: string; en?: string }; catalogStatus?: string };
 type Provider = { id: string; name: string; website?: string; active: boolean; verified: boolean };
+type SalesReadiness = {
+  state: 'sample_needs_external_verification';
+  source: 'firestore_bounded_sample';
+  observedAt: string;
+  coverage: { limitPerCollection: number; productsSampled: number; providersSampled: number; slotsSampled: number; truncatedOrUnknown: boolean; totalsCertified: false };
+  counts: { verifiedActiveProvidersSample: number; providerProfilesWithRateAndEmailSample: number; offerCandidatesSample: number; datedSlotCandidatesSample: number };
+  configuration: { emailTransportConfigured: boolean; paymentCredentialsConfigured: boolean; leadAutoFollowUpEnabled: boolean };
+  blockers: string[];
+};
+const READINESS_ACTIONS: Record<string, { es: string; en: string }> = {
+  verify_real_provider: { es: 'Registrar y verificar un proveedor real.', en: 'Register and verify a real supplier.' },
+  complete_provider_rate_and_email: { es: 'Verificar acuerdo y registrar comisión y correo operativo de proveedores.', en: 'Verify agreement and record provider commission rate and operational email.' },
+  publish_contractual_offer: { es: 'Publicar al menos una oferta con tarifa y horarios verificados.', en: 'Publish at least one offer with verified price and departure times.' },
+  publish_future_inventory: { es: 'Registrar cupos futuros reales para las ofertas publicadas.', en: 'Register real future capacity for published offers.' },
+  configure_real_email_transport: { es: 'Configurar SMTP, Resend o SendGrid y probar entrega real.', en: 'Configure SMTP, Resend or SendGrid and test actual delivery.' },
+  configure_payment_gateway: { es: 'Configurar pasarela de pago y verificar webhooks en sandbox.', en: 'Configure payment gateway and verify webhooks in sandbox.' },
+  review_followup_policy_and_consent: { es: 'Revisar consentimiento y habilitación controlada del seguimiento de prospectos.', en: 'Review consent and controlled lead follow-up enablement.' },
+};
 type Readiness = {
   products: Product[]; providers: Provider[]; truncated: boolean;
+  salesReadiness?: SalesReadiness;
   payments: { paypalCredentialsConfigured: boolean; paypalMode: string; stripeCredentialsConfigured: boolean };
   voice: { ready: boolean; missing: string[]; humanTransferConfigured: boolean };
 };
@@ -67,6 +86,30 @@ export function CommerceOperationsPanel({ language }: { language: Language }) {
       <p>Stripe: {data.payments.stripeCredentialsConfigured ? (es ? 'credenciales presentes; probar cobro' : 'credentials present; payment test needed') : (es ? 'pendiente' : 'pending')}</p>
       <p>{es ? 'Voz: ' : 'Voice: '}{data.voice.ready ? (es ? 'configuración presente; falta prueba de llamada' : 'configuration present; call test needed') : (es ? 'configuración incompleta' : 'configuration incomplete')}</p>
     </div>}
+    {data?.salesReadiness && <section aria-label={es ? 'Diagnóstico comercial' : 'Sales readiness'} className="rounded-2xl border border-amber-400/25 bg-black/20 p-4 space-y-3">
+      <h3 className="text-lg font-bold text-white">{es ? 'Preflight comercial: datos verificados, no ventas simuladas' : 'Sales preflight: verified data, not simulated sales'}</h3>
+      <p className="text-xs text-stone-300">{es
+        ? 'Muestras de Firestore (hasta 500 registros por colección). Un cupo publicado no significa disponibilidad confirmada por el proveedor.'
+        : 'Firestore samples (up to 500 records per collection). Published capacity is not supplier-confirmed availability.'}</p>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {([
+          [es ? 'Proveedores activos verificados' : 'Verified active providers', data.salesReadiness.counts.verifiedActiveProvidersSample],
+          [es ? 'Proveedores con tasa y correo' : 'Providers with rate and email', data.salesReadiness.counts.providerProfilesWithRateAndEmailSample],
+          [es ? 'Ofertas candidatas' : 'Candidate offers', data.salesReadiness.counts.offerCandidatesSample],
+          [es ? 'Cupos futuros candidatos' : 'Candidate future slots', data.salesReadiness.counts.datedSlotCandidatesSample],
+        ] as Array<[string, number]>).map(([label, value]) => <div key={label} className="rounded-xl border border-white/10 p-3">
+          <p className="text-2xl font-black text-white tabular-nums">{value}</p>
+          <p className="text-xs text-stone-300">{label}</p>
+        </div>)}
+      </div>
+      <h4 className="font-semibold text-amber-200">{es ? 'Próximas acciones verificables' : 'Verifiable next actions'}</h4>
+      {data.salesReadiness.blockers.length
+        ? <ul className="space-y-1 text-sm text-stone-200">{data.salesReadiness.blockers.map(code =>
+          <li key={code}>• {READINESS_ACTIONS[code]?.[es ? 'es' : 'en'] || code}</li>)}</ul>
+        : <p className="text-sm text-stone-200">{es ? 'No hay bloqueos de configuración en la muestra. Falta probar una reserva completa en sandbox y la aceptación del proveedor.' : 'No sampled configuration blockers. A complete sandbox booking and provider acceptance still need verification.'}</p>}
+      {data.salesReadiness.coverage.truncatedOrUnknown && <p className="text-xs text-amber-200">{es ? 'Cobertura limitada: al menos una consulta llegó al límite de 500. Los contadores no son totales globales.' : 'Limited coverage: at least one query hit the 500 limit. Counts are not global totals.'}</p>}
+      <p className="text-xs text-stone-400">{es ? 'Actualizado' : 'Updated'}: {new Date(data.salesReadiness.observedAt).toLocaleString(es ? 'es-CR' : 'en-US')}</p>
+    </section>}
     {data?.voice.missing?.length ? <p className="text-xs text-stone-400">{es ? 'Voz pendiente: ' : 'Voice pending: '}{data.voice.missing.join(', ')}</p> : null}
     {data?.truncated && <p className="text-amber-300">{es ? 'Vista limitada a 500 registros; no representa todo el catálogo.' : 'View limited to 500 records; not the full catalog.'}</p>}
     <div className="flex flex-wrap gap-2">{['provider', 'product', 'offer', 'slot'].map((value, i) => <button key={value} type="button" disabled={busy} aria-pressed={operation === value} onClick={() => { setOperation(value); setMessage(''); }} className={'rounded-xl px-4 py-2 ' + (operation === value ? 'bg-amber-400 text-black' : 'bg-white/10 text-white')}>{(es ? ['Proveedor', 'Nueva experiencia', 'Oferta', 'Cupos'] : ['Provider', 'New experience', 'Offer', 'Inventory'])[i]}</button>)}</div>
@@ -78,7 +121,7 @@ export function CommerceOperationsPanel({ language }: { language: Language }) {
           {field('email', es ? 'Correo operativo para confirmaciones' : 'Operations email for confirmations', 'email')}
           {field('phone', es ? 'Teléfono con código de país' : 'Phone with country code', 'tel', { placeholder: '+506…' })}
           {field('website', es ? 'Web oficial HTTPS' : 'Official HTTPS website', 'url', { placeholder: 'https://…' })}
-          {field('commissionPercent', es ? 'Comisión acordada (%)' : 'Agreed commission (%)', 'number', { min: 0, max: 100, step: 0.01 })}
+          {field('commissionPercent', es ? 'Comisión acordada (%)' : 'Agreed commission (%)', 'number', { min: 0, max: 99.99, step: 0.01 })}
           <p className="sm:col-span-2 text-xs text-stone-400">{es ? 'Los datos de contacto de proveedores viven solo en el servidor (archivo interno). Confirme acuerdo, tarifas y comisión con el proveedor; una web pública no prueba disponibilidad.' : 'Provider contact data lives only on the server (internal file). Confirm agreement, rates and commission with the provider; a public website does not prove availability.'}</p>
         </> : operation === 'product' ? <>
           {field('productId', es ? 'Código único de servicio' : 'Unique service code', 'text', { pattern: '[a-zA-Z0-9_-]+', maxLength: 160 })}
