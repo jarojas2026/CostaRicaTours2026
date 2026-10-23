@@ -197,7 +197,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
   };
 
   const whatsappMsg = encodeURIComponent(
-    `🇨🇷 *Solicitud Costa Rica Tours (costaricatours.es)*\n` +
+    `🇨🇷 *Solicitud Costa Rica Tours*\n` +
     `*ID de Reserva:* ${booking.bookingId}\n` +
     `*Tour:* ${booking.tourName}\n` +
     `*Fecha:* ${booking.date} | *Hora:* ${booking.time}\n` +
@@ -218,7 +218,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
             <div>
               <h2 style={{ color: '#1E4D2B', fontSize: '30px', margin: 0, fontWeight: '900', letterSpacing: '-0.5px' }}>COSTA RICA TOURS</h2>
               <p style={{ margin: '4px 0 0 0', color: '#57534E', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                {language === 'es' ? 'Resumen de solicitud • costaricatours.es' : 'Request summary • costaricatours.es'}
+                {language === 'es' ? 'Resumen de solicitud • Costa Rica Tours' : 'Request summary • Costa Rica Tours'}
               </p>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -299,7 +299,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
           </div>
           
           <div style={{ marginTop: '40px', textAlign: 'center', fontSize: '11px', color: '#78716C', borderTop: '1px solid #E7E5E4', paddingTop: '20px' }}>
-            <p style={{ margin: '0 0 4px 0' }}>{language === 'es' ? '¡Gracias por elegir Costa Rica Tours (costaricatours.es)! Dudas o emergencias vía WhatsApp al +506 8795-9148. Pura Vida!' : 'Thank you for choosing Costa Rica Tours (costaricatours.es)! WhatsApp support: +506 8795-9148. Pura Vida!'}</p>
+            <p style={{ margin: '0 0 4px 0' }}>{language === 'es' ? '¡Gracias por elegir Costa Rica Tours! Dudas o emergencias vía WhatsApp al +506 8795-9148. Pura Vida!' : 'Thank you for choosing Costa Rica Tours! WhatsApp support: +506 8795-9148. Pura Vida!'}</p>
             <p style={{ margin: 0 }}>{language === 'es' ? 'Generado el' : 'Generated on'} {new Date().toLocaleString()}</p>
           </div>
         </div>

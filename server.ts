@@ -25,6 +25,7 @@ import { syncAgentRegistryFromKnowledgeFabric } from './backend/agentRegistrySer
 import { processPendingCustomerIntakeJobs } from './backend/customerIntakeGateway';
 import { createApp } from './backend/app';
 import { initServerSentry } from './backend/observability/sentry';
+import { warmInternalDataStore } from './backend/internalDataStore';
 
 const app = createApp();
 const PORT = Number(process.env.PORT) || 3000;
@@ -71,6 +72,11 @@ async function startServer() {
     });
   }
 
+  // Datos internos de operadores (Firestore privado en producción): se cargan antes de
+  // aceptar tráfico para que la redacción de proveedores tenga su denylist desde el inicio.
+  await warmInternalDataStore()
+    .then((snap) => console.log(`🔒 Datos internos de operadores: ${snap.source} (${snap.tourSources.length} tours).`))
+    .catch((err) => console.warn('Internal data warm-up failed:', err));
   hydrateSkillGenome().catch(err => console.warn('Skill Genome hydration skipped:', err));
   syncAgentRegistryFromKnowledgeFabric().catch(err => console.warn('Agent registry bootstrap skipped:', err));
   app.listen(PORT, '0.0.0.0', () => {

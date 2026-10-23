@@ -27,14 +27,18 @@ import { buildMatchers, scanText, scanPublicTree, listFiles, OPERATOR_FIELD_KEYS
 const root = process.cwd();
 const matchers = buildMatchers();
 const readJson = (p: string) => JSON.parse(fs.readFileSync(path.join(root, p), 'utf8'));
-const internal = readJson('data/internal/operatorTourSources.json');
+// data/internal/ saldrá del repo (segunda PR): sin esos archivos, las pruebas que los
+// necesitan se omiten; la auditoría de nombres usa OPERATOR_DENYLIST_JSON o los hashes.
+const HAS_INTERNAL = ['operatorTourSources', 'operatorDenylist', 'legacyTourIds', 'legacyCuratedTourIds'].every((f) => fs.existsSync(path.join(root, `data/internal/${f}.json`)));
+const NO_INTERNAL = !HAS_INTERNAL && 'data/internal/ ausente (datos en Firestore)';
+const internal = HAS_INTERNAL ? readJson('data/internal/operatorTourSources.json') : { tours: [] };
 const publicCatalog = readJson('src/data/catalogTours.json');
 const KNOWN = ['Desafío', 'Pure Trek', 'Selvatura', 'Hacienda Guachipelín', 'Iguana Tours', 'Sky Adventures', 'Mawamba', 'Expediciones Tropicales', 'Alsama Tours'];
 
 const leak = (value: unknown, opts: { fields?: boolean } = {}) =>
   scanText(typeof value === 'string' ? value : JSON.stringify(value), matchers, { names: true, domains: true, fields: opts.fields ?? true }) as string[];
 
-test('denylist is populated from the internal sources (names + domains)', () => {
+test('denylist is populated from the internal sources (names + domains)', { skip: NO_INTERNAL }, () => {
   assert.ok(internal.tours.length >= 500);
   assert.ok(matchers.names.length >= 150, `names ${matchers.names.length}`);
   assert.ok(matchers.domains.length >= 150, `domains ${matchers.domains.length}`);
@@ -96,12 +100,12 @@ test('pre-rendered pages, JSON-LD and meta tags have neutral operator text only'
 test('sitemap lists only neutral tour ids', () => {
   const sitemap = fs.readFileSync(path.join(root, 'public/sitemap.xml'), 'utf8');
   assert.deepEqual(leak(sitemap, { fields: false }), []);
-  for (const legacy of Object.keys(readJson('data/internal/legacyTourIds.json'))) {
+  for (const legacy of Object.keys(HAS_INTERNAL ? readJson('data/internal/legacyTourIds.json') : {})) {
     assert.ok(!sitemap.includes(`/tour/${legacy}<`), legacy);
   }
 });
 
-test('old ids with operator names 301-redirect to existing neutral ids without breaking /tour rewrite', () => {
+test('old ids with operator names 301-redirect to existing neutral ids without breaking /tour rewrite', { skip: NO_INTERNAL }, () => {
   const vercel = readJson('vercel.json');
   const legacy = { ...readJson('data/internal/legacyTourIds.json'), ...readJson('data/internal/legacyCuratedTourIds.json') } as Record<string, string>;
   const ids = new Set(TOURS.map(t => t.id));
@@ -154,7 +158,7 @@ test('remote Firestore tour docs are stripped of operator fields before reaching
   assert.doesNotMatch(publicDoc, /operatorName|inquirySourceUrl/, 'la ficha pública de Firestore no debe guardar datos del proveedor');
 });
 
-test('server keeps operator identity internally to route leads (admin only)', () => {
+test('server keeps operator identity internally to route leads (admin only)', { skip: NO_INTERNAL }, () => {
   const row = internal.tours.find((t: any) => t.legacyId === 'op-desafio-lost-canyon-canyoning');
   assert.ok(row && TOURS.some(t => t.id === row.id));
   assert.equal(operatorSourceForTour('op-desafio-lost-canyon-canyoning')?.operatorName, row.operatorName);

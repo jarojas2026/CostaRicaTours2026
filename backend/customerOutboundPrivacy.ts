@@ -7,12 +7,13 @@
  * la confirmación (reserva `confirmada` o pago `completed`) puede nombrar al operador.
  *
  * Fuentes de nombres:
- *  - data/internal/operatorDenylist.json (generado por scripts/catalog/build_operator_tours.py);
+ *  - denylist interno vía backend/internalDataStore.ts (Firestore privado en producción;
+ *    data/internal/operatorDenylist.json como respaldo local fuera de producción);
  *  - nombres que pasa el llamador (p. ej. `order.providerName` del registro operativo).
  * Los contactos de negocio (teléfonos, correos, webs, wa.me) se quitan con
  * `redactBusinessContactsText`, que conserva emergencias y entes oficiales.
  */
-import denylist from '../data/internal/operatorDenylist.json';
+import { peekInternalData, type InternalDataSnapshot } from './internalDataStore';
 import { redactBusinessContactsText } from './assistantContactRedaction';
 
 export const PROVIDER_PLACEHOLDER = { es: 'nuestro operador local', en: 'our local operator' } as const;
@@ -36,12 +37,23 @@ function accentPattern(name: string): string {
 
 const nameRegex = (name: string, flags = 'gu') => new RegExp(`(?<![\\p{L}\\p{N}_])${accentPattern(name)}(?![\\p{L}\\p{N}_])`, flags);
 
-const DENY = denylist as Denylist;
-const PUBLIC_PLACES = new Set((DENY.publicPlaceNames || []).map((n) => n.toLowerCase()));
-// Nombres más largos primero para que "Aggressor Adventures" se sustituya antes que "Aggressor".
-const DENY_NAMES = [...new Set(DENY.names)].filter((n) => n && !PUBLIC_PLACES.has(n.toLowerCase())).sort((a, b) => b.length - a.length);
-const NAME_RES = DENY_NAMES.map((n) => nameRegex(n));
-const DOMAIN_RES = [...new Set(DENY.domains)].filter(Boolean).map((d) => new RegExp(`(?<![a-z0-9-])(?:[a-z0-9-]+\\.)*${esc(d)}\\b`, 'gi'));
+let compiled: { snap: InternalDataSnapshot; names: RegExp[]; domains: RegExp[] } | null = null;
+
+/** Compila los patrones del denylist vigente; se recompila solo si cambia la instantánea. */
+function denyMatchers() {
+  const snap = peekInternalData();
+  if (compiled && compiled.snap === snap) return compiled;
+  const DENY: Denylist = snap.denylist;
+  const PUBLIC_PLACES = new Set((DENY.publicPlaceNames || []).map((n) => n.toLowerCase()));
+  // Nombres más largos primero para que "Aggressor Adventures" se sustituya antes que "Aggressor".
+  const DENY_NAMES = [...new Set(DENY.names)].filter((n) => n && !PUBLIC_PLACES.has(n.toLowerCase())).sort((a, b) => b.length - a.length);
+  compiled = {
+    snap,
+    names: DENY_NAMES.map((n) => nameRegex(n)),
+    domains: [...new Set(DENY.domains)].filter(Boolean).map((d) => new RegExp(`(?<![a-z0-9-])(?:[a-z0-9-]+\\.)*${esc(d)}\\b`, 'gi')),
+  };
+  return compiled;
+}
 
 export interface CustomerOutboundOptions {
   language?: unknown;
@@ -63,6 +75,7 @@ export function redactProviderIdentityForCustomer(text: unknown, options: Custom
   // 1. Contactos de negocio (teléfono, WhatsApp, correo, web); conserva emergencias/oficiales.
   out = redactBusinessContactsText(out, lang);
   // 2. Dominios de operadores que no tengan esquema ni www (p. ej. "ejemplo.cr").
+  const { names: NAME_RES, domains: DOMAIN_RES } = denyMatchers();
   for (const re of DOMAIN_RES) out = out.replace(re, ph);
   // 3. Nombres del llamador (registro operativo) y del denylist interno.
   const extra = (options.providerNames || [])
