@@ -6,7 +6,10 @@ import { LazyImage } from './LazyImage';
 import { TourComparisonModal } from './TourComparisonModal';
 import { CATEGORIES, REGIONS } from '../data/catalogMeta';
 import { createT, localeTag } from '../i18n';
-import { formatCurrency, getLangText } from '../utils/i18n';
+import { getLangText } from '../utils/i18n';
+import { Price } from './ui';
+import { useRates } from '../hooks/useMoney';
+import { rateFor } from '../utils/money';
 import { isBookableTour, normalizeCatalogSearch } from '../utils/tourListing';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -101,6 +104,9 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
     recognition.start();
   };
 
+  // Tasa real (BCCR/BCE) de la moneda elegida; sin tasa, <Price> muestra solo USD.
+  const rates = useRates();
+  const priceRate = rateFor(currency, rates);
   const [sortBy, setSortBy] = useState<'popular' | 'rating' | 'price_asc' | 'price_desc' | 'duration'>('popular');
   const [bestsellerOnly, setBestsellerOnly] = useState(false);
   const [ecoFriendlyOnly, setEcoFriendlyOnly] = useState(false);
@@ -454,7 +460,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                       <span>{t('toursGrid.maxPrice')}</span>
                     </span>
                     <span className="font-mono font-bold text-amber-300 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-500/30 text-[11px]">
-                      {maxPrice >= 500 ? (t('toursGrid.noLimit')) : `${formatCurrency(maxPrice, currency)} (${maxPrice} USD)`}
+                      {maxPrice >= 500 ? (t('toursGrid.noLimit')) : <Price amountUSD={maxPrice} currency={currency} rate={priceRate} language={language} variant="inline" />}
                     </span>
                   </div>
                   <input
@@ -610,7 +616,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
 
             {hasBookableOffers && maxPrice < 500 && (
               <span className="bg-emerald-950/80 text-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1 text-[11px] font-medium">
-                💰 ≤ ${maxPrice}
+                💰 ≤ <Price amountUSD={maxPrice} currency="USD" language={language} variant="inline" />
                 <X className="w-3 h-3 cursor-pointer text-stone-400 hover:text-white ml-0.5" onClick={() => setMaxPrice(500)} />
               </span>
             )}
@@ -728,7 +734,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                       <span>💰 {t('toursGrid.maxBudget')}</span>
                     </label>
                     <span className="text-sm font-black text-white bg-emerald-950 px-2.5 py-1 rounded-full border border-emerald-500/40">
-                      {maxPrice >= 500 ? (t('toursGrid.noLimit500')) : `${formatCurrency(maxPrice, currency)} (${maxPrice} USD)`}
+                      {maxPrice >= 500 ? (t('toursGrid.noLimit500')) : <Price amountUSD={maxPrice} currency={currency} rate={priceRate} language={language} variant="inline" />}
                     </span>
                   </div>
 
@@ -763,7 +769,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                             : 'bg-emerald-950/70 text-emerald-200/80 border-emerald-500/20 hover:border-emerald-500/40'
                         }`}
                       >
-                        {preset === 500 ? (t('toursGrid.all')) : `≤ $${preset}`}
+                        {preset === 500 ? (t('toursGrid.all')) : <>≤ <Price amountUSD={preset} currency="USD" language={language} variant="inline" /></>}
                       </button>
                     ))}
                   </div>
