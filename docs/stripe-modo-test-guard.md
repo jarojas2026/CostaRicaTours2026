@@ -6,7 +6,7 @@ Estado: **cableado** en `backend/bookingService.ts` → `getStripe()` (único pu
   Si `STRIPE_SECRET_KEY` empieza por `sk_live_` o `rk_live_` y `ALLOW_STRIPE_LIVE` no es `true` → error `STRIPE_LIVE_BLOCKED`.
 - Tests: `tests/stripeModeGuard.contract.test.ts`.
 
-## Cableado pendiente (1 línea, dueño del carril de pagos)
+## Cableado (hecho)
 En `backend/bookingService.ts`, `getStripe()`, antes de `new Stripe(...)`:
 ```ts
 import { assertStripeTestMode } from './stripeModeGuard';
@@ -18,7 +18,7 @@ Opcional: llamar `checkStripeMode()` al arrancar y registrar `mode` en `/api/hea
 Cloud Run: `STRIPE_SECRET_KEY=sk_live_...` (Secret Manager) **y** `ALLOW_STRIPE_LIVE=true`.
 Volver a TEST: clave `sk_test_...` o quitar `ALLOW_STRIPE_LIVE`.
 
-## Hueco conocido
+## Claves restringidas
 Las claves restringidas `rk_live_` se bloquean igual que `sk_live_`.
 
 # Script de limpieza de leads de prueba (#331)
