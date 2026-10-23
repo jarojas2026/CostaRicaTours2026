@@ -2732,10 +2732,9 @@ export const TOURS: Tour[] = [
   },
   {
     id: 'puntarenas-sunset-dinner-cruise',
-    providerId: 'bay-island-cruises',
     title: {
       es: 'Crucero al Atardecer y Cena Tropical en Catamarán',
-      en: 'Bay Island Sunset Dinner Catamaran Cruise'
+      en: 'Sunset Dinner Catamaran Cruise in the Gulf of Nicoya'
     },
     subtitle: {
       es: 'Navegación romántica por el Golfo de Nicoya con puesta de sol, música en vivo y cena buffet',
