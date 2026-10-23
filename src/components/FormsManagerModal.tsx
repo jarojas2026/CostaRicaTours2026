@@ -57,7 +57,7 @@ export const FormsManagerModal: React.FC<FormsManagerModalProps> = ({ isOpen, on
         },
         body: JSON.stringify({
           info: {
-            title: 'Costa Rica Tours (costaricatours.es) - Tour Feedback',
+            title: 'Costa Rica Tours - Tour Feedback',
             documentTitle: 'Tour Feedback Form'
           }
         })

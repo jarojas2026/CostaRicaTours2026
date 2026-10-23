@@ -155,7 +155,7 @@ export async function sendAdministrativeAlert(params: {
 export async function sendEmail(
   payload: EmailPayload
 ): Promise<{ success: boolean; id?: string; error?: string }> {
-  const fromEmail = payload.from || process.env.EMAIL_FROM || process.env.SMTP_USER || 'Costa Rica Tours <reservas@costaricatours.es>';
+  const fromEmail = payload.from || process.env.EMAIL_FROM || process.env.SMTP_USER || 'Costa Rica Tours <no-reply@costaricatours2026.vercel.app>';
 
   // 1. Enviar vía Resend API si está configurado
   if (process.env.RESEND_API_KEY) {

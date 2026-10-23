@@ -645,7 +645,7 @@ Devuelve estrictamente un objeto JSON con este esquema:
 
 /**
  * 🌟 AGENTE DE MOSTRADOR Y RESERVAS (COUNTER AGENT)
- * Sofía • Counter Agent Oficial de Costa Rica Tours.
+ * Asistente de viajes (Counter Agent) de Costa Rica Tours.
  * Encargada de las labores de un agente de reservas y servicio al cliente la mayor parte del tiempo,
  * experta en el área y en turismo costarricense.
  * Puede:
@@ -700,7 +700,7 @@ export async function runCounterAgent(
           `3. **Acción inmediata**: Comunícate de inmediato al **9-1-1** o a nuestra Línea Directa 24/7 al **${emergencyContact}**.\n` +
           `4. El caso quedó registrado para el equipo de Costa Rica Tours; el tiempo de respuesta humana puede variar.`,
       agentId: 'counter_agent',
-      agentName: 'Sofía • Counter Agent & Mostrador',
+      agentName: 'Asistente de viajes • Costa Rica Tours',
       agentCategory: 'SERVICIO',
       escalation: {
         escalated: true,
@@ -773,7 +773,7 @@ export async function runCounterAgent(
             `• **Menos de 48 horas**: No reembolsable bajo políticas estándar de operador.\n\n` +
             `¿Deseas que solicitemos un cambio de fecha, reenviarte el correo de confirmación de la reserva o conectarte con nuestra jefatura de operaciones por WhatsApp?`,
         agentId: 'counter_agent',
-        agentName: 'Sofía • Counter Agent & Mostrador',
+        agentName: 'Asistente de viajes • Costa Rica Tours',
         agentCategory: 'SERVICIO',
         escalation: { escalated: false, level: 'none' },
         voucherPreview: existingBooking,
@@ -892,7 +892,7 @@ export async function runCounterAgent(
     return {
       reply: replyQuote,
       agentId: 'counter_agent',
-      agentName: 'Sofía • Counter Agent & Mostrador',
+      agentName: 'Asistente de viajes • Costa Rica Tours',
       agentCategory: 'RESERVAS',
       escalation: { escalated: false, level: 'none' },
       recommendedTours: [selectedTour],
@@ -944,13 +944,13 @@ REGLAS DE RESPUESTA:
         return {
           reply: replyText,
           agentId: 'counter_agent',
-          agentName: 'Sofía • Counter Agent & Mostrador',
+          agentName: 'Asistente de viajes • Costa Rica Tours',
           agentCategory: 'INFORMACION',
           escalation: { escalated: false, level: 'none' },
           recommendedTours: matchedTour ? [matchedTour] : TOURS.slice(0, 2),
           quickActions: [
             { label: isEn ? '🎟️ View Recommended Tours' : '🎟️ Ver Tours Recomendados', action: 'send_message', data: { message: isEn ? 'Show tours' : 'Ver tours' } },
-            { label: isEn ? '💬 Speak with Sofía on WhatsApp' : '💬 Hablar con Sofía por WhatsApp', action: 'direct_whatsapp' }
+            { label: isEn ? '💬 Continue on WhatsApp' : '💬 Continuar por WhatsApp', action: 'direct_whatsapp' }
           ],
           modelUsed: getLightModel()
         };
@@ -960,12 +960,12 @@ REGLAS DE RESPUESTA:
     console.warn('Fallback en Gemini Counter Agent:', err);
   }
 
-  // Fallback con base de conocimiento estructurada de Sofía
+  // Fallback con base de conocimiento estructurada del asistente
   const kbReply = getKnowledgeBaseReply(message, isEn);
   return {
-    reply: `🛎️ **Sofía • Counter Agent & Mostrador**\n\n${kbReply.reply}`,
+    reply: `🛎️ **Asistente de viajes • Costa Rica Tours**\n\n${kbReply.reply}`,
     agentId: 'counter_agent',
-    agentName: 'Sofía • Counter Agent & Mostrador',
+    agentName: 'Asistente de viajes • Costa Rica Tours',
     agentCategory: 'INFORMACION',
     escalation: { escalated: false, level: 'none' },
     quickActions: kbReply.quickActions || [

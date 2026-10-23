@@ -2649,7 +2649,7 @@ export const TOURS: Tour[] = [
       en: ['Arenal Volcano hike & Baldi mineral hot springs', 'Lake Arenal boat transfer crossing', 'Monteverde Cloud Forest canopy bridges & zipline', 'Manuel Antonio National Park guided wildlife safari', 'All door-to-door intercity hotel transfers included']
     },
     inclusions: {
-      es: ['4 noches de hospedaje en hoteles 4 estrellas con desayuno', 'Todos los traslados terrestres y acuáticos privados entre destinos', 'Entradas a Volcán Arenal, Termales Baldi, Puentes Monteverde y Manuel Antonio', 'Guías bilingües autorizadas en cada tour', 'Asistencia local 24/7 de Costa Rica Tours (costaricatours.es)'],
+      es: ['4 noches de hospedaje en hoteles 4 estrellas con desayuno', 'Todos los traslados terrestres y acuáticos privados entre destinos', 'Entradas a Volcán Arenal, Termales Baldi, Puentes Monteverde y Manuel Antonio', 'Guías bilingües autorizadas en cada tour', 'Asistencia local 24/7 de Costa Rica Tours'],
       en: ['4 nights in top 4-star hotels with daily breakfast', 'All private door-to-door intercity & boat transfers', 'Entrance tickets to Arenal, Baldi Springs, Monteverde Bridges & Manuel Antonio', 'Certified bilingual guides on every tour', '24/7 dedicated local concierge assistance']
     },
     exclusions: {
