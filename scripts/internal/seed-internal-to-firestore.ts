@@ -114,6 +114,43 @@ async function main() {
   console.log(`✓ ${n} operaciones aplicadas.`);
 }
 
+type Terminable = { terminate?: () => Promise<unknown> } | null | undefined;
+
+/**
+ * Ejecuta el CLI y termina el proceso al acabar. Firestore Admin (y otros módulos del
+ * backend) dejan el event loop abierto, así que sin esto el script queda colgado tras
+ * imprimir el resumen. Cierra Firestore con un tope de tiempo y sale con 0 o 1.
+ */
+export async function runCli(
+  run: () => Promise<void>,
+  deps: { getDb: () => Promise<Terminable>; exit: (code: number) => void; log?: (msg: string) => void; terminateTimeoutMs?: number },
+): Promise<number> {
+  let code = 0;
+  try {
+    await run();
+  } catch (err: any) {
+    (deps.log || console.error)(`✖ ${err?.message || err}`);
+    code = 1;
+  }
+  try {
+    const db = await deps.getDb();
+    if (db?.terminate) {
+      await Promise.race([
+        db.terminate(),
+        new Promise((resolve) => setTimeout(resolve, deps.terminateTimeoutMs ?? 5000).unref?.()),
+      ]);
+    }
+  } catch { /* cerrar es best-effort: salimos igual */ }
+  deps.exit(code);
+  return code;
+}
+
 if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
-  main().catch((err) => { console.error('✖', err?.message || err); process.exit(1); });
+  void runCli(main, {
+    getDb: async () => {
+      const { getFirestoreDb } = await import('../../backend/bookingService');
+      return getFirestoreDb() as unknown as Terminable;
+    },
+    exit: (code) => process.exit(code),
+  });
 }
