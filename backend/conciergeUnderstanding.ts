@@ -1,5 +1,5 @@
 /**
- * Sofía (concierge) server-side understanding.
+ * Concierge (travel assistant) server-side understanding.
  *
  * Deterministic extraction of what a traveller asked for (activity / tour,
  * party size, month or exact date, region, budget and language) plus a

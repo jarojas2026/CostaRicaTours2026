@@ -24,6 +24,9 @@ import {
 } from './aiAssistantService';
 import { TOURS } from '../src/data/toursData';
 
+/** Origen público del sitio para enlaces de pase y facturas. */
+const publicSiteOrigin = () => (process.env.PUBLIC_BASE_URL || process.env.APP_URL || 'https://costaricatours2026.vercel.app').trim().replace(/\/+$/, '');
+
 // Registro de eventos y auditoría en memoria para monitoreo en vivo
 export interface NativeAutomationLog {
   id: string;
@@ -929,7 +932,7 @@ export async function executeAutonomousMultiDayPlanner(body: any) {
       equivalenteCRC: Math.round(totalUSD * getUsdToCrcRate()),
       beneficioAlsamaTransportBundle: 'Ahorro de $75 USD al combinar traslados con tours'
     },
-    enlaceCredencialDigital: `https://costaricatours.es/pass/${qrPassToken}`,
+    enlaceCredencialDigital: `${publicSiteOrigin()}/pass/${qrPassToken}`,
     timestamp: new Date().toISOString()
   };
 }
@@ -1166,8 +1169,8 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
       estadoLiquidacion: 'PROGRAMADA_DISPERSION_24H'
     },
     archivosGenerados: {
-      xmlFirmadoUrl: `https://costaricatours.es/facturas/xml/${clave50}.xml`,
-      pdfLegalUrl: `https://costaricatours.es/facturas/pdf/${clave50}.pdf`
+      xmlFirmadoUrl: `${publicSiteOrigin()}/facturas/xml/${clave50}.xml`,
+      pdfLegalUrl: `${publicSiteOrigin()}/facturas/pdf/${clave50}.pdf`
     },
     timestamp: new Date().toISOString()
   };

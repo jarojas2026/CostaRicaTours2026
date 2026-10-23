@@ -1,7 +1,7 @@
 /**
  * Pipeline automático de leads.
  *
- * Cada consulta (handoff de Sofía, formulario de contacto, solicitud de
+ * Cada consulta (handoff del asistente, formulario de contacto, solicitud de
  * reserva que queda pendiente) se convierte en un registro `leads` con:
  *  - máquina de estados nuevo → cotizando → esperando_operador →
  *    confirmado_por_escrito → pagado, con cancelado desde cualquier estado

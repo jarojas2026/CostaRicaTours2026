@@ -66,5 +66,11 @@ export function aiHealthHttpStatus(providers: Array<{ status: string }>) {
   return configured.length > 0 && configured.every(p => p.status === 'degraded') ? 503 : 200;
 }
 
+/** Última observación de un proveedor (para no pisar fallos reales con un sondeo). */
+export function hasFreshAiObservation(provider: string, now = Date.now()) {
+  const last = observations.get(provider);
+  return Boolean(last && now - last.at < FRESH_MS);
+}
+
 /** Test helper: forget instance-local observations. */
 export function resetAiObservations() { observations.clear(); }

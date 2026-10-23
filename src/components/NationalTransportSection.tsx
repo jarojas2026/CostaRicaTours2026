@@ -487,8 +487,8 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
               onClick={() => requestCustomerIntake({
                 message: 
                       language === 'es'
-                        ? 'Hola Costa Rica Tours (costaricatours.es), quisiera cotizar un shuttle turístico compartido hotel-a-hotel.'
-                        : 'Hello Costa Rica Tours (costaricatours.es), I would like to book a shared hotel-to-hotel tourist shuttle.'
+                        ? 'Hola Costa Rica Tours, quisiera cotizar un shuttle turístico compartido hotel-a-hotel.'
+                        : 'Hello Costa Rica Tours, I would like to book a shared hotel-to-hotel tourist shuttle.'
                     ,
                 language, source: 'national-transport:shuttle-shared'
               })}
@@ -538,8 +538,8 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
               onClick={() => requestCustomerIntake({
                 message: 
                       language === 'es'
-                        ? 'Hola Costa Rica Tours (costaricatours.es), quisiera cotizar traslado shuttle hacia Puerto Viejo / Cahuita / Caribe.'
-                        : 'Hello Costa Rica Tours (costaricatours.es), I would like to book a tourist shuttle to Puerto Viejo / Cahuita / Caribbean.'
+                        ? 'Hola Costa Rica Tours, quisiera cotizar traslado shuttle hacia Puerto Viejo / Cahuita / Caribe.'
+                        : 'Hello Costa Rica Tours, I would like to book a tourist shuttle to Puerto Viejo / Cahuita / Caribbean.'
                     ,
                 language, source: 'national-transport:shuttle-caribe'
               })}
@@ -589,8 +589,8 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
               onClick={() => requestCustomerIntake({
                 message: 
                       language === 'es'
-                        ? 'Hola Costa Rica Tours (costaricatours.es), quisiera cotizar un traslado privado exclusivo para mi grupo.'
-                        : 'Hello Costa Rica Tours (costaricatours.es), I would like to quote a private van transfer for my group.'
+                        ? 'Hola Costa Rica Tours, quisiera cotizar un traslado privado exclusivo para mi grupo.'
+                        : 'Hello Costa Rica Tours, I would like to quote a private van transfer for my group.'
                     ,
                 language, source: 'national-transport:van-private'
               })}
@@ -657,8 +657,8 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
               onClick={() => requestCustomerIntake({
                 message: 
                       language === 'es'
-                        ? 'Hola Costa Rica Tours (costaricatours.es), quisiera cotizar el alquiler de un vehículo 4x4 para mis fechas de viaje.'
-                        : 'Hello Costa Rica Tours (costaricatours.es), I would like to quote a 4x4 rental car for my travel dates.'
+                        ? 'Hola Costa Rica Tours, quisiera cotizar el alquiler de un vehículo 4x4 para mis fechas de viaje.'
+                        : 'Hello Costa Rica Tours, I would like to quote a 4x4 rental car for my travel dates.'
                     ,
                 language, source: 'national-transport:rental-4x4'
               })}
@@ -716,8 +716,8 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
               onClick={() => requestCustomerIntake({
                 message: 
                       language === 'es'
-                        ? 'Hola Costa Rica Tours (costaricatours.es), quisiera cotizar un auto automático para mi viaje.'
-                        : 'Hello Costa Rica Tours (costaricatours.es), I would like to quote an automatic rental car for my trip.'
+                        ? 'Hola Costa Rica Tours, quisiera cotizar un auto automático para mi viaje.'
+                        : 'Hello Costa Rica Tours, I would like to quote an automatic rental car for my trip.'
                     ,
                 language, source: 'national-transport:rental-automatic'
               })}
@@ -758,8 +758,8 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
               onClick={() => requestCustomerIntake({
                 message: 
                     language === 'es'
-                      ? 'Hola Costa Rica Tours (costaricatours.es), quisiera cotizar y reservar vuelos domésticos internos en Costa Rica.'
-                      : 'Hello Costa Rica Tours (costaricatours.es), I would like to quote and book domestic flights in Costa Rica.'
+                      ? 'Hola Costa Rica Tours, quisiera cotizar y reservar vuelos domésticos internos en Costa Rica.'
+                      : 'Hello Costa Rica Tours, I would like to quote and book domestic flights in Costa Rica.'
                   ,
                 language, source: 'national-transport:domestic-flights'
               })}
@@ -951,8 +951,8 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                 </strong>
                 <p className="leading-relaxed">
                   {language === 'es'
-                    ? 'Los tiquetes de buses públicos se compran directamente en el sitio web oficial o en las ventanillas físicas de cada empresa. Costa Rica Tours (costaricatours.es) no vende ni cobra comisiones por boletos de transporte público; únicamente facilitamos los enlaces e información para ayudarte a planificar tu itinerario.'
-                    : 'Public bus tickets are purchased directly on the official websites or physical terminal counters of each company. Costa Rica Tours (costaricatours.es) does not sell or charge fees for public bus tickets; we provide the links and guidance solely for itinerary planning.'}
+                    ? 'Los tiquetes de buses públicos se compran directamente en el sitio web oficial o en las ventanillas físicas de cada empresa. Costa Rica Tours no vende ni cobra comisiones por boletos de transporte público; únicamente facilitamos los enlaces e información para ayudarte a planificar tu itinerario.'
+                    : 'Public bus tickets are purchased directly on the official websites or physical terminal counters of each company. Costa Rica Tours does not sell or charge fees for public bus tickets; we provide the links and guidance solely for itinerary planning.'}
                 </p>
               </div>
             </div>
