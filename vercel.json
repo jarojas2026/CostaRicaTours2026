@@ -450,6 +450,16 @@
       "statusCode": 301
     },
     {
+      "source": "/tour/op-bio-cr-paquera-bote",
+      "destination": "/tour/bioluminiscencia-en-bote-por-paquera",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-bio-cr-paquera-kayak",
+      "destination": "/tour/kayak-nocturno-y-bioluminiscencia-en-paquera",
+      "statusCode": 301
+    },
+    {
       "source": "/tour/op-blue-falls-costa-rica-entrada",
       "destination": "/tour/cataratas-azules-de-bajos-del-toro",
       "statusCode": 301
@@ -950,8 +960,23 @@
       "statusCode": 301
     },
     {
+      "source": "/tour/op-cwt-cano-desde-jimenez",
+      "destination": "/tour/snorkeling-en-isla-del-cano-desde-puerto-jimenez",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cwt-corcovado-3d2n",
+      "destination": "/tour/corcovado-tres-dias-y-dos-noches-en-sirena",
+      "statusCode": 301
+    },
+    {
       "source": "/tour/op-cwt-delfines-golfo-dulce",
       "destination": "/tour/avistamiento-de-delfines-y-ballenas-en-golfo-dulce",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-cwt-kayak-bioluminiscencia",
+      "destination": "/tour/kayak-al-atardecer-y-bioluminiscencia-en-golfo-dulce",
       "statusCode": 301
     },
     {
@@ -1720,6 +1745,26 @@
       "statusCode": 301
     },
     {
+      "source": "/tour/op-natuwa-aranjuez-autoguiado",
+      "destination": "/tour/entrada-autoguiada-a-santuario-en-aranjuez",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-natuwa-aranjuez-guiado",
+      "destination": "/tour/visita-guiada-de-fauna-en-aranjuez",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-natuwa-monteverde-completo",
+      "destination": "/tour/recorrido-completo-de-santuario-en-monteverde",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-natuwa-monteverde-perezosos",
+      "destination": "/tour/visita-al-jardin-de-perezosos-en-monteverde",
+      "statusCode": 301
+    },
+    {
       "source": "/tour/op-nauyaca-iguana",
       "destination": "/tour/cataratas-nauyaca-desde-manuel-antonio",
       "statusCode": 301
@@ -2055,6 +2100,21 @@
       "statusCode": 301
     },
     {
+      "source": "/tour/op-pilangosta-cafe",
+      "destination": "/tour/proceso-y-degustacion-de-cafe-en-hojancha",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pilangosta-cafe-bosque",
+      "destination": "/tour/cafe-y-bosque-en-hojancha",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-pilangosta-cafe-matambu",
+      "destination": "/tour/cafe-y-cultura-chorotega-en-matambu",
+      "statusCode": 301
+    },
+    {
       "source": "/tour/op-pinahills-cabalgata-pavones",
       "destination": "/tour/cabalgata-playa-y-montana-en-pavones",
       "statusCode": 301
@@ -2157,6 +2217,21 @@
     {
       "source": "/tour/op-rainmaker-caminata-iguana",
       "destination": "/tour/caminata-en-la-reserva-rainmaker",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rainmaker-directo-entrada",
+      "destination": "/tour/entrada-autoguiada-a-senderos-y-puentes-cerca-de-quepos",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rainmaker-directo-guiado",
+      "destination": "/tour/bosque-y-puentes-cerca-de-quepos-con-guia",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-rainmaker-directo-noche",
+      "destination": "/tour/anfibios-y-reptiles-caminata-nocturna-cerca-de-quepos",
       "statusCode": 301
     },
     {
@@ -2410,6 +2485,31 @@
       "statusCode": 301
     },
     {
+      "source": "/tour/op-sfda-aula-abierta",
+      "destination": "/tour/taller-de-agricultura-organica-en-dota",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sfda-cocina-copey",
+      "destination": "/tour/cocina-tradicional-en-copey",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sfda-finca-copey",
+      "destination": "/tour/visita-de-finca-en-copey-de-dota",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sfda-infusiones-copey",
+      "destination": "/tour/taller-de-infusiones-en-copey",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-sfda-manzanas-copey",
+      "destination": "/tour/taller-de-molienda-de-manzana",
+      "statusCode": 301
+    },
+    {
       "source": "/tour/op-sisisi-llanos-de-cortes",
       "destination": "/tour/tour-a-la-catarata-llanos-de-cortes",
       "statusCode": 301
@@ -2457,6 +2557,56 @@
     {
       "source": "/tour/op-snorkel-delfines-gunslinger",
       "destination": "/tour/snorkel-y-delfines-en-lancha-gunslinger",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-soc-alquiler-kayak",
+      "destination": "/tour/alquiler-de-kayak-en-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-soc-iniciacion-kayak",
+      "destination": "/tour/curso-de-iniciacion-al-kayak-en-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-soc-kayak-dia",
+      "destination": "/tour/kayak-de-rio-de-dia-completo-en-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-soc-kayak-medio",
+      "destination": "/tour/kayak-de-rio-de-medio-dia-en-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-soc-kayak-selva",
+      "destination": "/tour/kayak-de-naturaleza-en-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-soc-rafting-ii-iii-dia",
+      "destination": "/tour/rafting-iiiii-de-dia-completo-en-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-soc-rafting-ii-iii-medio",
+      "destination": "/tour/rafting-iiiii-de-medio-dia-en-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-soc-rafting-iii-iv-dia",
+      "destination": "/tour/rafting-iiiiv-de-dia-completo-en-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-soc-rafting-iii-iv-medio",
+      "destination": "/tour/rafting-iiiiv-de-medio-dia-en-sarapiqui",
+      "statusCode": 301
+    },
+    {
+      "source": "/tour/op-soc-safari-flotante",
+      "destination": "/tour/safari-en-balsa-por-sarapiqui",
       "statusCode": 301
     },
     {

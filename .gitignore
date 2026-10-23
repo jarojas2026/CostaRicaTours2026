@@ -16,3 +16,7 @@ usr/
 /blob-report/
 /playwright/.cache/
 scripts/quality-agent/quality-agent-results.json
+
+# Python catalog research tooling
+__pycache__/
+*.py[cod]

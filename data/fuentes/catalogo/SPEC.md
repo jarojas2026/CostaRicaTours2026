@@ -15,3 +15,14 @@ id_slug,titulo_es,titulo_en,categoria,region,lugar,lat,lng,operador,url_fuente,p
 - url_fuente: the operator's own tour page you actually opened (web_fetch). Prefer operator sites over OTAs (Viator/GetYourGuide only if the operator has no site, and note it).
 - Each row = a distinct real tour product currently offered. No duplicates of the 43 existing catalog tours unless a different operator.
 - notas: anything uncertain (e.g., "precio de 2025", "temporada dic-abr").
+
+## Nuevas tandas revisadas
+
+- Añadir al final las columnas `revisado_el` (YYYY-MM-DD) y `estado_precio` (vacío o `por_confirmar`).
+- La fecha corresponde a la revisión manual de esa ficha, nunca a la regeneración del archivo. Las tandas antiguas conservan su fecha original; una nueva tanda no las actualiza.
+- Usar `por_confirmar` y precios vacíos cuando la tarifa aplicable requiera validar residencia, edad, grupo, temporada, impuestos o condiciones comerciales. Esto no significa que la fuente carezca de precios.
+- Una ficha por experiencia distinta. No multiplicar fechas, idiomas, horarios, nacionalidades, tamaños de grupo o extras para inflar el catálogo.
+- Coordenadas aproximadas de la zona, no instrucciones de llegada ni un punto de encuentro confirmado.
+- Descripciones bilingües originales y breves; conservar contradicciones en notas para resolver al cotizar. No prometer inclusiones inciertas.
+- El generador rechaza fechas inválidas/futuras, columnas desalineadas, identificadores repetidos, productos repetidos del mismo operador, coordenadas no finitas y precios contradictorios en tandas fechadas.
+- Las fichas generadas siguen siendo de consulta. Publicar una fuente no aprueba al proveedor, no verifica cupos y no autoriza cobrar.
