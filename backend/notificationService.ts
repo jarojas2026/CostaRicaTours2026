@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { createAlert, getMailTransporter } from './alertService';
+import { emailTransportAllowed } from './emailProviderSelect';
 import { guardedGeminiGenerate } from './aiRouter';
 import { getLightModel } from './aiConfig';
 
@@ -158,7 +159,7 @@ export async function sendEmail(
   const fromEmail = payload.from || process.env.EMAIL_FROM || process.env.SMTP_USER || 'Costa Rica Tours <reservas@costaricatours.es>';
 
   // 1. Enviar vía Resend API si está configurado
-  if (process.env.RESEND_API_KEY) {
+  if (emailTransportAllowed('resend')) {
     try {
       const resendAttachments = payload.attachments?.map(att => ({
         filename: att.filename,
@@ -191,7 +192,7 @@ export async function sendEmail(
   }
 
   // 2. Enviar vía SendGrid si está configurado
-  if (process.env.SENDGRID_API_KEY) {
+  if (emailTransportAllowed('sendgrid')) {
     try {
       const sendGridAttachments = payload.attachments?.map(att => ({
         content: Buffer.isBuffer(att.content) ? att.content.toString('base64') : att.content,
@@ -225,7 +226,7 @@ export async function sendEmail(
   }
 
   // 3. Enviar vía SMTP / Nodemailer si está configurado (SMTP_USER y SMTP_PASS)
-  const transporter = getMailTransporter();
+  const transporter = emailTransportAllowed('smtp') ? getMailTransporter() : null;
   if (transporter) {
     try {
       const nodemailerAttachments = payload.attachments?.map(att => ({
