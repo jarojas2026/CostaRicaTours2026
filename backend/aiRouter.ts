@@ -18,7 +18,20 @@ import {
 } from './aiConfig';
 import { getGeminiClient } from './geminiRuntime';
 import { openAiCompatChat } from './openaiCompatClient';
+import { capacityChat } from './aiCapacityRouter';
 import { scrubText } from '../shared/observability/scrubPii';
+
+/**
+ * Cola + cadena de slots (backend/aiCapacityRouter.ts) SOLO si
+ * AI_CAPACITY_ROUTER_ENABLED=true. Por defecto (sin la variable) se llama a
+ * openAiCompatChat exactamente como antes.
+ */
+export function aiCapacityRouterEnabled(env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env): boolean {
+  return String(env.AI_CAPACITY_ROUTER_ENABLED ?? '').trim().toLowerCase() === 'true';
+}
+function openAiCompatChatForRouter(params: Parameters<typeof openAiCompatChat>[0]) {
+  return aiCapacityRouterEnabled() ? capacityChat(params as any) : openAiCompatChat(params);
+}
 
 export type AiTask = 'concierge' | 'concierge_classifier' | 'grounded_search' | 'counter_desk' | 'forecast'
   | 'email' | 'fraud' | 'booking_insights' | 'notification' | 'itinerary' | 'learning' | 'photo'
@@ -327,7 +340,7 @@ export async function runGenerative(input: RunGenerativeInput): Promise<RunGener
       }
       if (provider === 'openai_compat') {
         const system = typeof input.config?.systemInstruction === 'string' ? input.config.systemInstruction : undefined;
-        const response: any = await callProvider('openai_compat', input.task, signal => openAiCompatChat({
+        const response: any = await callProvider('openai_compat', input.task, signal => openAiCompatChatForRouter({
           messages: [...(system ? [{ role: 'system' as const, content: system }] : []), { role: 'user' as const, content: contentsToText(contents) }],
           signal,
         }));

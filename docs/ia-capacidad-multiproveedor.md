@@ -29,3 +29,8 @@ Recomendado cablear después de medir en staging; el breaker de aiRouter sigue f
 - Los planes `:free` tienen cuotas bajas (por minuto y por día); sirven de respaldo, no de capacidad principal.
 - La cola es por instancia; con N instancias la concurrencia total es N × máximo.
 - Para miles de consultas reales hace falta un slot de pago (requiere autorización de gasto del dueño).
+
+## Cableado (hecho, apagado por defecto)
+`backend/aiRouter.ts` usa `openAiCompatChatForRouter`: si `AI_CAPACITY_ROUTER_ENABLED=true`
+llama a `capacityChat`; si no (por defecto), a `openAiCompatChat` exactamente como antes.
+Contrato: `tests/aiCapacityWiring.contract.test.ts`.
