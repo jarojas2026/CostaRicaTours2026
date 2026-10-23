@@ -19,6 +19,7 @@ import { agentsRouter, agentToolsRouter } from './agents';
 import { chatRouter } from './chat';
 import { fcmRouter } from './fcm';
 import { leadsRouter } from './leads';
+import { voiceTtsRouter } from './voiceTts';
 
 export const domainRouters: readonly Router[] = [
   paymentWebhooksRouter,
@@ -51,4 +52,5 @@ export const domainRouters: readonly Router[] = [
   agentToolsRouter,
   fcmRouter,
   leadsRouter,
+  voiceTtsRouter,
 ];
