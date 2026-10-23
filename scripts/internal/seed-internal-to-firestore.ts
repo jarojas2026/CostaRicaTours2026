@@ -137,7 +137,7 @@ export async function runCli(
     if (db?.terminate) {
       await Promise.race([
         db.terminate(),
-        new Promise((resolve) => setTimeout(resolve, deps.terminateTimeoutMs ?? 5000).unref?.()),
+        new Promise((resolve) => setTimeout(resolve, deps.terminateTimeoutMs ?? 5000)),
       ]);
     }
   } catch { /* cerrar es best-effort: salimos igual */ }
