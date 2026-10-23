@@ -107,6 +107,16 @@ export interface LeadStatusChange {
   evidence?: string;
 }
 
+/** Cambio de la reserva enlazada a un lead (POST /api/admin/leads/:id/link-booking). */
+export interface LeadBookingLinkChange {
+  from: string | null;
+  to: string;
+  at: string;
+  by: string;
+  forced: boolean;
+  note?: string;
+}
+
 export interface LeadRecord {
   id: string;
   dedupeKey: string;
@@ -127,6 +137,8 @@ export interface LeadRecord {
   contact: { name?: string; email?: string; phone?: string } | null;
   contactRedacted: boolean;
   bookingId?: string;
+  /** Historial de enlaces lead → reserva (quién, cuándo, de qué reserva a cuál). */
+  bookingHistory?: LeadBookingLinkChange[];
   bookingOutcome?: string;
   messageSnippet?: string;
   operatorCandidates: OperatorCandidate[];
@@ -646,6 +658,37 @@ export async function triageLeads(
     if (result) updated.push(result); else notFound.push(id);
   }
   return { updated, notFound };
+}
+
+export type LeadMutation<E extends string> =
+  | { ok: true; lead: LeadRecord; changed: boolean }
+  | { ok: false; error: E; message: string };
+
+/**
+ * Lee el lead y aplica `mutate` dentro de una transacción (memoria si no hay Firestore).
+ * Solo escribe cuando la mutación devuelve ok y changed.
+ */
+export async function mutateLead<E extends string>(
+  id: string,
+  mutate: (lead: LeadRecord) => LeadMutation<E>,
+): Promise<LeadMutation<E | 'not_found'>> {
+  if (!/^lead_[a-z0-9_]{8,64}$/.test(id)) return { ok: false, error: 'not_found', message: 'Lead no encontrado.' };
+  const db = getFirestoreDb();
+  if (!db) {
+    const lead = memoryLeads.get(id);
+    if (!lead || !lead.status) return { ok: false, error: 'not_found', message: 'Lead no encontrado.' };
+    const result = mutate(lead);
+    if (result.ok && result.changed) memoryLeads.set(id, result.lead);
+    return result;
+  }
+  return db.runTransaction(async (tx: any) => {
+    const ref = db.collection('leads').doc(id);
+    const snap = await tx.get(ref);
+    if (!snap.exists || !(snap.data() as LeadRecord).status) return { ok: false as const, error: 'not_found' as const, message: 'Lead no encontrado.' };
+    const result = mutate({ ...(snap.data() as LeadRecord), id });
+    if (result.ok && result.changed) tx.set(ref, stripUndefined(result.lead));
+    return result;
+  });
 }
 
 export type TransitionError = 'not_found' | 'invalid_status' | 'invalid_transition' | 'evidence_required' | 'admin_required';

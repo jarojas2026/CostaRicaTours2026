@@ -7,6 +7,10 @@
  * - PATCH /api/admin/leads/:id/status     (requireOperator) máquina de estados con evidencia
  * - POST /api/admin/leads/:id/payment-link (requireOwner) enlace de checkout Stripe TEST de la
  *   reserva enlazada al lead (reutiliza createStripeCheckoutForBooking; no marca nada como pagado).
+ * - POST /api/admin/leads/:id/link-booking (requireOwner) enlaza una reserva existente al lead;
+ *   no sobrescribe otra salvo force=true; registra el cambio en lead.bookingHistory.
+ * - GET  /api/admin/leads/:id/payment-status (requireOwner) solo lectura: estado de pago de la
+ *   reserva enlazada y elegibilidad del voucher (misma regla que /api/bookings/:id/download-pdf).
  * - POST /api/leads/quote-request        (público, rate-limit) solicitud de cotización desde
  *   /tour/:id con source "tour_page"; exige consentimiento Ley 8968 y un tour del catálogo.
  * - POST /api/leads/map-service-request (público, mismo antiabuso) consulta de un servicio del
@@ -19,8 +23,10 @@ import crypto from 'crypto';
 import type express from 'express';
 import { requireOperator, requireOwner } from '../authMiddleware';
 import { createLeadPaymentLink } from '../leadPaymentLink';
+import { getLeadPaymentStatus, linkLeadBooking } from '../leadBookingLink';
+import { getBookingById } from '../bookingService';
 import { createStripeCheckoutForBooking } from './payments';
-import { buildLeadDigest, buildMapServiceLeadInput, buildTourPageLeadInput, captureLeadAndNotify, getLead, isLeadStatus, listLeads, transitionLead, triageLeads, LEAD_STATUSES } from '../leadPipeline';
+import { buildLeadDigest, buildMapServiceLeadInput, buildTourPageLeadInput, captureLeadAndNotify, getLead, isLeadStatus, listLeads, mutateLead, transitionLead, triageLeads, LEAD_STATUSES } from '../leadPipeline';
 import { isLeadPriority, isLeadTriageState, LEAD_PRIORITIES, LEAD_TRIAGE_STATES } from '../leadTriage';
 import { createRouter, adminAccessPayload, chatLimiter } from './shared';
 import { leadPublicReference, parseTourQuoteLeadPayload } from '../../shared/tourQuoteRequest';
@@ -102,6 +108,18 @@ leadsRouter.patch('/api/admin/leads/:id/status', requireOperator, async (req, re
 
 leadsRouter.post('/api/admin/leads/:id/payment-link', requireOwner, async (req, res) => {
   const result = await createLeadPaymentLink(String(req.params.id), { getLead, createCheckout: createStripeCheckoutForBooking });
+  res.status(result.status).json(result.body);
+});
+
+leadsRouter.post('/api/admin/leads/:id/link-booking', requireOwner, async (req, res) => {
+  const access = adminAccessPayload(req);
+  const result = await linkLeadBooking(String(req.params.id), req.body, { by: String(access.email || access.uid || access.role || 'owner') }, { getBooking: getBookingById, mutateLead });
+  res.status(result.status).json(result.body);
+});
+
+leadsRouter.get('/api/admin/leads/:id/payment-status', requireOwner, async (req, res) => {
+  const result = await getLeadPaymentStatus(String(req.params.id), { getLead, getBooking: getBookingById });
+  res.setHeader('Cache-Control', 'private, no-store');
   res.status(result.status).json(result.body);
 });
 
