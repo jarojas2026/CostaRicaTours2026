@@ -164,7 +164,7 @@ opsMetricsRouter.all('/webhook/health-check', (req, res) => {
 // ==========================================
 // 📊 ANALÍTICA NATIVA Y ACCIONES DE RESERVA
 // ==========================================
-opsMetricsRouter.get('/api/analytics/conversion-report', async (req, res) => {
+opsMetricsRouter.get('/api/analytics/conversion-report', requireAdmin, async (req, res) => {
   try {
     const metrics = await getWeeklyConversionMetrics();
     res.json({ success: true, data: metrics, source: 'firestore-native' });
