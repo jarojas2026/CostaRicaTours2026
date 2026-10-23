@@ -334,7 +334,7 @@ export const REVIEWS: Review[] = [
     userCountry: 'EE. UU.',
     rating: 5,
     date: 'Hace 3 días',
-    comment: '¡Fue el mejor día de nuestras vacaciones en Costa Rica! La caminata por la lava del volcán fue fascinante y las termales de Baldi al final del día fueron pura relajación. El guía Carlos conocía cada ave y mono de la zona.',
+    comment: '¡Fue el mejor día de nuestras vacaciones en Costa Rica! La caminata por la lava del volcán fue fascinante y las aguas termales al final del día fueron pura relajación. El guía Carlos conocía cada ave y mono de la zona.',
     verified: true
   },
   {
