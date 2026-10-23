@@ -11,6 +11,7 @@ import { requireOperator, requireAdmin as requireAdminRole } from '../authMiddle
 import { installAsyncRouteSafety } from '../asyncRoutes';
 import { hasInternalJobToken } from '../internalJobAuth';
 import { createInFlightLimiter } from '../admissionControl';
+import { rateLimitStoreOption } from '../sharedStateStore';
 
 /**
  * Crea un Router de Express con la misma protección async que la app:
@@ -68,6 +69,7 @@ export function requireAgentTool(req: express.Request, res: express.Response, ne
 // 🛡️ RATE LIMITING MIDDLEWARES
 // ==========================================
 export const paymentLimiter = rateLimit({
+  ...rateLimitStoreOption('payment', 60 * 1000),
   windowMs: 60 * 1000,
   max: 20,
   standardHeaders: true,
@@ -76,6 +78,7 @@ export const paymentLimiter = rateLimit({
 });
 
 export const counterLimiter = rateLimit({
+  ...rateLimitStoreOption('counter', 60 * 1000),
   windowMs: 60 * 1000,
   max: 30,
   standardHeaders: true,
@@ -84,6 +87,7 @@ export const counterLimiter = rateLimit({
 });
 
 export const chatLimiter = rateLimit({
+  ...rateLimitStoreOption('chat', 60 * 1000),
   windowMs: 60 * 1000,
   max: 30,
   standardHeaders: true,
@@ -92,6 +96,7 @@ export const chatLimiter = rateLimit({
 });
 
 export const generalApiLimiter = rateLimit({
+  ...rateLimitStoreOption('general', 60 * 1000),
   windowMs: 60 * 1000,
   max: 120,
   standardHeaders: true,
@@ -106,6 +111,7 @@ export const bookingAdmission = createInFlightLimiter(30, 2);
 
 // Stricter per-IP budget for routes that spend LLM / model tokens.
 export const llmLimiter = rateLimit({
+  ...rateLimitStoreOption('llm', 60 * 1000),
   windowMs: 60 * 1000,
   max: Number(process.env.LLM_RATE_LIMIT_PER_MINUTE || 20),
   standardHeaders: true,

@@ -28,3 +28,9 @@ Solo en Cloud Run / Secret Manager, nunca `VITE_*`:
 - `UPSTASH_REDIS_REST_URL=https://...` y `UPSTASH_REDIS_REST_TOKEN` (Secret Manager)
 - opcional: `SHARED_STATE_PREFIX` (por defecto `crt:`), `SHARED_STATE_TIMEOUT_MS`
 Apagar: quitar `SHARED_STATE_STORE` o ponerlo en `memory`.
+
+## Cableado (hecho)
+Los 5 limitadores de `backend/routes/shared.ts` (payment, counter, chat, general, llm) llevan
+`...rateLimitStoreOption('<prefijo>', 60 * 1000)`. Sin `SHARED_STATE_STORE=upstash` + URL/token
+válidos devuelve `{}` → mismo MemoryStore por instancia que antes. Contrato:
+`tests/sharedStateLimiterWiring.contract.test.ts`. `formAbuseGuard` sigue en memoria (PR aparte).
