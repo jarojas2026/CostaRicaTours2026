@@ -22,6 +22,7 @@ import {
   suggestComplementaryTours,
   whatsappHandoffLink
 } from './agentSkillPack';
+import { PHASE_C_DECLARATIONS, PHASE_C_TOOL_REGISTRY, executePhaseCTool, isPhaseCTool, type AgentToolContext } from './agentPhaseCRegistry';
 
 export const AGENT_TOOL_REGISTRY = {
   search_tours: {
@@ -155,7 +156,9 @@ export const AGENT_TOOL_REGISTRY = {
   nearest_services: {
     description: 'Nearest hospitals/CCSS clinics, police/fire/Red Cross, pharmacies, transport, lodging or food to a coordinate in Costa Rica.',
     sideEffect: false
-  }
+  },
+  // Fase C (get_product, get_policies, …): ver backend/agentPhaseCRegistry.ts
+  ...PHASE_C_TOOL_REGISTRY
 } as const;
 
 /**
@@ -165,8 +168,11 @@ export const AGENT_TOOL_REGISTRY = {
  */
 export async function executeAgentTool(
   name: keyof typeof AGENT_TOOL_REGISTRY,
-  args: Record<string, any>
+  args: Record<string, any>,
+  context: AgentToolContext = {}
 ): Promise<any> {
+  // Fase C: el contexto lo pone el servidor (sesión, mensaje literal del cliente, canal).
+  if (isPhaseCTool(String(name))) return executePhaseCTool(name as any, args || {}, context);
   const result = await executeAgentToolUnredacted(name, args);
   return redactToolResultForClient(String(name), result);
 }
@@ -919,5 +925,7 @@ export const GEMINI_FUNCTION_DECLARATIONS = [
       },
       required: ['lat', 'lng']
     }
-  }
+  },
+  // Fase C: declaraciones en backend/agentPhaseCRegistry.ts
+  ...PHASE_C_DECLARATIONS
 ];

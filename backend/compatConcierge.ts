@@ -11,6 +11,8 @@ import { openAiCompatChat, toOpenAiTools, type CompatMessage } from './openaiCom
 export const COMPAT_READ_ONLY_TOOLS = [
   'search_operator_tours', 'search_tours', 'check_availability', 'quote_price', 'lookup_booking',
   'cancellation_policy', 'park_info', 'nearest_services', 'season_advice',
+  // Fase C (lectura)
+  'get_product', 'get_policies',
 ] as const;
 
 const MAX_CONTEXT_CHARS = 3500;
@@ -21,6 +23,7 @@ export function buildCompatSystemPrompt(isEn: boolean) {
   return [
     isEn ? 'You are the travel assistant of Costa Rica Tours. Reply in English.' : 'Eres el asistente de viajes de Costa Rica Tours. Responde en español.',
     'Be warm, concise (max ~120 words) and practical. Use the tools to look up tours, availability, quotes, bookings, parks and nearby services.',
+    'For details of one tour (inclusions, duration, minimum age, what to bring) call get_product with its id. For cancellation or terms questions call get_policies and quote only that text.',
     'For ANY question about tours or activities, ALWAYS call search_operator_tours (full catalog of ~590 tours, use the region and activity, e.g. query "rafting", region "arenal") before answering. Never say an activity is unavailable without searching it first.',
     'RULES (mandatory):',
     '- Never invent tours, prices, availability, ratings, schedules or providers. Use only tool results or the verified context. If unknown, say so.',
