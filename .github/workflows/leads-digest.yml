@@ -27,6 +27,8 @@ env:
 
 jobs:
   digest:
+    # No invocar producción durante la pausa, incluso por workflow_dispatch.
+    if: vars.CLOUD_RUN_OPERATIONS_ENABLED == 'true' && github.ref == 'refs/heads/main'
     name: Resumen de leads por estado y sin respuesta >24h
     runs-on: ubuntu-latest
     timeout-minutes: 10
