@@ -123,7 +123,7 @@ export const AdminControlCenterPage: React.FC<{ language: Language }> = ({ langu
       <div className="rounded-xl bg-black/25 p-3"><div className="text-2xl font-black text-emerald-300">{supervisor.unavailable ? '—' : supervisor.active}</div><div className="text-sm text-stone-400">{es ? 'Activos' : 'Active'}</div></div>
       <div className="rounded-xl bg-black/25 p-3"><div className="text-2xl font-black text-stone-300">{supervisor.unavailable ? '—' : supervisor.noSignal}</div><div className="text-sm text-stone-400">{es ? 'Sin señal' : 'No signal'}</div></div>
     </div>
-    <p className="text-sm text-stone-400">{es ? '“Sin señal” = sin eventos en los últimos 5 min; no significa apagado.' : '“No signal” = no events in the last 5 min; it does not mean offline.'}</p>
+    <p className="text-sm text-stone-400">{es ? '“Sin señal” = sin heartbeat en los últimos 60 s; no significa apagado.' : '“No signal” = no heartbeat in the last 60 s; it does not mean offline.'}</p>
     {section !== 'ia' && <button type="button" onClick={() => go('ia')} className="inline-flex items-center gap-1 self-start text-base font-bold text-amber-300 hover:underline">{es ? 'Ver detalle por agente' : 'See per-agent detail'}<ChevronRight size={18} /></button>}
   </Card>;
 
