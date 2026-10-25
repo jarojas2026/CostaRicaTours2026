@@ -4,17 +4,19 @@ import { Language } from '../types';
 import { auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { deskCounterValue, deskRequest, hasDeskSnapshot } from '../utils/deskRequest';
+import { withStorageScope } from '../hooks/useStorageScope';
+import { getPersonalItem, setPersonalItem } from '../utils/privateStorage';
 
 interface Props { language: Language; }
 
-export const CounterDeskPage: React.FC<Props> = ({ language }) => {
+const CounterDeskPageComponent: React.FC<Props> = ({ language }) => {
   const es = language === 'es';
   const [sessionId] = useState(() => {
-    const key = 'crt-counter-session';
-    const existing = localStorage.getItem(key);
+    const key = 'crt-counter-session' as const;
+    const existing = getPersonalItem(key);
     if (existing) return existing;
     const created = 'counter_' + (globalThis.crypto?.randomUUID?.() || Date.now().toString(36));
-    localStorage.setItem(key, created);
+    setPersonalItem(key, created);
     return created;
   });
   const [message, setMessage] = useState('');
@@ -279,3 +281,6 @@ export const CounterDeskPage: React.FC<Props> = ({ language }) => {
     </div>
   );
 };
+
+// Remonta al cambiar de identidad: el estado en memoria nunca pasa a otra persona.
+export const CounterDeskPage = withStorageScope(CounterDeskPageComponent);
