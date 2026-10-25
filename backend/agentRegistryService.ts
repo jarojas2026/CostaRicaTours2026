@@ -7,7 +7,7 @@ import type {
 } from '../shared/agentOfficeTypes';
 
 const COLLECTION = 'agents';
-const REGISTRY_VERSION = 3;
+const REGISTRY_VERSION = 4;
 
 type AgentProfileMetadata = {
   name: LocalizedText;
@@ -85,6 +85,21 @@ const AGENT_PROFILE_METADATA: Readonly<Record<string, AgentProfileMetadata>> = {
     name: { es: 'Soporte de pagos', en: 'Payments Support' },
     office: 'payments',
     missionEn: 'Explain payment methods, payment state and receipts without manipulating or simulating charges.',
+  },
+  marketing_content: {
+    name: { es: 'Mercadeo y contenido', en: 'Marketing & Content' },
+    office: 'international_marketing',
+    missionEn: 'Prepare verifiable drafts for listings, blog, social and email; never publishes or sends on its own.',
+  },
+  finance_analyst: {
+    name: { es: 'Analista financiero', en: 'Finance Analyst' },
+    office: 'finance',
+    missionEn: 'Analyze margins, costs and reconciliation and prepare accounting drafts for review; never moves money or issues invoices.',
+  },
+  compliance: {
+    name: { es: 'Cumplimiento', en: 'Compliance' },
+    office: 'verification_quality',
+    missionEn: 'Maintain the Costa Rica compliance checklist, watch legal texts and claims, and escalate risks; not legal advice.',
   },
 };
 
