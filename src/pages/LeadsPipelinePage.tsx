@@ -3,6 +3,7 @@ import { ClipboardCopy, Inbox, RefreshCw, ShieldCheck, Trash2, Undo2 } from 'luc
 import type { Language } from '../types';
 import { auth } from '../firebase';
 import { LeadPaymentPanel } from '../components/LeadPaymentPanel';
+import { SupplierPayoutsPanel } from '../components/SupplierPayoutsPanel';
 
 type LeadStatus = 'nuevo' | 'cotizando' | 'esperando_operador' | 'confirmado_por_escrito' | 'pagado' | 'cancelado';
 
@@ -245,6 +246,7 @@ export function LeadsPipelinePage({ language }: { language: Language }) {
                       </div>
                     )}
                     <LeadPaymentPanel leadId={lead.id} bookingId={lead.bookingId} es={es} onChanged={() => void load()} />
+                    <SupplierPayoutsPanel leadId={lead.id} es={es} />
                     <div>
                       <h2 className="font-bold text-stone-200">{es ? 'Operadores candidatos (prospectos)' : 'Candidate operators (prospects)'}</h2>
                       {lead.operatorCandidates.length === 0 ? <p className="text-stone-400">{es ? 'Sin coincidencias.' : 'No matches.'}</p> : (
