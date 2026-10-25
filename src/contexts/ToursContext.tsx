@@ -21,6 +21,10 @@ const ToursContext = createContext<ToursContextType>({
 });
 
 import { mergeRemoteTours, type RemoteTourDoc } from '../utils/mergeRemoteTours';
+import { getPersonalJSON, getStorageScopeKey, setPersonalJSON } from '../utils/privateStorage';
+import { useStorageScope } from '../hooks/useStorageScope';
+
+const FAVORITES_KEY = 'costa_rica_tours_favorites' as const;
 
 
 export const ToursProvider = ({ children }: { children: ReactNode }) => {
@@ -28,21 +32,29 @@ export const ToursProvider = ({ children }: { children: ReactNode }) => {
   const localTours = useLocalTours();
   // null = Firestore has not answered (or failed): fall back to the local catalog.
   const [remoteTours, setRemoteTours] = useState<RemoteTourDoc[] | null>(null);
-  const [favorites, setFavorites] = useState<string[]>(() => {
-    const saved = localStorage.getItem('costa_rica_tours_favorites');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // Favoritos personales: se leen del ámbito activo (visitante → sessionStorage,
+  // usuario → clave con uid) y se recargan al cambiar de identidad, sin
+  // escribir nunca la lista de una persona en el ámbito de otra.
+  const storageScope = useStorageScope();
+  const readFavorites = () => {
+    const saved = getPersonalJSON<unknown>(FAVORITES_KEY, []);
+    return Array.isArray(saved) ? saved.filter((id): id is string => typeof id === 'string') : [];
+  };
+  const [favoritesState, setFavoritesState] = useState<{ scope: string; ids: string[] }>(() => ({ scope: storageScope, ids: readFavorites() }));
+  const favorites = favoritesState.scope === storageScope ? favoritesState.ids : [];
 
   useEffect(() => {
-    localStorage.setItem('costa_rica_tours_favorites', JSON.stringify(favorites));
-  }, [favorites]);
+    if (favoritesState.scope !== storageScope) setFavoritesState({ scope: storageScope, ids: readFavorites() });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageScope]);
 
   const toggleFavorite = (tourId: string) => {
-    setFavorites(prev =>
-      prev.includes(tourId)
-        ? prev.filter(id => id !== tourId)
-        : [...prev, tourId]
-    );
+    setFavoritesState(prev => {
+      const current = prev.scope === getStorageScopeKey() ? prev.ids : readFavorites();
+      const ids = current.includes(tourId) ? current.filter(id => id !== tourId) : [...current, tourId];
+      setPersonalJSON(FAVORITES_KEY, ids);
+      return { scope: getStorageScopeKey(), ids };
+    });
   };
 
   const isFavorite = (tourId: string) => favorites.includes(tourId);
