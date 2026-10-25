@@ -11,6 +11,12 @@
  *   no sobrescribe otra salvo force=true; registra el cambio en lead.bookingHistory.
  * - GET  /api/admin/leads/:id/payment-status (requireOwner) solo lectura: estado de pago de la
  *   reserva enlazada y elegibilidad del voucher (misma regla que /api/bookings/:id/download-pdf).
+ * - GET  /api/admin/leads/:id/supplier-payouts (requireOwner) pagos a proveedores del lead.
+ * - POST /api/admin/leads/:id/supplier-payouts (requireOwner) registra un pago a proveedor
+ *   pendiente_aprobacion; exige pago del cliente verificado por el servidor.
+ * - POST /api/admin/leads/:id/supplier-payouts/:payoutId/approve|mark-paid|cancel (requireOwner)
+ *   aprobar, registrar el pago MANUAL (referencia SINPE/transferencia + fecha) o cancelar.
+ *   El sistema nunca ejecuta pagos ni llama a SINPE (docs/REGLAS_PLATAFORMA.md §7).
  * - POST /api/leads/quote-request        (público, rate-limit) solicitud de cotización desde
  *   /tour/:id con source "tour_page"; exige consentimiento Ley 8968 y un tour del catálogo.
  * - POST /api/leads/map-service-request (público, mismo antiabuso) consulta de un servicio del
@@ -24,6 +30,7 @@ import type express from 'express';
 import { requireOperator, requireOwner } from '../authMiddleware';
 import { createLeadPaymentLink } from '../leadPaymentLink';
 import { getLeadPaymentStatus, linkLeadBooking } from '../leadBookingLink';
+import { approveSupplierPayout, cancelSupplierPayout, createSupplierPayout, listSupplierPayouts, markSupplierPayoutPaid, type SupplierPayoutActor } from '../leadSupplierPayouts';
 import { getBookingById } from '../bookingService';
 import { createStripeCheckoutForBooking } from './payments';
 import { buildLeadDigest, buildMapServiceLeadInput, buildTourPageLeadInput, captureLeadAndNotify, getLead, isLeadStatus, listLeads, mutateLead, transitionLead, triageLeads, LEAD_STATUSES } from '../leadPipeline';
@@ -120,6 +127,40 @@ leadsRouter.post('/api/admin/leads/:id/link-booking', requireOwner, async (req, 
 leadsRouter.get('/api/admin/leads/:id/payment-status', requireOwner, async (req, res) => {
   const result = await getLeadPaymentStatus(String(req.params.id), { getLead, getBooking: getBookingById });
   res.setHeader('Cache-Control', 'private, no-store');
+  res.status(result.status).json(result.body);
+});
+
+/** Actor de pagos a proveedores: lo fija el servidor desde la sesión (nunca el body). Estas rutas son humanas. */
+function supplierPayoutActor(req: express.Request): SupplierPayoutActor {
+  const access = adminAccessPayload(req);
+  return { by: String(access.email || access.uid || 'owner'), role: access.role, authMethod: (req as any).adminAccess?.authMethod ?? null, kind: 'human' };
+}
+
+const supplierPayoutDeps = { getLead, getBooking: getBookingById, mutateLead };
+
+leadsRouter.get('/api/admin/leads/:id/supplier-payouts', requireOwner, async (req, res) => {
+  const result = await listSupplierPayouts(String(req.params.id), supplierPayoutDeps);
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.status(result.status).json(result.body);
+});
+
+leadsRouter.post('/api/admin/leads/:id/supplier-payouts', requireOwner, async (req, res) => {
+  const result = await createSupplierPayout(String(req.params.id), req.body, supplierPayoutActor(req), supplierPayoutDeps);
+  res.status(result.status).json(result.body);
+});
+
+leadsRouter.post('/api/admin/leads/:id/supplier-payouts/:payoutId/approve', requireOwner, async (req, res) => {
+  const result = await approveSupplierPayout(String(req.params.id), String(req.params.payoutId), supplierPayoutActor(req), supplierPayoutDeps);
+  res.status(result.status).json(result.body);
+});
+
+leadsRouter.post('/api/admin/leads/:id/supplier-payouts/:payoutId/mark-paid', requireOwner, async (req, res) => {
+  const result = await markSupplierPayoutPaid(String(req.params.id), String(req.params.payoutId), req.body, supplierPayoutActor(req), supplierPayoutDeps);
+  res.status(result.status).json(result.body);
+});
+
+leadsRouter.post('/api/admin/leads/:id/supplier-payouts/:payoutId/cancel', requireOwner, async (req, res) => {
+  const result = await cancelSupplierPayout(String(req.params.id), String(req.params.payoutId), req.body, supplierPayoutActor(req), supplierPayoutDeps);
   res.status(result.status).json(result.body);
 });
 
