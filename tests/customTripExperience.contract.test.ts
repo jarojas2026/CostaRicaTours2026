@@ -16,7 +16,7 @@ test('custom trip funnel captures reservation-ready context instead of inventing
   assert.match(funnel, /specialRequests/);
   assert.match(funnel, /customerEmail/);
   assert.match(funnel, /requestQuote/);
-  assert.match(funnel, /existingJourneyId: localStorage\.getItem\('crt_active_journey'\)/);
+  assert.match(funnel, /existingJourneyId: getPersonalItem\('crt_active_journey'\)/);
   assert.match(funnel, /Crear plan y verificar para cotizar/);
   assert.doesNotMatch(funnel, /Estimado Total Paquete Completo/);
   assert.doesNotMatch(funnel, /10% Descuento Grupo Aplicado/);

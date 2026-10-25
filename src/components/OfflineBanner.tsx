@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { WifiOff, Wifi, ShieldCheck, QrCode } from 'lucide-react';
 import { BookingRequest, Language } from '../types';
+import { getPersonalItem } from '../utils/privateStorage';
 
 interface OfflineBannerProps {
   language?: Language;
@@ -15,9 +16,9 @@ export const OfflineBanner: React.FC<OfflineBannerProps> = ({ language = 'es' })
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => {
       setIsOnline(false);
-      // Load cached bookings from localStorage
+      // Reservas en caché del ámbito personal actual (visitante o uid)
       try {
-        const saved = localStorage.getItem('cr_tours_my_bookings');
+        const saved = getPersonalItem('cr_tours_my_bookings');
         if (saved) {
           setCachedBookings(JSON.parse(saved));
         }

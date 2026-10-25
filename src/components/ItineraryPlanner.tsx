@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useTours } from '../contexts/ToursContext';
 import { requestCustomerIntake } from '../utils/customerIntake';
+import { getPersonalItem } from '../utils/privateStorage';
 
 interface ItineraryPlannerProps {
   language: Language;
@@ -174,7 +175,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
       },
       context: {
         requestKind: 'custom_multi_day_itinerary',
-        existingJourneyId: localStorage.getItem('crt_active_journey') || undefined,
+        existingJourneyId: getPersonalItem('crt_active_journey') || undefined,
         journeyRequest: {
           startDate,
           durationDays: itinerary?.totalDays || daysCount,

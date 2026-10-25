@@ -23,7 +23,11 @@ import {
   Mail,
   User as UserIcon,
   FileText,
-  Check
+  Check,
+  LayoutDashboard,
+  Users,
+  Scale,
+  Store
 } from 'lucide-react';
 import { Language, Currency } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -34,6 +38,8 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { requestCustomerIntake } from '../utils/customerIntake';
 import { whatsappInquiryUrl } from '../utils/directWhatsApp';
 import { MY_SECTIONS, MyLabel, MyWordmark } from './MyBrand';
+import { useAdminAccess } from '../hooks/useAdminAccess';
+import { accountMenuSections, adminMenuLinks, PROVIDER_PORTAL_PATH } from '../utils/accountRoles';
 
 type HeaderTab = 'home' | 'tours' | 'map' | 'culture' | 'ai' | 'itinerary' | 'bookings' | 'tools' | 'flights' | 'workspace' | 'destinations' | 'activities' | 'about' | 'blog';
 
@@ -80,6 +86,13 @@ export const Header: React.FC<HeaderProps> = ({
   const es = language === 'es';
   const availableCurrencyList = useAvailableCurrencies();
   const [user, setUser] = useState<FirebaseUser | null>(null);
+  // Accesos por rol (solo visual; el backend vuelve a verificar en cada ruta).
+  const roles = useAdminAccess();
+  const roleSections = accountMenuSections({ signedIn: Boolean(user), adminStatus: roles.adminStatus, providerClaims: roles.isProvider });
+  const adminLinks = adminMenuLinks(es);
+  const adminLinkIcons: Record<string, typeof LayoutDashboard> = {
+    control: LayoutDashboard, leads: Users, 'ai-command': Bot, email: Mail, 'financial-legal': Scale,
+  };
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -304,8 +317,8 @@ export const Header: React.FC<HeaderProps> = ({
                 aria-controls={menuPanelId}
                 aria-haspopup="dialog"
                 aria-label={es
-                  ? `Menú de cuenta y preferencias${count > 0 ? `, ${count} reservas` : ''}`
-                  : `Account and preferences menu${count > 0 ? `, ${count} bookings` : ''}`}
+                  ? `Menú de cuenta y preferencias${roleSections.admin ? ', administrador' : ''}${count > 0 ? `, ${count} reservas` : ''}`
+                  : `Account and preferences menu${roleSections.admin ? ', administrator' : ''}${count > 0 ? `, ${count} bookings` : ''}`}
                 className={`relative flex items-center gap-1 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 pl-1 pr-1.5 sm:pr-2 py-1 transition-colors ${focusRing}`}
               >
                 {user ? (
@@ -319,6 +332,11 @@ export const Header: React.FC<HeaderProps> = ({
                   {language.toUpperCase()} · {currency}
                 </span>
                 <ChevronDown className={`w-3.5 h-3.5 text-stone-400 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+                {roleSections.admin && (
+                  <span className="absolute -bottom-1 -left-1 w-4 h-4 rounded-full bg-amber-400 border-2 border-[#031710] flex items-center justify-center" aria-hidden="true">
+                    <ShieldCheck className="w-2.5 h-2.5 text-stone-950" />
+                  </span>
+                )}
                 {count > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-orange-500 text-stone-950 font-black text-[10px] flex items-center justify-center border-2 border-[#031710]" aria-hidden="true">
                     {count}
@@ -354,6 +372,34 @@ export const Header: React.FC<HeaderProps> = ({
                       <LogIn className="w-4 h-4" aria-hidden="true" />
                       <span>{t('signIn')}</span>
                     </button>
+                  )}
+
+                  {/* Role access (visual only; the backend authorizes every admin/provider route). */}
+                  {roleSections.admin && (
+                    <nav aria-labelledby={`${menuPanelId}-admin`} className="mt-2 rounded-xl border border-amber-400/30 bg-amber-400/[0.06] p-1">
+                      <p id={`${menuPanelId}-admin`} className="flex items-center gap-1.5 px-2.5 pt-2 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">
+                        <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
+                        {es ? 'Panel de administración' : 'Admin panel'}
+                      </p>
+                      {adminLinks.map(({ id, to, label }) => {
+                        const Icon = adminLinkIcons[id] || LayoutDashboard;
+                        return (
+                          <Link key={id} to={to} onClick={closeMenu} data-admin-link={id} className={menuItemClass}>
+                            <Icon className="w-4 h-4 text-amber-300" aria-hidden="true" />
+                            <span>{label}</span>
+                          </Link>
+                        );
+                      })}
+                    </nav>
+                  )}
+                  {roleSections.provider && (
+                    <div className="mt-2 rounded-xl border border-teal-400/30 bg-teal-400/[0.06] p-1">
+                      <p className="px-2.5 pt-2 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-teal-300">{es ? 'Proveedores' : 'Providers'}</p>
+                      <Link to={PROVIDER_PORTAL_PATH} onClick={closeMenu} className={menuItemClass}>
+                        <Store className="w-4 h-4 text-teal-300" aria-hidden="true" />
+                        <span>{es ? 'Portal de proveedores' : 'Provider portal'}</span>
+                      </Link>
+                    </div>
                   )}
 
                   {/* Primary navigation for phones */}

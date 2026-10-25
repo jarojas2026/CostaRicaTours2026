@@ -12,6 +12,8 @@ import type { Language, BookingRequest } from '../types';
 import { loadExchangeRates } from '../utils/exchangeRates';
 import { formatAmount, formatUSD, rateFor, rateNote } from '../utils/money';
 import { useRates } from '../hooks/useMoney';
+import { withStorageScope } from '../hooks/useStorageScope';
+import { getPersonalItem, setPersonalItem } from '../utils/privateStorage';
 
 interface TravelerOSPageProps {
   language: Language;
@@ -38,7 +40,7 @@ type SavedTrip = {
   note: string;
 };
 
-const STORAGE_KEY = 'crt_traveler_os_v1';
+const STORAGE_KEY = 'crt_traveler_os_v1' as const;
 
 const defaultTasks: Task[] = [
   { id: 'passport', labelEs: 'Revisar pasaporte y requisitos de entrada', labelEn: 'Review passport and entry requirements', done: false, category: 'documents' },
@@ -59,7 +61,7 @@ const initialTrip: SavedTrip = {
   note: ''
 };
 
-export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
+const TravelerOSPageComponent: React.FC<TravelerOSPageProps> = ({
   language,
   currency = 'USD',
   onOpenTripBuilder,
@@ -86,7 +88,7 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = getPersonalItem(STORAGE_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw) as { trip?: SavedTrip; tasks?: Task[]; spentUSD?: number; expenses?: Array<{ id: string; label: string; amount: number }> };
       if (parsed.trip) setTrip({ ...initialTrip, ...parsed.trip });
@@ -112,7 +114,7 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ trip, tasks, spentUSD, expenses }));
+        setPersonalItem(STORAGE_KEY, JSON.stringify({ trip, tasks, spentUSD, expenses }));
       } catch {
         // Ignore storage quota/privacy restrictions.
       }
@@ -190,7 +192,7 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
 
   const saveNow = () => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ trip, tasks, spentUSD, expenses }));
+      setPersonalItem(STORAGE_KEY, JSON.stringify({ trip, tasks, spentUSD, expenses }));
       setSaved(true);
       window.setTimeout(() => setSaved(false), 1800);
     } catch {
@@ -365,3 +367,6 @@ export const TravelerOSPage: React.FC<TravelerOSPageProps> = ({
     </main>
   );
 };
+
+// Remonta al cambiar de identidad: el estado en memoria nunca pasa a otra persona.
+export const TravelerOSPage = withStorageScope(TravelerOSPageComponent);

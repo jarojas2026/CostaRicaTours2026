@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { onIdTokenChanged } from 'firebase/auth';
 import { auth, signInWithGoogle, signOut } from '../firebase';
 import type { Language } from '../types';
+import { checkAdminAccessPolicy } from '../utils/accountRoles';
 
 export function AdminRouteGuard({ language = 'es', children }: { language?: Language; children: React.ReactNode }) {
   const es = language === 'es';
@@ -23,18 +24,9 @@ export function AdminRouteGuard({ language = 'es', children }: { language?: Lang
       try {
         const token = await user.getIdToken();
         if (current !== generation) return;
-        const response = await fetch('/api/admin/access-policy', {
-          headers: { Authorization: 'Bearer ' + token },
-          signal: request.signal,
-        });
-        if (current !== generation) return;
-        if (response.status === 401 || response.status === 403) {
-          setStatus('denied');
-          return;
-        }
-        if (!response.ok) throw new Error('Access check unavailable');
-        const policy = await response.json();
-        if (current === generation) setStatus(policy.allowed === true ? 'allowed' : 'denied');
+        // Misma verificación que usa el menú (utils/accountRoles); aquí siempre fresca, sin caché.
+        const result = await checkAdminAccessPolicy(token, fetch, request.signal);
+        if (current === generation) setStatus(result);
       } catch {
         if (current === generation) setStatus('error');
       } finally {

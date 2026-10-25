@@ -34,6 +34,8 @@ import { formatCurrency, getLangText } from '../utils/i18n';
 import { useSupportPanel } from '../hooks/useSupportPanel';
 import { bookingInquiry } from '../utils/bookingInquiry';
 import { deskRequest } from '../utils/deskRequest';
+import { withStorageScope } from '../hooks/useStorageScope';
+import { getPersonalItem, setPersonalItem } from '../utils/privateStorage';
 
 export interface DigitalCounterWidgetProps {
   language: Language;
@@ -59,7 +61,7 @@ interface Message {
   sources?: Array<{ uri: string; title: string }>;
 }
 
-export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
+const DigitalCounterWidgetComponent: React.FC<DigitalCounterWidgetProps> = ({
   language,
   currency,
   onSelectTour,
@@ -70,11 +72,11 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
   const [activeTab, setActiveTab] = useState<'chat' | 'availability' | 'faq' | 'embed'>('chat');
   const [showTeaser, setShowTeaser] = useState(false);
   const [sessionId] = useState(() => {
-    const key = 'crt-counter-widget-session';
-    const existing = localStorage.getItem(key);
+    const key = 'crt-counter-widget-session' as const;
+    const existing = getPersonalItem(key);
     if (existing) return existing;
     const created = 'counter_' + Math.random().toString(36).slice(2, 15);
-    localStorage.setItem(key, created);
+    setPersonalItem(key, created);
     return created;
   });
   const { tours: TOURS } = useTours();
@@ -978,3 +980,6 @@ export const DigitalCounterWidget: React.FC<DigitalCounterWidgetProps> = ({
     </>
   );
 };
+
+// Remonta al cambiar de identidad: el estado en memoria nunca pasa a otra persona.
+export const DigitalCounterWidget = withStorageScope(DigitalCounterWidgetComponent);

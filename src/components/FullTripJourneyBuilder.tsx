@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { CalendarDays, Compass, Loader2, MapPinned, MessageCircle, PackageCheck, Route, Sparkles, Sun, Users, RefreshCw, Save } from 'lucide-react';
 import { Language } from '../types';
+import { withStorageScope } from '../hooks/useStorageScope';
+import { getPersonalItem, setPersonalItem } from '../utils/privateStorage';
 
-export const FullTripJourneyBuilder: React.FC<{ language: Language }> = ({ language }) => {
+const FullTripJourneyBuilderComponent: React.FC<{ language: Language }> = ({ language }) => {
   const es = language === 'es';
   const [form, setForm] = useState({ query: '', days: 7, travelers: 2, date: '', profile: 'relaxed', arrivalAirport: 'SJO' });
   const [journey, setJourney] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
-  const journeyStorageKey = 'crt_journey_id';
+  const journeyStorageKey = 'crt_journey_id' as const;
 
   React.useEffect(() => {
-    const id = localStorage.getItem(journeyStorageKey);
+    const id = getPersonalItem(journeyStorageKey);
     if (!id) return;
     fetch(`/api/journey/${encodeURIComponent(id)}`)
       .then(r => r.ok ? r.json() : null)
@@ -22,13 +24,13 @@ export const FullTripJourneyBuilder: React.FC<{ language: Language }> = ({ langu
   async function build() {
     setLoading(true); setError('');
     try {
-      const sessionId = localStorage.getItem('crt_journey_session') || 'traveler_' + Math.random().toString(36).slice(2);
-      localStorage.setItem('crt_journey_session', sessionId);
+      const sessionId = getPersonalItem('crt_journey_session') || 'traveler_' + Math.random().toString(36).slice(2);
+      setPersonalItem('crt_journey_session', sessionId);
       const response = await fetch('/api/journey/build', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...form,sessionId,language}) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'No se pudo construir el viaje');
       setJourney(data.journey);
-      if (data.journey?.journeyId) localStorage.setItem(journeyStorageKey, data.journey.journeyId);
+      if (data.journey?.journeyId) setPersonalItem(journeyStorageKey, data.journey.journeyId);
       setSaved(true);
       setTimeout(() => setSaved(false), 1800);
     } catch(e:any){ setError(e?.message || 'Error'); } finally { setLoading(false); }
@@ -41,7 +43,7 @@ export const FullTripJourneyBuilder: React.FC<{ language: Language }> = ({ langu
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'No se pudo adaptar el viaje');
       setJourney(data.journey);
-      localStorage.setItem(journeyStorageKey, data.journey.journeyId);
+      setPersonalItem(journeyStorageKey, data.journey.journeyId);
       setSaved(true); setTimeout(() => setSaved(false), 1800);
     } catch(e:any){ setError(e?.message || 'Error'); } finally { setLoading(false); }
   }
@@ -80,3 +82,6 @@ export const FullTripJourneyBuilder: React.FC<{ language: Language }> = ({ langu
     </div>}
   </section>;
 };
+
+// Remonta al cambiar de identidad: el estado en memoria nunca pasa a otra persona.
+export const FullTripJourneyBuilder = withStorageScope(FullTripJourneyBuilderComponent);

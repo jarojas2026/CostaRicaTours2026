@@ -9,8 +9,10 @@ import { Language, Currency } from '../types';
 import { leadPublicReference } from '../../shared/tourQuoteRequest';
 import { RequestFollowUpWhatsApp } from './RequestFollowUpWhatsApp';
 import type { CustomerIntakeResult } from '../utils/customerIntake';
+import { withStorageScope } from '../hooks/useStorageScope';
+import { getPersonalItem, setPersonalItem, removePersonalItem } from '../utils/privateStorage';
 
-const CUSTOM_FUNNEL_DRAFT_KEY = 'costa_rica_custom_funnel_draft';
+const CUSTOM_FUNNEL_DRAFT_KEY = 'costa_rica_custom_funnel_draft' as const;
 
 const DESTINATION_OPTIONS = [
   { id: 'Arenal', es: 'Volcán Arenal & La Fortuna', en: 'Arenal Volcano & La Fortuna' },
@@ -65,7 +67,7 @@ interface CustomFunnelModalProps {
   onOpenItineraryPlanner?: () => void;
 }
 
-export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
+const CustomFunnelModalComponent: React.FC<CustomFunnelModalProps> = ({
   isOpen,
   onClose,
   language,
@@ -144,7 +146,7 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
   useEffect(() => {
     if (isOpen && !hasRestoredRef.current) {
       try {
-        const saved = localStorage.getItem(CUSTOM_FUNNEL_DRAFT_KEY);
+        const saved = getPersonalItem(CUSTOM_FUNNEL_DRAFT_KEY);
         if (saved) {
           const draft = JSON.parse(saved);
           if (draft) {
@@ -218,7 +220,7 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
       };
 
       try {
-        localStorage.setItem(CUSTOM_FUNNEL_DRAFT_KEY, JSON.stringify(payload));
+        setPersonalItem(CUSTOM_FUNNEL_DRAFT_KEY, JSON.stringify(payload));
         setLastSavedTime(timeFormatted);
       } catch (err) {
         console.warn('Could not auto-save custom funnel:', err);
@@ -241,7 +243,7 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
 
   const handleResetDraft = () => {
     try {
-      localStorage.removeItem(CUSTOM_FUNNEL_DRAFT_KEY);
+      removePersonalItem(CUSTOM_FUNNEL_DRAFT_KEY);
     } catch (e) {
       console.warn(e);
     }
@@ -399,7 +401,7 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
       if (result?.ok && reference) {
         setSubmitReference(reference);
         setSubmitState('success');
-        try { localStorage.removeItem(CUSTOM_FUNNEL_DRAFT_KEY); } catch { /* sin almacenamiento */ }
+        try { removePersonalItem(CUSTOM_FUNNEL_DRAFT_KEY); } catch { /* sin almacenamiento */ }
         return;
       }
       setSubmitState('error');
@@ -424,7 +426,7 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
         page: window.location.pathname,
         requestKind: 'custom_multi_day_itinerary',
         consent: consent ? { law: 'CR-8968', given: true } : undefined,
-        existingJourneyId: localStorage.getItem('crt_active_journey') || undefined,
+        existingJourneyId: getPersonalItem('crt_active_journey') || undefined,
         journeyRequest: {
           startDate: startDate || undefined,
           arrivalAirport,
@@ -1123,3 +1125,6 @@ export const CustomFunnelModal: React.FC<CustomFunnelModalProps> = ({
     </div>
   );
 };
+
+// Remonta al cambiar de identidad: el estado en memoria nunca pasa a otra persona.
+export const CustomFunnelModal = withStorageScope(CustomFunnelModalComponent);

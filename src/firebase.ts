@@ -3,6 +3,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRe
 import { initializeFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 import firebaseConfig from '../firebase-applet-config.json';
+import { clearUserPersonalStorage, purgeLegacyPersonalLocalStorage, setStorageIdentity } from './utils/privateStorage';
 
 // Serve the Firebase auth handler from our public host only where Vercel
 // proxies /__/auth/* and /__/firebase/*. Previews and localhost keep the
@@ -27,6 +28,13 @@ export const db = (firebaseConfig as any).firestoreDatabaseId
   : initializeFirestore(app, { experimentalForceLongPolling: true });
 
 export const auth = getAuth(app);
+
+// Privacidad entre visitantes: datos personales heredados sin uid se eliminan
+// y el ámbito de almacenamiento sigue a la identidad de Firebase Auth.
+if (typeof window !== 'undefined') {
+  purgeLegacyPersonalLocalStorage();
+  onAuthStateChanged(auth, (user) => setStorageIdentity(user?.uid ?? null));
+}
 export const googleProvider = new GoogleAuthProvider();
 
 export enum OperationType {
@@ -172,6 +180,9 @@ export const getAccessToken = async (): Promise<string | null> => {
 
 export const signOut = async () => {
   try {
+    // Borra todo lo personal del usuario (chat IA, borradores, itinerarios,
+    // favoritos) antes de cerrar sesión; el listener luego pasa a visitante.
+    clearUserPersonalStorage(auth.currentUser?.uid ?? null);
     await firebaseSignOut(auth);
     cachedAccessToken = null;
   } catch (error) {

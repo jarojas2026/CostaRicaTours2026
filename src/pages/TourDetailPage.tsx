@@ -26,6 +26,7 @@ import { PhotoCredit } from '../components/PhotoCredit';
 import { TourWeather } from '../components/TourWeather';
 import { useTourMedia } from '../hooks/useTourMedia';
 import { whatsappInquiryUrl } from '../utils/directWhatsApp';
+import { setSessionPersonalItem } from '../utils/privateStorage';
 
 interface TourDetailPageProps {
   language: Language;
@@ -288,7 +289,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
         bookingId = String(bookingData.booking.bookingId);
         bookingRecord = bookingData.booking;
         setPendingBookingId(bookingId);
-        sessionStorage.setItem('crt_last_booking_id', bookingId);
+        setSessionPersonalItem('crt_last_booking_id', bookingId);
       }
 
       setStatusMessage(language === 'es'

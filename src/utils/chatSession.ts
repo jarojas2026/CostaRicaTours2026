@@ -1,3 +1,5 @@
+import { getPersonalItem, getStorageScopeKey, removePersonalItem, setPersonalItem } from './privateStorage';
+
 /**
  * Server-minted chat session capability.
  * The backend only serves conversational memory to callers that present the
@@ -8,11 +10,13 @@ export interface ChatSessionCredentials {
   sessionToken: string;
 }
 
-const STORAGE_KEY = 'crt_chat_session_v2';
+// Personal: sessionStorage para visitantes, clave con uid para usuarios
+// (ver privateStorage). Nunca se comparte entre personas ni visitas anónimas.
+const STORAGE_KEY = 'crt_chat_session_v2' as const;
 
 export function readStoredChatSession(): ChatSessionCredentials | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = getPersonalItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (typeof parsed?.sessionId === 'string' && typeof parsed?.sessionToken === 'string') {
@@ -25,17 +29,21 @@ export function readStoredChatSession(): ChatSessionCredentials | null {
 }
 
 export function clearStoredChatSession(): void {
-  try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+  removePersonalItem(STORAGE_KEY);
 }
 
 export async function requestChatSession(): Promise<ChatSessionCredentials | null> {
+  // Si la identidad cambia mientras se pide la sesión, se descarta: el id
+  // emitido para una persona nunca se guarda ni se usa en el ámbito de otra.
+  const scopeAtRequest = getStorageScopeKey();
   try {
     const response = await fetch('/api/chat/session', { method: 'POST' });
     if (!response.ok) return null;
     const data = await response.json();
     if (typeof data?.sessionId !== 'string' || typeof data?.sessionToken !== 'string') return null;
+    if (getStorageScopeKey() !== scopeAtRequest) return null;
     const credentials = { sessionId: data.sessionId, sessionToken: data.sessionToken };
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(credentials)); } catch { /* ignore */ }
+    setPersonalItem(STORAGE_KEY, JSON.stringify(credentials));
     return credentials;
   } catch {
     return null;

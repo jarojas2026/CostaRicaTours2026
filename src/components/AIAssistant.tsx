@@ -20,6 +20,8 @@ import { useChatAnalytics } from '../hooks/useChatAnalytics';
 import { useSpeechRecognition, speechSynthesisSupported } from '../hooks/useSpeechRecognition';
 import { buildTripInquiryHandoff, serverInquiryHandoff, type TripInquiryHandoff } from '../utils/tripRequestParser';
 import { chatSessionHeaders, clearStoredChatSession, readStoredChatSession, requestChatSession, type ChatSessionCredentials } from '../utils/chatSession';
+import { withStorageScope } from '../hooks/useStorageScope';
+import { getPersonalItem, setPersonalItem, removePersonalItem } from '../utils/privateStorage';
 
 interface AIAssistantProps {
   language: Language;
@@ -60,7 +62,7 @@ interface Message {
   };
 }
 
-export const AIAssistant: React.FC<AIAssistantProps> = ({
+const AIAssistantComponent: React.FC<AIAssistantProps> = ({
   language,
   currency = 'USD',
   onSelectTour,
@@ -98,7 +100,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const [messagesByAgent, setMessagesByAgent] = useState<Record<string, Message[]>>(() => {
     const initial: Record<string, Message[]> = {};
     AI_AGENTS.forEach((ag) => {
-      const cached = localStorage.getItem(`chat_history_${ag.id}`);
+      const cached = getPersonalItem(`chat_history_${ag.id}`);
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
@@ -137,7 +139,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       const current = prev[activeAgentId] || [];
       const next = typeof updater === 'function' ? updater(current) : updater;
       try {
-        localStorage.setItem(`chat_history_${activeAgentId}`, JSON.stringify(next));
+        setPersonalItem(`chat_history_${activeAgentId}`, JSON.stringify(next));
       } catch (e) {}
       return {
         ...prev,
@@ -272,7 +274,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       fetch(`/api/chat/history?sessionId=${encodeURIComponent(scopedSessionId)}`, { method: 'DELETE', headers: chatSessionHeaders(chatSession) }).catch(console.error);
     }
     try {
-      localStorage.removeItem(`chat_history_${activeAgentId}`);
+      removePersonalItem(`chat_history_${activeAgentId}`);
     } catch (e) {}
   };
 
@@ -1647,3 +1649,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     </div>
   );
 };
+
+// Remonta al cambiar de identidad: el estado en memoria nunca pasa a otra persona.
+export const AIAssistant = withStorageScope(AIAssistantComponent);
