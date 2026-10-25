@@ -4,6 +4,25 @@ Este archivo define las convenciones arquitectónicas, reglas de diseño y direc
 
 ---
 
+## 0. Reglas vigentes del dueño (25-oct-2026) — prevalecen sobre este archivo
+
+Fuente normativa: [`docs/REGLAS_PLATAFORMA.md`](docs/REGLAS_PLATAFORMA.md). Si una sección más abajo la contradice, gana `docs/REGLAS_PLATAFORMA.md`.
+
+1. **Costo $0 hasta autorización explícita del dueño.** No reactivar facturación de Google Cloud, no desplegar a Cloud Run, no ejecutar Cloud Build, no activar planes ni APIs pagas. GitHub Actions del repo público sí.
+2. **No borrar nada** (servicios, imágenes, activadores, ramas, colecciones, agentes, código). Desactivar, pausar, marcar como obsoleto/simulado o mover a `archive/`.
+3. **Stripe solo TEST** (`stripeModeGuard`). **No tocar `api/[...path].ts`** sin autorización.
+4. **Backend canónico `costa-rica-tours`; deploys y digest pausados por defecto** (#445, `docs/backend-canonico-pausa.md`). No encender `CLOUD_RUN_DEPLOY_ENABLED` / `CLOUD_RUN_OPERATIONS_ENABLED` sin OK.
+5. **Roles** (#447): cliente (sesión, `uid`), proveedor (claims `role=provider` + `providerId` + `providerRole`, más `provider_members/{uid}` activo), administrador (`GET /api/admin/access-policy` → `allowed:true`). Menú: avatar → "Panel de administración" (y botón Admin en `BottomNav`); proveedor → `/provider/portal`. Los accesos del menú son solo visuales: el backend autoriza cada ruta. Colaboradores: rol futuro, no implementado.
+6. **Privacidad** (#447): datos personales del navegador solo vía `src/utils/privateStorage.ts` (visitante → `sessionStorage`; usuario → `crt_u:<uid>:…`; limpieza al cerrar sesión). Memoria de IA solo con sesión emitida + token HMAC; nunca memoria de otro usuario.
+7. **Pagos** (#446): el panel de `/admin/leads` genera enlaces Stripe TEST y lee estado; **nunca marca pagado** desde la UI. Solo webhook firmado o retorno verificado.
+8. **Oficina virtual:** Gabriel (dueño) ↔ Hark (director externo) → JARVIS (orquestador) → oficinas y agentes. Autonomía inicial 0 (niveles 0–3). Aprobación humana de un solo uso, siempre, para pagos, cobros, reembolsos, payouts, precios, publicaciones y mensajes a clientes. Sin heartbeat real no se muestra un agente "trabajando".
+9. **Prohibido** generar facturas, comprobantes, acuses de Hacienda o confirmaciones simuladas. La factura DGT simulada de `nativeAutomationEngine.ts` se está retirando en #448.
+10. **Legal CR:** Ley 8968/PRODHAB, factura electrónica 4.4, IVA 13 %, ICT, Ley 7472 (retracto), Ley 8454 (los agentes nunca firman). **No se ofrece pagar SINPE por terceros** (art. 15 Ley 7786, inscripción SUGEF): solo se cobran servicios propios.
+11. **PRs:** rama desde `origin/main` → tests de contrato → `NODE_OPTIONS=--max-old-space-size=6144 npm run lint` → PR en español → CI verde → **squash solo con OK de Gabriel**.
+12. **Stack libre:** preferir MIT/Apache; vigilar AGPL (no mezclar en este repo) y licencias no libres (n8n, Dify, Directus, Typebot, etc.). Ver §10 de `docs/REGLAS_PLATAFORMA.md`.
+
+---
+
 ## 1. Identidad y Alcance del Proyecto
 * **Nombre de la Aplicación**: Costa Rica Tours
 * **Propósito**: Plataforma oficial de reservas, experiencias ecoturísticas sostenibles y asistencia inteligente al viajero en Costa Rica.
@@ -111,5 +130,5 @@ Ver `docs/ciudad-digital-global-skills-2026.md` y `.agents/skills/global-city-on
 - `tests/publicOperatorPrivacy.contract.test.ts` y `scripts/auditOperatorPrivacy.mjs` (en `npm run build`) fallan si se filtra un operador.
 
 ## 14. Coordinación multiagente
-- Antes de empezar cualquier tarea, leer `docs/COORDINACION-AGENTES.md`: reglas fijas, carriles con dueño (Hark / ChatGPT), cómo reclamar un issue (asignarse + etiqueta `en-curso` + rama `hark/` o `gpt/` desde `origin/main`), decisiones del dueño y estado actual.
-- PR pequeño, squash con CI verde, nunca force-push a `main`.
+- Antes de empezar cualquier tarea, leer `docs/REGLAS_PLATAFORMA.md` y `docs/COORDINACION-AGENTES.md`: reglas fijas, carriles con dueño (Hark / ChatGPT), cómo reclamar un issue (asignarse + etiqueta `en-curso` + rama `hark/` o `gpt/` desde `origin/main`), decisiones del dueño y estado actual.
+- PR pequeño, squash con CI verde y OK explícito de Gabriel, nunca force-push a `main`.
