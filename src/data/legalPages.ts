@@ -115,10 +115,12 @@ export const LEGAL_PAGES: Record<LegalPageId, LegalPageContent> = {
           es: [
             'No solicitamos pagos antes de la confirmación escrita descrita en el punto 2. La forma de pago, quién la recibe (la plataforma o el operador) y el comprobante se indican en esa confirmación.',
             'Las entradas a parques nacionales se compran y pagan directamente al SINAC en su sitio oficial; no las vendemos ni cobramos.',
+            'Cuando el pago lo recibe la plataforma, Costa Rica Tours cobra únicamente sus propios servicios (tours, transporte y entradas incluidas en los paquetes que vende). Después paga por su cuenta a sus proveedores locales. La plataforma no realiza transferencias ni pagos SINPE a terceros por cuenta del cliente, ni recibe dinero para reenviarlo a otra persona.',
           ],
           en: [
             'We do not request payment before the written confirmation described in section 2. The payment method, who receives it (the platform or the operator) and the receipt are stated in that confirmation.',
             'National park tickets are bought and paid directly to SINAC on its official website; we do not sell or charge for them.',
+            'When the platform receives the payment, Costa Rica Tours charges only for its own services (tours, transport and tickets included in the packages it sells). It then pays its local suppliers on its own account. The platform does not make transfers or SINPE payments to third parties on the customer\'s behalf, nor does it receive money to forward to anyone else.',
           ],
         },
       },
