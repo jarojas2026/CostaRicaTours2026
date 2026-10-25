@@ -319,11 +319,12 @@ legacyWebhooksRouter.post(['/webhook/weather-contingency-rerouting', '/api/autom
   }
 });
 
-// WF-COMPLEX-04: Facturación Electrónica DGT Hacienda v4.3 & Liquidación Operadores
+// WF-COMPLEX-04: Facturación electrónica DGT — desactivada (simulación retirada).
+// Responde 501 con estado honesto "no_configurado": no se emite ni se envía nada a Hacienda.
 legacyWebhooksRouter.post(['/webhook/dgt-electronic-invoicing-settlement', '/api/automations/dgt-invoicing'], requireAdmin, async (req, res) => {
   try {
     const result = await executeDGTElectronicInvoicingSettlement(req.body);
-    res.json(result);
+    res.status(501).json(result);
   } catch (error: any) {
     res.status(500).json({ exito: false, error: error.message });
   }
