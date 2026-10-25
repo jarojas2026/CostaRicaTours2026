@@ -1089,89 +1089,72 @@ export async function executeEmergencyContingencyRerouting(body: any) {
 }
 
 /**
- * WF-COMPLEX-04: Facturación Electrónica DGT Hacienda v4.3 & Liquidación
+ * WF-COMPLEX-04: Facturación electrónica DGT — DESACTIVADA (simulación retirada).
+ *
+ * Antes esta función armaba una "Factura Electrónica v4.3" con IVA 4 % y devolvía
+ * `estadoHacienda` aceptado con un acuse generado al azar, sin enviar nada a Hacienda.
+ * Eso es falso y riesgoso: la versión 4.4 es obligatoria desde el 1-sep-2025 y la tarifa
+ * de servicios turísticos es 13 %. La función se conserva (no se borra) pero ahora
+ * responde siempre un estado honesto: no hay integración con Hacienda/TRIBU-CR.
+ *
+ * Si `DGT_INVOICE_SIMULATION_PREVIEW=true`, agrega un borrador numérico marcado como
+ * SIMULACIÓN (13 %, sin clave, sin consecutivo, sin acuse) solo para revisión interna.
+ * Nunca devuelve estados de aceptación de Hacienda ni acuses, ni programa liquidaciones.
  */
+export const DGT_INVOICING_STATUS = 'no_configurado' as const;
+export const DGT_INVOICING_MODE = 'simulacion_desactivada' as const;
+
+export function isDGTInvoiceSimulationPreviewEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  return String(env.DGT_INVOICE_SIMULATION_PREVIEW || '').trim().toLowerCase() === 'true';
+}
+
 export async function executeDGTElectronicInvoicingSettlement(body: any) {
   const start = Date.now();
-  const cliente = body.cliente || {};
-  const venta = body.detalleVenta || {};
-  const totalUSD = Number(venta.montoTotalUSD || 235);
-  const configuredRate = Number(venta.tipoCambioCRC ?? process.env.USD_TO_CRC_RATE);
-  if (!Number.isFinite(configuredRate) || configuredRate <= 0) {
-    throw new Error('USD_TO_CRC_RATE debe estar configurado para generar importes CRC.');
+  const venta = (body && typeof body === 'object' ? body.detalleVenta : null) || {};
+  const totalUSDRaw = Number(venta.montoTotalUSD);
+  const totalUSD = Number.isFinite(totalUSDRaw) && totalUSDRaw > 0 ? totalUSDRaw : null;
+
+  let borradorSimulacion: Record<string, unknown> | null = null;
+  if (isDGTInvoiceSimulationPreviewEnabled() && totalUSD !== null) {
+    const tasaIVA = 0.13;
+    const subtotalUSD = Number((totalUSD / (1 + tasaIVA)).toFixed(2));
+    const ivaUSD = Number((totalUSD - subtotalUSD).toFixed(2));
+    borradorSimulacion = {
+      etiqueta: 'SIMULACIÓN — no es un comprobante electrónico ni se envió a Hacienda',
+      versionReferencia: '4.4',
+      tarifaIVA: '13% (tarifa general Ley 9635; revisar con contador)',
+      subtotalUSD,
+      impuestoIVAUSD: ivaUSD,
+      totalUSD,
+      claveNumerica: null,
+      consecutivo: null,
+      acuseHacienda: null,
+    };
   }
-  const tipoCambio = configuredRate;
-  const totalCRC = Math.round(totalUSD * tipoCambio);
 
-  // 4% IVA turístico según Ley 9635
-  const tasaIVA = 0.04;
-  const subtotalUSD = Number((totalUSD / (1 + tasaIVA)).toFixed(2));
-  const ivaUSD = Number((totalUSD - subtotalUSD).toFixed(2));
-
-  // Clave de 50 dígitos DGT
-  const hoy = new Date();
-  const fechaStr = `${String(hoy.getDate()).padStart(2, '0')}${String(hoy.getMonth() + 1).padStart(2, '0')}${String(hoy.getFullYear()).slice(-2)}`;
-  const consecutivo = String(Math.floor(Math.random() * 90000000) + 10000000);
-  const clave50 = `506${fechaStr}0031019998880010000101000000${consecutivo}199887766`;
-
-  // Liquidación del operador
-  const comisionPlataformaUSD = Number((totalUSD * 0.15).toFixed(2));
-  const liquidacionOperadorUSD = Number((totalUSD * 0.85).toFixed(2));
-
-  const duration = Date.now() - start;
   logAutomationExecution(
     'WF_COMPLEX_04_DGT_FACTURACION_LIQUIDACION',
-    duration,
-    'success',
-    `Factura DGT generada por $${totalUSD} USD. Liquidado $${liquidacionOperadorUSD} USD a ${venta.proveedorId || 'operador'}`,
-    { clave50, subtotalUSD, ivaUSD, comisionPlataformaUSD }
+    Date.now() - start,
+    'warning',
+    'Facturación electrónica no configurada: no se emitió ni envió ningún comprobante a Hacienda.',
+    { estado: DGT_INVOICING_STATUS, modo: DGT_INVOICING_MODE }
   );
 
   return {
-    exito: true,
-    documentoFiscal: {
-      tipoDocumento: '01 - Factura Electrónica v4.3 DGT Hacienda',
-      claveNumerica50Digitos: clave50,
-      consecutivoFiscal: `0010000101000000${consecutivo}`,
-      codigoCABYS: '8552300000000',
-      descripcionCABYS: 'Servicios de transporte turístico y excursiones de ecoturismo',
-      emisor: {
-        nombre: 'Costa Rica Tours S.A.',
-        cedulaJuridica: '3-101-999888',
-        regimen: 'Régimen Tradicional Simplificado Turístico'
-      },
-      receptor: {
-        nombre: cliente.nombre || 'Turista Internacional',
-        tipoIdentificacion: cliente.tipoIdentificacion || '03 (Pasaporte)',
-        numero: cliente.numeroIdentificacion || 'PASSPORT-VALID'
-      },
-      desgloseMonetarioUSD: {
-        subtotalUSD,
-        tarifaIVA: '4% (IVA Turístico Ley 9635)',
-        impuestoIVAUSD: ivaUSD,
-        totalFacturadoUSD: totalUSD
-      },
-      desgloseMonetarioCRC: {
-        subtotalCRC: Math.round(subtotalUSD * tipoCambio),
-        impuestoIVACRC: Math.round(ivaUSD * tipoCambio),
-        totalFacturadoCRC: totalCRC
-      },
-      estadoHacienda: 'ACEPTADO_POR_DGT',
-      acuseHaciendaHash: `SHA256-${Math.random().toString(36).substring(2, 14)}`
-    },
-    liquidacionBancariaOperador: {
-      proveedorId: venta.proveedorId || null,
-      nombreProveedor: venta.proveedorId ? 'Proveedor asignado' : 'Proveedor pendiente de asignación',
-      montoBrutoUSD: totalUSD,
-      comisionPlataforma15USD: comisionPlataformaUSD,
-      montoNetoLiquidadoUSD: liquidacionOperadorUSD,
-      metodoLiquidacion: 'Transferencia IBAN Automática (Banco Nacional de CR)',
-      estadoLiquidacion: 'PROGRAMADA_DISPERSION_24H'
-    },
-    archivosGenerados: {
-      xmlFirmadoUrl: `${publicSiteOrigin()}/facturas/xml/${clave50}.xml`,
-      pdfLegalUrl: `${publicSiteOrigin()}/facturas/pdf/${clave50}.pdf`
-    },
+    exito: false,
+    estado: DGT_INVOICING_STATUS,
+    modo: DGT_INVOICING_MODE,
+    simulacion: true,
+    emitido: false,
+    enviadoAHacienda: false,
+    mensaje:
+      'La facturación electrónica no está integrada. No se generó ningún comprobante ni se envió nada a Hacienda. ' +
+      'Emita el comprobante v4.4 manualmente en TicoFactura (TRIBU-CR) y revise la tarifa de IVA con su contador.',
+    accionRequerida: 'emitir_manual_ticofactura_v4_4',
+    documentoFiscal: null,
+    liquidacionBancariaOperador: null,
+    archivosGenerados: null,
+    borradorSimulacion,
     timestamp: new Date().toISOString()
   };
 }
