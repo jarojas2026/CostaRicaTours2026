@@ -3,6 +3,9 @@
  * Runtime status is trusted only while its heartbeat is fresh. Missing or
  * stale telemetry becomes no_signal rather than being guessed as idle.
  * Customer/event payload bodies are never projected to the frontend.
+ * Task objectives (free text that may carry traveler data or internal
+ * instructions) are never projected either: only a safe task summary
+ * (run id + start time) leaves the backend.
  */
 import {
   AGENT_STATUSES,
@@ -13,6 +16,12 @@ import {
   type LocalizedText,
 } from '../shared/agentOfficeTypes';
 import { AGENT_NO_SIGNAL_AFTER_MS } from './agentRuntimeService';
+
+/** Resumen seguro de la tarea en curso: nunca incluye el objetivo textual. */
+export type AgentOfficeTaskSummary = {
+  runId: string;
+  startedAt: string | null;
+};
 
 export type AgentOfficeSignal = 'recent_activity' | 'no_recent_signal' | 'telemetry_unavailable';
 
@@ -26,7 +35,7 @@ export type AgentOfficeAgent = {
   lastEventType: string | null;
   lastObservedAt: string | null;
   lastHeartbeatAt: string | null;
-  currentTask: AgentCurrentTask | null;
+  currentTask: AgentOfficeTaskSummary | null;
   autonomyLevel: number | null;
   usageToday: AgentDailyUsage | null;
   model: string | null;
@@ -68,6 +77,22 @@ function validHeartbeat(value: unknown, now: number): { at: string; timestamp: n
     at: new Date(timestamp).toISOString(),
     timestamp,
     fresh: now >= timestamp && now - timestamp <= AGENT_NO_SIGNAL_AFTER_MS,
+  };
+}
+
+const SAFE_RUN_ID = /^[A-Za-z0-9_.:-]{1,64}$/;
+
+/**
+ * Redacta la tarea en curso para el dashboard: solo el id de ejecución (si tiene
+ * formato de identificador) y la hora de inicio. El objetivo textual se descarta.
+ */
+export function summarizeAgentTask(task: AgentCurrentTask | null | undefined): AgentOfficeTaskSummary | null {
+  if (!task || typeof task !== 'object') return null;
+  const rawRunId = typeof task.runId === 'string' ? task.runId.trim() : '';
+  const startedAtTimestamp = typeof task.startedAt === 'string' ? Date.parse(task.startedAt) : NaN;
+  return {
+    runId: SAFE_RUN_ID.test(rawRunId) ? rawRunId : 'redacted',
+    startedAt: Number.isFinite(startedAtTimestamp) ? new Date(startedAtTimestamp).toISOString() : null,
   };
 }
 
@@ -139,7 +164,7 @@ export function projectAgentOffice(
       lastEventType: activity?.type ?? null,
       lastObservedAt: lastObserved,
       lastHeartbeatAt: heartbeat?.at ?? null,
-      currentTask: agent.currentTask ?? null,
+      currentTask: summarizeAgentTask(agent.currentTask),
       autonomyLevel: Number.isInteger(agent.autonomyLevel) ? Number(agent.autonomyLevel) : null,
       usageToday: agent.usageToday ?? null,
       model: typeof agent.model === 'string' ? agent.model : null,

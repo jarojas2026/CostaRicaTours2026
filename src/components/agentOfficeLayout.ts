@@ -18,7 +18,8 @@ export type OfficeAgent = {
   lastEventType: string | null;
   lastObservedAt: string | null;
   lastHeartbeatAt?: string | null;
-  currentTask?: { runId: string; objective: string; startedAt: string } | null;
+  /** Resumen seguro (sin objetivo textual): el backend redacta la tarea en agentOfficeProjection. */
+  currentTask?: { runId: string; startedAt: string | null } | null;
   autonomyLevel?: number | null;
 };
 

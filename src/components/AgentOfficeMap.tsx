@@ -14,6 +14,19 @@ type OfficeSnapshot = {
 const isRecent = (signal: OfficeAgentSignal) => signal === 'recent_activity';
 
 /**
+ * Resumen seguro de la tarea: solo id de ejecución y hora de inicio. El objetivo
+ * textual nunca se muestra (puede traer datos de viajeros o instrucciones internas;
+ * AGENTS.md §12), aunque una respuesta antigua del backend lo incluyera.
+ */
+export function safeTaskSummary(task: { runId?: unknown; startedAt?: unknown } | null | undefined, es: boolean, formatTime: (value: string | null | undefined) => string): string {
+  const runId = typeof task?.runId === 'string' && /^[A-Za-z0-9_.:-]{1,64}$/.test(task.runId) ? task.runId : (es ? 'reservado' : 'redacted');
+  const startedAt = typeof task?.startedAt === 'string' ? formatTime(task.startedAt) : '—';
+  return es
+    ? `Tarea en curso · ejecución ${runId} · desde ${startedAt}. El detalle de la tarea no se muestra aquí por privacidad.`
+    : `Task in progress · run ${runId} · since ${startedAt}. Task details are not shown here for privacy.`;
+}
+
+/**
  * Planta de la oficina virtual: 9 salas del registro real (shared/agentOfficeTypes).
  * Cada agente aparece en la sala de su campo `office`. Sin heartbeat fresco el estado
  * es "sin señal": la vista no simula empleados trabajando ni ejecuta acciones.
@@ -95,7 +108,7 @@ export function AgentOfficeMap({ language, snapshot }: { language: Language; sna
           <div><dt className="text-stone-500">{es ? 'Último heartbeat' : 'Last heartbeat'}</dt><dd className="mt-1 text-white">{timestamp(selected.lastHeartbeatAt)}</dd></div>
         </dl>
         <div className="mt-3 flex items-start gap-2 rounded-xl bg-black/25 p-3 text-xs text-stone-400"><Activity size={15} className="shrink-0 text-amber-300"/>{selected.currentTask && isRecent(selected.signal)
-          ? (es ? 'Tarea actual: ' : 'Current task: ') + selected.currentTask.objective
+          ? safeTaskSummary(selected.currentTask, es, timestamp)
           : (es ? 'Tarea actual: no verificable. Hoy ningún proceso emite heartbeats, por eso los agentes aparecen “sin señal”. Esta vista no ejecuta acciones ni simula tareas.' : 'Current task: not verifiable. No process emits heartbeats yet, so agents show “no signal”. This view does not execute actions or simulate tasks.')}</div>
       </aside>}
       <p className="text-[11px] text-stone-500">{es ? 'Fuente: registro de agentes y eventos en Firestore. “Sin señal” = sin heartbeat en los últimos 60 s; no significa apagado ni libre de tareas.' : 'Source: Firestore agent registry and events. “No signal” = no heartbeat in the last 60 s; it does not mean offline or free of tasks.'}</p>

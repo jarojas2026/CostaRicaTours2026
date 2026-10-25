@@ -19,6 +19,26 @@ type Approval = {
   rejectionReason?: string | null;
 };
 
+type ApprovalPage = { approvals: Approval[]; nextCursor?: string | null };
+
+/** Tamaño de página de la bandeja de pendientes (filtro status=pending en el servidor). */
+export const PENDING_APPROVALS_PAGE_SIZE = 50;
+/** Respaldo de refresco del estado global si el padre no entrega refreshKey (igual al refresco de 60 s de /admin). */
+export const GOVERNANCE_REFRESH_MS = 60_000;
+
+/**
+ * Programa el refresco periódico del estado global (apagado) cuando el padre no lo
+ * refresca. Devuelve la función de limpieza. Con refresco del padre no crea intervalo.
+ */
+export function startGovernanceAutoRefresh(
+  load: () => unknown,
+  options: { hasParentRefresh: boolean; intervalMs?: number; setIntervalFn: (fn: () => void, ms: number) => any; clearIntervalFn: (id: any) => void },
+): () => void {
+  if (options.hasParentRefresh) return () => undefined;
+  const id = options.setIntervalFn(() => { void load(); }, options.intervalMs ?? GOVERNANCE_REFRESH_MS);
+  return () => options.clearIntervalFn(id);
+}
+
 type GlobalControl = { agentsDisabled: boolean; reason: string | null; updatedAt: string | null };
 
 type JarvisResponse = {
@@ -68,13 +88,41 @@ export function OwnerApprovalInbox({ language, fetcher = ownerOfficeFetch }: { l
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
   const [reasons, setReasons] = useState<Record<string, string>>({});
+  const [recent, setRecent] = useState<Approval[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
+  // Pendientes: filtro de estado del lado del servidor (status=pending) con paginación.
+  // Historial: la lista reciente sin filtro, solo para "Decisiones recientes".
   const load = useCallback(async () => {
     setError('');
-    try { const data = await fetcher<{ approvals: Approval[] }>(officeRequests.approvals(), es); setApprovals(Array.isArray(data?.approvals) ? data.approvals : []); }
+    try {
+      const [pendingPage, history] = await Promise.all([
+        fetcher<ApprovalPage>(officeRequests.approvalsByStatus('pending', { limit: PENDING_APPROVALS_PAGE_SIZE }), es),
+        fetcher<ApprovalPage>(officeRequests.approvals(), es).catch(() => ({ approvals: [] as Approval[] })),
+      ]);
+      setApprovals(Array.isArray(pendingPage?.approvals) ? pendingPage.approvals.filter(a => a.status === 'pending') : []);
+      setNextCursor(typeof pendingPage?.nextCursor === 'string' && pendingPage.nextCursor ? pendingPage.nextCursor : null);
+      setRecent(Array.isArray(history?.approvals) ? history.approvals : []);
+    }
     catch (e: any) { setError(e?.message || 'Error'); }
   }, [es, fetcher]);
   useEffect(() => { void load(); }, [load]);
+
+  const loadMore = async () => {
+    if (!nextCursor) return;
+    setError(''); setLoadingMore(true);
+    try {
+      const page = await fetcher<ApprovalPage>(officeRequests.approvalsByStatus('pending', { limit: PENDING_APPROVALS_PAGE_SIZE, cursor: nextCursor }), es);
+      const more = Array.isArray(page?.approvals) ? page.approvals.filter(a => a.status === 'pending') : [];
+      setApprovals(current => {
+        const seen = new Set((current || []).map(a => a.id));
+        return [...(current || []), ...more.filter(a => !seen.has(a.id))];
+      });
+      setNextCursor(typeof page?.nextCursor === 'string' && page.nextCursor ? page.nextCursor : null);
+    } catch (e: any) { setError(e?.message || 'Error'); }
+    finally { setLoadingMore(false); }
+  };
 
   const decide = async (approval: Approval, decision: 'approve' | 'reject') => {
     setError(''); setMessage('');
@@ -82,7 +130,7 @@ export function OwnerApprovalInbox({ language, fetcher = ownerOfficeFetch }: { l
       const reason = (reasons[approval.id] || '').trim();
       if (decision === 'reject' && !reason) throw new Error(es ? 'Escribe el motivo del rechazo.' : 'Write a rejection reason.');
       setBusy(approval.id);
-      await fetcher(decision === 'approve' ? officeRequests.approve(approval.id) : officeRequests.reject(approval.id, reason), es);
+      await fetcher(decision === 'approve' ? officeRequests.approve(approval.id, es ? 'es' : 'en') : officeRequests.reject(approval.id, reason, es ? 'es' : 'en'), es);
       setMessage(decision === 'approve'
         ? (es ? 'Aprobado. Es una autorización de un solo uso: no se ejecutó nada todavía.' : 'Approved. Single-use authorization: nothing was executed yet.')
         : (es ? 'Rechazado y registrado en la auditoría.' : 'Rejected and recorded in the audit log.'));
@@ -92,7 +140,7 @@ export function OwnerApprovalInbox({ language, fetcher = ownerOfficeFetch }: { l
   };
 
   const pending = (approvals || []).filter(a => a.status === 'pending');
-  const decided = (approvals || []).filter(a => a.status !== 'pending').slice(0, 8);
+  const decided = recent.filter(a => a.status !== 'pending').slice(0, 8);
 
   return <Panel title={es ? 'Bandeja de aprobaciones' : 'Approval inbox'} icon={<Inbox size={20} />}
     action={<button type="button" onClick={() => void load()} className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-3 py-1 text-sm text-white hover:bg-white/5"><RefreshCw size={14} />{es ? 'Actualizar' : 'Refresh'}</button>}>
@@ -115,6 +163,7 @@ export function OwnerApprovalInbox({ language, fetcher = ownerOfficeFetch }: { l
         </div>
       </li>)}
     </ul>
+    {nextCursor && <button type="button" disabled={loadingMore} onClick={() => void loadMore()} className="mt-3 inline-flex items-center gap-1 rounded-lg border border-white/15 px-3 py-1 text-sm text-white hover:bg-white/5 disabled:opacity-50">{loadingMore ? (es ? 'Cargando…' : 'Loading…') : (es ? 'Cargar más pendientes' : 'Load more pending')}</button>}
     {decided.length > 0 && <details className="mt-4"><summary className="cursor-pointer text-sm text-stone-300">{es ? 'Decisiones recientes' : 'Recent decisions'} ({decided.length})</summary>
       <ul className="mt-2 space-y-1 text-xs text-stone-400">{decided.map(a => <li key={a.id}>{a.status} · {a.action} · {a.summary.slice(0, 90)} · {when(a.decidedAt, es)}</li>)}</ul>
     </details>}
@@ -122,7 +171,12 @@ export function OwnerApprovalInbox({ language, fetcher = ownerOfficeFetch }: { l
 }
 
 /** Gobernanza: pausar / reanudar / revocar / restaurar por agente y apagado global. */
-export function AgentGovernancePanel({ language, agents, onChanged, fetcher = ownerOfficeFetch }: { language: Language; agents: OfficeAgent[]; onChanged?: () => void; fetcher?: Fetcher }) {
+/**
+ * refreshKey: cambia con cada refresco del padre (AdminControlCenterPage recarga cada 60 s
+ * y entrega snapshot.generatedAt). Al cambiar, se vuelve a leer el estado de apagado global.
+ * Sin refreshKey, el panel se refresca solo cada GOVERNANCE_REFRESH_MS.
+ */
+export function AgentGovernancePanel({ language, agents, onChanged, fetcher = ownerOfficeFetch, refreshKey }: { language: Language; agents: OfficeAgent[]; onChanged?: () => void; fetcher?: Fetcher; refreshKey?: string | number | null }) {
   const es = language === 'es';
   const [global, setGlobal] = useState<GlobalControl | null>(null);
   const [reason, setReason] = useState('');
@@ -134,7 +188,14 @@ export function AgentGovernancePanel({ language, agents, onChanged, fetcher = ow
     try { const data = await fetcher<{ global: GlobalControl }>(officeRequests.governance(), es); setGlobal(data?.global || null); }
     catch (e: any) { setError(e?.message || 'Error'); }
   }, [es, fetcher]);
-  useEffect(() => { void load(); }, [load]);
+  const hasParentRefresh = refreshKey !== undefined && refreshKey !== null;
+  // Se recarga al montar y en cada refresco del padre (refreshKey).
+  useEffect(() => { void load(); }, [load, refreshKey]);
+  // Respaldo: si el padre no entrega refreshKey, refresco periódico propio.
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    return startGovernanceAutoRefresh(load, { hasParentRefresh, setIntervalFn: window.setInterval.bind(window), clearIntervalFn: window.clearInterval.bind(window) });
+  }, [hasParentRefresh, load]);
 
   const run = async (request: () => OfficeRequest, done: string, confirmText?: string) => {
     setError(''); setMessage('');
@@ -164,8 +225,8 @@ export function AgentGovernancePanel({ language, agents, onChanged, fetcher = ow
       <input value={reason} onChange={e => setReason(e.target.value)} maxLength={500} className="mt-1 w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-white" />
     </label>
     <div className="mt-3 flex flex-wrap gap-2">
-      <button type="button" disabled={busy} onClick={() => void run(() => officeRequests.shutdown(reason), es ? 'Apagado global activado.' : 'Global shutdown enabled.', es ? '¿Apagar todos los agentes?' : 'Shut down all agents?')} className="inline-flex items-center gap-1 rounded-lg bg-rose-500 px-4 py-2 text-sm font-black text-white disabled:opacity-50"><ShieldAlert size={16} />{es ? 'Apagado global' : 'Global shutdown'}</button>
-      <button type="button" disabled={busy} onClick={() => void run(() => officeRequests.resumeAll(reason), es ? 'Agentes reanudados.' : 'Agents resumed.', es ? '¿Reanudar la fuerza de agentes?' : 'Resume all agents?')} className="inline-flex items-center gap-1 rounded-lg border border-emerald-400/40 px-4 py-2 text-sm font-bold text-emerald-200 disabled:opacity-50"><Play size={16} />{es ? 'Reanudar todo' : 'Resume all'}</button>
+      <button type="button" disabled={busy} onClick={() => void run(() => officeRequests.shutdown(reason, es ? 'es' : 'en'), es ? 'Apagado global activado.' : 'Global shutdown enabled.', es ? '¿Apagar todos los agentes?' : 'Shut down all agents?')} className="inline-flex items-center gap-1 rounded-lg bg-rose-500 px-4 py-2 text-sm font-black text-white disabled:opacity-50"><ShieldAlert size={16} />{es ? 'Apagado global' : 'Global shutdown'}</button>
+      <button type="button" disabled={busy} onClick={() => void run(() => officeRequests.resumeAll(reason, es ? 'es' : 'en'), es ? 'Agentes reanudados.' : 'Agents resumed.', es ? '¿Reanudar la fuerza de agentes?' : 'Resume all agents?')} className="inline-flex items-center gap-1 rounded-lg border border-emerald-400/40 px-4 py-2 text-sm font-bold text-emerald-200 disabled:opacity-50"><Play size={16} />{es ? 'Reanudar todo' : 'Resume all'}</button>
     </div>
     {error && <div className="mt-3"><Notice tone="error">{error}</Notice></div>}
     {message && <div className="mt-3"><Notice tone="ok">{message}</Notice></div>}
@@ -181,11 +242,11 @@ export function AgentGovernancePanel({ language, agents, onChanged, fetcher = ow
               <td className="text-stone-300">{agent.autonomyLevel ?? '—'}</td>
               <td className="flex flex-wrap gap-1 py-2">
                 {s === 'paused'
-                  ? <button type="button" disabled={busy} onClick={() => void run(() => officeRequests.agentControl(agent.id, 'resume', reason), es ? 'Agente reanudado.' : 'Agent resumed.')} className="inline-flex items-center gap-1 rounded-md border border-white/15 px-2 py-1 text-xs text-white"><Play size={12} />{es ? 'Reanudar' : 'Resume'}</button>
-                  : s !== 'revoked' && <button type="button" disabled={busy} onClick={() => void run(() => officeRequests.agentControl(agent.id, 'pause', reason), es ? 'Agente pausado.' : 'Agent paused.')} className="inline-flex items-center gap-1 rounded-md border border-white/15 px-2 py-1 text-xs text-white"><Pause size={12} />{es ? 'Pausar' : 'Pause'}</button>}
+                  ? <button type="button" disabled={busy} onClick={() => void run(() => officeRequests.agentControl(agent.id, 'resume', reason, es ? 'es' : 'en'), es ? 'Agente reanudado.' : 'Agent resumed.')} className="inline-flex items-center gap-1 rounded-md border border-white/15 px-2 py-1 text-xs text-white"><Play size={12} />{es ? 'Reanudar' : 'Resume'}</button>
+                  : s !== 'revoked' && <button type="button" disabled={busy} onClick={() => void run(() => officeRequests.agentControl(agent.id, 'pause', reason, es ? 'es' : 'en'), es ? 'Agente pausado.' : 'Agent paused.')} className="inline-flex items-center gap-1 rounded-md border border-white/15 px-2 py-1 text-xs text-white"><Pause size={12} />{es ? 'Pausar' : 'Pause'}</button>}
                 {s === 'revoked'
-                  ? <button type="button" disabled={busy} onClick={() => void run(() => officeRequests.agentControl(agent.id, 'restore', reason), es ? 'Agente restaurado (autonomía según registro).' : 'Agent restored.', es ? '¿Restaurar este agente?' : 'Restore this agent?')} className="rounded-md border border-emerald-400/30 px-2 py-1 text-xs text-emerald-200">{es ? 'Restaurar' : 'Restore'}</button>
-                  : <button type="button" disabled={busy} onClick={() => void run(() => officeRequests.agentControl(agent.id, 'revoke', reason), es ? 'Agente revocado.' : 'Agent revoked.', es ? '¿Revocar este agente? Invalida sus autorizaciones.' : 'Revoke this agent? Its authorizations are invalidated.')} className="rounded-md border border-rose-400/30 px-2 py-1 text-xs text-rose-200">{es ? 'Revocar' : 'Revoke'}</button>}
+                  ? <button type="button" disabled={busy} onClick={() => void run(() => officeRequests.agentControl(agent.id, 'restore', reason, es ? 'es' : 'en'), es ? 'Agente restaurado (autonomía según registro).' : 'Agent restored.', es ? '¿Restaurar este agente?' : 'Restore this agent?')} className="rounded-md border border-emerald-400/30 px-2 py-1 text-xs text-emerald-200">{es ? 'Restaurar' : 'Restore'}</button>
+                  : <button type="button" disabled={busy} onClick={() => void run(() => officeRequests.agentControl(agent.id, 'revoke', reason, es ? 'es' : 'en'), es ? 'Agente revocado.' : 'Agent revoked.', es ? '¿Revocar este agente? Invalida sus autorizaciones.' : 'Revoke this agent? Its authorizations are invalidated.')} className="rounded-md border border-rose-400/30 px-2 py-1 text-xs text-rose-200">{es ? 'Revocar' : 'Revoke'}</button>}
               </td>
             </tr>;
           })}
@@ -226,7 +287,7 @@ export function JarvisCommandConsole({ language, fetcher = ownerOfficeFetch }: {
 
   const reconcile = async (planId: string) => {
     setError('');
-    try { setBusy(true); await fetcher(officeRequests.jarvisReconcile(planId), es); await loadPlans(); }
+    try { setBusy(true); await fetcher(officeRequests.jarvisReconcile(planId, es ? 'es' : 'en'), es); await loadPlans(); }
     catch (e: any) { setError(e?.message || 'Error'); }
     finally { setBusy(false); }
   };
@@ -267,6 +328,6 @@ export function AgentOfficeWorkspace({ language, snapshot, onChanged, fetcher }:
       <OwnerApprovalInbox language={language} fetcher={fetcher} />
       <JarvisCommandConsole language={language} fetcher={fetcher} />
     </div>
-    <AgentGovernancePanel language={language} agents={agents} onChanged={onChanged} fetcher={fetcher} />
+    <AgentGovernancePanel language={language} agents={agents} onChanged={onChanged} fetcher={fetcher} refreshKey={typeof snapshot?.generatedAt === 'string' ? snapshot.generatedAt : null} />
   </div>;
 }

@@ -1,10 +1,12 @@
 import crypto from 'crypto';
+import { FieldPath } from 'firebase-admin/firestore';
 import { getFirestoreDb } from './bookingService';
 import {
   OWNER_APPROVAL_ACTIONS,
   type GovernanceActor,
   type OwnerApprovalAction,
   type OwnerApprovalRequest,
+  type OwnerApprovalStatus,
 } from '../shared/ownerApprovalTypes';
 
 const COLLECTION = 'agent_approvals';
@@ -136,6 +138,58 @@ export async function listOwnerApprovals(input: {
   const approvals = snapshot.docs.map((document) => document.data() as OwnerApprovalRequest);
   return (input.status ? approvals.filter((approval) => approval.status === input.status) : approvals)
     .slice(0, safeLimit);
+}
+
+export const OWNER_APPROVAL_STATUSES: readonly OwnerApprovalStatus[] = ['pending', 'approved', 'rejected', 'consumed'];
+
+export function isOwnerApprovalStatus(value: unknown): value is OwnerApprovalStatus {
+  return typeof value === 'string' && (OWNER_APPROVAL_STATUSES as readonly string[]).includes(value);
+}
+
+/** Mínimo de la API de Firestore que usa la paginación (permite inyectar un doble en tests). */
+type ApprovalsQueryDb = {
+  collection(name: string): {
+    where(field: string, op: '==', value: unknown): ApprovalsQuery;
+  };
+};
+type ApprovalsQuery = {
+  orderBy(field: unknown): ApprovalsQuery;
+  startAfter(value: unknown): ApprovalsQuery;
+  limit(value: number): ApprovalsQuery;
+  get(): Promise<{ docs: Array<{ id: string; data(): unknown }> }>;
+};
+
+/**
+ * Página de aprobaciones filtrada por estado EN EL SERVIDOR (Firestore), con cursor.
+ *
+ * Índices: igualdad sobre `status` + orden por id de documento (ascendente) se sirve
+ * con los índices automáticos de un solo campo; no requiere índice compuesto nuevo.
+ * Por eso no se ordena por `createdAt` en la consulta: cada página se ordena por
+ * `createdAt` (más reciente primero) en memoria. `nextCursor` es el id del último
+ * documento leído (null si no hay más).
+ */
+export async function listOwnerApprovalsPage(input: {
+  status: OwnerApprovalStatus;
+  limit?: number;
+  cursor?: string | null;
+}, db: ApprovalsQueryDb | null = getFirestoreDb() as unknown as ApprovalsQueryDb | null): Promise<{ approvals: OwnerApprovalRequest[]; nextCursor: string | null }> {
+  if (!isOwnerApprovalStatus(input.status)) throw new Error('Estado de aprobación no válido.');
+  if (!db) return { approvals: [], nextCursor: null };
+  const safeLimit = Math.min(Math.max(Math.trunc(Number(input.limit) || 50), 1), 100);
+  const cursor = typeof input.cursor === 'string' ? input.cursor.trim().slice(0, 200) : '';
+  let query = db.collection(COLLECTION)
+    .where('status', '==', input.status)
+    .orderBy(FieldPath.documentId());
+  if (cursor) query = query.startAfter(cursor);
+  // Se pide uno extra para saber si hay otra página sin una segunda lectura.
+  const snapshot = await query.limit(safeLimit + 1).get();
+  const docs = snapshot.docs.slice(0, safeLimit);
+  const hasMore = snapshot.docs.length > safeLimit;
+  const approvals = docs
+    .map((document) => document.data() as OwnerApprovalRequest)
+    .filter((approval) => approval && approval.status === input.status)
+    .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+  return { approvals, nextCursor: hasMore && docs.length ? docs[docs.length - 1].id : null };
 }
 
 async function decideOwnerApproval(input: {
