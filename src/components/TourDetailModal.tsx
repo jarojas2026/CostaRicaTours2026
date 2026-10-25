@@ -14,6 +14,7 @@ import { getUsdToCrcRate } from '../utils/currencies';
 import { neutralOperatorLabel } from '../utils/operatorPrivacy';
 import { LazyImage } from './LazyImage';
 import { isBookableTour } from '../utils/tourListing';
+import { setSessionPersonalItem } from '../utils/privateStorage';
 
 interface TourDetailModalProps {
   tour: Tour | null;
@@ -244,7 +245,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
         bookingId = String(bookingData.booking.bookingId);
         confirmedBooking = bookingData.booking;
         setPendingBookingId(bookingId);
-        sessionStorage.setItem('crt_last_booking_id', bookingId);
+        setSessionPersonalItem('crt_last_booking_id', bookingId);
       }
 
       setStatusMessage(language === 'es'
