@@ -12,7 +12,7 @@ import { getAdminControlCenterSnapshot } from '../adminControlCenterService';
 import { getOwnerMissionControlSnapshot } from '../missionControlService';
 import { getOwnerExecutiveBriefing } from '../ownerExecutiveBriefingService';
 import { getGlobalAgentControl, listAgentGovernanceAudit, pauseAgent, resumeAgent, revokeAgent, restoreAgent, setAgentAutonomy, setGlobalAgentShutdown } from '../agentGovernanceService';
-import { listOwnerApprovals, approveOwnerApproval, rejectOwnerApproval } from '../ownerApprovalService';
+import { listOwnerApprovals, listOwnerApprovalsPage, isOwnerApprovalStatus, approveOwnerApproval, rejectOwnerApproval } from '../ownerApprovalService';
 import { getJarvisPlan, listJarvisPlans, reconcileJarvisPlan, runJarvisOwnerCommand } from '../jarvisOrchestrator';
 import { evaluateDigitalCityRegistration } from '../digitalCityRegistrationPolicy';
 import { getPlatformControls, updatePlatformControls } from '../platformControlService';
@@ -159,7 +159,19 @@ adminRouter.post('/api/admin/agent-office/resume-all', requireOwner, async (req,
   }
 });
 
-adminRouter.get('/api/admin/agent-office/approvals', requireOwner, async (_req, res) => {
+adminRouter.get('/api/admin/agent-office/approvals', requireOwner, async (req, res) => {
+  const status = typeof req.query.status === 'string' ? req.query.status.trim() : '';
+  if (status) {
+    // Filtro de estado del lado del servidor con paginación (?status=pending&limit=50&cursor=<id>).
+    if (!isOwnerApprovalStatus(status)) return res.status(400).json({ error: 'Estado de aprobación no válido.' });
+    try {
+      return res.json(await listOwnerApprovalsPage({
+        status,
+        limit: Number(req.query.limit) || 50,
+        cursor: typeof req.query.cursor === 'string' ? req.query.cursor : null
+      }));
+    } catch (error: any) { return res.status(500).json({ error: error?.message || 'No se pudo cargar la cola de aprobaciones.' }); }
+  }
   try { return res.json({ approvals: await listOwnerApprovals({ limit: 100 }) }); }
   catch (error: any) { return res.status(500).json({ error: error?.message || 'No se pudo cargar la cola de aprobaciones.' }); }
 });
