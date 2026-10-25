@@ -2,6 +2,17 @@
 
 Plataforma full-stack de venta, asesoría, planificación y operación de servicios turísticos en Costa Rica.
 
+> **Reglas vigentes del dueño (25-oct-2026) — leer primero:** [`docs/REGLAS_PLATAFORMA.md`](docs/REGLAS_PLATAFORMA.md). En corto:
+> - **Costo $0** hasta autorización del dueño: no reactivar facturación de GCP, no desplegar a Cloud Run, no Cloud Build, no planes pagos.
+> - **No borrar nada:** desactivar, pausar o marcar en lugar de eliminar.
+> - **Stripe solo TEST**; ninguna UI marca un pago como pagado. **No tocar `api/[...path].ts`** sin autorización.
+> - **Deploys pausados por defecto** (#445): `CLOUD_RUN_DEPLOY_ENABLED` y `CLOUD_RUN_OPERATIONS_ENABLED` deben ser `true` para ejecutar; apagadas por defecto.
+> - **Roles** (#447): cliente, proveedor (claims), administrador (`/api/admin/access-policy`; menú del avatar → "Panel de administración", botón Admin en móvil); colaboradores aún no existen.
+> - **Privacidad** (#447): visitantes sin memoria entre visitas, datos por `uid`, limpieza al cerrar sesión, IA sin memoria cruzada.
+> - **Oficina virtual:** Hark director externo con Gabriel, JARVIS orquestador; autonomía 0–3 y aprobación humana obligatoria para pagos, cobros, precios, publicaciones y mensajes a clientes. Prohibidas facturas o acuses simulados.
+> - **Legal CR:** Ley 8968/PRODHAB, factura 4.4, IVA, ICT, Ley 7472, Ley 8454; no se ofrece pagar SINPE por terceros (art. 15 Ley 7786, SUGEF): solo se cobran servicios propios.
+> - **PRs:** rama desde `origin/main`, tests de contrato, `tsc` con `NODE_OPTIONS=--max-old-space-size=6144`, CI verde, **merge solo con OK de Gabriel**.
+
 > **Coordinación multiagente:** antes de trabajar en este repo, lee [`docs/COORDINACION-AGENTES.md`](docs/COORDINACION-AGENTES.md) (reglas fijas, carriles Hark/ChatGPT, cómo reclamar issues, decisiones del dueño y estado actual).
 
 ### JARVIS PRIME · Correctitud de métricas (PR de revisión, 20 octubre 2026)
