@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { CalendarDays, Compass, Loader2, MapPinned, MessageCircle, PackageCheck, Route, Sparkles, Sun, Users, RefreshCw, Save } from 'lucide-react';
 import { Language } from '../types';
 import { withStorageScope } from '../hooks/useStorageScope';
-import { getPersonalItem, setPersonalItem } from '../utils/privateStorage';
+import { captureStorageScope, getPersonalItem, isStorageScopeCurrent, setPersonalItemInScope } from '../utils/privateStorage';
 
 const FullTripJourneyBuilderComponent: React.FC<{ language: Language }> = ({ language }) => {
   const es = language === 'es';
@@ -13,39 +13,69 @@ const FullTripJourneyBuilderComponent: React.FC<{ language: Language }> = ({ lan
   const [saved, setSaved] = useState(false);
   const journeyStorageKey = 'crt_journey_id' as const;
 
+  // Peticiones en curso: se abortan al desmontar (p. ej. remontaje por cambio de identidad).
+  const inflightRef = React.useRef(new Set<AbortController>());
+  React.useEffect(() => {
+    const inflight = inflightRef.current;
+    return () => { inflight.forEach(controller => controller.abort()); inflight.clear(); };
+  }, []);
+  const startRequest = () => {
+    const controller = new AbortController();
+    inflightRef.current.add(controller);
+    return controller;
+  };
+  // Respuesta obsoleta: el componente se desmontó o la identidad cambió desde que empezó la petición.
+  const isStale = (controller: AbortController, scope: ReturnType<typeof captureStorageScope>) =>
+    controller.signal.aborted || !isStorageScopeCurrent(scope);
+
   React.useEffect(() => {
     const id = getPersonalItem(journeyStorageKey);
     if (!id) return;
-    fetch(`/api/journey/${encodeURIComponent(id)}`)
+    const scope = captureStorageScope();
+    const controller = startRequest();
+    fetch(`/api/journey/${encodeURIComponent(id)}`, { signal: controller.signal })
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.journey?.status !== 'not_found') setJourney(data.journey); })
-      .catch(() => undefined);
+      .then(data => {
+        if (isStale(controller, scope)) return;
+        if (data?.journey && data.journey.status !== 'not_found') setJourney(data.journey);
+      })
+      .catch(() => undefined)
+      .finally(() => { inflightRef.current.delete(controller); });
   }, []);
   async function build() {
+    const scope = captureStorageScope();
+    const controller = startRequest();
     setLoading(true); setError('');
     try {
       const sessionId = getPersonalItem('crt_journey_session') || 'traveler_' + Math.random().toString(36).slice(2);
-      setPersonalItem('crt_journey_session', sessionId);
-      const response = await fetch('/api/journey/build', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...form,sessionId,language}) });
+      setPersonalItemInScope(scope, 'crt_journey_session', sessionId);
+      const response = await fetch('/api/journey/build', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...form,sessionId,language}), signal: controller.signal });
       const data = await response.json();
+      // Si el viajero cerró sesión o cambió de cuenta, la respuesta vieja se descarta: no se guarda ni se muestra.
+      if (isStale(controller, scope)) return;
       if (!response.ok) throw new Error(data.error || 'No se pudo construir el viaje');
       setJourney(data.journey);
-      if (data.journey?.journeyId) setPersonalItem(journeyStorageKey, data.journey.journeyId);
+      if (data.journey?.journeyId) setPersonalItemInScope(scope, journeyStorageKey, data.journey.journeyId);
       setSaved(true);
       setTimeout(() => setSaved(false), 1800);
-    } catch(e:any){ setError(e?.message || 'Error'); } finally { setLoading(false); }
+    } catch(e:any){ if (!isStale(controller, scope)) setError(e?.message || 'Error'); }
+    finally { inflightRef.current.delete(controller); if (!controller.signal.aborted) setLoading(false); }
   }
   async function adapt() {
     if (!journey?.journeyId || loading) return;
+    const scope = captureStorageScope();
+    const controller = startRequest();
     setLoading(true); setError('');
     try {
-      const response = await fetch(`/api/journey/${encodeURIComponent(journey.journeyId)}/adapt`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...form, language}) });
+      const response = await fetch(`/api/journey/${encodeURIComponent(journey.journeyId)}/adapt`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...form, language}), signal: controller.signal });
       const data = await response.json();
+      if (isStale(controller, scope)) return;
       if (!response.ok) throw new Error(data.error || 'No se pudo adaptar el viaje');
       setJourney(data.journey);
-      setPersonalItem(journeyStorageKey, data.journey.journeyId);
+      if (data.journey?.journeyId) setPersonalItemInScope(scope, journeyStorageKey, data.journey.journeyId);
       setSaved(true); setTimeout(() => setSaved(false), 1800);
-    } catch(e:any){ setError(e?.message || 'Error'); } finally { setLoading(false); }
+    } catch(e:any){ if (!isStale(controller, scope)) setError(e?.message || 'Error'); }
+    finally { inflightRef.current.delete(controller); if (!controller.signal.aborted) setLoading(false); }
   }
 
   return <section className="rounded-[32px] border border-amber-400/20 bg-gradient-to-br from-[#071e14] via-[#061711] to-[#020a07] p-5 md:p-8 shadow-2xl">

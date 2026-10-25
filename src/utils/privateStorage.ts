@@ -83,6 +83,8 @@ export function configureStorageBackends(next: Backends | null): void {
 
 let currentUid: string | null = null;
 let resolved = false;
+/** Sube con cada cambio de identidad; distingue anon→usuario→anon de "siempre anon". */
+let scopeEpoch = 0;
 const listeners = new Set<() => void>();
 
 export function getStorageScopeKey(): StorageScopeKey {
@@ -164,11 +166,13 @@ export function setStorageIdentity(uid: string | null): void {
   if (previousUid && previousUid !== nextUid) clearUserPersonalStorage(previousUid);
   if (nextUid && nextUid !== previousUid) clearAnonymousPersonalStorage();
   currentUid = nextUid;
+  if (previousUid !== nextUid) scopeEpoch++;
   if (previousUid !== nextUid) listeners.forEach(listener => safe(listener, undefined));
 }
 
 /** Solo para tests. */
 export function resetStorageIdentityForTests(): void {
+  scopeEpoch++;
   currentUid = null;
   resolved = false;
   listeners.clear();
@@ -202,6 +206,35 @@ export function setSessionPersonalItem(key: PersonalStorageKey, value: string): 
   if (!session) return;
   const storageKey = currentUid ? userScopedKey(currentUid, key) : key;
   safe(() => session.setItem(storageKey, value), undefined);
+}
+
+/**
+ * Ámbito capturado al iniciar una operación asíncrona (fetch). Si el viajero
+ * cierra sesión o cambia de cuenta antes de que llegue la respuesta, el
+ * resultado viejo no debe escribirse bajo la identidad nueva ni en el
+ * almacenamiento anónimo: comprobar con isStorageScopeCurrent() o escribir
+ * con setPersonalItemInScope(), que descarta la escritura si el ámbito cambió.
+ */
+export interface StorageScopeSnapshot {
+  readonly key: StorageScopeKey;
+  readonly uid: string | null;
+  readonly epoch: number;
+}
+
+export function captureStorageScope(): StorageScopeSnapshot {
+  return Object.freeze({ key: getStorageScopeKey(), uid: currentUid, epoch: scopeEpoch });
+}
+
+/** true solo si la identidad no cambió desde captureStorageScope() (ni siquiera ida y vuelta). */
+export function isStorageScopeCurrent(scope: StorageScopeSnapshot): boolean {
+  return scope.epoch === scopeEpoch && scope.uid === currentUid;
+}
+
+/** Escribe solo si `scope` sigue activo; devuelve false (sin escribir) si la identidad cambió. */
+export function setPersonalItemInScope(scope: StorageScopeSnapshot, key: PersonalStorageKey, value: string): boolean {
+  if (!isStorageScopeCurrent(scope)) return false;
+  setPersonalItem(key, value);
+  return true;
 }
 
 export function getPersonalJSON<T>(key: PersonalStorageKey, fallback: T): T {
