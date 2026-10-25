@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CreditCard, ClipboardCopy, Link2, RefreshCw } from 'lucide-react';
 import { auth } from '../firebase';
-import { describeLeadPaymentError, isValidBookingIdInput, type LeadPaymentStatusView } from './leadPaymentMessages';
+import { describeLeadPaymentError, describeVoucherReason, isValidBookingIdInput, type LeadPaymentStatusView } from './leadPaymentMessages';
 
 /**
  * Panel de pago de un lead en /admin/leads (solo dueño).
@@ -101,7 +101,7 @@ export function LeadPaymentPanel({ leadId, bookingId: initialBookingId, es, onCh
           <dt>{es ? 'Estado' : 'Status'}</dt><dd>{status.paymentStatus || (es ? 'sin pago' : 'no payment')}</dd>
           <dt>{es ? 'Monto verificado' : 'Verified amount'}</dt><dd>{status.montoVerificado != null ? `$${status.montoVerificado.toFixed(2)} ${status.moneda || 'USD'}` : '—'}</dd>
           <dt>{es ? 'Verificado el' : 'Verified at'}</dt><dd>{status.paymentVerifiedAt ? new Date(status.paymentVerifiedAt).toLocaleString(es ? 'es-CR' : 'en-US') : '—'}</dd>
-          <dt>Voucher</dt><dd>{status.voucherElegible ? (es ? 'disponible' : 'available') : `${es ? 'no disponible' : 'not available'}${status.voucherMotivo ? ` (${status.voucherMotivo})` : ''}`}</dd>
+          <dt>Voucher</dt><dd>{status.voucherElegible ? (es ? 'disponible' : 'available') : `${es ? 'no disponible' : 'not available'}${status.voucherMotivo ? ` (${describeVoucherReason(status.voucherMotivo, es)})` : ''}`}</dd>
         </dl>
       )}
 
