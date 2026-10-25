@@ -168,7 +168,10 @@ test('firestore rules: leads are admin/operator only, never public', () => {
   assert.ok(start > 0);
   const block = rules.slice(start, rules.indexOf('\n    }', start));
   assert.match(block, /allow read: if isAdmin\(\) \|\| isOperatorRole\(\);/);
-  assert.match(block, /allow create, update, delete: if isAdmin\(\);/);
+  // Admin escribe desde el navegador, salvo el libro supplierPayouts (solo servidor).
+  assert.match(block, /allow create: if isAdmin\(\) && !\('supplierPayouts' in incoming\(\)\);/);
+  assert.match(block, /allow update: if isAdmin\(\)/);
+  assert.match(block, /allow delete: if isAdmin\(\) && !\('supplierPayouts' in existing\(\)\);/);
   assert.doesNotMatch(block, /if true/);
 });
 

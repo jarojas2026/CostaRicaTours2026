@@ -77,8 +77,16 @@ export function SupplierPayoutsPanel({ leadId, es }: { leadId: string; es: boole
     const invalid = validateSupplierPayoutForm(form, es);
     if (invalid) { setError(invalid); return; }
     const r = await call('', { proveedor: form.proveedor.trim(), montoCRC: form.montoCRC.trim(), concepto: form.concepto.trim(), clientRequestId: requestId });
+    // Solo se limpia si el backend aceptó; ante 409 (idempotency_conflict) u otro error el
+    // formulario se conserva y se muestra el mensaje ES/EN.
     if (apply(r)) { setForm({ proveedor: '', montoCRC: '', concepto: '' }); setRequestId(newRequestId()); }
   });
+
+  /** Editar el formulario es otra intención: nueva clave de idempotencia. */
+  const editForm = (patch: Partial<typeof form>) => {
+    setForm(f => ({ ...f, ...patch }));
+    setRequestId(newRequestId());
+  };
 
   const approve = (id: string) => run(async () => { apply(await call(`/${encodeURIComponent(id)}/approve`, {})); });
 
@@ -113,9 +121,9 @@ export function SupplierPayoutsPanel({ leadId, es }: { leadId: string; es: boole
 
       {loaded && verified && (
         <div className="flex flex-wrap items-end gap-2">
-          <input value={form.proveedor} onChange={e => setForm({ ...form, proveedor: e.target.value })} aria-label={es ? 'Proveedor' : 'Supplier'} placeholder={es ? 'Proveedor' : 'Supplier'} maxLength={120} className={input} />
-          <input value={form.montoCRC} onChange={e => setForm({ ...form, montoCRC: e.target.value })} aria-label={es ? 'Monto en colones' : 'Amount in CRC'} placeholder="₡" inputMode="decimal" className={`${input} w-28`} />
-          <input value={form.concepto} onChange={e => setForm({ ...form, concepto: e.target.value })} aria-label={es ? 'Concepto' : 'Concept'} placeholder={es ? 'Concepto (tour, transporte…)' : 'Concept (tour, transport…)'} maxLength={300} className={`${input} flex-1 min-w-[10rem]`} />
+          <input value={form.proveedor} onChange={e => editForm({ proveedor: e.target.value })} aria-label={es ? 'Proveedor' : 'Supplier'} placeholder={es ? 'Proveedor' : 'Supplier'} maxLength={120} className={input} />
+          <input value={form.montoCRC} onChange={e => editForm({ montoCRC: e.target.value })} aria-label={es ? 'Monto en colones' : 'Amount in CRC'} placeholder="₡" inputMode="decimal" className={`${input} w-28`} />
+          <input value={form.concepto} onChange={e => editForm({ concepto: e.target.value })} aria-label={es ? 'Concepto' : 'Concept'} placeholder={es ? 'Concepto (tour, transporte…)' : 'Concept (tour, transport…)'} maxLength={300} className={`${input} flex-1 min-w-[10rem]`} />
           <button type="button" disabled={busy} onClick={() => void create()} className="inline-flex items-center gap-1 rounded-lg bg-emerald-500 px-3 py-1.5 font-bold text-stone-950 disabled:opacity-50" data-supplier-payout-create="true"><Plus className="w-4 h-4" aria-hidden="true" />{es ? 'Crear (pendiente de aprobación)' : 'Create (pending approval)'}</button>
         </div>
       )}

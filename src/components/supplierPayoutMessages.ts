@@ -34,6 +34,7 @@ const MESSAGES: Record<string, { es: string; en: string }> = {
   lead_without_booking: { es: 'El lead no tiene una reserva enlazada. No se registró nada.', en: 'Lead has no linked booking. Nothing was recorded.' },
   booking_not_found: { es: 'La reserva enlazada no existe.', en: 'Linked booking not found.' },
   invalid_transition: { es: 'Ese cambio de estado no está permitido.', en: 'That state change is not allowed.' },
+  idempotency_conflict: { es: 'Esta solicitud ya se registró con otros datos. Revisa el formulario y vuelve a enviarlo; no se registró nada nuevo.', en: 'This request was already recorded with different data. Review the form and submit again; nothing new was recorded.' },
   duplicate_reference: { es: 'Esa referencia ya está registrada en otro pago de este lead.', en: 'That reference is already recorded on another payment of this lead.' },
   agent_not_allowed: { es: 'Ningún agente de IA puede aprobar ni registrar pagos.', en: 'No AI agent can approve or record payments.' },
   forbidden: { es: 'Solo el dueño puede gestionar pagos a proveedores.', en: 'Only the owner can manage supplier payments.' },
