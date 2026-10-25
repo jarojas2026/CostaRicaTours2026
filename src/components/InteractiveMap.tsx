@@ -61,6 +61,8 @@ import { NationalPoiLayer, OPEN_NATIONAL_LAYERS_EVENT } from './NationalPoiLayer
 import { groupMapPointsAtZoom } from '../utils/mapMarkerLayout';
 import { PRICE_ON_REQUEST, REFERENCE_PRICE_NOTE, getMapServiceUnitPriceUSD } from '../utils/mapServicePricing';
 import { PUBLIC_REQUEST_LABEL } from '../data/publicContactPolicy';
+import { withStorageScope } from '../hooks/useStorageScope';
+import { getPersonalItem, setPersonalItem } from '../utils/privateStorage';
 
 
 const OFFLINE_CACHE_KEY = 'pura_vida_offline_map_tours_v3';
@@ -199,7 +201,7 @@ function GoogleMapViewController({ center, zoom }: { center: [number, number], z
   return null;
 }
 
-export const InteractiveMap: React.FC<InteractiveMapProps> = ({
+const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
   language,
   currency = 'USD',
   tours = [],
@@ -270,17 +272,17 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   // Itinerary Builder State
   const [itineraryStops, setItineraryStops] = useState<ItineraryStopItem[]>(() => {
     try {
-      const saved = localStorage.getItem('costa_rica_map_itinerary_v1');
+      const saved = getPersonalItem('costa_rica_map_itinerary_v1');
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
     }
   });
 
-  // Save itinerary to localStorage
+  // Itinerario personal: sessionStorage para visitantes, clave con uid para usuarios
   useEffect(() => {
     try {
-      localStorage.setItem('costa_rica_map_itinerary_v1', JSON.stringify(itineraryStops));
+      setPersonalItem('costa_rica_map_itinerary_v1', JSON.stringify(itineraryStops));
     } catch (e) {
       console.warn('Could not save itinerary to storage:', e);
     }
@@ -2381,3 +2383,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     </section>
   );
 };
+
+// Remonta al cambiar de identidad: el estado en memoria nunca pasa a otra persona.
+export const InteractiveMap = withStorageScope(InteractiveMapComponent);
