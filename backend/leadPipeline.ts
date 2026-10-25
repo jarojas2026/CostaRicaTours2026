@@ -31,6 +31,7 @@ import {
   applyManualTriage, deriveLegacyTriage, isActionableTriage, triageNewLead,
   type LeadPriority, type LeadTriage, type LeadTriageState, type RecentLeadRef,
 } from './leadTriage';
+import type { SupplierPayout } from './leadSupplierPayouts';
 import { buildFollowUpDraft, followUpEmail, isAutoFollowUpEnabled, missingLeadData, type LeadFollowUp } from './leadFollowUp';
 
 export const LEAD_STATUSES = ['nuevo', 'cotizando', 'esperando_operador', 'confirmado_por_escrito', 'pagado', 'cancelado'] as const;
@@ -139,6 +140,8 @@ export interface LeadRecord {
   bookingId?: string;
   /** Historial de enlaces lead → reserva (quién, cuándo, de qué reserva a cuál). */
   bookingHistory?: LeadBookingLinkChange[];
+  /** Pagos a proveedores registrados manualmente por el dueño (backend/leadSupplierPayouts.ts). */
+  supplierPayouts?: SupplierPayout[];
   bookingOutcome?: string;
   messageSnippet?: string;
   operatorCandidates: OperatorCandidate[];
