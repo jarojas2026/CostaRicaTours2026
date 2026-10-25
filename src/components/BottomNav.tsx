@@ -1,7 +1,8 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Home, Compass, Bot, Route } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Home, Compass, Bot, Route, ShieldCheck } from 'lucide-react';
 import { Language } from '../types';
+import { useAdminAccess } from '../hooks/useAdminAccess';
 
 interface BottomNavProps {
   language: Language;
@@ -10,6 +11,9 @@ interface BottomNavProps {
 
 export const BottomNav: React.FC<BottomNavProps> = ({ language, activeTab }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  // Acceso visual para administradores; /admin sigue protegido por AdminRouteGuard y el backend.
+  const { isAdmin } = useAdminAccess();
   const t = (es: string, en: string) => language === 'es' ? es : en;
 
   const handleTabSelect = (tab: string) => {
@@ -21,7 +25,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ language, activeTab }) => 
   // Revenue-first mobile navigation: keep the customer focused on discovery,
   // booking, trip management and one unified AI concierge. Secondary utilities
   // (map, flights, culture, tools) remain available inside the journey/home UI.
-  const navItems = [
+  const navItems: Array<{ id: string; label: string; icon: React.ReactNode; badge?: string }> = [
     { id: 'home', label: t('Explorar', 'Explore'), icon: <Home className="w-5 h-5" /> },
     { id: 'tours', label: t('Reservar', 'Book'), icon: <Compass className="w-5 h-5" /> },
     { id: 'trip', label: t('Mi viaje', 'My trip'), icon: <Route className="w-5 h-5" /> },
@@ -31,24 +35,27 @@ export const BottomNav: React.FC<BottomNavProps> = ({ language, activeTab }) => 
       icon: <Bot className="w-5 h-5" />,
       badge: '24/7'
     },
+    ...(isAdmin ? [{ id: 'admin', label: t('Admin', 'Admin'), icon: <ShieldCheck className="w-5 h-5" /> }] : []),
   ];
 
   const normalizedActiveTab = activeTab === 'itinerary' || activeTab === 'bookings'
     ? 'trip'
     : activeTab;
+  const isAdminRoute = location.pathname.startsWith('/admin');
 
   return (
     <div className="lg:hidden fixed bottom-3 left-4 right-4 z-[60] max-w-md mx-auto pointer-events-auto">
       <nav
-        className="grid grid-cols-4 items-center h-14 px-2 bg-[#02140c]/90 backdrop-blur-2xl border border-emerald-500/30 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.4)]"
+        className={`grid ${isAdmin ? 'grid-cols-5' : 'grid-cols-4'} items-center h-14 px-2 bg-[#02140c]/90 backdrop-blur-2xl border border-emerald-500/30 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.4)]`}
         aria-label={t('Navegación principal', 'Primary navigation')}
       >
         {navItems.map((item) => {
-          const isActive = normalizedActiveTab === item.id;
+          const isActive = item.id === 'admin' ? (normalizedActiveTab === 'admin' || isAdminRoute) : normalizedActiveTab === item.id;
           return (
             <button
               key={item.id}
               onClick={() => handleTabSelect(item.id)}
+              aria-label={item.id === 'admin' ? t('Panel de administración', 'Admin panel') : undefined}
               aria-current={isActive ? 'page' : undefined}
               className={`relative flex flex-col items-center justify-center w-full h-full space-y-0.5 transition-all cursor-pointer ${
                 isActive
