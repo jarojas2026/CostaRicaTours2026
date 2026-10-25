@@ -20,6 +20,8 @@ export interface CustomerIntakeResult {
   journeyId?: string;
   workflow?: unknown;
   handoffUrl?: string;
+  /** true si la respuesta se descartó porque la identidad cambió mientras se procesaba. */
+  discarded?: boolean;
 }
 
 export function requestCustomerIntake(payload: CustomerIntakeRequest): void {

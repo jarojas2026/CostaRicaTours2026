@@ -65,7 +65,7 @@ const BlogArticlePage = lazy(() => import('./pages/BlogArticlePage').then(m => (
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { getPersonalItem, setPersonalItem } from './utils/privateStorage';
+import { captureStorageScope, getPersonalItem, isStorageScopeCurrent, setPersonalItemInScope } from './utils/privateStorage';
 
 export default function App() {
   const location = useLocation();
@@ -170,9 +170,23 @@ export default function App() {
       setIntakeHandoffUrl(undefined);
       setIntakeEscalated(false);
       setIntakeId('');
+      // Ámbito de almacenamiento al iniciar: si la identidad cambia antes de la respuesta, se descarta.
+      const scopeAtRequest = captureStorageScope();
+      const discardStaleIntake = () => {
+        const staleReply = language === 'es'
+          ? 'Tu sesión cambió mientras procesábamos la consulta. Por privacidad no mostramos esa respuesta; envíala de nuevo si la necesitas.'
+          : 'Your session changed while we processed the inquiry. For privacy we are not showing that reply; please send it again if needed.';
+        setIntakeOpen(false);
+        setIntakeMessage('');
+        setIntakeReply('');
+        setIntakeEscalated(false);
+        setIntakeHandoffUrl(undefined);
+        setIntakeId('');
+        detail.onResult?.({ ok: false, discarded: true, reply: staleReply });
+      };
       try {
         const sessionId = detail.sessionId || getPersonalItem('crt_customer_session') || `web_${globalThis.crypto?.randomUUID?.() || Date.now().toString(36)}`;
-        setPersonalItem('crt_customer_session', sessionId);
+        setPersonalItemInScope(scopeAtRequest, 'crt_customer_session', sessionId);
         const response = await fetch('/api/customer-intake', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -185,13 +199,15 @@ export default function App() {
           })
         });
         const data = await response.json();
+        // Respuesta de otra identidad (cerró sesión o cambió de cuenta): no se guarda ni se muestra.
+        if (!isStorageScopeCurrent(scopeAtRequest)) { discardStaleIntake(); return; }
         if (!response.ok) throw new Error(data?.error || 'No se pudo procesar la solicitud.');
         setIntakeReply(data.customer?.reply || 'La IA recibió tu solicitud y está procesando la información.');
         setIntakeEscalated(Boolean(data.decision?.escalated));
         setIntakeHandoffUrl(data.customer?.handoffUrl);
         setIntakeId(data.intakeId || '');
         if (data.journey?.journeyId) {
-          setPersonalItem('crt_active_journey', String(data.journey.journeyId));
+          setPersonalItemInScope(scopeAtRequest, 'crt_active_journey', String(data.journey.journeyId));
         }
         detail.onResult?.({
           ok: true,
@@ -201,6 +217,7 @@ export default function App() {
           workflow: data.journey?.workflow
         });
       } catch (error: any) {
+        if (!isStorageScopeCurrent(scopeAtRequest)) { discardStaleIntake(); return; }
         const failureReply = language === 'es' ? 'No pudimos completar la consulta. No se ha confirmado ninguna reserva ni notificación al equipo. Puedes consultar directamente por WhatsApp.' : 'We could not complete the inquiry. No booking or team notification has been confirmed. You can contact us directly on WhatsApp.';
         setIntakeReply(failureReply);
         setIntakeEscalated(false);
