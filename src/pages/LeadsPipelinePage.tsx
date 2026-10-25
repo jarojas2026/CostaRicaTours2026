@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ClipboardCopy, Inbox, RefreshCw, ShieldCheck, Trash2, Undo2 } from 'lucide-react';
 import type { Language } from '../types';
 import { auth } from '../firebase';
+import { LeadPaymentPanel } from '../components/LeadPaymentPanel';
 
 type LeadStatus = 'nuevo' | 'cotizando' | 'esperando_operador' | 'confirmado_por_escrito' | 'pagado' | 'cancelado';
 
@@ -64,6 +65,7 @@ interface Lead {
   operatorCandidates: Array<{ operatorId: string; name: string; region: string; reasons: string[] }>;
   quoteRequestDrafts: Array<{ operatorId: string; operatorName: string; language: 'es' | 'en'; subject: string; body: string }>;
   triage?: { state: TriageState; priority: Priority; reasons: string[]; auto: boolean; duplicateOf?: string };
+  bookingId?: string;
   followUp?: { status: 'borrador_no_enviado' | 'enviado' | 'envio_fallido'; language: 'es' | 'en'; missing: Array<'fecha' | 'pax'>; to?: string; subject: string; body: string; sentAt?: string; error?: string };
 }
 
@@ -242,6 +244,7 @@ export function LeadsPipelinePage({ language }: { language: Language }) {
                         {lead.followUp.error && <p className="text-xs text-red-300 mt-1">{lead.followUp.error}</p>}
                       </div>
                     )}
+                    <LeadPaymentPanel leadId={lead.id} bookingId={lead.bookingId} es={es} onChanged={() => void load()} />
                     <div>
                       <h2 className="font-bold text-stone-200">{es ? 'Operadores candidatos (prospectos)' : 'Candidate operators (prospects)'}</h2>
                       {lead.operatorCandidates.length === 0 ? <p className="text-stone-400">{es ? 'Sin coincidencias.' : 'No matches.'}</p> : (
