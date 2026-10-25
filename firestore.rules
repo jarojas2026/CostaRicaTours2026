@@ -91,9 +91,16 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.role == 'operator';
     }
 
+    // El libro de pagos a proveedores (campo supplierPayouts, backend/leadSupplierPayouts.ts)
+    // es solo del servidor: lo escribe el backend con Admin SDK tras validar dueño humano,
+    // pago del cliente verificado, transiciones e idempotencia. Ningún navegador (ni admin)
+    // puede crearlo, modificarlo ni borrar un lead que lo contenga.
     match /leads/{leadId} {
       allow read: if isAdmin() || isOperatorRole();
-      allow create, update, delete: if isAdmin();
+      allow create: if isAdmin() && !('supplierPayouts' in incoming());
+      allow update: if isAdmin()
+        && !incoming().diff(existing()).affectedKeys().hasAny(['supplierPayouts']);
+      allow delete: if isAdmin() && !('supplierPayouts' in existing());
     }
 
     match /reviews/{reviewId} {

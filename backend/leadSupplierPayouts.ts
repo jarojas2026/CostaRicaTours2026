@@ -97,6 +97,7 @@ export type SupplierPayoutError =
   | 'payout_not_found'
   | 'invalid_transition'
   | 'duplicate_request'
+  | 'idempotency_conflict'
   | 'duplicate_reference';
 
 type Result = LeadMutation<SupplierPayoutError>;
@@ -186,6 +187,18 @@ function withPayouts(lead: LeadRecord, payouts: SupplierPayout[], at: string): L
   return { ...lead, supplierPayouts: payouts, updatedAt: at, lastActivityAt: at };
 }
 
+/**
+ * ¿El registro existente corresponde a la misma solicitud? Compara la reserva y los campos ya
+ * normalizados por parseCreateInput. La moneda es siempre CRC (campo montoCRC), así que coincide
+ * por construcción; se compara el monto redondeado a céntimos.
+ */
+export function sameSupplierPayoutRequest(existing: SupplierPayout, bookingId: string, input: CreateSupplierPayoutInput): boolean {
+  return existing.bookingId === bookingId
+    && cleanText(existing.proveedor, 120) === input.proveedor
+    && Math.round(Number(existing.montoCRC) * 100) === Math.round(input.montoCRC * 100)
+    && cleanText(existing.concepto, 300) === input.concepto;
+}
+
 /** Regla pura de creación. `booking` es la reserva ENLAZADA al lead, leída del servidor. */
 export function applyCreateSupplierPayout(
   lead: LeadRecord,
@@ -205,7 +218,14 @@ export function applyCreateSupplierPayout(
   const existing = payoutsOf(lead);
   if (input.clientRequestId) {
     const dup = existing.find(p => p.clientRequestId === input.clientRequestId);
-    if (dup) return { ok: true, lead, changed: false };
+    if (dup) {
+      // Misma clave de idempotencia: solo es un reintento si coincide la reserva y los campos
+      // normalizados (proveedor, monto, moneda CRC, concepto). Si no, es otra intención → 409.
+      if (!sameSupplierPayoutRequest(dup, bookingId, input)) {
+        return fail('idempotency_conflict', 'Ese clientRequestId ya se usó con otros datos. No se registró nada.');
+      }
+      return { ok: true, lead, changed: false };
+    }
   }
   const at = now.toISOString();
   const payout: SupplierPayout = {
@@ -320,6 +340,7 @@ const STATUS_BY_ERROR: Record<string, number> = {
   customer_payment_not_verified: 409,
   invalid_transition: 409,
   duplicate_request: 409,
+  idempotency_conflict: 409,
   duplicate_reference: 409,
 };
 

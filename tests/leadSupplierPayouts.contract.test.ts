@@ -269,3 +269,55 @@ test('términos ES/EN: la plataforma cobra solo sus servicios y no paga SINPE a 
   assert.match(payments.paragraphs.en.join(' '), /charges only for its own services/);
   assert.match(payments.paragraphs.en.join(' '), /does not make transfers or SINPE payments to third parties on the customer's behalf/);
 });
+
+test('idempotencia: mismo clientRequestId con datos distintos → 409 idempotency_conflict sin escribir', async () => {
+  const s = store(lead());
+  const first = await createSupplierPayout('lead_abcdefgh01', { ...input, clientRequestId: 'req_conflict1' }, owner, s.d);
+  assert.equal(first.status, 201);
+  // Reintento idéntico (con espacios/normalización equivalente) sigue siendo idempotente.
+  const same = await createSupplierPayout('lead_abcdefgh01', { ...input, proveedor: '  Operador local A ', montoCRC: '45000.00', clientRequestId: 'req_conflict1' }, owner, s.d);
+  assert.equal(same.status, 200);
+  assert.equal(same.body.changed, false);
+  for (const changed of [{ proveedor: 'Operador local B' }, { montoCRC: 45001 }, { concepto: 'Otro concepto' }]) {
+    const r = await createSupplierPayout('lead_abcdefgh01', { ...input, ...changed, clientRequestId: 'req_conflict1' }, owner, s.d);
+    assert.equal(r.status, 409);
+    assert.equal(r.body.error, 'idempotency_conflict');
+    assert.equal(r.body.ejecutadoPorSistema, false);
+  }
+  assert.equal(s.writes(), 1);
+  assert.equal(s.get()?.supplierPayouts?.length, 1);
+  assert.equal(s.get()?.supplierPayouts?.[0].proveedor, 'Operador local A');
+});
+
+test('idempotencia: mismo clientRequestId contra otra reserva enlazada → conflicto', () => {
+  const base = applyCreateSupplierPayout(lead(), paid, { ...input, clientRequestId: 'req_otherbk1' }, owner, 'sp_test000001', NOW);
+  assert.ok(base.ok);
+  const moved = { ...base.lead, bookingId: 'bk_other' } as LeadRecord;
+  const r = applyCreateSupplierPayout(moved, { ...paid, id: 'bk_other' }, { ...input, clientRequestId: 'req_otherbk1' }, owner, 'sp_test000002', NOW);
+  assert.equal(!r.ok && r.error, 'idempotency_conflict');
+});
+
+test('UI: conflicto 409 con mensaje ES/EN, no limpia el formulario y renueva requestId al editar', () => {
+  const es = describeSupplierPayoutError(409, { error: 'idempotency_conflict' }, true);
+  const en = describeSupplierPayoutError(409, { error: 'idempotency_conflict' }, false);
+  assert.match(es, /otros datos/);
+  assert.match(en, /different data/);
+  assert.doesNotMatch(`${es} ${en}`, /pagado|transferido|paid|transferred/i);
+  const panel = fs.readFileSync('src/components/SupplierPayoutsPanel.tsx', 'utf8');
+  assert.match(panel, /if \(apply\(r\)\) \{ setForm\(\{ proveedor: '', montoCRC: '', concepto: '' \}\); setRequestId\(newRequestId\(\)\); \}/, 'solo limpia tras éxito');
+  assert.match(panel, /const editForm = [\s\S]*?setRequestId\(newRequestId\(\)\)/);
+  for (const k of ['proveedor', 'montoCRC', 'concepto']) {
+    assert.match(panel, new RegExp(`onChange=\\{e => editForm\\(\\{ ${k}: e\\.target\\.value \\}\\)\\}`));
+  }
+});
+
+test('firestore rules: el libro supplierPayouts de /leads es solo del servidor', () => {
+  const rules = fs.readFileSync('firestore.rules', 'utf8');
+  const block = rules.slice(rules.indexOf('match /leads/{leadId}'), rules.indexOf('match /reviews/{reviewId}'));
+  assert.doesNotMatch(block, /allow create, update, delete: if isAdmin\(\);/);
+  assert.doesNotMatch(block, /allow write/);
+  assert.match(block, /allow create: if isAdmin\(\) && !\('supplierPayouts' in incoming\(\)\);/);
+  assert.match(block, /allow update: if isAdmin\(\)\s*&& !incoming\(\)\.diff\(existing\(\)\)\.affectedKeys\(\)\.hasAny\(\['supplierPayouts'\]\);/);
+  assert.match(block, /allow delete: if isAdmin\(\) && !\('supplierPayouts' in existing\(\)\);/);
+  assert.match(block, /allow read: if isAdmin\(\) \|\| isOperatorRole\(\);/);
+});
