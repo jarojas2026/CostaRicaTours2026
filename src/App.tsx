@@ -65,6 +65,7 @@ const BlogArticlePage = lazy(() => import('./pages/BlogArticlePage').then(m => (
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { getPersonalItem, setPersonalItem } from './utils/privateStorage';
 
 export default function App() {
   const location = useLocation();
@@ -170,8 +171,8 @@ export default function App() {
       setIntakeEscalated(false);
       setIntakeId('');
       try {
-        const sessionId = detail.sessionId || localStorage.getItem('crt_customer_session') || `web_${globalThis.crypto?.randomUUID?.() || Date.now().toString(36)}`;
-        localStorage.setItem('crt_customer_session', sessionId);
+        const sessionId = detail.sessionId || getPersonalItem('crt_customer_session') || `web_${globalThis.crypto?.randomUUID?.() || Date.now().toString(36)}`;
+        setPersonalItem('crt_customer_session', sessionId);
         const response = await fetch('/api/customer-intake', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -190,7 +191,7 @@ export default function App() {
         setIntakeHandoffUrl(data.customer?.handoffUrl);
         setIntakeId(data.intakeId || '');
         if (data.journey?.journeyId) {
-          localStorage.setItem('crt_active_journey', String(data.journey.journeyId));
+          setPersonalItem('crt_active_journey', String(data.journey.journeyId));
         }
         detail.onResult?.({
           ok: true,
