@@ -48,6 +48,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency, getLangText } from '../utils/i18n';
 import { useMoney } from '../hooks/useMoney';
+import { useMapClusters } from '../hooks/useMapClusters';
 import { APIProvider, Map as GoogleMap, AdvancedMarker, useMap as useGoogleMap } from '@vis.gl/react-google-maps';
 import { 
   MAP_TOURISM_SERVICES, 
@@ -265,7 +266,8 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
   const [showRegionAreas, setShowRegionAreas] = useState(false);
   const [resultPage, setResultPage] = useState(0);
   const [tileError, setTileError] = useState(false);
-  const spatialFilter = useMemo<MapSpatialFilter>(() => ({ viewport: onlyInView || radiusKm !== null ? viewport : null, onlyInView, radiusKm }), [viewport, onlyInView, radiusKm]);
+  const filteredViewport = onlyInView || radiusKm !== null ? viewport : null;
+  const spatialFilter = useMemo<MapSpatialFilter>(() => ({ viewport: filteredViewport, onlyInView, radiusKm }), [filteredViewport, onlyInView, radiusKm]);
   const openDock = useCallback((tab:'layers'|'results'|'tools'|'itinerary'|'calculator'|null) => {
     setSelectedMapTourState(null); setSelectedMapServiceState(null); setSelectedPoi(null); setSelectedGroup(null);
     setShowItineraryDrawer(tab==='itinerary'); setShowCalculatorModal(tab==='calculator');
@@ -448,6 +450,8 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
     ...effectiveServices.map(service => ({id:`service:${service.id}`,title:getLangText(service.name,language),subtitle:getServiceIconAndColor(service.type).label[language==='es'?'es':'en'],icon:getServiceIconAndColor(service.type).emoji,ll:[service.coordinates.lat,service.coordinates.lng] as [number,number],service})),
     ...poiResults.map(poi => ({id:`poi:${poi.properties.grupo}:${poi.properties.id}`,title:poi.properties.nombre||getPoiTypeLabel(poi.properties.tipo,language),subtitle:getPoiTypeLabel(poi.properties.tipo,language),icon:NATIONAL_POI_GROUPS.find(g=>g.id===poi.properties.grupo)?.emoji||'📍',ll:[poi.geometry.coordinates[1],poi.geometry.coordinates[0]] as [number,number],poi}))
   ], [effectiveTours,effectiveServices,poiResults,language]);
+
+  const {groups:markerGroups,pending:clustersPending}=useMapClusters(mapItems,currentZoom);
 
   // Counts for each category
   const serviceCounts = useMemo(() => {
@@ -687,8 +691,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
     const redraw = () => {
       layer.clearLayers();
       const zoom = map.getZoom(), bounds = map.getBounds().pad(.15);
-      const groups = groupMapPointsAtZoom(mapItems,item=>item.ll,(lat,lng)=>map.project([lat,lng],zoom),zoom);
-      for (const group of groups) {
+      for (const group of markerGroups) {
         if (!bounds.contains([group.lat,group.lng])) continue;
         const item = group.items[0], clustered = group.items.length > 1;
         const approximate = !!item.poi?.properties.aprox;
@@ -724,7 +727,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
     };
     redraw();map.on('moveend',redraw);
     return () => { map.off('moveend',redraw); layer.clearLayers(); };
-  }, [leafletMapInstance,mapItems,language,selectedMapTour,selectedMapService,selectedPoi,openDock,selectPoi,setSelectedMapTour,setSelectedMapService]);
+  }, [leafletMapInstance,markerGroups,language,selectedMapTour,selectedMapService,selectedPoi,openDock,selectPoi,setSelectedMapTour,setSelectedMapService]);
 
   // =========================================================
   // ITINERARY POLYLINE & NUMBERED WAYPOINTS ON LEAFLET
@@ -1048,7 +1051,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
         ) : (
           <div
             ref={mapContainerRef}
-            id="costa-rica-leaflet-map-canvas"
+            id="costa-rica-leaflet-map-canvas" data-cluster-pending={clustersPending}
             className="w-full h-full z-0 bg-[#020d09]"
             style={{ minHeight: '100%' }}
           />
@@ -1796,7 +1799,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
       )}
 
       {/* ========================================================= */}
-      <footer className="crt-map-footer" aria-live="polite"><span>{results.length.toLocaleString(language==='es'?'es-CR':'en-US')} {language==='es'?'resultados · capas activas':'results · active layers'}{searchQuery!==deferredSearch?' …':''}</span><span className="crt-map-extra-status">{language==='es'?'Círculos numerados: grupos · referencias sujetas a confirmación':'Numbered circles: groups · references require confirmation'}</span><span>Zoom {currentZoom}</span></footer>
+      <footer className="crt-map-footer" aria-live="polite"><span>{clustersPending ? (language==='es'?'Actualizando marcas…':'Updating markers…') : <>{results.length.toLocaleString(language==='es'?'es-CR':'en-US')} {language==='es'?'resultados · capas activas':'results · active layers'}</>}{searchQuery!==deferredSearch?' …':''}</span><span className="crt-map-extra-status">{language==='es'?'Círculos numerados: grupos · referencias sujetas a confirmación':'Numbered circles: groups · references require confirmation'}</span><span>Zoom {currentZoom}</span></footer>
       {/* SERVICE BOOKING MODAL (HOTELS, PARKS, BUSES, FLIGHTS) */}
       {/* ========================================================= */}
       <MapServiceBookingModal

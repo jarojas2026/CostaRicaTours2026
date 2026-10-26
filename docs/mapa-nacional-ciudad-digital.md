@@ -55,6 +55,8 @@ Las marcas individuales conservan su coordenada. Un centroide de grupo represent
 
 ### Carga y fallos
 
+La agrupación nacional se calcula en un Web Worker para mantener libres el desplazamiento y los controles. Se reutiliza al desplazar el mapa; un indicador señala los recálculos de zoom o filtros.
+
 `nationalPoiData.ts` conserva los datos correctos en memoria y comparte las solicitudes concurrentes de una misma capa. Valida la colección y descarta geometrías inválidas. Un fallo detiene los reintentos automáticos y ofrece un botón explícito para reintentar; no se crea un bucle de peticiones ni se bloquean las otras capas. El service worker existente conserva su estrategia de caché para GeoJSON.
 
 El guardado manual sin conexión conserva el catálogo público. No garantiza teselas nuevas sin red ni cobertura de capas que nunca se hayan descargado.

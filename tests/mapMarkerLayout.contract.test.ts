@@ -140,7 +140,7 @@ test('identical zone reference points remain an accessible count at high zoom', 
 
 test('map clusters the combined inventory and exposes zoom drilldown', () => {
   const mapCode = fs.readFileSync('src/components/InteractiveMap.tsx', 'utf8');
-  assert.match(mapCode, /groupMapPointsAtZoom\(mapItems,/);
+  assert.match(mapCode, /useMapClusters\(mapItems,currentZoom\)/);
   assert.match(mapCode, /renderMarkers=\{false\}/);
   assert.match(mapCode, /effectiveTours\.map/);
   assert.match(mapCode, /effectiveServices\.map/);
