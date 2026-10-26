@@ -138,12 +138,26 @@ test('identical zone reference points remain an accessible count at high zoom', 
   assert.equal(highZoom[0].isCluster, false);
 });
 
-test('map draws zoom-dependent clusters for both tours and services and exposes zoom drilldown', () => {
+test('map clusters the combined inventory and exposes zoom drilldown', () => {
   const mapCode = fs.readFileSync('src/components/InteractiveMap.tsx', 'utf8');
-  assert.match(mapCode, /groupMapPointsAtZoom\(effectiveTours,/);
-  assert.match(mapCode, /groupMapPointsAtZoom\(effectiveServices,/);
-  assert.match(mapCode, /currency, currentZoom\]/);
-  assert.match(mapCode, /Zoom in to separate pins/);
-  assert.match(mapCode, /not the exact location of every service/i);
+  assert.match(mapCode, /useMapClusters\(mapItems,currentZoom\)/);
+  assert.match(mapCode, /renderMarkers=\{false\}/);
+  assert.match(mapCode, /effectiveTours\.map/);
+  assert.match(mapCode, /effectiveServices\.map/);
+  assert.match(mapCode, /poiResults\.map/);
+  assert.match(mapCode, /setSelectedGroup/);
+  assert.match(mapCode, /mapReferenceLabel/);
+  assert.doesNotMatch(mapCode, /\.bindPopup\(/, 'catalog details and groups must use the reserved dock instead of map popups');
   assert.match(mapCode, /new ResizeObserver\(/);
+});
+
+
+test('clusters from adjacent cells merge when their symbols would overlap', () => {
+  const items=[{id:'tour',ll:[1,63] as LatLngTuple},{id:'hotel',ll:[1,65] as LatLngTuple},{id:'poi',ll:[1,180] as LatLngTuple}];
+  const before=items.map(i=>[...i.ll]);
+  const groups=groupMapPointsAtZoom(items,i=>i.ll,(lat,lng)=>({x:lng,y:lat}),8);
+  assert.equal(groups.length,2);
+  assert.equal(groups.find(g=>g.count===2)!.items.length,2);
+  assert.deepEqual(items.map(i=>i.ll),before);
+  assert.equal(groups.reduce((n,g)=>n+g.count,0),3);
 });

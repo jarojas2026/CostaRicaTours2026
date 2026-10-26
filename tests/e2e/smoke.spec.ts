@@ -38,13 +38,12 @@ test('map page loads and toggles a layer', async ({ page, consoleProblems }) => 
   await mockApi(page);
   await page.goto('/map');
   await expect(page.locator('.leaflet-container')).toBeVisible();
-  const hotels = page.getByRole('button', { name: /Hoteles/ });
-  await expect(hotels).toHaveAttribute('aria-pressed', /true|false/);
-  const before = await hotels.getAttribute('aria-pressed');
-  await hotels.click();
-  await expect(hotels).toHaveAttribute('aria-pressed', before === 'true' ? 'false' : 'true');
-  await hotels.click();
-  await expect(hotels).toHaveAttribute('aria-pressed', before!);
+  await page.locator('#national-poi-layers-toggle').click();
+  await page.getByText('Tours y servicios del catálogo',{exact:true}).click();
+  const hotels = page.getByRole('checkbox', {name:'Hoteles del catálogo',exact:true});
+  await expect(hotels).not.toBeChecked();
+  await hotels.check();await expect(hotels).toBeChecked();
+  await hotels.uncheck();await expect(hotels).not.toBeChecked();
   expectNoConsoleErrors(consoleProblems);
 });
 

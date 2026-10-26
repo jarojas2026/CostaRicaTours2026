@@ -1,357 +1,167 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
-import { Language } from '../types';
-import { X } from 'lucide-react';
-import { NATIONAL_POI_GROUPS, NationalPoiGroupId, getPoiTypeLabel } from '../data/nationalPoiLayers';
+import { X, RefreshCw } from 'lucide-react';
+import type { Language } from '../types';
+import { NATIONAL_POI_GROUPS, type NationalPoiGroupId, getPoiTypeLabel } from '../data/nationalPoiLayers';
 import { requestCustomerIntake } from '../utils/customerIntake';
-import { buildNationalPoiPopupHtml, escapeHtml, type PoiProps } from './nationalPoiPopup';
-import { clusterByGrid, groupByCoordinate, limitNearestToCenter, toLeafletLatLng } from '../utils/mapMarkerLayout';
+import { buildNationalPoiPopupHtml, escapeHtml } from './nationalPoiPopup';
+import { clusterByGrid, groupByCoordinate, toLeafletLatLng } from '../utils/mapMarkerLayout';
+import { loadNationalPoiData } from '../utils/nationalPoiData';
+import { matchesNationalPoi, type NationalPoiFeature, type MapSpatialFilter } from '../utils/mapExplorerFilters';
 
-/**
- * Capa nacional de puntos de interés de la Ciudad Digital.
- *
- * - Carga cada GeoJSON solo cuando el usuario activa la capa (lazy fetch + caché en memoria).
- * - Sin dependencias nuevas: agrupación por cuadrícula hecha a mano a zoom bajo
- *   y marcadores en canvas (L.canvas) a zoom alto, para manejar >20.000 puntos con fluidez.
- * - Solo dibuja lo que está dentro del área visible.
- */
+export const OPEN_NATIONAL_LAYERS_EVENT = 'crt:open-national-layers';
+export type NationalLayerSelection = Record<NationalPoiGroupId, boolean>;
+export const defaultNationalLayers = (): NationalLayerSelection => Object.fromEntries(NATIONAL_POI_GROUPS.map(g => [g.id, g.defaultOn])) as NationalLayerSelection;
+const emptySpatial: MapSpatialFilter = { viewport: null, onlyInView: false, radiusKm: null };
+const families: { name: { es: string; en: string }; ids: NationalPoiGroupId[] }[] = [
+  { name: { es: 'Naturaleza y conservación', en: 'Nature & conservation' }, ids: ['parques_sinac','naturaleza','fauna','reforestacion'] },
+  { name: { es: 'Hospedaje y alimentación', en: 'Lodging & food' }, ids: ['hospedaje','alimentacion'] },
+  { name: { es: 'Cultura y lugares turísticos', en: 'Culture & attractions' }, ids: ['atracciones','cultura','patrimonio'] },
+  { name: { es: 'Movilidad y servicios', en: 'Transport & services' }, ids: ['transporte','servicios'] },
+  { name: { es: 'Salud y emergencias', en: 'Health & emergency' }, ids: ['ccss','salud','emergencia'] },
+];
 
-interface PoiFeature {
-  type: 'Feature';
-  geometry: { type: 'Point'; coordinates: [number, number] };
-  properties: PoiProps;
-}
-
-interface NationalPoiLayerProps {
+interface Props {
   map: L.Map | null;
   language: Language;
+  embedded?: boolean;
+  renderMarkers?: boolean;
+  filterResetKey?: number;
+  enabledLayers?: NationalLayerSelection;
+  onEnabledLayersChange?: (value: NationalLayerSelection) => void;
+  searchQuery?: string;
+  hideApproximate?: boolean;
+  spatialFilter?: MapSpatialFilter;
+  onFeaturesChange?: (features: NationalPoiFeature[]) => void;
+  onSelectPoi?: (feature: NationalPoiFeature) => void;
+  onSelectGroup?: (features: NationalPoiFeature[]) => void;
 }
-
-/** Window event other map controls dispatch to open this layer panel. */
-export const OPEN_NATIONAL_LAYERS_EVENT = 'crt:open-national-layers';
-
-const CLUSTER_UNTIL_ZOOM = 13; // por debajo de este zoom se agrupa
-const CLUSTER_CELL_PX = 64;
-const MAX_POINTS_RENDERED = 5000;
-const MAX_STACK_IN_POPUP = 10;
-
-const featureLatLng = (f: PoiFeature) => toLeafletLatLng(f.geometry.coordinates);
-
-const dataCache = new Map<NationalPoiGroupId, PoiFeature[]>();
-
-export const NationalPoiLayer: React.FC<NationalPoiLayerProps> = ({ map, language }) => {
+export const NationalPoiLayer: React.FC<Props> = ({ map, language, embedded = false, renderMarkers = true, filterResetKey = 0, enabledLayers, onEnabledLayersChange, searchQuery, hideApproximate = false, spatialFilter = emptySpatial, onFeaturesChange, onSelectPoi, onSelectGroup }) => {
   const isEs = language === 'es';
-  const [enabled, setEnabled] = useState<Record<NationalPoiGroupId, boolean>>(() =>
-    NATIONAL_POI_GROUPS.reduce((acc, g) => ({ ...acc, [g.id]: g.defaultOn }), {} as Record<NationalPoiGroupId, boolean>)
-  );
-  const [loaded, setLoaded] = useState<Partial<Record<NationalPoiGroupId, PoiFeature[]>>>({});
+  const [localEnabled, setLocalEnabled] = useState(defaultNationalLayers);
+  const enabled = enabledLayers ?? localEnabled;
+  const changeEnabled = onEnabledLayersChange ?? setLocalEnabled;
+  const [loaded, setLoaded] = useState<Partial<Record<NationalPoiGroupId, NationalPoiFeature[]>>>({});
   const [loading, setLoading] = useState<Partial<Record<NationalPoiGroupId, boolean>>>({});
+  const [errors, setErrors] = useState<Partial<Record<NationalPoiGroupId, boolean>>>({});
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [poiType, setPoiType] = useState('all');
+  const [page, setPage] = useState(0);
+  useEffect(() => { setPoiType('all'); }, [filterResetKey]);
+  const [renderInfo, setRenderInfo] = useState({ places: 0, markers: 0 });
   const layerRef = useRef<L.LayerGroup | null>(null);
   const drawerRef = useRef<HTMLDivElement | null>(null);
-  const rendererRef = useRef<L.Canvas | null>(null);
-
-  // Other controls (e.g. the main "Layers" bar) can open this panel.
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => {
+    if (embedded) return;
     const open = () => setIsOpen(true);
     window.addEventListener(OPEN_NATIONAL_LAYERS_EVENT, open);
     return () => window.removeEventListener(OPEN_NATIONAL_LAYERS_EVENT, open);
-  }, []);
-
-  // Cierre con Escape (rescatado de #228), además del botón X visible.
+  }, [embedded]);
   useEffect(() => {
-    if (!isOpen) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsOpen(false);
-    };
-    // Tocar fuera del cajón (p. ej. el mapa) lo cierra, para que nunca quede tapando el mapa en móvil.
-    const closeOnOutsidePointer = (event: PointerEvent) => {
-      const target = event.target as Node | null;
-      if (target && drawerRef.current && !drawerRef.current.contains(target)) setIsOpen(false);
-    };
-    window.addEventListener('keydown', closeOnEscape);
-    document.addEventListener('pointerdown', closeOnOutsidePointer, true);
-    return () => {
-      window.removeEventListener('keydown', closeOnEscape);
-      document.removeEventListener('pointerdown', closeOnOutsidePointer, true);
-    };
-  }, [isOpen]);
-
-  // Carga diferida de cada capa activada
+    if (!isOpen || embedded) return;
+    const escape = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsOpen(false); };
+    const outside = (e: PointerEvent) => { if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) setIsOpen(false); };
+    window.addEventListener('keydown', escape);
+    document.addEventListener('pointerdown', outside, true);
+    return () => { window.removeEventListener('keydown', escape); document.removeEventListener('pointerdown', outside, true); };
+  }, [isOpen, embedded]);
   useEffect(() => {
-    NATIONAL_POI_GROUPS.forEach((group) => {
-      if (!enabled[group.id] || loaded[group.id] || loading[group.id]) return;
-      const cached = dataCache.get(group.id);
-      if (cached) {
-        setLoaded((prev) => ({ ...prev, [group.id]: cached }));
-        return;
-      }
-      setLoading((prev) => ({ ...prev, [group.id]: true }));
-      fetch(group.file)
-        .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
-        .then((json) => {
-          const features: PoiFeature[] = Array.isArray(json?.features) ? json.features : [];
-          dataCache.set(group.id, features);
-          setLoaded((prev) => ({ ...prev, [group.id]: features }));
-        })
-        .catch((err) => console.warn(`No se pudo cargar la capa ${group.id}:`, err))
-        .finally(() => setLoading((prev) => ({ ...prev, [group.id]: false })));
-    });
-  }, [enabled, loaded, loading]);
-
-  const activeFeatures = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const list: PoiFeature[] = [];
-    NATIONAL_POI_GROUPS.forEach((g) => {
-      if (!enabled[g.id]) return;
-      (loaded[g.id] || []).forEach((f) => {
-        if (q && !(`${f.properties.nombre || ''} ${f.properties.tipo}`.toLowerCase().includes(q))) return;
-        list.push(f);
+    for (const group of NATIONAL_POI_GROUPS) {
+      if (!enabled[group.id] || loaded[group.id] || loading[group.id] || errors[group.id]) continue;
+      setLoading(prev => ({ ...prev, [group.id]: true }));
+      loadNationalPoiData(group.id).then(features => {
+        if (mounted.current) setLoaded(prev => ({ ...prev, [group.id]: features }));
+      }).catch(() => {
+        if (mounted.current) setErrors(prev => ({ ...prev, [group.id]: true }));
+      }).finally(() => {
+        if (mounted.current) setLoading(prev => ({ ...prev, [group.id]: false }));
       });
-    });
-    return list;
-  }, [enabled, loaded, query]);
-
-  const buildPopup = useCallback(
-    (p: PoiProps, lat: number, lng: number): string => buildNationalPoiPopupHtml(p, lat, lng, language),
-    [language]
-  );
-
-  const [renderInfo, setRenderInfo] = useState<{ shown: number; total: number; truncated: boolean }>({ shown: 0, total: 0, truncated: false });
-
-  // Dibujo según vista: agrupaciones a zoom bajo, puntos en canvas a zoom alto.
-  // Coordenadas: GeoJSON [lng, lat] → Leaflet [lat, lng] solo vía toLeafletLatLng.
-  const redraw = useCallback(() => {
-    if (!map) return;
-    if (!layerRef.current) layerRef.current = L.layerGroup().addTo(map);
-    if (!rendererRef.current) rendererRef.current = L.canvas({ padding: 0.3 });
-    const layer = layerRef.current;
-    layer.clearLayers();
-    if (activeFeatures.length === 0) {
-      setRenderInfo({ shown: 0, total: 0, truncated: false });
-      return;
     }
-
-    const bounds = map.getBounds().pad(0.25);
-    const zoom = map.getZoom();
-    const visible = activeFeatures.filter((f) => {
-      const ll = featureLatLng(f);
-      return !!ll && bounds.contains(ll);
-    });
-
-    const addPoint = (f: PoiFeature, ll: [number, number], radius: number, withTooltip: boolean) => {
-      const g = NATIONAL_POI_GROUPS.find((x) => x.id === f.properties.grupo);
-      const approx = !!f.properties.aprox;
-      // Ubicación aproximada: anillo punteado y relleno tenue, para no parecer un punto exacto.
-      const marker = L.circleMarker(ll, {
-        renderer: rendererRef.current!,
-        radius,
-        color: approx ? g?.color || '#10b981' : '#fff',
-        weight: approx ? 2 : 1.5,
-        dashArray: approx ? '3 3' : undefined,
-        fillColor: g?.color,
-        fillOpacity: approx ? 0.35 : 0.95,
-      });
-      if (withTooltip) {
-        const label = escapeHtml(f.properties.nombre || getPoiTypeLabel(f.properties.tipo, language));
-        marker.bindTooltip(approx ? `${label} · ${isEs ? 'ubicación aproximada' : 'approximate location'}` : label, { direction: 'top', offset: [0, -6] });
-      }
-      marker.bindPopup(buildPopup(f.properties, ll[0], ll[1])).addTo(layer);
-    };
-
-    if (zoom < CLUSTER_UNTIL_ZOOM) {
-      const clusters = clusterByGrid(visible, featureLatLng, (lat, lng) => map.project([lat, lng], zoom), CLUSTER_CELL_PX);
-      clusters.forEach((cluster) => {
-        if (!cluster.isCluster) {
-          addPoint(cluster.items[0], [cluster.lat, cluster.lng], 5, false);
-          return;
-        }
-        const groups = new Set(cluster.items.map((f) => f.properties.grupo));
-        const color = groups.size === 1 ? NATIONAL_POI_GROUPS.find((x) => x.id === [...groups][0])?.color || '#10b981' : '#0f766e';
-        const size = cluster.count < 10 ? 28 : cluster.count < 100 ? 34 : cluster.count < 1000 ? 40 : 46;
-        const label = cluster.count >= 1000 ? `${(cluster.count / 1000).toFixed(1)}k` : String(cluster.count);
-        const title = isEs ? `Grupo de ${cluster.count} puntos (no es un lugar). Clic para acercar.` : `Group of ${cluster.count} points (not a place). Click to zoom in.`;
-        // Agrupación: anillo de color con centro oscuro y conteo. iconSize = tamaño real
-        // del nodo raíz y ancla en su centro, así la marca no se corre al hacer zoom.
-        const icon = L.divIcon({
-          className: 'national-poi-cluster',
-          html: `<div role="img" aria-label="${escapeHtml(title)}" title="${escapeHtml(title)}" style="box-sizing:border-box;width:${size}px;height:${size}px;border-radius:9999px;background:rgba(4,23,17,.82);color:#fff;border:3px solid ${color};outline:2px dashed rgba(255,255,255,.7);outline-offset:1px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;box-shadow:0 2px 6px rgba(0,0,0,.35);">${label}</div>`,
-          iconSize: [size, size],
-          iconAnchor: [size / 2, size / 2],
-        });
-        L.marker([cluster.lat, cluster.lng], { icon, keyboard: false, title })
-          .on('click', () => map.flyTo([cluster.lat, cluster.lng], Math.min(zoom + 2, 18), { duration: 0.6 }))
-          .addTo(layer);
-      });
-      setRenderInfo({ shown: visible.length, total: visible.length, truncated: false });
-      return;
+  }, [enabled, loaded, loading, errors]);
+  const types = useMemo(() => [...new Set(NATIONAL_POI_GROUPS.flatMap(g => enabled[g.id] ? (loaded[g.id] || []).map(f => f.properties.tipo) : []))].sort((a,b) => a.localeCompare(b)), [enabled, loaded]);
+  // A preset must not leave an invisible stale subtype active.
+  useEffect(() => { if (poiType !== 'all' && !types.includes(poiType)) setPoiType('all'); }, [poiType, types]);
+  const activeFeatures = useMemo(() => NATIONAL_POI_GROUPS.flatMap(g => enabled[g.id] ? (loaded[g.id] || []).filter(f => matchesNationalPoi(f, searchQuery ?? query, poiType, hideApproximate, spatialFilter)) : []), [enabled, loaded, searchQuery, query, poiType, hideApproximate, spatialFilter]);
+  useEffect(() => { onFeaturesChange?.(activeFeatures); setPage(0); }, [activeFeatures, onFeaturesChange]);
+  const select = useCallback((feature: NationalPoiFeature) => {
+    if (onSelectPoi) onSelectPoi(feature);
+    else {
+      const ll = toLeafletLatLng(feature.geometry.coordinates);
+      if (ll && map) L.popup({ maxHeight: 220, maxWidth: 280 }).setLatLng(ll).setContent(buildNationalPoiPopupHtml(feature.properties, ll[0], ll[1], language)).openOn(map);
     }
-
-    const center = map.getCenter();
-    const { shown, total, truncated } = limitNearestToCenter(visible, featureLatLng, [center.lat, center.lng], MAX_POINTS_RENDERED);
-    groupByCoordinate(shown, featureLatLng).forEach((group) => {
-      if (group.items.length === 1) {
-        addPoint(group.items[0], [group.lat, group.lng], 7, true);
-        return;
-      }
-      // Varias fichas en la misma coordenada: una sola marca con conteo y ficha con la lista.
-      const g = NATIONAL_POI_GROUPS.find((x) => x.id === group.items[0].properties.grupo);
-      const allApprox = group.items.every((f) => f.properties.aprox);
-      const size = 26;
-      const title = isEs ? `${group.items.length} puntos en esta ubicación${allApprox ? ' (aproximada)' : ''}` : `${group.items.length} points at this location${allApprox ? ' (approximate)' : ''}`;
-      const icon = L.divIcon({
-        className: 'national-poi-stack',
-        html: `<div role="img" aria-label="${escapeHtml(title)}" style="box-sizing:border-box;width:${size}px;height:${size}px;border-radius:9999px;background:${g?.color || '#10b981'};color:#fff;border:2px ${allApprox ? 'dashed' : 'solid'} #fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;box-shadow:0 2px 6px rgba(0,0,0,.35);">${group.items.length}</div>`,
-        iconSize: [size, size],
-        iconAnchor: [size / 2, size / 2],
-      });
-      const list = group.items.slice(0, MAX_STACK_IN_POPUP).map((f) => buildPopup(f.properties, group.lat, group.lng)).join('<hr style="margin:6px 0;opacity:.3;" />');
-      const more = group.items.length > MAX_STACK_IN_POPUP ? `<div style="font-size:11px;opacity:.75;">${isEs ? `y ${group.items.length - MAX_STACK_IN_POPUP} más` : `and ${group.items.length - MAX_STACK_IN_POPUP} more`}</div>` : '';
-      L.marker([group.lat, group.lng], { icon, keyboard: false, title })
-        .bindPopup(`<div style="max-height:320px;overflow-y:auto;"><div style="font-weight:800;font-size:12px;margin-bottom:4px;">${escapeHtml(title)}</div>${list}${more}</div>`)
-        .addTo(layer);
-    });
-    setRenderInfo({ shown: shown.length, total, truncated });
-  }, [map, activeFeatures, buildPopup, language, isEs]);
-
+  }, [onSelectPoi, map, language]);
   useEffect(() => {
     if (!map) return;
+    const layer = L.layerGroup().addTo(map);
+    layerRef.current = layer;
+    const redraw = () => {
+      layer.clearLayers();
+      const zoom = map.getZoom();
+      const bounds = map.getBounds().pad(.15);
+      // Group the complete filtered dataset in world pixels before viewport culling.
+      // Panning cannot change the members/centroid of a visible grid cell.
+      const groups = !renderMarkers ? [] : zoom < 18
+        ? clusterByGrid(activeFeatures, f => toLeafletLatLng(f.geometry.coordinates), (lat,lng) => map.project([lat,lng],zoom), zoom < 13 ? 66 : 42)
+        : groupByCoordinate(activeFeatures, f => toLeafletLatLng(f.geometry.coordinates)).map(g => ({ ...g, count: g.items.length, isCluster: false }));
+      let markerCount = 0;
+      for (const group of groups) {
+        if (!bounds.contains([group.lat,group.lng])) continue;
+        const count = group.items.length;
+        const meta = NATIONAL_POI_GROUPS.find(g => g.id === group.items[0].properties.grupo)!;
+        const clustered = count > 1;
+        const size = clustered ? (count > 999 ? 44 : 36) : 28;
+        const title = clustered ? (isEs ? `${count} lugares cercanos; acercar o ver lista` : `${count} nearby places; zoom in or view list`) : `${group.items[0].properties.nombre || getPoiTypeLabel(group.items[0].properties.tipo,language)}${group.items[0].properties.aprox ? (isEs ? ' · ubicación aproximada' : ' · approximate location') : ''}`;
+        const icon = L.divIcon({ className: clustered ? 'national-poi-cluster' : 'national-poi-place', html: `<div class="crt-poi-symbol${clustered ? ' crt-poi-group' : ''}" style="width:${size}px;height:${size}px;--poi-color:${meta.color};border-style:${group.items[0].properties.aprox ? 'dashed' : 'solid'}">${clustered ? count.toLocaleString(isEs ? 'es-CR' : 'en-US') : meta.emoji}</div>`, iconSize:[size,size], iconAnchor:[size / 2,size / 2] });
+        const marker = L.marker([group.lat,group.lng], { icon, title, keyboard: true });
+        marker.on('click', () => {
+          if (!clustered) { select(group.items[0]); return; }
+          const sameCoordinate = group.items.every(f => Math.abs(f.geometry.coordinates[1] - group.lat) < .0001 && Math.abs(f.geometry.coordinates[0] - group.lng) < .0001);
+          if (onSelectGroup && (zoom >= 16 || sameCoordinate)) onSelectGroup(group.items);
+          else map.flyTo([group.lat,group.lng],Math.min(zoom+2,18), { duration:.35 });
+        }).addTo(layer);
+        const element = marker.getElement();
+        element?.setAttribute('aria-label',title);
+        element?.setAttribute('data-lat',String(group.lat));
+        element?.setAttribute('data-lng',String(group.lng));
+        marker.bindTooltip(escapeHtml(title), { direction:'top', offset:[0,-size/2] });
+        markerCount++;
+      }
+      setRenderInfo({ places: activeFeatures.filter(f => { const ll=toLeafletLatLng(f.geometry.coordinates);return ll && map.getBounds().contains(ll); }).length, markers:markerCount });
+    };
     redraw();
-    // 'moveend' también se emite al terminar un zoom: un solo listener evita el doble redibujo.
-    map.on('moveend', redraw);
-    return () => {
-      map.off('moveend', redraw);
-    };
-  }, [map, redraw]);
-
-  // Botón "Solicitar / consultar con nosotros" de las fichas: abre el flujo de consulta
-  // existente (customer intake) en lugar de mostrar contactos del negocio. El href a /ai
-  // queda como respaldo si el evento no se puede despachar.
+    map.on('moveend',redraw);
+    return () => { map.off('moveend',redraw); layer.remove(); layerRef.current=null; };
+  }, [map, activeFeatures, language, isEs, select, onSelectGroup, renderMarkers]);
   useEffect(() => {
-    if (!map) return;
+    if (!map || onSelectPoi) return;
     const container = map.getContainer();
-    const onClick = (event: MouseEvent) => {
-      const cta = (event.target as HTMLElement | null)?.closest?.('[data-public-request-cta]') as HTMLElement | null;
+    const onClick = (e: MouseEvent) => {
+      const cta=(e.target as HTMLElement)?.closest<HTMLElement>('[data-public-request-cta]');
       if (!cta) return;
-      event.preventDefault();
-      const name = cta.dataset.poiName || '';
-      const type = cta.dataset.poiType || '';
-      requestCustomerIntake({
-        message: isEs
-          ? `Quisiera consultar o solicitar: ${name}${type ? ` (${type})` : ''}. ¿Pueden gestionarlo por mí?`
-          : `I would like to ask about or request: ${name}${type ? ` (${type})` : ''}. Can you handle it for me?`,
-        language,
-        source: `map:poi:${cta.dataset.poiGrupo || ''}`,
-        context: { poiId: cta.dataset.poiId, poiGroup: cta.dataset.poiGrupo },
-      });
+      e.preventDefault();
+      requestCustomerIntake({ message:isEs ? `Quisiera consultar: ${cta.dataset.poiName || ''}.` : `I would like to ask about: ${cta.dataset.poiName || ''}.`,language,source:`map:poi:${cta.dataset.poiGrupo || ''}`,context:{poiId:cta.dataset.poiId,poiGroup:cta.dataset.poiGrupo} });
     };
-    container.addEventListener('click', onClick);
-    return () => container.removeEventListener('click', onClick);
-  }, [map, language, isEs]);
-
-  // Limpieza cuando el mapa se destruye
-  useEffect(() => {
-    return () => {
-      layerRef.current?.remove();
-      layerRef.current = null;
-      rendererRef.current = null;
-    };
-  }, [map]);
-
-  if (!map) return null;
-
-  const totalLoaded = activeFeatures.length;
-
-  return (
-    <div ref={drawerRef} data-testid="national-poi-layers" className="absolute left-2 sm:left-4 bottom-20 z-30 pointer-events-auto max-w-[calc(100vw-1rem)] sm:max-w-[92vw]">
-      <button
-        type="button"
-        id="national-poi-layers-toggle"
-        aria-label={isEs ? 'Capas nacionales de Costa Rica (salud CCSS, parques SINAC, fauna, patrimonio y más)' : 'Costa Rica national layers (CCSS health, SINAC parks, wildlife, heritage and more)'}
-        aria-expanded={isOpen}
-        aria-controls="national-poi-layers-panel"
-        onClick={() => setIsOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-full bg-[#051c14]/95 border border-emerald-500/40 px-4 py-2 text-sm font-bold text-emerald-50 shadow-lg hover:border-amber-400 active:scale-95 transition"
-      >
-        🗺️ {isEs ? 'Capas nacionales' : 'National layers'}
-        <span className="hidden sm:inline text-[11px] font-semibold text-emerald-200/80">
-          {isEs ? 'CCSS · SINAC · fauna · patrimonio' : 'CCSS · SINAC · wildlife · heritage'}
-        </span>
-        {totalLoaded > 0 && <span className="rounded-full bg-amber-500 px-2 text-xs text-[#041711]">{totalLoaded.toLocaleString(isEs ? 'es-CR' : 'en-US')}</span>}
-      </button>
-
-      {isOpen && (
-        <div
-          id="national-poi-layers-panel"
-          role="region"
-          aria-label={isEs ? 'Selector de capas nacionales' : 'National layers selector'}
-          className="absolute bottom-full left-0 mb-2 w-[calc(100vw-1rem)] max-w-sm sm:w-80 sm:max-w-[92vw] max-h-[min(45dvh,22rem)] sm:max-h-[min(60dvh,32rem)] overflow-y-auto overscroll-contain touch-pan-y rounded-2xl bg-[#041711]/97 border border-emerald-500/30 p-3 text-emerald-50 shadow-2xl"
-        >
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
-              {isEs ? `${NATIONAL_POI_GROUPS.length} capas nacionales` : `${NATIONAL_POI_GROUPS.length} national layers`}
-            </p>
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              aria-label={isEs ? 'Cerrar selector de capas' : 'Close layers selector'}
-              className="min-h-[44px] min-w-[44px] shrink-0 rounded-full border border-emerald-500/30 bg-emerald-950/80 text-emerald-100 hover:border-amber-400 flex items-center justify-center"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={isEs ? 'Buscar: soda, hospital, museo…' : 'Search: soda, hospital, museum…'}
-            aria-label={isEs ? 'Buscar puntos en el mapa' : 'Search map points'}
-            className="mb-3 w-full rounded-lg bg-[#051c14] border border-emerald-700/60 px-3 py-2 text-sm placeholder:text-emerald-200/50 focus:outline-none focus:border-amber-400"
-          />
-          {renderInfo.truncated && (
-            <p role="status" className="mb-2 rounded-lg border border-amber-500/40 bg-amber-950/40 px-2 py-1 text-[11px] text-amber-100">
-              {isEs
-                ? `Se muestran los ${renderInfo.shown.toLocaleString('es-CR')} puntos más cercanos al centro de ${renderInfo.total.toLocaleString('es-CR')} en pantalla. Acerque o filtre para ver el resto.`
-                : `Showing the ${renderInfo.shown.toLocaleString('en-US')} points nearest the centre out of ${renderInfo.total.toLocaleString('en-US')} on screen. Zoom in or filter to see the rest.`}
-            </p>
-          )}
-          <p className="mb-2 text-[10px] text-emerald-200/70">
-            {isEs
-              ? 'Círculos con número y borde punteado = grupo de puntos (no es un lugar). Borde punteado en un punto = ubicación aproximada.'
-              : 'Numbered circles with a dashed edge = group of points (not a place). Dashed edge on a point = approximate location.'}
-          </p>
-          <ul className="space-y-1">
-            {NATIONAL_POI_GROUPS.map((g) => {
-              const count = loaded[g.id]?.length;
-              return (
-                <li key={g.id}>
-                  <label className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-emerald-900/40 cursor-pointer text-sm">
-                    <input
-                      type="checkbox"
-                      checked={!!enabled[g.id]}
-                      onChange={() => setEnabled((prev) => ({ ...prev, [g.id]: !prev[g.id] }))}
-                      className="accent-amber-500"
-                    />
-                    <span className="inline-block h-3 w-3 rounded-full" style={{ background: g.color }} />
-                    <span className="flex-1">{g.emoji} {isEs ? g.label.es : g.label.en}</span>
-                    <span className="text-xs text-emerald-200/70">
-                      {loading[g.id] ? '…' : typeof count === 'number' ? count.toLocaleString(isEs ? 'es-CR' : 'en-US') : ''}
-                    </span>
-                  </label>
-                </li>
-              );
-            })}
-          </ul>
-          <p className="mt-3 text-[10px] leading-snug text-emerald-200/60">
-            {isEs
-              ? 'Datos: © colaboradores de OpenStreetMap (ODbL), SINAC, CCSS, MCJ, MOPT/CONAVI y fuentes oficiales de cada proyecto. Para horarios, tarifas o reservas, consúltenos y gestionamos su solicitud.'
-              : 'Data: © OpenStreetMap contributors (ODbL), SINAC, CCSS, MCJ, MOPT/CONAVI and each project\'s official sources. For hours, fees or bookings, ask us and we will handle your request.'}
-          </p>
-        </div>
-      )}
-    </div>
-  );
+    container.addEventListener('click',onClick);
+    return () => container.removeEventListener('click',onClick);
+  }, [map, onSelectPoi, language, isEs]);
+  const panel = <div id="national-poi-layers-panel" className={embedded ? 'crt-national-layers' : 'crt-standalone-layers'} role="region" aria-label={isEs ? 'Selector de capas nacionales' : 'National layers selector'}>
+    {!embedded && <button type="button" onClick={() => setIsOpen(false)} aria-label={isEs ? 'Cerrar selector de capas' : 'Close layers selector'}><X size={18}/></button>}
+    <p className="crt-map-help">{isEs ? '14 capas disponibles. Activa solo lo que necesitas; los datos se cargan al elegir una capa.' : '14 available layers. Enable what you need; data loads only for chosen layers.'}</p>
+    {NATIONAL_POI_GROUPS.some(g => enabled[g.id] && loading[g.id]) && <p className="crt-map-help" role="status">{isEs ? 'Cargando capas activas…' : 'Loading active layers…'}</p>}
+    {NATIONAL_POI_GROUPS.filter(g => enabled[g.id] && errors[g.id]).map(g => <button key={g.id} className="crt-map-secondary crt-layer-retry" type="button" onClick={() => setErrors(prev => ({...prev,[g.id]:false}))} aria-label={`${isEs ? 'Reintentar capa' : 'Retry layer'} ${isEs ? g.label.es : g.label.en}`}><RefreshCw size={14}/>{isEs ? `No se pudo cargar ${g.label.es}. Reintentar` : `Could not load ${g.label.en}. Retry`}</button>)}
+    {searchQuery === undefined && <input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder={isEs ? 'Buscar lugares' : 'Search places'} aria-label={isEs ? 'Buscar puntos en el mapa' : 'Search map points'}/>}
+    <label className="crt-map-field">{isEs ? 'Tipo de lugar' : 'Place type'}<select id="map-poi-type" value={poiType} onChange={e => setPoiType(e.target.value)}><option value="all">{isEs ? 'Todos los tipos de las capas activas' : 'All types in active layers'}</option>{types.map(t=><option key={t} value={t}>{getPoiTypeLabel(t,language)}</option>)}</select></label>
+    {families.map(family => <details className="crt-layer-family" key={family.ids[0]}>
+      <summary>{isEs ? family.name.es : family.name.en}<span>{family.ids.filter(id=>enabled[id]).length}/{family.ids.length}</span></summary>
+      {family.ids.map(id => { const g=NATIONAL_POI_GROUPS.find(g=>g.id===id)!;return <div className="crt-layer-option" key={id}><label><input type="checkbox" checked={!!enabled[id]} onChange={()=>changeEnabled({...enabled,[id]:!enabled[id]})}/><span aria-hidden="true">{g.emoji}</span><span>{isEs ? g.label.es : g.label.en}<small>{loading[id] ? (isEs ? 'Cargando…' : 'Loading…') : loaded[id] ? `${loaded[id]!.length.toLocaleString(isEs ? 'es-CR' : 'en-US')} ${isEs ? 'registros' : 'records'}` : (isEs ? 'Se carga al activar' : 'Loads when enabled')}</small></span></label></div>; })}
+    </details>)}
+    <p className="crt-map-help" role="status">{renderInfo.places.toLocaleString(isEs ? 'es-CR' : 'en-US')} {isEs ? 'puntos en esta vista' : 'places in this view'}{renderMarkers && <> · {renderInfo.markers} {isEs ? 'marcas agrupadas' : 'grouped markers'}</>}</p>
+    <details className="crt-layer-family"><summary>{isEs ? 'Cobertura y procedencia' : 'Coverage & provenance'}</summary><p className="crt-map-help">{isEs ? 'Inventario disponible de OpenStreetMap, SINAC, CCSS y fuentes compiladas. No es un censo exhaustivo ni confirma operación, tarifas o disponibilidad. Los datos de CCSS corresponden a 2021. Los puntos aproximados llevan borde discontinuo.' : 'Available inventory from OpenStreetMap, SINAC, CCSS and compiled sources. It is not an exhaustive census or confirmation of operation, fees or availability. CCSS data dates from 2021. Approximate points have a dashed edge.'}</p></details>
+    {!embedded && <div className="crt-standalone-results">{activeFeatures.slice(page*30,(page+1)*30).map((f,i)=><button key={`${f.properties.grupo}:${f.properties.id}:${i}`} type="button" onClick={()=>select(f)}>{f.properties.nombre || getPoiTypeLabel(f.properties.tipo,language)}</button>)}{activeFeatures.length>(page+1)*30 && <button onClick={()=>setPage(p=>p+1)}>{isEs ? 'Más lugares' : 'More places'}</button>}</div>}
+  </div>;
+  return embedded ? panel : <div ref={drawerRef} className="crt-national-standalone" data-testid="national-poi-layers"><button id="national-poi-layers-toggle" type="button" aria-expanded={isOpen} aria-controls="national-poi-layers-panel" onClick={()=>setIsOpen(v=>!v)}>{isEs ? 'Capas nacionales' : 'National layers'}</button>{isOpen && panel}</div>;
 };
-
 export default NationalPoiLayer;
