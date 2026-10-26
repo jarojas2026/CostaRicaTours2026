@@ -60,9 +60,10 @@ test('Cocos navigation survives clearing a catalog region',async({page})=>{
 });
 
 test('tour facts remain visible and selection reaches its destination',async({page})=>{
- await page.locator('#map-search-input').fill('arenal');await page.locator('#map-results-toggle').click();
- await page.locator('#map-explorer-results .crt-map-result').first().click();
+ await page.getByRole('button',{name:/^Canopy San Luis ·/}).click();
  await expect(page.locator('[data-testid=map-tour-facts]')).toBeVisible();
  await expect(page.locator('[data-testid=map-tour-facts]')).toContainText('Desde');
- await expect(page.locator('#costa-rica-leaflet-map-canvas')).toHaveAttribute('data-zoom','14');
+ const map=page.locator('#costa-rica-leaflet-map-canvas');
+ await expect(map).toHaveAttribute('data-zoom','14');
+ await expect.poll(async()=>Math.abs(Number(await map.getAttribute('data-center-lat'))-10.1)+Math.abs(Number(await map.getAttribute('data-center-lng'))+84.47)).toBeLessThan(.001);
 });
