@@ -4,6 +4,21 @@ Este archivo define las convenciones arquitectónicas, reglas de diseño y direc
 
 ---
 
+## 00. Reglas permanentes para toda IA (26-oct-2026) — máxima prioridad
+
+Aplican a cualquier IA o agente (Hark, Codex, Copilot, ChatGPT, JARVIS u otro). Prevalecen sobre todo lo demás de este archivo.
+
+1. **Costo $0 obligatorio.** Prohibido activar o reactivar, sin aprobación explícita y escrita de Gabriel: facturación de Google Cloud, Cloud Run, Cloud Build, escaneo de vulnerabilidades (Container Scanning / On-Demand Scanning), VMs, planes pagos, Google Maps con facturación o cualquier servicio con costo. **Nada de deploys a GCP.** Los recursos de GCP se apagaron el 26-oct-2026 para detener cargos: no volver a encenderlos.
+2. **Nunca borrar nada** (servicios, imágenes, repositorios, buckets, ramas, datos). Si algo sobra: desactivarlo, aislarlo o marcarlo como simulación.
+3. **Stripe solo en modo TEST.**
+4. **No tocar `api/[...path].ts`, `Header` ni `BottomNav`.**
+5. **No fusionar PRs** sin autorización explícita de Gabriel.
+6. **Cambios mínimos, aislados y sin dañar nada.** Antes de abrir un PR: correr los tests de contratos y TSC con `NODE_OPTIONS=--max-old-space-size=6144`.
+7. **Pagos a proveedores solo manuales** y registrados por el dueño. Nunca SINPE, banco ni pagos a números arbitrarios por cuenta del cliente.
+8. **Responder a Gabriel en español, con voseo costarricense.**
+
+---
+
 ## 0. Reglas vigentes del dueño (25-oct-2026) — prevalecen sobre este archivo
 
 Fuente normativa: [`docs/REGLAS_PLATAFORMA.md`](docs/REGLAS_PLATAFORMA.md). Si una sección más abajo la contradice, gana `docs/REGLAS_PLATAFORMA.md`.
