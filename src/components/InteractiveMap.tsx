@@ -569,10 +569,20 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
     // conserva el tamaño viejo: el zoom se ancla en un centro falso y las marcas parecen
     // desplazarse respecto a lo que el usuario ve. ResizeObserver lo corrige en cada cambio.
     let resizeFrame = 0;
+    let initialFitPending = selectedRegion === 'all';
+    const preserveUserView = () => { initialFitPending = false; };
+    map.on('dragstart zoomstart', preserveUserView);
     const handleResize = () => {
       cancelAnimationFrame(resizeFrame);
       resizeFrame = requestAnimationFrame(() => {
+        const center = map.getCenter();
         map.invalidateSize({ pan: false, debounceMoveend: true });
+        // Keep the chosen geographic center when a dock changes canvas size.
+        map.setView(center, map.getZoom(), { animate: false });
+        if (initialFitPending) {
+          initialFitPending = false;
+          map.fitBounds([[8.0, -86.0], [11.3, -82.5]], { padding: [40, 40], maxZoom: 8, animate: false });
+        }
         publishView();
       });
     };
@@ -588,6 +598,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
       window.removeEventListener('resize', handleResize);
       document.removeEventListener('fullscreenchange', handleResize);
       clearTimeout(resizeTimer);
+      map.off('dragstart zoomstart', preserveUserView);
       map.off('moveend', publishView);
       map.remove();
       leafletMapRef.current = null;

@@ -18,6 +18,9 @@ test('mobile layers dock reserves space and never overlaps the map',async({page}
  expect(box.height).toBeLessThanOrEqual(VIEWPORT.height/2);
  expect((await map.boundingBox())!.height).toBeGreaterThanOrEqual(210);
  await panel.hover();await page.mouse.wheel(0,650);await expect.poll(()=>panel.evaluate(el=>el.scrollTop)).toBeGreaterThan(0);
+ await panel.locator('#map-radius').selectOption('25');
+ await expect(page.locator('#map-search-input')).toBeVisible();
+ expect(await page.evaluate(()=>window.scrollY)).toBe(0);
  await page.getByRole('button',{name:'Cerrar selector de capas',exact:true}).tap();await expect(panel).toBeHidden();
 });
 test('dock closes with Escape or map background and can be toggled again',async({page})=>{
@@ -33,4 +36,12 @@ test('mobile tools and calculator preserve visible geography and page width',asy
  const p=(await panel.boundingBox())!,m=(await map.boundingBox())!;expect(m.y+m.height).toBeLessThanOrEqual(p.y+2);
  await page.getByRole('button',{name:'Cerrar calculadora',exact:true}).tap();await expect(panel).toBeHidden();
  const sizes=await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,width:document.documentElement.clientWidth}));expect(sizes.scrollWidth).toBeLessThanOrEqual(sizes.width);
+});
+
+test('mobile initial framing includes the mainland and opening a dock preserves its center',async({page})=>{
+ const map=page.locator('#costa-rica-leaflet-map-canvas');
+ await expect.poll(async()=>Number(await map.getAttribute('data-zoom'))).toBeLessThanOrEqual(7);
+ const before={lat:Number(await map.getAttribute('data-center-lat')),lng:Number(await map.getAttribute('data-center-lng'))};
+ await page.locator('#national-poi-layers-toggle').tap();
+ await expect.poll(async()=>Math.abs(Number(await map.getAttribute('data-center-lat'))-before.lat)+Math.abs(Number(await map.getAttribute('data-center-lng'))-before.lng)).toBeLessThan(.01);
 });
