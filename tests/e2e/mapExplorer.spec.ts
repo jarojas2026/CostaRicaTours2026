@@ -1,5 +1,6 @@
 import {expect,mockApi,test,expectNoConsoleErrors} from './fixtures';
 import {readFileSync} from 'node:fs';
+test.use({viewport:{width:1363,height:936}});
 test.beforeEach(async({page})=>{
  await page.addInitScript(()=>{if(window===window.top)window.localStorage.setItem('cookie-consent','essential');});
  await mockApi(page);await page.goto('/map');await expect(page.locator('#costa-rica-leaflet-map-canvas.leaflet-container')).toBeVisible();
