@@ -55,7 +55,7 @@ Las marcas individuales conservan su coordenada. Un centroide de grupo represent
 
 ### Carga y fallos
 
-La agrupación nacional se calcula en un Web Worker para mantener libres el desplazamiento y los controles. Se reutiliza al desplazar el mapa; un indicador señala los recálculos de zoom o filtros.
+La agrupación nacional se calcula en un Web Worker para mantener libres el desplazamiento y los controles. Se reutiliza al desplazar el mapa; un indicador señala los recálculos de zoom o filtros. El worker permanece inactivo entre solicitudes, agrupa cambios sucesivos y descarta respuestas antiguas; se termina al salir del mapa.
 
 `nationalPoiData.ts` conserva los datos correctos en memoria y comparte las solicitudes concurrentes de una misma capa. Valida la colección y descarta geometrías inválidas. Un fallo detiene los reintentos automáticos y ofrece un botón explícito para reintentar; no se crea un bucle de peticiones ni se bloquean las otras capas. El service worker existente conserva su estrategia de caché para GeoJSON.
 
@@ -69,7 +69,7 @@ No se modifica `api/[...path].ts`, pagos, reservas del servidor, variables, perm
 
 ### Validación
 
-- Contratos del repositorio: 958 pruebas aprobadas en la revisión local completa; contratos específicos de búsqueda, área/radio, duración, carga y agrupación ejecutados nuevamente tras los ajustes finales.
+- Contratos del repositorio: 959 pruebas aprobadas en la revisión local completa; contratos específicos de búsqueda, área/radio, duración, carga y agrupación ejecutados nuevamente tras los ajustes finales.
 - TypeScript sin emisiones y compilación Vite; auditoría de privacidad del bundle público.
 - Pruebas E2E de regresión: posición tras zoom, desplazamiento y cambio de tamaño; panel móvil sin superposición; filtros y ficha; superficies e itinerario; fallo de capa y reintento manual. Se ejecutan en el CI del PR con red externa simulada.
 - Inspección del build real en navegador: escritorio y marco móvil de 390 × 844. Panel acoplado, búsqueda nacional, ficha de catarata, agrupación y cambio de zoom. En la muestra de marcas visibles a zoom 15, la desviación respecto de Web Mercator fue menor de 1 px.

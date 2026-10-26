@@ -61,7 +61,7 @@ test('Cocos navigation survives clearing a catalog region',async({page})=>{
 });
 
 test('tour facts remain visible and selection reaches its destination',async({page})=>{
- await page.getByRole('button',{name:/^Canopy San Luis ·/}).click();
+ await page.getByRole('button',{name:/^Canopy San Luis/}).click();
  await expect(page.locator('[data-testid=map-tour-facts]')).toBeVisible();
  await expect(page.locator('[data-testid=map-tour-facts]')).toContainText('Desde');
  const map=page.locator('#costa-rica-leaflet-map-canvas');
