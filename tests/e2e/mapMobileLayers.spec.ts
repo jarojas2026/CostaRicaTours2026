@@ -26,8 +26,16 @@ test('mobile layers dock reserves space and never overlaps the map',async({page}
 test('dock closes with Escape or map background and can be toggled again',async({page})=>{
  const toggle=page.locator('#national-poi-layers-toggle'),panel=page.locator('#map-explorer-filters');
  await toggle.tap();await page.keyboard.press('Escape');await expect(panel).toBeHidden();
- await toggle.tap();const map=(await page.locator('#costa-rica-leaflet-map-canvas').boundingBox())!;
- await page.touchscreen.tap(map.x+30,map.y+30);await expect(panel).toBeHidden();
+ await toggle.tap();await expect(panel).toBeVisible();
+ const point=await page.locator('#costa-rica-leaflet-map-canvas').evaluate(el=>{
+  const r=el.getBoundingClientRect();
+  for(const dx of [.08,.25,.5,.75])for(const dy of [.12,.3,.6]){
+   const x=r.x+r.width*dx,y=r.y+r.height*dy,target=document.elementFromPoint(x,y);
+   if(target&&el.contains(target)&&!target.closest('.leaflet-marker-icon,.leaflet-control,.leaflet-tooltip'))return{x,y};
+  }
+  throw new Error('No map background available');
+ });
+ await page.touchscreen.tap(point.x,point.y);await expect(panel).toBeHidden();
  await toggle.tap();await expect(panel).toBeVisible();await toggle.tap();await expect(panel).toBeHidden();
 });
 test('mobile tools and calculator preserve visible geography and page width',async({page})=>{

@@ -43,6 +43,6 @@ test('a failed national layer stops retrying until the customer explicitly retri
  const retry=page.getByRole('button',{name:/Reintentar capa.*Hospedaje/i});await expect(retry).toBeVisible();
  await page.locator('#map-search-input').fill('hotel');await expect(retry).toBeVisible();expect(attempts).toBe(1);
  await retry.click();await expect(retry).toBeHidden();
- await page.getByText('Hospedaje y alimentación',{exact:true}).click();
+ await page.locator('#national-poi-layers-panel summary').filter({hasText:'Hospedaje y alimentación'}).click();
  await expect(page.locator('#national-poi-layers-panel')).toContainText(/3[.\s]911 registros/);expect(attempts).toBe(2);
 });

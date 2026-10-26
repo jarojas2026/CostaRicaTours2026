@@ -295,6 +295,24 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
   },[openDock]);
   useEffect(()=>{const map=leafletMapInstance;if(!map)return;const close=()=>openDock(null);map.on('click',close);return()=>{map.off('click',close);};},[leafletMapInstance,openDock]);
   useEffect(() => {
+    if (!leafletMapInstance) return;
+    const canvas = leafletMapInstance.getContainer();
+    let start: { id: number; x: number; y: number } | null = null;
+    const down = (event: PointerEvent) => { start = { id: event.pointerId, x: event.clientX, y: event.clientY }; };
+    const cancel = () => { start = null; };
+    const up = (event: PointerEvent) => {
+      const origin = start; start = null;
+      if (!origin || origin.id !== event.pointerId || Math.hypot(event.clientX-origin.x,event.clientY-origin.y)>8) return;
+      if ((event.target as Element).closest('.leaflet-marker-icon,.leaflet-control,.leaflet-tooltip')) return;
+      openDock(null);
+    };
+    // Capture a genuine background tap even when Leaflet suppresses a mobile click.
+    canvas.addEventListener('pointerdown',down,{passive:true});
+    canvas.addEventListener('pointerup',up,{passive:true});
+    canvas.addEventListener('pointercancel',cancel,{passive:true});
+    return () => { canvas.removeEventListener('pointerdown',down); canvas.removeEventListener('pointerup',up); canvas.removeEventListener('pointercancel',cancel); };
+  }, [leafletMapInstance,openDock]);
+  useEffect(() => {
     if(!activePanel)return;
     const key=(event:KeyboardEvent)=>{if(event.key==='Escape'){openDock(null);document.getElementById('national-poi-layers-toggle')?.focus();}};
     window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);
@@ -472,12 +490,12 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
     });
 
     map.setMaxBounds([
-      [4.8, -88.5],
-      [12.5, -80.5]
+      [2, -92],
+      [18, -77]
     ]);
     // Fit the mainland to the actual canvas, including narrow mobile screens.
     // Cocos Island stays reachable through its dedicated navigation action.
-    if (selectedRegion === 'all') map.fitBounds([[8.0, -86.0], [11.3, -82.5]], { padding: [40, 40], maxZoom: 8 });
+    if (selectedRegion === 'all') map.fitBounds([[8.0, -86.0], [11.3, -82.5]], { padding: [20, 30], maxZoom: 8 });
 
     const layerConfig = TILE_LAYERS[activeLayer];
     const tileLayer = L.tileLayer(layerConfig.url, {
@@ -581,7 +599,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
         map.setView(center, map.getZoom(), { animate: false });
         if (initialFitPending) {
           initialFitPending = false;
-          map.fitBounds([[8.0, -86.0], [11.3, -82.5]], { padding: [40, 40], maxZoom: 8, animate: false });
+          map.fitBounds([[8.0, -86.0], [11.3, -82.5]], { padding: [20, 30], maxZoom: 8, animate: false });
         }
         publishView();
       });
@@ -1029,7 +1047,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
 
   const handleRecenterCostaRica = () => {
     onSelectRegion('all');
-    leafletMapRef.current?.flyToBounds([[8.0, -86.0], [11.3, -82.5]], { padding: [40, 40], maxZoom: 8, duration: .6 });
+    leafletMapRef.current?.flyToBounds([[8.0, -86.0], [11.3, -82.5]], { padding: [20, 30], maxZoom: 8, duration: .6 });
   };
 
   // Fit bounds to filtered pins
