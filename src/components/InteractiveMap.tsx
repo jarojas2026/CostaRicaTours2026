@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, useDeferredValue } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { REGIONS_DATA } from '../data/regionsData';
@@ -57,7 +57,13 @@ import {
   estimateTravelTime 
 } from '../data/mapServicesData';
 import { MapServiceBookingModal } from './MapServiceBookingModal';
-import { NationalPoiLayer, OPEN_NATIONAL_LAYERS_EVENT } from './NationalPoiLayer';
+import { NationalPoiLayer, OPEN_NATIONAL_LAYERS_EVENT, defaultNationalLayers, type NationalLayerSelection } from './NationalPoiLayer';
+import { MapExplorerControls, type MapLayerFilters, type MapPreset } from './MapExplorerControls';
+import { NATIONAL_POI_GROUPS, getPoiTypeLabel } from '../data/nationalPoiLayers';
+import { matchesMapSearch, matchesMapSpatialFilter, matchesTourDuration, mapReferenceLabel, type MapViewport, type MapSpatialFilter, type NationalPoiFeature } from '../utils/mapExplorerFilters';
+import { buildNationalPoiPopupHtml, escapeHtml } from './nationalPoiPopup';
+import { requestCustomerIntake } from '../utils/customerIntake';
+import './MapExplorer.css';
 import { groupMapPointsAtZoom } from '../utils/mapMarkerLayout';
 import { PRICE_ON_REQUEST, REFERENCE_PRICE_NOTE, getMapServiceUnitPriceUSD } from '../utils/mapServicePricing';
 import { PUBLIC_REQUEST_LABEL } from '../data/publicContactPolicy';
@@ -120,9 +126,9 @@ const TILE_LAYERS: Record<TileLayerKey, TileLayerConfig> = {
   },
   topo: {
     name: { es: 'Topográfico & Relieve', en: 'Topography & Relief' },
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-    attribution: '&copy; Esri, HERE, Garmin, USGS',
-    maxZoom: 18,
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attribution: 'Map data &copy; OpenStreetMap, SRTM | Map style &copy; OpenTopoMap (CC BY-SA)',
+    maxZoom: 17,
     icon: '⛰️'
   }
 };
@@ -225,13 +231,13 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
   const itineraryMarkersLayerRef = useRef<L.LayerGroup | null>(null);
 
   // Selection states
-  const [selectedMapTour, setSelectedMapTour] = useState<Tour | null>(null);
-  const [selectedMapService, setSelectedMapService] = useState<MapTourismService | null>(null);
+  const [selectedMapTour, setSelectedMapTourState] = useState<Tour | null>(null);
+  const [selectedMapService, setSelectedMapServiceState] = useState<MapTourismService | null>(null);
   const [activeBookingService, setActiveBookingService] = useState<MapTourismService | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   // Layer & UI states
-  const [activeLayer, setActiveLayer] = useState<TileLayerKey>('voyager');
+  const [activeLayer, setActiveLayer] = useState<TileLayerKey>('topo');
   const [currentZoom, setCurrentZoom] = useState<number>(8);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showLayerMenu, setShowLayerMenu] = useState(false);
@@ -242,28 +248,65 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
   const [showCalculatorModal, setShowCalculatorModal] = useState<boolean>(false);
 
   // Service Layer Filters Toggles
-  const [layerFilters, setLayerFilters] = useState<{
-    tours: boolean;
-    hotels: boolean;
-    parks: boolean;
-    buses: boolean;
-    trains: boolean;
-    taxis: boolean;
-    airports: boolean;
-    airstrips: boolean;
-  }>({
-    tours: true,
-    hotels: true,
-    parks: true,
-    buses: true,
-    trains: true,
-    taxis: true,
-    airports: true,
-    airstrips: true
-  });
-
+  const initialCatalogLayers: MapLayerFilters = { tours:true, hotels:false, parks:false, buses:false, trains:false, taxis:false, airports:false, airstrips:false };
+  const [layerFilters, setLayerFilters] = useState<MapLayerFilters>(initialCatalogLayers);
+  const [nationalLayers, setNationalLayers] = useState<NationalLayerSelection>(defaultNationalLayers);
+  const [nationalFilterReset, setNationalFilterReset] = useState(0);
+  const [dockTab, setDockTab] = useState<'layers'|'results'|'tools'|null>(null);
+  const [selectedPoi, setSelectedPoi] = useState<NationalPoiFeature|null>(null);
+  type ResultItem = { id:string; title:string; subtitle:string; icon:string; ll:[number,number]; tour?:Tour; service?:MapTourismService; poi?:NationalPoiFeature };
+  const [selectedGroup, setSelectedGroup] = useState<ResultItem[]|null>(null);
+  const [poiResults, setPoiResults] = useState<NationalPoiFeature[]>([]);
+  const [viewport, setViewport] = useState<MapViewport|null>(null);
+  const [onlyInView, setOnlyInView] = useState(false);
+  const [radiusKm, setRadiusKm] = useState<number|null>(null);
+  const [hideApproximate, setHideApproximate] = useState(false);
+  const [maxDuration, setMaxDuration] = useState<number|null>(null);
+  const [showRegionAreas, setShowRegionAreas] = useState(false);
+  const [resultPage, setResultPage] = useState(0);
+  const [tileError, setTileError] = useState(false);
+  const spatialFilter = useMemo<MapSpatialFilter>(() => ({ viewport: onlyInView || radiusKm !== null ? viewport : null, onlyInView, radiusKm }), [viewport, onlyInView, radiusKm]);
+  const openDock = useCallback((tab:'layers'|'results'|'tools'|'itinerary'|'calculator'|null) => {
+    setSelectedMapTourState(null); setSelectedMapServiceState(null); setSelectedPoi(null); setSelectedGroup(null);
+    setShowItineraryDrawer(tab==='itinerary'); setShowCalculatorModal(tab==='calculator');
+    setDockTab(tab==='layers'||tab==='results'||tab==='tools' ? tab : null);
+  }, []);
+  const setSelectedMapTour = useCallback((tour:Tour|null) => {
+    setSelectedMapTourState(tour);
+    if(tour){setSelectedMapServiceState(null);setSelectedPoi(null);setSelectedGroup(null);setShowItineraryDrawer(false);setShowCalculatorModal(false);setDockTab(null);}
+  }, []);
+  const setSelectedMapService = useCallback((service:MapTourismService|null) => {
+    setSelectedMapServiceState(service);
+    if(service){setSelectedMapTourState(null);setSelectedPoi(null);setSelectedGroup(null);setShowItineraryDrawer(false);setShowCalculatorModal(false);setDockTab(null);}
+  }, []);
+  const selectPoi = useCallback((poi:NationalPoiFeature) => {
+    openDock(null); setSelectedPoi(poi);
+    const [lng,lat]=poi.geometry.coordinates;
+    leafletMapRef.current?.flyTo([lat,lng],Math.max(leafletMapRef.current.getZoom(),14),{duration:.4});
+  }, [openDock]);
+  const selectPoiGroup = useCallback((features:NationalPoiFeature[]) => {
+    openDock(null); setSelectedGroup(features.map(poi=>({id:`poi:${poi.properties.grupo}:${poi.properties.id}`,title:poi.properties.nombre||getPoiTypeLabel(poi.properties.tipo,language),subtitle:getPoiTypeLabel(poi.properties.tipo,language),icon:NATIONAL_POI_GROUPS.find(g=>g.id===poi.properties.grupo)?.emoji||'📍',ll:[poi.geometry.coordinates[1],poi.geometry.coordinates[0]],poi})));
+  }, [openDock,language]);
+  const activePanel = selectedPoi ? 'poi' : selectedGroup ? 'group' : selectedMapTour ? 'tour' : selectedMapService ? 'service' : showItineraryDrawer ? 'itinerary' : showCalculatorModal ? 'calculator' : dockTab;
+  useEffect(() => {
+    const open=()=>openDock('layers');
+    window.addEventListener(OPEN_NATIONAL_LAYERS_EVENT,open);
+    return()=>window.removeEventListener(OPEN_NATIONAL_LAYERS_EVENT,open);
+  },[openDock]);
+  useEffect(()=>{const map=leafletMapInstance;if(!map)return;const close=()=>openDock(null);map.on('click',close);return()=>{map.off('click',close);};},[leafletMapInstance,openDock]);
+  useEffect(() => {
+    if(!activePanel)return;
+    const key=(event:KeyboardEvent)=>{if(event.key==='Escape'){openDock(null);document.getElementById('national-poi-layers-toggle')?.focus();}};
+    window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);
+  },[activePanel,openDock]);
+  useEffect(() => {
+    const map=leafletMapInstance;if(!map)return;
+    const publish=()=>{const center=map.getCenter(),b=map.getBounds();setViewport({center:[center.lat,center.lng],bounds:[b.getSouth(),b.getWest(),b.getNorth(),b.getEast()],zoom:map.getZoom()});};
+    publish();map.on('moveend',publish);return()=>{map.off('moveend',publish);};
+  },[leafletMapInstance]);
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
+  const deferredSearch = useDeferredValue(searchQuery);
   const [selectedCategory, setSelectedCategory] = useState<TourCategory | 'all'>('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
   const [gpsLoading, setGpsLoading] = useState(false);
@@ -336,17 +379,9 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
   const effectiveTours = useMemo(() => {
     if (!layerFilters.tours) return [];
     return tours.filter((tour) => {
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const title = getLangText(tour.title, language).toLowerCase();
-        const subtitle = getLangText(tour.subtitle || { es: '', en: '' }, language).toLowerCase();
-        const desc = getLangText(tour.description || { es: '', en: '' }, language).toLowerCase();
-        const place = (tour.location?.placeName || (tour.location as any)?.name || '').toLowerCase();
-        if (!title.includes(q) && !subtitle.includes(q) && !desc.includes(q) && !place.includes(q)) {
-          return false;
-        }
-      }
-
+      if (!matchesMapSearch(deferredSearch,[getLangText(tour.title,language),getLangText(tour.subtitle,language),getLangText(tour.description,language),tour.location?.placeName])) return false;
+      if (!matchesTourDuration(tour,maxDuration)) return false;
+      if (!matchesMapSpatialFilter(tour.location ? [tour.location.lat,tour.location.lng] : null,spatialFilter)) return false;
       if (selectedRegion !== 'all' && tour.region !== selectedRegion) {
         return false;
       }
@@ -361,7 +396,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
 
       return true;
     });
-  }, [tours, searchQuery, selectedRegion, selectedCategory, selectedDifficulty, language, layerFilters.tours]);
+  }, [tours, deferredSearch, maxDuration, spatialFilter, selectedRegion, selectedCategory, selectedDifficulty, language, layerFilters.tours]);
 
   // Filtered tourism services (hotels, parks, transport, etc.)
   const effectiveServices = useMemo(() => {
@@ -380,21 +415,12 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
         return false;
       }
 
-      // Search query filter
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const name = getLangText(srv.name, language).toLowerCase();
-        const subtitle = getLangText(srv.subtitle, language).toLowerCase();
-        const address = getLangText(srv.address, language).toLowerCase();
-        const desc = getLangText(srv.description, language).toLowerCase();
-        if (!name.includes(q) && !subtitle.includes(q) && !address.includes(q) && !desc.includes(q)) {
-          return false;
-        }
-      }
+      if (!matchesMapSearch(deferredSearch,[getLangText(srv.name,language),getLangText(srv.subtitle,language),getLangText(srv.address,language),getLangText(srv.description,language)])) return false;
+      if (!matchesMapSpatialFilter([srv.coordinates.lat,srv.coordinates.lng],spatialFilter)) return false;
 
       return true;
     });
-  }, [layerFilters, selectedRegion, searchQuery, language]);
+  }, [layerFilters, selectedRegion, deferredSearch, spatialFilter, language]);
 
   // Counts for each category
   const serviceCounts = useMemo(() => {
@@ -446,16 +472,22 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
     });
 
     map.setMaxBounds([
-      [6.5, -88.5],
+      [4.8, -88.5],
       [12.5, -80.5]
     ]);
+    // Fit the mainland to the actual canvas, including narrow mobile screens.
+    // Cocos Island stays reachable through its dedicated navigation action.
+    if (selectedRegion === 'all') map.fitBounds([[8.0, -86.0], [11.3, -82.5]], { padding: [40, 40], maxZoom: 8 });
 
     const layerConfig = TILE_LAYERS[activeLayer];
     const tileLayer = L.tileLayer(layerConfig.url, {
       attribution: layerConfig.attribution,
-      maxZoom: layerConfig.maxZoom
+      maxZoom: 18,
+      maxNativeZoom: layerConfig.maxZoom
     }).addTo(map);
 
+    tileLayer.on('tileerror',()=>setTileError(true));
+    tileLayer.on('tileload',()=>setTileError(false));
     tileLayerRef.current = tileLayer;
 
     // Markers layer group
@@ -509,13 +541,14 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
           }
         });
       }
-    }).addTo(map);
+    });
 
     geoJsonLayerRef.current = geoJsonLayer;
 
     map.on('zoomend', () => {
       setCurrentZoom(map.getZoom());
     });
+    setCurrentZoom(map.getZoom());
 
     leafletMapRef.current = map;
     setLeafletMapInstance(map);
@@ -588,6 +621,8 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
     }
   }, [selectedRegion]);
 
+  useEffect(()=>{const map=leafletMapInstance,layer=geoJsonLayerRef.current;if(!map||!layer)return;if(showRegionAreas)layer.addTo(map);else layer.remove();},[leafletMapInstance,showRegionAreas]);
+
   // Update Tile Layer
   useEffect(() => {
     if (!leafletMapRef.current || !tileLayerRef.current) return;
@@ -596,9 +631,13 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
     const layerConfig = TILE_LAYERS[activeLayer];
     const newTileLayer = L.tileLayer(layerConfig.url, {
       attribution: layerConfig.attribution,
-      maxZoom: layerConfig.maxZoom
+      maxZoom: 18,
+      maxNativeZoom: layerConfig.maxZoom
     }).addTo(leafletMapRef.current);
 
+    setTileError(false);
+    newTileLayer.on('tileerror',()=>setTileError(true));
+    newTileLayer.on('tileload',()=>setTileError(false));
     tileLayerRef.current = newTileLayer;
   }, [activeLayer]);
 
@@ -647,45 +686,10 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
         });
         const stackMarker = L.marker([group.lat, group.lng], { icon: stackIcon, zIndexOffset: hasSelected ? 1000 : 15 });
 
-        const popupEl = document.createElement('div');
-        popupEl.style.cssText = 'min-width:200px;max-width:260px;max-height:280px;overflow-y:auto;line-height:1.3;font-size:12px;';
-        const heading = document.createElement('div');
-        heading.style.cssText = 'font-weight:800;font-size:12px;margin-bottom:2px;';
-        heading.textContent = language === 'es' ? `${groupTours.length} tours en esta zona` : `${groupTours.length} tours in this area`;
-        const note = document.createElement('div');
-        note.style.cssText = 'font-size:10px;opacity:.7;margin-bottom:6px;';
-        note.textContent = language === 'es'
-          ? group.isCluster
-            ? '📍 Agrupación de zonas cercanas; esta marca NO indica una ubicación exacta'
-            : `📍 ${zoneName} · ubicación aproximada (punto de referencia de la zona)`
-          : group.isCluster
-            ? '📍 Nearby areas grouped; this pin is NOT an exact location'
-            : `📍 ${zoneName} · approximate location (area reference point)`;
-        popupEl.append(heading, note);
-        if (group.isCluster && zoom < 13) {
-          const zoomButton = document.createElement('button');
-          zoomButton.type = 'button';
-          zoomButton.textContent = language === 'es' ? '🔎 Acercar para separar marcas' : '🔎 Zoom in to separate pins';
-          zoomButton.style.cssText = 'display:block;width:100%;text-align:left;padding:5px 2px;margin-bottom:4px;color:#047857;font-weight:800;cursor:pointer;';
-          zoomButton.addEventListener('click', () => {
-            stackMarker.closePopup();
-            map.flyTo([group.lat, group.lng], Math.min(13, zoom + 2), { duration: 0.45 });
-          });
-          popupEl.append(zoomButton);
-        }
-        groupTours.forEach((tour) => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.style.cssText = 'display:block;width:100%;text-align:left;padding:4px 2px;border-bottom:1px solid rgba(0,0,0,.08);font-weight:700;cursor:pointer;';
-          btn.textContent = `${getCategoryColorAndEmoji(tour.category).emoji} ${getLangText(tour.title, language)}`;
-          btn.addEventListener('click', () => {
-            setSelectedMapTour(tour);
-            setSelectedMapService(null);
-            stackMarker.closePopup();
-          });
-          popupEl.append(btn);
+        stackMarker.on('click',()=>{
+          if(group.isCluster && zoom<18){map.flyTo([group.lat,group.lng],Math.min(zoom+2,18),{duration:.35});return;}
+          openDock(null);setSelectedGroup(groupTours.map(tour=>({id:`tour:${tour.id}`,title:getLangText(tour.title,language),subtitle:mapReferenceLabel(language),icon:getCategoryColorAndEmoji(tour.category).emoji,ll:[tour.location.lat,tour.location.lng],tour})));
         });
-        stackMarker.bindPopup(popupEl, { maxWidth: 280 });
         stackMarker.bindTooltip(
           group.isCluster
             ? (language === 'es' ? `${groupTours.length} tours cercanos · grupo aproximado` : `${groupTours.length} nearby tours · approximate cluster`)
@@ -693,6 +697,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
           { direction: 'top', offset: [0, -18], className: 'leaflet-tour-tooltip' }
         );
         stackMarker.addTo(markersLayerRef.current!);
+        stackMarker.getElement()?.setAttribute('aria-label',language==='es'?`${groupTours.length} tours agrupados · acercar o ver lista`:`${groupTours.length} grouped tours · zoom in or view list`);
         stackMarker.getElement()?.setAttribute('data-lat', String(group.lat));
         stackMarker.getElement()?.setAttribute('data-lng', String(group.lng));
         return;
@@ -735,14 +740,14 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
           );
         });
 
-        const tourTitle = getLangText(tour.title, language);
-        const tourLocation = tour.location.placeName || (tour.location as any).name || '';
+        const tourTitle = escapeHtml(getLangText(tour.title, language));
+        const tourLocation = escapeHtml(tour.location.placeName || (tour.location as any).name || '');
         marker.bindTooltip(`
           <div style="min-width: 160px; max-width: 220px; line-height: 1.3;">
             <div style="font-weight: 800; font-size: 11px; color: #10b981; margin-bottom: 2px;">📍 ${tourLocation}</div>
             <div style="font-weight: 700; font-size: 12px; color: #F8FAFC;">${tourTitle}</div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 11px; color: #A7F3D0;">
-              <span>★ ${tour.rating}</span>
+              <span>${language === 'es' ? 'Referencia de zona' : 'Area reference'}</span>
               <span>${getLangText(tour.durationLabel, language)}</span>
             </div>
           </div>
@@ -753,6 +758,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
         });
 
         marker.addTo(markersLayerRef.current!);
+      marker.getElement()?.setAttribute('aria-label',getLangText(tour.title,language));
       marker.getElement()?.setAttribute('data-lat', String(tour.location.lat));
       marker.getElement()?.setAttribute('data-lng', String(tour.location.lng));
     });
@@ -774,41 +780,14 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
           popupAnchor: [0, -16]
         });
         const marker = L.marker([group.lat, group.lng], { icon: clusteredIcon, zIndexOffset: 17 });
-        const popup = document.createElement('div');
-        popup.style.cssText = 'min-width:200px;max-width:270px;max-height:280px;overflow-y:auto;font-size:12px;line-height:1.3;';
-        const heading = document.createElement('strong');
-        heading.textContent = language === 'es' ? `${group.count} servicios en esta área` : `${group.count} services in this area`;
-        const explanation = document.createElement('p');
-        explanation.style.cssText = 'font-size:10px;opacity:.75;margin:5px 0;';
-        explanation.textContent = language === 'es'
-          ? 'Agrupación de referencia: no representa la ubicación exacta de todos los servicios.'
-          : 'Reference cluster: not the exact location of every service.';
-        popup.append(heading, explanation);
-        if (group.isCluster && zoom < 13) {
-          const zoomButton = document.createElement('button');
-          zoomButton.type = 'button';
-          zoomButton.textContent = language === 'es' ? '🔎 Acercar para separar marcas' : '🔎 Zoom in to separate pins';
-          zoomButton.style.cssText = 'display:block;padding:5px 2px;color:#047857;font-weight:800;cursor:pointer;';
-          zoomButton.addEventListener('click', () => {
-            marker.closePopup();
-            map.flyTo([group.lat, group.lng], Math.min(13, zoom + 2), { duration: 0.45 });
-          });
-          popup.append(zoomButton);
-        }
-        for (const srv of group.items) {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.style.cssText = 'display:block;width:100%;text-align:left;padding:5px 2px;border-bottom:1px solid #eee;cursor:pointer;';
-          btn.textContent = `${getServiceIconAndColor(srv.type).emoji} ${getLangText(srv.name, language)}`;
-          btn.addEventListener('click', () => {
-            setSelectedMapService(srv);
-            setSelectedMapTour(null);
-            marker.closePopup();
-          });
-          popup.append(btn);
-        }
-        marker.bindPopup(popup, { maxWidth: 290 });
+        marker.on('click',()=>{
+          if(group.isCluster && zoom<18){map.flyTo([group.lat,group.lng],Math.min(zoom+2,18),{duration:.35});return;}
+          openDock(null);setSelectedGroup(group.items.map(service=>({id:`service:${service.id}`,title:getLangText(service.name,language),subtitle:mapReferenceLabel(language),icon:getServiceIconAndColor(service.type).emoji,ll:[service.coordinates.lat,service.coordinates.lng],service})));
+        });
         marker.addTo(markersLayerRef.current!);
+        marker.getElement()?.setAttribute('aria-label',language==='es'?`${group.items.length} servicios agrupados · acercar o ver lista`:`${group.items.length} grouped services · zoom in or view list`);
+        marker.getElement()?.setAttribute('data-lat',String(group.lat));
+        marker.getElement()?.setAttribute('data-lng',String(group.lng));
         return;
       }
       const srv = group.items[0];
@@ -863,8 +842,8 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
         );
       });
 
-      const srvName = getLangText(srv.name, language);
-      const srvSub = getLangText(srv.subtitle, language);
+      const srvName = escapeHtml(getLangText(srv.name, language));
+      const srvSub = escapeHtml(getLangText(srv.subtitle, language));
       marker.bindTooltip(`
         <div style="min-width: 170px; max-width: 240px; line-height: 1.3;">
           <div style="font-weight: 800; font-size: 11px; color: #34d399; margin-bottom: 2px;">${meta.emoji} ${meta.label[language === 'es' ? 'es' : 'en']}</div>
@@ -878,6 +857,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
       });
 
       marker.addTo(markersLayerRef.current!);
+      marker.getElement()?.setAttribute('aria-label',getLangText(srv.name,language));
       marker.getElement()?.setAttribute('data-lat', String(srv.coordinates.lat));
       marker.getElement()?.setAttribute('data-lng', String(srv.coordinates.lng));
     });
@@ -991,7 +971,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
     }
     const updated = [...itineraryStops, item];
     setItineraryStops(updated);
-    setShowItineraryDrawer(true);
+    openDock('itinerary');
   };
 
   const handleRemoveStop = (id: string) => {
@@ -1038,7 +1018,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
 
   const handleRecenterCostaRica = () => {
     onSelectRegion('all');
-    leafletMapRef.current?.flyTo([9.7489, -83.7534], 8, { duration: 1.0 });
+    leafletMapRef.current?.flyToBounds([[8.0, -86.0], [11.3, -82.5]], { padding: [40, 40], maxZoom: 8, duration: .6 });
   };
 
   // Fit bounds to filtered pins
@@ -1102,7 +1082,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
   const handleToggleFullscreen = () => {
     if (!mapContainerRef.current) return;
     if (!document.fullscreenElement) {
-      mapContainerRef.current.requestFullscreen?.().then(() => setIsFullscreen(true)).catch(() => {});
+      document.getElementById('costa-rica-interactive-map-root')?.requestFullscreen?.().then(() => setIsFullscreen(true)).catch(() => {});
     } else {
       document.exitFullscreen?.().then(() => setIsFullscreen(false)).catch(() => {});
     }
@@ -1129,351 +1109,59 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
     };
   }, [calcOrigin, calcDestination]);
 
+  const results = useMemo<ResultItem[]>(()=>[
+    ...effectiveTours.map(tour=>({id:`tour:${tour.id}`,title:getLangText(tour.title,language),subtitle:mapReferenceLabel(language),icon:getCategoryColorAndEmoji(tour.category).emoji,ll:[tour.location.lat,tour.location.lng] as [number,number],tour})),
+    ...effectiveServices.map(service=>({id:`service:${service.id}`,title:getLangText(service.name,language),subtitle:getServiceIconAndColor(service.type).label[language==='es'?'es':'en'],icon:getServiceIconAndColor(service.type).emoji,ll:[service.coordinates.lat,service.coordinates.lng] as [number,number],service})),
+    ...poiResults.map(poi=>({id:`poi:${poi.properties.grupo}:${poi.properties.id}`,title:poi.properties.nombre||getPoiTypeLabel(poi.properties.tipo,language),subtitle:getPoiTypeLabel(poi.properties.tipo,language),icon:NATIONAL_POI_GROUPS.find(g=>g.id===poi.properties.grupo)?.emoji||'📍',ll:[poi.geometry.coordinates[1],poi.geometry.coordinates[0]] as [number,number],poi}))
+  ],[effectiveTours,effectiveServices,poiResults,language]);
+  useEffect(()=>setResultPage(0),[results,selectedGroup]);
+  const chooseResult=(item:ResultItem)=>{
+    if(item.poi){selectPoi(item.poi);return;}
+    if(item.tour)setSelectedMapTour(item.tour);
+    if(item.service)setSelectedMapService(item.service);
+    leafletMapRef.current?.flyTo(item.ll,Math.max(leafletMapRef.current.getZoom(),14),{duration:.4});
+  };
+  const applyPreset=(preset:MapPreset)=>{
+    setNationalFilterReset(value=>value+1);
+    const groups:Record<MapPreset,string[]>={discover:['parques_sinac'],nature:['parques_sinac','naturaleza','fauna','reforestacion'],stay:['hospedaje','alimentacion'],transport:['transporte'],essentials:['servicios','salud','ccss','emergencia'],all:NATIONAL_POI_GROUPS.map(g=>g.id)};
+    setNationalLayers(Object.fromEntries(NATIONAL_POI_GROUPS.map(g=>[g.id,groups[preset].includes(g.id)])) as NationalLayerSelection);
+    setLayerFilters({...initialCatalogLayers,tours:preset==='discover'||preset==='nature'||preset==='all',hotels:preset==='stay'||preset==='all',parks:preset==='nature'||preset==='all',buses:preset==='transport'||preset==='all',trains:preset==='transport'||preset==='all',taxis:preset==='transport'||preset==='all',airports:preset==='transport'||preset==='all',airstrips:preset==='transport'||preset==='all'});
+    setSelectedCategory('all');setSelectedDifficulty('all');setMaxDuration(null);
+  };
+  const resetExplorer=()=>{setSearchQuery('');setSelectedCategory('all');setSelectedDifficulty('all');setMaxDuration(null);setRadiusKm(null);setOnlyInView(false);setHideApproximate(false);onSelectRegion('all');applyPreset('discover');};
+  const renderResults=(items:ResultItem[])=> <>
+    <p className="crt-map-search-status" role="status">{items.length.toLocaleString(language==='es'?'es-CR':'en-US')} {language==='es'?'resultados en capas activas':'results in active layers'}</p>
+    {!items.length && <><p className="crt-map-help">{language==='es'?'No hay resultados con estos filtros. Activa otra capa o amplía el área de búsqueda.':'No results match these filters. Enable another layer or widen the search area.'}</p><button className="crt-map-secondary" type="button" onClick={resetExplorer}>{language==='es'?'Restablecer búsqueda':'Reset search'}</button></>}
+    {items.slice(resultPage*40,(resultPage+1)*40).map(item=><button className="crt-map-result" key={item.id} type="button" onClick={()=>chooseResult(item)}><span className="crt-map-result-symbol" aria-hidden="true">{item.icon}</span><span><strong>{item.title}</strong><small>{item.subtitle}</small></span></button>)}
+    {items.length>40 && <div className="crt-map-pages"><button type="button" disabled={resultPage===0} onClick={()=>setResultPage(p=>p-1)}>{language==='es'?'Anterior':'Previous'}</button><span>{resultPage+1} / {Math.ceil(items.length/40)}</span><button type="button" disabled={(resultPage+1)*40>=items.length} onClick={()=>setResultPage(p=>p+1)}>{language==='es'?'Siguiente':'Next'}</button></div>}
+  </>;
   return (
     <section 
       id="costa-rica-interactive-map-root"
-      className="relative w-full h-[calc(100vh-64px)] flex flex-col bg-[#041711] overflow-hidden select-none"
+      className="crt-map-explorer relative w-full bg-[#041711] overflow-hidden"
+      data-dock-open={!!activePanel}
     >
-      {/* TOP HEADER CONTROLS BAR */}
-      <header className="absolute top-2 left-2 right-2 z-30 pointer-events-none">
-        <div className="max-w-6xl mx-auto flex flex-col gap-2 pointer-events-auto">
-          {/* Collapsed State */}
-          {isControlsCollapsed ? (
-            <div className="flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
-              <button
-                id="map-exit-min-btn"
-                onClick={onExitMap}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-800 bg-white/95 hover:bg-white border border-slate-200/90 rounded-xl shadow-lg backdrop-blur-md transition-all active:scale-95"
-                title={language === 'es' ? 'Volver al catálogo' : 'Back to catalog'}
-              >
-                <span>←</span>
-                <span className="hidden sm:inline">{language === 'es' ? 'Volver' : 'Back'}</span>
-              </button>
-
-              <button
-                id="map-expand-controls-btn"
-                onClick={() => setIsControlsCollapsed(false)}
-                className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-800 bg-white/95 hover:bg-white border border-slate-200/90 rounded-xl shadow-lg backdrop-blur-md transition-all active:scale-95 group"
-                title={language === 'es' ? 'Mostrar herramientas y capas' : 'Show tools & layers'}
-              >
-                <Search className="w-3.5 h-3.5 text-emerald-600 group-hover:scale-110 transition-transform" />
-                <span className="font-semibold text-slate-900">
-                  {searchQuery ? `"${searchQuery}"` : (language === 'es' ? 'Buscador y Capas' : 'Search & Layers')}
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-mono border border-emerald-300">
-                  {effectiveTours.length + effectiveServices.length} {language === 'es' ? 'puntos' : 'pins'}
-                </span>
-                <Eye className="w-3.5 h-3.5 text-emerald-600 ml-1" />
-              </button>
-
-              {/* Itinerary Quick Pill if stops exist */}
-              {itineraryStops.length > 0 && (
-                <button
-                  onClick={() => setShowItineraryDrawer(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white border border-emerald-500 shadow-xl"
-                >
-                  <Route className="w-3.5 h-3.5" />
-                  <span>{language === 'es' ? 'Itinerario' : 'Itinerary'} ({itineraryStops.length})</span>
-                </button>
-              )}
-            </div>
-          ) : (
-            /* Expanded State: Compact, Modern Floating Card Deck */
-            <div className="flex flex-col gap-2">
-              <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-xl p-2 sm:p-2.5 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 text-slate-800">
-                {/* Back Button */}
-                <button
-                  id="map-exit-btn"
-                  onClick={onExitMap}
-                  className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all shrink-0"
-                  title={language === 'es' ? 'Volver al catálogo' : 'Back to catalog'}
-                >
-                  <span>←</span>
-                  <span className="hidden sm:inline">{language === 'es' ? 'Volver' : 'Back'}</span>
-                </button>
-
-                {/* Search Bar Input */}
-                <div className="flex-1 min-w-[140px] relative">
-                  <div className="relative flex items-center">
-                    <Search className="absolute left-2.5 sm:left-3 w-3.5 sm:w-4 h-3.5 sm:h-4 text-slate-400 pointer-events-none" />
-                    <input
-                      id="map-search-input"
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder={language === 'es' ? 'Buscar tours, hoteles, parques SINAC, buses...' : 'Search tours, hotels, national parks, buses...'}
-                      className="w-full pl-8 sm:pl-9 pr-7 sm:pr-8 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery('')}
-                        className="absolute right-2 text-slate-400 hover:text-slate-600"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Region Navigation Selector */}
-                <button
-                  id="map-toggle-regions-btn"
-                  onClick={() => setShowRegionPills(!showRegionPills)}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-xl border transition-all shrink-0 ${
-                    showRegionPills || selectedRegion !== 'all'
-                      ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm'
-                      : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
-                  }`}
-                  title={language === 'es' ? 'Ver regiones de Costa Rica' : 'Explore regions'}
-                >
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span className="hidden md:inline">
-                    {selectedRegion !== 'all' 
-                      ? (REGION_NAV_ITEMS.find(r => r.id === selectedRegion)?.name[language === 'es' ? 'es' : 'en'] || '📍') 
-                      : (language === 'es' ? 'Regiones' : 'Regions')}
-                  </span>
-                  {showRegionPills ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                </button>
-
-                {/* Route Calculator Tool */}
-                <button
-                  id="map-toggle-calculator-btn"
-                  onClick={() => setShowCalculatorModal(true)}
-                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-all shrink-0"
-                  title={language === 'es' ? 'Calculadora de rutas y tiempos (Bus, Auto, Avioneta)' : 'Route & travel time calculator'}
-                >
-                  <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="hidden lg:inline">{language === 'es' ? 'Rutas y Tiempos' : 'Travel Times'}</span>
-                </button>
-
-                {/* Itinerary Drawer Button */}
-                <button
-                  id="map-toggle-itinerary-drawer-btn"
-                  onClick={() => setShowItineraryDrawer(!showItineraryDrawer)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-xl border transition-all shrink-0 ${
-                    itineraryStops.length > 0 
-                      ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm' 
-                      : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
-                  }`}
-                  title={language === 'es' ? 'Planificador de Itinerario en el Mapa' : 'Map Route Itinerary'}
-                >
-                  <Route className="w-3.5 h-3.5" />
-                  <span>{language === 'es' ? 'Itinerario' : 'Itinerary'}</span>
-                  {itineraryStops.length > 0 && (
-                    <span className="w-4 h-4 rounded-full bg-emerald-800 text-white text-[10px] font-bold flex items-center justify-center">
-                      {itineraryStops.length}
-                    </span>
-                  )}
-                </button>
-
-                {/* Layer Switcher */}
-                <div className="relative shrink-0">
-                  <button
-                    id="map-layer-selector-btn"
-                    onClick={() => setShowLayerMenu(!showLayerMenu)}
-                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all"
-                  >
-                    <Layers className="w-3.5 h-3.5 text-emerald-600" />
-                    <span className="hidden xl:inline">{TILE_LAYERS[activeLayer].name[language === 'es' ? 'es' : 'en']}</span>
-                  </button>
-
-                  {showLayerMenu && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 text-slate-800">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 py-1 mb-1">
-                        {language === 'es' ? 'Capas de Mapa' : 'Map Layers'}
-                      </div>
-                      {(Object.keys(TILE_LAYERS) as TileLayerKey[]).map((key) => {
-                        const l = TILE_LAYERS[key];
-                        const isActive = activeLayer === key;
-                        return (
-                          <button
-                            key={key}
-                            onClick={() => {
-                              setActiveLayer(key);
-                              setShowLayerMenu(false);
-                            }}
-                            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all ${
-                              isActive ? 'bg-emerald-600 text-white font-bold' : 'text-slate-700 hover:bg-slate-100'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <span>{l.icon}</span>
-                              <span>{l.name[language === 'es' ? 'es' : 'en']}</span>
-                            </div>
-                            {isActive && <Check className="w-4 h-4" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Hide Bar Toggle */}
-                <button
-                  id="map-collapse-controls-btn"
-                  onClick={() => setIsControlsCollapsed(true)}
-                  className="flex items-center gap-1 px-2 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all shrink-0"
-                  title={language === 'es' ? 'Ocultar barra para despejar mapa' : 'Hide toolbar'}
-                >
-                  <EyeOff className="w-3.5 h-3.5 text-slate-500" />
-                </button>
-              </div>
-
-              {/* SINGLE CLEAN SCROLLABLE LAYER PILLS BAR */}
-              <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl p-1.5 shadow-lg flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 shrink-0">
-                  {language === 'es' ? 'Capas:' : 'Layers:'}
-                </span>
-
-                {/* Tours */}
-                <button
-                  onClick={() => setLayerFilters(prev => ({ ...prev, tours: !prev.tours }))}
-                  aria-pressed={layerFilters.tours}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
-                    layerFilters.tours ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
-                  }`}
-                >
-                  <span>📍</span>
-                  <span>{language === 'es' ? 'Tours' : 'Tours'}</span>
-                  <span className="text-[10px] opacity-90">({serviceCounts.tours})</span>
-                </button>
-
-                {/* Hotels */}
-                <button
-                  onClick={() => setLayerFilters(prev => ({ ...prev, hotels: !prev.hotels }))}
-                  aria-pressed={layerFilters.hotels}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
-                    layerFilters.hotels ? 'bg-amber-50 text-amber-700 border-amber-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
-                  }`}
-                >
-                  <span>🏨</span>
-                  <span>{language === 'es' ? 'Hoteles' : 'Hotels'}</span>
-                  <span className="text-[10px] opacity-90">({serviceCounts.hotels})</span>
-                </button>
-
-                {/* National Parks */}
-                <button
-                  onClick={() => setLayerFilters(prev => ({ ...prev, parks: !prev.parks }))}
-                  aria-pressed={layerFilters.parks}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
-                    layerFilters.parks ? 'bg-teal-50 text-teal-700 border-teal-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
-                  }`}
-                >
-                  <span>🌿</span>
-                  <span>{language === 'es' ? 'Parques SINAC destacados' : 'Featured SINAC parks'}</span>
-                  <span className="text-[10px] opacity-90">({serviceCounts.parks})</span>
-                </button>
-
-                {/* Buses */}
-                <button
-                  onClick={() => setLayerFilters(prev => ({ ...prev, buses: !prev.buses }))}
-                  aria-pressed={layerFilters.buses}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
-                    layerFilters.buses ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
-                  }`}
-                >
-                  <span>🚌</span>
-                  <span>{language === 'es' ? 'Buses' : 'Buses'}</span>
-                  <span className="text-[10px] opacity-90">({serviceCounts.buses})</span>
-                </button>
-
-                {/* Trains */}
-                <button
-                  onClick={() => setLayerFilters(prev => ({ ...prev, trains: !prev.trains }))}
-                  aria-pressed={layerFilters.trains}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
-                    layerFilters.trains ? 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
-                  }`}
-                >
-                  <span>🚆</span>
-                  <span>{language === 'es' ? 'Trenes' : 'Trains'}</span>
-                  <span className="text-[10px] opacity-90">({serviceCounts.trains})</span>
-                </button>
-
-                {/* Taxis & Shuttles */}
-                <button
-                  onClick={() => setLayerFilters(prev => ({ ...prev, taxis: !prev.taxis }))}
-                  aria-pressed={layerFilters.taxis}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
-                    layerFilters.taxis ? 'bg-orange-50 text-orange-700 border-orange-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
-                  }`}
-                >
-                  <span>🚕</span>
-                  <span>{language === 'es' ? 'Shuttles' : 'Shuttles'}</span>
-                  <span className="text-[10px] opacity-90">({serviceCounts.taxis})</span>
-                </button>
-
-                {/* Commercial Airports */}
-                <button
-                  onClick={() => setLayerFilters(prev => ({ ...prev, airports: !prev.airports }))}
-                  aria-pressed={layerFilters.airports}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
-                    layerFilters.airports ? 'bg-purple-50 text-purple-700 border-purple-200 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400'
-                  }`}
-                >
-                  <span>✈️</span>
-                  <span>{language === 'es' ? 'Aeropuertos' : 'Airports'}</span>
-                  <span className="text-[10px] opacity-90">({serviceCounts.airports})</span>
-                </button>
-
-                {/* National layers (CCSS health, 62 SINAC sectors, wildlife, heritage...) */}
-                <button
-                  type="button"
-                  id="open-national-layers-btn"
-                  onClick={() => {
-                    // National layers render on the Leaflet map; switch first if needed.
-                    if (useGoogleMapsMode) setUseGoogleMapsMode(false);
-                    window.setTimeout(() => window.dispatchEvent(new CustomEvent(OPEN_NATIONAL_LAYERS_EVENT)), useGoogleMapsMode ? 400 : 0);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all shrink-0 border bg-amber-50 text-amber-800 border-amber-300 shadow-sm hover:bg-amber-100"
-                >
-                  <span>🗺️</span>
-                  <span className="sm:hidden">{language === 'es' ? 'Más capas' : 'More layers'}</span>
-                  <span className="hidden sm:inline">{language === 'es' ? 'Más capas: salud CCSS, SINAC, fauna, patrimonio…' : 'More layers: CCSS health, SINAC, wildlife, heritage…'}</span>
-                </button>
-              </div>
-
-              {/* Region Quick Navigation Pills */}
-              {showRegionPills && (
-                <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl p-2 shadow-xl animate-in slide-in-from-top-2 duration-150">
-                  <div className="flex items-center justify-between px-2 pb-1.5 mb-1 border-b border-slate-100 text-[11px] font-bold text-slate-800">
-                    <span className="flex items-center gap-1.5 text-emerald-700">
-                      <Compass className="w-3.5 h-3.5" />
-                      {language === 'es' ? 'Seleccionar Región de Costa Rica' : 'Select Costa Rica Region'}
-                    </span>
-                    <button
-                      onClick={() => setShowRegionPills(false)}
-                      className="text-slate-400 hover:text-slate-600 p-0.5 rounded"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none">
-                    {REGION_NAV_ITEMS.map((item) => {
-                      const isSelected = selectedRegion === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          id={`region-nav-pill-${item.id}`}
-                          onClick={() => handleFlyToRegion(item.id)}
-                          className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all shadow-sm ${
-                            isSelected
-                              ? 'bg-emerald-600 text-white font-bold scale-105 shadow-emerald-500/25'
-                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
-                          }`}
-                        >
-                          <span>{item.name[language === 'es' ? 'es' : 'en']}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+      <header className="crt-map-toolbar" aria-label={language==='es'?'Herramientas del mapa':'Map tools'}>
+        <button type="button" id="map-exit-btn" className="crt-map-back" onClick={onExitMap} aria-label={language==='es'?'Volver al catálogo':'Back to catalog'}>←</button>
+        <span className="crt-map-top-title">{language==='es'?'Explora Costa Rica':'Explore Costa Rica'}</span>
+        <label className="crt-map-search"><Search aria-hidden="true"/><input id="map-search-input" type="search" value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} aria-label={language==='es'?'Buscar en capas activas':'Search active layers'} placeholder={language==='es'?'Buscar en las capas activas…':'Search active layers…'}/>{searchQuery && <button type="button" onClick={()=>setSearchQuery('')} aria-label={language==='es'?'Limpiar búsqueda':'Clear search'}><X/></button>}</label>
+        <button type="button" id="national-poi-layers-toggle" className="crt-map-command" aria-expanded={activePanel==='layers'} aria-controls="map-explorer-filters" onClick={()=>openDock(activePanel==='layers'?null:'layers')}><Layers/>{language==='es'?'Capas y filtros':'Layers & filters'}</button>
+        <button type="button" id="map-results-toggle" className="crt-map-command" aria-expanded={activePanel==='results'} onClick={()=>openDock(activePanel==='results'?null:'results')}><MapPin/>{language==='es'?'Lugares':'Places'} <span id="map-result-count">{results.length.toLocaleString(language==='es'?'es-CR':'en-US')}</span></button>
+        <button type="button" id="map-tools-toggle" className="crt-map-command" aria-expanded={activePanel==='tools'} onClick={()=>openDock(activePanel==='tools'?null:'tools')}><Compass/>{language==='es'?'Herramientas':'Tools'}</button>
       </header>
-
+      <aside id="map-explorer-filters" className="crt-map-dock" hidden={activePanel!=='layers'} aria-label={language==='es'?'Capas y filtros del mapa':'Map layers and filters'}>
+        <div className="crt-map-dock-heading"><h2>{language==='es'?'Tu mapa, a tu manera':'Your map, your way'}</h2><button type="button" onClick={()=>openDock(null)} aria-label={language==='es'?'Cerrar selector de capas':'Close layers selector'}><X size={18}/></button></div>
+        <div className="crt-map-dock-body"><MapExplorerControls language={language} layers={layerFilters} onLayersChange={setLayerFilters} category={selectedCategory} onCategory={setSelectedCategory} difficulty={selectedDifficulty} onDifficulty={setSelectedDifficulty} region={selectedRegion} onRegion={handleFlyToRegion} maxDuration={maxDuration} onDuration={setMaxDuration} onlyInView={onlyInView} onOnlyInView={setOnlyInView} radiusKm={radiusKm} onRadius={setRadiusKm} hideApproximate={hideApproximate} onHideApproximate={setHideApproximate} showRegions={showRegionAreas} onShowRegions={setShowRegionAreas} onPreset={applyPreset} onReset={resetExplorer}>
+          <NationalPoiLayer map={leafletMapInstance} language={language} embedded filterResetKey={nationalFilterReset} enabledLayers={nationalLayers} onEnabledLayersChange={setNationalLayers} searchQuery={deferredSearch} spatialFilter={spatialFilter} hideApproximate={hideApproximate} onFeaturesChange={setPoiResults} onSelectPoi={selectPoi} onSelectGroup={selectPoiGroup}/>
+        </MapExplorerControls></div>
+      </aside>
+      {(activePanel==='results'||activePanel==='group') && <aside id="map-explorer-results" className="crt-map-dock" aria-label={language==='es'?'Resultados del mapa':'Map results'}><div className="crt-map-dock-heading"><h2>{activePanel==='group'?(language==='es'?'En esta ubicación':'At this location'):(language==='es'?'Lugares por descubrir':'Places to discover')}</h2><button type="button" onClick={()=>openDock(null)} aria-label={language==='es'?'Cerrar resultados':'Close results'}><X size={18}/></button></div><div className="crt-map-dock-body">{renderResults(selectedGroup||results)}</div></aside>}
+      {activePanel==='tools' && <aside id="map-explorer-tools" className="crt-map-dock"><div className="crt-map-dock-heading"><h2>{language==='es'?'Prepara tu ruta':'Plan your route'}</h2><button type="button" onClick={()=>openDock(null)} aria-label={language==='es'?'Cerrar herramientas':'Close tools'}><X size={18}/></button></div><div className="crt-map-dock-body">
+        <label className="crt-map-field">{language==='es'?'Superficie del mapa':'Basemap surface'}<select id="map-base-layer" value={activeLayer} onChange={e=>setActiveLayer(e.target.value as TileLayerKey)}>{(Object.keys(TILE_LAYERS) as TileLayerKey[]).map(key=><option key={key} value={key}>{TILE_LAYERS[key].icon} {TILE_LAYERS[key].name[language==='es'?'es':'en']}</option>)}</select></label>
+        <div className="crt-map-tools-grid"><button type="button" id="map-toggle-calculator-btn" onClick={()=>openDock('calculator')}>{language==='es'?'Rutas y tiempos':'Routes & travel times'}</button><button type="button" id="map-toggle-itinerary-drawer-btn" onClick={()=>openDock('itinerary')}>{language==='es'?'Mi itinerario':'My itinerary'} ({itineraryStops.length})</button><button type="button" onClick={handleFitBoundsToTours}>{language==='es'?'Ver catálogo filtrado':'Fit filtered catalog'}</button><button type="button" onClick={handleDownloadOffline}>{language==='es'?'Guardar catálogo sin conexión':'Save catalog offline'}</button><button type="button" onClick={()=>{onSelectRegion('all');leafletMapRef.current?.flyTo([5.53,-87.06],11,{duration:.5});}}>{language==='es'?'Isla del Coco':'Cocos Island'}</button><button type="button" onClick={()=>{resetExplorer();handleRecenterCostaRica();}}>{language==='es'?'Todo Costa Rica':'All Costa Rica'}</button></div>
+        <p className="crt-map-help">{language==='es'?'El catálogo y las capas descargadas pueden consultarse sin conexión. Las imágenes del mapa necesitan conexión. GPS se solicita solo al tocar su botón.':'Catalog and downloaded layers can be consulted offline. Basemap imagery requires a connection. GPS is requested only when its button is pressed.'}</p>
+      </div></aside>}
+      {selectedPoi && <aside id="map-selected-poi-panel" className="crt-map-dock" aria-label={language==='es'?'Detalles del lugar':'Place details'}><div className="crt-map-dock-heading"><h2>{getPoiTypeLabel(selectedPoi.properties.tipo,language)}</h2><button type="button" onClick={()=>openDock(null)} aria-label={language==='es'?'Cerrar detalles del lugar':'Close place details'}><X size={18}/></button></div><div className="crt-map-dock-body crt-map-place-facts" onClick={e=>{const cta=(e.target as HTMLElement).closest<HTMLElement>('[data-public-request-cta]');if(!cta)return;e.preventDefault();requestCustomerIntake({message:language==='es'?`Quisiera consultar: ${selectedPoi.properties.nombre||selectedPoi.properties.tipo}.`:`I would like to ask about: ${selectedPoi.properties.nombre||selectedPoi.properties.tipo}.`,language,source:`map:poi:${selectedPoi.properties.grupo}`,context:{poiId:selectedPoi.properties.id,poiGroup:selectedPoi.properties.grupo}});}} dangerouslySetInnerHTML={{__html:buildNationalPoiPopupHtml(selectedPoi.properties,selectedPoi.geometry.coordinates[1],selectedPoi.geometry.coordinates[0],language)}}/><p className="crt-map-dock-body crt-map-help">{language==='es'?'Referencia cartográfica. Confirma acceso, horarios y condiciones antes de viajar.':'Map reference. Confirm access, hours and conditions before traveling.'}</p></aside>}
       {/* GPS Status Toast */}
       {gpsStatusMsg && (
         <div className="absolute top-28 left-1/2 transform -translate-x-1/2 z-40 bg-stone-950/90 border border-emerald-500/50 text-emerald-200 text-xs font-bold px-4 py-2 rounded-full shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-top-4">
@@ -1482,7 +1170,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
       )}
 
       {/* MAP CANVAS CONTAINER */}
-      <div className="flex-1 w-full h-full relative">
+      <div className="crt-map-canvas-area">
         {useGoogleMapsMode && GOOGLE_MAPS_API_KEY ? (
           <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
             <GoogleMap
@@ -1508,13 +1196,15 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
         )}
 
         {/* CAPAS NACIONALES: todo Costa Rica (OpenStreetMap, carga diferida) */}
-        {!useGoogleMapsMode && <NationalPoiLayer map={leafletMapInstance} language={language} />}
+
 
         {/* FLOATING NAVIGATION & ZOOM TOOLBOX (Right Side) */}
-        <div className="absolute right-4 bottom-8 sm:bottom-12 z-30 flex flex-col gap-2 pointer-events-auto">
+        <div className="crt-map-nav">
           {/* Zoom In */}
           <button
             id="map-zoom-in-control"
+            aria-label={language==='es'?'Acercar zoom (+)':'Zoom In (+)'}
+            disabled={currentZoom>=18}
             onClick={handleZoomIn}
             className="w-9 h-9 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl flex items-center justify-center shadow-sm transition-all active:scale-95"
             title={language === 'es' ? 'Acercar zoom (+)' : 'Zoom In (+)'}
@@ -1525,6 +1215,8 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
           {/* Zoom Out */}
           <button
             id="map-zoom-out-control"
+            aria-label={language==='es'?'Alejar zoom (-)':'Zoom Out (-)'}
+            disabled={currentZoom<=6}
             onClick={handleZoomOut}
             className="w-9 h-9 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl flex items-center justify-center shadow-sm transition-all active:scale-95"
             title={language === 'es' ? 'Alejar zoom (-)' : 'Zoom Out (-)'}
@@ -1566,32 +1258,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
 
         </div>
 
-        {/* BOTTOM LEFT: Quick Itinerary Status Pill */}
-        <div className="absolute left-4 bottom-4 z-20 flex items-center gap-2">
-          {itineraryStops.length > 0 ? (
-            <button
-              onClick={() => setShowItineraryDrawer(true)}
-              className="flex items-center gap-2 bg-[#051e16]/95 hover:bg-emerald-950 backdrop-blur-md border border-emerald-400 px-4 py-2.5 rounded-2xl shadow-2xl text-xs font-bold text-white transition-all active:scale-95"
-            >
-              <Route className="w-4 h-4 text-emerald-400 animate-pulse" />
-              <span>
-                {language === 'es' 
-                  ? `Ruta Activa: ${itineraryStops.length} paradas (${itineraryMetrics.totalKm} km)` 
-                  : `Active Route: ${itineraryStops.length} stops (${itineraryMetrics.totalKm} km)`}
-              </span>
-              <span className="text-amber-300 font-mono">~{itineraryMetrics.driveHours}</span>
-            </button>
-          ) : (
-            <div className="hidden md:flex items-center gap-2 bg-[#051e16]/85 backdrop-blur-md border border-emerald-500/30 px-3.5 py-2 rounded-2xl shadow-xl">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span className="text-xs text-emerald-200">
-                {language === 'es' 
-                  ? 'Haz clic en cualquier tour, hotel, parque o transporte para reservar o añadir a tu ruta' 
-                  : 'Click any tour, hotel, national park, or transit hub to book or add to your route'}
-              </span>
-            </div>
-          )}
-        </div>
+        {tileError && <div role="status" className="crt-map-tile-error">{language==='es'?'No se pudo cargar parte del mapa base. Puedes cambiar de superficie en Herramientas.':'Some basemap tiles could not load. Choose another surface in Tools.'}</div>}
       </div>
 
       {/* ========================================================= */}
@@ -1600,10 +1267,10 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
       {showItineraryDrawer && (
         <aside 
           id="map-itinerary-drawer-panel"
-          className="absolute top-0 right-0 bottom-0 w-full sm:w-[420px] bg-[#051e16] border-l border-emerald-500/40 shadow-[-20px_0_50px_rgba(0,0,0,0.8)] z-50 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200"
+          className="crt-map-dock absolute top-0 right-0 bottom-0 w-full sm:w-[420px] bg-[#051e16] border-l border-emerald-500/40 shadow-[-20px_0_50px_rgba(0,0,0,0.8)] z-50 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200"
         >
           {/* Header */}
-          <div className="p-4 sm:p-5 border-b border-emerald-500/30 bg-emerald-950/80 flex items-center justify-between">
+          <div className="crt-map-heading-sticky p-4 sm:p-5 border-b border-emerald-500/30 bg-emerald-950/80 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-emerald-500 text-stone-950 flex items-center justify-center font-black">
                 <Route className="w-5 h-5" />
@@ -1619,6 +1286,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
             </div>
             <button
               onClick={() => setShowItineraryDrawer(false)}
+              aria-label={language==='es'?'Cerrar itinerario':'Close itinerary'}
               className="w-8 h-8 rounded-full bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 flex items-center justify-center"
             >
               <X className="w-5 h-5" />
@@ -1766,7 +1434,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
       {/* ROUTE & TRAVEL TIME CALCULATOR MODAL */}
       {/* ========================================================= */}
       {showCalculatorModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div id="map-calculator-panel" className="crt-map-dock">
           <div className="bg-[#051e16] border-2 border-emerald-500/40 rounded-3xl max-w-xl w-full shadow-2xl p-5 sm:p-6 text-white animate-in zoom-in-95 duration-150 space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-emerald-500/30">
               <div className="flex items-center gap-2.5">
@@ -1784,6 +1452,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
               </div>
               <button
                 onClick={() => setShowCalculatorModal(false)}
+                aria-label={language==='es'?'Cerrar calculadora':'Close calculator'}
                 className="text-emerald-400 hover:text-white"
               >
                 <X className="w-5 h-5" />
@@ -1927,117 +1596,14 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
       )}
 
       {/* ========================================================= */}
-      {/* FILTER MODAL / PANEL */}
-      {/* ========================================================= */}
-      {showFiltersModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#051e16] border border-emerald-500/40 rounded-3xl p-6 max-w-lg w-full shadow-2xl text-white animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-4 border-b border-emerald-500/20">
-              <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-lg font-black">{language === 'es' ? 'Filtrar Tours y Aventuras' : 'Filter Adventure Tours'}</h3>
-              </div>
-              <button
-                onClick={() => setShowFiltersModal(false)}
-                className="text-emerald-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4 py-4">
-              {/* Category */}
-              <div>
-                <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">
-                  {language === 'es' ? 'Categoría' : 'Category'}
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: 'all', label: { es: 'Todas las Categorías', en: 'All Categories' } },
-                    { id: 'volcanoes', label: { es: '🌋 Volcanes & Termales', en: 'Volcanoes & Springs' } },
-                    { id: 'wildlife', label: { es: '🦥 Fauna & Perezosos', en: 'Wildlife & Sloths' } },
-                    { id: 'canopy', label: { es: '🪂 Canopy & Tirolesa', en: 'Canopy & Zipline' } },
-                    { id: 'beaches', label: { es: '🏄 Playas & Catamarán', en: 'Beaches & Ocean' } },
-                    { id: 'rafting', label: { es: '🛶 Rafting en Ríos', en: 'River Rafting' } },
-                    { id: 'culture', label: { es: '☕ Café & Chocolate', en: 'Coffee & Culture' } },
-                    { id: 'services', label: { es: '🚐 Transporte y servicios', en: 'Transport & services' } }
-                  ].map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => setSelectedCategory(cat.id as any)}
-                      className={`px-3 py-2 rounded-xl text-xs font-bold text-left transition-all border ${
-                        selectedCategory === cat.id
-                          ? 'bg-emerald-500 border-white text-stone-950'
-                          : 'bg-emerald-950/50 border-emerald-500/20 text-emerald-100 hover:bg-emerald-900/60'
-                      }`}
-                    >
-                      {cat.label[language === 'es' ? 'es' : 'en']}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Difficulty */}
-              <div>
-                <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">
-                  {language === 'es' ? 'Dificultad' : 'Difficulty'}
-                </label>
-                <div className="grid grid-cols-4 gap-2">
-                  {[
-                    { id: 'all', label: { es: 'Todos', en: 'All' } },
-                    { id: 'fácil', label: { es: 'Fácil', en: 'Easy' } },
-                    { id: 'moderado', label: { es: 'Moderado', en: 'Moderate' } },
-                    { id: 'exigente', label: { es: 'Exigente', en: 'Challenging' } }
-                  ].map((diff) => (
-                    <button
-                      key={diff.id}
-                      onClick={() => setSelectedDifficulty(diff.id)}
-                      className={`px-2 py-1.5 rounded-xl text-xs font-bold text-center transition-all border ${
-                        selectedDifficulty === diff.id
-                          ? 'bg-amber-500 border-white text-stone-950'
-                          : 'bg-emerald-950/50 border-emerald-500/20 text-emerald-100 hover:bg-emerald-900/60'
-                      }`}
-                    >
-                      {diff.label[language === 'es' ? 'es' : 'en']}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-4 border-t border-emerald-500/20">
-              <button
-                onClick={() => {
-                  setSelectedCategory('all');
-                  setSelectedDifficulty('all');
-                  setSearchQuery('');
-                }}
-                className="flex-1 py-2.5 bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-500/30 rounded-xl text-xs font-bold text-emerald-200"
-              >
-                {language === 'es' ? 'Restablecer' : 'Reset'}
-              </button>
-              <button
-                onClick={() => {
-                  setShowFiltersModal(false);
-                  handleFitBoundsToTours();
-                }}
-                className="flex-1 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-stone-950 font-black rounded-xl text-xs shadow-lg"
-              >
-                {language === 'es' ? `Ver ${effectiveTours.length} Tours` : `Show ${effectiveTours.length} Tours`}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================= */}
       {/* SELECTED TOUR DETAIL SIDE PANEL */}
       {/* ========================================================= */}
       {selectedMapTour && (
         <aside 
-          id="map-selected-tour-panel"
-          className="absolute bottom-0 left-0 right-0 sm:left-auto sm:top-0 sm:bottom-0 w-full sm:w-[420px] max-h-[82vh] sm:max-h-full bg-[#051e16] border-t sm:border-t-0 sm:border-l border-emerald-500/30 sm:shadow-[-15px_0_40px_rgba(0,0,0,0.6)] shadow-[0_-15px_40px_rgba(0,0,0,0.6)] pointer-events-auto flex flex-col z-40 overflow-y-auto rounded-t-3xl sm:rounded-none animate-in slide-in-from-bottom-8 sm:slide-in-from-right-8 duration-200"
+          id="map-selected-tour-panel" aria-label={language==='es'?'Detalles del tour':'Tour details'}
+          className="crt-map-dock absolute bottom-0 left-0 right-0 sm:left-auto sm:top-0 sm:bottom-0 w-full sm:w-[420px] max-h-[82vh] sm:max-h-full bg-[#051e16] border-t sm:border-t-0 sm:border-l border-emerald-500/30 sm:shadow-[-15px_0_40px_rgba(0,0,0,0.6)] shadow-[0_-15px_40px_rgba(0,0,0,0.6)] pointer-events-auto flex flex-col z-40 overflow-y-auto rounded-t-3xl sm:rounded-none animate-in slide-in-from-bottom-8 sm:slide-in-from-right-8 duration-200"
         >
+          <div className="crt-map-dock-heading"><h2>{language==='es'?'Detalle del tour':'Tour details'}</h2><button type="button" onClick={()=>setSelectedMapTour(null)} aria-label={language==='es'?'Cerrar detalles del tour':'Close tour details'}><X size={18}/></button></div>
           {/* Cover Photo */}
           <div className="relative h-60 sm:h-72 flex-shrink-0">
             <img
@@ -2072,6 +1638,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
             </div>
           </div>
 
+          <p className="crt-map-help px-4">{mapReferenceLabel(language)}</p>
           {/* Content Info */}
           <div className="p-6 flex flex-col flex-1 text-white">
             <div className="flex items-center gap-2 text-emerald-400 mb-2">
@@ -2100,7 +1667,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
                   {language === 'es' ? 'Valoración' : 'Rating'}
                 </span>
                 <span className="text-xs font-black text-amber-400">
-                  ★ {selectedMapTour.rating}
+                  {selectedMapTour.reviewsVerified ? `★ ${selectedMapTour.rating}` : (language==='es'?'Por verificar':'Unverified')}
                 </span>
               </div>
               <div>
@@ -2175,9 +1742,10 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
       {/* ========================================================= */}
       {selectedMapService && (
         <aside 
-          id="map-selected-service-panel"
-          className="absolute bottom-0 left-0 right-0 sm:left-auto sm:top-0 sm:bottom-0 w-full sm:w-[420px] max-h-[85vh] sm:max-h-full bg-[#051e16] border-t sm:border-t-0 sm:border-l border-emerald-500/40 sm:shadow-[-15px_0_40px_rgba(0,0,0,0.7)] shadow-[0_-15px_40px_rgba(0,0,0,0.7)] pointer-events-auto flex flex-col z-40 overflow-y-auto rounded-t-3xl sm:rounded-none animate-in slide-in-from-bottom-8 sm:slide-in-from-right-8 duration-200"
+          id="map-selected-service-panel" aria-label={language==='es'?'Detalles del servicio':'Service details'}
+          className="crt-map-dock absolute bottom-0 left-0 right-0 sm:left-auto sm:top-0 sm:bottom-0 w-full sm:w-[420px] max-h-[85vh] sm:max-h-full bg-[#051e16] border-t sm:border-t-0 sm:border-l border-emerald-500/40 sm:shadow-[-15px_0_40px_rgba(0,0,0,0.7)] shadow-[0_-15px_40px_rgba(0,0,0,0.7)] pointer-events-auto flex flex-col z-40 overflow-y-auto rounded-t-3xl sm:rounded-none animate-in slide-in-from-bottom-8 sm:slide-in-from-right-8 duration-200"
         >
+          <div className="crt-map-dock-heading"><h2>{language==='es'?'Detalle del servicio':'Service details'}</h2><button type="button" onClick={()=>setSelectedMapService(null)} aria-label={language==='es'?'Cerrar detalles del servicio':'Close service details'}><X size={18}/></button></div>
           {/* Cover Photo */}
           <div className="relative h-60 sm:h-72 flex-shrink-0">
             <img
@@ -2224,6 +1792,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
             </div>
           </div>
 
+          <p className="crt-map-help px-4">{mapReferenceLabel(language)}</p>
           {/* Details */}
           <div className="p-6 flex flex-col flex-1 text-white space-y-4">
             <div>
@@ -2368,6 +1937,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
       )}
 
       {/* ========================================================= */}
+      <footer className="crt-map-footer" aria-live="polite"><span>{results.length.toLocaleString(language==='es'?'es-CR':'en-US')} {language==='es'?'resultados · capas activas':'results · active layers'}{searchQuery!==deferredSearch?' …':''}</span><span className="crt-map-extra-status">{language==='es'?'Círculos numerados: grupos · referencias sujetas a confirmación':'Numbered circles: groups · references require confirmation'}</span><span>Zoom {currentZoom}</span></footer>
       {/* SERVICE BOOKING MODAL (HOTELS, PARKS, BUSES, FLIGHTS) */}
       {/* ========================================================= */}
       <MapServiceBookingModal

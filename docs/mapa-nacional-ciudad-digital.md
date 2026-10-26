@@ -1,75 +1,83 @@
-# Mapa nacional de la Ciudad Digital — Todo Costa Rica
+# Mapa nacional de Costa Rica Tours
 
-## Qué incluye esta versión (fase 1)
-23.293 puntos reales con coordenadas, en 9 capas (`public/data/mapa/*.geojson`), extraídos de OpenStreetMap (extracto Geofabrik, octubre 2026):
+## Explorador integrado — 26 de octubre de 2026
 
-| Capa | Puntos | Contenido |
-|---|---|---|
-| alimentacion | 8.096 | Sodas (783 con "Soda" en el nombre), restaurantes, cafés |
-| hospedaje | 3.934 | Hoteles, cabinas, hostales, apartamentos, camping |
-| transporte | 3.667 | Paradas de bus, 502 terminales, 86 aeropuertos y pistas |
-| salud | 2.404 | 119 hospitales, clínicas/EBAIS, farmacias |
-| servicios | 1.865 | Gasolineras, bancos/cajeros, información turística |
-| naturaleza | 1.237 | 203 áreas protegidas/parques, 237 cataratas, 442 playas, 35 volcanes, miradores |
-| emergencia | 903 | 134 Cruz Roja, bomberos, policía |
-| cultura | 684 | 68 museos, 82 teatros, sitios históricos, arte |
-| atracciones | 503 | Atracciones, zoológicos, parques temáticos |
+La ruta `/map` conserva el catálogo y las capas existentes. La interfaz utiliza una barra compacta y un único panel: a la derecha en escritorio y debajo del mapa en móvil. El panel ocupa una celda propia del diseño; no tapa la geografía. Solo se abre una vista de filtros, resultados, ficha, itinerario o calculadora a la vez. Se cierra con X, Escape o pulsando el fondo del mapa.
 
-Unos 2.000 puntos tienen teléfono publicado.
+La dirección visual mantiene los verdes, acentos dorados, tipografía y cabecera de la plataforma. No se agregan dependencias, claves, servicios de pago ni cambios del backend.
 
-## Cómo funciona en el mapa
-- Componente `src/components/NationalPoiLayer.tsx`, montado en `InteractiveMap.tsx` (modo Leaflet).
-- Botón "Todo Costa Rica" abajo a la izquierda: activar/desactivar capas y buscar por nombre o tipo.
-- Cada capa se descarga solo al activarla (carga diferida, caché en memoria).
-- Zoom < 13: agrupación por cuadrícula (clusters con conteo; clic = acercar). Zoom ≥ 13: puntos individuales en canvas con ficha (tipo, nombre, dirección, teléfono, horario, web, "Cómo llegar").
-- Sin dependencias nuevas.
-- Atribución ODbL obligatoria: "© colaboradores de OpenStreetMap" (ya incluida en fichas y panel).
+### Inventario conservado
 
-## Actualizar los datos
-```bash
-curl -LO https://download.geofabrik.de/central-america/costa-rica-latest.osm.pbf
-pip install osmium
-python3 scripts/mapa/export_osm_layers.py   # escribe public/data/mapa/*.geojson
-```
-Recomendado: mensual.
+Conteo directo de `public/data/mapa/*.geojson` en esta revisión: **25.699 puntos en 14 capas**, además de los tours y los 29 servicios destacados del catálogo existente. El conteo de tours se calcula con los datos recibidos por la pantalla; no está fijado en el componente.
 
-## Fase 2 — capas oficiales (integradas, octubre 2026)
-| Capa | Puntos | Fuente |
-|---|---|---|
-| parques_sinac | 62 sectores de 42 áreas | Páginas oficiales SINAC; tarifas extranjero/nacional, horario, días cerrado, cupo, enlace de reserva (serviciosenlinea.sinac.go.cr) |
-| fauna | 48 pasos de fauna (~448 estructuras) + 38 corredores biológicos | MOPT/CONAVI, BID (osf.io/6fe83), SINAC 2008, ONG (KSTR, Jaguar Rescue, Osa Conservation…) |
-| reforestacion | 50 proyectos | Sitio de cada proyecto; 29 permiten visitar o participar |
-| patrimonio | 387 (378 inmuebles declarados + 9 UNESCO/arqueológicos) | Lista compilada del MCJ, UNESCO, Wikidata |
-| ccss | 1.888 (EBAIS, áreas de salud, hospitales) | CCSS SGIS (datos 2021) |
+| Capa | Registros | Contenido |
+|---|---:|---|
+| alimentacion | 8.087 | Sodas, restaurantes y cafés |
+| hospedaje | 3.911 | Hoteles, cabinas, hostales, camping y otros alojamientos |
+| transporte | 3.666 | Buses, terminales, aeropuertos y pistas |
+| salud | 2.404 | Hospitales, clínicas, farmacias y otros centros |
+| servicios | 1.861 | Gasolineras, bancos e información turística |
+| naturaleza | 1.237 | Playas, cataratas, volcanes, miradores y áreas protegidas |
+| emergencia | 903 | Cruz Roja, bomberos y policía |
+| cultura | 683 | Museos, teatros, sitios históricos y arte |
+| atracciones | 474 | Atracciones turísticas |
+| parques_sinac | 62 | Sectores y áreas protegidas compilados de SINAC |
+| fauna | 86 | Pasos de fauna y corredores biológicos |
+| reforestacion | 50 | Proyectos de reforestación |
+| patrimonio | 387 | Patrimonio histórico y sitios UNESCO |
+| ccss | 1.888 | Red CCSS; conjunto de datos de 2021 |
 
-Las fichas muestran "Ubicación aproximada" cuando el punto es de distrito, poblado o centroide.
+No es un censo exhaustivo de todo lo que existe en Costa Rica. La presencia de un punto no verifica operación, acceso, disponibilidad, tarifas, relación comercial ni autorización para reservar. Las capas conservan sus fuentes y limitaciones originales. Los conteos pueden cambiar cuando el proceso de actualización genere un nuevo PR.
 
-### Pendientes conocidos
-- Corredores: la capa vigente (54 corredores) está en SNIT `https://geos1pne.sirefor.go.cr/wfs` capa `PNE:corredoresbiologicos` (no respondió).
-- Pasos de fauna: no existe inventario nacional público con ubicaciones (MOPT reporta 98).
-- Patrimonio: el sitio oficial inmuebles.patrimonio.go.cr bloquea acceso automatizado; faltan declaratorias posteriores a 2021.
-- CCSS: datos de 2021; faltan teléfonos en ~1.000 puntos.
-- No usar sinac-cr.com: no es oficial.
-- Empresas con declaratoria ICT: sin registro público consultable.
+### Navegación y filtros
 
-## Fase 3 — de punto a servicio vendible
-Unir cada POI con operadores y servicios (tours, transporte, alimentación, hospedaje, guías, asesoría, entradas) para que el punto se pueda reservar desde la ficha (`MapServiceBookingModal`).
+- Seis selecciones rápidas: Explorar, Naturaleza, Dormir y comer, Moverse, Servicios útiles y Todas las capas. La carga inicial muestra tours y la capa SINAC; las demás se descargan al activarlas.
+- Cinco familias de capas nacionales, desplegables para revelar solo la información necesaria.
+- Búsqueda compartida en las capas activas: normaliza mayúsculas y acentos y exige todos los términos.
+- Tipo de lugar para los POI nacionales. Cambiar de selección rápida o restablecer filtros elimina subtipos anteriores.
+- Región, categoría, dificultad y duración máxima para el catálogo. Los tours sin duración conocida quedan fuera cuando se exige una duración máxima.
+- Área visible y radio de 5/10/25/50/100 km desde el centro del mapa para ambos inventarios. Al desplazar el mapa, se actualizan el centro y los resultados; el radio mide distancia en línea recta.
+- Opción de ocultar POI que la fuente marca como aproximados. No convierte referencias de catálogo en coordenadas verificadas.
+- Resultados paginados de 40 en 40; los grupos de puntos con una misma referencia también se pueden inspeccionar mediante una lista.
+- Tres superficies: calles OpenStreetMap, satélite Esri y relieve OpenTopoMap. Las atribuciones permanecen visibles. Un fallo de teselas muestra una indicación para cambiar de superficie.
+- Zonas turísticas orientativas opcionales, desactivadas inicialmente. Los rectángulos heredados no son límites oficiales de provincias ni polígonos de parques. Isla del Coco tiene un acceso específico; el encuadre inicial se adapta al territorio continental y al tamaño de pantalla.
+- Se conservan itinerario, calculadora de rutas y tiempos estimados, geolocalización solicitada por el usuario, pantalla completa, consulta de fichas y guardado local del catálogo público.
 
+### Posición, agrupación y precisión
 
-## Fase 3 — datos como código (octubre 2026)
-- **Pipeline reproducible**: `scripts/mapa/` (`export_osm_layers.py`, `fetch_ccss.py`, `normalize_fase2.py`). Las capas curadas de la fase 2 viven en `data/fuentes/fase2/*.geojson` y se normalizan a `public/data/mapa/`.
-- **Actualización automática**: `.github/workflows/refresh-map-data.yml` corre cada lunes (y a demanda), regenera OSM y CCSS, valida y abre un PR solo si hay cambios.
-- **Validación**: `tests/nationalMapData.contract.test.ts` (todas las capas: puntos dentro de Costa Rica, ids únicos, enlaces de reserva solo oficiales) y `tests/operatorProspects.contract.test.ts`.
-- **Offline / móvil**: el service worker (Workbox) guarda las capas con *stale-while-revalidate*: abren al instante y funcionan sin señal.
-- **Operadores**: `data/operators/operatorProspects.{json,ts}` (fuera de `src/`, no entra al bundle) — 50 prospectos tipados y validados en tiempo de ejecución, con `verification` y `partnershipStatus`. `getSellableOperators()` solo devuelve operadores verificados con acuerdo firmado (hoy ninguno).
-- **Teselas vectoriales (PMTiles)**: evaluadas y descartadas por ahora. Con ~26.000 puntos, las capas ya viajan comprimidas con Brotli (la más grande ≈230 KB gzip) y la búsqueda nacional necesita los datos completos. Conviene adoptarlas cuando se agreguen polígonos (límites de parques, corredores) o se pase a MapLibre.
+GeoJSON utiliza `[longitud, latitud]`; la conversión a Leaflet `[latitud, longitud]` se valida con `toLeafletLatLng`. No se desplazan coordenadas de origen para separar marcas visualmente.
 
-## Estabilidad de marcas al hacer zoom (octubre 2026)
-- **Causa principal**: el contenedor del mapa cambia de tamaño sin que cambie la ventana (cabecera que se pliega, paneles, pantalla completa, barra del navegador móvil). Leaflet solo recalculaba con `window.resize`, así que conservaba el tamaño viejo: el zoom se anclaba en un centro falso y las marcas parecían correrse. Ahora `InteractiveMap.tsx` usa `ResizeObserver` + `fullscreenchange` → `invalidateSize({ pan: false })`.
-- **Marcas apiladas**: 406 de 591 tours comparten la coordenada de referencia de su zona (p. ej. 17 en Caño Negro). Antes se dibujaban una encima de otra (solo la de arriba era clicable y parecía un negocio). Ahora se agrupan en una marca con conteo y borde punteado, con lista de tours y aviso de "ubicación aproximada". Lo mismo en las capas nacionales a zoom ≥ 13 (p. ej. 18 inmuebles de patrimonio en un mismo centroide).
-- **Agrupaciones vs. lugares**: los grupos por cuadrícula (zoom < 13) tienen centro oscuro, anillo de color y contorno punteado, con `title` "Grupo de N puntos (no es un lugar)". Un punto suelto conserva su coordenada exacta (nunca un centroide).
-- **Ubicación aproximada**: puntos con `aprox: true` se dibujan con borde punteado y relleno tenue; tooltip y ficha lo indican.
-- **Tope de 5.000 puntos**: se priorizan los más cercanos al centro de la vista (antes se cortaba por orden de archivo) y el panel avisa cuántos se muestran.
-- **Coordenadas**: GeoJSON `[lng, lat]` → Leaflet `[lat, lng]` solo vía `toLeafletLatLng` (`src/utils/mapMarkerLayout.ts`).
-- **Pruebas**: `tests/mapMarkerLayout.contract.test.ts` (orden de coordenadas, agrupación estable, tope, `iconAnchor` = centro de `iconSize`, ResizeObserver) y `tests/e2e/mapMarkers.spec.ts` (posición en pantalla de cada marca vs. su coordenada tras zoom, desplazamiento y resize a móvil).
-- El panel de capas nacionales se cierra con X o Escape (rescatado de #228).
+Los puntos próximos se agrupan por cuadrículas de píxeles del mundo. La agrupación se calcula antes de recortar por la vista: desplazar el mapa no cambia el centro de un grupo. Los símbolos mantienen un tamaño legible al hacer zoom. Los grupos se acercan al pulsarlos; las referencias coincidentes o los grupos a gran aumento abren una lista en el panel. Al máximo aumento se conservan grupos para coordenadas coincidentes, de modo que todas las fichas siguen accesibles.
+
+Las marcas individuales conservan su coordenada. Un centroide de grupo representa varios registros, no un negocio. Las fichas de tours y servicios del catálogo muestran que la coordenada es una referencia y piden confirmar el punto de encuentro. Los POI con `aprox: true` se identifican con borde discontinuo y aviso en la ficha; no se inventa una precisión mayor.
+
+`ResizeObserver`, `fullscreenchange` e `invalidateSize({ pan: false })` mantienen sincronizado el tamaño de Leaflet cuando el panel, la cabecera o la pantalla cambian.
+
+### Carga y fallos
+
+`nationalPoiData.ts` conserva los datos correctos en memoria y comparte las solicitudes concurrentes de una misma capa. Valida la colección y descarta geometrías inválidas. Un fallo detiene los reintentos automáticos y ofrece un botón explícito para reintentar; no se crea un bucle de peticiones ni se bloquean las otras capas. El service worker existente conserva su estrategia de caché para GeoJSON.
+
+El guardado manual sin conexión conserva el catálogo público. No garantiza teselas nuevas sin red ni cobertura de capas que nunca se hayan descargado.
+
+### Privacidad y continuidad
+
+Las fichas nacionales reutilizan `nationalPoiPopup.ts`, con las reglas vigentes de ocultación de contactos, enlaces de fuente y datos comerciales del proveedor. La consulta comercial continúa por el flujo interno de Costa Rica Tours. La presencia de un POI no crea un servicio vendible ni una reserva confirmada.
+
+No se modifica `api/[...path].ts`, pagos, reservas del servidor, variables, permisos ni despliegues pausados de GCP. No se habilita el modo de Google Maps ni se incorpora una API de pago. La versión anterior completa de los dos componentes y esta documentación queda en `archive/map-ui-20261026/` como referencia no compilada.
+
+### Validación
+
+- Contratos del repositorio: 958 pruebas aprobadas en la revisión local completa; contratos específicos de búsqueda, área/radio, duración, carga y agrupación ejecutados nuevamente tras los ajustes finales.
+- TypeScript sin emisiones y compilación Vite; auditoría de privacidad del bundle público.
+- Pruebas E2E de regresión: posición tras zoom, desplazamiento y cambio de tamaño; panel móvil sin superposición; filtros y ficha; superficies e itinerario; fallo de capa y reintento manual. Se ejecutan en el CI del PR con red externa simulada.
+- Inspección del build real en navegador: escritorio y marco móvil de 390 × 844. Panel acoplado, búsqueda nacional, ficha de catarata, agrupación y cambio de zoom. En la muestra de marcas visibles a zoom 15, la desviación respecto de Web Mercator fue menor de 1 px.
+
+El marco móvil valida el diseño y la interacción de la página a ese ancho. No sustituye una prueba física de gestos multitáctiles en dispositivos iOS/Android. Los datos antiguos o aproximados siguen requiriendo verificación de campo.
+
+## Actualización de datos
+
+El pipeline existente en `scripts/mapa/` genera las capas OSM/CCSS y normaliza las capas curadas desde `data/fuentes/fase2/`. El workflow `refresh-map-data.yml` propone cambios mediante PR; se conservan los contratos de datos nacionales y prospectos. No se ejecuta una actualización masiva como parte de este cambio de interfaz.
+
+La relación comercial, verificación de operadores y acuerdos se gestionan en el backend existente. No publicar contactos internos en el catálogo, la documentación del cambio ni los logs. Mantener atribución de OpenStreetMap y de los proveedores de superficies.
+
+PMTiles/MapLibre se mantienen como una posible evolución para polígonos oficiales o inventarios mayores. Esta revisión reutiliza Leaflet y los GeoJSON existentes; no dibuja límites oficiales inexistentes.

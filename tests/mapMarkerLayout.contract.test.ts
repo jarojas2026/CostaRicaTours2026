@@ -143,7 +143,8 @@ test('map draws zoom-dependent clusters for both tours and services and exposes 
   assert.match(mapCode, /groupMapPointsAtZoom\(effectiveTours,/);
   assert.match(mapCode, /groupMapPointsAtZoom\(effectiveServices,/);
   assert.match(mapCode, /currency, currentZoom\]/);
-  assert.match(mapCode, /Zoom in to separate pins/);
-  assert.match(mapCode, /not the exact location of every service/i);
+  assert.match(mapCode, /setSelectedGroup/);
+  assert.match(mapCode, /mapReferenceLabel/);
+  assert.doesNotMatch(mapCode, /\.bindPopup\(/, 'catalog details and groups must use the reserved dock instead of map popups');
   assert.match(mapCode, /new ResizeObserver\(/);
 });

@@ -106,13 +106,17 @@ export function groupMapPointsAtZoom<T>(
   zoom: number,
   cellPx = 64,
 ): GridCluster<T>[] {
-  if (zoom <= 12) return clusterByGrid(items, getLatLng, project, cellPx);
+  if (zoom < 18) {
+    return clusterByGrid(items,getLatLng,project,zoom <= 12 ? cellPx : 44).map(group => ({
+      ...group,
+      isCluster: new Set(group.items.map(item => { const ll=getLatLng(item)!;return coordinateKey(ll[0],ll[1]); })).size > 1,
+    }));
+  }
   return groupByCoordinate(items, getLatLng).map(group => ({
     lat: group.lat,
     lng: group.lng,
     count: group.items.length,
     items: group.items,
-    // A shared map reference is not an actual multi-operator exact address.
     isCluster: false,
   }));
 }
