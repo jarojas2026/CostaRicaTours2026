@@ -183,6 +183,18 @@ function payoutsOf(lead: LeadRecord): SupplierPayout[] {
   return Array.isArray(lead.supplierPayouts) ? lead.supplierPayouts : [];
 }
 
+/**
+ * Copia del lead SIN el libro supplierPayouts, para respuestas de rutas de operador/admin
+ * (GET /api/admin/leads, GET /api/admin/leads/:id, PATCH .../status). El libro solo se
+ * lee por GET /api/admin/leads/:id/supplier-payouts (requireOwner). No modifica el dato
+ * guardado: solo lo omite de la respuesta.
+ */
+export function withoutSupplierPayouts<T extends Partial<LeadRecord>>(lead: T): Omit<T, 'supplierPayouts'> {
+  if (!lead || typeof lead !== 'object' || !('supplierPayouts' in lead)) return lead;
+  const { supplierPayouts: _omitted, ...rest } = lead;
+  return rest;
+}
+
 function withPayouts(lead: LeadRecord, payouts: SupplierPayout[], at: string): LeadRecord {
   return { ...lead, supplierPayouts: payouts, updatedAt: at, lastActivityAt: at };
 }
