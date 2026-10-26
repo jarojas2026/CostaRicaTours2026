@@ -21,7 +21,7 @@
     "ops:scheduler:apply": "tsx scripts/configureOperationalScheduler.ts --apply"
   },
   "dependencies": {
-    "@anthropic-ai/vertex-sdk": "^0.21.0",
+    "@anthropic-ai/vertex-sdk": "^0.22.0",
     "@google/genai": "^2.30.0",
     "@sentry/node": "^11.7.0",
     "@sentry/react": "^11.8.0",
