@@ -25,6 +25,7 @@ interface Props {
   map: L.Map | null;
   language: Language;
   embedded?: boolean;
+  renderMarkers?: boolean;
   filterResetKey?: number;
   enabledLayers?: NationalLayerSelection;
   onEnabledLayersChange?: (value: NationalLayerSelection) => void;
@@ -35,7 +36,7 @@ interface Props {
   onSelectPoi?: (feature: NationalPoiFeature) => void;
   onSelectGroup?: (features: NationalPoiFeature[]) => void;
 }
-export const NationalPoiLayer: React.FC<Props> = ({ map, language, embedded = false, filterResetKey = 0, enabledLayers, onEnabledLayersChange, searchQuery, hideApproximate = false, spatialFilter = emptySpatial, onFeaturesChange, onSelectPoi, onSelectGroup }) => {
+export const NationalPoiLayer: React.FC<Props> = ({ map, language, embedded = false, renderMarkers = true, filterResetKey = 0, enabledLayers, onEnabledLayersChange, searchQuery, hideApproximate = false, spatialFilter = emptySpatial, onFeaturesChange, onSelectPoi, onSelectGroup }) => {
   const isEs = language === 'es';
   const [localEnabled, setLocalEnabled] = useState(defaultNationalLayers);
   const enabled = enabledLayers ?? localEnabled;
@@ -102,7 +103,7 @@ export const NationalPoiLayer: React.FC<Props> = ({ map, language, embedded = fa
       const bounds = map.getBounds().pad(.15);
       // Group the complete filtered dataset in world pixels before viewport culling.
       // Panning cannot change the members/centroid of a visible grid cell.
-      const groups = zoom < 18
+      const groups = !renderMarkers ? [] : zoom < 18
         ? clusterByGrid(activeFeatures, f => toLeafletLatLng(f.geometry.coordinates), (lat,lng) => map.project([lat,lng],zoom), zoom < 13 ? 66 : 42)
         : groupByCoordinate(activeFeatures, f => toLeafletLatLng(f.geometry.coordinates)).map(g => ({ ...g, count: g.items.length, isCluster: false }));
       let markerCount = 0;
@@ -133,7 +134,7 @@ export const NationalPoiLayer: React.FC<Props> = ({ map, language, embedded = fa
     redraw();
     map.on('moveend',redraw);
     return () => { map.off('moveend',redraw); layer.remove(); layerRef.current=null; };
-  }, [map, activeFeatures, language, isEs, select, onSelectGroup]);
+  }, [map, activeFeatures, language, isEs, select, onSelectGroup, renderMarkers]);
   useEffect(() => {
     if (!map || onSelectPoi) return;
     const container = map.getContainer();
@@ -157,7 +158,7 @@ export const NationalPoiLayer: React.FC<Props> = ({ map, language, embedded = fa
       <summary>{isEs ? family.name.es : family.name.en}<span>{family.ids.filter(id=>enabled[id]).length}/{family.ids.length}</span></summary>
       {family.ids.map(id => { const g=NATIONAL_POI_GROUPS.find(g=>g.id===id)!;return <div className="crt-layer-option" key={id}><label><input type="checkbox" checked={!!enabled[id]} onChange={()=>changeEnabled({...enabled,[id]:!enabled[id]})}/><span aria-hidden="true">{g.emoji}</span><span>{isEs ? g.label.es : g.label.en}<small>{loading[id] ? (isEs ? 'Cargando…' : 'Loading…') : loaded[id] ? `${loaded[id]!.length.toLocaleString(isEs ? 'es-CR' : 'en-US')} ${isEs ? 'registros' : 'records'}` : (isEs ? 'Se carga al activar' : 'Loads when enabled')}</small></span></label></div>; })}
     </details>)}
-    <p className="crt-map-help" role="status">{renderInfo.places.toLocaleString(isEs ? 'es-CR' : 'en-US')} {isEs ? 'puntos en esta vista' : 'places in this view'} · {renderInfo.markers} {isEs ? 'marcas agrupadas' : 'grouped markers'}</p>
+    <p className="crt-map-help" role="status">{renderInfo.places.toLocaleString(isEs ? 'es-CR' : 'en-US')} {isEs ? 'puntos en esta vista' : 'places in this view'}{renderMarkers && <> · {renderInfo.markers} {isEs ? 'marcas agrupadas' : 'grouped markers'}</>}</p>
     <details className="crt-layer-family"><summary>{isEs ? 'Cobertura y procedencia' : 'Coverage & provenance'}</summary><p className="crt-map-help">{isEs ? 'Inventario disponible de OpenStreetMap, SINAC, CCSS y fuentes compiladas. No es un censo exhaustivo ni confirma operación, tarifas o disponibilidad. Los datos de CCSS corresponden a 2021. Los puntos aproximados llevan borde discontinuo.' : 'Available inventory from OpenStreetMap, SINAC, CCSS and compiled sources. It is not an exhaustive census or confirmation of operation, fees or availability. CCSS data dates from 2021. Approximate points have a dashed edge.'}</p></details>
     {!embedded && <div className="crt-standalone-results">{activeFeatures.slice(page*30,(page+1)*30).map((f,i)=><button key={`${f.properties.grupo}:${f.properties.id}:${i}`} type="button" onClick={()=>select(f)}>{f.properties.nombre || getPoiTypeLabel(f.properties.tipo,language)}</button>)}{activeFeatures.length>(page+1)*30 && <button onClick={()=>setPage(p=>p+1)}>{isEs ? 'Más lugares' : 'More places'}</button>}</div>}
   </div>;

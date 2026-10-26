@@ -298,19 +298,21 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
     if (!leafletMapInstance) return;
     const canvas = leafletMapInstance.getContainer();
     let start: { id: number; x: number; y: number } | null = null;
-    const down = (event: PointerEvent) => { start = { id: event.pointerId, x: event.clientX, y: event.clientY }; };
-    const cancel = () => { start = null; };
+    const pointers = new Set<number>();
+    const down = (event: PointerEvent) => { pointers.add(event.pointerId); start = pointers.size===1 ? { id: event.pointerId, x: event.clientX, y: event.clientY } : null; };
+    const cancel = (event: PointerEvent) => { pointers.delete(event.pointerId); start = null; };
     const up = (event: PointerEvent) => {
+      pointers.delete(event.pointerId);
       const origin = start; start = null;
       if (!origin || origin.id !== event.pointerId || Math.hypot(event.clientX-origin.x,event.clientY-origin.y)>8) return;
       if ((event.target as Element).closest('.leaflet-marker-icon,.leaflet-control,.leaflet-tooltip')) return;
       openDock(null);
     };
     // Capture a genuine background tap even when Leaflet suppresses a mobile click.
-    canvas.addEventListener('pointerdown',down,{passive:true});
-    canvas.addEventListener('pointerup',up,{passive:true});
-    canvas.addEventListener('pointercancel',cancel,{passive:true});
-    return () => { canvas.removeEventListener('pointerdown',down); canvas.removeEventListener('pointerup',up); canvas.removeEventListener('pointercancel',cancel); };
+    canvas.addEventListener('pointerdown',down,{passive:true,capture:true});
+    canvas.addEventListener('pointerup',up,{passive:true,capture:true});
+    canvas.addEventListener('pointercancel',cancel,{passive:true,capture:true});
+    return () => { canvas.removeEventListener('pointerdown',down,true); canvas.removeEventListener('pointerup',up,true); canvas.removeEventListener('pointercancel',cancel,true); };
   }, [leafletMapInstance,openDock]);
   useEffect(() => {
     if(!activePanel)return;
@@ -439,6 +441,13 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
       return true;
     });
   }, [layerFilters, selectedRegion, deferredSearch, spatialFilter, language]);
+
+  // One shared inventory prevents clusters from different datasets covering each other.
+  const mapItems = useMemo<ResultItem[]>(() => [
+    ...effectiveTours.map(tour => ({id:`tour:${tour.id}`,title:getLangText(tour.title,language),subtitle:mapReferenceLabel(language),icon:getCategoryColorAndEmoji(tour.category).emoji,ll:[tour.location.lat,tour.location.lng] as [number,number],tour})),
+    ...effectiveServices.map(service => ({id:`service:${service.id}`,title:getLangText(service.name,language),subtitle:getServiceIconAndColor(service.type).label[language==='es'?'es':'en'],icon:getServiceIconAndColor(service.type).emoji,ll:[service.coordinates.lat,service.coordinates.lng] as [number,number],service})),
+    ...poiResults.map(poi => ({id:`poi:${poi.properties.grupo}:${poi.properties.id}`,title:poi.properties.nombre||getPoiTypeLabel(poi.properties.tipo,language),subtitle:getPoiTypeLabel(poi.properties.tipo,language),icon:NATIONAL_POI_GROUPS.find(g=>g.id===poi.properties.grupo)?.emoji||'📍',ll:[poi.geometry.coordinates[1],poi.geometry.coordinates[0]] as [number,number],poi}))
+  ], [effectiveTours,effectiveServices,poiResults,language]);
 
   // Counts for each category
   const serviceCounts = useMemo(() => {
@@ -670,227 +679,52 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
     tileLayerRef.current = newTileLayer;
   }, [activeLayer]);
 
-  // =========================================================
-  // RENDER PINS ON LEAFLET MAP (TOURS + ALL TOURISM SERVICES)
-  // =========================================================
+  // Cluster tours, catalog services and national POI together in world pixels.
   useEffect(() => {
-    if (!leafletMapRef.current || !markersLayerRef.current) return;
-    markersLayerRef.current.clearLayers();
-
-    // 1. Render Tours Pins
-    // Muchos tours comparten la coordenada de referencia de su zona (p. ej. 17 en Caño Negro).
-    // Apilados, solo el de arriba era clicable y parecían un único negocio: se agrupan en una
-    // marca con conteo, marcada como ubicación aproximada de la zona.
-    const map = leafletMapRef.current;
-    const zoom = map.getZoom();
-    // Use geographic world pixels, not screen-relative pixels; panning must
-    // not move the grouping centroid. On close zoom we keep original anchors.
-    const projectPoint = (lat: number, lng: number) => {
-      const point = map.project([lat, lng], zoom);
-      return { x: point.x, y: point.y };
+    const map = leafletMapInstance, layer = markersLayerRef.current;
+    if (!map || !layer) return;
+    const es = language === 'es';
+    const redraw = () => {
+      layer.clearLayers();
+      const zoom = map.getZoom(), bounds = map.getBounds().pad(.15);
+      const groups = groupMapPointsAtZoom(mapItems,item=>item.ll,(lat,lng)=>map.project([lat,lng],zoom),zoom);
+      for (const group of groups) {
+        if (!bounds.contains([group.lat,group.lng])) continue;
+        const item = group.items[0], clustered = group.items.length > 1;
+        const approximate = !!item.poi?.properties.aprox;
+        const selected = item.tour?.id === selectedMapTour?.id && !!item.tour || item.service?.id === selectedMapService?.id && !!item.service || !!item.poi && item.poi === selectedPoi;
+        const size = clustered ? (group.count>999 ? 44 : 36) : 28;
+        const color = clustered ? '#edc15a' : item.poi ? NATIONAL_POI_GROUPS.find(g=>g.id===item.poi!.properties.grupo)!.color : '#42d3a0';
+        const label = clustered
+          ? (es ? `${group.count} lugares agrupados; acercar o ver lista` : `${group.count} grouped places; zoom in or view list`)
+          : `${item.title} · ${item.poi ? item.subtitle : mapReferenceLabel(language)}${approximate ? (es ? ' · ubicación aproximada' : ' · approximate location') : ''}`;
+        const icon = L.divIcon({
+          className: clustered ? 'crt-map-cluster' : item.tour ? 'custom-tour-pin' : 'crt-map-place',
+          html:`<div class="crt-poi-symbol${clustered ? ' crt-poi-group' : ''}" style="width:${size}px;height:${size}px;--poi-color:${color};border-style:${approximate&&!clustered ? 'dashed' : 'solid'};${selected?'box-shadow:0 0 0 4px #f7d36c77;':''}">${clustered ? group.count.toLocaleString(es?'es-CR':'en-US') : item.icon}</div>`,
+          iconSize:[size,size], iconAnchor:[size / 2,size / 2]
+        });
+        const marker = L.marker([group.lat,group.lng],{icon,title:label,keyboard:true,zIndexOffset:selected?1000:0}).addTo(layer);
+        const element = marker.getElement();
+        element?.setAttribute('aria-label',label);
+        element?.setAttribute('data-lat',String(group.lat));element?.setAttribute('data-lng',String(group.lng));
+        marker.bindTooltip(escapeHtml(label),{direction:'top',offset:[0,-size/2]});
+        marker.on('click',() => {
+          if (clustered) {
+            if (zoom < 16 && group.isCluster) map.flyTo([group.lat,group.lng],Math.min(zoom+2,18),{duration:.35});
+            else { openDock(null);setSelectedGroup(group.items); }
+            return;
+          }
+          if (item.poi) { selectPoi(item.poi); return; }
+          if (item.tour) setSelectedMapTour(item.tour);
+          if (item.service) setSelectedMapService(item.service);
+          map.flyTo(item.ll,Math.max(zoom,14),{duration:.4});
+        });
+      }
+      const canvas=map.getContainer();canvas.dataset.markerWidth=String(map.getSize().x);canvas.dataset.markerHeight=String(map.getSize().y);
     };
-    const tourGroups = groupMapPointsAtZoom(effectiveTours, (tour) =>
-      Number.isFinite(tour.location?.lat) && Number.isFinite(tour.location?.lng)
-        ? [tour.location.lat, tour.location.lng] : null,
-      projectPoint, zoom
-    );
-    tourGroups.forEach((group) => {
-      if (group.items.length > 1) {
-        const groupTours = group.items;
-        const hasSelected = groupTours.some((t) => t.id === selectedMapTour?.id);
-        const zoneName = groupTours[0].location.placeName || (groupTours[0].location as any).name || '';
-        const stackHtml = `
-          <div class="relative flex items-center justify-center w-8 h-8 cursor-pointer">
-            <div class="relative bg-white border-2 border-dashed ${hasSelected ? 'border-emerald-700 shadow-lg' : 'border-emerald-500 shadow-sm'} rounded-full w-full h-full flex items-center justify-center">
-              <span class="text-[12px] font-black text-emerald-800 leading-none">${groupTours.length}</span>
-            </div>
-          </div>
-        `;
-        const stackIcon = L.divIcon({
-          className: 'custom-tour-pin custom-tour-stack',
-          html: stackHtml,
-          iconSize: [32, 32],
-          iconAnchor: [16, 16],
-          popupAnchor: [0, -16]
-        });
-        const stackMarker = L.marker([group.lat, group.lng], { icon: stackIcon, zIndexOffset: hasSelected ? 1000 : 15 });
-
-        stackMarker.on('click',()=>{
-          if(group.isCluster && zoom<18){map.flyTo([group.lat,group.lng],Math.min(zoom+2,18),{duration:.35});return;}
-          openDock(null);setSelectedGroup(groupTours.map(tour=>({id:`tour:${tour.id}`,title:getLangText(tour.title,language),subtitle:mapReferenceLabel(language),icon:getCategoryColorAndEmoji(tour.category).emoji,ll:[tour.location.lat,tour.location.lng],tour})));
-        });
-        stackMarker.bindTooltip(
-          group.isCluster
-            ? (language === 'es' ? `${groupTours.length} tours cercanos · grupo aproximado` : `${groupTours.length} nearby tours · approximate cluster`)
-            : (language === 'es' ? `${groupTours.length} tours · ${zoneName} (ubicación aproximada)` : `${groupTours.length} tours · ${zoneName} (approximate location)`),
-          { direction: 'top', offset: [0, -18], className: 'leaflet-tour-tooltip' }
-        );
-        stackMarker.addTo(markersLayerRef.current!);
-        stackMarker.getElement()?.setAttribute('aria-label',language==='es'?`${groupTours.length} tours agrupados · acercar o ver lista`:`${groupTours.length} grouped tours · zoom in or view list`);
-        stackMarker.getElement()?.setAttribute('data-lat', String(group.lat));
-        stackMarker.getElement()?.setAttribute('data-lng', String(group.lng));
-        return;
-      }
-
-      const tour = group.items[0];
-        const isSelected = selectedMapTour?.id === tour.id;
-        const { emoji } = getCategoryColorAndEmoji(tour.category);
-        const priceFormatted = formatCurrency(tour.priceUSD, currency);
-
-        const htmlString = `
-          <div class="relative flex items-center justify-center w-8 h-8 cursor-pointer transition-transform duration-300 ${isSelected ? 'scale-125 z-50' : 'hover:scale-110 z-20'}">
-            ${isSelected ? '<div class="absolute -inset-2 bg-emerald-500/40 rounded-full animate-ping"></div>' : ''}
-            <div class="relative bg-white border-2 ${isSelected ? 'border-emerald-600 shadow-emerald-500/50 shadow-lg' : 'border-emerald-500 shadow-sm'} rounded-full w-full h-full flex items-center justify-center">
-              <span class="text-[13px] leading-none">${emoji}</span>
-            </div>
-          </div>
-        `;
-
-        const customIcon = L.divIcon({
-          className: 'custom-tour-pin',
-          html: htmlString,
-          iconSize: [32, 32],
-          iconAnchor: [16, 16],
-          popupAnchor: [0, -16]
-        });
-
-        const marker = L.marker([tour.location.lat, tour.location.lng], {
-          icon: customIcon,
-          zIndexOffset: isSelected ? 1000 : 10
-        });
-
-        marker.on('click', () => {
-          setSelectedMapTour(tour);
-          setSelectedMapService(null);
-          leafletMapRef.current?.flyTo(
-            [tour.location.lat, tour.location.lng],
-            Math.max(leafletMapRef.current.getZoom(), 12),
-            { duration: 0.8 }
-          );
-        });
-
-        const tourTitle = escapeHtml(getLangText(tour.title, language));
-        const tourLocation = escapeHtml(tour.location.placeName || (tour.location as any).name || '');
-        marker.bindTooltip(`
-          <div style="min-width: 160px; max-width: 220px; line-height: 1.3;">
-            <div style="font-weight: 800; font-size: 11px; color: #10b981; margin-bottom: 2px;">📍 ${tourLocation}</div>
-            <div style="font-weight: 700; font-size: 12px; color: #F8FAFC;">${tourTitle}</div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 11px; color: #A7F3D0;">
-              <span>${language === 'es' ? 'Referencia de zona' : 'Area reference'}</span>
-              <span>${getLangText(tour.durationLabel, language)}</span>
-            </div>
-          </div>
-        `, {
-          direction: 'top',
-          offset: [0, -36],
-          className: 'leaflet-tour-tooltip'
-        });
-
-        marker.addTo(markersLayerRef.current!);
-      marker.getElement()?.setAttribute('aria-label',getLangText(tour.title,language));
-      marker.getElement()?.setAttribute('data-lat', String(tour.location.lat));
-      marker.getElement()?.setAttribute('data-lng', String(tour.location.lng));
-    });
-
-    // 2. Render Tourism Services Pins (Hotels, Parks, Buses, Trains, Taxis, Airstrips)
-    // Keep each service's original geolocation; clusters are only UI groups.
-    const serviceGroups = groupMapPointsAtZoom(effectiveServices, srv =>
-      Number.isFinite(srv.coordinates?.lat) && Number.isFinite(srv.coordinates?.lng)
-        ? [srv.coordinates.lat, srv.coordinates.lng] : null,
-      projectPoint, zoom
-    );
-    serviceGroups.forEach(group => {
-      if (group.count > 1) {
-        const clusteredIcon = L.divIcon({
-          className: 'custom-srv-pin custom-service-stack',
-          html: `<div class="flex items-center justify-center w-8 h-8 bg-slate-50 text-slate-800 rounded-full border-2 border-dashed border-sky-600 shadow-sm"><span class="text-xs font-black">${group.count}</span></div>`,
-          iconSize: [32, 32],
-          iconAnchor: [16, 16],
-          popupAnchor: [0, -16]
-        });
-        const marker = L.marker([group.lat, group.lng], { icon: clusteredIcon, zIndexOffset: 17 });
-        marker.on('click',()=>{
-          if(group.isCluster && zoom<18){map.flyTo([group.lat,group.lng],Math.min(zoom+2,18),{duration:.35});return;}
-          openDock(null);setSelectedGroup(group.items.map(service=>({id:`service:${service.id}`,title:getLangText(service.name,language),subtitle:mapReferenceLabel(language),icon:getServiceIconAndColor(service.type).emoji,ll:[service.coordinates.lat,service.coordinates.lng],service})));
-        });
-        marker.addTo(markersLayerRef.current!);
-        marker.getElement()?.setAttribute('aria-label',language==='es'?`${group.items.length} servicios agrupados · acercar o ver lista`:`${group.items.length} grouped services · zoom in or view list`);
-        marker.getElement()?.setAttribute('data-lat',String(group.lat));
-        marker.getElement()?.setAttribute('data-lng',String(group.lng));
-        return;
-      }
-      const srv = group.items[0];
-      const isSelected = selectedMapService?.id === srv.id;
-      const meta = getServiceIconAndColor(srv.type);
-
-      let badgeContent = '';
-      if (srv.type === 'hotel') {
-        const nightly = getMapServiceUnitPriceUSD(srv);
-        badgeContent = nightly === null ? (language === 'es' ? 'Consultar' : 'Ask') : `${nightly}/n`;
-      } else if (srv.type === 'national_park') {
-        badgeContent = 'SINAC';
-      } else if (srv.type === 'airstrip' || srv.type === 'airport') {
-        badgeContent = srv.flightCode?.split(' ')[0] || 'AÉREO';
-      } else if (srv.type === 'bus_station') {
-        badgeContent = 'BUS';
-      } else if (srv.type === 'train_station') {
-        badgeContent = 'TREN';
-      } else if (srv.type === 'taxi_stand') {
-        badgeContent = 'TAXI';
-      }
-
-      const htmlString = `
-        <div class="relative flex items-center justify-center w-7 h-7 cursor-pointer transition-transform duration-300 ${isSelected ? 'scale-125 z-50' : 'hover:scale-110 z-20'}">
-          ${isSelected ? '<div class="absolute -inset-2 bg-slate-400/40 rounded-full animate-ping"></div>' : ''}
-          <div class="relative bg-white border-2 ${isSelected ? 'border-slate-800 shadow-slate-500/50 shadow-lg' : meta.border + ' shadow-sm'} rounded-full w-full h-full flex items-center justify-center">
-            <span class="text-[11px] leading-none">${meta.emoji}</span>
-          </div>
-        </div>
-      `;
-
-      const customIcon = L.divIcon({
-        className: `custom-srv-pin custom-${srv.type}-pin`,
-        html: htmlString,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
-        popupAnchor: [0, -14]
-      });
-
-      const marker = L.marker([srv.coordinates.lat, srv.coordinates.lng], {
-        icon: customIcon,
-        zIndexOffset: isSelected ? 1000 : 20
-      });
-
-      marker.on('click', () => {
-        setSelectedMapService(srv);
-        setSelectedMapTour(null);
-        leafletMapRef.current?.flyTo(
-          [srv.coordinates.lat, srv.coordinates.lng],
-          Math.max(leafletMapRef.current.getZoom(), 13),
-          { duration: 0.8 }
-        );
-      });
-
-      const srvName = escapeHtml(getLangText(srv.name, language));
-      const srvSub = escapeHtml(getLangText(srv.subtitle, language));
-      marker.bindTooltip(`
-        <div style="min-width: 170px; max-width: 240px; line-height: 1.3;">
-          <div style="font-weight: 800; font-size: 11px; color: #34d399; margin-bottom: 2px;">${meta.emoji} ${meta.label[language === 'es' ? 'es' : 'en']}</div>
-          <div style="font-weight: 700; font-size: 12px; color: #F8FAFC;">${srvName}</div>
-          <div style="font-size: 11px; color: #CBD5E1; margin-top: 3px;">${srvSub}</div>
-        </div>
-      `, {
-        direction: 'top',
-        offset: [0, -36],
-        className: 'leaflet-tour-tooltip'
-      });
-
-      marker.addTo(markersLayerRef.current!);
-      marker.getElement()?.setAttribute('aria-label',getLangText(srv.name,language));
-      marker.getElement()?.setAttribute('data-lat', String(srv.coordinates.lat));
-      marker.getElement()?.setAttribute('data-lng', String(srv.coordinates.lng));
-    });
-  }, [effectiveTours, effectiveServices, selectedMapTour, selectedMapService, language, currency, currentZoom]);
+    redraw();map.on('moveend',redraw);
+    return () => { map.off('moveend',redraw); layer.clearLayers(); };
+  }, [leafletMapInstance,mapItems,language,selectedMapTour,selectedMapService,selectedPoi,openDock,selectPoi,setSelectedMapTour,setSelectedMapService]);
 
   // =========================================================
   // ITINERARY POLYLINE & NUMBERED WAYPOINTS ON LEAFLET
@@ -1138,11 +972,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
     };
   }, [calcOrigin, calcDestination]);
 
-  const results = useMemo<ResultItem[]>(()=>[
-    ...effectiveTours.map(tour=>({id:`tour:${tour.id}`,title:getLangText(tour.title,language),subtitle:mapReferenceLabel(language),icon:getCategoryColorAndEmoji(tour.category).emoji,ll:[tour.location.lat,tour.location.lng] as [number,number],tour})),
-    ...effectiveServices.map(service=>({id:`service:${service.id}`,title:getLangText(service.name,language),subtitle:getServiceIconAndColor(service.type).label[language==='es'?'es':'en'],icon:getServiceIconAndColor(service.type).emoji,ll:[service.coordinates.lat,service.coordinates.lng] as [number,number],service})),
-    ...poiResults.map(poi=>({id:`poi:${poi.properties.grupo}:${poi.properties.id}`,title:poi.properties.nombre||getPoiTypeLabel(poi.properties.tipo,language),subtitle:getPoiTypeLabel(poi.properties.tipo,language),icon:NATIONAL_POI_GROUPS.find(g=>g.id===poi.properties.grupo)?.emoji||'📍',ll:[poi.geometry.coordinates[1],poi.geometry.coordinates[0]] as [number,number],poi}))
-  ],[effectiveTours,effectiveServices,poiResults,language]);
+  const results = mapItems;
   useEffect(()=>setResultPage(0),[results,selectedGroup]);
   const chooseResult=(item:ResultItem)=>{
     if(item.poi){selectPoi(item.poi);return;}
@@ -1181,7 +1011,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
       <aside id="map-explorer-filters" className="crt-map-dock" hidden={activePanel!=='layers'} aria-label={language==='es'?'Capas y filtros del mapa':'Map layers and filters'}>
         <div className="crt-map-dock-heading"><h2>{language==='es'?'Tu mapa, a tu manera':'Your map, your way'}</h2><button type="button" onClick={()=>openDock(null)} aria-label={language==='es'?'Cerrar selector de capas':'Close layers selector'}><X size={18}/></button></div>
         <div className="crt-map-dock-body"><MapExplorerControls language={language} layers={layerFilters} onLayersChange={setLayerFilters} category={selectedCategory} onCategory={setSelectedCategory} difficulty={selectedDifficulty} onDifficulty={setSelectedDifficulty} region={selectedRegion} onRegion={handleFlyToRegion} maxDuration={maxDuration} onDuration={setMaxDuration} onlyInView={onlyInView} onOnlyInView={setOnlyInView} radiusKm={radiusKm} onRadius={setRadiusKm} hideApproximate={hideApproximate} onHideApproximate={setHideApproximate} showRegions={showRegionAreas} onShowRegions={setShowRegionAreas} onPreset={applyPreset} onReset={resetExplorer}>
-          <NationalPoiLayer map={leafletMapInstance} language={language} embedded filterResetKey={nationalFilterReset} enabledLayers={nationalLayers} onEnabledLayersChange={setNationalLayers} searchQuery={deferredSearch} spatialFilter={spatialFilter} hideApproximate={hideApproximate} onFeaturesChange={setPoiResults} onSelectPoi={selectPoi} onSelectGroup={selectPoiGroup}/>
+          <NationalPoiLayer map={leafletMapInstance} language={language} embedded renderMarkers={false} filterResetKey={nationalFilterReset} enabledLayers={nationalLayers} onEnabledLayersChange={setNationalLayers} searchQuery={deferredSearch} spatialFilter={spatialFilter} hideApproximate={hideApproximate} onFeaturesChange={setPoiResults} onSelectPoi={selectPoi} onSelectGroup={selectPoiGroup}/>
         </MapExplorerControls></div>
       </aside>
       {(activePanel==='results'||activePanel==='group') && <aside id="map-explorer-results" className="crt-map-dock" aria-label={language==='es'?'Resultados del mapa':'Map results'}><div className="crt-map-dock-heading"><h2>{activePanel==='group'?(language==='es'?'En esta ubicación':'At this location'):(language==='es'?'Lugares por descubrir':'Places to discover')}</h2><button type="button" onClick={()=>openDock(null)} aria-label={language==='es'?'Cerrar resultados':'Close results'}><X size={18}/></button></div><div className="crt-map-dock-body">{renderResults(selectedGroup||results)}</div></aside>}

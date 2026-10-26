@@ -106,18 +106,30 @@ export function groupMapPointsAtZoom<T>(
   zoom: number,
   cellPx = 64,
 ): GridCluster<T>[] {
-  if (zoom < 18) {
-    return clusterByGrid(items,getLatLng,project,zoom <= 12 ? cellPx : 44).map(group => ({
+  let groups = clusterByGrid(items,getLatLng,project,zoom <= 12 ? cellPx : 44);
+  // Adjacent grid cells can still have overlapping centroids. Merge neighboring
+  // symbols, then recheck their weighted centers, without moving source points.
+  for (let pass=0;pass<20;pass++) {
+    const parents=groups.map((_,i)=>i), cells=new Map<string,number[]>();
+    const root=(i:number):number=>{while(parents[i]!==i){parents[i]=parents[parents[i]];i=parents[i];}return i;};
+    const projected=groups.map(g=>project(g.lat,g.lng));
+    let merged=false;
+    for(let i=0;i<groups.length;i++) {
+      const p=projected[i],x=Math.floor(p.x/52),y=Math.floor(p.y/52);
+      for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++)for(const j of cells.get(`${x+dx}:${y+dy}`)||[]) {
+        if(Math.hypot(p.x-projected[j].x,p.y-projected[j].y)>=52)continue;
+        const a=root(i),b=root(j);if(a!==b){parents[a]=b;merged=true;}
+      }
+      const key=`${x}:${y}`,bucket=cells.get(key)||[];bucket.push(i);cells.set(key,bucket);
+    }
+    if(!merged)break;
+    const combined=new Map<number,GridCluster<T>>();
+    groups.forEach((g,i)=>{const key=root(i),target=combined.get(key);if(target){const count=target.count+g.count;target.lat=(target.lat*target.count+g.lat*g.count)/count;target.lng=(target.lng*target.count+g.lng*g.count)/count;target.count=count;target.items.push(...g.items);}else combined.set(key,{...g,items:[...g.items]});});
+    groups=[...combined.values()];
+  }
+  return groups.map(group => ({
       ...group,
       isCluster: new Set(group.items.map(item => { const ll=getLatLng(item)!;return coordinateKey(ll[0],ll[1]); })).size > 1,
-    }));
-  }
-  return groupByCoordinate(items, getLatLng).map(group => ({
-    lat: group.lat,
-    lng: group.lng,
-    count: group.items.length,
-    items: group.items,
-    isCluster: false,
   }));
 }
 

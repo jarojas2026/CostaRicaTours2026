@@ -27,6 +27,7 @@ test('dock closes with Escape or map background and can be toggled again',async(
  const toggle=page.locator('#national-poi-layers-toggle'),panel=page.locator('#map-explorer-filters');
  await toggle.tap();await page.keyboard.press('Escape');await expect(panel).toBeHidden();
  await toggle.tap();await expect(panel).toBeVisible();
+ await expect.poll(()=>page.locator('#costa-rica-leaflet-map-canvas').evaluate(el=>Number((el as HTMLElement).dataset.markerHeight)===el.clientHeight)).toBe(true);
  const point=await page.locator('#costa-rica-leaflet-map-canvas').evaluate(el=>{
   const r=el.getBoundingClientRect();
   for(const dx of [.08,.25,.5,.75])for(const dy of [.12,.3,.6]){
