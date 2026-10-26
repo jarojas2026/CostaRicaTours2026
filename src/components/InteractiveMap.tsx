@@ -606,10 +606,8 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
     const handleResize = () => {
       cancelAnimationFrame(resizeFrame);
       resizeFrame = requestAnimationFrame(() => {
-        const center = map.getCenter();
-        map.invalidateSize({ pan: false, debounceMoveend: true });
-        // Keep the chosen geographic center when a dock changes canvas size.
-        map.setView(center, map.getZoom(), { animate: false });
+        // Native non-animated size correction preserves the center without stopping flyTo.
+        map.invalidateSize({ pan: true, animate: false, debounceMoveend: true });
         if (initialFitPending) {
           initialFitPending = false;
           map.fitBounds([[8.0, -86.0], [11.3, -82.5]], { padding: [20, 30], maxZoom: 8, animate: false });
@@ -643,7 +641,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
   // Reactive Fly to Region
   useEffect(() => {
     if (!leafletMapRef.current) return;
-    const target = REGION_NAV_ITEMS.find((r) => r.id === selectedRegion);
+    const target = selectedRegion==='all' ? undefined : REGION_NAV_ITEMS.find((r) => r.id === selectedRegion);
     if (target) {
       leafletMapRef.current.flyTo([target.lat, target.lng], target.zoom, {
         duration: 1.2,
@@ -868,6 +866,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
 
   // Flying to a region
   const handleFlyToRegion = (regionId: TourRegion | 'all') => {
+    if(regionId==='all'){handleRecenterCostaRica();return;}
     onSelectRegion(regionId);
     const target = REGION_NAV_ITEMS.find((r) => r.id === regionId);
     if (target && leafletMapRef.current) {
@@ -1482,22 +1481,7 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
               <X className="w-5 h-5" />
             </button>
             <div className="absolute inset-0 bg-gradient-to-t from-[#051e16] via-[#051e16]/30 to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
-              <span className="bg-emerald-500 text-stone-950 text-xs font-black uppercase px-3 py-1.5 rounded-lg shadow-lg">
-                {getLangText(selectedMapTour.durationLabel, language)}
-              </span>
-              <div className="bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-emerald-500/40 text-right">
-                <span className="block text-[9px] font-bold text-emerald-300 uppercase tracking-widest leading-none mb-0.5">
-                  {language === 'es' ? 'Desde' : 'From'}
-                </span>
-                <span className="block font-black text-white text-xl leading-none" title={money(selectedMapTour.priceUSD).note || money(selectedMapTour.priceUSD).notice}>
-                  {money(selectedMapTour.priceUSD).primary}
-                </span>
-                {(money(selectedMapTour.priceUSD).note || money(selectedMapTour.priceUSD).notice) && (
-                  <span data-testid="rate-note" className="mt-1 block max-w-[12rem] text-[9px] leading-tight text-stone-300">{money(selectedMapTour.priceUSD).note || money(selectedMapTour.priceUSD).notice}</span>
-                )}
-              </div>
-            </div>
+
           </div>
 
           <p className="crt-map-help px-4">{mapReferenceLabel(language)}</p>
@@ -1513,6 +1497,23 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
             <h3 className="text-2xl font-black leading-snug mb-4 text-white">
               {getLangText(selectedMapTour.title, language)}
             </h3>
+
+            <div className="crt-map-detail-facts flex justify-between items-center gap-3 mb-4" data-testid="map-tour-facts">
+              <span className="bg-emerald-500 text-stone-950 text-xs font-black uppercase px-3 py-1.5 rounded-lg shadow-lg">
+                {getLangText(selectedMapTour.durationLabel, language)}
+              </span>
+              <div className="bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-emerald-500/40 text-right">
+                <span className="block text-[9px] font-bold text-emerald-300 uppercase tracking-widest leading-none mb-0.5">
+                  {language === 'es' ? 'Desde' : 'From'}
+                </span>
+                <span className="block font-black text-white text-xl leading-none" title={money(selectedMapTour.priceUSD).note || money(selectedMapTour.priceUSD).notice}>
+                  {money(selectedMapTour.priceUSD).primary}
+                </span>
+                {(money(selectedMapTour.priceUSD).note || money(selectedMapTour.priceUSD).notice) && (
+                  <span data-testid="rate-note" className="mt-1 block max-w-[12rem] text-[9px] leading-tight text-stone-300">{money(selectedMapTour.priceUSD).note || money(selectedMapTour.priceUSD).notice}</span>
+                )}
+              </div>
+            </div>
 
             {/* Metrics */}
             <div className="grid grid-cols-3 gap-2 mb-6 bg-emerald-950/60 border border-emerald-500/20 p-3 rounded-2xl text-center">
@@ -1623,7 +1624,28 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
               <X className="w-5 h-5" />
             </button>
             <div className="absolute inset-0 bg-gradient-to-t from-[#051e16] via-[#051e16]/30 to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+
+          </div>
+
+          <p className="crt-map-help px-4">{mapReferenceLabel(language)}</p>
+          {/* Details */}
+          <div className="p-6 flex flex-col flex-1 text-white space-y-4">
+            <div>
+              <div className="flex items-center gap-2 text-emerald-400 mb-1">
+                <MapPin className="w-4 h-4 shrink-0" />
+                <span className="text-xs font-bold tracking-wide">
+                  {getLangText(selectedMapService.address, language)}
+                </span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                {getLangText(selectedMapService.name, language)}
+              </h3>
+              <p className="text-xs text-emerald-300/80 mt-1">
+                {getLangText(selectedMapService.subtitle, language)}
+              </p>
+            </div>
+
+            <div className="crt-map-detail-facts flex justify-between items-center gap-3 mb-4" data-testid="map-service-facts">
               <span className={`text-stone-950 text-xs font-black uppercase px-3 py-1.5 rounded-lg shadow-lg ${
                 getServiceIconAndColor(selectedMapService.type).bg
               }`}>
@@ -1651,25 +1673,6 @@ const InteractiveMapComponent: React.FC<InteractiveMapProps> = ({
                   </span>
                 )}
               </div>
-            </div>
-          </div>
-
-          <p className="crt-map-help px-4">{mapReferenceLabel(language)}</p>
-          {/* Details */}
-          <div className="p-6 flex flex-col flex-1 text-white space-y-4">
-            <div>
-              <div className="flex items-center gap-2 text-emerald-400 mb-1">
-                <MapPin className="w-4 h-4 shrink-0" />
-                <span className="text-xs font-bold tracking-wide">
-                  {getLangText(selectedMapService.address, language)}
-                </span>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
-                {getLangText(selectedMapService.name, language)}
-              </h3>
-              <p className="text-xs text-emerald-300/80 mt-1">
-                {getLangText(selectedMapService.subtitle, language)}
-              </p>
             </div>
 
             {/* Special Badges (CST certificate, SINAC, etc.) */}

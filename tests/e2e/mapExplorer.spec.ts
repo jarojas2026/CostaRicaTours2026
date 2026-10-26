@@ -13,6 +13,7 @@ test('national search, presets, subtype and result selection share one dock',asy
  const first=page.locator('#map-explorer-results .crt-map-result').first();await expect(first).toBeVisible();
  const label=(await first.locator('strong').innerText());await first.click();
  const detail=page.locator('#map-selected-service-panel, #map-selected-poi-panel');await expect(detail).toBeVisible();await expect(detail).toContainText(label);
+ await expect(page.locator('[data-testid=map-service-facts]')).toBeVisible();
  const boxes=await page.evaluate(()=>{const map=document.querySelector('#costa-rica-leaflet-map-canvas')!.getBoundingClientRect(),dock=document.querySelector('#map-selected-service-panel, #map-selected-poi-panel')!.getBoundingClientRect();return{mapRight:map.right,dockLeft:dock.left};});expect(boxes.mapRight).toBeLessThanOrEqual(boxes.dockLeft+2);
  await page.keyboard.press('Escape');await expect(detail).toBeHidden();expectNoConsoleErrors(consoleProblems);
 });
@@ -45,4 +46,23 @@ test('a failed national layer stops retrying until the customer explicitly retri
  await retry.click();await expect(retry).toBeHidden();
  await page.locator('#national-poi-layers-panel summary').filter({hasText:'Hospedaje y alimentación'}).click();
  await expect(page.locator('#national-poi-layers-panel')).toContainText(/3[.\s]911 registros/);expect(attempts).toBe(2);
+});
+
+test('Cocos navigation survives clearing a catalog region',async({page})=>{
+ await page.locator('#national-poi-layers-toggle').click();
+ await page.getByText('Tours y servicios del catálogo',{exact:true}).click();
+ const region=page.locator('#map-region-filter');
+ const value=await region.locator('option').nth(1).getAttribute('value');await region.selectOption(value!);
+ await page.locator('#map-tools-toggle').click();await page.getByRole('button',{name:'Isla del Coco',exact:true}).click();
+ const map=page.locator('#costa-rica-leaflet-map-canvas');
+ await expect.poll(async()=>Math.abs(Number(await map.getAttribute('data-center-lat'))-5.53)+Math.abs(Number(await map.getAttribute('data-center-lng'))+87.06)).toBeLessThan(.02);
+ await expect(map).toHaveAttribute('data-zoom','11');
+});
+
+test('tour facts remain visible and selection reaches its destination',async({page})=>{
+ await page.locator('#map-search-input').fill('arenal');await page.locator('#map-results-toggle').click();
+ await page.locator('#map-explorer-results .crt-map-result').first().click();
+ await expect(page.locator('[data-testid=map-tour-facts]')).toBeVisible();
+ await expect(page.locator('[data-testid=map-tour-facts]')).toContainText('Desde');
+ await expect(page.locator('#costa-rica-leaflet-map-canvas')).toHaveAttribute('data-zoom','14');
 });

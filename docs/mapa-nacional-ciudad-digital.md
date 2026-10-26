@@ -51,7 +51,7 @@ Tours, servicios del catálogo y POI nacionales comparten una sola agrupación p
 
 Las marcas individuales conservan su coordenada. Un centroide de grupo representa varios registros, no un negocio. Las fichas de tours y servicios del catálogo muestran que la coordenada es una referencia y piden confirmar el punto de encuentro. Los POI con `aprox: true` se identifican con borde discontinuo y aviso en la ficha; no se inventa una precisión mayor.
 
-`ResizeObserver`, `fullscreenchange` e `invalidateSize({ pan: false })` mantienen sincronizado el tamaño de Leaflet cuando el panel, la cabecera o la pantalla cambian.
+`ResizeObserver`, `fullscreenchange` e `invalidateSize({ pan: true, animate: false })` mantienen el centro y las animaciones de destino al sincronizar el tamaño de Leaflet cuando el panel, la cabecera o la pantalla cambian.
 
 ### Carga y fallos
 
