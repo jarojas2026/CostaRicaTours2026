@@ -4,10 +4,9 @@ name: Deploy to Google Cloud Run
 # Build & Type Check termine exitosamente en main. workflow_dispatch se
 # conserva para recuperación manual. La pausa de costos es fail-closed:
 # CLOUD_RUN_DEPLOY_ENABLED debe ser exactamente true para cualquier ejecución.
+# Pausa de costos (26-oct-2026): SOLO manual. No se despliega en cada merge.
+# Reactivar el disparo automático requiere autorización escrita de Gabriel.
 on:
-  workflow_run:
-    workflows: ["Build & Type Check"]
-    types: [completed]
   workflow_dispatch: {}
 
 env:
