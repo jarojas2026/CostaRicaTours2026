@@ -14,10 +14,10 @@ test('Cloud Run deploy is GitHub OIDC keyless-only', () => {
   assert.doesNotMatch(workflow, /GCP_SA_KEY/);
 });
 
-test('deploy remains gated by successful main Build & Type Check', () => {
-  assert.match(workflow, /workflows: \["Build & Type Check"\]/);
-  assert.match(workflow, /workflow_run\.conclusion == 'success'/);
-  assert.match(workflow, /workflow_run\.head_branch == 'main'/);
+test('deploy is manual only (cost pause, 26-oct-2026)', () => {
+  const onBlock = workflow.match(/^on:\n([\s\S]*?)\n\S/m)?.[1] ?? '';
+  assert.match(onBlock, /workflow_dispatch/);
+  assert.doesNotMatch(onBlock, /workflow_run|push:|pull_request|schedule:/);
 });
 
 test('private Cloud Run smoke checks use an audience-bound ID token from auth@v3', () => {
