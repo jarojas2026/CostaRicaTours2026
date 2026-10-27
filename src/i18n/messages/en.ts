@@ -137,4 +137,12 @@ export const en: Messages = {
   'tourCard.from': "From",
   'tourCard.referencePrice': "Reference price",
   'tourCard.askPrice': "Ask for price",
+  // partners (affiliate links)
+  'partners.title': "Book with partners",
+  'partners.disclosure': "Affiliate links: we may earn a commission at no extra cost to you.",
+  'partners.klook': "Tours and activities in Costa Rica",
+  'partners.tiqets': "Tickets and attractions",
+  'partners.kiwitaxi': "Transfer from SJO airport",
+  'partners.localrent': "Car rental",
+  'partners.welcomePickups': "Private driver transfers",
 };

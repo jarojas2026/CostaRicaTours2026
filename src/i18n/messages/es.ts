@@ -135,6 +135,14 @@ export const es = {
   'tourCard.from': "Desde",
   'tourCard.referencePrice': "Precio de referencia",
   'tourCard.askPrice': "Consultar precio",
+  // partners (enlaces de afiliado)
+  'partners.title': "Reservá también con socios",
+  'partners.disclosure': "Enlaces de afiliado: podemos recibir una comisión sin costo extra para vos.",
+  'partners.klook': "Tours y actividades en Costa Rica",
+  'partners.tiqets': "Entradas y atracciones",
+  'partners.kiwitaxi': "Traslado desde el aeropuerto SJO",
+  'partners.localrent': "Alquiler de carros",
+  'partners.welcomePickups': "Traslados con chofer",
 } as const;
 
 export type MessageKey = keyof typeof es;

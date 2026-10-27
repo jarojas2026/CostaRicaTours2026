@@ -6,6 +6,7 @@ import { Tour, Language, Currency, TourCategory, TourRegion } from '../types';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTours } from '../contexts/ToursContext';
 import { RegionalExperienceGuides } from '../components/RegionalExperienceGuides';
+import { AffiliatePartners } from '../components/AffiliatePartners';
 import { DEFAULT_CATALOG_PRICE, patchCatalogRouteFilters, readCatalogRouteFilters, type CatalogRouteFilters } from '../utils/catalogRouteFilters';
 
 interface ToursPageProps {
@@ -140,6 +141,7 @@ export const ToursPage: React.FC<ToursPageProps> = ({
         viewMode={viewMode}
         setViewMode={setViewMode}
       />
+      {!onlyFavorites && <AffiliatePartners language={language} />}
     </motion.div>
   );
 };
