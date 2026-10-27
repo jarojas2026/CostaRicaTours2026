@@ -1,3 +1,4 @@
+import { TravelPreparationEntry } from '../components/TravelPreparationEntry';
 import { TourFacts } from '../components/TourFacts';
 import { NotFoundPage } from './NotFoundPage';
 import { TourQuoteRequestForm } from '../components/TourQuoteRequestForm';
@@ -443,6 +444,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
             </div>
 
             <TourFacts tour={tour} language={language} currency={currency} />
+            <TravelPreparationEntry language={language} region={tour.region} activity={tour.category} compact/>
 
             <div className="prose prose-invert prose-stone max-w-none">
               <h3 className="text-2xl font-black text-white uppercase tracking-wider mb-6">{language === 'es' ? 'Sobre esta experiencia' : 'About this experience'}</h3>

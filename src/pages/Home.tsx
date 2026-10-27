@@ -1,3 +1,4 @@
+import { TravelPreparationEntry } from '../components/TravelPreparationEntry';
 import React from 'react';
 import { motion } from 'motion/react';
 import { HeroSection } from '../components/HeroSection';
@@ -77,6 +78,7 @@ export const Home: React.FC<HomeProps> = ({
 
       {/* Honest operational verification message: the first trust signal after the hero. */}
       <OperationalTrustNotice language={language} />
+      <div className="mx-auto w-full max-w-7xl px-4"><TravelPreparationEntry language={language} region={selectedRegion} activity={selectedCategory}/></div>
 
       {/* Connected city masterplan entrance: complements the travel-first navigation. */}
       <DigitalCityGateway language={language} />
