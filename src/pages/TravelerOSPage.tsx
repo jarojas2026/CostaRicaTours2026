@@ -199,6 +199,7 @@ const TravelerOSPageComponent: React.FC<TravelerOSPageProps> = ({
     : timing.phase==='return_unknown' ? (es?'La salida ya pasó. Añade una fecha de finalización para mostrar la fase del viaje.':'Departure has passed. Add an end date to show the trip phase.')
     : tripDay!==null ? (es?`Día ${tripDay}: revisa agenda, accesos y conexiones.`:`Day ${tripDay}: review your agenda, access and connections.`)
     : countdown!==null&&countdown<=7 ? (es?'La salida está cerca: prioriza documentos, accesos y traslados.':'Departure is near: prioritize documents, access and transfers.')
+    : countdown!==null ? (es?`Faltan ${countdown} días para salir. Revisa los pendientes de tu plan.`:`Departure is in ${countdown} days. Review your preparation checklist.`)
     : (es?'Define fecha, región y actividad para adaptar tu preparación.':'Set your date, region and activity to adapt your preparation.');
 
   const addNote = () => {

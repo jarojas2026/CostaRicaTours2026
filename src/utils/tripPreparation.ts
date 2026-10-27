@@ -66,7 +66,7 @@ export function preparationTasks(profile:PreparationProfile,today=costaRicaDate(
     add('trip-expenses','Conciliar gastos registrados','Reconcile recorded expenses','Comparar tu registro personal con los comprobantes reales.','Compare your personal record with actual receipts.','budget');
     return tasks;
   }
-  if(timing.phase==='today'||timing.phase==='during')add('daily-plan','Revisar la agenda y conexiones de hoy','Review today’s plan and connections','Comprobar con el operador los cambios de esta jornada.','Check today’s changes with the operator.','transport');
+  if(timing.phase==='today'||timing.phase==='during')add('daily-plan-'+today,'Revisar la agenda y conexiones de hoy','Review today’s plan and connections','Comprobar con el operador los cambios de esta jornada.','Check today’s changes with the operator.','transport');
   else if(timing.phase==='upcoming'&&timing.countdown!==null&&timing.countdown<=7)add('departure-week','Completar revisión antes de salir','Complete the pre-departure review','La salida está a una semana o menos; revisar documentación y conexiones pendientes.','Departure is within a week; review outstanding documents and connections.','entry');
   add('weather','Consultar avisos y pronóstico','Check advisories and forecast','Revisar cerca de la salida y de cada actividad.','Check close to departure and each activity date.','weather');
   add('meeting','Revisar recogida y conexiones','Review pickup and connections','Confirmar puntos, horario, equipaje y margen de llegada.','Confirm meeting points, times, baggage and arrival buffers.','transport');

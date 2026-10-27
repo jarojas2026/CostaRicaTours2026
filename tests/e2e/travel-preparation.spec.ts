@@ -29,6 +29,20 @@ test('official guide filters, empty search, URL history and reset',async({page,c
   expectNoConsoleErrors(consoleProblems);
 });
 
+test('guide converts USD to CRC even when the global currency is USD',async({page,consoleProblems})=>{
+  await page.addInitScript(()=>{if(window===window.top)localStorage.setItem('crt_currency','USD');});
+  await page.goto('/tools?topic=budget');
+  await expect(page.getByRole('heading',{name:/Conversor orientativo.*USD → CRC/})).toBeVisible();
+  await expect(page.getByTestId('guide-conversion-result')).toContainText('₡');
+  await expect(page.getByTestId('guide-conversion-result')).toContainText(/51[\s.,]?000/);
+  await page.getByLabel('Monto de referencia en USD').fill('200');
+  await expect(page.getByTestId('guide-conversion-result')).toContainText(/102[\s.,]?000/);
+  await page.getByLabel('Monto de referencia en USD').fill('-1');
+  await expect(page.getByRole('alert').filter({hasText:'monto válido'})).toBeVisible();
+  await expect(page.getByTestId('guide-conversion-result')).toHaveText('—');
+  expectNoConsoleErrors(consoleProblems);
+});
+
 test('contextual plan adapts tasks and packing, isolates checks and preserves old notes, tasks and full expense history',async({page,consoleProblems})=>{
   await page.addInitScript(()=>{
     if(window===window.top&&!sessionStorage.getItem('crt_traveler_os_v1'))sessionStorage.setItem('crt_traveler_os_v1',JSON.stringify({trip:{destination:'Plan de prueba',startDate:'',travelers:3,budgetUSD:90,note:'Nota anterior conservada'},tasks:[{id:'legacy-task',labelEs:'Pendiente anterior',labelEn:'Earlier task',done:true,category:'before'}],spentUSD:100,expenses:Array.from({length:35},(_,i)=>({id:'legacy-'+i,label:'Gasto histórico '+i,amount:1}))}));

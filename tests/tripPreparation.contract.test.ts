@@ -46,7 +46,13 @@ test('packing responds to terrain and water without prechecking any item',()=>{
 });
 test('preparation changes near departure, during travel and after the end date',()=>{
   assert.ok(taskIds(profile,'2026-11-14').includes('departure-week'));
-  assert.ok(taskIds(profile,'2026-11-20').includes('daily-plan'));
+  assert.ok(taskIds(profile,'2026-11-20').includes('daily-plan-2026-11-20'));
+  const firstDay=taskIds(profile,'2026-11-20').find(id=>id.startsWith('daily-plan-'))!;
+  const secondDay=taskIds(profile,'2026-11-21').find(id=>id.startsWith('daily-plan-'))!;
+  const checked={[preparationContext(profile)+'|'+firstDay]:true};
+  assert.notEqual(firstDay,secondDay);
+  assert.equal(checked[preparationContext(profile)+'|'+secondDay],undefined);
+  assert.ok(taskIds(profile,'2026-11-21').includes('park-access'));
   assert.deepEqual(taskIds(profile,'2026-11-26'),['trip-record','trip-expenses']);
   assert.ok(!taskIds(profile,today).includes('departure-week'));
 });
