@@ -11,6 +11,7 @@
  */
 import { getPolicies, getProduct } from './agentProductTools';
 import { AGENT_EVENT_TYPES, logEvent } from './agentEventLog';
+import { AGENT_TICKET_PRIORITIES, AGENT_TICKET_REASONS, createTicket } from './agentSupportTicket';
 
 /** Contexto que pone el SERVIDOR (no el modelo) al ejecutar una herramienta. */
 export interface AgentToolContext {
@@ -32,6 +33,10 @@ export const PHASE_C_TOOL_REGISTRY = {
   },
   log_event: {
     description: 'Record a conversation event (type, leadId, small data object) in a private server collection. Server sets the timestamp; leadId/sessionId are stored hashed; names, emails and phones are never stored.',
+    sideEffect: true
+  },
+  create_ticket: {
+    description: 'Escalate to a human when the agent cannot resolve: creates an open support ticket (reason, priority, hashed leadId, short sanitized summary) in a private server collection and returns its ticket number. Sends no emails or messages.',
     sideEffect: true
   },
 } as const;
@@ -90,6 +95,30 @@ export const PHASE_C_DECLARATIONS = [
       required: ['type']
     }
   },
+  {
+    name: 'create_ticket',
+    description: `Escalate to a human teammate when you cannot resolve the request. reason must be one of: ${AGENT_TICKET_REASONS.join(', ')}. priority: ${AGENT_TICKET_PRIORITIES.join(' | ')} (default normal). summary: one short sentence of what is needed, WITHOUT names, emails, phone numbers, addresses, document numbers or links (they are removed). Returns a ticket number to share with the customer; never promise a response time. No message is sent to anyone.`,
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        reason: { type: 'STRING', description: `Escalation reason: ${AGENT_TICKET_REASONS.join(' | ')}` },
+        priority: { type: 'STRING', description: `Priority: ${AGENT_TICKET_PRIORITIES.join(' | ')}` },
+        summary: { type: 'STRING', description: 'Short non-personal summary (max 200 chars)' },
+        leadId: { type: 'STRING', description: 'Optional lead id (stored only as a hash)' },
+        data: {
+          type: 'OBJECT',
+          description: 'Optional small object of short non-personal values (max 8 keys)',
+          properties: {
+            tourId: { type: 'STRING', description: 'Catalog tour id' },
+            topic: { type: 'STRING', description: 'Short topic label' },
+            travelDate: { type: 'STRING', description: 'Travel date as YYYYMM or month label (no full dates)' },
+            count: { type: 'NUMBER', description: 'Optional small count (e.g. travelers)' }
+          }
+        }
+      },
+      required: ['reason', 'summary']
+    }
+  },
 ];
 
 export async function executePhaseCTool(name: PhaseCToolName, args: Record<string, any>, context: AgentToolContext = {}): Promise<any> {
@@ -102,6 +131,11 @@ export async function executePhaseCTool(name: PhaseCToolName, args: Record<strin
     case 'log_event':
       return logEvent(
         { type: args.type, leadId: args.leadId, data: args.data },
+        { sessionId: context.sessionId, channel: context.channel, language: context.language }
+      );
+    case 'create_ticket':
+      return createTicket(
+        { reason: args.reason, priority: args.priority, leadId: args.leadId, summary: args.summary, data: args.data },
         { sessionId: context.sessionId, channel: context.channel, language: context.language }
       );
   }
