@@ -1,3 +1,4 @@
+import { TravelPreparationEntry } from '../components/TravelPreparationEntry';
 import React from 'react';
 import { motion } from 'motion/react';
 import { ToursGrid } from '../components/ToursGrid';
@@ -115,6 +116,7 @@ export const ToursPage: React.FC<ToursPageProps> = ({
           }}
         />
       )}
+      <TravelPreparationEntry language={language} region={filters.region} activity={filters.category} compact/>
       <ToursGrid
         tours={onlyFavorites ? tours.filter(tour => favorites.includes(tour.id)) : tours}
         language={language}

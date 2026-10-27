@@ -1,4 +1,6 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { preparationHref } from '../utils/tripPreparation';
 import { ArrowRight, Compass, MessageCircle } from 'lucide-react';
 import { Tour, TourRegion, Language } from '../types';
 import { REGIONAL_EXPERIENCE_GUIDES } from '../data/regionalExperienceGuides';
@@ -59,6 +61,7 @@ export const RegionalExperienceGuides: React.FC<RegionalExperienceGuidesProps> =
                     <MessageCircle size={14} /> {es ? 'Consultar esta región con IA' : 'Ask AI about this region'}
                   </button>
                 )}
+                <Link to={preparationHref(guide.regionId)} className="inline-flex min-h-11 items-center text-xs font-bold text-emerald-200 underline underline-offset-4">{es ? 'Preparar esta región' : 'Prepare for this region'}</Link>
               </div>
             </article>
           );

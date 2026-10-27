@@ -1695,3 +1695,7 @@ JARVIS ya existe como identidad real del registro de agentes y ocupa la `jarvis_
 - `POST /api/admin/jarvis/plans/:planId/reconcile`
 
 **Límite de esta fase:** JARVIS ya planifica, gobierna, encola, supervisa y reintenta tareas auditables. Los ejecutores especializados continúan siendo los servicios/agentes existentes; una tarea en cola no se marca como ejecutada hasta que uno de esos ejecutores la procese realmente.
+
+### Guía y preparación personal del viaje (26-oct-2026)
+
+`/tools` reúne 12 temas prácticos ES/EN con referencias oficiales; `/trip` adapta pendientes y equipaje a la región, actividad, fechas y necesidades indicadas. Incluye resumen y calendario descargable, guardado por identidad y aviso de presupuesto excedido. No confirma reservas ni reactiva operaciones del backend pausado. [Alcance, fuentes y validación](docs/preparacion-informacion-2026-10-26.md).

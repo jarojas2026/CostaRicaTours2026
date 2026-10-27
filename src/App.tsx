@@ -1,3 +1,4 @@
+import { TravelPreparationEntry } from './components/TravelPreparationEntry';
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -443,6 +444,7 @@ export default function App() {
                     {language === 'es' ? 'Destinos de Costa Rica' : 'Costa Rica Destinations'}
                   </h2>
                 </div>
+                <TravelPreparationEntry language={language} compact/>
                 <Suspense fallback={<RouteFallback />}>
                 <DestinationsSection 
                   language={language}

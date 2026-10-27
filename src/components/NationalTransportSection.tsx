@@ -616,37 +616,37 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="bg-orange-500/20 text-orange-300 border border-orange-400/30 text-[11px] font-black uppercase px-3 py-1 rounded-full">
-                      {language === 'es' ? 'Flota Todo Terreno' : 'All-Terrain 4WD Fleet'}
+                      {language === 'es' ? 'Alquiler por consultar' : 'Car rental inquiry'}
                     </span>
-                    <span className="text-teal-300 text-xs font-bold">★ Cobertura Total Disponible</span>
+                    <span className="text-teal-300 text-xs font-bold">{language === 'es' ? 'Condiciones por confirmar' : 'Terms to be confirmed'}</span>
                   </div>
 
                   <h3 className="text-2xl font-black text-stone-900 flex items-center gap-2">
-                    🚙 Alquiler de Vehículos 4x4 & SUVs
+                    🚙 {language === 'es' ? 'Consulta sobre vehículos 4x4 y SUVs' : 'Ask about 4x4 vehicles and SUVs'}
                   </h3>
 
                   <p className="text-xs sm:text-sm text-stone-900 leading-relaxed">
                     {language === 'es'
-                      ? 'Flota moderna de vehículos 4x4 (Suzuki Jimny, Vitara, Hyundai Tucson, Prado) con excelentes coberturas y entrega directa en Aeropuertos SJO y LIR o en tu hotel en cualquier parte del país.'
-                      : 'Modern 4WD SUV fleet (Suzuki Jimny, Vitara, Tucson, Prado) with comprehensive zero-deductible insurance and airport pickup at SJO/LIR or direct hotel delivery.'}
+                      ? 'Indica tu recorrido, fechas y punto de entrega. El modelo, disponibilidad, depósito, seguros, deducible y cargos se confirman en una cotización escrita antes de reservar.'
+                      : 'Tell us your route, dates and pickup location. Vehicle model, availability, deposit, insurance, deductible and fees are confirmed in a written quote before booking.'}
                   </p>
 
                   <div className="grid grid-cols-2 gap-2 text-xs text-stone-800">
                     <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-200/60 flex items-center gap-2">
                       <Check className="w-4 h-4 text-teal-400 shrink-0" />
-                      <span>{language === 'es' ? 'Cobertura Total Cero Deducible' : 'Zero Deductible Option'}</span>
+                      <span>{language === 'es' ? 'Consultar coberturas y deducible' : 'Check coverage and deductible'}</span>
                     </div>
                     <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-200/60 flex items-center gap-2">
                       <Check className="w-4 h-4 text-teal-400 shrink-0" />
-                      <span>{language === 'es' ? 'GPS & WiFi portátil' : 'GPS & WiFi Hotspot'}</span>
+                      <span>{language === 'es' ? 'Consultar equipo y conectividad' : 'Ask about equipment and connectivity'}</span>
                     </div>
                     <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-200/60 flex items-center gap-2">
                       <Check className="w-4 h-4 text-teal-400 shrink-0" />
-                      <span>{language === 'es' ? 'Conductor adicional gratis' : 'Free additional driver'}</span>
+                      <span>{language === 'es' ? 'Consultar conductores y cargos' : 'Check drivers and fees'}</span>
                     </div>
                     <div className="bg-[#071A0F] p-3 rounded-xl border border-stone-200/60 flex items-center gap-2">
                       <Check className="w-4 h-4 text-teal-400 shrink-0" />
-                      <span>{language === 'es' ? 'Asistencia en carretera 24/7' : '24/7 Roadside Assistance'}</span>
+                      <span>{language === 'es' ? 'Consultar asistencia en carretera' : 'Ask about roadside assistance'}</span>
                     </div>
                   </div>
                 </div>
@@ -973,8 +973,8 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
               </h4>
               <p className="text-stone-900 text-xs leading-relaxed">
                 {language === 'es' 
-                  ? 'Los traslados turísticos y vuelos domésticos coordinados por nuestra agencia son sumamente puntuales. Para buses públicos, recomendamos presentarse con 30 minutos de antelación.' 
-                  : 'Tourist shuttles and domestic flights arranged by our agency operate strictly on schedule. For public buses, we recommend arriving 30 minutes before departure.'}
+                  ? 'Confirma horario, punto de salida y anticipación requerida para tu servicio. El tráfico, el clima y cambios operativos pueden afectar la conexión; deja margen para continuar tu viaje.' 
+                  : 'Confirm the time, departure point and required check-in buffer for your service. Traffic, weather and operational changes can affect connections; allow time for onward travel.'}
               </p>
             </div>
             
@@ -985,8 +985,8 @@ export const NationalTransportSection: React.FC<NationalTransportSectionProps> =
               </h4>
               <p className="text-stone-900 text-xs leading-relaxed">
                 {language === 'es' 
-                  ? 'Para Monteverde, Península de Osa y playas remotas, un 4x4 o SUV alto es altamente recomendado debido a la topografía de montaña y tramos de lastre.' 
-                  : 'For Monteverde, Osa Peninsula, and secluded beaches, a 4WD or high-clearance SUV is strongly recommended due to mountain terrain.'}
+                  ? 'Depende del acceso concreto y de las condiciones del recorrido. Consulta el estado de la ruta con tu hospedaje u operador y confirma qué vehículo y condiciones autoriza la arrendadora.' 
+                  : 'It depends on the specific access road and route conditions. Check the route with your lodging or operator and confirm which vehicle and conditions the rental company permits.'}
               </p>
             </div>
 
