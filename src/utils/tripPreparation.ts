@@ -45,7 +45,7 @@ export function regionLabel(region:PreparationProfile['region'],language:Languag
 export function activityLabel(activity:PreparationProfile['activity'],language:Language):string {
   if(activity==='all')return language==='es'?'Actividad por definir':'Activity not set';
   const names=CATEGORIES.find(c=>c.id===activity)?.name;
-  const extra:Partial<Record<TourCategory,{es:string;en:string}>>={surf:{es:'Surf',en:'Surfing'},snorkeling:{es:'Esnórquel',en:'Snorkeling'},diving:{es:'Buceo',en:'Diving'},whale_watching:{es:'Observación de ballenas',en:'Whale watching'},kayak:{es:'Kayak',en:'Kayaking'},fishing:{es:'Pesca',en:'Fishing'},family:{es:'En familia',en:'Family'},services:{es:'Servicios',en:'Services'},rural:{es:'Turismo rural',en:'Rural tourism'},gastronomy:{es:'Gastronomía',en:'Food experiences'}};
+  const extra:Partial<Record<TourCategory,{es:string;en:string}>>={adventure:{es:'Aventura',en:'Adventure'},nature:{es:'Naturaleza',en:'Nature'},surf:{es:'Surf',en:'Surfing'},snorkeling:{es:'Esnórquel',en:'Snorkeling'},diving:{es:'Buceo',en:'Diving'},whale_watching:{es:'Observación de ballenas',en:'Whale watching'},kayak:{es:'Kayak',en:'Kayaking'},fishing:{es:'Pesca',en:'Fishing'},family:{es:'En familia',en:'Family'},services:{es:'Servicios',en:'Services'},rural:{es:'Turismo rural',en:'Rural tourism'},gastronomy:{es:'Gastronomía',en:'Food experiences'}};
   return names?.[language]||names?.es||extra[activity]?.[language==='es'?'es':'en']||activity;
 }
 export function preparationHref(region?:unknown,activity?:unknown):string {

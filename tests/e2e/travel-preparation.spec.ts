@@ -6,7 +6,7 @@ import catalog from '../../src/data/catalogTours.json' with { type: 'json' };
 const futureDate=(days:number)=>new Date(Date.now()+days*86_400_000).toISOString().slice(0,10);
 
 test.beforeEach(async({page})=>{
-  await page.addInitScript(()=>{localStorage.setItem('cookie-consent','essential');});
+  await page.addInitScript(()=>{if(window===window.top)localStorage.setItem('cookie-consent','essential');});
   await mockApi(page);
 });
 
@@ -31,7 +31,7 @@ test('official guide filters, empty search, URL history and reset',async({page,c
 
 test('contextual plan adapts tasks and packing, isolates checks and preserves old notes, tasks and full expense history',async({page,consoleProblems})=>{
   await page.addInitScript(()=>{
-    if(!sessionStorage.getItem('crt_traveler_os_v1'))sessionStorage.setItem('crt_traveler_os_v1',JSON.stringify({trip:{destination:'Plan de prueba',startDate:'',travelers:3,budgetUSD:90,note:'Nota anterior conservada'},tasks:[{id:'legacy-task',labelEs:'Pendiente anterior',labelEn:'Earlier task',done:true,category:'before'}],spentUSD:100,expenses:Array.from({length:35},(_,i)=>({id:'legacy-'+i,label:'Gasto histórico '+i,amount:1}))}));
+    if(window===window.top&&!sessionStorage.getItem('crt_traveler_os_v1'))sessionStorage.setItem('crt_traveler_os_v1',JSON.stringify({trip:{destination:'Plan de prueba',startDate:'',travelers:3,budgetUSD:90,note:'Nota anterior conservada'},tasks:[{id:'legacy-task',labelEs:'Pendiente anterior',labelEn:'Earlier task',done:true,category:'before'}],spentUSD:100,expenses:Array.from({length:35},(_,i)=>({id:'legacy-'+i,label:'Gasto histórico '+i,amount:1}))}));
   });
   await page.goto('/trip?region=monteverde&activity=hiking');
   await expect(page.getByLabel('Región principal')).toHaveValue('monteverde');
@@ -126,7 +126,7 @@ test('mobile guidance and preparation stay usable without horizontal overflow',a
 });
 
 test('new guide and preparation panel are accessible in English',async({page})=>{
-  await page.addInitScript(()=>localStorage.setItem('crt_language','en'));
+  await page.addInitScript(()=>{if(window===window.top)localStorage.setItem('crt_language','en');});
   await page.goto('/tools?topic=entry');
   await expect(page.getByRole('heading',{level:1})).toHaveText('Useful information to plan and travel');
   const guideAudit=await new AxeBuilder({page}).include('#traveler-toolkit').withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
