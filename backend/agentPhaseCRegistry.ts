@@ -12,6 +12,7 @@
 import { getPolicies, getProduct } from './agentProductTools';
 import { AGENT_EVENT_TYPES, logEvent } from './agentEventLog';
 import { AGENT_TICKET_PRIORITIES, AGENT_TICKET_REASONS, createTicket } from './agentSupportTicket';
+import { QUOTE_MAX_PAX, QUOTE_SUPPORTED_CURRENCIES, QUOTE_VALIDITY_HOURS, createQuote } from './agentQuote';
 
 /** Contexto que pone el SERVIDOR (no el modelo) al ejecutar una herramienta. */
 export interface AgentToolContext {
@@ -37,6 +38,10 @@ export const PHASE_C_TOOL_REGISTRY = {
   },
   create_ticket: {
     description: 'Escalate to a human when the agent cannot resolve: creates an open support ticket (reason, priority, hashed leadId, short sanitized summary) in a private server collection and returns its ticket number. Sends no emails or messages.',
+    sideEffect: true
+  },
+  create_quote: {
+    description: 'Create a 48-hour quote (status quoted, QTE number) for a bookable tour from its published offer, only if it keeps the minimum business margin over the supplier cost. Stored in a private server collection with hashed leadId. Never returns supplier name, id, cost or margin. No payment, no payment link, no messages.',
     sideEffect: true
   },
 } as const;
@@ -119,6 +124,21 @@ export const PHASE_C_DECLARATIONS = [
       required: ['reason', 'summary']
     }
   },
+  {
+    name: 'create_quote',
+    description: `Create a formal quote for ONE bookable tour (id from search results): date YYYY-MM-DD (today or later), pax 1-${QUOTE_MAX_PAX}, currency ${QUOTE_SUPPORTED_CURRENCIES.join(' | ')}. Returns a quote number, unit and total price and an expiry ${QUOTE_VALIDITY_HOURS}h after creation. It does not reserve seats, take payment or send anything; availability is confirmed before any payment. If it returns an error with next=create_ticket, escalate to a human instead of estimating a price. Never put names, emails or phone numbers in leadId.`,
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        tourId: { type: 'STRING', description: 'Tour id or slug from the catalog' },
+        date: { type: 'STRING', description: 'Travel date YYYY-MM-DD (Costa Rica time)' },
+        pax: { type: 'NUMBER', description: `Number of travelers (1-${QUOTE_MAX_PAX})` },
+        currency: { type: 'STRING', description: `Currency: ${QUOTE_SUPPORTED_CURRENCIES.join(' | ')} (default USD)` },
+        leadId: { type: 'STRING', description: 'Optional lead id (stored only as a hash)' }
+      },
+      required: ['tourId', 'date', 'pax']
+    }
+  },
 ];
 
 export async function executePhaseCTool(name: PhaseCToolName, args: Record<string, any>, context: AgentToolContext = {}): Promise<any> {
@@ -136,6 +156,11 @@ export async function executePhaseCTool(name: PhaseCToolName, args: Record<strin
     case 'create_ticket':
       return createTicket(
         { reason: args.reason, priority: args.priority, leadId: args.leadId, summary: args.summary, data: args.data },
+        { sessionId: context.sessionId, channel: context.channel, language: context.language }
+      );
+    case 'create_quote':
+      return createQuote(
+        { tourId: args.tourId ?? args.id, date: args.date, pax: args.pax, currency: args.currency, leadId: args.leadId },
         { sessionId: context.sessionId, channel: context.channel, language: context.language }
       );
   }
