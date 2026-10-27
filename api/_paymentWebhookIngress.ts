@@ -1,5 +1,6 @@
 import type { IncomingHttpHeaders } from 'http';
 import Stripe from 'stripe';
+import { STRIPE_DISABLED_REASON } from '../backend/stripeModeGuard';
 
 export type PaymentWebhookTranslation =
   | {
@@ -47,6 +48,8 @@ export async function translateStripeWebhook(
   rawBody: Buffer,
   headers: IncomingHttpHeaders,
 ): Promise<PaymentWebhookTranslation> {
+  throw new Error(`${STRIPE_DISABLED_REASON}: Stripe webhooks están deshabilitados por política de la plataforma.`);
+  /* Preservado temporalmente para revisión histórica; no se ejecuta mientras Stripe esté deshabilitado.
   const signingSecret = requiredEnv('STRIPE_WEBHOOK_SECRET');
   const apiKey = requiredEnv('STRIPE_SECRET_KEY');
   const signature = header(headers, 'stripe-signature');
@@ -83,6 +86,9 @@ export async function translateStripeWebhook(
   }
 
   return { action: 'ack', provider: 'stripe', eventId: event.id, reason: 'event_not_actionable' };
+}
+
+  */
 }
 
 type PayPalAuth = { accessToken: string; baseUrl: string };
