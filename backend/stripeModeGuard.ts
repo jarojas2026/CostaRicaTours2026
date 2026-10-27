@@ -12,7 +12,7 @@ export type StripeModeCheck = { mode: 'test' | 'live' | 'none'; blocked: boolean
 export const STRIPE_DISABLED_REASON = 'STRIPE_DISABLED_IN_COSTA_RICA_TOURS';
 
 export function checkStripeMode(key?: string): StripeModeCheck {
-  const k = (key || process.env.STRIPE_SECRET_KEY || '').trim();
+  const k = (key === undefined ? process.env.STRIPE_SECRET_KEY : key || '').trim();
   if (!k) return { mode: 'none', blocked: true, reason: STRIPE_DISABLED_REASON };
   const mode = k.startsWith('sk_live_') || k.startsWith('rk_live_') ? 'live' : 'test';
   return { mode, blocked: true, reason: STRIPE_DISABLED_REASON };
