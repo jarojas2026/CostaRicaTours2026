@@ -52,7 +52,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
   const [children, setChildren] = useState(0);
   const [pickupHotel, setPickupHotel] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'paypal' | 'sinpe_movil' | 'pay_at_pickup'>('credit_card');
+  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'paypal' | 'sinpe_movil' | 'pay_at_pickup'>('pay_at_pickup');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availabilityState, setAvailabilityState] = useState<'idle' | 'checking' | 'available' | 'unavailable'>('idle');
   const [providerCheckState, setProviderCheckState] = useState<ProviderCheckState>('idle');
@@ -624,10 +624,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] ml-4">{language === 'es' ? 'Forma de continuar' : 'How to continue'}</label>
                     <select disabled={requestLocked} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value as any)} className="w-full bg-stone-950/50 border border-white/10 rounded-2xl px-5 py-3.5 text-white focus:outline-none focus:border-emerald-500 disabled:opacity-60">
-                      <option value="credit_card">{language === 'es' ? 'Tarjeta · Stripe después de disponibilidad' : 'Card · Stripe after availability'}</option>
-                      <option value="paypal">PayPal</option>
-                      <option value="sinpe_movil">SINPE Móvil</option>
-                      <option value="pay_at_pickup">{language === 'es' ? 'Coordinar antes del pago' : 'Coordinate before payment'}</option>
+                      <option value="pay_at_pickup">{language === 'es' ? 'Enviar solicitud y coordinar pago después' : 'Submit request and coordinate payment later'}</option>
                     </select>
                   </div>
 
