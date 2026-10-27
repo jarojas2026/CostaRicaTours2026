@@ -9,27 +9,27 @@ const ingress = fs.readFileSync(path.join(root, 'api/_paymentWebhookIngress.ts')
 const webhookHttp = fs.readFileSync(path.join(root, 'backend/paymentWebhookHttpService.ts'), 'utf8');
 
 test('payment webhooks are intercepted before the generic gateway body path', () => {
-  assert.match(gateway, /forwardedPath === 'webhooks\\/stripe'/);
-  assert.match(gateway, /forwardedPath === 'webhooks\\/paypal'/);
-  assert.match(gateway, /readRawRequestBody\\(req\\)/);
-  assert.match(gateway, /translateStripeWebhook\\(rawBody, req\\.headers\\)/);
-  assert.match(gateway, /translatePayPalWebhook\\(rawBody, req\\.headers\\)/);
+  assert.match(gateway, /forwardedPath === 'webhooks\/stripe'/);
+  assert.match(gateway, /forwardedPath === 'webhooks\/paypal'/);
+  assert.match(gateway, /readRawRequestBody\(req\)/);
+  assert.match(gateway, /translateStripeWebhook\(rawBody, req\.headers\)/);
+  assert.match(gateway, /translatePayPalWebhook\(rawBody, req\.headers\)/);
 });
 
 test('Stripe webhook ingress fails closed and never forwards payment events', () => {
   assert.match(ingress, /STRIPE_DISABLED_REASON/);
   assert.match(ingress, /throw new Error/);
   assert.doesNotMatch(ingress, /STRIPE_WEBHOOK_SECRET/);
-  assert.doesNotMatch(ingress, /stripe\\.webhooks\\.constructEvent/);
-  assert.doesNotMatch(ingress, /targetPath: '\\/api\\/payments\\/stripe\\/return'/);
+  assert.doesNotMatch(ingress, /stripe\.webhooks\.constructEvent/);
+  assert.doesNotMatch(ingress, /targetPath: '\/api\/payments\/stripe\/return'/);
 });
 
 test('PayPal webhook ingress verifies the official signature before forwarding', () => {
   assert.match(ingress, /PAYPAL_WEBHOOK_ID/);
   assert.match(ingress, /verify-webhook-signature/);
   assert.match(ingress, /verification_status !== 'SUCCESS'/);
-  assert.match(ingress, /targetPath: '\\/api\\/payments\\/paypal\\/return'/);
-  assert.match(ingress, /body: \\{ orderId \\}/);
+  assert.match(ingress, /targetPath: '\/api\/payments\/paypal\/return'/);
+  assert.match(ingress, /body: \{ orderId \}/);
 });
 
 test('the edge never mutates the authoritative booking ledger', () => {
@@ -37,29 +37,29 @@ test('the edge never mutates the authoritative booking ledger', () => {
   assert.doesNotMatch(ingress, /getFirestoreDb/);
   assert.doesNotMatch(gateway, /updateBookingStatus/);
   assert.doesNotMatch(gateway, /getFirestoreDb/);
-  assert.match(gateway, /gatewayHandler\\(translated, res\\)/);
+  assert.match(gateway, /gatewayHandler\(translated, res\)/);
 });
 
 test('verified payment events are routed through the canonical reservation orchestrator', () => {
   assert.match(webhookHttp, /advanceReservationLifecycle/);
-  assert.match(webhookHttp, /getBookingById\\(result\\.bookingId\\)/);
-  assert.match(webhookHttp, /payment\\.lifecycle\\.advanced/);
-  assert.match(webhookHttp, /payment\\.lifecycle\\.deferred/);
+  assert.match(webhookHttp, /getBookingById\(result\.bookingId\)/);
+  assert.match(webhookHttp, /payment\.lifecycle\.advanced/);
+  assert.match(webhookHttp, /payment\.lifecycle\.deferred/);
 });
 
 test('downstream lifecycle failures do not reject provider-valid PayPal webhooks', () => {
-  assert.match(webhookHttp, /catch \\(error\\)[\\s\\S]*payment\\.lifecycle\\.deferred/);
-  assert.match(webhookHttp, /const lifecycle = await finalizeVerifiedWebhook\\('paypal', result\\);[\\s\\S]*res\\.status\\(200\\)/);
+  assert.match(webhookHttp, /catch \(error\)[\s\S]*payment\.lifecycle\.deferred/);
+  assert.match(webhookHttp, /const lifecycle = await finalizeVerifiedWebhook\('paypal', result\);[\s\S]*res\.status\(200\)/);
 });
 
 test('duplicate provider events do not re-run lifecycle side effects', () => {
-  assert.match(webhookHttp, /result\\.duplicate/);
-  assert.match(webhookHttp, /if \\(!result\\.accepted \\|\\| result\\.duplicate \\|\\| !result\\.bookingId\\) return null/);
+  assert.match(webhookHttp, /result\.duplicate/);
+  assert.match(webhookHttp, /if \(!result\.accepted \|\| result\.duplicate \|\| !result\.bookingId\) return null/);
 });
 
 test('legacy synthetic payment and confirmation endpoints are not used by webhook ingress', () => {
-  assert.doesNotMatch(ingress, /\\/api\\/pagos\\/solicitud/);
-  assert.doesNotMatch(ingress, /\\/api\\/reservas\\/confirmar/);
-  assert.doesNotMatch(gateway, /\\/api\\/pagos\\/solicitud/);
-  assert.doesNotMatch(gateway, /\\/api\\/reservas\\/confirmar/);
+  assert.doesNotMatch(ingress, /\/api\/pagos\/solicitud/);
+  assert.doesNotMatch(ingress, /\/api\/reservas\/confirmar/);
+  assert.doesNotMatch(gateway, /\/api\/pagos\/solicitud/);
+  assert.doesNotMatch(gateway, /\/api\/reservas\/confirmar/);
 });
