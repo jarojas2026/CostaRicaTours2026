@@ -10,6 +10,7 @@
  *    (Firestore Admin SDK; las reglas cliente siguen en Default Deny).
  */
 import { getPolicies, getProduct } from './agentProductTools';
+import { AGENT_EVENT_TYPES, logEvent } from './agentEventLog';
 
 /** Contexto que pone el SERVIDOR (no el modelo) al ejecutar una herramienta. */
 export interface AgentToolContext {
@@ -28,6 +29,10 @@ export const PHASE_C_TOOL_REGISTRY = {
   get_policies: {
     description: 'Return the published cancellation policy and terms (legal pages) without promising refunds beyond them.',
     sideEffect: false
+  },
+  log_event: {
+    description: 'Record a conversation event (type, leadId, small data object) in a private server collection. Server sets the timestamp; leadId/sessionId are stored hashed; names, emails and phones are never stored.',
+    sideEffect: true
   },
 } as const;
 
@@ -62,6 +67,29 @@ export const PHASE_C_DECLARATIONS = [
       }
     }
   },
+  {
+    name: 'log_event',
+    description: `Record ONE internal conversation event for analytics (not shown to the customer). type must be one of: ${AGENT_EVENT_TYPES.join(', ')}. Never put names, emails, phone numbers, addresses or document numbers in data: they are discarded. The server sets the timestamp.`,
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        type: { type: 'STRING', description: `Event type: ${AGENT_EVENT_TYPES.join(' | ')}` },
+        leadId: { type: 'STRING', description: 'Optional lead id (stored only as a hash)' },
+        data: {
+          type: 'OBJECT',
+          description: 'Optional small object of short non-personal values (max 8 keys)',
+          properties: {
+            tourId: { type: 'STRING', description: 'Catalog tour id' },
+            intent: { type: 'STRING', description: 'Short intent label, e.g. quote, availability' },
+            topic: { type: 'STRING', description: 'Short topic label' },
+            reason: { type: 'STRING', description: 'Short non-personal reason' },
+            count: { type: 'NUMBER', description: 'Optional small count (e.g. travelers)' }
+          }
+        }
+      },
+      required: ['type']
+    }
+  },
 ];
 
 export async function executePhaseCTool(name: PhaseCToolName, args: Record<string, any>, context: AgentToolContext = {}): Promise<any> {
@@ -71,5 +99,10 @@ export async function executePhaseCTool(name: PhaseCToolName, args: Record<strin
       return getProduct({ tourId: args.tourId ?? args.id, language });
     case 'get_policies':
       return getPolicies({ topic: args.topic, language, tourId: args.tourId });
+    case 'log_event':
+      return logEvent(
+        { type: args.type, leadId: args.leadId, data: args.data },
+        { sessionId: context.sessionId, channel: context.channel, language: context.language }
+      );
   }
 }
