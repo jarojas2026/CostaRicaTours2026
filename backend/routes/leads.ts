@@ -30,7 +30,7 @@ import type express from 'express';
 import { requireOperator, requireOwner } from '../authMiddleware';
 import { createLeadPaymentLink } from '../leadPaymentLink';
 import { getLeadPaymentStatus, linkLeadBooking } from '../leadBookingLink';
-import { approveSupplierPayout, cancelSupplierPayout, createSupplierPayout, listSupplierPayouts, markSupplierPayoutPaid, type SupplierPayoutActor } from '../leadSupplierPayouts';
+import { approveSupplierPayout, cancelSupplierPayout, createSupplierPayout, listSupplierPayouts, markSupplierPayoutPaid, withoutSupplierPayouts, type SupplierPayoutActor } from '../leadSupplierPayouts';
 import { getBookingById } from '../bookingService';
 import { createStripeCheckoutForBooking } from './payments';
 import { buildLeadDigest, buildMapServiceLeadInput, buildTourPageLeadInput, captureLeadAndNotify, getLead, isLeadStatus, listLeads, mutateLead, transitionLead, triageLeads, LEAD_STATUSES } from '../leadPipeline';
@@ -61,7 +61,8 @@ leadsRouter.get('/api/admin/leads', requireOperator, async (req, res) => {
   const triage = req.query.triage ? String(req.query.triage) : undefined;
   if (triage && !isLeadTriageState(triage)) return res.status(400).json({ success: false, error: `Triaje inválido. Use: ${LEAD_TRIAGE_STATES.join(', ')}` });
   const leads = await listLeads({ status: status as any, priority: priority as any, triage: triage as any, limit: Number(req.query.limit) || 100 });
-  res.json({ success: true, statuses: LEAD_STATUSES, priorities: LEAD_PRIORITIES, triageStates: LEAD_TRIAGE_STATES, leads });
+  // El libro de pagos a proveedores no viaja en rutas de operador: solo por /supplier-payouts (requireOwner).
+  res.json({ success: true, statuses: LEAD_STATUSES, priorities: LEAD_PRIORITIES, triageStates: LEAD_TRIAGE_STATES, leads: leads.map(withoutSupplierPayouts) });
 });
 
 leadsRouter.post('/api/admin/leads/triage', requireOperator, async (req, res) => {
@@ -95,7 +96,7 @@ leadsRouter.post('/api/admin/leads/triage', requireOperator, async (req, res) =>
 leadsRouter.get('/api/admin/leads/:id', requireOperator, async (req, res) => {
   const lead = await getLead(String(req.params.id));
   if (!lead) return res.status(404).json({ success: false, error: 'Lead no encontrado.' });
-  res.json({ success: true, lead });
+  res.json({ success: true, lead: withoutSupplierPayouts(lead) });
 });
 
 leadsRouter.patch('/api/admin/leads/:id/status', requireOperator, async (req, res) => {
@@ -110,7 +111,7 @@ leadsRouter.patch('/api/admin/leads/:id/status', requireOperator, async (req, re
     const code = result.error === 'not_found' ? 404 : result.error === 'admin_required' ? 403 : result.error === 'invalid_transition' ? 409 : 400;
     return res.status(code).json({ success: false, error: result.error, message: result.message });
   }
-  res.json({ success: true, lead: result.lead });
+  res.json({ success: true, lead: withoutSupplierPayouts(result.lead) });
 });
 
 leadsRouter.post('/api/admin/leads/:id/payment-link', requireOwner, async (req, res) => {
