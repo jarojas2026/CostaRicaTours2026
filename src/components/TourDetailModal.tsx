@@ -37,7 +37,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
   const [children, setChildren] = useState(0);
   const [pickupHotel, setPickupHotel] = useState('');
   const [specialRequests] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'paypal' | 'sinpe_movil' | 'pay_at_pickup'>('credit_card');
+  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'paypal' | 'sinpe_movil' | 'pay_at_pickup'>('pay_at_pickup');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -616,10 +616,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
                     aria-label={language === 'es' ? 'Método de pago' : 'Payment method'}
                     onChange={e => setPaymentMethod(e.target.value as any)}
                   >
-                    <option value="credit_card" className="bg-stone-900">💳 Tarjeta de Crédito / Débito (Stripe)</option>
-                    <option value="paypal" className="bg-stone-900">💳 PayPal Express</option>
-                    <option value="sinpe_movil" className="bg-stone-900">📱 SINPE Móvil (Costa Rica ₡)</option>
-                    <option value="pay_at_pickup" className="bg-stone-900">💵 Pago en Efectivo al Abordar</option>
+                    <option value="pay_at_pickup" className="bg-stone-900">{language === 'es' ? 'Enviar solicitud y coordinar pago después' : 'Submit request and coordinate payment later'}</option>
                   </select>
                 </div>
 
