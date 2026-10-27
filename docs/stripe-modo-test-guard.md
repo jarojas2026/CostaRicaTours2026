@@ -1,27 +1,17 @@
-# Bloqueo de Stripe en vivo (modo TEST hasta el lanzamiento)
+# Stripe deshabilitado en Costa Rica Tours
 
-Estado: **cableado** en `backend/bookingService.ts` → `getStripe()` (único punto que crea el cliente Stripe del backend; `routes/payments.ts` y `paymentWebhookService.ts` lo usan). `api/_paymentWebhookIngress.ts` crea su propio cliente solo para verificar firmas de webhook y no se tocó.
+Estado: **deshabilitado por política del producto**. La plataforma no debe crear sesiones de checkout Stripe, procesar eventos de Stripe ni habilitar Stripe TEST/LIVE como medio de pago. Esta es una decisión de implementación de Costa Rica Tours, no asesoría ni afirmación jurídica general.
 
-- `backend/stripeModeGuard.ts`: `checkStripeMode()` / `assertStripeTestMode()`.
-  Si `STRIPE_SECRET_KEY` empieza por `sk_live_` o `rk_live_` y `ALLOW_STRIPE_LIVE` no es `true` → error `STRIPE_LIVE_BLOCKED`.
-- Tests: `tests/stripeModeGuard.contract.test.ts`.
+## Controles
+- `backend/stripeModeGuard.ts`: bloquea cualquier clave Stripe, incluso `sk_test_` y aunque `ALLOW_STRIPE_LIVE=true`.
+- `backend/bookingService.ts`: `getStripe()` invoca el guard antes de crear un cliente.
+- `api/_paymentWebhookIngress.ts`: no valida ni reenvía webhooks Stripe.
+- Las rutas de pago deben responder de forma segura y nunca cambiar el estado de una reserva por una respuesta del navegador.
+- No eliminar integraciones ni datos históricos: conservar el código bloqueado para facilitar auditoría y una decisión futura documentada.
+- No sustituir Stripe por SINPE, PayPal ni otra pasarela automáticamente. Cualquier alternativa requiere evaluación legal/técnica, consentimiento del dueño y pruebas sin cobros reales.
 
-## Cableado (hecho)
-En `backend/bookingService.ts`, `getStripe()`, antes de `new Stripe(...)`:
-```ts
-import { assertStripeTestMode } from './stripeModeGuard';
-assertStripeTestMode(process.env.STRIPE_SECRET_KEY);
-```
-Opcional: llamar `checkStripeMode()` al arrancar y registrar `mode` en `/api/health` (sin la clave).
+## Pruebas
+`tests/stripeModeGuard.contract.test.ts` comprueba que TEST, LIVE, claves restringidas y `ALLOW_STRIPE_LIVE` quedan bloqueados.
 
-## Encender cobros reales (solo con autorización escrita del dueño)
-Cloud Run: `STRIPE_SECRET_KEY=sk_live_...` (Secret Manager) **y** `ALLOW_STRIPE_LIVE=true`.
-Volver a TEST: clave `sk_test_...` o quitar `ALLOW_STRIPE_LIVE`.
-
-## Claves restringidas
-Las claves restringidas `rk_live_` se bloquean igual que `sk_live_`.
-
-# Script de limpieza de leads de prueba (#331)
-`scripts/discardTestLeads.ts`: DRY-RUN por defecto; descarte reversible vía
-`POST /api/admin/leads/triage {action:'descartar', ids}` (requireOperator: `X-Operator-Key`
-= `OPERATOR_API_KEY`, o `--id-token`). Lo corre solo el dueño. Ver cabecera del script.
+## Reactivación
+No hay bandera de entorno que reactive Stripe. Cualquier reconsideración requiere decisión explícita del dueño, revisión de cumplimiento y un PR nuevo.
