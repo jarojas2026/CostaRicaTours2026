@@ -38,9 +38,9 @@ test('ALLOW_STRIPE_LIVE nunca puede reactivar Stripe', () => {
 test('getStripe no puede crear cliente y los routes no crean clientes alternativos', () => {
   const booking = readFileSync('backend/bookingService.ts', 'utf8');
   const body = booking.slice(booking.indexOf('export function getStripe()'), booking.indexOf('let aiClient'));
-  assert.match(body, /assertStripeTestMode\\(process\\.env\\.STRIPE_SECRET_KEY\\)/);
+  assert.match(body, /assertStripeTestMode\(process\.env\.STRIPE_SECRET_KEY\)/);
   assert.ok(body.indexOf('assertStripeTestMode') < body.indexOf('new Stripe('));
-  assert.doesNotMatch(readFileSync('backend/routes/payments.ts', 'utf8'), /new Stripe\\(/);
+  assert.doesNotMatch(readFileSync('backend/routes/payments.ts', 'utf8'), /new Stripe\(/);
 });
 
 test('ingress de webhook falla cerrado sin crear cliente ni aceptar eventos Stripe', () => {
@@ -48,5 +48,5 @@ test('ingress de webhook falla cerrado sin crear cliente ni aceptar eventos Stri
   assert.match(ingress, /STRIPE_DISABLED_REASON/);
   assert.match(ingress, /throw new Error/);
   assert.doesNotMatch(ingress, /STRIPE_WEBHOOK_SECRET/);
-  assert.doesNotMatch(ingress, /stripe\\.webhooks\\.constructEvent/);
+  assert.doesNotMatch(ingress, /stripe\.webhooks\.constructEvent/);
 });
