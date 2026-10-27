@@ -16,12 +16,12 @@ test('payment webhooks are intercepted before the generic gateway body path', ()
   assert.match(gateway, /translatePayPalWebhook\(rawBody, req\.headers\)/);
 });
 
-test('Stripe webhook ingress verifies the provider signature before forwarding', () => {
-  assert.match(ingress, /STRIPE_WEBHOOK_SECRET/);
-  assert.match(ingress, /stripe-signature/);
-  assert.match(ingress, /stripe\.webhooks\.constructEvent\(rawBody, signature, signingSecret\)/);
-  assert.match(ingress, /targetPath: '\/api\/payments\/stripe\/return'/);
-  assert.match(ingress, /body: \{ sessionId: session\.id \}/);
+test('Stripe webhook ingress fails closed and never forwards payment events', () => {
+  assert.match(ingress, /STRIPE_DISABLED_REASON/);
+  assert.match(ingress, /throw new Error/);
+  assert.doesNotMatch(ingress, /STRIPE_WEBHOOK_SECRET/);
+  assert.doesNotMatch(ingress, /stripe\.webhooks\.constructEvent/);
+  assert.doesNotMatch(ingress, /targetPath: '\/api\/payments\/stripe\/return'/);
 });
 
 test('PayPal webhook ingress verifies the official signature before forwarding', () => {
@@ -40,16 +40,15 @@ test('the edge never mutates the authoritative booking ledger', () => {
   assert.match(gateway, /gatewayHandler\(translated, res\)/);
 });
 
-test('verified payments continue through the canonical reservation orchestrator', () => {
+test('verified payment events are routed through the canonical reservation orchestrator', () => {
   assert.match(webhookHttp, /advanceReservationLifecycle/);
   assert.match(webhookHttp, /getBookingById\(result\.bookingId\)/);
   assert.match(webhookHttp, /payment\.lifecycle\.advanced/);
   assert.match(webhookHttp, /payment\.lifecycle\.deferred/);
 });
 
-test('downstream lifecycle failures do not reject a provider-valid payment webhook', () => {
+test('downstream lifecycle failures do not reject provider-valid PayPal webhooks', () => {
   assert.match(webhookHttp, /catch \(error\)[\s\S]*payment\.lifecycle\.deferred/);
-  assert.match(webhookHttp, /const lifecycle = await finalizeVerifiedWebhook\('stripe', result\);[\s\S]*res\.status\(200\)/);
   assert.match(webhookHttp, /const lifecycle = await finalizeVerifiedWebhook\('paypal', result\);[\s\S]*res\.status\(200\)/);
 });
 
