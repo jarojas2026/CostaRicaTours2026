@@ -1,4 +1,5 @@
 import { JARVIS_TOURISM_ADVISORIES } from './jarvisTourismAdvisory';
+import { TOURISM_AI_GUARDRAILS } from './tourismAiQualityPolicy';
 
 export const TOURISM_INTELLIGENCE_RULES = [
   'Priorizar la conectividad lógica entre regiones y evitar rutas redundantes.',
@@ -6,7 +7,8 @@ export const TOURISM_INTELLIGENCE_RULES = [
   'Separar conocimiento estable de condiciones vivas: clima, disponibilidad, horarios y cierres requieren verificación.',
   'Nunca convertir una estimación heurística en una promesa de disponibilidad, precio o seguridad.',
   'Optimizar conjuntamente duración, aeropuerto, ritmo, intereses, presupuesto y carga de traslados.',
-  ...JARVIS_TOURISM_ADVISORIES.map(item => item.es)
+  ...JARVIS_TOURISM_ADVISORIES.map(item => item.es),
+  ...TOURISM_AI_GUARDRAILS
 ];
 
 export function buildIntelligenceInsights(query: string): string[] {
@@ -14,7 +16,8 @@ export function buildIntelligenceInsights(query: string): string[] {
   return [
     normalized ? `Consulta analizada: "${normalized}".` : 'Consulta turística pendiente de preferencias.',
     'La disponibilidad y las condiciones operativas deben verificarse antes de confirmar.',
-    'El itinerario puede adaptarse cuando cambien fecha, clima, disponibilidad o preferencias.'
+    'El itinerario puede adaptarse cuando cambien fecha, clima, disponibilidad o preferencias.',
+    ...TOURISM_AI_GUARDRAILS
   ];
 }
 
