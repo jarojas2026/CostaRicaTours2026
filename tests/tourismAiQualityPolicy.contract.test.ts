@@ -79,3 +79,16 @@ test('zero validity window expires as soon as the observation is older than now'
   assert.equal(assessTourismEvidence(evidence).status, 'verified');
   assert.equal(assessTourismEvidence({ ...evidence, now: 10_001 }).status, 'stale');
 });
+
+test('invalid explicit validity windows fail closed instead of using a permissive default', () => {
+  const base = {
+    kind: 'availability' as const, source: 'booking-service', verified: true,
+    observedAt: 9_900, now: 10_000,
+  };
+  for (const validForMs of [-1, Number.NaN, Number.POSITIVE_INFINITY]) {
+    const result = assessTourismEvidence({ ...base, validForMs });
+    assert.equal(result.status, 'unknown');
+    assert.equal(result.requiresLiveVerification, true);
+    assert.equal(result.reason, 'invalid_validity_window');
+  }
+});
