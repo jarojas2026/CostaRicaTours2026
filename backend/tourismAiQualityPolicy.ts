@@ -35,14 +35,16 @@ export function assessTourismEvidence(evidence: TourismEvidence): {
   }
 
   if (live) {
+    if (evidence.validForMs !== undefined && (!Number.isFinite(evidence.validForMs) || evidence.validForMs < 0)) {
+      return { status: 'unknown', requiresLiveVerification: true, reason: 'invalid_validity_window' };
+    }
+
     const defaultValidityMs = evidence.kind === 'availability' || evidence.kind === 'booking' || evidence.kind === 'payment'
       ? 60_000
       : evidence.kind === 'weather' || evidence.kind === 'road' || evidence.kind === 'opening-hours'
         ? 30 * 60_000
         : 24 * 60 * 60_000;
-    const validForMs = Number.isFinite(evidence.validForMs) && Number(evidence.validForMs) >= 0
-      ? Number(evidence.validForMs)
-      : defaultValidityMs;
+    const validForMs = evidence.validForMs ?? defaultValidityMs;
     if (now - observedAt > validForMs) {
       return { status: 'stale', requiresLiveVerification: true, reason: 'evidence_expired' };
     }
