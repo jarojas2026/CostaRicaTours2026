@@ -52,3 +52,30 @@ test('stable general knowledge still requires a declared source to be called ver
   assert.ok(TOURISM_AI_GUARDRAILS.some(rule => rule.includes('No inventar precios')));
   assert.ok(TOURISM_AI_GUARDRAILS.some(rule => rule.includes('aprobación humana')));
 });
+
+test('unverified and whitespace-only source evidence cannot support a claim', () => {
+  assert.equal(assessTourismEvidence({
+    kind: 'price', source: 'official-source', verified: false, observedAt: 9_900, now: 10_000,
+  }).status, 'unknown');
+  assert.equal(assessTourismEvidence({
+    kind: 'price', source: '   ', verified: true, observedAt: 9_900, now: 10_000,
+  }).status, 'unknown');
+});
+
+test('freshness threshold is inclusive and evidence becomes stale after the threshold', () => {
+  const evidence = {
+    kind: 'availability' as const, source: 'booking-service', verified: true,
+    observedAt: 1_000, now: 61_000,
+  };
+  assert.equal(assessTourismEvidence(evidence).status, 'verified');
+  assert.equal(assessTourismEvidence({ ...evidence, now: 61_001 }).status, 'stale');
+});
+
+test('zero validity window expires as soon as the observation is older than now', () => {
+  const evidence = {
+    kind: 'weather' as const, source: 'weather-service', verified: true,
+    observedAt: 10_000, now: 10_000, validForMs: 0,
+  };
+  assert.equal(assessTourismEvidence(evidence).status, 'verified');
+  assert.equal(assessTourismEvidence({ ...evidence, now: 10_001 }).status, 'stale');
+});
