@@ -221,6 +221,20 @@ export async function processChatInquiry(
     console.warn('Conversation memory unavailable:', memErr);
   }
   if (!memory || !state) return processChatInquiryCore(message, language, history, engine, sessionId, options);
+  // Embudo de reserva guiado (PR "Embudo de reserva guiado"): intención de reserva o embudo activo.
+  // No corre en voz ni en solicitudes escaladas (allowMutations === false): ahí sigue el flujo normal.
+  if (!options.voiceChannel && options.allowMutations !== false) {
+    try {
+      const funnelMod = await import('./bookingFunnel');
+      if (funnelMod.shouldRunFunnel(state, message)) {
+        const out = await funnelMod.runFunnelTurn({ message, language, state, sessionId }, { chat: await funnelMod.defaultFunnelChat() });
+        try { await memory.saveConversationState(sessionId, memory.applyAssistantTurn(out.state, out.reply, new Date())); } catch { /* nunca bloquea */ }
+        return { reply: out.reply, quickActions: out.quickActions, modelUsed: out.modelUsed, agentId: engine === 'counter_agent' ? 'counter_agent' : 'concierge' };
+      }
+    } catch (funnelErr) {
+      console.warn('Booking funnel unavailable:', funnelErr);
+    }
+  }
   const memoryContext = memory.buildMemoryContext(state, language);
   // El historial del cliente manda; si viene vacío (otra pestaña, recarga) se usa el guardado.
   const effectiveHistory = history.length

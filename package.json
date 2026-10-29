@@ -12,6 +12,7 @@
     "lint": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test:contracts": "node --test-force-exit --import ./tests/offlineEnv.mjs --import tsx --test tests/*.test.ts tests/*.test.mjs",
+    "eval:concierge": "node --import ./tests/offlineEnv.mjs --import tsx scripts/eval/concierge-eval.mjs",
     "audit:security:prod": "npm audit --omit=dev --audit-level=high",
     "audit:whatsapp": "tsx scripts/auditCustomerWhatsAppRouting.ts",
     "audit:system": "tsx scripts/auditSystem.ts",
