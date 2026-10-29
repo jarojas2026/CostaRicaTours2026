@@ -201,6 +201,14 @@ export async function processChatInquiry(
   const isEn = language === 'en';
   const requestedAgentId = engine === 'counter_agent' ? 'counter_agent' : 'concierge';
   let liveToolContext = '';
+  // RAG lite (BM25 local, $0): va primero para sobrevivir al recorte de contexto del proveedor.
+  try {
+    const { buildKnowledgeContext } = await import('./knowledge');
+    const kb = buildKnowledgeContext(message, language);
+    if (kb) liveToolContext += `\n${kb}\n`;
+  } catch (kbErr) {
+    console.warn('Knowledge base unavailable:', kbErr);
+  }
   try {
     const { buildAgentKnowledgeContext } = await import('./agentKnowledgeFabric');
     liveToolContext += '\nFABRICA DE CONOCIMIENTO OPERATIVO:\n' + await buildAgentKnowledgeContext({
