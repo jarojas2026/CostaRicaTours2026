@@ -230,5 +230,6 @@ ROUTE POST /api/internal/leads/digest (1)
 ROUTE GET /api/voice/tts/status (2)
 ROUTE POST /api/voice/tts (2)
 ROUTE GET /api/admin/supplier-directory (2)
+ROUTE POST /api/admin/supplier-directory/outreach-suggestions (2)
 USE /api wrapped
 USE / apiErrorHandler

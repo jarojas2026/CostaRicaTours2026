@@ -21,6 +21,7 @@ import { fcmRouter } from './fcm';
 import { leadsRouter } from './leads';
 import { voiceTtsRouter } from './voiceTts';
 import { supplierDirectoryRouter } from './supplierDirectory';
+import { supplierOutreachRouter } from './supplierOutreach';
 
 export const domainRouters: readonly Router[] = [
   paymentWebhooksRouter,
@@ -55,4 +56,5 @@ export const domainRouters: readonly Router[] = [
   leadsRouter,
   voiceTtsRouter,
   supplierDirectoryRouter,
+  supplierOutreachRouter,
 ];
