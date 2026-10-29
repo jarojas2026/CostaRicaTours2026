@@ -13,6 +13,7 @@ import { getPolicies, getProduct } from './agentProductTools';
 import { AGENT_EVENT_TYPES, logEvent } from './agentEventLog';
 import { AGENT_TICKET_PRIORITIES, AGENT_TICKET_REASONS, createTicket } from './agentSupportTicket';
 import { QUOTE_MAX_PAX, QUOTE_SUPPORTED_CURRENCIES, QUOTE_VALIDITY_HOURS, createQuote } from './agentQuote';
+import { HOLD_DURATION_MINUTES, confirmBooking, holdBooking } from './agentBookingHold';
 
 /** Contexto que pone el SERVIDOR (no el modelo) al ejecutar una herramienta. */
 export interface AgentToolContext {
@@ -42,6 +43,14 @@ export const PHASE_C_TOOL_REGISTRY = {
   },
   create_quote: {
     description: 'Create a 48-hour quote (status quoted, QTE number) for a bookable tour from its published offer, only if it keeps the minimum business margin over the supplier cost. Stored in a private server collection with hashed leadId. Never returns supplier name, id, cost or margin. No payment, no payment link, no messages.',
+    sideEffect: true
+  },
+  hold_booking: {
+    description: 'Hold a valid quote (same chat session) for a limited time at the quoted price, without charging. Does not reserve operator capacity. Private server collection.',
+    sideEffect: true
+  },
+  confirm_booking: {
+    description: 'After the customer explicitly confirms, turn an active hold into a PENDING booking and create a Stripe TEST payment link. Booking stays pending until the owner verifies the supplier manually. No live charges, no supplier payments.',
     sideEffect: true
   },
 } as const;
@@ -139,6 +148,28 @@ export const PHASE_C_DECLARATIONS = [
       required: ['tourId', 'date', 'pax']
     }
   },
+  {
+    name: 'hold_booking',
+    description: `Hold the customer's quote (quoteNumber from create_quote, same conversation) for up to ${HOLD_DURATION_MINUTES} minutes at the quoted price. It does NOT charge and does NOT confirm availability with the operator. Returns a hold number (HLD-…) and its expiry.`,
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        quoteNumber: { type: 'STRING', description: 'Quote number QTE-YYYYMMDD-XXXX' }
+      },
+      required: ['quoteNumber']
+    }
+  },
+  {
+    name: 'confirm_booking',
+    description: 'Only after showing the summary (tour, date, travelers, total) and the customer explicitly confirms in their own words ("Sí, confirmo" / "Yes, I confirm"): turns an active hold into a booking PENDING operator verification and returns a Stripe TEST payment link. Never say the booking is confirmed or paid: our team verifies with the local operator first.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        holdNumber: { type: 'STRING', description: 'Hold number HLD-YYYYMMDD-XXXX from hold_booking' }
+      },
+      required: ['holdNumber']
+    }
+  },
 ];
 
 export async function executePhaseCTool(name: PhaseCToolName, args: Record<string, any>, context: AgentToolContext = {}): Promise<any> {
@@ -162,6 +193,17 @@ export async function executePhaseCTool(name: PhaseCToolName, args: Record<strin
       return createQuote(
         { tourId: args.tourId ?? args.id, date: args.date, pax: args.pax, currency: args.currency, leadId: args.leadId },
         { sessionId: context.sessionId, channel: context.channel, language: context.language }
+      );
+    case 'hold_booking':
+      return holdBooking(
+        { quoteNumber: args.quoteNumber },
+        { sessionId: context.sessionId, channel: context.channel, language: context.language }
+      );
+    case 'confirm_booking':
+      // La confirmación se verifica contra el mensaje literal del cliente que pone el servidor, no contra el modelo.
+      return confirmBooking(
+        { holdNumber: args.holdNumber },
+        { sessionId: context.sessionId, userMessage: context.userMessage, channel: context.channel, language: context.language }
       );
   }
 }
