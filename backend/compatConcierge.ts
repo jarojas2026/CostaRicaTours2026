@@ -46,6 +46,9 @@ export async function runCompatConcierge(params: {
   history: Array<{ role: string; text: string }>;
   liveToolContext: string;
   agentId: string;
+  /** Con memoria de conversación: más turnos, pero dentro de un presupuesto de caracteres (Groq 8K TPM). */
+  historyTurns?: number;
+  historyCharBudget?: number;
 }): Promise<{ reply: string; modelUsed: string; agentId: string; quickActions: Array<{ label: string; action: string; data?: any }> } | null> {
   const cfg = getAiConfig();
   const safe = (t: string) => (cfg.allowExternalPii ? t : redactPii(t));
@@ -53,10 +56,17 @@ export async function runCompatConcierge(params: {
     const { GEMINI_FUNCTION_DECLARATIONS, AGENT_TOOL_REGISTRY, executeAgentTool } = await import('./agentTools');
     const tools = toOpenAiTools(selectCompatTools(GEMINI_FUNCTION_DECLARATIONS as any, AGENT_TOOL_REGISTRY as any) as any);
     const messages: CompatMessage[] = [{ role: 'system', content: buildCompatSystemPrompt(params.isEn) }];
-    for (const h of params.history.slice(-6)) {
+    const historyMsgs: CompatMessage[] = [];
+    let historyChars = 0;
+    const budget = params.historyCharBudget ?? Number.POSITIVE_INFINITY;
+    for (const h of params.history.slice(-(params.historyTurns ?? 6)).reverse()) {
       const text = safe(String(h.text || '')).slice(0, 800);
-      if (text) messages.push(h.role === 'user' ? { role: 'user', content: text } : { role: 'assistant', content: text });
+      if (!text) continue;
+      if (historyChars + text.length > budget) break;
+      historyChars += text.length;
+      historyMsgs.unshift(h.role === 'user' ? { role: 'user', content: text } : { role: 'assistant', content: text });
     }
+    messages.push(...historyMsgs);
     const ctx = params.liveToolContext ? `VERIFIED CONTEXT:\n${safe(params.liveToolContext).slice(0, MAX_CONTEXT_CHARS)}\n\n` : '';
     messages.push({ role: 'user', content: `${ctx}${safe(params.message)}` });
 
