@@ -190,17 +190,61 @@ function getKnowledgeBaseReply(message: string, isEn: boolean) {
   };
 }
 
+type ChatInquiryOptions = {
+  allowMutations?: boolean;
+  voiceChannel?: boolean;
+  /** Memoria de conversación del lado del servidor (solo sesiones de chat verificadas). */
+  conversationMemory?: boolean;
+  /** Interno: bloque de memoria ya armado por el envoltorio. */
+  memoryContext?: string;
+};
+type ChatInquiryResult = { reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string; agentId?: string; sources?: Array<{ uri: string; title: string }> };
+
 export async function processChatInquiry(
   message: string,
   language: 'es' | 'en' = 'es',
   history: Array<{ role: 'user' | 'assistant' | 'bot'; text: string }> = [],
   engine: 'auto' | 'claude' | 'gemini' | 'counter_agent' = 'auto',
   sessionId?: string,
-  options: { allowMutations?: boolean; voiceChannel?: boolean } = {}
-): Promise<{ reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string; agentId?: string; sources?: Array<{ uri: string; title: string }> }> {
+  options: ChatInquiryOptions = {}
+): Promise<ChatInquiryResult> {
+  // Memoria de conversación (PR "Memoria de conversación"): estado por sesión con hash,
+  // sin PII y con vencimiento. Sin sesión verificada o ante cualquier fallo: flujo sin memoria.
+  if (!options.conversationMemory || !sessionId) return processChatInquiryCore(message, language, history, engine, sessionId, options);
+  let memory: typeof import('./conversationState') | null = null;
+  let state: import('./conversationState').ConversationState | null = null;
+  const now = new Date();
+  try {
+    memory = await import('./conversationState');
+    state = memory.applyUserTurn(await memory.loadConversationState(sessionId), message, now, language);
+  } catch (memErr) {
+    console.warn('Conversation memory unavailable:', memErr);
+  }
+  if (!memory || !state) return processChatInquiryCore(message, language, history, engine, sessionId, options);
+  const memoryContext = memory.buildMemoryContext(state, language);
+  // El historial del cliente manda; si viene vacío (otra pestaña, recarga) se usa el guardado.
+  const effectiveHistory = history.length
+    ? memory.fitHistoryToBudget(history)
+    : memory.recentHistory(state, { excludeLastUser: true });
+  const result = await processChatInquiryCore(message, language, effectiveHistory, engine, sessionId, { ...options, memoryContext });
+  try {
+    await memory.saveConversationState(sessionId, memory.applyAssistantTurn(state, result.reply, new Date()));
+  } catch { /* la memoria nunca bloquea la respuesta */ }
+  return result;
+}
+
+async function processChatInquiryCore(
+  message: string,
+  language: 'es' | 'en' = 'es',
+  history: Array<{ role: 'user' | 'assistant' | 'bot'; text: string }> = [],
+  engine: 'auto' | 'claude' | 'gemini' | 'counter_agent' = 'auto',
+  sessionId?: string,
+  options: ChatInquiryOptions = {}
+): Promise<ChatInquiryResult> {
   const isEn = language === 'en';
   const requestedAgentId = engine === 'counter_agent' ? 'counter_agent' : 'concierge';
-  let liveToolContext = '';
+  // Memoria de conversación primero: es corta y debe sobrevivir al recorte de contexto.
+  let liveToolContext = options.memoryContext ? `\n${options.memoryContext}\n` : '';
   // RAG lite (BM25 local, $0): va primero para sobrevivir al recorte de contexto del proveedor.
   try {
     const { buildKnowledgeContext } = await import('./knowledge');
@@ -259,7 +303,7 @@ export async function processChatInquiry(
   if (engine !== 'claude' && engine !== 'gemini' && usableProviders.includes('openai_compat')
     && (usableProviders[0] === 'openai_compat' || !usableProviders.includes('gemini'))) {
     const { runCompatConcierge } = await import('./compatConcierge');
-    const compat = await runCompatConcierge({ message, isEn, history, liveToolContext, agentId: requestedAgentId });
+    const compat = await runCompatConcierge({ message, isEn, history, liveToolContext, agentId: requestedAgentId, ...(options.memoryContext ? { historyTurns: 8, historyCharBudget: 2400 } : {}) });
     if (compat) return compat;
   }
 

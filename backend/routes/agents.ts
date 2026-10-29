@@ -134,7 +134,8 @@ agentsRouter.post('/api/gemini/concierge', redactAssistantReplyMiddleware, async
     }
 
     // El flujo de IA es 100% nativo: Claude/Vertex o Gemini, con fallback interno.
-    const assistantResult = await processChatInquiry(userMsg, lang, history || [], engine || 'auto', memorySessionId || undefined);
+    // Memoria de conversación del servidor solo con sesión verificada (hash, sin PII, con vencimiento).
+    const assistantResult = await processChatInquiry(userMsg, lang, history || [], engine || 'auto', memorySessionId || undefined, { conversationMemory: Boolean(memorySessionId) });
     if (memorySessionId) {
       const { rememberTurn } = await import('../memoryService');
       await rememberTurn(memorySessionId, { role: 'user', text: userMsg }, { agentId: assistantResult.agentId || agentId });
