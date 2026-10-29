@@ -19,7 +19,7 @@ type Env = NodeJS.ProcessEnv | Record<string, string | undefined>;
 const str = (v: string | undefined) => String(v ?? '').trim();
 
 /** Herramientas que mutan reservas o dinero. Se bloquean por nombre y por patrón. */
-const TRANSACTIONAL_TOOLS = new Set(['create_reservation']);
+const TRANSACTIONAL_TOOLS = new Set(['create_reservation', 'hold_booking', 'confirm_booking']);
 const TRANSACTIONAL_PATTERN = /^(create|confirm|cancel|modify|update|pay|charge|refund|checkout|capture)_|(_payment|_checkout|_refund|_charge)$/i;
 
 export function voiceTransactionsAllowed(env: Env = process.env) {
