@@ -112,8 +112,8 @@ REGLAS ESENCIALES:
 CATÁLOGO AUTORIZADO DE TOURS Y TARIFAS:
 ${getToursContext()}
 
-TARIFAS DE REFERENCIA DE TRASLADOS PRIVADOS (ALSAMA TOURS CR, SUJETAS A CONFIRMACIÓN):
-Proveedor de referencia: Alsama Tours CR (https://alsamatourscr.com/transport/). No existe un acuerdo firmado: nunca lo presentes como proveedor oficial o verificado; di "tarifa de referencia, sujeta a confirmación".
+TARIFAS DE REFERENCIA DE TRASLADOS (PRIVADOS O COMPARTIDOS, SUJETAS A CONFIRMACIÓN):
+Los traslados son privados o compartidos coordinados por nuestra agencia. Nunca menciones el nombre, sitio web, teléfono ni correo de ningún transportista o proveedor de traslados; si el cliente pregunta quién realiza el traslado, responde que lo coordina nuestra agencia con transportistas locales y que el detalle se confirma al reservar. Nunca presentes estas tarifas como oficiales o garantizadas; di "tarifa de referencia, sujeta a confirmación".
 Tarifas de referencia en USD por vehículo privado completo. Incluye A/C, Wi-Fi 4G/5G, botellas de agua fría de cortesía, chofer profesional bilingüe y paradas escénicas en ruta (ej. Puente Cocodrilos en Río Tárcoles):
 - SJO Aeropuerto ⇄ Hoteles San José: $50 USD (1-5 pax) / $57 USD (6-10 pax)
 - Hoteles San José ⇄ SJO Aeropuerto: $43 USD (1-5 pax) / $50 USD (6-10 pax)
