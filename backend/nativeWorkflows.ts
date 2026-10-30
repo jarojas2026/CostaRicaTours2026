@@ -69,9 +69,9 @@ export const MASTER_OPERATORS_REGISTRY: Record<string, {
 }> = {
   'alsama-tours-cr': {
     id: 'alsama-tours-cr',
-    name: 'Alsama Tours CR (proveedor de referencia, sujeto a confirmación)',
+    name: 'Traslados privados o compartidos coordinados por nuestra agencia (tarifa de referencia, sujeta a confirmación)',
     email: PROVIDER_DEV_EMAIL,
-    officialEmail: 'operaciones@alsamatourscr.com',
+    officialEmail: '',
     phone: '+506 8795-9148',
     whatsapp: '50687959148',
     paypalEmail: PROVIDER_DEV_EMAIL,

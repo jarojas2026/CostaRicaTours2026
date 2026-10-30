@@ -289,7 +289,7 @@ legacyWebhooksRouter.post(['/webhook/reporte-semanal-conversion', '/api/reportes
 // 🚀 WORKFLOWS COMPLEJOS Y SÚPER AVANZADOS (WF-COMPLEX-01 a 06 EN CÓDIGO NATIVO)
 // ==========================================
 
-// WF-COMPLEX-01: Orquestador Autónomo de Itinerarios Multidía (SINAC/IMN/Alsama)
+// WF-COMPLEX-01: Orquestador Autónomo de Itinerarios Multidía (SINAC/IMN/traslados)
 legacyWebhooksRouter.post(['/webhook/autonomous-multi-day-planner', '/api/automations/multi-day-planner'], requireAdmin, async (req, res) => {
   try {
     const result = await executeAutonomousMultiDayPlanner(req.body);
@@ -330,7 +330,7 @@ legacyWebhooksRouter.post(['/webhook/dgt-electronic-invoicing-settlement', '/api
   }
 });
 
-// WF-COMPLEX-05: Flight Guard Predictivo en Tiempo Real & Despacho Alsama
+// WF-COMPLEX-05: Flight Guard Predictivo en Tiempo Real & Despacho de traslados
 legacyWebhooksRouter.post(['/webhook/flight-guard-autonomous-dispatch', '/api/automations/flight-guard'], requireAdmin, async (req, res) => {
   try {
     const result = await executeAutonomousFlightGuardDispatch(req.body);

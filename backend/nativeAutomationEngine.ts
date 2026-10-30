@@ -873,14 +873,14 @@ export async function executeAutonomousMultiDayPlanner(body: any) {
       dia: 7,
       titulo: 'Regreso Cómodo al Aeropuerto Internacional SJO',
       destino: 'Manuel Antonio ➔ Aeropuerto SJO',
-      transporte: 'Traslado Privado Directo Alsama Tours CR (~2.5h) sincronizado con el horario de vuelo de salida',
+      transporte: 'Traslado privado o compartido coordinado por nuestra agencia (~2.5h) sincronizado con el horario de vuelo de salida',
       actividadTarde: 'Check-in de vuelo y despedida Pura Vida'
     }
   ];
 
   // Cálculo de precios y bundle discount
   const basePricePerPerson = 380;
-  const transportFixedUSD = 499; // Paquete completo de traslados ejecutivos Alsama Tours
+  const transportFixedUSD = 499; // Paquete completo de traslados (tarifa de referencia, sujeta a confirmación)
   const subtotalUSD = (basePricePerPerson * totalPax) + transportFixedUSD;
   const bundleDiscountUSD = Math.round(subtotalUSD * 0.10); // 10% ahorro combo
   const totalUSD = subtotalUSD - bundleDiscountUSD;
@@ -910,7 +910,7 @@ export async function executeAutonomousMultiDayPlanner(body: any) {
       nivelPresupuesto: params.presupuestoNivel || 'confort_premium'
     },
     transporteOficial: {
-      proveedor: 'Alsama Tours CR (referencia, sujeto a confirmación)',
+      proveedor: 'Traslados privados o compartidos coordinados por nuestra agencia (tarifa de referencia, sujeta a confirmación)',
       tipoVehiculo: totalPax <= 5 ? 'Van Ejecutiva A/C con Wi-Fi' : 'Microbús Familiar A/C',
       incluye: ['Chofer profesional bilingüe', 'Wi-Fi 4G/5G a bordo', 'Botellas de agua fría', 'Parada escénica Río Tárcoles', 'Seguro MOPT/ICT']
     },
@@ -984,12 +984,12 @@ export async function executeDynamicPricingYieldOptimizer(body: any) {
   ];
 
   const bundleSynergy = {
-    nombre: 'Mega-Bundle: Tour Arenal + Traslado Privado Alsama Tours',
+    nombre: 'Mega-Bundle: Tour Arenal + Traslado coordinado por nuestra agencia',
     rutaTraslado: 'San José / SJO ⇄ La Fortuna (Arenal)',
     precioNormalComboUSD: 145 + 170, // 315
     precioComboOptimizadoUSD: 275,
     ahorroTotalUSD: 40,
-    proveedorTransporte: 'Alsama Tours CR (referencia, sujeto a confirmación)'
+    proveedorTransporte: 'Traslados privados o compartidos coordinados por nuestra agencia (tarifa de referencia, sujeta a confirmación)'
   };
 
   const duration = Date.now() - start;
@@ -1050,7 +1050,7 @@ export async function executeEmergencyContingencyRerouting(body: any) {
     actividadSustituta: 'Aguas Termales de Lujo Tabacón + Pase de Día con Almuerzo',
     diferenciaTarifaUSD: 0,
     transporteAlsamaAjustado: {
-      choferAsignado: (process.env.PROVIDER_DEV_NAME || 'Operador de prueba') + ' (Alsama Tours CR)',
+      choferAsignado: (process.env.PROVIDER_DEV_NAME || 'Operador de prueba') + ' (traslado coordinado por nuestra agencia)',
       nuevaRuta: `${viajero.hotel} ➔ Tabacón Thermal Resort`,
       horaRecogida: '10:30 AM (Desplazamiento seguro sin riesgo de río)'
     },
@@ -1160,7 +1160,7 @@ export async function executeDGTElectronicInvoicingSettlement(body: any) {
 }
 
 /**
- * WF-COMPLEX-05: Flight Guard Predictivo en Tiempo Real & Despacho Alsama
+ * WF-COMPLEX-05: Flight Guard Predictivo en Tiempo Real & Despacho de traslados
  */
 export async function executeAutonomousFlightGuardDispatch(body: any) {
   const start = Date.now();
@@ -1179,7 +1179,7 @@ export async function executeAutonomousFlightGuardDispatch(body: any) {
     'WF_COMPLEX_05_FLIGHT_GUARD',
     duration,
     'success',
-    `Vuelo ${vuelo} retrasado ${retraso} min. Despacho Alsama Tours reprogramado a las ${nuevaHoraSalidaTerminal}`,
+    `Vuelo ${vuelo} retrasado ${retraso} min. Despacho de traslado reprogramado a las ${nuevaHoraSalidaTerminal}`,
     { pasajero: pasajero.nombre, nuevaHora: nuevaHoraSalidaTerminal }
   );
 
@@ -1196,7 +1196,7 @@ export async function executeAutonomousFlightGuardDispatch(body: any) {
       minutosRetraso: retraso
     },
     despachoChoferAlsamaTours: {
-      proveedor: 'Alsama Tours CR',
+      proveedor: 'Traslado privado o compartido coordinado por nuestra agencia',
       choferAsignado: process.env.PROVIDER_DEV_NAME || 'Operador de prueba',
       vehiculo: 'Van Ejecutiva A/C (Placa TS-882)',
       cartelDigital: `Bienvenido a Costa Rica: ${pasajero.nombre}`,
@@ -1249,7 +1249,7 @@ export async function executeAutonomousCrisisSentimentEscalation(body: any) {
       idiomaDetectado: turista.idioma || 'es'
     },
     resolucionEmpatica: {
-      mensajeRespuestaTurista: `Estimado/a ${turista.nombre}, entendemos perfectamente tu frustración y lamentamos sinceramente el inconveniente en tu lobby. Un supervisor senior de operaciones de Costa Rica Tours ya se comunicó con la unidad de Alsama Tours asignada y está resolviendo el desplazamiento en este momento.`,
+      mensajeRespuestaTurista: `Estimado/a ${turista.nombre}, entendemos perfectamente tu frustración y lamentamos sinceramente el inconveniente en tu lobby. Un supervisor senior de operaciones de Costa Rica Tours ya se comunicó con la unidad de traslado asignada y está resolviendo el desplazamiento en este momento.`,
       compensacionDeCortesia: {
         codigoCupon: voucherCompensacion,
         valorUSD: 50,
