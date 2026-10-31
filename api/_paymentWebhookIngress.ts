@@ -3,11 +3,12 @@ import { STRIPE_DISABLED_REASON } from '../backend/stripeModeGuard';
 
 export type PaymentWebhookTranslation =
   | {
+      // Stripe is disabled (fail closed): only PayPal events may be forwarded.
       action: 'forward';
-      provider: 'stripe' | 'paypal';
+      provider: 'paypal';
       eventId: string;
-      targetPath: '/api/payments/stripe/return' | '/api/payments/paypal/return';
-      body: { sessionId: string } | { orderId: string };
+      targetPath: '/api/payments/paypal/return';
+      body: { orderId: string };
     }
   | {
       action: 'ack';
