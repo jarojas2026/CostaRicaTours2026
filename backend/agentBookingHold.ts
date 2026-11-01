@@ -212,7 +212,7 @@ export async function confirmBooking(input: { holdNumber?: unknown }, context: H
       currency: 'usd',
       productName: `Costa Rica Tours — ${String(hold.tourId || 'tour')} — ${String(hold.date || '')} — ${Number(hold.pax) || 1} pax`.slice(0, 120),
       expiresAtUnix: Math.floor(expiresAtMs / 1000),
-      // Sin bookingId: el webhook actual no reconcilia esta reserva; el dueño la verifica a mano.
+      // Sin bookingId: el webhook la concilia por agentBookingNumber (agentBookingPayment.ts) y queda pendiente de verificación del dueño.
       metadata: { agentBookingNumber: bookingNumber, holdNumber, quoteNumber: String(hold.quoteNumber || ''), source: 'agent_confirm_booking' },
     });
     if (!session?.id || !session.url) return { success: false as const, created: false, error: 'checkout_unavailable' };
