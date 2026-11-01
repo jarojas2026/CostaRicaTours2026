@@ -14,7 +14,7 @@ Decisión del dueño del 26-oct-2026. Aplican a cualquier IA o agente (Hark, Cod
 
 1. **Costo $0 obligatorio.** Prohibido activar o reactivar, sin aprobación explícita y escrita de Gabriel: facturación de Google Cloud, Cloud Run, Cloud Build, escaneo de vulnerabilidades (Container Scanning / On-Demand Scanning), VMs, planes pagos, Google Maps con facturación o cualquier servicio con costo. **Nada de deploys a GCP.** Los recursos de GCP se apagaron el 26-oct-2026 para detener cargos: no volver a encenderlos.
 2. **Nunca borrar nada** (servicios, imágenes, repositorios, buckets, ramas, datos). Si algo sobra: desactivarlo, aislarlo o marcarlo como simulación.
-3. **Stripe solo en modo TEST.**
+3. **Stripe deshabilitado en Costa Rica Tours.** No crear checkout ni procesar webhooks; no habilitar TEST ni LIVE. No sustituir automáticamente por otra pasarela. Cualquier alternativa requiere evaluación documentada y aprobación explícita del dueño.
 4. **No tocar `api/[...path].ts`, `Header` ni `BottomNav`.**
 5. **No fusionar PRs** sin autorización explícita de Gabriel.
 6. **Cambios mínimos, aislados y sin dañar nada.** Antes de abrir un PR: correr los tests de contratos y TSC con `NODE_OPTIONS=--max-old-space-size=6144`.

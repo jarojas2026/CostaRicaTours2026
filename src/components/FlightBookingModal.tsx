@@ -45,7 +45,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
   const [phone, setPhone] = useState('');
   const [passportNumber, setPassportNumber] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'pay_at_pickup' | 'sinpe_movil'>('credit_card');
+  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'pay_at_pickup' | 'sinpe_movil'>('pay_at_pickup');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessTicket, setShowSuccessTicket] = useState(false);
@@ -523,9 +523,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {[
-                    { id: 'credit_card', label: language === 'es' ? 'Tarjeta de Crédito / Débito' : 'Credit / Debit Card', icon: <CreditCard className="w-3.5 h-3.5" /> },
-                    { id: 'pay_at_pickup', label: language === 'es' ? 'Pago a la Llegada en CR' : 'Pay Upon Arrival', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
-                    { id: 'sinpe_movil', label: 'SINPE Móvil / Transfer', icon: <Phone className="w-3.5 h-3.5" /> },
+                    { id: 'pay_at_pickup', label: language === 'es' ? 'Enviar solicitud sin cobro online' : 'Submit request without online charge', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
                   ].map((m) => (
                     <button
                       type="button"
@@ -580,9 +578,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                     <>
                       <Check className="w-4 h-4" />
                       <span>
-                        {paymentMethod === 'credit_card'
-                          ? (language === 'es' ? 'Continuar al pago seguro' : 'Continue to secure payment')
-                          : (language === 'es' ? 'Enviar solicitud' : 'Submit request')}
+                        {language === 'es' ? 'Enviar solicitud' : 'Submit request'}
                       </span>
                     </>
                   )}

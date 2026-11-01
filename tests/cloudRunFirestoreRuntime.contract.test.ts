@@ -14,15 +14,21 @@ test('Cloud Run runtime image retains the named Firestore database configuration
   );
 });
 
-test('Cloud Run deployment recovers disabled build identity without opening the service publicly', () => {
+test('Cloud Run deployment remains paused and cannot recover or enable cloud identities', () => {
   const workflow = read('.github/workflows/deploy-cloud-run.yml');
-  assert.match(workflow, /gcloud iam service-accounts enable "\$DEFAULT_COMPUTE_SA"/);
-  assert.match(workflow, /FIREBASE_PROJECT_ID=\$PROJECT_ID,FIRESTORE_DATABASE_ID=\$FIRESTORE_DATABASE_ID/);
+  assert.match(workflow, /workflow_dispatch/);
+  assert.match(workflow, /if:\s*false/);
+  assert.match(workflow, /Deshabilitado por política de costo cero/);
+  assert.doesNotMatch(workflow, /gcloud\s+iam\s+service-accounts\s+enable/i);
+  assert.doesNotMatch(workflow, /google-github-actions\/auth/);
+  assert.doesNotMatch(workflow, /id-token:\s*write/);
   assert.doesNotMatch(workflow, /--allow-unauthenticated/);
 });
 
-test('Cloud Run deployment verifies availability does not fall back to inaccessible Firestore', () => {
+test('paused Cloud Run workflow performs no availability probes or deployment operations', () => {
   const workflow = read('.github/workflows/deploy-cloud-run.yml');
-  assert.match(workflow, /\/api\/tours\/arenal-volcano-hotsprings\/availability/);
-  assert.match(workflow, /disponibilidad en vivo no está accesible\|servicio de disponibilidad no respondió/);
+  assert.doesNotMatch(workflow, /\/api\/tours\/arenal-volcano-hotsprings\/availability/);
+  assert.doesNotMatch(workflow, /gcloud\s+run\s+deploy/i);
+  assert.doesNotMatch(workflow, /google-github-actions\/deploy-cloudrun/);
+  assert.match(workflow, /No se ejecutó autenticación, build ni despliegue/);
 });

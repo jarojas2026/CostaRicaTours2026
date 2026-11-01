@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { getBookingById } from './bookingService';
+import { STRIPE_DISABLED_REASON } from './stripeModeGuard';
 import { processPayPalWebhook, processStripeWebhook, webhookCorrelationId } from './paymentWebhookService';
 import { emitOperationalEvent } from './operationalEventBus';
 import { advanceReservationLifecycle } from './reservationLifecycleOrchestrator';
@@ -89,7 +90,10 @@ async function finalizeVerifiedWebhook(provider: 'stripe' | 'paypal', result: We
   return advanceVerifiedPayment(provider, result);
 }
 
-export async function handleStripeWebhook(req: Request, res: Response): Promise<void> {
+export async function handleStripeWebhook(_req: Request, res: Response): Promise<void> {
+  res.status(503).json({ accepted: false, error: 'Stripe está deshabilitado por política de la plataforma.', code: STRIPE_DISABLED_REASON });
+  return;
+  /* Preservado temporalmente para auditoría; no se ejecuta mientras Stripe esté deshabilitado.
   const signature = typeof req.headers['stripe-signature'] === 'string' ? req.headers['stripe-signature'] : undefined;
   const rawBody = (req as Request & { rawBody?: Buffer }).rawBody;
   const correlationId = webhookCorrelationId('stripe', signature?.slice(0, 48));
@@ -109,6 +113,7 @@ export async function handleStripeWebhook(req: Request, res: Response): Promise<
     console.error('[payment-webhook][stripe]', { correlationId, error: message });
     res.status(400).json({ accepted: false, error: message, correlationId });
   }
+  */
 }
 
 export async function handlePayPalWebhook(req: Request, res: Response): Promise<void> {

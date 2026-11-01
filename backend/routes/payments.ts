@@ -9,6 +9,7 @@ import express from 'express';
 import { requireOperator } from '../authMiddleware';
 import { checkoutQuote, checkoutOrigin } from '../commercePolicy';
 import { getStripe, getBookingById, updateBookingStatus } from '../bookingService';
+import { STRIPE_DISABLED_REASON } from '../stripeModeGuard';
 import { handleStripeWebhook, handlePayPalWebhook } from '../paymentWebhookHttpService';
 import { executeSinpeVerification } from '../sinpeService';
 import { createRouter, paymentLimiter } from './shared';
@@ -35,7 +36,9 @@ export const checkoutRouter = createRouter();
  * Misma lógica que antes vivía dentro de POST /api/stripe/create-checkout-session; se exporta
  * para reutilizarla desde POST /api/admin/leads/:id/payment-link sin duplicar la llamada a Stripe.
  */
-export async function createStripeCheckoutForBooking(bookingId: unknown): Promise<{ status: number; body: any }> {
+export async function createStripeCheckoutForBooking(_bookingId: unknown): Promise<{ status: number; body: any }> {
+  return { status: 503, body: { error: 'Stripe no está habilitado en Costa Rica Tours.', code: STRIPE_DISABLED_REASON } };
+  /* Preservado temporalmente para auditoría; no se ejecuta mientras Stripe esté deshabilitado.
   try {
     const booking = await getBookingById(String(bookingId || ''));
     if (!booking || booking.paymentStatus === 'completed') {
@@ -75,6 +78,7 @@ export async function createStripeCheckoutForBooking(bookingId: unknown): Promis
     console.error('Error en Stripe:', err);
     return { status: 500, body: { error: err.message } };
   }
+  */
 }
 
 checkoutRouter.post('/api/stripe/create-checkout-session', paymentLimiter, async (req, res) => {
