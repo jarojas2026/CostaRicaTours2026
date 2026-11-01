@@ -21,6 +21,12 @@ test('disabled workflow cannot authenticate, build or deploy to Google Cloud', (
   assert.match(workflow, /No se ejecutó autenticación, build ni despliegue/);
 });
 
+test('deploy is manual only (cost pause, 26-oct-2026)', () => {
+  const onBlock = workflow.match(/^on:\n([\s\S]*?)\n\S/m)?.[1] ?? '';
+  assert.match(onBlock, /workflow_dispatch/);
+  assert.doesNotMatch(onBlock, /workflow_run|push:|pull_request|schedule:/);
+});
+
 test('no workflow can deploy Cloud Run while the zero-cost policy is active', () => {
   const workflowsDirectory = path.join(process.cwd(), '.github', 'workflows');
   const workflowFiles = fs.readdirSync(workflowsDirectory).filter((file) => /\.ya?ml$/i.test(file));

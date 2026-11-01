@@ -153,8 +153,8 @@ Eres el asistente inteligente oficial de Costa Rica Tours, especialista en turis
 --- TOURS Y TARIFAS AUTORIZADAS ---
 ${getToursKnowledgeBase()}
 
---- TRASLADOS PRIVADOS: TARIFAS DE REFERENCIA (ALSAMA TOURS CR) ---
-Proveedor de referencia: Alsama Tours CR (https://alsamatourscr.com/transport/). No existe un acuerdo firmado: presenta estas tarifas siempre como "tarifa de referencia, sujeta a confirmación" y nunca como proveedor oficial o verificado.
+--- TRASLADOS: TARIFAS DE REFERENCIA ---
+Ofrecemos traslados privados o compartidos coordinados por nuestra agencia. No nombres al transportista ni des su web o contacto: presenta estas tarifas siempre como "tarifa de referencia, sujeta a confirmación" y nunca como tarifa oficial o garantizada.
 Tarifas de referencia en USD por vehículo completo privado (no por persona). Incluyen A/C, Wi-Fi 4G/5G a bordo, botellas de agua de cortesía, chofer profesional bilingüe y paradas escénicas en ruta (ej. Puente de los Cocodrilos en Río Tárcoles):
 • Aeropuerto SJO ⇄ Hoteles en San José (Centro / Escazú / Sabana): $50 USD (1-5 pax) / $57 USD (6-10 pax)
 • Hoteles San José ⇄ Aeropuerto SJO: $43 USD (1-5 pax) / $50 USD (6-10 pax)
@@ -190,17 +190,83 @@ function getKnowledgeBaseReply(message: string, isEn: boolean) {
   };
 }
 
+type ChatInquiryOptions = {
+  allowMutations?: boolean;
+  voiceChannel?: boolean;
+  /** Memoria de conversación del lado del servidor (solo sesiones de chat verificadas). */
+  conversationMemory?: boolean;
+  /** Interno: bloque de memoria ya armado por el envoltorio. */
+  memoryContext?: string;
+};
+type ChatInquiryResult = { reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string; agentId?: string; sources?: Array<{ uri: string; title: string }> };
+
 export async function processChatInquiry(
   message: string,
   language: 'es' | 'en' = 'es',
   history: Array<{ role: 'user' | 'assistant' | 'bot'; text: string }> = [],
   engine: 'auto' | 'claude' | 'gemini' | 'counter_agent' = 'auto',
   sessionId?: string,
-  options: { allowMutations?: boolean; voiceChannel?: boolean } = {}
-): Promise<{ reply: string; quickActions: Array<{ label: string; action: string; data?: any }>; modelUsed?: string; agentId?: string; sources?: Array<{ uri: string; title: string }> }> {
+  options: ChatInquiryOptions = {}
+): Promise<ChatInquiryResult> {
+  // Memoria de conversación (PR "Memoria de conversación"): estado por sesión con hash,
+  // sin PII y con vencimiento. Sin sesión verificada o ante cualquier fallo: flujo sin memoria.
+  if (!options.conversationMemory || !sessionId) return processChatInquiryCore(message, language, history, engine, sessionId, options);
+  let memory: typeof import('./conversationState') | null = null;
+  let state: import('./conversationState').ConversationState | null = null;
+  const now = new Date();
+  try {
+    memory = await import('./conversationState');
+    state = memory.applyUserTurn(await memory.loadConversationState(sessionId), message, now, language);
+  } catch (memErr) {
+    console.warn('Conversation memory unavailable:', memErr);
+  }
+  if (!memory || !state) return processChatInquiryCore(message, language, history, engine, sessionId, options);
+  // Embudo de reserva guiado (PR "Embudo de reserva guiado"): intención de reserva o embudo activo.
+  // No corre en voz ni en solicitudes escaladas (allowMutations === false): ahí sigue el flujo normal.
+  if (!options.voiceChannel && options.allowMutations !== false) {
+    try {
+      const funnelMod = await import('./bookingFunnel');
+      if (funnelMod.shouldRunFunnel(state, message)) {
+        const out = await funnelMod.runFunnelTurn({ message, language, state, sessionId }, { chat: await funnelMod.defaultFunnelChat() });
+        try { await memory.saveConversationState(sessionId, memory.applyAssistantTurn(out.state, out.reply, new Date())); } catch { /* nunca bloquea */ }
+        return { reply: out.reply, quickActions: out.quickActions, modelUsed: out.modelUsed, agentId: engine === 'counter_agent' ? 'counter_agent' : 'concierge' };
+      }
+    } catch (funnelErr) {
+      console.warn('Booking funnel unavailable:', funnelErr);
+    }
+  }
+  const memoryContext = memory.buildMemoryContext(state, language);
+  // El historial del cliente manda; si viene vacío (otra pestaña, recarga) se usa el guardado.
+  const effectiveHistory = history.length
+    ? memory.fitHistoryToBudget(history)
+    : memory.recentHistory(state, { excludeLastUser: true });
+  const result = await processChatInquiryCore(message, language, effectiveHistory, engine, sessionId, { ...options, memoryContext });
+  try {
+    await memory.saveConversationState(sessionId, memory.applyAssistantTurn(state, result.reply, new Date()));
+  } catch { /* la memoria nunca bloquea la respuesta */ }
+  return result;
+}
+
+async function processChatInquiryCore(
+  message: string,
+  language: 'es' | 'en' = 'es',
+  history: Array<{ role: 'user' | 'assistant' | 'bot'; text: string }> = [],
+  engine: 'auto' | 'claude' | 'gemini' | 'counter_agent' = 'auto',
+  sessionId?: string,
+  options: ChatInquiryOptions = {}
+): Promise<ChatInquiryResult> {
   const isEn = language === 'en';
   const requestedAgentId = engine === 'counter_agent' ? 'counter_agent' : 'concierge';
-  let liveToolContext = '';
+  // Memoria de conversación primero: es corta y debe sobrevivir al recorte de contexto.
+  let liveToolContext = options.memoryContext ? `\n${options.memoryContext}\n` : '';
+  // RAG lite (BM25 local, $0): va primero para sobrevivir al recorte de contexto del proveedor.
+  try {
+    const { buildKnowledgeContext } = await import('./knowledge');
+    const kb = buildKnowledgeContext(message, language);
+    if (kb) liveToolContext += `\n${kb}\n`;
+  } catch (kbErr) {
+    console.warn('Knowledge base unavailable:', kbErr);
+  }
   try {
     const { buildAgentKnowledgeContext } = await import('./agentKnowledgeFabric');
     liveToolContext += '\nFABRICA DE CONOCIMIENTO OPERATIVO:\n' + await buildAgentKnowledgeContext({
@@ -251,7 +317,7 @@ export async function processChatInquiry(
   if (engine !== 'claude' && engine !== 'gemini' && usableProviders.includes('openai_compat')
     && (usableProviders[0] === 'openai_compat' || !usableProviders.includes('gemini'))) {
     const { runCompatConcierge } = await import('./compatConcierge');
-    const compat = await runCompatConcierge({ message, isEn, history, liveToolContext, agentId: requestedAgentId });
+    const compat = await runCompatConcierge({ message, isEn, history, liveToolContext, agentId: requestedAgentId, ...(options.memoryContext ? { historyTurns: 8, historyCharBudget: 2400 } : {}) });
     if (compat) return compat;
   }
 
@@ -512,7 +578,7 @@ Tu ÚNICO trabajo es leer el mensaje del usuario y clasificarlo en UNA de estas 
 - SERVICIO: quejas, dudas de una reserva existente, cambios de fecha, cancelaciones, problemas durante o después del tour, reembolsos, solicitud de factura de un tour ya comprado.
 - RESERVAS: quiere reservar, pregunta disponibilidad de cupos, cotizaciones y precios de tours, quiere pagar, cómo reservar.
 - INFORMACION: preguntas generales sobre destinos (Arenal, Monteverde, Manuel Antonio, Tortuguero, etc.), microclimas/temporadas, qué ropa llevar, actividades por región, cultura costarricense, requisitos de viaje/visas — SIN intención de reservar aún.
-- LOGISTICA: coordinación con proveedores/guías locales, transporte/traslados (Alsama Tours CR), rutas y estado de carreteras, incidentes operativos en tiempo real, alertas climáticas/IMN que afecten un tour en curso, emergencias.
+- LOGISTICA: coordinación con proveedores/guías locales, transporte/traslados (traslados privados o compartidos coordinados por nuestra agencia), rutas y estado de carreteras, incidentes operativos en tiempo real, alertas climáticas/IMN que afecten un tour en curso, emergencias.
 
 ORDEN DE PRIORIDAD SI SE MEZCLAN O HAY DUDA (NO NEGOCIABLE):
 LOGISTICA > SERVICIO > RESERVAS > INFORMACION.
@@ -657,7 +723,7 @@ Devuelve estrictamente un objeto JSON con este esquema:
  * 2. Atender servicio al cliente (búsqueda instantánea de reservas en Firestore por código o email,
  *    reprogramación de fechas, verificación de estado de pago, aplicación de políticas de cancelación).
  * 3. Responder con la información más acertada que si fuera un humano ya que tiene todo el conocimiento
- *    instantáneo de parques nacionales, actividades, microclimas, traslados con Alsama Tours CR,
+ *    instantáneo de parques nacionales, actividades, microclimas, traslados (traslados privados o compartidos coordinados por nuestra agencia),
  *    normativas y requisitos turísticos.
  */
 export async function runCounterAgent(
@@ -1432,7 +1498,7 @@ export async function runInformationAgent(
 /**
  * 4. AGENTE DE LOGÍSTICA
  * Coordina la operación en tiempo real: comunicación con proveedores/guías, transporte,
- * rutas (Alsama Tours CR), incidentes operativos, alertas climáticas IMN y emergencias.
+ * rutas (traslados privados o compartidos coordinados por nuestra agencia), incidentes operativos, alertas climáticas IMN y emergencias.
  */
 export async function runLogisticsAgent(
   message: string,
@@ -1495,7 +1561,7 @@ export async function runLogisticsAgent(
     };
   }
 
-  // Operación normal de transporte y proveedores (Alsama Tours CR, rutas, guías)
+  // Operación normal de transporte y proveedores (traslados, rutas, guías)
   const isTransport =
     lower.includes('traslado') ||
     lower.includes('transport') ||
@@ -1510,14 +1576,14 @@ export async function runLogisticsAgent(
     type: isTransport ? 'route_incident' : 'operational_note',
     severity: 'media',
     details: `[LOGÍSTICA OPERATIVA]: ${message}`,
-    actionTaken: 'Consulta y verificación de despacho con proveedores y rutas Alsama',
+    actionTaken: 'Consulta y verificación de despacho con proveedores y rutas de traslado',
     resolved: true
   });
 
   const replyText = isEn
     ? `🚐 **Logistics & Operations • Live Field Dispatch**\n\n` +
       `1. **Severity Assessment**: **Normal Operational Coordination** (Ops Ref: \`${opsLogEntry.id}\`).\n` +
-      `2. **Transport reference info (Alsama Tours CR, subject to confirmation)**:\n` +
+      `2. **Transport reference info (private or shared transfers coordinated by our agency, subject to confirmation)**:\n` +
       `• **Private Vehicles**: Mercedes-Benz Sprinter & Toyota HiAce equipped with AC, 4G/5G Wi-Fi, and certified bilingual drivers.\n` +
       `• **Route 32 (Braulio Carrillo - Caribbean)**: Open with caution. Normal driving time San José ⇄ Guápiles/Tortuguero (~3 hrs).\n` +
       `• **Route 27 & Costanera (Pacific)**: Fully operational. SJO ⇄ Jacó (1h 45m), Manuel Antonio (~3h).\n` +
@@ -1526,7 +1592,7 @@ export async function runLogisticsAgent(
       `4. **Daily Log Recorded**: Action logged into the centralized daily operations report. How can I assist with your transport schedule?`
     : `🚐 **Agente de Logística • Operaciones en Terreno en Tiempo Real**\n\n` +
       `1. **Evaluación de severidad**: **Coordinación Operativa Normal** (Ref: \`${opsLogEntry.id}\`).\n` +
-      `2. **Información de referencia de traslados (Alsama Tours CR, sujeta a confirmación)**:\n` +
+      `2. **Información de referencia de traslados (traslados privados o compartidos coordinados por nuestra agencia, sujeta a confirmación)**:\n` +
       `• **Flota privada (referencia)**: Vans ejecutivas con aire acondicionado, Wi-Fi 4G/5G a bordo, chofer profesional y pólizas MOPT/ICT.\n` +
       `• **Ruta 32 (Braulio Carrillo hacia el Caribe)**: Tránsito fluido. Tiempo estimado San José ⇄ Guápiles/Caribe (~3 a 4.5 hrs).\n` +
       `• **Ruta 27 y Costanera Sur (Pacífico)**: Tránsito normal. SJO ⇄ Jacó (1h 45m), Manuel Antonio (~3h).\n` +

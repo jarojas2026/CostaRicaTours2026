@@ -3041,6 +3041,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/conserje",
+      "destination": "/index.html"
+    },
+    {
       "source": "/itinerary",
       "destination": "/index.html"
     },

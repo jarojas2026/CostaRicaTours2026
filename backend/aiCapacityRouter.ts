@@ -33,12 +33,15 @@ export type CapacitySlot = { name: CapacitySlotName; env: Record<string, string>
 /** Construye la cadena de slots usable. Nunca incluye el slot de pago con presupuesto 0. */
 export function capacitySlots(env: Env = process.env): CapacitySlot[] {
   const slots: CapacitySlot[] = [];
-  const mk = (name: CapacitySlotName, baseUrl: string, key: string, model: string) => {
+  // GROQ_MODEL_FALLBACK solo aplica al slot primario (Groq); los demás slots no heredan respaldo.
+  const mk = (name: CapacitySlotName, baseUrl: string, key: string, model: string, fallbackModel = '') => {
     if (!httpsOk(baseUrl) || key.length < 20 || !model) return;
     slots.push({ name, env: { OPENAI_COMPAT_BASE_URL: baseUrl, OPENAI_COMPAT_API_KEY: key, OPENAI_COMPAT_MODEL: model,
+      GROQ_MODEL_FALLBACK: fallbackModel || 'none',
       OPENAI_COMPAT_MAX_TOKENS: str(env.OPENAI_COMPAT_MAX_TOKENS), OPENAI_COMPAT_REASONING_EFFORT: str(env.OPENAI_COMPAT_REASONING_EFFORT) } });
   };
-  mk('primary', str(env.OPENAI_COMPAT_BASE_URL), str(env.OPENAI_COMPAT_API_KEY), getOpenAiCompatConfig(env).model);
+  const primaryCfg = getOpenAiCompatConfig(env);
+  mk('primary', str(env.OPENAI_COMPAT_BASE_URL), str(env.OPENAI_COMPAT_API_KEY), primaryCfg.model, primaryCfg.fallbackModel);
   const freeModel = str(env.AI_FREE_FALLBACK_MODEL);
   if (/:free$/i.test(freeModel)) {
     mk('free', str(env.AI_FREE_FALLBACK_BASE_URL) || 'https://openrouter.ai/api/v1', str(env.AI_FREE_FALLBACK_API_KEY), freeModel);

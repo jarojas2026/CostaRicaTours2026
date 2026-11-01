@@ -27,6 +27,7 @@ export function buildCompatSystemPrompt(isEn: boolean) {
     'For ANY question about tours or activities, ALWAYS call search_operator_tours (full catalog of ~590 tours, use the region and activity, e.g. query "rafting", region "arenal") before answering. Never say an activity is unavailable without searching it first.',
     'RULES (mandatory):',
     '- Never invent tours, prices, availability, ratings, schedules or providers. Use only tool results or the verified context. If unknown, say so.',
+    '- Ground every answer in the KNOWLEDGE BASE snippets, tool results or verified context. If the answer is not there, say you do not have that information and offer a quote or human follow-up.',
     '- Prices are operator reference prices subject to confirmation; availability is confirmed with the local operator before any payment.',
     '- Never reveal operator/provider names, phones, emails, addresses or websites. If asked: "We work with local operators; we verify their ICT tourism declaration before confirming each booking." The operator identity is shared in the booking confirmation.',
     '- To book: tell the customer to open the tour page and use "Consultar disponibilidad / Request a quote"; our team confirms with the operator and then sends the secure payment link. Never say a booking or payment is confirmed unless lookup_booking says so.',
@@ -45,6 +46,9 @@ export async function runCompatConcierge(params: {
   history: Array<{ role: string; text: string }>;
   liveToolContext: string;
   agentId: string;
+  /** Con memoria de conversación: más turnos, pero dentro de un presupuesto de caracteres (Groq 8K TPM). */
+  historyTurns?: number;
+  historyCharBudget?: number;
 }): Promise<{ reply: string; modelUsed: string; agentId: string; quickActions: Array<{ label: string; action: string; data?: any }> } | null> {
   const cfg = getAiConfig();
   const safe = (t: string) => (cfg.allowExternalPii ? t : redactPii(t));
@@ -52,10 +56,17 @@ export async function runCompatConcierge(params: {
     const { GEMINI_FUNCTION_DECLARATIONS, AGENT_TOOL_REGISTRY, executeAgentTool } = await import('./agentTools');
     const tools = toOpenAiTools(selectCompatTools(GEMINI_FUNCTION_DECLARATIONS as any, AGENT_TOOL_REGISTRY as any) as any);
     const messages: CompatMessage[] = [{ role: 'system', content: buildCompatSystemPrompt(params.isEn) }];
-    for (const h of params.history.slice(-6)) {
+    const historyMsgs: CompatMessage[] = [];
+    let historyChars = 0;
+    const budget = params.historyCharBudget ?? Number.POSITIVE_INFINITY;
+    for (const h of params.history.slice(-(params.historyTurns ?? 6)).reverse()) {
       const text = safe(String(h.text || '')).slice(0, 800);
-      if (text) messages.push(h.role === 'user' ? { role: 'user', content: text } : { role: 'assistant', content: text });
+      if (!text) continue;
+      if (historyChars + text.length > budget) break;
+      historyChars += text.length;
+      historyMsgs.unshift(h.role === 'user' ? { role: 'user', content: text } : { role: 'assistant', content: text });
     }
+    messages.push(...historyMsgs);
     const ctx = params.liveToolContext ? `VERIFIED CONTEXT:\n${safe(params.liveToolContext).slice(0, MAX_CONTEXT_CHARS)}\n\n` : '';
     messages.push({ role: 'user', content: `${ctx}${safe(params.message)}` });
 

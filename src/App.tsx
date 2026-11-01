@@ -61,12 +61,14 @@ const AboutSection = lazy(() => import('./components/AboutSection').then(m => ({
 // Customer-intake markdown renderer (react-markdown + micromark ≈ 100 kB) loads on first reply.
 const IntakeReplyMarkdown = lazy(() => import('./components/IntakeReplyMarkdown'));
 const BlogArticlePage = lazy(() => import('./pages/BlogArticlePage').then(m => ({ default: m.BlogArticlePage })));
+const VoiceConciergePage = lazy(() => import('./pages/VoiceConciergePage').then(m => ({ default: m.VoiceConciergePage })));
 
 
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { captureStorageScope, getPersonalItem, isStorageScopeCurrent, setPersonalItemInScope } from './utils/privateStorage';
+import { createIntakeOwnership } from './utils/intakeOwnership';
 
 export default function App() {
   const location = useLocation();
@@ -159,11 +161,16 @@ export default function App() {
     }
   }, [language]);
 
+  // Solo la consulta más reciente puede tocar el panel visible (una respuesta vieja no limpia ni pisa la nueva).
+  const intakeOwnershipRef = React.useRef(createIntakeOwnership());
+
   useEffect(() => {
     const handleCustomerIntake = async (event: Event) => {
       const detail = (event as CustomEvent).detail || {};
       const message = String(detail.message || '').trim();
       if (!message) return;
+      const intakeToken = intakeOwnershipRef.current.begin();
+      const ownsPanel = () => intakeOwnershipRef.current.owns(intakeToken);
       setIntakeOpen(true);
       setIntakeMessage(message);
       setIntakeLoading(true);
@@ -177,12 +184,15 @@ export default function App() {
         const staleReply = language === 'es'
           ? 'Tu sesión cambió mientras procesábamos la consulta. Por privacidad no mostramos esa respuesta; envíala de nuevo si la necesitas.'
           : 'Your session changed while we processed the inquiry. For privacy we are not showing that reply; please send it again if needed.';
-        setIntakeOpen(false);
-        setIntakeMessage('');
-        setIntakeReply('');
-        setIntakeEscalated(false);
-        setIntakeHandoffUrl(undefined);
-        setIntakeId('');
+        // Si ya hay una consulta más nueva (p. ej. de la cuenta nueva), no se toca su panel.
+        if (ownsPanel()) {
+          setIntakeOpen(false);
+          setIntakeMessage('');
+          setIntakeReply('');
+          setIntakeEscalated(false);
+          setIntakeHandoffUrl(undefined);
+          setIntakeId('');
+        }
         detail.onResult?.({ ok: false, discarded: true, reply: staleReply });
       };
       try {
@@ -203,10 +213,12 @@ export default function App() {
         // Respuesta de otra identidad (cerró sesión o cambió de cuenta): no se guarda ni se muestra.
         if (!isStorageScopeCurrent(scopeAtRequest)) { discardStaleIntake(); return; }
         if (!response.ok) throw new Error(data?.error || 'No se pudo procesar la solicitud.');
-        setIntakeReply(data.customer?.reply || 'La IA recibió tu solicitud y está procesando la información.');
-        setIntakeEscalated(Boolean(data.decision?.escalated));
-        setIntakeHandoffUrl(data.customer?.handoffUrl);
-        setIntakeId(data.intakeId || '');
+        if (ownsPanel()) {
+          setIntakeReply(data.customer?.reply || 'La IA recibió tu solicitud y está procesando la información.');
+          setIntakeEscalated(Boolean(data.decision?.escalated));
+          setIntakeHandoffUrl(data.customer?.handoffUrl);
+          setIntakeId(data.intakeId || '');
+        }
         if (data.journey?.journeyId) {
           setPersonalItemInScope(scopeAtRequest, 'crt_active_journey', String(data.journey.journeyId));
         }
@@ -220,13 +232,15 @@ export default function App() {
       } catch (error: any) {
         if (!isStorageScopeCurrent(scopeAtRequest)) { discardStaleIntake(); return; }
         const failureReply = language === 'es' ? 'No pudimos completar la consulta. No se ha confirmado ninguna reserva ni notificación al equipo. Puedes consultar directamente por WhatsApp.' : 'We could not complete the inquiry. No booking or team notification has been confirmed. You can contact us directly on WhatsApp.';
-        setIntakeReply(failureReply);
-        setIntakeEscalated(false);
         const handoffUrl = directWhatsAppUrl(message);
-        setIntakeHandoffUrl(handoffUrl);
+        if (ownsPanel()) {
+          setIntakeReply(failureReply);
+          setIntakeEscalated(false);
+          setIntakeHandoffUrl(handoffUrl);
+        }
         detail.onResult?.({ ok: false, reply: failureReply, handoffUrl });
       } finally {
-        setIntakeLoading(false);
+        if (ownsPanel()) setIntakeLoading(false);
       }
     };
     window.addEventListener('customer-intake-request', handleCustomerIntake as EventListener);
@@ -507,6 +521,15 @@ export default function App() {
                     onSelectTour={(t) => navigate(`/tour/${t.id}`)}
                     userBookings={myBookings}
                   />
+                </Suspense>
+              </div>
+            } />
+
+            {/* Prototipo: conserje de voz (Web Speech API, $0). No enlazado desde el menú. */}
+            <Route path="/conserje" element={
+              <div className="w-full min-w-0 overflow-x-clip py-5 sm:py-8">
+                <Suspense fallback={<div className="py-24 text-center text-emerald-400">Cargando...</div>}>
+                  <VoiceConciergePage language={language} />
                 </Suspense>
               </div>
             } />

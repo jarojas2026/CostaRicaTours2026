@@ -29,6 +29,12 @@
  * - OPENAI_COMPAT_REASONING_EFFORT  low | medium | high (por defecto low; con gpt-oss evita
  *                          respuestas vacías por consumir el presupuesto en razonamiento).
  * - OPENAI_COMPAT_MAX_TOKENS  por defecto 700 (acotado 100-4000).
+ * - GROQ_MODEL             modelo principal del proveedor OpenAI-compatible (tiene prioridad
+ *                          sobre OPENAI_COMPAT_MODEL). Por defecto openai/gpt-oss-120b, el más
+ *                          potente del plan gratuito de Groq (https://console.groq.com/docs/rate-limits).
+ * - GROQ_MODEL_FALLBACK    modelo más pequeño al que se cae ante 429/5xx/errores de red del
+ *                          principal (por defecto openai/gpt-oss-20b, también en el plan gratuito).
+ *                          `none` u `off` desactiva el respaldo.
  */
 
 export type AiProviderName = 'gemini' | 'claude' | 'openai_compat';
@@ -40,6 +46,7 @@ const DEFAULT_INTERNAL_MODEL = 'gemini-2.5-flash';
 const DEFAULT_EMBEDDING_MODEL = 'gemini-embedding-001';
 const DEFAULT_CLAUDE_MODEL = 'claude-3-5-sonnet-v2@20241022';
 const DEFAULT_OPENAI_COMPAT_MODEL = 'openai/gpt-oss-120b';
+const DEFAULT_OPENAI_COMPAT_FALLBACK_MODEL = 'openai/gpt-oss-20b';
 
 type Env = NodeJS.ProcessEnv | Record<string, string | undefined>;
 
@@ -108,9 +115,15 @@ export function isGeminiConfigured(env: Env = process.env) {
 export function getOpenAiCompatConfig(env: Env = process.env) {
   const effort = str(env.OPENAI_COMPAT_REASONING_EFFORT).toLowerCase();
   const maxTokens = Number(str(env.OPENAI_COMPAT_MAX_TOKENS) || '700');
+  const model = str(env.GROQ_MODEL) || str(env.OPENAI_COMPAT_MODEL) || DEFAULT_OPENAI_COMPAT_MODEL;
+  const rawFallback = str(env.GROQ_MODEL_FALLBACK);
+  const fallbackModel = ['none', 'off', 'false', '0'].includes(rawFallback.toLowerCase()) ? ''
+    : (rawFallback || DEFAULT_OPENAI_COMPAT_FALLBACK_MODEL);
   return {
     baseUrl: str(env.OPENAI_COMPAT_BASE_URL).replace(/\/+$/, ''),
-    model: str(env.OPENAI_COMPAT_MODEL) || DEFAULT_OPENAI_COMPAT_MODEL,
+    model,
+    /** Modelo de respaldo (vacío = sin respaldo o igual al principal). */
+    fallbackModel: fallbackModel && fallbackModel !== model ? fallbackModel : '',
     reasoningEffort: (['low', 'medium', 'high'].includes(effort) ? effort : 'low') as 'low' | 'medium' | 'high',
     maxTokens: Number.isFinite(maxTokens) ? Math.min(4000, Math.max(100, Math.round(maxTokens))) : 700,
   };

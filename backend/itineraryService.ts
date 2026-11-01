@@ -86,7 +86,7 @@ export function generateDeterministicItinerary(params: ItineraryParams): Generat
     title: isEn ? 'Arrival in Costa Rica & Scenic Transfer to Arenal' : 'Llegada a Costa Rica & Traslado a La Fortuna',
     location: 'La Fortuna / Arenal',
     destination: 'La Fortuna / Arenal',
-    driveEstimate: isEn ? '3.5 hours via Alsama Private Van' : '3.5 horas vía Van Privada Alsama Tours',
+    driveEstimate: isEn ? '3.5 hours by private or shared transfer coordinated by our agency' : '3.5 horas en traslado privado o compartido coordinado por nuestra agencia',
     morningActivity: isEn ? 'Arrival at SJO Airport and meet private driver' : 'Recepción VIP en Aeropuerto Juan Santamaría (SJO)',
     afternoonActivity: isEn ? 'Check-in at Arenal Eco-Resort and explore La Fortuna town' : 'Check-in en Eco-Lodge y paseo por el pueblo de La Fortuna',
     eveningActivity: isEn ? 'Natural volcanic mineral thermal springs with buffet dinner' : 'Aguas termales minerales del Volcán Arenal con cena buffet',
@@ -100,7 +100,7 @@ export function generateDeterministicItinerary(params: ItineraryParams): Generat
     recommendedTourId: 'arenal-volcano-hot-springs',
     suggestedTours: [isEn ? 'Arenal Volcano & Tabacón Hot Springs' : 'Volcán Arenal y Termales Tabacón'],
     stay: isEn ? 'Arenal Springs Eco Resort (Boutique & Sustainable)' : 'Arenal Springs Eco Resort (Sostenible CST)',
-    transfer: 'Alsama Tours CR - Van Ejecutiva Privada'
+    transfer: 'Traslado privado o compartido coordinado por nuestra agencia'
   });
 
   // Día 2: Volcán Arenal & Catarata La Fortuna
@@ -170,7 +170,7 @@ export function generateDeterministicItinerary(params: ItineraryParams): Generat
       recommendedTourId: 'monteverde-zipline-canopy',
       suggestedTours: [isEn ? 'Monteverde Extreme Canopy Zipline' : 'Canopy Tirolesa Extrema Monteverde'],
       stay: isEn ? 'Si Como No Resort & Wildlife Refuge (Manuel Antonio)' : 'Si Como No Resort & Wildlife Refuge (Manuel Antonio)',
-      transfer: 'Alsama Tours CR - Traslado Privado Climatizado'
+      transfer: 'Traslado privado o compartido coordinado por nuestra agencia'
     });
   }
 
@@ -244,7 +244,7 @@ export function generateDeterministicItinerary(params: ItineraryParams): Generat
       recommendedTourId: 'sjo-3-in-1-combo',
       suggestedTours: [isEn ? 'San Jose City & Artisan Heritage' : 'Tour Cultural Valle Central'],
       stay: isEn ? 'Departure Flight / Return Home' : 'Vuelo de Retorno / Fin del Viaje',
-      transfer: 'Alsama Tours CR - Traslado Aeropuerto SJO'
+      transfer: 'Traslado desde/hacia Aeropuerto SJO coordinado por nuestra agencia (privado o compartido)'
     });
   }
 
@@ -283,7 +283,7 @@ export function generateDeterministicItinerary(params: ItineraryParams): Generat
 
   const summary = isEn
     ? `A flawless ${totalDays}-day hand-crafted Costa Rican journey connecting Arenal's volcanic thermal rivers, Monteverde's mystical cloud forest canopy, and Manuel Antonio's world-renowned wildlife beaches. Seamlessly synchronized with verified private drivers, certified naturalists, and SINAC national park permits.`
-    : `Una ruta maestra de ${totalDays} días perfectamente coordinada entre las aguas termales del Volcán Arenal, el dosel nuboso de Monteverde y las playas vírgenes con fauna de Manuel Antonio. Sincronizada con choferes privados verificados de Alsama Tours CR, guías naturalistas bilingües y cupos garantizados en SINAC.`;
+    : `Una ruta maestra de ${totalDays} días perfectamente coordinada entre las aguas termales del Volcán Arenal, el dosel nuboso de Monteverde y las playas vírgenes con fauna de Manuel Antonio. Sincronizada con traslados privados o compartidos coordinados por nuestra agencia, guías naturalistas bilingües y cupos garantizados en SINAC.`;
 
   const packingList = isEn ? [
     'Quick-dry lightweight clothing (light colors)',
@@ -444,7 +444,7 @@ Devuelve SIEMPRE JSON estructurado estricto conforme al esquema solicitado.`,
       recommendedTourId: d.recommendedTourId,
       suggestedTours: Array.isArray(d.suggestedTours) ? d.suggestedTours : (d.recommendedTourId ? [d.recommendedTourId] : []),
       stay: d.stay || (isEn ? 'Verified Eco-Lodge' : 'Eco-Lodge Verificado CST'),
-      transfer: d.transfer || 'Alsama Tours CR - Traslado Privado'
+      transfer: d.transfer || 'Traslado privado o compartido coordinado por nuestra agencia'
     }));
 
     const totalUsd = Number(parsed.estimatedBudgetUSD) || (daysCount * pax * 175);
