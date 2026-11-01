@@ -4,7 +4,9 @@
  * Flujo en el chat del cliente:
  *   cotización (create_quote) → el cliente pide reservar → hold_booking (sin cobro, 60 min)
  *   → resumen + pedido de confirmación explícita → el cliente confirma con sus palabras
- *   ("Sí, confirmo" / "Yes, I confirm") → confirm_booking → enlace de pago Stripe en MODO TEST.
+ *   ("Sí, confirmo" / "Yes, I confirm") → confirm_booking → reserva PENDIENTE DE PAGO
+ *   ('pendiente_pago'). Independiente del proveedor de pago: el chat no crea enlaces ni cobra; la
+ *   agencia envía las instrucciones/enlace de pago y el dueño verifica manualmente.
  *
  * Reglas que valida el SERVIDOR (no el modelo):
  *  - hold_booking usa SIEMPRE la cotización guardada en el estado de la conversación (misma sesión);
@@ -13,12 +15,13 @@
  *    tour/fecha/personas (el cliente la vio).
  *  - confirm_booking exige: (a) un apartado que ya existía ANTES de este turno (el cliente vio el
  *    resumen) y (b) confirmación explícita en el MENSAJE LITERAL del cliente de este turno
- *    (isExplicitConfirmation). El servicio vuelve a validar sesión, vencimiento y modo Stripe TEST.
- *  - La reserva queda PENDIENTE de verificación del dueño; nunca se dice confirmada ni pagada.
- *  - El enlace de pago no va en el texto (la barrera de contactos quita URLs): va como acción
- *    rápida `open_payment_link`, solo si apunta a checkout.stripe.com.
+ *    (isExplicitConfirmation). El servicio vuelve a validar sesión y vencimiento.
+ *  - La reserva queda PENDIENTE DE PAGO y de verificación del dueño; nunca se dice confirmada ni pagada.
+ *  - El contacto de WhatsApp va como acción rápida `direct_whatsapp` (la barrera de contactos
+ *    quita teléfonos y enlaces del texto de la respuesta).
  *  - Respuestas en lista blanca: nunca proveedor, costo, comisión ni margen.
  */
+import { COMPANY_FACTS } from './agentSkillPack';
 import type { ConversationLanguage, ConversationState } from './conversationState';
 
 export interface FunnelHold {
@@ -36,8 +39,6 @@ export interface FunnelBooking {
   paymentStatus: string;
   totalPrice: number;
   currency: string;
-  /** URL de checkout de Stripe TEST (solo se entrega como acción rápida). */
-  paymentUrl: string | null;
 }
 
 export interface HoldStageDeps {
@@ -68,17 +69,6 @@ export async function isExplicitCustomerConfirmation(message: string): Promise<b
   return isExplicitConfirmation(message);
 }
 
-/** Solo URLs https de checkout de Stripe llegan al cliente como botón. */
-export function safePaymentUrl(url: unknown): string | null {
-  const s = String(url ?? '');
-  try {
-    const u = new URL(s);
-    return u.protocol === 'https:' && u.hostname === 'checkout.stripe.com' ? s : null;
-  } catch {
-    return null;
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Estado
 // ---------------------------------------------------------------------------
@@ -101,11 +91,10 @@ export function readBooking(raw: any): FunnelBooking | undefined {
   return {
     bookingNumber: String(raw.bookingNumber),
     holdNumber: String(raw.holdNumber || ''),
-    status: String(raw.status || 'pending_supplier_verification'),
-    paymentStatus: String(raw.paymentStatus || 'payment_link_created'),
+    status: String(raw.status || 'pendiente_pago'),
+    paymentStatus: String(raw.paymentStatus || 'awaiting_payment_instructions'),
     totalPrice: num2(raw.totalPrice),
     currency: String(raw.currency || 'USD'),
-    paymentUrl: safePaymentUrl(raw.paymentUrl),
   };
 }
 
@@ -190,7 +179,7 @@ export async function runConfirmStep(
   deps: HoldStageDeps = {},
 ) {
   const { hold, booking } = getHoldStage(state);
-  if (booking) return { state, result: { success: true, reused: true, bookingNumber: booking.bookingNumber, status: booking.status, paymentStatus: booking.paymentStatus, mode: 'test' } };
+  if (booking) return { state, result: { success: true, reused: true, bookingNumber: booking.bookingNumber, status: booking.status, paymentStatus: booking.paymentStatus } };
   if (!hold) return { state, result: { success: false, error: 'hold_required', next: 'hold_booking' } };
   const asked = String(args.holdNumber ?? '').trim().toUpperCase();
   if (asked && asked !== hold.holdNumber) return { state, result: { success: false, error: 'hold_mismatch' } };
@@ -208,16 +197,14 @@ export async function runConfirmStep(
     const next: FunnelBooking = {
       bookingNumber: String(raw.bookingNumber),
       holdNumber: hold.holdNumber,
-      status: String(raw.status || 'pending_supplier_verification'),
-      paymentStatus: String(raw.paymentStatus || 'payment_link_created'),
+      status: String(raw.status || 'pendiente_pago'),
+      paymentStatus: String(raw.paymentStatus || 'awaiting_payment_instructions'),
       totalPrice: num2(raw.totalPrice),
       currency: String(raw.currency || 'USD'),
-      paymentUrl: safePaymentUrl(raw.paymentUrl),
     };
-    // Al modelo NO se le pasa la URL (la entrega el servidor como botón).
     return {
       state: setHoldStage(state, { booking: next }),
-      result: { success: true, created: true, bookingNumber: next.bookingNumber, status: next.status, paymentStatus: next.paymentStatus, paymentLinkReady: Boolean(next.paymentUrl), mode: 'test', totalPrice: next.totalPrice, currency: next.currency },
+      result: { success: true, created: true, bookingNumber: next.bookingNumber, status: next.status, paymentStatus: next.paymentStatus, charged: false, paymentInstructions: 'agency_will_send_shortly', totalPrice: next.totalPrice, currency: next.currency },
     };
   }
   const error = String(raw?.error || 'confirm_failed').slice(0, 60);
@@ -270,7 +257,7 @@ export const HOLD_STAGE_TOOLS = [
     type: 'function' as const,
     function: {
       name: 'confirm_booking',
-      description: 'ONLY when the customer\'s latest message explicitly confirms the hold summary in their own words ("Sí, confirmo" / "Yes, I confirm"). Creates a booking PENDING verification by our team and a TEST-mode payment button. Never call it on a question, a maybe or your own initiative; the server rejects it without explicit confirmation.',
+      description: 'ONLY when the customer\'s latest message explicitly confirms the hold summary in their own words ("Sí, confirmo" / "Yes, I confirm"). Creates a booking PENDING PAYMENT; the agency then sends payment instructions. No payment link, no charge. Never call it on a question, a maybe or your own initiative; the server rejects it without explicit confirmation.',
       parameters: { type: 'object', properties: { holdNumber: { type: 'string', description: 'HLD-YYYYMMDD-XXXX (optional; the saved hold is used)' } } },
     },
   },
@@ -280,10 +267,10 @@ export const HOLD_STAGE_TOOLS = [
 export function holdStagePrompt(state: ConversationState): string {
   const { hold, booking, quoteNumber } = getHoldStage(state);
   if (booking) {
-    return `Booking ${booking.bookingNumber} was created and is PENDING: our team verifies availability with the local operator before confirming. A "Pay (test mode)" button is shown below your message; it is a TEST payment, no real charge. Never say the booking is confirmed or paid, never write any link, and do not call confirm_booking again.`;
+    return `Booking ${booking.bookingNumber} was created and is PENDING PAYMENT: the agency will send payment instructions/link shortly, and our team verifies availability with the local operator. A WhatsApp button is shown below your message. Nothing was charged. Never say the booking is confirmed or paid, never write any link or phone number, and do not call confirm_booking again.`;
   }
   if (hold) {
-    return `Quote ${hold.quoteNumber} is HELD as ${hold.holdNumber} until ${hold.expiresAt} (no charge). Show the summary (tour, date, travelers, total ${hold.currency} ${hold.totalPrice}) and ask the customer to reply "Sí, confirmo" / "Yes, I confirm" to create the booking (pending our team's verification) and the test-mode payment button. Call confirm_booking ONLY if the customer's latest message explicitly confirms. Never say the booking is confirmed or paid.`;
+    return `Quote ${hold.quoteNumber} is HELD as ${hold.holdNumber} until ${hold.expiresAt} (no charge). Show the summary (tour, date, travelers, total ${hold.currency} ${hold.totalPrice}) and ask the customer to reply "Sí, confirmo" / "Yes, I confirm" to create the booking (pending payment; the agency then sends payment instructions). Call confirm_booking ONLY if the customer's latest message explicitly confirms. Never say the booking is confirmed or paid.`;
   }
   if (quoteNumber) {
     return 'If the customer wants to book this quote, call hold_booking (no charge, held for 60 minutes). Never claim it is booked.';
@@ -314,16 +301,10 @@ export function holdStageReply(state: ConversationState, lang: ConversationLangu
   const { hold, booking } = getHoldStage(state);
   if (booking && (step === 'confirm_booking' || !step)) {
     return en
-      ? `Your booking request ${booking.bookingNumber} is registered and PENDING: our team verifies availability with the local operator before confirming it. Use the "Pay (test mode)" button below — it is a TEST payment, no real charge is made.`
-      : `Tu solicitud de reserva ${booking.bookingNumber} quedó registrada y PENDIENTE: nuestro equipo verifica la disponibilidad con el operador local antes de confirmarla. Usa el botón "Pagar (modo prueba)" de abajo: es un pago de PRUEBA, no se hace ningún cobro real.`;
+      ? `Your booking ${booking.bookingNumber} is registered as PENDING PAYMENT. Our agency will send you the payment instructions/link shortly, and our team verifies availability with the local operator. Nothing has been charged. You can also reach us on WhatsApp with the button below.`
+      : `Tu reserva ${booking.bookingNumber} quedó registrada como PENDIENTE DE PAGO. Nuestra agencia te enviará en breve las instrucciones/enlace de pago, y nuestro equipo verifica la disponibilidad con el operador local. No se ha cobrado nada. También puedes escribirnos por WhatsApp con el botón de abajo.`;
   }
   if (step === 'confirm_booking' && result && result.success === false) {
-    if (['stripe_live_blocked', 'stripe_disabled', 'stripe_test_only', 'stripe_not_configured'].includes(String(result.error))) {
-      // Pagos en línea deshabilitados por política: el apartado sigue vigente y una persona coordina el pago.
-      return en
-        ? 'Your hold is still active, but online payment is not available from the chat right now. Nothing was charged. Tap "Talk to our team" and we will coordinate the booking and payment with you.'
-        : 'Tu apartado sigue vigente, pero ahora no está disponible el pago en línea desde el chat. No se cobró nada. Toca "Hablar con el equipo" y coordinamos contigo la reserva y el pago.';
-    }
     if (result.error === 'hold_expired' || result.error === 'hold_not_active' || result.error === 'hold_not_found') {
       return en
         ? 'The 60-minute hold expired, so nothing was booked or charged. Would you like me to hold the quote again?'
@@ -335,8 +316,8 @@ export function holdStageReply(state: ConversationState, lang: ConversationLangu
   }
   if (hold) {
     return en
-      ? `I held quote ${hold.quoteNumber} as ${hold.holdNumber} for up to 60 minutes${fmtExpiry(hold.expiresAt, lang)}: total ${hold.currency} ${hold.totalPrice}. Nothing has been charged. To create the booking (pending our team's verification with the local operator) and get the test-mode payment button, reply "Yes, I confirm".`
-      : `Aparté la cotización ${hold.quoteNumber} como ${hold.holdNumber} por hasta 60 minutos${fmtExpiry(hold.expiresAt, lang)}: total ${hold.currency} ${hold.totalPrice}. No se ha cobrado nada. Para crear la reserva (pendiente de que nuestro equipo verifique con el operador local) y recibir el botón de pago en modo prueba, responde "Sí, confirmo".`;
+      ? `I held quote ${hold.quoteNumber} as ${hold.holdNumber} for up to 60 minutes${fmtExpiry(hold.expiresAt, lang)}: total ${hold.currency} ${hold.totalPrice}. Nothing has been charged. To create the booking (pending our team's verification with the local operator) and receive the payment instructions from our agency, reply "Yes, I confirm".`
+      : `Aparté la cotización ${hold.quoteNumber} como ${hold.holdNumber} por hasta 60 minutos${fmtExpiry(hold.expiresAt, lang)}: total ${hold.currency} ${hold.totalPrice}. No se ha cobrado nada. Para crear la reserva (pendiente de que nuestro equipo verifique con el operador local) y recibir de nuestra agencia las instrucciones de pago, responde "Sí, confirmo".`;
   }
   if (step === 'hold_booking' && result && result.success === false) {
     return result.error === 'quote_expired'
@@ -346,13 +327,11 @@ export function holdStageReply(state: ConversationState, lang: ConversationLangu
   return null;
 }
 
-/** Acciones rápidas de la etapa: botón de confirmación literal y botón de pago TEST. */
-export function holdStageQuickActions(state: ConversationState, lang: ConversationLanguage, lastConfirmResult?: any): Array<{ label: string; action: string; data?: any }> {
+/** Acciones rápidas de la etapa: botón de confirmación literal y contacto de WhatsApp de la agencia. */
+export function holdStageQuickActions(state: ConversationState, lang: ConversationLanguage): Array<{ label: string; action: string; data?: any }> {
   const { hold, booking } = getHoldStage(state);
-  // Pago en línea no disponible (política de Stripe): sin botón de confirmar en bucle.
-  if (lastConfirmResult && lastConfirmResult.success === false && /^stripe_/.test(String(lastConfirmResult.error || ''))) return [];
-  if (booking?.paymentUrl) {
-    return [{ label: lang === 'en' ? '💳 Pay (test mode)' : '💳 Pagar (modo prueba)', action: 'open_payment_link', data: { url: booking.paymentUrl, bookingNumber: booking.bookingNumber, mode: 'test' } }];
+  if (booking) {
+    return [{ label: `💬 WhatsApp ${COMPANY_FACTS.whatsappDisplay}`, action: 'direct_whatsapp', data: { bookingNumber: booking.bookingNumber } }];
   }
   if (hold && !booking) {
     const msg = lang === 'en' ? 'Yes, I confirm' : 'Sí, confirmo';

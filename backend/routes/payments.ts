@@ -170,13 +170,6 @@ checkoutRouter.post('/api/payments/stripe/return', paymentLimiter, async (req, r
     if (!sessionId || !stripe) return res.status(400).json({ error: 'No se puede verificar el pago de tarjeta todavía.' });
 
     const session = await stripe.checkout.sessions.retrieve(sessionId);
-    // Reserva del asistente (confirm_booking, TEST): pagada pero pendiente de verificación del dueño.
-    const agentPayment = await import('../agentBookingPayment');
-    if (agentPayment.isAgentBookingSession(session)) {
-      const agent = await agentPayment.reconcileAgentBookingPayment(session, { via: 'return' });
-      if (!agent.success) return res.status(409).json({ error: 'El pago no coincide con una reserva pendiente válida.' });
-      return res.json({ success: true, agentBooking: { bookingNumber: agent.bookingNumber, status: agent.status, paymentStatus: agent.paymentStatus, mode: agent.mode } });
-    }
     const bookingId = String(session.metadata?.bookingId || session.client_reference_id || '').trim();
     const booking = await getBookingById(bookingId);
     const expectedCents = Math.round(Number(booking?.totalUSD || 0) * 100);

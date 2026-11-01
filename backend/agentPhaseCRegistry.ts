@@ -50,7 +50,7 @@ export const PHASE_C_TOOL_REGISTRY = {
     sideEffect: true
   },
   confirm_booking: {
-    description: 'After the customer explicitly confirms, turn an active hold into a PENDING booking and create a Stripe TEST payment link. Booking stays pending until the owner verifies the supplier manually. No live charges, no supplier payments.',
+    description: 'After the customer explicitly confirms, turn an active hold into a booking PENDING PAYMENT (pendiente_pago). Payment-provider agnostic: no payment link, no charge; the agency sends payment instructions by a human channel and the owner verifies payment and supplier manually. No supplier payments.',
     sideEffect: true
   },
 } as const;
@@ -161,7 +161,7 @@ export const PHASE_C_DECLARATIONS = [
   },
   {
     name: 'confirm_booking',
-    description: 'Only after showing the summary (tour, date, travelers, total) and the customer explicitly confirms in their own words ("Sí, confirmo" / "Yes, I confirm"): turns an active hold into a booking PENDING operator verification and returns a Stripe TEST payment link. Never say the booking is confirmed or paid: our team verifies with the local operator first.',
+    description: 'Only after showing the summary (tour, date, travelers, total) and the customer explicitly confirms in their own words ("Sí, confirmo" / "Yes, I confirm"): turns an active hold into a booking PENDING PAYMENT. No payment link is created: tell the customer the agency will send payment instructions/link shortly (WhatsApp available). Never say the booking is confirmed or paid and never invent a link.',
     parameters: {
       type: 'OBJECT',
       properties: {

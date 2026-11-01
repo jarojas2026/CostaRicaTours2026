@@ -6,8 +6,6 @@ export type PaymentWebhookResult = {
   accepted: boolean;
   duplicate?: boolean;
   bookingId?: string;
-  /** Reserva del asistente (confirm_booking) conciliada en modo TEST; no avanza el ciclo de vida. */
-  agentBookingNumber?: string;
   eventId?: string;
   reason?: string;
 };
@@ -106,15 +104,6 @@ export async function processStripeWebhook(rawBody: Buffer, signature: string | 
   try {
     if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
       const session = event.data.object as Stripe.Checkout.Session;
-      // Reservas del asistente (confirm_booking, Stripe TEST): se marcan pagadas y siguen pendientes
-      // de verificación del dueño. Sin bookingId en el resultado: no avanza el ciclo de vida ni paga proveedores.
-      const agentPayment = await import('./agentBookingPayment');
-      if (agentPayment.isAgentBookingSession(session)) {
-        const agent = await agentPayment.reconcileAgentBookingPayment(session, { eventId: event.id, via: 'webhook' });
-        if (!agent.success) throw new Error(`Reserva del asistente no conciliada: ${agent.error}`);
-        await finishEvent('stripe', event.id, { status: 'processed', agentBookingNumber: agent.bookingNumber, duplicateBooking: agent.duplicate, type: event.type });
-        return { accepted: true, eventId: event.id, agentBookingNumber: agent.bookingNumber, reason: 'agent_booking_paid_test_pending_owner_verification' };
-      }
       const bookingId = String(session.metadata?.bookingId || session.client_reference_id || '').trim();
       if (!bookingId) throw new Error('Evento Stripe sin referencia de reserva.');
       const booking = await getBookingById(bookingId);

@@ -722,8 +722,8 @@ export async function runFunnelTurn(params: {
 
   const quickActions: Array<{ label: string; action: string; data?: any }> = [];
   if (missing === 'tour') getFunnel(state).recommended.forEach((r, i) => quickActions.push({ label: `${i + 1}. ${r.title}`.slice(0, 60), action: 'send_message', data: { message: String(i + 1) } }));
-  quickActions.push(...holdStageQuickActions(state, lang, stageStep === 'confirm_booking' ? stageResult : undefined));
-  if (funnel.quote) quickActions.push({ label: lang === 'en' ? '💬 Talk to our team' : '💬 Hablar con el equipo', action: 'direct_whatsapp' });
+  quickActions.push(...holdStageQuickActions(state, lang));
+  if (funnel.quote && !quickActions.some(q => q.action === 'direct_whatsapp')) quickActions.push({ label: lang === 'en' ? '💬 Talk to our team' : '💬 Hablar con el equipo', action: 'direct_whatsapp' });
   return { reply: guard.reply, state, modelUsed, quickActions, toolCalls, guard: { removedPrices: guard.removedPrices, supplierRedactions: guard.supplierRedactions } };
 }
 

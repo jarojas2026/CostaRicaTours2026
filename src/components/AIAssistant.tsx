@@ -400,12 +400,6 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
       requestCustomerIntake({ message: 'Hola Costa Rica Tours, quisiera consultar sobre un tour.', language, source: 'ai-assistant-whatsapp' });
     } else if (qa.action === 'send_message' && qa.data?.message) {
       handleSendMessage(qa.data.message);
-    } else if (qa.action === 'open_payment_link' && typeof qa.data?.url === 'string') {
-      // Enlace de pago del asistente (Stripe en modo prueba): solo checkout.stripe.com por https.
-      try {
-        const url = new URL(qa.data.url);
-        if (url.protocol === 'https:' && url.hostname === 'checkout.stripe.com') window.open(url.toString(), '_blank', 'noopener,noreferrer');
-      } catch { /* URL no válida: se ignora */ }
     }
   };
 
