@@ -8,7 +8,9 @@
  * Esta función marca ese documento como PAGADO (paymentStatus 'paid', paymentMode 'test') cuando
  * el evento ya fue verificado (firma del webhook o sesión recuperada desde la API de Stripe):
  *  - Solo TEST: sesión con livemode=true o clave en vivo ⇒ se rechaza (stripe_test_only). No lee
- *    ni cambia ALLOW_STRIPE_LIVE; el bloqueo de claves en vivo sigue en stripeModeGuard.
+ *    ni cambia ALLOW_STRIPE_LIVE; la política de Stripe sigue en stripeModeGuard. Mientras esa
+ *    política bloquee Stripe (#475, STRIPE_DISABLED_IN_COSTA_RICA_TOURS) esta función falla cerrado
+ *    (stripe_disabled) y el webhook/retorno de Stripe ni siquiera llegan aquí.
  *  - Valida sesión de checkout, estado 'paid', moneda USD e importe exacto en centavos.
  *  - Idempotente: si ya está pagada, responde duplicate sin escribir (en transacción cuando hay).
  *  - NO confirma la reserva: el status sigue 'pending_supplier_verification', supplierVerified
@@ -16,7 +18,7 @@
  *  - Salida en lista blanca: nunca proveedor, costo, comisión ni margen.
  */
 import { AGENT_BOOKING_COLLECTION } from './agentBookingHold';
-import { checkStripeMode, type StripeModeCheck } from './stripeModeGuard';
+import { STRIPE_DISABLED_REASON, checkStripeMode, type StripeModeCheck } from './stripeModeGuard';
 
 export const AGENT_PAYMENT_SOURCE = 'agent_confirm_booking';
 const BOOKING_NUMBER = /^AGB-\d{8}-[A-F0-9]{4}$/;
@@ -67,7 +69,8 @@ export async function reconcileAgentBookingPayment(
     // Guardia TEST: ni sesiones en vivo ni clave en vivo (aunque ALLOW_STRIPE_LIVE=true).
     if (session.livemode === true) return fail('stripe_test_only');
     const mode = (deps.stripeMode ?? checkStripeMode)();
-    if (mode.blocked) return fail('stripe_live_blocked');
+    // Política vigente (#475): Stripe deshabilitado ⇒ falla cerrado, no se toca ninguna reserva.
+    if (mode.blocked) return fail(mode.reason === STRIPE_DISABLED_REASON ? 'stripe_disabled' : 'stripe_live_blocked');
     if (mode.mode === 'live') return fail('stripe_test_only');
     if (!session.id) return fail('session_id_missing');
     if (session.payment_status !== 'paid') return fail('payment_not_completed');

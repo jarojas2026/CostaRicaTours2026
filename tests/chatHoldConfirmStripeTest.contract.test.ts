@@ -278,29 +278,57 @@ test('webhook: rechaza importe/sesión/moneda distintos, pagos no completados y 
   assert.equal((await reconcileAgentBookingPayment(paidSession(), { via: 'webhook' }, { db: null, stripeMode: testMode }) as any).error, 'storage_unavailable');
 });
 
-test('webhook: firma verificada; el evento del asistente va a su conciliación y no avanza el ciclo de vida', async () => {
+test('política vigente (#475, Stripe deshabilitado): webhook y conciliación fallan cerrado; el cableado del asistente queda listo', async () => {
   const prev = { key: process.env.STRIPE_SECRET_KEY, secret: process.env.STRIPE_WEBHOOK_SECRET, allow: process.env.ALLOW_STRIPE_LIVE };
   process.env.STRIPE_SECRET_KEY = 'sk_test_contract_only';
   process.env.STRIPE_WEBHOOK_SECRET = 'whsec_contract_only';
   try {
     const { processStripeWebhook } = await import('../backend/paymentWebhookService');
     const payload = JSON.stringify({ id: 'evt_test_agent_1', object: 'event', type: 'checkout.session.completed', data: { object: paidSession() } });
-    // Firma inválida ⇒ rechazado antes de tocar datos.
-    await assert.rejects(processStripeWebhook(Buffer.from(payload), 't=1,v1=bad'), /Firma Stripe no válida/);
     const header = Stripe.webhooks.generateTestHeaderString({ payload, secret: 'whsec_contract_only' });
-    // Offline (sin Firestore): llega a la rama del asistente (no a la de bookingId) y no concilia nada.
-    await assert.rejects(processStripeWebhook(Buffer.from(payload), header), /Reserva del asistente no conciliada: storage_unavailable/);
+    await assert.rejects(processStripeWebhook(Buffer.from(payload), header), /STRIPE_DISABLED_IN_COSTA_RICA_TOURS/);
+    // Guardia real (sin inyectar modo): no escribe nada.
+    const db = bookedDb();
+    const r: any = await reconcileAgentBookingPayment(paidSession(), { eventId: 'evt_real', via: 'webhook' }, { db, now: () => NOW });
+    assert.equal(r.success, false);
+    assert.equal(r.error, 'stripe_disabled');
+    assert.equal(db.writes(), 0);
   } finally {
     for (const [k, v] of [['STRIPE_SECRET_KEY', prev.key], ['STRIPE_WEBHOOK_SECRET', prev.secret], ['ALLOW_STRIPE_LIVE', prev.allow]] as const) {
       if (v === undefined) delete process.env[k]; else process.env[k] = v;
     }
   }
   const svc = readFileSync('backend/paymentWebhookService.ts', 'utf8');
-  assert.match(svc, /isAgentBookingSession\(session\)/);
+  // La conciliación del asistente va DESPUÉS de constructEvent (firma) y de claimEvent (idempotencia por evento).
+  const sig = svc.indexOf('stripe.webhooks.constructEvent(rawBody, signature, secret)');
+  const claim = svc.indexOf("claimEvent('stripe', event.id)");
+  const agent = svc.indexOf('isAgentBookingSession(session)');
+  assert.ok(sig > -1 && claim > sig && agent > claim);
   assert.match(svc, /return \{ accepted: true, eventId: event\.id, agentBookingNumber: agent\.bookingNumber/);
   assert.match(readFileSync('backend/routes/payments.ts', 'utf8'), /reconcileAgentBookingPayment\(session, \{ via: 'return' \}\)/);
+  assert.match(readFileSync('backend/stripeModeGuard.ts', 'utf8'), /STRIPE_DISABLED_IN_COSTA_RICA_TOURS/);
   const lib = readFileSync('backend/agentBookingPayment.ts', 'utf8');
   assert.doesNotMatch(lib, /transfers\.create|payouts\.create|process\.env\.ALLOW_STRIPE_LIVE\s*=[^=]|sk_live_[A-Za-z0-9]|supplierVerified:\s*true|'confirmada'/);
+});
+
+test('chat con la política real de Stripe: confirmar no crea enlace, conserva el apartado y deriva al equipo', async () => {
+  const { db, checkout } = harness();
+  const now = () => NOW;
+  const deps = {
+    now,
+    holdBooking: (i: any, c: any) => holdBooking(i, c, { db, now, randomHex: () => 'c0de' }),
+    // Sin stripeMode inyectado: usa checkStripeMode real (bloqueado por #475).
+    confirmBooking: (i: any, c: any) => confirmBooking(i, c, { db, now, createCheckoutSession: async (p: any) => { checkout.push(p); return { id: 'cs', url: PAY_URL }; } }),
+  };
+  const t1 = await turn(quotedState(), 'quiero reservarlo', deps);
+  const t2 = await turn(t1.state, 'Sí, confirmo', deps);
+  assert.equal(checkout.length, 0);
+  assert.equal(db.cols[AGENT_BOOKING_COLLECTION]?.length ?? 0, 0);
+  assert.ok(getHoldStage(t2.state).hold);
+  assert.equal(getHoldStage(t2.state).booking, undefined);
+  assert.match(t2.reply, /No se cobró nada/);
+  assert.ok(!t2.quickActions.some(q => q.action === 'open_payment_link' || q.data?.message === 'Sí, confirmo'));
+  assert.ok(t2.quickActions.some(q => q.action === 'direct_whatsapp'));
 });
 
 // ---------------------------------------------------------------------------

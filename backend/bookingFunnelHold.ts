@@ -318,6 +318,12 @@ export function holdStageReply(state: ConversationState, lang: ConversationLangu
       : `Tu solicitud de reserva ${booking.bookingNumber} quedó registrada y PENDIENTE: nuestro equipo verifica la disponibilidad con el operador local antes de confirmarla. Usa el botón "Pagar (modo prueba)" de abajo: es un pago de PRUEBA, no se hace ningún cobro real.`;
   }
   if (step === 'confirm_booking' && result && result.success === false) {
+    if (['stripe_live_blocked', 'stripe_disabled', 'stripe_test_only', 'stripe_not_configured'].includes(String(result.error))) {
+      // Pagos en línea deshabilitados por política: el apartado sigue vigente y una persona coordina el pago.
+      return en
+        ? 'Your hold is still active, but online payment is not available from the chat right now. Nothing was charged. Tap "Talk to our team" and we will coordinate the booking and payment with you.'
+        : 'Tu apartado sigue vigente, pero ahora no está disponible el pago en línea desde el chat. No se cobró nada. Toca "Hablar con el equipo" y coordinamos contigo la reserva y el pago.';
+    }
     if (result.error === 'hold_expired' || result.error === 'hold_not_active' || result.error === 'hold_not_found') {
       return en
         ? 'The 60-minute hold expired, so nothing was booked or charged. Would you like me to hold the quote again?'
@@ -341,8 +347,10 @@ export function holdStageReply(state: ConversationState, lang: ConversationLangu
 }
 
 /** Acciones rápidas de la etapa: botón de confirmación literal y botón de pago TEST. */
-export function holdStageQuickActions(state: ConversationState, lang: ConversationLanguage): Array<{ label: string; action: string; data?: any }> {
+export function holdStageQuickActions(state: ConversationState, lang: ConversationLanguage, lastConfirmResult?: any): Array<{ label: string; action: string; data?: any }> {
   const { hold, booking } = getHoldStage(state);
+  // Pago en línea no disponible (política de Stripe): sin botón de confirmar en bucle.
+  if (lastConfirmResult && lastConfirmResult.success === false && /^stripe_/.test(String(lastConfirmResult.error || ''))) return [];
   if (booking?.paymentUrl) {
     return [{ label: lang === 'en' ? '💳 Pay (test mode)' : '💳 Pagar (modo prueba)', action: 'open_payment_link', data: { url: booking.paymentUrl, bookingNumber: booking.bookingNumber, mode: 'test' } }];
   }
