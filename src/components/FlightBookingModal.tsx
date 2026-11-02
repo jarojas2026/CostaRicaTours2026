@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   X, Plane, Calendar, User, Mail, Phone, Globe, ShieldCheck, 
-  CheckCircle2, Clock, Luggage, MapPin, Sparkles, CreditCard, 
+  CheckCircle2, Clock, Luggage, MapPin, Sparkles, 
   ArrowRight, Award, Car, Check, QrCode, Shield, Compass, ChevronRight, FileText
 } from 'lucide-react';
 import { FlightRoute, Language, Currency, BookingRequest } from '../types';
@@ -35,9 +35,9 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
   const [seatPreference, setSeatPreference] = useState<'window' | 'aisle' | 'extra_legroom'>('window');
   
   // Add-on options
-  const [includeAirportTransfer, setIncludeAirportTransfer] = useState(true);
-  const [includeWelcomeSimKit, setIncludeWelcomeSimKit] = useState(true);
-  const [includeTravelInsurance, setIncludeTravelInsurance] = useState(true);
+  const [includeAirportTransfer, setIncludeAirportTransfer] = useState(false);
+  const [includeWelcomeSimKit, setIncludeWelcomeSimKit] = useState(false);
+  const [includeTravelInsurance, setIncludeTravelInsurance] = useState(false);
 
   // Customer info
   const [fullName, setFullName] = useState('');
@@ -45,7 +45,8 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
   const [phone, setPhone] = useState('');
   const [passportNumber, setPassportNumber] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'pay_at_pickup' | 'sinpe_movil'>('pay_at_pickup');
+  // This flow only requests a quote; no online payment method is offered.
+  const paymentMethod: BookingRequest['paymentMethod'] = 'pay_at_pickup';
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessTicket, setShowSuccessTicket] = useState(false);
@@ -62,6 +63,10 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
   const totalUSD = pricePerPerson * passengersCount;
   const crcRate = getUsdToCrcRate();
   const totalCRC = crcRate > 0 ? Math.round(totalUSD * crcRate) : 0;
+  const baseFareTotalUSD = basePrice * passengersCount;
+  const transferTotalUSD = transferPrice * passengersCount;
+  const simTotalUSD = simKitPrice * passengersCount;
+  const insuranceTotalUSD = insurancePrice * passengersCount;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +96,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
         phone,
         country: flight.originCountry,
       },
-      paymentMethod,
+      paymentMethod: 'pay_at_pickup',
       paymentStatus: 'pending',
       flightDetails: {
         flightNumber: flight.flightNumber,
@@ -111,35 +116,6 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
     };
 
     try {
-      if (paymentMethod === 'credit_card') {
-        const stripeRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || ""}/api/stripe/create-checkout-session`, {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({
-             tourId: 'flight-' + flight.flightNumber,
-             tourName: 'Vuelo ' + flight.flightNumber + ' - ' + flight.airline,
-             totalUSD,
-             customerEmail: email,
-             date: departureDate,
-             passengers: passengersCount,
-             flightNumber: flight.flightNumber,
-             cabinClass: selectedCabin,
-             includeAirportTransfer,
-             includeWelcomeSimKit,
-             includeTravelInsurance
-           })
-        });
-        const stripeData = await stripeRes.json().catch(() => ({}));
-        if (!stripeRes.ok) {
-          throw new Error(stripeData?.message || stripeData?.error || 'No se pudo iniciar el pago seguro.');
-        }
-        if (!stripeData.url) {
-          throw new Error('La pasarela no devolvió un enlace de pago verificable.');
-        }
-        window.location.href = stripeData.url;
-        return;
-      }
-
       const bookingRes = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -210,7 +186,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
 
             <div>
               <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest block">
-                {language === 'es' ? 'Solicitud registrada' : 'Request registered'}
+                {language === 'es' ? 'Solicitud de cotización registrada' : 'Quote request registered'}
               </span>
               <h4 className="text-2xl font-black text-slate-900 mt-1">
                 {language === 'es' ? 'Referencia:' : 'Reference:'} <span className="text-emerald-600 font-mono">{confirmedBookingData.bookingId}</span>
@@ -516,32 +492,6 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                 </div>
               </div>
 
-              {/* Payment Method Selector */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-700 uppercase block">
-                  {language === 'es' ? 'Método de Pago:' : 'Payment Method:'}
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {[
-                    { id: 'pay_at_pickup', label: language === 'es' ? 'Enviar solicitud sin cobro online' : 'Submit request without online charge', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
-                  ].map((m) => (
-                    <button
-                      type="button"
-                      key={m.id}
-                      onClick={() => setPaymentMethod(m.id as any)}
-                      className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                        paymentMethod === m.id
-                          ? 'bg-slate-900 text-white border-slate-900 font-bold shadow-sm'
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      {m.icon}
-                      <span>{m.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {submissionError && (
                 <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700" role="alert">
                   {submissionError}
@@ -552,15 +502,21 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
               <div className="bg-slate-900 text-white p-4.5 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-4 shadow-xl">
                 <div>
                   <span className="text-xs text-slate-300 font-semibold block">
-                    {language === 'es' ? 'Total estimado del paquete solicitado:' : 'Estimated requested package total:'}
+                    {language === 'es' ? 'Desglose de la cotización solicitada:' : 'Requested quote breakdown:'}
                   </span>
-                  <div className="flex items-baseline gap-2 mt-0.5">
+                  <div className="mt-2 space-y-1 text-[11px] text-slate-300">
+                    <div className="flex justify-between gap-3"><span>{language === 'es' ? 'Tarifa base × pasajeros' : 'Base fare × passengers'}</span><span>{formatCurrency(baseFareTotalUSD, 'USD', language)}</span></div>
+                    {includeAirportTransfer && <div className="flex justify-between gap-3"><span>{language === 'es' ? 'Chofer VIP × pasajeros' : 'VIP driver × passengers'}</span><span>{formatCurrency(transferTotalUSD, 'USD', language)}</span></div>}
+                    {includeWelcomeSimKit && <div className="flex justify-between gap-3"><span>SIM × {passengersCount}</span><span>{formatCurrency(simTotalUSD, 'USD', language)}</span></div>}
+                    {includeTravelInsurance && <div className="flex justify-between gap-3"><span>{language === 'es' ? 'Seguro × pasajeros' : 'Insurance × passengers'}</span><span>{formatCurrency(insuranceTotalUSD, 'USD', language)}</span></div>}
+                  </div>
+                  <div className="flex items-baseline gap-2 mt-2">
                     <span className="text-2xl sm:text-3xl font-black text-emerald-400">
-                      {formatCurrency(totalUSD, currency)}
+                      {currency === 'CRC' && crcRate <= 0
+                        ? (language === 'es' ? 'CRC no disponible' : 'CRC unavailable')
+                        : formatCurrency(totalUSD, currency, language)}
                     </span>
-                    <span className="text-xs text-slate-400 font-mono">
-                      (₡{totalCRC.toLocaleString()} CRC)
-                    </span>
+                    {crcRate > 0 && currency !== 'CRC' && <span className="text-xs text-slate-400 font-mono">({formatCurrency(totalCRC / crcRate, 'CRC', language)})</span>}
                   </div>
                   <span className="text-[10px] text-slate-400 block mt-0.5">
                     {language === 'es' ? 'La disponibilidad y el total final se confirman en el flujo operativo.' : 'Availability and final total are confirmed in the operational flow.'}
@@ -578,7 +534,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                     <>
                       <Check className="w-4 h-4" />
                       <span>
-                        {language === 'es' ? 'Enviar solicitud' : 'Submit request'}
+                        {language === 'es' ? 'Solicitar cotización' : 'Request a quote'}
                       </span>
                     </>
                   )}
