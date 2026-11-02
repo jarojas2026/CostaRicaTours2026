@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   X, Plane, Calendar, User, Mail, Phone, Globe, ShieldCheck, 
-  CheckCircle2, Clock, Luggage, MapPin, Sparkles, CreditCard, 
+  CheckCircle2, Clock, Luggage, MapPin, Sparkles, 
   ArrowRight, Award, Car, Check, QrCode, Shield, Compass, ChevronRight, FileText
 } from 'lucide-react';
 import { FlightRoute, Language, Currency, BookingRequest } from '../types';
