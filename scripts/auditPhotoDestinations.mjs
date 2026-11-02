@@ -49,7 +49,8 @@ const regionAliases = {
 const hasPlace = (text, place) => normalize(text).includes(normalize(place));
 const csvCell = (value) => '"' + String(value ?? '').replace(/"/g, '""') + '"';
 
-const headers = ['key','place','regions','source','source_filename','url_filename','filename_match','destination_mismatch','author','license','license_url','source_page','credit','action'];
+const auditDate = new Date().toISOString().slice(0, 10);
+const headers = ['audit_date','key','place','regions','source','source_filename','url_filename','filename_match','destination_mismatch','author','license','license_url','source_page','credit','action'];
 const rows = manifest.photos.map(photo => {
   const sourceFilename = filenameFromSourcePage(photo.sourcePage);
   const urlFilename = filenameFromUrl(photo.url);
@@ -65,7 +66,7 @@ const rows = manifest.photos.map(photo => {
     knownCRHits.some(place => !hasPlace(declared, place)) ? 'Costa Rica place in filename differs from declared place/region: ' + knownCRHits.filter(place => !hasPlace(declared, place)).join('; ') : ''
   ].filter(Boolean);
   return [
-    photo.key, photo.place, (photo.regions || []).join(';'), photo.source, sourceFilename, urlFilename,
+    auditDate, photo.key, photo.place, (photo.regions || []).join(';'), photo.source, sourceFilename, urlFilename,
     filenameMatch ? 'MATCH' : 'REVIEW', destinationMismatch ? 'REVIEW' : 'NO_SIGNAL',
     photo.author, photo.license, photo.licenseUrl, photo.sourcePage, photo.credit,
     reasons.length ? reasons.join(' | ') : (destinationMismatch ? 'Review filename/destination mapping' : 'No explicit mismatch detected')
