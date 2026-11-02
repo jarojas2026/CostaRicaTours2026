@@ -35,3 +35,7 @@ test('generic searches do not filter the catalog', () => {
 test('unknown specific query produces no match', () => {
   assert.equal(catalogTourSearchScore(poas, 'unicornio espacial'), 0);
 });
+
+test('localized category and region names participate in metadata-tier search', () => {
+  assert.equal(catalogTourSearchScore(poas, 'volcanes'), 60);
+});
