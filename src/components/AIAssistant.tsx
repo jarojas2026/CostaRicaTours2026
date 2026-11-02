@@ -1,4 +1,6 @@
 import { requestCustomerIntake } from '../utils/customerIntake';
+import { buildAgentBookingWhatsAppText } from '../../shared/agentBookingWhatsApp';
+import { directWhatsAppUrl } from '../utils/directWhatsApp';
 import React, { useState, useRef, useEffect } from 'react';
 import { Language, Tour, BookingRequest, AgentId, AIAgent } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -396,6 +398,10 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
       if (onNavigateTab) onNavigateTab('tours');
     } else if (qa.action === 'book_itinerary') {
       if (onNavigateTab) onNavigateTab('itinerary');
+    } else if (qa.action === 'direct_whatsapp' && qa.data?.bookingNumber && buildAgentBookingWhatsAppText({ ...qa.data, language })) {
+      // Reserva pendiente de pago (AGB-…): WhatsApp directo con código, tour, fecha y personas prellenados.
+      const text = buildAgentBookingWhatsAppText({ ...qa.data, language }) as string;
+      window.open(directWhatsAppUrl(text), '_blank', 'noopener,noreferrer');
     } else if (qa.action === 'direct_whatsapp') {
       requestCustomerIntake({ message: 'Hola Costa Rica Tours, quisiera consultar sobre un tour.', language, source: 'ai-assistant-whatsapp' });
     } else if (qa.action === 'send_message' && qa.data?.message) {

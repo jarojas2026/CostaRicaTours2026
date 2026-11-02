@@ -19,7 +19,9 @@
  *  - Las respuestas usan lista blanca: nunca proveedor, costo, comisión ni margen.
  *  - Marcas de tiempo, vencimientos y números los pone el SERVIDOR. Nunca lanza.
  *  - Solo escribe en colecciones privadas de servidor (Admin SDK; reglas cliente en Default Deny).
- *    No envía correos ni mensajes, no borra nada y no modifica la cotización original.
+ *    No envía correos ni mensajes al cliente, no borra nada y no modifica la cotización original.
+ *  - Cada reserva NUEVA avisa al dueño (alerta en admin_alerts + correo a ADMIN_ALERT_EMAIL si hay
+ *    SMTP configurado), sin proveedor ni datos de sesión. Si el aviso falla, la reserva sigue creada.
  */
 import crypto from 'crypto';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -61,6 +63,12 @@ export interface BookingHoldDeps {
   } | null;
   now?: () => Date;
   randomHex?: () => string;
+  /**
+   * Aviso al dueño de cada reserva nueva (backend/agentBookingOwnerNotice.ts: alerta admin +
+   * correo si está configurado). Por defecto el real; si se inyecta `db` (pruebas) y no se pasa
+   * este, no se avisa. `null` lo desactiva.
+   */
+  notifyOwner?: ((booking: Record<string, any>) => Promise<unknown>) | null;
 }
 
 export interface HoldContext { sessionId?: string; userMessage?: string; channel?: 'chat' | 'voice' | 'whatsapp' | 'admin'; language?: 'es' | 'en' }
@@ -174,7 +182,7 @@ export async function confirmBooking(input: { holdNumber?: unknown }, context: H
     }
 
     const bookingNumber = buildNumber('AGB', now, (deps.randomHex ?? (() => crypto.randomBytes(2).toString('hex')))());
-    await db.collection(AGENT_BOOKING_COLLECTION).add({
+    const bookingDoc = {
       bookingNumber,
       status: AGENT_BOOKING_STATUS,
       paymentStatus: AGENT_BOOKING_PAYMENT_STATUS,
@@ -198,7 +206,9 @@ export async function confirmBooking(input: { holdNumber?: unknown }, context: H
       timestamp: now.toISOString(),
       source: 'agent_phase_c',
       createdAt: FieldValue.serverTimestamp(),
-    });
+    };
+    await db.collection(AGENT_BOOKING_COLLECTION).add(bookingDoc);
+    await notifyOwnerSafely(bookingDoc, deps);
     return {
       success: true as const,
       created: true,
@@ -212,5 +222,19 @@ export async function confirmBooking(input: { holdNumber?: unknown }, context: H
     };
   } catch {
     return { success: false as const, created: false, error: 'confirm_failed' };
+  }
+}
+
+/** Aviso al dueño de una reserva recién creada. Nunca lanza ni cambia el resultado de confirmBooking. */
+async function notifyOwnerSafely(booking: Record<string, any>, deps: BookingHoldDeps): Promise<void> {
+  try {
+    const notify = deps.notifyOwner !== undefined
+      ? deps.notifyOwner
+      : deps.db !== undefined
+        ? null
+        : async (b: Record<string, any>) => (await import('./agentBookingOwnerNotice')).notifyOwnerOfAgentBooking(b as any);
+    if (notify) await notify(booking);
+  } catch {
+    /* el aviso nunca afecta la reserva ya creada */
   }
 }

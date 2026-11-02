@@ -21,6 +21,9 @@
  *   /tour/:id con source "tour_page"; exige consentimiento Ley 8968 y un tour del catálogo.
  * - POST /api/leads/map-service-request (público, mismo antiabuso) consulta de un servicio del
  *   mapa (hotel/parque/transporte) con source "map_service"; Ley 8968; nunca /api/bookings.
+ * - GET  /api/admin/agent-bookings       (requireOwner) solo lectura: reservas del asistente
+ *   (`agent_bookings`, pendiente_pago), más nuevas primero, ?limit= (máx 100). Lista blanca:
+ *   sin sesión, proveedor, costo ni margen (backend/agentBookingOwnerNotice.ts).
  * - POST /api/internal/leads/digest       (X-Operator-Key = OPERATOR_API_KEY) resumen diario;
  *   solo registra (dry-run) salvo LEADS_DIGEST_ENABLED=true.
  */
@@ -91,6 +94,14 @@ leadsRouter.post('/api/admin/leads/triage', requireOperator, async (req, res) =>
     }
   }
   res.json({ success: true, updated: result.updated.map(l => ({ id: l.id, triage: l.triage })), notFound: result.notFound, alertsResolved });
+});
+
+// Reservas del asistente (agent_bookings): solo lectura, solo dueño.
+leadsRouter.get('/api/admin/agent-bookings', requireOwner, async (req, res) => {
+  const { listAgentBookings } = await import('../agentBookingOwnerNotice');
+  const result = await listAgentBookings({ limit: req.query.limit });
+  if (!result.ok) return res.status(503).json({ success: false, error: result.error });
+  res.json({ success: true, bookings: result.bookings });
 });
 
 leadsRouter.get('/api/admin/leads/:id', requireOperator, async (req, res) => {

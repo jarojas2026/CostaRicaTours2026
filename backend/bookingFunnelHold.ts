@@ -22,6 +22,9 @@
  *  - Respuestas en lista blanca: nunca proveedor, costo, comisión ni margen.
  */
 import { COMPANY_FACTS } from './agentSkillPack';
+import { findCatalogTour } from './agentProductTools';
+import { redactProviderIdentityForCustomer } from './customerOutboundPrivacy';
+import { buildAgentBookingWhatsAppText } from '../shared/agentBookingWhatsApp';
 import type { ConversationLanguage, ConversationState } from './conversationState';
 
 export interface FunnelHold {
@@ -327,11 +330,29 @@ export function holdStageReply(state: ConversationState, lang: ConversationLangu
   return null;
 }
 
+/** Título público del tour (catálogo), sin identidad del operador. '' si no está. */
+function safeCustomerTourTitle(tourId: string, lang: ConversationLanguage): string {
+  if (!tourId) return '';
+  let t: any;
+  try { t = findCatalogTour(tourId); } catch { t = undefined; }
+  if (!t) return '';
+  const raw = String(t?.title?.[lang] || t?.title?.es || t?.title?.en || '');
+  const providerNames = [t?.operatorName, t?.providerId, t?.operatorId].filter((n: unknown): n is string => typeof n === 'string' && n.length >= 3);
+  return redactProviderIdentityForCustomer(raw, { language: lang, providerNames }).slice(0, 120);
+}
+
 /** Acciones rápidas de la etapa: botón de confirmación literal y contacto de WhatsApp de la agencia. */
 export function holdStageQuickActions(state: ConversationState, lang: ConversationLanguage): Array<{ label: string; action: string; data?: any }> {
   const { hold, booking } = getHoldStage(state);
   if (booking) {
-    return [{ label: `💬 WhatsApp ${COMPANY_FACTS.whatsappDisplay}`, action: 'direct_whatsapp', data: { bookingNumber: booking.bookingNumber } }];
+    // Texto prellenado con código AGB, tour, fecha y personas (shared/agentBookingWhatsApp.ts).
+    const f = funnelRaw(state);
+    const tourId = String(f.quote?.tourId || '');
+    const date = String(f.quote?.date || '');
+    const pax = Number(f.quote?.pax) || null;
+    const tourTitle = safeCustomerTourTitle(tourId, lang);
+    const whatsappText = buildAgentBookingWhatsAppText({ bookingNumber: booking.bookingNumber, tourTitle, date, pax, language: lang });
+    return [{ label: `💬 WhatsApp ${COMPANY_FACTS.whatsappDisplay}`, action: 'direct_whatsapp', data: { bookingNumber: booking.bookingNumber, tourTitle, date, pax, ...(whatsappText ? { whatsappText } : {}) } }];
   }
   if (hold && !booking) {
     const msg = lang === 'en' ? 'Yes, I confirm' : 'Sí, confirmo';
