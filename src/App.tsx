@@ -42,6 +42,7 @@ const FormsManagerModal = lazy(() => import('./components/FormsManagerModal').th
 const TravelerOSPage = lazy(() => import('./pages/TravelerOSPage').then(m => ({ default: m.TravelerOSPage })));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const AIAssistant = lazy(() => import('./components/AIAssistant').then(m => ({ default: m.AIAssistant })));
+const VoiceConciergePage = lazy(() => import('./pages/VoiceConciergePage').then(m => ({ default: m.VoiceConciergePage })));
 const FlightTrackerGadget = lazy(() => import('./components/FlightTrackerGadget').then(m => ({ default: m.FlightTrackerGadget })));
 const GoogleWorkspaceHub = lazy(() => import('./components/GoogleWorkspaceHub').then(m => ({ default: m.GoogleWorkspaceHub })));
 const CounterDeskPage = lazy(() => import('./pages/CounterDeskPage').then(m => ({ default: m.CounterDeskPage })));
