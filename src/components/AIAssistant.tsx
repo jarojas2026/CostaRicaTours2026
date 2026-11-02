@@ -586,6 +586,8 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (error) {
       console.error(error);
+      setFallbackContactMessage(query.trim());
+      setFallbackContactStatus('idle');
       setMessages((prev) => [
         ...prev,
         {
