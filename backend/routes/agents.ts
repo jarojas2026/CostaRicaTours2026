@@ -37,7 +37,7 @@ function conciergeStructuredFields(u: ConciergeUnderstanding | null) {
 
 /** Add the catalogue-backed day-by-day proposal even when a model answered. */
 function withDurationPlan(reply: string, understanding: ConciergeUnderstanding | null, deterministicReply?: string): string {
-  if (!understanding?.understood.days || !deterministicReply) return reply;
+  if (!understanding?.understood.days || !deterministicReply || reply.includes(deterministicReply)) return reply;
   return [reply, deterministicReply].filter(Boolean).join('\\n\\n');
 }
 
