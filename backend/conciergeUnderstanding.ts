@@ -315,7 +315,7 @@ export function understandConciergeMessage<T extends CatalogTourLike>(
   const language = detectLanguage(raw, requested);
   if (isTransportInquiry(raw)) {
     return {
-      understood: { language, asksPrice: /\\b(how much|price|cost|rate|quote|cuanto|precio|tarifa|costo|cotiz)\\b/.test(text) },
+      understood: { language, asksPrice: /(how much|price|cost|rate|quote|cuanto|precio|tarifa|costo|cotiz)/.test(text) },
       isConcreteInquiry: false,
     };
   }
