@@ -159,7 +159,7 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
   const [fallbackContactName, setFallbackContactName] = useState('');
   const [fallbackContactEmail, setFallbackContactEmail] = useState('');
   const [fallbackContactMessage, setFallbackContactMessage] = useState('');
-  const [fallbackContactStatus, setFallbackContactStatus] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
+  const [fallbackContactStatusByMessage, setFallbackContactStatusByMessage] = useState<Record<string, 'idle' | 'sending' | 'sent' | 'failed'>>({});
   const [fallbackConsentByMessage, setFallbackConsentByMessage] = useState<Record<string, boolean>>({});
   const [thinkingMode, setThinkingMode] = useState(false);
   const [aiEngine, setAiEngine] = useState<'claude' | 'gemini'>('claude');
@@ -425,7 +425,7 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
     const email = fallbackContactEmail.trim();
     if (!message || !name || !email || !fallbackConsentByMessage[messageId]) return;
 
-    setFallbackContactStatus('sending');
+    setFallbackContactStatusByMessage((prev) => ({ ...prev, [messageId]: 'sending' }));
     requestCustomerIntake({
       message,
       language,
@@ -433,7 +433,7 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
       customer: { name, email },
       consent: true,
       privacyConsent: true,
-      onResult: (result) => setFallbackContactStatus(result.ok ? 'sent' : 'failed'),
+      onResult: (result) => setFallbackContactStatusByMessage((prev) => ({ ...prev, [messageId]: result.ok ? 'sent' : 'failed' })),
     });
   };
 
@@ -514,7 +514,7 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
       const data = await response.json();
       if (!response.ok || data?.success === false) {
         const recoveryId = `ai-err-${Date.now()}`;
-        setFallbackContactStatus('idle');
+        setFallbackContactStatusByMessage((prev) => ({ ...prev, [recoveryId]: 'idle' }));
         setMessages((prev) => [...prev, {
           id: recoveryId,
           sender: 'assistant',
@@ -607,11 +607,12 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (error) {
       console.error(error);
-      setFallbackContactStatus('idle');
+      const recoveryId = `ai-err-${Date.now()}`;
+      setFallbackContactStatusByMessage((prev) => ({ ...prev, [recoveryId]: 'idle' }));
       setMessages((prev) => [
         ...prev,
         {
-          id: `ai-err-${Date.now()}`,
+          id: recoveryId,
           sender: 'assistant',
           agentId: activeAgentId,
           text: language === 'es'
@@ -999,23 +1000,23 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
                             </label>
                             <button
                               type="submit"
-                              disabled={fallbackContactStatus === 'sending' || fallbackContactStatus === 'sent'}
+                              disabled={(fallbackContactStatusByMessage[msg.id] || 'idle') === 'sending' || (fallbackContactStatusByMessage[msg.id] || 'idle') === 'sent'}
                               className="w-full rounded-lg bg-amber-400 px-3 py-2.5 text-xs font-black text-stone-950 disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                              {fallbackContactStatus === 'sending'
+                              {(fallbackContactStatusByMessage[msg.id] || 'idle') === 'sending'
                                 ? (language === 'es' ? 'Enviando consulta…' : 'Sending inquiry…')
-                                : fallbackContactStatus === 'sent'
+                                : (fallbackContactStatusByMessage[msg.id] || 'idle') === 'sent'
                                   ? (language === 'es' ? 'Consulta enviada' : 'Inquiry sent')
                                   : (language === 'es' ? 'Dejar mi consulta' : 'Send my inquiry')}
                             </button>
-                            {fallbackContactStatus === 'failed' && (
+                            {(fallbackContactStatusByMessage[msg.id] || 'idle') === 'failed' && (
                               <p role="alert" className="text-xs text-amber-200">
                                 {language === 'es'
                                   ? 'No pudimos enviar la consulta ahora. Usá WhatsApp para contactarnos directamente.'
                                   : 'We could not send your inquiry right now. Please use WhatsApp to contact us directly.'}
                               </p>
                             )}
-                            {fallbackContactStatus === 'sent' && (
+                            {(fallbackContactStatusByMessage[msg.id] || 'idle') === 'sent' && (
                               <p role="status" className="text-xs text-emerald-200">
                                 {language === 'es'
                                   ? 'Recibimos tu consulta. Te contactaremos para darle seguimiento.'
