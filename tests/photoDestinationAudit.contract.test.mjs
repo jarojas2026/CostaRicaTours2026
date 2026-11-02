@@ -5,6 +5,16 @@ import fs from 'node:fs';
 const script = fs.readFileSync('scripts/auditPhotoDestinations.mjs', 'utf8');
 const csv = fs.readFileSync('reports/photo-destination-audit.csv', 'utf8');
 const manifest = JSON.parse(fs.readFileSync('src/data/photoManifest.json', 'utf8'));
+function csvColumnCount(line) {
+  let count = 1, quoted = false;
+  for (let i = 0; i < line.length; i += 1) {
+    if (line[i] === '"') {
+      if (quoted && line[i + 1] === '"') { i += 1; continue; }
+      quoted = !quoted;
+    } else if (line[i] === ',' && !quoted) count += 1;
+  }
+  return count;
+}
 const credit = fs.readFileSync('src/components/PhotoCredit.tsx', 'utf8');
 const catalog = fs.readFileSync('src/data/photoCatalog.ts', 'utf8');
 
@@ -23,7 +33,7 @@ test('CSV is committed with all manifest photos and filename/destination/license
   assert.match(lines[0], /destination_mismatch/);
   assert.match(lines[0], /license/);
   assert.equal(lines.length, manifest.photos.length + 1);
-  for (const row of lines.slice(1)) assert.equal(row.split(',').length, 15, 'every CSV row must have 15 columns');
+  for (const row of lines.slice(1)) assert.equal(csvColumnCount(row), 15, 'every CSV row must have 15 columns');
   assert.match(csv, /No explicit mismatch detected/);
 });
 
