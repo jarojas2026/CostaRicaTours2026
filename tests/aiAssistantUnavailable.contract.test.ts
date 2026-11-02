@@ -13,7 +13,7 @@ test('AI service failure gives an honest bilingual unavailable message without a
   assert.match(catchBlock, /Nuestro asistente no está disponible en este momento/);
   assert.match(catchBlock, /Our assistant is unavailable right now/);
   assert.match(catchBlock, /serviceUnavailable: true/);
-  assert.match(catchBlock, /setFallbackContactMessage\(query\.trim\(\)\)/);
+  assert.match(catchBlock, /fallbackInquiry: query\.trim\(\)/);
   assert.doesNotMatch(catchBlock, /intenta preguntarme nuevamente|Please ask me again|inquiryHandoff/);
 });
 
@@ -35,4 +35,19 @@ test('fallback form reuses the existing customer-intake workflow and does not cl
   assert.match(assistant, /onResult: \(result\) => setFallbackContactStatus\(result\.ok \? 'sent' : 'failed'\)/);
   assert.match(assistant, /no crea una reserva ni confirma disponibilidad/);
   assert.match(assistant, /does not create a booking or confirm availability/);
+});
+
+test('HTTP 200 with success false displays recovery instead of a normal assistant answer', () => {
+  const sendHandler = assistant.slice(assistant.indexOf('const handleSendMessage = async'), assistant.indexOf('const currentQuestions ='));
+  assert.match(sendHandler, /if \(!response\.ok \|\| data\?\.success === false\)/);
+  assert.match(sendHandler, /serviceUnavailable: true/);
+  assert.match(sendHandler, /fallbackInquiry: query\.trim\(\)/);
+});
+
+test('fallback recovery binds WhatsApp and form to the originating message and requires explicit consent', () => {
+  assert.match(assistant, /msg\.fallbackInquiry/);
+  assert.match(assistant, /handleFallbackContactSubmit\(event, msg\.fallbackInquiry \|\| '', msg\.id\)/);
+  assert.match(assistant, /fallbackConsentByMessage\[msg\.id\]/);
+  assert.match(assistant, /Acepto que Costa Rica Tours use mi nombre y correo/);
+  assert.match(assistant, /consent: true/);
 });
