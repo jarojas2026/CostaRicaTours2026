@@ -64,7 +64,6 @@ const AboutSection = lazy(() => import('./components/AboutSection').then(m => ({
 // Customer-intake markdown renderer (react-markdown + micromark ≈ 100 kB) loads on first reply.
 const IntakeReplyMarkdown = lazy(() => import('./components/IntakeReplyMarkdown'));
 const BlogArticlePage = lazy(() => import('./pages/BlogArticlePage').then(m => ({ default: m.BlogArticlePage })));
-const VoiceConciergePage = lazy(() => import('./pages/VoiceConciergePage').then(m => ({ default: m.VoiceConciergePage })));
 
 
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
@@ -539,14 +538,8 @@ export default function App() {
               </div>
             } />
 
-            {/* Prototipo: conserje de voz (Web Speech API, $0). No enlazado desde el menú. */}
-            <Route path="/conserje" element={
-              <div className="w-full min-w-0 overflow-x-clip py-5 sm:py-8">
-                <Suspense fallback={<div className="py-24 text-center text-emerald-400">Cargando...</div>}>
-                  <VoiceConciergePage language={language} />
-                </Suspense>
-              </div>
-            } />
+            {/* Retired voice prototype: preserve old links without exposing the prototype. */}
+            <Route path="/conserje" element={<Navigate to="/tours" replace />} />
 
             <Route path="/trip" element={
               <Suspense fallback={<div className="py-24 text-center text-emerald-300">Cargando tu centro de viaje...</div>}>
