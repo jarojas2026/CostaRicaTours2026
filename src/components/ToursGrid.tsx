@@ -10,7 +10,7 @@ import { getLangText } from '../utils/i18n';
 import { Price } from './ui';
 import { useRates } from '../hooks/useMoney';
 import { rateFor } from '../utils/money';
-import { isBookableTour, normalizeCatalogSearch } from '../utils/tourListing';
+import { isBookableTour, normalizeCatalogSearch, catalogTourSearchScore, isGenericCatalogSearch } from '../utils/tourListing';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Compass, Search, Filter, SlidersHorizontal, Sparkles, LayoutGrid, List, 
@@ -131,33 +131,13 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
     if (tour) toggleCompare(tour);
   };
 
+  // A generic query such as "tours Costa Rica" leaves the catalog unfiltered.
+  const activeSearch = searchQuery.trim() && !isGenericCatalogSearch(searchQuery) ? searchQuery : '';
+  const searchScores = new Map(tours.map(tour => [tour.id, activeSearch ? catalogTourSearchScore(tour, activeSearch) : 0]));
+
   // Apply All Filtering & Sorting
   let processedTours = tours.filter(tour => {
-    // Search Filter
-    if (searchQuery.trim()) {
-      const q = normalizeCatalogSearch(searchQuery);
-      const region = REGIONS.find((item) => item.id === tour.region);
-      const category = CATEGORIES.find((item) => item.id === tour.category);
-      const localizedValues = [tour.title, tour.subtitle, tour.description, tour.highlights, tour.inclusions, region?.name, region?.description, category?.name, category?.description]
-        .flatMap((value) => value ? Object.values(value).flatMap((part) => Array.isArray(part) ? part : [part]) : []);
-      const synonyms = [
-        tour.region === 'sarapiqui' ? 'sarapiqui sarapiquí northern plains llanuras del norte río river bote boat aves birding canopy rafting' : '',
-        tour.region === 'central_pacific' ? 'pacifico central central pacific tarcoles carara damas manglar mangrove kayak' : '',
-        tour.region === 'los_santos' ? 'los santos dota san gerardo quetzal aves birdwatching hiking senderismo' : '',
-        tour.region === 'golfito' || tour.region === 'golfo_dulce' ? 'golfito golfo dulce gulf osa puerto jimenez pavones zancudo whale dolphin pesca fishing' : '',
-        tour.region === 'osa' ? 'osa uvita ballena dominical corcovado caño drake bay golfito whale watching' : '',
-        tour.region === 'caribe' || tour.region === 'caribe_sur' ? 'caribe caribbean puerto viejo cahuita limon afrocaribeño afro caribbean' : '',
-        tour.region === 'sjo' || tour.region === 'san_jose' ? 'san jose san josé valle central central valley cartago poas poás irazu i razu' : '',
-        tour.category === 'wildlife' ? 'fauna animales vida silvestre naturaleza wildlife animal spotting' : '',
-        tour.category === 'beaches' ? 'playa playa costa beach ocean snorkeling surf mar' : '',
-        tour.category === 'culture' ? 'cultura café cafe coffee cacao chocolate community historia heritage' : '',
-        tour.category === 'canopy' ? 'zipline tirolesa canopy aventura adventure' : '',
-        tour.category === 'rafting' ? 'rafting whitewater aguas bravas río river' : ''
-      ];
-      const haystack = normalizeCatalogSearch([...localizedValues, tour.location.placeName, tour.region, tour.category, ...synonyms].join(' '));
-      // Todas las palabras deben aparecer (en cualquier orden): "negro caño" también encuentra Caño Negro.
-      if (!q.split(/\s+/).filter(Boolean).every((word) => haystack.includes(word))) return false;
-    }
+    if (activeSearch && (searchScores.get(tour.id) || 0) === 0) return false;
 
     // Category Filter
     if (selectedCategory !== 'all' && tour.category !== selectedCategory) return false;
@@ -192,8 +172,12 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
     return true;
   });
 
-  // Sorting Logic
+  // Search relevance always comes first; the user's selected sort breaks ties.
   processedTours.sort((a, b) => {
+    if (activeSearch) {
+      const relevance = (searchScores.get(b.id) || 0) - (searchScores.get(a.id) || 0);
+      if (relevance !== 0) return relevance;
+    }
     if (sortBy === 'rating' && hasVerifiedRatings) {
       const aRating = isBookableTour(a) && a.reviewsVerified ? a.rating : -1;
       const bRating = isBookableTour(b) && b.reviewsVerified ? b.rating : -1;
@@ -220,7 +204,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
     (selectedCategory !== 'all' ? 1 : 0) +
     (selectedRegion !== 'all' ? 1 : 0) +
     (difficultyFilter !== 'all' ? 1 : 0) +
-    (searchQuery.trim() ? 1 : 0) +
+    (activeSearch ? 1 : 0) +
     (hasBookableOffers && maxPrice < 500 ? 1 : 0) +
     (maxDurationHours < 14 ? 1 : 0) +
     (hasVerifiedRatings && minRating > 0 ? 1 : 0) +
@@ -1086,7 +1070,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
             {t('toursGrid.noToursMatchFilter')}
           </h3>
           <p className="text-xs text-orange-400 max-w-md mx-auto leading-relaxed">
-            {searchQuery.trim() ? t('toursGrid.noResultsTryWord') : t('toursGrid.noResultsWiden')}
+            {activeSearch ? t('toursGrid.noResultsTryWord') : t('toursGrid.noResultsWiden')}
           </p>
           <button
             type="button"
