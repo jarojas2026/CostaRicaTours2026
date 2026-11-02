@@ -473,7 +473,12 @@ export function deterministicConciergeReply(u: ConciergeUnderstanding): string |
       const dayLabel = u.understood.days ? (es ? `Día ${index + 1}: ` : `Day ${index + 1}: `) : '';
       parts.push(`• ${dayLabel}${s.title}${s.referenceLine ? ` — ${s.referenceLine}` : ''}`);
     });
-    if (u.understood.days && u.suggestions.length < u.understood.days) {
+    if (u.understood.days > 14) {
+      parts.push(es
+        ? 'Por claridad, esta respuesta muestra hasta 14 experiencias; es un límite de presentación, no una afirmación de que el catálogo tenga solo 14.'
+        : 'For clarity, this response displays up to 14 experiences; this is a presentation limit, not a claim that the catalogue has only 14.' );
+    }
+    if (u.understood.days && u.understood.days <= 14 && u.suggestions.length < u.understood.days) {
       parts.push(es
         ? `El catálogo consultado solo ofrece ${u.suggestions.length} opción(es) identificadas para esta zona; no voy a inventar las ${u.understood.days - u.suggestions.length} restantes. Podemos completar el plan con días libres o revisar otra región.`
         : `The available catalogue only identifies ${u.suggestions.length} option(s) for this area; I will not invent the remaining ${u.understood.days - u.suggestions.length}. We can leave those days flexible or consider another region.`);
