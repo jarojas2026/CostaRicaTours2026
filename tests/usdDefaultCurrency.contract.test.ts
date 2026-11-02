@@ -15,7 +15,7 @@ test('unsupported saved currency is reset to USD after live rates resolve', () =
   assert.match(app, /availableCurrencies\(snapshot \|\| getRatesSnapshot\(\)\)/);
   assert.match(app, /if \(!supported\.includes\(currency\)\)/);
   assert.match(app, /setCurrencyState\('USD'\)/);
-  assert.match(app, /rememberCurrency\('USD'\)/);
+  assert.doesNotMatch(app, /rememberCurrency\('USD'\)/);
 });
 
 test('CRC is available only with a valid source-backed exchange rate', () => {
@@ -28,4 +28,10 @@ test('currency selector shows unavailable currencies disabled and reflects selec
   assert.match(header, /value=\{currency\}/);
   assert.match(header, /disabled=\{!availableCurrencyList\.includes\(item\)\}/);
   assert.match(header, /\{language\.toUpperCase\(\)\} · \{currency\}/);
+});
+
+test('a temporary rate outage does not overwrite the previously saved currency', () => {
+  assert.match(app, /Keep the visitor's saved choice/);
+  assert.match(app, /setCurrencyState\('USD'\)/);
+  assert.doesNotMatch(app, /setCurrencyState\('USD'\);\s*rememberCurrency\('USD'\)/);
 });
