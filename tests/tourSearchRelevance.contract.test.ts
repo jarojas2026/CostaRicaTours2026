@@ -39,3 +39,8 @@ test('unknown specific query produces no match', () => {
 test('localized category and region names participate in metadata-tier search', () => {
   assert.equal(catalogTourSearchScore(poas, 'volcanes'), 60);
 });
+
+test('generic catalog query ignores punctuation such as a trailing question mark', () => {
+  assert.equal(isGenericCatalogSearch('tours Costa Rica?'), true);
+  assert.equal(catalogSearchTerms('tours Costa Rica?').length, 0);
+});
