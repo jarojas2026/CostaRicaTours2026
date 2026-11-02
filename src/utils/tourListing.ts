@@ -1,4 +1,5 @@
 import { Tour } from '../types';
+import { CATEGORIES, REGIONS } from '../data/catalogMeta';
 
 /** Only explicitly onboarded offers may display as priced/bookable products. */
 export function isBookableTour(tour: Pick<Tour, 'catalogStatus' | 'providerId'>): boolean {
@@ -64,8 +65,12 @@ export function catalogTourSearchScore(tour: Tour, query: string): number {
   const terms = catalogSearchTerms(query);
   if (!terms.length) return 0;
   const title = normalizeCatalogSearch(flattenCatalogValue(tour.title).join(' '));
+  const category = CATEGORIES.find(item => item.id === tour.category);
+  const region = REGIONS.find(item => item.id === tour.region);
   const metadata = normalizeCatalogSearch([
     tour.category, tour.region, tour.location?.placeName,
+    ...flattenCatalogValue(category?.name), ...flattenCatalogValue(category?.description),
+    ...flattenCatalogValue(region?.name), ...flattenCatalogValue(region?.tagline), ...flattenCatalogValue(region?.description),
     ...flattenCatalogValue(tour.highlights), ...flattenCatalogValue(tour.inclusions),
     tourSearchSynonyms(tour)
   ].join(' '));
