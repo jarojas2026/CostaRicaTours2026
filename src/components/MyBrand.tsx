@@ -18,7 +18,7 @@ export const MY_SECTIONS = {
 } as const;
 export type MySection = keyof typeof MY_SECTIONS;
 
-export const MyMark: React.FC<{ text?: 'my' | 'My'; className?: string }> = ({ text = 'my', className = '' }) => (
+export const MyMark: React.FC<{ text?: 'my' | 'My' | 'Mi' | 'Mis; className?: string }> = ({ text = 'my', className = '' }) => (
   <span data-brand="my" className={`${MY_MARK_CLASS} ${className}`}>{text}</span>
 );
 
