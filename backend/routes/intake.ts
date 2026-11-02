@@ -32,7 +32,8 @@ customerIntakeRouter.post('/api/customer-intake', chatLimiter, contactFormGuard,
       sessionId: /^web_[A-Za-z0-9-]{8,80}$/.test(requestedSessionId) ? requestedSessionId : undefined,
       source: req.body?.source || 'web',
       context: req.body?.context,
-      customer: req.body?.customer
+      // Server-side consent gate: unconsented contact data never reaches intake/owner alerts.
+      customer: req.body?.consent === true || req.body?.privacyConsent === true ? req.body?.customer : undefined
     });
     // Formulario de contacto → lead. Los datos de contacto solo se guardan con
     // consentimiento expreso (Ley 8968): body.consent === true.

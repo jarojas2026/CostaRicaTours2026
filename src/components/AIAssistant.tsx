@@ -46,6 +46,10 @@ interface Message {
   recommendedTours?: Tour[];
   /** Client-side acknowledgement + WhatsApp hand-off for concrete trip inquiries. */
   inquiryHandoff?: TripInquiryHandoff;
+  /** Explicit recovery UI when the AI service is unavailable. */
+  serviceUnavailable?: boolean;
+  /** Original user query scoped to this recovery message. */
+  fallbackInquiry?: string;
   quickActions?: Array<{ label: string; action: string; data?: any }>;
   voucher?: any;
   sources?: Array<{ uri: string; title: string }>;
@@ -152,6 +156,11 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
 
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [fallbackContactName, setFallbackContactName] = useState('');
+  const [fallbackContactEmail, setFallbackContactEmail] = useState('');
+  const [fallbackContactMessage, setFallbackContactMessage] = useState('');
+  const [fallbackContactStatusByMessage, setFallbackContactStatusByMessage] = useState<Record<string, 'idle' | 'sending' | 'sent' | 'failed'>>({});
+  const [fallbackConsentByMessage, setFallbackConsentByMessage] = useState<Record<string, boolean>>({});
   const [thinkingMode, setThinkingMode] = useState(false);
   const [aiEngine, setAiEngine] = useState<'claude' | 'gemini'>('claude');
   const [isItineraryModalOpen, setIsItineraryModalOpen] = useState(false);
@@ -409,6 +418,25 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
     }
   };
 
+  const handleFallbackContactSubmit = (event: React.FormEvent<HTMLFormElement>, inquiry: string, messageId: string) => {
+    event.preventDefault();
+    const message = inquiry.trim();
+    const name = fallbackContactName.trim();
+    const email = fallbackContactEmail.trim();
+    if (!message || !name || !email || !fallbackConsentByMessage[messageId]) return;
+
+    setFallbackContactStatusByMessage((prev) => ({ ...prev, [messageId]: 'sending' }));
+    requestCustomerIntake({
+      message,
+      language,
+      source: 'ai-assistant-unavailable',
+      customer: { name, email },
+      consent: true,
+      privacyConsent: true,
+      onResult: (result) => setFallbackContactStatusByMessage((prev) => ({ ...prev, [messageId]: result.ok ? 'sent' : 'failed' })),
+    });
+  };
+
   const handleSendMessage = async (textToSend?: string) => {
     const query = textToSend || inputMessage;
     if ((!query.trim() && !selectedImage) || isLoading) return;
@@ -449,7 +477,23 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
             language
           }),
         });
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data?.success === false || !data?.analysis) {
+          const recoveryId = `ai-image-err-${Date.now()}`;
+          setFallbackContactStatusByMessage((prev) => ({ ...prev, [recoveryId]: 'idle' }));
+          setMessages((prev) => [...prev, {
+            id: recoveryId,
+            sender: 'assistant',
+            agentId: activeAgentId,
+            text: language === 'es'
+              ? 'El análisis de imágenes no está disponible ahora. No se confirmó ninguna reserva ni disponibilidad. Puedes continuar por WhatsApp o dejar tus datos con consentimiento.'
+              : 'Image analysis is unavailable right now. No booking or availability was confirmed. You can continue on WhatsApp or leave your details with consent.',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            serviceUnavailable: true,
+            fallbackInquiry: query.trim() || (language === 'es' ? 'Solicito ayuda con la imagen adjunta.' : 'I need help with the attached image.'),
+          }]);
+          return;
+        }
         const assistantMsg: Message = {
           id: `ai-${Date.now()}`,
           sender: 'assistant',
@@ -484,6 +528,22 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
       });
 
       const data = await response.json();
+      if (!response.ok || data?.success === false) {
+        const recoveryId = `ai-err-${Date.now()}`;
+        setFallbackContactStatusByMessage((prev) => ({ ...prev, [recoveryId]: 'idle' }));
+        setMessages((prev) => [...prev, {
+          id: recoveryId,
+          sender: 'assistant',
+          agentId: activeAgentId,
+          text: language === 'es'
+            ? 'Nuestro asistente no pudo procesar la consulta. No se creó ninguna reserva ni se confirmó disponibilidad. Podés continuar por WhatsApp o dejar tus datos con consentimiento.'
+            : 'Our assistant could not process the inquiry. No booking or availability was confirmed. You can continue on WhatsApp or leave your details with consent.',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          serviceUnavailable: true,
+          fallbackInquiry: query.trim(),
+        }]);
+        return;
+      }
 
       let finalReply = data.reply || (language === 'es' ? '¡Pura Vida! ¿En qué más te puedo colaborar?' : 'Pura Vida! How else can I assist?');
       let explicitRecommendedTours: Tour[] | undefined = undefined;
@@ -563,17 +623,20 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (error) {
       console.error(error);
+      const recoveryId = `ai-err-${Date.now()}`;
+      setFallbackContactStatusByMessage((prev) => ({ ...prev, [recoveryId]: 'idle' }));
       setMessages((prev) => [
         ...prev,
         {
-          id: `ai-err-${Date.now()}`,
+          id: recoveryId,
           sender: 'assistant',
           agentId: activeAgentId,
           text: language === 'es'
-            ? '¡Pura Vida! Disculpa, hubo una interrupción breve en la comunicación. Por favor intenta preguntarme nuevamente.'
-            : 'Pura Vida! Apologies, brief communication interruption. Please ask again.',
+            ? 'Nuestro asistente no está disponible en este momento. Escribinos por WhatsApp o dejanos tu consulta y te respondemos.'
+            : "Our assistant is unavailable right now. Contact us on WhatsApp or leave your inquiry and we'll get back to you.",
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          inquiryHandoff: buildTripInquiryHandoff(query, language, TOURS),
+          serviceUnavailable: true,
+          fallbackInquiry: query.trim(),
         },
       ]);
     } finally {
@@ -895,6 +958,90 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
   }
   return <span key={i} className="whitespace-pre-line">{part}</span>;
 })}
+
+                      {msg.serviceUnavailable && (
+                        <section className="mt-3 rounded-xl border border-amber-400/40 bg-[#020e08] p-3 space-y-3" data-service-unavailable="true">
+                          <p className="text-xs text-emerald-100">
+                            {language === 'es'
+                              ? 'Podés contactarnos directamente o dejar tus datos para que demos seguimiento a tu consulta. Este formulario no crea una reserva ni confirma disponibilidad.'
+                              : 'You can contact us directly or leave your details so we can follow up on your inquiry. This form does not create a booking or confirm availability.'}
+                          </p>
+                          <a
+                            href={directWhatsAppUrl(language === 'es'
+                              ? `Hola Costa Rica Tours. Necesito ayuda con esta consulta: ${msg.fallbackInquiry || ''}`
+                              : `Hello Costa Rica Tours. I need help with this inquiry: ${msg.fallbackInquiry || ''}`)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            data-human-handoff="true"
+                            className="w-full rounded-lg bg-[#25D366] px-3 py-2.5 text-center text-xs font-black text-stone-950 flex items-center justify-center gap-2"
+                          >
+                            <Phone className="h-4 w-4" aria-hidden="true" />
+                            {language === 'es' ? 'Escribir por WhatsApp' : 'Contact us on WhatsApp'}
+                          </a>
+                          <form onSubmit={(event) => handleFallbackContactSubmit(event, msg.fallbackInquiry || '', msg.id)} className="space-y-2.5" data-customer-intake-fallback="true">
+                            <label className="block space-y-1 text-xs text-emerald-100">
+                              <span>{language === 'es' ? 'Nombre' : 'Name'}</span>
+                              <input
+                                required
+                                autoComplete="name"
+                                value={fallbackContactName}
+                                onChange={(event) => setFallbackContactName(event.target.value)}
+                                className="w-full rounded-lg border border-emerald-500/30 bg-[#051c14] px-3 py-2 text-white"
+                              />
+                            </label>
+                            <label className="block space-y-1 text-xs text-emerald-100">
+                              <span>{language === 'es' ? 'Correo electrónico' : 'Email'}</span>
+                              <input
+                                required
+                                type="email"
+                                autoComplete="email"
+                                value={fallbackContactEmail}
+                                onChange={(event) => setFallbackContactEmail(event.target.value)}
+                                className="w-full rounded-lg border border-emerald-500/30 bg-[#051c14] px-3 py-2 text-white"
+                              />
+                            </label>
+                            <label className="block space-y-1 text-xs text-emerald-100">
+                              <span>{language === 'es' ? 'Tu consulta' : 'Your inquiry'}</span>
+                              <textarea
+                                required
+                                rows={3}
+                                value={msg.fallbackInquiry || ''}
+                                readOnly
+                                className="w-full rounded-lg border border-emerald-500/30 bg-[#051c14] px-3 py-2 text-white"
+                              />
+                            </label>
+                            <label className="flex items-start gap-2 text-xs text-emerald-100">
+                              <input type="checkbox" required checked={Boolean(fallbackConsentByMessage[msg.id])} onChange={(event) => setFallbackConsentByMessage((prev) => ({ ...prev, [msg.id]: event.target.checked }))} className="mt-0.5 accent-emerald-500" />
+                              <span>{language === 'es' ? 'Acepto que Costa Rica Tours use mi nombre y correo para dar seguimiento a esta consulta, según la política de privacidad.' : 'I consent to Costa Rica Tours using my name and email to follow up on this inquiry, according to the privacy policy.'}</span>
+                            </label>
+                            <button
+                              type="submit"
+                              disabled={(fallbackContactStatusByMessage[msg.id] || 'idle') === 'sending' || (fallbackContactStatusByMessage[msg.id] || 'idle') === 'sent'}
+                              className="w-full rounded-lg bg-amber-400 px-3 py-2.5 text-xs font-black text-stone-950 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {(fallbackContactStatusByMessage[msg.id] || 'idle') === 'sending'
+                                ? (language === 'es' ? 'Enviando consulta…' : 'Sending inquiry…')
+                                : (fallbackContactStatusByMessage[msg.id] || 'idle') === 'sent'
+                                  ? (language === 'es' ? 'Consulta enviada' : 'Inquiry sent')
+                                  : (language === 'es' ? 'Dejar mi consulta' : 'Send my inquiry')}
+                            </button>
+                            {(fallbackContactStatusByMessage[msg.id] || 'idle') === 'failed' && (
+                              <p role="alert" className="text-xs text-amber-200">
+                                {language === 'es'
+                                  ? 'No pudimos enviar la consulta ahora. Usá WhatsApp para contactarnos directamente.'
+                                  : 'We could not send your inquiry right now. Please use WhatsApp to contact us directly.'}
+                              </p>
+                            )}
+                            {(fallbackContactStatusByMessage[msg.id] || 'idle') === 'sent' && (
+                              <p role="status" className="text-xs text-emerald-200">
+                                {language === 'es'
+                                  ? 'Recibimos tu consulta. Te contactaremos para darle seguimiento.'
+                                  : 'Your inquiry was received. We will follow up with you.'}
+                              </p>
+                            )}
+                          </form>
+                        </section>
+                      )}
 
                       {/* Google Search Grounding Sources Display */}
                       {msg.sources && msg.sources.length > 0 && (
