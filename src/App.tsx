@@ -46,8 +46,10 @@ const CounterDeskPage = lazy(() => import('./pages/CounterDeskPage').then(m => (
 const AutonomousOperationsPage = lazy(() => import('./pages/AutonomousOperationsPage').then(m => ({ default: m.default })));
 const EmailOperationsPage = lazy(() => import('./pages/EmailOperationsPage').then(m => ({ default: m.default })));
 const LeadsPipelinePage = lazy(() => import('./pages/LeadsPipelinePage').then(m => ({ default: m.LeadsPipelinePage })));
-const DigitalCityJoinPage = lazy(() => import('./pages/DigitalCityJoinPage').then(m => ({ default: m.DigitalCityJoinPage })));
-const DigitalCityArchitecturePage = lazy(() => import('./pages/DigitalCityArchitecturePage').then(m => ({ default: m.DigitalCityArchitecturePage })));
+// Digital City routes remain in the codebase but are hidden behind a build-time feature flag.
+const SHOW_DIGITAL_CITY = import.meta.env.VITE_SHOW_DIGITAL_CITY === 'true';
+const DigitalCityJoinPage = SHOW_DIGITAL_CITY ? lazy(() => import('./pages/DigitalCityJoinPage').then(m => ({ default: m.DigitalCityJoinPage }))) : null;
+const DigitalCityArchitecturePage = SHOW_DIGITAL_CITY ? lazy(() => import('./pages/DigitalCityArchitecturePage').then(m => ({ default: m.DigitalCityArchitecturePage }))) : null;
 const LegalPage = lazy(() => import('./pages/LegalPage').then(m => ({ default: m.LegalPage })));
 const TourDetailModal = lazy(() => import('./components/TourDetailModal').then(m => ({ default: m.TourDetailModal })));
 const BookingConfirmationModal = lazy(() => import('./components/BookingConfirmationModal').then(m => ({ default: m.BookingConfirmationModal })));
@@ -415,8 +417,8 @@ export default function App() {
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
             <Route path="/provider/portal" element={<Suspense fallback={<RouteFallback />}><ProviderPortalPage /></Suspense>} />
-            <Route path="/ciudad" element={<Suspense fallback={<div className="py-12 text-center text-amber-200">Cargando ciudad digital…</div>}><DigitalCityArchitecturePage language={language} /></Suspense>} />
-            <Route path="/participar" element={<Suspense fallback={<div className="py-12 text-center text-amber-200">Cargando…</div>}><DigitalCityJoinPage language={language} onOpenPrivacy={() => navigate('/privacy')} /></Suspense>} />
+            <Route path="/ciudad" element={SHOW_DIGITAL_CITY && DigitalCityArchitecturePage ? <Suspense fallback={<div className="py-12 text-center text-amber-200">Cargando ciudad digital…</div>}><DigitalCityArchitecturePage language={language} /></Suspense> : <Navigate to="/tours" replace />} />
+            <Route path="/participar" element={SHOW_DIGITAL_CITY && DigitalCityJoinPage ? <Suspense fallback={<div className="py-12 text-center text-amber-200">Cargando…</div>}><DigitalCityJoinPage language={language} onOpenPrivacy={() => navigate('/privacy')} /></Suspense> : <Navigate to="/tours" replace />} />
 
             <Route path="/" element={
               <HomePage
