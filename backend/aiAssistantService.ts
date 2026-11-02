@@ -12,6 +12,7 @@ import { recordAiObservation } from './aiHealth';
 import { getAiConfig, getLightModel, providerOrder } from './aiConfig';
 import { callProvider, guardedGeminiGenerate, isBreakerOpen, redactPii, runGenerative } from './aiRouter';
 import { knowledgeToolReply } from './knowledgeReplies';
+import { isTransportInquiry, transportQuoteReply } from '../src/utils/transportIntent';
 import { TOURS } from '../src/data/toursData';
 import { generateClaudeChatResponse, getClaudeClient } from './claudeService';
 import {
@@ -864,6 +865,19 @@ export async function runCounterAgent(
         ]
       };
     }
+  }
+
+  // 2.5 TRANSPORT QUOTATIONS: never substitute an unrelated catalogue tour.
+  if (isTransportInquiry(message)) {
+    return {
+      reply: transportQuoteReply(isEn ? 'en' : 'es'),
+      agentId: 'counter_agent',
+      agentName: 'Asistente de viajes • Costa Rica Tours',
+      agentCategory: 'INFORMACION',
+      escalation: { escalated: false, level: 'none' },
+      recommendedTours: [],
+      quickActions: [],
+    };
   }
 
   // 3. EJECUCIÓN DIRECTA DE RESERVAS EN TIEMPO REAL
