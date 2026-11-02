@@ -8,6 +8,8 @@ import { knowledgeToolReply } from '../backend/knowledgeReplies';
 
 const transferPhrases = [
   { language: 'en' as const, text: 'How much is a transfer from SJO to Manuel Antonio?' },
+  { language: 'es' as const, text: 'Cotízame un carro privado desde SJO hasta Manuel Antonio para 3 personas' },
+  { language: 'en' as const, text: 'Quote a private car from SJO to Manuel Antonio for 3 people' },
   { language: 'en' as const, text: 'Do you offer an airport shuttle from San José to Manuel Antonio?' },
   { language: 'es' as const, text: '¿Cuánto cuesta un traslado desde SJO a Manuel Antonio?' },
   { language: 'es' as const, text: 'Necesito transporte del aeropuerto a Manuel Antonio para 3 personas.' },
@@ -78,4 +80,19 @@ test('chat UI suppresses catalogue recommendations and tour handoff for transfer
   assert.match(source, /const transportInquiry = isTransportInquiry\(query\)/);
   assert.match(source, /transportInquiry \? undefined : \(serverInquiryHandoff/);
   assert.match(source, /const matchedTours = transportInquiry \? \[\]/);
+});
+
+test('emergency guidance precedes transport matching for taxi accidents', () => {
+  const reply = knowledgeToolReply("Taxi accident, I'm injured in San José", 'en') || '';
+  assert.match(reply, /call 911 now/i);
+  assert.doesNotMatch(reply, /pickup location|destination|transfer date/i);
+});
+
+test('concierge route handles emergency and transport intents before model dispatch', () => {
+  const source = readFileSync('backend/routes/agents.ts', 'utf8');
+  const route = source.slice(source.indexOf("agentsRouter.post('/api/gemini/concierge'"));
+  const emergency = route.indexOf('const emergency = emergencyReply');
+  const transport = route.indexOf('if (isTransportInquiry(userMsg))');
+  const claude = route.indexOf("if (engine === 'claude')");
+  assert.ok(emergency >= 0 && transport > emergency && claude > transport);
 });
