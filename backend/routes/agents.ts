@@ -30,8 +30,15 @@ function conciergeStructuredFields(u: ConciergeUnderstanding | null) {
     understood: u.understood,
     isConcreteInquiry: u.isConcreteInquiry,
     ...(u.quote ? { quote: u.quote } : {}),
+    ...(u.suggestions?.length ? { suggestions: u.suggestions } : {}),
     ...(u.inquiryHandoff ? { inquiryHandoff: u.inquiryHandoff } : {}),
   };
+}
+
+/** Add the catalogue-backed day-by-day proposal even when a model answered. */
+function withDurationPlan(reply: string, understanding: ConciergeUnderstanding | null, deterministicReply?: string): string {
+  if (!understanding?.understood.days || !deterministicReply) return reply;
+  return [reply, deterministicReply].filter(Boolean).join('\\n\\n');
 }
 
 /** Agentes, concierge, counter y skills. */
@@ -105,7 +112,7 @@ agentsRouter.post('/api/gemini/concierge', redactAssistantReplyMiddleware, async
       try {
         const claudeResult = await generateClaudeChatResponse(userMsg, lang, history || []);
         return res.json({
-          reply: enforceSingleReferencePrice(claudeResult.reply, understanding),
+          reply: withDurationPlan(enforceSingleReferencePrice(claudeResult.reply, understanding), understanding, deterministicReply),
           quickActions: claudeResult.quickActions || [],
           success: true,
           source: 'claude_vertex',
@@ -121,7 +128,7 @@ agentsRouter.post('/api/gemini/concierge', redactAssistantReplyMiddleware, async
     if (agentId === 'counter_agent') {
       const counterResult = await runCounterAgent(userMsg, {}, context || {}, lang, history || []);
       return res.json({
-        reply: enforceSingleReferencePrice(counterResult.reply, understanding),
+        reply: withDurationPlan(enforceSingleReferencePrice(counterResult.reply, understanding), understanding, deterministicReply),
         quickActions: counterResult.quickActions,
         recommendedTours: counterResult.recommendedTours,
         voucherPreview: counterResult.voucherPreview,
@@ -147,7 +154,7 @@ agentsRouter.post('/api/gemini/concierge', redactAssistantReplyMiddleware, async
     // Sin modelo: primero las herramientas verificables (emergencias, guías ICT, parques SINAC, tours por presupuesto).
     const toolReply = modelAnswered ? undefined : knowledgeToolReply(userMsg, lang);
     res.json({
-      reply: toolReply ?? (!modelAnswered && deterministicReply ? deterministicReply : enforceSingleReferencePrice(assistantResult.reply, understanding)),
+      reply: withDurationPlan(toolReply ?? (!modelAnswered && deterministicReply ? deterministicReply : enforceSingleReferencePrice(assistantResult.reply, understanding)), understanding, deterministicReply),
       quickActions: assistantResult.quickActions,
       success: true,
       source: assistantResult.modelUsed || (toolReply ? 'knowledge_tools' : deterministicReply ? 'deterministic_extraction' : 'gemini_fallback'),
