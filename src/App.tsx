@@ -64,7 +64,6 @@ const AboutSection = lazy(() => import('./components/AboutSection').then(m => ({
 // Customer-intake markdown renderer (react-markdown + micromark ≈ 100 kB) loads on first reply.
 const IntakeReplyMarkdown = lazy(() => import('./components/IntakeReplyMarkdown'));
 const BlogArticlePage = lazy(() => import('./pages/BlogArticlePage').then(m => ({ default: m.BlogArticlePage })));
-const VoiceConciergePage = lazy(() => import('./pages/VoiceConciergePage').then(m => ({ default: m.VoiceConciergePage })));
 
 
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
