@@ -41,7 +41,6 @@ const quote = (over: Record<string, any> = {}) => ({
   internal: { providerId: 'secret-op', supplierCostUSD: 200, marginUSD: 90 }, ...over,
 });
 
-const testMode = () => ({ mode: 'test' as const, blocked: false });
 
 test('hold_booking aparta la cotización de la misma sesión, sin cobrar y con vencimiento acotado', async () => {
   const db = fakeDb({ agent_quotes: [quote()] });
@@ -81,72 +80,46 @@ async function heldDb() {
 
 test('confirm_booking exige confirmación explícita literal del cliente', async () => {
   const { db, holdNumber } = await heldDb();
-  let called = 0;
-  const deps = { db, now: () => NOW, stripeMode: testMode, createCheckoutSession: async () => { called++; return { id: 'cs_test_1', url: 'https://checkout.stripe.com/c/pay/cs_test_1' }; } };
+  const deps = { db, now: () => NOW };
   for (const msg of ['ok', 'tal vez', 'no confirmo todavía', "I don't confirm", '']) {
     const r: any = await confirmBooking({ holdNumber }, { sessionId: SESSION, userMessage: msg }, deps);
     assert.equal(r.error, 'explicit_confirmation_required', msg);
   }
-  assert.equal(called, 0);
+  assert.equal((db.cols[AGENT_BOOKING_COLLECTION] || []).length, 0);
   assert.equal(isExplicitConfirmation('Sí, confirmo la reserva'), true);
   assert.equal(isExplicitConfirmation('Yes, I confirm'), true);
 });
 
-test('confirm_booking: reserva PENDIENTE + enlace Stripe TEST; nada confirmado ni pagado; sin pago a proveedor', async () => {
+test('confirm_booking: reserva PENDIENTE DE PAGO sin proveedor de pago; nada confirmado ni pagado; sin pago a proveedor', async () => {
   const { db, holdNumber } = await heldDb();
-  const sessions: any[] = [];
-  const deps = { db, now: () => NOW, randomHex: () => 'a1b2', stripeMode: testMode, createCheckoutSession: async (p: any) => { sessions.push(p); return { id: 'cs_test_1', url: 'https://checkout.stripe.com/c/pay/cs_test_1' }; } };
+  const deps = { db, now: () => NOW, randomHex: () => 'a1b2' };
   const r: any = await confirmBooking({ holdNumber }, { sessionId: SESSION, userMessage: 'Sí, confirmo' }, deps);
   assert.equal(r.success, true);
   assert.equal(r.bookingNumber, 'AGB-20261028-A1B2');
-  assert.equal(r.status, 'pending_supplier_verification');
-  assert.equal(r.mode, 'test');
-  assert.equal(sessions[0].amountCents, 29000);
-  assert.equal(sessions[0].currency, 'usd');
-  // Stripe: vencimiento entre 30 min y 24 h.
-  const secs = sessions[0].expiresAtUnix - Math.floor(NOW.getTime() / 1000);
-  assert.ok(secs >= 30 * 60 && secs <= 24 * 3600);
+  assert.equal(r.status, 'pendiente_pago');
+  assert.equal(r.paymentStatus, 'awaiting_payment_instructions');
+  assert.equal(r.charged, false);
+  assert.equal(r.paymentUrl, undefined);
   const booking = db.cols[AGENT_BOOKING_COLLECTION][0].data;
-  assert.equal(booking.status, 'pending_supplier_verification');
+  assert.equal(booking.status, 'pendiente_pago');
+  assert.equal(booking.paymentProvider, null);
+  assert.equal(booking.ownerVerificationRequired, true);
   assert.equal(booking.supplierVerified, false);
   assert.equal(booking.supplierPayout, 'manual_owner_only');
-  assert.notEqual(booking.paymentStatus, 'completed');
-  assert.doesNotMatch(JSON.stringify({ r, booking }), /secret-op|supplierCost|margin|confirmada|"paid"/);
-  // Idempotente: un enlace por apartado.
+  assert.doesNotMatch(JSON.stringify({ r, booking }), /secret-op|supplierCost|margin|confirmada|"paid"|completed|stripe|checkout|https?:\/\//i);
+  // Idempotente: una reserva por apartado.
   const again: any = await confirmBooking({ holdNumber }, { sessionId: SESSION, userMessage: 'Sí, confirmo' }, deps);
   assert.equal(again.reused, true);
-  assert.equal(sessions.length, 1);
+  assert.equal(db.cols[AGENT_BOOKING_COLLECTION].length, 1);
 });
 
-test('confirm_booking respeta ALLOW_STRIPE_LIVE y solo opera en TEST', async () => {
+test('confirm_booking: otra sesión o apartado vencido no crean reserva', async () => {
   const { db, holdNumber } = await heldDb();
-  let called = 0;
-  const mk = (stripeMode: any) => ({ db, now: () => NOW, stripeMode, createCheckoutSession: async () => { called++; return { id: 'cs', url: 'u' }; } });
-  const ctx = { sessionId: SESSION, userMessage: 'Yes, I confirm' };
-  assert.equal((await confirmBooking({ holdNumber }, ctx, mk(() => ({ mode: 'live', blocked: true }))) as any).error, 'stripe_live_blocked');
-  assert.equal((await confirmBooking({ holdNumber }, ctx, mk(() => ({ mode: 'live', blocked: false }))) as any).error, 'stripe_test_only');
-  assert.equal((await confirmBooking({ holdNumber }, ctx, mk(() => ({ mode: 'none', blocked: false }))) as any).error, 'stripe_not_configured');
-  assert.equal(called, 0);
-  // Guardia real: sk_live_ sin ALLOW_STRIPE_LIVE ⇒ bloqueado antes de Stripe.
-  const prevKey = process.env.STRIPE_SECRET_KEY; const prevAllow = process.env.ALLOW_STRIPE_LIVE;
-  process.env.STRIPE_SECRET_KEY = 'sk_live_fake_for_contract'; delete process.env.ALLOW_STRIPE_LIVE;
-  try {
-    assert.equal((await confirmBooking({ holdNumber }, ctx, { db, now: () => NOW, createCheckoutSession: async () => { called++; return { id: 'x', url: 'y' }; } }) as any).error, 'stripe_live_blocked');
-  } finally {
-    if (prevKey === undefined) delete process.env.STRIPE_SECRET_KEY; else process.env.STRIPE_SECRET_KEY = prevKey;
-    if (prevAllow !== undefined) process.env.ALLOW_STRIPE_LIVE = prevAllow;
-  }
-  assert.equal(called, 0);
-});
-
-test('confirm_booking: otra sesión o apartado vencido no generan enlace', async () => {
-  const { db, holdNumber } = await heldDb();
-  let called = 0;
-  const deps = (now: Date) => ({ db, now: () => now, stripeMode: testMode, createCheckoutSession: async () => { called++; return { id: 'cs', url: 'u' }; } });
+  const deps = (now: Date) => ({ db, now: () => now });
   assert.equal((await confirmBooking({ holdNumber }, { sessionId: 'otra', userMessage: 'confirmo' }, deps(NOW)) as any).error, 'hold_not_found');
   const later = new Date(NOW.getTime() + (HOLD_DURATION_MINUTES + 1) * 60_000);
   assert.equal((await confirmBooking({ holdNumber }, { sessionId: SESSION, userMessage: 'confirmo' }, deps(later)) as any).error, 'hold_expired');
-  assert.equal(called, 0);
+  assert.equal((db.cols[AGENT_BOOKING_COLLECTION] || []).length, 0);
 });
 
 test('registro Fase C: herramientas con efectos, bloqueadas por voz y sin pagos a proveedores', () => {
@@ -159,6 +132,6 @@ test('registro Fase C: herramientas con efectos, bloqueadas por voz y sin pagos 
   assert.equal(isTransactionalTool('confirm_booking'), true);
   assert.deepEqual(filterVoiceTools([{ name: 'hold_booking' }, { name: 'confirm_booking' }, { name: 'get_product' }], {}).map(d => d.name), ['get_product']);
   const src = readFileSync('backend/agentBookingHold.ts', 'utf8');
-  assert.doesNotMatch(src, /transfers\.create|payouts\.create|sk_live_[A-Za-z0-9]/);
+  assert.doesNotMatch(src, /transfers\.create|payouts\.create|sk_live_[A-Za-z0-9]|stripe|checkout\.sessions/i);
   assert.match(buildNumber('HLD', NOW, 'ab'), /^HLD-20261028-00AB$/);
 });

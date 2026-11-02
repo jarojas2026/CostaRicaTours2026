@@ -34,6 +34,23 @@ import {
   type ConversationSlots,
   type ConversationState,
 } from './conversationState';
+import {
+  HOLD_STAGE_TOOLS,
+  getHoldStage,
+  hasPendingHold,
+  holdStageGroundTexts,
+  holdStagePrompt,
+  holdStageQuickActions,
+  holdStageReply,
+  readBooking,
+  readHold,
+  runConfirmStep,
+  runHoldStage,
+  runHoldStep,
+  type FunnelBooking,
+  type FunnelHold,
+  type HoldStageDeps,
+} from './bookingFunnelHold';
 
 export type FunnelSlot = 'zone' | 'date' | 'pax' | 'tour';
 
@@ -63,9 +80,13 @@ export interface FunnelState {
   quote?: FunnelQuote;
   ticket?: { ticketNumber: string; key: string };
   lastAsked?: FunnelSlot | 'done';
+  /** Apartado sin cobro de la cotización (hold_booking). */
+  hold?: FunnelHold;
+  /** Reserva pendiente creada tras confirmación explícita (confirm_booking). */
+  booking?: FunnelBooking;
 }
 
-export const FUNNEL_TOOL_NAMES = ['save_booking_details', 'create_quote', 'create_ticket'] as const;
+export const FUNNEL_TOOL_NAMES = ['save_booking_details', 'create_quote', 'create_ticket', 'hold_booking', 'confirm_booking'] as const;
 const MAX_ROUNDS = 3;
 const MAX_RECOMMENDATIONS = 3;
 
@@ -92,6 +113,8 @@ export function getFunnel(state: ConversationState): FunnelState {
     ...(raw.quote && typeof raw.quote === 'object' ? { quote: raw.quote } : {}),
     ...(raw.ticket && typeof raw.ticket === 'object' ? { ticket: raw.ticket } : {}),
     ...(raw.lastAsked ? { lastAsked: raw.lastAsked } : {}),
+    ...(readHold(raw.hold) ? { hold: readHold(raw.hold) } : {}),
+    ...(readBooking(raw.booking) ? { booking: readBooking(raw.booking) } : {}),
   };
 }
 
@@ -102,7 +125,8 @@ export function withFunnel(state: ConversationState, funnel: FunnelState): Conve
 /** ¿Este turno lo atiende el embudo? (intención nueva o embudo activo sin pedido de salida). */
 export function shouldRunFunnel(state: ConversationState, message: string): boolean {
   if (FUNNEL_EXIT.test(norm(message))) return false;
-  return getFunnel(state).active || detectBookingIntent(message);
+  // Un apartado esperando confirmación ("Sí, confirmo") también lo atiende el embudo.
+  return getFunnel(state).active || hasPendingHold(state) || detectBookingIntent(message);
 }
 
 /** Siguiente dato que falta, en orden fijo. null = listo para cotizar. */
@@ -456,7 +480,7 @@ function deterministicReply(state: ConversationState, lang: ConversationLanguage
 
 export type FunnelChat = (params: { messages: any[]; tools?: any[] }) => Promise<any>;
 
-export interface FunnelTurnDeps extends FunnelToolDeps {
+export interface FunnelTurnDeps extends FunnelToolDeps, HoldStageDeps {
   /** Cliente del modelo (Groq OpenAI-compatible). Sin él, respuesta determinista. */
   chat?: FunnelChat;
   now?: () => Date;
@@ -510,6 +534,8 @@ export const FUNNEL_TOOLS = [
       },
     },
   },
+  // Apartado y confirmación (#485): el servidor valida etapa, sesión y confirmación literal.
+  ...HOLD_STAGE_TOOLS,
 ];
 
 export function buildFunnelSystemPrompt(state: ConversationState, lang: ConversationLanguage): string {
@@ -518,14 +544,18 @@ export function buildFunnelSystemPrompt(state: ConversationState, lang: Conversa
   const missing = nextMissingSlot(state.slots, funnel);
   const prefs = describeSlots({ ...state.slots, language: undefined }, 'en') || 'none yet';
   const recs = funnel.recommended.length ? formatRecommendations(funnel.recommended, lang) : '';
+  const stage = getHoldStage(state);
+  const stagePrompt = holdStagePrompt(state);
   return [
     en ? 'You are the booking assistant of Costa Rica Tours. Reply ONLY in English.' : 'Eres el asistente de reservas de Costa Rica Tours. Responde SOLO en español.',
     'Be warm and brief (max ~90 words). Follow the booking steps strictly.',
     `Saved booking details: ${prefs}.${funnel.selectedTourId ? ` Chosen tour id: ${funnel.selectedTourId}.` : ''}`,
     missing
       ? `Missing next: ${missing}. Ask ONLY for this one item (one question). Do not ask for anything already saved. Do not ask for names, emails or phone numbers.`
+      : funnel.quote && (stage.hold || stage.booking)
+        ? stagePrompt
       : funnel.quote
-        ? `The quote is already created: ${JSON.stringify(funnel.quote)}. Present it (number, total, per person, valid 48 hours, availability confirmed before any payment, nothing charged). Do not call create_quote again.`
+        ? `The quote is already created: ${JSON.stringify(funnel.quote)}. Present it (number, total, per person, valid 48 hours, availability confirmed before any payment, nothing charged). Do not call create_quote again. ${stagePrompt}`
         : funnel.ticket
           ? `No quote was possible; a human will quote it. Share request number ${funnel.ticket.ticketNumber}. Nothing was charged.`
           : 'All details are saved: call create_quote now (do not ask anything else first).',
@@ -540,6 +570,7 @@ function groundTextsFor(state: ConversationState, extra: string[] = []): string[
   const funnel = getFunnel(state);
   const texts = [formatRecommendations(funnel.recommended, 'es'), formatRecommendations(funnel.recommended, 'en'), ...extra];
   if (funnel.quote) texts.push(`USD ${funnel.quote.totalPrice} USD ${funnel.quote.unitPrice}`);
+  texts.push(...holdStageGroundTexts(state));
   if (state.slots.budget) texts.push(`${state.slots.budget.currency === 'CRC' ? '₡' : 'USD '}${state.slots.budget.amount}`);
   return texts;
 }
@@ -581,6 +612,8 @@ export async function runFunnelTurn(params: {
   const lang: ConversationLanguage = params.state.slots.language || params.language;
   let state = prepareFunnelState(params.state, params.message, lang, deps.catalog);
   const ctx = { sessionId: params.sessionId, language: lang };
+  // Apartado que el cliente ya vio ANTES de este mensaje (requisito para confirmar).
+  const heldBeforeTurn = getHoldStage(params.state).hold;
   const toolCalls: Array<{ name: string; ok: boolean }> = [];
   const toolTexts: string[] = [];
   let quoteResult: any = null;
@@ -594,13 +627,28 @@ export async function runFunnelTurn(params: {
     toolTexts.push(JSON.stringify(step.result));
   }
 
+  // Apartado / confirmación decididos por el servidor (pedido de reservar o "Sí, confirmo" literal).
+  let stageStep: 'hold_booking' | 'confirm_booking' | null = null;
+  let stageResult: any = null;
+  if (getFunnel(state).quote) {
+    const stage = await runHoldStage({ state, message: params.message, quoteReused: quoteResult?.reused === true, heldBeforeTurn, ctx, now }, deps);
+    state = stage.state;
+    if (stage.step) {
+      stageStep = stage.step;
+      stageResult = stage.result;
+      toolCalls.push({ name: stage.step, ok: Boolean(stage.result?.success) });
+      toolTexts.push(JSON.stringify(stage.result));
+    }
+  }
+
   let reply = '';
   let modelUsed = 'booking_funnel';
   if (deps.chat) {
     try {
       const messages: any[] = [{ role: 'system', content: buildFunnelSystemPrompt(state, lang) }];
       for (const t of params.state.turns.slice(-6, -1)) messages.push({ role: t.role, content: t.text });
-      const serverNote = quoteResult ? `\n\n[SERVER create_quote result: ${JSON.stringify(quoteResult)}]` : '';
+      const serverNote = (quoteResult ? `\n\n[SERVER create_quote result: ${JSON.stringify(quoteResult)}]` : '')
+        + (stageStep ? `\n\n[SERVER ${stageStep} result: ${JSON.stringify(stageResult)}]` : '');
       messages.push({ role: 'user', content: `${params.message}${serverNote}` });
       for (let round = 0; round <= MAX_ROUNDS; round++) {
         const response = await deps.chat({ messages, tools: round < MAX_ROUNDS ? FUNNEL_TOOLS : undefined });
@@ -634,6 +682,19 @@ export async function runFunnelTurn(params: {
             const step = await runTicketTool(state, args, ctx, deps);
             state = step.state;
             result = step.result;
+          } else if (name === 'hold_booking') {
+            const step = await runHoldStep(state, ctx, args, deps);
+            state = step.state;
+            result = step.result;
+            if (!stageStep) { stageStep = 'hold_booking'; stageResult = step.result; }
+            messages[0] = { role: 'system', content: buildFunnelSystemPrompt(state, lang) };
+          } else if (name === 'confirm_booking') {
+            // Siempre contra el mensaje LITERAL del cliente y el apartado previo a este turno.
+            const step = await runConfirmStep(state, { ...ctx, userMessage: params.message, heldBeforeTurn }, args, deps);
+            state = step.state;
+            result = step.result;
+            if (step.result?.success) { stageStep = 'confirm_booking'; stageResult = step.result; }
+            messages[0] = { role: 'system', content: buildFunnelSystemPrompt(state, lang) };
           } else {
             result = { error: 'tool_not_allowed' };
           }
@@ -649,7 +710,10 @@ export async function runFunnelTurn(params: {
   }
   // Idioma: si el modelo contestó en otro idioma, se usa la respuesta determinista en el del cliente.
   const replyLang = reply ? detectLanguage(reply) : undefined;
-  if (!reply || (replyLang && replyLang !== lang)) { reply = deterministicReply(state, lang, quoteResult); modelUsed = 'booking_funnel'; }
+  if (!reply || (replyLang && replyLang !== lang)) {
+    reply = holdStageReply(state, lang, stageStep, stageResult) ?? deterministicReply(state, lang, quoteResult);
+    modelUsed = 'booking_funnel';
+  }
 
   const guard = guardFunnelReply(reply, groundTextsFor(state, toolTexts), lang, deps.providerNames);
   const funnel = getFunnel(state);
@@ -658,7 +722,8 @@ export async function runFunnelTurn(params: {
 
   const quickActions: Array<{ label: string; action: string; data?: any }> = [];
   if (missing === 'tour') getFunnel(state).recommended.forEach((r, i) => quickActions.push({ label: `${i + 1}. ${r.title}`.slice(0, 60), action: 'send_message', data: { message: String(i + 1) } }));
-  if (funnel.quote) quickActions.push({ label: lang === 'en' ? '💬 Talk to our team' : '💬 Hablar con el equipo', action: 'direct_whatsapp' });
+  quickActions.push(...holdStageQuickActions(state, lang));
+  if (funnel.quote && !quickActions.some(q => q.action === 'direct_whatsapp')) quickActions.push({ label: lang === 'en' ? '💬 Talk to our team' : '💬 Hablar con el equipo', action: 'direct_whatsapp' });
   return { reply: guard.reply, state, modelUsed, quickActions, toolCalls, guard: { removedPrices: guard.removedPrices, supplierRedactions: guard.supplierRedactions } };
 }
 

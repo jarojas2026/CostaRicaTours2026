@@ -6,12 +6,10 @@
  *   una persona). Crea un documento en `agent_booking_holds` y devuelve su número (HLD-…).
  *
  * confirm_booking: con confirmación explícita del cliente en su mensaje literal, convierte un
- *   apartado vigente en una reserva PENDIENTE (`agent_bookings`, status
- *   'pending_supplier_verification') y genera un enlace de pago Stripe en MODO TEST.
- *   - Respeta stripeModeGuard: clave en vivo sin ALLOW_STRIPE_LIVE ⇒ bloqueado. Además, esta
- *     herramienta de IA solo opera en TEST: con clave en vivo (aunque ALLOW_STRIPE_LIVE=true)
- *     responde stripe_test_only. Pasar a vivo exige un cambio de código revisado por el dueño.
- *   - La reserva queda pendiente hasta que el dueño verifica manualmente al proveedor. Nunca se
+ *   apartado vigente en una reserva PENDIENTE DE PAGO (`agent_bookings`, status 'pendiente_pago',
+ *   paymentStatus 'awaiting_payment_instructions'). Es independiente del proveedor de pago: no crea
+ *   enlaces ni cobra; la agencia envía instrucciones/enlace de pago por un canal humano.
+ *   - La reserva queda pendiente hasta que el dueño verifica manualmente el pago y al proveedor. Nunca se
  *     marca como confirmada ni pagada aquí; nunca se paga a proveedores (pagos a proveedores son
  *     manuales y solo los aprueba el dueño, docs/REGLAS_PLATAFORMA.md).
  *
@@ -27,15 +25,11 @@ import crypto from 'crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { hashIdentifier } from './agentEventLog';
 import { AGENT_QUOTE_COLLECTION } from './agentQuote';
-import { checkStripeMode, type StripeModeCheck } from './stripeModeGuard';
 
 export const AGENT_HOLD_COLLECTION = 'agent_booking_holds';
 export const AGENT_BOOKING_COLLECTION = 'agent_bookings';
 /** Duración del apartado (acotada al vencimiento de la cotización). */
 export const HOLD_DURATION_MINUTES = 60;
-/** Stripe exige que una sesión de checkout venza entre 30 min y 24 h. */
-const CHECKOUT_MIN_MS = 31 * 60 * 1000;
-const CHECKOUT_MAX_MS = 23 * 60 * 60 * 1000;
 const CR_OFFSET_MS = 6 * 60 * 60 * 1000;
 
 const QUOTE_NUMBER = /^QTE-\d{8}-[A-F0-9]{4}$/;
@@ -67,17 +61,6 @@ export interface BookingHoldDeps {
   } | null;
   now?: () => Date;
   randomHex?: () => string;
-  stripeMode?: () => StripeModeCheck;
-  /** Crea la sesión de checkout Stripe (TEST). Inyectable en tests: nunca se llama a Stripe en CI. */
-  createCheckoutSession?: (params: CheckoutParams) => Promise<{ id: string; url: string | null }>;
-}
-
-export interface CheckoutParams {
-  amountCents: number;
-  currency: 'usd';
-  productName: string;
-  expiresAtUnix: number;
-  metadata: Record<string, string>;
 }
 
 export interface HoldContext { sessionId?: string; userMessage?: string; channel?: 'chat' | 'voice' | 'whatsapp' | 'admin'; language?: 'es' | 'en' }
@@ -151,24 +134,15 @@ export async function holdBooking(input: { quoteNumber?: unknown }, context: Hol
   }
 }
 
-async function defaultCreateCheckoutSession(params: CheckoutParams) {
-  const [{ getStripe }, { checkoutOrigin }] = await Promise.all([import('./bookingService'), import('./commercePolicy')]);
-  const stripe = getStripe(); // assertStripeTestMode dentro de getStripe.
-  if (!stripe) throw Object.assign(new Error('stripe_not_configured'), { code: 'stripe_not_configured' });
-  const origin = checkoutOrigin();
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    payment_method_types: ['card'],
-    line_items: [{ price_data: { currency: params.currency, product_data: { name: params.productName }, unit_amount: params.amountCents }, quantity: 1 }],
-    metadata: params.metadata,
-    expires_at: params.expiresAtUnix,
-    success_url: `${origin}/?booking=pending&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/?booking=canceled`,
-  });
-  return { id: session.id, url: session.url };
-}
+/** Estado de la reserva creada por confirm_booking: pendiente de pago, sin proveedor de pago asignado. */
+export const AGENT_BOOKING_STATUS = 'pendiente_pago' as const;
+export const AGENT_BOOKING_PAYMENT_STATUS = 'awaiting_payment_instructions' as const;
 
-/** Convierte un apartado vigente en reserva pendiente + enlace de pago Stripe TEST. */
+/**
+ * Convierte un apartado vigente en reserva PENDIENTE DE PAGO (independiente del proveedor de pago).
+ * No crea enlaces ni cobra: la agencia envía las instrucciones/enlace de pago por un canal humano
+ * y el dueño verifica manualmente el pago y al proveedor.
+ */
 export async function confirmBooking(input: { holdNumber?: unknown }, context: HoldContext = {}, deps: BookingHoldDeps = {}) {
   try {
     const holdNumber = String(input.holdNumber ?? '').trim().toUpperCase();
@@ -178,12 +152,6 @@ export async function confirmBooking(input: { holdNumber?: unknown }, context: H
     }
     const sessionHash = hashIdentifier('session', context.sessionId);
     if (!sessionHash) return { success: false as const, created: false, error: 'session_required' };
-
-    // Guardia Stripe antes de tocar datos: solo TEST.
-    const mode = (deps.stripeMode ?? checkStripeMode)();
-    if (mode.blocked) return { success: false as const, created: false, error: 'stripe_live_blocked' };
-    if (mode.mode === 'live') return { success: false as const, created: false, error: 'stripe_test_only' };
-    if (mode.mode === 'none') return { success: false as const, created: false, error: 'stripe_not_configured', next: 'create_ticket' };
 
     const db = await resolveDb(deps);
     if (!db) return { success: false as const, created: false, error: 'storage_unavailable' };
@@ -202,29 +170,18 @@ export async function confirmBooking(input: { holdNumber?: unknown }, context: H
     const existing = await findOne(db, AGENT_BOOKING_COLLECTION, 'holdId', holdDoc.id);
     const ex = existing?.data();
     if (ex) {
-      return { success: true as const, created: false, reused: true, bookingNumber: String(ex.bookingNumber), status: String(ex.status), paymentStatus: String(ex.paymentStatus), paymentUrl: ex.paymentUrl ?? null, mode: 'test' as const, totalPrice: total, currency: 'USD' };
+      return { success: true as const, created: false, reused: true, bookingNumber: String(ex.bookingNumber), status: String(ex.status), paymentStatus: String(ex.paymentStatus), totalPrice: total, currency: 'USD' };
     }
 
     const bookingNumber = buildNumber('AGB', now, (deps.randomHex ?? (() => crypto.randomBytes(2).toString('hex')))());
-    const expiresAtMs = Math.min(now.getTime() + CHECKOUT_MAX_MS, Math.max(now.getTime() + CHECKOUT_MIN_MS, holdExpiry));
-    const session = await (deps.createCheckoutSession ?? defaultCreateCheckoutSession)({
-      amountCents: Math.round(total * 100),
-      currency: 'usd',
-      productName: `Costa Rica Tours — ${String(hold.tourId || 'tour')} — ${String(hold.date || '')} — ${Number(hold.pax) || 1} pax`.slice(0, 120),
-      expiresAtUnix: Math.floor(expiresAtMs / 1000),
-      // Sin bookingId: el webhook actual no reconcilia esta reserva; el dueño la verifica a mano.
-      metadata: { agentBookingNumber: bookingNumber, holdNumber, quoteNumber: String(hold.quoteNumber || ''), source: 'agent_confirm_booking' },
-    });
-    if (!session?.id || !session.url) return { success: false as const, created: false, error: 'checkout_unavailable' };
-
     await db.collection(AGENT_BOOKING_COLLECTION).add({
       bookingNumber,
-      status: 'pending_supplier_verification',
-      paymentStatus: 'payment_link_created',
-      stripeMode: 'test',
-      checkoutSessionId: session.id,
-      paymentUrl: session.url,
-      paymentLinkExpiresAt: new Date(expiresAtMs).toISOString(),
+      status: AGENT_BOOKING_STATUS,
+      paymentStatus: AGENT_BOOKING_PAYMENT_STATUS,
+      // Sin proveedor de pago: la agencia elige el medio y envía instrucciones/enlace por canal humano.
+      paymentProvider: null,
+      paymentInstructionsSent: false,
+      ownerVerificationRequired: true,
       holdId: holdDoc.id,
       holdNumber,
       quoteNumber: String(hold.quoteNumber || ''),
@@ -246,17 +203,14 @@ export async function confirmBooking(input: { holdNumber?: unknown }, context: H
       success: true as const,
       created: true,
       bookingNumber,
-      status: 'pending_supplier_verification' as const,
-      paymentStatus: 'payment_link_created' as const,
-      paymentUrl: session.url,
-      mode: 'test' as const,
+      status: AGENT_BOOKING_STATUS,
+      paymentStatus: AGENT_BOOKING_PAYMENT_STATUS,
       totalPrice: total,
       currency: 'USD',
-      message: 'Booking is PENDING: our team verifies availability with the local operator before confirming. Stripe TEST mode: no real charge. Never say the booking is confirmed or paid.',
+      charged: false,
+      message: 'Booking is PENDING PAYMENT: the agency will send payment instructions/link shortly through a human channel and verifies availability with the local operator. Nothing was charged. Never say the booking is confirmed or paid and never invent a payment link.',
     };
-  } catch (err: any) {
-    if (String(err?.message || '').startsWith('STRIPE_LIVE_BLOCKED')) return { success: false as const, created: false, error: 'stripe_live_blocked' };
-    if (err?.code === 'stripe_not_configured') return { success: false as const, created: false, error: 'stripe_not_configured', next: 'create_ticket' };
+  } catch {
     return { success: false as const, created: false, error: 'confirm_failed' };
   }
 }

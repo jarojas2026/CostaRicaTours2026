@@ -376,6 +376,7 @@ Reply ONLY with "YES" or "NO".`;
       1,
       Math.min(10, Number(platformControls?.values?.max_agent_tool_rounds || platformControls?.max_agent_tool_rounds) || 3)
     );
+    let heldThisTurn = false;
     while (toolRounds < maxToolRounds) {
       const result = await runGenerative({
         task: 'concierge',
@@ -412,13 +413,24 @@ Reply ONLY with "YES" or "NO".`;
       for (const call of calls.slice(0, 6)) {
         const toolName = call.name || 'unknown_tool';
         try {
+          // confirm_booking nunca en el mismo turno en que se apartó: el cliente debe ver el resumen antes.
+          if (toolName === 'confirm_booking' && heldThisTurn) {
+            throw new Error('explicit_confirmation_required: muestre el resumen del apartado y pida confirmación explícita en un mensaje nuevo del cliente.');
+          }
           if (options.voiceChannel && !voiceTransactionsAllowed() && isTransactionalTool(toolName)) {
             throw new Error('Por voz no se reserva ni se paga: derive al formulario de cotización o a un enlace de pago generado por una persona.');
           }
           if (options.allowMutations === false && mutationTools.has(toolName)) {
             throw new Error('Esta herramienta cambia el estado operativo y requiere una solicitud no escalada con autorización explícita.');
           }
-          const result = await executeAgentTool(toolName as any, call.args || {});
+          // Contexto del SERVIDOR para Fase C (sesión, mensaje literal del cliente, canal, idioma).
+          const result = await executeAgentTool(toolName as any, call.args || {}, {
+            sessionId,
+            userMessage: message,
+            channel: options.voiceChannel ? 'voice' : 'chat',
+            language
+          });
+          if (toolName === 'hold_booking' && result?.success === true) heldThisTurn = true;
           functionParts.push({
             functionResponse: {
               id: call.id,
