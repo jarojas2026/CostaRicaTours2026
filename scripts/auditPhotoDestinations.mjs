@@ -54,20 +54,21 @@ const headers = ['audit_date','key','place','regions','source','source_filename'
 const rows = manifest.photos.map(photo => {
   const sourceFilename = filenameFromSourcePage(photo.sourcePage);
   const urlFilename = filenameFromUrl(photo.url);
-  const filenameMatch = !sourceFilename || sameFilename(sourceFilename, urlFilename);
+  // Only Commons entries have a source-page filename to compare. Unsplash is N/A, not MATCH.
+  const filenameMatch = photo.source === 'wikimedia-commons' && sourceFilename ? sameFilename(sourceFilename, urlFilename) : null;
   const declared = normalize([photo.place, ...(photo.regions || []).map(region => regionAliases[region] || region), photo.inCostaRica === true ? 'Costa Rica' : ''].join(' '));
   const allNames = normalize([sourceFilename, urlFilename].join(' '));
   const foreignHits = foreignPlaces.filter(place => hasPlace(allNames, place) && !hasPlace(declared, place));
   const knownCRHits = costaRicaPlaces.filter(place => hasPlace(allNames, place));
   const destinationMismatch = foreignHits.length > 0 || knownCRHits.some(place => !hasPlace(declared, place));
   const reasons = [
-    !filenameMatch ? 'URL filename differs from Commons source page' : '',
+    filenameMatch === false ? 'URL filename differs from Commons source page' : '',
     foreignHits.length ? 'foreign place in filename: ' + foreignHits.join('; ') : '',
     knownCRHits.some(place => !hasPlace(declared, place)) ? 'Costa Rica place in filename differs from declared place/region: ' + knownCRHits.filter(place => !hasPlace(declared, place)).join('; ') : ''
   ].filter(Boolean);
   return [
     auditDate, photo.key, photo.place, (photo.regions || []).join(';'), photo.source, sourceFilename, urlFilename,
-    filenameMatch ? 'MATCH' : 'REVIEW', destinationMismatch ? 'REVIEW' : 'NO_SIGNAL',
+    filenameMatch === null ? 'N/A' : filenameMatch ? 'MATCH' : 'REVIEW', destinationMismatch ? 'REVIEW' : 'NO_SIGNAL',
     photo.author, photo.license, photo.licenseUrl, photo.sourcePage, photo.credit,
     reasons.length ? reasons.join(' | ') : (destinationMismatch ? 'Review filename/destination mapping' : 'No explicit mismatch detected')
   ];
@@ -75,6 +76,6 @@ const rows = manifest.photos.map(photo => {
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 fs.writeFileSync(outputPath, [headers, ...rows].map(row => row.map(csvCell).join(',')).join('\n') + '\n', 'utf8');
-const filenameIssues = rows.filter(row => row[6] === 'REVIEW').length;
-const destinationIssues = rows.filter(row => row[7] === 'REVIEW').length;
+const filenameIssues = rows.filter(row => row[7] === 'REVIEW').length;
+const destinationIssues = rows.filter(row => row[8] === 'REVIEW').length;
 console.log(`CSV: ${outputPath}\nFotos: ${rows.length}; filename mismatch: ${filenameIssues}; destination mismatch: ${destinationIssues}\nNo se modificó ningún activo ni manifest.`);
