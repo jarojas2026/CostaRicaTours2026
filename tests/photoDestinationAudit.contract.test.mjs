@@ -53,5 +53,5 @@ test('non-Commons photo filenames are N/A, not falsely marked MATCH', () => {
   assert.match(script, /filenameMatch === null \? 'N\/A'/);
   const unsplashRows = manifest.photos.filter(p => p.source === 'unsplash');
   assert.ok(unsplashRows.length > 0);
-  assert.match(csv, /,N\/A,NO_SIGNAL,/);
+  assert.match(csv, /"N\/A","NO_SIGNAL"/);
 });
