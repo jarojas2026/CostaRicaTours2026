@@ -7,7 +7,8 @@ import { catalogSearchHref, readCatalogRouteFilters } from './utils/catalogRoute
 import { useTours } from './contexts/ToursContext';
 import { Tour, Language, Currency, TourCategory, TourRegion, BookingRequest } from './types';
 import { fetchExchangeRates } from './utils/i18n';
-import { getRatesSnapshot, availableCurrencies } from './utils/money';
+import { getRatesSnapshot } from './utils/exchangeRates';
+import { availableCurrencies } from './utils/money';
 import { getInitialCurrency, getInitialLanguage, rememberCurrency, rememberLanguage } from './i18n';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
