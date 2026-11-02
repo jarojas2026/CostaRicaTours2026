@@ -183,6 +183,5 @@ export function supplierReply(message: string, es: boolean): string | undefined 
 export function knowledgeToolReply(message: string, language: 'es' | 'en'): string | undefined {
   const es = language !== 'en';
   void loadLayer; // capas cargadas bajo demanda por las herramientas
-  if (isTransportInquiry(message)) return transportQuoteReply(es ? 'es' : 'en');
-  return emergencyReply(message, es) ?? supplierReply(message, es) ?? guidesReply(message, es) ?? parkReply(message, es) ?? toursReply(message, es) ?? bookingReply(message, es);
+  return emergencyReply(message, es) ?? (isTransportInquiry(message) ? transportQuoteReply(es ? 'es' : 'en') : undefined) ?? supplierReply(message, es) ?? guidesReply(message, es) ?? parkReply(message, es) ?? toursReply(message, es) ?? bookingReply(message, es);
 }
