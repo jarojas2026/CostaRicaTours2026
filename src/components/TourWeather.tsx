@@ -45,21 +45,51 @@ function dayLabel(date: string, es: boolean): string {
  */
 export function TourWeather({ lat, lng, language }: { lat: number; lng: number; language: Language }) {
   const [days, setDays] = useState<ForecastDay[] | null>(null);
+  const [forecastState, setForecastState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
   const es = language === 'es';
 
   useEffect(() => {
-    if (!Number.isFinite(lat) || !Number.isFinite(lng) || (lat === 0 && lng === 0)) return;
     const controller = new AbortController();
+    let active = true;
     setDays(null);
+    setForecastState('loading');
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || (lat === 0 && lng === 0)) {
+      setForecastState('unavailable');
+      return () => { active = false; controller.abort(); };
+    }
     fetch(`/api/weather/forecast?lat=${encodeURIComponent(lat.toFixed(2))}&lon=${encodeURIComponent(lng.toFixed(2))}`, { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : null))
       .then((data: ForecastResponse | null) => {
-        if (data?.success && Array.isArray(data.days) && data.days.length >= 3) setDays(data.days.slice(0, 5));
+        if (!active) return;
+        if (data?.success && Array.isArray(data.days) && data.days.length >= 3) {
+          setDays(data.days.slice(0, 5));
+          setForecastState('ready');
+        } else {
+          setDays(null);
+          setForecastState('unavailable');
+        }
       })
-      .catch(() => { /* silencioso */ });
-    return () => controller.abort();
+      .catch((error) => {
+        if (!active || error?.name === 'AbortError') return;
+        setDays(null);
+        setForecastState('unavailable');
+      });
+    return () => { active = false; controller.abort(); };
   }, [lat, lng]);
 
+  if (forecastState === 'loading') return null;
+  if (forecastState === 'unavailable') {
+    return (
+      <section data-testid="tour-weather-unavailable" aria-label={es ? 'Pronóstico no disponible' : 'Forecast unavailable'} className="rounded-2xl border border-white/10 bg-stone-950/30 p-4">
+        <h2 className="text-lg font-bold text-white">{es ? 'Pronóstico temporalmente no disponible' : 'Forecast temporarily unavailable'}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-stone-400">
+          {es
+            ? 'No pudimos verificar el clima para esta ubicación. Consulta fuentes meteorológicas oficiales y confirma con el operador si hay cambios; el pronóstico no garantiza que una actividad se realice.'
+            : 'We could not verify weather for this location. Check official weather sources and confirm any changes with the operator; a forecast never guarantees an activity will run.'}
+        </p>
+      </section>
+    );
+  }
   if (!days) return null;
   const rainyDays = days.filter(rainy);
 
