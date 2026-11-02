@@ -123,6 +123,36 @@ test('two-day English request responds in English and does not invent missing ca
   assert.match(reply, /March/);
 });
 
+test('concierge API returns catalogue day suggestions and same-language reply for multi-day requests', async () => {
+  const saved = { gemini: process.env.GEMINI_API_KEY, google: process.env.GOOGLE_API_KEY };
+  delete process.env.GEMINI_API_KEY;
+  delete process.env.GOOGLE_API_KEY;
+  const { createApp } = await import('../backend/app');
+  const server = createApp().listen(0);
+  try {
+    const { port } = server.address() as AddressInfo;
+    const res = await fetch(`http://127.0.0.1:${port}/api/gemini/concierge`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ message: 'Quiero conocer Uvita 2 días para 4 personas en marzo', language: 'en' }),
+    });
+    const body: any = await res.json();
+    assert.equal(body.understood?.language, 'es');
+    assert.equal(body.understood?.days, 2);
+    assert.equal(body.understood?.people, 4);
+    assert.equal(body.understood?.month, 3);
+    assert.equal(body.suggestions?.length, 2);
+    assert.match(body.reply, /Día 1:/);
+    assert.match(body.reply, /Día 2:/);
+    assert.match(body.reply, /4 personas/);
+    assert.match(body.reply, /marzo/);
+  } finally {
+    server.close();
+    if (saved.gemini !== undefined) process.env.GEMINI_API_KEY = saved.gemini;
+    if (saved.google !== undefined) process.env.GOOGLE_API_KEY = saved.google;
+  }
+});
+
 test('POST /api/gemini/concierge returns structured understanding even without an AI key', async () => {
   const saved = { gemini: process.env.GEMINI_API_KEY, google: process.env.GOOGLE_API_KEY };
   delete process.env.GEMINI_API_KEY;
