@@ -564,7 +564,7 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
         (combinedText.includes('rafting') && t.category === 'rafting') ||
         (combinedText.includes('manuel antonio') && t.region === 'manuel_antonio') ||
         (combinedText.includes('tortuguero') && t.region === 'tortuguero')
-      ).slice(0, 2);
+      ).slice(0, 2));
 
       const assistantMsg: Message = {
         id: `ai-${Date.now()}`,
