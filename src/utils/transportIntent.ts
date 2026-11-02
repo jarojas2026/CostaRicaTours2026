@@ -4,6 +4,8 @@ export function isTransportInquiry(input: string): boolean {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
+  const mentionsTour = /\b(tours?|excursions?|excursiones?|tourist activities|actividades turisticas|experiencias?)\b/.test(normalized);
+  if (mentionsTour) return false;
   return /\b(transfers?|airport transfer|shuttles?|traslados?|transporte|transportation|transport service|servicio de transporte|taxi|private driver|chofer|conductor|airport pickup|pickup service|drop[- ]?off)\b/.test(normalized);
 }
 
