@@ -18,6 +18,7 @@
 import { parseTripRequest, type CatalogTourLike } from '../src/utils/tripRequestParser';
 import { referenceTotalLine, formatUsdReference } from '../src/utils/referencePrice';
 import { directWhatsAppUrl } from '../src/utils/directWhatsApp';
+import { isTransportInquiry } from '../src/utils/transportIntent';
 
 export type ConciergeLanguage = 'es' | 'en';
 
@@ -312,6 +313,12 @@ export function understandConciergeMessage<T extends CatalogTourLike>(
   const text = normalize(raw);
   const requested: ConciergeLanguage = options.requestedLanguage === 'en' ? 'en' : 'es';
   const language = detectLanguage(raw, requested);
+  if (isTransportInquiry(raw)) {
+    return {
+      understood: { language, asksPrice: /\\b(how much|price|cost|rate|quote|cuanto|precio|tarifa|costo|cotiz)\\b/.test(text) },
+      isConcreteInquiry: false,
+    };
+  }
   const now = options.now ?? new Date();
 
   const base = parseTripRequest(raw);
