@@ -477,7 +477,23 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
             language
           }),
         });
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data?.success === false || !data?.analysis) {
+          const recoveryId = `ai-image-err-${Date.now()}`;
+          setFallbackContactStatusByMessage((prev) => ({ ...prev, [recoveryId]: 'idle' }));
+          setMessages((prev) => [...prev, {
+            id: recoveryId,
+            sender: 'assistant',
+            agentId: activeAgentId,
+            text: language === 'es'
+              ? 'El análisis de imágenes no está disponible ahora. No se confirmó ninguna reserva ni disponibilidad. Puedes continuar por WhatsApp o dejar tus datos con consentimiento.'
+              : 'Image analysis is unavailable right now. No booking or availability was confirmed. You can continue on WhatsApp or leave your details with consent.',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            serviceUnavailable: true,
+            fallbackInquiry: query.trim() || (language === 'es' ? 'Solicito ayuda con la imagen adjunta.' : 'I need help with the attached image.'),
+          }]);
+          return;
+        }
         const assistantMsg: Message = {
           id: `ai-${Date.now()}`,
           sender: 'assistant',
