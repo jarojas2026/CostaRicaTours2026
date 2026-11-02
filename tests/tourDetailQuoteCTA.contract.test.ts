@@ -25,3 +25,8 @@ test('Poás US$125 remains explicitly an unverified working reference, not a pub
   assert.match(publication, /tour\.priceSource === 'precio_referencia'/);
   assert.match(publication, /priceCheckedAt/);
 });
+
+test('quote disclaimer wraps on wider layouts instead of squeezing the CTA row', () => {
+  assert.match(page, /sm:flex-row sm:flex-wrap sm:items-center sm:justify-between/);
+  assert.match(page, /basis-full text-xs leading-relaxed text-stone-400/);
+});
