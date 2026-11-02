@@ -417,7 +417,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <p className={sectionLabelClass}>my<span className="text-white/80">CostaRicaTours</span></p>
                   <button type="button" onClick={handleOpenBookings} className={`group ${menuItemClass}`}>
                     <ShoppingBag className="w-4 h-4 text-orange-400" aria-hidden="true" />
-                    <span className="flex-1"><MyLabel section="bookings" /></span>
+                    <span className="flex-1"><MyLabel section="bookings" language={language} /></span>
                     {count > 0 && <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-orange-500 text-stone-950 text-[11px] font-black flex items-center justify-center">{count}</span>}
                   </button>
                   <button type="button" onClick={() => go('/tours?favorites=1')} className={menuItemClass}>
@@ -426,15 +426,15 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
                   <button type="button" onClick={() => go(MY_SECTIONS.trip.to)} className={`group ${menuItemClass}`}>
                     <Compass className="w-4 h-4 text-teal-300" aria-hidden="true" />
-                    <MyLabel section="trip" />
+                    <MyLabel section="trip" language={language} />
                   </button>
                   <button type="button" onClick={handleOpenItinerary} className={`group ${menuItemClass}`}>
                     <Sparkles className="w-4 h-4 text-amber-300" aria-hidden="true" />
-                    <MyLabel section="planner" />
+                    <MyLabel section="planner" language={language} />
                   </button>
                   <button type="button" onClick={() => go(MY_SECTIONS.flights.to)} className={`group ${menuItemClass}`}>
                     <Plane className="w-4 h-4 text-sky-300" aria-hidden="true" />
-                    <MyLabel section="flights" />
+                    <MyLabel section="flights" language={language} />
                   </button>
 
                   {/* Preferences */}
