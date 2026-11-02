@@ -348,7 +348,9 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
   const referenceParts = referencePrice === undefined ? undefined : referencePriceParts(referencePrice, currency, priceRate, language, rates);
   const priceRateNote = referenceParts?.rateNote || referenceParts?.rateNotice;
   const priceNote = referencePrice === undefined ? null : (language === 'es' ? 'sujeto a confirmación' : 'subject to confirmation');
-  const ctaLabel = language === 'es' ? 'Cotizar / Reservar' : 'Get a quote / Book';
+  const ctaLabel = isBookable
+    ? (language === 'es' ? 'Cotizar / Reservar' : 'Get a quote / Book')
+    : (language === 'es' ? 'Solicitar cotización' : 'Request a quote');
   const openQuoteForm = () => {
     const node = quoteRef.current;
     if (!node) return;
@@ -425,6 +427,18 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
                 <button type="button" onClick={openQuoteForm} aria-controls="tour-quote" className="rounded-2xl bg-emerald-500 px-6 py-3 font-black text-stone-950 shadow-lg shadow-emerald-500/20 transition-colors hover:bg-emerald-400 focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300/60">
                   {ctaLabel}
                 </button>
+                <p className="basis-full text-xs leading-relaxed text-stone-400" data-testid="tour-price-confirmation-note">
+                  {language === 'es'
+                    ? 'El precio final y la disponibilidad se confirman con el proveedor antes de cualquier pago.'
+                    : 'Final price and availability are confirmed with the provider before any payment.'}
+                </p>
+                {tour.id === 'poas-volcano-coffee-waterfall' && (
+                  <p className="basis-full text-xs text-amber-200/90" data-testid="poas-reference-price-note">
+                    {language === 'es'
+                      ? 'Referencia de trabajo solicitada: US$125; pendiente de verificación del operador (no es tarifa confirmada).'
+                      : 'Requested working reference: US$125; pending operator verification (not a confirmed fare).'}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-wrap gap-4">
