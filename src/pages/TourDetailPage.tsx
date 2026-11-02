@@ -419,7 +419,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
               </div>
               <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-tight">{getLangText(tour.title, language)}</h1>
 
-              <div data-testid="tour-cta" className="flex flex-col gap-3 rounded-[2rem] border border-emerald-500/30 bg-emerald-950/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div data-testid="tour-cta" className="flex flex-col gap-3 rounded-[2rem] border border-emerald-500/30 bg-emerald-950/30 p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <div>
                   <div data-testid="tour-cta-price" className="text-2xl font-black text-emerald-300">{priceLabel}</div>
                   {priceNote && <div className="text-xs font-semibold text-stone-400">{priceNote}</div>}
