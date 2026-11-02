@@ -19,10 +19,11 @@ test('audit script detects URL/source filename mismatch and explicit destination
 test('CSV is committed with all manifest photos and filename/destination/license columns', () => {
   const lines = csv.trim().split(/\r?\n/);
   assert.match(lines[0], /audit_date/);
-  assert.match(lines[1], /filename_match/);
-  assert.match(lines[1], /destination_mismatch/);
-  assert.match(lines[1], /license/);
-  assert.equal(lines.length, manifest.photos.length + 2);
+  assert.match(lines[0], /filename_match/);
+  assert.match(lines[0], /destination_mismatch/);
+  assert.match(lines[0], /license/);
+  assert.equal(lines.length, manifest.photos.length + 1);
+  for (const row of lines.slice(1)) assert.equal(row.split(',').length, 15, 'every CSV row must have 15 columns');
   assert.match(csv, /No explicit mismatch detected/);
 });
 
