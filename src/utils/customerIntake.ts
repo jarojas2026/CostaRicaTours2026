@@ -6,6 +6,9 @@ export interface CustomerIntakeRequest {
   source?: string;
   sessionId?: string;
   customer?: { name?: string; email?: string; phone?: string };
+  /** Consentimiento expreso para usar datos de contacto en seguimiento. */
+  consent?: boolean;
+  privacyConsent?: boolean;
   context?: Record<string, any>;
   /** Antiabuso (shared/formAbuse): honeypot y marca de tiempo del formulario. */
   website?: string;
