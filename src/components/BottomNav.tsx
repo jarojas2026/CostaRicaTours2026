@@ -44,7 +44,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ language, activeTab }) => 
   const isAdminRoute = location.pathname.startsWith('/admin');
 
   return (
-    <div className="lg:hidden fixed bottom-3 left-4 right-4 z-[60] max-w-md mx-auto pointer-events-auto">
+    <div data-testid="bottom-nav" className="lg:hidden fixed bottom-3 left-4 right-4 z-[60] max-w-md mx-auto pointer-events-auto">
       <nav
         className={`grid ${isAdmin ? 'grid-cols-5' : 'grid-cols-4'} items-center h-14 px-2 bg-[#02140c]/90 backdrop-blur-2xl border border-emerald-500/30 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.4)]`}
         aria-label={t('Navegación principal', 'Primary navigation')}
