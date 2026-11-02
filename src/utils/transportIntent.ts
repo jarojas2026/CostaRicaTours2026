@@ -4,7 +4,7 @@ export function isTransportInquiry(input: string): boolean {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
-  return /\b(transfers?|airport transfer|shuttles?|traslados?|transporte|transportation|transport service|servicio de transporte|taxi|private driver|chofer|conductor|airport pickup|pickup service|drop[- ]?off)\b/.test(normalized);
+  return /\b(transfers?|airport transfer|shuttles?|traslados?|transporte|transportation|transport service|servicio de transporte|taxi|private driver|private car|private vehicle|carro privado|auto privado|vehiculo privado|vehículo privado|chofer|conductor|airport pickup|pickup service|drop[- ]?off)\b/.test(normalized);
 }
 
 export function transportQuoteReply(language: 'es' | 'en'): string {
