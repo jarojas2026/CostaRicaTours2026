@@ -206,6 +206,8 @@ export default function App() {
             message,
             language,
             sessionId,
+            // Do not transmit contact details unless the visitor explicitly consented.
+            customer: detail.consent === true || detail.privacyConsent === true ? detail.customer : undefined,
             source: detail.source || `web:${location.pathname}`
           })
         });
