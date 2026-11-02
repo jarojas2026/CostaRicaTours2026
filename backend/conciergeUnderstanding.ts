@@ -140,8 +140,8 @@ const NUMBER_WORDS: Record<string, number> = {
 const NUM = `(\\d{1,2}|${Object.keys(NUMBER_WORDS).join('|')})`;
 const toNumber = (token: string): number => (/^\d+$/.test(token) ? Number(token) : NUMBER_WORDS[token] ?? NaN);
 
-const EN_HINTS = /\\b(i|we|want|would|like|how much|price|people|for|the|tour|in|please|book|cost|trip|next|kids|adults|days?|nights?|travel|visit|stay|march|april|june|july|august|september|october|november|december|january|february)\\b/g;
-const ES_HINTS = /\\b(quiero|queremos|cuanto|cuesta|precio|personas|para|el|la|los|las|en|por favor|reservar|viaje|nosotros|ninos|adultos|de|con|dias?|noches?|viajar|visitar|quedar|marzo|abril|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|enero|febrero)\\b/g;
+const EN_HINTS = /\b(i|we|want|would|like|how much|price|people|for|the|tour|in|please|book|cost|trip|next|kids|adults|days?|nights?|travel|visit|stay|march|april|june|july|august|september|october|november|december|january|february)\b/g;
+const ES_HINTS = /\b(quiero|queremos|cuanto|cuesta|precio|personas|para|el|la|los|las|en|por favor|reservar|viaje|nosotros|ninos|adultos|de|con|dias?|noches?|viajar|visitar|quedar|marzo|abril|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|enero|febrero)\b/g;
 
 export function detectLanguage(text: string, fallback: ConciergeLanguage = 'es'): ConciergeLanguage {
   const t = normalize(text);
