@@ -87,6 +87,42 @@ test('frontend accepts only a well-formed server hand-off to the official number
   assert.equal(serverInquiryHandoff({ reply: 'hola' }), undefined);
 });
 
+test('two-day trip returns two distinct catalogue experiences and preserves people and month in Spanish', () => {
+  const regionalTours = [
+    { id: 'uvita-whale-watching', title: { es: 'Avistamiento de ballenas', en: 'Whale watching' }, category: 'wildlife', region: 'osa', priceUSD: 85 },
+    { id: 'marino-ballena-kayak', title: { es: 'Kayak Marino Ballena', en: 'Marino Ballena Kayak' }, category: 'kayak', region: 'osa', priceUSD: 60 },
+    { id: 'nauyaca-waterfall', title: { es: 'Catarata Nauyaca', en: 'Nauyaca Waterfall' }, category: 'nature', region: 'osa', priceUSD: 35 },
+  ];
+  const u = understandConciergeMessage('Quiero conocer Uvita 2 días para 4 personas en marzo', regionalTours, { now, requestedLanguage: 'en' });
+  assert.equal(u.understood.language, 'es');
+  assert.equal(u.understood.days, 2);
+  assert.equal(u.understood.people, 4);
+  assert.equal(u.understood.month, 3);
+  assert.equal(u.suggestions?.length, 2);
+  const reply = deterministicConciergeReply(u) || '';
+  assert.match(reply, /Día 1:/);
+  assert.match(reply, /Día 2:/);
+  assert.match(reply, /4 personas/);
+  assert.match(reply, /marzo/);
+});
+
+test('two-day English request responds in English and does not invent missing catalogue experiences', () => {
+  const oneRegionalTour = [
+    { id: 'uvita-whale-watching', title: { es: 'Avistamiento de ballenas', en: 'Whale watching' }, category: 'wildlife', region: 'osa', priceUSD: 85 },
+  ];
+  const u = understandConciergeMessage('I want to visit Uvita for 2 days with 4 people in March', oneRegionalTour, { now, requestedLanguage: 'es' });
+  assert.equal(u.understood.language, 'en');
+  assert.equal(u.understood.days, 2);
+  assert.equal(u.understood.people, 4);
+  assert.equal(u.understood.month, 3);
+  assert.equal(u.suggestions?.length, 1);
+  const reply = deterministicConciergeReply(u) || '';
+  assert.match(reply, /Day 1:/);
+  assert.match(reply, /will not invent the remaining 1/);
+  assert.match(reply, /4 people/);
+  assert.match(reply, /March/);
+});
+
 test('POST /api/gemini/concierge returns structured understanding even without an AI key', async () => {
   const saved = { gemini: process.env.GEMINI_API_KEY, google: process.env.GOOGLE_API_KEY };
   delete process.env.GEMINI_API_KEY;
