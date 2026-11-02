@@ -22,6 +22,8 @@ import { buildSkillEvolutionReport, selectEvolvedSkill, recordSkillOutcome, prop
 import { createRouter, chatSessionTokenFrom, requireAdmin, requireAgentTool } from './shared';
 import { captureLeadInBackground } from '../leadPipeline';
 import { understandConciergeMessage, deterministicConciergeReply, enforceSingleReferencePrice, type ConciergeUnderstanding } from '../conciergeUnderstanding';
+import { isTransportInquiry, transportQuoteReply } from '../../src/utils/transportIntent';
+import { emergencyReply } from '../knowledgeReplies';
 
 /** Structured, deterministic fields attached to every concierge response. */
 function conciergeStructuredFields(u: ConciergeUnderstanding | null) {
@@ -87,6 +89,11 @@ agentsRouter.post('/api/gemini/concierge', redactAssistantReplyMiddleware, async
     // Idioma del mensaje del usuario (detectado), con el idioma de la interfaz como respaldo:
     // una pregunta en español se responde en español aunque la UI esté en inglés y viceversa.
     const lang = (understanding?.understood.language || (language === 'en' ? 'en' : 'es')) as 'es' | 'en';
+    // Emergency safety instructions must take precedence over any transport keyword (e.g. taxi accident).
+    const emergency = emergencyReply(userMsg, lang !== 'en');
+    if (emergency) return res.json({ reply: emergency, quickActions: [], success: true, ...structured });
+    // Transfer/private-car questions are never routed to a tour model or catalogue price.
+    if (isTransportInquiry(userMsg)) return res.json({ reply: transportQuoteReply(lang), quickActions: [], success: true, ...structured });
 
     // Pipeline de leads: una consulta concreta crea/actualiza un lead sin datos
     // personales (el chat no recoge consentimiento). Nunca bloquea la respuesta.
