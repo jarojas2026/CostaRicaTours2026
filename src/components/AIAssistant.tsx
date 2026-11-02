@@ -48,6 +48,8 @@ interface Message {
   inquiryHandoff?: TripInquiryHandoff;
   /** Explicit recovery UI when the AI service is unavailable. */
   serviceUnavailable?: boolean;
+  /** Original user query scoped to this recovery message. */
+  fallbackInquiry?: string;
   quickActions?: Array<{ label: string; action: string; data?: any }>;
   voucher?: any;
   sources?: Array<{ uri: string; title: string }>;
@@ -158,6 +160,7 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
   const [fallbackContactEmail, setFallbackContactEmail] = useState('');
   const [fallbackContactMessage, setFallbackContactMessage] = useState('');
   const [fallbackContactStatus, setFallbackContactStatus] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
+  const [fallbackConsentByMessage, setFallbackConsentByMessage] = useState<Record<string, boolean>>({});
   const [thinkingMode, setThinkingMode] = useState(false);
   const [aiEngine, setAiEngine] = useState<'claude' | 'gemini'>('claude');
   const [isItineraryModalOpen, setIsItineraryModalOpen] = useState(false);
@@ -415,12 +418,12 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
     }
   };
 
-  const handleFallbackContactSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleFallbackContactSubmit = (event: React.FormEvent<HTMLFormElement>, inquiry: string, messageId: string) => {
     event.preventDefault();
-    const message = fallbackContactMessage.trim();
+    const message = inquiry.trim();
     const name = fallbackContactName.trim();
     const email = fallbackContactEmail.trim();
-    if (!message || !name || !email) return;
+    if (!message || !name || !email || !fallbackConsentByMessage[messageId]) return;
 
     setFallbackContactStatus('sending');
     requestCustomerIntake({
@@ -428,6 +431,8 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
       language,
       source: 'ai-assistant-unavailable',
       customer: { name, email },
+      consent: true,
+      privacyConsent: true,
       onResult: (result) => setFallbackContactStatus(result.ok ? 'sent' : 'failed'),
     });
   };
@@ -507,6 +512,22 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
       });
 
       const data = await response.json();
+      if (!response.ok || data?.success === false) {
+        const recoveryId = `ai-err-${Date.now()}`;
+        setFallbackContactStatus('idle');
+        setMessages((prev) => [...prev, {
+          id: recoveryId,
+          sender: 'assistant',
+          agentId: activeAgentId,
+          text: language === 'es'
+            ? 'Nuestro asistente no pudo procesar la consulta. No se creó ninguna reserva ni se confirmó disponibilidad. Podés continuar por WhatsApp o dejar tus datos con consentimiento.'
+            : 'Our assistant could not process the inquiry. No booking or availability was confirmed. You can continue on WhatsApp or leave your details with consent.',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          serviceUnavailable: true,
+          fallbackInquiry: query.trim(),
+        }]);
+        return;
+      }
 
       let finalReply = data.reply || (language === 'es' ? '¡Pura Vida! ¿En qué más te puedo colaborar?' : 'Pura Vida! How else can I assist?');
       let explicitRecommendedTours: Tour[] | undefined = undefined;
@@ -586,7 +607,6 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (error) {
       console.error(error);
-      setFallbackContactMessage(query.trim());
       setFallbackContactStatus('idle');
       setMessages((prev) => [
         ...prev,
@@ -599,6 +619,7 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
             : "Our assistant is unavailable right now. Contact us on WhatsApp or leave your inquiry and we'll get back to you.",
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           serviceUnavailable: true,
+          fallbackInquiry: query.trim(),
         },
       ]);
     } finally {
@@ -930,8 +951,8 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
                           </p>
                           <a
                             href={directWhatsAppUrl(language === 'es'
-                              ? `Hola Costa Rica Tours. Necesito ayuda con esta consulta: ${fallbackContactMessage.trim()}`
-                              : `Hello Costa Rica Tours. I need help with this inquiry: ${fallbackContactMessage.trim()}`)}
+                              ? `Hola Costa Rica Tours. Necesito ayuda con esta consulta: ${msg.fallbackInquiry || ''}`
+                              : `Hello Costa Rica Tours. I need help with this inquiry: ${msg.fallbackInquiry || ''}`)}
                             target="_blank"
                             rel="noopener noreferrer"
                             data-human-handoff="true"
@@ -940,7 +961,7 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
                             <Phone className="h-4 w-4" aria-hidden="true" />
                             {language === 'es' ? 'Escribir por WhatsApp' : 'Contact us on WhatsApp'}
                           </a>
-                          <form onSubmit={handleFallbackContactSubmit} className="space-y-2.5" data-customer-intake-fallback="true">
+                          <form onSubmit={(event) => handleFallbackContactSubmit(event, msg.fallbackInquiry || '', msg.id)} className="space-y-2.5" data-customer-intake-fallback="true">
                             <label className="block space-y-1 text-xs text-emerald-100">
                               <span>{language === 'es' ? 'Nombre' : 'Name'}</span>
                               <input
@@ -967,10 +988,14 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
                               <textarea
                                 required
                                 rows={3}
-                                value={fallbackContactMessage}
-                                onChange={(event) => setFallbackContactMessage(event.target.value)}
+                                value={msg.fallbackInquiry || ''}
+                                readOnly
                                 className="w-full rounded-lg border border-emerald-500/30 bg-[#051c14] px-3 py-2 text-white"
                               />
+                            </label>
+                            <label className="flex items-start gap-2 text-xs text-emerald-100">
+                              <input type="checkbox" required checked={Boolean(fallbackConsentByMessage[msg.id])} onChange={(event) => setFallbackConsentByMessage((prev) => ({ ...prev, [msg.id]: event.target.checked }))} className="mt-0.5 accent-emerald-500" />
+                              <span>{language === 'es' ? 'Acepto que Costa Rica Tours use mi nombre y correo para dar seguimiento a esta consulta, según la política de privacidad.' : 'I consent to Costa Rica Tours using my name and email to follow up on this inquiry, according to the privacy policy.'}</span>
                             </label>
                             <button
                               type="submit"
