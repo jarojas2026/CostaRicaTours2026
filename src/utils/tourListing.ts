@@ -23,7 +23,7 @@ const GENERIC_CATALOG_TERMS = new Set([
 
 /** Generic catalog requests (e.g. "tours Costa Rica") do not narrow results. */
 export function catalogSearchTerms(query: string): string[] {
-  return normalizeCatalogSearch(query).split(/\s+/).filter(Boolean).filter(term => !GENERIC_CATALOG_TERMS.has(term));
+  return (normalizeCatalogSearch(query).match(/[a-z0-9]+/g) || []).filter(term => !GENERIC_CATALOG_TERMS.has(term));
 }
 
 export function isGenericCatalogSearch(query: string): boolean {
