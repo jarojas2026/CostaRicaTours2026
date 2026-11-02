@@ -944,7 +944,20 @@ export async function runCounterAgent(
 
   // CASO B: INTENCIÓN DE RESERVA O COTIZACIÓN PERO FALTAN DATOS
   if (hasBookingIntent || lower.includes('cotiz') || lower.includes('disponib') || lower.includes('cuanto') || lower.includes('precio')) {
-    const selectedTour = matchedTour || TOURS[0];
+    if (!matchedTour) {
+      return {
+        reply: isEn
+          ? 'I can prepare a quote, but I need to identify the right experience first. Which tour or activity and destination are you interested in? Please also share your date and number of travelers. I will not guess a product, price or availability.'
+          : 'Con gusto preparo la cotización, pero primero necesito identificar la experiencia correcta. ¿Qué tour o actividad y destino te interesan? Indícame también la fecha y cuántas personas viajan. No voy a adivinar un producto, precio ni disponibilidad.',
+        agentId: 'counter_agent',
+        agentName: 'Asistente de viajes • Costa Rica Tours',
+        agentCategory: 'INFORMACION',
+        escalation: { escalated: false, level: 'none' },
+        recommendedTours: [],
+        quickActions: [],
+      };
+    }
+    const selectedTour = matchedTour;
     const targetDate = extractedDate || new Date(Date.now() + 86400000).toISOString().split('T')[0];
     const availCheck = await checkTourAvailability(selectedTour.id, targetDate, '08:00 AM', numPax);
     const unitUSD = selectedTour.priceUSD;
