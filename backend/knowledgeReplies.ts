@@ -75,7 +75,7 @@ function budgetFrom(m: string): number | undefined {
   return r ? Number(r[1]) : undefined;
 }
 
-function emergencyReply(message: string, es: boolean): string | undefined {
+export function emergencyReply(message: string, es: boolean): string | undefined {
   const m = norm(message);
   if (!/(hospital|me siento mal|emergencia|emergency|ambulanc|doctor|medico|clinica|clinic|sick|herid|injur|accidente|accident|ebais|farmacia|pharmacy)/.test(m)) return undefined;
   const town = findTown(message);
