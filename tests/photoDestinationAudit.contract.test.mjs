@@ -37,3 +37,11 @@ test('photo attribution remains linked to source and license, and bad images hav
     assert.ok(p.author && p.license && p.sourcePage && p.credit, p.key + ' missing attribution metadata');
   }
 });
+
+test('non-Commons photo filenames are N/A, not falsely marked MATCH', () => {
+  assert.match(script, /photo\.source === 'wikimedia-commons' && sourceFilename/);
+  assert.match(script, /filenameMatch === null \? 'N\/A'/);
+  const unsplashRows = manifest.photos.filter(p => p.source === 'unsplash');
+  assert.ok(unsplashRows.length > 0);
+  assert.match(csv, /,N\/A,NO_SIGNAL,/);
+});
