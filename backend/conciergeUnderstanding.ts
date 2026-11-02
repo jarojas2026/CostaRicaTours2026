@@ -353,7 +353,7 @@ export function understandConciergeMessage<T extends CatalogTourLike>(
 
   const es = language === 'es';
   // Zona sin ficha única: proponer actividades reales del catálogo (máx. 3), con su precio de referencia.
-  if (!tour && region) {
+  if ((!tour || understood.days) && region) {
     const inRegion = tours.filter(t => t.region === region || (place?.tourKeywords?.test(normalize(t.id)) ?? false))
       .filter(t => !activity || activity.tourKeywords.test(normalize(`${t.id} ${typeof t.title === 'string' ? t.title : `${t.title.es || ''} ${t.title.en || ''}`}`)) || activity.categories.includes(t.category));
     // A multi-day request asks for one distinct catalogue experience per day.
@@ -455,6 +455,9 @@ export function deterministicConciergeReply(u: ConciergeUnderstanding): string |
     es ? '¡Pura Vida! Esto es lo que entendí de tu consulta:' : 'Pura Vida! Here is what I understood from your request:',
     ...u.inquiryHandoff.understood.map(l => `• ${l}`),
   ];
+  if (u.understood.people) {
+    parts.push(es ? `• Viajan ${u.understood.people} personas.` : `• Group size: ${u.understood.people} people.`);
+  }
   if (u.quote) {
     parts.push(es ? `Precio de referencia: ${u.quote.line}.` : `Reference price: ${u.quote.line}.`);
     if (u.quote.withinBudget === false) {
