@@ -267,7 +267,7 @@ export default function App() {
       // labeling USD fallback prices as CRC. USD remains the safe display currency.
       if (!supported.includes(currency)) {
         setCurrencyState('USD');
-        rememberCurrency('USD');
+        // Keep the visitor's saved choice; a temporary rates outage must not overwrite it.
       }
     });
     return () => { active = false; };
