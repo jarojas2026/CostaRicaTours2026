@@ -21,6 +21,7 @@ import { useMoney } from '../hooks/useMoney';
 import { useChatAnalytics } from '../hooks/useChatAnalytics';
 import { useSpeechRecognition, speechSynthesisSupported } from '../hooks/useSpeechRecognition';
 import { buildTripInquiryHandoff, serverInquiryHandoff, type TripInquiryHandoff } from '../utils/tripRequestParser';
+import { isTransportInquiry } from '../utils/transportIntent';
 import { chatSessionHeaders, clearStoredChatSession, readStoredChatSession, requestChatSession, type ChatSessionCredentials } from '../utils/chatSession';
 import { withStorageScope } from '../hooks/useStorageScope';
 import { getPersonalItem, setPersonalItem, removePersonalItem } from '../utils/privateStorage';
@@ -552,12 +553,14 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
       // explicit acknowledgement and a prefilled WhatsApp hand-off. The server
       // extraction (catalog-wide, dates, budget) wins; the client parser is the
       // fallback when the server did not return a well-formed hand-off.
-      const inquiryHandoff = serverInquiryHandoff(data) || buildTripInquiryHandoff(query, language, TOURS);
+      const transportInquiry = isTransportInquiry(query);
+      const inquiryHandoff = transportInquiry ? undefined : (serverInquiryHandoff(data) || buildTripInquiryHandoff(query, language, TOURS));
       const handoffTour = inquiryHandoff?.tourId ? TOURS.find(t => t.id === inquiryHandoff.tourId) : undefined;
 
-      // Find relevant tour matches in query or reply for smart UI recommendation card
+      // Find relevant tour matches in query or reply for smart UI recommendation card.
+      // Transport requests are quotations, not tour-catalogue selections.
       const combinedText = (query + ' ' + (data.reply || '')).toLowerCase();
-      const matchedTours = explicitRecommendedTours || (handoffTour ? [handoffTour] : null) || TOURS.filter(t => 
+      const matchedTours = transportInquiry ? [] : (explicitRecommendedTours || (handoffTour ? [handoffTour] : null) || TOURS.filter(t => 
         combinedText.includes(t.title.es.toLowerCase()) ||
         (t.title.en && combinedText.includes(t.title.en.toLowerCase())) ||
         (combinedText.includes('arenal') && t.region === 'arenal') ||
