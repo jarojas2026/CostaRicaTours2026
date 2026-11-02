@@ -10,7 +10,7 @@ import { getLangText } from '../utils/i18n';
 import { Price } from './ui';
 import { useRates } from '../hooks/useMoney';
 import { rateFor } from '../utils/money';
-import { isBookableTour, normalizeCatalogSearch, catalogTourSearchScore, isGenericCatalogSearch } from '../utils/tourListing';
+import { isBookableTour, catalogTourSearchScore, isGenericCatalogSearch } from '../utils/tourListing';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Compass, Search, Filter, SlidersHorizontal, Sparkles, LayoutGrid, List, 
