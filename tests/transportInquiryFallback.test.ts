@@ -63,11 +63,14 @@ test('Counter Agent returns the transport quotation before selecting a catalogue
   const guard = source.indexOf('if (isTransportInquiry(message))');
   const tourSelection = source.indexOf('const matchedTour =');
   const unsafeFallback = source.indexOf('const selectedTour = matchedTour || TOURS[0]');
+  const ambiguousGuard = source.indexOf('if (!matchedTour)');
   assert.ok(guard >= 0, 'Counter Agent must have an explicit transport-intent guard');
   assert.ok(tourSelection > guard, 'transport guard must run before catalogue matching');
-  assert.ok(unsafeFallback > guard, 'transport guard must run before any generic first-tour fallback');
+  assert.equal(unsafeFallback, -1, 'Counter Agent must never substitute the first catalogue tour');
+  assert.ok(ambiguousGuard > tourSelection, 'ambiguous quote requests must be checked after matching');
   assert.match(source.slice(guard, tourSelection), /transportQuoteReply/);
-  assert.match(source.slice(guard, tourSelection), /recommendedTours:\s*\[\]/);
+  assert.match(source.slice(guard, tourSelection), /recommendedTours:\\s*\\[\\]/);
+  assert.match(source.slice(ambiguousGuard, source.indexOf('const selectedTour = matchedTour', ambiguousGuard)), /need to identify the right experience|identificar la experiencia correcta/);
 });
 
 test('chat UI suppresses catalogue recommendations and tour handoff for transfer requests', () => {
