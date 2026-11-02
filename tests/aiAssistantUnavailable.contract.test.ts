@@ -32,7 +32,7 @@ test('unavailable AI state offers WhatsApp and a short customer inquiry form', (
 test('fallback form reuses the existing customer-intake workflow and does not claim a booking', () => {
   assert.match(assistant, /requestCustomerIntake\(\{[\s\S]*?source: 'ai-assistant-unavailable'/);
   assert.match(assistant, /customer: \{ name, email \}/);
-  assert.match(assistant, /onResult: \(result\) => setFallbackContactStatus\(result\.ok \? 'sent' : 'failed'\)/);
+  assert.match(assistant, /onResult: \(result\) => setFallbackContactStatusByMessage\(\(prev\) => \(\{ \.\.\.prev, \[messageId\]: result\.ok \? 'sent' : 'failed' \}\)\)/);
   assert.match(assistant, /no crea una reserva ni confirma disponibilidad/);
   assert.match(assistant, /does not create a booking or confirm availability/);
 });
@@ -50,4 +50,13 @@ test('fallback recovery binds WhatsApp and form to the originating message and r
   assert.match(assistant, /fallbackConsentByMessage\[msg\.id\]/);
   assert.match(assistant, /Acepto que Costa Rica Tours use mi nombre y correo/);
   assert.match(assistant, /consent: true/);
+});
+
+test('image analysis HTTP/API failures attach the same consent-based recovery UI', () => {
+  const sendHandler = assistant.slice(assistant.indexOf('const handleSendMessage = async'), assistant.indexOf('const currentQuestions ='));
+  const imageBranch = sendHandler.slice(sendHandler.indexOf('if (imageToSend)'), sendHandler.indexOf('const isUrgent ='));
+  assert.match(imageBranch, /if \(!response\.ok \|\| data\?\.success === false \|\| !data\?\.analysis\)/);
+  assert.match(imageBranch, /serviceUnavailable: true/);
+  assert.match(imageBranch, /fallbackInquiry:/);
+  assert.match(imageBranch, /ai-image-err-/);
 });
