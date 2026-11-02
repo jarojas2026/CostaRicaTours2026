@@ -116,5 +116,7 @@ export function getInitialLanguage(): Language {
 }
 
 export function getInitialCurrency(): Currency {
-  return readStoredCurrency() ?? detectCurrency();
+  // Commercial catalogue is USD-denominated. USD is the safe first-visit default;
+  // a previously explicit selection is preserved and validated after rates load.
+  return readStoredCurrency() ?? 'USD';
 }
