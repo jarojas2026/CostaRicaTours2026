@@ -87,6 +87,72 @@ test('frontend accepts only a well-formed server hand-off to the official number
   assert.equal(serverInquiryHandoff({ reply: 'hola' }), undefined);
 });
 
+test('two-day trip returns two distinct catalogue experiences and preserves people and month in Spanish', () => {
+  const regionalTours = [
+    { id: 'uvita-whale-watching', title: { es: 'Avistamiento de ballenas', en: 'Whale watching' }, category: 'wildlife', region: 'osa', priceUSD: 85 },
+    { id: 'marino-ballena-kayak', title: { es: 'Kayak Marino Ballena', en: 'Marino Ballena Kayak' }, category: 'kayak', region: 'osa', priceUSD: 60 },
+    { id: 'nauyaca-waterfall', title: { es: 'Catarata Nauyaca', en: 'Nauyaca Waterfall' }, category: 'nature', region: 'osa', priceUSD: 35 },
+  ];
+  const u = understandConciergeMessage('Quiero conocer Uvita 2 días para 4 personas en marzo', regionalTours, { now, requestedLanguage: 'en' });
+  assert.equal(u.understood.language, 'es');
+  assert.equal(u.understood.days, 2);
+  assert.equal(u.understood.people, 4);
+  assert.equal(u.understood.month, 3);
+  assert.equal(u.suggestions?.length, 2);
+  const reply = deterministicConciergeReply(u) || '';
+  assert.match(reply, /Día 1:/);
+  assert.match(reply, /Día 2:/);
+  assert.match(reply, /4 personas/);
+  assert.match(reply, /marzo/);
+});
+
+test('two-day English request responds in English and does not invent missing catalogue experiences', () => {
+  const oneRegionalTour = [
+    { id: 'uvita-whale-watching', title: { es: 'Avistamiento de ballenas', en: 'Whale watching' }, category: 'wildlife', region: 'osa', priceUSD: 85 },
+  ];
+  const u = understandConciergeMessage('I want to visit Uvita for 2 days with 4 people in March', oneRegionalTour, { now, requestedLanguage: 'es' });
+  assert.equal(u.understood.language, 'en');
+  assert.equal(u.understood.days, 2);
+  assert.equal(u.understood.people, 4);
+  assert.equal(u.understood.month, 3);
+  assert.equal(u.suggestions?.length, 1);
+  const reply = deterministicConciergeReply(u) || '';
+  assert.match(reply, /Day 1:/);
+  assert.match(reply, /will not invent the remaining 1/);
+  assert.match(reply, /4 people/);
+  assert.match(reply, /March/);
+});
+
+test('concierge API returns catalogue day suggestions and same-language reply for multi-day requests', async () => {
+  const saved = { gemini: process.env.GEMINI_API_KEY, google: process.env.GOOGLE_API_KEY };
+  delete process.env.GEMINI_API_KEY;
+  delete process.env.GOOGLE_API_KEY;
+  const { createApp } = await import('../backend/app');
+  const server = createApp().listen(0);
+  try {
+    const { port } = server.address() as AddressInfo;
+    const res = await fetch(`http://127.0.0.1:${port}/api/gemini/concierge`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ message: 'Quiero conocer Uvita 2 días para 4 personas en marzo', language: 'en' }),
+    });
+    const body: any = await res.json();
+    assert.equal(body.understood?.language, 'es');
+    assert.equal(body.understood?.days, 2);
+    assert.equal(body.understood?.people, 4);
+    assert.equal(body.understood?.month, 3);
+    assert.equal(body.suggestions?.length, 2);
+    assert.match(body.reply, /Día 1:/);
+    assert.match(body.reply, /Día 2:/);
+    assert.match(body.reply, /4 personas/);
+    assert.match(body.reply, /marzo/);
+  } finally {
+    server.close();
+    if (saved.gemini !== undefined) process.env.GEMINI_API_KEY = saved.gemini;
+    if (saved.google !== undefined) process.env.GOOGLE_API_KEY = saved.google;
+  }
+});
+
 test('POST /api/gemini/concierge returns structured understanding even without an AI key', async () => {
   const saved = { gemini: process.env.GEMINI_API_KEY, google: process.env.GOOGLE_API_KEY };
   delete process.env.GEMINI_API_KEY;
@@ -112,4 +178,13 @@ test('POST /api/gemini/concierge returns structured understanding even without a
     if (saved.gemini !== undefined) process.env.GEMINI_API_KEY = saved.gemini;
     if (saved.google !== undefined) process.env.GOOGLE_API_KEY = saved.google;
   }
+});
+
+test('requests above 14 days distinguish display cap from catalogue availability', () => {
+  const u = understandConciergeMessage('I want a 20 days trip in Osa for 2 people', TOURS, { now, requestedLanguage: 'es' });
+  assert.equal(u.understood.language, 'en');
+  assert.equal(u.understood.days, 20);
+  const reply = deterministicConciergeReply(u) || '';
+  assert.match(reply, /displays up to 14 experiences; this is a presentation limit/i);
+  assert.doesNotMatch(reply, /catalogue only identifies 14|catalogue only offers 14/i);
 });

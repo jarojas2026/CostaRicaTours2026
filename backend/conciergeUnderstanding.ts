@@ -140,8 +140,8 @@ const NUMBER_WORDS: Record<string, number> = {
 const NUM = `(\\d{1,2}|${Object.keys(NUMBER_WORDS).join('|')})`;
 const toNumber = (token: string): number => (/^\d+$/.test(token) ? Number(token) : NUMBER_WORDS[token] ?? NaN);
 
-const EN_HINTS = /\b(i|we|want|would|like|how much|price|people|for|the|tour|in|please|book|cost|trip|next|kids|adults)\b/g;
-const ES_HINTS = /\b(quiero|queremos|cuanto|cuesta|precio|personas|para|el|la|los|las|en|por favor|reservar|viaje|nosotros|ninos|adultos|de|con)\b/g;
+const EN_HINTS = /\b(i|we|want|would|like|how much|price|people|for|the|tour|in|please|book|cost|trip|next|kids|adults|days?|nights?|travel|visit|stay|march|april|june|july|august|september|october|november|december|january|february)\b/g;
+const ES_HINTS = /\b(quiero|queremos|cuanto|cuesta|precio|personas|para|el|la|los|las|en|por favor|reservar|viaje|nosotros|ninos|adultos|de|con|dias?|noches?|viajar|visitar|quedar|marzo|abril|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|enero|febrero)\b/g;
 
 export function detectLanguage(text: string, fallback: ConciergeLanguage = 'es'): ConciergeLanguage {
   const t = normalize(text);
@@ -356,7 +356,10 @@ export function understandConciergeMessage<T extends CatalogTourLike>(
   if (!tour && region) {
     const inRegion = tours.filter(t => t.region === region || (place?.tourKeywords?.test(normalize(t.id)) ?? false))
       .filter(t => !activity || activity.tourKeywords.test(normalize(`${t.id} ${typeof t.title === 'string' ? t.title : `${t.title.es || ''} ${t.title.en || ''}`}`)) || activity.categories.includes(t.category));
-    const picks = inRegion.slice(0, 3);
+    // A multi-day request asks for one distinct catalogue experience per day.
+    // Never fabricate entries: if the region has fewer options, the reply says so.
+    const requestedExperiences = understood.days ? Math.min(understood.days, 14) : 3;
+    const picks = inRegion.slice(0, requestedExperiences);
     if (picks.length) {
       result.suggestions = picks.map(t => ({
         tourId: t.id,
@@ -459,8 +462,27 @@ export function deterministicConciergeReply(u: ConciergeUnderstanding): string |
     }
   }
   if (u.suggestions?.length) {
-    parts.push(es ? 'Ideas del catálogo para la zona:' : 'Catalog ideas for the area:');
-    for (const s of u.suggestions) parts.push(`• ${s.title}${s.referenceLine ? ` — ${s.referenceLine}` : ''}`);
+    if (u.understood.days) {
+      parts.push(es
+        ? `Propuesta preliminar: ${u.suggestions.length} experiencia(s) distinta(s) del catálogo para un viaje de ${u.understood.days} días, idealmente una por día:`
+        : `Preliminary plan: ${u.suggestions.length} distinct catalogue experience(s) for a ${u.understood.days}-day trip, ideally one per day:`);
+    } else {
+      parts.push(es ? 'Ideas del catálogo para la zona:' : 'Catalog ideas for the area:');
+    }
+    u.suggestions.forEach((s, index) => {
+      const dayLabel = u.understood.days ? (es ? `Día ${index + 1}: ` : `Day ${index + 1}: `) : '';
+      parts.push(`• ${dayLabel}${s.title}${s.referenceLine ? ` — ${s.referenceLine}` : ''}`);
+    });
+    if (u.understood.days > 14) {
+      parts.push(es
+        ? 'Por claridad, esta respuesta muestra hasta 14 experiencias; es un límite de presentación, no una afirmación de que el catálogo tenga solo 14.'
+        : 'For clarity, this response displays up to 14 experiences; this is a presentation limit, not a claim that the catalogue has only 14.' );
+    }
+    if (u.understood.days && u.understood.days <= 14 && u.suggestions.length < u.understood.days) {
+      parts.push(es
+        ? `El catálogo consultado solo ofrece ${u.suggestions.length} opción(es) identificadas para esta zona; no voy a inventar las ${u.understood.days - u.suggestions.length} restantes. Podemos completar el plan con días libres o revisar otra región.`
+        : `The available catalogue only identifies ${u.suggestions.length} option(s) for this area; I will not invent the remaining ${u.understood.days - u.suggestions.length}. We can leave those days flexible or consider another region.`);
+    }
   }
   parts.push(u.inquiryHandoff.operatorNote);
   parts.push(es ? 'Usa el botón de WhatsApp para enviarnos estos datos y te respondemos con la confirmación por escrito.' : 'Use the WhatsApp button to send us these details and we will reply with a written confirmation.');
