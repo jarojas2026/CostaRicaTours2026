@@ -4,6 +4,7 @@ import type { Language } from '../types';
 import { auth } from '../firebase';
 import { LeadPaymentPanel } from '../components/LeadPaymentPanel';
 import { SupplierPayoutsPanel } from '../components/SupplierPayoutsPanel';
+import { AgentBookingsPanel } from '../components/AgentBookingsPanel';
 
 type LeadStatus = 'nuevo' | 'cotizando' | 'esperando_operador' | 'confirmado_por_escrito' | 'pagado' | 'cancelado';
 
@@ -182,6 +183,7 @@ export function LeadsPipelinePage({ language }: { language: Language }) {
           <button type="button" onClick={() => void load()} className="inline-flex items-center gap-1 rounded-lg border border-stone-700 px-3 py-1.5 text-sm"><RefreshCw className="w-4 h-4" aria-hidden="true" />{es ? 'Actualizar' : 'Refresh'}</button>
         </div>
       </div>
+      <AgentBookingsPanel es={es} />
       {leads.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
           <label className="inline-flex items-center gap-2">
