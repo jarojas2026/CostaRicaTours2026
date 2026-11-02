@@ -504,6 +504,27 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
 
       const data = await response.json();
 
+      // Some backend failures intentionally return HTTP 200 with success:false.
+      // Treat them as unavailable so the traveler sees the recovery hand-off.
+      if (data?.success === false) {
+        setFallbackContactMessage(query.trim());
+        setFallbackContactStatus('idle');
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `ai-err-${Date.now()}`,
+            sender: 'assistant',
+            agentId: activeAgentId,
+            text: data.reply || (language === 'es'
+              ? 'Nuestro asistente no está disponible en este momento. Escribinos por WhatsApp o dejanos tu consulta y te respondemos.'
+              : "Our assistant is unavailable right now. Contact us on WhatsApp or leave your inquiry and we'll get back to you."),
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            serviceUnavailable: true,
+          },
+        ]);
+        return;
+      }
+
       let finalReply = data.reply || (language === 'es' ? '¡Pura Vida! ¿En qué más te puedo colaborar?' : 'Pura Vida! How else can I assist?');
       let explicitRecommendedTours: Tour[] | undefined = undefined;
 
