@@ -260,13 +260,8 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
     reader.readAsDataURL(file);
   };
 
-  // Dictado por voz del navegador (Web Speech API): el texto se agrega al campo y el usuario decide enviarlo.
-  const speech = useSpeechRecognition(language, (text) => {
-    setInputMessage((prev) => prev + (prev ? ' ' : '') + text);
-  });
-  const isRecording = speech.listening;
+  // Voice dictation is disabled until the voice backend is available.
   const canSpeakAloud = speechSynthesisSupported();
-  const handleMicClick = () => speech.toggle();
 
   const handleClearHistory = () => {
     setMessages([
