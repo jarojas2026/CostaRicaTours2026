@@ -7,6 +7,7 @@ import { catalogSearchHref, readCatalogRouteFilters } from './utils/catalogRoute
 import { useTours } from './contexts/ToursContext';
 import { Tour, Language, Currency, TourCategory, TourRegion, BookingRequest } from './types';
 import { fetchExchangeRates } from './utils/i18n';
+import { getRatesSnapshot, availableCurrencies } from './utils/money';
 import { getInitialCurrency, getInitialLanguage, rememberCurrency, rememberLanguage } from './i18n';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
@@ -258,8 +259,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    fetchExchangeRates();
-  }, []);
+    let active = true;
+    void fetchExchangeRates().then((snapshot) => {
+      if (!active) return;
+      const supported = availableCurrencies(snapshot || getRatesSnapshot());
+      // Prevent stale localStorage (e.g. CRC selected before a rate expired) from
+      // labeling USD fallback prices as CRC. USD remains the safe display currency.
+      if (!supported.includes(currency)) {
+        setCurrencyState('USD');
+        rememberCurrency('USD');
+      }
+    });
+    return () => { active = false; };
+  }, [currency]);
 
   // Ensure modal state does not conflict with direct /tour/:id SPA routing
   useEffect(() => {
