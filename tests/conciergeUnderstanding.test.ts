@@ -179,3 +179,12 @@ test('POST /api/gemini/concierge returns structured understanding even without a
     if (saved.google !== undefined) process.env.GOOGLE_API_KEY = saved.google;
   }
 });
+
+test('requests above 14 days distinguish display cap from catalogue availability', () => {
+  const u = understandConciergeMessage('I want a 20 days trip in Osa for 2 people', TOURS, { now, requestedLanguage: 'es' });
+  assert.equal(u.understood.language, 'en');
+  assert.equal(u.understood.days, 20);
+  const reply = deterministicConciergeReply(u) || '';
+  assert.match(reply, /displays up to 14 experiences; this is a presentation limit/i);
+  assert.doesNotMatch(reply, /catalogue only identifies 14|catalogue only offers 14/i);
+});
