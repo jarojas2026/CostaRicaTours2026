@@ -93,18 +93,6 @@ export const Footer: React.FC<FooterProps> = ({ language }) => {
                 </Link>
               </li>
               <li>
-                <Link to="/ciudad" className="hover:text-amber-400 transition-colors flex items-center gap-2 group focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
-                  <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
-                  {t('footer.digitalCityMasterplan')}
-                </Link>
-              </li>
-              <li>
-                <Link to="/participar" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
-                  <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
-                  {t('footer.joinDigitalCity')}
-                </Link>
-              </li>
-              <li>
                 <Link to="/itinerary" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
                   <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
                   {t('footer.aiItinerary')}

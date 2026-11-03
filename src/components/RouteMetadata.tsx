@@ -162,9 +162,9 @@ function upsertCanonical(url: string) {
  * hreflang alternates. The SPA serves every language on the same path; `?lang=`
  * pins one (see src/i18n/detect.ts) and x-default lets the browser decide.
  */
-function upsertAlternates(baseUrl: string) {
+function upsertAlternates(baseUrl: string, languageCodes: readonly Language[] = ENABLED_LANGUAGES) {
   const wanted = [
-    ...ENABLED_LANGUAGES.map(code => ({ hreflang: htmlLang(code), href: `${baseUrl}?lang=${code}` })),
+    ...languageCodes.map(code => ({ hreflang: htmlLang(code), href: `${baseUrl}?lang=${code}` })),
     { hreflang: 'x-default', href: baseUrl },
   ];
   document.head.querySelectorAll<HTMLLinkElement>('link[rel="alternate"][hreflang]').forEach(link => {
@@ -190,7 +190,10 @@ export function RouteMetadata({ language }: { language: Language }) {
   useEffect(() => {
     const id = pathname.startsWith('/tour/') ? pathname.slice(6).replace(/\/$/, '') : '';
     const tour = tours.find(t => t.id === id || t.slug === id);
-    const lang = language === 'es' ? 'es' : 'en';
+    const isBlogArticle = pathname.startsWith('/blog/');
+    // Blog content is authored in ES/EN only; other UI languages fall back to EN.
+    const seoLanguage: Language = isBlogArticle ? (language === 'es' ? 'es' : 'en') : language;
+    const lang = seoLanguage === 'es' ? 'es' : 'en';
     const { title, description } = tour
       ? { title: `${tour.title[lang] || tour.title.es} | ${BRAND}`, description: (tour.description[lang] || tour.description.es).slice(0, 160) }
       : resolveRouteMeta(pathname, language);
@@ -207,7 +210,7 @@ export function RouteMetadata({ language }: { language: Language }) {
     }
 
     document.title = title;
-    document.documentElement.lang = htmlLang(language);
+    document.documentElement.lang = htmlLang(seoLanguage);
     upsertMeta('meta[property="og:locale"]', { property: 'og:locale' }, LOCALES[language]?.ogLocale ?? 'en_US');
     const alternateLocale = ENABLED_LANGUAGES.find(code => code !== language);
     if (alternateLocale) upsertMeta('meta[property="og:locale:alternate"]', { property: 'og:locale:alternate' }, LOCALES[alternateLocale].ogLocale);
@@ -217,9 +220,9 @@ export function RouteMetadata({ language }: { language: Language }) {
     upsertMeta('meta[property="og:url"]', { property: 'og:url' }, canonicalUrl);
     upsertMeta('meta[name="twitter:title"]', { name: 'twitter:title' }, title);
     upsertMeta('meta[name="twitter:description"]', { name: 'twitter:description' }, description);
-    const pinnedLanguage = languageFromQuery(search);
+    const pinnedLanguage = isBlogArticle ? lang : languageFromQuery(search);
     upsertCanonical(pinnedLanguage ? `${canonicalUrl}?lang=${pinnedLanguage}` : canonicalUrl);
-    upsertAlternates(canonicalUrl);
+    upsertAlternates(canonicalUrl, isBlogArticle ? ['es', 'en'] : ENABLED_LANGUAGES);
   }, [pathname, search, language, tours]);
 
   return null;

@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Mic, MicOff, Send, Volume2, VolumeX, Trash2, MessageCircle, ClipboardList, ShieldCheck } from 'lucide-react';
+import { Send, Volume2, VolumeX, Trash2, MessageCircle, ClipboardList, ShieldCheck } from 'lucide-react';
 import type { Language } from '../types';
 import type { CatalogTourLike } from '../utils/tripRequestParser';
 import { useTours } from '../contexts/ToursContext';
-import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 import { withStorageScope } from '../hooks/useStorageScope';
 import { getPersonalItem, setPersonalItem, removePersonalItem } from '../utils/privateStorage';
@@ -25,7 +24,7 @@ export interface VoiceConciergeProps {
 const COPY = {
   es: {
     title: 'Conserje de voz', beta: 'Prototipo', hotelBadge: 'Modo hotel',
-    micStart: 'Hablar con el conserje', micStop: 'Dejar de escuchar', listening: 'Escuchando… habla ahora',
+    micStart: 'Hablar con el conserje', micStop: 'Dejar de escuchar', listening: 'Escuchando… habla ahora', voiceSoon: 'Dictado por voz: próximamente.',
     fallback: 'Tu navegador no permite dictado por voz. Escribe tu pregunta y el conserje te responde igual.',
     readOn: 'Leer respuestas en voz alta: activado', readOff: 'Leer respuestas en voz alta: desactivado',
     placeholder: 'Escribe tu pregunta…', send: 'Enviar', clear: 'Borrar conversación',
@@ -39,7 +38,7 @@ const COPY = {
   },
   en: {
     title: 'Voice concierge', beta: 'Prototype', hotelBadge: 'Hotel mode',
-    micStart: 'Talk to the concierge', micStop: 'Stop listening', listening: 'Listening… speak now',
+    micStart: 'Talk to the concierge', micStop: 'Stop listening', listening: 'Listening… speak now', voiceSoon: 'Voice dictation: coming soon.',
     fallback: "Your browser doesn't support voice dictation. Type your question and the concierge will still answer.",
     readOn: 'Read answers aloud: on', readOff: 'Read answers aloud: off',
     placeholder: 'Type your question…', send: 'Send', clear: 'Clear conversation',
@@ -99,13 +98,6 @@ const VoiceConciergeComponent: React.FC<VoiceConciergeProps> = ({ language, hote
     if (readAloud && tts.supported) tts.speak(answer.reply);
   };
 
-  // Dictado: el texto final se envía al conserje (respuesta local, sin costo ni red).
-  const speech = useSpeechRecognition(lang, (text) => ask(text, 'voice'));
-
-  const handleMic = () => {
-    if (!speech.listening) tts.cancel();
-    speech.toggle();
-  };
 
   const sendRequest = (entry: VoiceTranscriptEntry) => {
     const idx = entries.findIndex(e => e.id === entry.id);
@@ -197,22 +189,10 @@ const VoiceConciergeComponent: React.FC<VoiceConciergeProps> = ({ language, hote
         <div ref={endRef} />
       </div>
 
-      {speech.listening && (
-        <p role="status" data-testid="voice-concierge-listening" className="mt-3 flex items-center gap-2 text-sm font-bold text-rose-300">
-          <span className="inline-block h-2.5 w-2.5 animate-pulse rounded-full bg-rose-500" aria-hidden />{c.listening}
-        </p>
-      )}
-      {speech.error && !speech.listening && <p role="alert" className="mt-3 text-xs text-rose-200">{c.micError}</p>}
-      {!speech.supported && <p data-testid="voice-concierge-fallback" className="mt-3 text-xs text-stone-300">{c.fallback}</p>}
+      <p data-testid="voice-concierge-coming-soon" className="mt-3 text-xs text-stone-400">{c.voiceSoon}</p>
 
       <form className="mt-3 flex items-center gap-2" onSubmit={(e) => { e.preventDefault(); ask(input, 'text'); }}>
-        {speech.supported && (
-          <button type="button" data-testid="voice-concierge-mic" onClick={handleMic}
-            aria-label={speech.listening ? c.micStop : c.micStart} aria-pressed={speech.listening} title={speech.listening ? c.micStop : c.micStart}
-            className={`shrink-0 rounded-full p-3 ${speech.listening ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-stone-950'}`}>
-            {speech.listening ? <MicOff size={20} aria-hidden /> : <Mic size={20} aria-hidden />}
-          </button>
-        )}
+
         <label htmlFor="voice-concierge-input" className="sr-only">{c.placeholder}</label>
         <input id="voice-concierge-input" data-testid="voice-concierge-input" value={input} onChange={(e) => setInput(e.target.value)}
           placeholder={c.placeholder} maxLength={1000} autoComplete="off"

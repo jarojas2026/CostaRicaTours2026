@@ -460,7 +460,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
   };
 
   return (
-    <div className="fixed bottom-[calc(9rem+env(safe-area-inset-bottom))] right-3 sm:right-4 lg:bottom-6 lg:right-6 z-[80]">
+    <div data-testid="floating-whatsapp" className="fixed bottom-[calc(9rem+env(safe-area-inset-bottom))] right-3 z-[80] sm:hidden">
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -713,6 +713,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
       </AnimatePresence>
 
       <motion.button
+        data-testid="floating-whatsapp-launcher"
         type="button"
         onClick={() => setIsOpen((value) => !value)}
         whileHover={{ scale: 1.05 }}

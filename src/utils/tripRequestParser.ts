@@ -1,6 +1,7 @@
 import type { Language } from '../types';
 import { referenceTotalLine, formatUsdReference } from './referencePrice';
 import { directWhatsAppUrl } from './directWhatsApp';
+import { isTransportInquiry } from './transportIntent';
 
 /**
  * Lightweight, deterministic extraction of the parameters a traveller gives in
@@ -146,6 +147,7 @@ export function buildTripInquiryHandoff<T extends CatalogTourLike>(
   language: Language,
   tours: T[],
 ): TripInquiryHandoff | undefined {
+  if (isTransportInquiry(input)) return undefined;
   const parsed = parseTripRequest(input);
   const hasSubject = Boolean(parsed.activity || parsed.place);
   const hasDetail = parsed.asksPrice || parsed.people !== undefined || parsed.month !== undefined;

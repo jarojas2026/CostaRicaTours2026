@@ -30,6 +30,19 @@ voiceRouter.use(['/api/voice/incoming', '/api/voice/respond', '/api/voice/human-
   next();
 });
 
+// Public readiness probe exposes only status, never provider credentials or configuration values.
+voiceRouter.get('/api/voice/health', (_req, res) => {
+  const config = voiceAgentDeskConfig();
+  const available = config.enabled && config.ready;
+  const status = !config.enabled ? 'disabled' : config.ready ? 'ready' : 'configuration_pending';
+  res.status(available ? 200 : 503).json({
+    success: true,
+    available,
+    status,
+    messageCode: available ? 'voice_ready' : status === 'disabled' ? 'voice_disabled' : 'voice_configuration_pending'
+  });
+});
+
 voiceRouter.get('/api/voice/config', requireAdmin, async (_req, res) => {
   res.json({ success: true, config: voiceAgentDeskConfig() });
 });

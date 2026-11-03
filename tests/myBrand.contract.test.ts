@@ -4,11 +4,11 @@ import { readFileSync } from 'node:fs';
 import { MY_MARK_CLASS, MY_SECTIONS } from '../src/components/MyBrand';
 
 // #399: sistema de marca "my" (solo UI).
-test('nombres fijos ES/EN y rutas', () => {
-  assert.deepEqual(
-    Object.values(MY_SECTIONS).map(s => [s.label, s.to]),
-    [['My Trip', '/trip'], ['My Planner', '/itinerary'], ['My Bookings', null], ['My Flights', '/flights']],
-  );
+test('labels ES/EN localizados y rutas estables', () => {
+  assert.deepEqual(Object.values(MY_SECTIONS).map(s => [s.label, s.labelEs, s.to]), [
+    ['My Trip', 'Mi viaje', '/trip'], ['My Planner', 'Mi planificador', '/itinerary'],
+    ['My Bookings', 'Mis reservas', null], ['My Flights', 'Mis vuelos', '/flights'],
+  ]);
 });
 
 test('"my" resaltado con acento existente y animación solo motion-safe', () => {
@@ -18,12 +18,13 @@ test('"my" resaltado con acento existente y animación solo motion-safe', () => 
   for (const c of animated) assert.match(c, /^motion-safe:/, `${c} debe respetar prefers-reduced-motion`);
 });
 
-test('encabezado y menú de cuenta usan la marca; el idioma no cambia los nombres', () => {
+test('encabezado y command bar pasan idioma a etiquetas ES/EN', () => {
   const header = readFileSync('src/components/Header.tsx', 'utf8');
   assert.match(header, /<MyWordmark \/>/);
-  for (const s of ['trip', 'planner', 'bookings', 'flights']) assert.match(header, new RegExp(`<MyLabel section="${s}" />`));
+  for (const s of ['trip', 'planner', 'bookings', 'flights']) assert.match(header, new RegExp(`<MyLabel section="${s}" language=\\{language\\} />`));
   assert.doesNotMatch(header, /'Armar mi viaje'|'Build my trip'/);
   const bar = readFileSync('src/components/TravelerCommandBar.tsx', 'utf8');
+  assert.match(bar, /<MyLabel section=\{item\.section\} language=\{language\} \/>/);
   assert.match(bar, /MY_SECTIONS\.trip\.label/);
   assert.match(bar, /MY_SECTIONS\.planner\.label/);
 });

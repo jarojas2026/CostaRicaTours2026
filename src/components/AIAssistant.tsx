@@ -5,7 +5,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Language, Tour, BookingRequest, AgentId, AIAgent } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft,
-  Bot, Send, Sparkles, Mic, MicOff, User, RefreshCw, X, MessageSquare, 
+  Bot, Send, Sparkles, User, RefreshCw, X, MessageSquare, 
   Compass, ArrowRight, Trash2, HelpCircle, CheckCircle2, Ticket, 
   Image as ImageIcon, BrainCircuit, XCircle, Leaf, Trees, ShieldCheck, 
   Info, Clock, ChevronDown, ChevronRight, Zap, Coffee, Compass as CompassIcon, Waves, Mountain,
@@ -19,8 +19,9 @@ import { ClaudeItineraryModal } from './ClaudeItineraryModal';
 import { getUsdToCrcRate } from '../utils/currencies';
 import { useMoney } from '../hooks/useMoney';
 import { useChatAnalytics } from '../hooks/useChatAnalytics';
-import { useSpeechRecognition, speechSynthesisSupported } from '../hooks/useSpeechRecognition';
+import { speechSynthesisSupported } from '../hooks/useSpeechRecognition';
 import { buildTripInquiryHandoff, serverInquiryHandoff, type TripInquiryHandoff } from '../utils/tripRequestParser';
+import { isTransportInquiry } from '../utils/transportIntent';
 import { chatSessionHeaders, clearStoredChatSession, readStoredChatSession, requestChatSession, type ChatSessionCredentials } from '../utils/chatSession';
 import { withStorageScope } from '../hooks/useStorageScope';
 import { getPersonalItem, setPersonalItem, removePersonalItem } from '../utils/privateStorage';
@@ -46,6 +47,8 @@ interface Message {
   recommendedTours?: Tour[];
   /** Client-side acknowledgement + WhatsApp hand-off for concrete trip inquiries. */
   inquiryHandoff?: TripInquiryHandoff;
+  /** Explicit recovery UI when the AI service is unavailable. */
+  serviceUnavailable?: boolean;
   quickActions?: Array<{ label: string; action: string; data?: any }>;
   voucher?: any;
   sources?: Array<{ uri: string; title: string }>;
@@ -152,6 +155,10 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
 
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [fallbackContactName, setFallbackContactName] = useState('');
+  const [fallbackContactEmail, setFallbackContactEmail] = useState('');
+  const [fallbackContactMessage, setFallbackContactMessage] = useState('');
+  const [fallbackContactStatus, setFallbackContactStatus] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
   const [thinkingMode, setThinkingMode] = useState(false);
   const [aiEngine, setAiEngine] = useState<'claude' | 'gemini'>('claude');
   const [isItineraryModalOpen, setIsItineraryModalOpen] = useState(false);
@@ -253,13 +260,8 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
     reader.readAsDataURL(file);
   };
 
-  // Dictado por voz del navegador (Web Speech API): el texto se agrega al campo y el usuario decide enviarlo.
-  const speech = useSpeechRecognition(language, (text) => {
-    setInputMessage((prev) => prev + (prev ? ' ' : '') + text);
-  });
-  const isRecording = speech.listening;
+  // Voice dictation is disabled until the voice backend is available.
   const canSpeakAloud = speechSynthesisSupported();
-  const handleMicClick = () => speech.toggle();
 
   const handleClearHistory = () => {
     setMessages([
@@ -409,6 +411,23 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
     }
   };
 
+  const handleFallbackContactSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const message = fallbackContactMessage.trim();
+    const name = fallbackContactName.trim();
+    const email = fallbackContactEmail.trim();
+    if (!message || !name || !email) return;
+
+    setFallbackContactStatus('sending');
+    requestCustomerIntake({
+      message,
+      language,
+      source: 'ai-assistant-unavailable',
+      customer: { name, email },
+      onResult: (result) => setFallbackContactStatus(result.ok ? 'sent' : 'failed'),
+    });
+  };
+
   const handleSendMessage = async (textToSend?: string) => {
     const query = textToSend || inputMessage;
     if ((!query.trim() && !selectedImage) || isLoading) return;
@@ -485,6 +504,27 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
 
       const data = await response.json();
 
+      // Some backend failures intentionally return HTTP 200 with success:false.
+      // Treat them as unavailable so the traveler sees the recovery hand-off.
+      if (data?.success === false) {
+        setFallbackContactMessage(query.trim());
+        setFallbackContactStatus('idle');
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `ai-err-${Date.now()}`,
+            sender: 'assistant',
+            agentId: activeAgentId,
+            text: data.reply || (language === 'es'
+              ? 'Nuestro asistente no está disponible en este momento. Escribinos por WhatsApp o dejanos tu consulta y te respondemos.'
+              : "Our assistant is unavailable right now. Contact us on WhatsApp or leave your inquiry and we'll get back to you."),
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            serviceUnavailable: true,
+          },
+        ]);
+        return;
+      }
+
       let finalReply = data.reply || (language === 'es' ? '¡Pura Vida! ¿En qué más te puedo colaborar?' : 'Pura Vida! How else can I assist?');
       let explicitRecommendedTours: Tour[] | undefined = undefined;
 
@@ -529,12 +569,14 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
       // explicit acknowledgement and a prefilled WhatsApp hand-off. The server
       // extraction (catalog-wide, dates, budget) wins; the client parser is the
       // fallback when the server did not return a well-formed hand-off.
-      const inquiryHandoff = serverInquiryHandoff(data) || buildTripInquiryHandoff(query, language, TOURS);
+      const transportInquiry = isTransportInquiry(query);
+      const inquiryHandoff = transportInquiry ? undefined : (serverInquiryHandoff(data) || buildTripInquiryHandoff(query, language, TOURS));
       const handoffTour = inquiryHandoff?.tourId ? TOURS.find(t => t.id === inquiryHandoff.tourId) : undefined;
 
-      // Find relevant tour matches in query or reply for smart UI recommendation card
+      // Find relevant tour matches in query or reply for smart UI recommendation card.
+      // Transport requests are quotations, not tour-catalogue selections.
       const combinedText = (query + ' ' + (data.reply || '')).toLowerCase();
-      const matchedTours = explicitRecommendedTours || (handoffTour ? [handoffTour] : null) || TOURS.filter(t => 
+      const matchedTours = transportInquiry ? [] : (explicitRecommendedTours || (handoffTour ? [handoffTour] : null) || TOURS.filter(t => 
         combinedText.includes(t.title.es.toLowerCase()) ||
         (t.title.en && combinedText.includes(t.title.en.toLowerCase())) ||
         (combinedText.includes('arenal') && t.region === 'arenal') ||
@@ -543,7 +585,7 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
         (combinedText.includes('rafting') && t.category === 'rafting') ||
         (combinedText.includes('manuel antonio') && t.region === 'manuel_antonio') ||
         (combinedText.includes('tortuguero') && t.region === 'tortuguero')
-      ).slice(0, 2);
+      ).slice(0, 2));
 
       const assistantMsg: Message = {
         id: `ai-${Date.now()}`,
@@ -563,6 +605,8 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (error) {
       console.error(error);
+      setFallbackContactMessage(query.trim());
+      setFallbackContactStatus('idle');
       setMessages((prev) => [
         ...prev,
         {
@@ -570,10 +614,10 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
           sender: 'assistant',
           agentId: activeAgentId,
           text: language === 'es'
-            ? '¡Pura Vida! Disculpa, hubo una interrupción breve en la comunicación. Por favor intenta preguntarme nuevamente.'
-            : 'Pura Vida! Apologies, brief communication interruption. Please ask again.',
+            ? 'Nuestro asistente no está disponible en este momento. Escribinos por WhatsApp o dejanos tu consulta y te respondemos.'
+            : "Our assistant is unavailable right now. Contact us on WhatsApp or leave your inquiry and we'll get back to you.",
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          inquiryHandoff: buildTripInquiryHandoff(query, language, TOURS),
+          serviceUnavailable: true,
         },
       ]);
     } finally {
@@ -895,6 +939,86 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
   }
   return <span key={i} className="whitespace-pre-line">{part}</span>;
 })}
+
+                      {msg.serviceUnavailable && (
+                        <section className="mt-3 rounded-xl border border-amber-400/40 bg-[#020e08] p-3 space-y-3" data-service-unavailable="true">
+                          <p className="text-xs text-emerald-100">
+                            {language === 'es'
+                              ? 'Podés contactarnos directamente o dejar tus datos para que demos seguimiento a tu consulta. Este formulario no crea una reserva ni confirma disponibilidad.'
+                              : 'You can contact us directly or leave your details so we can follow up on your inquiry. This form does not create a booking or confirm availability.'}
+                          </p>
+                          <a
+                            href={directWhatsAppUrl(language === 'es'
+                              ? `Hola Costa Rica Tours. Necesito ayuda con esta consulta: ${fallbackContactMessage.trim()}`
+                              : `Hello Costa Rica Tours. I need help with this inquiry: ${fallbackContactMessage.trim()}`)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            data-human-handoff="true"
+                            className="w-full rounded-lg bg-[#25D366] px-3 py-2.5 text-center text-xs font-black text-stone-950 flex items-center justify-center gap-2"
+                          >
+                            <Phone className="h-4 w-4" aria-hidden="true" />
+                            {language === 'es' ? 'Escribir por WhatsApp' : 'Contact us on WhatsApp'}
+                          </a>
+                          <form onSubmit={handleFallbackContactSubmit} className="space-y-2.5" data-customer-intake-fallback="true">
+                            <label className="block space-y-1 text-xs text-emerald-100">
+                              <span>{language === 'es' ? 'Nombre' : 'Name'}</span>
+                              <input
+                                required
+                                autoComplete="name"
+                                value={fallbackContactName}
+                                onChange={(event) => setFallbackContactName(event.target.value)}
+                                className="w-full rounded-lg border border-emerald-500/30 bg-[#051c14] px-3 py-2 text-white"
+                              />
+                            </label>
+                            <label className="block space-y-1 text-xs text-emerald-100">
+                              <span>{language === 'es' ? 'Correo electrónico' : 'Email'}</span>
+                              <input
+                                required
+                                type="email"
+                                autoComplete="email"
+                                value={fallbackContactEmail}
+                                onChange={(event) => setFallbackContactEmail(event.target.value)}
+                                className="w-full rounded-lg border border-emerald-500/30 bg-[#051c14] px-3 py-2 text-white"
+                              />
+                            </label>
+                            <label className="block space-y-1 text-xs text-emerald-100">
+                              <span>{language === 'es' ? 'Tu consulta' : 'Your inquiry'}</span>
+                              <textarea
+                                required
+                                rows={3}
+                                value={fallbackContactMessage}
+                                onChange={(event) => setFallbackContactMessage(event.target.value)}
+                                className="w-full rounded-lg border border-emerald-500/30 bg-[#051c14] px-3 py-2 text-white"
+                              />
+                            </label>
+                            <button
+                              type="submit"
+                              disabled={fallbackContactStatus === 'sending' || fallbackContactStatus === 'sent'}
+                              className="w-full rounded-lg bg-amber-400 px-3 py-2.5 text-xs font-black text-stone-950 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {fallbackContactStatus === 'sending'
+                                ? (language === 'es' ? 'Enviando consulta…' : 'Sending inquiry…')
+                                : fallbackContactStatus === 'sent'
+                                  ? (language === 'es' ? 'Consulta enviada' : 'Inquiry sent')
+                                  : (language === 'es' ? 'Dejar mi consulta' : 'Send my inquiry')}
+                            </button>
+                            {fallbackContactStatus === 'failed' && (
+                              <p role="alert" className="text-xs text-amber-200">
+                                {language === 'es'
+                                  ? 'No pudimos enviar la consulta ahora. Usá WhatsApp para contactarnos directamente.'
+                                  : 'We could not send your inquiry right now. Please use WhatsApp to contact us directly.'}
+                              </p>
+                            )}
+                            {fallbackContactStatus === 'sent' && (
+                              <p role="status" className="text-xs text-emerald-200">
+                                {language === 'es'
+                                  ? 'Recibimos tu consulta. Te contactaremos para darle seguimiento.'
+                                  : 'Your inquiry was received. We will follow up with you.'}
+                              </p>
+                            )}
+                          </form>
+                        </section>
+                      )}
 
                       {/* Google Search Grounding Sources Display */}
                       {msg.sources && msg.sources.length > 0 && (
@@ -1287,7 +1411,7 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
                 e.preventDefault();
                 handleSendMessage();
               }}
-              className="relative grid w-full min-w-0 grid-cols-[48px_48px_minmax(0,1fr)] gap-2 sm:flex"
+              className="relative grid w-full min-w-0 grid-cols-[48px_minmax(0,1fr)] gap-2 sm:flex"
             >
               <input 
                 type="file" 
@@ -1305,40 +1429,26 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
               >
                 <ImageIcon className="w-5 h-5" />
               </button>
-              {speech.supported && <button
-                type="button"
-                data-testid="assistant-mic"
-                onClick={handleMicClick}
-                disabled={isLoading}
-                aria-pressed={isRecording}
-                className={`flex-shrink-0 w-[48px] h-[48px] flex items-center justify-center rounded-xl border transition-all cursor-pointer ${
-                  isRecording 
-                    ? 'bg-red-500/20 text-red-400 border-red-500/50 animate-pulse' 
-                    : 'bg-[#051c14] border-emerald-500/30 text-amber-400 hover:bg-[#0a2e21]'
-                }`}
-                title={isRecording ? (language === 'es' ? 'Detener dictado' : 'Stop dictation') : (language === 'es' ? 'Dictar por voz' : 'Dictate by voice')}
-                aria-label={isRecording ? (language === 'es' ? 'Detener dictado' : 'Stop dictation') : (language === 'es' ? 'Dictar por voz' : 'Dictate by voice')}
-              >
-                {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-              </button>}
+
               <input type="text" value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} spellCheck="false" autoComplete="off" autoCorrect="off"
                 placeholder={
                   language === 'es'
                     ? `Pregunta a ${getLangText(currentAgent.name, language)}...`
                     : `Ask ${getLangText(currentAgent.name, language)}...`
                 }
-                disabled={isLoading || isRecording}
-                className="col-span-3 row-start-2 w-full min-w-0 bg-[#051c14] border border-emerald-500/30 focus:border-amber-400 text-white px-4 py-3 rounded-xl text-base focus:outline-none placeholder-emerald-300/40 sm:col-span-1 sm:row-auto sm:flex-1"
+                disabled={isLoading}
+                className="col-span-2 row-start-2 w-full min-w-0 bg-[#051c14] border border-emerald-500/30 focus:border-amber-400 text-white px-4 py-3 rounded-xl text-base focus:outline-none placeholder-emerald-300/40 sm:col-span-1 sm:row-auto sm:flex-1"
               />
               <button
                 type="submit"
                 disabled={isLoading || (!inputMessage.trim() && !selectedImage)}
-                className="col-start-3 row-start-1 flex min-w-0 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 px-3 py-3 text-xs font-black uppercase tracking-wider text-stone-950 shadow-lg shadow-amber-400/20 transition-all hover:from-amber-300 hover:to-amber-400 active:scale-95 disabled:opacity-50 cursor-pointer sm:col-auto sm:row-auto sm:px-6"
+                className="col-start-2 row-start-1 flex min-w-0 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 px-3 py-3 text-xs font-black uppercase tracking-wider text-stone-950 shadow-lg shadow-amber-400/20 transition-all hover:from-amber-300 hover:to-amber-400 active:scale-95 disabled:opacity-50 cursor-pointer sm:col-auto sm:row-auto sm:px-6"
               >
                 <Send className="w-4 h-4" />
                 <span className="hidden sm:inline">{t('aiSend')}</span>
               </button>
             </form>
+            <p data-testid="assistant-voice-coming-soon" className="mt-2 text-[11px] text-stone-500">{language === 'es' ? 'Dictado por voz: próximamente.' : 'Voice dictation: coming soon.'}</p>
           </div>
 
         </div>

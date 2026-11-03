@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Language } from '../types';
 
 /**
  * Sistema de marca "my" (#399). Solo UI: no cambia dominio, URLs canónicas ni SEO.
@@ -10,10 +11,10 @@ export const MY_MARK_CLASS =
 
 /** Nombres fijos, iguales en ES y EN. */
 export const MY_SECTIONS = {
-  trip: { name: 'Trip', label: 'My Trip', to: '/trip' },
-  planner: { name: 'Planner', label: 'My Planner', to: '/itinerary' },
-  bookings: { name: 'Bookings', label: 'My Bookings', to: null },
-  flights: { name: 'Flights', label: 'My Flights', to: '/flights' },
+  trip: { name: 'Trip', label: 'My Trip', nameEs: 'viaje', labelEs: 'Mi viaje', to: '/trip' },
+  planner: { name: 'Planner', label: 'My Planner', nameEs: 'planificador', labelEs: 'Mi planificador', to: '/itinerary' },
+  bookings: { name: 'Bookings', label: 'My Bookings', nameEs: 'reservas', labelEs: 'Mis reservas', to: null },
+  flights: { name: 'Flights', label: 'My Flights', nameEs: 'vuelos', labelEs: 'Mis vuelos', to: '/flights' },
 } as const;
 export type MySection = keyof typeof MY_SECTIONS;
 
@@ -30,10 +31,15 @@ export const MyWordmark: React.FC = () => (
   </span>
 );
 
-/** Etiqueta de sección del viajero: "My" resaltado + nombre fijo. */
-export const MyLabel: React.FC<{ section: MySection }> = ({ section }) => (
-  <span data-testid={`my-label-${section}`} aria-label={MY_SECTIONS[section].label}>
-    <MyMark text="My" />
-    <span aria-hidden="true">{' '}{MY_SECTIONS[section].name}</span>
-  </span>
-);
+/** Etiqueta de sección del viajero localizada (ES/EN), sin alterar el wordmark comercial. */
+export const MyLabel: React.FC<{ section: MySection; language?: Language }> = ({ section, language = 'en' }) => {
+  const es = language === 'es';
+  const item = MY_SECTIONS[section];
+  const prefix = es ? (section === 'bookings' || section === 'flights' ? 'Mis' : 'Mi') : 'My';
+  return (
+    <span data-testid={`my-label-${section}`} aria-label={es ? item.labelEs : item.label}>
+      <MyMark text={es ? prefix : 'My'} />
+      <span aria-hidden="true">{' '}{es ? item.nameEs : item.name}</span>
+    </span>
+  );
+};

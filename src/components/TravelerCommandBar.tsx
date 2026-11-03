@@ -117,7 +117,7 @@ export const TravelerCommandBar: React.FC<TravelerCommandBarProps> = ({
                   </span>
                   <ArrowRight size={15} className="text-stone-600 group-hover:text-amber-300 group-hover:translate-x-1 transition-all" />
                 </div>
-                <div className="mt-4 text-sm font-black text-white">{'section' in item && item.section ? <MyLabel section={item.section} /> : item.title}</div>
+                <div className="mt-4 text-sm font-black text-white">{'section' in item && item.section ? <MyLabel section={item.section} language={language} /> : item.title}</div>
                 <div className="mt-1 text-[11px] leading-relaxed text-stone-500">{item.text}</div>
               </motion.button>
             );

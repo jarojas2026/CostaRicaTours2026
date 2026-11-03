@@ -7,6 +7,8 @@ import { catalogSearchHref, readCatalogRouteFilters } from './utils/catalogRoute
 import { useTours } from './contexts/ToursContext';
 import { Tour, Language, Currency, TourCategory, TourRegion, BookingRequest } from './types';
 import { fetchExchangeRates } from './utils/i18n';
+import { getRatesSnapshot } from './utils/exchangeRates';
+import { availableCurrencies } from './utils/money';
 import { getInitialCurrency, getInitialLanguage, rememberCurrency, rememberLanguage } from './i18n';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
@@ -40,14 +42,17 @@ const FormsManagerModal = lazy(() => import('./components/FormsManagerModal').th
 const TravelerOSPage = lazy(() => import('./pages/TravelerOSPage').then(m => ({ default: m.TravelerOSPage })));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const AIAssistant = lazy(() => import('./components/AIAssistant').then(m => ({ default: m.AIAssistant })));
+const VoiceConciergePage = lazy(() => import('./pages/VoiceConciergePage').then(m => ({ default: m.VoiceConciergePage })));
 const FlightTrackerGadget = lazy(() => import('./components/FlightTrackerGadget').then(m => ({ default: m.FlightTrackerGadget })));
 const GoogleWorkspaceHub = lazy(() => import('./components/GoogleWorkspaceHub').then(m => ({ default: m.GoogleWorkspaceHub })));
 const CounterDeskPage = lazy(() => import('./pages/CounterDeskPage').then(m => ({ default: m.CounterDeskPage })));
 const AutonomousOperationsPage = lazy(() => import('./pages/AutonomousOperationsPage').then(m => ({ default: m.default })));
 const EmailOperationsPage = lazy(() => import('./pages/EmailOperationsPage').then(m => ({ default: m.default })));
 const LeadsPipelinePage = lazy(() => import('./pages/LeadsPipelinePage').then(m => ({ default: m.LeadsPipelinePage })));
-const DigitalCityJoinPage = lazy(() => import('./pages/DigitalCityJoinPage').then(m => ({ default: m.DigitalCityJoinPage })));
-const DigitalCityArchitecturePage = lazy(() => import('./pages/DigitalCityArchitecturePage').then(m => ({ default: m.DigitalCityArchitecturePage })));
+// Digital City routes remain in the codebase but are hidden behind a build-time feature flag.
+const SHOW_DIGITAL_CITY = import.meta.env.VITE_SHOW_DIGITAL_CITY === 'true';
+const DigitalCityJoinPage = SHOW_DIGITAL_CITY ? lazy(() => import('./pages/DigitalCityJoinPage').then(m => ({ default: m.DigitalCityJoinPage }))) : null;
+const DigitalCityArchitecturePage = SHOW_DIGITAL_CITY ? lazy(() => import('./pages/DigitalCityArchitecturePage').then(m => ({ default: m.DigitalCityArchitecturePage }))) : null;
 const LegalPage = lazy(() => import('./pages/LegalPage').then(m => ({ default: m.LegalPage })));
 const TourDetailModal = lazy(() => import('./components/TourDetailModal').then(m => ({ default: m.TourDetailModal })));
 const BookingConfirmationModal = lazy(() => import('./components/BookingConfirmationModal').then(m => ({ default: m.BookingConfirmationModal })));
@@ -61,7 +66,6 @@ const AboutSection = lazy(() => import('./components/AboutSection').then(m => ({
 // Customer-intake markdown renderer (react-markdown + micromark ≈ 100 kB) loads on first reply.
 const IntakeReplyMarkdown = lazy(() => import('./components/IntakeReplyMarkdown'));
 const BlogArticlePage = lazy(() => import('./pages/BlogArticlePage').then(m => ({ default: m.BlogArticlePage })));
-const VoiceConciergePage = lazy(() => import('./pages/VoiceConciergePage').then(m => ({ default: m.VoiceConciergePage })));
 
 
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
@@ -256,8 +260,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    fetchExchangeRates();
-  }, []);
+    let active = true;
+    void fetchExchangeRates().then((snapshot) => {
+      if (!active) return;
+      const supported = availableCurrencies(snapshot || getRatesSnapshot());
+      // Prevent stale localStorage (e.g. CRC selected before a rate expired) from
+      // labeling USD fallback prices as CRC. USD remains the safe display currency.
+      if (!supported.includes(currency)) {
+        setCurrencyState('USD');
+        rememberCurrency('USD');
+      }
+    });
+    return () => { active = false; };
+  }, [currency]);
 
   // Ensure modal state does not conflict with direct /tour/:id SPA routing
   useEffect(() => {
@@ -313,7 +328,7 @@ export default function App() {
       case 'activities': return `🧗 ${language === 'es' ? 'Actividades & Experiencias' : 'Activities & Experiences'}`;
       case 'blog': return `📝 ${language === 'es' ? 'Blog de Viajes' : 'Travel Blog'}`;
       case 'about': return `🌿 ${language === 'es' ? 'Sobre Nosotros' : 'About Us'}`;
-      case 'flights': return `✈️ ${language === 'es' ? 'Rastreador en Vivo de Vuelos' : 'Live Flight Radar'}`;
+      case 'flights': return `✈️ ${language === 'es' ? 'Radar de Vuelos' : 'Flight Radar'}`;
       case 'ai': return `🤖 ${language === 'es' ? 'Asistente Turístico IA' : 'AI Concierge'}`;
       case 'itinerary': return `✨ ${language === 'es' ? 'Planificador Inteligente' : 'AI Trip Planner'}`;
       case 'culture': return `🇨🇷 ${language === 'es' ? 'Rincón Tico: Cultura' : 'Tico Culture'}`;
@@ -415,8 +430,8 @@ export default function App() {
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
             <Route path="/provider/portal" element={<Suspense fallback={<RouteFallback />}><ProviderPortalPage /></Suspense>} />
-            <Route path="/ciudad" element={<Suspense fallback={<div className="py-12 text-center text-amber-200">Cargando ciudad digital…</div>}><DigitalCityArchitecturePage language={language} /></Suspense>} />
-            <Route path="/participar" element={<Suspense fallback={<div className="py-12 text-center text-amber-200">Cargando…</div>}><DigitalCityJoinPage language={language} onOpenPrivacy={() => navigate('/privacy')} /></Suspense>} />
+            <Route path="/ciudad" element={SHOW_DIGITAL_CITY && DigitalCityArchitecturePage ? <Suspense fallback={<div className="py-12 text-center text-amber-200">Cargando ciudad digital…</div>}><DigitalCityArchitecturePage language={language} /></Suspense> : <Navigate to="/tours" replace />} />
+            <Route path="/participar" element={SHOW_DIGITAL_CITY && DigitalCityJoinPage ? <Suspense fallback={<div className="py-12 text-center text-amber-200">Cargando…</div>}><DigitalCityJoinPage language={language} onOpenPrivacy={() => navigate('/privacy')} /></Suspense> : <Navigate to="/tours" replace />} />
 
             <Route path="/" element={
               <HomePage
