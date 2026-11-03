@@ -28,7 +28,7 @@ test('detecta soporte de reconocimiento y síntesis sin lanzar errores', () => {
 test('sin soporte el componente muestra el aviso de texto y no el micrófono', async () => {
   const { VoiceConcierge } = await import('../src/components/VoiceConcierge');
   const html = renderToStaticMarkup(React.createElement(VoiceConcierge, { language: 'es', tours }));
-  assert.match(html, /data-testid="voice-concierge-fallback"/);
+  assert.match(html, /data-testid="voice-concierge-coming-soon"/);
   assert.doesNotMatch(html, /data-testid="voice-concierge-mic"/);
   assert.match(html, /data-testid="voice-concierge-input"/, 'el campo de texto siempre está disponible');
 });
