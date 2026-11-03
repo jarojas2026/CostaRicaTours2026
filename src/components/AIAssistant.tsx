@@ -5,7 +5,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Language, Tour, BookingRequest, AgentId, AIAgent } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft,
-  Bot, Send, Sparkles, User, RefreshCw, X, MessageSquare, 
+  Bot, Send, Sparkles, Mic, MicOff, User, RefreshCw, X, MessageSquare, 
   Compass, ArrowRight, Trash2, HelpCircle, CheckCircle2, Ticket, 
   Image as ImageIcon, BrainCircuit, XCircle, Leaf, Trees, ShieldCheck, 
   Info, Clock, ChevronDown, ChevronRight, Zap, Coffee, Compass as CompassIcon, Waves, Mountain,
@@ -19,7 +19,8 @@ import { ClaudeItineraryModal } from './ClaudeItineraryModal';
 import { getUsdToCrcRate } from '../utils/currencies';
 import { useMoney } from '../hooks/useMoney';
 import { useChatAnalytics } from '../hooks/useChatAnalytics';
-import { speechSynthesisSupported } from '../hooks/useSpeechRecognition';
+import { useSpeechRecognition, speechSynthesisSupported } from '../hooks/useSpeechRecognition';
+import { VOICE_DICTATION_ENABLED } from '../config/voiceFlags';
 import { buildTripInquiryHandoff, serverInquiryHandoff, type TripInquiryHandoff } from '../utils/tripRequestParser';
 import { isTransportInquiry } from '../utils/transportIntent';
 import { chatSessionHeaders, clearStoredChatSession, readStoredChatSession, requestChatSession, type ChatSessionCredentials } from '../utils/chatSession';
@@ -260,8 +261,15 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
     reader.readAsDataURL(file);
   };
 
-  // Voice dictation is disabled until the voice backend is available.
+  // Dictado por voz del navegador (Web Speech API): el texto se agrega al campo y el usuario decide enviarlo.
+  // Bandera VITE_VOICE_DICTATION=off lo apaga y muestra "Dictado por voz: próximamente".
+  const speech = useSpeechRecognition(language, (text) => {
+    setInputMessage((prev) => prev + (prev ? ' ' : '') + text);
+  });
+  const showMic = VOICE_DICTATION_ENABLED && speech.supported;
+  const isRecording = showMic && speech.listening;
   const canSpeakAloud = speechSynthesisSupported();
+  const handleMicClick = () => speech.toggle();
 
   const handleClearHistory = () => {
     setMessages([
@@ -1411,7 +1419,7 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
                 e.preventDefault();
                 handleSendMessage();
               }}
-              className="relative grid w-full min-w-0 grid-cols-[48px_minmax(0,1fr)] gap-2 sm:flex"
+              className={`relative grid w-full min-w-0 ${showMic ? 'grid-cols-[48px_48px_minmax(0,1fr)]' : 'grid-cols-[48px_minmax(0,1fr)]'} gap-2 sm:flex`}
             >
               <input 
                 type="file" 
@@ -1429,26 +1437,41 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
               >
                 <ImageIcon className="w-5 h-5" />
               </button>
-
+              {showMic && <button
+                type="button"
+                data-testid="assistant-mic"
+                onClick={handleMicClick}
+                disabled={isLoading}
+                aria-pressed={isRecording}
+                className={`flex-shrink-0 w-[48px] h-[48px] flex items-center justify-center rounded-xl border transition-all cursor-pointer ${
+                  isRecording 
+                    ? 'bg-red-500/20 text-red-400 border-red-500/50 animate-pulse' 
+                    : 'bg-[#051c14] border-emerald-500/30 text-amber-400 hover:bg-[#0a2e21]'
+                }`}
+                title={isRecording ? (language === 'es' ? 'Detener dictado' : 'Stop dictation') : (language === 'es' ? 'Dictar por voz' : 'Dictate by voice')}
+                aria-label={isRecording ? (language === 'es' ? 'Detener dictado' : 'Stop dictation') : (language === 'es' ? 'Dictar por voz' : 'Dictate by voice')}
+              >
+                {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              </button>}
               <input type="text" value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} spellCheck="false" autoComplete="off" autoCorrect="off"
                 placeholder={
                   language === 'es'
                     ? `Pregunta a ${getLangText(currentAgent.name, language)}...`
                     : `Ask ${getLangText(currentAgent.name, language)}...`
                 }
-                disabled={isLoading}
-                className="col-span-2 row-start-2 w-full min-w-0 bg-[#051c14] border border-emerald-500/30 focus:border-amber-400 text-white px-4 py-3 rounded-xl text-base focus:outline-none placeholder-emerald-300/40 sm:col-span-1 sm:row-auto sm:flex-1"
+                disabled={isLoading || isRecording}
+                className={`${showMic ? 'col-span-3' : 'col-span-2'} row-start-2 w-full min-w-0 bg-[#051c14] border border-emerald-500/30 focus:border-amber-400 text-white px-4 py-3 rounded-xl text-base focus:outline-none placeholder-emerald-300/40 sm:col-span-1 sm:row-auto sm:flex-1`}
               />
               <button
                 type="submit"
                 disabled={isLoading || (!inputMessage.trim() && !selectedImage)}
-                className="col-start-2 row-start-1 flex min-w-0 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 px-3 py-3 text-xs font-black uppercase tracking-wider text-stone-950 shadow-lg shadow-amber-400/20 transition-all hover:from-amber-300 hover:to-amber-400 active:scale-95 disabled:opacity-50 cursor-pointer sm:col-auto sm:row-auto sm:px-6"
+                className={`${showMic ? 'col-start-3' : 'col-start-2'} row-start-1 flex min-w-0 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 px-3 py-3 text-xs font-black uppercase tracking-wider text-stone-950 shadow-lg shadow-amber-400/20 transition-all hover:from-amber-300 hover:to-amber-400 active:scale-95 disabled:opacity-50 cursor-pointer sm:col-auto sm:row-auto sm:px-6`}
               >
                 <Send className="w-4 h-4" />
                 <span className="hidden sm:inline">{t('aiSend')}</span>
               </button>
             </form>
-            <p data-testid="assistant-voice-coming-soon" className="mt-2 text-[11px] text-stone-500">{language === 'es' ? 'Dictado por voz: próximamente.' : 'Voice dictation: coming soon.'}</p>
+            {!VOICE_DICTATION_ENABLED && <p data-testid="assistant-voice-coming-soon" className="mt-2 text-[11px] text-stone-500">{language === 'es' ? 'Dictado por voz: próximamente.' : 'Voice dictation: coming soon.'}</p>}
           </div>
 
         </div>

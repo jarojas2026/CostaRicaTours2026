@@ -1,13 +1,19 @@
 import { expect, mockApi, test } from './fixtures';
 
+// BottomNav no tiene data-testid (y no se modifica): se ubica por su rol y nombre accesible.
+const bottomNav = (page: import('@playwright/test').Page) =>
+  page.getByRole('navigation', { name: /^(Navegación principal|Primary navigation)$/ });
+
 test('floating WhatsApp is mobile-only and does not cover BottomNav at 375px', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
+  await page.addInitScript(() => { if (window === window.top) localStorage.setItem('cookie-consent', 'essential'); });
   await mockApi(page);
   await page.goto('/');
-  const nav = page.getByTestId('bottom-nav');
-  const whatsapp = page.getByTestId('floating-whatsapp-launcher');
+  const nav = bottomNav(page);
+  const whatsapp = page.getByTestId('mobile-whatsapp-button');
   await expect(nav).toBeVisible();
   await expect(whatsapp).toBeVisible();
+  await expect(whatsapp).toHaveAttribute('href', /^https:\/\/wa\.me\//);
 
   const [navBox, whatsappBox] = await Promise.all([nav.boundingBox(), whatsapp.boundingBox()]);
   expect(navBox).not.toBeNull();
@@ -23,8 +29,9 @@ test('floating WhatsApp is mobile-only and does not cover BottomNav at 375px', a
 
 test('floating WhatsApp is hidden on desktop while BottomNav is also hidden', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
+  await page.addInitScript(() => { if (window === window.top) localStorage.setItem('cookie-consent', 'essential'); });
   await mockApi(page);
   await page.goto('/');
-  await expect(page.getByTestId('floating-whatsapp-launcher')).toBeHidden();
-  await expect(page.getByTestId('bottom-nav')).toBeHidden();
+  await expect(page.getByTestId('mobile-whatsapp-button')).toBeHidden();
+  await expect(bottomNav(page)).toBeHidden();
 });

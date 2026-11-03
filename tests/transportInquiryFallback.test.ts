@@ -69,7 +69,7 @@ test('Counter Agent returns the transport quotation before selecting a catalogue
   assert.equal(unsafeFallback, -1, 'Counter Agent must never substitute the first catalogue tour');
   assert.ok(ambiguousGuard > tourSelection, 'ambiguous quote requests must be checked after matching');
   assert.match(source.slice(guard, tourSelection), /transportQuoteReply/);
-  assert.match(source.slice(guard, tourSelection), /recommendedTours:\\s*\\[\\]/);
+  assert.match(source.slice(guard, tourSelection), /recommendedTours:\s*\[\]/);
   assert.match(source.slice(ambiguousGuard, source.indexOf('const selectedTour = matchedTour', ambiguousGuard)), /need to identify the right experience|identificar la experiencia correcta/);
 });
 

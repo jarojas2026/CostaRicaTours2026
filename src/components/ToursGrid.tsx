@@ -14,7 +14,7 @@ import { isBookableTour, catalogTourSearchScore, isGenericCatalogSearch } from '
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Compass, Search, Filter, SlidersHorizontal, Sparkles, LayoutGrid, List, 
-  Map, Heart, Scale, X, Flame, Leaf, Check, RotateCcw, ArrowUpDown, ArrowLeft, Mic, MicOff, Loader2,
+  Map as MapIcon, Heart, Scale, X, Flame, Leaf, Check, RotateCcw, ArrowUpDown, ArrowLeft, Mic, MicOff, Loader2,
   MapPin, ChevronDown, CheckCircle2, Clock, Star, Zap
 } from 'lucide-react';
 
@@ -133,7 +133,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
 
   // A generic query such as "tours Costa Rica" leaves the catalog unfiltered.
   const activeSearch = searchQuery.trim() && !isGenericCatalogSearch(searchQuery) ? searchQuery : '';
-  const searchScores = new Map(tours.map(tour => [tour.id, activeSearch ? catalogTourSearchScore(tour, activeSearch) : 0]));
+  const searchScores = new Map<string, number>(tours.map(tour => [tour.id, activeSearch ? catalogTourSearchScore(tour, activeSearch) : 0]));
 
   // Apply All Filtering & Sorting
   let processedTours = tours.filter(tour => {
@@ -382,7 +382,7 @@ export const ToursGrid: React.FC<ToursGridProps> = ({
                 className="hidden sm:flex items-center gap-1 bg-emerald-950/70 hover:bg-emerald-900 text-emerald-300 hover:text-amber-300 px-3 py-2 rounded-full border border-emerald-500/30 text-xs font-bold transition-all"
                 title={t('toursGrid.viewInteractiveMap')}
               >
-                <Map className="w-3.5 h-3.5 text-teal-400" />
+                <MapIcon className="w-3.5 h-3.5 text-teal-400" />
                 <span className="hidden lg:inline">{t('toursGrid.map')}</span>
               </button>
             )}

@@ -16,6 +16,7 @@ import { AmbientBackground } from './components/AmbientBackground';
 import { CookiesBanner } from './components/CookiesBanner';
 import { Home as HomePage } from './pages/Home';
 import { BottomNav } from './components/BottomNav';
+import { MobileWhatsAppButton } from './components/MobileWhatsAppButton';
 import { RouteMetadata } from './components/RouteMetadata';
 import { OfflineBanner } from './components/OfflineBanner';
 import { Home, ChevronRight, Bot, MessageCircle, X, Loader2 } from 'lucide-react';
@@ -740,6 +741,8 @@ export default function App() {
 
       {/* On tour details, the fixed booking CTA owns the mobile bottom safe-area. */}
       {!location.pathname.startsWith('/tour/') && <BottomNav language={language} activeTab={activeTab} />}
+      {/* WhatsApp flotante solo en celular, por encima de la BottomNav (no en detalle de tour ni en /ai). */}
+      {!location.pathname.startsWith('/tour/') && location.pathname !== '/ai' && <MobileWhatsAppButton language={language} />}
       <Footer language={language} />
       <CookiesBanner language={language} />
     </div>

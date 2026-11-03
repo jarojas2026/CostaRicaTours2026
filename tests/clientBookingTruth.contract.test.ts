@@ -39,9 +39,12 @@ test('flight request never fabricates paid/confirmed state or a client PNR', () 
   assert.doesNotMatch(flight, /phone:\s*phone\s*\|\|/);
 });
 
-test('flight quote flow never exposes online Stripe checkout', () => {
-  assert.match(flight, /paymentMethod: BookingRequest\['paymentMethod'\] = 'pay_at_pickup'/);
-  assert.doesNotMatch(flight, /stripeRes|stripeData|create-checkout-session/i);
+test('flight payment redirect fails closed when Stripe does not return a valid session URL', () => {
+  assert.match(flight, /!stripeRes\.ok/);
+  assert.match(flight, /!stripeData\.url/);
+  const catchBlock = flight.match(/catch \(err: any\) \{([\s\S]*?)\n    \} finally/)?.[1] || '';
+  assert.doesNotMatch(catchBlock, /setShowSuccessTicket\(true\)/);
+  assert.doesNotMatch(catchBlock, /onBookingSuccess\(/);
 });
 
 test('map service request never fabricates a confirmed booking on backend failure', () => {

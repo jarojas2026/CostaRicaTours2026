@@ -8,6 +8,9 @@ import { FlightRoute, Language, Currency, BookingRequest } from '../types';
 import { formatCurrency, getLangText } from '../utils/i18n';
 import { getUsdToCrcRate } from '../utils/currencies';
 
+// Bandera: el cobro online con tarjeta (Stripe) para vuelos está apagado. No cambiar a true sin aprobación del dueño.
+export const FLIGHT_ONLINE_PAYMENT_ENABLED = false as boolean;
+
 interface FlightBookingModalProps {
   flight: FlightRoute;
   isOpen: boolean;
@@ -45,8 +48,8 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
   const [phone, setPhone] = useState('');
   const [passportNumber, setPassportNumber] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
-  // This flow only requests a quote; no online payment method is offered.
-  const paymentMethod: BookingRequest['paymentMethod'] = 'pay_at_pickup';
+  // This flow only requests a quote; the only selectable option is a no-charge request.
+  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'pay_at_pickup' | 'sinpe_movil'>('pay_at_pickup');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessTicket, setShowSuccessTicket] = useState(false);
@@ -116,6 +119,37 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
     };
 
     try {
+      // Cobro online de vuelos APAGADO: el bloque se conserva detrás de la bandera, pero nunca se ejecuta
+      // mientras FLIGHT_ONLINE_PAYMENT_ENABLED sea false (Stripe no se activa en este flujo de cotización).
+      if (FLIGHT_ONLINE_PAYMENT_ENABLED && paymentMethod === 'credit_card') {
+        const stripeRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || ""}/api/stripe/create-checkout-session`, {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({
+             tourId: 'flight-' + flight.flightNumber,
+             tourName: 'Vuelo ' + flight.flightNumber + ' - ' + flight.airline,
+             totalUSD,
+             customerEmail: email,
+             date: departureDate,
+             passengers: passengersCount,
+             flightNumber: flight.flightNumber,
+             cabinClass: selectedCabin,
+             includeAirportTransfer,
+             includeWelcomeSimKit,
+             includeTravelInsurance
+           })
+        });
+        const stripeData = await stripeRes.json().catch(() => ({}));
+        if (!stripeRes.ok) {
+          throw new Error(stripeData?.message || stripeData?.error || 'No se pudo iniciar el pago seguro.');
+        }
+        if (!stripeData.url) {
+          throw new Error('La pasarela no devolvió un enlace de pago verificable.');
+        }
+        window.location.href = stripeData.url;
+        return;
+      }
+
       const bookingRes = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -489,6 +523,32 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Payment Method Selector (solo solicitud sin cobro online) */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-700 uppercase block">
+                  {language === 'es' ? 'Método de Pago:' : 'Payment Method:'}
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {[
+                    { id: 'pay_at_pickup', label: language === 'es' ? 'Enviar solicitud sin cobro online' : 'Submit request without online charge', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
+                  ].map((m) => (
+                    <button
+                      type="button"
+                      key={m.id}
+                      onClick={() => setPaymentMethod(m.id as any)}
+                      className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        paymentMethod === m.id
+                          ? 'bg-slate-900 text-white border-slate-900 font-bold shadow-sm'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {m.icon}
+                      <span>{m.label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
