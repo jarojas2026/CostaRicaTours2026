@@ -86,6 +86,7 @@ ROUTE GET /api/counter/operations (2)
 ROUTE GET /api/counter/autopilot (2)
 ROUTE POST /api/counter/organize (2)
 USE [/api/voice/incoming, /api/voice/respond, /api/voice/human-transfer, /api/voice/status] wrapped
+ROUTE GET /api/voice/health (1)
 ROUTE GET /api/voice/config (2)
 ROUTE POST /api/voice/incoming (1)
 ROUTE POST /api/voice/respond (1)
