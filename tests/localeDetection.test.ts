@@ -50,7 +50,7 @@ test('footer, catalog filters and tour cards take every text from i18n', () => {
 
 test('html lang and hreflang alternates are set per route', () => {
   const meta = fs.readFileSync('src/components/RouteMetadata.tsx', 'utf8');
-  assert.match(meta, /document\.documentElement\.lang = htmlLang\(language\)/);
+  assert.match(meta, /document\.documentElement\.lang = htmlLang\(seoLanguage\)/);
   assert.match(meta, /hreflang: 'x-default'/);
   assert.match(fs.readFileSync('index.html', 'utf8'), /hreflang="x-default"/);
 });
