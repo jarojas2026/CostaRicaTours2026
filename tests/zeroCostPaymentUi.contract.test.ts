@@ -23,7 +23,7 @@ test('tour modal does not render Stripe, PayPal or SINPE payment choices', () =>
 });
 
 test('flight request UI defaults to no online charge and only renders that option', () => {
-  assert.match(flightModal, /const \[paymentMethod, setPaymentMethod\] = useState<[^>]+>\('pay_at_pickup'\)/);
+  assert.match(flightModal, /paymentMethod: BookingRequest\['paymentMethod'\] = 'pay_at_pickup'/);
   assert.match(flightModal, /id: 'pay_at_pickup', label: language === 'es' \? 'Enviar solicitud sin cobro online'/);
   assert.doesNotMatch(flightModal, /id: 'credit_card'/);
   assert.doesNotMatch(flightModal, /id: 'sinpe_movil'/);
