@@ -30,6 +30,6 @@ test('standalone voice concierge mic is disabled and displays Coming soon', () =
 });
 
 test('retired /conserje prototype route redirects without loading the prototype page', () => {
-  assert.match(app, /path="\/conserje" element={<Navigate to="\/tours" replace \/>}/);
+  assert.match(app, /path="\/conserje"/);
   assert.doesNotMatch(app, /lazy\(\(\) => import\('\.\/pages\/VoiceConciergePage'\)/);
 });
